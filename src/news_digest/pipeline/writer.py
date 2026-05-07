@@ -387,10 +387,20 @@ def write_digest(project_root: Path) -> StageResult:
         "Футбол",
         "Радар по районам",
     ]
+    # Section-level caps
+    SECTION_MAX_ITEMS: dict[str, int] = {
+        "Футбол": 3,
+        "IT и бизнес": 5,
+        "Выходные в GM": 6,
+    }
+
     for section_name in ordered_sections:
         lines = sections.get(section_name, [])
         if not lines:
             continue
+        cap = SECTION_MAX_ITEMS.get(section_name)
+        if cap:
+            lines = lines[:cap]
         rendered.append(f"<b>{section_name}</b>")
         rendered.extend(lines)
         rendered.append("")
