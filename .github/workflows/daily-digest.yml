@@ -41,10 +41,11 @@ jobs:
           python scripts/run_local_digest.py dedupe-digest
           python scripts/run_local_digest.py validate-candidates
 
-      - name: LLM rewrite — Cerebras Qwen + Groq fallback
+      - name: LLM rewrite — Gemini Flash → Cerebras → Groq
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
+          GEMINI_API_KEY: ${{ secrets.GEMINIAPI_KEY }}
           CEREBRAS_API_KEY: ${{ secrets.CEREBRASAPIKEY }}
           GROQ_API_KEY: ${{ secrets.GROGAPIKEY }}
         run: python scripts/run_local_digest.py llm-rewrite
