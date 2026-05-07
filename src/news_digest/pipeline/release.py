@@ -160,8 +160,9 @@ def _validate_scan_report(scan_report: dict | None, current_day_london: str, err
         return
 
     # Categories that must be both checked AND usable for release.
-    # transport is excluded: a clean-network day is valid (transport fallback handles it).
-    REQUIRED_USABLE_CATEGORIES = {k for k in REQUIRED_SCAN_CATEGORIES if k != "transport"}
+    # transport: excluded — clean-network day is valid.
+    # gmp: excluded — BBC Manchester public-safety fallback covers it when GMP server is down.
+    REQUIRED_USABLE_CATEGORIES = {k for k in REQUIRED_SCAN_CATEGORIES if k not in {"transport", "gmp"}}
 
     for key, label in REQUIRED_SCAN_CATEGORIES.items():
         category = categories.get(key)
@@ -370,20 +371,16 @@ def _validate_draft(
         public_services = scan_report.get("categories", {}).get("public_services", {})
         active_disruption = bool(public_services.get("active_disruption_today"))
     if active_disruption:
-        has_included_public_services = any(
-            candidate.get("category") == "public_services"
-            for candidate in included_candidates
-        )
-        if has_included_public_services:
-            public_service_visible = any(
-                candidate.get("category") == "public_services"
-                for candidate in included_candidates
-                if str(candidate.get("title", "")).lower() in lower_text
+        # Check by fingerprint (robust) — title-match is unreliable when LLM rewrites draft_line
+        ps_fingerprints = {
+            str(c.get("fingerprint") or "").strip()
+            for c in included_candidates
+            if c.get("category") == "public_services" and str(c.get("fingerprint") or "").strip()
+        }
+        if ps_fingerprints and not ps_fingerprints.intersection(rendered_fingerprints):
+            errors.append(
+                "Active public-services disruption is marked for today but not visible in the digest."
             )
-            if not public_service_visible:
-                errors.append(
-                    "Active public-services disruption is marked for today but not visible in the digest."
-                )
 
 
 def build_release(project_root: Path) -> ReleaseResult:
