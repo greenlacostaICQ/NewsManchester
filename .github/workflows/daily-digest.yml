@@ -33,8 +33,8 @@ jobs:
 
       - name: Run pipeline — collect → dedupe → validate
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_TARGET: ${{ secrets.TELEGRAM_TARGET }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
+          TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
         run: |
           set -euo pipefail
           python scripts/run_local_digest.py collect-digest
@@ -43,16 +43,16 @@ jobs:
 
       - name: LLM rewrite — Cerebras Qwen + Groq fallback
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_TARGET: ${{ secrets.TELEGRAM_TARGET }}
-          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
+          TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRASAPIKEY }}
+          GROQ_API_KEY: ${{ secrets.GROGAPIKEY }}
         run: python scripts/run_local_digest.py llm-rewrite
 
       - name: Run pipeline — write → edit → build
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_TARGET: ${{ secrets.TELEGRAM_TARGET }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
+          TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
         run: |
           set -euo pipefail
           python scripts/run_local_digest.py write-digest
@@ -61,8 +61,8 @@ jobs:
 
       - name: Send digest to Telegram
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_TARGET: ${{ secrets.TELEGRAM_TARGET }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
+          TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
         run: |
           python scripts/run_local_digest.py send-file data/outgoing/current_digest.html --parse-mode HTML
 
