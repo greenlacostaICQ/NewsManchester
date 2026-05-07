@@ -26,9 +26,8 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 CEREBRAS_BASE_URL = "https://api.cerebras.ai/v1"
-# gpt-oss-120b — production model, not deprecated.
-# qwen-3-235b-a22b-instruct-2507 deprecated 2026-05-27; switch if needed.
-CEREBRAS_MODEL = "gpt-oss-120b"
+# qwen-3-235b-a22b-instruct-2507 works until 2026-05-27; update before then.
+CEREBRAS_MODEL = "qwen-3-235b-a22b-instruct-2507"
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 GROQ_MODEL = "llama-3.3-70b-versatile"
@@ -70,7 +69,10 @@ SYSTEM_PROMPT = """Ты редактор новостного дайджеста
 Никакого markdown, никаких пояснений — только JSON."""
 
 
-def _call_provider(
+BATCH_SIZE = 20  # keep each request well under Groq's 12k TPM free-tier limit
+
+
+def _call_provider_batch(
     base_url: str,
     api_key: str,
     model: str,
@@ -78,7 +80,7 @@ def _call_provider(
     provider_name: str,
     timeout: int = 90,
 ) -> dict[str, str]:
-    """Call one OpenAI-compatible provider. Returns fingerprint→draft_line mapping."""
+    """Call one provider in batches of BATCH_SIZE. Returns fingerprint→draft_line."""
     if not api_key:
         logger.warning("%s: API key not set, skipping.", provider_name)
         return {}
@@ -89,56 +91,67 @@ def _call_provider(
         logger.error("openai package not installed. Run: pip install openai")
         return {}
 
-    user_content = json.dumps(
-        [
-            {
-                "fingerprint": c.get("fingerprint", ""),
-                "title": c.get("title", ""),
-                "summary": c.get("summary", ""),
-                "lead": c.get("lead", ""),
-                "category": c.get("category", ""),
-                "primary_block": c.get("primary_block", ""),
-                "practical_angle": c.get("practical_angle", ""),
-                "source_label": c.get("source_label", ""),
-            }
-            for c in candidates
-        ],
-        ensure_ascii=False,
-    )
+    client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
+    mapping: dict[str, str] = {}
 
-    try:
-        logger.info(
-            "%s: sending %d candidates to %s...", provider_name, len(candidates), model
-        )
-        client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_content},
+    batches = [candidates[i: i + BATCH_SIZE] for i in range(0, len(candidates), BATCH_SIZE)]
+    logger.info("%s: %d candidates → %d batch(es) of ≤%d.", provider_name, len(candidates), len(batches), BATCH_SIZE)
+
+    for batch_idx, batch in enumerate(batches, start=1):
+        user_content = json.dumps(
+            [
+                {
+                    "fingerprint": c.get("fingerprint", ""),
+                    "title": c.get("title", ""),
+                    "summary": c.get("summary", ""),
+                    "lead": c.get("lead", ""),
+                    "category": c.get("category", ""),
+                    "primary_block": c.get("primary_block", ""),
+                    "practical_angle": c.get("practical_angle", ""),
+                    "source_label": c.get("source_label", ""),
+                }
+                for c in batch
             ],
-            temperature=0.3,
-            max_tokens=2048,
+            ensure_ascii=False,
         )
-        raw = response.choices[0].message.content.strip()
-        # Strip markdown code fences if model wraps response
-        if raw.startswith("```"):
-            raw = raw.split("```", 2)[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
-            raw = raw.rsplit("```", 1)[0]
-        results = json.loads(raw.strip())
-        mapping: dict[str, str] = {}
-        for item in results:
-            fp = str(item.get("fingerprint") or "").strip()
-            dl = str(item.get("draft_line") or "").strip()
-            if fp and dl and dl.startswith("• ") and len(dl) >= 10:
-                mapping[fp] = dl
-        logger.info("%s: got %d valid draft_lines.", provider_name, len(mapping))
-        return mapping
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("%s: failed — %s", provider_name, exc)
-        return {}
+        try:
+            logger.info("%s: batch %d/%d — sending %d candidates to %s...",
+                        provider_name, batch_idx, len(batches), len(batch), model)
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_content},
+                ],
+                temperature=0.3,
+                max_tokens=2048,
+            )
+            raw = response.choices[0].message.content.strip()
+            if raw.startswith("```"):
+                raw = raw.split("```", 2)[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+                raw = raw.rsplit("```", 1)[0]
+            results = json.loads(raw.strip())
+            batch_hits = 0
+            for item in results:
+                fp = str(item.get("fingerprint") or "").strip()
+                dl = str(item.get("draft_line") or "").strip()
+                if fp and dl and dl.startswith("• ") and len(dl) >= 10:
+                    mapping[fp] = dl
+                    batch_hits += 1
+            logger.info("%s: batch %d/%d → %d draft_lines.", provider_name, batch_idx, len(batches), batch_hits)
+            if batch_idx < len(batches):
+                time.sleep(1)  # small pause between batches
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("%s: batch %d/%d failed — %s", provider_name, batch_idx, len(batches), exc)
+
+    logger.info("%s: total %d valid draft_lines.", provider_name, len(mapping))
+    return mapping
+
+
+# Keep old name as alias for backward compat
+_call_provider = _call_provider_batch
 
 
 def run_llm_rewrite(project_root: Path) -> None:

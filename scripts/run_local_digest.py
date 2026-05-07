@@ -307,9 +307,13 @@ def cmd_digest_status() -> int:
 
 def cmd_build_digest() -> int:
     result = build_release(PROJECT_ROOT)
+    # Also surface gate errors so CI logs show exactly what blocked release
+    from news_digest.pipeline.common import read_json  # noqa: PLC0415
+    report = read_json(result.report_path, {})
     payload = {
         "ok": result.ok,
         "message": result.message,
+        "errors": report.get("errors", []),
         "report_path": str(result.report_path),
         "output_path": str(result.output_path),
     }
