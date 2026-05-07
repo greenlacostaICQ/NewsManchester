@@ -387,15 +387,47 @@ SOURCES: tuple[SourceDef, ...] = (
         source_type="rss",
         allowed_hosts=("bdaily.co.uk",),
     ),
-    # MIDAS disabled — scrapes sector navigation pages, not news items.
-    # SourceDef("MIDAS Manchester", ...),
-    # ── Районные события — советы боро ─────────────────────────────────────
-    # Council event pages disabled — scrape navigation elements, not events.
-    # Re-enable when proper event RSS feeds are found per borough.
-    # SourceDef("Manchester City Events", ...),
-    # SourceDef("Salford Events", ...),
-    # SourceDef("Stockport Events", ...),
-    # SourceDef("Bolton Events", ...),
+    SourceDef(
+        "MIDAS Manchester",
+        "tech_business",
+        "tech_business",
+        "https://www.investinmanchester.com/news/",
+        "tech_business",
+        allowed_hosts=("investinmanchester.com",),
+    ),
+    # ── Районные события — советы боро (с фильтрами в filters.py) ──────────
+    SourceDef(
+        "Manchester City Events",
+        "culture_weekly",
+        "culture_weekly",
+        "https://www.manchester.gov.uk/events",
+        "weekend_activities",
+        allowed_hosts=("manchester.gov.uk",),
+    ),
+    SourceDef(
+        "Salford Events",
+        "culture_weekly",
+        "culture_weekly",
+        "https://www.salford.gov.uk/leisure-and-culture/events/",
+        "weekend_activities",
+        allowed_hosts=("salford.gov.uk",),
+    ),
+    SourceDef(
+        "Stockport Events",
+        "culture_weekly",
+        "culture_weekly",
+        "https://www.stockport.gov.uk/events",
+        "weekend_activities",
+        allowed_hosts=("stockport.gov.uk",),
+    ),
+    SourceDef(
+        "Bolton Events",
+        "culture_weekly",
+        "culture_weekly",
+        "https://www.bolton.gov.uk/events",
+        "weekend_activities",
+        allowed_hosts=("bolton.gov.uk",),
+    ),
     # ── Футбол — только Man Utd и Man City (трансферы + матчи) ────────────
     SourceDef("Manchester United", "football", "football", "https://www.manutd.com/en/news", "football"),
     SourceDef("Manchester City", "football", "football", "https://www.mancity.com/news", "football"),

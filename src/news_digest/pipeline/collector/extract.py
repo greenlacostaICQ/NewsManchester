@@ -32,6 +32,7 @@ from .filters import (
     _is_football_fluff,
     _is_listicle_opening,
     _is_stale_public_service,
+    _is_stale_transport,
     _looks_like_candidate_title,
     _looks_like_city_watch_topical,
 )
@@ -360,6 +361,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
             if not _looks_like_city_watch_topical(text_blob):
                 continue
             primary_block = "city_watch"
+        if source.report_category == "transport" and _is_stale_transport(published_at, item.title):
+            continue
         if source.report_category == "public_services" and _is_stale_public_service(published_at, item.title):
             # GMMH and similar public-services sources publish soft PR
             # news (awards, surveys, new term launches) alongside real

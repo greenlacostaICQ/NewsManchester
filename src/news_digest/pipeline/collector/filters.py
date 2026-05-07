@@ -160,6 +160,22 @@ _FOOTBALL_FLUFF_TOKENS: tuple[str, ...] = (
     "membership",
     "highlights",
     "merchandise",
+    # Press conferences, podcasts, behind-the-scenes — not news
+    "press conference",
+    "pre-match press",
+    "post-match press",
+    "podcast",
+    "matchday programme",
+    "programme cover",
+    "training session",
+    "in pictures",
+    "photo gallery",
+    "behind the scenes",
+    "afta studios",
+    "wembley final",  # women's WSL — separate competition
+    "wsl",
+    "women's super league",
+    "citc",  # City in the Community — charity, not first team
 )
 
 
@@ -204,6 +220,32 @@ def _looks_like_city_watch_topical(text: str) -> bool:
 
 
 _PUBLIC_SERVICE_MAX_AGE_DAYS = 7
+_TRANSPORT_MAX_AGE_DAYS = 1  # transport disruptions older than 1 day are likely resolved
+
+
+def _is_stale_transport(published_at: str | None, title: str) -> bool:
+    """Return True if a transport disruption item is past its relevance window.
+
+    Transport items without a publication date are dropped (stale-safe).
+    Items published more than 1 day ago are treated as stale — a disruption
+    that was published 2+ days ago has either ended or is well-known already.
+
+    Exception: items that contain future-date signals (e.g. "from Monday",
+    "starting", "planned") are kept regardless of publication age.
+    """
+    lowered = str(title or "").lower()
+    future_signals = ("from monday", "from tuesday", "from wednesday", "from thursday",
+                      "from friday", "starting", "planned works", "engineering works",
+                      "advance notice", "next week")
+    if any(sig in lowered for sig in future_signals):
+        return False
+    if not published_at:
+        return True
+    parsed = _parse_datetime_value(published_at)
+    if parsed is None:
+        return True
+    age = now_london() - parsed
+    return age.days > _TRANSPORT_MAX_AGE_DAYS
 
 
 def _is_stale_public_service(published_at: str | None, title: str) -> bool:
@@ -441,4 +483,93 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
         )
     if source.name == "GMMH":
         return any(token in lowered_path for token in ["/news", "/2026/", "/whats-on", "/events"])
+
+    # ── Weekend event sources ─────────────────────────────────────────────
+    if source.name == "Skiddle Manchester":
+        # Accept individual event pages: /events/REGION/CITY/VENUE/EVENT-NAME/
+        return "/events/" in lowered_path and len([p for p in path.split("/") if p]) >= 4
+
+    if source.name == "Eventbrite Manchester":
+        # Accept individual event ticket pages: /e/event-name-tickets-12345/
+        return "/e/" in lowered_path and "tickets-" in lowered_path
+
+    if source.name == "Manchester Markets":
+        # Accept market-specific pages, not homepage
+        return len([p for p in path.split("/") if p]) >= 2 and (
+            any(token in lowered_path for token in ("/market", "/event", "/whats-on"))
+        )
+
+    if source.name == "Time Out Manchester":
+        # Accept specific what's-on pages (3+ path segments), reject evergreen listicles
+        segments = [p for p in path.split("/") if p]
+        if len(segments) < 3:
+            return False
+        if not lowered_path.startswith("/manchester/"):
+            return False
+        # Reject "best X", "top N" evergreen articles
+        if _is_listicle_opening(lowered_title):
+            return False
+        # Reject year-in-review and trend articles
+        if re.search(r"\b(2025|trends|guide to)\b", lowered_title):
+            return False
+        return True
+
+    if source.name == "Manchester Food & Drink Festival":
+        return len([p for p in path.split("/") if p]) >= 2 and (
+            any(token in lowered_path for token in ("/event", "/festival", "/market", "/news"))
+        )
+
+    if source.name in {"Manchester City Events", "Salford Events"}:
+        # Council event pages: require event-specific deep URL (3+ segments)
+        segments = [p for p in path.split("/") if p]
+        if len(segments) < 3:
+            return False
+        # Block known navigation slugs
+        nav_slugs = {
+            "translate-this-page", "emergency-contacts", "social-media-and-email-updates",
+            "freedom-of-information", "modern-slavery-statement", "births-marriages-and-deaths",
+            "business-and-licensing", "environmental-health", "accessibility-statement",
+            "cookie-policy", "privacy-notice", "site-map", "search",
+        }
+        if any(slug in lowered_path for slug in nav_slugs):
+            return False
+        return "/event" in lowered_path or "/whats-on" in lowered_path
+
+    if source.name in {"Stockport Events", "Bolton Events"}:
+        segments = [p for p in path.split("/") if p]
+        if len(segments) < 3:
+            return False
+        nav_slugs = {
+            "translate", "emergency", "freedom-of-information", "modern-slavery",
+            "accessibility", "cookie", "privacy", "sitemap", "search",
+            "births", "business-and-licensing", "environmental-health",
+        }
+        if any(slug in lowered_path for slug in nav_slugs):
+            return False
+        return True
+
+    # ── IT и бизнес — новые источники ────────────────────────────────────
+    if source.name == "BusinessCloud":
+        # RSS feed — accept article paths, reject tag/category/author pages
+        if any(token in lowered_path for token in ("/tag/", "/category/", "/author/", "/page/")):
+            return False
+        return len([p for p in path.split("/") if p]) >= 2 and len(lowered_title) >= 25
+
+    if source.name == "Bdaily Manchester":
+        # RSS — accept article paths only
+        if any(token in lowered_path for token in ("/tag/", "/category/", "/author/", "/page/", "/region/")):
+            return False
+        return "/articles/" in lowered_path and len(lowered_title) >= 25
+
+    if source.name == "MIDAS Manchester":
+        # Reject sector/navigation pages — only accept dated news articles
+        nav_slugs = {
+            "get-started", "sectors", "why-manchester", "about", "contact",
+            "advanced-materials", "digital-cyber", "financial-professional",
+            "life-sciences", "energy", "sport",
+        }
+        if any(slug in lowered_path for slug in nav_slugs):
+            return False
+        return "/news/" in lowered_path and len([p for p in path.split("/") if p]) >= 3
+
     return len(lowered_title) >= 18
