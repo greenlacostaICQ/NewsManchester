@@ -156,6 +156,7 @@ _FOOTBALL_FLUFF_TOKENS: tuple[str, ...] = (
     "u21",
     "pl2",
     "ticket information",
+    "ticketing information",
     "club shop",
     "membership",
     "highlights",
@@ -167,6 +168,7 @@ _FOOTBALL_FLUFF_TOKENS: tuple[str, ...] = (
     "podcast",
     "matchday programme",
     "programme cover",
+    "programme promo",
     "training session",
     "in pictures",
     "photo gallery",
@@ -180,10 +182,12 @@ _FOOTBALL_FLUFF_TOKENS: tuple[str, ...] = (
 
 
 def _is_football_fluff(title: str, url: str = "") -> bool:
-    lowered = f"{title} {url}".lower()
-    if " on tv" in lowered or "tv-listings" in lowered:
+    # Normalize URL slugs (hyphens → spaces) so tokens like "press conference"
+    # also match "press-conference" in article URL paths.
+    normalized = f"{title} {url.replace('-', ' ')}".lower()
+    if " on tv" in normalized or "tv listings" in normalized:
         return True
-    return any(token in lowered for token in _FOOTBALL_FLUFF_TOKENS)
+    return any(token in normalized for token in _FOOTBALL_FLUFF_TOKENS)
 
 
 _CITY_WATCH_TOPICAL_KEYWORDS: tuple[str, ...] = (
@@ -391,11 +395,11 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
     if source.name == "Manchester United":
         if "/en/news/" not in lowered_path:
             return False
-        return not any(token in lowered_title for token in ("women", "academy", "ticket information", "community"))
+        return not any(token in lowered_title for token in ("women", "academy", "ticket information", "ticketing", "community"))
     if source.name == "Manchester City":
         if "/news/" not in lowered_path:
             return False
-        return not any(token in lowered_title for token in ("eds", "academy", "women", "ticket information", "pl2", "u18"))
+        return not any(token in lowered_title for token in ("eds", "academy", "women", "ticket information", "ticketing", "pl2", "u18"))
     if source.name == "Salford City":
         if "/news/" not in lowered_path:
             return False
@@ -509,8 +513,8 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
         # Reject "best X", "top N" evergreen articles
         if _is_listicle_opening(lowered_title):
             return False
-        # Reject year-in-review and trend articles
-        if re.search(r"\b(2025|trends|guide to)\b", lowered_title):
+        # Reject year-in-review, trend, and "things to do" listicle articles
+        if re.search(r"\b(202[456]|trends?|guide to|things? to do|places? to)\b", lowered_title):
             return False
         return True
 
@@ -536,17 +540,13 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
         return "/event" in lowered_path or "/whats-on" in lowered_path
 
     if source.name in {"Stockport Events", "Bolton Events"}:
+        # Only accept event detail pages — must be under /events/
+        # This rejects all nav/topic pages (freedom-of-information, births, etc.)
+        # which don't live under /events/.
+        if "/events/" not in lowered_path:
+            return False
         segments = [p for p in path.split("/") if p]
-        if len(segments) < 3:
-            return False
-        nav_slugs = {
-            "translate", "emergency", "freedom-of-information", "modern-slavery",
-            "accessibility", "cookie", "privacy", "sitemap", "search",
-            "births", "business-and-licensing", "environmental-health",
-        }
-        if any(slug in lowered_path for slug in nav_slugs):
-            return False
-        return True
+        return len(segments) >= 2
 
     # ── IT и бизнес — новые источники ────────────────────────────────────
     if source.name == "BusinessCloud":
