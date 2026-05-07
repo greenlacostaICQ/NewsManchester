@@ -366,12 +366,18 @@ def write_digest(project_root: Path) -> StageResult:
             rendered_candidate_fingerprints.append(fingerprint)
 
     rendered: list[str] = [_title_line(), ""]
+
+    # "Выходные в GM" показываем только с четверга (weekday >= 3)
+    london_weekday = now_london().weekday()  # 0=Пн … 6=Вс
+    show_weekend = london_weekday >= 3
+
     ordered_sections = [
         "Погода",
-        "Коротко",
+        "Главная история дня",
+        "Что произошло за 24 часа",
         "Транспорт и сбои",
         "Что важно сегодня",
-        "Что произошло за 24 часа",
+        *(["Выходные в GM"] if show_weekend else []),
         "Городской радар",
         "Что важно в ближайшие 7 дней",
         "Дальние анонсы",

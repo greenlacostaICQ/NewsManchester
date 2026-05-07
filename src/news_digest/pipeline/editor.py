@@ -98,7 +98,9 @@ def edit_digest(project_root: Path) -> StageResult:
     if city_candidates and len(weak_city_candidates) == len(city_candidates):
         errors.append("All city/public-affairs candidates still rely on placeholder practical angles.")
 
-    for block in REQUIRED_BLOCKS:
+    # "Коротко" больше не требуется — убрана из дайджеста
+    required_to_check = [b for b in REQUIRED_BLOCKS if b != "Коротко"]
+    for block in required_to_check:
         if block not in normalized_sections:
             errors.append(f"Required block missing after editor pass: {block}.")
 

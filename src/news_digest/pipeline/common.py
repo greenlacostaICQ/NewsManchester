@@ -24,7 +24,6 @@ REQUIRED_SCAN_CATEGORIES = {
 
 REQUIRED_BLOCKS = [
     "Погода",
-    "Коротко",
     "Транспорт и сбои",
     "Что важно сегодня",
     "Что произошло за 24 часа",
@@ -47,11 +46,14 @@ VAGUE_PRACTICAL_ANGLES = {
 
 PRIMARY_BLOCKS = {
     "weather": "Погода",
+    # "short_actions" retained for legacy candidates but not rendered
     "short_actions": "Коротко",
     "transport": "Транспорт и сбои",
     "today_focus": "Что важно сегодня",
     "last_24h": "Что произошло за 24 часа",
+    "lead_story": "Главная история дня",
     "city_watch": "Городской радар",
+    "weekend_activities": "Выходные в GM",
     "next_7_days": "Что важно в ближайшие 7 дней",
     "future_announcements": "Дальние анонсы",
     "ticket_radar": "Билеты / Ticket Radar",
