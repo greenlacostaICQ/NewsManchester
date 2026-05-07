@@ -1,0 +1,83 @@
+name: Greater Manchester AM Digest
+
+on:
+  schedule:
+    # 06:30 UTC = 07:30 BST (summer, Apr-Oct) / 06:30 GMT (winter, Oct-Apr, one hour early)
+    # To flip for winter: change to '30 7 * * *'
+    - cron: '30 6 * * *'
+  workflow_dispatch:
+    # Allows manual trigger from GitHub Actions UI (useful for testing)
+
+permissions:
+  contents: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -e . openai
+
+      - name: Run pipeline — collect → dedupe → validate
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_TARGET: ${{ secrets.TELEGRAM_TARGET }}
+        run: |
+          set -euo pipefail
+          python scripts/run_local_digest.py collect-digest
+          python scripts/run_local_digest.py dedupe-digest
+          python scripts/run_local_digest.py validate-candidates
+
+      - name: LLM rewrite — Cerebras Qwen + Groq fallback
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_TARGET: ${{ secrets.TELEGRAM_TARGET }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: python scripts/run_local_digest.py llm-rewrite
+
+      - name: Run pipeline — write → edit → build
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_TARGET: ${{ secrets.TELEGRAM_TARGET }}
+        run: |
+          set -euo pipefail
+          python scripts/run_local_digest.py write-digest
+          python scripts/run_local_digest.py edit-digest
+          python scripts/run_local_digest.py build-digest
+
+      - name: Send digest to Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_TARGET: ${{ secrets.TELEGRAM_TARGET }}
+        run: |
+          python scripts/run_local_digest.py send-file data/outgoing/current_digest.html --parse-mode HTML
+
+      - name: Commit updated state files
+        run: |
+          git config user.name "digest-bot"
+          git config user.email "digest-bot@users.noreply.github.com"
+          git add -f data/state/published_facts.json || true
+          git add -f data/state/dedupe_memory.json || true
+          git add -f data/state/bot_state.json || true
+          git add -f data/state/delivery_state.json || true
+          git add -f data/outgoing/current_digest.html || true
+          if git diff --staged --quiet; then
+            echo "No state changes to commit."
+          else
+            git commit -m "chore: digest state $(date -u '+%Y-%m-%d')"
+            git push
+          fi
