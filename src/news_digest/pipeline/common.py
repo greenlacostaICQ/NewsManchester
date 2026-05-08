@@ -51,8 +51,6 @@ VAGUE_PRACTICAL_ANGLES = {
 
 PRIMARY_BLOCKS = {
     "weather": "Погода",
-    # "short_actions" retained for legacy candidates but not rendered
-    "short_actions": "Коротко",
     "transport": "Транспорт и сбои",
     "today_focus": "Что важно сегодня",
     "last_24h": "Что произошло за 24 часа",

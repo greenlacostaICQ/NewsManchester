@@ -1,21 +1,18 @@
 """Synthetic candidates that keep required blocks non-empty.
 
-When live scan finds nothing for a required block (transport with no
-live disruption, last_24h with no fresh dated city item, weather, short
-actions), we generate a labelled synthetic candidate so the gate can
+When live scan finds nothing for a required block (weather, or last_24h
+with no fresh dated city item), we generate a labelled synthetic candidate so the gate can
 distinguish "we checked and there is nothing material" from "we never
 checked".
 """
 
 from __future__ import annotations
 
-import html
 import json
 
 from news_digest.pipeline.common import fingerprint_for_candidate, now_london, today_london
 
 from .fetch import _fetch_text
-from .summary import _clean_snippet
 from .weather import _extract_met_office_weather
 
 
@@ -124,78 +121,3 @@ def _last_24h_fallback_candidates(candidates: list[dict]) -> list[dict]:
     }
     candidate["fingerprint"] = fingerprint_for_candidate(candidate)
     return [candidate]
-
-
-def _short_actions_fallback_candidates(candidates: list[dict]) -> list[dict]:
-    if any(candidate.get("primary_block") == "short_actions" for candidate in candidates if isinstance(candidate, dict)):
-        return []
-
-    buckets = (
-        ("today_focus", "public_services"),
-        ("ticket_radar", "venues_tickets"),
-        ("transport", "transport"),
-        ("last_24h", "city_news"),
-    )
-    preferred: list[dict] = []
-    seen_fingerprints: set[str] = set()
-    for block_name, category in buckets:
-        for candidate in candidates:
-            if not isinstance(candidate, dict):
-                continue
-            if candidate.get("primary_block") != block_name:
-                continue
-            if category and candidate.get("category") != category:
-                continue
-            fingerprint = str(candidate.get("fingerprint") or "").strip()
-            if fingerprint and fingerprint in seen_fingerprints:
-                continue
-            if fingerprint:
-                seen_fingerprints.add(fingerprint)
-            preferred.append(candidate)
-            break
-    if not preferred:
-        return []
-
-    selected = preferred[:2]
-    fallback: list[dict] = []
-    for index, source in enumerate(selected, start=1):
-        title = str(source.get("title") or "").strip()
-        source_label = str(source.get("source_label") or "").strip()
-        category = str(source.get("category") or "").strip()
-        lead = _clean_snippet(str(source.get("lead") or "").strip()) or title
-        summary = _clean_snippet(str(source.get("summary") or "").strip())
-        practical = _clean_snippet(str(source.get("practical_angle") or "").strip())
-        if category == "transport":
-            lead = "Утренний транспортный scan не показывает крупных сетевых сбоев"
-        elif category == "public_services" and lead:
-            lead = f"Сегодня в фокусе: {lead}"
-        candidate = {
-            "title": title,
-            "category": "short_actions",
-            "summary": summary or lead or title,
-            "source_url": source.get("source_url"),
-            "source_label": source_label,
-            "primary_block": "short_actions",
-            "include": True,
-            "dedupe_decision": "new",
-            "carry_over_label": "",
-            "reason": "Short actions fallback derived from actionable candidate.",
-            "matched_previous_fingerprint": "",
-            "practical_angle": practical,
-            "lead": lead,
-            "event_page_type": "unknown",
-            "published_at": source.get("published_at"),
-            "published_date_london": source.get("published_date_london"),
-            "freshness_status": source.get("freshness_status"),
-            "source_health": source.get("source_health"),
-        }
-        if lead:
-            parts = [html.escape(lead.rstrip(".")) + "."]
-            if practical and practical.lower() != lead.lower():
-                parts.append(html.escape(practical.rstrip(".")) + ".")
-            if source_label:
-                parts.append(f'<a href="{html.escape(str(source.get("source_url") or ""), quote=True)}">{html.escape(source_label)}</a>')
-            candidate["draft_line"] = "• " + " ".join(parts)
-        candidate["fingerprint"] = fingerprint_for_candidate(candidate)
-        fallback.append(candidate)
-    return fallback

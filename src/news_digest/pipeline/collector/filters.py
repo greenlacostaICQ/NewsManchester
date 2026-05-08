@@ -376,6 +376,24 @@ def _is_football_fluff(title: str, url: str = "") -> bool:
     return any(token in normalized for token in _FOOTBALL_FLUFF_TOKENS)
 
 
+def _is_football_publishable(title: str, url: str = "") -> bool:
+    normalized = f"{title} {url.replace('-', ' ')}".lower()
+    if re.search(r"\b\d+\s*[-–]\s*\d+\b", normalized):
+        return True
+    transfer_terms = (
+        "sign", "signed", "signs", "joins", "joined", "leaves", "left",
+        "transfer", "fee", "deal agreed", "contract", "loan",
+    )
+    if any(term in normalized for term in transfer_terms) and (
+        "£" in normalized or "from " in normalized or "to " in normalized
+    ):
+        return True
+    preview_terms = ("match preview", "preview", "team news", "confirmed line up", "confirmed lineup")
+    if any(term in normalized for term in preview_terms):
+        return True
+    return False
+
+
 _CITY_WATCH_TOPICAL_KEYWORDS: tuple[str, ...] = (
     # public order / safety
     "police", "gmp", "stab", "knife", "charge", "arrest", "court", "sentence",
@@ -762,6 +780,20 @@ def _source_override(
             "oxford road", "deansgate",
         )
         return any(re.search(rf"\b{re.escape(t)}\b", lowered_title) for t in rail_terms)
+
+    if source.name == "Manchester United":
+        if "/en/news/" not in lowered_path:
+            return False
+        if _is_football_fluff(lowered_title, lowered_path):
+            return False
+        return _is_football_publishable(lowered_title, lowered_path)
+
+    if source.name == "Manchester City":
+        if "/news/" not in lowered_path:
+            return False
+        if _is_football_fluff(lowered_title, lowered_path):
+            return False
+        return _is_football_publishable(lowered_title, lowered_path)
 
     if source.name == "Manchester's Finest":
         if not any(t in lowered_path for t in ("/eating-and-drinking/", "/food-and-drink/", "/news/")):

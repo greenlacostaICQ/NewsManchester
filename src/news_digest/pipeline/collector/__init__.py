@@ -19,7 +19,7 @@ Internal modules (read directly only when changing collector internals):
 - `routing` — freshness, primary_block routing, today_focus promotion, ticket horizon
 - `extract` — `LinkExtractor`, RSS/Atom/Funnelback parsers, og:description enrichment
 - `weather` — Met Office forecast HTML parser
-- `fallbacks` — synthetic candidates (weather, transport, last_24h, short_actions)
+- `fallbacks` — synthetic candidates (weather, transport, last_24h)
 - `core` — `collect_digest` entry point and the `_default_report` shape
 """
 

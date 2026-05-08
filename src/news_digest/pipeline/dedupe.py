@@ -207,11 +207,25 @@ def _title_tokens(title: str) -> frozenset[str]:
     return frozenset(w for w in words if w not in _TITLE_STOPWORDS and len(w) >= 3)
 
 
+_DEDUP_BLOCK_GROUPS: tuple[frozenset[str], ...] = (
+    frozenset({"lead_story", "last_24h", "today_focus", "city_watch", "district_radar"}),
+    frozenset({"weekend_activities", "next_7_days", "future_announcements", "ticket_radar"}),
+    frozenset({"openings", "tech_business"}),
+)
+
+
+def _dedup_block_group(primary_block: str) -> str:
+    for index, group in enumerate(_DEDUP_BLOCK_GROUPS):
+        if primary_block in group:
+            return f"group:{index}"
+    return primary_block
+
+
 def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
     """Drop topic-duplicates within the batch, keeping the strongest source.
 
     Two included candidates are considered the same story when:
-    - They are in the same primary_block
+    - They are in the same dedupe block group
     - Their title token overlap (Jaccard) >= 0.50
     - They refer to the same GM borough, or neither mentions a specific borough
       (city-wide story)
@@ -230,13 +244,14 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
         tokens_i = _title_tokens(str(ci.get("title") or ""))
         borough_i = _extract_borough(str(ci.get("title") or ""))
         block_i = str(ci.get("primary_block") or "")
+        group_i = _dedup_block_group(block_i)
         rank_i = _source_rank(str(ci.get("source_label") or ""))
 
         for j in range(i + 1, n):
             if j in to_drop:
                 continue
             cj = included[j]
-            if str(cj.get("primary_block") or "") != block_i:
+            if _dedup_block_group(str(cj.get("primary_block") or "")) != group_i:
                 continue
 
             borough_j = _extract_borough(str(cj.get("title") or ""))
@@ -274,6 +289,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                 "kept_fingerprint": kept.get("fingerprint"),
                 "kept_title": kept.get("title"),
                 "kept_source_label": kept.get("source_label"),
+                "kept_primary_block": kept.get("primary_block"),
                 "overlap": drop_context["overlap"],
                 "reason": c["reason"],
             }

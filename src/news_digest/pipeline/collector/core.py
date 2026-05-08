@@ -26,7 +26,6 @@ from news_digest.pipeline.history import ensure_history_files
 from .extract import _extract_source_candidates
 from .fallbacks import (
     _last_24h_fallback_candidates,
-    _short_actions_fallback_candidates,
     _transport_fallback_candidates,
     _weather_candidate,
 )
@@ -221,7 +220,6 @@ def collect_digest(project_root: Path) -> StageResult:
     candidates.extend(_transport_fallback_candidates(report))
     _promote_to_today_focus(candidates)
     candidates.extend(_last_24h_fallback_candidates(candidates))
-    candidates.extend(_short_actions_fallback_candidates(candidates))
 
     checked_all = all(
         bool(report["categories"][key]["checked"])

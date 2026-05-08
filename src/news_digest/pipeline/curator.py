@@ -11,6 +11,7 @@ import logging
 import os
 import time
 from pathlib import Path
+import re
 
 from news_digest.pipeline.common import now_london, read_json, today_london, write_json
 
@@ -50,6 +51,23 @@ CURATOR_PROMPT = """Ты редакторский куратор дайджес�
 [{"fingerprint": "...", "include": true, "is_lead": false, "reason": "кратко почему"}]"""
 
 
+_GM_BOROUGHS: tuple[str, ...] = (
+    "Manchester", "Salford", "Trafford", "Stockport", "Tameside",
+    "Oldham", "Rochdale", "Bury", "Bolton", "Wigan",
+)
+
+
+def _infer_borough(candidate: dict) -> str:
+    text = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "practical_angle")
+    )
+    for borough in _GM_BOROUGHS:
+        if re.search(rf"\b{re.escape(borough)}\b", text, flags=re.IGNORECASE):
+            return borough
+    return ""
+
+
 def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: str) -> list[dict]:
     if not api_key or not candidates:
         return []
@@ -63,10 +81,17 @@ def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: st
         {
             "fingerprint": c.get("fingerprint", ""),
             "title": c.get("title", ""),
-            "summary": (c.get("summary") or c.get("lead") or "")[:200],
+            "summary": (c.get("summary") or "")[:320],
+            "lead": (c.get("lead") or "")[:320],
+            "practical_angle": (c.get("practical_angle") or "")[:240],
             "category": c.get("category", ""),
             "primary_block": c.get("primary_block", ""),
             "source_label": c.get("source_label", ""),
+            "source_url": c.get("source_url", ""),
+            "published_at": c.get("published_at", ""),
+            "freshness_status": c.get("freshness_status", ""),
+            "event_page_type": c.get("event_page_type", ""),
+            "borough": c.get("borough") or _infer_borough(c),
         }
         for c in candidates
     ]
@@ -101,6 +126,7 @@ def run_curator_pass(project_root: Path) -> None:
 
     if not candidates_path.exists():
         logger.warning("candidates.json not found, skipping curator pass.")
+        write_json(report_path, {"status": "skipped", "reason": "missing candidates.json", "run_at": now_london().isoformat(), "run_date_london": today_london()})
         return
 
     payload = json.loads(candidates_path.read_text(encoding="utf-8"))
@@ -109,6 +135,7 @@ def run_curator_pass(project_root: Path) -> None:
     included = [c for c in candidates if isinstance(c, dict) and c.get("include")]
     if not included:
         logger.info("Curator: no included candidates.")
+        write_json(report_path, {"status": "skipped", "reason": "no included candidates", "run_at": now_london().isoformat(), "run_date_london": today_london()})
         return
 
     logger.info("Curator: reviewing %d included candidates.", len(included))
@@ -116,6 +143,7 @@ def run_curator_pass(project_root: Path) -> None:
     provider_override = os.environ.get("LLM_PROVIDER", "").lower().strip()
     if provider_override == "none":
         logger.info("LLM_PROVIDER=none — skipping curator pass.")
+        write_json(report_path, {"status": "skipped", "reason": "LLM_PROVIDER=none", "run_at": now_london().isoformat(), "run_date_london": today_london()})
         return
 
     base_url = os.environ.get("LLM_BASE_URL") or OPENAI_BASE_URL
@@ -137,7 +165,7 @@ def run_curator_pass(project_root: Path) -> None:
 
     if not decisions:
         logger.warning("Curator: all providers failed — keeping existing include flags.")
-        write_json(report_path, {"status": "skipped", "reason": "all providers failed", "run_at": now_london().isoformat()})
+        write_json(report_path, {"status": "skipped", "reason": "all providers failed", "run_at": now_london().isoformat(), "run_date_london": today_london()})
         return
 
     decision_map = {str(d.get("fingerprint") or ""): d for d in decisions if isinstance(d, dict)}
