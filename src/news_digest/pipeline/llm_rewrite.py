@@ -168,7 +168,7 @@ def _call_provider_batch(
     provider_name: str,
     timeout: int = 90,
     batch_size: int = BATCH_SIZE,
-    system_prompt: str = SYSTEM_PROMPT,
+    system_prompt: str = PROMPT_CITY_NEWS,
 ) -> dict[str, str]:
     """Call one provider in batches. Returns fingerprint→draft_line."""
     if not api_key:
