@@ -112,12 +112,35 @@ def _cyrillic_ratio(text: str) -> float:
     return len(re.findall(r"[а-яёА-ЯЁ]", text)) / len(non_space)
 
 
+_EN_FUNCTION_WORDS = frozenset({
+    # articles / determiners
+    "the", "a", "an",
+    # prepositions
+    "of", "in", "at", "on", "by", "as", "to", "up",
+    "for", "with", "from", "into", "onto", "out",
+    "after", "before", "during", "following", "across", "about",
+    "ahead", "alongside", "within", "against", "despite",
+    # conjunctions
+    "and", "or", "but",
+    # pronouns / determiners
+    "their", "they", "this", "that", "which", "who", "its", "our",
+    # auxiliary / common verbs
+    "is", "are", "was", "were", "be", "been", "have", "has", "had",
+    "will", "would", "could", "should", "may", "might",
+    "said", "says", "makes", "made", "gets", "got",
+    "signed", "confirmed", "announced", "opened", "closed",
+    "donated", "makes", "joining", "leaves", "joins",
+})
+
+
 def _needs_translation_fix(draft_line: str) -> bool:
+    """True only when the line reads as English prose, not just contains brand names."""
     text = str(draft_line or "").strip()
-    if not text:
+    if not text or _cyrillic_ratio(text) >= 0.5:
         return False
-    latin_words = re.findall(r"[A-Za-z][A-Za-z''-]+", text)
-    return len(latin_words) >= 6 and _cyrillic_ratio(text) < 0.5
+    lowercase_words = re.findall(r"[a-z][a-z''-]+", text)
+    hits = sum(1 for w in lowercase_words if w in _EN_FUNCTION_WORDS)
+    return hits >= 2
 
 
 def _call_provider_batch(
