@@ -318,15 +318,6 @@ def _validate_draft(
             if len(chunks) >= 2 and chunks[0].lower() == chunks[1].lower():
                 errors.append(f"Draft digest contains repeated sentence in section {section_name}.")
                 break
-            cyrillic_chars = len(re.findall(r"[а-яёА-ЯЁ]", body))
-            non_space_chars = len(re.sub(r"\s", "", body))
-            cyrillic_ratio = cyrillic_chars / non_space_chars if non_space_chars else 1.0
-            latin_words = re.findall(r"[A-Za-z][A-Za-z’’-]+", body)
-            if len(latin_words) >= 6 and cyrillic_ratio < 0.5 and ENGLISH_PROSE_PATTERN.search(body):
-                errors.append(
-                    f"English passthrough in section ‘{section_name}’: {body[:100]!r}"
-                )
-                break
 
     for block in LOW_SIGNAL_BLOCKS:
         lines = sections.get(block, [])

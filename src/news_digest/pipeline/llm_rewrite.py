@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import time
 from pathlib import Path
 
@@ -97,6 +98,27 @@ IT-термины, названия мест и брендов оставляй 
 BATCH_SIZE = 20      # default — used for OpenAI and Gemini
 GROQ_BATCH_SIZE = 8  # Groq free tier: 6000 TPM; 8 candidates ≈ 2700 tokens safely
 
+FIX_TRANSLATE_SYSTEM = """Переведи строку новостного дайджеста на русский язык.
+Названия людей, мест, брендов, компаний, IT-терминов оставляй по-английски.
+Строка начинается с «• » и не превышает 280 символов.
+Верни ТОЛЬКО JSON-массив: [{"fingerprint": "...", "draft_line": "• ..."}]
+Никакого markdown, никаких пояснений — только JSON."""
+
+
+def _cyrillic_ratio(text: str) -> float:
+    non_space = re.sub(r"\s", "", text)
+    if not non_space:
+        return 1.0
+    return len(re.findall(r"[а-яёА-ЯЁ]", text)) / len(non_space)
+
+
+def _needs_translation_fix(draft_line: str) -> bool:
+    text = str(draft_line or "").strip()
+    if not text:
+        return False
+    latin_words = re.findall(r"[A-Za-z][A-Za-z''-]+", text)
+    return len(latin_words) >= 6 and _cyrillic_ratio(text) < 0.5
+
 
 def _call_provider_batch(
     base_url: str,
@@ -106,6 +128,7 @@ def _call_provider_batch(
     provider_name: str,
     timeout: int = 90,
     batch_size: int = BATCH_SIZE,
+    system_prompt: str = SYSTEM_PROMPT,
 ) -> dict[str, str]:
     """Call one provider in batches. Returns fingerprint→draft_line."""
     if not api_key:
@@ -147,7 +170,7 @@ def _call_provider_batch(
             response = client.chat.completions.create(
                 model=model,
                 messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_content},
                 ],
                 temperature=0.3,
@@ -286,3 +309,56 @@ def run_llm_rewrite(project_root: Path) -> None:
         json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     logger.info("LLM rewrite: applied %d draft_lines.", applied)
+
+    # Fix pass: re-translate draft_lines that are still mostly English
+    to_fix = [
+        c for c in candidates
+        if isinstance(c, dict)
+        and c.get("include")
+        and _needs_translation_fix(str(c.get("draft_line") or ""))
+    ]
+    if not to_fix:
+        return
+
+    logger.info("LLM fix pass: %d draft_lines are English-dominant, re-translating.", len(to_fix))
+
+    fix_candidates = [
+        {"fingerprint": c.get("fingerprint", ""), "draft_line": c.get("draft_line", "")}
+        for c in to_fix
+    ]
+
+    if provider_override == "none":
+        logger.info("LLM_PROVIDER=none — skipping fix pass.")
+        return
+
+    fix_mapping: dict[str, str] = {}
+    if provider_override and base_url_override and model_override:
+        api_key = os.environ.get("LLM_API_KEY", "")
+        fix_mapping = _call_provider_batch(
+            base_url_override, api_key, model_override, fix_candidates,
+            provider_override, system_prompt=FIX_TRANSLATE_SYSTEM,
+        )
+    else:
+        fix_mapping = _call_provider_batch(
+            OPENAI_BASE_URL, os.environ.get("OPENAI_API_KEY", ""), OPENAI_MODEL,
+            fix_candidates, "OpenAI-fix", system_prompt=FIX_TRANSLATE_SYSTEM,
+        )
+        still_missing = [c for c in fix_candidates if c["fingerprint"] not in fix_mapping]
+        if still_missing:
+            fix_mapping.update(_call_provider_batch(
+                GEMINI_BASE_URL, os.environ.get("GEMINI_API_KEY", ""), GEMINI_MODEL,
+                still_missing, "Gemini-fix", system_prompt=FIX_TRANSLATE_SYSTEM,
+            ))
+
+    fixed = 0
+    for candidate in candidates:
+        fp = str(candidate.get("fingerprint") or "").strip()
+        if fp in fix_mapping and not _needs_translation_fix(fix_mapping[fp]):
+            candidate["draft_line"] = fix_mapping[fp]
+            fixed += 1
+
+    if fixed:
+        candidates_path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        logger.info("LLM fix pass: fixed %d English draft_lines.", fixed)
