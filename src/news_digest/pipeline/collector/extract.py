@@ -186,7 +186,7 @@ def _extract_article_published_at(html_text: str) -> str | None:
 
 
 def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
-    if source.report_category not in {"media_layer", "gmp", "public_services"} and source.candidate_category != "council":
+    if source.report_category not in {"media_layer", "gmp", "public_services", "culture_weekly"} and source.candidate_category != "council":
         return item
     summary_thin = _is_thin_summary(item.summary, item.title)
     if item.published_at and not summary_thin:

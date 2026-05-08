@@ -329,6 +329,22 @@ SOURCES: tuple[SourceDef, ...] = (
     ),
     # ── Выходные события / Weekend activities ──────────────────────────────
     SourceDef(
+        "Eventbrite Manchester",
+        "culture_weekly",
+        "culture_weekly",
+        "https://www.eventbrite.co.uk/d/united-kingdom--manchester/",
+        "weekend_activities",
+        allowed_hosts=("eventbrite.co.uk", "eventbrite.com"),
+    ),
+    SourceDef(
+        "Manchester Markets",
+        "culture_weekly",
+        "culture_weekly",
+        "https://www.manchestermarkets.com/",
+        "weekend_activities",
+        allowed_hosts=("manchestermarkets.com",),
+    ),
+    SourceDef(
         "Skiddle Manchester",
         "culture_weekly",
         "culture_weekly",
