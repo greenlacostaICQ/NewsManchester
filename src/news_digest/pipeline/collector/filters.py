@@ -349,6 +349,20 @@ _FOOTBALL_FLUFF_TOKENS: tuple[str, ...] = (
     "wsl",
     "women's super league",
     "citc",  # City in the Community — charity, not first team
+    # PR / commercial announcements
+    "donat",  # donation, donate, donates
+    "award",
+    "shortlist",
+    "partnership",
+    "sponsor",
+    "kit launch",
+    "shirt launch",
+    "community matchday",
+    "community day",
+    "in frame for",
+    "under-18",
+    "under 18",
+    "u-18",
 )
 
 

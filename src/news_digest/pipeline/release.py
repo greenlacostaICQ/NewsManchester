@@ -41,6 +41,30 @@ BAD_EDITORIAL_PROSE = [
     "сетка влияния",
     "следить компаниям",
     "business-impact",
+    # Weather clichés
+    "лучше взять зонт",
+    "лучше прихватить зонт",
+    "не забудьте зонт",
+    "прихватите зонт",
+    # English words / phrases that slip through translation
+    "live alert",
+    "live disruption",
+    "forecast",
+    "attractions",
+    "highlights",
+    "matchday",
+    "check before",
+    # Passive filler / vague council-speak
+    "опубликовал важное обновление",
+    "появилось новое обновление",
+    "судебное обновление",
+    "новое судебное",
+    "футбольное обновление",
+    # Prompts to the reader that belong to the author, not the digest
+    "перепроверьте",
+    "убедитесь сами",
+    "читайте подробнее",
+    "подробности ниже",
 ]
 
 ENGLISH_PROSE_PATTERN = re.compile(
