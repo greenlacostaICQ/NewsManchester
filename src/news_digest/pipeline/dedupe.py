@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 
 from news_digest.pipeline.common import (
     fingerprint_for_candidate,
@@ -129,6 +130,8 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             }
         )
 
+    _apply_intra_batch_dedup(candidates)
+
     payload["run_at_london"] = now_london().isoformat()
     payload["run_date_london"] = today_london()
     payload["stage_status"] = "complete" if not errors else "failed"
@@ -144,6 +147,108 @@ def dedupe_candidates(project_root: Path) -> StageResult:
     )
 
     return StageResult(not errors, "Dedupe completed." if not errors else "Dedupe completed with errors.", report_path)
+
+
+_GM_BOROUGHS: frozenset[str] = frozenset({
+    "salford", "stockport", "trafford", "tameside",
+    "rochdale", "oldham", "wigan", "bolton", "bury",
+    "altrincham", "stretford", "ashton", "eccles",
+})
+
+_SOURCE_PRIORITY: dict[str, int] = {
+    "bbc": 0,
+    "manchester evening news": 1, "men": 1,
+    "the mill": 2,
+    "greater manchester police": 2, "gmp": 2,
+    "the manc": 3, "altrincham today": 3,
+    "i love manchester": 4, "secret manchester": 4,
+    "manchester's finest": 5,
+}
+
+_TITLE_STOPWORDS: frozenset[str] = frozenset({
+    "a", "an", "the", "and", "or", "but", "in", "on", "at", "to",
+    "of", "for", "with", "from", "is", "are", "was", "were", "be",
+    "been", "has", "have", "had", "by", "as", "it", "its",
+})
+
+
+def _extract_borough(title: str) -> str | None:
+    lowered = title.lower()
+    for borough in _GM_BOROUGHS:
+        if re.search(rf"\b{re.escape(borough)}\b", lowered):
+            return borough
+    return None
+
+
+def _source_rank(source_label: str) -> int:
+    label = str(source_label or "").lower()
+    for key, rank in _SOURCE_PRIORITY.items():
+        if key in label:
+            return rank
+    return 99
+
+
+def _title_tokens(title: str) -> frozenset[str]:
+    words = re.findall(r"[a-zA-Zа-яёА-ЯЁ][a-zA-Zа-яёА-ЯЁ'-]*", title.lower())
+    return frozenset(w for w in words if w not in _TITLE_STOPWORDS and len(w) >= 3)
+
+
+def _apply_intra_batch_dedup(candidates: list[dict]) -> None:
+    """Drop topic-duplicates within the batch, keeping the strongest source.
+
+    Two included candidates are considered the same story when:
+    - They are in the same primary_block
+    - Their title token overlap (Jaccard) >= 0.50
+    - They refer to the same GM borough, or neither mentions a specific borough
+      (city-wide story)
+
+    The candidate with the lower source priority rank is dropped.
+    """
+    included = [c for c in candidates if isinstance(c, dict) and c.get("include")]
+    n = len(included)
+
+    to_drop: set[int] = set()
+
+    for i in range(n):
+        if i in to_drop:
+            continue
+        ci = included[i]
+        tokens_i = _title_tokens(str(ci.get("title") or ""))
+        borough_i = _extract_borough(str(ci.get("title") or ""))
+        block_i = str(ci.get("primary_block") or "")
+        rank_i = _source_rank(str(ci.get("source_label") or ""))
+
+        for j in range(i + 1, n):
+            if j in to_drop:
+                continue
+            cj = included[j]
+            if str(cj.get("primary_block") or "") != block_i:
+                continue
+
+            borough_j = _extract_borough(str(cj.get("title") or ""))
+            if borough_i != borough_j:
+                continue  # different boroughs = different stories
+
+            tokens_j = _title_tokens(str(cj.get("title") or ""))
+            union = tokens_i | tokens_j
+            if not union or len(tokens_i) < 3 or len(tokens_j) < 3:
+                continue
+            overlap = len(tokens_i & tokens_j) / len(union)
+            if overlap < 0.40:
+                continue
+
+            rank_j = _source_rank(str(cj.get("source_label") or ""))
+            if rank_i <= rank_j:
+                to_drop.add(j)
+            else:
+                to_drop.add(i)
+                break
+
+    for idx in to_drop:
+        c = included[idx]
+        c["dedupe_decision"] = "drop"
+        c["include"] = False
+        c["reason"] = "Intra-batch topic duplicate — same story kept from stronger source."
 
 
 def _similar_published_titles(normalized_title: str, published_titles: list[dict]) -> list[dict]:

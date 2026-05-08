@@ -270,6 +270,19 @@ _WEEKEND_EVERGREEN_TOKENS: tuple[str, ...] = (
     "pretty bars",
     "things to do in manchester",
     "where to",
+    # additional evergreen patterns
+    "explore the",
+    "discover the",
+    "must-visit",
+    "must-see",
+    "what to see",
+    "what to do",
+    "cultural attractions",
+    "tourist attraction",
+    "free things",
+    "how to spend",
+    "weekend guide",
+    "visitor guide",
 )
 
 
@@ -768,5 +781,12 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
         if any(slug in lowered_path for slug in nav_slugs):
             return False
         return "/news/" in lowered_path and len([p for p in path.split("/") if p]) >= 3
+
+    if source.name == "Visit Manchester":
+        if _is_evergreen_weekend_title(lowered_title):
+            return False
+        if _is_obviously_non_gm_weekend_item(lowered_title, lowered_path, str(summary or "")):
+            return False
+        return _has_weekend_date_signal(lowered_title, lowered_path)
 
     return len(lowered_title) >= 18
