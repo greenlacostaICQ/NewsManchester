@@ -2,7 +2,10 @@ name: Greater Manchester AM Digest
 
 on:
   schedule:
-    - cron: '5 8 * * *'
+    # GitHub Actions cron is UTC-only. We schedule both UTC slots that
+    # can map to 07:30 Europe/London and keep the correct one at runtime.
+    - cron: '30 6 * * *'
+    - cron: '30 7 * * *'
   workflow_dispatch:
     # Allows manual trigger from GitHub Actions UI (useful for testing)
 
@@ -10,7 +13,36 @@ permissions:
   contents: write
 
 jobs:
+  should-run:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.guard.outputs.run }}
+      london_time: ${{ steps.guard.outputs.london_time }}
+
+    steps:
+      - name: Check London schedule window
+        id: guard
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "london_time=manual" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          london_time=$(TZ=Europe/London date +'%Y-%m-%d %H:%M')
+          london_hour=$(TZ=Europe/London date +'%H')
+          echo "london_time=$london_time" >> "$GITHUB_OUTPUT"
+
+          if [ "$london_hour" = "07" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
   digest:
+    needs: should-run
+    if: needs.should-run.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -29,15 +61,18 @@ jobs:
       - name: Install dependencies
         run: pip install -e . openai
 
+      - name: Log schedule slot
+        run: echo "Running daily digest for London time ${{ needs.should-run.outputs.london_time }}"
+
       - name: Run pipeline — collect → dedupe → validate
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
         run: |
           set -euo pipefail
-          python scripts/run_local_digest.py collect-digest
-          python scripts/run_local_digest.py dedupe-digest
-          python scripts/run_local_digest.py validate-candidates
+          python3 scripts/run_local_digest.py collect-digest
+          python3 scripts/run_local_digest.py dedupe-digest
+          python3 scripts/run_local_digest.py validate-candidates
 
       - name: LLM rewrite — Gemini Flash → Cerebras → Groq
         env:
@@ -46,7 +81,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINIAPI_KEY }}
           CEREBRAS_API_KEY: ${{ secrets.CEREBRASAPIKEY }}
           GROQ_API_KEY: ${{ secrets.GROGAPIKEY }}
-        run: python scripts/run_local_digest.py llm-rewrite
+        run: python3 scripts/run_local_digest.py llm-rewrite
 
       - name: Run pipeline — write → edit → build
         env:
@@ -54,16 +89,16 @@ jobs:
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
         run: |
           set -euo pipefail
-          python scripts/run_local_digest.py write-digest
-          python scripts/run_local_digest.py edit-digest
-          python scripts/run_local_digest.py build-digest
+          python3 scripts/run_local_digest.py write-digest
+          python3 scripts/run_local_digest.py edit-digest
+          python3 scripts/run_local_digest.py build-digest
 
       - name: Send digest to Telegram
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
         run: |
-          python scripts/run_local_digest.py send-file data/outgoing/current_digest.html --parse-mode HTML
+          python3 scripts/run_local_digest.py send-file data/outgoing/current_digest.html --parse-mode HTML
 
       - name: Commit updated state files
         run: |
