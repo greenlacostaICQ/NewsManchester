@@ -17,7 +17,7 @@ from news_digest.pipeline.common import (
 )
 
 
-BANNED_MARKERS = [
+BANNED_PLACEHOLDER_MARKERS = [
     "[link]",
     "[todo]",
     "[source]",
@@ -257,9 +257,9 @@ def _validate_draft(
     if not header_match or header_match.group(1) != current_day_london:
         errors.append(f"Draft digest header does not contain today's date {current_day_london}.")
 
-    for marker in BANNED_MARKERS:
+    for marker in BANNED_PLACEHOLDER_MARKERS:
         if marker in html_text:
-            errors.append(f"Draft digest contains placeholder or bot marker: {marker}.")
+            errors.append(f"Draft digest contains placeholder marker: {marker}.")
 
     lower_text = html_text.lower()
     for marker in BANNED_AUTHOR_VOICE:
