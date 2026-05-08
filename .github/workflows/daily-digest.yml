@@ -74,6 +74,12 @@ jobs:
           python3 scripts/run_local_digest.py dedupe-digest
           python3 scripts/run_local_digest.py validate-candidates
 
+      - name: Curator pass — editorial drop + lead selection
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI }}
+          GEMINI_API_KEY: ${{ secrets.GEMINIAPI_KEY }}
+        run: python3 scripts/run_local_digest.py curator-pass
+
       - name: LLM rewrite — OpenAI → Gemini → Groq Llama
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}

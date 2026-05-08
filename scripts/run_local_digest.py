@@ -380,6 +380,14 @@ def cmd_validate_candidates() -> int:
     return 0 if result.ok else 1
 
 
+def cmd_curator_pass() -> int:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    from news_digest.pipeline.curator import run_curator_pass  # noqa: PLC0415
+    run_curator_pass(PROJECT_ROOT)
+    print(json.dumps({"ok": True, "message": "Curator pass complete."}, ensure_ascii=False))
+    return 0
+
+
 def cmd_llm_rewrite() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     run_llm_rewrite(PROJECT_ROOT)
@@ -440,6 +448,10 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "validate-candidates",
         help="Validate source quality and publishability for candidates.",
+    )
+    subparsers.add_parser(
+        "curator-pass",
+        help="Editorial curator: drop PR/evergreen candidates and mark lead story.",
     )
     subparsers.add_parser(
         "llm-rewrite",
@@ -515,6 +527,8 @@ def main() -> int:
         return cmd_dedupe_digest()
     if args.command == "validate-candidates":
         return cmd_validate_candidates()
+    if args.command == "curator-pass":
+        return cmd_curator_pass()
     if args.command == "llm-rewrite":
         return cmd_llm_rewrite()
     if args.command == "write-digest":

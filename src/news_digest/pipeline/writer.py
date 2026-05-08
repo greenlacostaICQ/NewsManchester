@@ -261,10 +261,21 @@ def write_digest(project_root: Path) -> StageResult:
             )
             continue
 
-        if not line.startswith("• "):
-            line = f"• {line}"
-        line = _attach_source_anchor(line, source_url, source_label)
-        sections[section_name].append(line)
+        if candidate.get("is_lead"):
+            # Lead story: no bullet, bold first sentence, placed in main_story block
+            line = line.lstrip("• ").strip()
+            sentences = re.split(r"(?<=[.!?])\s+", line, maxsplit=1)
+            if len(sentences) == 2:
+                line = f"<b>{sentences[0]}</b> {sentences[1]}"
+            else:
+                line = f"<b>{line}</b>"
+            line = _attach_source_anchor(line, source_url, source_label)
+            sections.setdefault("Главная история дня", []).insert(0, line)
+        else:
+            if not line.startswith("• "):
+                line = f"• {line}"
+            line = _attach_source_anchor(line, source_url, source_label)
+            sections[section_name].append(line)
         quality_counts["rendered_candidates"] += 1
         fingerprint = str(candidate.get("fingerprint") or "").strip()
         if fingerprint:
