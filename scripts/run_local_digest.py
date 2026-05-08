@@ -22,7 +22,7 @@ from news_digest.delivery.telegram import TelegramTransportError
 from news_digest.jobs.send_demo_digest import send_demo_digest
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector import collect_digest, initialize_collector_state
-from news_digest.pipeline.common import read_json
+from news_digest.pipeline.common import read_json, write_json
 from news_digest.pipeline.dedupe import dedupe_candidates, initialize_candidates_state
 from news_digest.pipeline.editor import edit_digest
 from news_digest.pipeline.history import ensure_history_files, record_delivery_artifacts
@@ -337,6 +337,34 @@ def cmd_build_digest() -> int:
     return 0 if result.ok else 1
 
 
+def cmd_mark_pipeline_failed(stage: str) -> int:
+    state_dir = PROJECT_ROOT / "data" / "state"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    now_london = datetime.now(LONDON_TZ)
+    report_path = state_dir / "release_report.json"
+    report_payload = {
+        "run_at_london": now_london.isoformat(),
+        "run_date_london": now_london.strftime("%Y-%m-%d"),
+        "release_decision": "fail",
+        "message": "Digest pipeline stopped before release gate.",
+        "errors": [f"Pipeline stage failed before build-digest: {stage}."],
+        "failed_stage": stage,
+        "published_facts_updated": False,
+        "inputs": {
+            "collector_report": str((state_dir / "collector_report.json").resolve()),
+            "candidates": str((state_dir / "candidates.json").resolve()),
+            "curator_report": str((state_dir / "curator_report.json").resolve()),
+            "writer_report": str((state_dir / "writer_report.json").resolve()),
+            "editor_report": str((state_dir / "editor_report.json").resolve()),
+            "draft_digest": str((state_dir / "draft_digest.html").resolve()),
+        },
+        "output_path": str((PROJECT_ROOT / "data" / "outgoing" / "current_digest.html").resolve()),
+    }
+    write_json(report_path, report_payload)
+    print(json.dumps({"ok": True, "report_path": str(report_path), "failed_stage": stage}, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_init_build_state(overwrite: bool) -> int:
     paths = initialize_release_inputs(PROJECT_ROOT, overwrite=overwrite)
     initialize_collector_state(PROJECT_ROOT, overwrite=overwrite)
@@ -465,6 +493,11 @@ def build_parser() -> argparse.ArgumentParser:
         "edit-digest",
         help="Run editor/balancer checks on draft_digest.html.",
     )
+    mark_failed_parser = subparsers.add_parser(
+        "mark-pipeline-failed",
+        help=argparse.SUPPRESS,
+    )
+    mark_failed_parser.add_argument("stage", help="Pipeline stage that failed before build-digest.")
     init_build_parser = subparsers.add_parser(
         "init-build-state",
         help="Create or refresh today's collector/candidates/draft template files for the staged digest pipeline.",
@@ -535,6 +568,8 @@ def main() -> int:
         return cmd_write_digest()
     if args.command == "edit-digest":
         return cmd_edit_digest()
+    if args.command == "mark-pipeline-failed":
+        return cmd_mark_pipeline_failed(args.stage)
     if args.command == "init-build-state":
         return cmd_init_build_state(args.overwrite)
     if args.command == "poll-updates":

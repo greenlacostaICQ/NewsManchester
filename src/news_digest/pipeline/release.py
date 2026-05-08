@@ -211,6 +211,28 @@ def _validate_candidates(
     return {"included_candidates": included_candidates}
 
 
+def _validate_curator_report(
+    curator_report: dict | None,
+    current_day_london: str,
+    errors: list[str],
+) -> None:
+    if curator_report is None:
+        errors.append("Missing data/state/curator_report.json.")
+        return
+
+    if curator_report.get("run_date_london") != current_day_london:
+        errors.append(
+            f"Curator report is stale: {curator_report.get('run_date_london')} != {current_day_london}."
+        )
+
+    if curator_report.get("status") != "complete":
+        errors.append(f"Curator report is not complete: {curator_report.get('status')!r}.")
+
+    reviewed = curator_report.get("reviewed")
+    if not isinstance(reviewed, int) or reviewed <= 0:
+        errors.append("Curator report did not review any included candidates.")
+
+
 def _validate_stage_reports(
     writer_report: dict | None,
     editor_report: dict | None,
@@ -380,12 +402,14 @@ def build_release(project_root: Path) -> ReleaseResult:
 
     scan_report = _load_optional_json(state_dir / "collector_report.json")
     candidates_report = _load_optional_json(state_dir / "candidates.json")
+    curator_report = _load_optional_json(state_dir / "curator_report.json")
     writer_report = _load_optional_json(state_dir / "writer_report.json")
     editor_report = _load_optional_json(state_dir / "editor_report.json")
 
     errors: list[str] = []
     _validate_scan_report(scan_report, current_day_london, errors)
     candidate_context = _validate_candidates(candidates_report, current_day_london, errors)
+    _validate_curator_report(curator_report, current_day_london, errors)
     rendered_fingerprints = _validate_stage_reports(writer_report, editor_report, errors)
     _validate_draft(
         draft_path=draft_path,
@@ -414,6 +438,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "inputs": {
             "collector_report": str((state_dir / "collector_report.json").resolve()),
             "candidates": str((state_dir / "candidates.json").resolve()),
+            "curator_report": str((state_dir / "curator_report.json").resolve()),
             "writer_report": str((state_dir / "writer_report.json").resolve()),
             "editor_report": str((state_dir / "editor_report.json").resolve()),
             "draft_digest": str(draft_path.resolve()),

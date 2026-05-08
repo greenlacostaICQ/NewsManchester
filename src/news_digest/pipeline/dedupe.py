@@ -130,7 +130,19 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             }
         )
 
-    _apply_intra_batch_dedup(candidates)
+    intra_batch_drops = _apply_intra_batch_dedup(candidates)
+    final_candidates_by_fp = {
+        str(candidate.get("fingerprint") or ""): candidate
+        for candidate in candidates
+        if isinstance(candidate, dict) and candidate.get("fingerprint")
+    }
+    for decision in decisions:
+        final_candidate = final_candidates_by_fp.get(str(decision.get("fingerprint") or ""))
+        if not final_candidate:
+            continue
+        decision["decision"] = final_candidate.get("dedupe_decision")
+        decision["reason"] = final_candidate.get("reason")
+        decision["include"] = bool(final_candidate.get("include"))
 
     payload["run_at_london"] = now_london().isoformat()
     payload["run_date_london"] = today_london()
@@ -143,6 +155,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             "stage_status": "complete" if not errors else "failed",
             "errors": errors,
             "decisions": decisions,
+            "intra_batch_dedup_drops": intra_batch_drops,
         },
     )
 
@@ -193,7 +206,7 @@ def _title_tokens(title: str) -> frozenset[str]:
     return frozenset(w for w in words if w not in _TITLE_STOPWORDS and len(w) >= 3)
 
 
-def _apply_intra_batch_dedup(candidates: list[dict]) -> None:
+def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
     """Drop topic-duplicates within the batch, keeping the strongest source.
 
     Two included candidates are considered the same story when:
@@ -207,7 +220,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> None:
     included = [c for c in candidates if isinstance(c, dict) and c.get("include")]
     n = len(included)
 
-    to_drop: set[int] = set()
+    to_drop: dict[int, dict] = {}
 
     for i in range(n):
         if i in to_drop:
@@ -239,16 +252,32 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> None:
 
             rank_j = _source_rank(str(cj.get("source_label") or ""))
             if rank_i <= rank_j:
-                to_drop.add(j)
+                to_drop[j] = {"kept_index": i, "overlap": round(overlap, 2)}
             else:
-                to_drop.add(i)
+                to_drop[i] = {"kept_index": j, "overlap": round(overlap, 2)}
                 break
 
-    for idx in to_drop:
+    drops: list[dict] = []
+    for idx, drop_context in to_drop.items():
         c = included[idx]
+        kept = included[int(drop_context["kept_index"])]
         c["dedupe_decision"] = "drop"
         c["include"] = False
         c["reason"] = "Intra-batch topic duplicate — same story kept from stronger source."
+        drops.append(
+            {
+                "fingerprint": c.get("fingerprint"),
+                "title": c.get("title"),
+                "source_label": c.get("source_label"),
+                "primary_block": c.get("primary_block"),
+                "kept_fingerprint": kept.get("fingerprint"),
+                "kept_title": kept.get("title"),
+                "kept_source_label": kept.get("source_label"),
+                "overlap": drop_context["overlap"],
+                "reason": c["reason"],
+            }
+        )
+    return drops
 
 
 def _similar_published_titles(normalized_title: str, published_titles: list[dict]) -> list[dict]:

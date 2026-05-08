@@ -42,6 +42,7 @@ set +a
 run_stage() {
   local stage="$1"
   if ! "$PYTHON_BIN" "$PROJECT_ROOT/scripts/run_local_digest.py" "$stage"; then
+    "$PYTHON_BIN" "$PROJECT_ROOT/scripts/run_local_digest.py" mark-pipeline-failed "$stage" >/dev/null 2>&1 || true
     echo "Stage '$stage' failed; see data/state/*_report.json"
     exit 1
   fi
@@ -53,6 +54,7 @@ run_stage() {
 run_stage collect-digest
 run_stage dedupe-digest
 run_stage validate-candidates
+run_stage curator-pass
 run_stage llm-rewrite
 run_stage write-digest
 run_stage edit-digest

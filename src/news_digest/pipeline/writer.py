@@ -281,6 +281,14 @@ def write_digest(project_root: Path) -> StageResult:
         if fingerprint:
             rendered_candidate_fingerprints.append(fingerprint)
 
+    missing_draft_count = quality_counts["dropped_missing_draft_line"]
+    if missing_draft_count:
+        errors.append(
+            "Writer dropped "
+            f"{missing_draft_count} included candidate(s) because required model draft_line values were missing. "
+            "Run llm-rewrite again or repair data/state/candidates.json before writing the digest."
+        )
+
     rendered: list[str] = [_title_line(), ""]
 
     # "Выходные в GM" показываем только с четверга (weekday >= 3)
