@@ -337,6 +337,22 @@ SOURCES: tuple[SourceDef, ...] = (
         allowed_hosts=("skiddle.com",),
     ),
     SourceDef(
+        "Visit Manchester Markets",
+        "culture_weekly",
+        "culture_weekly",
+        "https://www.visitmanchester.com/whats-on/markets",
+        "weekend_activities",
+        allowed_hosts=("visitmanchester.com",),
+    ),
+    SourceDef(
+        "Time Out Manchester",
+        "culture_weekly",
+        "culture_weekly",
+        "https://www.timeout.com/manchester/things-to-do",
+        "weekend_activities",
+        allowed_hosts=("timeout.com",),
+    ),
+    SourceDef(
         "Manchester Food & Drink Festival",
         "culture_weekly",
         "culture_weekly",
