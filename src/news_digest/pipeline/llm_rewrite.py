@@ -1,14 +1,14 @@
 """LLM rewrite stage — writes Russian draft_lines to candidates.json.
 
 Provider chain:
-  1. Groq Qwen3-32B — primary, reliable infra, best Russian quality, 100+ languages
-  2. Groq Llama-3.3-70B — fallback on same Groq infra, proven reliable
-  3. Gemini 2.0 Flash — emergency fallback, free tier quota may be exhausted
+  1. Gemini 2.0 Flash — primary, best quality
+  2. Groq Qwen3-32B — fallback, reliable infra, good Russian quality
+  3. Groq Llama-3.3-70B — emergency fallback on same Groq infra
   4. Rule-based in writer.py — final safety net, always fires if LLM unavailable
 
 Required env vars (set in GitHub Actions Secrets or .env.local):
+  GEMINI_API_KEY    — aistudio.google.com (free)
   GROQ_API_KEY      — console.groq.com (free)
-  GEMINI_API_KEY    — aistudio.google.com (free, optional)
 
 Optional overrides:
   LLM_PROVIDER      — force "gemini" | "cerebras" | "groq" | "none"
@@ -37,19 +37,20 @@ GEMINI_MODEL = "gemini-2.0-flash"
 
 SYSTEM_PROMPT = """Ты редактор новостного дайджеста «Greater Manchester AM Brief».
 
-Для каждого кандидата напиши draft_line — максимум 2 коротких предложения на русском.
+Для каждого кандидата напиши draft_line — 2-3 предложения на русском с достаточным контекстом чтобы читатель понял суть без перехода по ссылке.
 
 ФОРМАТ:
 - Начинай ВСЕГДА с «• »
 - Telegram HTML: <b>текст</b> — НЕ Markdown
 - Без ссылок <a href=...> — pipeline добавит сам
-- Максимум 160 символов на весь draft_line
+- Максимум 280 символов на весь draft_line
 - Весь текст на русском, кроме имён собственных и названий мест
 
 СОДЕРЖАНИЕ:
 - Первое предложение: ТОЛЬКО факт — что произошло, кто конкретно, где конкретно. Без оценок.
 - Называй КОНКРЕТНЫЕ имена и места из summary/title: не «туристическая достопримечательность», а её название; не «местный житель», а возраст/должность; не «агентство», а его название.
-- Второе предложение (только если неочевидно): одно практическое следствие для жителя.
+- Второе предложение: контекст или подробности — число жертв, сумма, причина, хронология. Не повторяй первое предложение другими словами.
+- Третье предложение (только если есть практическое следствие для жителя): маршрут закрыт, участок работает до X, цены вырастут.
 - Для событий и билетов: обязательно укажи дату, место и о чём оно — коротко своими словами если название непонятное.
 - Для полиции: кто (возраст/должность), что именно, где.
 - Для IT/бизнес: только запуск, инвестиция, открытие или закрытие. Сумма если есть.
@@ -160,7 +161,7 @@ def _call_provider_batch(
             for item in results:
                 fp = str(item.get("fingerprint") or "").strip()
                 dl = str(item.get("draft_line") or "").strip()
-                if fp and dl and dl.startswith("• ") and len(dl) >= 10:
+                if fp and dl and dl.startswith("• ") and len(dl) >= 15:
                     mapping[fp] = dl
                     batch_hits += 1
             logger.info("%s: batch %d/%d → %d draft_lines.", provider_name, batch_idx, len(batches), batch_hits)
@@ -220,15 +221,32 @@ def run_llm_rewrite(project_root: Path) -> None:
             base_url_override, api_key, model_override, to_rewrite, provider_override
         )
     else:
-        # Primary: Groq Qwen3-32B (reliable infra, best Russian quality)
+        # Primary: Gemini 2.0 Flash (best quality)
         mapping = _call_provider(
-            GROQ_BASE_URL,
-            os.environ.get("GROQ_API_KEY", ""),
-            GROQ_PRIMARY_MODEL,
+            GEMINI_BASE_URL,
+            os.environ.get("GEMINI_API_KEY", ""),
+            GEMINI_MODEL,
             to_rewrite,
-            "Groq-Qwen3",
+            "Gemini",
         )
-        # Fallback 1: Groq Llama-3.3-70B (same infra, proven reliable)
+        # Fallback 1: Groq Qwen3-32B (reliable, good Russian)
+        missing = [
+            c
+            for c in to_rewrite
+            if str(c.get("fingerprint") or "") not in mapping
+        ]
+        if missing:
+            logger.info("Groq-Qwen3 fallback: %d candidates still without draft_line.", len(missing))
+            time.sleep(1)
+            qwen_map = _call_provider(
+                GROQ_BASE_URL,
+                os.environ.get("GROQ_API_KEY", ""),
+                GROQ_PRIMARY_MODEL,
+                missing,
+                "Groq-Qwen3",
+            )
+            mapping.update(qwen_map)
+        # Fallback 2: Groq Llama (emergency)
         missing = [
             c
             for c in to_rewrite
@@ -245,23 +263,6 @@ def run_llm_rewrite(project_root: Path) -> None:
                 "Groq-Llama",
             )
             mapping.update(llama_map)
-        # Fallback 2: Gemini (emergency, quota may be exhausted)
-        missing = [
-            c
-            for c in to_rewrite
-            if str(c.get("fingerprint") or "") not in mapping
-        ]
-        if missing:
-            logger.info("Gemini fallback: %d candidates still without draft_line.", len(missing))
-            time.sleep(1)
-            gemini_map = _call_provider(
-                GEMINI_BASE_URL,
-                os.environ.get("GEMINI_API_KEY", ""),
-                GEMINI_MODEL,
-                missing,
-                "Gemini",
-            )
-            mapping.update(gemini_map)
 
     if not mapping:
         logger.info(
