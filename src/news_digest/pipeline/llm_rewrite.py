@@ -1,17 +1,18 @@
 """LLM rewrite stage — writes Russian draft_lines to candidates.json.
 
 Provider chain:
-  1. Gemini 2.0 Flash — primary, best quality
-  2. Groq Qwen3-32B — fallback, reliable infra, good Russian quality
-  3. Groq Llama-3.3-70B — emergency fallback on same Groq infra
+  1. OpenAI gpt-4o-mini — primary, paid, reliable (~$0.15/1M input tokens)
+  2. Gemini 2.0 Flash — fallback, free tier
+  3. Groq Llama-3.3-70B — emergency fallback, free tier
   4. Rule-based in writer.py — final safety net, always fires if LLM unavailable
 
 Required env vars (set in GitHub Actions Secrets or .env.local):
+  OPENAI_API_KEY    — platform.openai.com (paid, gpt-4o-mini)
   GEMINI_API_KEY    — aistudio.google.com (free)
   GROQ_API_KEY      — console.groq.com (free)
 
 Optional overrides:
-  LLM_PROVIDER      — force "gemini" | "cerebras" | "groq" | "none"
+  LLM_PROVIDER      — force "gemini" | "groq" | "openai" | "none"
   LLM_MODEL         — override model name
   LLM_BASE_URL      — override API base URL
   LLM_API_KEY       — override API key (used with LLM_PROVIDER)
@@ -26,14 +27,14 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-# Primary: Qwen3-32B — best Russian quality, 100+ languages, reliable Groq infra
-GROQ_PRIMARY_MODEL = "qwen/qwen3-32b"
-# Fallback: Llama 3.3 70B — proven fallback on same Groq infra
-GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile"
+OPENAI_BASE_URL = "https://api.openai.com/v1"
+OPENAI_MODEL = "gpt-4o-mini"  # cheapest OpenAI model, ~$0.15/1M input tokens
 
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 GEMINI_MODEL = "gemini-2.0-flash"
+
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile"
 
 SYSTEM_PROMPT = """Ты редактор новостного дайджеста «Greater Manchester AM Brief».
 
@@ -93,7 +94,8 @@ IT-термины, названия мест и брендов оставляй 
 Никакого markdown, никаких пояснений — только JSON."""
 
 
-BATCH_SIZE = 20  # keep each request well under Groq's 12k TPM free-tier limit
+BATCH_SIZE = 20      # default — used for OpenAI and Gemini
+GROQ_BATCH_SIZE = 8  # Groq free tier: 6000 TPM; 8 candidates ≈ 2700 tokens safely
 
 
 def _call_provider_batch(
@@ -103,8 +105,9 @@ def _call_provider_batch(
     candidates: list[dict],
     provider_name: str,
     timeout: int = 90,
+    batch_size: int = BATCH_SIZE,
 ) -> dict[str, str]:
-    """Call one provider in batches of BATCH_SIZE. Returns fingerprint→draft_line."""
+    """Call one provider in batches. Returns fingerprint→draft_line."""
     if not api_key:
         logger.warning("%s: API key not set, skipping.", provider_name)
         return {}
@@ -118,8 +121,8 @@ def _call_provider_batch(
     client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
     mapping: dict[str, str] = {}
 
-    batches = [candidates[i: i + BATCH_SIZE] for i in range(0, len(candidates), BATCH_SIZE)]
-    logger.info("%s: %d candidates → %d batch(es) of ≤%d.", provider_name, len(candidates), len(batches), BATCH_SIZE)
+    batches = [candidates[i: i + batch_size] for i in range(0, len(candidates), batch_size)]
+    logger.info("%s: %d candidates → %d batch(es) of ≤%d.", provider_name, len(candidates), len(batches), batch_size)
 
     for batch_idx, batch in enumerate(batches, start=1):
         user_content = json.dumps(
@@ -221,32 +224,32 @@ def run_llm_rewrite(project_root: Path) -> None:
             base_url_override, api_key, model_override, to_rewrite, provider_override
         )
     else:
-        # Primary: Gemini 2.0 Flash (best quality)
+        # Primary: OpenAI gpt-4o-mini (paid, reliable, cheapest OpenAI model)
         mapping = _call_provider(
-            GEMINI_BASE_URL,
-            os.environ.get("GEMINI_API_KEY", ""),
-            GEMINI_MODEL,
+            OPENAI_BASE_URL,
+            os.environ.get("OPENAI_API_KEY", ""),
+            OPENAI_MODEL,
             to_rewrite,
-            "Gemini",
+            "OpenAI",
         )
-        # Fallback 1: Groq Qwen3-32B (reliable, good Russian)
+        # Fallback 1: Gemini 2.0 Flash (free tier)
         missing = [
             c
             for c in to_rewrite
             if str(c.get("fingerprint") or "") not in mapping
         ]
         if missing:
-            logger.info("Groq-Qwen3 fallback: %d candidates still without draft_line.", len(missing))
+            logger.info("Gemini fallback: %d candidates still without draft_line.", len(missing))
             time.sleep(1)
-            qwen_map = _call_provider(
-                GROQ_BASE_URL,
-                os.environ.get("GROQ_API_KEY", ""),
-                GROQ_PRIMARY_MODEL,
+            gemini_map = _call_provider(
+                GEMINI_BASE_URL,
+                os.environ.get("GEMINI_API_KEY", ""),
+                GEMINI_MODEL,
                 missing,
-                "Groq-Qwen3",
+                "Gemini",
             )
-            mapping.update(qwen_map)
-        # Fallback 2: Groq Llama (emergency)
+            mapping.update(gemini_map)
+        # Fallback 2: Groq Llama (emergency, free tier)
         missing = [
             c
             for c in to_rewrite
@@ -261,6 +264,7 @@ def run_llm_rewrite(project_root: Path) -> None:
                 GROQ_FALLBACK_MODEL,
                 missing,
                 "Groq-Llama",
+                batch_size=GROQ_BATCH_SIZE,
             )
             mapping.update(llama_map)
 
