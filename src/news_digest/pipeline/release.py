@@ -408,9 +408,22 @@ def build_release(project_root: Path) -> ReleaseResult:
     editor_report = _load_optional_json(state_dir / "editor_report.json")
 
     errors: list[str] = []
+    warnings: list[str] = []
     _validate_scan_report(scan_report, current_day_london, errors)
     candidate_context = _validate_candidates(candidates_report, current_day_london, errors)
     rendered_fingerprints = _validate_stage_reports(writer_report, editor_report, errors)
+    if writer_report:
+        qc = writer_report.get("quality_counts") or {}
+        english = int(qc.get("dropped_english_passthrough") or 0)
+        no_draft = int(qc.get("dropped_missing_draft_line") or 0)
+        included = int(qc.get("included_candidates") or 0)
+        rendered = int(qc.get("rendered_candidates") or 0)
+        if english > 0:
+            warnings.append(f"Quality: {english} candidate(s) dropped for English passthrough — translation may be failing.")
+        if no_draft > 2:
+            warnings.append(f"Quality: {no_draft} candidate(s) dropped for missing draft_line — LLM rewrite yield is low.")
+        if included >= 15 and rendered < 8:
+            warnings.append(f"Quality: heavy filtering — {rendered} rendered from {included} included candidates.")
     _validate_draft(
         draft_path=draft_path,
         scan_report=scan_report,
@@ -434,6 +447,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "release_decision": "pass" if ok else "fail",
         "message": message,
         "errors": errors,
+        "warnings": warnings,
         "published_facts_updated": published_facts_updated,
         "inputs": {
             "collector_report": str((state_dir / "collector_report.json").resolve()),
