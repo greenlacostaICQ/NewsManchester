@@ -211,7 +211,14 @@ SOURCES: tuple[SourceDef, ...] = (
     ),
     SourceDef("Co-op Live", "venues_tickets", "venues_tickets", "https://www.cooplive.com/events", "ticket_radar"),
     SourceDef("AO Arena", "venues_tickets", "venues_tickets", "https://www.ao-arena.com/events", "next_7_days"),
-    SourceDef("Manchester's Finest", "food_openings", "food_openings", "https://www.manchestersfinest.com/", "openings"),
+    SourceDef(
+        "Manchester's Finest",
+        "food_openings",
+        "food_openings",
+        "https://www.manchestersfinest.com/category/eating-and-drinking/",
+        "openings",
+        allowed_hosts=("manchestersfinest.com",),
+    ),
     SourceDef(
         "Manchester Digital",
         "tech_business",
@@ -308,6 +315,22 @@ SOURCES: tuple[SourceDef, ...] = (
         "https://confidentials.com/manchester/food-drink/drink/new-openings",
         "openings",
         allowed_hosts=("confidentials.com",),
+    ),
+    SourceDef(
+        "About Manchester Food & Drink",
+        "food_openings",
+        "food_openings",
+        "https://aboutmanchester.co.uk/category/food-drink/openings/",
+        "openings",
+        allowed_hosts=("aboutmanchester.co.uk",),
+    ),
+    SourceDef(
+        "The Manc Eats",
+        "food_openings",
+        "food_openings",
+        "https://themanc.com/eats/",
+        "openings",
+        allowed_hosts=("themanc.com",),
     ),
     SourceDef(
         "I Love Manchester",

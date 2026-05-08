@@ -143,9 +143,119 @@ _LISTICLE_OPENINGS_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
 )
 
 
+_FOOD_OPENING_TERMS: tuple[str, ...] = (
+    "open",
+    "opening",
+    "opens",
+    "opened",
+    "launch",
+    "launches",
+    "launched",
+    "arrives",
+    "lands",
+    "coming to",
+    "coming soon",
+    "first look",
+    "look inside",
+    "now open",
+    "officially open",
+    "debut",
+    "debuts",
+    "unveil",
+    "unveils",
+    "reopen",
+    "reopens",
+    "closed",
+    "closes",
+    "quietly closes",
+    "shuts",
+    "new restaurant",
+    "new bar",
+    "new cafe",
+    "new café",
+    "new pub",
+    "new venue",
+    "new menu",
+    "new spot",
+    "new dining",
+    "new food",
+)
+
+
+_FOOD_LOCAL_PLACE_TERMS: tuple[str, ...] = (
+    "bar",
+    "boozer",
+    "brewery",
+    "cafe",
+    "café",
+    "cocktail",
+    "dining",
+    "food hall",
+    "pub",
+    "restaurant",
+    "taproom",
+)
+
+
+_FOOD_EVERGREEN_TOKENS: tuple[str, ...] = (
+    "advertising",
+    "all the bars",
+    "competition terms",
+    "competitions on",
+    "deals & offers",
+    "discount dining",
+    "list your business",
+    "make a contribution",
+    "restaurant deals",
+    "shipping and refunds",
+    "where to eat for less",
+    "where to get",
+)
+
+
+_FOOD_NON_GM_TOKENS: tuple[str, ...] = (
+    "cheshire",
+    "glossop",
+    "liverpool",
+    "london",
+    "sheffield",
+    "wilmslow",
+)
+
+
 def _is_listicle_opening(title: str) -> bool:
     lowered = str(title or "").lower()
     return any(pattern.search(lowered) for pattern in _LISTICLE_OPENINGS_PATTERNS)
+
+
+def _has_food_opening_signal(title: str) -> bool:
+    lowered = str(title or "").lower()
+    return any(term in lowered for term in _FOOD_OPENING_TERMS)
+
+
+def _has_food_place_signal(title: str) -> bool:
+    lowered = str(title or "").lower()
+    return any(re.search(rf"\b{re.escape(term)}\b", lowered) for term in _FOOD_LOCAL_PLACE_TERMS)
+
+
+def _is_food_evergreen_or_admin(title: str, path: str = "") -> bool:
+    lowered = f"{title} {path}".lower()
+    return _is_listicle_opening(title) or any(token in lowered for token in _FOOD_EVERGREEN_TOKENS)
+
+
+def _is_obviously_non_gm_food_item(title: str, path: str, summary: str = "") -> bool:
+    text = f"{title} {path} {summary}".lower()
+    if not any(re.search(rf"\b{re.escape(token)}\b", text) for token in _FOOD_NON_GM_TOKENS):
+        return False
+    # Keep inbound stories like "Edinburgh Street Food expands to
+    # Manchester", but reject outbound/fringe items such as "opens second
+    # site in Wilmslow" even if the brand originated in a GM district.
+    return not re.search(
+        r"\b(?:to|in|into|on|at)\s+(?:greater\s+manchester|manchester|"
+        r"altrincham|bolton|bury|chorlton|deansgate|oldham|rochdale|"
+        r"salford|spinningfields|stockport|tameside|trafford|wigan)\b",
+        text,
+    )
 
 
 _WEEKEND_EVERGREEN_TOKENS: tuple[str, ...] = (
@@ -457,28 +567,14 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
     if source.name == "Manchester's Finest":
         if not any(token in lowered_path for token in ["/eating-and-drinking/", "/food-and-drink/", "/news/"]):
             return False
-        # Accept (a) explicit opening signals or (b) named-establishment
-        # signals — Manchester's Finest writes mostly about specific new
-        # venues and rarely uses "opens" verbatim. The previous strict
-        # filter dropped everything; this one keeps single-venue items
-        # while the listicle filter (`_is_listicle_opening`) still drops
-        # "best X in Manchester" roundups.
-        opening_terms = (
-            "opening", "opens", "launch", "launches", "launching",
-            "coming soon", "first look", "now open", "officially open",
-            "debut", "debuts", "unveil", "unveils", "reopen", "reopens",
+        if _is_food_evergreen_or_admin(lowered_title, lowered_path):
+            return False
+        if _is_obviously_non_gm_food_item(lowered_title, lowered_path, str(summary or "").lower()):
+            return False
+        return _has_food_opening_signal(lowered_title) or (
+            _has_gm_token(lowered_title, lowered_path, str(summary or "").lower())
+            and _has_food_place_signal(lowered_title)
         )
-        named_venue_terms = (
-            "new restaurant", "new bar", "new cafe", "new café",
-            "new pub", "new venue", "new menu", "new spot",
-            "rooftop", "tasting menu", "chef ", "by chef",
-            "michelin", "head chef",
-        )
-        if any(term in lowered_title for term in opening_terms):
-            return True
-        if any(term in lowered_title for term in named_venue_terms):
-            return True
-        return False
     if source.name == "Manchester Digital":
         if "/post/manchester-digital/" not in lowered_path:
             return False
@@ -525,13 +621,28 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
             return False
         if any(token in lowered_path for token in ("/p2", "/p3", "/p4", "/p5", "/p6", "/p7", "/p8", "/p9", "/p10", "/page/")):
             return False
-        opening_terms = (
-            "open", "opening", "opens", "launched", "launch", "coming to",
-            "new bar", "new restaurant", "new cafe", "new café", "first look",
-            "look inside",
+        if _is_food_evergreen_or_admin(lowered_title, lowered_path):
+            return False
+        if _is_obviously_non_gm_food_item(lowered_title, lowered_path, str(summary or "").lower()):
+            return False
+        return _has_gm_token(lowered_title, lowered_path, str(summary or "").lower()) or _has_food_opening_signal(lowered_title)
+    if source.name == "About Manchester Food & Drink":
+        if _is_food_evergreen_or_admin(lowered_title, lowered_path):
+            return False
+        if _is_obviously_non_gm_food_item(lowered_title, lowered_path, str(summary or "").lower()):
+            return False
+        return _has_gm_token(lowered_title, lowered_path, str(summary or "").lower()) and (
+            _has_food_opening_signal(lowered_title) or _has_food_place_signal(lowered_title)
         )
-        return _has_gm_token(lowered_title, lowered_path, str(summary or "").lower()) or any(
-            term in lowered_title for term in opening_terms
+    if source.name == "The Manc Eats":
+        if not any(token in lowered_path for token in ("/eats/", "/food-and-drink/", "/manchester/")):
+            return False
+        if _is_food_evergreen_or_admin(lowered_title, lowered_path):
+            return False
+        if _is_obviously_non_gm_food_item(lowered_title, lowered_path, str(summary or "").lower()):
+            return False
+        return _has_gm_token(lowered_title, lowered_path, str(summary or "").lower()) and (
+            _has_food_opening_signal(lowered_title) or _has_food_place_signal(lowered_title)
         )
     if source.name == "GMMH":
         return any(token in lowered_path for token in ["/news", "/2026/", "/whats-on", "/events"])
