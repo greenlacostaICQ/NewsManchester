@@ -82,37 +82,9 @@ def _weather_candidate() -> dict:
 
 
 def _transport_fallback_candidates(report: dict) -> list[dict]:
-    transport = report.get("categories", {}).get("transport", {})
-    if int(transport.get("publishable_count") or 0) > 0:
-        return []
-    if not transport.get("checked"):
-        return []
-
-    candidate = {
-        "title": "No major transport disruption detected on morning scan",
-        "category": "transport",
-        "summary": "На утренней проверке крупных подтверждённых сетевых сбоев по Greater Manchester не видно.",
-        "source_url": "https://tfgm.com/travel-updates/travel-alerts",
-        "source_label": "TfGM",
-        "primary_block": "transport",
-        "include": True,
-        "dedupe_decision": "new",
-        "carry_over_label": "",
-        "reason": "Transport fallback created because live scan found no publishable transport candidate.",
-        "matched_previous_fingerprint": "",
-        "practical_angle": "Актуальный статус сети — на сайте TfGM.",
-        "lead": "Крупных подтверждённых сетевых сбоев по Greater Manchester не зафиксировано.",
-        "event_page_type": "unknown",
-        "published_at": now_london().isoformat(),
-        "published_date_london": today_london(),
-        "freshness_status": "not_applicable",
-        "source_health": "dated",
-        "draft_line": (
-            "• Крупных подтверждённых сетевых сбоев по Greater Manchester не зафиксировано. TfGM"
-        ),
-    }
-    candidate["fingerprint"] = fingerprint_for_candidate(candidate)
-    return [candidate]
+    # Transport block is optional (not in REQUIRED_BLOCKS). A quiet day with
+    # no disruptions produces no transport candidates — that is correct behaviour.
+    return []
 
 
 def _last_24h_fallback_candidates(candidates: list[dict]) -> list[dict]:
