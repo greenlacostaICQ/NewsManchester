@@ -10,44 +10,54 @@
 
 # News project — agent context
 
-Greater Manchester daily digest. Python does the mechanical pipeline
-work (HTTP fetch, JSON I/O, deterministic dedupe, validation, writer
-assembly, release gate). Model use is an external Codex operational
-pass over existing state files; the project itself does not call model
-APIs.
+Greater Manchester daily digest. Runs as a GitHub Actions workflow at
+08:00 Europe/London. Python handles collect, dedupe, validate, curator,
+LLM rewrite, write, edit, and release gate. LLM calls (OpenAI/Gemini/Groq)
+are made by the pipeline itself — not by an external agent.
 
 ## Pipeline (in order)
 
 ```
-collect-digest -> dedupe-digest -> validate-candidates -> write-digest -> edit-digest -> build-digest
+collect-digest
+  → dedupe-digest
+  → validate-candidates
+  → curator-pass          # editorial LLM pass: drop PR/evergreen, pick lead story
+  → llm-rewrite           # 5 category-specific prompts (transport/city/events/business/football)
+  → write-digest
+  → edit-digest
+  → build-digest          # release gate → promotes draft to outgoing + writes published_facts
 ```
 
-Each stage reads/writes its own `data/state/*.json` file. Python stages
-do not invoke LLMs. `build-digest` is the gate — only it promotes
+Each stage reads/writes its own `data/state/*.json` file.
+`build-digest` is the only stage that promotes
 `data/state/draft_digest.html` to `data/outgoing/current_digest.html`
-and writes `published_facts.json` for next-day dedupe.
+and updates `published_facts.json` for next-day dedupe.
 
-## Operational Model Policy
+Sources are declared in `data/sources.toml` — set `enabled = false` to
+disable a source without touching Python.
 
-Use this only as an external Codex workflow. Do not add project-level
-model API calls, new files, new pipeline stages, or shell-script changes.
+## Operational notes
+
+Do not add model API calls, new pipeline stages, or shell-script changes
+without updating `.github/workflows/daily-digest.yml` and
+`scripts/run_local_digest.py` in the same commit.
+
 One pass per stage; if uncertain, leave Python output as-is.
 
-1. Run `collect-digest`. As `GPT-5.4-Mini`, review
-   `data/state/candidates.json` and change only obvious bad includes:
-   homepage/index/category pages, non-GM items, and clear wrong-source
-   items. Use `data/state/collector_report.json` only for source-health
-   context.
-2. Run `dedupe-digest`. As `GPT-5.4-Mini`, review only ambiguous
-   carry-over/new edge cases in `data/state/dedupe_memory.json`. Do not
-   rewrite normal deterministic decisions.
-3. Run `validate-candidates`. As `GPT-5.4-Mini`, review
-   `data/state/candidates.json` for vague practical angles and obviously
-   weak `include=true` candidates. Do not mass-edit the file.
-4. After `validate-candidates`, as `GPT-5.4`, read every
-   `include=true` candidate in `data/state/candidates.json` and write a
-   normal Russian `draft_line` for each one before running
-   `write-digest`. Do not leave transport / culture / football / ticket
+1. Run `collect-digest`. Review `data/state/candidates.json` and change
+   only obvious bad includes: homepage/index/category pages, non-GM items,
+   wrong-source items.
+2. Run `dedupe-digest`. Review only ambiguous carry-over/new edge cases.
+   Do not rewrite normal deterministic decisions.
+3. Run `validate-candidates`. Review for vague practical angles and weak
+   `include=true` candidates.
+4. Run `curator-pass`. The curator LLM sees all included candidates at
+   once, drops PR/evergreen/non-GM, and marks `is_lead=true` on the top
+   story. Review `data/state/curator_report.json` if lead selection looks wrong.
+5. Run `llm-rewrite`. Each candidate category gets its own prompt.
+   Drop decisions from writer (no draft_line) are logged at INFO level.
+6. Run `write-digest`. Review `data/state/draft_digest.html`.
+   Candidate draft_line for transport / culture / football / ticket
    items to fallback prose. Each line must start with `•`, be
    self-contained, and use Telegram HTML emphasis (`<b>...</b>`) instead
    of Markdown `**...**`. Do not write source anchor HTML;

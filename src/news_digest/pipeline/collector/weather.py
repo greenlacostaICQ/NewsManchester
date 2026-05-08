@@ -47,11 +47,11 @@ def _met_office_practical_angle(headline: str, today_text: str, precip_max: int)
     if any(token in blob for token in ("amber warning", "yellow warning", "red warning", "flood")):
         return "Проверить, действует ли предупреждение Met Office в вашем районе."
     if precip_max >= 60:
-        return "После обеда возможны сильные осадки, лучше взять зонт и перепроверить forecast перед выходом."
+        return "После обеда ожидаются сильные осадки — зонт обязателен."
     if precip_max >= 30:
-        return "Во второй половине дня возможны локальные осадки, лучше проверить forecast перед выходом."
+        return "Во второй половине дня возможны локальные осадки."
     if "showers" in blob:
-        return "Днём могут появиться локальные showers, так что прогноз лучше перепроверить перед выходом."
+        return "Днём возможны кратковременные дожди."
     if "sunny" in blob or "bright" in blob:
-        return "Днём заметно комфортнее утра, но утреннюю прохладу всё равно стоит учитывать."
-    return "Проверить обновлённый прогноз перед выходом."
+        return "Днём заметно теплее утра."
+    return "Без резких перемен погоды."

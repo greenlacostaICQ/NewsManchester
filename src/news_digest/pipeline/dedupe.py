@@ -84,7 +84,8 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         candidate["fingerprint"] = fingerprint
         previous = published_by_fp.get(fingerprint)
         normalized_title = normalize_title(str(candidate.get("title") or ""))
-        similar_previous = _similar_published_titles(normalized_title, published_titles)
+        original_title = str(candidate.get("title") or "")
+        similar_previous = _similar_published_titles(normalized_title, original_title, published_titles)
         candidate.setdefault("reason", "")
         candidate.setdefault("matched_previous_fingerprint", "")
 
@@ -280,8 +281,18 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
     return drops
 
 
-def _similar_published_titles(normalized_title: str, published_titles: list[dict]) -> list[dict]:
+def _entity_tokens(title: str) -> set[str]:
+    """Capitalized words and numbers from the original title — likely proper nouns."""
+    return {w.lower() for w in re.findall(r"\b(?:[A-Z][a-z]{1,}|[A-Z]{2,}|\d{2,})\b", title)}
+
+
+def _similar_published_titles(
+    normalized_title: str,
+    original_title: str,
+    published_titles: list[dict],
+) -> list[dict]:
     title_tokens = set(normalized_title.split())
+    entity_tokens = _entity_tokens(original_title)
     if len(title_tokens) < 4:
         return []
     matches: list[dict] = []
@@ -290,13 +301,15 @@ def _similar_published_titles(normalized_title: str, published_titles: list[dict
         previous_tokens = set(previous_title.split())
         if len(previous_tokens) < 4:
             continue
-        overlap = len(title_tokens & previous_tokens) / max(len(title_tokens | previous_tokens), 1)
+        union = title_tokens | previous_tokens
+        overlap = len(title_tokens & previous_tokens) / max(len(union), 1)
+        # Primary match: high Jaccard on full title tokens
         if overlap >= 0.55:
-            matches.append(
-                {
-                    "fingerprint": item.get("fingerprint"),
-                    "title": item.get("title"),
-                    "overlap": round(overlap, 2),
-                }
-            )
+            matches.append({"fingerprint": item.get("fingerprint"), "title": item.get("title"), "overlap": round(overlap, 2)})
+            continue
+        # Secondary match: moderate Jaccard + shared named entities (≥2)
+        if overlap >= 0.25 and entity_tokens:
+            prev_entities = _entity_tokens(str(item.get("title") or ""))
+            if len(entity_tokens & prev_entities) >= 2:
+                matches.append({"fingerprint": item.get("fingerprint"), "title": item.get("title"), "overlap": round(overlap, 2)})
     return matches[:3]

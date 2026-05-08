@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib import parse
 
+from news_digest.pipeline.collector.filters import _has_weekend_date_signal
 from news_digest.pipeline.common import clean_url, now_london, read_json, today_london, write_json
 
 
@@ -68,6 +69,12 @@ def validate_candidates(project_root: Path) -> StageResult:
         if candidate.get("include") and _is_topic_or_index_url(url):
             candidate["include"] = False
             candidate["reason"] = str(candidate.get("reason") or "").rstrip() + " | Validator: topic/index URL, not a standalone item."
+        if candidate.get("include") and candidate.get("primary_block") == "weekend_activities":
+            title = str(candidate.get("title") or "")
+            path = parse.urlsplit(url).path
+            if not _has_weekend_date_signal(title, path):
+                candidate["include"] = False
+                candidate["reason"] = str(candidate.get("reason") or "").rstrip() + " | Validator: no date signal for weekend block."
         if candidate.get("event_page_type") in {"homepage", "aggregator"}:
             validation_errors.append("Event candidate must use an official event page.")
 
