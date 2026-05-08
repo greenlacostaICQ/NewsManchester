@@ -49,6 +49,7 @@ assert_runtime_match() {
 mkdir -p \
   "$RUNTIME_ROOT/scripts" \
   "$RUNTIME_ROOT/src" \
+  "$RUNTIME_ROOT/data" \
   "$RUNTIME_ROOT/data/outgoing" \
   "$RUNTIME_ROOT/data/state" \
   "$RUNTIME_ROOT/data/archive"
@@ -59,6 +60,8 @@ copy_required "$PROJECT_ROOT/.env.local" "$RUNTIME_ROOT/.env.local"
 
 rsync -a --delete "$PROJECT_ROOT/src/" "$RUNTIME_ROOT/src/" \
   || die "rsync src/ failed"
+
+copy_required "$PROJECT_ROOT/data/sources.toml" "$RUNTIME_ROOT/data/sources.toml"
 
 copy_required "$PROJECT_ROOT/scripts/run_local_digest.py" "$RUNTIME_ROOT/scripts/run_local_digest.py"
 copy_required "$PROJECT_ROOT/scripts/run_daily_digest.sh" "$RUNTIME_ROOT/scripts/run_daily_digest.sh"
@@ -92,6 +95,9 @@ fi
 assert_runtime_match \
   "$PROJECT_ROOT/src/news_digest/pipeline/collector/sources.py" \
   "$RUNTIME_ROOT/src/news_digest/pipeline/collector/sources.py"
+assert_runtime_match \
+  "$PROJECT_ROOT/data/sources.toml" \
+  "$RUNTIME_ROOT/data/sources.toml"
 assert_runtime_match \
   "$PROJECT_ROOT/scripts/run_local_digest.py" \
   "$RUNTIME_ROOT/scripts/run_local_digest.py"
