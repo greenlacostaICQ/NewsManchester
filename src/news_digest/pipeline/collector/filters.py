@@ -491,20 +491,6 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
         if any(token in lowered_path for token in ("/all-about/", "/topic/", "/author/", "/newsletter/")):
             return False
         return "/news/" in lowered_path or "/whats-on/" in lowered_path
-    if source.name == "ManchesterWorld":
-        # ManchesterWorld is itself a Greater Manchester regional outlet.
-        # The previous GM-token gate rejected every item because their
-        # headlines often use district names ('Oldham', 'Wigan') that
-        # already lived in GM_TOKENS but never the literal word
-        # "Manchester". The check resulted in publishable_count = 0 even
-        # though the feed worked. Trust the source by default; rely on
-        # path filtering (must be under /news/), tag-page exclusion, and
-        # downstream city_watch topical filter to drop noise.
-        if "/news/" not in lowered_path:
-            return False
-        if any(token in lowered_path for token in ("/tag/", "/author/", "/page/", "/topic/")):
-            return False
-        return len(lowered_title) >= 18
     if source.name == "The Mill":
         if any(token in lowered_path for token in ("/tag/", "/author/", "/page/")):
             return False
@@ -558,10 +544,6 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
         if "/news/" not in lowered_path:
             return False
         return not any(token in lowered_title for token in ("eds", "academy", "women", "ticket information", "ticketing", "pl2", "u18"))
-    if source.name == "Salford City":
-        if "/news/" not in lowered_path:
-            return False
-        return not any(token in lowered_title for token in ("ticket information", "community", "highlights"))
     if source.name in {"HOME", "Whitworth", "The Lowry"}:
         return "/whats-on" in lowered_path or "/events" in lowered_path
     if source.name == "Manchester's Finest":
@@ -589,13 +571,6 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
             token in lowered_title
             for token in ("manchester", "northern", "agency", "digital", "media", "tech")
         )
-    if source.name == "ITV Granada":
-        # Granada region covers the wider North-West but the listing also
-        # shows Lancashire/Cheshire-only stories. Keep only items that
-        # mention Greater Manchester.
-        if not any(token in lowered_path for token in ["/news", "/2026/"]):
-            return False
-        return _has_gm_token(lowered_title, lowered_path)
     if source.name == "The Manc":
         if not any(token in lowered_path for token in ["/news", "/2026/", "/whats-on", "/events"]):
             return False

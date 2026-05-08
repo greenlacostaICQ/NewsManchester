@@ -19,7 +19,6 @@ from news_digest.pipeline.history import update_published_facts
 
 
 BANNED_MARKERS = [
-    "> MNewsDigest:",
     "[link]",
     "[todo]",
     "[source]",

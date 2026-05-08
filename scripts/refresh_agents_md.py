@@ -42,10 +42,6 @@ PIPELINE_FILES: tuple[Path, ...] = (
     PROJECT_ROOT / "src/news_digest/pipeline/release.py",
     PROJECT_ROOT / "src/news_digest/pipeline/history.py",
     PROJECT_ROOT / "src/news_digest/pipeline/common.py",
-    PROJECT_ROOT / "src/news_digest/pipeline/config.py",
-    PROJECT_ROOT / "src/news_digest/pipeline/fact_extraction.py",
-    PROJECT_ROOT / "src/news_digest/pipeline/fact_normalization.py",
-    PROJECT_ROOT / "src/news_digest/pipeline/fact_rewrite.py",
     PROJECT_ROOT / "scripts/run_local_digest.py",
 )
 

@@ -22,21 +22,9 @@ from news_digest.delivery.telegram import TelegramTransportError
 from news_digest.jobs.send_demo_digest import send_demo_digest
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector import collect_digest, initialize_collector_state
-from news_digest.pipeline.config import pipeline_config_payload
 from news_digest.pipeline.common import read_json
 from news_digest.pipeline.dedupe import dedupe_candidates, initialize_candidates_state
 from news_digest.pipeline.editor import edit_digest
-from news_digest.pipeline.fact_extraction import (
-    build_phase2a_rss_pack,
-    compare_fact_candidates,
-    fact_candidate_schema_payload,
-)
-from news_digest.pipeline.fact_normalization import normalize_fact_candidates_file, phase2b_contract_payload
-from news_digest.pipeline.fact_rewrite import (
-    activate_phase2c_rewrites,
-    build_phase2c_rewrite_pack,
-    phase2c_rewrite_contract_payload,
-)
 from news_digest.pipeline.history import ensure_history_files, record_delivery_artifacts
 from news_digest.pipeline.llm_rewrite import run_llm_rewrite
 from news_digest.pipeline.release import build_release, initialize_release_inputs
@@ -383,73 +371,6 @@ def cmd_edit_digest() -> int:
     return 0 if result.ok else 1
 
 
-def cmd_pipeline_config() -> int:
-    print(json.dumps(pipeline_config_payload(), ensure_ascii=False, indent=2))
-    return 0
-
-
-def cmd_phase2_fact_schema() -> int:
-    print(json.dumps(fact_candidate_schema_payload(), ensure_ascii=False, indent=2))
-    return 0
-
-
-def cmd_phase2_rss_pack(
-    state_root: str | None,
-    output_root: str | None,
-    source_labels: list[str] | None,
-    limit_per_source: int,
-    output_prefix: str,
-) -> int:
-    result = build_phase2a_rss_pack(
-        PROJECT_ROOT,
-        state_root=Path(state_root) if state_root else None,
-        output_state_root=Path(output_root) if output_root else None,
-        source_labels=tuple(source_labels or []),
-        limit_per_source=limit_per_source,
-        output_prefix=output_prefix,
-    )
-    print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0
-
-
-def cmd_phase2_compare_facts(llm_output: str, baseline_path: str | None) -> int:
-    result = compare_fact_candidates(
-        PROJECT_ROOT,
-        llm_output_path=Path(llm_output),
-        baseline_path=Path(baseline_path) if baseline_path else None,
-    )
-    print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0
-
-
-def cmd_phase2b_contract() -> int:
-    print(json.dumps(phase2b_contract_payload(), ensure_ascii=False, indent=2))
-    return 0
-
-
-def cmd_phase2b_normalize(input_path: str, output_path: str) -> int:
-    result = normalize_fact_candidates_file(Path(input_path), Path(output_path))
-    print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0
-
-
-def cmd_phase2c_contract() -> int:
-    print(json.dumps(phase2c_rewrite_contract_payload(), ensure_ascii=False, indent=2))
-    return 0
-
-
-def cmd_phase2c_build_pack(input_path: str, output_prefix: str) -> int:
-    result = build_phase2c_rewrite_pack(Path(input_path), output_prefix)
-    print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0
-
-
-def cmd_phase2c_activate_rewrites(rewrite_path: str) -> int:
-    result = activate_phase2c_rewrites(PROJECT_ROOT, Path(rewrite_path))
-    print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Local runner for the Manchester digest MVP.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -494,7 +415,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers.add_parser(
         "llm-rewrite",
-        help="Write Russian draft_lines via Cerebras/Groq LLM (falls back to rule-based if unavailable).",
+        help="Write Russian draft_lines via OpenAI → Gemini → Groq Llama provider chain.",
     )
     subparsers.add_parser(
         "write-digest",
@@ -503,101 +424,6 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "edit-digest",
         help="Run editor/balancer checks on draft_digest.html.",
-    )
-    subparsers.add_parser(
-        "pipeline-config",
-        help="Show explicit model and reasoning assignments for each pipeline stage.",
-    )
-    subparsers.add_parser(
-        "phase2-fact-schema",
-        help="Print the Phase 2A fact_candidate JSON schema.",
-    )
-    phase2_pack_parser = subparsers.add_parser(
-        "phase2-rss-pack",
-        help="Build Phase 2A RSS/feed extraction inputs, prompt text and deterministic baseline.",
-    )
-    phase2_pack_parser.add_argument(
-        "--state-root",
-        help="Override the input state directory to read candidates from (defaults to data/state).",
-    )
-    phase2_pack_parser.add_argument(
-        "--output-root",
-        help="Override the output directory for generated artifacts (defaults to data/state).",
-    )
-    phase2_pack_parser.add_argument(
-        "--source-label",
-        action="append",
-        dest="source_labels",
-        help="Source label to include. Repeatable. Defaults to BBC Manchester, GMP, MEN, The Mill.",
-    )
-    phase2_pack_parser.add_argument(
-        "--limit-per-source",
-        type=int,
-        default=3,
-        help="How many candidates to sample per source.",
-    )
-    phase2_pack_parser.add_argument(
-        "--output-prefix",
-        default="phase2a_rss",
-        help="File prefix for generated prompt/baseline artifacts.",
-    )
-    phase2_compare_parser = subparsers.add_parser(
-        "phase2-compare-facts",
-        help="Compare LLM fact_candidate output to the deterministic baseline generated by phase2-rss-pack.",
-    )
-    phase2_compare_parser.add_argument(
-        "--llm-output",
-        required=True,
-        help="Path to a JSON file with {'fact_candidates': [...]} returned by the LLM.",
-    )
-    phase2_compare_parser.add_argument(
-        "--baseline-path",
-        help="Optional path to the deterministic baseline JSON file.",
-    )
-    subparsers.add_parser(
-        "phase2b-contract",
-        help="Print the Phase 2B normalization contract and trusted extraction fields.",
-    )
-    phase2b_normalize_parser = subparsers.add_parser(
-        "phase2b-normalize",
-        help="Normalize Phase 2A fact_candidate output with borough/entity dictionaries.",
-    )
-    phase2b_normalize_parser.add_argument(
-        "--input-path",
-        default="data/state/phase2a_runtime_rss_llm_output.json",
-        help="Path to the Phase 2A fact_candidate JSON file.",
-    )
-    phase2b_normalize_parser.add_argument(
-        "--output-path",
-        default="data/state/phase2b_runtime_rss_normalized.json",
-        help="Where to write the normalized Phase 2B JSON file.",
-    )
-    subparsers.add_parser(
-        "phase2c-contract",
-        help="Print the Phase 2C rewrite contract for publishable normalized facts.",
-    )
-    phase2c_pack_parser = subparsers.add_parser(
-        "phase2c-build-pack",
-        help="Build a publishable-only Phase 2C rewrite pack from normalized Phase 2B output.",
-    )
-    phase2c_pack_parser.add_argument(
-        "--input-path",
-        default="data/state/phase2b_runtime_rss_normalized.json",
-        help="Path to the Phase 2B normalized JSON file.",
-    )
-    phase2c_pack_parser.add_argument(
-        "--output-prefix",
-        default="phase2c_runtime_rss",
-        help="Prefix for generated rewrite inputs and prompt files.",
-    )
-    phase2c_activate_parser = subparsers.add_parser(
-        "phase2c-activate-rewrites",
-        help="Validate and activate an agent-produced Phase 2C rewrites JSON for optional writer use.",
-    )
-    phase2c_activate_parser.add_argument(
-        "--rewrite-path",
-        required=True,
-        help="Path to the agent-produced Phase 2C rewrites JSON file.",
     )
     init_build_parser = subparsers.add_parser(
         "init-build-state",
@@ -667,30 +493,6 @@ def main() -> int:
         return cmd_write_digest()
     if args.command == "edit-digest":
         return cmd_edit_digest()
-    if args.command == "pipeline-config":
-        return cmd_pipeline_config()
-    if args.command == "phase2-fact-schema":
-        return cmd_phase2_fact_schema()
-    if args.command == "phase2-rss-pack":
-        return cmd_phase2_rss_pack(
-            args.state_root,
-            args.output_root,
-            args.source_labels,
-            args.limit_per_source,
-            args.output_prefix,
-        )
-    if args.command == "phase2-compare-facts":
-        return cmd_phase2_compare_facts(args.llm_output, args.baseline_path)
-    if args.command == "phase2b-contract":
-        return cmd_phase2b_contract()
-    if args.command == "phase2b-normalize":
-        return cmd_phase2b_normalize(args.input_path, args.output_path)
-    if args.command == "phase2c-contract":
-        return cmd_phase2c_contract()
-    if args.command == "phase2c-build-pack":
-        return cmd_phase2c_build_pack(args.input_path, args.output_prefix)
-    if args.command == "phase2c-activate-rewrites":
-        return cmd_phase2c_activate_rewrites(args.rewrite_path)
     if args.command == "init-build-state":
         return cmd_init_build_state(args.overwrite)
     if args.command == "poll-updates":

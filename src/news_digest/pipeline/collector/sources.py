@@ -53,11 +53,6 @@ SOURCES: tuple[SourceDef, ...] = (
         fallback_urls=("https://www.bbc.com/news/england/manchester",),
         allowed_hosts=("bbc.com", "bbc.co.uk", "bbci.co.uk"),
     ),
-    # ITV Granada: PHASE 1 WAIVER — server enforces Cloudflare bot-challenge
-    # on every request from urllib (timeout/403). No public RSS. Cannot be
-    # scraped without a headless browser. Excluded from Phase 1 completion
-    # criteria. Re-evaluate in Phase 2 with Playwright or a third-party feed.
-    # SourceDef("ITV Granada", "media_layer", "media_layer", "https://www.itv.com/news/granada", "last_24h"),
     SourceDef(
         "MEN",
         "media_layer",
@@ -66,21 +61,6 @@ SOURCES: tuple[SourceDef, ...] = (
         "last_24h",
         allowed_hosts=("manchestereveningnews.co.uk",),
     ),
-    # ManchesterWorld: PHASE 1 WAIVER — /rss and all sub-path RSS feeds
-    # (/news/rss, /news/local-news/rss) contain only affiliate/recommended
-    # consumer-commerce noise (category=Recommended), not local news.
-    # Homepage (/news) returns 404 or blocks urllib. No usable feed found.
-    # Re-evaluate in Phase 2 when they expose a proper local-news RSS or
-    # a scrapeable news index. Fingerprint: manchesterworld.uk/rss returns
-    # 7 items, all aff, 0 pass _is_allowed_source_link filter.
-    # SourceDef(
-    #     "ManchesterWorld",
-    #     "media_layer",
-    #     "media_layer",
-    #     "https://www.manchesterworld.uk/rss",
-    #     "last_24h",
-    #     allowed_hosts=("manchesterworld.uk",),
-    # ),
     SourceDef(
         "The Mill",
         "media_layer",
@@ -506,5 +486,4 @@ SOURCES: tuple[SourceDef, ...] = (
     # ── Футбол — только Man Utd и Man City (трансферы + матчи) ────────────
     SourceDef("Manchester United", "football", "football", "https://www.manutd.com/en/news", "football"),
     SourceDef("Manchester City", "football", "football", "https://www.mancity.com/news", "football"),
-    # Salford City убран — не входит в фокус дайджеста
 )
