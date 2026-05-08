@@ -8,6 +8,7 @@ filter style: input == candidate text, output == bool.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from urllib import parse
 import re
 
@@ -456,13 +457,340 @@ def _is_stale_public_service(published_at: str | None, title: str) -> bool:
     return age.days > _PUBLIC_SERVICE_MAX_AGE_DAYS
 
 
+@dataclass(frozen=True, slots=True)
+class _SourcePolicy:
+    path_must_contain: tuple[str, ...] = ()      # path must contain ANY of these
+    path_all_must_contain: tuple[str, ...] = ()  # path must contain ALL of these
+    path_must_start: str = ""
+    path_banned_segments: tuple[str, ...] = ()   # ANY present in path → drop
+    path_banned_starts: tuple[str, ...] = ()     # path starts with ANY → drop
+    min_path_depth: int = 0
+    exact_path_depth: int = 0                    # 0 = not enforced
+    min_title_len: int = 0
+    blocked_title_tokens: tuple[str, ...] = ()   # ANY in lowered title → drop
+    require_gm_token: bool = False
+    require_food_opening_or_place: bool = False
+    require_date_signal: bool = False
+    require_gm_or_date: bool = False             # GM token OR date signal
+    require_event_path_or_date: bool = False     # /events path OR date signal
+    block_evergreen: bool = False
+    block_food_evergreen: bool = False
+    block_non_gm_food: bool = False
+    block_non_gm_weekend: bool = False
+    block_listicle: bool = False
+
+
+_COUNCIL_NAV_SLUGS: tuple[str, ...] = (
+    "translate-this-page", "emergency-contacts", "social-media-and-email-updates",
+    "freedom-of-information", "modern-slavery-statement", "births-marriages-and-deaths",
+    "business-and-licensing", "environmental-health", "accessibility-statement",
+    "cookie-policy", "privacy-notice", "site-map", "search",
+)
+
+_SOURCE_POLICIES: dict[str, _SourcePolicy] = {
+    # ── GMP ──────────────────────────────────────────────────────────────────
+    "GMP": _SourcePolicy(path_must_contain=("/news/greater-manchester/news/news/",)),
+    # ── Media layer ───────────────────────────────────────────────────────────
+    "MEN": _SourcePolicy(
+        path_must_contain=("/news/", "/whats-on/"),
+        path_banned_segments=("/all-about/", "/topic/", "/author/", "/newsletter/"),
+    ),
+    "The Mill": _SourcePolicy(
+        path_banned_segments=("/tag/", "/author/", "/page/"),
+        min_title_len=18,
+    ),
+    "The Manc": _SourcePolicy(
+        path_must_contain=("/news", "/2026/", "/whats-on", "/events"),
+        require_gm_token=True,
+        blocked_title_tokens=("best things to do",),
+    ),
+    "I Love Manchester": _SourcePolicy(
+        path_banned_segments=("/category/", "/event-category/", "/tag/", "/author/", "/page/"),
+        exact_path_depth=1,
+        require_gm_token=True,
+    ),
+    "Secret Manchester": _SourcePolicy(
+        path_banned_segments=("/category/", "/tag/", "/author/", "/page/"),
+        exact_path_depth=1,
+        require_gm_token=True,
+    ),
+    # ── Councils ──────────────────────────────────────────────────────────────
+    "Manchester Council": _SourcePolicy(path_must_start="/news-stories/20", min_path_depth=4),
+    "Salford Council": _SourcePolicy(path_must_start="/news/", min_path_depth=3),
+    "Trafford Council": _SourcePolicy(path_must_start="/news/20", min_path_depth=4),
+    "Stockport Council": _SourcePolicy(
+        path_must_start="/news/",
+        path_banned_segments=("/newsroom",),
+        min_path_depth=3,
+    ),
+    "Oldham Council": _SourcePolicy(path_must_start="/news/article/", min_path_depth=4),
+    "Rochdale Council": _SourcePolicy(path_must_start="/news/article/", min_path_depth=4),
+    "Bolton Council": _SourcePolicy(path_must_start="/news/article/", min_path_depth=4),
+    "Tameside Council": _SourcePolicy(path_must_start="/newsroom/articles/", min_path_depth=4),
+    "Bury Council": _SourcePolicy(path_all_must_contain=("/pressreleases/", "/bury-council/")),
+    "Wigan Council": _SourcePolicy(path_must_start="/news/articles/20", min_path_depth=5),
+    "GMMH": _SourcePolicy(path_must_contain=("/news", "/2026/", "/whats-on", "/events")),
+    # ── Transport ─────────────────────────────────────────────────────────────
+    "TfGM": _SourcePolicy(path_must_contain=("/travel-updates", "/planned-works")),
+    # National Rail: override below (GM token OR named station)
+    # ── Culture ───────────────────────────────────────────────────────────────
+    "HOME": _SourcePolicy(path_must_contain=("/whats-on", "/events")),
+    "Whitworth": _SourcePolicy(path_must_contain=("/whats-on", "/events")),
+    "The Lowry": _SourcePolicy(path_must_contain=("/whats-on", "/events")),
+    "Factory International": _SourcePolicy(path_must_contain=("/whats-on/",), min_path_depth=3),
+    "Palace Theatre": _SourcePolicy(
+        path_must_start="/shows/",
+        path_all_must_contain=("/palace-theatre-manchester",),
+    ),
+    # ── Venues ────────────────────────────────────────────────────────────────
+    "Co-op Live": _SourcePolicy(path_must_contain=("/events/",), min_path_depth=3),
+    "AO Arena": _SourcePolicy(path_must_contain=("/events",), min_path_depth=3),
+    # ── Football ──────────────────────────────────────────────────────────────
+    "Manchester United": _SourcePolicy(
+        path_must_contain=("/en/news/",),
+        blocked_title_tokens=("women", "academy", "ticket information", "ticketing", "community"),
+    ),
+    "Manchester City": _SourcePolicy(
+        path_must_contain=("/news/",),
+        blocked_title_tokens=("eds", "academy", "women", "ticket information", "ticketing", "pl2", "u18"),
+    ),
+    # ── Food / Openings ───────────────────────────────────────────────────────
+    # Manchester's Finest: override below (food_opening alone is sufficient)
+    "Confidentials": _SourcePolicy(
+        path_must_start="/manchester/",
+        path_banned_segments=("/p2", "/p3", "/p4", "/p5", "/p6", "/p7", "/p8", "/p9", "/p10", "/page/"),
+        block_food_evergreen=True,
+        block_non_gm_food=True,
+        require_gm_token=True,
+    ),
+    "About Manchester Food & Drink": _SourcePolicy(
+        block_food_evergreen=True,
+        block_non_gm_food=True,
+        require_gm_token=True,
+        require_food_opening_or_place=True,
+    ),
+    "The Manc Eats": _SourcePolicy(
+        path_must_contain=("/eats/", "/food-and-drink/", "/manchester/"),
+        block_food_evergreen=True,
+        block_non_gm_food=True,
+        require_gm_token=True,
+        require_food_opening_or_place=True,
+    ),
+    # ── Tech / Business ───────────────────────────────────────────────────────
+    # Manchester Digital: override below (GM token OR tech terms)
+    "Prolific North": _SourcePolicy(path_must_contain=("/news/",), require_gm_token=True),
+    "BusinessCloud": _SourcePolicy(
+        path_banned_segments=("/tag/", "/category/", "/author/", "/page/"),
+        min_path_depth=2,
+        min_title_len=25,
+        require_gm_token=True,
+    ),
+    "Bdaily Manchester": _SourcePolicy(
+        path_must_contain=("/articles/",),
+        path_banned_segments=("/tag/", "/category/", "/author/", "/page/", "/region/"),
+        min_title_len=25,
+        require_gm_token=True,
+    ),
+    "MIDAS Manchester": _SourcePolicy(
+        path_must_contain=("/news/",),
+        path_banned_segments=(
+            "get-started", "sectors", "why-manchester", "about", "contact",
+            "advanced-materials", "digital-cyber", "financial-professional",
+            "life-sciences", "energy", "sport",
+        ),
+        min_path_depth=3,
+    ),
+    # ── Weekend ───────────────────────────────────────────────────────────────
+    "Manchester Wire": _SourcePolicy(
+        exact_path_depth=1,
+        path_banned_segments=("/guide/", "/what/", "/where/", "/tag/", "/author/", "/page/"),
+        block_evergreen=True,
+        require_gm_or_date=True,
+    ),
+    "Creative Tourist Manchester": _SourcePolicy(
+        min_path_depth=2,
+        path_banned_starts=("/venue/", "/place/", "/articles/", "/manchester/", "/locations/"),
+        path_banned_segments=("/food-and-drink-guides", "/neighbourhoods/", "/day-trips/"),
+        block_evergreen=True,
+        require_gm_or_date=True,
+    ),
+    "DesignMyNight Manchester": _SourcePolicy(
+        min_path_depth=4,
+        path_must_start="/manchester/whats-on/",
+        path_banned_segments=("/things-to-do", "/best-", "/guide-", "/clubs", "/bars", "/restaurants"),
+        block_evergreen=True,
+    ),
+    "Fairfield Social Club": _SourcePolicy(
+        min_path_depth=2,
+        path_banned_segments=("/info", "/accessibility", "/book-a-table", "/private", "/weddings", "/corporate", "/sign-up"),
+        require_event_path_or_date=True,
+    ),
+    "Skiddle Manchester": _SourcePolicy(path_must_contain=("/events/",), min_path_depth=4),
+    "Eventbrite Manchester": _SourcePolicy(
+        path_all_must_contain=("/e/", "tickets-"),
+        block_non_gm_weekend=True,
+    ),
+    "Manchester Markets": _SourcePolicy(
+        min_path_depth=2,
+        path_must_contain=("/market", "/event", "/whats-on"),
+    ),
+    "Time Out Manchester": _SourcePolicy(
+        min_path_depth=3,
+        path_must_start="/manchester/",
+        path_banned_segments=("/travel/",),
+        block_non_gm_weekend=True,
+        block_listicle=True,
+        block_evergreen=True,
+        require_date_signal=True,
+    ),
+    "Manchester Food & Drink Festival": _SourcePolicy(
+        min_path_depth=2,
+        path_must_contain=("/event", "/festival", "/market"),
+        path_banned_segments=("/news/",),
+    ),
+    "Visit Manchester Markets": _SourcePolicy(
+        path_must_contain=("/whats-on/",),
+        path_banned_starts=("/things-to-see-and-do/",),
+        block_evergreen=True,
+    ),
+    "Manchester City Events": _SourcePolicy(
+        min_path_depth=3,
+        path_must_contain=("/event", "/whats-on"),
+        path_banned_segments=_COUNCIL_NAV_SLUGS,
+    ),
+    "Salford Events": _SourcePolicy(
+        min_path_depth=3,
+        path_must_contain=("/event", "/whats-on"),
+        path_banned_segments=_COUNCIL_NAV_SLUGS,
+    ),
+    "Stockport Events": _SourcePolicy(path_must_contain=("/events/",), min_path_depth=2),
+    "Bolton Events": _SourcePolicy(path_must_contain=("/events/",), min_path_depth=2),
+    "Visit Manchester": _SourcePolicy(
+        block_evergreen=True,
+        block_non_gm_weekend=True,
+        require_date_signal=True,
+    ),
+}
+
+
+def _evaluate_policy(
+    policy: _SourcePolicy,
+    path: str,
+    lowered_path: str,
+    lowered_title: str,
+    lowered_summary: str,
+) -> bool:
+    depth = len([p for p in path.split("/") if p])
+    if policy.path_must_contain and not any(t in lowered_path for t in policy.path_must_contain):
+        return False
+    if policy.path_all_must_contain and not all(t in lowered_path for t in policy.path_all_must_contain):
+        return False
+    if policy.path_must_start and not lowered_path.startswith(policy.path_must_start):
+        return False
+    if policy.path_banned_segments and any(t in lowered_path for t in policy.path_banned_segments):
+        return False
+    if policy.path_banned_starts and any(lowered_path.startswith(t) for t in policy.path_banned_starts):
+        return False
+    if policy.min_path_depth and depth < policy.min_path_depth:
+        return False
+    if policy.exact_path_depth and depth != policy.exact_path_depth:
+        return False
+    if policy.min_title_len and len(lowered_title) < policy.min_title_len:
+        return False
+    if policy.blocked_title_tokens and any(t in lowered_title for t in policy.blocked_title_tokens):
+        return False
+    if policy.block_evergreen and _is_evergreen_weekend_title(lowered_title):
+        return False
+    if policy.block_food_evergreen and _is_food_evergreen_or_admin(lowered_title, lowered_path):
+        return False
+    if policy.block_non_gm_food and _is_obviously_non_gm_food_item(lowered_title, lowered_path, lowered_summary):
+        return False
+    if policy.block_non_gm_weekend and _is_obviously_non_gm_weekend_item(lowered_title, lowered_path, lowered_summary):
+        return False
+    if policy.block_listicle and _is_listicle_opening(lowered_title):
+        return False
+    has_gm = _has_gm_token(lowered_title, lowered_path, lowered_summary)
+    if policy.require_gm_token and not has_gm:
+        return False
+    if policy.require_food_opening_or_place:
+        if not (_has_food_opening_signal(lowered_title) or _has_food_place_signal(lowered_title)):
+            return False
+    if policy.require_date_signal and not _has_weekend_date_signal(lowered_title, lowered_path):
+        return False
+    if policy.require_gm_or_date:
+        if not (has_gm or _has_weekend_date_signal(lowered_title, lowered_path)):
+            return False
+    if policy.require_event_path_or_date:
+        event_in_path = any(t in lowered_path for t in ("/events", "/whats-on", "/event"))
+        if not (event_in_path or _has_weekend_date_signal(lowered_title, lowered_path)):
+            return False
+    return True
+
+
+def _source_override(
+    source: SourceDef,
+    lowered_path: str,
+    lowered_title: str,
+    lowered_summary: str,
+) -> bool | None:
+    """Return True/False for sources whose logic can't be expressed as _SourcePolicy.
+    Return None to fall through to policy/default evaluation.
+    """
+    if source.name == "BBC Manchester":
+        if not ("/news/articles/" in lowered_path or "/news/uk-england-" in lowered_path):
+            return False
+        return _has_gm_token(lowered_title, lowered_path, lowered_summary)
+
+    if source.name == "BBC Manchester public safety fallback":
+        if not ("/news/articles/" in lowered_path or "/news/uk-england-" in lowered_path):
+            return False
+        public_safety_terms = (
+            "police", "gmp", "arrest", "charged", "court", "stab",
+            "murder", "assault", "fire", "crash", "drug",
+        )
+        return _has_gm_token(lowered_title, lowered_path) and any(
+            term in lowered_title for term in public_safety_terms
+        )
+
+    if source.name == "National Rail":
+        if not ("/status-and-disruptions" in lowered_path or "/engineering-works/" in lowered_path):
+            return False
+        if _has_gm_token(lowered_title):
+            return True
+        rail_terms = (
+            "manchester airport", "manchester piccadilly", "manchester victoria",
+            "oxford road", "deansgate",
+        )
+        return any(re.search(rf"\b{re.escape(t)}\b", lowered_title) for t in rail_terms)
+
+    if source.name == "Manchester's Finest":
+        if not any(t in lowered_path for t in ("/eating-and-drinking/", "/food-and-drink/", "/news/")):
+            return False
+        if _is_food_evergreen_or_admin(lowered_title, lowered_path):
+            return False
+        if _is_obviously_non_gm_food_item(lowered_title, lowered_path, lowered_summary):
+            return False
+        return _has_food_opening_signal(lowered_title) or (
+            _has_gm_token(lowered_title, lowered_path, lowered_summary) and _has_food_place_signal(lowered_title)
+        )
+
+    if source.name == "Manchester Digital":
+        if "/post/manchester-digital/" not in lowered_path:
+            return False
+        tech_terms = ("digital", "tech", "ecommerce", "infrastructure", "agency", "software", "ai")
+        return _has_gm_token(lowered_title, lowered_path, lowered_summary) or any(
+            term in lowered_title for term in tech_terms
+        )
+
+    return None
+
+
 def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: str = "") -> bool:
     parsed = parse.urlsplit(url)
     path = parsed.path.rstrip("/")
     host = parsed.netloc.replace("www.", "")
+
     if source.allowed_hosts:
-        # Explicit allow-list — used when the source URL is a feed on a
-        # different subdomain than the article links it carries.
         if host and not any(
             host == allowed or host.endswith("." + allowed)
             for allowed in source.allowed_hosts
@@ -477,329 +805,17 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
 
     lowered_title = title.lower()
     lowered_path = path.lower()
+    lowered_summary = str(summary or "").lower()
 
-    # Football club pages tend to surface section labels ('Women's Team',
-    # 'EDS & Academy') as anchor text. Reject those before category-specific
-    # rules so they don't slip into the football block.
     if source.report_category == "football" and _is_navigation_chrome(title):
         return False
 
-    if source.name == "BBC Manchester":
-        # BBC Manchester RSS surfaces regional North-West pieces where the
-        # Greater Manchester geography only appears in the description, not
-        # the headline.  Check title, URL path *and* RSS summary so that
-        # items like 'Farmer refuses to budge for 2,000 new houses' (about
-        # Tameside) are not silently dropped.
-        if not ("/news/articles/" in lowered_path or "/news/uk-england-" in lowered_path):
-            return False
-        return _has_gm_token(lowered_title, lowered_path, str(summary or "").lower())
-    if source.name == "BBC Manchester public safety fallback":
-        if not ("/news/articles/" in lowered_path or "/news/uk-england-" in lowered_path):
-            return False
-        public_safety_terms = (
-            "police",
-            "gmp",
-            "arrest",
-            "charged",
-            "court",
-            "stab",
-            "murder",
-            "assault",
-            "fire",
-            "crash",
-            "drug",
-        )
-        return _has_gm_token(lowered_title, lowered_path) and any(
-            term in lowered_title for term in public_safety_terms
-        )
-    if source.name == "GMP":
-        return "/news/greater-manchester/news/news/" in lowered_path
-    if source.name == "MEN":
-        if any(token in lowered_path for token in ("/all-about/", "/topic/", "/author/", "/newsletter/")):
-            return False
-        return "/news/" in lowered_path or "/whats-on/" in lowered_path
-    if source.name == "The Mill":
-        if any(token in lowered_path for token in ("/tag/", "/author/", "/page/")):
-            return False
+    override = _source_override(source, lowered_path, lowered_title, lowered_summary)
+    if override is not None:
+        return override
+
+    policy = _SOURCE_POLICIES.get(source.name)
+    if policy is None:
         return len(lowered_title) >= 18
-    if source.name == "Manchester Council":
-        return lowered_path.startswith("/news-stories/20") and len(path.split("/")) >= 4
-    if source.name == "Salford Council":
-        return lowered_path.startswith("/news/") and len(path.split("/")) >= 3
-    if source.name == "Trafford Council":
-        return lowered_path.startswith("/news/20") and len(path.split("/")) >= 4
-    if source.name == "Stockport Council":
-        return lowered_path.startswith("/news/") and "/newsroom" not in lowered_path and len(path.split("/")) >= 3
-    if source.name in {"Oldham Council", "Rochdale Council", "Bolton Council"}:
-        return lowered_path.startswith("/news/article/") and len(path.split("/")) >= 4
-    if source.name == "Tameside Council":
-        return lowered_path.startswith("/newsroom/articles/") and len(path.split("/")) >= 4
-    if source.name == "Bury Council":
-        return "/pressreleases/" in lowered_path and "/bury-council/" in lowered_path
-    if source.name == "Wigan Council":
-        return lowered_path.startswith("/news/articles/20") and len(path.split("/")) >= 5
-    if source.name == "Factory International":
-        return "/whats-on/" in lowered_path and len(path.split("/")) >= 3
-    if source.name == "Palace Theatre":
-        return lowered_path.startswith("/shows/") and "/palace-theatre-manchester" in lowered_path
-    if source.name == "TfGM":
-        return "/travel-updates" in lowered_path or "/planned-works" in lowered_path
-    if source.name == "National Rail":
-        rail_terms = (
-            "manchester airport",
-            "manchester piccadilly",
-            "manchester victoria",
-            "oxford road",
-            "deansgate",
-        )
-        if not (
-            "/status-and-disruptions" in lowered_path or "/engineering-works/" in lowered_path
-        ):
-            return False
-        if _has_gm_token(lowered_title):
-            return True
-        return any(re.search(rf"\b{re.escape(term)}\b", lowered_title) for term in rail_terms)
-    if source.name == "Co-op Live":
-        return "/events/" in lowered_path and len(path.split("/")) >= 3
-    if source.name == "AO Arena":
-        return "/events" in lowered_path and len(path.split("/")) >= 3
-    if source.name == "Manchester United":
-        if "/en/news/" not in lowered_path:
-            return False
-        return not any(token in lowered_title for token in ("women", "academy", "ticket information", "ticketing", "community"))
-    if source.name == "Manchester City":
-        if "/news/" not in lowered_path:
-            return False
-        return not any(token in lowered_title for token in ("eds", "academy", "women", "ticket information", "ticketing", "pl2", "u18"))
-    if source.name in {"HOME", "Whitworth", "The Lowry"}:
-        return "/whats-on" in lowered_path or "/events" in lowered_path
-    if source.name == "Manchester's Finest":
-        if not any(token in lowered_path for token in ["/eating-and-drinking/", "/food-and-drink/", "/news/"]):
-            return False
-        if _is_food_evergreen_or_admin(lowered_title, lowered_path):
-            return False
-        if _is_obviously_non_gm_food_item(lowered_title, lowered_path, str(summary or "").lower()):
-            return False
-        return _has_food_opening_signal(lowered_title) or (
-            _has_gm_token(lowered_title, lowered_path, str(summary or "").lower())
-            and _has_food_place_signal(lowered_title)
-        )
-    if source.name == "Manchester Digital":
-        if "/post/manchester-digital/" not in lowered_path:
-            return False
-        return _has_gm_token(lowered_title, lowered_path, str(summary or "").lower()) or any(
-            token in lowered_title
-            for token in ("digital", "tech", "ecommerce", "infrastructure", "agency", "software", "ai")
-        )
-    if source.name == "Prolific North":
-        if "/news/" not in lowered_path:
-            return False
-        return _has_gm_token(lowered_title, str(summary or "").lower())
-    if source.name == "The Manc":
-        if not any(token in lowered_path for token in ["/news", "/2026/", "/whats-on", "/events"]):
-            return False
-        # The Manc occasionally publishes UK-wide listicles. Require an
-        # explicit GM token in title or URL.
-        if not _has_gm_token(lowered_title, lowered_path):
-            return False
-        return "best things to do" not in lowered_title
-    if source.name == "I Love Manchester":
-        if any(token in lowered_path for token in ("/category/", "/event-category/", "/tag/", "/author/", "/page/")):
-            return False
-        if len([part for part in path.split("/") if part]) != 1:
-            return False
-        return _has_gm_token(lowered_title, lowered_path, str(summary or "").lower())
-    if source.name == "Secret Manchester":
-        if any(token in lowered_path for token in ("/category/", "/tag/", "/author/", "/page/")):
-            return False
-        if len([part for part in path.split("/") if part]) != 1:
-            return False
-        return _has_gm_token(lowered_title, lowered_path, str(summary or "").lower())
-    if source.name == "Confidentials":
-        if not lowered_path.startswith("/manchester/"):
-            return False
-        if any(token in lowered_path for token in ("/p2", "/p3", "/p4", "/p5", "/p6", "/p7", "/p8", "/p9", "/p10", "/page/")):
-            return False
-        if _is_food_evergreen_or_admin(lowered_title, lowered_path):
-            return False
-        if _is_obviously_non_gm_food_item(lowered_title, lowered_path, str(summary or "").lower()):
-            return False
-        return _has_gm_token(lowered_title, lowered_path, str(summary or "").lower()) or _has_food_opening_signal(lowered_title)
-    if source.name == "About Manchester Food & Drink":
-        if _is_food_evergreen_or_admin(lowered_title, lowered_path):
-            return False
-        if _is_obviously_non_gm_food_item(lowered_title, lowered_path, str(summary or "").lower()):
-            return False
-        return _has_gm_token(lowered_title, lowered_path, str(summary or "").lower()) and (
-            _has_food_opening_signal(lowered_title) or _has_food_place_signal(lowered_title)
-        )
-    if source.name == "The Manc Eats":
-        if not any(token in lowered_path for token in ("/eats/", "/food-and-drink/", "/manchester/")):
-            return False
-        if _is_food_evergreen_or_admin(lowered_title, lowered_path):
-            return False
-        if _is_obviously_non_gm_food_item(lowered_title, lowered_path, str(summary or "").lower()):
-            return False
-        return _has_gm_token(lowered_title, lowered_path, str(summary or "").lower()) and (
-            _has_food_opening_signal(lowered_title) or _has_food_place_signal(lowered_title)
-        )
-    if source.name == "GMMH":
-        return any(token in lowered_path for token in ["/news", "/2026/", "/whats-on", "/events"])
 
-    # ── Weekend event sources ─────────────────────────────────────────────
-    if source.name == "Manchester Wire":
-        segments = [p for p in path.split("/") if p]
-        if len(segments) != 1:
-            return False
-        if lowered_path.startswith(("/guide/", "/what/", "/where/", "/tag/", "/author/", "/page/")):
-            return False
-        if _is_evergreen_weekend_title(lowered_title):
-            return False
-        return _has_gm_token(lowered_title, lowered_path) or _has_weekend_date_signal(lowered_title, lowered_path)
-
-    if source.name == "Creative Tourist Manchester":
-        segments = [p for p in path.split("/") if p]
-        if len(segments) < 2:
-            return False
-        if lowered_path.startswith(("/venue/", "/place/", "/articles/", "/manchester/", "/locations/")):
-            return False
-        if any(token in lowered_path for token in ("/food-and-drink-guides", "/neighbourhoods/", "/day-trips/")):
-            return False
-        if _is_evergreen_weekend_title(lowered_title):
-            return False
-        return _has_gm_token(lowered_title, lowered_path, str(summary or "").lower()) or _has_weekend_date_signal(lowered_title, lowered_path)
-
-    if source.name == "DesignMyNight Manchester":
-        segments = [p for p in path.split("/") if p]
-        if len(segments) < 4:
-            return False
-        if not lowered_path.startswith("/manchester/whats-on/"):
-            return False
-        if any(token in lowered_path for token in ("/things-to-do", "/best-", "/guide-", "/clubs", "/bars", "/restaurants")):
-            return False
-        if _is_evergreen_weekend_title(lowered_title):
-            return False
-        return True
-
-    if source.name == "Resident Advisor Manchester":
-        segments = [p for p in path.split("/") if p]
-        return len(segments) >= 2 and segments[0] == "events" and segments[1].isdigit()
-
-    if source.name == "Fairfield Social Club":
-        segments = [p for p in path.split("/") if p]
-        if len(segments) < 2:
-            return False
-        if any(token in lowered_path for token in ("/info", "/accessibility", "/book-a-table", "/private", "/weddings", "/corporate", "/sign-up")):
-            return False
-        return any(token in lowered_path for token in ("/events", "/whats-on", "/event")) or _has_weekend_date_signal(lowered_title, lowered_path)
-
-    if source.name == "Skiddle Manchester":
-        # Accept individual event pages: /events/REGION/CITY/VENUE/EVENT-NAME/
-        return "/events/" in lowered_path and len([p for p in path.split("/") if p]) >= 4
-
-    if source.name == "Eventbrite Manchester":
-        # Accept individual event ticket pages: /e/event-name-tickets-12345/
-        if _is_obviously_non_gm_weekend_item(lowered_title, lowered_path, str(summary or "")):
-            return False
-        return "/e/" in lowered_path and "tickets-" in lowered_path
-
-    if source.name == "Manchester Markets":
-        # Accept market-specific pages, not homepage
-        return len([p for p in path.split("/") if p]) >= 2 and (
-            any(token in lowered_path for token in ("/market", "/event", "/whats-on"))
-        )
-
-    if source.name == "Time Out Manchester":
-        # Accept specific what's-on pages (3+ path segments), reject evergreen listicles
-        segments = [p for p in path.split("/") if p]
-        if len(segments) < 3:
-            return False
-        if not lowered_path.startswith("/manchester/"):
-            return False
-        if "/travel/" in lowered_path:
-            return False
-        if _is_obviously_non_gm_weekend_item(lowered_title, lowered_path, str(summary or "")):
-            return False
-        # Reject "best X", "top N" evergreen articles
-        if _is_listicle_opening(lowered_title):
-            return False
-        # Reject year-in-review, trend, and "things to do" listicle articles
-        if re.search(r"\b(202[456]|trends?|guide to|things? to do|places? to)\b", lowered_title):
-            return False
-        return _has_weekend_date_signal(lowered_title, lowered_path)
-
-    if source.name == "Manchester Food & Drink Festival":
-        if "/news/" in lowered_path:
-            return False
-        return len([p for p in path.split("/") if p]) >= 2 and (
-            any(token in lowered_path for token in ("/event", "/festival", "/market"))
-        )
-
-    if source.name == "Visit Manchester Markets":
-        if lowered_path.startswith("/things-to-see-and-do/"):
-            return False
-        if _is_evergreen_weekend_title(lowered_title):
-            return False
-        return "/whats-on/" in lowered_path and (
-            "market" in lowered_path or "market" in lowered_title or _has_weekend_date_signal(lowered_title, lowered_path)
-        )
-
-    if source.name in {"Manchester City Events", "Salford Events"}:
-        # Council event pages: require event-specific deep URL (3+ segments)
-        segments = [p for p in path.split("/") if p]
-        if len(segments) < 3:
-            return False
-        # Block known navigation slugs
-        nav_slugs = {
-            "translate-this-page", "emergency-contacts", "social-media-and-email-updates",
-            "freedom-of-information", "modern-slavery-statement", "births-marriages-and-deaths",
-            "business-and-licensing", "environmental-health", "accessibility-statement",
-            "cookie-policy", "privacy-notice", "site-map", "search",
-        }
-        if any(slug in lowered_path for slug in nav_slugs):
-            return False
-        return "/event" in lowered_path or "/whats-on" in lowered_path
-
-    if source.name in {"Stockport Events", "Bolton Events"}:
-        # Only accept event detail pages — must be under /events/
-        # This rejects all nav/topic pages (freedom-of-information, births, etc.)
-        # which don't live under /events/.
-        if "/events/" not in lowered_path:
-            return False
-        segments = [p for p in path.split("/") if p]
-        return len(segments) >= 2
-
-    # ── IT и бизнес — новые источники ────────────────────────────────────
-    if source.name == "BusinessCloud":
-        if any(token in lowered_path for token in ("/tag/", "/category/", "/author/", "/page/")):
-            return False
-        if not len([p for p in path.split("/") if p]) >= 2 or len(lowered_title) < 25:
-            return False
-        return _has_gm_token(lowered_title, str(summary or "").lower())
-
-    if source.name == "Bdaily Manchester":
-        if any(token in lowered_path for token in ("/tag/", "/category/", "/author/", "/page/", "/region/")):
-            return False
-        if "/articles/" not in lowered_path or len(lowered_title) < 25:
-            return False
-        return _has_gm_token(lowered_title, str(summary or "").lower())
-
-    if source.name == "MIDAS Manchester":
-        # Reject sector/navigation pages — only accept dated news articles
-        nav_slugs = {
-            "get-started", "sectors", "why-manchester", "about", "contact",
-            "advanced-materials", "digital-cyber", "financial-professional",
-            "life-sciences", "energy", "sport",
-        }
-        if any(slug in lowered_path for slug in nav_slugs):
-            return False
-        return "/news/" in lowered_path and len([p for p in path.split("/") if p]) >= 3
-
-    if source.name == "Visit Manchester":
-        if _is_evergreen_weekend_title(lowered_title):
-            return False
-        if _is_obviously_non_gm_weekend_item(lowered_title, lowered_path, str(summary or "")):
-            return False
-        return _has_weekend_date_signal(lowered_title, lowered_path)
-
-    return len(lowered_title) >= 18
+    return _evaluate_policy(policy, path, lowered_path, lowered_title, lowered_summary)
