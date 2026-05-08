@@ -1,0 +1,536 @@
+# Greater Manchester Morning Digest — source registry
+# Set enabled = false to disable a source without deleting it.
+# Fields: name, report_category, candidate_category, url, primary_block
+# Optional: source_type (default "html"), fallback_urls, allowed_hosts, enabled (default true)
+
+# ── Media layer ────────────────────────────────────────────────────────────────
+
+[[sources]]
+name = "BBC Manchester"
+report_category = "media_layer"
+candidate_category = "media_layer"
+url = "https://feeds.bbci.co.uk/news/england/manchester/rss.xml"
+primary_block = "last_24h"
+source_type = "rss"
+fallback_urls = ["https://www.bbc.com/news/england/manchester"]
+allowed_hosts = ["bbc.com", "bbc.co.uk", "bbci.co.uk"]
+
+[[sources]]
+name = "MEN"
+report_category = "media_layer"
+candidate_category = "media_layer"
+url = "https://www.manchestereveningnews.co.uk/"
+primary_block = "last_24h"
+allowed_hosts = ["manchestereveningnews.co.uk"]
+
+[[sources]]
+name = "The Mill"
+report_category = "media_layer"
+candidate_category = "media_layer"
+url = "https://manchestermill.co.uk/rss/"
+primary_block = "last_24h"
+source_type = "rss"
+allowed_hosts = ["manchestermill.co.uk"]
+
+[[sources]]
+name = "The Manc"
+report_category = "media_layer"
+candidate_category = "media_layer"
+url = "https://themanc.com/"
+primary_block = "last_24h"
+
+[[sources]]
+name = "Altrincham Today"
+report_category = "media_layer"
+candidate_category = "media_layer"
+url = "https://altrincham.todaynews.co.uk/"
+primary_block = "last_24h"
+allowed_hosts = ["altrincham.todaynews.co.uk"]
+
+[[sources]]
+name = "I Love Manchester"
+report_category = "media_layer"
+candidate_category = "media_layer"
+url = "https://ilovemanchester.com/feed"
+primary_block = "city_watch"
+source_type = "rss"
+allowed_hosts = ["ilovemanchester.com"]
+
+[[sources]]
+name = "Secret Manchester"
+report_category = "media_layer"
+candidate_category = "media_layer"
+url = "https://secretmanchester.com/feed"
+primary_block = "city_watch"
+source_type = "rss"
+allowed_hosts = ["secretmanchester.com"]
+
+# ── GMP / Public safety ────────────────────────────────────────────────────────
+
+[[sources]]
+name = "GMP"
+report_category = "gmp"
+candidate_category = "gmp"
+url = "https://www.gmp.police.uk/news/greater-manchester/news/GetNewsRss/"
+primary_block = "last_24h"
+source_type = "rss"
+fallback_urls = [
+  "https://www.gmp.police.uk/news/greater-manchester/news/",
+  "https://www.gmp.police.uk/news/greater-manchester/news/?newsCategory=News",
+]
+
+[[sources]]
+name = "BBC Manchester public safety fallback"
+report_category = "gmp"
+candidate_category = "gmp"
+url = "https://www.bbc.com/news/england/manchester"
+primary_block = "last_24h"
+
+# ── Transport ──────────────────────────────────────────────────────────────────
+
+[[sources]]
+name = "TfGM"
+report_category = "transport"
+candidate_category = "transport"
+url = "https://tfgm.com/travel-updates/travel-alerts"
+primary_block = "transport"
+
+[[sources]]
+name = "National Rail"
+report_category = "transport"
+candidate_category = "transport"
+url = "https://www.nationalrail.co.uk/status-and-disruptions/"
+primary_block = "transport"
+
+# ── Public services ────────────────────────────────────────────────────────────
+
+[[sources]]
+name = "GMMH"
+report_category = "public_services"
+candidate_category = "public_services"
+url = "https://www.gmmh.nhs.uk/news/"
+primary_block = "today_focus"
+
+[[sources]]
+name = "GMCA"
+report_category = "public_services"
+candidate_category = "public_services"
+url = "https://www.greatermanchester-ca.gov.uk/who-we-are/the-mayor/news/"
+primary_block = "last_24h"
+allowed_hosts = ["greatermanchester-ca.gov.uk"]
+
+# ── Councils ───────────────────────────────────────────────────────────────────
+
+[[sources]]
+name = "Manchester Council"
+report_category = "media_layer"
+candidate_category = "council"
+url = "https://manchester2-search.funnelback.squiz.cloud/s/search.json?collection=manchester~sp-search&profile=news-archive_preview&query=&sort=dmetatimestamp&num_ranks=20&gscope1=news"
+primary_block = "last_24h"
+source_type = "json_funnelback"
+fallback_urls = ["https://www.manchester.gov.uk/news-stories"]
+allowed_hosts = ["manchester.gov.uk"]
+
+[[sources]]
+name = "Salford Council"
+report_category = "media_layer"
+candidate_category = "council"
+url = "https://news.salford.gov.uk/news/"
+primary_block = "last_24h"
+
+[[sources]]
+name = "Trafford Council"
+report_category = "media_layer"
+candidate_category = "council"
+url = "https://www.trafford.gov.uk/news/"
+primary_block = "last_24h"
+allowed_hosts = ["trafford.gov.uk"]
+
+[[sources]]
+name = "Stockport Council"
+report_category = "media_layer"
+candidate_category = "council"
+url = "https://www.stockport.gov.uk/newsroom?page=1&pageSize=60&type=rss&view=Standard"
+primary_block = "last_24h"
+allowed_hosts = ["stockport.gov.uk"]
+
+[[sources]]
+name = "Oldham Council"
+report_category = "media_layer"
+candidate_category = "council"
+url = "https://www.oldham.gov.uk/rss/news"
+primary_block = "last_24h"
+source_type = "rss"
+allowed_hosts = ["oldham.gov.uk"]
+
+[[sources]]
+name = "Rochdale Council"
+report_category = "media_layer"
+candidate_category = "council"
+url = "https://www.rochdale.gov.uk/rss/news"
+primary_block = "last_24h"
+source_type = "rss"
+allowed_hosts = ["rochdale.gov.uk"]
+
+[[sources]]
+name = "Bolton Council"
+report_category = "media_layer"
+candidate_category = "council"
+url = "https://www.bolton.gov.uk/rss/news"
+primary_block = "last_24h"
+source_type = "rss"
+allowed_hosts = ["bolton.gov.uk"]
+
+[[sources]]
+name = "Tameside Council"
+report_category = "media_layer"
+candidate_category = "council"
+url = "https://www.tameside.gov.uk/newsroom"
+primary_block = "last_24h"
+allowed_hosts = ["tameside.gov.uk"]
+
+[[sources]]
+name = "Bury Council"
+report_category = "media_layer"
+candidate_category = "council"
+url = "https://www.mynewsdesk.com/uk/rss/current_news/49585"
+primary_block = "last_24h"
+source_type = "rss"
+allowed_hosts = ["mynewsdesk.com"]
+
+[[sources]]
+name = "Wigan Council"
+report_category = "media_layer"
+candidate_category = "council"
+url = "https://www.wigan.gov.uk/News/News.aspx"
+primary_block = "last_24h"
+allowed_hosts = ["wigan.gov.uk"]
+
+# ── Culture / Events ───────────────────────────────────────────────────────────
+
+[[sources]]
+name = "HOME"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://homemcr.org/whats-on/"
+primary_block = "next_7_days"
+
+[[sources]]
+name = "Whitworth"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.whitworth.manchester.ac.uk/whats-on/events/"
+primary_block = "next_7_days"
+
+[[sources]]
+name = "Factory International"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://factoryinternational.org/whats-on/"
+primary_block = "next_7_days"
+
+[[sources]]
+name = "The Lowry"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://thelowry.com/whats-on"
+primary_block = "next_7_days"
+
+[[sources]]
+name = "Palace Theatre"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.atgtickets.com/venues/palace-theatre-manchester/whats-on/"
+primary_block = "next_7_days"
+allowed_hosts = ["atgtickets.com"]
+
+[[sources]]
+name = "Contact Theatre"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://contactmcr.com/whats-on/"
+primary_block = "next_7_days"
+allowed_hosts = ["contactmcr.com"]
+
+[[sources]]
+name = "People's History Museum"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://phm.org.uk/whats-on/"
+primary_block = "next_7_days"
+allowed_hosts = ["phm.org.uk"]
+
+[[sources]]
+name = "John Rylands Library"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.library.manchester.ac.uk/rylands/visit/events/"
+primary_block = "next_7_days"
+allowed_hosts = ["library.manchester.ac.uk"]
+
+[[sources]]
+name = "Visit Manchester"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.visitmanchester.com/whats-on"
+primary_block = "next_7_days"
+allowed_hosts = ["visitmanchester.com"]
+
+# ── Venues / Tickets ───────────────────────────────────────────────────────────
+
+[[sources]]
+name = "Co-op Live"
+report_category = "venues_tickets"
+candidate_category = "venues_tickets"
+url = "https://www.cooplive.com/events"
+primary_block = "ticket_radar"
+
+[[sources]]
+name = "AO Arena"
+report_category = "venues_tickets"
+candidate_category = "venues_tickets"
+url = "https://www.ao-arena.com/events"
+primary_block = "next_7_days"
+
+# ── Food / Openings ────────────────────────────────────────────────────────────
+
+[[sources]]
+name = "Manchester's Finest"
+report_category = "food_openings"
+candidate_category = "food_openings"
+url = "https://www.manchestersfinest.com/category/eating-and-drinking/"
+primary_block = "openings"
+allowed_hosts = ["manchestersfinest.com"]
+
+[[sources]]
+name = "Confidentials"
+report_category = "food_openings"
+candidate_category = "food_openings"
+url = "https://confidentials.com/manchester/food-drink/drink/new-openings"
+primary_block = "openings"
+allowed_hosts = ["confidentials.com"]
+
+[[sources]]
+name = "About Manchester Food & Drink"
+report_category = "food_openings"
+candidate_category = "food_openings"
+url = "https://aboutmanchester.co.uk/category/food-drink/openings/"
+primary_block = "openings"
+allowed_hosts = ["aboutmanchester.co.uk"]
+
+[[sources]]
+name = "The Manc Eats"
+report_category = "food_openings"
+candidate_category = "food_openings"
+url = "https://themanc.com/eats/"
+primary_block = "openings"
+allowed_hosts = ["themanc.com"]
+
+# ── Tech / Business ────────────────────────────────────────────────────────────
+
+[[sources]]
+name = "Manchester Digital"
+report_category = "tech_business"
+candidate_category = "tech_business"
+url = "https://www.manchesterdigital.com/"
+primary_block = "tech_business"
+allowed_hosts = ["manchesterdigital.com"]
+
+[[sources]]
+name = "Prolific North"
+report_category = "tech_business"
+candidate_category = "tech_business"
+url = "https://www.prolificnorth.co.uk/news/?feed=rss2"
+primary_block = "tech_business"
+source_type = "rss"
+allowed_hosts = ["prolificnorth.co.uk"]
+
+[[sources]]
+name = "BusinessCloud"
+report_category = "tech_business"
+candidate_category = "tech_business"
+url = "https://businesscloud.co.uk/feed/"
+primary_block = "tech_business"
+source_type = "rss"
+allowed_hosts = ["businesscloud.co.uk"]
+
+[[sources]]
+name = "Bdaily Manchester"
+report_category = "tech_business"
+candidate_category = "tech_business"
+url = "https://bdaily.co.uk/feed/region/manchester"
+primary_block = "tech_business"
+source_type = "rss"
+allowed_hosts = ["bdaily.co.uk"]
+
+[[sources]]
+name = "MIDAS Manchester"
+report_category = "tech_business"
+candidate_category = "tech_business"
+url = "https://www.investinmanchester.com/news/"
+primary_block = "tech_business"
+allowed_hosts = ["investinmanchester.com"]
+
+[[sources]]
+name = "University of Salford"
+report_category = "tech_business"
+candidate_category = "tech_business"
+url = "https://www.salford.ac.uk/news"
+primary_block = "tech_business"
+allowed_hosts = ["salford.ac.uk"]
+
+[[sources]]
+name = "University of Manchester"
+report_category = "tech_business"
+candidate_category = "tech_business"
+url = "https://www.manchester.ac.uk/about/news/"
+primary_block = "tech_business"
+allowed_hosts = ["manchester.ac.uk"]
+
+[[sources]]
+name = "Manchester Metropolitan"
+report_category = "tech_business"
+candidate_category = "tech_business"
+url = "https://www.mmu.ac.uk/news-and-events"
+primary_block = "tech_business"
+allowed_hosts = ["mmu.ac.uk"]
+
+# ── Weekend activities ─────────────────────────────────────────────────────────
+
+[[sources]]
+name = "Manchester Wire"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://manchesterwire.co.uk/"
+primary_block = "weekend_activities"
+allowed_hosts = ["manchesterwire.co.uk"]
+
+[[sources]]
+name = "Creative Tourist Manchester"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.creativetourist.com/whats-on/"
+primary_block = "weekend_activities"
+allowed_hosts = ["creativetourist.com"]
+
+[[sources]]
+name = "DesignMyNight Manchester"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.designmynight.com/manchester/whats-on/things-to-do-this-weekend-in-manchester"
+primary_block = "weekend_activities"
+allowed_hosts = ["designmynight.com"]
+
+# Resident Advisor returns HTTP 403 to direct fetches — re-enable only with a browser/API path
+[[sources]]
+name = "Resident Advisor Manchester"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://ra.co/events/uk/manchester"
+primary_block = "weekend_activities"
+allowed_hosts = ["ra.co"]
+enabled = false
+
+[[sources]]
+name = "Fairfield Social Club"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://fscmcr.co.uk/"
+primary_block = "weekend_activities"
+allowed_hosts = ["fscmcr.co.uk"]
+
+[[sources]]
+name = "Eventbrite Manchester"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.eventbrite.co.uk/d/united-kingdom--manchester/"
+primary_block = "weekend_activities"
+allowed_hosts = ["eventbrite.co.uk", "eventbrite.com"]
+
+[[sources]]
+name = "Manchester Markets"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.manchestermarkets.com/"
+primary_block = "weekend_activities"
+allowed_hosts = ["manchestermarkets.com"]
+
+[[sources]]
+name = "Skiddle Manchester"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.skiddle.com/whats-on/Manchester/"
+primary_block = "weekend_activities"
+allowed_hosts = ["skiddle.com"]
+
+[[sources]]
+name = "Visit Manchester Markets"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.visitmanchester.com/whats-on/markets"
+primary_block = "weekend_activities"
+allowed_hosts = ["visitmanchester.com"]
+
+[[sources]]
+name = "Time Out Manchester"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.timeout.com/manchester/things-to-do"
+primary_block = "weekend_activities"
+allowed_hosts = ["timeout.com"]
+
+[[sources]]
+name = "Manchester Food & Drink Festival"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.foodanddrinkfestival.com/"
+primary_block = "weekend_activities"
+allowed_hosts = ["foodanddrinkfestival.com"]
+
+[[sources]]
+name = "Manchester City Events"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.manchester.gov.uk/events"
+primary_block = "weekend_activities"
+allowed_hosts = ["manchester.gov.uk"]
+
+[[sources]]
+name = "Salford Events"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.salford.gov.uk/leisure-and-culture/events/"
+primary_block = "weekend_activities"
+allowed_hosts = ["salford.gov.uk"]
+
+[[sources]]
+name = "Stockport Events"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.stockport.gov.uk/events"
+primary_block = "weekend_activities"
+allowed_hosts = ["stockport.gov.uk"]
+
+[[sources]]
+name = "Bolton Events"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.bolton.gov.uk/events"
+primary_block = "weekend_activities"
+allowed_hosts = ["bolton.gov.uk"]
+
+# ── Football ───────────────────────────────────────────────────────────────────
+
+[[sources]]
+name = "Manchester United"
+report_category = "football"
+candidate_category = "football"
+url = "https://www.manutd.com/en/news"
+primary_block = "football"
+
+[[sources]]
+name = "Manchester City"
+report_category = "football"
+candidate_category = "football"
+url = "https://www.mancity.com/news"
+primary_block = "football"
