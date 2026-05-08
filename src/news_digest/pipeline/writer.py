@@ -93,6 +93,26 @@ def _attach_source_anchor(line: str, source_url: str, source_label: str) -> str:
     return f"{text} {_source_anchor(source_url, source_label)}".strip()
 
 
+_SUMMER_MONTHS = frozenset({6, 7, 8})
+_HEAVY_SNOW_PATTERN = re.compile(
+    r"\b(?:heavy\s+snow|blizzard|snowstorm|snowfall|снегопад|метель|снежная\s+буря)\b",
+    re.IGNORECASE,
+)
+_EXTREME_TEMP_PATTERN = re.compile(r"\b([1-9]\d)\s*°[Cc]\b")
+
+
+def _sanity_flags(candidate: dict, line: str) -> list[str]:
+    flags: list[str] = []
+    month = now_london().month
+    if month in _SUMMER_MONTHS and _HEAVY_SNOW_PATTERN.search(line):
+        flags.append("Seasonal impossibility: heavy snow in summer month.")
+    for m in _EXTREME_TEMP_PATTERN.finditer(line):
+        temp = int(m.group(1))
+        if temp > 38 or temp < 0 and month in _SUMMER_MONTHS:
+            flags.append(f"Implausible Manchester temperature: {m.group()}.")
+    return flags
+
+
 def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     text = str(line or "").strip()
     errors: list[str] = []
@@ -111,6 +131,7 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     category = str(candidate.get("category") or "").strip()
     if category in REQUIRE_DRAFT_LINE_CATEGORIES and len(re.findall(r"[.!?]", text)) < 1:
         errors.append("draft_line must contain at least one complete sentence.")
+    errors.extend(_sanity_flags(candidate, text))
     return errors
 
 

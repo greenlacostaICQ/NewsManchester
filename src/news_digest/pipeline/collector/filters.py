@@ -580,10 +580,7 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
     if source.name == "Prolific North":
         if "/news/" not in lowered_path:
             return False
-        return _has_gm_token(lowered_title, lowered_path, str(summary or "").lower()) or any(
-            token in lowered_title
-            for token in ("manchester", "northern", "agency", "digital", "media", "tech")
-        )
+        return _has_gm_token(lowered_title, str(summary or "").lower())
     if source.name == "The Manc":
         if not any(token in lowered_path for token in ["/news", "/2026/", "/whats-on", "/events"]):
             return False
@@ -760,16 +757,18 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
 
     # ── IT и бизнес — новые источники ────────────────────────────────────
     if source.name == "BusinessCloud":
-        # RSS feed — accept article paths, reject tag/category/author pages
         if any(token in lowered_path for token in ("/tag/", "/category/", "/author/", "/page/")):
             return False
-        return len([p for p in path.split("/") if p]) >= 2 and len(lowered_title) >= 25
+        if not len([p for p in path.split("/") if p]) >= 2 or len(lowered_title) < 25:
+            return False
+        return _has_gm_token(lowered_title, str(summary or "").lower())
 
     if source.name == "Bdaily Manchester":
-        # RSS — accept article paths only
         if any(token in lowered_path for token in ("/tag/", "/category/", "/author/", "/page/", "/region/")):
             return False
-        return "/articles/" in lowered_path and len(lowered_title) >= 25
+        if "/articles/" not in lowered_path or len(lowered_title) < 25:
+            return False
+        return _has_gm_token(lowered_title, str(summary or "").lower())
 
     if source.name == "MIDAS Manchester":
         # Reject sector/navigation pages — only accept dated news articles
