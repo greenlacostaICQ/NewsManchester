@@ -22,7 +22,7 @@ from .weather import _extract_met_office_weather
 def _weather_candidate() -> dict:
     current = now_london()
     weather_url = "https://weather.metoffice.gov.uk/forecast/gcw2hzs1u"
-    draft_line = "• Погода: live-прогноз не получен; перед выходом проверьте обновление Met Office. Met Office"
+    draft_line = "• Погода: данные Met Office временно недоступны. Met Office"
     source_url = "https://weather.metoffice.gov.uk/forecast/gcw2hzs1u"
     source_label = "Met Office"
     try:
@@ -49,7 +49,7 @@ def _weather_candidate() -> dict:
             rain_probability = round(float(daily.get("precipitation_probability_max", [0])[0]))
             draft_line = (
                 f"• Погода: {min_temp}-{max_temp}°C, вероятность осадков до {rain_probability}%. "
-                "Проверить обновлённый прогноз перед выходом. Open-Meteo"
+                "Open-Meteo"
             )
             source_url = fallback_url
             source_label = "Open-Meteo"
@@ -68,7 +68,7 @@ def _weather_candidate() -> dict:
         "carry_over_label": "",
         "reason": "Pipeline weather stage placeholder; should be replaced by live weather collector.",
         "matched_previous_fingerprint": "",
-        "practical_angle": "Проверить обновлённый прогноз перед выходом.",
+        "practical_angle": "Актуальный прогноз — на сайте Met Office.",
         "lead": "",
         "event_page_type": "unknown",
         "published_at": current.isoformat(),
@@ -100,16 +100,15 @@ def _transport_fallback_candidates(report: dict) -> list[dict]:
         "carry_over_label": "",
         "reason": "Transport fallback created because live scan found no publishable transport candidate.",
         "matched_previous_fingerprint": "",
-        "practical_angle": "Если едете по точному маршруту, всё равно перепроверьте live alerts перед выходом.",
-        "lead": "На утренней проверке крупных подтверждённых сетевых сбоев по Greater Manchester не видно.",
+        "practical_angle": "Актуальный статус сети — на сайте TfGM.",
+        "lead": "Крупных подтверждённых сетевых сбоев по Greater Manchester не зафиксировано.",
         "event_page_type": "unknown",
         "published_at": now_london().isoformat(),
         "published_date_london": today_london(),
         "freshness_status": "not_applicable",
         "source_health": "dated",
         "draft_line": (
-            "• На утренней проверке крупных подтверждённых сетевых сбоев по Greater Manchester не видно. "
-            "Если едете по точному маршруту, всё равно перепроверьте live alerts перед выходом. TfGM"
+            "• Крупных подтверждённых сетевых сбоев по Greater Manchester не зафиксировано. TfGM"
         ),
     }
     candidate["fingerprint"] = fingerprint_for_candidate(candidate)

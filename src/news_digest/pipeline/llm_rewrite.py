@@ -37,62 +37,79 @@ GEMINI_MODEL = "gemini-2.0-flash"
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile"
 
-SYSTEM_PROMPT = """Ты редактор новостного дайджеста «Greater Manchester AM Brief».
+_PROMPT_FOOTER = (
+    '\nВерни ТОЛЬКО JSON-массив: [{"fingerprint": "...", "draft_line": "• ..."}]\n'
+    "Никакого markdown, никаких пояснений — только JSON."
+)
 
-Для каждого кандидата напиши draft_line — 2-3 предложения на русском с достаточным контекстом чтобы читатель понял суть без перехода по ссылке.
+PROMPT_TRANSPORT = (
+    "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line для транспортных сбоев.\n\n"
+    "ФОРМАТ: «• », Telegram HTML, без ссылок, максимум 160 символов, весь текст на русском кроме названий линий.\n\n"
+    "ПРАВИЛО: оператор (Northern/Metrolink/TfGM) + что именно + когда заканчивается.\n"
+    "«• У Northern до конца четверга отменены поздние рейсы через Manchester Piccadilly.»\n"
+    "Без «проверьте заранее», без «следите за обновлениями»."
+    + _PROMPT_FOOTER
+)
 
-ФОРМАТ:
-- Начинай ВСЕГДА с «• »
-- Telegram HTML: <b>текст</b> — НЕ Markdown
-- Без ссылок <a href=...> — pipeline добавит сам
-- Максимум 280 символов на весь draft_line
-- Весь текст на русском, кроме имён собственных и названий мест
+PROMPT_CITY_NEWS = (
+    "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line для городских новостей GM.\n\n"
+    "ФОРМАТ: «• », Telegram HTML, без ссылок, максимум 280 символов.\n\n"
+    "ПРАВИЛО: первое предложение — ТОЛЬКО факт: кто (имя/возраст/должность), что, где конкретно (район/улица).\n"
+    "Второе предложение — только если добавляет существенный контекст: сумма, число пострадавших, причина.\n\n"
+    "ПОЛИЦИЯ/СУДЫ: «• Bolton: 34-летний мужчина задержан после погони, пострадавшая девушка в больнице.»\n"
+    "СОВЕТ: что меняется для жителей, с какой даты.\n"
+    "NHS/СЛУЖБЫ: конкретный факт без PR-языка. «важный шаг», «значимая инициатива» — запрещено.\n\n"
+    "ЗАПРЕЩЕНО: «туристическая достопримечательность», «местный житель», «одна из организаций», «появилось обновление», "
+    "«заранее проверьте», «важный сигнал», «заметный кейс»."
+    + _PROMPT_FOOTER
+)
 
-СОДЕРЖАНИЕ:
-- Первое предложение: ТОЛЬКО факт — что произошло, кто конкретно, где конкретно. Без оценок.
-- Называй КОНКРЕТНЫЕ имена и места из summary/title: не «туристическая достопримечательность», а её название; не «местный житель», а возраст/должность; не «агентство», а его название.
-- Второе предложение — ТОЛЬКО если добавляет существенный контекст которого нет в первом: число жертв, сумма, причина, хронология. Если первое предложение уже полное — не добавляй второе.
-- Третье предложение — ТОЛЬКО если есть конкретное практическое следствие для жителя: маршрут закрыт, участок работает до X, цены вырастут. Не добавляй если очевидно.
-- Для событий и билетов: обязательно укажи дату, место и о чём оно — коротко своими словами если название непонятное.
-- Для полиции: кто (возраст/должность), что именно, где.
-- Для IT/бизнес: только запуск, инвестиция, открытие или закрытие. Сумма если есть.
-- Для футбола: счёт матча или сумма трансфера — одна строка с деталью.
-- Погода: температура + главное явление. Без советов.
+PROMPT_EVENTS = (
+    "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line для событий и культуры GM.\n\n"
+    "ФОРМАТ: «• », Telegram HTML, без ссылок, максимум 280 символов.\n\n"
+    "ОБЯЗАТЕЛЬНО: дата + площадка + одно предложение своими словами о чём событие.\n"
+    "«• В HOME 10–14 мая — танцевальный спектакль Akram Khan о миграции, билеты от £15.»\n"
+    "«• В Dunham Massey 10 мая — May Day фестиваль с выбором Королевы роз, вход свободный.»\n\n"
+    "ЗАПРЕЩЕНО: «не пропустите», «обязательно посетите», «захватывающий», «уникальный», даты без конкретного места."
+    + _PROMPT_FOOTER
+)
 
-СТРОГО ЗАПРЕЩЕНО:
-«заранее проверьте», «держите в планах», «уточните заранее», «сверьте»,
-«важный сигнал», «заметный кейс», «это не X, а Y», «слот подтверждён»,
-«если вам подходит», «если голосуете», «если следите», «если собираетесь»,
-любые объяснения почему новость включена в дайджест,
-расплывчатые фразы: «туристическая достопримечательность», «местный житель», «одна из организаций», «появилось обновление»,
-бытовые английские слова вместо русских: «forecast»→«прогноз», «pop-up»→«временный магазин», «highlights»→«лучшие моменты».
-IT-термины, названия мест и брендов оставляй по-английски: Digital, AI, CEO, startup, Manchester United.
+PROMPT_BUSINESS = (
+    "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line для бизнеса и открытий GM.\n\n"
+    "ФОРМАТ: «• », Telegram HTML, без ссылок, максимум 280 символов.\n\n"
+    "IT/БИЗНЕС: инвестиция с суммой £, открытие/закрытие компании с GM-локацией. Кадровые назначения — пропусти (верни \"\").\n"
+    "«• Salford-стартап Heliex получил £3.2 млн на расширение в Азию.»\n\n"
+    "ЕДА/ОТКРЫТИЯ: название + тип заведения + район GM + дата открытия.\n"
+    "«• На Northern Quarter открывается корейский ресторан Seoulful — с 12 мая.»\n\n"
+    "ЗАПРЕЩЕНО: профили людей без цифр, PR-события без конкретных данных, компании без GM-адреса."
+    + _PROMPT_FOOTER
+)
 
-СПЕЦИАЛЬНЫЕ ПРАВИЛА:
-- Суд/полиция: обязательно назови кто (должность/возраст) и что конкретно произошло.
-- Погода: только температура + главное явление дня. Без советов («лучше взять зонт» — запрещено).
-- Футбол: только мужские команды (Man Utd, Man City). Только результат матча или факт трансфера с деталью (счёт, сумма, откуда).
-  Пресс-конференции, подкасты, фотосессии, составы, женские команды — пропусти (верни пустой draft_line «»).
-- IT/бизнес: только инвестиции, открытия, закрытия компаний. Кадровые назначения и профили людей — пропусти.
-- События: дата + место + одно предложение о чём это, своими словами.
+PROMPT_FOOTBALL = (
+    "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line только для Man Utd и Man City.\n\n"
+    "ФОРМАТ: «• », Telegram HTML, без ссылок, максимум 160 символов.\n\n"
+    "ПРИНИМАЙ — верни заполненный draft_line:\n"
+    "• Результат матча со счётом: «• Man City 2–1 Arsenal: гол де Брёйне на 87-й.»\n"
+    "• Трансфер с суммой и клубом: «• Man Utd подписал Кассерру из Sporting за £38 млн.»\n"
+    "• Официальный предматчевый анонс с соперником и датой.\n\n"
+    "ПРОПУСКАЙ — верни draft_line \"\": пресс-конференции, подкасты, донации, награды, Under-18/Under-21, "
+    "женские команды, matchday programme, фото-галереи, Community события."
+    + _PROMPT_FOOTER
+)
 
-ПРИМЕРЫ правильно:
-• В Bolton полиция задержала 17-летнего водителя после погони, пострадавшая девушка в больнице.
-• У Northern до конца четверга изменены поздневечерние рейсы через Manchester Piccadilly.
-• В HOME с 7 по 14 мая — фильм «The North» о пешем походе по Шотландии.
-• 9–16°C, сильный дождь после обеда.
-• Manchester United подписал полузащитника из Atletico Madrid за £45 млн.
-• Asterix Health получила £2.1 млн на цифровой сервис первичной медпомощи.
-• В Dunham Massey 10 мая — традиционный фестиваль May Day с выбором «Королевы роз».
-
-ПРИМЕРЫ неправильно (запрещено):
-• Туристическая достопримечательность в Greater Manchester пострадала от вандализма. ← нет конкретики
-• Появилось новое судебное обновление. ← пустая строка
-• Суд по делу об убийстве продолжается. ← что за дело, кто?
-• С 2026 года проходит неделя осведомлённости. ← непонятно когда именно
-
-Верни ТОЛЬКО JSON-массив: [{"fingerprint": "...", "draft_line": "• ..."}]
-Никакого markdown, никаких пояснений — только JSON."""
+_CATEGORY_TO_PROMPT: dict[str, str] = {
+    "transport": PROMPT_TRANSPORT,
+    "gmp": PROMPT_CITY_NEWS,
+    "media_layer": PROMPT_CITY_NEWS,
+    "council": PROMPT_CITY_NEWS,
+    "public_services": PROMPT_CITY_NEWS,
+    "city_news": PROMPT_CITY_NEWS,
+    "culture_weekly": PROMPT_EVENTS,
+    "venues_tickets": PROMPT_EVENTS,
+    "food_openings": PROMPT_BUSINESS,
+    "tech_business": PROMPT_BUSINESS,
+    "football": PROMPT_FOOTBALL,
+}
 
 
 BATCH_SIZE = 20      # default — used for OpenAI and Gemini
@@ -227,14 +244,49 @@ def _call_provider_batch(
 _call_provider = _call_provider_batch
 
 
+def _call_with_fallback(
+    candidates: list[dict],
+    prompt: str,
+    provider_override: str,
+    base_url_override: str,
+    model_override: str,
+    label_suffix: str = "",
+) -> dict[str, str]:
+    """Call provider chain with a specific prompt, return fingerprint→draft_line."""
+    if not candidates:
+        return {}
+    if provider_override == "none":
+        return {}
+    if provider_override and base_url_override and model_override:
+        return _call_provider_batch(
+            base_url_override, os.environ.get("LLM_API_KEY", ""),
+            model_override, candidates, provider_override + label_suffix,
+            system_prompt=prompt,
+        )
+    mapping = _call_provider_batch(
+        OPENAI_BASE_URL, os.environ.get("OPENAI_API_KEY", ""), OPENAI_MODEL,
+        candidates, f"OpenAI{label_suffix}", system_prompt=prompt,
+    )
+    missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
+    if missing:
+        time.sleep(1)
+        mapping.update(_call_provider_batch(
+            GEMINI_BASE_URL, os.environ.get("GEMINI_API_KEY", ""), GEMINI_MODEL,
+            missing, f"Gemini{label_suffix}", system_prompt=prompt,
+        ))
+    missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
+    if missing:
+        time.sleep(1)
+        mapping.update(_call_provider_batch(
+            GROQ_BASE_URL, os.environ.get("GROQ_API_KEY", ""), GROQ_FALLBACK_MODEL,
+            missing, f"Groq{label_suffix}", batch_size=GROQ_BATCH_SIZE, system_prompt=prompt,
+        ))
+    return mapping
+
+
 def run_llm_rewrite(project_root: Path) -> None:
-    """Read candidates.json, fill Russian draft_lines for included candidates.
-
-    Falls through silently if no API keys are set or both providers fail —
-    writer.py rule-based fallback is the final safety net.
-    """
+    """Read candidates.json, fill Russian draft_lines for included candidates."""
     candidates_path = project_root / "data" / "state" / "candidates.json"
-
     if not candidates_path.exists():
         logger.warning("candidates.json not found, skipping LLM rewrite.")
         return
@@ -243,13 +295,11 @@ def run_llm_rewrite(project_root: Path) -> None:
     candidates = payload.get("candidates", [])
 
     to_rewrite = [
-        c
-        for c in candidates
+        c for c in candidates
         if isinstance(c, dict)
         and c.get("include")
         and not str(c.get("draft_line") or "").strip()
     ]
-
     if not to_rewrite:
         logger.info("LLM rewrite: all included candidates already have draft_lines.")
         return
@@ -260,65 +310,20 @@ def run_llm_rewrite(project_root: Path) -> None:
     model_override = os.environ.get("LLM_MODEL", "").strip()
     base_url_override = os.environ.get("LLM_BASE_URL", "").strip()
 
-    mapping: dict[str, str] = {}
-
     if provider_override == "none":
-        logger.info("LLM_PROVIDER=none — rule-based fallback will handle.")
-    elif provider_override and base_url_override and model_override:
-        api_key = os.environ.get("LLM_API_KEY", "")
-        mapping = _call_provider(
-            base_url_override, api_key, model_override, to_rewrite, provider_override
-        )
-    else:
-        # Primary: OpenAI gpt-4o-mini (paid, reliable, cheapest OpenAI model)
-        mapping = _call_provider(
-            OPENAI_BASE_URL,
-            os.environ.get("OPENAI_API_KEY", ""),
-            OPENAI_MODEL,
-            to_rewrite,
-            "OpenAI",
-        )
-        # Fallback 1: Gemini 2.0 Flash (free tier)
-        missing = [
-            c
-            for c in to_rewrite
-            if str(c.get("fingerprint") or "") not in mapping
-        ]
-        if missing:
-            logger.info("Gemini fallback: %d candidates still without draft_line.", len(missing))
-            time.sleep(1)
-            gemini_map = _call_provider(
-                GEMINI_BASE_URL,
-                os.environ.get("GEMINI_API_KEY", ""),
-                GEMINI_MODEL,
-                missing,
-                "Gemini",
-            )
-            mapping.update(gemini_map)
-        # Fallback 2: Groq Llama (emergency, free tier)
-        missing = [
-            c
-            for c in to_rewrite
-            if str(c.get("fingerprint") or "") not in mapping
-        ]
-        if missing:
-            logger.info("Groq-Llama fallback: %d candidates still without draft_line.", len(missing))
-            time.sleep(1)
-            llama_map = _call_provider(
-                GROQ_BASE_URL,
-                os.environ.get("GROQ_API_KEY", ""),
-                GROQ_FALLBACK_MODEL,
-                missing,
-                "Groq-Llama",
-                batch_size=GROQ_BATCH_SIZE,
-            )
-            mapping.update(llama_map)
-
-    if not mapping:
-        logger.info(
-            "LLM rewrite: no draft_lines written — rule-based fallback will handle."
-        )
+        logger.info("LLM_PROVIDER=none — skipping rewrite.")
         return
+
+    # Group by prompt type and call each group separately
+    groups: dict[str, list[dict]] = {}
+    for c in to_rewrite:
+        prompt = _CATEGORY_TO_PROMPT.get(str(c.get("category") or ""), PROMPT_CITY_NEWS)
+        groups.setdefault(prompt, []).append(c)
+
+    mapping: dict[str, str] = {}
+    for prompt, group in groups.items():
+        logger.info("LLM rewrite: calling group of %d candidates.", len(group))
+        mapping.update(_call_with_fallback(group, prompt, provider_override, base_url_override, model_override))
 
     applied = 0
     for candidate in candidates:
@@ -327,51 +332,21 @@ def run_llm_rewrite(project_root: Path) -> None:
             candidate["draft_line"] = mapping[fp]
             applied += 1
 
-    payload["candidates"] = candidates
-    candidates_path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     logger.info("LLM rewrite: applied %d draft_lines.", applied)
 
-    # Fix pass: re-translate draft_lines that are still mostly English
+    # Fix pass: re-translate draft_lines still mostly in English
     to_fix = [
         c for c in candidates
-        if isinstance(c, dict)
-        and c.get("include")
+        if isinstance(c, dict) and c.get("include")
         and _needs_translation_fix(str(c.get("draft_line") or ""))
     ]
     if not to_fix:
         return
 
-    logger.info("LLM fix pass: %d draft_lines are English-dominant, re-translating.", len(to_fix))
-
-    fix_candidates = [
-        {"fingerprint": c.get("fingerprint", ""), "draft_line": c.get("draft_line", "")}
-        for c in to_fix
-    ]
-
-    if provider_override == "none":
-        logger.info("LLM_PROVIDER=none — skipping fix pass.")
-        return
-
-    fix_mapping: dict[str, str] = {}
-    if provider_override and base_url_override and model_override:
-        api_key = os.environ.get("LLM_API_KEY", "")
-        fix_mapping = _call_provider_batch(
-            base_url_override, api_key, model_override, fix_candidates,
-            provider_override, system_prompt=FIX_TRANSLATE_SYSTEM,
-        )
-    else:
-        fix_mapping = _call_provider_batch(
-            OPENAI_BASE_URL, os.environ.get("OPENAI_API_KEY", ""), OPENAI_MODEL,
-            fix_candidates, "OpenAI-fix", system_prompt=FIX_TRANSLATE_SYSTEM,
-        )
-        still_missing = [c for c in fix_candidates if c["fingerprint"] not in fix_mapping]
-        if still_missing:
-            fix_mapping.update(_call_provider_batch(
-                GEMINI_BASE_URL, os.environ.get("GEMINI_API_KEY", ""), GEMINI_MODEL,
-                still_missing, "Gemini-fix", system_prompt=FIX_TRANSLATE_SYSTEM,
-            ))
+    logger.info("LLM fix pass: %d English-dominant draft_lines, re-translating.", len(to_fix))
+    fix_candidates = [{"fingerprint": c.get("fingerprint", ""), "draft_line": c.get("draft_line", "")} for c in to_fix]
+    fix_mapping = _call_with_fallback(fix_candidates, FIX_TRANSLATE_SYSTEM, provider_override, base_url_override, model_override, label_suffix="-fix")
 
     fixed = 0
     for candidate in candidates:
@@ -381,7 +356,5 @@ def run_llm_rewrite(project_root: Path) -> None:
             fixed += 1
 
     if fixed:
-        candidates_path.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         logger.info("LLM fix pass: fixed %d English draft_lines.", fixed)
