@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 # Primary: Qwen3-32B — best Russian quality, 100+ languages, reliable Groq infra
-GROQ_PRIMARY_MODEL = "qwen3-32b"
+GROQ_PRIMARY_MODEL = "qwen/qwen3-32b"
 # Fallback: Llama 3.3 70B — proven fallback on same Groq infra
 GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile"
 
