@@ -90,7 +90,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         decision = str(candidate.get("dedupe_decision") or "").strip()
         category = str(candidate.get("category") or "").strip()
         primary_block = str(candidate.get("primary_block") or "").strip()
-        operational_repeat_ok = primary_block in {"weather", "transport", "short_actions", "today_focus"}
+        operational_repeat_ok = primary_block in {"weather", "transport"}
         same_day_repeat_ok = (
             previous is not None
             and str(previous.get("last_published_day_london") or "").strip() == today_london()
