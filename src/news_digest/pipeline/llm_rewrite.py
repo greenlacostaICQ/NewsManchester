@@ -28,7 +28,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
-GEMINI_MODEL = "gemini-2.5-flash-preview-05-20"
+GEMINI_MODEL = "gemini-2.0-flash"
 
 CEREBRAS_BASE_URL = "https://api.cerebras.ai/v1"
 # qwen-3-235b-a22b-instruct-2507 works until 2026-05-27; update before then.
