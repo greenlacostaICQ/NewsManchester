@@ -35,12 +35,9 @@ def ensure_history_files(state_dir: Path) -> dict[str, Path]:
 def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[str, Path]:
     """Idempotently merge candidates into published_facts.json.
 
-    Called from two places:
-      1. After build-digest gate passes (the moment the pipeline commits
-         to today's content), so tomorrow's dedupe sees today's items
-         even if the actual Telegram send fails or is delayed.
-      2. After successful Telegram send, as a safety net for older code
-         paths that bypass the gate.
+    Called only after successful Telegram delivery. Gate-pass alone is
+    not enough: if sending fails, tomorrow's dedupe must not treat the
+    unsent draft as already published.
 
     Merge is idempotent on candidate fingerprint: re-running on the same
     day refreshes last_published_day_london and preserves
@@ -94,11 +91,7 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
 
 
 def record_delivery_artifacts(project_root: Path, source_path: Path, candidates: list[dict]) -> dict[str, Path]:
-    """Update last_sent_digest.html on actual Telegram send.
-
-    Calls update_published_facts as a belt-and-braces safety net. The
-    primary write path is now release.build_release at gate-pass time.
-    """
+    """Update last_sent_digest.html and published facts after actual Telegram send."""
 
     state_dir = project_root / "data" / "state"
     paths = ensure_history_files(state_dir)
@@ -106,5 +99,6 @@ def record_delivery_artifacts(project_root: Path, source_path: Path, candidates:
     if source_path.exists():
         shutil.copyfile(source_path, paths["last_sent_digest"])
 
-    update_published_facts(project_root, candidates)
+    if candidates:
+        update_published_facts(project_root, candidates)
     return paths

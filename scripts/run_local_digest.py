@@ -185,6 +185,40 @@ def cmd_send_demo() -> int:
     return 0
 
 
+def _rendered_candidates_for_delivery() -> list[dict]:
+    state_dir = PROJECT_ROOT / "data" / "state"
+    writer_report = read_json(state_dir / "writer_report.json", {})
+    rendered_fingerprints = {
+        str(item).strip()
+        for item in writer_report.get("rendered_candidate_fingerprints", [])
+        if str(item).strip()
+    }
+    if not rendered_fingerprints:
+        print(
+            "Warning: writer_report has no rendered_candidate_fingerprints; "
+            "published_facts.json was not updated.",
+            file=sys.stderr,
+        )
+        return []
+
+    candidates_payload = read_json(state_dir / "candidates.json", {"candidates": []})
+    rendered_candidates = [
+        candidate
+        for candidate in candidates_payload.get("candidates", [])
+        if isinstance(candidate, dict)
+        and candidate.get("include")
+        and not candidate.get("validation_errors")
+        and str(candidate.get("fingerprint") or "").strip() in rendered_fingerprints
+    ]
+    if not rendered_candidates:
+        print(
+            "Warning: no candidates matched rendered_candidate_fingerprints; "
+            "published_facts.json was not updated.",
+            file=sys.stderr,
+        )
+    return rendered_candidates
+
+
 def cmd_send_file(file_path: str, parse_mode: str | None, force: bool) -> int:
     settings, client, store = _load_store_and_client()
     resolved_path = Path(file_path).resolve()
@@ -212,13 +246,7 @@ def cmd_send_file(file_path: str, parse_mode: str | None, force: bool) -> int:
     runtime_state_dir = _runtime_state_dir()
     if runtime_state_dir != settings.state_dir and runtime_state_dir.exists():
         StateStore(runtime_state_dir, settings.archive_dir).mark_delivery(targets, str(resolved_path))
-    candidates_payload = read_json(PROJECT_ROOT / "data" / "state" / "candidates.json", {"candidates": []})
-    published_candidates = [
-        candidate
-        for candidate in candidates_payload.get("candidates", [])
-        if isinstance(candidate, dict) and candidate.get("include") and not candidate.get("validation_errors")
-    ]
-    record_delivery_artifacts(PROJECT_ROOT, resolved_path, published_candidates)
+    record_delivery_artifacts(PROJECT_ROOT, resolved_path, _rendered_candidates_for_delivery())
     print(f"Sent file {file_path} to {len(targets)} target(s): {', '.join(targets)}.")
     return 0
 

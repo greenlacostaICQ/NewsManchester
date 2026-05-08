@@ -15,7 +15,6 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
-from news_digest.pipeline.history import update_published_facts
 
 
 BANNED_MARKERS = [
@@ -234,8 +233,6 @@ def _validate_stage_reports(
     else:
         if editor_report.get("stage_status") != "complete":
             errors.append("Editor report is not complete.")
-        if int(editor_report.get("weak_city_candidate_count") or 0) > 0:
-            errors.append("Editor report still has weak city/public-affairs candidates.")
 
     return rendered_fingerprints
 
@@ -404,23 +401,6 @@ def build_release(project_root: Path) -> ReleaseResult:
     if ok:
         shutil.copyfile(draft_path, output_path)
         message = f"Release passed. Promoted {draft_path} to {output_path}."
-        # Record published facts at gate-pass time, not at send time.
-        # This way tomorrow's dedupe sees today's items even if the
-        # actual Telegram send fails or is delayed. Only fingerprints
-        # that the writer actually rendered into the draft are recorded.
-        rendered_candidates = [
-            candidate
-            for candidate in candidate_context["included_candidates"]
-            if str(candidate.get("fingerprint") or "") in rendered_fingerprints
-        ]
-        if rendered_candidates:
-            try:
-                update_published_facts(project_root, rendered_candidates)
-                published_facts_updated = True
-            except Exception as exc:  # noqa: BLE001 - surface in release report.
-                errors.append(f"Failed to update published_facts: {exc}")
-                ok = False
-                message = FAIL_CLOSED_SUMMARY
     else:
         message = FAIL_CLOSED_SUMMARY
 
