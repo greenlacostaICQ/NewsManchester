@@ -352,14 +352,18 @@ SOURCES: tuple[SourceDef, ...] = (
         "weekend_activities",
         allowed_hosts=("designmynight.com",),
     ),
-    SourceDef(
-        "Resident Advisor Manchester",
-        "culture_weekly",
-        "culture_weekly",
-        "https://ra.co/events/uk/manchester",
-        "weekend_activities",
-        allowed_hosts=("ra.co",),
-    ),
+    # Resident Advisor Manchester is intentionally not active in the urllib
+    # collector: ra.co returns Cloudflare HTTP 403 to direct HTTP fetches.
+    # Re-enable only with a browser/API fetch path, otherwise it looks wired
+    # but contributes zero events.
+    # SourceDef(
+    #     "Resident Advisor Manchester",
+    #     "culture_weekly",
+    #     "culture_weekly",
+    #     "https://ra.co/events/uk/manchester",
+    #     "weekend_activities",
+    #     allowed_hosts=("ra.co",),
+    # ),
     SourceDef(
         "Fairfield Social Club",
         "culture_weekly",
