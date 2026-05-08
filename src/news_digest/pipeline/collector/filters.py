@@ -148,6 +148,54 @@ def _is_listicle_opening(title: str) -> bool:
     return any(pattern.search(lowered) for pattern in _LISTICLE_OPENINGS_PATTERNS)
 
 
+_WEEKEND_EVERGREEN_TOKENS: tuple[str, ...] = (
+    "best bars",
+    "best restaurants",
+    "best things to do",
+    "birthday ideas",
+    "city guide",
+    "destination guide",
+    "guide to",
+    "places to",
+    "pretty bars",
+    "things to do in manchester",
+    "where to",
+)
+
+
+_WEEKEND_NON_GM_TOKENS: tuple[str, ...] = (
+    "cumbria",
+    "edinburgh",
+    "liverpool",
+    "london",
+    "windermere",
+    "yorkshire",
+)
+
+
+def _is_evergreen_weekend_title(title: str) -> bool:
+    lowered = str(title or "").lower()
+    return _is_listicle_opening(lowered) or any(token in lowered for token in _WEEKEND_EVERGREEN_TOKENS)
+
+
+def _is_obviously_non_gm_weekend_item(title: str, path: str, summary: str = "") -> bool:
+    text = f"{title} {path} {summary}".lower()
+    return any(re.search(rf"\b{re.escape(token)}\b", text) for token in _WEEKEND_NON_GM_TOKENS)
+
+
+def _has_weekend_date_signal(title: str, path: str) -> bool:
+    text = f"{title} {path}".lower()
+    if re.search(r"\b(?:today|tonight|tomorrow|weekend|this week|next week)\b", text):
+        return True
+    if re.search(r"\b(?:mon|tue|wed|thu|fri|sat|sun),?\s+\d{1,2}\s+[a-z]{3,9}\b", text):
+        return True
+    if re.search(r"\b\d{1,2}\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b", text):
+        return True
+    if re.search(r"\b20\d{2}[/-]\d{1,2}[/-]\d{1,2}\b", text):
+        return True
+    return False
+
+
 _FOOTBALL_FLUFF_TOKENS: tuple[str, ...] = (
     "tv listings",
     "tv information",
@@ -489,12 +537,60 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
         return any(token in lowered_path for token in ["/news", "/2026/", "/whats-on", "/events"])
 
     # ── Weekend event sources ─────────────────────────────────────────────
+    if source.name == "Manchester Wire":
+        segments = [p for p in path.split("/") if p]
+        if len(segments) != 1:
+            return False
+        if lowered_path.startswith(("/guide/", "/what/", "/where/", "/tag/", "/author/", "/page/")):
+            return False
+        if _is_evergreen_weekend_title(lowered_title):
+            return False
+        return _has_gm_token(lowered_title, lowered_path) or _has_weekend_date_signal(lowered_title, lowered_path)
+
+    if source.name == "Creative Tourist Manchester":
+        segments = [p for p in path.split("/") if p]
+        if len(segments) < 2:
+            return False
+        if lowered_path.startswith(("/venue/", "/place/", "/articles/", "/manchester/", "/locations/")):
+            return False
+        if any(token in lowered_path for token in ("/food-and-drink-guides", "/neighbourhoods/", "/day-trips/")):
+            return False
+        if _is_evergreen_weekend_title(lowered_title):
+            return False
+        return _has_gm_token(lowered_title, lowered_path, str(summary or "").lower()) or _has_weekend_date_signal(lowered_title, lowered_path)
+
+    if source.name == "DesignMyNight Manchester":
+        segments = [p for p in path.split("/") if p]
+        if len(segments) < 4:
+            return False
+        if not lowered_path.startswith("/manchester/whats-on/"):
+            return False
+        if any(token in lowered_path for token in ("/things-to-do", "/best-", "/guide-", "/clubs", "/bars", "/restaurants")):
+            return False
+        if _is_evergreen_weekend_title(lowered_title):
+            return False
+        return True
+
+    if source.name == "Resident Advisor Manchester":
+        segments = [p for p in path.split("/") if p]
+        return len(segments) >= 2 and segments[0] == "events" and segments[1].isdigit()
+
+    if source.name == "Fairfield Social Club":
+        segments = [p for p in path.split("/") if p]
+        if len(segments) < 2:
+            return False
+        if any(token in lowered_path for token in ("/info", "/accessibility", "/book-a-table", "/private", "/weddings", "/corporate", "/sign-up")):
+            return False
+        return any(token in lowered_path for token in ("/events", "/whats-on", "/event")) or _has_weekend_date_signal(lowered_title, lowered_path)
+
     if source.name == "Skiddle Manchester":
         # Accept individual event pages: /events/REGION/CITY/VENUE/EVENT-NAME/
         return "/events/" in lowered_path and len([p for p in path.split("/") if p]) >= 4
 
     if source.name == "Eventbrite Manchester":
         # Accept individual event ticket pages: /e/event-name-tickets-12345/
+        if _is_obviously_non_gm_weekend_item(lowered_title, lowered_path, str(summary or "")):
+            return False
         return "/e/" in lowered_path and "tickets-" in lowered_path
 
     if source.name == "Manchester Markets":
@@ -510,17 +606,32 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
             return False
         if not lowered_path.startswith("/manchester/"):
             return False
+        if "/travel/" in lowered_path:
+            return False
+        if _is_obviously_non_gm_weekend_item(lowered_title, lowered_path, str(summary or "")):
+            return False
         # Reject "best X", "top N" evergreen articles
         if _is_listicle_opening(lowered_title):
             return False
         # Reject year-in-review, trend, and "things to do" listicle articles
         if re.search(r"\b(202[456]|trends?|guide to|things? to do|places? to)\b", lowered_title):
             return False
-        return True
+        return _has_weekend_date_signal(lowered_title, lowered_path)
 
     if source.name == "Manchester Food & Drink Festival":
+        if "/news/" in lowered_path:
+            return False
         return len([p for p in path.split("/") if p]) >= 2 and (
-            any(token in lowered_path for token in ("/event", "/festival", "/market", "/news"))
+            any(token in lowered_path for token in ("/event", "/festival", "/market"))
+        )
+
+    if source.name == "Visit Manchester Markets":
+        if lowered_path.startswith("/things-to-see-and-do/"):
+            return False
+        if _is_evergreen_weekend_title(lowered_title):
+            return False
+        return "/whats-on/" in lowered_path and (
+            "market" in lowered_path or "market" in lowered_title or _has_weekend_date_signal(lowered_title, lowered_path)
         )
 
     if source.name in {"Manchester City Events", "Salford Events"}:
