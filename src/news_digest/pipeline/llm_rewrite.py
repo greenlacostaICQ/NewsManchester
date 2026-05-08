@@ -1,15 +1,14 @@
 """LLM rewrite stage — writes Russian draft_lines to candidates.json.
 
 Provider chain:
-  1. Gemini 2.5 Flash (via OpenAI-compatible endpoint) — primary, stable Google infra
-  2. Cerebras (qwen-3-235b-a22b-instruct-2507) — fallback, great Russian quality
-  3. Groq (llama-3.3-70b-versatile) — emergency fallback
+  1. Groq Qwen3-32B — primary, reliable infra, best Russian quality, 100+ languages
+  2. Groq Llama-3.3-70B — fallback on same Groq infra, proven reliable
+  3. Gemini 2.0 Flash — emergency fallback, free tier quota may be exhausted
   4. Rule-based in writer.py — final safety net, always fires if LLM unavailable
 
 Required env vars (set in GitHub Actions Secrets or .env.local):
-  GEMINI_API_KEY    — aistudio.google.com (free)
-  CEREBRAS_API_KEY  — console.cerebras.ai (free)
   GROQ_API_KEY      — console.groq.com (free)
+  GEMINI_API_KEY    — aistudio.google.com (free, optional)
 
 Optional overrides:
   LLM_PROVIDER      — force "gemini" | "cerebras" | "groq" | "none"
@@ -27,15 +26,14 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+# Primary: Qwen3-32B — best Russian quality, 100+ languages, reliable Groq infra
+GROQ_PRIMARY_MODEL = "qwen3-32b"
+# Fallback: Llama 3.3 70B — proven fallback on same Groq infra
+GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile"
+
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 GEMINI_MODEL = "gemini-2.0-flash"
-
-CEREBRAS_BASE_URL = "https://api.cerebras.ai/v1"
-# qwen-3-235b-a22b-instruct-2507 works until 2026-05-27; update before then.
-CEREBRAS_MODEL = "qwen-3-235b-a22b-instruct-2507"
-
-GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-GROQ_MODEL = "llama-3.3-70b-versatile"
 
 SYSTEM_PROMPT = """Ты редактор новостного дайджеста «Greater Manchester AM Brief».
 
@@ -222,48 +220,48 @@ def run_llm_rewrite(project_root: Path) -> None:
             base_url_override, api_key, model_override, to_rewrite, provider_override
         )
     else:
-        # Primary: Gemini 2.5 Flash (stable Google infra, OpenAI-compatible)
+        # Primary: Groq Qwen3-32B (reliable infra, best Russian quality)
         mapping = _call_provider(
-            GEMINI_BASE_URL,
-            os.environ.get("GEMINI_API_KEY", ""),
-            GEMINI_MODEL,
+            GROQ_BASE_URL,
+            os.environ.get("GROQ_API_KEY", ""),
+            GROQ_PRIMARY_MODEL,
             to_rewrite,
-            "Gemini",
+            "Groq-Qwen3",
         )
-        # Fallback 1: Cerebras Qwen (great Russian quality)
+        # Fallback 1: Groq Llama-3.3-70B (same infra, proven reliable)
         missing = [
             c
             for c in to_rewrite
             if str(c.get("fingerprint") or "") not in mapping
         ]
         if missing:
-            logger.info("Cerebras fallback: %d candidates still without draft_line.", len(missing))
+            logger.info("Groq-Llama fallback: %d candidates still without draft_line.", len(missing))
             time.sleep(1)
-            cerebras_map = _call_provider(
-                CEREBRAS_BASE_URL,
-                os.environ.get("CEREBRAS_API_KEY", ""),
-                CEREBRAS_MODEL,
-                missing,
-                "Cerebras",
-            )
-            mapping.update(cerebras_map)
-        # Fallback 2: Groq (emergency)
-        missing = [
-            c
-            for c in to_rewrite
-            if str(c.get("fingerprint") or "") not in mapping
-        ]
-        if missing:
-            logger.info("Groq fallback: %d candidates still without draft_line.", len(missing))
-            time.sleep(1)
-            groq_map = _call_provider(
+            llama_map = _call_provider(
                 GROQ_BASE_URL,
                 os.environ.get("GROQ_API_KEY", ""),
-                GROQ_MODEL,
+                GROQ_FALLBACK_MODEL,
                 missing,
-                "Groq",
+                "Groq-Llama",
             )
-            mapping.update(groq_map)
+            mapping.update(llama_map)
+        # Fallback 2: Gemini (emergency, quota may be exhausted)
+        missing = [
+            c
+            for c in to_rewrite
+            if str(c.get("fingerprint") or "") not in mapping
+        ]
+        if missing:
+            logger.info("Gemini fallback: %d candidates still without draft_line.", len(missing))
+            time.sleep(1)
+            gemini_map = _call_provider(
+                GEMINI_BASE_URL,
+                os.environ.get("GEMINI_API_KEY", ""),
+                GEMINI_MODEL,
+                missing,
+                "Gemini",
+            )
+            mapping.update(gemini_map)
 
     if not mapping:
         logger.info(
