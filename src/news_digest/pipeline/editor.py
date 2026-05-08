@@ -108,8 +108,8 @@ def edit_digest(project_root: Path) -> StageResult:
     ]
     weak_city_share = len(weak_city_candidates) / len(city_candidates) if city_candidates else 0
     if city_candidates and weak_city_share > MAX_WEAK_CITY_CANDIDATE_SHARE:
-        errors.append(
-            "Too many city/public-affairs candidates have weak practical angles "
+        warnings.append(
+            "City/public-affairs candidates need editorial rewrite or candidate-level drop: "
             f"({len(weak_city_candidates)}/{len(city_candidates)})."
         )
 
