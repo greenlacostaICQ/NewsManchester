@@ -8,6 +8,7 @@ import re
 from news_digest.pipeline.common import (
     LOW_SIGNAL_BLOCKS,
     PRIMARY_BLOCKS,
+    SECTION_MAX_ITEMS,
     is_placeholder_practical_angle,
     now_london,
     read_json,
@@ -291,13 +292,6 @@ def write_digest(project_root: Path) -> StageResult:
         "Футбол",
         "Радар по районам",
     ]
-    # Section-level caps
-    SECTION_MAX_ITEMS: dict[str, int] = {
-        "Футбол": 3,
-        "IT и бизнес": 5,
-        "Выходные в GM": 6,
-    }
-
     for section_name in ordered_sections:
         lines = sections.get(section_name, [])
         if not lines:

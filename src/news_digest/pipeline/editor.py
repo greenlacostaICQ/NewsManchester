@@ -15,6 +15,10 @@ from news_digest.pipeline.common import (
 )
 
 
+MIN_CITY_PRACTICAL_ANGLE_LENGTH = 40
+MAX_WEAK_CITY_CANDIDATE_SHARE = 0.5
+
+
 @dataclass(slots=True)
 class StageResult:
     ok: bool
@@ -33,6 +37,13 @@ def _unique_preserving_order(lines: list[str]) -> list[str]:
         seen.add(key)
         result.append(line)
     return result
+
+
+def _is_weak_city_candidate(candidate: dict) -> bool:
+    practical_angle = str(candidate.get("practical_angle") or "").strip()
+    if is_placeholder_practical_angle(practical_angle):
+        return True
+    return len(practical_angle) < MIN_CITY_PRACTICAL_ANGLE_LENGTH
 
 
 def edit_digest(project_root: Path) -> StageResult:
@@ -93,10 +104,14 @@ def edit_digest(project_root: Path) -> StageResult:
     weak_city_candidates = [
         candidate
         for candidate in city_candidates
-        if is_placeholder_practical_angle(str(candidate.get("practical_angle") or ""))
+        if _is_weak_city_candidate(candidate)
     ]
-    if city_candidates and len(weak_city_candidates) == len(city_candidates):
-        errors.append("All city/public-affairs candidates still rely on placeholder practical angles.")
+    weak_city_share = len(weak_city_candidates) / len(city_candidates) if city_candidates else 0
+    if city_candidates and weak_city_share > MAX_WEAK_CITY_CANDIDATE_SHARE:
+        errors.append(
+            "Too many city/public-affairs candidates have weak practical angles "
+            f"({len(weak_city_candidates)}/{len(city_candidates)})."
+        )
 
     # "Коротко" больше не требуется — убрана из дайджеста
     required_to_check = [b for b in REQUIRED_BLOCKS if b != "Коротко"]
@@ -130,6 +145,9 @@ def edit_digest(project_root: Path) -> StageResult:
             "city_candidate_count": len(city_candidates),
             "soft_candidate_count": len(soft_candidates),
             "weak_city_candidate_count": len(weak_city_candidates),
+            "weak_city_candidate_share": round(weak_city_share, 3),
+            "min_city_practical_angle_length": MIN_CITY_PRACTICAL_ANGLE_LENGTH,
+            "max_weak_city_candidate_share": MAX_WEAK_CITY_CANDIDATE_SHARE,
             "duplicate_collisions": duplicate_collisions,
             "draft_path": str(draft_path.resolve()),
         },
