@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import html
+import logging
 from pathlib import Path
 import re
+
+logger = logging.getLogger(__name__)
 
 from news_digest.pipeline.common import (
     LOW_SIGNAL_BLOCKS,
@@ -212,6 +215,7 @@ def write_digest(project_root: Path) -> StageResult:
         if not line:
             if category in REQUIRE_DRAFT_LINE_CATEGORIES:
                 warnings.append(f"Candidate #{index} dropped: no model draft_line for {category!r}.")
+                logger.info("DROP no_draft_line | %s | %s | %s", category, block_key, title[:80])
                 quality_counts["dropped_missing_draft_line"] += 1
                 dropped_candidates.append(
                     {
@@ -225,6 +229,7 @@ def write_digest(project_root: Path) -> StageResult:
                 continue
             if english_detected:
                 warnings.append(f"Candidate #{index} dropped: English passthrough without translation.")
+                logger.info("DROP english_passthrough | %s | %s | %s", category, block_key, title[:80])
                 quality_counts["dropped_english_passthrough"] += 1
                 dropped_candidates.append(
                     {
@@ -249,6 +254,7 @@ def write_digest(project_root: Path) -> StageResult:
             warnings.append(
                 f"Candidate #{index} dropped: draft_line quality issues ({'; '.join(draft_line_errors)})."
             )
+            logger.info("DROP low_quality | %s | %s | %s | %s", category, block_key, title[:80], "; ".join(draft_line_errors))
             quality_counts["dropped_low_quality"] += 1
             dropped_candidates.append(
                 {
