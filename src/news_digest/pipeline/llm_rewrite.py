@@ -32,7 +32,7 @@ OPENAI_BASE_URL = "https://api.openai.com/v1"
 OPENAI_MODEL = "gpt-4o-mini"  # cheapest OpenAI model, ~$0.15/1M input tokens
 
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
-GEMINI_MODEL = "gemini-2.0-flash-lite"
+GEMINI_MODEL = "gemini-2.0-flash"
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile"

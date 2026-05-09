@@ -391,6 +391,13 @@ def _is_football_publishable(title: str, url: str = "") -> bool:
     preview_terms = ("match preview", "preview", "team news", "confirmed line up", "confirmed lineup")
     if any(term in normalized for term in preview_terms):
         return True
+    fitness_terms = (
+        "doubtful", "injury", "injured", "fit for", "ruled out", "returns from",
+        "suspended", "suspension", "squad named", "starting lineup", "starting eleven",
+        "fitness doubt", "fitness test", "available for", "misses out", "set to miss",
+    )
+    if any(term in normalized for term in fitness_terms):
+        return True
     return False
 
 
@@ -539,7 +546,7 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     "Stockport Council": _SourcePolicy(
         path_must_start="/news/",
         path_banned_segments=("/newsroom",),
-        min_path_depth=3,
+        min_path_depth=2,
     ),
     "Oldham Council": _SourcePolicy(path_must_start="/news/article/", min_path_depth=4),
     "Rochdale Council": _SourcePolicy(path_must_start="/news/article/", min_path_depth=4),
@@ -563,6 +570,7 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     # ── Venues ────────────────────────────────────────────────────────────────
     "Co-op Live": _SourcePolicy(path_must_contain=("/events/",), min_path_depth=3),
     "AO Arena": _SourcePolicy(path_must_contain=("/events",), min_path_depth=3),
+    "Ticketmaster Manchester": _SourcePolicy(path_must_contain=("/manchester-", "/event/"), min_path_depth=2),
     # ── Football ──────────────────────────────────────────────────────────────
     "Manchester United": _SourcePolicy(
         path_must_contain=("/en/news/",),
@@ -643,7 +651,7 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
         path_banned_segments=("/info", "/accessibility", "/book-a-table", "/private", "/weddings", "/corporate", "/sign-up"),
         require_event_path_or_date=True,
     ),
-    "Skiddle Manchester": _SourcePolicy(path_must_contain=("/events/",), min_path_depth=4),
+    "Skiddle Manchester": _SourcePolicy(path_must_contain=("/whats-on/",), min_path_depth=4),
     "Eventbrite Manchester": _SourcePolicy(
         path_all_must_contain=("/e/", "tickets-"),
         block_non_gm_weekend=True,
@@ -654,7 +662,7 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     ),
     "Time Out Manchester": _SourcePolicy(
         min_path_depth=3,
-        path_must_start="/manchester/",
+        path_must_contain=("/manchester/things-to-do", "/manchester/food-drink", "/manchester/art-culture"),
         path_banned_segments=("/travel/",),
         block_non_gm_weekend=True,
         block_listicle=True,
