@@ -402,10 +402,13 @@ def cmd_collect_digest() -> int:
                 run_at = datetime.fromisoformat(run_at_str)
                 age_hours = (datetime.now(run_at.tzinfo or timezone.utc) - run_at).total_seconds() / 3600
                 if age_hours < 12:
+                    candidates = read_json(candidates_path, {})
                     print(json.dumps({
                         "skipped": True,
                         "reason": f"Collect already ran {age_hours:.1f}h ago — reusing existing candidates.",
                         "run_at_london": run_at_str,
+                        "candidates_path": str(candidates_path),
+                        "candidate_count": len(candidates.get("candidates", [])),
                     }, ensure_ascii=False, indent=2))
                     return 0
             except Exception:

@@ -29,6 +29,37 @@ REQUIRE_DRAFT_LINE_CATEGORIES = MODEL_WRITTEN_CATEGORIES | {
     "tech_business",
     "city_news",
 }
+_BAD_EDITORIAL_PROSE_MARKERS = (
+    "ticket office",
+    "слот входа",
+    "госпитальн",
+    "кадровый и дисциплинарный кейс",
+    "заметный кейс",
+    "новая фаза истории",
+    "сетка влияния",
+    "следить компаниям",
+    "business-impact",
+    "лучше взять зонт",
+    "лучше прихватить зонт",
+    "не забудьте зонт",
+    "прихватите зонт",
+    "live alert",
+    "live disruption",
+    "forecast",
+    "attractions",
+    "highlights",
+    "matchday",
+    "check before",
+    "опубликовал важное обновление",
+    "появилось новое обновление",
+    "судебное обновление",
+    "новое судебное",
+    "футбольное обновление",
+    "перепроверьте",
+    "убедитесь сами",
+    "читайте подробнее",
+    "подробности ниже",
+)
 
 
 @dataclass(slots=True)
@@ -135,6 +166,11 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     category = str(candidate.get("category") or "").strip()
     if category in REQUIRE_DRAFT_LINE_CATEGORIES and len(re.findall(r"[.!?]", text)) < 1:
         errors.append("draft_line must contain at least one complete sentence.")
+    lowered = text.lower()
+    for marker in _BAD_EDITORIAL_PROSE_MARKERS:
+        if marker in lowered:
+            errors.append(f"draft_line contains bad editorial prose marker: {marker}.")
+            break
     errors.extend(_sanity_flags(candidate, text))
     return errors
 

@@ -85,6 +85,18 @@ class ReleaseResult:
     output_path: Path
 
 
+def _visible_text_from_html(html_text: str) -> str:
+    """Return digest text without URLs or tags for prose-only checks."""
+    text = re.sub(
+        r"<a\b[^>]*>(.*?)</a>",
+        lambda match: match.group(1),
+        html_text,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    text = re.sub(r"<[^>]+>", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def initialize_release_inputs(project_root: Path, *, overwrite: bool = False) -> dict[str, Path]:
     state_dir = project_root / "data" / "state"
     state_dir.mkdir(parents=True, exist_ok=True)
@@ -318,11 +330,12 @@ def _validate_draft(
             errors.append(f"Draft digest contains placeholder marker: {marker}.")
 
     lower_text = html_text.lower()
+    visible_lower_text = _visible_text_from_html(html_text).lower()
     for marker in BANNED_AUTHOR_VOICE:
-        if marker in lower_text:
+        if marker in visible_lower_text:
             errors.append(f"Draft digest contains author voice marker: {marker}.")
     for marker in BAD_EDITORIAL_PROSE:
-        if marker in lower_text:
+        if marker in visible_lower_text:
             errors.append(f"Draft digest contains bad editorial prose marker: {marker}.")
     if "/amp/" in lower_text:
         errors.append("Draft digest contains an /amp/ URL.")
