@@ -105,7 +105,7 @@ def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: st
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
             ],
             temperature=0.1,
-            max_tokens=1500,
+            max_tokens=4096,
         )
         raw = response.choices[0].message.content.strip()
         if raw.startswith("```"):
