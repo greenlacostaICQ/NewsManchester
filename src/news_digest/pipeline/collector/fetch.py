@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import os
 import time
+from datetime import UTC, timedelta
 from urllib import error, request
+
+from news_digest.pipeline.common import now_london
 
 from .sources import SourceDef
 
@@ -17,7 +20,20 @@ from .sources import SourceDef
 def _resolve_url(url: str) -> str:
     """Expand {ENV_VAR} placeholders in URLs from environment."""
     import re
-    return re.sub(r"\{([A-Z0-9_]+)\}", lambda m: os.environ.get(m.group(1), m.group(0)), url)
+
+    now_utc = now_london().astimezone(UTC)
+    dynamic_values = {
+        "NOW_UTC": now_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "NOW_MINUS_1D_UTC": (now_utc - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "PLUS_14D_UTC": (now_utc + timedelta(days=14)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "PLUS_30D_UTC": (now_utc + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+
+    return re.sub(
+        r"\{([A-Z0-9_]+)\}",
+        lambda m: dynamic_values.get(m.group(1), os.environ.get(m.group(1), m.group(0))),
+        url,
+    )
 
 
 # Transient network errors (timeout, DNS hiccup) will be retried once

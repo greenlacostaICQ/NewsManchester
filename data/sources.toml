@@ -293,12 +293,57 @@ url = "https://www.ao-arena.com/events"
 primary_block = "next_7_days"
 
 [[sources]]
-name = "Ticketmaster Manchester"
+name = "Ticketmaster Manchester Onsale"
 report_category = "venues_tickets"
 candidate_category = "venues_tickets"
 source_type = "json_ticketmaster"
-url = "https://app.ticketmaster.com/discovery/v2/events.json?city=Manchester&countryCode=GB&size=20&sort=date,asc&apikey={TICKETMASTER_API_KEY}"
+url = "https://app.ticketmaster.com/discovery/v2/events.json?city=Manchester&countryCode=GB&classificationName=music&size=50&sort=onSaleStartDate,asc&onsaleStartDateTime={NOW_MINUS_1D_UTC}&onsaleEndDateTime={PLUS_14D_UTC}&apikey={TICKETMASTER_API_KEY}"
 primary_block = "ticket_radar"
+allowed_hosts = ["ticketmaster.co.uk", "ticketmaster.com"]
+
+[[sources]]
+name = "Ticketmaster Liverpool Onsale"
+report_category = "venues_tickets"
+candidate_category = "venues_tickets"
+source_type = "json_ticketmaster"
+url = "https://app.ticketmaster.com/discovery/v2/events.json?city=Liverpool&countryCode=GB&classificationName=music&size=50&sort=onSaleStartDate,asc&onsaleStartDateTime={NOW_MINUS_1D_UTC}&onsaleEndDateTime={PLUS_14D_UTC}&apikey={TICKETMASTER_API_KEY}"
+primary_block = "ticket_radar"
+allowed_hosts = ["ticketmaster.co.uk", "ticketmaster.com"]
+
+[[sources]]
+name = "Ticketmaster Manchester Upcoming"
+report_category = "venues_tickets"
+candidate_category = "venues_tickets"
+source_type = "json_ticketmaster"
+url = "https://app.ticketmaster.com/discovery/v2/events.json?city=Manchester&countryCode=GB&classificationName=music&size=50&sort=date,asc&startDateTime={NOW_UTC}&endDateTime={PLUS_30D_UTC}&apikey={TICKETMASTER_API_KEY}"
+primary_block = "next_7_days"
+allowed_hosts = ["ticketmaster.co.uk", "ticketmaster.com"]
+
+[[sources]]
+name = "Ticketmaster Liverpool Upcoming"
+report_category = "venues_tickets"
+candidate_category = "venues_tickets"
+source_type = "json_ticketmaster"
+url = "https://app.ticketmaster.com/discovery/v2/events.json?city=Liverpool&countryCode=GB&classificationName=music&size=50&sort=date,asc&startDateTime={NOW_UTC}&endDateTime={PLUS_30D_UTC}&apikey={TICKETMASTER_API_KEY}"
+primary_block = "next_7_days"
+allowed_hosts = ["ticketmaster.co.uk", "ticketmaster.com"]
+
+[[sources]]
+name = "Ticketmaster London Major Onsale"
+report_category = "venues_tickets"
+candidate_category = "venues_tickets"
+source_type = "json_ticketmaster"
+url = "https://app.ticketmaster.com/discovery/v2/events.json?city=London&countryCode=GB&classificationName=music&size=100&sort=onSaleStartDate,asc&onsaleStartDateTime={NOW_MINUS_1D_UTC}&onsaleEndDateTime={PLUS_14D_UTC}&apikey={TICKETMASTER_API_KEY}"
+primary_block = "ticket_radar"
+allowed_hosts = ["ticketmaster.co.uk", "ticketmaster.com"]
+
+[[sources]]
+name = "Ticketmaster London Major Upcoming"
+report_category = "venues_tickets"
+candidate_category = "venues_tickets"
+source_type = "json_ticketmaster"
+url = "https://app.ticketmaster.com/discovery/v2/events.json?city=London&countryCode=GB&classificationName=music&size=100&sort=date,asc&startDateTime={NOW_UTC}&endDateTime={PLUS_30D_UTC}&apikey={TICKETMASTER_API_KEY}"
+primary_block = "next_7_days"
 allowed_hosts = ["ticketmaster.co.uk", "ticketmaster.com"]
 
 # ── Food / Openings ────────────────────────────────────────────────────────────

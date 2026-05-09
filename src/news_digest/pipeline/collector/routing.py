@@ -246,6 +246,8 @@ def _adjust_ticket_radar_block(candidate: dict) -> None:
 
     if candidate.get("primary_block") != "ticket_radar":
         return
+    if "ticket_signal=onsale" in str(candidate.get("summary") or "").lower():
+        return
     title = str(candidate.get("title") or "")
     latest = _ticket_event_max_date(title)
     if latest is None:

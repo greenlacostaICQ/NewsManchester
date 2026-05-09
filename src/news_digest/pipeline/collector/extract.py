@@ -275,28 +275,97 @@ def _extract_funnelback_items(body: str) -> list[ExtractedItem]:
     return items
 
 
-def _extract_ticketmaster_items(body: str) -> list[ExtractedItem]:
+_TICKETMASTER_MAJOR_ARTISTS = (
+    "ac/dc",
+    "adele",
+    "arctic monkeys",
+    "beyonce",
+    "billie eilish",
+    "bruce springsteen",
+    "coldplay",
+    "depeche mode",
+    "dua lipa",
+    "ed sheeran",
+    "foo fighters",
+    "green day",
+    "harry styles",
+    "imagine dragons",
+    "iron maiden",
+    "lady gaga",
+    "linkin park",
+    "madonna",
+    "metallica",
+    "muse",
+    "oasis",
+    "radiohead",
+    "red hot chili peppers",
+    "taylor swift",
+    "the killers",
+    "the weeknd",
+    "u2",
+)
+
+
+def _format_ticketmaster_date(value: str | None) -> str:
+    if not value:
+        return ""
+    parsed = _parse_datetime_value_flexible(value)
+    if not parsed:
+        return str(value)
+    return parsed[:16].replace("T", " ")
+
+
+def _extract_ticketmaster_items(source: SourceDef, body: str) -> list[ExtractedItem]:
     payload = json.loads(body)
     events = (payload.get("_embedded") or {}).get("events") or []
     items: list[ExtractedItem] = []
+    major_only = "major" in source.name.lower()
+    onsale_scan = "onsale" in source.name.lower()
     for event in events:
         title = str(event.get("name") or "").strip()
+        if major_only and not any(artist in title.lower() for artist in _TICKETMASTER_MAJOR_ARTISTS):
+            continue
         url = str(event.get("url") or "").strip()
         dates = (event.get("dates") or {}).get("start") or {}
-        published_at = _parse_datetime_value_flexible(
-            dates.get("dateTime") or dates.get("localDate") or ""
-        )
+        event_start_raw = dates.get("dateTime") or dates.get("localDate") or ""
+        event_start = _parse_datetime_value_flexible(event_start_raw)
+        public_sale = ((event.get("sales") or {}).get("public") or {})
+        onsale_start_raw = public_sale.get("startDateTime") or ""
+        onsale_start = _parse_datetime_value_flexible(onsale_start_raw)
         venue = ""
+        city = ""
         venues = ((event.get("_embedded") or {}).get("venues") or [])
         if venues:
             venue = str(venues[0].get("name") or "").strip()
+            city = str((venues[0].get("city") or {}).get("name") or "").strip()
         classifications = event.get("classifications") or []
         genre = ""
         if classifications:
             genre = str((classifications[0].get("genre") or {}).get("name") or "").strip()
-        summary = " | ".join(filter(None, [venue, genre]))
-        if title and url and _looks_like_candidate_title(title):
-            items.append(ExtractedItem(title=_clean_title_text(title), url=url, published_at=published_at, summary=summary))
+        title_parts = [title]
+        if event_start:
+            title_parts.append(f"event {event_start[:10]}")
+        if onsale_start:
+            title_parts.append(f"public sale {onsale_start[:16].replace('T', ' ')}")
+        display_title = " — ".join(title_parts)
+        summary_parts = [
+            venue,
+            city,
+            genre,
+            f"event_date={_format_ticketmaster_date(event_start_raw)}" if event_start_raw else "",
+            f"public_onsale={_format_ticketmaster_date(onsale_start_raw)}" if onsale_start_raw else "",
+            "ticket_signal=onsale" if onsale_scan else "ticket_signal=upcoming_event",
+        ]
+        summary = " | ".join(filter(None, summary_parts))
+        if title and url and _looks_like_candidate_title(display_title):
+            items.append(
+                ExtractedItem(
+                    title=_clean_title_text(display_title),
+                    url=url,
+                    published_at=onsale_start if onsale_scan and onsale_start else event_start,
+                    summary=summary,
+                )
+            )
     return items
 
 
@@ -348,7 +417,7 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
     if source.source_type == "json_funnelback":
         links = _extract_funnelback_items(body)
     elif source.source_type == "json_ticketmaster":
-        links = _extract_ticketmaster_items(body)
+        links = _extract_ticketmaster_items(source, body)
     elif source.source_type == "json_wp_rest":
         links = _extract_wp_rest_items(body)
     elif source.source_type == "markdown_links":

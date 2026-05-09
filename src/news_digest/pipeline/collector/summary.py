@@ -153,6 +153,8 @@ def _default_practical_angle(source: SourceDef, title: str = "", summary: str = 
     if source.report_category == "transport":
         return "Есть возможное влияние на поездки сегодня."
     if source.report_category == "venues_tickets":
+        if "onsale" in source.name.lower():
+            return "Проверьте старт продаж и наличие билетов на официальной странице."
         return "Проверьте время, вход и наличие билетов на официальной странице."
     if source.report_category == "football":
         return "Проверьте время матча и официальные обновления клуба."

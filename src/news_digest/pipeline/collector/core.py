@@ -13,7 +13,9 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
+import re
 import time
+from urllib import parse
 
 from news_digest.pipeline.common import (
     REQUIRED_SCAN_CATEGORIES,
@@ -43,6 +45,33 @@ class StageResult:
 
 
 _COLLECTOR_MAX_WORKERS = 6
+_SENSITIVE_QUERY_KEYS = {"apikey", "api_key", "key", "token", "access_token"}
+
+
+def _redact_sensitive_url(value: str) -> str:
+    raw = str(value or "")
+    if not raw:
+        return raw
+    parsed = parse.urlsplit(raw)
+    if not parsed.query:
+        return raw
+    query = parse.parse_qsl(parsed.query, keep_blank_values=True)
+    redacted = [
+        (key, "***" if key.lower() in _SENSITIVE_QUERY_KEYS else val)
+        for key, val in query
+    ]
+    return parse.urlunsplit(
+        (parsed.scheme, parsed.netloc, parsed.path, parse.urlencode(redacted), parsed.fragment)
+    )
+
+
+def _redact_sensitive_text(value: str) -> str:
+    def _replace(match: re.Match[str]) -> str:
+        raw_url = match.group(0)
+        suffix = ":" if raw_url.endswith(":") else ""
+        return _redact_sensitive_url(raw_url.rstrip(":")) + suffix
+
+    return re.sub(r"https?://\S+", _replace, str(value or ""))
 
 
 def _default_report() -> dict:
@@ -103,9 +132,9 @@ def _collect_single_source(source) -> tuple[dict, list[dict]]:
             source_health["warnings"].append(
                 f"primary URL failed; switched to fallback {fetched_url}"
             )
-        source_health["fetched_url"] = fetched_url
+        source_health["fetched_url"] = _redact_sensitive_url(fetched_url)
         for attempt_note in attempt_log:
-            source_health["warnings"].append(f"attempt failed: {attempt_note}")
+            source_health["warnings"].append(f"attempt failed: {_redact_sensitive_text(attempt_note)}")
 
         extract_started_at = time.perf_counter()
         source_candidates = _extract_source_candidates(source, body)
