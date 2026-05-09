@@ -570,7 +570,6 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     # ── Venues ────────────────────────────────────────────────────────────────
     "Co-op Live": _SourcePolicy(path_must_contain=("/events/",), min_path_depth=3),
     "AO Arena": _SourcePolicy(path_must_contain=("/events",), min_path_depth=3),
-    "Ticketmaster Manchester": _SourcePolicy(path_must_contain=("/manchester-", "/event/"), min_path_depth=2),
     # ── Football ──────────────────────────────────────────────────────────────
     "Manchester United": _SourcePolicy(
         path_must_contain=("/en/news/",),
