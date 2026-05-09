@@ -392,7 +392,8 @@ def _stage_payload(result) -> dict[str, object]:
 
 def cmd_collect_digest() -> int:
     report_path = PROJECT_ROOT / "data" / "state" / "collector_report.json"
-    if report_path.exists():
+    candidates_path = PROJECT_ROOT / "data" / "state" / "candidates.json"
+    if report_path.exists() and candidates_path.exists():
         report = read_json(report_path, {})
         run_at_str = report.get("run_at_london", "")
         if run_at_str:
