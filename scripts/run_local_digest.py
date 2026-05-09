@@ -431,7 +431,11 @@ def cmd_write_digest() -> int:
 
 def cmd_edit_digest() -> int:
     result = edit_digest(PROJECT_ROOT)
-    print(json.dumps(_stage_payload(result), ensure_ascii=False, indent=2))
+    payload = _stage_payload(result)
+    report = read_json(result.report_path, {})
+    payload["errors"] = report.get("errors", [])
+    payload["warnings"] = report.get("warnings", [])
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0 if result.ok else 1
 
 

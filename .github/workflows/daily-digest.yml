@@ -1,48 +1,14 @@
 name: Greater Manchester AM Digest
 
 on:
-  schedule:
-    # GitHub Actions cron is UTC-only. We schedule both UTC slots that
-    # can map to 07:30 Europe/London and keep the correct one at runtime.
-    - cron: '30 6 * * *'
-    - cron: '30 7 * * *'
   workflow_dispatch:
-    # Allows manual trigger from GitHub Actions UI (useful for testing)
+    # Triggered by the external scheduler, or manually from GitHub Actions UI.
 
 permissions:
   contents: write
 
 jobs:
-  should-run:
-    runs-on: ubuntu-latest
-    outputs:
-      run: ${{ steps.guard.outputs.run }}
-      london_time: ${{ steps.guard.outputs.london_time }}
-
-    steps:
-      - name: Check London schedule window
-        id: guard
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "london_time=manual" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          london_time=$(TZ=Europe/London date +'%Y-%m-%d %H:%M')
-          london_hour=$(TZ=Europe/London date +'%H')
-          echo "london_time=$london_time" >> "$GITHUB_OUTPUT"
-
-          if [ "$london_hour" = "07" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          fi
-
   digest:
-    needs: should-run
-    if: needs.should-run.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -61,8 +27,8 @@ jobs:
       - name: Install dependencies
         run: pip install -e . openai
 
-      - name: Log schedule slot
-        run: echo "Running daily digest for London time ${{ needs.should-run.outputs.london_time }}"
+      - name: Log trigger
+        run: echo "Running daily digest via ${{ github.event_name }} at $(TZ=Europe/London date +'%Y-%m-%d %H:%M %Z')"
 
       - name: Run pipeline — collect → dedupe → validate
         env:
@@ -106,6 +72,39 @@ jobs:
           FORCE_FLAG: ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
         run: |
           python3 scripts/run_local_digest.py send-file data/outgoing/current_digest.html --parse-mode HTML $FORCE_FLAG
+
+      - name: Dump failure diagnostics
+        if: failure()
+        run: |
+          set +e
+          echo "=== GitHub digest failure diagnostics ==="
+          echo "event=${{ github.event_name }}"
+          echo "sha=${{ github.sha }}"
+          echo "london_now=$(TZ=Europe/London date +'%Y-%m-%d %H:%M %Z')"
+          for file in \
+            data/state/collector_report.json \
+            data/state/dedupe_memory.json \
+            data/state/candidate_validation_report.json \
+            data/state/curator_report.json \
+            data/state/writer_report.json \
+            data/state/editor_report.json \
+            data/state/release_report.json
+          do
+            echo ""
+            echo "=== $file ==="
+            if [ -f "$file" ]; then
+              python3 -m json.tool "$file" | sed -n '1,220p'
+            else
+              echo "missing"
+            fi
+          done
+          echo ""
+          echo "=== data/state/draft_digest.html preview ==="
+          if [ -f data/state/draft_digest.html ]; then
+            sed -n '1,120p' data/state/draft_digest.html
+          else
+            echo "missing"
+          fi
 
       - name: Commit updated state files
         run: |
