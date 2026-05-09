@@ -55,6 +55,15 @@ _GM_BOROUGHS: tuple[str, ...] = (
     "Manchester", "Salford", "Trafford", "Stockport", "Tameside",
     "Oldham", "Rochdale", "Bury", "Bolton", "Wigan",
 )
+_CURATOR_PROTECTED_CATEGORIES = {"weather"}
+_CURATOR_PROTECTED_BLOCKS = {"weather"}
+
+
+def _is_curator_protected(candidate: dict) -> bool:
+    return (
+        str(candidate.get("category") or "") in _CURATOR_PROTECTED_CATEGORIES
+        or str(candidate.get("primary_block") or "") in _CURATOR_PROTECTED_BLOCKS
+    )
 
 
 def _infer_borough(candidate: dict) -> str:
@@ -132,7 +141,11 @@ def run_curator_pass(project_root: Path) -> None:
     payload = json.loads(candidates_path.read_text(encoding="utf-8"))
     candidates = payload.get("candidates", [])
 
-    included = [c for c in candidates if isinstance(c, dict) and c.get("include") and c.get("category") != "weather"]
+    included = [
+        c
+        for c in candidates
+        if isinstance(c, dict) and c.get("include") and not _is_curator_protected(c)
+    ]
     if not included:
         logger.info("Curator: no included candidates.")
         write_json(report_path, {"status": "skipped", "reason": "no included candidates", "run_at": now_london().isoformat(), "run_date_london": today_london()})
@@ -173,6 +186,10 @@ def run_curator_pass(project_root: Path) -> None:
     lead_set = False
 
     for candidate in candidates:
+        if _is_curator_protected(candidate):
+            candidate["include"] = True
+            candidate["is_lead"] = False
+            continue
         fp = str(candidate.get("fingerprint") or "")
         decision = decision_map.get(fp)
         if not decision:
