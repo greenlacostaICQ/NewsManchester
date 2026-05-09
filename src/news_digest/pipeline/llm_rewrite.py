@@ -214,7 +214,7 @@ def _call_provider_batch(
                     {"role": "user", "content": user_content},
                 ],
                 temperature=0.3,
-                max_tokens=2048,
+                max_tokens=4096,
             )
             raw = response.choices[0].message.content.strip()
             if raw.startswith("```"):
