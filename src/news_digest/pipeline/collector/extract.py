@@ -401,9 +401,26 @@ def _extract_markdown_link_items(body: str) -> list[ExtractedItem]:
     return items
 
 
+def _extract_sitemap_items(base_url: str, body: str) -> list[ExtractedItem]:
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    for match in re.finditer(r"<loc>([^<]+)</loc>", body):
+        url = match.group(1).strip()
+        if url in seen:
+            continue
+        seen.add(url)
+        slug = url.rstrip("/").split("/")[-1].replace("-", " ")
+        title = _clean_title_text(slug.title())
+        if title and _looks_like_candidate_title(title):
+            items.append(ExtractedItem(title=title, url=url))
+    return items
+
+
 def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
     if source.source_type == "json_funnelback":
         links = _extract_funnelback_items(body)
+    elif source.source_type == "xml_sitemap":
+        links = _extract_sitemap_items(source.url, body)
     elif source.source_type == "json_ticketmaster":
         links = _extract_ticketmaster_items(source, body)
     elif source.source_type == "json_wp_rest":
