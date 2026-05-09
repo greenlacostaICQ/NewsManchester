@@ -239,6 +239,7 @@ def _validate_curator_report(
     curator_report: dict | None,
     current_day_london: str,
     errors: list[str],
+    warnings: list[str],
 ) -> None:
     if curator_report is None:
         errors.append("Missing data/state/curator_report.json.")
@@ -248,13 +249,21 @@ def _validate_curator_report(
         errors.append(
             f"Curator report is stale: {curator_report.get('run_date_london')} != {current_day_london}."
         )
+        return
 
-    if curator_report.get("status") != "complete":
-        errors.append(f"Curator report is not complete: {curator_report.get('status')!r}.")
-
-    reviewed = curator_report.get("reviewed")
-    if not isinstance(reviewed, int) or reviewed <= 0:
-        errors.append("Curator report did not review any included candidates.")
+    status = curator_report.get("status")
+    if status == "skipped":
+        reason = curator_report.get("reason", "unknown")
+        if reason in {"all providers failed", "LLM_PROVIDER=none"}:
+            warnings.append(f"Curator skipped ({reason}) — existing include flags kept.")
+        else:
+            errors.append(f"Curator skipped unexpectedly: {reason!r}.")
+    elif status != "complete":
+        errors.append(f"Curator report is not complete: {status!r}.")
+    else:
+        reviewed = curator_report.get("reviewed")
+        if not isinstance(reviewed, int) or reviewed <= 0:
+            errors.append("Curator report did not review any included candidates.")
 
 
 def _validate_stage_reports(
@@ -434,7 +443,7 @@ def build_release(project_root: Path) -> ReleaseResult:
     warnings: list[str] = []
     _validate_scan_report(scan_report, current_day_london, errors)
     candidate_context = _validate_candidates(candidates_report, current_day_london, errors)
-    _validate_curator_report(curator_report, current_day_london, errors)
+    _validate_curator_report(curator_report, current_day_london, errors, warnings)
     rendered_fingerprints = _validate_stage_reports(writer_report, editor_report, errors)
     if writer_report:
         qc = writer_report.get("quality_counts") or {}
