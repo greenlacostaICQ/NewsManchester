@@ -275,34 +275,17 @@ def _extract_funnelback_items(body: str) -> list[ExtractedItem]:
     return items
 
 
-_TICKETMASTER_MAJOR_ARTISTS = (
-    "ac/dc",
-    "adele",
-    "arctic monkeys",
-    "beyonce",
-    "billie eilish",
-    "bruce springsteen",
-    "coldplay",
-    "depeche mode",
-    "dua lipa",
-    "ed sheeran",
-    "foo fighters",
-    "green day",
-    "harry styles",
-    "imagine dragons",
-    "iron maiden",
-    "lady gaga",
-    "linkin park",
-    "madonna",
-    "metallica",
-    "muse",
-    "oasis",
-    "radiohead",
-    "red hot chili peppers",
-    "taylor swift",
-    "the killers",
-    "the weeknd",
-    "u2",
+_TICKETMASTER_MAJOR_LONDON_VENUES = (
+    "alexandra palace",
+    "eventim apollo",
+    "hyde park",
+    "london stadium",
+    "ovo arena",
+    "royal albert hall",
+    "the o2",
+    "tottenham hotspur stadium",
+    "wembley arena",
+    "wembley stadium",
 )
 
 
@@ -315,16 +298,19 @@ def _format_ticketmaster_date(value: str | None) -> str:
     return parsed[:16].replace("T", " ")
 
 
+def _is_major_london_venue(venue: str) -> bool:
+    lowered = venue.lower()
+    return any(token in lowered for token in _TICKETMASTER_MAJOR_LONDON_VENUES)
+
+
 def _extract_ticketmaster_items(source: SourceDef, body: str) -> list[ExtractedItem]:
     payload = json.loads(body)
     events = (payload.get("_embedded") or {}).get("events") or []
     items: list[ExtractedItem] = []
-    major_only = "major" in source.name.lower()
+    major_london_only = "london major" in source.name.lower()
     onsale_scan = "onsale" in source.name.lower()
     for event in events:
         title = str(event.get("name") or "").strip()
-        if major_only and not any(artist in title.lower() for artist in _TICKETMASTER_MAJOR_ARTISTS):
-            continue
         url = str(event.get("url") or "").strip()
         dates = (event.get("dates") or {}).get("start") or {}
         event_start_raw = dates.get("dateTime") or dates.get("localDate") or ""
@@ -338,6 +324,8 @@ def _extract_ticketmaster_items(source: SourceDef, body: str) -> list[ExtractedI
         if venues:
             venue = str(venues[0].get("name") or "").strip()
             city = str((venues[0].get("city") or {}).get("name") or "").strip()
+        if major_london_only and not _is_major_london_venue(venue):
+            continue
         classifications = event.get("classifications") or []
         genre = ""
         if classifications:
