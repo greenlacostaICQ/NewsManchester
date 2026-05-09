@@ -391,6 +391,24 @@ def _stage_payload(result) -> dict[str, object]:
 
 
 def cmd_collect_digest() -> int:
+    report_path = PROJECT_ROOT / "data" / "state" / "collector_report.json"
+    if report_path.exists():
+        report = read_json(report_path, {})
+        run_at_str = report.get("run_at_london", "")
+        if run_at_str:
+            try:
+                from datetime import timezone
+                run_at = datetime.fromisoformat(run_at_str)
+                age_hours = (datetime.now(run_at.tzinfo or timezone.utc) - run_at).total_seconds() / 3600
+                if age_hours < 12:
+                    print(json.dumps({
+                        "skipped": True,
+                        "reason": f"Collect already ran {age_hours:.1f}h ago — reusing existing candidates.",
+                        "run_at_london": run_at_str,
+                    }, ensure_ascii=False, indent=2))
+                    return 0
+            except Exception:
+                pass
     result = collect_digest(PROJECT_ROOT)
     print(json.dumps(_stage_payload(result), ensure_ascii=False, indent=2))
     return 0 if result.ok else 1
