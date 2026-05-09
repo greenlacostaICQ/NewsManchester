@@ -7,10 +7,17 @@ strategy declared on `SourceDef.fallback_urls`.
 
 from __future__ import annotations
 
+import os
 import time
 from urllib import error, request
 
 from .sources import SourceDef
+
+
+def _resolve_url(url: str) -> str:
+    """Expand {ENV_VAR} placeholders in URLs from environment."""
+    import re
+    return re.sub(r"\{([A-Z0-9_]+)\}", lambda m: os.environ.get(m.group(1), m.group(0)), url)
 
 
 # Transient network errors (timeout, DNS hiccup) will be retried once
@@ -95,7 +102,7 @@ def _fetch_source_body(source: SourceDef) -> tuple[str, str, list[str]]:
     attempt_log: list[str] = []
     last_exception: Exception | None = None
     source_headers = _source_fetch_headers(source)
-    for candidate_url in (source.url, *source.fallback_urls):
+    for candidate_url in (_resolve_url(source.url), *[_resolve_url(u) for u in source.fallback_urls]):
         try:
             body = _fetch_text(candidate_url, extra_headers=source_headers)
             return body, candidate_url, attempt_log

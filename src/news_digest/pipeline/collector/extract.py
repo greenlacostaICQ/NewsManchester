@@ -275,6 +275,31 @@ def _extract_funnelback_items(body: str) -> list[ExtractedItem]:
     return items
 
 
+def _extract_ticketmaster_items(body: str) -> list[ExtractedItem]:
+    payload = json.loads(body)
+    events = (payload.get("_embedded") or {}).get("events") or []
+    items: list[ExtractedItem] = []
+    for event in events:
+        title = str(event.get("name") or "").strip()
+        url = str(event.get("url") or "").strip()
+        dates = (event.get("dates") or {}).get("start") or {}
+        published_at = _parse_datetime_value_flexible(
+            dates.get("dateTime") or dates.get("localDate") or ""
+        )
+        venue = ""
+        venues = ((event.get("_embedded") or {}).get("venues") or [])
+        if venues:
+            venue = str(venues[0].get("name") or "").strip()
+        classifications = event.get("classifications") or []
+        genre = ""
+        if classifications:
+            genre = str((classifications[0].get("genre") or {}).get("name") or "").strip()
+        summary = " | ".join(filter(None, [venue, genre]))
+        if title and url and _looks_like_candidate_title(title):
+            items.append(ExtractedItem(title=_clean_title_text(title), url=url, published_at=published_at, summary=summary))
+    return items
+
+
 def _extract_wp_rest_items(body: str) -> list[ExtractedItem]:
     payload = json.loads(body)
     if not isinstance(payload, list):
@@ -322,6 +347,8 @@ def _extract_markdown_link_items(body: str) -> list[ExtractedItem]:
 def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
     if source.source_type == "json_funnelback":
         links = _extract_funnelback_items(body)
+    elif source.source_type == "json_ticketmaster":
+        links = _extract_ticketmaster_items(body)
     elif source.source_type == "json_wp_rest":
         links = _extract_wp_rest_items(body)
     elif source.source_type == "markdown_links":
