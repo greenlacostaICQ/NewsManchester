@@ -133,6 +133,19 @@ def _today_focus_score(candidate: dict) -> int:
     return score
 
 
+_AWARENESS_TOKENS = re.compile(
+    r"\b(awareness week|awareness month|mental health awareness|deaf awareness|"
+    r"cancer awareness|heart awareness|diabetes awareness|stroke awareness|"
+    r"week \d{4}|month \d{4})\b",
+    re.IGNORECASE,
+)
+
+
+def _is_awareness_item(candidate: dict) -> bool:
+    blob = f"{candidate.get('title', '')} {candidate.get('summary', '')}".lower()
+    return bool(_AWARENESS_TOKENS.search(blob))
+
+
 def _promote_to_today_focus(candidates: list[dict]) -> None:
     """Ensure 'Что важно сегодня' has at least 2 substantive items.
 
@@ -150,6 +163,7 @@ def _promote_to_today_focus(candidates: list[dict]) -> None:
         if isinstance(candidate, dict)
         and candidate.get("primary_block") == "today_focus"
         and not str(candidate.get("practical_angle") or "").startswith("Включать только")
+        and not _is_awareness_item(candidate)
     ]
     if len(substantive) >= 2:
         return
