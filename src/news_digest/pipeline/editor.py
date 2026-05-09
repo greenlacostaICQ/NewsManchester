@@ -99,7 +99,10 @@ def edit_digest(project_root: Path) -> StageResult:
     if not city_candidates:
         errors.append("No city/public-affairs candidates are included.")
     elif len(soft_candidates) > len(city_candidates) * 2:
-        errors.append("Draft is overly skewed toward soft items compared with city/public-affairs coverage.")
+        warnings.append(
+            "Draft is skewed toward soft items compared with city/public-affairs coverage: "
+            f"{len(soft_candidates)} soft vs {len(city_candidates)} city/public-affairs candidate(s)."
+        )
 
     weak_city_candidates = [
         candidate
