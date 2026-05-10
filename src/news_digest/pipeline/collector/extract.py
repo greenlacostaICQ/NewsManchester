@@ -17,7 +17,7 @@ import json
 import re
 import xml.etree.ElementTree as ET
 
-from news_digest.pipeline.common import clean_url, fingerprint_for_candidate
+from news_digest.pipeline.common import clean_url, fingerprint_for_candidate, now_london
 
 from .dates import (
     _date_hint_from_text,
@@ -381,6 +381,233 @@ def _extract_feed_items(base_url: str, body: str) -> list[ExtractedItem]:
     return items
 
 
+_TFGM_ALERT_PATTERN = re.compile(
+    r'\\"title\\":\\"([^"\\]{5,200})\\"[^}]{0,800}?\\"description\\":\\"([^"\\]{10,500})\\"'
+)
+
+
+def _extract_tfgm_alerts(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Extract TfGM travel alerts from Next.js inline JSON.
+
+    The /travel-updates/travel-alerts page server-renders alert data inside
+    `self.__next_f.push([1, "...escaped JSON..."])` strings. Each alert has
+    a title (location + cause) and description. Bee Network bus disruptions
+    are surfaced on the same page.
+
+    Alerts don't have per-item permalinks — all items point at the source
+    listing URL. Curator + LLM rewrite turn them into single-line entries.
+    """
+
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    # Alerts are live — stamp them with current time so the transport
+    # staleness check (which drops items without a published_at) keeps them.
+    fetched_at = now_london().isoformat()
+    for match in _TFGM_ALERT_PATTERN.finditer(body):
+        title = match.group(1).strip().replace('\\u0026', '&')
+        description = match.group(2).strip().replace('\\u0026', '&')
+        if not title or title in seen:
+            continue
+        seen.add(title)
+        # Alerts have no per-item permalink. Synthesize a unique path so
+        # fingerprint_for_candidate sees distinct items (clean_url drops
+        # query/fragment, so we put the slug in the path itself).
+        slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:80]
+        items.append(
+            ExtractedItem(
+                title=_clean_title_text(title),
+                url=f"{source.url}/{slug}",
+                published_at=fetched_at,
+                summary=_clean_snippet(description)[:500],
+            )
+        )
+    return items
+
+
+_NATIONAL_RAIL_BUILD_ID_PATTERN = re.compile(r'"buildId":"([^"]+)"')
+# Operator codes are sometimes empty in the JSON payload — fall back to
+# operator name substrings for the GM-relevant set. Long-distance operators
+# (Avanti, CrossCountry) cover non-GM segments too — exclude them here and
+# rely on the National Rail filter's GM-station term list to surface
+# Manchester-stop disruptions when those operators publish them.
+_NATIONAL_RAIL_GM_OPERATOR_NAMES = (
+    "northern",
+    "transpennine",
+)
+
+
+def _extract_national_rail(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Two-step extractor: HTML → buildId → JSON disruption feed.
+
+    The /status-and-disruptions/ HTML page is just a Next.js shell. The
+    structured data lives at /_next/data/{buildId}/status-and-disruptions.json
+    where buildId is embedded in the shell's script tag. We pull operator-
+    level status indicators and unplanned incidents, filter to GM operators
+    (Northern, TransPennine, Avanti West Coast), and skip 'Good service'
+    rows that have nothing to report.
+    """
+
+    match = _NATIONAL_RAIL_BUILD_ID_PATTERN.search(body)
+    if not match:
+        return []
+    build_id = match.group(1)
+    json_url = f"https://www.nationalrail.co.uk/_next/data/{build_id}/status-and-disruptions.json"
+    try:
+        json_body = _fetch_text(json_url)
+    except Exception:
+        return []
+    try:
+        payload = json.loads(json_body)
+    except json.JSONDecodeError:
+        return []
+
+    data = payload.get("pageProps", {}).get("data", {})
+    indicators = data.get("serviceIndicatorsData", {}).get("serviceIndicators", []) or []
+    unplanned = data.get("serviceIndicatorsData", {}).get("unplannedIncidents", []) or []
+    disruptions = data.get("disruptionsData", {}).get("disruptions", []) or []
+
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    fetched_at = now_london().isoformat()
+
+    def _is_gm_operator(name: str, operators_collection: list[dict] | None = None) -> bool:
+        lowered = (name or "").lower()
+        if any(op in lowered for op in _NATIONAL_RAIL_GM_OPERATOR_NAMES):
+            return True
+        for op in operators_collection or []:
+            op_name = str(op.get("name") or "").lower()
+            if any(o in op_name for o in _NATIONAL_RAIL_GM_OPERATOR_NAMES):
+                return True
+        return False
+
+    for indicator in indicators:
+        name = str(indicator.get("name") or "").strip()
+        status = str(indicator.get("status") or "").strip()
+        description = (
+            str(indicator.get("customStatusDescription") or "").strip()
+            or str(indicator.get("additionalInfoMessage") or "").strip()
+        )
+        if not _is_gm_operator(name):
+            continue
+        if status.lower() == "good service" and not description:
+            continue
+        title = f"{name}: {description or status}".strip(": ")
+        if title in seen:
+            continue
+        seen.add(title)
+        slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:80]
+        items.append(
+            ExtractedItem(
+                title=_clean_title_text(title)[:200],
+                url=f"{source.url}{slug}",
+                published_at=fetched_at,
+                summary=_clean_snippet(description or status)[:400],
+            )
+        )
+
+    for incident in (*unplanned, *disruptions):
+        ops = incident.get("operatorsAffectedCollection") or []
+        if not _is_gm_operator("", ops):
+            continue
+        name = str(incident.get("name") or "").strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        op_label = ", ".join(str(o.get("name") or "").strip() for o in ops if o.get("name"))
+        title = f"{op_label}: {name}" if op_label else name
+        slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:80]
+        items.append(
+            ExtractedItem(
+                title=_clean_title_text(title)[:200],
+                url=f"{source.url}{slug}",
+                published_at=fetched_at,
+                summary=_clean_snippet(name)[:400],
+            )
+        )
+
+    return items
+
+
+_EVENTBRITE_EVENT_LINK_PATTERN = re.compile(
+    r'href="(https://www\.eventbrite\.[a-z.]+/e/([a-z0-9\-]+)-tickets[^"]+)"'
+)
+# Eventbrite's "markets" category page mixes in unrelated events
+# (webinars, polo days, food tours from other cities). Require an actual
+# market keyword in the slug AND a GM city/borough so we don't import
+# Halifax / Sheffield / London markets.
+_EVENTBRITE_MARKET_KEYWORDS = (
+    "market",
+    "fair",
+    "flea",
+    "maker",
+    "vintage",
+    "bazaar",
+    "car-boot",
+    "boot-sale",
+)
+_EVENTBRITE_GM_LOCATION_TOKENS = (
+    "manchester",
+    "salford",
+    "stockport",
+    "trafford",
+    "tameside",
+    "rochdale",
+    "oldham",
+    "wigan",
+    "bolton",
+    "bury",
+    "altrincham",
+    "prestwich",
+    "didsbury",
+    "chorlton",
+    "ancoats",
+    "northern-quarter",
+    "cutting-room",
+)
+
+
+def _extract_eventbrite_markets(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Extract market events from an Eventbrite category listing page.
+
+    Eventbrite event cards expose `/e/{slug}-tickets-{id}` URLs. The slug
+    contains a human-readable event name. We require both a market-type
+    keyword and a GM location token in the slug — Eventbrite's category
+    page surfaces unrelated events (webinars, polo days) and markets from
+    neighbouring cities (Halifax, Sheffield) that should not enter a GM
+    digest.
+    """
+
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    for match in _EVENTBRITE_EVENT_LINK_PATTERN.finditer(body):
+        url = match.group(1)
+        slug = match.group(2)
+        if url in seen:
+            continue
+        seen.add(url)
+        if not any(kw in slug for kw in _EVENTBRITE_MARKET_KEYWORDS):
+            continue
+        if not any(loc in slug for loc in _EVENTBRITE_GM_LOCATION_TOKENS):
+            continue
+        title = slug.replace("-", " ").strip()
+        if len(title) < 8:
+            continue
+        # Title-case the leading words but keep numbers and short tokens raw.
+        title = " ".join(
+            word if (word.isdigit() or len(word) <= 2) else word.capitalize()
+            for word in title.split()
+        )
+        items.append(
+            ExtractedItem(
+                title=_clean_title_text(title)[:200],
+                url=url,
+                published_at=None,
+                summary="",
+            )
+        )
+    return items
+
+
 def _extract_funnelback_items(body: str) -> list[ExtractedItem]:
     payload = json.loads(body)
     results = (
@@ -561,6 +788,12 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_wp_rest_items(body)
     elif source.source_type == "markdown_links":
         links = _extract_markdown_link_items(body)
+    elif source.source_type == "html_tfgm_alerts":
+        links = _extract_tfgm_alerts(source, body)
+    elif source.source_type == "json_national_rail":
+        links = _extract_national_rail(source, body)
+    elif source.source_type == "html_eventbrite":
+        links = _extract_eventbrite_markets(source, body)
     elif "<rss" in body[:500].lower() or "<feed" in body[:500].lower():
         links = _extract_feed_items(source.url, body)
     else:

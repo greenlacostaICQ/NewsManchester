@@ -724,6 +724,12 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
         path_all_must_contain=("/e/", "tickets-"),
         block_non_gm_weekend=True,
     ),
+    # Pre-filtered to markets via the Eventbrite category URL — accept all
+    # /e/ event pages without GM-token gate (titles are slugs like
+    # "manchester-urban-makers-street-market-weekend-2026").
+    "Eventbrite Manchester Markets": _SourcePolicy(
+        path_all_must_contain=("/e/", "tickets-"),
+    ),
     "Manchester Markets": _SourcePolicy(
         min_path_depth=2,
         path_must_contain=("/market", "/event", "/whats-on"),
@@ -850,6 +856,12 @@ def _source_override(
         if not ("/status-and-disruptions" in lowered_path or "/engineering-works/" in lowered_path):
             return False
         if _has_gm_token(lowered_title):
+            return True
+        # Items synthesised from the json_national_rail parser are already
+        # filtered to GM operators (Northern / TransPennine / Avanti West
+        # Coast). Their titles start with the operator name + colon — accept.
+        gm_operator_prefixes = ("northern:", "transpennine express:")
+        if any(lowered_title.startswith(p) for p in gm_operator_prefixes):
             return True
         rail_terms = (
             "manchester airport", "manchester piccadilly", "manchester victoria",

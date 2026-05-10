@@ -94,6 +94,8 @@ report_category = "transport"
 candidate_category = "transport"
 url = "https://tfgm.com/travel-updates/travel-alerts"
 primary_block = "transport"
+source_type = "html_tfgm_alerts"
+allowed_hosts = ["tfgm.com"]
 
 [[sources]]
 name = "National Rail"
@@ -101,6 +103,8 @@ report_category = "transport"
 candidate_category = "transport"
 url = "https://www.nationalrail.co.uk/status-and-disruptions/"
 primary_block = "transport"
+source_type = "json_national_rail"
+allowed_hosts = ["nationalrail.co.uk"]
 
 # ── Public services ────────────────────────────────────────────────────────────
 
@@ -521,18 +525,22 @@ allowed_hosts = ["investinmanchester.com"]
 name = "University of Salford"
 report_category = "tech_business"
 candidate_category = "tech_business"
-url = "https://www.salford.ac.uk/news"
+url = "https://www.salford.ac.uk/news/rss"
 primary_block = "tech_business"
+source_type = "rss"
 allowed_hosts = ["salford.ac.uk"]
 
 [[sources]]
 name = "University of Manchester"
 report_category = "tech_business"
 candidate_category = "tech_business"
-url = "https://www.manchester.ac.uk/about/news/"
+url = "https://www.manchester.ac.uk/about/news/feed/"
 primary_block = "tech_business"
+source_type = "rss"
 allowed_hosts = ["manchester.ac.uk"]
 
+# MMU has no public RSS feed — HTML extractor pulls navigation menu items.
+# Disabled until a working endpoint is confirmed.
 [[sources]]
 name = "Manchester Metropolitan"
 report_category = "tech_business"
@@ -540,6 +548,7 @@ candidate_category = "tech_business"
 url = "https://www.mmu.ac.uk/news-and-events"
 primary_block = "tech_business"
 allowed_hosts = ["mmu.ac.uk"]
+enabled = false
 
 # ── Weekend activities ─────────────────────────────────────────────────────────
 
@@ -593,6 +602,8 @@ url = "https://www.eventbrite.co.uk/d/united-kingdom--manchester/"
 primary_block = "weekend_activities"
 allowed_hosts = ["eventbrite.co.uk", "eventbrite.com"]
 
+# manchestermarkets.com is just a redirect/landing page → manchester.gov.uk/markets.
+# Real market events come from Eventbrite Manchester Markets (added below).
 [[sources]]
 name = "Manchester Markets"
 report_category = "food_openings"
@@ -600,6 +611,7 @@ candidate_category = "food_openings"
 url = "https://www.manchestermarkets.com/"
 primary_block = "openings"
 allowed_hosts = ["manchestermarkets.com"]
+enabled = false
 
 [[sources]]
 name = "Skiddle Manchester"
@@ -609,6 +621,8 @@ url = "https://www.skiddle.com/whats-on/Manchester/"
 primary_block = "weekend_activities"
 allowed_hosts = ["skiddle.com"]
 
+# visitmanchester.com/whats-on/markets is a dead URL — redirects to generic /whats-on
+# which extracts venue navigation links instead of markets.
 [[sources]]
 name = "Visit Manchester Markets"
 report_category = "food_openings"
@@ -616,6 +630,19 @@ candidate_category = "food_openings"
 url = "https://www.visitmanchester.com/whats-on/markets"
 primary_block = "openings"
 allowed_hosts = ["visitmanchester.com"]
+enabled = false
+
+# Eventbrite Manchester Markets — real market events (makers markets, food markets,
+# car boot sales, flea markets, vintage markets). Custom parser extracts event-card
+# href + aria-label patterns. Includes Prestwich Makers Market, urban makers, etc.
+[[sources]]
+name = "Eventbrite Manchester Markets"
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+url = "https://www.eventbrite.co.uk/d/united-kingdom--manchester/markets/"
+primary_block = "weekend_activities"
+source_type = "html_eventbrite"
+allowed_hosts = ["eventbrite.co.uk", "eventbrite.com"]
 
 [[sources]]
 name = "Time Out Manchester"
