@@ -135,7 +135,7 @@ _HEAVY_SNOW_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _EXTREME_TEMP_PATTERN = re.compile(r"\b([1-9]\d)\s*°[Cc]\b")
-_EVENT_BLOCKS = {"weekend_activities", "next_7_days", "ticket_radar", "future_announcements"}
+_EVENT_BLOCKS = {"weekend_activities", "next_7_days", "ticket_radar", "outside_gm_tickets", "future_announcements"}
 _MONTHS = {
     "jan": 1, "january": 1,
     "feb": 2, "february": 2,
@@ -433,6 +433,7 @@ def write_digest(project_root: Path) -> StageResult:
         "Что важно в ближайшие 7 дней",
         "Дальние анонсы",
         "Билеты / Ticket Radar",
+        "Крупные концерты вне GM",
         "Еда, открытия и рынки",
         "IT и бизнес",
         "Футбол",

@@ -207,6 +207,15 @@ def _extract_jsonld_description(html_text: str) -> str:
     return ""
 
 
+def _extract_jsonld_title(html_text: str) -> str:
+    for node in _extract_jsonld_nodes(html_text):
+        for key in ("name", "headline"):
+            title = _clean_title_text(str(node.get(key) or ""))
+            if len(title) >= 8:
+                return title
+    return ""
+
+
 def _extract_jsonld_start_date(html_text: str) -> str | None:
     for node in _extract_jsonld_nodes(html_text):
         for key in ("startDate", "datePublished", "dateModified", "uploadDate"):
@@ -214,6 +223,23 @@ def _extract_jsonld_start_date(html_text: str) -> str | None:
             if parsed is not None:
                 return parsed.isoformat()
     return None
+
+
+def _extract_page_title(html_text: str) -> str:
+    patterns = (
+        r'<meta\b[^>]*?(?:property|name)\s*=\s*["\']og:title["\'][^>]*?content\s*=\s*["\']([^"\']+)["\']',
+        r'<meta\b[^>]*?content\s*=\s*["\']([^"\']+)["\'][^>]*?(?:property|name)\s*=\s*["\']og:title["\']',
+        r"<title[^>]*>(.*?)</title>",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, html_text, flags=re.IGNORECASE | re.DOTALL)
+        if not match:
+            continue
+        title = _clean_title_text(match.group(1))
+        title = re.sub(r"\s*[|–-]\s*Albert Hall Manchester\s*$", "", title, flags=re.IGNORECASE).strip()
+        if len(title) >= 8:
+            return title
+    return ""
 
 
 def _extract_paragraph_evidence(html_text: str, title: str = "") -> str:
@@ -295,7 +321,11 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
     if not _should_enrich_source(source):
         return item
     summary_thin = _is_thin_summary(item.summary, item.title)
-    force_fetch = source.report_category in {"media_layer", "gmp", "food_openings"} or source.candidate_category == "council"
+    force_fetch = (
+        source.report_category in {"media_layer", "gmp", "food_openings"}
+        or source.candidate_category == "council"
+        or source.name == "Albert Hall Manchester"
+    )
     if item.published_at and not summary_thin and not force_fetch:
         return ExtractedItem(
             title=_clean_title_text(item.title),
@@ -321,6 +351,7 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
 
     paragraph_evidence = _extract_paragraph_evidence(article_html, item.title)
     enriched_summary = _extract_jsonld_description(article_html) or _extract_meta_description(article_html)
+    enriched_title = _extract_jsonld_title(article_html) or _extract_page_title(article_html)
     evidence_text = paragraph_evidence or enriched_summary or item.summary
     if summary_thin and paragraph_evidence:
         enriched_summary = _summary_from_evidence(paragraph_evidence)
@@ -338,7 +369,7 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         or _published_at_from_title_or_url(item.title, item.url)
     )
     return ExtractedItem(
-        title=_clean_title_text(item.title),
+        title=_clean_title_text(enriched_title or item.title),
         url=item.url,
         published_at=published_at,
         summary=summary,
@@ -718,6 +749,11 @@ def _extract_ticketmaster_items(source: SourceDef, body: str) -> list[ExtractedI
     return items
 
 
+def _is_outside_gm_ticket_source(source: SourceDef) -> bool:
+    lowered = source.name.lower()
+    return "ticketmaster liverpool" in lowered or "ticketmaster london major" in lowered
+
+
 def _extract_wp_rest_items(body: str) -> list[ExtractedItem]:
     payload = json.loads(body)
     if not isinstance(payload, list):
@@ -820,6 +856,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         published_at = item.published_at or _published_at_from_title_or_url(item.title, normalized_url)
         freshness_status = _freshness_status(source, published_at)
         primary_block = _resolve_primary_block(source, published_at)
+        if _is_outside_gm_ticket_source(source):
+            primary_block = "outside_gm_tickets"
         if source.report_category in {"media_layer", "gmp"} and freshness_status in {"stale", "unknown"}:
             # Stale/undated city items only deserve a Городской радар slot
             # when the title or summary actually carries a topical keyword

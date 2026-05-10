@@ -200,6 +200,7 @@ _CALENDAR_CARRY_BLOCKS: frozenset[str] = frozenset({
     "weekend_activities",
     "next_7_days",
     "ticket_radar",
+    "outside_gm_tickets",
     "future_announcements",
 })
 _CALENDAR_CARRY_CATEGORIES: frozenset[str] = frozenset({
@@ -329,18 +330,25 @@ def _calendar_item_should_carry_over(candidate: dict, previous: dict) -> bool:
         return False
 
     today = now_london().date()
-    last_published = _published_day_from_history(previous, "last_published_day_london")
-    if last_published and (today - last_published).days < _CALENDAR_CARRY_MIN_INTERVAL_DAYS:
-        return False
-
     first_published = _published_day_from_history(previous, "first_published_day_london")
     if first_published and (today - first_published).days > _CALENDAR_CARRY_MAX_AGE_DAYS:
         return False
 
     explicit_dates = _calendar_dates_from_text(text)
     published_day = _parse_day(candidate.get("published_at"))
-    if primary_block in {"weekend_activities", "next_7_days", "ticket_radar", "future_announcements"} and published_day:
+    if primary_block in {"weekend_activities", "next_7_days", "ticket_radar", "outside_gm_tickets", "future_announcements"} and published_day:
         explicit_dates.append(published_day)
+
+    long_running_active = False
+    if len(explicit_dates) >= 2:
+        start = min(explicit_dates)
+        end = max(explicit_dates)
+        long_running_active = start <= today <= end and (end - start).days >= 7
+
+    last_published = _published_day_from_history(previous, "last_published_day_london")
+    min_interval = 1 if long_running_active else _CALENDAR_CARRY_MIN_INTERVAL_DAYS
+    if last_published and (today - last_published).days < min_interval:
+        return False
 
     if explicit_dates:
         return max(explicit_dates) >= today
@@ -373,7 +381,7 @@ def _title_tokens(title: str) -> frozenset[str]:
 
 _DEDUP_BLOCK_GROUPS: tuple[frozenset[str], ...] = (
     frozenset({"lead_story", "last_24h", "today_focus", "city_watch", "district_radar"}),
-    frozenset({"weekend_activities", "next_7_days", "future_announcements", "ticket_radar"}),
+    frozenset({"weekend_activities", "next_7_days", "future_announcements", "ticket_radar", "outside_gm_tickets"}),
     frozenset({"openings", "tech_business"}),
 )
 
