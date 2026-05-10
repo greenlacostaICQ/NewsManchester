@@ -168,6 +168,90 @@ def _extract_meta_description(html_text: str) -> str:
     return ""
 
 
+def _jsonld_nodes(value: object) -> list[dict]:
+    nodes: list[dict] = []
+    if isinstance(value, dict):
+        nodes.append(value)
+        graph = value.get("@graph")
+        if isinstance(graph, list):
+            for item in graph:
+                nodes.extend(_jsonld_nodes(item))
+    elif isinstance(value, list):
+        for item in value:
+            nodes.extend(_jsonld_nodes(item))
+    return nodes
+
+
+def _extract_jsonld_nodes(html_text: str) -> list[dict]:
+    nodes: list[dict] = []
+    for match in re.finditer(
+        r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+        html_text,
+        flags=re.IGNORECASE | re.DOTALL,
+    ):
+        raw = re.sub(r"^\s*<!--|-->\s*$", "", match.group(1).strip())
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        nodes.extend(_jsonld_nodes(payload))
+    return nodes
+
+
+def _extract_jsonld_description(html_text: str) -> str:
+    for node in _extract_jsonld_nodes(html_text):
+        for key in ("description", "articleBody"):
+            snippet = _clean_snippet(str(node.get(key) or ""))
+            if len(snippet) >= 40:
+                return snippet
+    return ""
+
+
+def _extract_jsonld_start_date(html_text: str) -> str | None:
+    for node in _extract_jsonld_nodes(html_text):
+        for key in ("startDate", "datePublished", "dateModified", "uploadDate"):
+            parsed = _parse_datetime_value(str(node.get(key) or ""))
+            if parsed is not None:
+                return parsed.isoformat()
+    return None
+
+
+def _extract_paragraph_evidence(html_text: str, title: str = "") -> str:
+    article_match = re.search(
+        r"<(?:article|main)[^>]*>(.*?)</(?:article|main)>",
+        html_text,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    candidate_html = article_match.group(1) if article_match else html_text
+    title_key = re.sub(r"[^a-z0-9а-яё]+", " ", str(title or "").lower()).strip()
+    paragraphs: list[str] = []
+    seen: set[str] = set()
+    for match in re.finditer(r"<p[^>]*>(.*?)</p>", candidate_html, flags=re.IGNORECASE | re.DOTALL):
+        snippet = _clean_snippet(match.group(1))
+        if len(snippet) < 45:
+            continue
+        lowered = snippet.lower()
+        if any(token in lowered for token in ("subscribe", "newsletter", "advertisement", "cookies", "privacy policy")):
+            continue
+        key = re.sub(r"[^a-z0-9а-яё]+", " ", lowered).strip()
+        if not key or key in seen or (title_key and key == title_key):
+            continue
+        seen.add(key)
+        paragraphs.append(snippet)
+        if len(paragraphs) >= 3:
+            break
+    return " ".join(paragraphs)
+
+
+def _summary_from_evidence(evidence: str) -> str:
+    cleaned = _clean_snippet(evidence)
+    if not cleaned:
+        return ""
+    sentences = re.split(r"(?<=[.!?])\s+", cleaned)
+    summary = " ".join(sentence for sentence in sentences[:2] if sentence).strip()
+    return summary[:700].rstrip()
+
+
 def _extract_article_published_at(html_text: str) -> str | None:
     patterns = (
         r'"datePublished"\s*:\s*"([^"]+)"',
@@ -185,18 +269,61 @@ def _extract_article_published_at(html_text: str) -> str | None:
     return None
 
 
+def _should_enrich_source(source: SourceDef) -> bool:
+    if source.report_category == "transport":
+        return False
+    if source.source_type == "json_ticketmaster":
+        return False
+    if source.name in {"Co-op Live", "AO Arena"}:
+        return False
+    return (
+        source.report_category in {
+            "media_layer",
+            "gmp",
+            "public_services",
+            "culture_weekly",
+            "venues_tickets",
+            "food_openings",
+            "football",
+            "tech_business",
+        }
+        or source.candidate_category == "council"
+    )
+
+
 def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
-    if source.report_category not in {"media_layer", "gmp", "public_services", "culture_weekly"} and source.candidate_category != "council":
+    if not _should_enrich_source(source):
         return item
     summary_thin = _is_thin_summary(item.summary, item.title)
-    if item.published_at and not summary_thin:
-        return item
+    force_fetch = source.report_category in {"media_layer", "gmp", "food_openings"} or source.candidate_category == "council"
+    if item.published_at and not summary_thin and not force_fetch:
+        return ExtractedItem(
+            title=_clean_title_text(item.title),
+            url=item.url,
+            published_at=item.published_at,
+            summary=_source_specific_summary(source, item.title, item.summary),
+            lead=item.lead or _derive_lead(source, item.title, item.summary),
+            evidence_text=item.summary,
+            enrichment_status="skipped_existing_summary",
+        )
     try:
         article_html = _fetch_text(item.url)
-    except Exception:
-        return item
+    except Exception as exc:  # noqa: BLE001 - enrichment is best-effort.
+        return ExtractedItem(
+            title=_clean_title_text(item.title),
+            url=item.url,
+            published_at=item.published_at,
+            summary=item.summary,
+            lead=item.lead,
+            evidence_text=item.summary,
+            enrichment_status=f"failed: {exc}",
+        )
 
-    enriched_summary = _extract_meta_description(article_html)
+    paragraph_evidence = _extract_paragraph_evidence(article_html, item.title)
+    enriched_summary = _extract_jsonld_description(article_html) or _extract_meta_description(article_html)
+    evidence_text = paragraph_evidence or enriched_summary or item.summary
+    if summary_thin and paragraph_evidence:
+        enriched_summary = _summary_from_evidence(paragraph_evidence)
     summary = item.summary
     if summary_thin and enriched_summary and not _is_thin_summary(enriched_summary, item.title):
         summary = enriched_summary
@@ -204,13 +331,20 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         summary = enriched_summary
     summary = _source_specific_summary(source, item.title, summary)
     lead = item.lead or _derive_lead(source, item.title, summary)
-    published_at = item.published_at or _extract_article_published_at(article_html) or _published_at_from_title_or_url(item.title, item.url)
+    published_at = (
+        item.published_at
+        or _extract_jsonld_start_date(article_html)
+        or _extract_article_published_at(article_html)
+        or _published_at_from_title_or_url(item.title, item.url)
+    )
     return ExtractedItem(
         title=_clean_title_text(item.title),
         url=item.url,
         published_at=published_at,
         summary=summary,
         lead=lead,
+        evidence_text=_clean_snippet(evidence_text)[:1200],
+        enrichment_status="ok" if evidence_text else "ok_no_evidence",
     )
 
 
@@ -494,6 +628,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
             "published_date_london": published_at[:10] if published_at else "",
             "freshness_status": freshness_status,
             "source_health": "dated" if published_at else "undated",
+            "evidence_text": item.evidence_text,
+            "enrichment_status": item.enrichment_status,
         }
         if source.primary_block == "last_24h" and primary_block not in {"last_24h", "city_watch"}:
             candidate["reason"] = (

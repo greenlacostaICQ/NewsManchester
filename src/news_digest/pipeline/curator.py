@@ -70,7 +70,7 @@ def _is_curator_protected(candidate: dict) -> bool:
 def _infer_borough(candidate: dict) -> str:
     text = " ".join(
         str(candidate.get(field) or "")
-        for field in ("title", "summary", "lead", "practical_angle")
+        for field in ("title", "summary", "lead", "evidence_text", "practical_angle")
     )
     for borough in _GM_BOROUGHS:
         if re.search(rf"\b{re.escape(borough)}\b", text, flags=re.IGNORECASE):
@@ -93,6 +93,7 @@ def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: st
             "title": c.get("title", ""),
             "summary": (c.get("summary") or "")[:320],
             "lead": (c.get("lead") or "")[:320],
+            "evidence_text": (c.get("evidence_text") or "")[:700],
             "practical_angle": (c.get("practical_angle") or "")[:240],
             "category": c.get("category", ""),
             "primary_block": c.get("primary_block", ""),

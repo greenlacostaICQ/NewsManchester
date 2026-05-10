@@ -39,6 +39,8 @@ class ExtractedItem:
     published_at: str | None = None
     summary: str = ""
     lead: str = ""
+    evidence_text: str = ""
+    enrichment_status: str = "not_attempted"
 
 
 _SOURCES_TOML = Path(__file__).parents[4] / "data" / "sources.toml"
