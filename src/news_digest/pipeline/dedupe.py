@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date, datetime
 from pathlib import Path
 import re
 
@@ -97,10 +98,19 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             previous is not None
             and str(previous.get("last_published_day_london") or "").strip() == today_london()
         )
+        calendar_carry_ok = previous is not None and _calendar_item_should_carry_over(candidate, previous)
         if previous is not None and (operational_repeat_ok or same_day_repeat_ok):
             candidate["dedupe_decision"] = "new"
             candidate["include"] = True
             candidate["reason"] = candidate.get("reason") or "Operational block repeat is allowed while it remains relevant."
+        elif calendar_carry_ok:
+            candidate["dedupe_decision"] = "carry_over_with_label"
+            candidate["include"] = True
+            candidate["carry_over_label"] = candidate.get("carry_over_label") or "актуально к дате"
+            candidate["reason"] = (
+                candidate.get("reason")
+                or "Calendar/lifestyle item is still active and was not shown in the previous issue."
+            )
         elif previous is not None:
             candidate["matched_previous_fingerprint"] = fingerprint
             if decision not in {"carry_over_with_label", "new_phase"}:
@@ -184,6 +194,160 @@ _TITLE_STOPWORDS: frozenset[str] = frozenset({
     "of", "for", "with", "from", "is", "are", "was", "were", "be",
     "been", "has", "have", "had", "by", "as", "it", "its",
 })
+
+_CALENDAR_CARRY_BLOCKS: frozenset[str] = frozenset({
+    "openings",
+    "weekend_activities",
+    "next_7_days",
+    "ticket_radar",
+    "future_announcements",
+})
+_CALENDAR_CARRY_CATEGORIES: frozenset[str] = frozenset({
+    "food_openings",
+    "culture_weekly",
+    "venues_tickets",
+})
+_CALENDAR_CARRY_MIN_INTERVAL_DAYS = 2
+_CALENDAR_CARRY_MAX_AGE_DAYS = 14
+_CALENDAR_SIGNAL_TERMS: tuple[str, ...] = (
+    "bar",
+    "beer",
+    "brewery",
+    "cafe",
+    "café",
+    "car boot",
+    "closing",
+    "craft",
+    "fair",
+    "farmers market",
+    "festival",
+    "flea",
+    "food hall",
+    "food market",
+    "launch",
+    "launches",
+    "maker",
+    "makers market",
+    "market",
+    "opening",
+    "opens",
+    "pop-up",
+    "pub",
+    "reopen",
+    "restaurant",
+    "street food",
+)
+_MONTHS: dict[str, int] = {
+    "jan": 1, "january": 1,
+    "feb": 2, "february": 2,
+    "mar": 3, "march": 3,
+    "apr": 4, "april": 4,
+    "may": 5,
+    "jun": 6, "june": 6,
+    "jul": 7, "july": 7,
+    "aug": 8, "august": 8,
+    "sep": 9, "sept": 9, "september": 9,
+    "oct": 10, "october": 10,
+    "nov": 11, "november": 11,
+    "dec": 12, "december": 12,
+}
+
+
+def _parse_day(value: object) -> date | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).astimezone(now_london().tzinfo).date()
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime(raw[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _published_day_from_history(item: dict, key: str) -> date | None:
+    try:
+        return datetime.strptime(str(item.get(key) or ""), "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _candidate_text(candidate: dict) -> str:
+    return " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "practical_angle", "source_url")
+    )
+
+
+def _calendar_dates_from_text(text: str) -> list[date]:
+    today = now_london().date()
+    dates: list[date] = []
+    lowered = str(text or "").lower()
+
+    for match in re.finditer(r"\b(20\d{2})[/-](\d{1,2})[/-](\d{1,2})\b", lowered):
+        year, month, day = (int(part) for part in match.groups())
+        try:
+            dates.append(date(year, month, day))
+        except ValueError:
+            continue
+
+    for match in re.finditer(r"/(20\d{2})/(\d{1,2})/(\d{1,2})(?:/|$)", lowered):
+        year, month, day = (int(part) for part in match.groups())
+        try:
+            dates.append(date(year, month, day))
+        except ValueError:
+            continue
+
+    for match in re.finditer(r"\b(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]{3,9})(?:\s+(20\d{2}))?\b", lowered):
+        day_raw, month_raw, year_raw = match.groups()
+        month = _MONTHS.get(month_raw)
+        if not month:
+            continue
+        year = int(year_raw) if year_raw else today.year
+        try:
+            parsed = date(year, month, int(day_raw))
+        except ValueError:
+            continue
+        if not year_raw and parsed < today.replace(day=1):
+            parsed = parsed.replace(year=parsed.year + 1)
+        dates.append(parsed)
+
+    return dates
+
+
+def _calendar_item_should_carry_over(candidate: dict, previous: dict) -> bool:
+    primary_block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    if primary_block not in _CALENDAR_CARRY_BLOCKS and category not in _CALENDAR_CARRY_CATEGORIES:
+        return False
+
+    text = _candidate_text(candidate)
+    lowered = text.lower()
+    if not any(term in lowered for term in _CALENDAR_SIGNAL_TERMS):
+        return False
+
+    today = now_london().date()
+    last_published = _published_day_from_history(previous, "last_published_day_london")
+    if last_published and (today - last_published).days < _CALENDAR_CARRY_MIN_INTERVAL_DAYS:
+        return False
+
+    first_published = _published_day_from_history(previous, "first_published_day_london")
+    if first_published and (today - first_published).days > _CALENDAR_CARRY_MAX_AGE_DAYS:
+        return False
+
+    explicit_dates = _calendar_dates_from_text(text)
+    published_day = _parse_day(candidate.get("published_at"))
+    if primary_block in {"weekend_activities", "next_7_days", "ticket_radar", "future_announcements"} and published_day:
+        explicit_dates.append(published_day)
+
+    if explicit_dates:
+        return max(explicit_dates) >= today
+
+    # Food/opening pages often lack machine-readable event dates. Keep them
+    # eligible briefly instead of dropping an opening forever after one URL hit.
+    return primary_block == "openings" or category == "food_openings"
 
 
 def _extract_borough(title: str) -> str | None:

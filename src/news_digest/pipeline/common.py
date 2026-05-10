@@ -32,7 +32,7 @@ LOW_SIGNAL_BLOCKS = [
     "Городской радар",
     "Дальние анонсы",
     "Билеты / Ticket Radar",
-    "Открытия и еда",
+    "Еда, открытия и рынки",
     "IT и бизнес",
     "Радар по районам",
 ]
@@ -59,7 +59,7 @@ PRIMARY_BLOCKS = {
     "next_7_days": "Что важно в ближайшие 7 дней",
     "future_announcements": "Дальние анонсы",
     "ticket_radar": "Билеты / Ticket Radar",
-    "openings": "Открытия и еда",
+    "openings": "Еда, открытия и рынки",
     "tech_business": "IT и бизнес",
     "football": "Футбол",
     "district_radar": "Радар по районам",

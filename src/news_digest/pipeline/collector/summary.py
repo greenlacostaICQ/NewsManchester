@@ -165,6 +165,8 @@ def _default_practical_angle(source: SourceDef, title: str = "", summary: str = 
     if source.report_category == "culture_weekly":
         return "Проверьте дату, время и бронирование перед планированием."
     if source.report_category == "food_openings":
+        if any(token in lowered for token in ("market", "fair", "festival", "car boot", "street food")):
+            return "Проверьте дату, место и часы работы перед поездкой."
         return "Новое место или запуск стоит проверить перед визитом."
     if source.report_category in {"media_layer", "gmp"} or source.candidate_category == "council":
         blob = f"{lowered} {summary_lowered}"

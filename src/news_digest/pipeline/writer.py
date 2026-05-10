@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date, datetime
 import html
 import logging
 from pathlib import Path
@@ -134,6 +135,21 @@ _HEAVY_SNOW_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _EXTREME_TEMP_PATTERN = re.compile(r"\b([1-9]\d)\s*°[Cc]\b")
+_EVENT_BLOCKS = {"weekend_activities", "next_7_days", "ticket_radar", "future_announcements"}
+_MONTHS = {
+    "jan": 1, "january": 1,
+    "feb": 2, "february": 2,
+    "mar": 3, "march": 3,
+    "apr": 4, "april": 4,
+    "may": 5,
+    "jun": 6, "june": 6,
+    "jul": 7, "july": 7,
+    "aug": 8, "august": 8,
+    "sep": 9, "sept": 9, "september": 9,
+    "oct": 10, "october": 10,
+    "nov": 11, "november": 11,
+    "dec": 12, "december": 12,
+}
 
 
 def _sanity_flags(candidate: dict, line: str) -> list[str]:
@@ -146,6 +162,64 @@ def _sanity_flags(candidate: dict, line: str) -> list[str]:
         if temp > 38 or temp < 0 and month in _SUMMER_MONTHS:
             flags.append(f"Implausible Manchester temperature: {m.group()}.")
     return flags
+
+
+def _parse_day(value: object) -> date | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).astimezone(now_london().tzinfo).date()
+    except ValueError:
+        return None
+
+
+def _future_date_signal(text: str) -> bool:
+    today = now_london().date()
+    lowered = str(text or "").lower()
+    dates: list[date] = []
+    for match in re.finditer(r"\b(20\d{2})[/-](\d{1,2})[/-](\d{1,2})\b", lowered):
+        year, month, day = (int(part) for part in match.groups())
+        try:
+            dates.append(date(year, month, day))
+        except ValueError:
+            continue
+    for match in re.finditer(r"/(20\d{2})/(\d{1,2})/(\d{1,2})(?:/|$)", lowered):
+        year, month, day = (int(part) for part in match.groups())
+        try:
+            dates.append(date(year, month, day))
+        except ValueError:
+            continue
+    for match in re.finditer(r"\b(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]{3,9})(?:\s+(20\d{2}))?\b", lowered):
+        day_raw, month_raw, year_raw = match.groups()
+        month = _MONTHS.get(month_raw)
+        if not month:
+            continue
+        year = int(year_raw) if year_raw else today.year
+        try:
+            dates.append(date(year, month, int(day_raw)))
+        except ValueError:
+            continue
+    return bool(dates and max(dates) >= today)
+
+
+def _is_expired_event_candidate(candidate: dict, line: str = "") -> bool:
+    if str(candidate.get("primary_block") or "") not in _EVENT_BLOCKS:
+        return False
+    event_day = _parse_day(candidate.get("published_at"))
+    if not event_day or event_day >= now_london().date():
+        return False
+    text = " ".join(
+        str(value or "")
+        for value in (
+            candidate.get("title"),
+            candidate.get("summary"),
+            candidate.get("lead"),
+            candidate.get("source_url"),
+            line,
+        )
+    )
+    return not _future_date_signal(text)
 
 
 def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
@@ -222,6 +296,19 @@ def write_digest(project_root: Path) -> StageResult:
         if str(candidate.get("primary_block") or "") == "last_24h" and not str(candidate.get("published_at") or "").strip():
             errors.append(f"Candidate #{index} is in last_24h without published_at.")
             quality_counts["blocked_for_quality"] += 1
+            continue
+        if _is_expired_event_candidate(candidate):
+            warnings.append(f"Candidate #{index} dropped: expired event date.")
+            quality_counts["dropped_low_quality"] += 1
+            dropped_candidates.append(
+                {
+                    "fingerprint": candidate.get("fingerprint"),
+                    "title": str(candidate.get("title") or ""),
+                    "category": str(candidate.get("category") or ""),
+                    "primary_block": str(candidate.get("primary_block") or ""),
+                    "reasons": ["Expired event date."],
+                }
+            )
             continue
 
         block_key = str(candidate.get("primary_block") or "").strip()
@@ -346,7 +433,7 @@ def write_digest(project_root: Path) -> StageResult:
         "Что важно в ближайшие 7 дней",
         "Дальние анонсы",
         "Билеты / Ticket Radar",
-        "Открытия и еда",
+        "Еда, открытия и рынки",
         "IT и бизнес",
         "Футбол",
         "Радар по районам",

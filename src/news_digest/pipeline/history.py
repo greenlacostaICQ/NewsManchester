@@ -66,6 +66,10 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
                 "fingerprint": fingerprint,
                 "title": candidate.get("title"),
                 "normalized_title": normalize_title(str(candidate.get("title") or "")),
+                "category": candidate.get("category"),
+                "primary_block": candidate.get("primary_block"),
+                "source_label": candidate.get("source_label"),
+                "published_at": candidate.get("published_at"),
                 "first_published_day_london": entry.get("first_published_day_london") or run_day,
                 "last_published_day_london": run_day,
             }
