@@ -26,6 +26,8 @@ import re
 import time
 from pathlib import Path
 
+from news_digest.pipeline.common import now_london
+
 logger = logging.getLogger(__name__)
 
 OPENAI_BASE_URL = "https://api.openai.com/v1"
@@ -291,7 +293,7 @@ def _call_provider_batch(
                 fp = str(item.get("fingerprint") or "").strip()
                 dl = str(item.get("draft_line") or "").strip()
                 if fp and dl and dl.startswith("• ") and len(dl) >= 15:
-                    mapping[fp] = dl
+                    mapping[fp] = (dl, provider_name, model)
                     batch_hits += 1
             logger.info("%s: batch %d/%d → %d draft_lines.", provider_name, batch_idx, len(batches), batch_hits)
             if batch_idx < len(batches):
@@ -392,11 +394,16 @@ def run_llm_rewrite(project_root: Path) -> None:
             logger.info("LLM rewrite: calling group of %d candidates.", len(group))
             mapping.update(_call_with_fallback(group, prompt, provider_override, base_url_override, model_override))
 
+        run_iso = now_london().isoformat()
         applied = 0
         for candidate in candidates:
             fp = str(candidate.get("fingerprint") or "").strip()
             if fp in mapping:
-                candidate["draft_line"] = mapping[fp]
+                line, prov, model_name = mapping[fp]
+                candidate["draft_line"] = line
+                candidate["draft_line_provider"] = prov
+                candidate["draft_line_model"] = model_name
+                candidate["draft_line_written_at"] = run_iso
                 applied += 1
 
         candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -413,12 +420,18 @@ def run_llm_rewrite(project_root: Path) -> None:
         fix_candidates = [{"fingerprint": c.get("fingerprint", ""), "draft_line": c.get("draft_line", "")} for c in to_fix]
         fix_mapping = _call_with_fallback(fix_candidates, FIX_TRANSLATE_SYSTEM, provider_override, base_url_override, model_override, label_suffix="-fix")
 
+        run_iso = now_london().isoformat()
         fixed = 0
         for candidate in candidates:
             fp = str(candidate.get("fingerprint") or "").strip()
-            if fp in fix_mapping and not _needs_translation_fix(fix_mapping[fp]):
-                candidate["draft_line"] = fix_mapping[fp]
-                fixed += 1
+            if fp in fix_mapping:
+                line, prov, model_name = fix_mapping[fp]
+                if not _needs_translation_fix(line):
+                    candidate["draft_line"] = line
+                    candidate["draft_line_provider"] = prov + "-fix"
+                    candidate["draft_line_model"] = model_name
+                    candidate["draft_line_written_at"] = run_iso
+                    fixed += 1
 
         if fixed:
             candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -910,6 +910,21 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         _adjust_ticket_radar_block(candidate)
         if source.report_category == "food_openings" and _is_listicle_opening(item.title):
             continue
+        # Drop food_openings entries with a publication date older than 21 days.
+        # Last week's digest carried Popeyes from late February and Sticks'n'Sushi
+        # from March 30 — those slots should rotate, not freeze. We accept
+        # undated items (some sources never expose a date) and items in the
+        # future (announced openings).
+        if source.report_category == "food_openings" and published_at:
+            try:
+                pub_day = published_at[:10]
+                if pub_day and pub_day < (now_london().date().isoformat()):
+                    from datetime import date  # noqa: PLC0415
+                    delta = (now_london().date() - date.fromisoformat(pub_day)).days
+                    if delta > 21:
+                        continue
+            except (ValueError, TypeError):
+                pass
         if source.report_category == "football" and _is_football_fluff(item.title, normalized_url):
             continue
         candidate["fingerprint"] = fingerprint_for_candidate(candidate)
