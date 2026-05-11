@@ -914,6 +914,6 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
             continue
         candidate["fingerprint"] = fingerprint_for_candidate(candidate)
         candidates.append(candidate)
-        if len(candidates) >= 5:
+        if len(candidates) >= source.max_candidates:
             break
     return candidates

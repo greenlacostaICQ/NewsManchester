@@ -30,6 +30,9 @@ class SourceDef:
     # the primary URL is a feed (e.g. feeds.bbci.co.uk) and items point
     # at the canonical content domain (e.g. bbc.com/news/articles/...).
     allowed_hosts: tuple[str, ...] = ()
+    # Per-source candidate cap. Big media (MEN, BBC) publish 20-40 stories/day;
+    # councils and trade rags publish 1-5. Default 5 is safe for the long tail.
+    max_candidates: int = 5
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,6 +62,7 @@ def _load_sources() -> tuple[SourceDef, ...]:
             source_type=s.get("source_type", "html"),
             fallback_urls=tuple(s.get("fallback_urls", [])),
             allowed_hosts=tuple(s.get("allowed_hosts", [])),
+            max_candidates=int(s.get("max_candidates", 5)),
         )
         for s in _data["sources"]
         if s.get("enabled", True)

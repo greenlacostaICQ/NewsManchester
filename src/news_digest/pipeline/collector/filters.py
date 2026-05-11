@@ -874,14 +874,14 @@ def _source_override(
             return False
         if _is_football_fluff(lowered_title, lowered_path):
             return False
-        return _is_football_publishable(lowered_title, lowered_path)
+        return True
 
     if source.name == "Manchester City":
         if "/news/" not in lowered_path:
             return False
         if _is_football_fluff(lowered_title, lowered_path):
             return False
-        return _is_football_publishable(lowered_title, lowered_path)
+        return True
 
     if source.name == "Manchester's Finest":
         if not any(t in lowered_path for t in ("/eating-and-drinking/", "/food-and-drink/", "/news/")):
