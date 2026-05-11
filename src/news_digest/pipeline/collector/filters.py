@@ -566,9 +566,9 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
         require_gm_token=True,
     ),
     # ── Councils ──────────────────────────────────────────────────────────────
-    "Manchester Council": _SourcePolicy(path_must_start="/news-stories/20", min_path_depth=4),
+    "Manchester Council": _SourcePolicy(path_must_start="/news-stories/20", min_path_depth=3),
     "Salford Council": _SourcePolicy(path_must_start="/news/", min_path_depth=3),
-    "Trafford Council": _SourcePolicy(path_must_start="/news/20", min_path_depth=4),
+    "Trafford Council": _SourcePolicy(path_must_start="/news/20", min_path_depth=3),
     "Stockport Council": _SourcePolicy(
         path_must_start="/news/",
         path_banned_segments=("/newsroom",),
@@ -588,16 +588,16 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     "HOME": _SourcePolicy(path_must_contain=("/whats-on", "/events")),
     "Whitworth": _SourcePolicy(path_must_contain=("/whats-on", "/events")),
     "The Lowry": _SourcePolicy(path_must_contain=("/whats-on", "/events")),
-    "Factory International": _SourcePolicy(path_must_contain=("/whats-on/",), min_path_depth=3),
+    "Factory International": _SourcePolicy(path_must_contain=("/whats-on/",), min_path_depth=2),
     "Palace Theatre": _SourcePolicy(
         path_must_start="/shows/",
         path_all_must_contain=("/palace-theatre-manchester",),
     ),
     # ── Venues ────────────────────────────────────────────────────────────────
-    "Co-op Live": _SourcePolicy(path_must_contain=("/events/",), min_path_depth=3),
-    "AO Arena": _SourcePolicy(path_must_contain=("/events",), min_path_depth=3),
+    "Co-op Live": _SourcePolicy(path_must_contain=("/events/",), min_path_depth=2),
+    "AO Arena": _SourcePolicy(path_must_contain=("/events",), min_path_depth=2),
     "Ticketmaster Manchester": _SourcePolicy(),
-    "Bridgewater Hall": _SourcePolicy(path_must_contain=("/whats-on/",), min_path_depth=3),
+    "Bridgewater Hall": _SourcePolicy(path_must_contain=("/whats-on/",), min_path_depth=2),
     "Albert Hall Manchester": _SourcePolicy(path_must_contain=("/event/",), min_path_depth=2),
     "Band on the Wall": _SourcePolicy(path_must_contain=("/2026/", "/2025/"), min_path_depth=3),
     "RNCM": _SourcePolicy(path_must_contain=("/performance-and-events/",), min_path_depth=3),
@@ -690,9 +690,9 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
         path_banned_segments=(
             "get-started", "sectors", "why-manchester", "about", "contact",
             "advanced-materials", "digital-cyber", "financial-professional",
-            "life-sciences", "energy", "sport",
+            "life-sciences", "energy", "sport", "page/",
         ),
-        min_path_depth=3,
+        min_path_depth=2,
     ),
     # ── Weekend ───────────────────────────────────────────────────────────────
     "Manchester Wire": _SourcePolicy(
@@ -739,9 +739,6 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
         path_must_contain=("/manchester/things-to-do", "/manchester/food-drink", "/manchester/art-culture"),
         path_banned_segments=("/travel/",),
         block_non_gm_weekend=True,
-        block_listicle=True,
-        block_evergreen=True,
-        require_date_signal=True,
     ),
     "Manchester Food & Drink Festival": _SourcePolicy(
         min_path_depth=2,

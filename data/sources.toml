@@ -153,7 +153,7 @@ primary_block = "last_24h"
 name = "Trafford Council"
 report_category = "media_layer"
 candidate_category = "council"
-url = "https://www.trafford.gov.uk/news/"
+url = "https://www.trafford.gov.uk/news"
 primary_block = "last_24h"
 allowed_hosts = ["trafford.gov.uk"]
 
@@ -298,6 +298,7 @@ primary_block = "ticket_radar"
 
 [[sources]]
 name = "AO Arena"
+enabled = false  # SPA: server returns 19KB shell with 0 article links (Next.js)
 report_category = "venues_tickets"
 candidate_category = "venues_tickets"
 url = "https://www.ao-arena.com/events"
@@ -445,6 +446,7 @@ allowed_hosts = ["pedddle.com"]
 
 [[sources]]
 name = "The Makers Market"
+enabled = false  # SPA: 75KB shell with 0 internal hrefs; JS-rendered listing
 report_category = "food_openings"
 candidate_category = "food_openings"
 url = "https://www.themakersmarket.co.uk/"
@@ -453,6 +455,7 @@ allowed_hosts = ["themakersmarket.co.uk"]
 
 [[sources]]
 name = "Manchester Rocks Markets"
+enabled = false  # Next.js SPA: only chrome/static asset URLs in HTML
 report_category = "food_openings"
 candidate_category = "food_openings"
 url = "https://www.manchester-rocks.co.uk/things-to-do/"
@@ -661,6 +664,7 @@ allowed_hosts = ["timeout.com"]
 
 [[sources]]
 name = "Manchester Food & Drink Festival"
+enabled = false  # URL returns empty body (0 bytes)
 report_category = "food_openings"
 candidate_category = "food_openings"
 url = "https://www.foodanddrinkfestival.com/"
@@ -669,6 +673,7 @@ allowed_hosts = ["foodanddrinkfestival.com"]
 
 [[sources]]
 name = "Manchester City Events"
+enabled = false  # Squiz SPA: shell only, content loaded via Funnelback API
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.manchester.gov.uk/events"
@@ -693,6 +698,7 @@ allowed_hosts = ["stockport.gov.uk"]
 
 [[sources]]
 name = "Bolton Events"
+enabled = false  # SPA shell: only /event/new link, content loaded via JS
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.bolton.gov.uk/events"
