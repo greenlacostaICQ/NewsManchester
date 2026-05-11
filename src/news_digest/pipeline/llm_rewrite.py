@@ -357,11 +357,16 @@ def run_llm_rewrite(project_root: Path) -> None:
     payload = json.loads(candidates_path.read_text(encoding="utf-8"))
     candidates = payload.get("candidates", [])
 
+    # Rewrite EVERY included candidate each run, not only ones missing a
+    # draft_line. Caching draft_lines between runs meant a one-time fallback
+    # to Gemini/Groq Llama (during an OpenAI timeout, say) would freeze a
+    # weak draft_line into state forever — and later runs with healthy
+    # OpenAI quietly skipped them. With ~50-80 candidates/day this costs
+    # roughly $0.02/day on gpt-4o-mini but guarantees today's text actually
+    # came from today's primary model.
     to_rewrite = [
         c for c in candidates
-        if isinstance(c, dict)
-        and c.get("include")
-        and not str(c.get("draft_line") or "").strip()
+        if isinstance(c, dict) and c.get("include")
     ]
     provider_override = os.environ.get("LLM_PROVIDER", "").lower().strip()
     model_override = os.environ.get("LLM_MODEL", "").strip()
