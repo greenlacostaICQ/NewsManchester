@@ -10,11 +10,31 @@ from __future__ import annotations
 import os
 import time
 from datetime import UTC, timedelta
-from urllib import error, request
+from urllib import error, parse, request
 
 from news_digest.pipeline.common import now_london
 
 from .sources import SourceDef
+
+
+# Hosts that block urllib via Cloudflare bot challenge but pass through
+# curl_cffi's Chrome TLS-fingerprint impersonation. Add a host here when
+# urllib gets a clean 403/503 and curl_cffi returns 200 for the same URL.
+_CLOUDFLARE_PROTECTED_HOSTS: tuple[str, ...] = (
+    "gmp.police.uk",
+    "mancity.com",
+    "manchester2-search.funnelback.squiz.cloud",
+    "news.salford.gov.uk",
+    "salford.gov.uk",
+)
+
+
+def _host_is_cloudflare_protected(url: str) -> bool:
+    try:
+        host = parse.urlparse(url).hostname or ""
+    except Exception:  # noqa: BLE001
+        return False
+    return any(host == h or host.endswith("." + h) for h in _CLOUDFLARE_PROTECTED_HOSTS)
 
 
 def _resolve_url(url: str) -> str:
@@ -59,16 +79,63 @@ _DEFAULT_FETCH_HEADERS: dict[str, str] = {
 }
 
 
+def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
+    """Fetch via curl_cffi using Chrome TLS fingerprint.
+
+    Used for hosts that block urllib's default TLS handshake via
+    Cloudflare bot challenge. Falls back to a single retry on transient
+    network errors to match the urllib path's resilience.
+
+    We strip our default browser-shaped headers (UA, Accept, Accept-Language)
+    so curl_cffi can use its own impersonation-matched values. Source-specific
+    headers like Referer/Origin are preserved.
+    """
+    from curl_cffi import requests as cffi_requests  # noqa: PLC0415
+
+    cffi_headers = {
+        k: v for k, v in headers.items()
+        if k not in {"User-Agent", "Accept", "Accept-Language", "X-Source-Tag"}
+    }
+
+    last_exc: Exception | None = None
+    for attempt in range(2):
+        try:
+            response = cffi_requests.get(
+                url,
+                headers=cffi_headers,
+                impersonate="chrome",
+                timeout=20,
+            )
+            if response.status_code >= 400:
+                raise RuntimeError(f"HTTP {response.status_code}")
+            return response.text
+        except Exception as exc:  # noqa: BLE001
+            last_exc = exc
+            if attempt == 0 and not str(exc).startswith("HTTP "):
+                time.sleep(_FETCH_RETRY_BACKOFF_SECONDS)
+                continue
+            raise
+    raise RuntimeError(str(last_exc) if last_exc else "curl_cffi fetch failed")
+
+
 def _fetch_text(url: str, *, extra_headers: dict[str, str] | None = None) -> str:
     """Fetch a URL once, retry once on transient `URLError` (timeout, DNS).
 
     HTTPError (server-side 4xx/5xx) is treated as definitive and not
     retried — fallback URLs handle that case at the source level.
+
+    For known Cloudflare-protected hosts we route through curl_cffi with
+    a Chrome TLS-fingerprint impersonation — those hosts return 403/503
+    to urllib's bare TLS handshake even with browser-shaped headers.
     """
 
     headers = dict(_DEFAULT_FETCH_HEADERS)
     if extra_headers:
         headers.update(extra_headers)
+
+    if _host_is_cloudflare_protected(url):
+        return _fetch_text_curl_cffi(url, headers)
+
     req = request.Request(url, headers=headers)
     last_url_error: Exception | None = None
     for attempt in range(2):  # 1 initial + 1 retry
