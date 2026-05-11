@@ -78,15 +78,10 @@ def _infer_borough(candidate: dict) -> str:
     return ""
 
 
-def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: str) -> list[dict]:
-    if not api_key or not candidates:
-        return []
-    try:
-        from openai import OpenAI  # noqa: PLC0415
-    except ImportError:
-        logger.error("openai package not installed.")
-        return []
+_CURATOR_BATCH_SIZE = 20
 
+
+def _call_curator_batch(batch: list[dict], client: object, model: str) -> list[dict]:
     payload = [
         {
             "fingerprint": c.get("fingerprint", ""),
@@ -104,30 +99,46 @@ def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: st
             "event_page_type": c.get("event_page_type", ""),
             "borough": c.get("borough") or _infer_borough(c),
         }
-        for c in candidates
+        for c in batch
     ]
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": CURATOR_PROMPT},
+            {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+        ],
+        temperature=0.1,
+        max_tokens=4000,
+    )
+    raw = response.choices[0].message.content.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```", 2)[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+        raw = raw.rsplit("```", 1)[0]
+    return json.loads(raw.strip())
+
+
+def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: str) -> list[dict]:
+    if not api_key or not candidates:
+        return []
+    try:
+        from openai import OpenAI  # noqa: PLC0415
+    except ImportError:
+        logger.error("openai package not installed.")
+        return []
 
     client = OpenAI(api_key=api_key, base_url=base_url, timeout=60)
-    try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": CURATOR_PROMPT},
-                {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
-            ],
-            temperature=0.1,
-            max_tokens=16000,
-        )
-        raw = response.choices[0].message.content.strip()
-        if raw.startswith("```"):
-            raw = raw.split("```", 2)[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
-            raw = raw.rsplit("```", 1)[0]
-        return json.loads(raw.strip())
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Curator call failed: %s", exc)
-        return []
+    results: list[dict] = []
+    batches = [candidates[i:i + _CURATOR_BATCH_SIZE] for i in range(0, len(candidates), _CURATOR_BATCH_SIZE)]
+    for i, batch in enumerate(batches):
+        try:
+            logger.info("Curator: batch %d/%d (%d candidates).", i + 1, len(batches), len(batch))
+            results.extend(_call_curator_batch(batch, client, model))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Curator call failed: %s", exc)
+            return []
+    return results
 
 
 def run_curator_pass(project_root: Path) -> None:

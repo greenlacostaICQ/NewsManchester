@@ -387,7 +387,7 @@ def _validate_draft(
 
     for block in LOW_SIGNAL_BLOCKS:
         lines = sections.get(block, [])
-        if lines and any("не добавляю" in line.lower() or "нет" in line.lower() for line in lines):
+        if lines and any(re.search(r"(?<![а-яёА-ЯЁ])нет(?![а-яёА-ЯЁ])", line, re.IGNORECASE) or "не добавляю" in line.lower() for line in lines):
             errors.append(f"Low-signal block should be hidden instead of printed empty: {block}.")
 
     last_24h_lines = sections.get("Что произошло за 24 часа", [])
