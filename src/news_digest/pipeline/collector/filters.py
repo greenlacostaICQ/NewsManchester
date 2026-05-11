@@ -567,6 +567,7 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     ),
     # ── Councils ──────────────────────────────────────────────────────────────
     "Manchester Council": _SourcePolicy(path_must_start="/news-stories/20", min_path_depth=3),
+    "GMCA": _SourcePolicy(path_must_start="/news/", min_path_depth=2),
     "Salford Council": _SourcePolicy(path_must_start="/news/", min_path_depth=3),
     "Trafford Council": _SourcePolicy(path_must_start="/news/20", min_path_depth=3),
     "Stockport Council": _SourcePolicy(
@@ -577,7 +578,7 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     "Oldham Council": _SourcePolicy(path_must_start="/news/article/", min_path_depth=4),
     "Rochdale Council": _SourcePolicy(path_must_start="/news/article/", min_path_depth=4),
     "Bolton Council": _SourcePolicy(path_must_start="/news/article/", min_path_depth=4),
-    "Tameside Council": _SourcePolicy(path_must_start="/newsroom/articles/", min_path_depth=4),
+    "Tameside Council": _SourcePolicy(path_must_start="/newsroom/articles/", min_path_depth=3),
     "Bury Council": _SourcePolicy(path_all_must_contain=("/pressreleases/", "/bury-council/")),
     "Wigan Council": _SourcePolicy(path_must_start="/news/articles/20", min_path_depth=5),
     "GMMH": _SourcePolicy(path_must_contain=("/news", "/2026/", "/whats-on", "/events")),

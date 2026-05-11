@@ -141,7 +141,10 @@ def _fetch_text(url: str, *, extra_headers: dict[str, str] | None = None) -> str
     for attempt in range(2):  # 1 initial + 1 retry
         try:
             with request.urlopen(req, timeout=20) as response:
-                raw = response.read(1_500_000)
+                # 4MB cap: Stockport Events RSS alone is ~1.5MB; MEN front
+                # page can exceed 900KB with images. 1.5MB cut mid-tag on
+                # bigger RSS feeds and broke the XML parser silently.
+                raw = response.read(4_000_000)
                 charset = response.headers.get_content_charset() or "utf-8"
                 return raw.decode(charset, errors="replace")
         except error.HTTPError as exc:
