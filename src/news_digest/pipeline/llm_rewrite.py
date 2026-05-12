@@ -471,9 +471,14 @@ def run_llm_rewrite(project_root: Path) -> None:
     repaired = 0
     for candidate in candidates:
         fp = str(candidate.get("fingerprint") or "").strip()
-        replacement = repair_mapping.get(fp, "")
+        if fp not in repair_mapping:
+            continue
+        replacement, prov, model_name = repair_mapping[fp]
         if replacement and replacement.startswith("• ") and len(re.sub(r"\s+", " ", replacement)) >= 70:
             candidate["draft_line"] = replacement
+            candidate["draft_line_provider"] = prov + "-repair"
+            candidate["draft_line_model"] = model_name
+            candidate["draft_line_written_at"] = run_iso
             repaired += 1
 
     if repaired:
