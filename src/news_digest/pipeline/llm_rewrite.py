@@ -442,7 +442,7 @@ def run_llm_rewrite(project_root: Path) -> None:
                 line, prov, model_name = fix_mapping[fp]
                 if not _needs_translation_fix(line):
                     candidate["draft_line"] = line
-                    candidate["draft_line_provider"] = prov + "-fix"
+                    candidate["draft_line_provider"] = prov
                     candidate["draft_line_model"] = model_name
                     candidate["draft_line_written_at"] = run_iso
                     fixed += 1
@@ -476,7 +476,7 @@ def run_llm_rewrite(project_root: Path) -> None:
         replacement, prov, model_name = repair_mapping[fp]
         if replacement and replacement.startswith("• ") and len(re.sub(r"\s+", " ", replacement)) >= 70:
             candidate["draft_line"] = replacement
-            candidate["draft_line_provider"] = prov + "-repair"
+            candidate["draft_line_provider"] = prov
             candidate["draft_line_model"] = model_name
             candidate["draft_line_written_at"] = run_iso
             repaired += 1
