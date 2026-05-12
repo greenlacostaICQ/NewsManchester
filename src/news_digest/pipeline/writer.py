@@ -26,6 +26,7 @@ MODEL_WRITTEN_CATEGORIES = {"media_layer", "gmp", "council", "public_services", 
 REQUIRE_DRAFT_LINE_CATEGORIES = MODEL_WRITTEN_CATEGORIES | {
     "transport",
     "venues_tickets",
+    "russian_speaking_events",
     "culture_weekly",
     "football",
     "tech_business",
@@ -44,6 +45,7 @@ LONG_FORMAT_CATEGORIES = {
     "tech_business",
     "culture_weekly",
     "venues_tickets",
+    "russian_speaking_events",
     "football",
 }
 LONG_FORMAT_MIN_CHARS = 150
@@ -153,7 +155,7 @@ _HEAVY_SNOW_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _EXTREME_TEMP_PATTERN = re.compile(r"\b([1-9]\d)\s*°[Cc]\b")
-_EVENT_BLOCKS = {"weekend_activities", "next_7_days", "ticket_radar", "outside_gm_tickets", "future_announcements"}
+_EVENT_BLOCKS = {"weekend_activities", "next_7_days", "ticket_radar", "outside_gm_tickets", "russian_events", "future_announcements"}
 _MONTHS = {
     "jan": 1, "january": 1,
     "feb": 2, "february": 2,
@@ -492,7 +494,7 @@ def write_digest(project_root: Path) -> StageResult:
             summary = ""
 
         english_detected = False
-        if category in {"media_layer", "gmp", "public_services", "city_news", "council", "transport", "venues_tickets", "culture_weekly", "football", "tech_business", "food_openings"}:
+        if category in {"media_layer", "gmp", "public_services", "city_news", "council", "transport", "venues_tickets", "russian_speaking_events", "culture_weekly", "football", "tech_business", "food_openings"}:
             english_fields = [field for field in (lead, summary, title) if _looks_like_untranslated_english(field)]
             if english_fields:
                 english_detected = True
@@ -605,6 +607,7 @@ def write_digest(project_root: Path) -> StageResult:
         "Дальние анонсы",
         "Билеты / Ticket Radar",
         "Крупные концерты вне GM",
+        "Русскоязычные концерты и стендап UK",
         "Еда, открытия и рынки",
         "IT и бизнес",
         "Футбол",

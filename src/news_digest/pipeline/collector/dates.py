@@ -41,7 +41,7 @@ def _parse_datetime_value_flexible(raw_value: str) -> str | None:
     value = str(raw_value or "").strip()
     if not value:
         return None
-    for fmt in ("%A %d %B %Y", "%d %B %Y", "%A, %d %B %Y"):
+    for fmt in ("%A %d %B %Y", "%d %B %Y", "%d %b %Y", "%A, %d %B %Y"):
         try:
             dt = datetime.strptime(value, fmt)
             return dt.replace(hour=12, minute=0, tzinfo=now_london().tzinfo).isoformat()

@@ -20,6 +20,7 @@ REQUIRED_SCAN_CATEGORIES = {
     "food_openings": "food / openings",
     "football": "football",
     "tech_business": "tech / business",
+    "diaspora_events": "Russian-speaking / diaspora events",
 }
 
 REQUIRED_BLOCKS = [
@@ -33,6 +34,7 @@ LOW_SIGNAL_BLOCKS = [
     "Дальние анонсы",
     "Билеты / Ticket Radar",
     "Крупные концерты вне GM",
+    "Русскоязычные концерты и стендап UK",
     "Еда, открытия и рынки",
     "IT и бизнес",
     "Радар по районам",
@@ -48,6 +50,7 @@ SECTION_MAX_ITEMS = {
     "Выходные в GM": 5,
     "Еда, открытия и рынки": 6,
     "Билеты / Ticket Radar": 6,
+    "Русскоязычные концерты и стендап UK": 6,
     "Что важно сегодня": 5,
 }
 
@@ -76,6 +79,7 @@ PRIMARY_BLOCKS = {
     "future_announcements": "Дальние анонсы",
     "ticket_radar": "Билеты / Ticket Radar",
     "outside_gm_tickets": "Крупные концерты вне GM",
+    "russian_events": "Русскоязычные концерты и стендап UK",
     "openings": "Еда, открытия и рынки",
     "tech_business": "IT и бизнес",
     "football": "Футбол",

@@ -100,6 +100,18 @@ PROMPT_EVENTS = (
     + _PROMPT_FOOTER
 )
 
+PROMPT_DIASPORA_EVENTS = (
+    "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line для русскоязычных концертов, стендапа и diaspora events в UK.\n\n"
+    + _LONG_FORMAT_RULES
+    + _ANTI_HALLUCINATION
+    + "ОБЯЗАТЕЛЬНО: артист/комик или название события + город + площадка + дата. Если есть фаза продаж — прямо скажи «билеты уже в продаже» или «продажи стартуют ...».\n"
+    "Пиши как полезный early warning: человеку важно узнать заранее, а не в день концерта. London/Liverpool/Manchester можно оставлять в этом блоке, если событие русскоязычное или от diaspora-промоутера.\n\n"
+    "«• Manchester Academy 24 марта — концерт Би-2 от EventCartel. На странице указаны двери в 19:00, curfew в 23:00 и билеты £69.75 плюс сбор; это официальный листинг площадки. Если планируете идти, лучше брать заранее: такие туры редко получают много северных дат.»\n"
+    "«• The Comedy Store Manchester 23 октября — русскоязычный стендап от UK Stand-Up Club. В описании указан конкретный комик, время начала и возрастное ограничение; билеты идут через Eventbrite/EventFirst. Это формат, который часто появляется вне Ticketmaster.»\n\n"
+    "ЗАПРЕЩЕНО: добавлять биографию артиста, песни, политический контекст или статус «крупный артист», если этого нет в evidence_text."
+    + _PROMPT_FOOTER
+)
+
 PROMPT_BUSINESS = (
     "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line для бизнеса, еды, открытий и рынков GM.\n\n"
     + _LONG_FORMAT_RULES
@@ -139,6 +151,7 @@ _CATEGORY_TO_PROMPT: dict[str, str] = {
     "city_news": PROMPT_CITY_NEWS,
     "culture_weekly": PROMPT_EVENTS,
     "venues_tickets": PROMPT_EVENTS,
+    "russian_speaking_events": PROMPT_DIASPORA_EVENTS,
     "food_openings": PROMPT_BUSINESS,
     "tech_business": PROMPT_BUSINESS,
     "football": PROMPT_FOOTBALL,
@@ -159,7 +172,7 @@ REPAIR_DRAFT_SYSTEM = """Ты senior editor городского morning brief.
 
 ФОРМАТ:
 - строка начинается с «• »
-- для категорий media_layer/gmp/council/public_services/food_openings/tech_business/culture_weekly/venues_tickets/football: 350–450 символов, 2–3 коротких предложения
+- для категорий media_layer/gmp/council/public_services/food_openings/tech_business/culture_weekly/venues_tickets/russian_speaking_events/football: 350–450 символов, 2–3 коротких предложения
 - для transport — 90–160 символов, одна строка
 - без ссылок и markdown
 - только факты из title/summary/lead/evidence_text/source_label/source_url/published_at
@@ -230,7 +243,7 @@ def _needs_translation_fix(draft_line: str) -> bool:
 _LONG_FORMAT_CATEGORIES_FOR_REPAIR = {
     "media_layer", "gmp", "council", "public_services",
     "food_openings", "tech_business", "culture_weekly",
-    "venues_tickets", "football",
+    "venues_tickets", "russian_speaking_events", "football",
 }
 
 

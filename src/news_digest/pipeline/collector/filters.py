@@ -250,9 +250,73 @@ _FOOD_NON_GM_TOKENS: tuple[str, ...] = (
 )
 
 
+_DIASPORA_LANGUAGE_OR_PROMOTER_TERMS: tuple[str, ...] = (
+    "russian",
+    "russian-speaking",
+    "in russian",
+    "русск",
+    "украин",
+    "україн",
+    "belarus",
+    "белорус",
+    "беларус",
+    "post-soviet",
+    "eventcartel",
+    "event cartel",
+    "beyondbasket",
+    "broland",
+    "kontramarka",
+    "uk stand-up club",
+    "uk stand up club",
+    "stand-up club",
+)
+
+_DIASPORA_EVENT_KIND_TERMS: tuple[str, ...] = (
+    "stand-up",
+    "standup",
+    "stand up",
+    "стендап",
+    "comedy",
+    "comic",
+    "comedian",
+    "комик",
+    "концерт",
+    "concert",
+    "gig",
+    "tour",
+    "live",
+    "band",
+    "music",
+    "rock",
+    "pop",
+    "presents",
+    "present:",
+    "doors",
+    "curfew",
+    "tickets",
+    "билет",
+)
+
+
 def _is_listicle_opening(title: str) -> bool:
     lowered = str(title or "").lower()
     return any(pattern.search(lowered) for pattern in _LISTICLE_OPENINGS_PATTERNS)
+
+
+def _looks_like_diaspora_event_signal(*parts: str) -> bool:
+    """Russian-speaking / diaspora event signal after page enrichment.
+
+    This deliberately does not depend on a fixed artist watchlist. It accepts
+    an event only when the page has both a language/promoter signal and an
+    event-kind signal, so a generic BBQ/community page from a diaspora
+    organiser does not crowd out concerts and stand-up.
+    """
+
+    blob = " ".join(str(part or "") for part in parts).lower()
+    has_cyrillic = bool(re.search(r"[а-яёіїєґ]", blob, flags=re.IGNORECASE))
+    language_or_promoter = has_cyrillic or any(term in blob for term in _DIASPORA_LANGUAGE_OR_PROMOTER_TERMS)
+    event_kind = any(term in blob for term in _DIASPORA_EVENT_KIND_TERMS)
+    return language_or_promoter and event_kind
 
 
 def _has_food_opening_signal(title: str) -> bool:
@@ -602,6 +666,15 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     "Albert Hall Manchester": _SourcePolicy(path_must_contain=("/event/",), min_path_depth=2),
     "Band on the Wall": _SourcePolicy(path_must_contain=("/2026/", "/2025/"), min_path_depth=3),
     "RNCM": _SourcePolicy(path_must_contain=("/performance-and-events/",), min_path_depth=3),
+    # ── Russian-speaking / diaspora events ───────────────────────────────────
+    "Manchester Academy Diaspora": _SourcePolicy(
+        path_must_contain=("/order/tickets/", "/event/"),
+        min_path_depth=2,
+    ),
+    "EventFirst Diaspora": _SourcePolicy(path_must_start="/event/", min_path_depth=2),
+    "UK Stand-Up Club": _SourcePolicy(min_title_len=10),
+    "UK Stand-Up Club Eventbrite": _SourcePolicy(path_must_start="/e/", min_path_depth=2),
+    "Kontramarka UK": _SourcePolicy(min_title_len=10),
     # ── Football ──────────────────────────────────────────────────────────────
     "Manchester United": _SourcePolicy(
         path_must_contain=("/en/news/",),

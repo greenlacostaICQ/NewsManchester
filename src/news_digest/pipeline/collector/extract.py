@@ -11,6 +11,7 @@ HTML enrichment helpers used after re-fetching an article.
 
 from __future__ import annotations
 
+from html import unescape
 from html.parser import HTMLParser
 from urllib import parse
 import json
@@ -35,6 +36,7 @@ from .filters import (
     _is_stale_transport,
     _looks_like_candidate_title,
     _looks_like_city_watch_topical,
+    _looks_like_diaspora_event_signal,
 )
 from .routing import (
     _adjust_ticket_radar_block,
@@ -309,6 +311,7 @@ def _should_enrich_source(source: SourceDef) -> bool:
             "public_services",
             "culture_weekly",
             "venues_tickets",
+            "diaspora_events",
             "food_openings",
             "football",
             "tech_business",
@@ -369,7 +372,7 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         or _published_at_from_title_or_url(item.title, item.url)
     )
     return ExtractedItem(
-        title=_clean_title_text(enriched_title or item.title),
+        title=_clean_title_text(unescape(enriched_title or item.title)),
         url=item.url,
         published_at=published_at,
         summary=summary,
@@ -639,6 +642,146 @@ def _extract_eventbrite_markets(source: SourceDef, body: str) -> list[ExtractedI
     return items
 
 
+def _extract_eventbrite_events(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Extract Eventbrite event links from an organiser/search page.
+
+    Diaspora relevance is decided after page enrichment: the useful signal is
+    often organiser/body text, not the Eventbrite listing slug.
+    """
+
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    marker = '"upcomingEvents":'
+    marker_index = body.find(marker)
+    if marker_index != -1:
+        array_start = body.find("[", marker_index)
+        if array_start != -1:
+            try:
+                events, _ = json.JSONDecoder().raw_decode(body[array_start:])
+            except json.JSONDecodeError:
+                events = []
+            if isinstance(events, list):
+                for event in events:
+                    if not isinstance(event, dict):
+                        continue
+                    url = str(event.get("url") or "").strip()
+                    title = _clean_title_text(str(event.get("name") or ""))
+                    if not url or url in seen or not title:
+                        continue
+                    seen.add(url)
+                    start_date = str(event.get("start_date") or "").strip()
+                    start_time = str(event.get("start_time") or "").strip()
+                    venue = event.get("primary_venue") or {}
+                    venue_name = str(venue.get("name") or "").strip() if isinstance(venue, dict) else ""
+                    address = venue.get("address") or {} if isinstance(venue, dict) else {}
+                    city = str(address.get("city") or "").strip() if isinstance(address, dict) else ""
+                    published_at = _parse_datetime_value_flexible(start_date) if start_date else None
+                    summary = _clean_event_card_field(" | ".join(part for part in (city, venue_name, start_date, start_time, "tickets") if part))
+                    if _looks_like_candidate_title(title):
+                        items.append(ExtractedItem(title=title, url=url, published_at=published_at, summary=summary))
+                if items:
+                    return items
+    for match in _EVENTBRITE_EVENT_LINK_PATTERN.finditer(body):
+        url = match.group(1)
+        slug = match.group(2)
+        if url in seen:
+            continue
+        seen.add(url)
+        title = slug.replace("-", " ").strip()
+        if len(title) < 8:
+            continue
+        title = " ".join(
+            word if (word.isdigit() or len(word) <= 2) else word.capitalize()
+            for word in title.split()
+        )
+        items.append(ExtractedItem(title=_clean_title_text(title)[:200], url=url))
+    return items
+
+
+def _extract_kontramarka_items(body: str) -> list[ExtractedItem]:
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    year = now_london().year
+    month_map = {
+        "january": 1, "february": 2, "march": 3, "april": 4,
+        "may": 5, "june": 6, "july": 7, "august": 8,
+        "september": 9, "october": 10, "november": 11, "december": 12,
+    }
+    for card in re.findall(r'<div class="card">(.*?)</div>\s*</div>\s*</div>', body, flags=re.IGNORECASE | re.DOTALL):
+        title_match = re.search(r'class="fw-bolder card-title">\s*(.*?)\s*</span>', card, flags=re.IGNORECASE | re.DOTALL)
+        href_match = re.search(r'href="(https://widget\.kontramarka\.uk/[^"]+/event/\d+)"', card, flags=re.IGNORECASE)
+        if not title_match or not href_match:
+            continue
+        url = href_match.group(1)
+        if url in seen:
+            continue
+        seen.add(url)
+        title = _clean_title_text(title_match.group(1))
+        day_match = re.search(r'class="ms-2 fs-3 fw-bolder">\s*(\d{1,2})\s*</span>\s*<span class="fs-6 fw-light">\s*([A-Za-z]+)\s*</span>', card, flags=re.IGNORECASE)
+        time_city_price = [_clean_snippet(part) for part in re.findall(r'<div class="mt-2 ms-1(?: fw-bolder)?">\s*(.*?)\s*</div>', card, flags=re.IGNORECASE | re.DOTALL)]
+        time_text = time_city_price[0] if len(time_city_price) > 0 else ""
+        city = time_city_price[1] if len(time_city_price) > 1 else ""
+        price = time_city_price[2] if len(time_city_price) > 2 else ""
+        published_at = None
+        if day_match:
+            day = int(day_match.group(1))
+            month = month_map.get(day_match.group(2).lower())
+            if month:
+                try:
+                    candidate_dt = now_london().replace(year=year, month=month, day=day, hour=12, minute=0, second=0, microsecond=0)
+                    if candidate_dt.date() < now_london().date():
+                        candidate_dt = candidate_dt.replace(year=year + 1)
+                    published_at = candidate_dt.isoformat()
+                except ValueError:
+                    published_at = None
+        summary = _clean_snippet(" | ".join(part for part in (city, time_text, price, "tickets") if part))
+        if title and _looks_like_candidate_title(title):
+            items.append(ExtractedItem(title=title, url=url, published_at=published_at, summary=summary))
+    return items
+
+
+def _clean_event_card_field(value: str) -> str:
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", unescape(str(value or "")))).strip()
+
+
+def _extract_eventfirst_items(body: str) -> list[ExtractedItem]:
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    starts = [match.start() for match in re.finditer(r'<div class="upcoming-events__item\s', body, flags=re.IGNORECASE)]
+    for idx, start in enumerate(starts):
+        end = starts[idx + 1] if idx + 1 < len(starts) else len(body)
+        block = body[start:end]
+        href_match = re.search(r'href="(https://eventfirst\.co\.uk/event/[^"]+)"', block, flags=re.IGNORECASE)
+        title_match = re.search(r'<h3 class="upcoming-events__item-title">\s*(.*?)\s*</h3>', block, flags=re.IGNORECASE | re.DOTALL)
+        if not href_match or not title_match:
+            continue
+        url = href_match.group(1)
+        if url in seen:
+            continue
+        seen.add(url)
+        title = _clean_title_text(unescape(title_match.group(1)))
+        date_text = ""
+        time_text = ""
+        venue = ""
+        city = ""
+        date_match = re.search(r'class="upcoming-events__item-info--date">\s*(.*?)\s*</div>', block, flags=re.IGNORECASE | re.DOTALL)
+        time_match = re.search(r'class="upcoming-events__item-info--time">\s*(.*?)\s*</div>', block, flags=re.IGNORECASE | re.DOTALL)
+        place_match = re.search(r'class="upcoming-events__item-info--place">\s*<div>\s*(.*?)\s*</div>\s*<div class="upcoming-events__item-info--city">\s*(.*?)\s*</div>', block, flags=re.IGNORECASE | re.DOTALL)
+        if date_match:
+            date_text = _clean_event_card_field(date_match.group(1))
+        if time_match:
+            time_text = _clean_event_card_field(time_match.group(1))
+        if place_match:
+            venue = _clean_event_card_field(place_match.group(1))
+            city = _clean_event_card_field(place_match.group(2))
+        published_at = _parse_datetime_value_flexible(date_text) if date_text else None
+        summary = _clean_snippet(" | ".join(part for part in (city, venue, date_text, time_text, "tickets") if part))
+        if title and _looks_like_candidate_title(title):
+            items.append(ExtractedItem(title=title, url=url, published_at=published_at, summary=summary))
+
+    return items
+
+
 def _extract_funnelback_items(body: str) -> list[ExtractedItem]:
     payload = json.loads(body)
     results = (
@@ -830,6 +973,12 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_national_rail(source, body)
     elif source.source_type == "html_eventbrite":
         links = _extract_eventbrite_markets(source, body)
+    elif source.source_type == "html_eventbrite_events":
+        links = _extract_eventbrite_events(source, body)
+    elif source.source_type == "html_kontramarka":
+        links = _extract_kontramarka_items(body)
+    elif source.source_type == "html_eventfirst":
+        links = _extract_eventfirst_items(body)
     elif "<rss" in body[:500].lower() or "<feed" in body[:500].lower():
         links = _extract_feed_items(source.url, body)
     else:
@@ -853,6 +1002,14 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
             continue
         seen.add(normalized_url)
         item = _enrich_item(source, item)
+        if source.report_category == "diaspora_events" and not _looks_like_diaspora_event_signal(
+            source.name,
+            item.title,
+            item.summary,
+            item.lead,
+            item.evidence_text,
+        ):
+            continue
         published_at = item.published_at or _published_at_from_title_or_url(item.title, normalized_url)
         freshness_status = _freshness_status(source, published_at)
         primary_block = _resolve_primary_block(source, published_at)
@@ -894,7 +1051,7 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
             "matched_previous_fingerprint": "",
             "practical_angle": _default_practical_angle(source, item.title, item.summary),
             "lead": item.lead or _default_lead(source, item.title, item.summary),
-            "event_page_type": "official" if source.report_category in {"venues_tickets", "culture_weekly"} else "unknown",
+            "event_page_type": "official" if source.report_category in {"venues_tickets", "culture_weekly", "diaspora_events"} else "unknown",
             "published_at": published_at,
             "published_date_london": published_at[:10] if published_at else "",
             "freshness_status": freshness_status,

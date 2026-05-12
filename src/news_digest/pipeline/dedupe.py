@@ -201,12 +201,14 @@ _CALENDAR_CARRY_BLOCKS: frozenset[str] = frozenset({
     "next_7_days",
     "ticket_radar",
     "outside_gm_tickets",
+    "russian_events",
     "future_announcements",
 })
 _CALENDAR_CARRY_CATEGORIES: frozenset[str] = frozenset({
     "food_openings",
     "culture_weekly",
     "venues_tickets",
+    "russian_speaking_events",
 })
 _CALENDAR_CARRY_MIN_INTERVAL_DAYS = 2
 _CALENDAR_CARRY_MAX_AGE_DAYS = 14
@@ -336,7 +338,7 @@ def _calendar_item_should_carry_over(candidate: dict, previous: dict) -> bool:
 
     explicit_dates = _calendar_dates_from_text(text)
     published_day = _parse_day(candidate.get("published_at"))
-    if primary_block in {"weekend_activities", "next_7_days", "ticket_radar", "outside_gm_tickets", "future_announcements"} and published_day:
+    if primary_block in {"weekend_activities", "next_7_days", "ticket_radar", "outside_gm_tickets", "russian_events", "future_announcements"} and published_day:
         explicit_dates.append(published_day)
 
     long_running_active = False
@@ -381,7 +383,7 @@ def _title_tokens(title: str) -> frozenset[str]:
 
 _DEDUP_BLOCK_GROUPS: tuple[frozenset[str], ...] = (
     frozenset({"lead_story", "last_24h", "today_focus", "city_watch", "district_radar"}),
-    frozenset({"weekend_activities", "next_7_days", "future_announcements", "ticket_radar", "outside_gm_tickets"}),
+    frozenset({"weekend_activities", "next_7_days", "future_announcements", "ticket_radar", "outside_gm_tickets", "russian_events"}),
     frozenset({"openings", "tech_business"}),
 )
 
