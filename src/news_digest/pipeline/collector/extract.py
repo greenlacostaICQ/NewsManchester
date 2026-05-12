@@ -264,7 +264,7 @@ def _extract_paragraph_evidence(html_text: str, title: str = "") -> str:
             continue
         seen.add(key)
         paragraphs.append(snippet)
-        if len(paragraphs) >= 3:
+        if len(paragraphs) >= 6:
             break
     return " ".join(paragraphs)
 
@@ -374,7 +374,7 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         published_at=published_at,
         summary=summary,
         lead=lead,
-        evidence_text=_clean_snippet(evidence_text)[:1200],
+        evidence_text=_clean_snippet(evidence_text)[:2500],
         enrichment_status="ok" if evidence_text else "ok_no_evidence",
     )
 

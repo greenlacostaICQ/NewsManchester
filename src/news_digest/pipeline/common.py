@@ -39,13 +39,16 @@ LOW_SIGNAL_BLOCKS = [
 ]
 
 SECTION_MAX_ITEMS = {
-    "Что произошло за 24 часа": 12,
+    # Length 350–450 char cards are 3× longer than old headlines, so caps
+    # are pulled down to keep the digest readable in Telegram.
+    "Что произошло за 24 часа": 9,
     "Городской радар": 12,
     "Футбол": 3,
     "IT и бизнес": 5,
-    "Выходные в GM": 6,
-    "Еда, открытия и рынки": 7,
+    "Выходные в GM": 5,
+    "Еда, открытия и рынки": 6,
     "Билеты / Ticket Radar": 6,
+    "Что важно сегодня": 5,
 }
 
 # Max items per single source per section. Universities pump out 5+ press
