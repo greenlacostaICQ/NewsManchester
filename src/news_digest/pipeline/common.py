@@ -39,9 +39,21 @@ LOW_SIGNAL_BLOCKS = [
 ]
 
 SECTION_MAX_ITEMS = {
+    "Что произошло за 24 часа": 12,
+    "Городской радар": 12,
     "Футбол": 3,
     "IT и бизнес": 5,
     "Выходные в GM": 6,
+    "Еда, открытия и рынки": 7,
+    "Билеты / Ticket Radar": 6,
+}
+
+# Max items per single source per section. Universities pump out 5+ press
+# releases a day each and dominated city_watch on 2026-05-12 — keep them
+# capped so they don't crowd out actual city news.
+SECTION_MAX_PER_SOURCE = {
+    "Городской радар": 2,
+    "Что произошло за 24 часа": 3,
 }
 
 VAGUE_PRACTICAL_ANGLES = {

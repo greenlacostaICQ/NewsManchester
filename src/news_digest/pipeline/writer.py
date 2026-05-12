@@ -13,6 +13,7 @@ from news_digest.pipeline.common import (
     LOW_SIGNAL_BLOCKS,
     PRIMARY_BLOCKS,
     SECTION_MAX_ITEMS,
+    SECTION_MAX_PER_SOURCE,
     is_placeholder_practical_angle,
     now_london,
     read_json,
@@ -258,6 +259,9 @@ def write_digest(project_root: Path) -> StageResult:
     payload = read_json(candidates_path, {"candidates": []})
     candidates = payload.get("candidates", [])
     sections = {heading: [] for heading in PRIMARY_BLOCKS.values()}
+    # Parallel list of source_labels per section (same indices as sections[*]).
+    # Used to apply SECTION_MAX_PER_SOURCE caps at render time.
+    section_sources: dict[str, list[str]] = {h: [] for h in PRIMARY_BLOCKS.values()}
     errors: list[str] = []
     warnings: list[str] = []
     quality_counts = {
@@ -390,6 +394,10 @@ def write_digest(project_root: Path) -> StageResult:
             )
             continue
 
+        # Scrub LLM placeholder genres like "Madison Beer, жанр не указан" /
+        # "Avatar, другой жанр" — the rewrite prompt says "не выдумывай жанр"
+        # but gpt-4o-mini still tacks these phrases on. Strip them post-hoc.
+        line = re.sub(r",\s*(?:жанр\s+не\s+указан|другой\s+жанр|жанр\s+не\s+определ[её]н|жанр\s+неизвестен)\s*(?=[.!?]|$)", "", line, flags=re.IGNORECASE)
         if candidate.get("is_lead"):
             # Lead story: no bullet, bold first sentence, placed in main_story block
             line = line.lstrip("• ").strip()
@@ -400,11 +408,13 @@ def write_digest(project_root: Path) -> StageResult:
                 line = f"<b>{line}</b>"
             line = _attach_source_anchor(line, source_url, source_label)
             sections.setdefault("Главная история дня", []).insert(0, line)
+            section_sources.setdefault("Главная история дня", []).insert(0, source_label)
         else:
             if not line.startswith("• "):
                 line = f"• {line}"
             line = _attach_source_anchor(line, source_url, source_label)
             sections[section_name].append(line)
+            section_sources[section_name].append(source_label)
         quality_counts["rendered_candidates"] += 1
         fingerprint = str(candidate.get("fingerprint") or "").strip()
         if fingerprint:
@@ -443,6 +453,18 @@ def write_digest(project_root: Path) -> StageResult:
         lines = sections.get(section_name, [])
         if not lines:
             continue
+        per_source_cap = SECTION_MAX_PER_SOURCE.get(section_name)
+        if per_source_cap:
+            src_counts: dict[str, int] = {}
+            filtered: list[str] = []
+            srcs = section_sources.get(section_name, [])
+            for idx, ln in enumerate(lines):
+                src = srcs[idx] if idx < len(srcs) else ""
+                if src_counts.get(src, 0) >= per_source_cap:
+                    continue
+                src_counts[src] = src_counts.get(src, 0) + 1
+                filtered.append(ln)
+            lines = filtered
         cap = SECTION_MAX_ITEMS.get(section_name)
         if cap:
             lines = lines[:cap]

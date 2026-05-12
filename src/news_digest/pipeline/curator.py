@@ -21,6 +21,8 @@ OPENAI_BASE_URL = "https://api.openai.com/v1"
 OPENAI_MODEL = "gpt-4o-mini"
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 GEMINI_MODEL = "gemini-2.5-flash"
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
 CURATOR_PROMPT = """Ты редакторский куратор дайджеста «Greater Manchester AM Brief».
 
@@ -80,7 +82,125 @@ def _infer_borough(candidate: dict) -> str:
     return ""
 
 
-_CURATOR_BATCH_SIZE = 20
+_CURATOR_BATCH_SIZE = 10
+_CURATOR_GROQ_BATCH_SIZE = 6
+
+# Tokens shorter than this don't carry enough signal (articles, fillers).
+_DEDUP_MIN_TOKEN_LEN = 4
+# Min |A ∩ B| / min(|A|, |B|) overlap ratio before treating as duplicate.
+_DEDUP_OVERLAP_RATIO = 0.25
+# Stopwords carry no story-identifying signal. Includes RSS-feed boilerplate
+# and the prefix-5 forms of common event/market/transport template words
+# that would otherwise create phantom overlap (e.g. "пройдёт", "товары",
+# "независимые продавцы" appear in every market event regardless of which
+# event it is).
+_DEDUP_STOPWORDS = {
+    # Geography (whole-region tokens recur in every borough story)
+    "manchester", "greater", "salford", "stockport", "trafford", "oldham",
+    "rochdale", "bolton", "tameside", "bury", "wigan",
+    # Generic news fillers (RU + prefix-5 truncations)
+    "новый", "новая", "новое", "новые", "после", "перед", "вчера",
+    "сегодня", "завтра", "около", "более", "также", "может", "будет",
+    "стал", "стала", "стало", "стали", "были", "было", "была",
+    "котор", "город", "годы",
+    "млн", "тысяч", "часть", "получ",
+    # Council/formatting boilerplate
+    "council", "councils", "совет", "район", "округ",
+    # Transport template
+    "tfgm", "задержки", "задер", "закрытие", "закрыт", "ремонт",
+    "ожидайте", "ожида", "работы", "работ", "между", "сбой", "пробки",
+    # Ticketmaster template
+    "ticketmaster", "event", "public", "sale", "tour", "arena", "hall",
+    "concert", "show", "london", "liverpool",
+    "ноября", "октяб", "сентя", "авгус", "июля", "июня",
+    "апрел", "марта", "февра", "января", "декаб",
+    # Market/event template prefixes (Makers Market false-positive on 2026-05-12).
+    # These appear in every event/market story regardless of identity.
+    "maker", "marke", "пройд", "товар", "прода", "ремес", "незав",
+    "состо", "пройде", "событ", "места",
+    # Generic reaction/sentiment phrases ("местные жители выражают") that
+    # triggered Oldham-elections ↔ Middleton-shop false-positive.
+    "выраж", "жител", "местн",
+}
+
+_BLOCKS_TO_SKIP_DEDUP = {
+    # Транспорт и tickets — все строки шаблонные, дедуп даёт ложные срабатывания.
+    # Дубли тут ловятся другим механизмом (fingerprint на уровне TfGM/Ticketmaster).
+    "transport", "ticket_radar", "outside_gm_tickets",
+}
+
+
+_DEDUP_PREFIX_LEN = 5
+
+
+def _dedup_signature(candidate: dict) -> set[str]:
+    """Token bag from draft_line only — title/lead carry RSS scrape noise
+    ('reporter', 'updated', 'comments') that creates phantom overlap between
+    unrelated MEN/Prolific North items. draft_line is the cleaned LLM
+    output so noise is minimal, and proper nouns like 'Stockport County'
+    or 'Adrian Brown' or 'Tour de France' survive into Russian text.
+
+    We keyword-truncate to the first 5 chars so that Russian declensions
+    collide ('Браун' / 'Брауна' both become 'браун', 'стадиона' / 'стадион'
+    both 'стади'). Without this, dedup misses re-told stories like the
+    Adrian-vs-Andrew Brown coverage on 2026-05-12."""
+    text = str(candidate.get("draft_line") or "").lower()
+    if not text:
+        return set()
+    # Keep alphanumerics + Cyrillic, split on everything else.
+    tokens = re.findall(r"[a-zа-яё0-9]+", text, flags=re.IGNORECASE)
+    out: set[str] = set()
+    for t in tokens:
+        if len(t) < _DEDUP_MIN_TOKEN_LEN:
+            continue
+        prefix = t[:_DEDUP_PREFIX_LEN]
+        # Filter both forms — stopwords are stored as prefix-5 truncations
+        # ("пройд"), so tokens like "пройдёт" need to match by prefix.
+        if t in _DEDUP_STOPWORDS or prefix in _DEDUP_STOPWORDS:
+            continue
+        out.add(prefix)
+    return out
+
+
+def _semantic_dedup_pass(candidates: list[dict]) -> int:
+    """Drop the second of any two included candidates that share enough
+    meaningful tokens to look like the same story. Cross-block comparison
+    (Adrian Brown was tagged today_focus by one source and last_24h by
+    another on 2026-05-12 — per-block dedup missed the pair). Transport and
+    ticket blocks are excluded because their lines share boilerplate. Keeps
+    the earlier-listed candidate (curator order ~= editorial priority)."""
+    seen: list[tuple[str, set[str]]] = []  # (fingerprint, tokens)
+    dropped = 0
+    for candidate in candidates:
+        if not isinstance(candidate, dict) or not candidate.get("include"):
+            continue
+        if _is_curator_protected(candidate):
+            continue
+        block = str(candidate.get("primary_block") or "")
+        if block in _BLOCKS_TO_SKIP_DEDUP:
+            continue
+        sig = _dedup_signature(candidate)
+        if len(sig) < 4:
+            # Too few signal tokens — can't reliably tell duplicate from coincidence.
+            continue
+        fp = str(candidate.get("fingerprint") or "")
+        match_fp: str | None = None
+        for earlier_fp, earlier_sig in seen:
+            overlap = len(sig & earlier_sig)
+            if overlap < 3:
+                continue
+            denom = min(len(sig), len(earlier_sig))
+            if denom and overlap / denom >= _DEDUP_OVERLAP_RATIO:
+                match_fp = earlier_fp
+                break
+        if match_fp is not None:
+            candidate["include"] = False
+            candidate["dedupe_decision"] = "drop"
+            candidate["reason"] = f"Semantic dedup: near-duplicate of {match_fp[:8]}"
+            dropped += 1
+        else:
+            seen.append((fp, sig))
+    return dropped
 
 
 def _call_curator_batch(batch: list[dict], client: object, model: str) -> list[dict]:
@@ -121,7 +241,7 @@ def _call_curator_batch(batch: list[dict], client: object, model: str) -> list[d
     return json.loads(raw.strip())
 
 
-def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: str) -> list[dict]:
+def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: str, batch_size: int = _CURATOR_BATCH_SIZE) -> list[dict]:
     if not api_key or not candidates:
         return []
     try:
@@ -130,9 +250,11 @@ def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: st
         logger.error("openai package not installed.")
         return []
 
-    client = OpenAI(api_key=api_key, base_url=base_url, timeout=60)
+    # max_retries=0: don't burn 3×60s on a dead endpoint — fail fast and let
+    # run_curator_pass try the next provider in the chain.
+    client = OpenAI(api_key=api_key, base_url=base_url, timeout=45, max_retries=0)
     results: list[dict] = []
-    batches = [candidates[i:i + _CURATOR_BATCH_SIZE] for i in range(0, len(candidates), _CURATOR_BATCH_SIZE)]
+    batches = [candidates[i:i + batch_size] for i in range(0, len(candidates), batch_size)]
     for i, batch in enumerate(batches):
         try:
             logger.info("Curator: batch %d/%d (%d candidates).", i + 1, len(batches), len(batch))
@@ -191,6 +313,20 @@ def run_curator_pass(project_root: Path) -> None:
             GEMINI_MODEL,
         )
 
+    # Groq fallback (added after 12 May 2026 outage where both OpenAI timed
+    # out and Gemini returned 503, leaving the curator silently skipped and
+    # every candidate passing through unfiltered).
+    if not decisions:
+        logger.info("Curator: Gemini failed, trying Groq.")
+        time.sleep(1)
+        decisions = _call_curator(
+            included,
+            os.environ.get("GROQ_API_KEY", ""),
+            GROQ_BASE_URL,
+            GROQ_MODEL,
+            batch_size=_CURATOR_GROQ_BATCH_SIZE,
+        )
+
     if not decisions:
         logger.warning("Curator: all providers failed — keeping existing include flags.")
         write_json(report_path, {"status": "skipped", "reason": "all providers failed", "run_at": now_london().isoformat(), "run_date_london": today_london()})
@@ -218,8 +354,17 @@ def run_curator_pass(project_root: Path) -> None:
             candidate["is_lead"] = True
             lead_set = True
 
+    # Semantic dedup pass: catch near-duplicate stories the LLM curator missed
+    # (same person / same event covered by multiple sources). On 2026-05-12 we
+    # shipped: Adrian Brown × 2 (MEN + BBC), Tour de France × 2 (Manchester +
+    # Oldham Council), Stockport County digitisation × 2 (Prolific North +
+    # BusinessCloud) — fingerprint dedup misses all of these because the
+    # surface text differs.
+    semantic_dropped = _semantic_dedup_pass(candidates)
+    dropped += semantic_dropped
+
     candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    logger.info("Curator: dropped %d candidates, lead=%s.", dropped, lead_set)
+    logger.info("Curator: dropped %d candidates (semantic dedup: %d), lead=%s.", dropped, semantic_dropped, lead_set)
 
     write_json(report_path, {
         "run_at": now_london().isoformat(),
@@ -227,6 +372,7 @@ def run_curator_pass(project_root: Path) -> None:
         "status": "complete",
         "reviewed": len(included),
         "dropped": dropped,
+        "semantic_dropped": semantic_dropped,
         "lead_set": lead_set,
         "decisions": decisions,
     })
