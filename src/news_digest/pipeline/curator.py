@@ -17,10 +17,10 @@ from news_digest.pipeline.common import now_london, read_json, today_london, wri
 
 logger = logging.getLogger(__name__)
 
+DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
+DEEPSEEK_MODEL = "deepseek-chat"
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 OPENAI_MODEL = "gpt-4o-mini"
-GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
-GEMINI_MODEL = "gemini-2.5-flash"
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 GROQ_MODEL = "llama-3.3-70b-versatile"
 
@@ -296,28 +296,27 @@ def run_curator_pass(project_root: Path) -> None:
         write_json(report_path, {"status": "skipped", "reason": "LLM_PROVIDER=none", "run_at": now_london().isoformat(), "run_date_london": today_london()})
         return
 
-    base_url = os.environ.get("LLM_BASE_URL") or OPENAI_BASE_URL
-    model = os.environ.get("LLM_MODEL") or OPENAI_MODEL
-    api_key = os.environ.get("LLM_API_KEY") or os.environ.get("OPENAI_API_KEY", "")
+    base_url = os.environ.get("LLM_BASE_URL") or DEEPSEEK_BASE_URL
+    model = os.environ.get("LLM_MODEL") or DEEPSEEK_MODEL
+    api_key = os.environ.get("LLM_API_KEY") or os.environ.get("DEEPSEEK_API_KEY", "")
 
     decisions = _call_curator(included, api_key, base_url, model)
 
-    # Gemini fallback
+    # OpenAI fallback
     if not decisions:
-        logger.info("Curator: OpenAI failed, trying Gemini.")
+        logger.info("Curator: DeepSeek failed, trying OpenAI.")
         time.sleep(1)
         decisions = _call_curator(
             included,
-            os.environ.get("GEMINI_API_KEY", ""),
-            GEMINI_BASE_URL,
-            GEMINI_MODEL,
+            os.environ.get("OPENAI_API_KEY", ""),
+            OPENAI_BASE_URL,
+            OPENAI_MODEL,
         )
 
-    # Groq fallback (added after 12 May 2026 outage where both OpenAI timed
-    # out and Gemini returned 503, leaving the curator silently skipped and
-    # every candidate passing through unfiltered).
+    # Groq fallback — free tier safety net so the curator never silently
+    # skips and lets every candidate through unfiltered.
     if not decisions:
-        logger.info("Curator: Gemini failed, trying Groq.")
+        logger.info("Curator: OpenAI failed, trying Groq.")
         time.sleep(1)
         decisions = _call_curator(
             included,

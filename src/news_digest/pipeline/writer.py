@@ -31,6 +31,23 @@ REQUIRE_DRAFT_LINE_CATEGORIES = MODEL_WRITTEN_CATEGORIES | {
     "tech_business",
     "city_news",
 }
+# Categories that should render as 350–450 char multi-sentence cards rather
+# than single-line headlines. Transport / weather / billet are explicitly
+# excluded — they're shorter by design.
+LONG_FORMAT_CATEGORIES = {
+    "media_layer",
+    "gmp",
+    "council",
+    "public_services",
+    "city_news",
+    "food_openings",
+    "tech_business",
+    "culture_weekly",
+    "venues_tickets",
+    "football",
+}
+LONG_FORMAT_MIN_CHARS = 150
+LONG_FORMAT_MIN_SENTENCES = 2
 _BAD_EDITORIAL_PROSE_MARKERS = (
     "ticket office",
     "слот входа",
@@ -223,6 +240,132 @@ def _is_expired_event_candidate(candidate: dict, line: str = "") -> bool:
     return not _future_date_signal(text)
 
 
+def _hallucination_flags(candidate: dict, line: str) -> list[str]:
+    """Flag £-sums and named-entity-looking numbers in line that don't appear
+    in the upstream evidence/title/summary/lead. Prevents the model from
+    inventing pound amounts or numeric facts when the long-format prompt asks
+    for a second sentence and there's nothing concrete to draw on."""
+    evidence_blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text")
+    ).lower()
+    flags: list[str] = []
+    line_lower = line.lower()
+    # £-amount pattern: £3, £3.2m, £400k, £1.1bn, £500
+    money_pattern = re.compile(r"£\s*\d[\d.,]*\s*(?:k|m|bn|млн|млрд|тыс)?", re.IGNORECASE)
+    for match in money_pattern.findall(line_lower):
+        token = match.replace(" ", "")
+        # Normalize: drop trailing punctuation/RU suffixes to compare loose
+        bare = re.sub(r"[^\d.,£kmbnмлрд]", "", token)
+        if bare and bare not in evidence_blob.replace(" ", ""):
+            flags.append(f"Pound amount {token!r} not present in evidence_text.")
+            break
+    return flags
+
+
+# Source-tier weights for «Городской радар» ordering. Higher = surfaces first.
+# Cap of 12 truncates the tail, so anything below ~30 is effectively cut.
+_CITY_WATCH_SOURCE_WEIGHTS: dict[str, int] = {
+    # GM-wide political authority — highest editorial priority.
+    "GMCA": 120,
+    "Manchester Council": 100,
+    "Salford Council": 95,
+    "Stockport Council": 95,
+    "Trafford Council": 95,
+    "Oldham Council": 90,
+    "Rochdale Council": 90,
+    "Bolton Council": 90,
+    "Bury Council": 90,
+    "Tameside Council": 90,
+    "Wigan Council": 90,
+    # Independent local journalism with reporting (not press releases).
+    "The Mill": 110,
+    "The Manc": 85,
+    "Manchester Mill": 110,
+    "I Love Manchester": 60,
+    # NHS / emergency services.
+    "GMMH": 70,
+    "GMP": 80,
+    # Universities — institutional PR, usually low signal for residents.
+    "University of Manchester": 25,
+    "University of Salford": 25,
+    "Manchester Metropolitan University": 25,
+}
+_CITY_WATCH_DEFAULT_WEIGHT = 50
+
+
+def _city_watch_score(candidate: dict) -> float:
+    """Editorial priority for «Городской радар» (higher = surfaces first).
+
+    Combines source-tier weight with content signals: presence of GM boroughs,
+    £-sums, dates, named people. Penalises academic / generic press-release
+    language so university feeds don't crowd out actual city news.
+    """
+    source_label = str(candidate.get("source_label") or "").strip()
+    score = float(_CITY_WATCH_SOURCE_WEIGHTS.get(source_label, _CITY_WATCH_DEFAULT_WEIGHT))
+
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text")
+    ).lower()
+
+    # Borough mentions — real GM signal.
+    borough_hits = sum(
+        1
+        for borough in ("manchester", "salford", "trafford", "stockport", "tameside",
+                         "oldham", "rochdale", "bury", "bolton", "wigan")
+        if borough in blob
+    )
+    score += min(borough_hits, 3) * 5
+
+    # Concrete signals readers care about: £ amounts, dates, percentages.
+    if re.search(r"£\s*\d", blob):
+        score += 15
+    if re.search(r"\b(?:january|february|march|april|may|june|july|august|"
+                 r"september|october|november|december|января|февраля|марта|"
+                 r"апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\b", blob):
+        score += 8
+    if re.search(r"\b\d{1,3}%\b|\b\d{4,6}\s+(?:residents|people|жител)", blob):
+        score += 10
+
+    # Academic / generic PR markers — drop these to the bottom.
+    academic_markers = (
+        "research", "researcher", "электрон", "graphene", "lecture",
+        "vice-chancellor", "chancellor", "academic", "professor", "phd",
+        "campus", "students meet", "submit your taught course",
+        "datadobi", "storage optimisation",
+    )
+    if any(marker in blob for marker in academic_markers):
+        score -= 35
+
+    # Generic council PR with no specific news beat.
+    generic_pr_markers = (
+        "named greater manchester town of culture",
+        "community champions",
+        "capital grant winners",
+        "parting gifts",
+        "celebration",
+        "tea party",
+        "lord mayor",
+    )
+    if any(marker in blob for marker in generic_pr_markers):
+        score -= 10
+
+    # Title length under 50 chars often means slogany PR header.
+    title = str(candidate.get("title") or "")
+    if len(title) < 30:
+        score -= 5
+
+    # Evidence depth — long evidence_text usually means a real article.
+    evidence_len = len(str(candidate.get("evidence_text") or ""))
+    if evidence_len >= 600:
+        score += 10
+    elif evidence_len < 200:
+        score -= 8
+
+    return score
+
+
 def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     text = str(line or "").strip()
     errors: list[str] = []
@@ -236,17 +379,29 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
         errors.append("draft_line must not use Markdown emphasis markers.")
     if not _contains_cyrillic(text):
         errors.append("draft_line must contain normal Russian prose.")
-    if len(re.sub(r"\s+", " ", text)) < 45:
+    normalized = re.sub(r"\s+", " ", text)
+    if len(normalized) < 45:
         errors.append("draft_line is too short to be a self-contained item.")
     category = str(candidate.get("category") or "").strip()
-    if category in REQUIRE_DRAFT_LINE_CATEGORIES and len(re.findall(r"[.!?]", text)) < 1:
+    sentence_count = len(re.findall(r"[.!?]", text))
+    if category in REQUIRE_DRAFT_LINE_CATEGORIES and sentence_count < 1:
         errors.append("draft_line must contain at least one complete sentence.")
+    if category in LONG_FORMAT_CATEGORIES:
+        if len(normalized) < LONG_FORMAT_MIN_CHARS:
+            errors.append(
+                f"draft_line for long-format category needs ≥{LONG_FORMAT_MIN_CHARS} chars (got {len(normalized)})."
+            )
+        if sentence_count < LONG_FORMAT_MIN_SENTENCES:
+            errors.append(
+                f"draft_line for long-format category needs ≥{LONG_FORMAT_MIN_SENTENCES} sentences (got {sentence_count})."
+            )
     lowered = text.lower()
     for marker in _BAD_EDITORIAL_PROSE_MARKERS:
         if marker in lowered:
             errors.append(f"draft_line contains bad editorial prose marker: {marker}.")
             break
     errors.extend(_sanity_flags(candidate, text))
+    errors.extend(_hallucination_flags(candidate, text))
     return errors
 
 
@@ -262,6 +417,10 @@ def write_digest(project_root: Path) -> StageResult:
     # Parallel list of source_labels per section (same indices as sections[*]).
     # Used to apply SECTION_MAX_PER_SOURCE caps at render time.
     section_sources: dict[str, list[str]] = {h: [] for h in PRIMARY_BLOCKS.values()}
+    # Editorial priority score per line — populated only for «Городской радар»
+    # where we re-sort candidates before truncation so the cap drops the
+    # weakest items (PR releases) rather than whatever happened to come last.
+    section_scores: dict[str, list[float]] = {h: [] for h in PRIMARY_BLOCKS.values()}
     errors: list[str] = []
     warnings: list[str] = []
     quality_counts = {
@@ -288,15 +447,14 @@ def write_digest(project_root: Path) -> StageResult:
             errors.append(f"Candidate #{index} is include=true but missing source reference.")
             quality_counts["blocked_for_quality"] += 1
             continue
+        # practical_angle is no longer a hard gate: the new long-format prompts
+        # derive the "so what" sentence directly from evidence_text, so an
+        # empty / placeholder practical_angle should not block rendering.
         practical_angle = str(candidate.get("practical_angle") or "").strip()
         if not practical_angle:
-            errors.append(f"Candidate #{index} is include=true but missing practical_angle.")
-            quality_counts["blocked_for_quality"] += 1
-            continue
-        if is_placeholder_practical_angle(practical_angle):
-            warnings.append(f"Candidate #{index} held: placeholder practical_angle ({practical_angle[:60]!r}).")
-            quality_counts["held_for_editorial_quality"] += 1
-            continue
+            warnings.append(f"Candidate #{index}: empty practical_angle (kept).")
+        elif is_placeholder_practical_angle(practical_angle):
+            warnings.append(f"Candidate #{index}: placeholder practical_angle (kept).")
         if str(candidate.get("primary_block") or "") == "last_24h" and not str(candidate.get("published_at") or "").strip():
             errors.append(f"Candidate #{index} is in last_24h without published_at.")
             quality_counts["blocked_for_quality"] += 1
@@ -409,12 +567,15 @@ def write_digest(project_root: Path) -> StageResult:
             line = _attach_source_anchor(line, source_url, source_label)
             sections.setdefault("Главная история дня", []).insert(0, line)
             section_sources.setdefault("Главная история дня", []).insert(0, source_label)
+            section_scores.setdefault("Главная история дня", []).insert(0, 0.0)
         else:
             if not line.startswith("• "):
                 line = f"• {line}"
             line = _attach_source_anchor(line, source_url, source_label)
             sections[section_name].append(line)
             section_sources[section_name].append(source_label)
+            score = _city_watch_score(candidate) if section_name == "Городской радар" else 0.0
+            section_scores[section_name].append(score)
         quality_counts["rendered_candidates"] += 1
         fingerprint = str(candidate.get("fingerprint") or "").strip()
         if fingerprint:
@@ -453,11 +614,24 @@ def write_digest(project_root: Path) -> StageResult:
         lines = sections.get(section_name, [])
         if not lines:
             continue
+        srcs = section_sources.get(section_name, [])
+        scores = section_scores.get(section_name, [])
+        # Re-rank «Городской радар» by editorial score so the 12-item cap
+        # keeps GMCA / council news and drops university PR / electron-spin
+        # research, rather than truncating in arbitrary source-registry order.
+        if section_name == "Городской радар" and scores:
+            triples = sorted(
+                zip(lines, srcs + [""] * (len(lines) - len(srcs)),
+                    scores + [0.0] * (len(lines) - len(scores))),
+                key=lambda triple: triple[2],
+                reverse=True,
+            )
+            lines = [t[0] for t in triples]
+            srcs = [t[1] for t in triples]
         per_source_cap = SECTION_MAX_PER_SOURCE.get(section_name)
         if per_source_cap:
             src_counts: dict[str, int] = {}
             filtered: list[str] = []
-            srcs = section_sources.get(section_name, [])
             for idx, ln in enumerate(lines):
                 src = srcs[idx] if idx < len(srcs) else ""
                 if src_counts.get(src, 0) >= per_source_cap:

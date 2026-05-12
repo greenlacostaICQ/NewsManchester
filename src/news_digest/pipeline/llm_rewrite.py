@@ -1,18 +1,18 @@
 """LLM rewrite stage — writes Russian draft_lines to candidates.json.
 
 Provider chain:
-  1. OpenAI gpt-4o-mini — primary, paid, reliable (~$0.15/1M input tokens)
-  2. Gemini 2.0 Flash — fallback, free tier
-  3. Groq Llama-3.3-70B — emergency fallback, free tier
+  1. DeepSeek deepseek-chat — primary, paid, cheap (~$0.27/1M input)
+  2. OpenAI gpt-4o-mini    — backup, paid (~$0.15/1M input)
+  3. Groq Llama-3.3-70B    — emergency fallback, free tier
   4. Rule-based in writer.py — final safety net, always fires if LLM unavailable
 
 Required env vars (set in GitHub Actions Secrets or .env.local):
+  DEEPSEEK_API_KEY  — platform.deepseek.com (paid, deepseek-chat)
   OPENAI_API_KEY    — platform.openai.com (paid, gpt-4o-mini)
-  GEMINI_API_KEY    — aistudio.google.com (free)
   GROQ_API_KEY      — console.groq.com (free)
 
 Optional overrides:
-  LLM_PROVIDER      — force "gemini" | "groq" | "openai" | "none"
+  LLM_PROVIDER      — force "deepseek" | "openai" | "groq" | "none"
   LLM_MODEL         — override model name
   LLM_BASE_URL      — override API base URL
   LLM_API_KEY       — override API key (used with LLM_PROVIDER)
@@ -30,11 +30,11 @@ from news_digest.pipeline.common import now_london
 
 logger = logging.getLogger(__name__)
 
+DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
+DEEPSEEK_MODEL = "deepseek-chat"  # alias for current production V3.x
+
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 OPENAI_MODEL = "gpt-4o-mini"  # cheapest OpenAI model, ~$0.15/1M input tokens
-
-GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
-GEMINI_MODEL = "gemini-2.5-flash"
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile"
@@ -42,6 +42,20 @@ GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile"
 _PROMPT_FOOTER = (
     '\nВерни ТОЛЬКО JSON-массив: [{"fingerprint": "...", "draft_line": "• ..."}]\n'
     "Никакого markdown, никаких пояснений — только JSON."
+)
+
+_ANTI_HALLUCINATION = (
+    "АНТИ-ВЫМЫСЕЛ: каждое имя, должность, число, сумма £, дата, адрес в твоём тексте ДОЛЖНЫ буквально присутствовать "
+    "в title/summary/lead/evidence_text. Нет в evidence — нет в draft_line. Запрещены конструкции «по словам экспертов», "
+    "«как ожидается», «вероятно», «по предварительным данным» — если этого нет в evidence.\n\n"
+)
+
+_LONG_FORMAT_RULES = (
+    "ФОРМАТ: «• », Telegram HTML, без ссылок, без markdown. 350–450 символов, 2–3 коротких предложения.\n"
+    "СТРУКТУРА:\n"
+    "1) Первое предложение — главный факт: кто (имя/возраст/должность), что сделал/произошло, где конкретно (район/улица/площадка GM).\n"
+    "2) Второе предложение — ключевая деталь из evidence_text: сумма, число, причина, имя пострадавшего/обвиняемого, дата вступления в силу, последствие. То, ради чего человек читает.\n"
+    "3) Третье предложение (по желанию, если данные есть) — что это значит для жителя GM: с какой даты меняется, кого затронет, чем кончится.\n\n"
 )
 
 PROMPT_TRANSPORT = (
@@ -61,58 +75,58 @@ PROMPT_TRANSPORT = (
 )
 
 PROMPT_CITY_NEWS = (
-    "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line для городских новостей GM.\n\n"
-    "ФОРМАТ: «• », Telegram HTML, без ссылок, максимум 280 символов.\n\n"
-    "ПРАВИЛО: пиши по evidence_text/lead/summary, не переводом title. Первое предложение — ТОЛЬКО факт: кто (имя/возраст/должность), что, где конкретно (район/улица).\n"
-    "Второе предложение — только если добавляет существенный контекст: сумма, число пострадавших, причина.\n\n"
-    "ПОЛИЦИЯ/СУДЫ: «• Bolton: 34-летний мужчина задержан после погони, пострадавшая девушка в больнице.»\n"
-    "СОВЕТ: что меняется для жителей, с какой даты.\n"
-    "NHS/СЛУЖБЫ: конкретный факт без PR-языка. «важный шаг», «значимая инициатива» — запрещено.\n\n"
-    "ЗАПРЕЩЕНО: «туристическая достопримечательность», «местный житель», «одна из организаций», «появилось обновление», "
-    "«заранее проверьте», «важный сигнал», «заметный кейс»."
+    "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line для городских новостей GM "
+    "(полиция, советы, NHS, происшествия, мэрия).\n\n"
+    + _LONG_FORMAT_RULES
+    + _ANTI_HALLUCINATION
+    + "ПИШИ ПО EVIDENCE_TEXT, НЕ ПЕРЕВОДОМ TITLE. В evidence обычно есть имена пострадавших, возраст, район, причина, дата суда — это и есть содержание для второго предложения.\n\n"
+    "ПОЛИЦИЯ/СУДЫ: «• Moss Side: 34-летний Адриан Браун, отец троих детей, зарезан на улице в южном Манчестере. Полиция назвала имя жертвы, мать заявила «они забрали моего мальчика»; задержанных пока нет. Это второе ножевое убийство в районе за месяц.»\n"
+    "СОВЕТ/МЭРИЯ: что меняется, с какой даты, для кого. «• Манчестер: совет утвердил план обязательной лицензии для съёмного жилья в 8 районах с 1 июля. Лицензия стоит £1175 на пять лет и распространяется на ~22 000 квартир в Cheetham, Levenshulme, Moss Side и Longsight. Цель — поднять стандарты после жалоб на сырость и плесень.»\n"
+    "NHS/СЛУЖБЫ: конкретный факт + цифра + срок. Без PR-языка («важный шаг», «значимая инициатива») и без «появилось обновление», «заметный кейс».\n\n"
+    "ЗАПРЕЩЕНО: «туристическая достопримечательность», «местный житель», «одна из организаций», «заранее проверьте», размытые формулировки. Если в evidence_text нет ни одной конкретной детали — лучше короче, чем выдумывать."
     + _PROMPT_FOOTER
 )
 
 PROMPT_EVENTS = (
     "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line для событий и культуры GM.\n\n"
-    "ФОРМАТ: «• », Telegram HTML, без ссылок, максимум 280 символов.\n\n"
-    "ОБЯЗАТЕЛЬНО: дата + площадка + одно предложение своими словами о чём событие. Используй evidence_text, если он есть.\n"
-    "«• В HOME 10–14 мая — танцевальный спектакль Akram Khan о миграции, билеты от £15.»\n"
-    "«• В Dunham Massey 10 мая — May Day фестиваль с выбором Королевы роз, вход свободный.»\n\n"
-    "МУЗЫКА: артист + площадка + дата + жанр/формат, только если жанр/формат есть в title/summary/lead/evidence_text; не выдумывай жанр.\n\n"
+    + _LONG_FORMAT_RULES
+    + _ANTI_HALLUCINATION
+    + "ОБЯЗАТЕЛЬНО: дата + площадка + о чём событие своими словами, опираясь на evidence_text.\n"
+    "Структура: 1) что именно + где + когда; 2) кто играет/ставит/курирует + о чём это (из evidence); 3) цена/билеты/доступность, если есть в evidence.\n\n"
+    "«• В HOME 10–14 мая — танцевальный спектакль Akram Khan «Outwitting the Devil» о миграции и мифологии. Постановка для шести танцоров, премьера в Лондоне получила 4 звезды у Guardian. Билеты от £15, скидки для студентов.»\n"
+    "«• В Dunham Massey 10 мая — May Day фестиваль с выбором Королевы роз и народными танцами. Вход свободный для членов National Trust, для остальных — £8 со взрослого. Парковка ограничена, рекомендуют приехать до 11:00.»\n\n"
+    "МУЗЫКА: артист + площадка + дата + жанр/формат, только если жанр/формат есть в evidence; не выдумывай жанр.\n\n"
     "ЗАПРЕЩЕНО: «не пропустите», «обязательно посетите», «захватывающий», «уникальный», даты без конкретного места."
     + _PROMPT_FOOTER
 )
 
 PROMPT_BUSINESS = (
     "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line для бизнеса, еды, открытий и рынков GM.\n\n"
-    "ФОРМАТ: «• », Telegram HTML, без ссылок, максимум 280 символов.\n\n"
-    "ИСПОЛЬЗУЙ EVIDENCE_TEXT. В нём — конкретные имена, должности, суммы, адреса. Если в evidence есть «Chief Nursing Officer Duncan Burton», в твоём тексте должно быть «главный руководитель медсестринской службы Дункан Бертон», не безымянное «главного медсестры».\n"
-    "ПЕРЕВОДИ ДОЛЖНОСТИ ПО РОДУ ЧЕЛОВЕКА: если в evidence указано мужское имя — мужской род, если женское — женский.\n\n"
-    "IT/БИЗНЕС: инвестиция с суммой £, открытие/закрытие компании с GM-локацией. Кадровые назначения — пропусти (верни \"\").\n"
-    "«• Salford-стартап Heliex получил £3.2 млн на расширение в Азию.»\n\n"
-    "ЕДА/ОТКРЫТИЯ: название + тип заведения + район GM + дата открытия. Не перевод заголовка: объясни, что реально открывается/меняется.\n"
-    "«• На Northern Quarter открывается корейский ресторан Seoulful — с 12 мая.»\n\n"
-    "РЫНКИ/ЯРМАРКИ: название + район/площадка + дата/время + что там продают/для кого это.\n"
-    "«• В Prestwich 10 мая — Makers Market у Longfield Centre: еда, ремесленные товары и независимые продавцы.»\n\n"
+    + _LONG_FORMAT_RULES
+    + _ANTI_HALLUCINATION
+    + "ИСПОЛЬЗУЙ EVIDENCE_TEXT. В нём — конкретные имена, должности, суммы, адреса. Если в evidence есть «Chief Nursing Officer Duncan Burton», в твоём тексте должно быть «главный руководитель медсестринской службы Дункан Бертон», не безымянное «главного медсестры». ПЕРЕВОДИ ДОЛЖНОСТИ ПО РОДУ: мужское имя → мужской род, женское → женский.\n\n"
+    "IT/БИЗНЕС: инвестиция с суммой £, открытие/закрытие компании с GM-локацией. Структура: 1) кто получил/инвестировал/открыл + где в GM; 2) сумма и куда пойдёт + сколько сотрудников/раундов до; 3) что это значит для рынка/региона, если в evidence есть. Кадровые назначения без сюжета — пропусти (верни \"\").\n"
+    "«• Salford-стартап Heliex получил £3.2 млн от Aviva Ventures на расширение в Сингапур и Гонконг. Компания делает турбины для рекуперации тепла на промпредприятиях; за три года выручка выросла с £400k до £2.1 млн. Новый раунд — пятый, с 2019 года Heliex привлекла £8.5 млн.»\n\n"
+    "ЕДА/ОТКРЫТИЯ: название + тип заведения + район GM + дата. Не перевод заголовка: объясни, что реально открывается, кто стоит за проектом, что в меню/чем выделяется. Если в evidence есть имя шефа, цена, концепция — добавь.\n"
+    "«• На Thomas Street в Northern Quarter с 13 мая — корейский ресторан Seoulful, проект бывшего шефа Hawksmoor Ли Уильямса. В меню — bibimbap, KFC-стиль курица и натуральные вина по £6 за бокал. Открытие совпадает с запуском восьми новых заведений в NQ за месяц.»\n\n"
+    "РЫНКИ/ЯРМАРКИ: название + район/площадка + дата/время + что продают, сколько участников, кому идёт сбор.\n"
+    "«• В Prestwich 10 мая, 10:00–16:00 — Makers Market у Longfield Centre. Около 50 независимых продавцов: керамика, мыло, выпечка, винтаж. Часть выручки идёт на ремонт детской площадки в St Mary's Park.»\n\n"
     "ЗАПРЕЩЕНО: профили людей без цифр, PR-события без конкретных данных, компании без GM-адреса."
     + _PROMPT_FOOTER
 )
 
 PROMPT_FOOTBALL = (
     "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line только для Man Utd и Man City.\n\n"
-    "ФОРМАТ: «• », Telegram HTML, без ссылок, максимум 160 символов.\n\n"
-    "ПРИНИМАЙ — верни заполненный draft_line:\n"
-    "• Результат матча со счётом: «• Man City 2–1 Arsenal: гол де Брёйне на 87-й.»\n"
-    "• Трансфер с суммой и клубом: «• Man Utd подписал Кассерру из Sporting за £38 млн.»\n"
-    "• Официальный предматчевый анонс с соперником и датой.\n"
-    "• Реакция тренера/игрока на матч (после-/предматчевая) с конкретной деталью.\n"
-    "  «• Carrick после ничьей с Sunderland: «решения не принимаются по одной игре».»\n"
-    "• Карьерная веха игрока с числом: «• Mainoo провёл 100-й матч за Man Utd.»\n"
-    "• Травма/возвращение игрока с именем и сроком: «• Холанд выбыл на 2 недели после удара бедром.»\n\n"
-    "ПРОПУСКАЙ — верни draft_line \"\": пресс-конференции без новых фактов, подкасты, донации, "
-    "награды без имени, Under-18/Under-21, женские команды, matchday programme, фото-галереи, "
-    "Community события, мерч и kit launches."
+    + _LONG_FORMAT_RULES
+    + _ANTI_HALLUCINATION
+    + "ПРИНИМАЙ — верни заполненный draft_line:\n"
+    "• Результат матча со счётом: 1) счёт + соперник + турнир; 2) кто забил/удалён + минута; 3) что это значит для турнирной таблицы/серии.\n"
+    "  «• Man City 2–1 Arsenal в АПЛ на «Этихаде». Голы Холанда (34') и де Брёйне (87') с пенальти; Сака отквитал на 70'. После 32 туров City — третьи, отрыв от Liverpool сократился до 4 очков.»\n"
+    "• Трансфер с суммой и клубом: фигурант + сумма + контракт + откуда; ради чего; что значит для состава.\n"
+    "  «• Man Utd подписал Кассерру из Sporting за £38 млн на пять лет. 23-летний португалец — опорный полузащитник, проведёт первый матч после паузы на сборные. Подписание закрывает дыру после ухода Каземиро в Al-Nassr.»\n"
+    "• Официальный анонс матча, реакция тренера/игрока с конкретной деталью, травма/возвращение.\n\n"
+    "ПРОПУСКАЙ — верни draft_line \"\": пресс-конференции без новых фактов, подкасты, донации, награды без имени, "
+    "Under-18/Under-21, женские команды, matchday programme, фото-галереи, Community события, мерч и kit launches."
     + _PROMPT_FOOTER
 )
 
@@ -145,14 +159,17 @@ REPAIR_DRAFT_SYSTEM = """Ты senior editor городского morning brief.
 
 ФОРМАТ:
 - строка начинается с «• »
-- 90–280 символов
+- для категорий media_layer/gmp/council/public_services/food_openings/tech_business/culture_weekly/venues_tickets/football: 350–450 символов, 2–3 коротких предложения
+- для transport — 90–160 символов, одна строка
 - без ссылок и markdown
-- только факты из title/summary/lead/evidence_text/practical_angle/source_label/source_url/published_at
+- только факты из title/summary/lead/evidence_text/source_label/source_url/published_at
 
-ОБЯЗАТЕЛЬНО:
-- для еды/открытий/рынков: что это, где, когда, зачем читателю
-- для событий: дата + площадка + что именно происходит
-- для новостей: кто/что/где, без пустого «важно»
+АНТИ-ВЫМЫСЕЛ: каждое имя, число, сумма £, дата, адрес должны буквально присутствовать в evidence_text/title. Запрещены «по словам экспертов», «как ожидается», «вероятно», если их нет в evidence.
+
+СТРУКТУРА длинного формата:
+1) Главный факт: кто, что, где конкретно.
+2) Ключевая деталь из evidence: сумма/имя/причина/дата.
+3) (опционально) что это значит для жителя GM.
 
 Если данных мало, всё равно сделай лучший самодостаточный пункт из имеющихся фактов. Не возвращай пустую строку.
 
@@ -210,16 +227,29 @@ def _needs_translation_fix(draft_line: str) -> bool:
     return hits >= 2
 
 
+_LONG_FORMAT_CATEGORIES_FOR_REPAIR = {
+    "media_layer", "gmp", "council", "public_services",
+    "food_openings", "tech_business", "culture_weekly",
+    "venues_tickets", "football",
+}
+
+
 def _needs_quality_repair(candidate: dict) -> bool:
     line = str(candidate.get("draft_line") or "").strip()
     if not line:
         return False
     category = str(candidate.get("category") or "")
     primary_block = str(candidate.get("primary_block") or "")
-    if category not in {"food_openings", "culture_weekly", "venues_tickets", "transport", "football", "media_layer", "gmp", "council", "public_services"}:
+    if category not in _LONG_FORMAT_CATEGORIES_FOR_REPAIR | {"transport"}:
         return False
     normalized = re.sub(r"\s+", " ", line)
     lowered = normalized.lower()
+    sentence_count = len(re.findall(r"[.!?]", normalized))
+    # Long-format card: must hit ≥150 chars AND ≥2 sentences. Anything
+    # shorter is still a headline and will be blocked by the writer.
+    if category in _LONG_FORMAT_CATEGORIES_FOR_REPAIR:
+        if len(normalized) < 150 or sentence_count < 2:
+            return True
     if len(normalized) < 90 and (category == "food_openings" or primary_block in {"weekend_activities", "next_7_days", "ticket_radar"}):
         return True
     if any(marker in lowered for marker in _REPAIR_BAD_MARKERS):
@@ -228,7 +258,7 @@ def _needs_quality_repair(candidate: dict) -> bool:
         return True
     # Bare opening lines like "X opens — date" are exactly what made the
     # food section feel like translated headlines rather than edited copy.
-    if category == "food_openings" and len(re.findall(r"[.!?]", normalized)) < 1:
+    if category == "food_openings" and sentence_count < 1:
         return True
     return False
 
@@ -293,7 +323,7 @@ def _call_provider_batch(
                     {"role": "user", "content": user_content},
                 ],
                 temperature=0.3,
-                max_tokens=4096,
+                max_tokens=8192,
             )
             raw = response.choices[0].message.content.strip()
             if raw.startswith("```"):
@@ -343,15 +373,15 @@ def _call_with_fallback(
             system_prompt=prompt,
         )
     mapping = _call_provider_batch(
-        OPENAI_BASE_URL, os.environ.get("OPENAI_API_KEY", ""), OPENAI_MODEL,
-        candidates, f"OpenAI{label_suffix}", system_prompt=prompt,
+        DEEPSEEK_BASE_URL, os.environ.get("DEEPSEEK_API_KEY", ""), DEEPSEEK_MODEL,
+        candidates, f"DeepSeek{label_suffix}", system_prompt=prompt,
     )
     missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
     if missing:
         time.sleep(1)
         mapping.update(_call_provider_batch(
-            GEMINI_BASE_URL, os.environ.get("GEMINI_API_KEY", ""), GEMINI_MODEL,
-            missing, f"Gemini{label_suffix}", system_prompt=prompt,
+            OPENAI_BASE_URL, os.environ.get("OPENAI_API_KEY", ""), OPENAI_MODEL,
+            missing, f"OpenAI{label_suffix}", system_prompt=prompt,
         ))
     missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
     if missing:

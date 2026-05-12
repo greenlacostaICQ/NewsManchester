@@ -43,16 +43,17 @@ jobs:
 
       - name: Curator pass — editorial drop + lead selection
         env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI }}
-          GEMINI_API_KEY: ${{ secrets.GEMINIAPI_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROGAPIKEY }}
         run: python3 scripts/run_local_digest.py curator-pass
 
-      - name: LLM rewrite — OpenAI → Gemini → Groq Llama
+      - name: LLM rewrite — DeepSeek → OpenAI → Groq Llama
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI }}
-          GEMINI_API_KEY: ${{ secrets.GEMINIAPI_KEY }}
           GROQ_API_KEY: ${{ secrets.GROGAPIKEY }}
         run: python3 scripts/run_local_digest.py llm-rewrite
 
