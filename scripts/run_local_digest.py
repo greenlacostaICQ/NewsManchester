@@ -32,6 +32,7 @@ from news_digest.pipeline.writer import write_digest
 from news_digest.state.store import StateStore
 
 LONDON_TZ = ZoneInfo("Europe/London")
+REQUIRED_RELEASE_GATE_VERSION = 3
 
 
 def _runtime_state_dir() -> Path:
@@ -85,6 +86,37 @@ def _effective_targets(primary_target: str | None, subscribers: list[str]) -> li
         seen.add(value)
         targets.append(value)
     return targets
+
+
+def _release_gate_error_for_file(path: Path) -> str | None:
+    state_dir = PROJECT_ROOT / "data" / "state"
+    outgoing_path = (PROJECT_ROOT / "data" / "outgoing" / "current_digest.html").resolve()
+    resolved_path = path.resolve()
+    if resolved_path != outgoing_path:
+        return None
+
+    report_path = state_dir / "release_report.json"
+    if not report_path.exists():
+        return "release_report.json is missing"
+    report = read_json(report_path, {})
+    today = datetime.now(LONDON_TZ).strftime("%Y-%m-%d")
+    if report.get("release_decision") != "pass":
+        return f"release gate did not pass: {report.get('message') or report.get('errors')}"
+    if int(report.get("release_gate_version") or 0) < REQUIRED_RELEASE_GATE_VERSION:
+        return "release_report was produced by an old gate version"
+    if report.get("run_date_london") != today:
+        return f"release_report is stale: {report.get('run_date_london')} != {today}"
+    output_path = str(report.get("output_path") or "")
+    if output_path:
+        try:
+            if Path(output_path).resolve() != resolved_path:
+                return "release_report output_path does not match requested file"
+        except OSError:
+            return "release_report output_path is invalid"
+    text = resolved_path.read_text(encoding="utf-8")
+    if f"Greater Manchester Brief — {today}," not in text:
+        return "current_digest.html does not contain today's digest header"
+    return None
 
 
 def cmd_bot_info() -> int:
@@ -222,6 +254,9 @@ def _rendered_candidates_for_delivery() -> list[dict]:
 def cmd_send_file(file_path: str, parse_mode: str | None, force: bool) -> int:
     settings, client, store = _load_store_and_client()
     resolved_path = Path(file_path).resolve()
+    gate_error = _release_gate_error_for_file(resolved_path)
+    if gate_error:
+        raise RuntimeError(f"Refusing to send current_digest.html: {gate_error}. Run build-digest successfully first.")
     text = resolved_path.read_text(encoding="utf-8")
     effective_parse_mode = parse_mode
     if effective_parse_mode is None and resolved_path.suffix.lower() == ".html":
@@ -342,7 +377,10 @@ def cmd_mark_pipeline_failed(stage: str) -> int:
     state_dir.mkdir(parents=True, exist_ok=True)
     now_london = datetime.now(LONDON_TZ)
     report_path = state_dir / "release_report.json"
+    candidates_report = read_json(state_dir / "candidates.json", {})
     report_payload = {
+        "release_gate_version": REQUIRED_RELEASE_GATE_VERSION,
+        "pipeline_run_id": str(candidates_report.get("pipeline_run_id") or ""),
         "run_at_london": now_london.isoformat(),
         "run_date_london": now_london.strftime("%Y-%m-%d"),
         "release_decision": "fail",
@@ -440,9 +478,9 @@ def cmd_curator_pass() -> int:
 
 def cmd_llm_rewrite() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    run_llm_rewrite(PROJECT_ROOT)
-    print(json.dumps({"ok": True, "message": "LLM rewrite stage complete."}, ensure_ascii=False))
-    return 0
+    result = run_llm_rewrite(PROJECT_ROOT)
+    print(json.dumps(_stage_payload(result), ensure_ascii=False))
+    return 0 if result.ok else 1
 
 
 def cmd_write_digest() -> int:

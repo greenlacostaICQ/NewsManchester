@@ -20,6 +20,7 @@ Optional overrides:
 from __future__ import annotations
 
 import calendar
+from dataclasses import dataclass
 import json
 import logging
 import os
@@ -28,9 +29,17 @@ import time
 from datetime import date, timedelta
 from pathlib import Path
 
-from news_digest.pipeline.common import now_london, today_london
+from news_digest.pipeline.common import now_london, pipeline_run_id_from, today_london, write_json
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(slots=True)
+class StageResult:
+    ok: bool
+    message: str
+    report_path: Path
+
 
 DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
 DEEPSEEK_MODEL = "deepseek-chat"  # alias for current production V3.x
@@ -530,14 +539,27 @@ def _enrich_recurring_events(candidates: list[dict]) -> None:
             logger.debug("Enriched recurring event '%s' with next date: %s", c.get("title", ""), next_date)
 
 
-def run_llm_rewrite(project_root: Path) -> None:
+def run_llm_rewrite(project_root: Path) -> StageResult:
     """Read candidates.json, fill Russian draft_lines for included candidates."""
+    report_path = project_root / "data" / "state" / "llm_rewrite_report.json"
     candidates_path = project_root / "data" / "state" / "candidates.json"
     if not candidates_path.exists():
         logger.warning("candidates.json not found, skipping LLM rewrite.")
-        return
+        write_json(
+            report_path,
+            {
+                "pipeline_run_id": "",
+                "run_at_london": now_london().isoformat(),
+                "run_date_london": today_london(),
+                "stage_status": "failed",
+                "errors": ["Missing data/state/candidates.json."],
+                "warnings": [],
+            },
+        )
+        return StageResult(False, "Missing candidates.json.", report_path)
 
     payload = json.loads(candidates_path.read_text(encoding="utf-8"))
+    pipeline_run_id = pipeline_run_id_from(payload)
     candidates = payload.get("candidates", [])
 
     # Rewrite EVERY included candidate each run, not only ones missing a
@@ -557,10 +579,31 @@ def run_llm_rewrite(project_root: Path) -> None:
     provider_override = os.environ.get("LLM_PROVIDER", "").lower().strip()
     model_override = os.environ.get("LLM_MODEL", "").strip()
     base_url_override = os.environ.get("LLM_BASE_URL", "").strip()
+    errors: list[str] = []
+    warnings: list[str] = []
+    applied = 0
+    fixed = 0
+    repaired = 0
 
     if provider_override == "none":
         logger.info("LLM_PROVIDER=none — skipping rewrite.")
-        return
+        warnings.append("LLM_PROVIDER=none — rewrite stage skipped; writer/release gates will decide publishability.")
+        write_json(
+            report_path,
+            {
+                "pipeline_run_id": pipeline_run_id,
+                "run_at_london": now_london().isoformat(),
+                "run_date_london": today_london(),
+                "stage_status": "degraded",
+                "errors": errors,
+                "warnings": warnings,
+                "included_for_rewrite": len(to_rewrite),
+                "applied": 0,
+                "fixed": 0,
+                "repaired": 0,
+            },
+        )
+        return StageResult(True, "LLM rewrite disabled; continuing with writer/release gates.", report_path)
 
     if not to_rewrite:
         logger.info("LLM rewrite: all included candidates already have draft_lines.")
@@ -589,7 +632,6 @@ def run_llm_rewrite(project_root: Path) -> None:
             mapping.update(_call_with_fallback(group, _with_date_header(prompt), provider_override, base_url_override, model_override))
 
         run_iso = now_london().isoformat()
-        applied = 0
         for candidate in candidates:
             fp = str(candidate.get("fingerprint") or "").strip()
             if fp in mapping:
@@ -615,7 +657,6 @@ def run_llm_rewrite(project_root: Path) -> None:
         fix_mapping = _call_with_fallback(fix_candidates, FIX_TRANSLATE_SYSTEM, provider_override, base_url_override, model_override, label_suffix="-fix")
 
         run_iso = now_london().isoformat()
-        fixed = 0
         for candidate in candidates:
             fp = str(candidate.get("fingerprint") or "").strip()
             if fp in fix_mapping:
@@ -635,32 +676,85 @@ def run_llm_rewrite(project_root: Path) -> None:
         c for c in candidates
         if isinstance(c, dict) and c.get("include") and _needs_quality_repair(c)
     ]
-    if not to_repair:
-        return
+    if to_repair:
+        logger.info("LLM repair pass: %d weak draft_lines, rewriting editorially.", len(to_repair))
+        repair_mapping = _call_with_fallback(
+            to_repair,
+            REPAIR_DRAFT_SYSTEM,
+            provider_override,
+            base_url_override,
+            model_override,
+            label_suffix="-repair",
+        )
 
-    logger.info("LLM repair pass: %d weak draft_lines, rewriting editorially.", len(to_repair))
-    repair_mapping = _call_with_fallback(
-        to_repair,
-        REPAIR_DRAFT_SYSTEM,
-        provider_override,
-        base_url_override,
-        model_override,
-        label_suffix="-repair",
+        run_iso = now_london().isoformat()
+        for candidate in candidates:
+            fp = str(candidate.get("fingerprint") or "").strip()
+            if fp not in repair_mapping:
+                continue
+            replacement, prov, model_name = repair_mapping[fp]
+            if replacement and replacement.startswith("• ") and len(re.sub(r"\s+", " ", replacement)) >= 70:
+                candidate["draft_line"] = replacement
+                candidate["draft_line_provider"] = prov
+                candidate["draft_line_model"] = model_name
+                candidate["draft_line_written_at"] = run_iso
+                repaired += 1
+
+        if repaired:
+            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            logger.info("LLM repair pass: repaired %d weak draft_lines.", repaired)
+
+    missing_after = [
+        c for c in to_rewrite
+        if not str(c.get("draft_line") or "").strip()
+    ]
+    weak_after = [
+        c for c in to_rewrite
+        if str(c.get("draft_line") or "").strip() and _needs_quality_repair(c)
+    ]
+    successful = len(to_rewrite) - len(missing_after)
+    if to_rewrite and successful < len(to_rewrite):
+        warnings.append(
+            f"LLM rewrite yield low after provider fallback: {successful}/{len(to_rewrite)} draft_lines written."
+        )
+    if weak_after:
+        warnings.append(f"{len(weak_after)} draft_line(s) still look weak after repair.")
+
+    write_json(
+        report_path,
+        {
+            "pipeline_run_id": pipeline_run_id,
+            "run_at_london": now_london().isoformat(),
+            "run_date_london": today_london(),
+            "stage_status": "complete" if not warnings else "degraded",
+            "errors": errors,
+            "warnings": warnings,
+            "included_for_rewrite": len(to_rewrite),
+            "applied": applied,
+            "fixed": fixed,
+            "repaired": repaired,
+            "missing_after": [
+                {
+                    "fingerprint": c.get("fingerprint"),
+                    "title": c.get("title"),
+                    "category": c.get("category"),
+                    "primary_block": c.get("primary_block"),
+                }
+                for c in missing_after[:30]
+            ],
+            "weak_after": [
+                {
+                    "fingerprint": c.get("fingerprint"),
+                    "title": c.get("title"),
+                    "category": c.get("category"),
+                    "primary_block": c.get("primary_block"),
+                }
+                for c in weak_after[:30]
+            ],
+        },
     )
-
-    repaired = 0
-    for candidate in candidates:
-        fp = str(candidate.get("fingerprint") or "").strip()
-        if fp not in repair_mapping:
-            continue
-        replacement, prov, model_name = repair_mapping[fp]
-        if replacement and replacement.startswith("• ") and len(re.sub(r"\s+", " ", replacement)) >= 70:
-            candidate["draft_line"] = replacement
-            candidate["draft_line_provider"] = prov
-            candidate["draft_line_model"] = model_name
-            candidate["draft_line_written_at"] = run_iso
-            repaired += 1
-
-    if repaired:
-        candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-        logger.info("LLM repair pass: repaired %d weak draft_lines.", repaired)
+    return StageResult(
+        True,
+        "LLM rewrite completed." if not warnings else "LLM rewrite completed with degraded yield/quality.",
+        report_path,
+    )

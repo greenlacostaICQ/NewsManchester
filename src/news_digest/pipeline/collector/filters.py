@@ -503,7 +503,7 @@ _CITY_WATCH_TOPICAL_KEYWORDS: tuple[str, ...] = (
     "by-election", "vote",
     # transport / infra
     "metrolink", "bee network", "tram", "bus service", "rail", "train",
-    "airport", "tfgm", "roadworks", "closure",
+    "transpennine", "northern",
     # public services
     "nhs", "strike", "industrial action", "walkout", "hospital", "ambulance",
     "school", "ofsted",

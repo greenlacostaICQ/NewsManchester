@@ -19,6 +19,7 @@ from urllib import parse
 
 from news_digest.pipeline.common import (
     REQUIRED_SCAN_CATEGORIES,
+    new_pipeline_run_id,
     now_london,
     today_london,
     write_json,
@@ -184,7 +185,9 @@ def collect_digest(project_root: Path) -> StageResult:
     ensure_history_files(state_dir)
 
     collect_started_at = time.perf_counter()
+    pipeline_run_id = new_pipeline_run_id()
     report = _default_report()
+    report["pipeline_run_id"] = pipeline_run_id
     candidates: list[dict] = [_weather_candidate()]
     for source in SOURCES:
         report["categories"][source.report_category]["sources"].append(source.name)
@@ -259,6 +262,7 @@ def collect_digest(project_root: Path) -> StageResult:
     report["total_duration_seconds"] = round(time.perf_counter() - collect_started_at, 3)
 
     candidates_payload = {
+        "pipeline_run_id": pipeline_run_id,
         "run_at_london": now_london().isoformat(),
         "run_date_london": today_london(),
         "stage_status": "complete" if candidates else "incomplete",

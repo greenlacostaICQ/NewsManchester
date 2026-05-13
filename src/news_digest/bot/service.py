@@ -1,11 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
+import json
 from pathlib import Path
+import re
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from news_digest.delivery.telegram import TelegramClient
 from news_digest.state.store import StateStore
+
+LONDON_TZ = ZoneInfo("Europe/London")
+REQUIRED_RELEASE_GATE_VERSION = 3
 
 
 WELCOME_TEXT = """Привет. Это бот ежедневного дайджеста по Greater Manchester.
@@ -119,10 +126,50 @@ class DigestBotService:
                 "Последний дайджест пока не найден. Сначала нужно собрать и сохранить выпуск.",
             )
             return replies + 1
+        gate_error = self._latest_digest_gate_error()
+        if gate_error:
+            self.client.send_message(
+                chat_id,
+                "Последний выпуск сейчас не готов к отправке: "
+                f"{gate_error} Сначала нужен успешный build-digest.",
+            )
+            return replies + 1
 
         text = self.latest_digest_path.read_text(encoding="utf-8")
         responses = self.client.send_text_in_chunks(chat_id, text, parse_mode="HTML")
         return replies + len(responses)
+
+    def _latest_digest_gate_error(self) -> str | None:
+        today = datetime.now(LONDON_TZ).strftime("%Y-%m-%d")
+        report_path = self.store.state_dir / "release_report.json"
+        if not report_path.exists():
+            return "нет release_report.json."
+        try:
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return "release_report.json не читается."
+        if report.get("release_decision") != "pass":
+            message = report.get("message") or "release gate не прошёл"
+            return str(message)
+        if int(report.get("release_gate_version") or 0) < REQUIRED_RELEASE_GATE_VERSION:
+            return "release_report создан старой версией gate."
+        if report.get("run_date_london") != today:
+            return f"release_report устарел: {report.get('run_date_london')} != {today}."
+        output_path = str(report.get("output_path") or "")
+        if output_path:
+            try:
+                if Path(output_path).resolve() != self.latest_digest_path.resolve():
+                    return "release_report относится к другому output_path."
+            except OSError:
+                return "release_report содержит некорректный output_path."
+        try:
+            text = self.latest_digest_path.read_text(encoding="utf-8")
+        except OSError:
+            return "current_digest.html не читается."
+        match = re.search(r"Greater Manchester Brief — (\d{4}-\d{2}-\d{2}),", text)
+        if not match or match.group(1) != today:
+            return "current_digest.html не содержит сегодняшнюю дату."
+        return None
 
     def _subscribe(self, chat_id: str) -> int:
         added = self.store.add_subscriber(chat_id)

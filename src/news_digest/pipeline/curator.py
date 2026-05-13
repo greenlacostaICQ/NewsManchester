@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 import re
 
-from news_digest.pipeline.common import now_london, read_json, today_london, write_json
+from news_digest.pipeline.common import now_london, pipeline_run_id_from, read_json, today_london, write_json
 
 logger = logging.getLogger(__name__)
 
@@ -272,10 +272,11 @@ def run_curator_pass(project_root: Path) -> None:
 
     if not candidates_path.exists():
         logger.warning("candidates.json not found, skipping curator pass.")
-        write_json(report_path, {"status": "skipped", "reason": "missing candidates.json", "run_at": now_london().isoformat(), "run_date_london": today_london()})
+        write_json(report_path, {"pipeline_run_id": "", "status": "skipped", "reason": "missing candidates.json", "run_at": now_london().isoformat(), "run_at_london": now_london().isoformat(), "run_date_london": today_london()})
         return
 
     payload = json.loads(candidates_path.read_text(encoding="utf-8"))
+    pipeline_run_id = pipeline_run_id_from(payload)
     candidates = payload.get("candidates", [])
 
     included = [
@@ -285,7 +286,7 @@ def run_curator_pass(project_root: Path) -> None:
     ]
     if not included:
         logger.info("Curator: no included candidates.")
-        write_json(report_path, {"status": "skipped", "reason": "no included candidates", "run_at": now_london().isoformat(), "run_date_london": today_london()})
+        write_json(report_path, {"pipeline_run_id": pipeline_run_id, "status": "skipped", "reason": "no included candidates", "run_at": now_london().isoformat(), "run_at_london": now_london().isoformat(), "run_date_london": today_london()})
         return
 
     logger.info("Curator: reviewing %d included candidates.", len(included))
@@ -293,7 +294,7 @@ def run_curator_pass(project_root: Path) -> None:
     provider_override = os.environ.get("LLM_PROVIDER", "").lower().strip()
     if provider_override == "none":
         logger.info("LLM_PROVIDER=none — skipping curator pass.")
-        write_json(report_path, {"status": "skipped", "reason": "LLM_PROVIDER=none", "run_at": now_london().isoformat(), "run_date_london": today_london()})
+        write_json(report_path, {"pipeline_run_id": pipeline_run_id, "status": "skipped", "reason": "LLM_PROVIDER=none", "run_at": now_london().isoformat(), "run_at_london": now_london().isoformat(), "run_date_london": today_london()})
         return
 
     base_url = os.environ.get("LLM_BASE_URL") or DEEPSEEK_BASE_URL
@@ -328,7 +329,7 @@ def run_curator_pass(project_root: Path) -> None:
 
     if not decisions:
         logger.warning("Curator: all providers failed — keeping existing include flags.")
-        write_json(report_path, {"status": "skipped", "reason": "all providers failed", "run_at": now_london().isoformat(), "run_date_london": today_london()})
+        write_json(report_path, {"pipeline_run_id": pipeline_run_id, "status": "skipped", "reason": "all providers failed", "run_at": now_london().isoformat(), "run_at_london": now_london().isoformat(), "run_date_london": today_london()})
         return
 
     decision_map = {str(d.get("fingerprint") or ""): d for d in decisions if isinstance(d, dict)}
@@ -366,7 +367,9 @@ def run_curator_pass(project_root: Path) -> None:
     logger.info("Curator: dropped %d candidates (semantic dedup: %d), lead=%s.", dropped, semantic_dropped, lead_set)
 
     write_json(report_path, {
+        "pipeline_run_id": pipeline_run_id,
         "run_at": now_london().isoformat(),
+        "run_at_london": now_london().isoformat(),
         "run_date_london": today_london(),
         "status": "complete",
         "reviewed": len(included),

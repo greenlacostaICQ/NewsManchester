@@ -87,10 +87,10 @@ if [[ -f "$PROJECT_ROOT/data/state/bot_state.json" && ! -f "$RUNTIME_ROOT/data/s
   copy_if_possible "$PROJECT_ROOT/data/state/bot_state.json" "$RUNTIME_ROOT/data/state/bot_state.json"
 fi
 
-# current digest for /latest bot command
-if [[ -f "$PROJECT_ROOT/data/outgoing/current_digest.html" ]]; then
-  copy_if_possible "$PROJECT_ROOT/data/outgoing/current_digest.html" "$RUNTIME_ROOT/data/outgoing/current_digest.html"
-fi
+# Do not sync data/outgoing/current_digest.html workspace → runtime.
+# Runtime must only serve a digest that its own release gate promoted.
+# Copying a stale workspace artifact here can make /latest and send-file
+# publish old HTML after a failed build.
 
 assert_runtime_match \
   "$PROJECT_ROOT/src/news_digest/pipeline/collector/sources.py" \

@@ -98,6 +98,16 @@ def today_london() -> str:
     return now_london().strftime("%Y-%m-%d")
 
 
+def new_pipeline_run_id() -> str:
+    return now_london().strftime("%Y%m%dT%H%M%S%z")
+
+
+def pipeline_run_id_from(payload: dict | None) -> str:
+    if not isinstance(payload, dict):
+        return ""
+    return str(payload.get("pipeline_run_id") or payload.get("run_id") or "").strip()
+
+
 def read_json(path: Path, default: dict | None = None) -> dict:
     if not path.exists():
         return {} if default is None else default

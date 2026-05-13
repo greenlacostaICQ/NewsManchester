@@ -16,6 +16,7 @@ from news_digest.pipeline.common import (
     SECTION_MAX_PER_SOURCE,
     is_placeholder_practical_angle,
     now_london,
+    pipeline_run_id_from,
     read_json,
     today_london,
     write_json,
@@ -431,6 +432,7 @@ def write_digest(project_root: Path) -> StageResult:
     report_path = state_dir / "writer_report.json"
 
     payload = read_json(candidates_path, {"candidates": []})
+    pipeline_run_id = pipeline_run_id_from(payload)
     candidates = payload.get("candidates", [])
     sections = {heading: [] for heading in PRIMARY_BLOCKS.values()}
     # Parallel list of source_labels per section (same indices as sections[*]).
@@ -670,6 +672,7 @@ def write_digest(project_root: Path) -> StageResult:
     write_json(
         report_path,
         {
+            "pipeline_run_id": pipeline_run_id,
             "run_at_london": now_london().isoformat(),
             "run_date_london": today_london(),
             "stage_status": "complete" if not errors else "failed",

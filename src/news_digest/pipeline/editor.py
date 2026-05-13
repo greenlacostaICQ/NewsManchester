@@ -9,6 +9,7 @@ from news_digest.pipeline.common import (
     extract_sections,
     is_placeholder_practical_angle,
     now_london,
+    pipeline_run_id_from,
     read_json,
     today_london,
     write_json,
@@ -55,6 +56,7 @@ def edit_digest(project_root: Path) -> StageResult:
     draft_text = draft_path.read_text(encoding="utf-8") if draft_path.exists() else ""
     sections = extract_sections(draft_text)
     payload = read_json(candidates_path, {"candidates": []})
+    pipeline_run_id = pipeline_run_id_from(payload)
     included_candidates = [
         candidate
         for candidate in payload.get("candidates", [])
@@ -140,6 +142,7 @@ def edit_digest(project_root: Path) -> StageResult:
     write_json(
         report_path,
         {
+            "pipeline_run_id": pipeline_run_id,
             "run_at_london": now_london().isoformat(),
             "run_date_london": today_london(),
             "stage_status": "complete" if not errors else "failed",

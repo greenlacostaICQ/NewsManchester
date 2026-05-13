@@ -9,6 +9,7 @@ from news_digest.pipeline.common import (
     fingerprint_for_candidate,
     normalize_title,
     now_london,
+    pipeline_run_id_from,
     read_json,
     today_london,
     write_json,
@@ -158,10 +159,14 @@ def dedupe_candidates(project_root: Path) -> StageResult:
     payload["run_at_london"] = now_london().isoformat()
     payload["run_date_london"] = today_london()
     payload["stage_status"] = "complete" if not errors else "failed"
+    pipeline_run_id = pipeline_run_id_from(payload)
     write_json(candidates_path, payload)
     write_json(
         report_path,
         {
+            "pipeline_run_id": pipeline_run_id,
+            "run_at_london": now_london().isoformat(),
+            "run_date_london": today_london(),
             "last_updated_london": today_london(),
             "stage_status": "complete" if not errors else "failed",
             "errors": errors,

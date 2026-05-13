@@ -11,6 +11,7 @@ from news_digest.pipeline.common import (
     REQUIRED_SCAN_CATEGORIES,
     extract_sections,
     now_london,
+    pipeline_run_id_from,
     read_json,
     today_london,
     write_json,
@@ -65,6 +66,35 @@ BAD_EDITORIAL_PROSE = [
     "убедитесь сами",
     "читайте подробнее",
     "подробности ниже",
+    "обогатит",
+    "центр притяжения",
+    "новая достопримечательность",
+    "другие детали не сообщаются",
+    "подробности не раскрываются",
+    "решение вступило в силу",
+    "остаётся нерешённой",
+    "привлечёт внимание",
+    "достопримечательност",
+    "готовые к изменению климата",
+    "sponge park",
+    "обещает стать",
+    "одной из основных линий",
+    "жители в шоке",
+    "эмоциональное прощание",
+    "это событие подчеркивает",
+    "отличный повод",
+    "билеты и даты уточняйте",
+    "время и дату уточняйте",
+    "дату и время уточняйте",
+    "уточните даты",
+    "уточняйте",
+    "booking fee",
+    "under-30s",
+    "claimants",
+    "soft refreshments",
+    "guided writing session",
+    "civic reception",
+    "takeaway",
 ]
 
 ENGLISH_PROSE_PATTERN = re.compile(
@@ -75,6 +105,7 @@ ENGLISH_PROSE_PATTERN = re.compile(
 FAIL_CLOSED_SUMMARY = (
     "Digest release is blocked until collector, dedupe, validator, writer and gate inputs pass."
 )
+RELEASE_GATE_VERSION = 3
 
 
 @dataclass(slots=True)
@@ -305,6 +336,63 @@ def _validate_stage_reports(
     return rendered_fingerprints
 
 
+def _validate_pipeline_run_consistency(
+    *,
+    collector_report: dict | None,
+    candidates_report: dict | None,
+    curator_report: dict | None,
+    llm_rewrite_report: dict | None,
+    writer_report: dict | None,
+    editor_report: dict | None,
+    errors: list[str],
+    warnings: list[str],
+) -> str:
+    expected = pipeline_run_id_from(collector_report)
+    if not expected:
+        errors.append("Collector report is missing pipeline_run_id; run collect-digest with the current code.")
+        return ""
+
+    required_inputs = {
+        "candidates": candidates_report,
+        "writer_report": writer_report,
+        "editor_report": editor_report,
+    }
+    optional_inputs = {
+        "curator_report": curator_report,
+        "llm_rewrite_report": llm_rewrite_report,
+    }
+
+    for label, payload in required_inputs.items():
+        actual = pipeline_run_id_from(payload)
+        if not actual:
+            errors.append(f"{label} is missing pipeline_run_id; rerun the full pipeline from collect-digest.")
+        elif actual != expected:
+            errors.append(
+                f"{label} belongs to a different pipeline run ({actual}) than collector_report ({expected})."
+            )
+
+    for label, payload in optional_inputs.items():
+        if payload is None:
+            errors.append(f"Missing data/state/{label}.json.")
+            continue
+        actual = pipeline_run_id_from(payload)
+        if not actual:
+            errors.append(f"{label} is missing pipeline_run_id; rerun the full pipeline from collect-digest.")
+        elif actual != expected:
+            errors.append(
+                f"{label} belongs to a different pipeline run ({actual}) than collector_report ({expected})."
+            )
+
+    if llm_rewrite_report is not None:
+        status = str(llm_rewrite_report.get("stage_status") or "")
+        if status not in {"complete", "degraded"}:
+            errors.append(f"LLM rewrite report is not complete/degraded: {status!r}.")
+        elif status == "degraded":
+            warnings.append("LLM rewrite was degraded; writer/release quality gates handled the remaining candidates.")
+
+    return expected
+
+
 def _validate_draft(
     draft_path: Path,
     scan_report: dict | None,
@@ -450,6 +538,7 @@ def build_release(project_root: Path) -> ReleaseResult:
     scan_report = _load_optional_json(state_dir / "collector_report.json")
     candidates_report = _load_optional_json(state_dir / "candidates.json")
     curator_report = _load_optional_json(state_dir / "curator_report.json")
+    llm_rewrite_report = _load_optional_json(state_dir / "llm_rewrite_report.json")
     writer_report = _load_optional_json(state_dir / "writer_report.json")
     editor_report = _load_optional_json(state_dir / "editor_report.json")
 
@@ -459,16 +548,31 @@ def build_release(project_root: Path) -> ReleaseResult:
     candidate_context = _validate_candidates(candidates_report, current_day_london, errors)
     _validate_curator_report(curator_report, current_day_london, errors, warnings)
     rendered_fingerprints = _validate_stage_reports(writer_report, editor_report, errors)
+    pipeline_run_id = _validate_pipeline_run_consistency(
+        collector_report=scan_report,
+        candidates_report=candidates_report,
+        curator_report=curator_report,
+        llm_rewrite_report=llm_rewrite_report,
+        writer_report=writer_report,
+        editor_report=editor_report,
+        errors=errors,
+        warnings=warnings,
+    )
     if writer_report:
         qc = writer_report.get("quality_counts") or {}
         english = int(qc.get("dropped_english_passthrough") or 0)
         no_draft = int(qc.get("dropped_missing_draft_line") or 0)
+        low_quality = int(qc.get("dropped_low_quality") or 0)
         included = int(qc.get("included_candidates") or 0)
         rendered = int(qc.get("rendered_candidates") or 0)
         if english > 0:
             warnings.append(f"Quality: {english} candidate(s) dropped for English passthrough — translation may be failing.")
         if no_draft > 2:
             warnings.append(f"Quality: {no_draft} candidate(s) dropped for missing draft_line — LLM rewrite yield is low.")
+        if low_quality > max(3, included // 5):
+            warnings.append(
+                f"Quality: writer dropped many low-quality draft_lines: {low_quality} of {included} included candidates."
+            )
         if included >= 15 and rendered < 8:
             warnings.append(f"Quality: heavy filtering — {rendered} rendered from {included} included candidates.")
     _validate_draft(
@@ -489,6 +593,8 @@ def build_release(project_root: Path) -> ReleaseResult:
         message = FAIL_CLOSED_SUMMARY
 
     report_payload = {
+        "release_gate_version": RELEASE_GATE_VERSION,
+        "pipeline_run_id": pipeline_run_id,
         "run_at_london": now_london().isoformat(),
         "run_date_london": current_day_london,
         "release_decision": "pass" if ok else "fail",
@@ -500,6 +606,7 @@ def build_release(project_root: Path) -> ReleaseResult:
             "collector_report": str((state_dir / "collector_report.json").resolve()),
             "candidates": str((state_dir / "candidates.json").resolve()),
             "curator_report": str((state_dir / "curator_report.json").resolve()),
+            "llm_rewrite_report": str((state_dir / "llm_rewrite_report.json").resolve()),
             "writer_report": str((state_dir / "writer_report.json").resolve()),
             "editor_report": str((state_dir / "editor_report.json").resolve()),
             "draft_digest": str(draft_path.resolve()),
