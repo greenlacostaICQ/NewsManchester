@@ -424,7 +424,7 @@ _TFGM_ALERT_PATTERN = re.compile(
 # transport users. An item is kept only if its title or description mentions a
 # recognisable public-transport keyword.
 _TFGM_PUBLIC_TRANSPORT_RE = re.compile(
-    r'\b(metrolink|tram|bus\b|buses|coach|bee\s+network|rail|train|northern|transpennine|'
+    r'\b(metrolink|trams?|bus\b|buses|coach|bee\s+network|rail|train|northern|transpennine|'
     r'piccadilly|victoria|altrincham\s+line|bury\s+line|eccles\s+line|ashton\s+line|'
     r'rochdale\s+line|didsbury\s+line|airport\s+line|stop\s+closure)\b',
     re.IGNORECASE,
