@@ -242,6 +242,72 @@ def _is_expired_event_candidate(candidate: dict, line: str = "") -> bool:
     return not _future_date_signal(text)
 
 
+def _redundancy_ratio(line: str) -> float:
+    """Return noun-overlap ratio between sentence 1 and sentence 2 of a draft_line.
+
+    Splits on sentence-ending punctuation, extracts CJK/Cyrillic/Latin tokens
+    ≥4 chars (proxy for nouns), and returns |intersection| / |union|.
+    Returns 0.0 if there is only one sentence.
+    """
+    text = re.sub(r"^•\s*", "", str(line or "")).strip()
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    if len(sentences) < 2:
+        return 0.0
+    def _tokens(s: str) -> set[str]:
+        return {w.lower() for w in re.findall(r"[а-яёa-z]{4,}", s, flags=re.IGNORECASE)}
+    t1 = _tokens(sentences[0])
+    t2 = _tokens(sentences[1])
+    union = t1 | t2
+    if not union:
+        return 0.0
+    return len(t1 & t2) / len(union)
+
+
+_STALE_NEWS_CATEGORIES = {"media_layer", "council", "tech_business", "culture_weekly"}
+_STALE_DAYS = 21
+
+
+def _is_stale_news_candidate(candidate: dict) -> bool:
+    """Return True for hard-news categories where all parseable dates in
+    title/lead/evidence are older than _STALE_DAYS days.
+
+    Events (culture_weekly) with a *future* date are NOT stale — that logic is
+    already handled by _is_expired_event_candidate. This check targets press
+    releases and articles that reference only past events older than 3 weeks.
+    """
+    if str(candidate.get("category") or "") not in _STALE_NEWS_CATEGORIES:
+        return False
+    today = now_london().date()
+    blob = " ".join(
+        str(candidate.get(f) or "")
+        for f in ("title", "lead", "evidence_text")
+    )
+    # Collect all ISO-format dates found in the text.
+    dates: list[date] = []
+    for m in re.finditer(r"\b(20\d{2})[/-](\d{1,2})[/-](\d{1,2})\b", blob):
+        try:
+            dates.append(date(int(m.group(1)), int(m.group(2)), int(m.group(3))))
+        except ValueError:
+            pass
+    for m in re.finditer(r"\b(\d{1,2})(?:st|nd|rd|th)?\s+([a-zA-Z]{3,9})(?:\s+(20\d{2}))?\b", blob):
+        day_raw, month_raw, year_raw = m.groups()
+        month_num = _MONTHS.get(month_raw.lower())
+        if not month_num:
+            continue
+        year = int(year_raw) if year_raw else today.year
+        try:
+            dates.append(date(year, month_num, int(day_raw)))
+        except ValueError:
+            pass
+    if not dates:
+        return False
+    newest = max(dates)
+    # If any date is in the future, not stale (likely an upcoming event).
+    if newest >= today:
+        return False
+    return (today - newest).days > _STALE_DAYS
+
+
 def _hallucination_flags(candidate: dict, line: str) -> list[str]:
     """Flag £-sums and named-entity-looking numbers in line that don't appear
     in the upstream evidence/title/summary/lead. Prevents the model from
@@ -433,7 +499,9 @@ def write_digest(project_root: Path) -> StageResult:
         "dropped_missing_draft_line": 0,
         "dropped_english_passthrough": 0,
         "dropped_low_quality": 0,
+        "stale_news_dropped": 0,
     }
+    redundancy_ratios: list[float] = []
     rendered_candidate_fingerprints: list[str] = []
     dropped_candidates: list[dict[str, object]] = []
 
@@ -471,6 +539,19 @@ def write_digest(project_root: Path) -> StageResult:
                     "category": str(candidate.get("category") or ""),
                     "primary_block": str(candidate.get("primary_block") or ""),
                     "reasons": ["Expired event date."],
+                }
+            )
+            continue
+        if _is_stale_news_candidate(candidate):
+            warnings.append(f"Candidate #{index} dropped: stale news (all dates > {_STALE_DAYS} days old).")
+            quality_counts["stale_news_dropped"] += 1
+            dropped_candidates.append(
+                {
+                    "fingerprint": candidate.get("fingerprint"),
+                    "title": str(candidate.get("title") or ""),
+                    "category": str(candidate.get("category") or ""),
+                    "primary_block": str(candidate.get("primary_block") or ""),
+                    "reasons": [f"Stale news: all parseable dates > {_STALE_DAYS} days old."],
                 }
             )
             continue
@@ -579,6 +660,14 @@ def write_digest(project_root: Path) -> StageResult:
             score = _city_watch_score(candidate) if section_name == "Городской радар" else 0.0
             section_scores[section_name].append(score)
         quality_counts["rendered_candidates"] += 1
+        if category in LONG_FORMAT_CATEGORIES:
+            rr = _redundancy_ratio(line)
+            if rr > 0.0:
+                redundancy_ratios.append(rr)
+                if rr >= 0.30:
+                    warnings.append(
+                        f"Candidate #{index}: high redundancy ratio {rr:.2f} between sentence 1 and 2."
+                    )
         fingerprint = str(candidate.get("fingerprint") or "").strip()
         if fingerprint:
             rendered_candidate_fingerprints.append(fingerprint)
@@ -650,6 +739,8 @@ def write_digest(project_root: Path) -> StageResult:
         rendered.append("")
 
     draft_path.write_text("\n".join(rendered).strip() + "\n", encoding="utf-8")
+    avg_redundancy = round(sum(redundancy_ratios) / len(redundancy_ratios), 3) if redundancy_ratios else 0.0
+    cards_high_redundancy = sum(1 for r in redundancy_ratios if r >= 0.30)
     write_json(
         report_path,
         {
@@ -659,6 +750,11 @@ def write_digest(project_root: Path) -> StageResult:
             "errors": errors,
             "warnings": warnings,
             "quality_counts": quality_counts,
+            "quality_metrics": {
+                "avg_redundancy_ratio": avg_redundancy,
+                "cards_with_high_redundancy": cards_high_redundancy,
+                "stale_news_dropped": quality_counts["stale_news_dropped"],
+            },
             "rendered_candidate_fingerprints": rendered_candidate_fingerprints,
             "dropped_candidates": dropped_candidates,
             "draft_path": str(draft_path.resolve()),
