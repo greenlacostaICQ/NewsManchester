@@ -160,7 +160,9 @@ def _attach_source_anchor(line: str, source_url: str, source_label: str) -> str:
     # "...Met Office" and "...Met Office." (period added by LLM or practical angle).
     if label and text.lower().rstrip(" .").endswith(label_lower):
         base = text.rstrip(" .")
-        text = base[: len(base) - len(label)].rstrip(" .")
+        # Only strip trailing spaces (not periods) so the sentence period before
+        # the label is preserved: "...зонт обязателен. Met Office" → "...зонт обязателен."
+        text = base[: len(base) - len(label)].rstrip(" ")
     return f"{text} {_source_anchor(source_url, source_label)}".strip()
 
 
