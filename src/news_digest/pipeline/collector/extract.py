@@ -419,6 +419,17 @@ _TFGM_ALERT_PATTERN = re.compile(
     r'\\"title\\":\\"([^"\\]{5,200})\\"[^}]{0,800}?\\"description\\":\\"([^"\\]{10,500})\\"'
 )
 
+# TfGM travel-alerts page surfaces both public-transport disruptions AND general
+# road/motorway/active-travel works. We only want items relevant to public
+# transport users. An item is kept only if its title or description mentions a
+# recognisable public-transport keyword.
+_TFGM_PUBLIC_TRANSPORT_RE = re.compile(
+    r'\b(metrolink|trams?|bus\b|buses|coach|bee\s+network|rail|train|northern|transpennine|'
+    r'piccadilly|victoria|altrincham\s+line|bury\s+line|eccles\s+line|ashton\s+line|'
+    r'rochdale\s+line|didsbury\s+line|airport\s+line|stop\s+closure)\b',
+    re.IGNORECASE,
+)
+
 
 def _extract_tfgm_alerts(source: SourceDef, body: str) -> list[ExtractedItem]:
     """Extract TfGM travel alerts from Next.js inline JSON.
@@ -441,6 +452,11 @@ def _extract_tfgm_alerts(source: SourceDef, body: str) -> list[ExtractedItem]:
         title = match.group(1).strip().replace('\\u0026', '&')
         description = match.group(2).strip().replace('\\u0026', '&')
         if not title or title in seen:
+            continue
+        # Only include alerts relevant to public transport users. Road/motorway/
+        # active-travel works without a transit component are dropped here — they
+        # belong in a separate "driving" section, not the transit brief.
+        if not _TFGM_PUBLIC_TRANSPORT_RE.search(title + " " + description):
             continue
         seen.add(title)
         # Alerts have no per-item permalink. Synthesize a unique path so

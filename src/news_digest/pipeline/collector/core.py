@@ -32,7 +32,7 @@ from .fallbacks import (
     _weather_candidate,
 )
 from .fetch import _fetch_source_body
-from .routing import _promote_to_today_focus
+from .routing import _promote_to_today_focus, _reroute_media_transit_to_transport
 from .sources import SOURCES
 from .summary import _looks_like_active_disruption
 
@@ -247,6 +247,7 @@ def collect_digest(project_root: Path) -> StageResult:
         for candidate in candidates
     )
     candidates.extend(_transport_fallback_candidates(report))
+    _reroute_media_transit_to_transport(candidates)
     _promote_to_today_focus(candidates)
     candidates.extend(_last_24h_fallback_candidates(candidates))
 

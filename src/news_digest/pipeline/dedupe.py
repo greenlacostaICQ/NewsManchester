@@ -376,8 +376,23 @@ def _source_rank(source_label: str) -> int:
     return 99
 
 
+_TICKETMASTER_SUFFIX_RE = re.compile(
+    r'\s*[—–\-]+\s*(?:event|public\s+sale)\s+\d{4}[\d\s:\-]+.*$',
+    re.IGNORECASE,
+)
+# Strip "Feat. The Neverland Express" / "Featuring <band>" — sub-details that appear
+# in Ticketmaster titles but not venue listing titles, causing Jaccard to drop.
+_FEAT_SUFFIX_RE = re.compile(
+    r'\s+[Ff]eat(?:uring)?\.?\s+.+$',
+)
+
+
 def _title_tokens(title: str) -> frozenset[str]:
-    words = re.findall(r"[a-zA-Zа-яёА-ЯЁ][a-zA-Zа-яёА-ЯЁ'-]*", title.lower())
+    # Strip Ticketmaster metadata suffix ("— event 2026-05-15 — public sale …")
+    # and featuring credits before tokenising so cross-source dedup works.
+    normalized = _TICKETMASTER_SUFFIX_RE.sub("", str(title or ""))
+    normalized = _FEAT_SUFFIX_RE.sub("", normalized)
+    words = re.findall(r"[a-zA-Zа-яёА-ЯЁ][a-zA-Zа-яёА-ЯЁ'-]*", normalized.lower())
     return frozenset(w for w in words if w not in _TITLE_STOPWORDS and len(w) >= 3)
 
 

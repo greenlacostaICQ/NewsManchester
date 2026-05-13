@@ -201,6 +201,47 @@ def _promote_to_today_focus(candidates: list[dict]) -> None:
             promoted_fingerprints.add(fingerprint)
 
 
+_TRANSIT_DISRUPTION_RE = re.compile(
+    r'\b(no\s+trams?|trams?\s+(not|won\'t)\s+(run|operate)|line\s+closure|'
+    r'metrolink\s+(suspended|closed|disruption|closure|replacement|works)|'
+    r'replacement\s+bus\s+service|track\s+replacement|'
+    r'two\s+weeks?|several\s+weeks?)\b',
+    re.IGNORECASE,
+)
+_TRANSIT_SUBJECT_RE = re.compile(
+    r'\b(metrolink|trams?|bee\s+network|northern|transpennine)\b',
+    re.IGNORECASE,
+)
+
+
+def _reroute_media_transit_to_transport(candidates: list[dict]) -> None:
+    """Move media_layer/city_news articles about Metrolink/transit closures to transport block.
+
+    The TfGM live-alerts feed only covers currently-active alerts. Planned multi-day
+    closures (e.g. "no trams on Bury line for two weeks") often surface first via
+    media sources (The Manc, BBC Manchester) in the media_layer category. This pass
+    detects them and moves them to the transport block so they sit alongside live alerts.
+    """
+    for candidate in candidates:
+        if not isinstance(candidate, dict) or not candidate.get("include"):
+            continue
+        if candidate.get("primary_block") not in {"last_24h", "city_watch"}:
+            continue
+        if candidate.get("category") not in {"media_layer", "city_news"}:
+            continue
+        blob = (
+            f"{str(candidate.get('title') or '')} "
+            f"{str(candidate.get('summary') or '')}"
+        )
+        if _TRANSIT_DISRUPTION_RE.search(blob) and _TRANSIT_SUBJECT_RE.search(blob):
+            candidate["primary_block"] = "transport"
+            existing_reason = str(candidate.get("reason") or "").strip()
+            note = "Rerouted media_layer transit disruption to transport block."
+            candidate["reason"] = (
+                f"{existing_reason} | {note}".strip(" |") if existing_reason else note
+            )
+
+
 _TICKET_DATE_PATTERN = re.compile(
     r"\b(?:mon|tue|wed|thu|fri|sat|sun)?\s*"
     r"(\d{1,2})\s+"
@@ -213,6 +254,23 @@ _TICKET_MONTHS = {
     "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
 }
 _TICKET_HORIZON_DAYS = 60
+
+# Matches "event_date=YYYY-MM-DD" or "public_onsale=YYYY-MM-DD" in Ticketmaster summary fields.
+_SUMMARY_ISODATE_PATTERN = re.compile(
+    r'\b(event_date|public_onsale)=(\d{4}-\d{2}-\d{2})'
+)
+
+
+def _parse_summary_field_date(summary: str, field: str) -> datetime | None:
+    """Extract a date value from the structured summary field (e.g. 'event_date=2026-10-05')."""
+    for m in _SUMMARY_ISODATE_PATTERN.finditer(summary):
+        if m.group(1) == field:
+            try:
+                d = datetime.strptime(m.group(2), "%Y-%m-%d")
+                return d.replace(tzinfo=now_london().tzinfo)
+            except ValueError:
+                return None
+    return None
 
 
 def _ticket_event_max_date(title: str) -> datetime | None:
@@ -242,17 +300,41 @@ def _adjust_ticket_radar_block(candidate: dict) -> None:
 
     Items > 60 days out drop to 'future_announcements' (Дальние анонсы).
     Items entirely in the past are excluded (include=False).
+
+    For onsale items: if the public_onsale date has already passed, the item
+    is no longer a "ticket radar" (start-of-sale) candidate. We check the
+    event_date and either demote to future_announcements (event still ahead)
+    or drop (event also past).
     """
 
     if candidate.get("primary_block") != "ticket_radar":
         return
-    if "ticket_signal=onsale" in str(candidate.get("summary") or "").lower():
+
+    summary = str(candidate.get("summary") or "")
+    today_dt = now_london()
+
+    if "ticket_signal=onsale" in summary.lower():
+        onsale_dt = _parse_summary_field_date(summary, "public_onsale")
+        if onsale_dt is not None and onsale_dt < today_dt:
+            # The on-sale window already opened — this is no longer a radar alert.
+            event_dt = _parse_summary_field_date(summary, "event_date")
+            if event_dt is None or event_dt < today_dt - timedelta(days=1):
+                candidate["include"] = False
+                candidate["reason"] = (
+                    "Onsale date is in the past and event date has passed or is missing."
+                )
+            else:
+                days_out = (event_dt - today_dt).days
+                candidate["primary_block"] = "future_announcements"
+                existing_reason = str(candidate.get("reason") or "").strip()
+                note = f"Onsale already open; event ~{days_out} day(s) away, moved to future_announcements."
+                candidate["reason"] = f"{existing_reason} | {note}".strip(" |") if existing_reason else note
         return
+
     title = str(candidate.get("title") or "")
     latest = _ticket_event_max_date(title)
     if latest is None:
         return
-    today_dt = now_london()
     if latest < today_dt - timedelta(days=1):
         candidate["include"] = False
         candidate["reason"] = (
