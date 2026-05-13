@@ -80,6 +80,19 @@ _BAD_EDITORIAL_PROSE_MARKERS = (
     "убедитесь сами",
     "читайте подробнее",
     "подробности ниже",
+    # PR filler endings from LLM padding
+    "обогатит",
+    "центр притяжения",
+    "новая достопримечательность",
+    "другие детали не сообщаются",
+    "подробности не раскрываются",
+    "остаётся нерешённой",
+    "привлечёт внимание",
+    "вступило в силу.",
+    "билеты и даты уточняйте",
+    "время и дату уточняйте",
+    "дату и время уточняйте",
+    "уточните даты",
 )
 
 
@@ -142,10 +155,12 @@ def _attach_source_anchor(line: str, source_url: str, source_label: str) -> str:
     if "<a " in text.lower():
         return text
     label = str(source_label or "").strip()
-    lowered = text.lower()
     label_lower = label.lower()
-    if label and lowered.endswith(label_lower):
-        text = text[: len(text) - len(label)].rstrip(" .")
+    # Normalise by stripping trailing punctuation before checking — handles both
+    # "...Met Office" and "...Met Office." (period added by LLM or practical angle).
+    if label and text.lower().rstrip(" .").endswith(label_lower):
+        base = text.rstrip(" .")
+        text = base[: len(base) - len(label)].rstrip(" .")
     return f"{text} {_source_anchor(source_url, source_label)}".strip()
 
 
@@ -599,7 +614,7 @@ def write_digest(project_root: Path) -> StageResult:
         "Погода",
         "Главная история дня",
         "Что произошло за 24 часа",
-        "Транспорт и сбои",
+        "Общественный транспорт сегодня",
         "Что важно сегодня",
         *(["Выходные в GM"] if show_weekend else []),
         "Городской радар",

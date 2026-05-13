@@ -60,6 +60,9 @@ SECTION_MAX_ITEMS = {
 SECTION_MAX_PER_SOURCE = {
     "Городской радар": 2,
     "Что произошло за 24 часа": 3,
+    # Whitworth/venue sources publish many recurring events — cap at 2 per
+    # venue so a single gallery doesn't dominate the 7-day calendar.
+    "Что важно в ближайшие 7 дней": 2,
 }
 
 VAGUE_PRACTICAL_ANGLES = {
@@ -69,7 +72,7 @@ VAGUE_PRACTICAL_ANGLES = {
 
 PRIMARY_BLOCKS = {
     "weather": "Погода",
-    "transport": "Транспорт и сбои",
+    "transport": "Общественный транспорт сегодня",
     "today_focus": "Что важно сегодня",
     "last_24h": "Что произошло за 24 часа",
     "lead_story": "Главная история дня",

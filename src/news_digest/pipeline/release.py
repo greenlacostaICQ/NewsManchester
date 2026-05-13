@@ -152,7 +152,7 @@ def initialize_release_inputs(project_root: Path, *, overwrite: bool = False) ->
             "• \n\n"
             "<b>Коротко</b>\n"
             "• \n\n"
-            "<b>Транспорт и сбои</b>\n"
+            "<b>Общественный транспорт сегодня</b>\n"
             "• \n\n"
             "<b>Что важно сегодня</b>\n"
             "• \n\n"

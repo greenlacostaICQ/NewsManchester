@@ -19,14 +19,16 @@ Optional overrides:
 """
 from __future__ import annotations
 
+import calendar
 import json
 import logging
 import os
 import re
 import time
+from datetime import date, timedelta
 from pathlib import Path
 
-from news_digest.pipeline.common import now_london
+from news_digest.pipeline.common import now_london, today_london
 
 logger = logging.getLogger(__name__)
 
@@ -51,39 +53,51 @@ _ANTI_HALLUCINATION = (
 )
 
 _LONG_FORMAT_RULES = (
-    "ФОРМАТ: «• », Telegram HTML, без ссылок, без markdown. 350–450 символов, 2–3 коротких предложения.\n"
+    "ФОРМАТ: «• », Telegram HTML, без ссылок, без markdown. 250–450 символов, 2–3 коротких предложения.\n"
     "СТРУКТУРА:\n"
     "1) Первое предложение — главный факт: кто (имя/возраст/должность), что сделал/произошло, где конкретно (район/улица/площадка GM).\n"
     "2) Второе предложение — ключевая деталь из evidence_text: сумма, число, причина, имя пострадавшего/обвиняемого, дата вступления в силу, последствие. То, ради чего человек читает.\n"
-    "3) Третье предложение (по желанию, если данные есть) — что это значит для жителя GM: с какой даты меняется, кого затронет, чем кончится.\n\n"
+    "3) Третье предложение (по желанию, если данные есть) — что это значит для жителя GM: с какой даты меняется, кого затронет, чем кончится.\n"
+    "ЕСЛИ данных мало — пиши короче (250–300 символов), не добавляй воду. Лучше точный короткий пункт, чем раздутый пустой.\n\n"
 )
 
 PROMPT_TRANSPORT = (
-    "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line для транспортных сбоев.\n\n"
-    "ФОРМАТ: «• », Telegram HTML, без ссылок, максимум 160 символов, весь текст на русском кроме названий линий/операторов.\n\n"
+    "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line только для сбоев общественного транспорта (Metrolink, bus, rail, coach).\n\n"
+    "ФОРМАТ: «• », Telegram HTML, без ссылок, максимум 180 символов, весь текст на русском кроме названий линий/операторов/остановок.\n\n"
     "ОПЕРАТОР — БЕРИ ИЗ TITLE, НЕ ИЗ SOURCE_LABEL.\n"
     "Title вида «TransPennine Express: Disruption between A and B» → оператор = «TransPennine Express», НЕ «National Rail».\n"
-    "Title вида «Ashton/Eccles Lines - Minor Delay» → оператор = «Metrolink» (для tfgm.com линий) или «TfGM» (для bus stops).\n\n"
-    "ПРАВИЛО: оператор + что именно + маршрут/линия (если в title) + когда заканчивается (если в evidence).\n"
-    "ПЕРЕВОДИ ВСЁ: «Disruption» → «сбой/задержки», «Minor Delay» → «небольшие задержки», «Bus Stop Closure» → «закрытие остановки», «Improvement Works» → «ремонтные работы».\n"
-    "Английские слова в финальной строке (кроме названий линий) — ЗАПРЕЩЕНО.\n\n"
-    "«• У Northern до конца четверга отменены поздние рейсы через Manchester Piccadilly.»\n"
-    "«• Metrolink: задержки на линии Ashton/Eccles из-за неисправности трамвая.»\n"
-    "«• TransPennine Express: сбой между Selby и Hull — ремонт пути.»\n\n"
+    "Title вида «Ashton/Eccles Lines - Minor Delay» → оператор = «Metrolink».\n\n"
+    "ЧЕТЫРЕ ОБЯЗАТЕЛЬНЫХ ЭЛЕМЕНТА в пункте (если есть в evidence):\n"
+    "1) Что не работает (задержки/отмены/объезд);\n"
+    "2) Между какими станциями или на какой линии;\n"
+    "3) До какого времени/даты;\n"
+    "4) Альтернатива (замещающий автобус, объезд).\n"
+    "Если какого-то элемента нет в evidence — пропусти, не выдумывай.\n\n"
+    "ПЕРЕВОДИ ВСЁ: «Disruption» → «сбой/задержки», «Minor Delay» → «небольшие задержки», «Bus Stop Closure» → «закрытие остановки», «Improvement Works» → «ремонтные работы», «Replacement Bus» → «замещающий автобус».\n"
+    "Английские слова в финальной строке (кроме названий линий/остановок) — ЗАПРЕЩЕНО.\n\n"
+    "«• Metrolink: с 17 мая по 1 июня нет трамваев на линии Bury между Bury Interchange и Crumpsall. Замещающий автобус с теми же остановками.»\n"
+    "«• Northern: задержки до 30 мин на маршрутах через Manchester Victoria — сигнальная неисправность.»\n"
+    "«• TransPennine Express: сбой между Selby и Hull — ремонт пути, ориентировочно до 18:00.»\n\n"
     "Без «проверьте заранее», без «следите за обновлениями»."
     + _PROMPT_FOOTER
 )
 
 PROMPT_CITY_NEWS = (
     "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line для городских новостей GM "
-    "(полиция, советы, NHS, происшествия, мэрия).\n\n"
+    "(полиция, советы, NHS, происшествия, мэрия, городское развитие, наука).\n\n"
     + _LONG_FORMAT_RULES
     + _ANTI_HALLUCINATION
     + "ПИШИ ПО EVIDENCE_TEXT, НЕ ПЕРЕВОДОМ TITLE. В evidence обычно есть имена пострадавших, возраст, район, причина, дата суда — это и есть содержание для второго предложения.\n\n"
     "ПОЛИЦИЯ/СУДЫ: «• Moss Side: 34-летний Адриан Браун, отец троих детей, зарезан на улице в южном Манчестере. Полиция назвала имя жертвы, мать заявила «они забрали моего мальчика»; задержанных пока нет. Это второе ножевое убийство в районе за месяц.»\n"
     "СОВЕТ/МЭРИЯ: что меняется, с какой даты, для кого. «• Манчестер: совет утвердил план обязательной лицензии для съёмного жилья в 8 районах с 1 июля. Лицензия стоит £1175 на пять лет и распространяется на ~22 000 квартир в Cheetham, Levenshulme, Moss Side и Longsight. Цель — поднять стандарты после жалоб на сырость и плесень.»\n"
     "NHS/СЛУЖБЫ: конкретный факт + цифра + срок. Без PR-языка («важный шаг», «значимая инициатива») и без «появилось обновление», «заметный кейс».\n\n"
-    "ЗАПРЕЩЕНО: «туристическая достопримечательность», «местный житель», «одна из организаций», «заранее проверьте», размытые формулировки. Если в evidence_text нет ни одной конкретной детали — лучше короче, чем выдумывать."
+    "ТЕРМИНОЛОГИЯ — переводи точно, не буквально:\n"
+    "«mural» = настенная роспись/мурал — НЕ «граффити» (граффити — несанкционированные надписи, это разные понятия).\n"
+    "«climate-ready» / «climate-resilient countries» = страны, адаптированные к климатическим изменениям — НЕ «страны, готовые к изменению климата».\n"
+    "«sponge park» = парк-губка (специально спроектированный для впитывания ливневой воды, защита от подтоплений) — объяснение включи в текст.\n"
+    "«OnlyFans creator» = модель/автор OnlyFans — НЕ «создательница OnlyFans» (создатель платформы — другой человек).\n"
+    "«National League → League Two» = из Национальной лиги (5-й дивизион, полупрофессиональный) в League Two (4-й дивизион, профессиональная EFL) — поясни кратко.\n\n"
+    "ЗАПРЕЩЕНО: «туристическая достопримечательность», «местный житель», «одна из организаций», «заранее проверьте», «привлечёт внимание», размытые формулировки. Если в evidence_text нет ни одной конкретной детали — пиши короче, не выдумывай."
     + _PROMPT_FOOTER
 )
 
@@ -96,7 +110,14 @@ PROMPT_EVENTS = (
     "«• В HOME 10–14 мая — танцевальный спектакль Akram Khan «Outwitting the Devil» о миграции и мифологии. Постановка для шести танцоров, премьера в Лондоне получила 4 звезды у Guardian. Билеты от £15, скидки для студентов.»\n"
     "«• В Dunham Massey 10 мая — May Day фестиваль с выбором Королевы роз и народными танцами. Вход свободный для членов National Trust, для остальных — £8 со взрослого. Парковка ограничена, рекомендуют приехать до 11:00.»\n\n"
     "МУЗЫКА: артист + площадка + дата + жанр/формат, только если жанр/формат есть в evidence; не выдумывай жанр.\n\n"
-    "ЗАПРЕЩЕНО: «не пропустите», «обязательно посетите», «захватывающий», «уникальный», даты без конкретного места."
+    "ПЕРЕВОДИ ВСЕ НАРИЦАТЕЛЬНЫЕ ТЕРМИНЫ — кроме имён собственных, названий площадок и устоявшихся культурных понятий (punk, jazz, hip-hop, opera):\n"
+    "«booking fee» → «сбор при покупке», «under-30s» → «до 30 лет», «claimants» → «получатели пособий», "
+    "«guided writing session» → «занятие с ведущим», «book club» → «книжный клуб», "
+    "«soft refreshments» → «лёгкие угощения», «life drawing» → «рисование с натуры», "
+    "«in residence» / «artist in residence» → «художник-резидент», "
+    "«mild horror» → «мягкий хоррор», «flashes» → «световые вспышки», «toggle» → «настройка отключения».\n\n"
+    "ЗАПРЕЩЕНО: «не пропустите», «обязательно посетите», «захватывающий», «уникальный», даты без конкретного места, "
+    "CTA без конкретики («уточните даты», «билеты и даты уточняйте»)."
     + _PROMPT_FOOTER
 )
 
@@ -119,11 +140,14 @@ PROMPT_BUSINESS = (
     + "ИСПОЛЬЗУЙ EVIDENCE_TEXT. В нём — конкретные имена, должности, суммы, адреса. Если в evidence есть «Chief Nursing Officer Duncan Burton», в твоём тексте должно быть «главный руководитель медсестринской службы Дункан Бертон», не безымянное «главного медсестры». ПЕРЕВОДИ ДОЛЖНОСТИ ПО РОДУ: мужское имя → мужской род, женское → женский.\n\n"
     "IT/БИЗНЕС: инвестиция с суммой £, открытие/закрытие компании с GM-локацией. Структура: 1) кто получил/инвестировал/открыл + где в GM; 2) сумма и куда пойдёт + сколько сотрудников/раундов до; 3) что это значит для рынка/региона, если в evidence есть. Кадровые назначения без сюжета — пропусти (верни \"\").\n"
     "«• Salford-стартап Heliex получил £3.2 млн от Aviva Ventures на расширение в Сингапур и Гонконг. Компания делает турбины для рекуперации тепла на промпредприятиях; за три года выручка выросла с £400k до £2.1 млн. Новый раунд — пятый, с 2019 года Heliex привлекла £8.5 млн.»\n\n"
-    "ЕДА/ОТКРЫТИЯ: название + тип заведения + район GM + дата. Не перевод заголовка: объясни, что реально открывается, кто стоит за проектом, что в меню/чем выделяется. Если в evidence есть имя шефа, цена, концепция — добавь.\n"
+    "ЕДА/ОТКРЫТИЯ: название + тип заведения + район GM + дата открытия (только если есть в evidence). Не перевод заголовка: объясни, что реально открывается, кто стоит за проектом, что в меню/чем выделяется. Если даты открытия в evidence нет — пиши «уже работает» или «недавно открылся», не выдумывай дату.\n"
     "«• На Thomas Street в Northern Quarter с 13 мая — корейский ресторан Seoulful, проект бывшего шефа Hawksmoor Ли Уильямса. В меню — bibimbap, KFC-стиль курица и натуральные вина по £6 за бокал. Открытие совпадает с запуском восьми новых заведений в NQ за месяц.»\n\n"
-    "РЫНКИ/ЯРМАРКИ: название + район/площадка + дата/время + что продают, сколько участников, кому идёт сбор.\n"
-    "«• В Prestwich 10 мая, 10:00–16:00 — Makers Market у Longfield Centre. Около 50 независимых продавцов: керамика, мыло, выпечка, винтаж. Часть выручки идёт на ремонт детской площадки в St Mary's Park.»\n\n"
-    "ЗАПРЕЩЕНО: профили людей без цифр, PR-события без конкретных данных, компании без GM-адреса."
+    "РЫНКИ/ЯРМАРКИ: название + район/площадка + КОНКРЕТНАЯ дата ближайшего проведения + что продают.\n"
+    "ЕСЛИ в summary есть поле NEXT_OCCURRENCE — используй его как точную дату ближайшего рынка. Не пиши «каждую третью субботу» — пиши конкретную дату: «в субботу 16 мая», «в воскресенье 17 мая».\n"
+    "«• В Prestwich, суббота 10 мая, 10:00–16:00 — Makers Market у Longfield Centre. Около 50 независимых продавцов: керамика, мыло, выпечка, винтаж. Вход свободный.»\n\n"
+    "ПЕРЕВОДИ: «takeaway» → «навынос», «booking fee» → «сбор при покупке».\n\n"
+    "ЗАПРЕЩЕНО: профили людей без цифр, PR-события без конкретных данных, компании без GM-адреса, "
+    "рынки без конкретной даты, \"каждую субботу\", \"каждое воскресенье\" (вместо этого — конкретная дата)."
     + _PROMPT_FOOTER
 )
 
@@ -172,8 +196,8 @@ REPAIR_DRAFT_SYSTEM = """Ты senior editor городского morning brief.
 
 ФОРМАТ:
 - строка начинается с «• »
-- для категорий media_layer/gmp/council/public_services/food_openings/tech_business/culture_weekly/venues_tickets/russian_speaking_events/football: 350–450 символов, 2–3 коротких предложения
-- для transport — 90–160 символов, одна строка
+- для категорий media_layer/gmp/council/public_services/food_openings/tech_business/culture_weekly/venues_tickets/russian_speaking_events/football: 250–450 символов, 2–3 коротких предложения
+- для transport — 90–180 символов, одна строка
 - без ссылок и markdown
 - только факты из title/summary/lead/evidence_text/source_label/source_url/published_at
 
@@ -184,7 +208,9 @@ REPAIR_DRAFT_SYSTEM = """Ты senior editor городского morning brief.
 2) Ключевая деталь из evidence: сумма/имя/причина/дата.
 3) (опционально) что это значит для жителя GM.
 
-Если данных мало, всё равно сделай лучший самодостаточный пункт из имеющихся фактов. Не возвращай пустую строку.
+ЕСЛИ данных мало — пиши 250–300 символов с реальной фактурой. Лучше точный короткий пункт, чем раздутый пустой.
+
+ЗАПРЕЩЕНЫ окончания-заглушки: «обогатит», «центр притяжения», «новая достопримечательность», «другие детали не сообщаются», «подробности не раскрываются», «решение вступило в силу», «остаётся нерешённой», «уточняйте», «привлечёт внимание».
 
 Верни ТОЛЬКО JSON-массив: [{"fingerprint": "...", "draft_line": "• ..."}]
 Никакого markdown, никаких пояснений — только JSON."""
@@ -199,6 +225,19 @@ _REPAIR_BAD_MARKERS = (
     "футбольное обновление",
     "подробности уточняйте",
     "подробности ниже",
+    # PR filler endings — LLM padding to hit char minimum
+    "обогатит",
+    "центр притяжения",
+    "новая достопримечательность",
+    "другие детали не сообщаются",
+    "подробности не раскрываются",
+    "остаётся нерешённой",
+    "привлечёт внимание",
+    "вступило в силу.",      # standalone finisher ("Решение вступило в силу.")
+    "билеты и даты уточняйте",
+    "время и дату уточняйте",
+    "дату и время уточняйте",
+    "уточните даты",
 )
 
 
@@ -406,6 +445,91 @@ def _call_with_fallback(
     return mapping
 
 
+# ---------------------------------------------------------------------------
+# Recurring-event date enrichment
+# ---------------------------------------------------------------------------
+
+_ORDINAL_MAP = {"first": 1, "1st": 1, "second": 2, "2nd": 2,
+                "third": 3, "3rd": 3, "fourth": 4, "4th": 4, "last": -1}
+_WEEKDAY_MAP = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
+                "friday": 4, "saturday": 5, "sunday": 6}
+_RUSSIAN_WEEKDAY = ["понедельник", "вторник", "среда", "четверг",
+                    "пятница", "суббота", "воскресенье"]
+_RUSSIAN_WEEKDAY_ACCUS = ["понедельник", "вторник", "среду", "четверг",
+                          "пятницу", "субботу", "воскресенье"]
+_RUSSIAN_MONTHS = ["января", "февраля", "марта", "апреля", "мая", "июня",
+                   "июля", "августа", "сентября", "октября", "ноября", "декабря"]
+
+_RECURRING_PATTERN = re.compile(
+    r'\b(first|1st|second|2nd|third|3rd|fourth|4th|last)\s+'
+    r'(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s+'
+    r'(?:of\s+)?(?:each|every)\s+month\b',
+    re.IGNORECASE,
+)
+
+
+def _nth_weekday_of_month(year: int, month: int, weekday: int, n: int) -> date | None:
+    """Return the nth occurrence of weekday (0=Mon) in given year/month.
+
+    n=-1 means last occurrence.
+    """
+    if n == -1:
+        # Last occurrence: start from end of month
+        last_day = calendar.monthrange(year, month)[1]
+        d = date(year, month, last_day)
+        while d.weekday() != weekday:
+            d -= timedelta(days=1)
+        return d
+    count = 0
+    d = date(year, month, 1)
+    while d.month == month:
+        if d.weekday() == weekday:
+            count += 1
+            if count == n:
+                return d
+        d += timedelta(days=1)
+    return None
+
+
+def _next_occurrence_from_pattern(text: str, from_date: date) -> str | None:
+    """Detect 'third Saturday of each month' patterns and return a formatted date string."""
+    m = _RECURRING_PATTERN.search(text)
+    if not m:
+        return None
+    ordinal = _ORDINAL_MAP[m.group(1).lower()]
+    weekday = _WEEKDAY_MAP[m.group(2).lower()]
+
+    # Try current month first, then next month
+    for delta_months in (0, 1):
+        month = from_date.month + delta_months
+        year = from_date.year + (month - 1) // 12
+        month = ((month - 1) % 12) + 1
+        occurrence = _nth_weekday_of_month(year, month, weekday, ordinal)
+        if occurrence and occurrence >= from_date:
+            day_name = _RUSSIAN_WEEKDAY_ACCUS[occurrence.weekday()]
+            month_name = _RUSSIAN_MONTHS[occurrence.month - 1]
+            return f"{day_name}, {occurrence.day} {month_name} {occurrence.year}"
+    return None
+
+
+def _enrich_recurring_events(candidates: list[dict]) -> None:
+    """For food_openings/culture candidates with recurring schedules,
+    compute the next concrete date and inject it into the summary field
+    so the LLM can use an exact date rather than 'каждую третью субботу'.
+    """
+    today = now_london().date()
+    for c in candidates:
+        if not isinstance(c, dict) or not c.get("include"):
+            continue
+        if c.get("category") not in {"food_openings", "culture_weekly"}:
+            continue
+        text = f"{c.get('title', '')} {c.get('summary', '')} {c.get('lead', '')}"
+        next_date = _next_occurrence_from_pattern(text, today)
+        if next_date and "NEXT_OCCURRENCE" not in str(c.get("summary", "")):
+            c["summary"] = (str(c.get("summary") or "")).rstrip() + f" NEXT_OCCURRENCE: {next_date}."
+            logger.debug("Enriched recurring event '%s' with next date: %s", c.get("title", ""), next_date)
+
+
 def run_llm_rewrite(project_root: Path) -> None:
     """Read candidates.json, fill Russian draft_lines for included candidates."""
     candidates_path = project_root / "data" / "state" / "candidates.json"
@@ -423,9 +547,12 @@ def run_llm_rewrite(project_root: Path) -> None:
     # OpenAI quietly skipped them. With ~50-80 candidates/day this costs
     # roughly $0.02/day on gpt-4o-mini but guarantees today's text actually
     # came from today's primary model.
+    _enrich_recurring_events(candidates)
+
     to_rewrite = [
         c for c in candidates
         if isinstance(c, dict) and c.get("include")
+        and str(c.get("category") or "") != "weather"  # handcrafted line, no LLM needed
     ]
     provider_override = os.environ.get("LLM_PROVIDER", "").lower().strip()
     model_override = os.environ.get("LLM_MODEL", "").strip()
@@ -440,7 +567,17 @@ def run_llm_rewrite(project_root: Path) -> None:
     else:
         logger.info("LLM rewrite: %d candidates need draft_lines.", len(to_rewrite))
 
-        # Group by prompt type and call each group separately
+        # Group by prompt type and call each group separately.
+        # For prompts that need current date (business/events/diaspora — recurring
+        # markets, date computation), inject TODAY_DATE header at the top.
+        _DATE_AWARE_PROMPTS = {PROMPT_BUSINESS, PROMPT_EVENTS, PROMPT_DIASPORA_EVENTS}
+        _today = today_london()
+
+        def _with_date_header(prompt: str) -> str:
+            if prompt in _DATE_AWARE_PROMPTS:
+                return f"TODAY_DATE={_today}\n\n" + prompt
+            return prompt
+
         groups: dict[str, list[dict]] = {}
         for c in to_rewrite:
             prompt = _CATEGORY_TO_PROMPT.get(str(c.get("category") or ""), PROMPT_CITY_NEWS)
@@ -449,7 +586,7 @@ def run_llm_rewrite(project_root: Path) -> None:
         mapping: dict[str, str] = {}
         for prompt, group in groups.items():
             logger.info("LLM rewrite: calling group of %d candidates.", len(group))
-            mapping.update(_call_with_fallback(group, prompt, provider_override, base_url_override, model_override))
+            mapping.update(_call_with_fallback(group, _with_date_header(prompt), provider_override, base_url_override, model_override))
 
         run_iso = now_london().isoformat()
         applied = 0
