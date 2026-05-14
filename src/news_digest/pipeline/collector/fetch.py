@@ -26,6 +26,13 @@ _CLOUDFLARE_PROTECTED_HOSTS: tuple[str, ...] = (
     "manchester2-search.funnelback.squiz.cloud",
     "news.salford.gov.uk",
     "salford.gov.uk",
+    "trafford.gov.uk",
+    "tameside.gov.uk",
+    "wigan.gov.uk",
+    "rncm.ac.uk",
+    "eventbrite.co.uk",
+    "eventbrite.com",
+    "visitsalford.info",
 )
 
 
@@ -97,24 +104,30 @@ def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
         if k not in {"User-Agent", "Accept", "Accept-Language", "X-Source-Tag"}
     }
 
+    # Some WAFs (notably gmp.police.uk on non-residential IP ranges like
+    # GitHub Actions runners) block the default Chrome fingerprint and
+    # accept a different one. Try a small cascade before giving up.
+    profiles = ("chrome", "chrome120", "safari17_0")
     last_exc: Exception | None = None
-    for attempt in range(2):
-        try:
-            response = cffi_requests.get(
-                url,
-                headers=cffi_headers,
-                impersonate="chrome",
-                timeout=20,
-            )
-            if response.status_code >= 400:
-                raise RuntimeError(f"HTTP {response.status_code}")
-            return response.text
-        except Exception as exc:  # noqa: BLE001
-            last_exc = exc
-            if attempt == 0 and not str(exc).startswith("HTTP "):
-                time.sleep(_FETCH_RETRY_BACKOFF_SECONDS)
-                continue
-            raise
+    for profile in profiles:
+        for attempt in range(2):
+            try:
+                response = cffi_requests.get(
+                    url,
+                    headers=cffi_headers,
+                    impersonate=profile,
+                    timeout=30,
+                )
+                if response.status_code >= 400:
+                    raise RuntimeError(f"HTTP {response.status_code}")
+                return response.text
+            except Exception as exc:  # noqa: BLE001
+                last_exc = exc
+                msg = str(exc)
+                if attempt == 0 and not msg.startswith("HTTP "):
+                    time.sleep(_FETCH_RETRY_BACKOFF_SECONDS)
+                    continue
+                break
     raise RuntimeError(str(last_exc) if last_exc else "curl_cffi fetch failed")
 
 
@@ -140,7 +153,7 @@ def _fetch_text(url: str, *, extra_headers: dict[str, str] | None = None) -> str
     last_url_error: Exception | None = None
     for attempt in range(2):  # 1 initial + 1 retry
         try:
-            with request.urlopen(req, timeout=20) as response:
+            with request.urlopen(req, timeout=30) as response:
                 # 4MB cap: Stockport Events RSS alone is ~1.5MB; MEN front
                 # page can exceed 900KB with images. 1.5MB cut mid-tag on
                 # bigger RSS feeds and broke the XML parser silently.
