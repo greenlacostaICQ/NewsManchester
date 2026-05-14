@@ -347,6 +347,59 @@ def cmd_send_warnings() -> int:
     return 0
 
 
+def cmd_send_weekly_cost() -> int:
+    """Send a 7-day cost summary to Telegram from data/state/cost_history.json.
+    Intended to be called on Sundays in CI."""
+    history_path = PROJECT_ROOT / "data" / "state" / "cost_history.json"
+    if not history_path.exists():
+        print(f"No cost_history.json at {history_path}. Nothing to summarise.")
+        return 0
+    try:
+        history = json.loads(history_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        print(f"Could not read cost_history.json: {exc}. Skipping.")
+        return 0
+    if not isinstance(history, list) or not history:
+        print("cost_history.json empty. Nothing to summarise.")
+        return 0
+
+    last7 = history[-7:]
+    total = sum(float(e.get("total_cost_usd") or 0.0) for e in last7)
+    by_provider: dict[str, float] = {}
+    by_stage: dict[str, float] = {}
+    for e in last7:
+        for p, info in (e.get("by_provider") or {}).items():
+            by_provider[p] = by_provider.get(p, 0.0) + float(info.get("cost_usd") or 0.0)
+        for s, info in (e.get("by_stage") or {}).items():
+            by_stage[s] = by_stage.get(s, 0.0) + float(info.get("cost_usd") or 0.0)
+    days = len(last7)
+    avg = total / days if days else 0.0
+
+    lines = [f"💰 Weekly cost — last {days} day(s)", f"Total: ${total:.4f}  •  Avg/day: ${avg:.4f}"]
+    if by_stage:
+        lines.append("By stage:")
+        for stage, cost in sorted(by_stage.items(), key=lambda x: -x[1]):
+            lines.append(f"• {stage}: ${cost:.4f}")
+    if by_provider:
+        lines.append("By provider:")
+        for prov, cost in sorted(by_provider.items(), key=lambda x: -x[1]):
+            lines.append(f"• {prov}: ${cost:.4f}")
+    lines.append("\nDay-by-day:")
+    for e in last7:
+        lines.append(f"• {e.get('run_date_london')}: ${float(e.get('total_cost_usd') or 0.0):.4f}")
+    text = "\n".join(lines)
+
+    settings, client, store = _load_store_and_client()
+    targets = _effective_targets(settings.telegram_target, store.list_subscribers())
+    if not targets:
+        print("No Telegram targets. Skipping weekly cost summary.")
+        return 0
+    for target in targets:
+        client.send_text_in_chunks(target, text, parse_mode=None)
+    print(f"Sent weekly cost summary to {len(targets)} target(s).")
+    return 0
+
+
 def cmd_delivered_today() -> int:
     settings, _, store = _load_store_and_client()
     payload = _delivered_today_payload(settings) or store.get_last_delivery()
@@ -667,6 +720,10 @@ def build_parser() -> argparse.ArgumentParser:
             "lost leads or section underflow. Opt-out via WARNINGS_TO_TELEGRAM=0."
         ),
     )
+    subparsers.add_parser(
+        "send-weekly-cost",
+        help="Send a 7-day LLM cost summary to Telegram from cost_history.json.",
+    )
     return parser
 
 
@@ -714,6 +771,8 @@ def main() -> int:
         return cmd_send_file(args.file_path, args.parse_mode, args.force)
     if args.command == "send-warnings":
         return cmd_send_warnings()
+    if args.command == "send-weekly-cost":
+        return cmd_send_weekly_cost()
 
     parser.error(f"Unknown command: {args.command}")
     return 2

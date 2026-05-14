@@ -525,6 +525,139 @@ def _validate_draft(
             )
 
 
+def _prompts_snapshot() -> list[dict[str, str]]:
+    from news_digest.pipeline.prompts_meta import snapshot as _ps  # noqa: PLC0415
+    return _ps()
+
+
+def _aggregate_cost(state_dir: Path) -> dict:
+    """Sum per-stage cost_*.json into a single daily total. Tolerates
+    missing stage files (e.g. LLM_PROVIDER=none disables llm_rewrite)."""
+    from news_digest.pipeline.cost_tracker import summarise, CallRecord  # noqa: PLC0415
+    records: list[CallRecord] = []
+    for stage_file in state_dir.glob("cost_*.json"):
+        try:
+            payload = read_json(stage_file)
+        except Exception:  # noqa: BLE001
+            continue
+        for r in payload.get("records") or []:
+            records.append(
+                CallRecord(
+                    stage=str(r.get("stage") or ""),
+                    provider=str(r.get("provider") or ""),
+                    model=str(r.get("model") or ""),
+                    prompt_name=str(r.get("prompt_name") or ""),
+                    prompt_tokens=int(r.get("prompt_tokens") or 0),
+                    completion_tokens=int(r.get("completion_tokens") or 0),
+                    cost_usd=float(r.get("cost_usd") or 0.0),
+                )
+            )
+    return summarise(records)
+
+
+def _detect_prompt_drift(
+    curator_report: dict | None,
+    llm_rewrite_report: dict | None,
+    state_dir: Path,
+) -> list[dict[str, str]]:
+    """If prompt text changed (new hash) but semver stayed the same vs
+    yesterday — flag silent drift. Reads previous prompt hashes from
+    `cost_history.json`."""
+    current = {p["name"]: p for p in _prompts_snapshot()}
+    history_path = state_dir / "cost_history.json"
+    if not history_path.exists():
+        return []
+    try:
+        history = read_json(history_path) or []
+    except Exception:  # noqa: BLE001
+        return []
+    if not isinstance(history, list) or not history:
+        return []
+    last = history[-1]
+    last_prompts = {p["name"]: p for p in last.get("prompt_versions") or []}
+    drift: list[dict[str, str]] = []
+    for name, cur in current.items():
+        prev = last_prompts.get(name)
+        if not prev:
+            continue
+        if cur["hash"] != prev["hash"] and cur["version"] == prev["version"]:
+            drift.append(
+                {
+                    "name": name,
+                    "version": cur["version"],
+                    "old_hash": prev["hash"],
+                    "new_hash": cur["hash"],
+                }
+            )
+    return drift
+
+
+def _check_budget(state_dir: Path, today_cost: float, current_day_london: str) -> str | None:
+    """Compare today's total cost against 1.5× the rolling 7-day average.
+    Skip the check until we have at least 3 historical days."""
+    history_path = state_dir / "cost_history.json"
+    if not history_path.exists():
+        return None
+    try:
+        history = read_json(history_path) or []
+    except Exception:  # noqa: BLE001
+        return None
+    if not isinstance(history, list):
+        return None
+    recent = [
+        float(e.get("total_cost_usd") or 0.0)
+        for e in history[-7:]
+        if isinstance(e, dict) and e.get("run_date_london") != current_day_london
+    ]
+    if len(recent) < 3:
+        return None
+    avg = sum(recent) / len(recent)
+    if avg <= 0:
+        return None
+    threshold = avg * 1.5
+    if today_cost > threshold:
+        return (
+            f"Budget: today's cost ${today_cost:.4f} > 1.5× of 7-day average "
+            f"${avg:.4f} (threshold ${threshold:.4f}). Investigate batch size, "
+            "provider fallback, or model swap."
+        )
+    return None
+
+
+def _append_cost_history(
+    state_dir: Path,
+    current_day_london: str,
+    cost_summary: dict,
+    prompt_versions: list[dict[str, str]],
+) -> None:
+    """Append today's totals to data/state/cost_history.json. Keeps the
+    last 60 entries so the file does not grow unbounded."""
+    history_path = state_dir / "cost_history.json"
+    history: list = []
+    if history_path.exists():
+        try:
+            loaded = read_json(history_path)
+            if isinstance(loaded, list):
+                history = loaded
+        except Exception:  # noqa: BLE001
+            history = []
+    history = [e for e in history if not (isinstance(e, dict) and e.get("run_date_london") == current_day_london)]
+    history.append(
+        {
+            "run_date_london": current_day_london,
+            "run_at_london": now_london().isoformat(),
+            "total_cost_usd": cost_summary.get("total_cost_usd", 0.0),
+            "total_calls": cost_summary.get("total_calls", 0),
+            "by_stage": cost_summary.get("by_stage", {}),
+            "by_provider": cost_summary.get("by_provider", {}),
+            "by_model": cost_summary.get("by_model", {}),
+            "prompt_versions": prompt_versions,
+        }
+    )
+    history = history[-60:]
+    write_json(history_path, history)
+
+
 def build_release(project_root: Path) -> ReleaseResult:
     state_dir = project_root / "data" / "state"
     outgoing_dir = project_root / "data" / "outgoing"
@@ -629,6 +762,25 @@ def build_release(project_root: Path) -> ReleaseResult:
                     f"(min={minimum}) while writer dropped {dropped_here} candidate(s) "
                     f"that targeted this section — quality gates may be too strict."
                 )
+    cost_summary = _aggregate_cost(state_dir)
+    if cost_summary["unknown_priced_models"]:
+        warnings.append(
+            "Cost: unknown-priced model(s) used — add to PRICING_PER_MTOKEN: "
+            f"{', '.join(cost_summary['unknown_priced_models'])}"
+        )
+
+    prompt_drift = _detect_prompt_drift(curator_report, llm_rewrite_report, state_dir)
+    if prompt_drift:
+        for pd in prompt_drift:
+            warnings.append(
+                f"Prompt drift: «{pd['name']}» hash changed to {pd['new_hash']} "
+                f"but version stayed {pd['version']} — bump semver if intent changed."
+            )
+
+    budget_alert = _check_budget(state_dir, cost_summary["total_cost_usd"], current_day_london)
+    if budget_alert:
+        warnings.append(budget_alert)
+
     _validate_draft(
         draft_path=draft_path,
         scan_report=scan_report,
@@ -657,6 +809,9 @@ def build_release(project_root: Path) -> ReleaseResult:
         "warnings": warnings,
         "lost_leads": lost_leads,
         "section_underflow": section_underflow,
+        "cost_summary": cost_summary,
+        "prompt_versions": _prompts_snapshot(),
+        "prompt_drift": prompt_drift,
         "published_facts_updated": published_facts_updated,
         "inputs": {
             "collector_report": str((state_dir / "collector_report.json").resolve()),
@@ -680,5 +835,6 @@ def build_release(project_root: Path) -> ReleaseResult:
     # answer; this file just preserves the gate's audit trail.
     if ok:
         write_json(state_dir / "last_passed_release_report.json", report_payload)
+        _append_cost_history(state_dir, current_day_london, cost_summary, _prompts_snapshot())
 
     return ReleaseResult(ok=ok, message=message, report_path=report_path, output_path=output_path)

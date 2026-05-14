@@ -24,6 +24,16 @@ OPENAI_MODEL = "gpt-4o-mini"
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 GROQ_MODEL = "llama-3.3-70b-versatile"
 
+
+def _provider_label(model: str) -> str:
+    if model.startswith("deepseek"):
+        return "DeepSeek"
+    if model.startswith("gpt-") or model.startswith("o1"):
+        return "OpenAI"
+    if model.startswith("llama") or "groq" in model.lower():
+        return "Groq"
+    return "unknown"
+
 CURATOR_PROMPT = """Ты редакторский куратор дайджеста «Greater Manchester AM Brief».
 
 Тебе даётся список кандидатов. Для каждого прими решение: include true/false и is_lead true/false.
@@ -232,6 +242,14 @@ def _call_curator_batch(batch: list[dict], client: object, model: str) -> list[d
         temperature=0.1,
         max_tokens=4000,
     )
+    from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
+    record_call_from_response(
+        response=response,
+        stage="curator",
+        provider=_provider_label(model),
+        model=model,
+        prompt_name="curator",
+    )
     raw = response.choices[0].message.content.strip()
     if raw.startswith("```"):
         raw = raw.split("```", 2)[1]
@@ -366,6 +384,11 @@ def run_curator_pass(project_root: Path) -> None:
     candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     logger.info("Curator: dropped %d candidates (semantic dedup: %d), lead=%s.", dropped, semantic_dropped, lead_set)
 
+    from news_digest.pipeline.cost_tracker import dump_stage, snapshot, summarise  # noqa: PLC0415
+    state_dir = project_root / "data" / "state"
+    dump_stage(state_dir, "curator")
+    cost_summary = summarise(snapshot(stage="curator"))
+
     write_json(report_path, {
         "pipeline_run_id": pipeline_run_id,
         "run_at": now_london().isoformat(),
@@ -377,4 +400,5 @@ def run_curator_pass(project_root: Path) -> None:
         "semantic_dropped": semantic_dropped,
         "lead_set": lead_set,
         "decisions": decisions,
+        "cost_summary": cost_summary,
     })

@@ -83,6 +83,17 @@ jobs:
         run: |
           python3 scripts/run_local_digest.py send-warnings
 
+      - name: Send weekly cost summary (Sundays only)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
+          TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
+        run: |
+          if [ "$(TZ=Europe/London date +%u)" = "7" ]; then
+            python3 scripts/run_local_digest.py send-weekly-cost
+          else
+            echo "Not Sunday in Europe/London — skipping weekly cost summary."
+          fi
+
       - name: Dump failure diagnostics
         if: failure()
         run: |
@@ -130,6 +141,9 @@ jobs:
           git add -f data/state/writer_report.json || true
           git add -f data/state/editor_report.json || true
           git add -f data/state/release_report.json || true
+          git add -f data/state/cost_history.json || true
+          git add -f data/state/cost_curator.json || true
+          git add -f data/state/cost_llm_rewrite.json || true
           git add -f data/state/bot_state.json || true
           git add -f data/state/delivery_state.json || true
           git add -f data/outgoing/current_digest.html || true

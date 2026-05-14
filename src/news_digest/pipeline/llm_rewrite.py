@@ -333,6 +333,7 @@ def _call_provider_batch(
     timeout: int = 90,
     batch_size: int = BATCH_SIZE,
     system_prompt: str = PROMPT_CITY_NEWS,
+    prompt_name: str = "unknown",
 ) -> dict[str, str]:
     """Call one provider in batches. Returns fingerprint→draft_line."""
     if not api_key:
@@ -386,6 +387,14 @@ def _call_provider_batch(
                 temperature=0.3,
                 max_tokens=8192,
             )
+            from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
+            record_call_from_response(
+                response=response,
+                stage="llm_rewrite",
+                provider=provider_name.split("-", 1)[0],
+                model=model,
+                prompt_name=prompt_name,
+            )
             raw = response.choices[0].message.content.strip()
             if raw.startswith("```"):
                 raw = raw.split("```", 2)[1]
@@ -421,6 +430,7 @@ def _call_with_fallback(
     base_url_override: str,
     model_override: str,
     label_suffix: str = "",
+    prompt_name: str = "unknown",
 ) -> dict[str, str]:
     """Call provider chain with a specific prompt, return fingerprint→draft_line."""
     if not candidates:
@@ -431,18 +441,18 @@ def _call_with_fallback(
         return _call_provider_batch(
             base_url_override, os.environ.get("LLM_API_KEY", ""),
             model_override, candidates, provider_override + label_suffix,
-            system_prompt=prompt,
+            system_prompt=prompt, prompt_name=prompt_name,
         )
     mapping = _call_provider_batch(
         DEEPSEEK_BASE_URL, os.environ.get("DEEPSEEK_API_KEY", ""), DEEPSEEK_MODEL,
-        candidates, f"DeepSeek{label_suffix}", system_prompt=prompt,
+        candidates, f"DeepSeek{label_suffix}", system_prompt=prompt, prompt_name=prompt_name,
     )
     missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
     if missing:
         time.sleep(1)
         mapping.update(_call_provider_batch(
             OPENAI_BASE_URL, os.environ.get("OPENAI_API_KEY", ""), OPENAI_MODEL,
-            missing, f"OpenAI{label_suffix}", system_prompt=prompt,
+            missing, f"OpenAI{label_suffix}", system_prompt=prompt, prompt_name=prompt_name,
         ))
     missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
     if missing:
@@ -450,6 +460,7 @@ def _call_with_fallback(
         mapping.update(_call_provider_batch(
             GROQ_BASE_URL, os.environ.get("GROQ_API_KEY", ""), GROQ_FALLBACK_MODEL,
             missing, f"Groq{label_suffix}", batch_size=GROQ_BATCH_SIZE, system_prompt=prompt,
+            prompt_name=prompt_name,
         ))
     return mapping
 
@@ -626,10 +637,14 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             prompt = _CATEGORY_TO_PROMPT.get(str(c.get("category") or ""), PROMPT_CITY_NEWS)
             groups.setdefault(prompt, []).append(c)
 
+        from news_digest.pipeline.prompts_meta import prompt_name_for  # noqa: PLC0415
         mapping: dict[str, str] = {}
         for prompt, group in groups.items():
             logger.info("LLM rewrite: calling group of %d candidates.", len(group))
-            mapping.update(_call_with_fallback(group, _with_date_header(prompt), provider_override, base_url_override, model_override))
+            mapping.update(_call_with_fallback(
+                group, _with_date_header(prompt), provider_override, base_url_override, model_override,
+                prompt_name=prompt_name_for(prompt),
+            ))
 
         run_iso = now_london().isoformat()
         for candidate in candidates:
@@ -654,7 +669,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     if to_fix:
         logger.info("LLM fix pass: %d English-dominant draft_lines, re-translating.", len(to_fix))
         fix_candidates = [{"fingerprint": c.get("fingerprint", ""), "draft_line": c.get("draft_line", "")} for c in to_fix]
-        fix_mapping = _call_with_fallback(fix_candidates, FIX_TRANSLATE_SYSTEM, provider_override, base_url_override, model_override, label_suffix="-fix")
+        fix_mapping = _call_with_fallback(fix_candidates, FIX_TRANSLATE_SYSTEM, provider_override, base_url_override, model_override, label_suffix="-fix", prompt_name="fix_translate")
 
         run_iso = now_london().isoformat()
         for candidate in candidates:
@@ -685,6 +700,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             base_url_override,
             model_override,
             label_suffix="-repair",
+            prompt_name="repair_draft",
         )
 
         run_iso = now_london().isoformat()
@@ -720,6 +736,11 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     if weak_after:
         warnings.append(f"{len(weak_after)} draft_line(s) still look weak after repair.")
 
+    from news_digest.pipeline.cost_tracker import dump_stage, snapshot, summarise  # noqa: PLC0415
+    from news_digest.pipeline.prompts_meta import snapshot as prompts_snapshot  # noqa: PLC0415
+    state_dir = project_root / "data" / "state"
+    dump_stage(state_dir, "llm_rewrite")
+    cost_summary = summarise(snapshot(stage="llm_rewrite"))
     write_json(
         report_path,
         {
@@ -733,6 +754,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "applied": applied,
             "fixed": fixed,
             "repaired": repaired,
+            "cost_summary": cost_summary,
+            "prompt_versions": prompts_snapshot(),
             "missing_after": [
                 {
                     "fingerprint": c.get("fingerprint"),
