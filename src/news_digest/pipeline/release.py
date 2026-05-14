@@ -7,6 +7,7 @@ import shutil
 
 from news_digest.pipeline.common import (
     LOW_SIGNAL_BLOCKS,
+    PRIMARY_BLOCKS,
     REQUIRED_BLOCKS,
     REQUIRED_SCAN_CATEGORIES,
     SECTION_MIN_ITEMS,
@@ -598,19 +599,35 @@ def build_release(project_root: Path) -> ReleaseResult:
                 f"({drop.get('category') or 'unknown'}) — {'; '.join(drop.get('reasons') or ['no reason recorded'])}"
             )
 
-        # Section underflow: target minimums let us spot days when a
-        # section ships thin (e.g. "Что важно сегодня" with 2 items).
-        # Warning only — does not block release.
+        # Section underflow: spot days when writer filtering pushed a
+        # section below its target minimum. We only flag underflow when
+        # writer actually dropped candidates that would have lived in
+        # that section — a thin section with zero drops just means there
+        # was no news today, which is not a signal worth alerting on.
         sec_counts = writer_report.get("section_counts") or {}
+        dropped_per_section: dict[str, int] = {}
+        for drop in writer_report.get("dropped_candidates") or []:
+            if not isinstance(drop, dict):
+                continue
+            section_name = PRIMARY_BLOCKS.get(str(drop.get("primary_block") or ""))
+            if section_name:
+                dropped_per_section[section_name] = dropped_per_section.get(section_name, 0) + 1
         for section_name, minimum in SECTION_MIN_ITEMS.items():
             actual = int(sec_counts.get(section_name) or 0)
-            if actual and actual < minimum:
+            dropped_here = dropped_per_section.get(section_name, 0)
+            if actual < minimum and dropped_here > 0:
                 section_underflow.append(
-                    {"section": section_name, "actual": actual, "minimum": minimum}
+                    {
+                        "section": section_name,
+                        "actual": actual,
+                        "minimum": minimum,
+                        "dropped_by_writer": dropped_here,
+                    }
                 )
                 warnings.append(
                     f"Section underflow: «{section_name}» shipped {actual} items "
-                    f"(min={minimum}). Curator nominated too few or writer filtered too many."
+                    f"(min={minimum}) while writer dropped {dropped_here} candidate(s) "
+                    f"that targeted this section — quality gates may be too strict."
                 )
     _validate_draft(
         draft_path=draft_path,
