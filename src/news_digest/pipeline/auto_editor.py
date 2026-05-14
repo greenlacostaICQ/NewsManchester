@@ -32,6 +32,13 @@ _EVENT_BLOCKS = {
     "russian_events",
     "future_announcements",
 }
+_STALE_EVENT_CATEGORIES = {
+    "public_services",
+    "tech_business",
+    "culture_weekly",
+    "venues_tickets",
+    "russian_speaking_events",
+}
 _EVENT_SECTION_NAMES = {
     "Выходные в GM",
     "Что важно в ближайшие 7 дней",
@@ -75,6 +82,54 @@ _VAGUE_TRANSPORT_MARKERS = (
     "одна из главных линий",
     "major line",
     "main line",
+)
+_TRANSPORT_MODE_PATTERN = re.compile(
+    r"\b(?:автобус|трамва|поезд|железнодорож|метро|tram|bus|rail|train|metrolink|transpennine)\b",
+    re.IGNORECASE,
+)
+_CULTURE_FACT_PATTERN = re.compile(
+    r"\b(?:\d{1,2}:\d{2}|£\s*\d|\b\d{1,2}\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\b|"
+    r"\b\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\b|"
+    r"street|road|avenue|hall|theatre|gallery|museum|venue|tickets?|билет|адрес|зал|театр|галерея|музей)\b",
+    re.IGNORECASE,
+)
+_CULTURE_MEDIUM_PATTERN = re.compile(
+    r"\b(?:film|movie|screening|cinema|play|theatre|show|concert|gig|festival|exhibition|gallery|workshop|comedy|stand-?up|"
+    r"tour|orchestra|symphony|opera|live|final|league|sport|netball|"
+    r"фильм|кино|показ|спектакль|театр|шоу|концерт|фестиваль|выставка|галерея|мастер-класс|стендап|тур|опера|оркестр|финал|спорт)\b",
+    re.IGNORECASE,
+)
+_UKRAINIAN_MARKERS = re.compile(
+    r"[іїєґІЇЄҐ]|\b(?:квитки|вистава|гурт|після|сьогодні|місто|україн)\b",
+    re.IGNORECASE,
+)
+_ENGLISH_PROSE_MARKERS = re.compile(
+    r"\b(?:the|and|for|with|from|after|following|today|launched|confirmed|announced|tickets?|event|show)\b",
+    re.IGNORECASE,
+)
+_LINE_NAMES = (
+    "Bury line",
+    "Altrincham line",
+    "Eccles line",
+    "Ashton line",
+    "Rochdale line",
+    "Oldham line",
+    "East Manchester line",
+    "Airport line",
+    "Trafford Park line",
+    "East Didsbury line",
+)
+_PARTY_REPLACEMENTS = (
+    (r"\bLabour\s+(councillor|MP)\b", "представитель Лейбористской партии"),
+    (r"\bGreen\s+(councillor|MP)\b", "представитель Зеленой партии"),
+    (r"\bLib\s*Dem\s+(councillor|MP)\b", "представитель Либеральных демократов"),
+    (r"\bLiberal Democrat\s+(councillor|MP)\b", "представитель Либеральных демократов"),
+    (r"\bConservative\s+(councillor|MP)\b", "представитель Консервативной партии"),
+    (r"\bLabour\b", "Лейбористская партия"),
+    (r"\bGreen Party\b", "Зеленая партия"),
+    (r"\bLib\s*Dem\b", "Либеральные демократы"),
+    (r"\bLiberal Democrats?\b", "Либеральные демократы"),
+    (r"\bConservatives?\b", "Консервативная партия"),
 )
 _MONTHS_EN = {
     "jan": 1,
@@ -201,7 +256,11 @@ def _repair_translation_terms(text: str) -> tuple[str, bool]:
     )
     for pattern, replacement in replacements:
         repaired = re.sub(pattern, replacement, repaired, flags=re.IGNORECASE)
+    for pattern, replacement in _PARTY_REPLACEMENTS:
+        repaired = re.sub(pattern, replacement, repaired, flags=re.IGNORECASE)
     repaired = re.sub(r"\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b", "", repaired)
+    repaired = re.sub(r"(?:для\s+)?access[- ]запросов?:?\s*(?:или\s*)?", "", repaired, flags=re.IGNORECASE)
+    repaired = re.sub(r"Для бронирования\s*[:—-]?\s*$", "", repaired, flags=re.IGNORECASE)
     repaired = re.sub(r"\s+([,.!?;:])", r"\1", repaired)
     repaired = re.sub(r"\s{2,}", " ", repaired).strip()
     repaired = re.sub(r"\.\s*\.", ".", repaired)
@@ -225,6 +284,7 @@ def repair_rendered_line(section_name: str, line: str) -> tuple[str | None, list
         notes.append("translated deterministic English terms")
     text = visible_part + anchor_part
     text = re.sub(r"\s+(?:Met Office|Open-Meteo)(?=\s*<a\s)", "", text)
+    text = re.sub(r"^(•\s*Погода:\s*)Погода:\s*", r"\1", text, flags=re.IGNORECASE)
     text = re.sub(r"\.\s*\.\s*(?=<a\s)", ". ", text)
     text = re.sub(r"\s{2,}", " ", text).strip()
     lowered = re.sub(r"<[^>]+>", " ", text).lower()
@@ -243,8 +303,14 @@ def _split_mixed_summary(candidate: dict) -> bool:
         value = str(candidate.get(field) or "").strip()
         if not value:
             continue
+        if len(re.findall(r"<h[12]\b|(?:^|\s)#{1,2}\s+|(?:^|\s)###\s+", value, flags=re.IGNORECASE)) > 1:
+            value = re.split(r"<h[12]\b|(?:^|\s)#{1,3}\s+", value, maxsplit=1, flags=re.IGNORECASE)[0].strip()
+            if len(value) >= 45:
+                candidate[field] = value.rstrip(" .") + "."
+                changed = True
+                continue
         parts = re.split(
-            r"\b(?:also announced|meanwhile|separately|in a statement|the statement added)\b",
+            r"\b(?:also announced|meanwhile|separately|in a statement|the statement added|live well|leadership programme|canal street)\b",
             value,
             maxsplit=1,
             flags=re.IGNORECASE,
@@ -308,7 +374,8 @@ def _has_only_past_dates(text: str, today: date) -> bool:
 
 def _is_stale_event(candidate: dict) -> bool:
     block = str(candidate.get("primary_block") or "")
-    if block not in _EVENT_BLOCKS:
+    category = str(candidate.get("category") or "")
+    if block not in _EVENT_BLOCKS and category not in _STALE_EVENT_CATEGORIES:
         return False
     today = now_london().date()
     onsale = _summary_field_date(candidate, "public_onsale")
@@ -317,6 +384,11 @@ def _is_stale_event(candidate: dict) -> bool:
     event_date = _summary_field_date(candidate, "event_date")
     if event_date:
         return event_date < today
+    if block not in _EVENT_BLOCKS:
+        visible_blob = _visible_candidate_blob(candidate).lower()
+        if not re.search(r"\b(event|conference|summit|expo|election|poll|vote|onsale|on sale|выбор|конференц|саммит|билет)\b", visible_blob):
+            return False
+        return _has_only_past_dates(visible_blob, today)
     return _has_only_past_dates(_candidate_blob(candidate), today)
 
 
@@ -350,6 +422,7 @@ def _repair_weather(candidate: dict) -> bool:
         details.append(f"вероятность осадков до {rain_probability}%")
     practical = "Зонт нужен." if rain_probability is None or rain_probability >= 45 else "Сверьте прогноз перед выходом."
     candidate["draft_line"] = "• Погода: " + ", ".join(details) + f". {practical}"
+    candidate["draft_line"] = re.sub(r"^(•\s*Погода:\s*)Погода:\s*", r"\1", candidate["draft_line"], flags=re.IGNORECASE)
     candidate["summary"] = candidate["draft_line"].removeprefix("• ")
     candidate["practical_angle"] = practical
     return True
@@ -369,17 +442,7 @@ def _extract_transport_fields(candidate: dict) -> dict[str, str]:
         fields["transport_mode"] = "bus"
         fields["operator"] = "Go North West" if "go north west" in lowered else "TfGM"
 
-    for line_name in (
-        "Bury line",
-        "Ashton line",
-        "Altrincham line",
-        "Eccles line",
-        "Trafford Park line",
-        "Airport line",
-        "East Didsbury line",
-        "Rochdale line",
-        "Oldham line",
-    ):
+    for line_name in _LINE_NAMES:
         if line_name.lower() in lowered:
             fields["line"] = line_name
             break
@@ -475,6 +538,76 @@ def _draft_from_candidate(candidate: dict) -> str:
     return ""
 
 
+def _line_language_problem(line: str) -> bool:
+    text = str(line or "").strip()
+    if not text:
+        return False
+    cyrillic = len(re.findall(r"[а-яёА-ЯЁ]", text))
+    ukrainian = bool(_UKRAINIAN_MARKERS.search(text))
+    if ukrainian:
+        return True
+    latin_words = re.findall(r"[A-Za-z][A-Za-z'’-]+", text)
+    english_hits = len([word for word in latin_words if _ENGLISH_PROSE_MARKERS.fullmatch(word)])
+    return bool(english_hits >= 3 and cyrillic < 40)
+
+
+def _repair_language(candidate: dict) -> bool:
+    line = str(candidate.get("draft_line") or "")
+    if not _line_language_problem(line):
+        return False
+    generated = _draft_from_candidate(candidate)
+    if generated and not _line_language_problem(generated):
+        candidate["draft_line"] = generated
+        candidate["draft_line_provider"] = "auto-editor"
+        return True
+    return False
+
+
+def _named_line_missing(candidate: dict) -> str:
+    evidence = _visible_candidate_blob(candidate)
+    line = str(candidate.get("draft_line") or "")
+    for line_name in _LINE_NAMES:
+        if re.search(rf"\b{re.escape(line_name)}\b", evidence, flags=re.IGNORECASE) and not re.search(
+            rf"\b{re.escape(line_name)}\b", line, flags=re.IGNORECASE
+        ):
+            return line_name
+    return ""
+
+
+def _repair_named_line(candidate: dict) -> bool:
+    line_name = _named_line_missing(candidate)
+    if not line_name:
+        return False
+    line = str(candidate.get("draft_line") or "").strip()
+    if not line:
+        return False
+    if re.search(r"Metrolink|трамва", line, re.IGNORECASE):
+        candidate["draft_line"] = re.sub(r"^(•\s*Metrolink:\s*)", rf"\1{line_name}: ", line, count=1)
+        if candidate["draft_line"] == line:
+            candidate["draft_line"] = f"• Metrolink: {line_name}. " + line.removeprefix("• ").strip()
+        return True
+    return False
+
+
+def _culture_fields_missing(candidate: dict) -> str:
+    category = str(candidate.get("category") or "")
+    block = str(candidate.get("primary_block") or "")
+    if category not in {"culture_weekly", "venues_tickets", "russian_speaking_events"} and block not in _EVENT_BLOCKS:
+        return ""
+    blob = _candidate_blob(candidate)
+    if not _CULTURE_FACT_PATTERN.search(blob):
+        return "missing concrete date/time/price/address"
+    if not _CULTURE_MEDIUM_PATTERN.search(blob):
+        return "missing event medium"
+    return ""
+
+
+def _transport_mode_missing(candidate: dict) -> bool:
+    if str(candidate.get("primary_block") or "") != "transport":
+        return False
+    return not _TRANSPORT_MODE_PATTERN.search(str(candidate.get("draft_line") or ""))
+
+
 def _repair_transport(candidate: dict) -> tuple[bool, bool]:
     if str(candidate.get("primary_block") or "") != "transport" and str(candidate.get("category") or "") != "transport":
         return False, False
@@ -497,6 +630,13 @@ def _repair_transport(candidate: dict) -> tuple[bool, bool]:
         )
         return True, False
 
+    if fields.get("line") and needs_vague_repair:
+        candidate["draft_line"] = (
+            f"• Metrolink: проверьте движение на {fields['line']}. "
+            "Сверьте маршрут перед поездкой."
+        )
+        return True, False
+
     if "victoria lodge" in lowered and "lower broughton road" in lowered:
         routes = _route_numbers(blob)
         route_phrase = f" Маршруты: {routes}." if routes else ""
@@ -511,6 +651,12 @@ def _repair_transport(candidate: dict) -> tuple[bool, bool]:
             "• Автобусы: Go North West проводит голосование о забастовке. "
             "Следите за обновлениями TfGM перед поездкой."
         )
+        return True, False
+
+    if fields.get("transport_mode") and _transport_mode_missing(candidate):
+        mode_label = {"tram": "Трамваи", "bus": "Автобусы", "rail": "Поезда"}.get(fields["transport_mode"], "Транспорт")
+        line = current_line.removeprefix("• ").strip()
+        candidate["draft_line"] = f"• {mode_label}: {line}"
         return True, False
 
     if needs_vague_repair and not fields.get("line") and not fields.get("segment"):
@@ -550,6 +696,14 @@ def _line_is_usable(candidate: dict) -> bool:
             candidate["draft_line"] = generated
             candidate["draft_line_provider"] = "auto-editor"
             line = generated
+    if _line_language_problem(line):
+        return False
+    if _culture_fields_missing(candidate):
+        return False
+    if _transport_mode_missing(candidate):
+        return False
+    if _named_line_missing(candidate):
+        return False
     return bool(line.startswith("• ") and re.search(r"[а-яё]", line, re.IGNORECASE))
 
 
@@ -651,6 +805,8 @@ def auto_edit_digest(project_root: Path) -> StageResult:
         if translated:
             candidate["draft_line"] = repaired_line
             actions.append({"action": "repair_translation_terms", "fingerprint": candidate.get("fingerprint")})
+        if _repair_language(candidate):
+            actions.append({"action": "repair_language", "fingerprint": candidate.get("fingerprint")})
         if auto_repair_weather(candidate):
             actions.append({"action": "repair_weather", "fingerprint": candidate.get("fingerprint")})
         repaired_transport, unfixable_transport = auto_repair_transport(candidate)
@@ -659,6 +815,8 @@ def auto_edit_digest(project_root: Path) -> StageResult:
             repaired_transport, unfixable_transport = auto_repair_transport(candidate)
         if repaired_transport:
             actions.append({"action": "repair_transport", "fingerprint": candidate.get("fingerprint")})
+        if _repair_named_line(candidate):
+            actions.append({"action": "repair_named_transport_line", "fingerprint": candidate.get("fingerprint")})
 
         drop_reason = ""
         stale_action = _repair_stale_event_routing(candidate)
@@ -666,6 +824,14 @@ def auto_edit_digest(project_root: Path) -> StageResult:
             actions.append({"action": "repair_event_dates_move_to_last_24h", "fingerprint": candidate.get("fingerprint")})
         elif stale_action == "drop":
             drop_reason = "Auto-editor: stale event/ticket date."
+        elif _line_language_problem(str(candidate.get("draft_line") or "")):
+            drop_reason = "Auto-editor: draft_line is not Russian prose."
+        elif _culture_fields_missing(candidate):
+            drop_reason = f"Auto-editor: culture/event candidate {_culture_fields_missing(candidate)}."
+        elif _transport_mode_missing(candidate):
+            drop_reason = "Auto-editor: transport line missing explicit mode."
+        elif _named_line_missing(candidate):
+            drop_reason = f"Auto-editor: transport line missing named line {_named_line_missing(candidate)}."
         elif _is_unfixable_promo(candidate):
             drop_reason = "Auto-editor: promo/deal item without city value."
         elif unfixable_transport:

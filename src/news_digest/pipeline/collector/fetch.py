@@ -26,6 +26,11 @@ _CLOUDFLARE_PROTECTED_HOSTS: tuple[str, ...] = (
     "manchester2-search.funnelback.squiz.cloud",
     "news.salford.gov.uk",
     "salford.gov.uk",
+    "trafford.gov.uk",
+    "tameside.gov.uk",
+    "wigan.gov.uk",
+    "eventbrite.co.uk",
+    "eventbrite.com",
 )
 
 
@@ -148,8 +153,13 @@ def _fetch_text(url: str, *, extra_headers: dict[str, str] | None = None) -> str
                 charset = response.headers.get_content_charset() or "utf-8"
                 return raw.decode(charset, errors="replace")
         except error.HTTPError as exc:
-            # Definitive HTTP error — don't retry, let _fetch_source_body
-            # try the next fallback URL instead.
+            if exc.code in {403, 405, 429, 503}:
+                try:
+                    return _fetch_text_curl_cffi(url, headers)
+                except Exception as cffi_exc:  # noqa: BLE001
+                    raise RuntimeError(f"HTTP {exc.code}; curl_cffi fallback failed: {cffi_exc}") from cffi_exc
+            # Other definitive HTTP errors are not retried; let
+            # _fetch_source_body try the next fallback URL instead.
             raise RuntimeError(f"HTTP {exc.code}") from exc
         except error.URLError as exc:
             last_url_error = exc
@@ -171,6 +181,21 @@ def _source_fetch_headers(source: SourceDef) -> dict[str, str]:
                 "Accept": "application/json, text/plain, */*",
                 "Referer": "https://www.manchester.gov.uk/news-stories",
                 "Origin": "https://www.manchester.gov.uk",
+            }
+        )
+    elif source.name in {"GMP", "Salford Council", "Trafford Council", "Tameside Council", "Wigan Council"}:
+        headers.update(
+            {
+                "Accept-Language": "en-GB,en;q=0.9",
+                "Referer": source.url,
+            }
+        )
+    elif "Eventbrite" in source.name:
+        headers.update(
+            {
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-GB,en;q=0.9",
+                "Referer": "https://www.eventbrite.co.uk/",
             }
         )
     return headers

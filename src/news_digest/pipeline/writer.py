@@ -9,6 +9,12 @@ import re
 
 logger = logging.getLogger(__name__)
 
+from news_digest.pipeline.auto_editor import (
+    _culture_fields_missing,
+    _line_language_problem,
+    _named_line_missing,
+    _transport_mode_missing,
+)
 from news_digest.pipeline.common import (
     LOW_SIGNAL_BLOCKS,
     PRIMARY_BLOCKS,
@@ -174,6 +180,7 @@ _HEAVY_SNOW_PATTERN = re.compile(
 )
 _EXTREME_TEMP_PATTERN = re.compile(r"\b([1-9]\d)\s*°[Cc]\b")
 _EVENT_BLOCKS = {"weekend_activities", "next_7_days", "ticket_radar", "outside_gm_tickets", "russian_events", "future_announcements"}
+_STALE_EVENT_CATEGORIES = {"public_services", "tech_business", "culture_weekly", "venues_tickets", "russian_speaking_events"}
 _MONTHS = {
     "jan": 1, "january": 1,
     "feb": 2, "february": 2,
@@ -212,6 +219,17 @@ def _parse_day(value: object) -> date | None:
         return None
 
 
+def _summary_field_day(candidate: dict, field: str) -> date | None:
+    summary = str(candidate.get("summary") or "")
+    match = re.search(rf"\b{re.escape(field)}=(20\d{{2}}-\d{{2}}-\d{{2}})(?:[T\s]\d{{2}}:\d{{2}})?", summary)
+    if not match:
+        return None
+    try:
+        return datetime.strptime(match.group(1), "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
 def _future_date_signal(text: str) -> bool:
     today = now_london().date()
     lowered = str(text or "").lower()
@@ -242,8 +260,31 @@ def _future_date_signal(text: str) -> bool:
 
 
 def _is_expired_event_candidate(candidate: dict, line: str = "") -> bool:
-    if str(candidate.get("primary_block") or "") not in _EVENT_BLOCKS:
+    primary_block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    if primary_block not in _EVENT_BLOCKS and category not in _STALE_EVENT_CATEGORIES:
         return False
+    event_day = _summary_field_day(candidate, "event_date")
+    if event_day is not None:
+        return event_day < now_london().date()
+    if primary_block == "ticket_radar":
+        onsale_day = _summary_field_day(candidate, "public_onsale")
+        if onsale_day is not None and onsale_day < now_london().date():
+            return True
+    if primary_block not in _EVENT_BLOCKS:
+        visible_text = " ".join(
+            str(value or "")
+            for value in (
+                candidate.get("title"),
+                candidate.get("summary"),
+                candidate.get("lead"),
+                candidate.get("evidence_text"),
+                line,
+            )
+        )
+        if not re.search(r"\b(event|conference|summit|expo|election|poll|vote|onsale|on sale|выбор|конференц|саммит|билет)\b", visible_text, re.IGNORECASE):
+            return False
+        return not _future_date_signal(visible_text)
     event_day = _parse_day(candidate.get("published_at"))
     if not event_day or event_day >= now_london().date():
         return False
@@ -260,6 +301,42 @@ def _is_expired_event_candidate(candidate: dict, line: str = "") -> bool:
     return not _future_date_signal(text)
 
 
+def _money_canonical_values(text: str) -> set[tuple[int, int]]:
+    """Return canonical pence-ish major-unit values as (scaled amount, multiplier).
+
+    Keeps comparison tolerant across £26.5m / £26,5млн / £26.5 million.
+    Amount is scaled by 100 to avoid float equality.
+    """
+    values: set[tuple[int, int]] = set()
+    pattern = re.compile(
+        r"£\s*(\d+(?:[.,]\d+)?)\s*(k|m|bn|тыс|млн|миллион\w*|млрд|billion)?",
+        re.IGNORECASE,
+    )
+    multipliers = {
+        "": 1,
+        "k": 1_000,
+        "тыс": 1_000,
+        "m": 1_000_000,
+        "млн": 1_000_000,
+        "миллион": 1_000_000,
+        "миллиона": 1_000_000,
+        "миллионов": 1_000_000,
+        "миллионный": 1_000_000,
+        "миллионных": 1_000_000,
+        "bn": 1_000_000_000,
+        "млрд": 1_000_000_000,
+        "billion": 1_000_000_000,
+    }
+    for match in pattern.finditer(str(text or "")):
+        raw_amount, raw_multiplier = match.groups()
+        try:
+            scaled = round(float(raw_amount.replace(",", ".")) * 100)
+        except ValueError:
+            continue
+        values.add((scaled, multipliers.get((raw_multiplier or "").lower(), 1)))
+    return values
+
+
 def _hallucination_flags(candidate: dict, line: str) -> list[str]:
     """Flag £-sums and named-entity-looking numbers in line that don't appear
     in the upstream evidence/title/summary/lead. Prevents the model from
@@ -268,16 +345,15 @@ def _hallucination_flags(candidate: dict, line: str) -> list[str]:
     evidence_blob = " ".join(
         str(candidate.get(field) or "")
         for field in ("title", "summary", "lead", "evidence_text")
-    ).lower()
+    )
+    evidence_money = _money_canonical_values(evidence_blob)
     flags: list[str] = []
-    line_lower = line.lower()
     # £-amount pattern: £3, £3.2m, £400k, £1.1bn, £500
-    money_pattern = re.compile(r"£\s*\d[\d.,]*\s*(?:k|m|bn|млн|млрд|тыс)?", re.IGNORECASE)
-    for match in money_pattern.findall(line_lower):
+    money_pattern = re.compile(r"£\s*\d[\d.,]*\s*(?:k|m|bn|млн|млрд|тыс|миллион\w*)?", re.IGNORECASE)
+    for match in money_pattern.findall(line):
         token = match.replace(" ", "")
-        # Normalize: drop trailing punctuation/RU suffixes to compare loose
-        bare = re.sub(r"[^\d.,£kmbnмлрд]", "", token)
-        if bare and bare not in evidence_blob.replace(" ", ""):
+        token_money = _money_canonical_values(token)
+        if token_money and not token_money.intersection(evidence_money):
             flags.append(f"Pound amount {token!r} not present in evidence_text.")
             break
     return flags
@@ -420,6 +496,18 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
         if marker in lowered:
             errors.append(f"draft_line contains bad editorial prose marker: {marker}.")
             break
+    if _line_language_problem(text):
+        errors.append("draft_line must be Russian prose after rewrite.")
+    culture_issue = _culture_fields_missing(candidate)
+    if culture_issue:
+        errors.append(f"event/culture candidate is under-specified: {culture_issue}.")
+    if _transport_mode_missing(candidate):
+        errors.append("transport draft_line must state an explicit mode.")
+    missing_line = _named_line_missing(candidate)
+    if missing_line:
+        errors.append(f"draft_line must preserve named transport line: {missing_line}.")
+    if re.search(r"\b(?:свой|открыл|запустил)[^.!?]{0,40}\b\d{1,3}[-–]?[йя]\b[^.!?]{0,60}\b(?:в|на)\s+(?:Manchester|Манчестер|GM|Greater Manchester)", text, re.IGNORECASE):
+        errors.append("draft_line mixes national/local ordinal counters.")
     errors.extend(_sanity_flags(candidate, text))
     errors.extend(_hallucination_flags(candidate, text))
     return errors

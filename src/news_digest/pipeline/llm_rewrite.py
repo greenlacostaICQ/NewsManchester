@@ -281,6 +281,8 @@ _EN_FUNCTION_WORDS = frozenset({
 def _needs_translation_fix(draft_line: str) -> bool:
     """True only when the line reads as English prose, not just contains brand names."""
     text = str(draft_line or "").strip()
+    if re.search(r"[іїєґІЇЄҐ]|\b(?:що|квитки|вистава|гурт|після|сьогодні|місто|україн)\b", text, re.IGNORECASE):
+        return True
     if not text or _cyrillic_ratio(text) >= 0.5:
         return False
     lowercase_words = re.findall(r"[a-z][a-z''-]+", text)
