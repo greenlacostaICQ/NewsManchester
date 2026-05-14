@@ -57,6 +57,9 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROGAPIKEY }}
         run: python3 scripts/run_local_digest.py llm-rewrite
 
+      - name: Auto-editor — repair / reroute / replace
+        run: python3 scripts/run_local_digest.py auto-edit-digest
+
       - name: Run pipeline — write → edit → build
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
@@ -88,6 +91,8 @@ jobs:
             data/state/dedupe_memory.json \
             data/state/candidate_validation_report.json \
             data/state/curator_report.json \
+            data/state/llm_rewrite_report.json \
+            data/state/auto_editor_report.json \
             data/state/writer_report.json \
             data/state/editor_report.json \
             data/state/release_report.json
