@@ -75,6 +75,14 @@ jobs:
         run: |
           python3 scripts/run_local_digest.py send-file data/outgoing/current_digest.html --parse-mode HTML $FORCE_FLAG
 
+      - name: Send internal warnings to Telegram (if any)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
+          TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
+          WARNINGS_TO_TELEGRAM: "1"
+        run: |
+          python3 scripts/run_local_digest.py send-warnings
+
       - name: Dump failure diagnostics
         if: failure()
         run: |

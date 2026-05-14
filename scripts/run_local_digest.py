@@ -4,6 +4,7 @@ import argparse
 from datetime import datetime
 import json
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -283,6 +284,66 @@ def cmd_send_file(file_path: str, parse_mode: str | None, force: bool) -> int:
         StateStore(runtime_state_dir, settings.archive_dir).mark_delivery(targets, str(resolved_path))
     record_delivery_artifacts(PROJECT_ROOT, resolved_path, _rendered_candidates_for_delivery())
     print(f"Sent file {file_path} to {len(targets)} target(s): {', '.join(targets)}.")
+    return 0
+
+
+def cmd_send_warnings() -> int:
+    """Post a short admin message to Telegram if release_report flagged
+    lost leads or section underflow. Opt-out with WARNINGS_TO_TELEGRAM=0.
+
+    Skips silently when:
+      - WARNINGS_TO_TELEGRAM=0 (kill switch)
+      - release_report.json is missing
+      - there are no lost_leads and no section_underflow
+    """
+    if os.environ.get("WARNINGS_TO_TELEGRAM", "1").strip() in {"0", "false", "False", ""}:
+        print("Warnings-to-Telegram disabled (WARNINGS_TO_TELEGRAM=0). Skipping.")
+        return 0
+
+    report_path = PROJECT_ROOT / "data" / "state" / "release_report.json"
+    if not report_path.exists():
+        print(f"No release_report.json at {report_path}. Skipping.")
+        return 0
+
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        print(f"Could not read release_report.json: {exc}. Skipping.")
+        return 0
+
+    lost_leads = report.get("lost_leads") or []
+    section_underflow = report.get("section_underflow") or []
+    if not lost_leads and not section_underflow:
+        print("No lost leads, no section underflow. Nothing to alert on.")
+        return 0
+
+    run_date = report.get("run_date_london") or ""
+    lines: list[str] = [f"⚠️ Внутренний контроль — {run_date}".strip()]
+    if lost_leads:
+        lines.append(f"\nLost leads ({len(lost_leads)}):")
+        for ll in lost_leads[:5]:
+            title = str(ll.get("title") or "").strip() or "(no title)"
+            reasons = "; ".join(str(r) for r in (ll.get("reasons") or [])) or "no reason"
+            lines.append(f"• {title[:90]} — {reasons[:140]}")
+        if len(lost_leads) > 5:
+            lines.append(f"…и ещё {len(lost_leads) - 5}.")
+    if section_underflow:
+        lines.append(f"\nSection underflow ({len(section_underflow)}):")
+        for su in section_underflow:
+            lines.append(
+                f"• «{su.get('section')}» {su.get('actual')}/{su.get('minimum')} "
+                f"(writer дропнул {su.get('dropped_by_writer')})"
+            )
+    text = "\n".join(lines).strip()
+
+    settings, client, store = _load_store_and_client()
+    targets = _effective_targets(settings.telegram_target, store.list_subscribers())
+    if not targets:
+        print("No Telegram targets configured. Skipping admin warnings.")
+        return 0
+    for target in targets:
+        client.send_text_in_chunks(target, text, parse_mode=None)
+    print(f"Sent warnings to {len(targets)} target(s).")
     return 0
 
 
@@ -599,6 +660,13 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Send even if a digest was already delivered today.",
     )
+    subparsers.add_parser(
+        "send-warnings",
+        help=(
+            "Post an admin alert to Telegram if release_report.json flagged "
+            "lost leads or section underflow. Opt-out via WARNINGS_TO_TELEGRAM=0."
+        ),
+    )
     return parser
 
 
@@ -644,6 +712,8 @@ def main() -> int:
         return cmd_send_demo()
     if args.command == "send-file":
         return cmd_send_file(args.file_path, args.parse_mode, args.force)
+    if args.command == "send-warnings":
+        return cmd_send_warnings()
 
     parser.error(f"Unknown command: {args.command}")
     return 2
