@@ -19,15 +19,16 @@ from .weather import _extract_met_office_weather
 def _weather_candidate() -> dict:
     current = now_london()
     weather_url = "https://weather.metoffice.gov.uk/forecast/gcw2hzs1u"
-    draft_line = "• Погода: данные Met Office временно недоступны. Met Office"
+    draft_line = "• Погода: данные прогноза временно недоступны. Сверьте прогноз перед выходом."
     source_url = "https://weather.metoffice.gov.uk/forecast/gcw2hzs1u"
     source_label = "Met Office"
     try:
         body = _fetch_text(weather_url)
         min_temp, max_temp, rain_probability, practical = _extract_met_office_weather(body)
+        practical = "Зонт нужен." if rain_probability >= 45 else practical.rstrip(".") + "."
         draft_line = (
             f"• Погода: {min_temp}-{max_temp}°C, вероятность осадков до {rain_probability}%. "
-            f"{practical} Met Office"
+            f"{practical}"
         )
     except Exception:
         # Keep a live weather line even if the official parser breaks.
@@ -44,9 +45,10 @@ def _weather_candidate() -> dict:
             min_temp = round(float(daily.get("temperature_2m_min", [0])[0]))
             max_temp = round(float(daily.get("temperature_2m_max", [0])[0]))
             rain_probability = round(float(daily.get("precipitation_probability_max", [0])[0]))
+            practical = "Зонт нужен." if rain_probability >= 45 else "Сверьте прогноз перед выходом."
             draft_line = (
                 f"• Погода: {min_temp}-{max_temp}°C, вероятность осадков до {rain_probability}%. "
-                "Open-Meteo"
+                f"{practical}"
             )
             source_url = fallback_url
             source_label = "Open-Meteo"

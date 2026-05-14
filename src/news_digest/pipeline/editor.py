@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from news_digest.pipeline.auto_editor import repair_rendered_line
 from news_digest.pipeline.common import (
     LOW_SIGNAL_BLOCKS,
     REQUIRED_BLOCKS,
@@ -80,6 +81,8 @@ def edit_digest(project_root: Path) -> StageResult:
     normalized_sections: dict[str, list[str]] = {}
     seen_lines_to_section: dict[str, str] = {}
     duplicate_collisions = 0
+    html_repair_count = 0
+    html_drop_count = 0
     for section_name, lines in sections.items():
         deduped = _unique_preserving_order(lines)
         filtered: list[str] = []
@@ -94,8 +97,15 @@ def edit_digest(project_root: Path) -> StageResult:
                     f"Removed cross-section duplicate from {section_name}; already present in {previous_section}."
                 )
                 continue
+            repaired_line, repair_notes = repair_rendered_line(section_name, line)
+            if repair_notes:
+                html_repair_count += 1
+                warnings.append(f"HTML repair in {section_name}: {'; '.join(repair_notes)}.")
+            if repaired_line is None:
+                html_drop_count += 1
+                continue
             seen_lines_to_section[key] = section_name
-            filtered.append(line)
+            filtered.append(repaired_line)
         normalized_sections[section_name] = filtered
 
     if not city_candidates:
@@ -155,6 +165,8 @@ def edit_digest(project_root: Path) -> StageResult:
             "min_city_practical_angle_length": MIN_CITY_PRACTICAL_ANGLE_LENGTH,
             "max_weak_city_candidate_share": MAX_WEAK_CITY_CANDIDATE_SHARE,
             "duplicate_collisions": duplicate_collisions,
+            "html_repair_count": html_repair_count,
+            "html_drop_count": html_drop_count,
             "draft_path": str(draft_path.resolve()),
         },
     )

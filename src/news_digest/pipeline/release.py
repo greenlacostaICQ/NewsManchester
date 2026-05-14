@@ -341,6 +341,7 @@ def _validate_pipeline_run_consistency(
     candidates_report: dict | None,
     curator_report: dict | None,
     llm_rewrite_report: dict | None,
+    auto_editor_report: dict | None,
     writer_report: dict | None,
     editor_report: dict | None,
     errors: list[str],
@@ -359,6 +360,7 @@ def _validate_pipeline_run_consistency(
     optional_inputs = {
         "curator_report": curator_report,
         "llm_rewrite_report": llm_rewrite_report,
+        "auto_editor_report": auto_editor_report,
     }
 
     for label, payload in required_inputs.items():
@@ -388,6 +390,10 @@ def _validate_pipeline_run_consistency(
             errors.append(f"LLM rewrite report is not complete/degraded: {status!r}.")
         elif status == "degraded":
             warnings.append("LLM rewrite was degraded; writer/release quality gates handled the remaining candidates.")
+    if auto_editor_report is not None:
+        status = str(auto_editor_report.get("stage_status") or "")
+        if status != "complete":
+            errors.append(f"Auto-editor report is not complete: {status!r}.")
 
     return expected
 
@@ -538,6 +544,7 @@ def build_release(project_root: Path) -> ReleaseResult:
     candidates_report = _load_optional_json(state_dir / "candidates.json")
     curator_report = _load_optional_json(state_dir / "curator_report.json")
     llm_rewrite_report = _load_optional_json(state_dir / "llm_rewrite_report.json")
+    auto_editor_report = _load_optional_json(state_dir / "auto_editor_report.json")
     writer_report = _load_optional_json(state_dir / "writer_report.json")
     editor_report = _load_optional_json(state_dir / "editor_report.json")
 
@@ -552,6 +559,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         candidates_report=candidates_report,
         curator_report=curator_report,
         llm_rewrite_report=llm_rewrite_report,
+        auto_editor_report=auto_editor_report,
         writer_report=writer_report,
         editor_report=editor_report,
         errors=errors,
@@ -606,6 +614,7 @@ def build_release(project_root: Path) -> ReleaseResult:
             "candidates": str((state_dir / "candidates.json").resolve()),
             "curator_report": str((state_dir / "curator_report.json").resolve()),
             "llm_rewrite_report": str((state_dir / "llm_rewrite_report.json").resolve()),
+            "auto_editor_report": str((state_dir / "auto_editor_report.json").resolve()),
             "writer_report": str((state_dir / "writer_report.json").resolve()),
             "editor_report": str((state_dir / "editor_report.json").resolve()),
             "draft_digest": str(draft_path.resolve()),

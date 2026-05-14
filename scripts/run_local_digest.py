@@ -20,6 +20,7 @@ from news_digest.config.settings import load_settings
 from news_digest.delivery.telegram import TelegramClient
 from news_digest.delivery.telegram import TelegramTransportError
 from news_digest.jobs.send_demo_digest import send_demo_digest
+from news_digest.pipeline.auto_editor import auto_edit_digest
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector import collect_digest, initialize_collector_state
 from news_digest.pipeline.common import read_json, write_json
@@ -392,6 +393,7 @@ def cmd_mark_pipeline_failed(stage: str) -> int:
             "collector_report": str((state_dir / "collector_report.json").resolve()),
             "candidates": str((state_dir / "candidates.json").resolve()),
             "curator_report": str((state_dir / "curator_report.json").resolve()),
+            "auto_editor_report": str((state_dir / "auto_editor_report.json").resolve()),
             "writer_report": str((state_dir / "writer_report.json").resolve()),
             "editor_report": str((state_dir / "editor_report.json").resolve()),
             "draft_digest": str((state_dir / "draft_digest.html").resolve()),
@@ -483,6 +485,12 @@ def cmd_llm_rewrite() -> int:
     return 0 if result.ok else 1
 
 
+def cmd_auto_edit_digest() -> int:
+    result = auto_edit_digest(PROJECT_ROOT)
+    print(json.dumps(_stage_payload(result), ensure_ascii=False, indent=2))
+    return 0 if result.ok else 1
+
+
 def cmd_write_digest() -> int:
     result = write_digest(PROJECT_ROOT)
     print(json.dumps(_stage_payload(result), ensure_ascii=False, indent=2))
@@ -548,6 +556,10 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "llm-rewrite",
         help="Write Russian draft_lines via OpenAI → Gemini → Groq Llama provider chain.",
+    )
+    subparsers.add_parser(
+        "auto-edit-digest",
+        help="Deterministically repair/re-route/replace weak candidates before writing the digest.",
     )
     subparsers.add_parser(
         "write-digest",
@@ -628,6 +640,8 @@ def main() -> int:
         return cmd_curator_pass()
     if args.command == "llm-rewrite":
         return cmd_llm_rewrite()
+    if args.command == "auto-edit-digest":
+        return cmd_auto_edit_digest()
     if args.command == "write-digest":
         return cmd_write_digest()
     if args.command == "edit-digest":

@@ -56,6 +56,7 @@ run_stage dedupe-digest
 run_stage validate-candidates
 run_stage curator-pass
 run_stage llm-rewrite
+run_stage auto-edit-digest
 run_stage write-digest
 run_stage edit-digest
 
