@@ -9,6 +9,7 @@ from news_digest.pipeline.common import (
     LOW_SIGNAL_BLOCKS,
     REQUIRED_BLOCKS,
     REQUIRED_SCAN_CATEGORIES,
+    SECTION_MIN_ITEMS,
     extract_sections,
     now_london,
     pipeline_run_id_from,
@@ -557,6 +558,8 @@ def build_release(project_root: Path) -> ReleaseResult:
         errors=errors,
         warnings=warnings,
     )
+    lost_leads: list[dict[str, object]] = []
+    section_underflow: list[dict[str, object]] = []
     if writer_report:
         qc = writer_report.get("quality_counts") or {}
         english = int(qc.get("dropped_english_passthrough") or 0)
@@ -574,6 +577,41 @@ def build_release(project_root: Path) -> ReleaseResult:
             )
         if included >= 15 and rendered < 8:
             warnings.append(f"Quality: heavy filtering — {rendered} rendered from {included} included candidates.")
+
+        # Sticky leads: curator-marked leads that writer dropped are
+        # visible regressions, not silent quality drops. Surface every
+        # one in release_report and as a per-lead warning.
+        for drop in writer_report.get("dropped_candidates") or []:
+            if not isinstance(drop, dict) or not drop.get("is_lead"):
+                continue
+            lost_leads.append(
+                {
+                    "fingerprint": drop.get("fingerprint"),
+                    "title": drop.get("title"),
+                    "category": drop.get("category"),
+                    "primary_block": drop.get("primary_block"),
+                    "reasons": drop.get("reasons") or [],
+                }
+            )
+            warnings.append(
+                "Lost lead: curator-marked lead dropped by writer "
+                f"({drop.get('category') or 'unknown'}) — {'; '.join(drop.get('reasons') or ['no reason recorded'])}"
+            )
+
+        # Section underflow: target minimums let us spot days when a
+        # section ships thin (e.g. "Что важно сегодня" with 2 items).
+        # Warning only — does not block release.
+        sec_counts = writer_report.get("section_counts") or {}
+        for section_name, minimum in SECTION_MIN_ITEMS.items():
+            actual = int(sec_counts.get(section_name) or 0)
+            if actual and actual < minimum:
+                section_underflow.append(
+                    {"section": section_name, "actual": actual, "minimum": minimum}
+                )
+                warnings.append(
+                    f"Section underflow: «{section_name}» shipped {actual} items "
+                    f"(min={minimum}). Curator nominated too few or writer filtered too many."
+                )
     _validate_draft(
         draft_path=draft_path,
         scan_report=scan_report,
@@ -600,6 +638,8 @@ def build_release(project_root: Path) -> ReleaseResult:
         "message": message,
         "errors": errors,
         "warnings": warnings,
+        "lost_leads": lost_leads,
+        "section_underflow": section_underflow,
         "published_facts_updated": published_facts_updated,
         "inputs": {
             "collector_report": str((state_dir / "collector_report.json").resolve()),

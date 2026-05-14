@@ -489,6 +489,7 @@ def write_digest(project_root: Path) -> StageResult:
                     "title": str(candidate.get("title") or ""),
                     "category": str(candidate.get("category") or ""),
                     "primary_block": str(candidate.get("primary_block") or ""),
+                    "is_lead": bool(candidate.get("is_lead")),
                     "reasons": ["Expired event date."],
                 }
             )
@@ -529,6 +530,7 @@ def write_digest(project_root: Path) -> StageResult:
                         "title": title,
                         "category": category,
                         "primary_block": block_key,
+                        "is_lead": bool(candidate.get("is_lead")),
                         "reasons": ["Missing draft_line."],
                     }
                 )
@@ -543,6 +545,7 @@ def write_digest(project_root: Path) -> StageResult:
                         "title": title,
                         "category": category,
                         "primary_block": block_key,
+                        "is_lead": bool(candidate.get("is_lead")),
                         "reasons": ["Untranslated English."],
                     }
                 )
@@ -568,6 +571,7 @@ def write_digest(project_root: Path) -> StageResult:
                     "title": title,
                     "category": category,
                     "primary_block": block_key,
+                    "is_lead": bool(candidate.get("is_lead")),
                     "reasons": draft_line_errors,
                 }
             )
@@ -632,6 +636,7 @@ def write_digest(project_root: Path) -> StageResult:
         "Футбол",
         "Радар по районам",
     ]
+    section_counts: dict[str, int] = {}
     for section_name in ordered_sections:
         lines = sections.get(section_name, [])
         if not lines:
@@ -664,6 +669,7 @@ def write_digest(project_root: Path) -> StageResult:
         cap = SECTION_MAX_ITEMS.get(section_name)
         if cap:
             lines = lines[:cap]
+        section_counts[section_name] = len(lines)
         rendered.append(f"<b>{section_name}</b>")
         rendered.extend(lines)
         rendered.append("")
@@ -679,6 +685,7 @@ def write_digest(project_root: Path) -> StageResult:
             "errors": errors,
             "warnings": warnings,
             "quality_counts": quality_counts,
+            "section_counts": section_counts,
             "rendered_candidate_fingerprints": rendered_candidate_fingerprints,
             "dropped_candidates": dropped_candidates,
             "draft_path": str(draft_path.resolve()),

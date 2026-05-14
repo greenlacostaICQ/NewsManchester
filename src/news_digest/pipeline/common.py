@@ -54,6 +54,20 @@ SECTION_MAX_ITEMS = {
     "Что важно сегодня": 5,
 }
 
+# Soft minimums: release gate emits a warning (does not block) when a
+# section ends up below this count after caps and quality drops. Used to
+# catch days when curator only nominated 2 items for "Что важно сегодня"
+# or similar — so the underflow is visible in release_report instead of
+# silently shipping a thin section.
+SECTION_MIN_ITEMS = {
+    "Что произошло за 24 часа": 5,
+    "Что важно сегодня": 3,
+    "Городской радар": 5,
+    "Что важно в ближайшие 7 дней": 3,
+    "Еда, открытия и рынки": 3,
+    "Футбол": 2,
+}
+
 # Max items per single source per section. Universities pump out 5+ press
 # releases a day each and dominated city_watch on 2026-05-12 — keep them
 # capped so they don't crowd out actual city news.
