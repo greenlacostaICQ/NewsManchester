@@ -685,6 +685,197 @@ def _evaluate_digest_health(
     }
 
 
+# Categories where "fresh in last 24h" is the right liveness signal —
+# these are news feeds expected to publish daily. For evergreen feeds
+# (venues, culture, diaspora, food openings) candidates accumulate
+# over weeks and fresh-24h=0 is the normal case, not staleness.
+_FRESHNESS_SENSITIVE_CATEGORIES = frozenset({
+    "media_layer", "gmp", "transport", "public_services", "city_news",
+    "football", "tech_business",
+})
+
+
+def _classify_source_status(entry: dict, category: str) -> tuple[str, str]:
+    """R1: one-word status per source + short human-readable detail."""
+    errors = list(entry.get("errors") or [])
+    warnings = list(entry.get("warnings") or [])
+    fetched = bool(entry.get("fetched"))
+    cands = int(entry.get("candidate_count") or 0)
+    fresh = int(entry.get("fresh_last_24h_count") or 0)
+    if not fetched or errors:
+        return "failed", (errors[0] if errors else "fetch failed")[:140]
+    if cands == 0:
+        return "empty", "fetched but no candidate links parsed"
+    # Stale only applies to news feeds expected to publish daily.
+    if category in _FRESHNESS_SENSITIVE_CATEGORIES and fresh == 0:
+        return "stale", f"{cands} item(s) but 0 fresh in last 24h — feed is dormant"
+    if warnings:
+        return "partial", "; ".join(warnings)[:140]
+    return "ok", f"{cands} item(s)" + (f", {fresh} fresh in last 24h" if fresh else "")
+
+
+def _summarise_source_health(scan_report: dict | None) -> dict[str, object]:
+    """R1: per-source status table + counts. Reads collector_report.json."""
+    counts: dict[str, int] = {"ok": 0, "partial": 0, "stale": 0, "empty": 0, "failed": 0}
+    sources: list[dict[str, str]] = []
+    if not scan_report:
+        return {"counts": counts, "sources": sources}
+    for cat_name, cat in (scan_report.get("categories") or {}).items():
+        if not isinstance(cat, dict):
+            continue
+        for entry in cat.get("source_health") or []:
+            if not isinstance(entry, dict):
+                continue
+            status, detail = _classify_source_status(entry, str(cat_name))
+            counts[status] = counts.get(status, 0) + 1
+            sources.append(
+                {
+                    "name": str(entry.get("name") or ""),
+                    "category": str(cat_name),
+                    "status": status,
+                    "detail": detail,
+                    "candidate_count": int(entry.get("candidate_count") or 0),
+                    "fresh_last_24h_count": int(entry.get("fresh_last_24h_count") or 0),
+                }
+            )
+    return {"counts": counts, "sources": sources}
+
+
+# R2: suspicious-reject classification.
+# Patterns in writer drop reasons that almost certainly point to an
+# LLM-formatting glitch rather than genuine low quality. £230m → £230млн
+# tripping the evidence-substring check is a classic example.
+_SUSPICIOUS_DROP_REASON_RE = re.compile(
+    r"Pound amount\s+'?[^']+'?\s+not present in evidence_text",
+    re.IGNORECASE,
+)
+# Curator drops worded as "evergreen без даты" — suspicious if the
+# evidence_text actually contains a concrete date marker.
+_DATE_HINT_IN_EVIDENCE = re.compile(
+    r"\b\d{1,2}\s*(?:января|февраля|марта|апреля|мая|июня|июля|"
+    r"августа|сентября|октября|ноября|декабря)\b"
+    r"|\b\d{1,2}[/.\-]\d{1,2}\b"
+    r"|\b(?:сегодня|завтра|послезавтра)\b"
+    r"|\bв\s+(?:понедельник|вторник|среду|четверг|пятницу|субботу|воскресенье)\b",
+    re.IGNORECASE,
+)
+_PREMIUM_SOURCE_PRIORITY = frozenset({"BBC Manchester", "MEN", "The Mill", "The Manc",
+                                       "Manchester Council", "GMCA"})
+
+
+def _classify_rejected_candidates(
+    writer_report: dict | None,
+    curator_report: dict | None,
+    candidates_report: dict | None,
+) -> dict[str, object]:
+    """R2: split rejected candidates into correctly_rejected / borderline /
+    suspiciously_rejected. Suspicious gets the strongest visibility — those
+    are likely false negatives we'd want to review by hand.
+    """
+    counts: dict[str, int] = {
+        "correctly_rejected": 0,
+        "borderline": 0,
+        "suspiciously_rejected": 0,
+    }
+    suspicious: list[dict[str, object]] = []
+    borderline: list[dict[str, object]] = []
+
+    # ── writer drops ──────────────────────────────────────────────────────
+    for drop in (writer_report or {}).get("dropped_candidates") or []:
+        if not isinstance(drop, dict):
+            continue
+        reasons = drop.get("reasons") or []
+        is_lead = bool(drop.get("is_lead"))
+        suspicious_hit = is_lead or any(
+            _SUSPICIOUS_DROP_REASON_RE.search(str(r) or "") for r in reasons
+        )
+        record = {
+            "stage": "writer",
+            "title": drop.get("title"),
+            "category": drop.get("category"),
+            "primary_block": drop.get("primary_block"),
+            "reasons": reasons,
+            "is_lead": is_lead,
+        }
+        if suspicious_hit:
+            counts["suspiciously_rejected"] += 1
+            if len(suspicious) < 15:
+                suspicious.append(record)
+        else:
+            counts["correctly_rejected"] += 1
+
+    # ── curator drops ─────────────────────────────────────────────────────
+    # Pull candidates with their evidence_text so we can re-check curator
+    # drops for date hints (the "evergreen" justification is wrong if a
+    # concrete date is actually in evidence).
+    candidates = (candidates_report or {}).get("candidates") or []
+    cand_by_fp: dict[str, dict] = {
+        str(c.get("fingerprint") or ""): c for c in candidates if isinstance(c, dict)
+    }
+    for dec in (curator_report or {}).get("decisions") or []:
+        if not isinstance(dec, dict) or dec.get("include"):
+            continue
+        fp = str(dec.get("fingerprint") or "")
+        cand = cand_by_fp.get(fp) or {}
+        reason = str(dec.get("reason") or "")
+        source_label = str(cand.get("source_label") or "")
+        evidence = str(cand.get("evidence_text") or "")
+        suspicious_reason = False
+        why = ""
+        if "evergreen" in reason.lower() and _DATE_HINT_IN_EVIDENCE.search(evidence):
+            suspicious_reason = True
+            why = "Curator pометил evergreen, но в evidence есть конкретная дата."
+        elif source_label in _PREMIUM_SOURCE_PRIORITY and "дубл" not in reason.lower():
+            # Premium source drop that isn't a dedup → at least borderline.
+            why = f"Premium-источник {source_label} отбит без явной дедупликации."
+        record = {
+            "stage": "curator",
+            "title": dec.get("title"),
+            "source_label": source_label,
+            "reason": reason,
+            "why_flagged": why,
+        }
+        if suspicious_reason:
+            counts["suspiciously_rejected"] += 1
+            if len(suspicious) < 15:
+                suspicious.append(record)
+        elif why:
+            counts["borderline"] += 1
+            if len(borderline) < 10:
+                borderline.append(record)
+        else:
+            counts["correctly_rejected"] += 1
+
+    return {
+        "counts": counts,
+        "suspiciously_rejected": suspicious,
+        "borderline": borderline,
+    }
+
+
+def _build_after_run_summary(
+    digest_health: dict,
+    source_status: dict,
+    reject_review: dict,
+    writer_report: dict | None,
+    lost_leads: list,
+    section_underflow: list,
+) -> dict[str, object]:
+    """R3: compact post-run dashboard. One block, query-once."""
+    rendered = int(((writer_report or {}).get("quality_counts") or {}).get("rendered_candidates") or 0)
+    return {
+        "useful_items": rendered,
+        "digest_risk_level": digest_health.get("risk_level"),
+        "digest_risk_score": digest_health.get("risk_score"),
+        "broken_sources": source_status["counts"].get("failed", 0) + source_status["counts"].get("empty", 0),
+        "stale_sources": source_status["counts"].get("stale", 0),
+        "suspiciously_rejected": reject_review["counts"].get("suspiciously_rejected", 0),
+        "borderline_rejected": reject_review["counts"].get("borderline", 0),
+        "lost_leads": len(lost_leads or []),
+        "section_underflow": len(section_underflow or []),
+    }
+
+
 def _summarise_change_types(state_dir: Path) -> dict[str, object]:
     """Count change_type buckets from dedupe_memory.json (Q6/Q7).
     Surface counts + a handful of concrete rejected examples so the
@@ -1011,6 +1202,36 @@ def build_release(project_root: Path) -> ReleaseResult:
         prefix = "Severe" if int(sig["severity"]) >= 3 else "Risk"
         warnings.append(f"Digest health [{prefix}] {sig['name']}: {sig['detail']}")
 
+    # R1: per-source status table.
+    source_status = _summarise_source_health(scan_report)
+    if source_status["counts"].get("failed", 0) >= 3:
+        warnings.append(
+            f"Source health: {source_status['counts']['failed']} source(s) failed today — "
+            "check release_report.source_status for the list."
+        )
+
+    # R2: rejected candidate review with borderline / suspicious flags.
+    reject_review = _classify_rejected_candidates(
+        writer_report=writer_report,
+        curator_report=curator_report,
+        candidates_report=candidates_report,
+    )
+    if reject_review["counts"].get("suspiciously_rejected", 0) > 0:
+        warnings.append(
+            f"Rejected review: {reject_review['counts']['suspiciously_rejected']} "
+            "suspiciously rejected candidate(s) — see release_report.reject_review."
+        )
+
+    # R3: after-run summary, single compact dashboard block.
+    after_run_summary = _build_after_run_summary(
+        digest_health=digest_health,
+        source_status=source_status,
+        reject_review=reject_review,
+        writer_report=writer_report,
+        lost_leads=lost_leads,
+        section_underflow=section_underflow,
+    )
+
     ok = not errors
     published_facts_updated = False
     if ok:
@@ -1033,6 +1254,9 @@ def build_release(project_root: Path) -> ReleaseResult:
         "cost_summary": cost_summary,
         "change_type_summary": change_type_summary,
         "digest_health": digest_health,
+        "source_status": source_status,
+        "reject_review": reject_review,
+        "after_run_summary": after_run_summary,
         "prompt_versions": _prompts_snapshot(),
         "prompt_drift": prompt_drift,
         "published_facts_updated": published_facts_updated,

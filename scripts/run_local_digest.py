@@ -316,18 +316,63 @@ def cmd_send_warnings() -> int:
     health = report.get("digest_health") or {}
     health_level = str(health.get("risk_level") or "healthy")
     health_signals = health.get("signals") or []
-    # Trigger the message whenever there's anything worth flagging.
-    if not lost_leads and not section_underflow and health_level == "healthy":
-        print("No lost leads, no section underflow, digest healthy. Nothing to alert on.")
+    summary = report.get("after_run_summary") or {}
+    source_status = report.get("source_status") or {}
+    reject_review = report.get("reject_review") or {}
+    suspicious_rejects = reject_review.get("suspiciously_rejected") or []
+    src_counts = source_status.get("counts") or {}
+    failed_sources = [
+        s for s in (source_status.get("sources") or []) if s.get("status") == "failed"
+    ]
+
+    # Trigger when there is anything worth surfacing.
+    has_signal = (
+        bool(lost_leads)
+        or bool(section_underflow)
+        or health_level != "healthy"
+        or bool(suspicious_rejects)
+        or src_counts.get("failed", 0) >= 3
+    )
+    if not has_signal:
+        print("Healthy run with no signals. Nothing to alert on.")
         return 0
 
     run_date = report.get("run_date_london") or ""
     icon = {"healthy": "⚠️", "at_risk": "🟡", "unhealthy": "🔴"}.get(health_level, "⚠️")
     lines: list[str] = [f"{icon} Внутренний контроль — {run_date}".strip()]
+
+    # R3: one-glance summary up top.
+    if summary:
+        lines.append("")
+        lines.append(
+            f"Items: {summary.get('useful_items', '?')}  •  "
+            f"Risk: {summary.get('digest_risk_level','?')}  •  "
+            f"Broken sources: {summary.get('broken_sources', 0)}  •  "
+            f"Suspicious rejects: {summary.get('suspiciously_rejected', 0)}"
+        )
+
     if health_level != "healthy" and health_signals:
         lines.append(f"\nDigest health: {health_level} (score {health.get('risk_score', 0)})")
         for sig in health_signals:
             lines.append(f"• {sig.get('name')}: {str(sig.get('detail') or '')[:160]}")
+
+    if failed_sources:
+        lines.append(f"\nFailed sources ({len(failed_sources)}):")
+        for s in failed_sources[:8]:
+            lines.append(f"• {s.get('name')} ({s.get('category')}): {str(s.get('detail') or '')[:120]}")
+        if len(failed_sources) > 8:
+            lines.append(f"…и ещё {len(failed_sources) - 8}.")
+
+    if suspicious_rejects:
+        lines.append(f"\nSuspicious rejects ({len(suspicious_rejects)}):")
+        for r in suspicious_rejects[:5]:
+            title = str(r.get("title") or "(no title)")[:90]
+            stage = r.get("stage", "?")
+            if r.get("stage") == "writer":
+                detail = "; ".join(str(x) for x in (r.get("reasons") or []))[:120]
+            else:
+                detail = (r.get("why_flagged") or r.get("reason") or "")[:120]
+            lines.append(f"• [{stage}] {title} — {detail}")
     if lost_leads:
         lines.append(f"\nLost leads ({len(lost_leads)}):")
         for ll in lost_leads[:5]:
