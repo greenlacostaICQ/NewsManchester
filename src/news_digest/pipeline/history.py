@@ -17,6 +17,7 @@ def ensure_history_files(state_dir: Path) -> dict[str, Path]:
     last_sent_path = state_dir / "last_sent_digest.html"
     published_facts_path = state_dir / "published_facts.json"
     dedupe_memory_path = state_dir / "dedupe_memory.json"
+    daily_index_path = state_dir / "daily_index.jsonl"
 
     if not last_sent_path.exists():
         last_sent_path.write_text("", encoding="utf-8")
@@ -24,11 +25,14 @@ def ensure_history_files(state_dir: Path) -> dict[str, Path]:
         write_json(published_facts_path, {"last_updated_london": None, "facts": []})
     if not dedupe_memory_path.exists():
         write_json(dedupe_memory_path, {"last_updated_london": None, "decisions": []})
+    if not daily_index_path.exists():
+        daily_index_path.write_text("", encoding="utf-8")
 
     return {
         "last_sent_digest": last_sent_path,
         "published_facts": published_facts_path,
         "dedupe_memory": dedupe_memory_path,
+        "daily_index": daily_index_path,
     }
 
 

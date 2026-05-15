@@ -74,7 +74,7 @@ chmod +x \
 # --- State files: sync published_facts + dedupe_memory workspace → runtime.
 # These are the cross-day dedup history. Without sync, runtime and workspace
 # diverge and items get re-published or wrongly deduped.
-for state_file in published_facts.json dedupe_memory.json; do
+for state_file in published_facts.json dedupe_memory.json daily_index.jsonl; do
   if [[ -f "$PROJECT_ROOT/data/state/$state_file" ]]; then
     copy_required \
       "$PROJECT_ROOT/data/state/$state_file" \
@@ -113,5 +113,11 @@ assert_runtime_match \
 assert_runtime_match \
   "$PROJECT_ROOT/data/state/dedupe_memory.json" \
   "$RUNTIME_ROOT/data/state/dedupe_memory.json"
+
+if [[ -f "$PROJECT_ROOT/data/state/daily_index.jsonl" ]]; then
+  assert_runtime_match \
+    "$PROJECT_ROOT/data/state/daily_index.jsonl" \
+    "$RUNTIME_ROOT/data/state/daily_index.jsonl"
+fi
 
 echo "Synced runtime bundle to $RUNTIME_ROOT"

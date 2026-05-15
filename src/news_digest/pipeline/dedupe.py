@@ -14,6 +14,11 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.daily_index import (
+    append_daily_index,
+    apply_daily_index_comparison,
+    load_recent_daily_index,
+)
 from news_digest.pipeline.history import ensure_history_files
 from news_digest.pipeline.reject_reasons import add_reject_reason, ensure_reject_reasons, reject_reason_counts, reject_reasons
 
@@ -75,6 +80,8 @@ def dedupe_candidates(project_root: Path) -> StageResult:
     published_titles = [
         item for item in published if isinstance(item, dict) and item.get("normalized_title")
     ]
+    daily_index_entries = load_recent_daily_index(state_dir)
+    daily_index_comparison = apply_daily_index_comparison(candidates, daily_index_entries)
 
     errors: list[str] = []
     decisions: list[dict] = []
@@ -105,10 +112,12 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         if previous is not None and (operational_repeat_ok or same_day_repeat_ok):
             candidate["dedupe_decision"] = "new"
             candidate["include"] = True
+            candidate["change_type"] = "reminder"
             candidate["reason"] = candidate.get("reason") or "Operational block repeat is allowed while it remains relevant."
         elif calendar_carry_ok:
             candidate["dedupe_decision"] = "carry_over_with_label"
             candidate["include"] = True
+            candidate["change_type"] = "reminder"
             candidate["carry_over_label"] = candidate.get("carry_over_label") or "актуально к дате"
             candidate["reason"] = (
                 candidate.get("reason")
@@ -119,18 +128,25 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             if decision not in {"carry_over_with_label", "new_phase"}:
                 candidate["dedupe_decision"] = "drop"
                 candidate["include"] = False
+                candidate["change_type"] = "no_change"
                 candidate["reason"] = candidate.get("reason") or "Repeat without new phase."
                 add_reject_reason(candidate, "no_change")
             elif decision == "carry_over_with_label" and not candidate.get("carry_over_label"):
                 candidate["dedupe_decision"] = "drop"
                 candidate["include"] = False
+                candidate["change_type"] = "no_change"
                 candidate["reason"] = "Carry-over without carry_over_label."
                 add_reject_reason(candidate, "no_change")
+            elif decision == "new_phase":
+                candidate["change_type"] = "same_story_new_facts"
         elif decision not in {"drop", "new", "new_phase", "carry_over_with_label"}:
             candidate["dedupe_decision"] = "drop"
             candidate["include"] = False
+            candidate["change_type"] = candidate.get("change_type") or "new_story"
             candidate["reason"] = "Invalid dedupe decision."
             add_reject_reason(candidate, "weak_value")
+        elif decision == "new_phase":
+            candidate["change_type"] = "same_story_new_facts"
 
         if not candidate.get("reason"):
             errors.append(f"Candidate #{index} is missing reason.")
@@ -143,6 +159,10 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 "reason": candidate.get("reason"),
                 "reject_reasons": reject_reasons(candidate),
                 "matched_previous_fingerprint": candidate.get("matched_previous_fingerprint"),
+                "matched_daily_index_fingerprint": candidate.get("matched_daily_index_fingerprint"),
+                "matched_daily_index_date": candidate.get("matched_daily_index_date"),
+                "change_type": candidate.get("change_type"),
+                "daily_index_matches": candidate.get("daily_index_matches", [])[:3],
                 "carry_over_label": candidate.get("carry_over_label"),
                 "similar_previous": similar_previous,
             }
@@ -163,6 +183,10 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         decision["reason"] = final_candidate.get("reason")
         decision["reject_reasons"] = reject_reasons(final_candidate)
         decision["include"] = bool(final_candidate.get("include"))
+        decision["change_type"] = final_candidate.get("change_type")
+        decision["daily_index_matches"] = final_candidate.get("daily_index_matches", [])[:3]
+
+    daily_index_append = append_daily_index(state_dir, candidates, pipeline_run_id=pipeline_run_id)
 
     payload["run_at_london"] = now_london().isoformat()
     payload["run_date_london"] = today_london()
@@ -181,6 +205,8 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             "decisions": decisions,
             "intra_batch_dedup_drops": intra_batch_drops,
             "reject_reason_counts": reject_reason_counts(candidates),
+            "daily_index_comparison": daily_index_comparison,
+            "daily_index_append": daily_index_append,
         },
     )
 
