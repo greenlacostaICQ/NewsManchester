@@ -36,6 +36,7 @@ from news_digest.pipeline.editorial_quality import (
     rubric_summary,
 )
 from news_digest.pipeline.event_quality import event_quality_errors
+from news_digest.pipeline.place_names import preserve_place_names
 from news_digest.pipeline.reject_reasons import classify_reject_reason_text, reject_reason_counts
 
 
@@ -704,6 +705,7 @@ def write_digest(project_root: Path) -> StageResult:
                 line = f"<b>{sentences[0]}</b> {sentences[1]}"
             else:
                 line = f"<b>{line}</b>"
+            line = preserve_place_names(line)
             line = _attach_source_anchor(line, source_url, source_label)
             sections.setdefault("Главная история дня", []).insert(0, line)
             section_sources.setdefault("Главная история дня", []).insert(0, source_label)
@@ -711,6 +713,7 @@ def write_digest(project_root: Path) -> StageResult:
         else:
             if not line.startswith("• "):
                 line = f"• {line}"
+            line = preserve_place_names(line)
             line = _attach_source_anchor(line, source_url, source_label)
             sections[section_name].append(line)
             section_sources[section_name].append(source_label)

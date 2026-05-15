@@ -804,6 +804,10 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     "Eventbrite Manchester Markets": _SourcePolicy(
         path_all_must_contain=("/e/", "tickets-"),
     ),
+    "Manchester's Finest Events": _SourcePolicy(
+        path_must_start="/events/",
+        block_non_gm_weekend=True,
+    ),
     "Manchester Markets": _SourcePolicy(
         min_path_depth=2,
         path_must_contain=("/market", "/event", "/whats-on"),
@@ -839,7 +843,6 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     "Visit Manchester": _SourcePolicy(
         block_evergreen=True,
         block_non_gm_weekend=True,
-        require_date_signal=True,
     ),
 }
 

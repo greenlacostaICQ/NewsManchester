@@ -6,7 +6,6 @@ from pathlib import Path
 import re
 from urllib import parse
 
-from news_digest.pipeline.collector.filters import _has_weekend_date_signal
 from news_digest.pipeline.common import clean_url, now_london, pipeline_run_id_from, read_json, today_london, write_json
 from news_digest.pipeline.editorial_quality import (
     evaluate_editorial_rubric,
@@ -152,7 +151,12 @@ def _has_future_or_concrete_date(candidate: dict) -> bool:
 
 def _has_computable_market_schedule(candidate: dict) -> bool:
     lowered = _candidate_blob(candidate).lower()
-    return "market" in lowered and bool(re.search(r"\b(?:third|3rd)\s+(?:saturday|sunday)\b", lowered))
+    return "market" in lowered and bool(
+        re.search(
+            r"\b(?:every|first|1st|second|2nd|third|3rd|last)\s+(?:saturday|sunday|weekend|month)\b",
+            lowered,
+        )
+    )
 
 
 def _exclude_undated_event_like_candidate(candidate: dict) -> bool:
@@ -239,13 +243,6 @@ def validate_candidates(project_root: Path) -> StageResult:
             candidate["include"] = False
             candidate["reason"] = str(candidate.get("reason") or "").rstrip() + " | Validator: topic/index URL, not a standalone item."
             add_reject_reason(candidate, "invalid_url")
-        if candidate.get("include") and candidate.get("primary_block") == "weekend_activities":
-            title = str(candidate.get("title") or "")
-            path = parse.urlsplit(url).path
-            if not _has_weekend_date_signal(title, path):
-                candidate["include"] = False
-                candidate["reason"] = str(candidate.get("reason") or "").rstrip() + " | Validator: no date signal for weekend block."
-                add_reject_reason(candidate, "no_date")
         if candidate.get("include"):
             _exclude_stale_ticket_onsale(candidate)
         if candidate.get("include"):

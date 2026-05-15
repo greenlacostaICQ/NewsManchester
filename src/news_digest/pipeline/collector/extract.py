@@ -212,7 +212,7 @@ def _extract_jsonld_description(html_text: str) -> str:
 def _extract_jsonld_title(html_text: str) -> str:
     for node in _extract_jsonld_nodes(html_text):
         for key in ("name", "headline"):
-            title = _clean_title_text(str(node.get(key) or ""))
+            title = _strip_page_title_suffix(_clean_title_text(str(node.get(key) or "")))
             if len(title) >= 8:
                 return title
     return ""
@@ -227,6 +227,13 @@ def _extract_jsonld_start_date(html_text: str) -> str | None:
     return None
 
 
+def _strip_page_title_suffix(title: str) -> str:
+    cleaned = str(title or "").strip()
+    cleaned = re.sub(r"\s*[|–-]\s*Albert Hall Manchester\s*$", "", cleaned, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(r"\s*[|–-]\s*(?:Home|Spinningfields|The Makers Market)\s*$", "", cleaned, flags=re.IGNORECASE).strip()
+    return cleaned
+
+
 def _extract_page_title(html_text: str) -> str:
     patterns = (
         r'<meta\b[^>]*?(?:property|name)\s*=\s*["\']og:title["\'][^>]*?content\s*=\s*["\']([^"\']+)["\']',
@@ -237,8 +244,7 @@ def _extract_page_title(html_text: str) -> str:
         match = re.search(pattern, html_text, flags=re.IGNORECASE | re.DOTALL)
         if not match:
             continue
-        title = _clean_title_text(match.group(1))
-        title = re.sub(r"\s*[|–-]\s*Albert Hall Manchester\s*$", "", title, flags=re.IGNORECASE).strip()
+        title = _strip_page_title_suffix(_clean_title_text(unescape(match.group(1))))
         if len(title) >= 8:
             return title
     return ""
@@ -271,6 +277,81 @@ def _extract_paragraph_evidence(html_text: str, title: str = "") -> str:
     return " ".join(paragraphs)
 
 
+def _clean_long_text(value: str) -> str:
+    text = re.sub(r"<[^>]+>", " ", str(value or ""))
+    text = unescape(text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text.strip(" |-—·•:.,")
+
+
+def _html_to_visible_text(html_text: str) -> str:
+    text = re.sub(r"<(?:script|style|noscript|svg)\b.*?</(?:script|style|noscript|svg)>", " ", html_text, flags=re.IGNORECASE | re.DOTALL)
+    text = re.sub(r"<br\s*/?>", " ", text, flags=re.IGNORECASE)
+    text = re.sub(r"</(?:p|div|li|h[1-6]|tr|section|article|main)>", ". ", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", " ", text)
+    return _clean_long_text(text)
+
+
+def _extract_h1_title(html_text: str) -> str:
+    match = re.search(r"<h1\b[^>]*>(.*?)</h1>", html_text, flags=re.IGNORECASE | re.DOTALL)
+    if not match:
+        return ""
+    return _strip_page_title_suffix(_clean_title_text(_clean_snippet(match.group(1))))
+
+
+def _extract_text_date_hint(text: str) -> str | None:
+    patterns = (
+        r"\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*\s+(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+),?\s+(20\d{2})\b",
+        r"\b(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+),?\s+(20\d{2})\b",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if not match:
+            continue
+        day, month, year = match.groups()
+        parsed = _parse_datetime_value_flexible(f"{int(day)} {month} {year}")
+        if parsed:
+            return parsed
+    return None
+
+
+def _extract_html_page_event(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Treat a source URL as a single event/market page.
+
+    Several market sites either have JS-rendered listings or no useful listing
+    page at all, while their canonical event page has the exact details we need.
+    This parser turns that page into one candidate and keeps visible page text as
+    evidence so later gates can see date/place/free/booking details.
+    """
+
+    title = _extract_jsonld_title(body) or _extract_page_title(body) or _extract_h1_title(body)
+    title = _strip_page_title_suffix(_clean_title_text(title))
+    if not title or not _looks_like_candidate_title(title):
+        return []
+    visible_text = _html_to_visible_text(body)
+    paragraph_evidence = _extract_paragraph_evidence(body, title)
+    enriched_summary = _extract_jsonld_description(body) or _extract_meta_description(body)
+    evidence = _clean_long_text(" ".join(part for part in (enriched_summary, paragraph_evidence, visible_text) if part))
+    summary = _summary_from_evidence(evidence) or enriched_summary or _default_summary(source, title)
+    published_at = (
+        _extract_jsonld_start_date(body)
+        or _extract_article_published_at(body)
+        or _extract_text_date_hint(evidence)
+        or _published_at_from_title_or_url(title, source.url)
+    )
+    return [
+        ExtractedItem(
+            title=title,
+            url=source.url,
+            published_at=published_at,
+            summary=summary,
+            lead=_derive_lead(source, title, summary),
+            evidence_text=evidence[:6000],
+            enrichment_status="ok_page_event",
+        )
+    ]
+
+
 def _summary_from_evidence(evidence: str) -> str:
     cleaned = _clean_snippet(evidence)
     if not cleaned:
@@ -298,6 +379,8 @@ def _extract_article_published_at(html_text: str) -> str | None:
 
 
 def _should_enrich_source(source: SourceDef) -> bool:
+    if source.source_type == "html_page_event":
+        return False
     if source.report_category == "transport":
         return False
     if source.source_type == "json_ticketmaster":
@@ -629,6 +712,42 @@ def _extract_eventbrite_markets(source: SourceDef, body: str) -> list[ExtractedI
 
     items: list[ExtractedItem] = []
     seen: set[str] = set()
+    marker = '"upcomingEvents":'
+    marker_index = body.find(marker)
+    if marker_index != -1:
+        array_start = body.find("[", marker_index)
+        if array_start != -1:
+            try:
+                events, _ = json.JSONDecoder().raw_decode(body[array_start:])
+            except json.JSONDecodeError:
+                events = []
+            if isinstance(events, list):
+                for event in events:
+                    if not isinstance(event, dict):
+                        continue
+                    url = str(event.get("url") or "").strip()
+                    title = _clean_title_text(str(event.get("name") or ""))
+                    if not url or url in seen or not title:
+                        continue
+                    slug = parse.urlsplit(url).path.lower()
+                    venue = event.get("primary_venue") or {}
+                    venue_name = str(venue.get("name") or "").strip() if isinstance(venue, dict) else ""
+                    address = venue.get("address") or {} if isinstance(venue, dict) else {}
+                    city = str(address.get("city") or "").strip() if isinstance(address, dict) else ""
+                    haystack = f"{title} {slug} {venue_name} {city}".lower()
+                    if not any(kw in haystack for kw in _EVENTBRITE_MARKET_KEYWORDS):
+                        continue
+                    if not any(loc in haystack for loc in _EVENTBRITE_GM_LOCATION_TOKENS):
+                        continue
+                    seen.add(url)
+                    start_date = str(event.get("start_date") or "").strip()
+                    start_time = str(event.get("start_time") or "").strip()
+                    published_at = _parse_datetime_value_flexible(start_date) if start_date else None
+                    summary = _clean_event_card_field(" | ".join(part for part in (city, venue_name, start_date, start_time, "tickets") if part))
+                    if _looks_like_candidate_title(title):
+                        items.append(ExtractedItem(title=title, url=url, published_at=published_at, summary=summary))
+                if items:
+                    return items
     for match in _EVENTBRITE_EVENT_LINK_PATTERN.finditer(body):
         url = match.group(1)
         slug = match.group(2)
@@ -656,6 +775,27 @@ def _extract_eventbrite_markets(source: SourceDef, body: str) -> list[ExtractedI
             )
         )
     return items
+
+
+def _extract_visit_manchester_events(source: SourceDef, body: str) -> list[ExtractedItem]:
+    items = _extract_slug_link_items(
+        source.url,
+        body,
+        r"^/whats-on/[^/]+",
+    )
+    return [
+        item
+        for item in items
+        if parse.urlsplit(item.url).path.rstrip("/").lower() != "/whats-on"
+    ]
+
+
+def _extract_phm_events(source: SourceDef, body: str) -> list[ExtractedItem]:
+    return _extract_slug_link_items(
+        source.url,
+        body,
+        r"^/(?:whats-on|events_new)/[^/]+",
+    )
 
 
 def _extract_eventbrite_events(source: SourceDef, body: str) -> list[ExtractedItem]:
@@ -995,6 +1135,12 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_kontramarka_items(body)
     elif source.source_type == "html_eventfirst":
         links = _extract_eventfirst_items(body)
+    elif source.source_type == "html_page_event":
+        links = _extract_html_page_event(source, body)
+    elif source.source_type == "html_visitmanchester_events":
+        links = _extract_visit_manchester_events(source, body)
+    elif source.source_type == "html_phm_events":
+        links = _extract_phm_events(source, body)
     elif "<rss" in body[:500].lower() or "<feed" in body[:500].lower():
         links = _extract_feed_items(source.url, body)
     else:
@@ -1012,7 +1158,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
     candidates: list[dict] = []
     for item in links:
         normalized_url = clean_url(item.url)
-        if not _is_allowed_source_link(source, normalized_url, item.title, item.summary):
+        same_source_page = source.source_type == "html_page_event" and normalized_url == clean_url(source.url)
+        if not same_source_page and not _is_allowed_source_link(source, normalized_url, item.title, item.summary):
             continue
         if normalized_url in seen:
             continue
