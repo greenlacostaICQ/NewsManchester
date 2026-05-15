@@ -571,13 +571,15 @@ def _evaluate_digest_health(
 ) -> dict[str, object]:
     """Q9: aggregate quality signals into a single health verdict.
 
-    severity 3 = fatal, blocks release (treated as error elsewhere)
-    severity 2 = strong risk, contributes to "at_risk"
-    severity 1 = soft risk, contributes only at scale
+    severity 3 = severe regression (e.g. all news sections thin, fewer
+                 than 15 items rendered) — surfaces as 🔴 unhealthy
+    severity 2 = clear risk (no weather, undated events) — at_risk
+    severity 1 = soft risk (transport empty, few items 15-25)
 
-    Levels: healthy / at_risk / unhealthy (any severity-3 fires).
-    Designed so a slow news day stays healthy — we look at filter
-    behaviour and section-level emptiness, not raw counts in isolation.
+    Observational only: the verdict never blocks release. The operator's
+    rule is "ship and flag" — a flagged digest is more useful than no
+    digest. The Telegram admin alert escalates the icon to 🔴 when
+    unhealthy so the day stands out at a glance.
     """
     signals: list[dict[str, object]] = []
     qc = (writer_report or {}).get("quality_counts") or {}
@@ -989,9 +991,12 @@ def build_release(project_root: Path) -> ReleaseResult:
     )
 
     # Q9: Bad Digest Detector. Compute health verdict from writer + curator
-    # signals plus a date-marker scan over event sections. severity-3
-    # signals are escalated into errors so a catastrophically thin digest
-    # never ships; severity-1/2 contribute to "at_risk" warnings only.
+    # signals plus a date-marker scan over event sections. The detector is
+    # observational only — even a severity-3 (unhealthy) verdict goes out
+    # as warnings, never errors, because operator preference is "ship and
+    # flag" rather than "block and notify". The 🔴 icon in the Telegram
+    # admin message + risk_level=unhealthy in release_report still make
+    # the day stand out.
     if draft_path.exists():
         try:
             health_sections = extract_sections(draft_path.read_text(encoding="utf-8"))
@@ -1001,12 +1006,8 @@ def build_release(project_root: Path) -> ReleaseResult:
         health_sections = {}
     digest_health = _evaluate_digest_health(writer_report, curator_report, health_sections)
     for sig in digest_health["signals"]:
-        prefix = "BLOCK" if int(sig["severity"]) >= 3 else "Risk"
-        line = f"Digest health [{prefix}] {sig['name']}: {sig['detail']}"
-        if int(sig["severity"]) >= 3:
-            errors.append(line)
-        else:
-            warnings.append(line)
+        prefix = "Severe" if int(sig["severity"]) >= 3 else "Risk"
+        warnings.append(f"Digest health [{prefix}] {sig['name']}: {sig['detail']}")
 
     ok = not errors
     published_facts_updated = False
