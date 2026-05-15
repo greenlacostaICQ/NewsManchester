@@ -718,6 +718,9 @@ def _summarise_change_types(state_dir: Path) -> dict[str, object]:
                     "change_type": ct,
                     "title": d.get("title"),
                     "reason": d.get("reason"),
+                    "previous_fingerprint": d.get("previous_fingerprint") or d.get("matched_previous_fingerprint"),
+                    "previous_published_day": d.get("previous_published_day"),
+                    "previous_title": d.get("previous_title"),
                 }
             )
     return {"counts": counts, "auto_rejected_examples": auto_rejected_examples}

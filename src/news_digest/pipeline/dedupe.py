@@ -127,22 +127,31 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             candidate["include"] = False
             candidate["reason"] = "Invalid dedupe decision."
 
-        # Q6: classify what kind of change this candidate represents
-        # relative to history. Q7: for hard-repeat types, rewrite reason
-        # with a concrete previous date + title so the audit trail makes
-        # "почему отбили" trivially answerable.
+        # Q6: classify what kind of change this candidate represents.
         change_type = _classify_change_type(candidate, previous, similar_previous)
         candidate["change_type"] = change_type
+
+        # Q7: pull "previous fact" out into structured fields whenever
+        # there's any prior match (exact fingerprint or title-similar),
+        # not just for hard-rejects. Makes "почему отбили / на что
+        # ссылается" queryable from JSON without parsing the reason
+        # sentence.
+        prev_ref = previous or (
+            published_by_fp.get(str(similar_previous[0].get("fingerprint") or ""))
+            if similar_previous else None
+        )
+        prev_fp = str(prev_ref.get("fingerprint") or "").strip() if prev_ref else ""
+        prev_date = (
+            str(prev_ref.get("first_published_day_london") or "").strip()
+            if prev_ref else ""
+        )
+        prev_title = str(prev_ref.get("title") or "").strip() if prev_ref else ""
+        if prev_ref:
+            candidate["previous_fingerprint"] = prev_fp
+            candidate["previous_published_day"] = prev_date
+            candidate["previous_title"] = prev_title
+
         if change_type in {"no_change", "same_story_rehash"}:
-            prev_ref = previous or (
-                published_by_fp.get(str(similar_previous[0].get("fingerprint") or ""))
-                if similar_previous else None
-            )
-            prev_date = (
-                str(prev_ref.get("first_published_day_london") or "").strip()
-                if prev_ref else ""
-            )
-            prev_title = str(prev_ref.get("title") or "").strip() if prev_ref else ""
             human_prefix = (
                 "Без новых фактов: уже был"
                 if change_type == "no_change"
@@ -170,6 +179,9 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 "change_type": change_type,
                 "reason": candidate.get("reason"),
                 "matched_previous_fingerprint": candidate.get("matched_previous_fingerprint"),
+                "previous_fingerprint": prev_fp,
+                "previous_published_day": prev_date,
+                "previous_title": prev_title,
                 "carry_over_label": candidate.get("carry_over_label"),
                 "similar_previous": similar_previous,
             }
