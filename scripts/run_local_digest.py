@@ -339,54 +339,87 @@ def cmd_send_warnings() -> int:
 
     run_date = report.get("run_date_london") or ""
     icon = {"healthy": "⚠️", "at_risk": "🟡", "unhealthy": "🔴"}.get(health_level, "⚠️")
+    level_ru = {
+        "healthy": "норма",
+        "at_risk": "под риском",
+        "unhealthy": "плохой выпуск",
+    }.get(health_level, health_level)
     lines: list[str] = [f"{icon} Внутренний контроль — {run_date}".strip()]
 
-    # R3: one-glance summary up top.
+    # Сводка одной строкой — что важно знать за 2 секунды.
     if summary:
         lines.append("")
         lines.append(
-            f"Items: {summary.get('useful_items', '?')}  •  "
-            f"Risk: {summary.get('digest_risk_level','?')}  •  "
-            f"Broken sources: {summary.get('broken_sources', 0)}  •  "
-            f"Suspicious rejects: {summary.get('suspiciously_rejected', 0)}"
+            f"Пунктов в выпуске: {summary.get('useful_items', '?')}  •  "
+            f"Качество: {level_ru}  •  "
+            f"Сломанные источники: {summary.get('broken_sources', 0)}  •  "
+            f"Подозрительных отказов: {summary.get('suspiciously_rejected', 0)}"
         )
 
     if health_level != "healthy" and health_signals:
-        lines.append(f"\nDigest health: {health_level} (score {health.get('risk_score', 0)})")
+        lines.append(
+            f"\nКачество выпуска: {level_ru} (балл {health.get('risk_score', 0)})"
+            "\nЧто это значит: автодетектор увидел несколько слабых мест в дайджесте; "
+            "выпуск всё равно ушёл, но стоит глянуть сигналы ниже."
+        )
         for sig in health_signals:
             lines.append(f"• {sig.get('name')}: {str(sig.get('detail') or '')[:160]}")
 
     if failed_sources:
-        lines.append(f"\nFailed sources ({len(failed_sources)}):")
+        lines.append(
+            f"\nИсточники с ошибкой ({len(failed_sources)}):"
+            "\nЧто это значит: эти URL не отдали данные сегодняшнему прогону. "
+            "Если повторяется каждый день — нужно искать замену или удалять."
+        )
         for s in failed_sources[:8]:
-            lines.append(f"• {s.get('name')} ({s.get('category')}): {str(s.get('detail') or '')[:120]}")
+            lines.append(
+                f"• {s.get('name')} (раздел {s.get('category')}): "
+                f"{str(s.get('detail') or '')[:120]}"
+            )
         if len(failed_sources) > 8:
             lines.append(f"…и ещё {len(failed_sources) - 8}.")
 
     if suspicious_rejects:
-        lines.append(f"\nSuspicious rejects ({len(suspicious_rejects)}):")
+        lines.append(
+            f"\nПодозрительные отказы ({len(suspicious_rejects)}):"
+            "\nЧто это значит: кандидат отбит писателем или куратором, "
+            "но похоже, что зря — типичный кейс: LLM написал «£150млн», "
+            "а проверка ищет «£150m» в evidence и не находит. Это не плохая "
+            "новость, это баг сверки формата."
+        )
         for r in suspicious_rejects[:5]:
-            title = str(r.get("title") or "(no title)")[:90]
-            stage = r.get("stage", "?")
+            title = str(r.get("title") or "(без заголовка)")[:90]
+            stage = "писатель" if r.get("stage") == "writer" else "куратор"
             if r.get("stage") == "writer":
                 detail = "; ".join(str(x) for x in (r.get("reasons") or []))[:120]
             else:
                 detail = (r.get("why_flagged") or r.get("reason") or "")[:120]
             lines.append(f"• [{stage}] {title} — {detail}")
+
     if lost_leads:
-        lines.append(f"\nLost leads ({len(lost_leads)}):")
+        lines.append(
+            f"\nПотерянные лиды ({len(lost_leads)}):"
+            "\nЧто это значит: куратор пометил новость как главную, "
+            "но писатель её выкинул на проверке качества. Лид должен был стать заметным "
+            "пунктом дня, а в итоге его в выпуске нет."
+        )
         for ll in lost_leads[:5]:
-            title = str(ll.get("title") or "").strip() or "(no title)"
-            reasons = "; ".join(str(r) for r in (ll.get("reasons") or [])) or "no reason"
+            title = str(ll.get("title") or "").strip() or "(без заголовка)"
+            reasons = "; ".join(str(r) for r in (ll.get("reasons") or [])) or "причина не записана"
             lines.append(f"• {title[:90]} — {reasons[:140]}")
         if len(lost_leads) > 5:
             lines.append(f"…и ещё {len(lost_leads) - 5}.")
+
     if section_underflow:
-        lines.append(f"\nSection underflow ({len(section_underflow)}):")
+        lines.append(
+            f"\nТонкие секции ({len(section_underflow)}):"
+            "\nЧто это значит: писатель отбил кандидатов, нацеленных в эту секцию, "
+            "и в итоге она вышла ниже минимума. Гейты качества возможно слишком жёсткие."
+        )
         for su in section_underflow:
             lines.append(
                 f"• «{su.get('section')}» {su.get('actual')}/{su.get('minimum')} "
-                f"(writer дропнул {su.get('dropped_by_writer')})"
+                f"(писатель дропнул {su.get('dropped_by_writer')})"
             )
     text = "\n".join(lines).strip()
 
