@@ -47,6 +47,36 @@ class EditorialQualityTest(unittest.TestCase):
         self.assertIn("not_pr", flags[0]["red_flags"])
         self.assertIn("not_evergreen", flags[0]["red_flags"])
 
+    def test_non_gm_candidate_has_local_red_flag(self) -> None:
+        candidate = {
+            "include": True,
+            "title": "Cheshire venue announces new programme",
+            "summary": "A Cheshire venue announces a programme.",
+            "lead": "",
+            "practical_angle": "",
+            "evidence_text": "Cheshire venue announces a programme.",
+            "source_url": "https://example.com/cheshire",
+            "primary_block": "city_watch",
+            "category": "media_layer",
+        }
+        rubric = evaluate_editorial_rubric(candidate)
+        self.assertFalse(rubric["local"])
+
+    def test_undated_event_has_specific_or_actionable_red_flag(self) -> None:
+        candidate = {
+            "include": True,
+            "title": "Manchester concert coming soon",
+            "summary": "A Manchester concert is coming soon with no date or ticket time.",
+            "lead": "",
+            "practical_angle": "",
+            "evidence_text": "A Manchester concert is coming soon with no date or ticket time.",
+            "source_url": "https://example.com/manchester-concert",
+            "primary_block": "next_7_days",
+            "category": "culture_weekly",
+        }
+        rubric = evaluate_editorial_rubric(candidate)
+        self.assertTrue(not rubric["specific"] or not rubric["actionable"])
+
     def test_summary_counts_included_red_flags(self) -> None:
         candidates = [
             {

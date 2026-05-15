@@ -8,6 +8,7 @@ import shutil
 
 from news_digest.pipeline.common import (
     LOW_SIGNAL_BLOCKS,
+    PRIMARY_BLOCKS,
     REQUIRED_BLOCKS,
     REQUIRED_SCAN_CATEGORIES,
     extract_sections,
@@ -295,6 +296,98 @@ def _writer_reject_reason_counts(writer_report: dict | None) -> dict[str, int]:
             if str(reason).strip():
                 counter[str(reason).strip()] += 1
     return dict(sorted(counter.items()))
+
+
+def _operator_warnings(
+    *,
+    candidates_report: dict | None,
+    writer_report: dict | None,
+    draft_path: Path,
+    rendered_fingerprints: set[str],
+) -> list[dict[str, object]]:
+    candidates = candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []
+    writer_drops = writer_report.get("dropped_candidates", []) if isinstance(writer_report, dict) else []
+    warnings: list[dict[str, object]] = []
+
+    lost_leads = [
+        candidate
+        for candidate in candidates
+        if isinstance(candidate, dict)
+        and candidate.get("is_lead")
+        and str(candidate.get("fingerprint") or "").strip() not in rendered_fingerprints
+    ]
+    if lost_leads:
+        warnings.append(
+            {
+                "type": "lost_leads",
+                "count": len(lost_leads),
+                "titles": [str(candidate.get("title") or "")[:120] for candidate in lost_leads[:3]],
+            }
+        )
+
+    sections = {}
+    if draft_path.exists():
+        sections = extract_sections(draft_path.read_text(encoding="utf-8"))
+    dropped_sections: set[str] = set()
+    for item in writer_drops:
+        if not isinstance(item, dict):
+            continue
+        block = str(item.get("primary_block") or "")
+        section = PRIMARY_BLOCKS.get(block)
+        if section:
+            dropped_sections.add(section)
+    min_items_by_section = {
+        "Что важно сегодня": 3,
+        "Что произошло за 24 часа": 3,
+        "Общественный транспорт сегодня": 1,
+    }
+    for section, minimum in min_items_by_section.items():
+        if section not in dropped_sections:
+            continue
+        visible = len([line for line in sections.get(section, []) if str(line).strip() and str(line).strip() != "•"])
+        if visible < minimum:
+            warnings.append(
+                {
+                    "type": "section_underflow",
+                    "section": section,
+                    "visible": visible,
+                    "minimum": minimum,
+                }
+            )
+
+    reject_counts = {}
+    if isinstance(candidates_report, dict):
+        reject_counts.update(reject_reason_counts(candidates))
+    writer_rejects = _writer_reject_reason_counts(writer_report)
+    for key, value in writer_rejects.items():
+        reject_counts[key] = int(reject_counts.get(key, 0)) + int(value)
+    noisy_rejects = {
+        key: count
+        for key, count in reject_counts.items()
+        if key in {"pr", "source_thin", "no_date", "weak_value", "english_prose"}
+        and int(count) >= 5
+    }
+    if noisy_rejects:
+        warnings.append({"type": "reject_spike", "counts": dict(sorted(noisy_rejects.items()))})
+
+    low_score_candidates = [
+        candidate
+        for candidate in candidates
+        if isinstance(candidate, dict)
+        and candidate.get("include")
+        and int(candidate.get("reader_value_score") or 0) <= 40
+    ]
+    if len(low_score_candidates) >= 3:
+        warnings.append(
+            {
+                "type": "low_reader_value",
+                "count": len(low_score_candidates),
+                "threshold": 40,
+                "titles": [str(candidate.get("title") or "")[:120] for candidate in low_score_candidates[:3]],
+            }
+        )
+
+    return warnings
 
 
 def _validate_curator_report(
@@ -609,6 +702,12 @@ def build_release(project_root: Path) -> ReleaseResult:
         current_day_london=current_day_london,
         errors=errors,
     )
+    operator_warnings = _operator_warnings(
+        candidates_report=candidates_report,
+        writer_report=writer_report,
+        draft_path=draft_path,
+        rendered_fingerprints=rendered_fingerprints,
+    )
 
     ok = not errors
     published_facts_updated = False
@@ -630,8 +729,11 @@ def build_release(project_root: Path) -> ReleaseResult:
         "reject_reason_counts": reject_reason_counts(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
         "writer_reject_reason_counts": _writer_reject_reason_counts(writer_report),
         "editorial_rubric_summary": rubric_summary(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
+        "quality_rubric_summary": rubric_summary(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
         "included_rubric_red_flags": included_rubric_red_flags(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
         "reader_value_report": reader_value_report(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
+        "reader_value_summary": reader_value_report(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
+        "operator_warnings": operator_warnings,
         "published_facts_updated": published_facts_updated,
         "inputs": {
             "collector_report": str((state_dir / "collector_report.json").resolve()),

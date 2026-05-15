@@ -4,6 +4,7 @@ import argparse
 from datetime import datetime
 import json
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -250,6 +251,76 @@ def _rendered_candidates_for_delivery() -> list[dict]:
             file=sys.stderr,
         )
     return rendered_candidates
+
+
+def _format_operator_warning_message(report: dict) -> str:
+    operator_warnings = report.get("operator_warnings", [])
+    if not isinstance(operator_warnings, list) or not operator_warnings:
+        return ""
+
+    parts: list[str] = []
+    reject_counts: dict[str, int] = {}
+    for warning in operator_warnings:
+        if not isinstance(warning, dict):
+            continue
+        warning_type = str(warning.get("type") or "")
+        if warning_type == "lost_leads":
+            count = int(warning.get("count") or 0)
+            if count:
+                parts.append(f"lost_leads={count}")
+        elif warning_type == "section_underflow":
+            section = str(warning.get("section") or "section")
+            visible = int(warning.get("visible") or 0)
+            minimum = int(warning.get("minimum") or 0)
+            parts.append(f"underflow={section} ({visible}/{minimum})")
+        elif warning_type == "reject_spike":
+            counts = warning.get("counts", {})
+            if isinstance(counts, dict):
+                for key, value in counts.items():
+                    try:
+                        reject_counts[str(key)] = int(value)
+                    except (TypeError, ValueError):
+                        continue
+        elif warning_type == "low_reader_value":
+            count = int(warning.get("count") or 0)
+            threshold = int(warning.get("threshold") or 0)
+            if count:
+                parts.append(f"low_score={count}≤{threshold}")
+
+    if reject_counts:
+        reject_text = ", ".join(f"{key}={value}" for key, value in sorted(reject_counts.items()))
+        parts.append(f"rejects: {reject_text}")
+    if not parts:
+        return ""
+    run_date = str(report.get("run_date_london") or "").strip()
+    prefix = f"⚠️ Контроль {run_date}:" if run_date else "⚠️ Контроль:"
+    return prefix + " " + "; ".join(parts)
+
+
+def cmd_send_warnings(dry_run: bool = False) -> int:
+    state_dir = PROJECT_ROOT / "data" / "state"
+    report = read_json(state_dir / "release_report.json", {})
+    message = _format_operator_warning_message(report)
+    if not message:
+        print(json.dumps({"sent": False, "reason": "no_operator_warnings"}, ensure_ascii=False, indent=2))
+        return 0
+    if dry_run:
+        print(message)
+        return 0
+    if os.environ.get("WARNINGS_TO_TELEGRAM") != "1":
+        print(json.dumps({"sent": False, "reason": "WARNINGS_TO_TELEGRAM is not 1", "message": message}, ensure_ascii=False, indent=2))
+        return 0
+
+    settings, client, store = _load_store_and_client()
+    targets = _effective_targets(settings.telegram_target, store.list_subscribers())
+    if not targets:
+        raise RuntimeError(
+            "Нет ни одного получателя. Укажите TELEGRAM_TARGET или подпишите хотя бы один чат через /subscribe."
+        )
+    for target in targets:
+        client.send_text_in_chunks(target, message, parse_mode=None)
+    print(json.dumps({"sent": True, "targets": targets, "message": message}, ensure_ascii=False, indent=2))
+    return 0
 
 
 def cmd_send_file(file_path: str, parse_mode: str | None, force: bool) -> int:
@@ -611,6 +682,15 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Send even if a digest was already delivered today.",
     )
+    send_warnings_parser = subparsers.add_parser(
+        "send-warnings",
+        help="Send internal operator warnings from release_report.json to Telegram when enabled.",
+    )
+    send_warnings_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print the warning message without sending to Telegram.",
+    )
     return parser
 
 
@@ -658,6 +738,8 @@ def main() -> int:
         return cmd_send_demo()
     if args.command == "send-file":
         return cmd_send_file(args.file_path, args.parse_mode, args.force)
+    if args.command == "send-warnings":
+        return cmd_send_warnings(args.dry_run)
 
     parser.error(f"Unknown command: {args.command}")
     return 2
