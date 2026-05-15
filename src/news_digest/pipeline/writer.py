@@ -260,26 +260,79 @@ def _is_expired_event_candidate(candidate: dict, line: str = "") -> bool:
     return not _future_date_signal(text)
 
 
+# Canonical money normaliser: maps £150m, £150 million, £150млн,
+# £150 миллионов, £150мн all to (150.0, "m"). Used by the hallucination
+# check so the writer doesn't reject its own LLM lines that translate
+# "£230m" to "£230млн" — the previous string comparison flagged those
+# as missing from evidence and silently lost real leads (Wigan £230m,
+# Metrolink £150m, council £11.8m, …).
+_MONEY_TOKEN_RE = re.compile(
+    r"£\s*(\d[\d.,]*)\s*"
+    r"(k|m|bn|млн|млрд|тыс|миллионов?|миллиардов?|тысяч)?",
+    re.IGNORECASE,
+)
+_UNIT_MAP = {
+    "":         "",
+    "k":        "k",
+    "тыс":      "k",
+    "тысяч":    "k",
+    "m":        "m",
+    "млн":      "m",
+    "миллион":  "m",
+    "миллионов":"m",
+    "bn":       "bn",
+    "млрд":     "bn",
+    "миллиард": "bn",
+    "миллиардов":"bn",
+}
+
+
+def _normalize_money(amount_str: str, unit_str: str) -> tuple[float, str] | None:
+    """Return (amount, canonical_unit) or None if the token doesn't parse.
+    Handles £230m / £230млн / £230 million / £230 миллионов as the same
+    canonical (230.0, 'm')."""
+    s = amount_str.replace(",", ".").replace(" ", "")
+    try:
+        amount = float(s)
+    except ValueError:
+        return None
+    unit_key = (unit_str or "").lower().strip()
+    canonical = _UNIT_MAP.get(unit_key, "")
+    return (amount, canonical)
+
+
+def _extract_money(text: str) -> set[tuple[float, str]]:
+    """Pull every £-amount out of `text` as a set of canonical tuples."""
+    found: set[tuple[float, str]] = set()
+    for m in _MONEY_TOKEN_RE.finditer(text or ""):
+        norm = _normalize_money(m.group(1), m.group(2) or "")
+        if norm is not None:
+            found.add(norm)
+    return found
+
+
 def _hallucination_flags(candidate: dict, line: str) -> list[str]:
-    """Flag £-sums and named-entity-looking numbers in line that don't appear
-    in the upstream evidence/title/summary/lead. Prevents the model from
-    inventing pound amounts or numeric facts when the long-format prompt asks
-    for a second sentence and there's nothing concrete to draw on."""
+    """Flag £-sums in `line` that don't appear in upstream
+    evidence/title/summary/lead. Normalised comparison via _extract_money
+    so £230m ↔ £230млн match."""
     evidence_blob = " ".join(
         str(candidate.get(field) or "")
         for field in ("title", "summary", "lead", "evidence_text")
-    ).lower()
+    )
     flags: list[str] = []
-    line_lower = line.lower()
-    # £-amount pattern: £3, £3.2m, £400k, £1.1bn, £500
-    money_pattern = re.compile(r"£\s*\d[\d.,]*\s*(?:k|m|bn|млн|млрд|тыс)?", re.IGNORECASE)
-    for match in money_pattern.findall(line_lower):
-        token = match.replace(" ", "")
-        # Normalize: drop trailing punctuation/RU suffixes to compare loose
-        bare = re.sub(r"[^\d.,£kmbnмлрд]", "", token)
-        if bare and bare not in evidence_blob.replace(" ", ""):
-            flags.append(f"Pound amount {token!r} not present in evidence_text.")
-            break
+    line_amounts = _extract_money(line)
+    if not line_amounts:
+        return flags
+    evidence_amounts = _extract_money(evidence_blob)
+    for amount, unit in line_amounts:
+        if (amount, unit) in evidence_amounts:
+            continue
+        # Try fuzzy match: same amount, any unit (e.g. evidence had
+        # "£26.5 million" without the m suffix or vice versa).
+        if any(abs(amount - ea) < 0.01 for ea, _ in evidence_amounts):
+            continue
+        flags.append(f"Pound amount £{amount:g}{unit} not present in evidence_text.")
+        break
     return flags
 
 

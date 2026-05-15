@@ -74,17 +74,13 @@ max_candidates = 10
 
 # ── GMP / Public safety ────────────────────────────────────────────────────────
 
-[[sources]]
-name = "GMP"
-report_category = "gmp"
-candidate_category = "gmp"
-url = "https://www.gmp.police.uk/news/greater-manchester/news/GetNewsRss/"
-primary_block = "last_24h"
-source_type = "rss"
-fallback_urls = [
-  "https://www.gmp.police.uk/news/greater-manchester/news/",
-  "https://www.gmp.police.uk/news/greater-manchester/news/?newsCategory=News",
-]
+# NOTE: GMP RSS / news page was permanently disabled 2026-05-15.
+# gmp.police.uk is Cloudflare-fronted with strict IP reputation rules
+# that block every GitHub Actions runner range, regardless of TLS
+# fingerprint impersonation. Locally the feed returns 200, on runner
+# always 403. BBC Manchester + The Manc cover police news adequately.
+# DO NOT re-add this entry without confirmed access from the actual
+# runner — see memory/project_runner_waf.md.
 
 [[sources]]
 name = "BBC Manchester public safety fallback"
@@ -146,8 +142,9 @@ allowed_hosts = ["manchester.gov.uk"]
 name = "Salford Council"
 report_category = "media_layer"
 candidate_category = "council"
-url = "https://news.salford.gov.uk/news/"
+url = "https://www.salford.gov.uk/news/"
 primary_block = "last_24h"
+allowed_hosts = ["salford.gov.uk"]
 
 [[sources]]
 name = "Trafford Council"
@@ -192,13 +189,12 @@ primary_block = "last_24h"
 source_type = "rss"
 allowed_hosts = ["bolton.gov.uk"]
 
-[[sources]]
-name = "Tameside Council"
-report_category = "media_layer"
-candidate_category = "council"
-url = "https://www.tameside.gov.uk/newsroom"
-primary_block = "last_24h"
-allowed_hosts = ["tameside.gov.uk"]
+# NOTE: Tameside Council was permanently disabled 2026-05-15.
+# tameside.gov.uk's network routing rejects connections from GitHub
+# runner IP ranges at the TCP level — even with 30s timeout the
+# curl_cffi connect never completes. Locally fine, on runner always
+# (28) Connection timed out. No alternative URL found.
+# DO NOT re-add without confirmed access from the actual runner.
 
 [[sources]]
 name = "Bury Council"
@@ -730,13 +726,10 @@ url = "https://www.manchester.gov.uk/events"
 primary_block = "weekend_activities"
 allowed_hosts = ["manchester.gov.uk"]
 
-[[sources]]
-name = "Salford Events"
-report_category = "culture_weekly"
-candidate_category = "culture_weekly"
-url = "https://www.salford.gov.uk/events/"
-primary_block = "weekend_activities"
-allowed_hosts = ["salford.gov.uk"]
+# NOTE: Salford Events was permanently disabled 2026-05-15.
+# Same Cloudflare IP-reputation block as Salford Council news. The
+# event listings are already covered indirectly by VisitSalford and
+# Visit Manchester. DO NOT re-add without confirmed runner access.
 
 [[sources]]
 name = "Stockport Events"
