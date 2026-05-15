@@ -175,6 +175,19 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             }
         )
 
+    # LLM borderline review: heuristic _classify_change_type can't tell
+    # "£230m requested" from "£230m granted". For candidates labelled
+    # no_change/same_story_rehash that DO carry substantive evidence_text,
+    # ask the LLM to either upgrade the verdict (same_story_new_facts /
+    # follow_up → un-drop) or confirm rehash. See _review_borderline_with_llm.
+    llm_reviews = _review_borderline_with_llm(candidates, published_by_fp)
+    for decision in decisions:
+        rev = llm_reviews.get(str(decision.get("fingerprint") or ""))
+        if rev:
+            decision["change_type"] = rev["change_type"]
+            decision["reason"] = rev["reason"]
+            decision["llm_reviewed"] = True
+
     intra_batch_drops = _apply_intra_batch_dedup(candidates)
     final_candidates_by_fp = {
         str(candidate.get("fingerprint") or ""): candidate
@@ -501,6 +514,198 @@ def _classify_change_type(
 
     # Title-similar to something we already shipped, no follow-up signal.
     return "same_story_rehash"
+
+
+# LLM borderline review — Q6/Q7 nuance pass.
+# Heuristic _classify_change_type can't tell apart "£230m requested"
+# vs "£230m granted" or "Burnham hints at Westminster return" vs
+# "Burnham officially announces Westminster bid". For those cases we
+# pull a small batch into a dedicated LLM check and upgrade the
+# verdict if evidence_text shows real news. Same provider cascade as
+# curator (DeepSeek primary → OpenAI → Groq Llama).
+
+_DEDUPE_REVIEW_PROMPT = """Ты редактор городского дайджеста. Получаешь пары: «новый кандидат» и «прошлая публикация» по той же истории.
+
+Решение для каждой пары — одно из трёх:
+- new_facts: в evidence_text есть конкретная НОВАЯ деталь, которой не было в прошлом заголовке (новая сумма £, новое имя, новая дата, вступило в силу, открыли, объявили о закрытии, поймали, обвинили).
+- follow_up: явная следующая фаза события (вердикт после ареста, годовщина, итог расследования, запуск после анонса).
+- rehash: тот же сюжет, просто новый URL/перепечатка/другая редакция, без новых конкретных фактов.
+
+Возвращай ТОЛЬКО JSON-массив:
+[{"fingerprint":"...","change_type":"new_facts|follow_up|rehash","reason":"кратко по-русски, ≤120 символов, со ссылкой на конкретный новый факт"}]
+Никакого markdown."""
+
+_BORDERLINE_MIN_EVIDENCE_CHARS = 200
+_BORDERLINE_BATCH_SIZE = 10
+
+
+def _borderline_pairs(
+    candidates: list[dict],
+    published_by_fp: dict[str, dict],
+) -> list[tuple[dict, dict]]:
+    """Pick candidates classified as no_change/same_story_rehash that
+    still have enough evidence_text to be worth a second look."""
+    pairs: list[tuple[dict, dict]] = []
+    for c in candidates:
+        if not isinstance(c, dict):
+            continue
+        if str(c.get("change_type") or "") not in {"no_change", "same_story_rehash"}:
+            continue
+        evidence = str(c.get("evidence_text") or "")
+        if len(evidence) < _BORDERLINE_MIN_EVIDENCE_CHARS:
+            continue
+        # Find a previous reference: exact fingerprint or first similar.
+        prev = published_by_fp.get(str(c.get("fingerprint") or ""))
+        if not prev:
+            # We may have matched via title similarity earlier; the
+            # similar_previous list is in dedupe_memory's decision but
+            # not on the candidate — fall back to scanning all published
+            # by normalized title overlap once more.
+            continue
+        pairs.append((c, prev))
+    return pairs
+
+
+def _call_dedupe_review_llm(
+    pairs: list[tuple[dict, dict]],
+    api_key: str,
+    base_url: str,
+    model: str,
+) -> list[dict]:
+    if not pairs or not api_key:
+        return []
+    try:
+        from openai import OpenAI  # noqa: PLC0415
+    except ImportError:  # pragma: no cover
+        return []
+    client = OpenAI(api_key=api_key, base_url=base_url, timeout=45, max_retries=0)
+    results: list[dict] = []
+    for i in range(0, len(pairs), _BORDERLINE_BATCH_SIZE):
+        batch = pairs[i: i + _BORDERLINE_BATCH_SIZE]
+        user = [
+            {
+                "fingerprint": c.get("fingerprint", ""),
+                "candidate_title": c.get("title", ""),
+                "candidate_evidence": (c.get("evidence_text") or "")[:800],
+                "candidate_lead": (c.get("lead") or "")[:300],
+                "previous_title": prev.get("title", ""),
+                "previous_published_day": prev.get("first_published_day_london", ""),
+            }
+            for c, prev in batch
+        ]
+        try:
+            import json as _json  # noqa: PLC0415
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": _DEDUPE_REVIEW_PROMPT},
+                    {"role": "user", "content": _json.dumps(user, ensure_ascii=False)},
+                ],
+                temperature=0.1,
+                max_tokens=1500,
+            )
+            from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
+            from news_digest.pipeline.curator import _provider_label  # noqa: PLC0415
+            record_call_from_response(
+                response=response,
+                stage="dedupe_review",
+                provider=_provider_label(model),
+                model=model,
+                prompt_name="dedupe_review",
+            )
+            raw = response.choices[0].message.content.strip()
+            if raw.startswith("```"):
+                raw = raw.split("```", 2)[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+                raw = raw.rsplit("```", 1)[0]
+            results.extend(_json.loads(raw.strip()) or [])
+        except Exception as exc:  # noqa: BLE001
+            import logging  # noqa: PLC0415
+            logging.getLogger(__name__).warning("Dedupe LLM review failed: %s", exc)
+            return []
+    return results
+
+
+def _review_borderline_with_llm(
+    candidates: list[dict],
+    published_by_fp: dict[str, dict],
+) -> dict[str, dict]:
+    """Run LLM review on borderline rehash/no_change candidates. Returns
+    {fingerprint: {change_type, reason}} only for candidates the LLM
+    upgraded or explicitly confirmed. Failures are silent — the existing
+    heuristic decision stays in place.
+    """
+    import os  # noqa: PLC0415
+    import logging  # noqa: PLC0415
+    logger = logging.getLogger(__name__)
+    provider_override = os.environ.get("LLM_PROVIDER", "").lower().strip()
+    if provider_override == "none":
+        return {}
+    pairs = _borderline_pairs(candidates, published_by_fp)
+    if not pairs:
+        return {}
+    logger.info("Dedupe LLM review: %d borderline candidate(s).", len(pairs))
+
+    # Same provider cascade as curator: DeepSeek → OpenAI → Groq.
+    from news_digest.pipeline.curator import (  # noqa: PLC0415
+        DEEPSEEK_BASE_URL, DEEPSEEK_MODEL,
+        OPENAI_BASE_URL, OPENAI_MODEL,
+        GROQ_BASE_URL, GROQ_MODEL,
+    )
+    chains = [
+        (os.environ.get("DEEPSEEK_API_KEY", ""), DEEPSEEK_BASE_URL, DEEPSEEK_MODEL),
+        (os.environ.get("OPENAI_API_KEY", ""),   OPENAI_BASE_URL,   OPENAI_MODEL),
+        (os.environ.get("GROQ_API_KEY", ""),     GROQ_BASE_URL,     GROQ_MODEL),
+    ]
+    decisions: list[dict] = []
+    for api_key, base_url, model in chains:
+        if not api_key:
+            continue
+        decisions = _call_dedupe_review_llm(pairs, api_key, base_url, model)
+        if decisions:
+            break
+    if not decisions:
+        logger.info("Dedupe LLM review: all providers failed — keeping heuristic verdicts.")
+        return {}
+
+    # Apply decisions: upgrade to same_story_new_facts / follow_up only
+    # if LLM explicitly says so AND the candidate was previously dropped.
+    upgrades: dict[str, dict] = {}
+    upgrade_map = {"new_facts": "same_story_new_facts", "follow_up": "follow_up"}
+    cands_by_fp = {str(c.get("fingerprint") or ""): c for c in candidates if isinstance(c, dict)}
+    for d in decisions:
+        if not isinstance(d, dict):
+            continue
+        fp = str(d.get("fingerprint") or "").strip()
+        ct_raw = str(d.get("change_type") or "").strip().lower()
+        reason = str(d.get("reason") or "").strip()
+        if not fp or ct_raw not in {"new_facts", "follow_up", "rehash"}:
+            continue
+        c = cands_by_fp.get(fp)
+        if not c:
+            continue
+        upgraded_ct = upgrade_map.get(ct_raw)
+        if upgraded_ct:
+            c["change_type"] = upgraded_ct
+            c["include"] = True
+            c["dedupe_decision"] = "new_phase"
+            c["reason"] = f"LLM-review: {reason}" if reason else "LLM-review: upgraded from heuristic verdict."
+            upgrades[fp] = {"change_type": upgraded_ct, "reason": c["reason"]}
+        elif ct_raw == "rehash" and reason:
+            # Strengthen the reason field with the LLM's specific call —
+            # heuristic reason already cites date+title, this adds the
+            # LLM's "почему не апгрейд" rationale.
+            existing = c.get("reason") or ""
+            c["reason"] = f"{existing} LLM-review: {reason}".strip()
+            upgrades[fp] = {"change_type": c.get("change_type") or "same_story_rehash", "reason": c["reason"]}
+    logger.info(
+        "Dedupe LLM review: upgraded %d, confirmed-rehash %d, total reviewed %d.",
+        sum(1 for v in upgrades.values() if v["change_type"] != "same_story_rehash"),
+        sum(1 for v in upgrades.values() if v["change_type"] == "same_story_rehash"),
+        len(pairs),
+    )
+    return upgrades
 
 
 def _title_tokens(title: str) -> frozenset[str]:

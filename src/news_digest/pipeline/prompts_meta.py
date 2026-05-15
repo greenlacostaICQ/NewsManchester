@@ -15,6 +15,7 @@ from hashlib import sha256
 
 from news_digest.pipeline import llm_rewrite as _lr
 from news_digest.pipeline import curator as _cur
+from news_digest.pipeline import dedupe as _dd
 
 
 def _h(text: str) -> str:
@@ -41,6 +42,7 @@ PROMPTS: tuple[PromptMeta, ...] = (
     PromptMeta(name="football",        version="v2", hash=_h(_lr.PROMPT_FOOTBALL)),
     PromptMeta(name="fix_translate",   version="v1", hash=_h(_lr.FIX_TRANSLATE_SYSTEM)),
     PromptMeta(name="repair_draft",    version="v1", hash=_h(_lr.REPAIR_DRAFT_SYSTEM)),
+    PromptMeta(name="dedupe_review",   version="v1", hash=_h(_dd._DEDUPE_REVIEW_PROMPT)),
 )
 
 
