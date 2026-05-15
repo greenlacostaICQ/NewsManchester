@@ -538,6 +538,152 @@ def _validate_draft(
             )
 
 
+# Sections that announce things-to-attend. A bullet here without a date
+# marker is almost always an unhelpful "concert sometime" line. We tolerate
+# up to ~half before flagging.
+_EVENT_SECTIONS_FOR_DATE_CHECK = frozenset({
+    "Что важно в ближайшие 7 дней",
+    "Билеты / Ticket Radar",
+    "Выходные в GM",
+    "Крупные концерты вне GM",
+    "Дальние анонсы",
+    "Русскоязычные концерты и стендап UK",
+})
+
+# Date markers: Russian/ASCII numeric dates, Russian month names, weekday
+# accusative forms ("в субботу"), "сегодня"/"завтра"/"послезавтра", or a
+# year. Anchored on word boundaries via the surrounding regex.
+_DATE_MARKER_RE = re.compile(
+    r"\b\d{1,2}\s*(?:января|февраля|марта|апреля|мая|июня|июля|"
+    r"августа|сентября|октября|ноября|декабря)\b"
+    r"|\b\d{1,2}[/.\-]\d{1,2}\b"
+    r"|\bв\s+(?:понедельник|вторник|среду|четверг|пятницу|субботу|воскресенье)\b"
+    r"|\b(?:сегодня|завтра|послезавтра)\b"
+    r"|\b20\d{2}\b",
+    re.IGNORECASE,
+)
+
+
+def _evaluate_digest_health(
+    writer_report: dict | None,
+    curator_report: dict | None,
+    sections: dict[str, list[str]],
+) -> dict[str, object]:
+    """Q9: aggregate quality signals into a single health verdict.
+
+    severity 3 = fatal, blocks release (treated as error elsewhere)
+    severity 2 = strong risk, contributes to "at_risk"
+    severity 1 = soft risk, contributes only at scale
+
+    Levels: healthy / at_risk / unhealthy (any severity-3 fires).
+    Designed so a slow news day stays healthy — we look at filter
+    behaviour and section-level emptiness, not raw counts in isolation.
+    """
+    signals: list[dict[str, object]] = []
+    qc = (writer_report or {}).get("quality_counts") or {}
+    sc = (writer_report or {}).get("section_counts") or {}
+    rendered = int(qc.get("rendered_candidates") or 0)
+    included = int(qc.get("included_candidates") or 0)
+
+    if rendered < 15:
+        signals.append({
+            "name": "too_few_items",
+            "severity": 3,
+            "detail": f"Only {rendered} item(s) rendered — below the 15-item floor.",
+        })
+    elif rendered < 25:
+        signals.append({
+            "name": "few_items",
+            "severity": 1,
+            "detail": f"Only {rendered} item(s) rendered (typical day 30–50).",
+        })
+
+    if sc.get("Погода", 0) == 0:
+        signals.append({
+            "name": "weather_empty",
+            "severity": 2,
+            "detail": "Weather section empty — Met Office collector likely down.",
+        })
+
+    if sc.get("Общественный транспорт сегодня", 0) == 0:
+        signals.append({
+            "name": "transport_empty",
+            "severity": 1,
+            "detail": "Transport section empty — no TfGM/Metrolink alerts surfaced.",
+        })
+
+    n_24h = int(sc.get("Что произошло за 24 часа", 0) or 0)
+    n_today = int(sc.get("Что важно сегодня", 0) or 0)
+    n_radar = int(sc.get("Городской радар", 0) or 0)
+    if n_24h < 5 and n_today < 3 and n_radar < 5:
+        signals.append({
+            "name": "all_news_thin",
+            "severity": 3,
+            "detail": (
+                f"All news sections thin: 24h={n_24h}, today={n_today}, "
+                f"radar={n_radar} — possible coverage breakdown."
+            ),
+        })
+
+    no_date = 0
+    total_events = 0
+    for sec in _EVENT_SECTIONS_FOR_DATE_CHECK:
+        for line in sections.get(sec, []):
+            visible = re.sub(r"<[^>]+>", " ", str(line))
+            if not visible.strip() or visible.strip() == "•":
+                continue
+            total_events += 1
+            if not _DATE_MARKER_RE.search(visible):
+                no_date += 1
+    if total_events >= 3 and no_date / total_events > 0.5:
+        signals.append({
+            "name": "events_without_dates",
+            "severity": 2,
+            "detail": (
+                f"{no_date}/{total_events} event item(s) lack a date marker — "
+                "readers can't act on undated event listings."
+            ),
+        })
+
+    if curator_report:
+        semantic_dropped = int(curator_report.get("semantic_dropped") or 0)
+        if semantic_dropped >= 10:
+            signals.append({
+                "name": "high_semantic_duplicates",
+                "severity": 1,
+                "detail": (
+                    f"{semantic_dropped} semantic duplicate(s) dropped by curator — "
+                    "input feeds are unusually noisy today."
+                ),
+            })
+
+    if included >= 20 and rendered < included * 0.4:
+        signals.append({
+            "name": "low_writer_yield",
+            "severity": 2,
+            "detail": (
+                f"Writer rendered {rendered} of {included} included candidates "
+                f"({rendered / included:.0%}) — quality gates may be too strict."
+            ),
+        })
+
+    score = sum(int(s["severity"]) for s in signals)
+    blocked = any(int(s["severity"]) >= 3 for s in signals)
+    if blocked:
+        level = "unhealthy"
+    elif score >= 2:
+        level = "at_risk"
+    else:
+        level = "healthy"
+
+    return {
+        "risk_level": level,
+        "risk_score": score,
+        "blocked": blocked,
+        "signals": signals,
+    }
+
+
 def _summarise_change_types(state_dir: Path) -> dict[str, object]:
     """Count change_type buckets from dedupe_memory.json (Q6/Q7).
     Surface counts + a handful of concrete rejected examples so the
@@ -842,6 +988,26 @@ def build_release(project_root: Path) -> ReleaseResult:
         errors=errors,
     )
 
+    # Q9: Bad Digest Detector. Compute health verdict from writer + curator
+    # signals plus a date-marker scan over event sections. severity-3
+    # signals are escalated into errors so a catastrophically thin digest
+    # never ships; severity-1/2 contribute to "at_risk" warnings only.
+    if draft_path.exists():
+        try:
+            health_sections = extract_sections(draft_path.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            health_sections = {}
+    else:
+        health_sections = {}
+    digest_health = _evaluate_digest_health(writer_report, curator_report, health_sections)
+    for sig in digest_health["signals"]:
+        prefix = "BLOCK" if int(sig["severity"]) >= 3 else "Risk"
+        line = f"Digest health [{prefix}] {sig['name']}: {sig['detail']}"
+        if int(sig["severity"]) >= 3:
+            errors.append(line)
+        else:
+            warnings.append(line)
+
     ok = not errors
     published_facts_updated = False
     if ok:
@@ -863,6 +1029,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "section_underflow": section_underflow,
         "cost_summary": cost_summary,
         "change_type_summary": change_type_summary,
+        "digest_health": digest_health,
         "prompt_versions": _prompts_snapshot(),
         "prompt_drift": prompt_drift,
         "published_facts_updated": published_facts_updated,

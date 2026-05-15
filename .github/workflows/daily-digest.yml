@@ -76,6 +76,10 @@ jobs:
           python3 scripts/run_local_digest.py send-file data/outgoing/current_digest.html --parse-mode HTML $FORCE_FLAG
 
       - name: Send internal warnings to Telegram (if any)
+        # Always run so a blocked digest (release_decision=fail with
+        # unhealthy health) still notifies the chat. Script no-ops when
+        # release_report.json is missing.
+        if: always()
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}

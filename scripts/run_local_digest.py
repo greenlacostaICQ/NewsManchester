@@ -313,12 +313,21 @@ def cmd_send_warnings() -> int:
 
     lost_leads = report.get("lost_leads") or []
     section_underflow = report.get("section_underflow") or []
-    if not lost_leads and not section_underflow:
-        print("No lost leads, no section underflow. Nothing to alert on.")
+    health = report.get("digest_health") or {}
+    health_level = str(health.get("risk_level") or "healthy")
+    health_signals = health.get("signals") or []
+    # Trigger the message whenever there's anything worth flagging.
+    if not lost_leads and not section_underflow and health_level == "healthy":
+        print("No lost leads, no section underflow, digest healthy. Nothing to alert on.")
         return 0
 
     run_date = report.get("run_date_london") or ""
-    lines: list[str] = [f"⚠️ Внутренний контроль — {run_date}".strip()]
+    icon = {"healthy": "⚠️", "at_risk": "🟡", "unhealthy": "🔴"}.get(health_level, "⚠️")
+    lines: list[str] = [f"{icon} Внутренний контроль — {run_date}".strip()]
+    if health_level != "healthy" and health_signals:
+        lines.append(f"\nDigest health: {health_level} (score {health.get('risk_score', 0)})")
+        for sig in health_signals:
+            lines.append(f"• {sig.get('name')}: {str(sig.get('detail') or '')[:160]}")
     if lost_leads:
         lines.append(f"\nLost leads ({len(lost_leads)}):")
         for ll in lost_leads[:5]:
