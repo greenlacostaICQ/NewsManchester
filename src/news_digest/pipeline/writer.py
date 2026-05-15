@@ -11,7 +11,6 @@ from collections import Counter
 logger = logging.getLogger(__name__)
 
 from news_digest.pipeline.auto_editor import (
-    _culture_fields_missing,
     _line_language_problem,
     _named_line_missing,
     _transport_mode_missing,
@@ -36,6 +35,7 @@ from news_digest.pipeline.editorial_quality import (
     reader_value_report,
     rubric_summary,
 )
+from news_digest.pipeline.event_quality import event_quality_errors
 from news_digest.pipeline.reject_reasons import classify_reject_reason_text, reject_reason_counts
 
 
@@ -508,9 +508,7 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
             break
     if _line_language_problem(text):
         errors.append("draft_line must be Russian prose after rewrite.")
-    culture_issue = _culture_fields_missing(candidate)
-    if culture_issue:
-        errors.append(f"event/culture candidate is under-specified: {culture_issue}.")
+    errors.extend(event_quality_errors(candidate))
     if _transport_mode_missing(candidate):
         errors.append("transport draft_line must state an explicit mode.")
     missing_line = _named_line_missing(candidate)

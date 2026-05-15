@@ -16,6 +16,7 @@ from news_digest.pipeline.common import (
     write_json,
 )
 from news_digest.pipeline.editorial_quality import apply_editorial_quality, included_rubric_red_flags, reader_value_report, rubric_summary
+from news_digest.pipeline.event_quality import event_quality_errors, event_quality_reject_reasons
 from news_digest.pipeline.reject_reasons import add_reject_reason, classify_reject_reason_text, ensure_reject_reasons, reject_reason_counts, reject_reasons
 
 
@@ -592,16 +593,8 @@ def _repair_named_line(candidate: dict) -> bool:
 
 
 def _culture_fields_missing(candidate: dict) -> str:
-    category = str(candidate.get("category") or "")
-    block = str(candidate.get("primary_block") or "")
-    if category not in {"culture_weekly", "venues_tickets", "russian_speaking_events"} and block not in _EVENT_BLOCKS:
-        return ""
-    blob = _candidate_blob(candidate)
-    if not _CULTURE_FACT_PATTERN.search(blob):
-        return "missing concrete date/time/price/address"
-    if not _CULTURE_MEDIUM_PATTERN.search(blob):
-        return "missing event medium"
-    return ""
+    errors = event_quality_errors(candidate)
+    return "; ".join(error.removeprefix("under-specified event: ").rstrip(".") for error in errors)
 
 
 def _transport_mode_missing(candidate: dict) -> bool:
@@ -700,7 +693,7 @@ def _line_is_usable(candidate: dict) -> bool:
             line = generated
     if _line_language_problem(line):
         return False
-    if _culture_fields_missing(candidate):
+    if event_quality_errors(candidate):
         return False
     if _transport_mode_missing(candidate):
         return False
@@ -843,8 +836,8 @@ def auto_edit_digest(project_root: Path) -> StageResult:
             drop_reason = "Auto-editor: stale event/ticket date."
         elif _line_language_problem(str(candidate.get("draft_line") or "")):
             drop_reason = "Auto-editor: draft_line is not Russian prose."
-        elif _culture_fields_missing(candidate):
-            drop_reason = f"Auto-editor: culture/event candidate {_culture_fields_missing(candidate)}."
+        elif event_quality_errors(candidate):
+            drop_reason = "Auto-editor: event quality gate failed: " + "; ".join(event_quality_errors(candidate))
         elif _transport_mode_missing(candidate):
             drop_reason = "Auto-editor: transport line missing explicit mode."
         elif _named_line_missing(candidate):
@@ -857,7 +850,13 @@ def auto_edit_digest(project_root: Path) -> StageResult:
         if drop_reason:
             candidate["include"] = False
             _append_reason(candidate, drop_reason)
-            add_reject_reason(candidate, _auto_editor_reject_code(drop_reason))
+            reject_codes = (
+                event_quality_reject_reasons(candidate)
+                if drop_reason.startswith("Auto-editor: event quality gate failed")
+                else [_auto_editor_reject_code(drop_reason)]
+            )
+            for reject_reason in reject_codes:
+                add_reject_reason(candidate, reject_reason)
             dropped_item = {
                 "fingerprint": candidate.get("fingerprint"),
                 "title": candidate.get("title"),

@@ -58,7 +58,22 @@ def classify_reject_reason_text(text: object) -> str:
         return "no_date"
     if any(token in lowered for token in ("repeat", "carry-over", "new phase", "no_change", "already published", "повтор")):
         return "no_change"
-    if any(token in lowered for token in ("thin", "too fact-thin", "too thin", "source material", "evidence is too thin", "мало фактов")):
+    if any(
+        token in lowered
+        for token in (
+            "thin",
+            "too fact-thin",
+            "too thin",
+            "source material",
+            "evidence is too thin",
+            "under-specified event",
+            "missing venue",
+            "missing district",
+            "missing price",
+            "missing booking",
+            "мало фактов",
+        )
+    ):
         return "source_thin"
     if any(token in lowered for token in ("english", "untranslated", "not russian", "russian prose", "англ")):
         return "english_prose"

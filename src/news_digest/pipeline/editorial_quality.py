@@ -109,6 +109,84 @@ _ACTION_TERMS_EN = (
     "disruption",
     "warning",
 )
+_MORNING_RELEVANCE_BLOCKS = {"weather", "transport", "today_focus"}
+_MORNING_RELEVANCE_TERMS = (
+    "today",
+    "tonight",
+    "this morning",
+    "tomorrow morning",
+    "deadline",
+    "closes today",
+    "last day",
+    "warning",
+    "closure",
+    "closed",
+    "strike",
+    "industrial action",
+    "cancel",
+    "replacement bus",
+    "сегодня",
+    "утром",
+    "дедлайн",
+    "последний день",
+    "предупреждение",
+    "закрыт",
+    "закрытие",
+    "забастов",
+)
+_COMMUTER_SUBJECT_TERMS = (
+    "metrolink",
+    "tram",
+    "trams",
+    "bus",
+    "buses",
+    "rail",
+    "train",
+    "station",
+    "airport",
+    "m60",
+    "m62",
+    "road",
+    "route",
+    "service",
+    "bee network",
+    "трамва",
+    "автобус",
+    "поезд",
+    "станци",
+    "аэропорт",
+    "маршрут",
+)
+_COMMUTER_DISRUPTION_TERMS = (
+    "disruption",
+    "delay",
+    "delays",
+    "cancel",
+    "cancelled",
+    "closed",
+    "closure",
+    "strike",
+    "replacement bus",
+    "works",
+    "suspended",
+    "diverted",
+    "warning",
+    "rain",
+    "snow",
+    "wind",
+    "ice",
+    "fog",
+    "задерж",
+    "отмен",
+    "закрыт",
+    "забастов",
+    "ремонт",
+    "замещающ",
+    "дожд",
+    "снег",
+    "ветер",
+    "туман",
+)
 _PR_TERMS = (
     "award-winning",
     "named best",
@@ -263,6 +341,33 @@ def _impact_score(candidate: dict) -> int:
     return min(score, 20)
 
 
+def _morning_relevance_score(candidate: dict) -> int:
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    blob = _candidate_blob(candidate).lower()
+    score = 0
+    if block in _MORNING_RELEVANCE_BLOCKS or category in {"weather", "transport"}:
+        score += 7
+    if any(term in blob for term in _MORNING_RELEVANCE_TERMS):
+        score += 5
+    if block in _NEAR_TERM_EVENT_BLOCKS and any(term in blob for term in ("today", "tonight", "сегодня")):
+        score += 3
+    return min(score, 12)
+
+
+def _commuter_boost_score(candidate: dict) -> int:
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    blob = _candidate_blob(candidate).lower()
+    subject_match = block == "transport" or category == "transport" or any(term in blob for term in _COMMUTER_SUBJECT_TERMS)
+    disruption_match = any(term in blob for term in _COMMUTER_DISRUPTION_TERMS)
+    if subject_match and disruption_match:
+        return 10
+    if block == "weather" and disruption_match:
+        return 5
+    return 0
+
+
 def reader_value_components(candidate: dict) -> dict[str, int]:
     rubric = candidate.get("editorial_rubric")
     if not isinstance(rubric, dict):
@@ -295,6 +400,8 @@ def reader_value_components(candidate: dict) -> dict[str, int]:
 
     actionability = 15 if rubric.get("actionable") else 0
     impact = _impact_score(candidate)
+    morning_relevance = _morning_relevance_score(candidate)
+    commuter_boost = _commuter_boost_score(candidate)
 
     pr_penalty = 25 if not rubric.get("not_pr") or "pr" in reasons else 0
     repeat_penalty = 20 if reasons.intersection({"duplicate", "no_change"}) else 0
@@ -313,6 +420,8 @@ def reader_value_components(candidate: dict) -> dict[str, int]:
         "urgency": urgency,
         "actionability": actionability,
         "impact": impact,
+        "morning_relevance": morning_relevance,
+        "commuter_boost": commuter_boost,
         "pr_penalty": pr_penalty,
         "repeat_penalty": repeat_penalty,
         "vagueness_penalty": min(vagueness_penalty, 17),
@@ -328,6 +437,8 @@ def reader_value_score(candidate: dict) -> int:
         + components["urgency"]
         + components["actionability"]
         + components["impact"]
+        + components["morning_relevance"]
+        + components["commuter_boost"]
         - components["pr_penalty"]
         - components["repeat_penalty"]
         - components["vagueness_penalty"]

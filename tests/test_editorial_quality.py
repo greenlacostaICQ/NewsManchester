@@ -6,6 +6,7 @@ from news_digest.pipeline.editorial_quality import (
     apply_editorial_quality,
     evaluate_editorial_rubric,
     included_rubric_red_flags,
+    reader_value_components,
     reader_value_report,
     rubric_summary,
 )
@@ -133,6 +134,35 @@ class EditorialQualityTest(unittest.TestCase):
         self.assertIn("novelty", strong["reader_value_components"])
         report = reader_value_report([strong, weak], limit=1)
         self.assertEqual(report["top"][0]["fingerprint"], strong.get("fingerprint"))
+
+    def test_morning_commuter_boost_lifts_disruption(self) -> None:
+        commuter = {
+            "include": True,
+            "fingerprint": "commuter",
+            "title": "Metrolink closure causes morning disruption on Bury line",
+            "summary": "Replacement bus services run today between Bury and Crumpsall.",
+            "practical_angle": "Проверьте маршрут утром.",
+            "evidence_text": "Metrolink closure disruption today replacement bus Bury line Manchester.",
+            "source_url": "https://tfgm.com/travel-updates/bury-line",
+            "primary_block": "transport",
+            "category": "transport",
+        }
+        routine = {
+            "include": True,
+            "fingerprint": "routine",
+            "title": "Manchester council publishes routine update",
+            "summary": "A Greater Manchester council update with local information.",
+            "practical_angle": "Сверьте детали.",
+            "evidence_text": "A Greater Manchester council update with local information.",
+            "source_url": "https://example.com/manchester-update",
+            "primary_block": "city_watch",
+            "category": "council",
+        }
+        apply_editorial_quality([commuter, routine])
+        components = reader_value_components(commuter)
+        self.assertGreater(components["morning_relevance"], 0)
+        self.assertGreater(components["commuter_boost"], 0)
+        self.assertGreater(commuter["reader_value_score"], routine["reader_value_score"])
 
 
 if __name__ == "__main__":

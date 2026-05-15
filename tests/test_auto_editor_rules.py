@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 from news_digest.pipeline.auto_editor import auto_edit_digest, repair_rendered_line
+from news_digest.pipeline.event_quality import event_quality_report
 from news_digest.pipeline.writer import _draft_line_quality_errors
 
 
@@ -122,6 +123,53 @@ class AutoEditorRulesTest(unittest.TestCase):
             "• Культура: Angel's Bone появится в Манчестере. Уточните детали перед поездкой.",
         )
         self.assertTrue(any("under-specified" in error for error in errors))
+
+    def test_event_quality_gate_requires_date_place_location_and_access(self) -> None:
+        complete = {
+            "category": "culture_weekly",
+            "primary_block": "next_7_days",
+            "title": "Concert at AO Arena Manchester on 20 May",
+            "summary": "AO Arena, Manchester | 20 May 2026 19:30 | tickets from £35",
+            "source_url": "https://example.com/tickets",
+            "source_label": "Venue",
+        }
+        thin = {
+            "category": "culture_weekly",
+            "primary_block": "next_7_days",
+            "title": "Concert coming soon",
+            "summary": "A show at a venue.",
+            "source_url": "https://example.com/event",
+            "source_label": "Venue",
+        }
+        self.assertTrue(event_quality_report(complete)["ok"])
+        report = event_quality_report(thin)
+        self.assertFalse(report["ok"])
+        self.assertIn("date", report["missing"])
+        self.assertIn("district", report["missing"])
+        self.assertIn("price_or_free_or_booking", report["missing"])
+
+    def test_auto_editor_drops_event_without_access_signal(self) -> None:
+        [candidate] = _run_auto_editor(
+            [
+                {
+                    "fingerprint": "thin-event",
+                    "title": "Concert at AO Arena Manchester on 20 May",
+                    "summary": "AO Arena, Manchester | 20 May 2026 19:30",
+                    "lead": "",
+                    "evidence_text": "Concert at AO Arena Manchester on 20 May 2026.",
+                    "source_url": "https://example.com/event",
+                    "source_label": "Venue",
+                    "primary_block": "next_7_days",
+                    "category": "culture_weekly",
+                    "include": True,
+                    "dedupe_decision": "new",
+                    "reason": "test",
+                    "draft_line": "• Культура: концерт пройдет 20 мая в AO Arena в Manchester. Уточните детали перед поездкой.",
+                }
+            ]
+        )
+        self.assertFalse(candidate["include"])
+        self.assertIn("source_thin", candidate["reject_reasons"])
 
 
 if __name__ == "__main__":
