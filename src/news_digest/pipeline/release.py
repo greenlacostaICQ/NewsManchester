@@ -670,8 +670,8 @@ def _evaluate_digest_health(
         })
 
     score = sum(int(s["severity"]) for s in signals)
-    blocked = any(int(s["severity"]) >= 3 for s in signals)
-    if blocked:
+    has_severe = any(int(s["severity"]) >= 3 for s in signals)
+    if has_severe:
         level = "unhealthy"
     elif score >= 2:
         level = "at_risk"
@@ -681,7 +681,6 @@ def _evaluate_digest_health(
     return {
         "risk_level": level,
         "risk_score": score,
-        "blocked": blocked,
         "signals": signals,
     }
 
