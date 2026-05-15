@@ -59,6 +59,10 @@ _ANTI_HALLUCINATION = (
     "АНТИ-ВЫМЫСЕЛ: каждое имя, должность, число, сумма £, дата, адрес в твоём тексте ДОЛЖНЫ буквально присутствовать "
     "в title/summary/lead/evidence_text. Нет в evidence — нет в draft_line. Запрещены конструкции «по словам экспертов», "
     "«как ожидается», «вероятно», «по предварительным данным» — если этого нет в evidence.\n\n"
+    "ПРАВИЛО ПУСТОТЫ: если evidence_text короче ~120 символов осмысленного текста, ИЛИ содержит только тизер/анонс без сути "
+    "(«One of Manchester's most iconic…», «Details to follow», paywall-stub, «приобретено северное мероприятие» без названия "
+    "сделки/сумм/имён), ИЛИ ты понимаешь, что для самодостаточного пункта нужно бы что-то домыслить — верни draft_line=\"\". "
+    "Лучше пустая строка, чем туманная карточка вида «Совет призывает сказать нет нелегальному кредитованию» без сути.\n\n"
 )
 
 _LONG_FORMAT_RULES = (
@@ -73,9 +77,12 @@ _LONG_FORMAT_RULES = (
 PROMPT_TRANSPORT = (
     "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line только для сбоев общественного транспорта (Metrolink, bus, rail, coach).\n\n"
     "ФОРМАТ: «• », Telegram HTML, без ссылок, максимум 180 символов, весь текст на русском кроме названий линий/операторов/остановок.\n\n"
-    "ОПЕРАТОР — БЕРИ ИЗ TITLE, НЕ ИЗ SOURCE_LABEL.\n"
+    "ОПЕРАТОР — ВСЕГДА БЕРИ ИЗ ПОЛЯ expected_operator, НЕ ИЗ SOURCE_LABEL.\n"
+    "Если в кандидате есть expected_operator (например «Автобус», «Metrolink», «Northern», «TransPennine Express») — начни строку с него и двоеточия. НИКОГДА не используй «TfGM:» как префикс.\n"
+    "Если поле expected_operator пустое — извлеки оператора из TITLE по тем же правилам:\n"
     "Title вида «TransPennine Express: Disruption between A and B» → оператор = «TransPennine Express», НЕ «National Rail».\n"
-    "Title вида «Ashton/Eccles Lines - Minor Delay» → оператор = «Metrolink».\n\n"
+    "Title вида «Ashton/Eccles Lines - Minor Delay» → оператор = «Metrolink».\n"
+    "Title с «Bus Stop Closure / Road Closure / Roadworks» + summary упоминает «bus services» → оператор = «Автобус».\n\n"
     "ЧЕТЫРЕ ОБЯЗАТЕЛЬНЫХ ЭЛЕМЕНТА в пункте (если есть в evidence):\n"
     "1) Что не работает (задержки/отмены/объезд);\n"
     "2) Между какими станциями или на какой линии;\n"
@@ -86,7 +93,8 @@ PROMPT_TRANSPORT = (
     "Английские слова в финальной строке (кроме названий линий/остановок) — ЗАПРЕЩЕНО.\n\n"
     "«• Metrolink: с 17 мая по 1 июня нет трамваев на линии Bury между Bury Interchange и Crumpsall. Замещающий автобус с теми же остановками.»\n"
     "«• Northern: задержки до 30 мин на маршрутах через Manchester Victoria — сигнальная неисправность.»\n"
-    "«• TransPennine Express: сбой между Selby и Hull — ремонт пути, ориентировочно до 18:00.»\n\n"
+    "«• TransPennine Express: сбой между Selby и Hull — ремонт пути, ориентировочно до 18:00.»\n"
+    "«• Автобус: остановки на Lower Broughton Road, Salford закрыты из-за ремонтных работ — диспетчер советует объезд через ближайшую остановку.»\n\n"
     "Без «проверьте заранее», без «следите за обновлениями»."
     + _PROMPT_FOOTER
 )
@@ -369,6 +377,8 @@ def _call_provider_batch(
                     "published_at": c.get("published_at", ""),
                     "freshness_status": c.get("freshness_status", ""),
                     "borough": c.get("borough", ""),
+                    "expected_operator": c.get("expected_operator", ""),
+                    "transport_mode": c.get("transport_mode", ""),
                     "current_draft_line": c.get("draft_line", ""),
                 }
                 for c in batch

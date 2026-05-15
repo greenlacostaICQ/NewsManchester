@@ -21,6 +21,7 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.toponyms import restore_english_toponyms
 
 
 MODEL_WRITTEN_CATEGORIES = {"media_layer", "gmp", "council", "public_services", "food_openings"}
@@ -475,6 +476,27 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
             break
     errors.extend(_sanity_flags(candidate, text))
     errors.extend(_hallucination_flags(candidate, text))
+    # Thin-evidence + long-draft = LLM padded a teaser into a vague card.
+    # We only check long-format categories (city news / events / business etc.) —
+    # transport / weather are intentionally short. Football already has its own
+    # "return draft_line=\"\"" rule in the prompt.
+    if category in LONG_FORMAT_CATEGORIES and category != "football":
+        evidence = str(candidate.get("evidence_text") or candidate.get("summary") or candidate.get("lead") or "")
+        evidence_meaningful = len(re.sub(r"\s+", " ", evidence).strip())
+        draft_len = len(normalized)
+        # Concrete signals: numbers, £-amount, date, capitalised proper noun pair.
+        has_concrete = bool(
+            re.search(r"\b\d{2,}", text)
+            or re.search(r"£\s*\d", text)
+            or re.search(r"\b(?:января|февраля|марта|апреля|мая|июня|июля|"
+                         r"августа|сентября|октября|ноября|декабря)\b", text, re.IGNORECASE)
+            or re.search(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b", text)
+        )
+        if evidence_meaningful < 150 and draft_len > 220 and not has_concrete:
+            errors.append(
+                f"draft_line padded from thin evidence "
+                f"(evidence={evidence_meaningful}c, draft={draft_len}c, no concrete signal)."
+            )
     return errors
 
 
@@ -634,6 +656,8 @@ def write_digest(project_root: Path) -> StageResult:
         # "Avatar, другой жанр" — the rewrite prompt says "не выдумывай жанр"
         # but gpt-4o-mini still tacks these phrases on. Strip them post-hoc.
         line = re.sub(r",\s*(?:жанр\s+не\s+указан|другой\s+жанр|жанр\s+не\s+определ[её]н|жанр\s+неизвестен)\s*(?=[.!?]|$)", "", line, flags=re.IGNORECASE)
+        # Restore English spellings for GM toponyms (Altrincham, Bury, Wigan, ...).
+        line = restore_english_toponyms(line)
         if candidate.get("is_lead"):
             # Lead story: no bullet, bold first sentence, placed in main_story block
             line = line.lstrip("• ").strip()
