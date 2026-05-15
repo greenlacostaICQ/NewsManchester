@@ -53,6 +53,7 @@ LONG_FORMAT_CATEGORIES = {
 }
 LONG_FORMAT_MIN_CHARS = 150
 LONG_FORMAT_MIN_SENTENCES = 2
+SHORT_TICKET_BLOCKS = {"ticket_radar", "outside_gm_tickets"}
 TODAY_FOCUS_SECTION = "Что важно сегодня"
 TODAY_FOCUS_BACKFILL_SECTIONS = (
     "Общественный транспорт сегодня",
@@ -526,7 +527,8 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     sentence_count = len(re.findall(r"[.!?]", text))
     if category in REQUIRE_DRAFT_LINE_CATEGORIES and sentence_count < 1:
         errors.append("draft_line must contain at least one complete sentence.")
-    if category in LONG_FORMAT_CATEGORIES:
+    block_key = str(candidate.get("primary_block") or "").strip()
+    if category in LONG_FORMAT_CATEGORIES and block_key not in SHORT_TICKET_BLOCKS:
         if len(normalized) < LONG_FORMAT_MIN_CHARS:
             errors.append(
                 f"draft_line for long-format category needs ≥{LONG_FORMAT_MIN_CHARS} chars (got {len(normalized)})."
