@@ -22,6 +22,7 @@ from news_digest.pipeline.common import (
     write_json,
 )
 from news_digest.pipeline.toponyms import restore_english_toponyms
+from news_digest.pipeline.place_names import preserve_place_names
 
 
 MODEL_WRITTEN_CATEGORIES = {"media_layer", "gmp", "council", "public_services", "food_openings"}
@@ -745,6 +746,7 @@ def write_digest(project_root: Path) -> StageResult:
                 line = f"<b>{sentences[0]}</b> {sentences[1]}"
             else:
                 line = f"<b>{line}</b>"
+            line = preserve_place_names(line)
             line = _attach_source_anchor(line, source_url, source_label)
             sections.setdefault("Главная история дня", []).insert(0, line)
             section_sources.setdefault("Главная история дня", []).insert(0, source_label)
@@ -752,6 +754,7 @@ def write_digest(project_root: Path) -> StageResult:
         else:
             if not line.startswith("• "):
                 line = f"• {line}"
+            line = preserve_place_names(line)
             line = _attach_source_anchor(line, source_url, source_label)
             sections[section_name].append(line)
             section_sources[section_name].append(source_label)

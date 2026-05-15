@@ -136,7 +136,12 @@ def _has_future_or_concrete_date(candidate: dict) -> bool:
 
 def _has_computable_market_schedule(candidate: dict) -> bool:
     lowered = _candidate_blob(candidate).lower()
-    return "market" in lowered and bool(re.search(r"\b(?:third|3rd)\s+(?:saturday|sunday)\b", lowered))
+    return "market" in lowered and bool(
+        re.search(
+            r"\b(?:every|first|1st|second|2nd|third|3rd|last)\s+(?:saturday|sunday|weekend|month)\b",
+            lowered,
+        )
+    )
 
 
 def _exclude_undated_event_like_candidate(candidate: dict) -> bool:
