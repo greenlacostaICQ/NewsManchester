@@ -15,7 +15,7 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
-from news_digest.pipeline.editorial_quality import apply_editorial_quality, included_rubric_red_flags, rubric_summary
+from news_digest.pipeline.editorial_quality import apply_editorial_quality, included_rubric_red_flags, reader_value_report, rubric_summary
 from news_digest.pipeline.reject_reasons import add_reject_reason, classify_reject_reason_text, ensure_reject_reasons, reject_reason_counts, reject_reasons
 
 
@@ -892,6 +892,7 @@ def auto_edit_digest(project_root: Path) -> StageResult:
             "reject_reason_counts": reject_reason_counts(candidates),
             "editorial_rubric_summary": rubric_summary(candidates),
             "included_rubric_red_flags": included_rubric_red_flags(candidates),
+            "reader_value_report": reader_value_report(candidates),
             "actions": actions[:120],
         },
     )

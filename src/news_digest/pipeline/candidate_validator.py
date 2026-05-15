@@ -11,6 +11,9 @@ from news_digest.pipeline.common import clean_url, now_london, pipeline_run_id_f
 from news_digest.pipeline.editorial_quality import (
     evaluate_editorial_rubric,
     included_rubric_red_flags,
+    reader_value_components,
+    reader_value_report,
+    reader_value_score,
     rubric_summary,
 )
 from news_digest.pipeline.reject_reasons import (
@@ -257,6 +260,8 @@ def validate_candidates(project_root: Path) -> StageResult:
         candidate["validated"] = not validation_errors
         ensure_reject_reason(candidate)
         candidate["editorial_rubric"] = evaluate_editorial_rubric(candidate)
+        candidate["reader_value_components"] = reader_value_components(candidate)
+        candidate["reader_value_score"] = reader_value_score(candidate)
         items.append(
             {
                 "fingerprint": candidate.get("fingerprint"),
@@ -266,6 +271,8 @@ def validate_candidates(project_root: Path) -> StageResult:
                 "include": bool(candidate.get("include")),
                 "reject_reasons": reject_reasons(candidate),
                 "editorial_rubric": candidate.get("editorial_rubric"),
+                "reader_value_score": candidate.get("reader_value_score"),
+                "reader_value_components": candidate.get("reader_value_components"),
             }
         )
 
@@ -288,6 +295,7 @@ def validate_candidates(project_root: Path) -> StageResult:
             "reject_reason_counts": reject_reason_counts(candidates),
             "editorial_rubric_summary": rubric_summary(candidates),
             "included_rubric_red_flags": included_rubric_red_flags(candidates),
+            "reader_value_report": reader_value_report(candidates),
             "items": items,
         },
     )

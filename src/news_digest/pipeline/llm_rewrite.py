@@ -30,6 +30,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from news_digest.pipeline.common import now_london, pipeline_run_id_from, today_london, write_json
+from news_digest.pipeline.editorial_quality import apply_editorial_quality, reader_value_report, rubric_summary
 
 logger = logging.getLogger(__name__)
 
@@ -590,6 +591,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     if provider_override == "none":
         logger.info("LLM_PROVIDER=none — skipping rewrite.")
         warnings.append("LLM_PROVIDER=none — rewrite stage skipped; writer/release gates will decide publishability.")
+        apply_editorial_quality(candidates)
+        candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         write_json(
             report_path,
             {
@@ -603,6 +606,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "applied": 0,
                 "fixed": 0,
                 "repaired": 0,
+                "editorial_rubric_summary": rubric_summary(candidates),
+                "reader_value_report": reader_value_report(candidates),
             },
         )
         return StageResult(True, "LLM rewrite disabled; continuing with writer/release gates.", report_path)
@@ -722,6 +727,9 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     if weak_after:
         warnings.append(f"{len(weak_after)} draft_line(s) still look weak after repair.")
 
+    apply_editorial_quality(candidates)
+    candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
     write_json(
         report_path,
         {
@@ -735,6 +743,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "applied": applied,
             "fixed": fixed,
             "repaired": repaired,
+            "editorial_rubric_summary": rubric_summary(candidates),
+            "reader_value_report": reader_value_report(candidates),
             "missing_after": [
                 {
                     "fingerprint": c.get("fingerprint"),

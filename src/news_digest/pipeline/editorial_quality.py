@@ -61,6 +61,31 @@ _EVENT_BLOCKS = {
     "future_announcements",
 }
 _OPERATIONAL_BLOCKS = {"weather", "transport", "today_focus", "last_24h"}
+_HIGH_URGENCY_BLOCKS = {"weather", "transport", "today_focus", "last_24h"}
+_NEAR_TERM_EVENT_BLOCKS = {"weekend_activities", "next_7_days", "ticket_radar", "russian_events"}
+_IMPACT_CATEGORIES = {"media_layer", "gmp", "public_services", "city_news", "council", "transport"}
+_IMPACT_TERMS = (
+    "death",
+    "died",
+    "murder",
+    "court",
+    "police",
+    "fire",
+    "crash",
+    "closed",
+    "closure",
+    "disruption",
+    "warning",
+    "strike",
+    "council",
+    "gmca",
+    "homes",
+    "jobs",
+    "school",
+    "hospital",
+    "evacuat",
+    "£",
+)
 _ACTION_VERBS_RU = (
     "проверьте",
     "закладывайте",
@@ -147,6 +172,13 @@ def _has_recent_signal(candidate: dict) -> bool:
     return published >= now_london() - timedelta(days=7)
 
 
+def _hours_since_published(candidate: dict) -> float | None:
+    published = _published_at(candidate)
+    if published is None:
+        return None
+    return max((now_london() - published).total_seconds() / 3600, 0.0)
+
+
 def _has_local_signal(candidate: dict) -> bool:
     blob = _candidate_blob(candidate).lower()
     source_url = str(candidate.get("source_url") or "").lower()
@@ -217,10 +249,107 @@ def evaluate_editorial_rubric(candidate: dict) -> dict[str, bool]:
     return rubric
 
 
+def _impact_score(candidate: dict) -> int:
+    category = str(candidate.get("category") or "")
+    block = str(candidate.get("primary_block") or "")
+    blob = _candidate_blob(candidate).lower()
+    score = 0
+    if category in _IMPACT_CATEGORIES or block in _HIGH_URGENCY_BLOCKS:
+        score += 10
+    if any(term in blob for term in _IMPACT_TERMS):
+        score += 7
+    if re.search(r"\b\d{2,}\s*(?:people|homes|jobs|services|routes|pupils|patients)\b", blob):
+        score += 3
+    return min(score, 20)
+
+
+def reader_value_components(candidate: dict) -> dict[str, int]:
+    rubric = candidate.get("editorial_rubric")
+    if not isinstance(rubric, dict):
+        rubric = evaluate_editorial_rubric(candidate)
+
+    block = str(candidate.get("primary_block") or "")
+    reasons = {str(reason) for reason in candidate.get("reject_reasons", []) if str(reason)}
+    hours_since = _hours_since_published(candidate)
+
+    novelty = 15 if rubric.get("new") else 0
+    if hours_since is not None and hours_since <= 36:
+        novelty += 5
+    novelty = min(novelty, 20)
+
+    local_relevance = 20 if rubric.get("local") else 0
+    if not rubric.get("local") and any(term in str(candidate.get("source_url") or "").lower() for term in _LOCAL_SOURCE_HOSTS):
+        local_relevance = 10
+
+    specificity = 15 if rubric.get("specific") else (7 if _DETAIL_RE.search(_candidate_blob(candidate)) else 0)
+
+    urgency = 0
+    if block in _HIGH_URGENCY_BLOCKS:
+        urgency = 15
+    elif block in _NEAR_TERM_EVENT_BLOCKS:
+        urgency = 10
+    elif block == "future_announcements":
+        urgency = 4
+    if hours_since is not None and hours_since <= 24:
+        urgency = min(15, urgency + 3)
+
+    actionability = 15 if rubric.get("actionable") else 0
+    impact = _impact_score(candidate)
+
+    pr_penalty = 25 if not rubric.get("not_pr") or "pr" in reasons else 0
+    repeat_penalty = 20 if reasons.intersection({"duplicate", "no_change"}) else 0
+    vagueness_penalty = 0
+    if not rubric.get("specific"):
+        vagueness_penalty += 8
+    if not rubric.get("useful"):
+        vagueness_penalty += 5
+    if not rubric.get("actionable") and block in _NEAR_TERM_EVENT_BLOCKS | _HIGH_URGENCY_BLOCKS:
+        vagueness_penalty += 4
+
+    return {
+        "novelty": novelty,
+        "local_relevance": local_relevance,
+        "specificity": specificity,
+        "urgency": urgency,
+        "actionability": actionability,
+        "impact": impact,
+        "pr_penalty": pr_penalty,
+        "repeat_penalty": repeat_penalty,
+        "vagueness_penalty": min(vagueness_penalty, 17),
+    }
+
+
+def reader_value_score(candidate: dict) -> int:
+    components = reader_value_components(candidate)
+    raw_score = (
+        components["novelty"]
+        + components["local_relevance"]
+        + components["specificity"]
+        + components["urgency"]
+        + components["actionability"]
+        + components["impact"]
+        - components["pr_penalty"]
+        - components["repeat_penalty"]
+        - components["vagueness_penalty"]
+    )
+    return max(0, min(100, int(raw_score)))
+
+
 def apply_editorial_quality(candidates: Iterable[dict]) -> None:
     for candidate in candidates:
         if isinstance(candidate, dict):
             candidate["editorial_rubric"] = evaluate_editorial_rubric(candidate)
+            candidate["reader_value_components"] = reader_value_components(candidate)
+            candidate["reader_value_score"] = reader_value_score(candidate)
+
+
+def candidate_reader_value(candidate: dict) -> int:
+    value = candidate.get("reader_value_score")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    return reader_value_score(candidate)
 
 
 def rubric_red_flags(candidate: dict) -> list[str]:
@@ -270,4 +399,30 @@ def rubric_summary(candidates: Iterable[dict]) -> dict[str, object]:
         "included_candidates": included,
         "included_with_red_flags": included_flagged,
         "red_flag_counts": dict(sorted(flag_counts.items())),
+    }
+
+
+def _score_report_item(candidate: dict) -> dict:
+    return {
+        "fingerprint": candidate.get("fingerprint"),
+        "title": candidate.get("title"),
+        "category": candidate.get("category"),
+        "primary_block": candidate.get("primary_block"),
+        "reader_value_score": candidate_reader_value(candidate),
+        "reader_value_components": candidate.get("reader_value_components") or reader_value_components(candidate),
+    }
+
+
+def reader_value_report(candidates: Iterable[dict], *, limit: int = 10) -> dict[str, object]:
+    included = [candidate for candidate in candidates if isinstance(candidate, dict) and candidate.get("include")]
+    scored = sorted(included, key=candidate_reader_value, reverse=True)
+    if not scored:
+        return {"included_candidates": 0, "average_score": 0, "top": [], "bottom": []}
+    average = round(sum(candidate_reader_value(candidate) for candidate in scored) / len(scored), 1)
+    bottom = sorted(scored, key=candidate_reader_value)[:limit]
+    return {
+        "included_candidates": len(scored),
+        "average_score": average,
+        "top": [_score_report_item(candidate) for candidate in scored[:limit]],
+        "bottom": [_score_report_item(candidate) for candidate in bottom],
     }

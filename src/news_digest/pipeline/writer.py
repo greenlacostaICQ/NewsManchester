@@ -28,7 +28,13 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
-from news_digest.pipeline.editorial_quality import included_rubric_red_flags, rubric_summary
+from news_digest.pipeline.editorial_quality import (
+    apply_editorial_quality,
+    candidate_reader_value,
+    included_rubric_red_flags,
+    reader_value_report,
+    rubric_summary,
+)
 from news_digest.pipeline.reject_reasons import classify_reject_reason_text, reject_reason_counts
 
 
@@ -543,13 +549,14 @@ def write_digest(project_root: Path) -> StageResult:
     payload = read_json(candidates_path, {"candidates": []})
     pipeline_run_id = pipeline_run_id_from(payload)
     candidates = payload.get("candidates", [])
+    apply_editorial_quality(candidates)
     sections = {heading: [] for heading in PRIMARY_BLOCKS.values()}
     # Parallel list of source_labels per section (same indices as sections[*]).
     # Used to apply SECTION_MAX_PER_SOURCE caps at render time.
     section_sources: dict[str, list[str]] = {h: [] for h in PRIMARY_BLOCKS.values()}
-    # Editorial priority score per line — populated only for «Городской радар»
-    # where we re-sort candidates before truncation so the cap drops the
-    # weakest items (PR releases) rather than whatever happened to come last.
+    # Reader value score per line. We re-sort inside each section before caps
+    # so low-value but still included candidates fall to the bottom instead of
+    # being dropped by a separate hard gate.
     section_scores: dict[str, list[float]] = {h: [] for h in PRIMARY_BLOCKS.values()}
     errors: list[str] = []
     warnings: list[str] = []
@@ -701,15 +708,14 @@ def write_digest(project_root: Path) -> StageResult:
             line = _attach_source_anchor(line, source_url, source_label)
             sections.setdefault("Главная история дня", []).insert(0, line)
             section_sources.setdefault("Главная история дня", []).insert(0, source_label)
-            section_scores.setdefault("Главная история дня", []).insert(0, 0.0)
+            section_scores.setdefault("Главная история дня", []).insert(0, float(candidate_reader_value(candidate)))
         else:
             if not line.startswith("• "):
                 line = f"• {line}"
             line = _attach_source_anchor(line, source_url, source_label)
             sections[section_name].append(line)
             section_sources[section_name].append(source_label)
-            score = _city_watch_score(candidate) if section_name == "Городской радар" else 0.0
-            section_scores[section_name].append(score)
+            section_scores[section_name].append(float(candidate_reader_value(candidate)))
         quality_counts["rendered_candidates"] += 1
         fingerprint = str(candidate.get("fingerprint") or "").strip()
         if fingerprint:
@@ -751,10 +757,7 @@ def write_digest(project_root: Path) -> StageResult:
             continue
         srcs = section_sources.get(section_name, [])
         scores = section_scores.get(section_name, [])
-        # Re-rank «Городской радар» by editorial score so the 12-item cap
-        # keeps GMCA / council news and drops university PR / electron-spin
-        # research, rather than truncating in arbitrary source-registry order.
-        if section_name == "Городской радар" and scores:
+        if section_name != "Главная история дня" and scores:
             triples = sorted(
                 zip(lines, srcs + [""] * (len(lines) - len(srcs)),
                     scores + [0.0] * (len(lines) - len(scores))),
@@ -796,6 +799,7 @@ def write_digest(project_root: Path) -> StageResult:
             "writer_reject_reason_counts": _dropped_candidate_reject_reason_counts(dropped_candidates),
             "editorial_rubric_summary": rubric_summary(candidates),
             "included_rubric_red_flags": included_rubric_red_flags(candidates),
+            "reader_value_report": reader_value_report(candidates),
             "rendered_candidate_fingerprints": rendered_candidate_fingerprints,
             "dropped_candidates": dropped_candidates,
             "draft_path": str(draft_path.resolve()),

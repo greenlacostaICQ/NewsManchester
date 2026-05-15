@@ -14,7 +14,7 @@ from pathlib import Path
 import re
 
 from news_digest.pipeline.common import now_london, pipeline_run_id_from, read_json, today_london, write_json
-from news_digest.pipeline.editorial_quality import apply_editorial_quality, included_rubric_red_flags, rubric_summary
+from news_digest.pipeline.editorial_quality import apply_editorial_quality, included_rubric_red_flags, reader_value_report, rubric_summary
 from news_digest.pipeline.reject_reasons import (
     add_reject_reason,
     classify_reject_reason_text,
@@ -394,5 +394,6 @@ def run_curator_pass(project_root: Path) -> None:
         "reject_reason_counts": reject_reason_counts(candidates),
         "editorial_rubric_summary": rubric_summary(candidates),
         "included_rubric_red_flags": included_rubric_red_flags(candidates),
+        "reader_value_report": reader_value_report(candidates),
         "decisions": decisions,
     })

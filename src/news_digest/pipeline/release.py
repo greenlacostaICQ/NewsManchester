@@ -17,7 +17,7 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
-from news_digest.pipeline.editorial_quality import included_rubric_red_flags, rubric_summary
+from news_digest.pipeline.editorial_quality import included_rubric_red_flags, reader_value_report, rubric_summary
 from news_digest.pipeline.reject_reasons import reject_reason_counts, reject_reasons
 
 
@@ -631,6 +631,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "writer_reject_reason_counts": _writer_reject_reason_counts(writer_report),
         "editorial_rubric_summary": rubric_summary(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
         "included_rubric_red_flags": included_rubric_red_flags(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
+        "reader_value_report": reader_value_report(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
         "published_facts_updated": published_facts_updated,
         "inputs": {
             "collector_report": str((state_dir / "collector_report.json").resolve()),
