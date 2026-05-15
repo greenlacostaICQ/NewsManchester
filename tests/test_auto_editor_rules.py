@@ -124,6 +124,23 @@ class AutoEditorRulesTest(unittest.TestCase):
         )
         self.assertTrue(any("under-specified" in error for error in errors))
 
+    def test_ticket_radar_allows_short_self_contained_lines(self) -> None:
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "Madison Beer the locket tour Sun 31 May 2026 Multiple times",
+            "summary": "Co-op Live Manchester | Sun 31 May 2026 | tickets",
+            "lead": "",
+            "evidence_text": "Madison Beer the locket tour Sun 31 May 2026 Multiple times at Co-op Live Manchester. tickets",
+            "source_url": "https://example.com/madison-beer",
+            "source_label": "Co-op Live",
+        }
+        errors = _draft_line_quality_errors(
+            candidate,
+            "• 31 мая в Co-op Live выступит Madison Beer. Билеты уже в продаже на официальном сайте площадки.",
+        )
+        self.assertFalse([error for error in errors if "long-format" in error])
+
     def test_event_quality_gate_requires_date_place_location_and_access(self) -> None:
         complete = {
             "category": "culture_weekly",
