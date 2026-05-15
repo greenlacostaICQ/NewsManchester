@@ -21,6 +21,7 @@ from news_digest.pipeline.common import (
 from news_digest.pipeline.digest_shape import digest_shape_report
 from news_digest.pipeline.editorial_quality import included_rubric_red_flags, reader_value_report, rubric_summary
 from news_digest.pipeline.reject_reasons import reject_reason_counts, reject_reasons
+from news_digest.pipeline.telegram_formatting import validate_telegram_formatting
 
 
 BANNED_PLACEHOLDER_MARKERS = [
@@ -558,6 +559,8 @@ def _validate_draft(
         errors.append("Draft digest contains an /amp/ URL.")
     if "<a " not in lower_text:
         errors.append("Draft digest contains no HTML source links.")
+    telegram_formatting_report = validate_telegram_formatting(html_text)
+    errors.extend(str(error) for error in telegram_formatting_report.get("errors", []))
 
     sections = extract_sections(html_text)
     for block in REQUIRED_BLOCKS:
@@ -724,6 +727,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else [],
         rendered_fingerprints,
     )
+    telegram_formatting_report = validate_telegram_formatting(draft_path.read_text(encoding="utf-8") if draft_path.exists() else "")
 
     ok = not errors
     published_facts_updated = False
@@ -750,6 +754,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "reader_value_report": reader_value_report(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
         "reader_value_summary": reader_value_report(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
         "digest_shape_report": shape_report,
+        "telegram_formatting_report": telegram_formatting_report,
         "operator_warnings": operator_warnings,
         "published_facts_updated": published_facts_updated,
         "inputs": {

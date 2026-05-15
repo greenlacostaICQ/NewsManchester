@@ -15,6 +15,7 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.telegram_formatting import validate_telegram_formatting
 
 
 MIN_CITY_PRACTICAL_ANGLE_LENGTH = 40
@@ -148,6 +149,10 @@ def edit_digest(project_root: Path) -> StageResult:
         rendered.append("")
     if rendered:
         draft_path.write_text("\n".join(rendered).strip() + "\n", encoding="utf-8")
+    final_draft_text = draft_path.read_text(encoding="utf-8") if draft_path.exists() else ""
+    telegram_formatting_report = validate_telegram_formatting(final_draft_text)
+    errors.extend(str(error) for error in telegram_formatting_report.get("errors", []))
+    warnings.extend(str(warning) for warning in telegram_formatting_report.get("warnings", []))
 
     write_json(
         report_path,
@@ -167,6 +172,7 @@ def edit_digest(project_root: Path) -> StageResult:
             "duplicate_collisions": duplicate_collisions,
             "html_repair_count": html_repair_count,
             "html_drop_count": html_drop_count,
+            "telegram_formatting_report": telegram_formatting_report,
             "draft_path": str(draft_path.resolve()),
         },
     )
