@@ -669,6 +669,12 @@ def write_digest(project_root: Path) -> StageResult:
         cap = SECTION_MAX_ITEMS.get(section_name)
         if cap:
             lines = lines[:cap]
+        # Per-source / per-section caps can filter every remaining line —
+        # don't emit a bare section header in that case, the release gate
+        # rejects empty low-signal blocks.
+        if not lines:
+            section_counts[section_name] = 0
+            continue
         section_counts[section_name] = len(lines)
         rendered.append(f"<b>{section_name}</b>")
         rendered.extend(lines)

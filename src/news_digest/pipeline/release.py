@@ -474,9 +474,22 @@ def _validate_draft(
                 errors.append(f"Draft digest contains repeated sentence in section {section_name}.")
                 break
 
+    # Strip quoted spans (Russian guillemets and ASCII/curly double quotes)
+    # before scanning for the standalone word "нет" — model-refusal markers
+    # like "у меня нет данных" always appear in plain prose, while the
+    # legitimate use is almost always a quoted slogan (e.g. campaign
+    # «сказать "нет" кредитным акулам»).
+    _QUOTED_SPAN_RE = re.compile(r'[«"„“][^»"”„“]{0,80}[»"”]')
+
+    def _has_refusal_marker(line: str) -> bool:
+        stripped = _QUOTED_SPAN_RE.sub("", line)
+        if re.search(r"(?<![а-яёА-ЯЁ])нет(?![а-яёА-ЯЁ])", stripped, re.IGNORECASE):
+            return True
+        return "не добавляю" in stripped.lower()
+
     for block in LOW_SIGNAL_BLOCKS:
         lines = sections.get(block, [])
-        if lines and any(re.search(r"(?<![а-яёА-ЯЁ])нет(?![а-яёА-ЯЁ])", line, re.IGNORECASE) or "не добавляю" in line.lower() for line in lines):
+        if lines and any(_has_refusal_marker(line) for line in lines):
             errors.append(f"Low-signal block should be hidden instead of printed empty: {block}.")
 
     last_24h_lines = sections.get("Что произошло за 24 часа", [])
