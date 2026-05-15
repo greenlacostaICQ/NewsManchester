@@ -538,6 +538,43 @@ def _validate_draft(
             )
 
 
+def _summarise_change_types(state_dir: Path) -> dict[str, object]:
+    """Count change_type buckets from dedupe_memory.json (Q6/Q7).
+    Surface counts + a handful of concrete rejected examples so the
+    "почему отбили этот сюжет" question is answerable from one file."""
+    path = state_dir / "dedupe_memory.json"
+    counts: dict[str, int] = {
+        "new_story": 0,
+        "same_story_new_facts": 0,
+        "same_story_rehash": 0,
+        "follow_up": 0,
+        "reminder": 0,
+        "no_change": 0,
+        "unclassified": 0,
+    }
+    auto_rejected_examples: list[dict[str, object]] = []
+    if not path.exists():
+        return {"counts": counts, "auto_rejected_examples": auto_rejected_examples}
+    try:
+        report = read_json(path)
+    except Exception:  # noqa: BLE001
+        return {"counts": counts, "auto_rejected_examples": auto_rejected_examples}
+    for d in report.get("decisions") or []:
+        if not isinstance(d, dict):
+            continue
+        ct = str(d.get("change_type") or "").strip() or "unclassified"
+        counts[ct] = counts.get(ct, 0) + 1
+        if ct in {"no_change", "same_story_rehash"} and len(auto_rejected_examples) < 10:
+            auto_rejected_examples.append(
+                {
+                    "change_type": ct,
+                    "title": d.get("title"),
+                    "reason": d.get("reason"),
+                }
+            )
+    return {"counts": counts, "auto_rejected_examples": auto_rejected_examples}
+
+
 def _prompts_snapshot() -> list[dict[str, str]]:
     from news_digest.pipeline.prompts_meta import snapshot as _ps  # noqa: PLC0415
     return _ps()
@@ -775,6 +812,8 @@ def build_release(project_root: Path) -> ReleaseResult:
                     f"(min={minimum}) while writer dropped {dropped_here} candidate(s) "
                     f"that targeted this section — quality gates may be too strict."
                 )
+    change_type_summary = _summarise_change_types(state_dir)
+
     cost_summary = _aggregate_cost(state_dir)
     if cost_summary["unknown_priced_models"]:
         warnings.append(
@@ -823,6 +862,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "lost_leads": lost_leads,
         "section_underflow": section_underflow,
         "cost_summary": cost_summary,
+        "change_type_summary": change_type_summary,
         "prompt_versions": _prompts_snapshot(),
         "prompt_drift": prompt_drift,
         "published_facts_updated": published_facts_updated,

@@ -127,6 +127,38 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             candidate["include"] = False
             candidate["reason"] = "Invalid dedupe decision."
 
+        # Q6: classify what kind of change this candidate represents
+        # relative to history. Q7: for hard-repeat types, rewrite reason
+        # with a concrete previous date + title so the audit trail makes
+        # "почему отбили" trivially answerable.
+        change_type = _classify_change_type(candidate, previous, similar_previous)
+        candidate["change_type"] = change_type
+        if change_type in {"no_change", "same_story_rehash"}:
+            prev_ref = previous or (
+                published_by_fp.get(str(similar_previous[0].get("fingerprint") or ""))
+                if similar_previous else None
+            )
+            prev_date = (
+                str(prev_ref.get("first_published_day_london") or "").strip()
+                if prev_ref else ""
+            )
+            prev_title = str(prev_ref.get("title") or "").strip() if prev_ref else ""
+            human_prefix = (
+                "Без новых фактов: уже был"
+                if change_type == "no_change"
+                else "Повтор сюжета без новых деталей: уже был"
+            )
+            if prev_date and prev_title:
+                candidate["reason"] = (
+                    f"{human_prefix} {prev_date} как «{prev_title[:120]}»."
+                )
+            elif prev_title:
+                candidate["reason"] = f"{human_prefix} ранее как «{prev_title[:120]}»."
+            # If we ended up here without a dedupe drop yet, enforce one.
+            if candidate.get("dedupe_decision") not in {"drop"}:
+                candidate["dedupe_decision"] = "drop"
+                candidate["include"] = False
+
         if not candidate.get("reason"):
             errors.append(f"Candidate #{index} is missing reason.")
 
@@ -135,6 +167,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 "fingerprint": fingerprint,
                 "title": candidate.get("title"),
                 "decision": candidate.get("dedupe_decision"),
+                "change_type": change_type,
                 "reason": candidate.get("reason"),
                 "matched_previous_fingerprint": candidate.get("matched_previous_fingerprint"),
                 "carry_over_label": candidate.get("carry_over_label"),
@@ -390,6 +423,84 @@ _TICKETMASTER_SUFFIX_RE = re.compile(
 _FEAT_SUFFIX_RE = re.compile(
     r'\s+[Ff]eat(?:uring)?\.?\s+.+$',
 )
+
+
+# Change-type classification (Q6/Q7).
+# Words in lead/title/summary that mark a story as a clear follow-up
+# of an earlier published item rather than a fresh rehash. When any of
+# these appear AND there is a previous match, classify as `follow_up`
+# (not blocked) rather than `same_story_rehash` (auto-rejected).
+_FOLLOW_UP_MARKERS: tuple[str, ...] = (
+    # Russian — court / police progression
+    "приговор", "осужд", "виновн", "приговорил",
+    "следствие продолжа", "расследование продолжа",
+    "задержан", "арестован", "обвинен",
+    "годовщин", "к годовщине",
+    "обновление", "обновлён", "новые подробности", "уточн",
+    # English court / police
+    "sentenced", "verdict", "convicted", "guilty",
+    "investigation continues", "court update",
+    "appeal", "charged", "anniversary",
+    "follow up", "follow-up", "follow up:",
+    # Project / policy phase markers
+    "вступает в силу", "вступил в силу", "запущен", "открылся",
+    "comes into effect", "now in effect", "officially open",
+)
+
+
+def _classify_change_type(
+    candidate: dict,
+    previous: dict | None,
+    similar_previous: list[dict],
+) -> str:
+    """Return one of:
+      new_story, no_change, same_story_rehash, same_story_new_facts,
+      follow_up, reminder.
+
+    Cheap heuristic based on fingerprint match, similar-title match,
+    declared dedupe_decision, and follow-up keywords. Anything more
+    nuanced (e.g. "Wigan got £230m vs Wigan asked for £230m") is the
+    LLM curator's job — we only label the obvious cases here.
+    """
+    decision = str(candidate.get("dedupe_decision") or "").strip()
+    primary_block = str(candidate.get("primary_block") or "").strip()
+
+    # Operational repeats (weather, transport): treat as standalone
+    # new_story each day — readers expect a fresh snapshot.
+    if primary_block in {"weather", "transport"} and not previous:
+        return "new_story"
+    if primary_block in {"weather", "transport"} and previous:
+        return "same_story_new_facts"  # daily refresh with new figures
+
+    # Calendar carry-over (next_7_days reminders) was decided upstream.
+    if decision == "carry_over_with_label":
+        return "reminder"
+
+    # Explicit new_phase set by candidate validator or curator means
+    # "yes, same story, but a new development". Distinguishing this
+    # from rehash without LLM is impossible cheaply — trust the flag.
+    if decision == "new_phase":
+        return "same_story_new_facts"
+
+    has_match = previous is not None or bool(similar_previous)
+    if not has_match:
+        return "new_story"
+
+    # Same-story branch: look for follow-up cue words in candidate text.
+    blob = " ".join(
+        str(candidate.get(f) or "")
+        for f in ("title", "lead", "summary", "evidence_text", "practical_angle")
+    ).lower()
+    if any(marker in blob for marker in _FOLLOW_UP_MARKERS):
+        return "follow_up"
+
+    # Exact fingerprint hit and the candidate text shows no follow-up
+    # signal → republished without new substance.
+    if previous is not None:
+        return "no_change"
+
+    # Title-similar to something we already shipped, no follow-up signal.
+    return "same_story_rehash"
 
 
 def _title_tokens(title: str) -> frozenset[str]:
