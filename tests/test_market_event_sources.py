@@ -61,6 +61,51 @@ class MarketEventSourcesTest(unittest.TestCase):
         self.assertTrue(report["checks"]["date"])
         self.assertTrue(report["ok"])
 
+    def test_the_manc_weekly_sections_become_food_event_candidates(self) -> None:
+        source = SourceDef(
+            name="The Manc Weekly Things To Do",
+            report_category="culture_weekly",
+            candidate_category="culture_weekly",
+            url="https://themanc.com/whats-on-manchester/the-best-things-to-do-in-greater-manchester-this-week-11-17-may-2026/",
+            primary_block="weekend_activities",
+            source_type="html_the_manc_weekly_events",
+            allowed_hosts=("themanc.com",),
+            max_candidates=12,
+        )
+        html = """
+        <article>
+          <h3>The Flat Baker Pistachio Festival</h3>
+          <p>Ancoats Saturday 16 May.</p>
+          <p>A festival dedicated to pistachio bakes, desserts and drinks is back in Manchester this weekend.</p>
+          <p>Find the bakery event through The Flat Baker source before travelling.</p>
+          <h3>Something unrelated</h3>
+          <p>A short listing with no practical details.</p>
+        </article>
+        """
+
+        [candidate] = _extract_source_candidates(source, html)
+
+        self.assertEqual(candidate["title"], "The Flat Baker Pistachio Festival")
+        self.assertIn("#the-flat-baker-pistachio-festival", candidate["source_url"])
+        self.assertTrue(event_quality_report(candidate)["ok"])
+
+    def test_car_boot_without_ticket_language_can_pass_with_source(self) -> None:
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": "Burnage RFC Car Boot Sale",
+            "summary": "Every Sunday from 10 May to 30 August at Burnage RFC, Varley Park, Stockport.",
+            "evidence_text": "Dates Every Sunday. Location Burnage RFC, Varley Park, Battersea Road, Stockport SK4 3EA.",
+            "source_url": "https://www.manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+            "source_label": "Burnage RFC Car Boot Sale",
+        }
+
+        report = event_quality_report(candidate)
+
+        self.assertTrue(report["checks"]["date"])
+        self.assertTrue(report["checks"]["access"])
+        self.assertTrue(report["ok"])
+
     def test_place_name_preservation_normalizes_russian_transliteration(self) -> None:
         line = "• Рынок: Фёрст Стрит и Нортерн Квортер доступны на выходных."
 

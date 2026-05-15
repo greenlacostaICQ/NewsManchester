@@ -36,6 +36,12 @@ _GM_TERMS = (
     "stretford",
     "ashton",
     "eccles",
+    "burnage",
+    "romiley",
+    "chorlton",
+    "warrington",
+    "wilmslow",
+    "styal",
 )
 _LOCAL_SOURCE_HOSTS = (
     "manchester",
