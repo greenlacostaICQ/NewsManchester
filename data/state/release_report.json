@@ -1,78 +1,898 @@
 {
   "release_gate_version": 3,
   "pipeline_run_id": "20260515T080050+0100",
-  "run_at_london": "2026-05-15T08:08:09.732107+01:00",
+  "run_at_london": "2026-05-15T10:28:10.708624+01:00",
   "run_date_london": "2026-05-15",
-  "release_decision": "fail",
-  "message": "Digest release is blocked until collector, dedupe, validator, writer and gate inputs pass.",
-  "errors": [
-    "Low-signal block should be hidden instead of printed empty: Городской радар."
-  ],
+  "release_decision": "pass",
+  "message": "Release passed. Promoted /home/runner/work/NewsManchester/NewsManchester/data/state/draft_digest.html to /home/runner/work/NewsManchester/NewsManchester/data/outgoing/current_digest.html.",
+  "errors": [],
   "warnings": [
-    "LLM rewrite was degraded; writer/release quality gates handled the remaining candidates."
+    "LLM rewrite was degraded; writer/release quality gates handled the remaining candidates.",
+    "Section underflow: «Что важно в ближайшие 7 дней» shipped 1 items (min=3) while writer dropped 1 candidate(s) that targeted this section — quality gates may be too strict.",
+    "Source health: 4 source(s) failed today — check release_report.source_status for the list.",
+    "Rejected review: 8 suspiciously rejected candidate(s) — see release_report.reject_review."
   ],
   "lost_leads": [],
-  "section_underflow": [],
+  "section_underflow": [
+    {
+      "section": "Что важно в ближайшие 7 дней",
+      "actual": 1,
+      "minimum": 3,
+      "dropped_by_writer": 1
+    }
+  ],
   "cost_summary": {
-    "total_calls": 26,
-    "total_cost_usd": 0.050693,
-    "total_prompt_tokens": 100868,
-    "total_completion_tokens": 22124,
+    "total_calls": 18,
+    "total_cost_usd": 0.032923,
+    "total_prompt_tokens": 68646,
+    "total_completion_tokens": 13842,
     "by_stage": {
       "llm_rewrite": {
-        "calls": 12,
-        "prompt_tokens": 42945,
-        "completion_tokens": 10957,
-        "cost_usd": 0.02277042
+        "calls": 10,
+        "prompt_tokens": 33972,
+        "completion_tokens": 7031,
+        "cost_usd": 0.016069230000000004
       },
       "curator": {
-        "calls": 14,
-        "prompt_tokens": 57923,
-        "completion_tokens": 11167,
-        "cost_usd": 0.027922910000000002
+        "calls": 8,
+        "prompt_tokens": 34674,
+        "completion_tokens": 6811,
+        "cost_usd": 0.01685408
       }
     },
     "by_provider": {
       "DeepSeek": {
-        "calls": 23,
-        "prompt_tokens": 96839,
-        "completion_tokens": 21712,
-        "cost_usd": 0.05002973
+        "calls": 15,
+        "prompt_tokens": 64523,
+        "completion_tokens": 13480,
+        "cost_usd": 0.03224921
       },
       "OpenAI": {
         "calls": 2,
-        "prompt_tokens": 2960,
-        "completion_tokens": 366,
-        "cost_usd": 0.0006636
+        "prompt_tokens": 3054,
+        "completion_tokens": 360,
+        "cost_usd": 0.0006741
       },
       "Groq": {
         "calls": 1,
         "prompt_tokens": 1069,
-        "completion_tokens": 46,
+        "completion_tokens": 2,
         "cost_usd": 0.0
       }
     },
     "by_model": {
       "deepseek-chat": {
-        "calls": 23,
-        "prompt_tokens": 96839,
-        "completion_tokens": 21712,
-        "cost_usd": 0.05002973
+        "calls": 15,
+        "prompt_tokens": 64523,
+        "completion_tokens": 13480,
+        "cost_usd": 0.03224921
       },
       "gpt-4o-mini": {
         "calls": 2,
-        "prompt_tokens": 2960,
-        "completion_tokens": 366,
-        "cost_usd": 0.0006636
+        "prompt_tokens": 3054,
+        "completion_tokens": 360,
+        "cost_usd": 0.0006741
       },
       "llama-3.3-70b-versatile": {
         "calls": 1,
         "prompt_tokens": 1069,
-        "completion_tokens": 46,
+        "completion_tokens": 2,
         "cost_usd": 0.0
       }
     },
     "unknown_priced_models": []
+  },
+  "change_type_summary": {
+    "counts": {
+      "new_story": 126,
+      "same_story_new_facts": 4,
+      "same_story_rehash": 41,
+      "follow_up": 8,
+      "reminder": 22,
+      "no_change": 83,
+      "unclassified": 0
+    },
+    "auto_rejected_examples": [
+      {
+        "change_type": "same_story_rehash",
+        "title": "Andy Burnham: 'King of the North' with eyes on the top job",
+        "reason": "Повтор сюжета без новых деталей: уже был 2026-05-14 как «The many lives of Andy Burnham».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-many-lives-andy-burnham-33941509",
+        "previous_published_day": "2026-05-14",
+        "previous_title": "The many lives of Andy Burnham"
+      },
+      {
+        "change_type": "no_change",
+        "title": "'We fled into the mountains as our homes burned. Manchester showed us humanity when we needed it'",
+        "reason": "Без новых фактов: уже был 2026-05-14 как «'We fled into the mountains as our homes burned. Manchester showed us humanity when we needed it'».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-we-fled-mountains-homes-burned-33903602",
+        "previous_published_day": "2026-05-14",
+        "previous_title": "'We fled into the mountains as our homes burned. Manchester showed us humanity when we needed it'"
+      },
+      {
+        "change_type": "no_change",
+        "title": "28 shipments came in from the US - there wasn't just vintage clothing inside",
+        "reason": "Без новых фактов: уже был 2026-05-14 как «28 shipments came in from the US - there wasn't just vintage clothing inside».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-28-shipments-came-wasnt-just-33927705",
+        "previous_published_day": "2026-05-14",
+        "previous_title": "28 shipments came in from the US - there wasn't just vintage clothing inside"
+      },
+      {
+        "change_type": "no_change",
+        "title": "What is Andy Burnham's Manchesterism - and can it save Britain?",
+        "reason": "Без новых фактов: уже был 2026-05-10 как «What is Manchesterism - and can it save Britain?».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-what-manchesterism-can-save-britain-33906365",
+        "previous_published_day": "2026-05-10",
+        "previous_title": "What is Manchesterism - and can it save Britain?"
+      },
+      {
+        "change_type": "no_change",
+        "title": "They kicked down her door and as her children screamed 'mama' filmed their vile attack on a mobile phone",
+        "reason": "Без новых фактов: уже был 2026-05-12 как «They kicked down her door and as her children screamed 'mama' filmed their vile attack on a mobile phone».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-kicked-down-door-children-screamed-33915200",
+        "previous_published_day": "2026-05-12",
+        "previous_title": "They kicked down her door and as her children screamed 'mama' filmed their vile attack on a mobile phone"
+      },
+      {
+        "change_type": "no_change",
+        "title": "The Educating Greater Manchester school at the centre of an investigation - again",
+        "reason": "Без новых фактов: уже был 2026-05-10 как «The Educating Greater Manchester school at the centre of an investigation - again».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-educating-greater-manchester-school-centre-33818430",
+        "previous_published_day": "2026-05-10",
+        "previous_title": "The Educating Greater Manchester school at the centre of an investigation - again"
+      },
+      {
+        "change_type": "no_change",
+        "title": "The many lives of Andy Burnham",
+        "reason": "Без новых фактов: уже был 2026-05-14 как «The many lives of Andy Burnham».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-many-lives-andy-burnham-33941509",
+        "previous_published_day": "2026-05-14",
+        "previous_title": "The many lives of Andy Burnham"
+      },
+      {
+        "change_type": "no_change",
+        "title": "Firebombings, silk pyjamas and a rout for Reform",
+        "reason": "Без новых фактов: уже был 2026-05-12 как «Firebombings, silk pyjamas and a rout for Reform».",
+        "previous_fingerprint": "media-layer-the-mill-manchestermill-co-uk-firebombings-silk-pyjamas-and-a-rout-for-reform",
+        "previous_published_day": "2026-05-12",
+        "previous_title": "Firebombings, silk pyjamas and a rout for Reform"
+      },
+      {
+        "change_type": "no_change",
+        "title": "The strange case of Lewis Croden, Salford Reform's man behind the curtain",
+        "reason": "Без новых фактов: уже был 2026-05-07 как «The strange case of Lewis Croden, Salford Reform's man behind the curtain».",
+        "previous_fingerprint": "media-layer-the-mill-manchestermill-co-uk-the-strange-case-of-lewis-croden-salford-reforms-man-behind-the-curtain",
+        "previous_published_day": "2026-05-07",
+        "previous_title": "The strange case of Lewis Croden, Salford Reform's man behind the curtain"
+      },
+      {
+        "change_type": "no_change",
+        "title": "‘Bogus Independents': Tameside Labour accused of planting its own Independent candidates",
+        "reason": "Без новых фактов: уже был 2026-04-30 как «‘Bogus Independents': Tameside Labour accused of planting its own Independent candidates».",
+        "previous_fingerprint": "media-layer-the-mill-manchestermill-co-uk-bogus-independents-tameside-labour-ashton-under-lyne",
+        "previous_published_day": "2026-04-30",
+        "previous_title": "‘Bogus Independents': Tameside Labour accused of planting its own Independent candidates"
+      }
+    ]
+  },
+  "digest_health": {
+    "risk_level": "healthy",
+    "risk_score": 0,
+    "signals": []
+  },
+  "source_status": {
+    "counts": {
+      "ok": 38,
+      "partial": 6,
+      "stale": 20,
+      "empty": 7,
+      "failed": 4
+    },
+    "sources": [
+      {
+        "name": "BBC Manchester",
+        "category": "media_layer",
+        "status": "ok",
+        "detail": "4 item(s), 4 fresh in last 24h",
+        "candidate_count": 4,
+        "fresh_last_24h_count": 4
+      },
+      {
+        "name": "MEN",
+        "category": "media_layer",
+        "status": "ok",
+        "detail": "25 item(s), 19 fresh in last 24h",
+        "candidate_count": 25,
+        "fresh_last_24h_count": 19
+      },
+      {
+        "name": "The Mill",
+        "category": "media_layer",
+        "status": "ok",
+        "detail": "7 item(s), 1 fresh in last 24h",
+        "candidate_count": 7,
+        "fresh_last_24h_count": 1
+      },
+      {
+        "name": "The Manc",
+        "category": "media_layer",
+        "status": "ok",
+        "detail": "6 item(s), 1 fresh in last 24h",
+        "candidate_count": 6,
+        "fresh_last_24h_count": 1
+      },
+      {
+        "name": "Altrincham Today",
+        "category": "media_layer",
+        "status": "ok",
+        "detail": "10 item(s), 2 fresh in last 24h",
+        "candidate_count": 10,
+        "fresh_last_24h_count": 2
+      },
+      {
+        "name": "I Love Manchester",
+        "category": "media_layer",
+        "status": "stale",
+        "detail": "4 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 4,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Secret Manchester",
+        "category": "media_layer",
+        "status": "stale",
+        "detail": "2 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 2,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "GMCA",
+        "category": "media_layer",
+        "status": "stale",
+        "detail": "3 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 3,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Manchester Council",
+        "category": "media_layer",
+        "status": "stale",
+        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Salford Council",
+        "category": "media_layer",
+        "status": "failed",
+        "detail": "HTTP 403",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Trafford Council",
+        "category": "media_layer",
+        "status": "stale",
+        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Stockport Council",
+        "category": "media_layer",
+        "status": "stale",
+        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Oldham Council",
+        "category": "media_layer",
+        "status": "stale",
+        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Rochdale Council",
+        "category": "media_layer",
+        "status": "ok",
+        "detail": "5 item(s), 1 fresh in last 24h",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 1
+      },
+      {
+        "name": "Bolton Council",
+        "category": "media_layer",
+        "status": "stale",
+        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Tameside Council",
+        "category": "media_layer",
+        "status": "failed",
+        "detail": "Failed to perform, curl: (28) Connection timed out after 30002 milliseconds. See https://curl.se/libcurl/c/libcurl-errors.html first for mor",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Bury Council",
+        "category": "media_layer",
+        "status": "stale",
+        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Wigan Council",
+        "category": "media_layer",
+        "status": "stale",
+        "detail": "4 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 4,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "University of Salford",
+        "category": "media_layer",
+        "status": "stale",
+        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "University of Manchester",
+        "category": "media_layer",
+        "status": "stale",
+        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "TfGM",
+        "category": "transport",
+        "status": "stale",
+        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "National Rail",
+        "category": "transport",
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "GMP",
+        "category": "gmp",
+        "status": "failed",
+        "detail": "HTTP 403",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "BBC Manchester public safety fallback",
+        "category": "gmp",
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "GMMH",
+        "category": "public_services",
+        "status": "stale",
+        "detail": "4 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 4,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "HOME",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "3 item(s)",
+        "candidate_count": 3,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Whitworth",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "4 item(s)",
+        "candidate_count": 4,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Factory International",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "5 item(s)",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "The Lowry",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "5 item(s)",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Palace Theatre",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "5 item(s)",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Contact Theatre",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "2 item(s)",
+        "candidate_count": 2,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "People's History Museum",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "John Rylands Library",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "5 item(s)",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Visit Manchester",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Manchester Wire",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "5 item(s)",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Creative Tourist Manchester",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "3 item(s)",
+        "candidate_count": 3,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "DesignMyNight Manchester",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "5 item(s)",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Fairfield Social Club",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "4 item(s)",
+        "candidate_count": 4,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Eventbrite Manchester",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "5 item(s)",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Skiddle Manchester",
+        "category": "culture_weekly",
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Eventbrite Manchester Markets",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "2 item(s)",
+        "candidate_count": 2,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Time Out Manchester",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "5 item(s)",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Salford Events",
+        "category": "culture_weekly",
+        "status": "failed",
+        "detail": "HTTP 403",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Stockport Events",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "5 item(s)",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Co-op Live",
+        "category": "venues_tickets",
+        "status": "ok",
+        "detail": "5 item(s)",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Ticketmaster Manchester Onsale",
+        "category": "venues_tickets",
+        "status": "partial",
+        "detail": "primary URL failed; switched to fallback https://app.ticketmaster.com/discovery/v2/events.json?city=Manchester&countryCode=GB&classification",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Ticketmaster Liverpool Onsale",
+        "category": "venues_tickets",
+        "status": "partial",
+        "detail": "primary URL failed; switched to fallback https://app.ticketmaster.com/discovery/v2/events.json?city=Liverpool&countryCode=GB&classificationN",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Ticketmaster Manchester Upcoming",
+        "category": "venues_tickets",
+        "status": "partial",
+        "detail": "primary URL failed; switched to fallback https://app.ticketmaster.com/discovery/v2/events.json?city=Manchester&countryCode=GB&classification",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Ticketmaster Liverpool Upcoming",
+        "category": "venues_tickets",
+        "status": "partial",
+        "detail": "primary URL failed; switched to fallback https://app.ticketmaster.com/discovery/v2/events.json?city=Liverpool&countryCode=GB&classificationN",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Ticketmaster London Major Onsale",
+        "category": "venues_tickets",
+        "status": "partial",
+        "detail": "primary URL failed; switched to fallback https://app.ticketmaster.com/discovery/v2/events.json?city=London&countryCode=GB&classificationName",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Ticketmaster London Major Upcoming",
+        "category": "venues_tickets",
+        "status": "partial",
+        "detail": "primary URL failed; switched to fallback https://app.ticketmaster.com/discovery/v2/events.json?city=London&countryCode=GB&classificationName",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Bridgewater Hall",
+        "category": "venues_tickets",
+        "status": "ok",
+        "detail": "5 item(s)",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Albert Hall Manchester",
+        "category": "venues_tickets",
+        "status": "ok",
+        "detail": "5 item(s)",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Band on the Wall",
+        "category": "venues_tickets",
+        "status": "ok",
+        "detail": "5 item(s)",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "RNCM",
+        "category": "venues_tickets",
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Manchester's Finest",
+        "category": "food_openings",
+        "status": "ok",
+        "detail": "3 item(s)",
+        "candidate_count": 3,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "About Manchester Food & Drink",
+        "category": "food_openings",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "The Manc Eats",
+        "category": "food_openings",
+        "status": "ok",
+        "detail": "5 item(s)",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Pedddle Markets",
+        "category": "food_openings",
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Pedddle Makers Market",
+        "category": "food_openings",
+        "status": "ok",
+        "detail": "3 item(s)",
+        "candidate_count": 3,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "ReMarket Mato",
+        "category": "food_openings",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "VisitSalford Markets",
+        "category": "food_openings",
+        "status": "ok",
+        "detail": "2 item(s)",
+        "candidate_count": 2,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "SK Lowdown Markets",
+        "category": "food_openings",
+        "status": "ok",
+        "detail": "3 item(s)",
+        "candidate_count": 3,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Manchester United",
+        "category": "football",
+        "status": "stale",
+        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Manchester City",
+        "category": "football",
+        "status": "stale",
+        "detail": "1 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Manchester Digital",
+        "category": "tech_business",
+        "status": "stale",
+        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Prolific North",
+        "category": "tech_business",
+        "status": "stale",
+        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "BusinessCloud",
+        "category": "tech_business",
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Bdaily Manchester",
+        "category": "tech_business",
+        "status": "stale",
+        "detail": "1 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "MIDAS Manchester",
+        "category": "tech_business",
+        "status": "stale",
+        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Manchester Academy Diaspora",
+        "category": "diaspora_events",
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "EventFirst Diaspora",
+        "category": "diaspora_events",
+        "status": "ok",
+        "detail": "3 item(s)",
+        "candidate_count": 3,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "UK Stand-Up Club",
+        "category": "diaspora_events",
+        "status": "ok",
+        "detail": "2 item(s)",
+        "candidate_count": 2,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "UK Stand-Up Club Eventbrite",
+        "category": "diaspora_events",
+        "status": "ok",
+        "detail": "2 item(s)",
+        "candidate_count": 2,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Kontramarka UK",
+        "category": "diaspora_events",
+        "status": "ok",
+        "detail": "2 item(s)",
+        "candidate_count": 2,
+        "fresh_last_24h_count": 0
+      }
+    ]
+  },
+  "reject_review": {
+    "counts": {
+      "correctly_rejected": 12,
+      "borderline": 1,
+      "suspiciously_rejected": 8
+    },
+    "suspiciously_rejected": [
+      {
+        "stage": "writer",
+        "title": "Metrolink tram users warned of two weeks of works disruption",
+        "category": "media_layer",
+        "primary_block": "transport",
+        "reasons": [
+          "Pound amount '£150млн' not present in evidence_text."
+        ],
+        "is_lead": false
+      },
+      {
+        "stage": "writer",
+        "title": "No trams to run on major Greater Manchester line for two weeks as part of £150m improvement works",
+        "category": "media_layer",
+        "primary_block": "transport",
+        "reasons": [
+          "Pound amount '£150млн' not present in evidence_text."
+        ],
+        "is_lead": false
+      },
+      {
+        "stage": "writer",
+        "title": "Council gets £11.8m grant to tackle homelessness and rough sleeping",
+        "category": "council",
+        "primary_block": "city_watch",
+        "reasons": [
+          "Pound amount '£12млн' not present in evidence_text."
+        ],
+        "is_lead": false
+      },
+      {
+        "stage": "writer",
+        "title": "Double Bill - Grow Up! / So Long, Farewell",
+        "category": "culture_weekly",
+        "primary_block": "next_7_days",
+        "reasons": [
+          "Pound amount '£5,' not present in evidence_text."
+        ],
+        "is_lead": false
+      },
+      {
+        "stage": "writer",
+        "title": "Invest in Manchester",
+        "category": "tech_business",
+        "primary_block": "tech_business",
+        "reasons": [
+          "Pound amount '£195млн' not present in evidence_text."
+        ],
+        "is_lead": false
+      },
+      {
+        "stage": "writer",
+        "title": "Invest in Manchester",
+        "category": "tech_business",
+        "primary_block": "tech_business",
+        "reasons": [
+          "Pound amount '£30млн' not present in evidence_text."
+        ],
+        "is_lead": false
+      },
+      {
+        "stage": "curator",
+        "title": null,
+        "source_label": "MEN",
+        "reason": "Evergreen-листинг без даты — ностальгическая статья о мосте без новостного повода.",
+        "why_flagged": "Curator pометил evergreen, но в evidence есть конкретная дата."
+      },
+      {
+        "stage": "curator",
+        "title": null,
+        "source_label": "Altrincham Today",
+        "reason": "Evergreen-новость от февраля 2026, stale, без нового события.",
+        "why_flagged": "Curator pометил evergreen, но в evidence есть конкретная дата."
+      }
+    ],
+    "borderline": [
+      {
+        "stage": "curator",
+        "title": null,
+        "source_label": "MEN",
+        "reason": "Общебританская новость о розыске, нет прямой привязки к GM.",
+        "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
+      }
+    ]
+  },
+  "after_run_summary": {
+    "useful_items": 49,
+    "digest_risk_level": "healthy",
+    "digest_risk_score": 0,
+    "broken_sources": 11,
+    "stale_sources": 20,
+    "suspiciously_rejected": 8,
+    "borderline_rejected": 1,
+    "lost_leads": 0,
+    "section_underflow": 1
   },
   "prompt_versions": [
     {
@@ -119,6 +939,11 @@
       "name": "repair_draft",
       "version": "v1",
       "hash": "5a6d4dca"
+    },
+    {
+      "name": "dedupe_review",
+      "version": "v1",
+      "hash": "c21d42cf"
     }
   ],
   "prompt_drift": [],
