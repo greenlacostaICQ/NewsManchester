@@ -28,6 +28,7 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.digest_shape import digest_shape_report
 from news_digest.pipeline.editorial_quality import (
     apply_editorial_quality,
     candidate_reader_value,
@@ -800,6 +801,7 @@ def write_digest(project_root: Path) -> StageResult:
             "editorial_rubric_summary": rubric_summary(candidates),
             "included_rubric_red_flags": included_rubric_red_flags(candidates),
             "reader_value_report": reader_value_report(candidates),
+            "digest_shape_report": digest_shape_report(candidates, rendered_candidate_fingerprints),
             "rendered_candidate_fingerprints": rendered_candidate_fingerprints,
             "dropped_candidates": dropped_candidates,
             "draft_path": str(draft_path.resolve()),

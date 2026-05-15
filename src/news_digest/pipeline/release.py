@@ -18,6 +18,7 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.digest_shape import digest_shape_report
 from news_digest.pipeline.editorial_quality import included_rubric_red_flags, reader_value_report, rubric_summary
 from news_digest.pipeline.reject_reasons import reject_reason_counts, reject_reasons
 
@@ -387,6 +388,17 @@ def _operator_warnings(
             }
         )
 
+    shape = digest_shape_report(candidates, rendered_fingerprints)
+    shape_warnings = shape.get("warnings", [])
+    if isinstance(shape_warnings, list) and shape_warnings:
+        warnings.append(
+            {
+                "type": "digest_shape",
+                "count": len(shape_warnings),
+                "guardrails": shape_warnings[:6],
+            }
+        )
+
     return warnings
 
 
@@ -708,6 +720,10 @@ def build_release(project_root: Path) -> ReleaseResult:
         draft_path=draft_path,
         rendered_fingerprints=rendered_fingerprints,
     )
+    shape_report = digest_shape_report(
+        candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else [],
+        rendered_fingerprints,
+    )
 
     ok = not errors
     published_facts_updated = False
@@ -733,6 +749,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "included_rubric_red_flags": included_rubric_red_flags(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
         "reader_value_report": reader_value_report(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
         "reader_value_summary": reader_value_report(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
+        "digest_shape_report": shape_report,
         "operator_warnings": operator_warnings,
         "published_facts_updated": published_facts_updated,
         "inputs": {

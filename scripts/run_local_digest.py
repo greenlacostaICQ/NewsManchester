@@ -286,6 +286,18 @@ def _format_operator_warning_message(report: dict) -> str:
             threshold = int(warning.get("threshold") or 0)
             if count:
                 parts.append(f"low_score={count}≤{threshold}")
+        elif warning_type == "digest_shape":
+            guardrails = warning.get("guardrails", [])
+            names: list[str] = []
+            if isinstance(guardrails, list):
+                for guardrail in guardrails[:3]:
+                    if isinstance(guardrail, dict) and guardrail.get("name"):
+                        names.append(str(guardrail["name"]))
+            count = int(warning.get("count") or len(names))
+            if names:
+                parts.append(f"shape={count} ({', '.join(names)})")
+            elif count:
+                parts.append(f"shape={count}")
 
     if reject_counts:
         reject_text = ", ".join(f"{key}={value}" for key, value in sorted(reject_counts.items()))

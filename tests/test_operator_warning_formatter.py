@@ -15,6 +15,7 @@ class OperatorWarningFormatterTest(unittest.TestCase):
                     {"type": "section_underflow", "section": "Что важно сегодня", "visible": 2, "minimum": 3},
                     {"type": "reject_spike", "counts": {"pr": 5, "source_thin": 3}},
                     {"type": "low_reader_value", "count": 4, "threshold": 40},
+                    {"type": "digest_shape", "count": 2, "guardrails": [{"name": "events_share"}, {"name": "top_source_share"}]},
                 ],
             }
         )
@@ -22,6 +23,7 @@ class OperatorWarningFormatterTest(unittest.TestCase):
         self.assertIn("underflow=Что важно сегодня (2/3)", message)
         self.assertIn("rejects: pr=5, source_thin=3", message)
         self.assertIn("low_score=4≤40", message)
+        self.assertIn("shape=2 (events_share, top_source_share)", message)
 
     def test_empty_when_no_operator_warnings(self) -> None:
         self.assertEqual(_format_operator_warning_message({"operator_warnings": []}), "")
