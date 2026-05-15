@@ -89,6 +89,7 @@ class AutoEditorRulesTest(unittest.TestCase):
             ]
         )
         self.assertFalse(old_event["include"])
+        self.assertIn("expired", old_event["reject_reasons"])
         self.assertTrue(replacement["include"])
         self.assertIn("IT и бизнес", replacement["draft_line"])
 

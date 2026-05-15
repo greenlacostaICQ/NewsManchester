@@ -14,6 +14,13 @@ from pathlib import Path
 import re
 
 from news_digest.pipeline.common import now_london, pipeline_run_id_from, read_json, today_london, write_json
+from news_digest.pipeline.editorial_quality import apply_editorial_quality, included_rubric_red_flags, rubric_summary
+from news_digest.pipeline.reject_reasons import (
+    add_reject_reason,
+    classify_reject_reason_text,
+    ensure_reject_reasons,
+    reject_reason_counts,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -197,6 +204,7 @@ def _semantic_dedup_pass(candidates: list[dict]) -> int:
             candidate["include"] = False
             candidate["dedupe_decision"] = "drop"
             candidate["reason"] = f"Semantic dedup: near-duplicate of {match_fp[:8]}"
+            add_reject_reason(candidate, "duplicate")
             dropped += 1
         else:
             seen.append((fp, sig))
@@ -348,7 +356,9 @@ def run_curator_pass(project_root: Path) -> None:
         if not decision.get("include", True):
             candidate["include"] = False
             candidate["dedupe_decision"] = "drop"
-            candidate["reason"] = f"Curator drop: {decision.get('reason', '')}"
+            reason = str(decision.get("reason", "") or "")
+            candidate["reason"] = f"Curator drop: {reason}"
+            add_reject_reason(candidate, classify_reject_reason_text(reason))
             dropped += 1
         if decision.get("is_lead") and not lead_set and candidate.get("include"):
             candidate["is_lead"] = True
@@ -362,6 +372,11 @@ def run_curator_pass(project_root: Path) -> None:
     # surface text differs.
     semantic_dropped = _semantic_dedup_pass(candidates)
     dropped += semantic_dropped
+    ensure_reject_reasons(candidates)
+    apply_editorial_quality(candidates)
+    for decision in decisions:
+        if isinstance(decision, dict) and not decision.get("include", True):
+            decision["reject_reasons"] = [classify_reject_reason_text(decision.get("reason", ""))]
 
     candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     logger.info("Curator: dropped %d candidates (semantic dedup: %d), lead=%s.", dropped, semantic_dropped, lead_set)
@@ -376,5 +391,8 @@ def run_curator_pass(project_root: Path) -> None:
         "dropped": dropped,
         "semantic_dropped": semantic_dropped,
         "lead_set": lead_set,
+        "reject_reason_counts": reject_reason_counts(candidates),
+        "editorial_rubric_summary": rubric_summary(candidates),
+        "included_rubric_red_flags": included_rubric_red_flags(candidates),
         "decisions": decisions,
     })

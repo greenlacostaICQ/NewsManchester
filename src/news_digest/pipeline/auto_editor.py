@@ -15,6 +15,8 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.editorial_quality import apply_editorial_quality, included_rubric_red_flags, rubric_summary
+from news_digest.pipeline.reject_reasons import add_reject_reason, classify_reject_reason_text, ensure_reject_reasons, reject_reason_counts, reject_reasons
 
 
 @dataclass(slots=True)
@@ -783,6 +785,21 @@ def auto_replace_unfixable_candidate(candidates: list[dict], dropped: dict, acti
     return _promote_replacement(candidates, dropped, actions)
 
 
+def _auto_editor_reject_code(reason: str) -> str:
+    lowered = str(reason or "").lower()
+    if "stale" in lowered or "date" in lowered and "past" in lowered:
+        return "expired"
+    if "not russian" in lowered:
+        return "english_prose"
+    if "promo" in lowered or "deal" in lowered:
+        return "pr"
+    if "missing concrete date" in lowered:
+        return "no_date"
+    if "missing" in lowered or "vague" in lowered:
+        return "weak_value"
+    return classify_reject_reason_text(reason)
+
+
 def auto_edit_digest(project_root: Path) -> StageResult:
     state_dir = project_root / "data" / "state"
     candidates_path = state_dir / "candidates.json"
@@ -840,11 +857,13 @@ def auto_edit_digest(project_root: Path) -> StageResult:
         if drop_reason:
             candidate["include"] = False
             _append_reason(candidate, drop_reason)
+            add_reject_reason(candidate, _auto_editor_reject_code(drop_reason))
             dropped_item = {
                 "fingerprint": candidate.get("fingerprint"),
                 "title": candidate.get("title"),
                 "primary_block": candidate.get("primary_block"),
                 "reason": drop_reason,
+                "reject_reasons": reject_reasons(candidate),
             }
             dropped.append(dropped_item)
             actions.append({"action": "drop_unfixable_candidate", **dropped_item})
@@ -855,6 +874,8 @@ def auto_edit_digest(project_root: Path) -> StageResult:
             replacements += 1
 
     payload["run_date_london"] = today_london()
+    ensure_reject_reasons(candidates)
+    apply_editorial_quality(candidates)
     write_json(candidates_path, payload)
     write_json(
         report_path,
@@ -868,6 +889,9 @@ def auto_edit_digest(project_root: Path) -> StageResult:
             "action_count": len(actions),
             "dropped_count": len(dropped),
             "replacement_count": replacements,
+            "reject_reason_counts": reject_reason_counts(candidates),
+            "editorial_rubric_summary": rubric_summary(candidates),
+            "included_rubric_red_flags": included_rubric_red_flags(candidates),
             "actions": actions[:120],
         },
     )

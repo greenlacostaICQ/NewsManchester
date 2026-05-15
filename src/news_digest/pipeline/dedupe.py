@@ -15,6 +15,7 @@ from news_digest.pipeline.common import (
     write_json,
 )
 from news_digest.pipeline.history import ensure_history_files
+from news_digest.pipeline.reject_reasons import add_reject_reason, ensure_reject_reasons, reject_reason_counts, reject_reasons
 
 
 @dataclass(slots=True)
@@ -49,6 +50,7 @@ def initialize_candidates_state(project_root: Path, *, overwrite: bool = False) 
                         "dedupe_decision": "drop",
                         "carry_over_label": "",
                         "reason": "",
+                        "reject_reasons": [],
                         "matched_previous_fingerprint": "",
                     }
                 ],
@@ -118,14 +120,17 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 candidate["dedupe_decision"] = "drop"
                 candidate["include"] = False
                 candidate["reason"] = candidate.get("reason") or "Repeat without new phase."
+                add_reject_reason(candidate, "no_change")
             elif decision == "carry_over_with_label" and not candidate.get("carry_over_label"):
                 candidate["dedupe_decision"] = "drop"
                 candidate["include"] = False
                 candidate["reason"] = "Carry-over without carry_over_label."
+                add_reject_reason(candidate, "no_change")
         elif decision not in {"drop", "new", "new_phase", "carry_over_with_label"}:
             candidate["dedupe_decision"] = "drop"
             candidate["include"] = False
             candidate["reason"] = "Invalid dedupe decision."
+            add_reject_reason(candidate, "weak_value")
 
         if not candidate.get("reason"):
             errors.append(f"Candidate #{index} is missing reason.")
@@ -136,6 +141,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 "title": candidate.get("title"),
                 "decision": candidate.get("dedupe_decision"),
                 "reason": candidate.get("reason"),
+                "reject_reasons": reject_reasons(candidate),
                 "matched_previous_fingerprint": candidate.get("matched_previous_fingerprint"),
                 "carry_over_label": candidate.get("carry_over_label"),
                 "similar_previous": similar_previous,
@@ -143,6 +149,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         )
 
     intra_batch_drops = _apply_intra_batch_dedup(candidates)
+    ensure_reject_reasons(candidates)
     final_candidates_by_fp = {
         str(candidate.get("fingerprint") or ""): candidate
         for candidate in candidates
@@ -154,6 +161,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             continue
         decision["decision"] = final_candidate.get("dedupe_decision")
         decision["reason"] = final_candidate.get("reason")
+        decision["reject_reasons"] = reject_reasons(final_candidate)
         decision["include"] = bool(final_candidate.get("include"))
 
     payload["run_at_london"] = now_london().isoformat()
@@ -172,6 +180,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             "errors": errors,
             "decisions": decisions,
             "intra_batch_dedup_drops": intra_batch_drops,
+            "reject_reason_counts": reject_reason_counts(candidates),
         },
     )
 
@@ -474,6 +483,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
         c["dedupe_decision"] = "drop"
         c["include"] = False
         c["reason"] = "Intra-batch topic duplicate — same story kept from stronger source."
+        add_reject_reason(c, "duplicate")
         drops.append(
             {
                 "fingerprint": c.get("fingerprint"),
@@ -486,6 +496,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                 "kept_primary_block": kept.get("primary_block"),
                 "overlap": drop_context["overlap"],
                 "reason": c["reason"],
+                "reject_reasons": reject_reasons(c),
             }
         )
     return drops

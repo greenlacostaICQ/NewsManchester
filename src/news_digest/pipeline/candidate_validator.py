@@ -8,6 +8,18 @@ from urllib import parse
 
 from news_digest.pipeline.collector.filters import _has_weekend_date_signal
 from news_digest.pipeline.common import clean_url, now_london, pipeline_run_id_from, read_json, today_london, write_json
+from news_digest.pipeline.editorial_quality import (
+    evaluate_editorial_rubric,
+    included_rubric_red_flags,
+    rubric_summary,
+)
+from news_digest.pipeline.reject_reasons import (
+    add_reject_reason,
+    ensure_reject_reason,
+    ensure_reject_reasons,
+    reject_reason_counts,
+    reject_reasons,
+)
 
 
 @dataclass(slots=True)
@@ -66,6 +78,7 @@ def _exclude_stale_ticket_onsale(candidate: dict) -> bool:
     existing = str(candidate.get("reason") or "").strip()
     note = "Validator: public_onsale is already in the past."
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    add_reject_reason(candidate, "expired")
     return True
 
 
@@ -157,6 +170,7 @@ def _exclude_undated_event_like_candidate(candidate: dict) -> bool:
     existing = str(candidate.get("reason") or "").strip()
     note = "Validator: event-like candidate has no concrete upcoming date."
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    add_reject_reason(candidate, "no_date")
     return True
 
 
@@ -177,6 +191,7 @@ def _exclude_thin_evidence_candidate(candidate: dict) -> bool:
     existing = str(candidate.get("reason") or "").strip()
     note = "Validator: evidence is too thin for a self-contained draft_line."
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    add_reject_reason(candidate, "source_thin")
     return True
 
 
@@ -213,32 +228,44 @@ def validate_candidates(project_root: Path) -> StageResult:
         lowered = url.lower()
         if "/amp/" in lowered:
             validation_errors.append("AMP URL is forbidden.")
+            add_reject_reason(candidate, "invalid_url")
         if _is_search_url(url):
             validation_errors.append("Search URL is forbidden.")
+            add_reject_reason(candidate, "invalid_url")
         if candidate.get("include") and _is_topic_or_index_url(url):
             candidate["include"] = False
             candidate["reason"] = str(candidate.get("reason") or "").rstrip() + " | Validator: topic/index URL, not a standalone item."
+            add_reject_reason(candidate, "invalid_url")
         if candidate.get("include") and candidate.get("primary_block") == "weekend_activities":
             title = str(candidate.get("title") or "")
             path = parse.urlsplit(url).path
             if not _has_weekend_date_signal(title, path):
                 candidate["include"] = False
                 candidate["reason"] = str(candidate.get("reason") or "").rstrip() + " | Validator: no date signal for weekend block."
+                add_reject_reason(candidate, "no_date")
         if candidate.get("include"):
             _exclude_stale_ticket_onsale(candidate)
         if candidate.get("include"):
             _exclude_undated_event_like_candidate(candidate)
+        if candidate.get("include"):
+            _exclude_thin_evidence_candidate(candidate)
         if candidate.get("event_page_type") in {"homepage", "aggregator"}:
             validation_errors.append("Event candidate must use an official event page.")
+            add_reject_reason(candidate, "invalid_url")
 
         candidate["validation_errors"] = validation_errors
         candidate["validated"] = not validation_errors
+        ensure_reject_reason(candidate)
+        candidate["editorial_rubric"] = evaluate_editorial_rubric(candidate)
         items.append(
             {
                 "fingerprint": candidate.get("fingerprint"),
                 "title": candidate.get("title"),
                 "validated": not validation_errors,
                 "validation_errors": validation_errors,
+                "include": bool(candidate.get("include")),
+                "reject_reasons": reject_reasons(candidate),
+                "editorial_rubric": candidate.get("editorial_rubric"),
             }
         )
 
@@ -248,6 +275,7 @@ def validate_candidates(project_root: Path) -> StageResult:
     payload["run_at_london"] = now_london().isoformat()
     payload["run_date_london"] = today_london()
     pipeline_run_id = pipeline_run_id_from(payload)
+    ensure_reject_reasons(candidates)
     write_json(candidates_path, payload)
     write_json(
         report_path,
@@ -257,6 +285,9 @@ def validate_candidates(project_root: Path) -> StageResult:
             "run_date_london": today_london(),
             "stage_status": "complete" if not errors else "failed",
             "errors": errors,
+            "reject_reason_counts": reject_reason_counts(candidates),
+            "editorial_rubric_summary": rubric_summary(candidates),
+            "included_rubric_red_flags": included_rubric_red_flags(candidates),
             "items": items,
         },
     )

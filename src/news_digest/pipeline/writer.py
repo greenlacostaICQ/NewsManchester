@@ -6,6 +6,7 @@ import html
 import logging
 from pathlib import Path
 import re
+from collections import Counter
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,8 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.editorial_quality import included_rubric_red_flags, rubric_summary
+from news_digest.pipeline.reject_reasons import classify_reject_reason_text, reject_reason_counts
 
 
 MODEL_WRITTEN_CATEGORIES = {"media_layer", "gmp", "council", "public_services", "food_openings"}
@@ -513,6 +516,24 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     return errors
 
 
+def _writer_reject_reasons(errors: list[str], default: str = "weak_value") -> list[str]:
+    reasons: list[str] = []
+    for error in errors:
+        code = classify_reject_reason_text(error)
+        if code not in reasons:
+            reasons.append(code)
+    return reasons or [default]
+
+
+def _dropped_candidate_reject_reason_counts(items: list[dict[str, object]]) -> dict[str, int]:
+    counter: Counter[str] = Counter()
+    for item in items:
+        for reason in item.get("reject_reasons", []):
+            if str(reason).strip():
+                counter[str(reason).strip()] += 1
+    return dict(sorted(counter.items()))
+
+
 def write_digest(project_root: Path) -> StageResult:
     state_dir = project_root / "data" / "state"
     candidates_path = state_dir / "candidates.json"
@@ -578,6 +599,7 @@ def write_digest(project_root: Path) -> StageResult:
                     "category": str(candidate.get("category") or ""),
                     "primary_block": str(candidate.get("primary_block") or ""),
                     "reasons": ["Expired event date."],
+                    "reject_reasons": ["expired"],
                 }
             )
             continue
@@ -618,6 +640,7 @@ def write_digest(project_root: Path) -> StageResult:
                         "category": category,
                         "primary_block": block_key,
                         "reasons": ["Missing draft_line."],
+                        "reject_reasons": ["weak_value"],
                     }
                 )
                 continue
@@ -632,6 +655,7 @@ def write_digest(project_root: Path) -> StageResult:
                         "category": category,
                         "primary_block": block_key,
                         "reasons": ["Untranslated English."],
+                        "reject_reasons": ["english_prose"],
                     }
                 )
                 continue
@@ -657,6 +681,7 @@ def write_digest(project_root: Path) -> StageResult:
                     "category": category,
                     "primary_block": block_key,
                     "reasons": draft_line_errors,
+                    "reject_reasons": _writer_reject_reasons(draft_line_errors),
                 }
             )
             continue
@@ -767,6 +792,10 @@ def write_digest(project_root: Path) -> StageResult:
             "errors": errors,
             "warnings": warnings,
             "quality_counts": quality_counts,
+            "reject_reason_counts": reject_reason_counts(candidates),
+            "writer_reject_reason_counts": _dropped_candidate_reject_reason_counts(dropped_candidates),
+            "editorial_rubric_summary": rubric_summary(candidates),
+            "included_rubric_red_flags": included_rubric_red_flags(candidates),
             "rendered_candidate_fingerprints": rendered_candidate_fingerprints,
             "dropped_candidates": dropped_candidates,
             "draft_path": str(draft_path.resolve()),

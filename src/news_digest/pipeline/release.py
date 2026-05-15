@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 import re
@@ -16,6 +17,8 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.editorial_quality import included_rubric_red_flags, rubric_summary
+from news_digest.pipeline.reject_reasons import reject_reason_counts, reject_reasons
 
 
 BANNED_PLACEHOLDER_MARKERS = [
@@ -270,6 +273,8 @@ def _validate_candidates(
             errors.append(f"Candidate #{index} has invalid dedupe_decision: {decision!r}.")
         if decision == "carry_over_with_label" and not candidate.get("carry_over_label"):
             errors.append(f"Candidate #{index} carry-over is missing carry_over_label.")
+        if candidate.get("include") is False and not reject_reasons(candidate):
+            errors.append(f"Candidate #{index} is include=false but missing reject_reasons.")
         if candidate.get("include") is True and decision != "drop":
             included_candidates.append(candidate)
 
@@ -277,6 +282,19 @@ def _validate_candidates(
         errors.append("No included candidates survived dedupe.")
 
     return {"included_candidates": included_candidates}
+
+
+def _writer_reject_reason_counts(writer_report: dict | None) -> dict[str, int]:
+    if not isinstance(writer_report, dict):
+        return {}
+    counter: Counter[str] = Counter()
+    for item in writer_report.get("dropped_candidates", []):
+        if not isinstance(item, dict):
+            continue
+        for reason in item.get("reject_reasons", []):
+            if str(reason).strip():
+                counter[str(reason).strip()] += 1
+    return dict(sorted(counter.items()))
 
 
 def _validate_curator_report(
@@ -609,6 +627,10 @@ def build_release(project_root: Path) -> ReleaseResult:
         "message": message,
         "errors": errors,
         "warnings": warnings,
+        "reject_reason_counts": reject_reason_counts(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
+        "writer_reject_reason_counts": _writer_reject_reason_counts(writer_report),
+        "editorial_rubric_summary": rubric_summary(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
+        "included_rubric_red_flags": included_rubric_red_flags(candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else []),
         "published_facts_updated": published_facts_updated,
         "inputs": {
             "collector_report": str((state_dir / "collector_report.json").resolve()),
