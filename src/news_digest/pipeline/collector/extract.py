@@ -324,8 +324,12 @@ def _extract_html_page_event(source: SourceDef, body: str) -> list[ExtractedItem
     evidence so later gates can see date/place/free/booking details.
     """
 
-    title = _extract_jsonld_title(body) or _extract_page_title(body) or _extract_h1_title(body)
-    title = _strip_page_title_suffix(_clean_title_text(title))
+    title = ""
+    for candidate_title in (_extract_jsonld_title(body), _extract_page_title(body), _extract_h1_title(body)):
+        candidate_title = _strip_page_title_suffix(_clean_title_text(candidate_title))
+        if candidate_title and _looks_like_candidate_title(candidate_title):
+            title = candidate_title
+            break
     if not title or not _looks_like_candidate_title(title):
         return []
     visible_text = _html_to_visible_text(body)
@@ -379,7 +383,7 @@ def _extract_article_published_at(html_text: str) -> str | None:
 
 
 def _should_enrich_source(source: SourceDef) -> bool:
-    if source.source_type == "html_page_event":
+    if source.source_type in {"html_page_event", "html_the_manc_weekly_events"}:
         return False
     if source.report_category == "transport":
         return False
@@ -798,6 +802,70 @@ def _extract_phm_events(source: SourceDef, body: str) -> list[ExtractedItem]:
     )
 
 
+def _extract_the_manc_weekly_events(source: SourceDef, body: str) -> list[ExtractedItem]:
+    article_match = re.search(
+        r"<(?:article|main)[^>]*>(.*?)</(?:article|main)>",
+        body,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    html_text = article_match.group(1) if article_match else body
+    starts = list(re.finditer(r"<h3\b[^>]*>(.*?)</h3>", html_text, flags=re.IGNORECASE | re.DOTALL))
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    title_terms = (
+        "market",
+        "makers",
+        "festival",
+        "food",
+        "flat baker",
+        "pistachio",
+        "car boot",
+    )
+    evidence_terms = (
+        "food festival",
+        "street food",
+        "makers market",
+        "car boot",
+        "flat baker",
+        "pistachio",
+    )
+    for index, match in enumerate(starts):
+        title = _clean_title_text(_clean_long_text(match.group(1)))
+        if not title or title.lower().startswith(("advertisement", "did you know")):
+            continue
+        block_start = match.end()
+        block_end = starts[index + 1].start() if index + 1 < len(starts) else len(html_text)
+        block = html_text[block_start:block_end]
+        evidence = _clean_long_text(block)
+        if len(evidence) < 80:
+            continue
+        title_lower = title.lower()
+        evidence_lower = evidence.lower()
+        if not any(term in title_lower for term in title_terms) and not any(
+            term in evidence_lower for term in evidence_terms
+        ):
+            continue
+        slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:80]
+        if not slug or slug in seen:
+            continue
+        seen.add(slug)
+        published_at = _extract_text_date_hint(f"{title} {evidence}")
+        items.append(
+            ExtractedItem(
+                title=title,
+                url=f"{source.url}#{slug}",
+                published_at=published_at,
+                summary=_summary_from_evidence(evidence),
+                lead=_derive_lead(source, title, evidence),
+                evidence_text=evidence[:6000],
+                enrichment_status="ok_weekly_section",
+            )
+        )
+        if len(items) >= source.max_candidates:
+            break
+    return items
+
+
 def _extract_eventbrite_events(source: SourceDef, body: str) -> list[ExtractedItem]:
     """Extract Eventbrite event links from an organiser/search page.
 
@@ -1141,6 +1209,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_visit_manchester_events(source, body)
     elif source.source_type == "html_phm_events":
         links = _extract_phm_events(source, body)
+    elif source.source_type == "html_the_manc_weekly_events":
+        links = _extract_the_manc_weekly_events(source, body)
     elif "<rss" in body[:500].lower() or "<feed" in body[:500].lower():
         links = _extract_feed_items(source.url, body)
     else:
@@ -1157,9 +1227,11 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
     seen: set[str] = set()
     candidates: list[dict] = []
     for item in links:
-        normalized_url = clean_url(item.url)
-        same_source_page = source.source_type == "html_page_event" and normalized_url == clean_url(source.url)
-        if not same_source_page and not _is_allowed_source_link(source, normalized_url, item.title, item.summary):
+        base_url = clean_url(item.url)
+        fragment = parse.urlsplit(item.url).fragment
+        normalized_url = f"{base_url}#{fragment}" if source.source_type == "html_the_manc_weekly_events" and fragment else base_url
+        same_source_page = source.source_type in {"html_page_event", "html_the_manc_weekly_events"} and base_url == clean_url(source.url)
+        if not same_source_page and not _is_allowed_source_link(source, base_url, item.title, item.summary):
             continue
         if normalized_url in seen:
             continue

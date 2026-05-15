@@ -24,7 +24,9 @@ _DATE_RE = re.compile(
     re.IGNORECASE,
 )
 _RECURRING_MARKET_RE = re.compile(
-    r"\b(?:every|first|1st|second|2nd|third|3rd|last)\s+(?:saturday|sunday|weekend|month)\b",
+    r"\b(?:every|each|all|most|first|1st|second|2nd|third|3rd|last)\s+(?:saturday|sunday|weekend|month)\b|"
+    r"\bruns?\s+(?:on\s+)?(?:saturdays?|sundays?|bank holiday mondays?)\b|"
+    r"\b(?:saturday|sunday)\s+market\b",
     re.IGNORECASE,
 )
 _PLACE_RE = re.compile(
@@ -36,8 +38,8 @@ _PLACE_RE = re.compile(
 )
 _DISTRICT_RE = re.compile(
     r"\b(?:greater manchester|manchester|salford|trafford|stockport|tameside|oldham|rochdale|bury|"
-    r"bolton|wigan|altrincham|stretford|ashton|eccles|city centre|deansgate|piccadilly|ancoats|"
-    r"northern quarter|oxford road|spinningfields|first street|levenshulme|wythenshawe|"
+    r"bolton|wigan|altrincham|stretford|ashton|eccles|burnage|romiley|city centre|deansgate|piccadilly|ancoats|"
+    r"northern quarter|oxford road|spinningfields|first street|levenshulme|wythenshawe|chorlton|warrington|wilmslow|styal|"
     r"urmston|great northern|london|birmingham|leeds|liverpool|sheffield|glasgow|cardiff|"
     r"манчестер|солфорд|траффорд|стокпорт|лондон|бирмингем|лидс|ливерпуль)\b",
     re.IGNORECASE,
@@ -82,16 +84,18 @@ def event_quality_report(candidate: dict) -> dict[str, object]:
     blob = _blob(candidate)
     has_price_or_free = bool(_PRICE_OR_FREE_RE.search(blob))
     has_booking_signal = bool(_BOOKING_RE.search(blob))
-    market_like = "market" in blob.lower()
+    lowered_blob = blob.lower()
+    market_like = "market" in lowered_blob or "car boot" in lowered_blob
+    food_drop_in = any(term in lowered_blob for term in ("food festival", "pistachio festival", "bakery event", "food pop-up", "street food"))
     checks = {
-        "date": bool(_DATE_RE.search(blob) or ("market" in blob.lower() and _RECURRING_MARKET_RE.search(blob))),
+        "date": bool(_DATE_RE.search(blob) or (market_like and _RECURRING_MARKET_RE.search(blob))),
         "place": bool(_PLACE_RE.search(blob)),
         "district": bool(_DISTRICT_RE.search(blob)),
         "price_or_free": has_price_or_free,
         "booking": has_booking_signal,
         "source": bool(str(candidate.get("source_url") or "").strip() and str(candidate.get("source_label") or "").strip()),
     }
-    checks["access"] = has_price_or_free or has_booking_signal or (market_like and checks["source"])
+    checks["access"] = has_price_or_free or has_booking_signal or ((market_like or food_drop_in) and checks["source"])
 
     missing: list[str] = []
     if not checks["date"]:
