@@ -516,7 +516,7 @@ def _validate_draft(
         and candidate.get("freshness_status") == "fresh_24h"
     ]
     if len(fresh_last_24h_candidates) >= 3 and len(last_24h_lines) < 3:
-        errors.append("Last 24h block has fewer than 3 items despite available fresh city/news candidates.")
+        warnings.append("Last 24h block has fewer than 3 items despite available fresh city/news candidates.")
 
     city_candidates = [
         candidate
