@@ -138,8 +138,14 @@ source_type = "json_funnelback"
 fallback_urls = ["https://www.manchester.gov.uk/news-stories"]
 allowed_hosts = ["manchester.gov.uk"]
 
+# NOTE: Salford Council disabled 2026-05-16. Locally returns 200 via
+# curl_cffi, but on GitHub Actions runner IPs Cloudflare consistently
+# returns 403 — same pattern as GMP and Tameside Council. No public
+# RSS endpoint exists (/rss /feed /news/feed all 404). Coverage of
+# Salford news still comes through BBC Manchester and The Mill.
 [[sources]]
 name = "Salford Council"
+enabled = false
 report_category = "media_layer"
 candidate_category = "council"
 url = "https://www.salford.gov.uk/news/"
@@ -899,8 +905,14 @@ source_type = "html_page_event"
 allowed_hosts = ["warringtoncarboot.com"]
 max_candidates = 1
 
+# NOTE: Holly Lane Car Boot Sale disabled 2026-05-16. findglocal.com
+# consistently returns 403 from GitHub Actions runners (Cloudflare /
+# CDN block). Alternative car boot listings come from Barton Aerodrome
+# Car Boot, Bowlee Car Boot Sale, The BIG Stockport Car Boot — all
+# already in the registry.
 [[sources]]
 name = "Holly Lane Car Boot Sale"
+enabled = false
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.findglocal.com/GB/Wilmslow/633691653449726/Holly-Lane-Car-Boot-Sale"

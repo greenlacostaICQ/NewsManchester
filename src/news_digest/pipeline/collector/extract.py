@@ -464,7 +464,11 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         published_at=published_at,
         summary=summary,
         lead=lead,
-        evidence_text=_clean_snippet(evidence_text)[:2500],
+        # Evidence_text feeds the LLM rewriter, which needs enough body
+        # text to write a 250-450 char Russian card with concrete details
+        # (date/venue/price for events; £ amounts/names for news). The
+        # default _clean_snippet cap is 280 — too tight; pass 2500 here.
+        evidence_text=_clean_snippet(evidence_text, max_chars=2500),
         enrichment_status="ok" if evidence_text else "ok_no_evidence",
     )
 
