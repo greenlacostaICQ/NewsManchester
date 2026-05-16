@@ -54,7 +54,11 @@ LONG_FORMAT_CATEGORIES = {
 LONG_FORMAT_MIN_CHARS = 150
 LONG_FORMAT_MIN_SENTENCES = 2
 SHORT_TICKET_BLOCKS = {"ticket_radar", "outside_gm_tickets"}
-SHORT_EVENT_BLOCKS = SHORT_TICKET_BLOCKS | {"weekend_activities"}
+# Event blocks where venue listings rarely have 150+ chars of evidence.
+# Skipping the LONG_FORMAT_MIN_CHARS / MIN_SENTENCES gate keeps real
+# events visible (Double Bill, Midge Ure, Palace Theatre Tour) instead
+# of dropping them for being a sentence too short.
+SHORT_EVENT_BLOCKS = SHORT_TICKET_BLOCKS | {"weekend_activities", "next_7_days", "future_announcements", "russian_events"}
 TODAY_FOCUS_SECTION = "Что важно сегодня"
 # Order matters: backfill takes the first non-empty section. We previously
 # pulled from transport FIRST, which dumped bus-stop closures into "Что

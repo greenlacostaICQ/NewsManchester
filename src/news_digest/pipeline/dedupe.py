@@ -167,8 +167,23 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 )
             elif prev_title:
                 candidate["reason"] = f"{human_prefix} ранее как «{prev_title[:120]}»."
-            # If we ended up here without a dedupe drop yet, enforce one.
-            if candidate.get("dedupe_decision") not in {"drop"}:
+            # If we ended up here without a dedupe drop yet, enforce one —
+            # UNLESS the same-day rerun exemption already accepted this
+            # candidate (operational/manual rerun reading earlier in this
+            # function). Same-day reruns should always re-include items
+            # published earlier today so a manually-triggered second
+            # digest at 14:00 doesn't lose the morning news.
+            if same_day_repeat_ok or operational_repeat_ok:
+                # Keep include=True and overwrite the misleading "no facts"
+                # reason with the rerun rationale.
+                candidate["dedupe_decision"] = "new"
+                candidate["include"] = True
+                candidate["reason"] = (
+                    "Same-day rerun repeat is allowed while correcting today's issue."
+                    if same_day_repeat_ok
+                    else "Operational block repeat is allowed while it remains relevant."
+                )
+            elif candidate.get("dedupe_decision") not in {"drop"}:
                 candidate["dedupe_decision"] = "drop"
                 candidate["include"] = False
 
@@ -739,6 +754,50 @@ def _title_tokens(title: str) -> frozenset[str]:
     return frozenset(w for w in words if w not in _TITLE_STOPWORDS and len(w) >= 3)
 
 
+# Named-entity dedup signature. Catches stories like:
+#   "Labour allows Andy Burnham to run for selection"
+#   "Burnham makes his move with a Makerfield gambit"
+#   "Burnham out, Reform in?"
+# These are about the same political event but have only 1-2 tokens in
+# common — Jaccard on tokens misses them. By extracting capitalised
+# 2-word person names and unique single tokens like "Burnham" /
+# "Makerfield" we can detect the shared subject and dedupe.
+_ENTITY_RE = re.compile(
+    r"\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})?)\b"
+)
+# Drop generic English capitalised words that aren't entities but appear
+# in many headlines (start-of-sentence words, generic place mentions).
+_ENTITY_STOPWORDS = frozenset({
+    "manchester", "greater", "city", "police", "council", "labour", "tory",
+    "conservative", "reform", "court", "the", "new", "what", "how", "why",
+    "when", "where", "labour", "liberal", "democrats", "green", "party",
+    "and", "for", "with", "from", "about", "after", "before", "during",
+    "today", "yesterday", "weekend", "week", "month", "year",
+    "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+    "north", "south", "east", "west", "central", "north-west", "north-east",
+})
+
+
+def _title_entities(title: str) -> frozenset[str]:
+    """Extract distinctive proper-noun entities (people, places, orgs).
+
+    Returns lowercased entities, including 2-word names ("andy burnham"),
+    so "Burnham" and "Andy Burnham" are both captured.
+    """
+    text = _TICKETMASTER_SUFFIX_RE.sub("", str(title or ""))
+    text = _FEAT_SUFFIX_RE.sub("", text)
+    entities = set()
+    for m in _ENTITY_RE.finditer(text):
+        name = m.group(1).lower()
+        # Include both the full match and individual words for partial overlap.
+        if name not in _ENTITY_STOPWORDS:
+            entities.add(name)
+        for word in name.split():
+            if word not in _ENTITY_STOPWORDS and len(word) >= 4:
+                entities.add(word)
+    return frozenset(entities)
+
+
 _DEDUP_BLOCK_GROUPS: tuple[frozenset[str], ...] = (
     frozenset({"lead_story", "last_24h", "today_focus", "city_watch", "district_radar"}),
     frozenset({"weekend_activities", "next_7_days", "future_announcements", "ticket_radar", "outside_gm_tickets", "russian_events"}),
@@ -774,6 +833,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
             continue
         ci = included[i]
         tokens_i = _title_tokens(str(ci.get("title") or ""))
+        entities_i = _title_entities(str(ci.get("title") or ""))
         borough_i = _extract_borough(str(ci.get("title") or ""))
         block_i = str(ci.get("primary_block") or "")
         group_i = _dedup_block_group(block_i)
@@ -791,6 +851,29 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                 continue  # different boroughs = different stories
 
             tokens_j = _title_tokens(str(cj.get("title") or ""))
+            entities_j = _title_entities(str(cj.get("title") or ""))
+
+            # FAST PATH — shared distinctive entity. If two titles both
+            # mention the same proper noun (Burnham, Mainoo, Manchester
+            # United, Trafford Centre), treat as same story even when
+            # token Jaccard is low. Catches the classic political-story
+            # case where each headline picks different verbs around the
+            # same subject.
+            shared_entities = entities_i & entities_j
+            if shared_entities and len(shared_entities) >= 1:
+                # Require at least one MULTI-WORD entity OR a 5+ char
+                # single-word entity to avoid false positives on common
+                # short words that survived the stopword filter.
+                strong = any(" " in e or len(e) >= 5 for e in shared_entities)
+                if strong:
+                    rank_j = _source_rank(str(cj.get("source_label") or ""))
+                    if rank_i <= rank_j:
+                        to_drop[j] = {"kept_index": i, "overlap": 0.0, "shared_entity": ",".join(sorted(shared_entities))[:60]}
+                    else:
+                        to_drop[i] = {"kept_index": j, "overlap": 0.0, "shared_entity": ",".join(sorted(shared_entities))[:60]}
+                        break
+                    continue
+
             union = tokens_i | tokens_j
             if not union or len(tokens_i) < 3 or len(tokens_j) < 3:
                 continue

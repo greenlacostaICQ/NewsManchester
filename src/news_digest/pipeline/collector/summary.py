@@ -39,11 +39,15 @@ _SNIPPET_NOISE_SUFFIXES: tuple[re.Pattern[str], ...] = tuple(
 )
 
 
-def _clean_snippet(value: str) -> str:
-    # Strip HTML tags first, then decode entities. Use html.unescape so we
-    # cover numeric refs (&#160;, &#8217;) and named refs (&nbsp;, &mdash;)
-    # in one shot — the previous .replace() chain only handled three of
-    # them and left visible &#160; in GMP summaries.
+def _clean_snippet(value: str, max_chars: int = 280) -> str:
+    """Strip HTML tags + noise and truncate to ``max_chars``.
+
+    Default 280 is right for one-line meta descriptions / titles.
+    Callers feeding article body for evidence_text should pass a larger
+    cap (1500-2500) so the LLM rewriter has enough context to compose
+    a 250-450 char Russian card with concrete details (date, venue,
+    price, performer for events; £ amounts and names for news).
+    """
     text = re.sub(r"<[^>]+>", " ", str(value or ""))
     text = html.unescape(text)
     text = re.sub(r"\s+", " ", text).strip()
@@ -52,7 +56,7 @@ def _clean_snippet(value: str) -> str:
     for pattern in _SNIPPET_NOISE_SUFFIXES:
         text = pattern.sub("", text, count=1)
     text = text.strip(" |-—·•:.,")
-    return text[:280].strip()
+    return text[:max_chars].strip()
 
 
 def _clean_title_text(title: str) -> str:

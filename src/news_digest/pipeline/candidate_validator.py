@@ -120,9 +120,26 @@ def _candidate_blob(candidate: dict) -> str:
     )
 
 
+_IMPLICIT_WEEKEND_URL_PATTERNS = (
+    "this-weekend", "this_weekend", "weekend-in-",
+    "things-to-do-this-week", "weekend-events",
+)
+
+
+def _is_implicit_weekend_aggregator(candidate: dict) -> bool:
+    """Source URLs like '.../things-to-do-this-weekend-in-manchester' list
+    only events for the current weekend by definition — even if an
+    individual card has no explicit date in title. Treat as dated.
+    """
+    url = str(candidate.get("source_url") or "").lower()
+    return any(pat in url for pat in _IMPLICIT_WEEKEND_URL_PATTERNS)
+
+
 def _has_future_or_concrete_date(candidate: dict) -> bool:
     summary = str(candidate.get("summary") or "")
     if _summary_field_datetime(summary, "event_date") is not None:
+        return True
+    if _is_implicit_weekend_aggregator(candidate):
         return True
     published_at = str(candidate.get("published_at") or "")
     if published_at:
