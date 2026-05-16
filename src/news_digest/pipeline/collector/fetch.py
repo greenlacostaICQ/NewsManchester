@@ -90,19 +90,21 @@ def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
     """Fetch via curl_cffi using Chrome TLS fingerprint.
 
     Used for hosts that block urllib's default TLS handshake via
-    Cloudflare bot challenge.
+    Cloudflare bot challenge. Falls back to a single retry on transient
+    network errors to match the urllib path's resilience.
 
-    Cloudflare ratchets the WAF every few weeks: the cascade of
-    impersonation profiles below has grown over time as profiles age
-    out. When a host that previously worked starts returning 403, the
-    fix is almost always:
+    We strip our default browser-shaped headers (UA, Accept, Accept-Language)
+    so curl_cffi can use its own impersonation-matched values. Source-specific
+    headers like Referer/Origin are preserved.
 
-      1. Add a newer profile name (chrome131+, safari18_0+, firefox133+).
-      2. Add the Sec-Fetch-* request headers that real browsers send —
-         WAF rules sometimes gate on their presence even though they're
-         technically optional.
-      3. Back off and retry on 403 (some WAF rate-limits release after
-         a few seconds).
+    HISTORY: 2026-05-15 added Sec-Fetch-* headers and a longer profile
+    cascade (chrome131/safari18_0/firefox133/...) thinking it would help
+    against newer Cloudflare rules. Result: Eventbrite Manchester
+    + Markets + Trafford Council went from OK/stale to HTTP 405/403
+    overnight. Reverted to the pre-2026-05-15 cascade and dropped the
+    Sec-Fetch-* headers. 429 Retry-After handling is the ONLY new
+    behaviour that survived the revert — it doesn't change the request
+    shape, it just respects the server's throttle hint.
     """
     from curl_cffi import requests as cffi_requests  # noqa: PLC0415
 
@@ -110,32 +112,13 @@ def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
         k: v for k, v in headers.items()
         if k not in {"User-Agent", "Accept", "Accept-Language", "X-Source-Tag"}
     }
-    # Sec-Fetch-* headers that real Chrome / Safari send for top-level
-    # navigations. Cloudflare's "Browser Integrity Check" rule reads
-    # them; missing values shift the bot-score toward block.
-    cffi_headers.setdefault("Sec-Fetch-Dest", "document")
-    cffi_headers.setdefault("Sec-Fetch-Mode", "navigate")
-    cffi_headers.setdefault("Sec-Fetch-Site", "none")
-    cffi_headers.setdefault("Sec-Fetch-User", "?1")
-    cffi_headers.setdefault("Upgrade-Insecure-Requests", "1")
 
-    # Modern profiles first — Cloudflare's JA3/JA4 rules favour current
-    # browser fingerprints and increasingly block older ones outright.
-    # Keep older profiles as last-ditch fallback for hosts whose WAFs
-    # haven't been updated.
-    profiles = (
-        "chrome131",
-        "chrome124",
-        "chrome120",
-        "safari18_0",
-        "safari17_2_ios",
-        "safari17_0",
-        "firefox133",
-        "edge99",
-        "chrome",
-    )
+    # Some WAFs (notably gmp.police.uk on non-residential IP ranges like
+    # GitHub Actions runners) block the default Chrome fingerprint and
+    # accept a different one. Try a small cascade before giving up.
+    profiles = ("chrome", "chrome120", "safari17_0")
     last_exc: Exception | None = None
-    for profile_idx, profile in enumerate(profiles):
+    for profile in profiles:
         for attempt in range(2):
             try:
                 response = cffi_requests.get(
@@ -145,9 +128,7 @@ def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
                     timeout=30,
                 )
                 if response.status_code >= 400:
-                    # Honour Retry-After on 429 (rate limit). Ticketmaster and
-                    # several CDNs use it; respecting the header gets us back
-                    # in much faster than blind retries.
+                    # 429 — honour Retry-After once, then surface the error.
                     if response.status_code == 429:
                         retry_after = response.headers.get("Retry-After", "")
                         try:
@@ -160,17 +141,9 @@ def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
             except Exception as exc:  # noqa: BLE001
                 last_exc = exc
                 msg = str(exc)
-                # Transient network error → retry once with the same profile.
                 if attempt == 0 and not msg.startswith("HTTP "):
                     time.sleep(_FETCH_RETRY_BACKOFF_SECONDS)
                     continue
-                # 403 / 429 specifically: try a brief backoff before moving
-                # to next profile in case the WAF rate-limited us — sometimes
-                # the same profile passes 3-5 seconds later. Don't escalate
-                # other HTTP codes; 4xx other than 403/429 is usually
-                # permanent (URL renamed / endpoint deprecated).
-                if msg in ("HTTP 403", "HTTP 429") and profile_idx < len(profiles) - 1:
-                    time.sleep(2.5)
                 break
     raise RuntimeError(str(last_exc) if last_exc else "curl_cffi fetch failed")
 
