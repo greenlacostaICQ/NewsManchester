@@ -145,6 +145,16 @@ def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
                     timeout=30,
                 )
                 if response.status_code >= 400:
+                    # Honour Retry-After on 429 (rate limit). Ticketmaster and
+                    # several CDNs use it; respecting the header gets us back
+                    # in much faster than blind retries.
+                    if response.status_code == 429:
+                        retry_after = response.headers.get("Retry-After", "")
+                        try:
+                            wait = min(int(retry_after), 30) if retry_after.isdigit() else 5
+                        except (ValueError, AttributeError):
+                            wait = 5
+                        time.sleep(max(wait, 1))
                     raise RuntimeError(f"HTTP {response.status_code}")
                 return response.text
             except Exception as exc:  # noqa: BLE001
@@ -154,12 +164,12 @@ def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
                 if attempt == 0 and not msg.startswith("HTTP "):
                     time.sleep(_FETCH_RETRY_BACKOFF_SECONDS)
                     continue
-                # 403 specifically: try a brief backoff before moving to
-                # next profile in case the WAF rate-limited us — sometimes
+                # 403 / 429 specifically: try a brief backoff before moving
+                # to next profile in case the WAF rate-limited us — sometimes
                 # the same profile passes 3-5 seconds later. Don't escalate
-                # other HTTP codes; 4xx other than 403 is usually
+                # other HTTP codes; 4xx other than 403/429 is usually
                 # permanent (URL renamed / endpoint deprecated).
-                if msg == "HTTP 403" and profile_idx < len(profiles) - 1:
+                if msg in ("HTTP 403", "HTTP 429") and profile_idx < len(profiles) - 1:
                     time.sleep(2.5)
                 break
     raise RuntimeError(str(last_exc) if last_exc else "curl_cffi fetch failed")
@@ -185,6 +195,7 @@ def _fetch_text(url: str, *, extra_headers: dict[str, str] | None = None) -> str
 
     req = request.Request(url, headers=headers)
     last_url_error: Exception | None = None
+    rate_limit_attempted = False
     for attempt in range(2):  # 1 initial + 1 retry
         try:
             with request.urlopen(req, timeout=30) as response:
@@ -195,6 +206,19 @@ def _fetch_text(url: str, *, extra_headers: dict[str, str] | None = None) -> str
                 charset = response.headers.get_content_charset() or "utf-8"
                 return raw.decode(charset, errors="replace")
         except error.HTTPError as exc:
+            # Honour Retry-After on 429 (rate limit) — Ticketmaster's API
+            # uses it on every rate-limit response. One retry after the
+            # advertised wait usually clears it. Cap the wait at 30s so
+            # we don't stall the whole digest run on a hung throttle.
+            if exc.code == 429 and not rate_limit_attempted:
+                rate_limit_attempted = True
+                retry_after = exc.headers.get("Retry-After", "") if exc.headers else ""
+                try:
+                    wait = min(int(retry_after), 30) if retry_after.isdigit() else 5
+                except (ValueError, AttributeError):
+                    wait = 5
+                time.sleep(max(wait, 1))
+                continue
             # Definitive HTTP error — don't retry, let _fetch_source_body
             # try the next fallback URL instead.
             raise RuntimeError(f"HTTP {exc.code}") from exc

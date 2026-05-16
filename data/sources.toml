@@ -152,6 +152,10 @@ report_category = "media_layer"
 candidate_category = "council"
 url = "https://www.trafford.gov.uk/news"
 primary_block = "last_24h"
+# Apex domain (no www) returned 200 locally when www.trafford.gov.uk gave
+# 403 — different Cloudflare rule attached to the subdomain. Worth a try
+# before giving up on this council source from the CI runner.
+fallback_urls = ["https://trafford.gov.uk/news/"]
 allowed_hosts = ["trafford.gov.uk"]
 
 [[sources]]
@@ -670,6 +674,13 @@ report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.eventbrite.co.uk/d/united-kingdom--manchester/"
 primary_block = "weekend_activities"
+# 2026-05-16: CI run returned 405 from .co.uk while .com worked locally.
+# /all-events/ subpath also returned 200 locally — both worth trying
+# before declaring the source dead for the day.
+fallback_urls = [
+    "https://www.eventbrite.com/d/united-kingdom--manchester/",
+    "https://www.eventbrite.co.uk/d/united-kingdom--manchester/all-events/",
+]
 allowed_hosts = ["eventbrite.co.uk", "eventbrite.com"]
 
 # manchestermarkets.com is just a redirect/landing page → manchester.gov.uk/markets.
@@ -712,6 +723,7 @@ candidate_category = "culture_weekly"
 url = "https://www.eventbrite.co.uk/d/united-kingdom--manchester/markets/"
 primary_block = "weekend_activities"
 source_type = "html_eventbrite"
+fallback_urls = ["https://www.eventbrite.com/d/united-kingdom--manchester/markets/"]
 allowed_hosts = ["eventbrite.co.uk", "eventbrite.com"]
 
 # Direct market/fair pages. These are intentionally single-page sources:
