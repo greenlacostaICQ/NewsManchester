@@ -1,17 +1,16 @@
 {
   "release_gate_version": 3,
   "pipeline_run_id": "20260516T080050+0100",
-  "run_at_london": "2026-05-16T10:28:26.707562+01:00",
+  "run_at_london": "2026-05-16T10:31:16.602269+01:00",
   "run_date_london": "2026-05-16",
-  "release_decision": "fail",
-  "message": "Digest release is blocked until collector, dedupe, validator, writer and gate inputs pass.",
-  "errors": [
-    "Last 24h block has fewer than 3 items despite available fresh city/news candidates."
-  ],
+  "release_decision": "pass",
+  "message": "Release passed. Promoted /home/runner/work/NewsManchester/NewsManchester/data/state/draft_digest.html to /home/runner/work/NewsManchester/NewsManchester/data/outgoing/current_digest.html.",
+  "errors": [],
   "warnings": [
     "LLM rewrite was degraded; writer/release quality gates handled the remaining candidates.",
     "Section underflow: «Что важно в ближайшие 7 дней» shipped 0 items (min=3) while writer dropped 1 candidate(s) that targeted this section — quality gates may be too strict.",
-    "Digest health [Risk] few_items: Only 18 item(s) rendered (typical day 30–50).",
+    "Last 24h block has fewer than 3 items despite available fresh city/news candidates.",
+    "Digest health [Risk] few_items: Only 16 item(s) rendered (typical day 30–50).",
     "Digest health [Severe] all_news_thin: All news sections thin: 24h=2, today=2, radar=0 — possible coverage breakdown.",
     "Source health: 5 source(s) failed today — check release_report.source_status for the list."
   ],
@@ -25,50 +24,50 @@
     }
   ],
   "cost_summary": {
-    "total_calls": 11,
-    "total_cost_usd": 0.010997,
-    "total_prompt_tokens": 26594,
-    "total_completion_tokens": 4378,
+    "total_calls": 10,
+    "total_cost_usd": 0.010433,
+    "total_prompt_tokens": 23740,
+    "total_completion_tokens": 4139,
     "by_stage": {
       "llm_rewrite": {
-        "calls": 8,
-        "prompt_tokens": 17041,
-        "completion_tokens": 2403,
-        "cost_usd": 0.00624539
+        "calls": 7,
+        "prompt_tokens": 14137,
+        "completion_tokens": 2119,
+        "cost_usd": 0.005618610000000001
       },
       "curator": {
         "calls": 3,
-        "prompt_tokens": 9553,
-        "completion_tokens": 1975,
-        "cost_usd": 0.00475181
+        "prompt_tokens": 9603,
+        "completion_tokens": 2020,
+        "cost_usd": 0.004814810000000001
       }
     },
     "by_provider": {
       "DeepSeek": {
         "calls": 8,
-        "prompt_tokens": 20890,
-        "completion_tokens": 3749,
-        "cost_usd": 0.0097642
+        "prompt_tokens": 20546,
+        "completion_tokens": 3847,
+        "cost_usd": 0.009779120000000002
       },
       "OpenAI": {
-        "calls": 3,
-        "prompt_tokens": 5704,
-        "completion_tokens": 629,
-        "cost_usd": 0.0012330000000000002
+        "calls": 2,
+        "prompt_tokens": 3194,
+        "completion_tokens": 292,
+        "cost_usd": 0.0006543
       }
     },
     "by_model": {
       "deepseek-chat": {
         "calls": 8,
-        "prompt_tokens": 20890,
-        "completion_tokens": 3749,
-        "cost_usd": 0.0097642
+        "prompt_tokens": 20546,
+        "completion_tokens": 3847,
+        "cost_usd": 0.009779120000000002
       },
       "gpt-4o-mini": {
-        "calls": 3,
-        "prompt_tokens": 5704,
-        "completion_tokens": 629,
-        "cost_usd": 0.0012330000000000002
+        "calls": 2,
+        "prompt_tokens": 3194,
+        "completion_tokens": 292,
+        "cost_usd": 0.0006543
       }
     },
     "unknown_priced_models": []
@@ -173,7 +172,7 @@
       {
         "name": "few_items",
         "severity": 1,
-        "detail": "Only 18 item(s) rendered (typical day 30–50)."
+        "detail": "Only 16 item(s) rendered (typical day 30–50)."
       },
       {
         "name": "all_news_thin",
@@ -779,7 +778,7 @@
     "borderline": []
   },
   "after_run_summary": {
-    "useful_items": 18,
+    "useful_items": 16,
     "digest_risk_level": "unhealthy",
     "digest_risk_score": 4,
     "broken_sources": 14,
