@@ -225,6 +225,7 @@ _HEAVY_SNOW_PATTERN = re.compile(
 )
 _EXTREME_TEMP_PATTERN = re.compile(r"\b([1-9]\d)\s*°[Cc]\b")
 _EVENT_BLOCKS = {"weekend_activities", "next_7_days", "ticket_radar", "outside_gm_tickets", "russian_events", "future_announcements"}
+_WEEKEND_BLOCK = "weekend_activities"
 _MONTHS = {
     "jan": 1, "january": 1,
     "feb": 2, "february": 2,
@@ -275,7 +276,7 @@ def _parse_day(value: object) -> date | None:
         return None
 
 
-def _future_date_signal(text: str) -> bool:
+def _date_signals(text: str) -> list[date]:
     today = now_london().date()
     lowered = str(text or "").lower()
     dates: list[date] = []
@@ -321,7 +322,57 @@ def _future_date_signal(text: str) -> bool:
             dates.append(date(year, month, int(end_day_raw)))
         except ValueError:
             continue
-    return bool(dates and max(dates) >= today)
+    return dates
+
+
+def _future_date_signal(text: str) -> bool:
+    dates = _date_signals(text)
+    return bool(dates and max(dates) >= now_london().date())
+
+
+def _current_weekend_end() -> date:
+    today = now_london().date()
+    days_until_sunday = (6 - today.weekday()) % 7
+    return date.fromordinal(today.toordinal() + days_until_sunday)
+
+
+def _has_current_weekend_recurring_signal(text: str) -> bool:
+    lowered = str(text or "").lower()
+    today = now_london().date()
+    weekend_end = _current_weekend_end()
+    weekdays = {
+        date.fromordinal(ordinal).weekday()
+        for ordinal in range(today.toordinal(), weekend_end.toordinal() + 1)
+    }
+    if 5 in weekdays and re.search(r"\b(?:(?:every|weekly)\s+saturdays?|saturdays)\b|кажд[а-яё]*\s+суббот", lowered):
+        return True
+    if 6 in weekdays and re.search(r"\b(?:(?:every|weekly)\s+sundays?|sundays)\b|кажд[а-яё]*\s+воскрес", lowered):
+        return True
+    return False
+
+
+def _is_outside_current_weekend_candidate(candidate: dict, line: str = "") -> bool:
+    if str(candidate.get("primary_block") or "") != _WEEKEND_BLOCK:
+        return False
+    text = " ".join(
+        str(value or "")
+        for value in (
+            candidate.get("title"),
+            candidate.get("summary"),
+            candidate.get("lead"),
+            candidate.get("evidence_text"),
+            candidate.get("source_url"),
+            line,
+        )
+    )
+    dates = _date_signals(text)
+    today = now_london().date()
+    weekend_end = _current_weekend_end()
+    if any(today <= day <= weekend_end for day in dates):
+        return False
+    if _has_current_weekend_recurring_signal(text):
+        return False
+    return bool(dates)
 
 
 def _is_expired_event_candidate(candidate: dict, line: str = "") -> bool:
@@ -683,6 +734,20 @@ def write_digest(project_root: Path) -> StageResult:
         if str(candidate.get("primary_block") or "") == "last_24h" and not str(candidate.get("published_at") or "").strip():
             errors.append(f"Candidate #{index} is in last_24h without published_at.")
             quality_counts["blocked_for_quality"] += 1
+            continue
+        if _is_outside_current_weekend_candidate(candidate):
+            warnings.append(f"Candidate #{index} dropped: outside current weekend window.")
+            quality_counts["dropped_low_quality"] += 1
+            dropped_candidates.append(
+                {
+                    "fingerprint": candidate.get("fingerprint"),
+                    "title": str(candidate.get("title") or ""),
+                    "category": str(candidate.get("category") or ""),
+                    "primary_block": str(candidate.get("primary_block") or ""),
+                    "is_lead": bool(candidate.get("is_lead")),
+                    "reasons": ["Outside current weekend window."],
+                }
+            )
             continue
         if _is_expired_event_candidate(candidate):
             warnings.append(f"Candidate #{index} dropped: expired event date.")
