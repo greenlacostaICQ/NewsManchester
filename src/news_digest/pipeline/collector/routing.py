@@ -254,6 +254,13 @@ _TRANSIT_SUBJECT_RE = re.compile(
     r'\b(metrolink|trams?|bee\s+network|northern|transpennine)\b',
     re.IGNORECASE,
 )
+_TRANSIT_ROUTE_SPECIFICITY_RE = re.compile(
+    r"\b(?:bury|rochdale|oldham|eccles|ashton|airport|trafford\s+park|"
+    r"east\s+didsbury|altrincham)\s+line\b|"
+    r"\bbetween\s+[A-Z][A-Za-z' -]{2,}\s+and\s+[A-Z][A-Za-z' -]{2,}\b|"
+    r"\b(?:victoria|piccadilly|crumpsall|rochdale\s+town\s+centre|bury\s+interchange)\b",
+    re.IGNORECASE,
+)
 
 
 def _reroute_media_transit_to_transport(candidates: list[dict]) -> None:
@@ -273,9 +280,15 @@ def _reroute_media_transit_to_transport(candidates: list[dict]) -> None:
             continue
         blob = (
             f"{str(candidate.get('title') or '')} "
-            f"{str(candidate.get('summary') or '')}"
+            f"{str(candidate.get('summary') or '')} "
+            f"{str(candidate.get('lead') or '')} "
+            f"{str(candidate.get('evidence_text') or '')}"
         )
-        if _TRANSIT_DISRUPTION_RE.search(blob) and _TRANSIT_SUBJECT_RE.search(blob):
+        if (
+            _TRANSIT_DISRUPTION_RE.search(blob)
+            and _TRANSIT_SUBJECT_RE.search(blob)
+            and _TRANSIT_ROUTE_SPECIFICITY_RE.search(blob)
+        ):
             candidate["primary_block"] = "transport"
             existing_reason = str(candidate.get("reason") or "").strip()
             note = "Rerouted media_layer transit disruption to transport block."
