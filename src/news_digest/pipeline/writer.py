@@ -51,6 +51,16 @@ LONG_FORMAT_CATEGORIES = {
 }
 LONG_FORMAT_MIN_CHARS = 150
 LONG_FORMAT_MIN_SENTENCES = 2
+TODAY_FOCUS_SECTION = "Что важно сегодня"
+TODAY_FOCUS_BACKFILL_SECTIONS = (
+    "Общественный транспорт сегодня",
+    "Что произошло за 24 часа",
+    "Городской радар",
+)
+TODAY_FOCUS_BACKFILL_TARGET = 2
+TODAY_FOCUS_MIN_SOURCE_REMAINING = {
+    "Что произошло за 24 часа": 1,
+}
 _BAD_EDITORIAL_PROSE_MARKERS = (
     "ticket office",
     "слот входа",
@@ -125,6 +135,42 @@ def _summary_is_useful(summary: str, headline: str) -> bool:
     if len(cleaned) < 28:
         return False
     return True
+
+
+def _backfill_today_focus(
+    sections: dict[str, list[str]],
+    section_sources: dict[str, list[str]],
+    section_scores: dict[str, list[float]],
+) -> int:
+    if sections.get(TODAY_FOCUS_SECTION):
+        return 0
+
+    moved = 0
+    sections.setdefault(TODAY_FOCUS_SECTION, [])
+    section_sources.setdefault(TODAY_FOCUS_SECTION, [])
+    section_scores.setdefault(TODAY_FOCUS_SECTION, [])
+
+    for source_section in TODAY_FOCUS_BACKFILL_SECTIONS:
+        lines = sections.get(source_section) or []
+        sources = section_sources.get(source_section) or []
+        scores = section_scores.get(source_section) or []
+        min_remaining = TODAY_FOCUS_MIN_SOURCE_REMAINING.get(source_section, 0)
+        while lines and moved < TODAY_FOCUS_BACKFILL_TARGET and len(lines) > min_remaining:
+            sections[TODAY_FOCUS_SECTION].append(lines.pop(0))
+            section_sources[TODAY_FOCUS_SECTION].append(sources.pop(0) if sources else "")
+            section_scores[TODAY_FOCUS_SECTION].append(scores.pop(0) if scores else 0.0)
+            moved += 1
+        sections[source_section] = lines
+        section_sources[source_section] = sources
+        section_scores[source_section] = scores
+        if moved >= TODAY_FOCUS_BACKFILL_TARGET:
+            break
+
+    if not sections.get(TODAY_FOCUS_SECTION):
+        sections.pop(TODAY_FOCUS_SECTION, None)
+        section_sources.pop(TODAY_FOCUS_SECTION, None)
+        section_scores.pop(TODAY_FOCUS_SECTION, None)
+    return moved
 
 
 def _contains_cyrillic(value: str) -> bool:
@@ -665,6 +711,12 @@ def write_digest(project_root: Path) -> StageResult:
             f"Writer dropped {missing_draft_count} included candidate(s) with missing draft_line — digest continues."
         )
 
+    backfilled_today_focus = _backfill_today_focus(sections, section_sources, section_scores)
+    if backfilled_today_focus:
+        warnings.append(
+            f"Writer backfilled «{TODAY_FOCUS_SECTION}» with {backfilled_today_focus} item(s) from other practical sections."
+        )
+
     rendered: list[str] = [_title_line(), ""]
 
     # "Выходные в GM" показываем только с четверга (weekday >= 3)
@@ -745,6 +797,7 @@ def write_digest(project_root: Path) -> StageResult:
             "warnings": warnings,
             "quality_counts": quality_counts,
             "section_counts": section_counts,
+            "backfilled_today_focus": backfilled_today_focus,
             "rendered_candidate_fingerprints": rendered_candidate_fingerprints,
             "dropped_candidates": dropped_candidates,
             "draft_path": str(draft_path.resolve()),
