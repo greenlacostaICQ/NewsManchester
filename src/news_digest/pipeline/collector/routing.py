@@ -48,9 +48,19 @@ def _freshness_status(source: SourceDef, published_at: str | None) -> str:
 
 
 def _resolve_primary_block(source: SourceDef, published_at: str | None) -> str:
+    """Decide which block a candidate lands in based on source config + freshness.
+
+    Previously stale items from last_24h-sources defaulted to ``today_focus``,
+    which is the WRONG direction — "Что важно сегодня" should be today's
+    fresh news, not yesterday's leftovers. Stale items now go to
+    ``city_watch`` (the catch-all radar block) so today_focus stays
+    reserved for promotion-pass output.
+    """
     if source.primary_block != "last_24h":
         return source.primary_block
-    return "last_24h" if _freshness_status(source, published_at) == "fresh_24h" else "today_focus"
+    if _freshness_status(source, published_at) == "fresh_24h":
+        return "last_24h"
+    return "city_watch"
 
 
 _TODAY_FOCUS_KEYWORDS: tuple[str, ...] = (
@@ -146,59 +156,91 @@ def _is_awareness_item(candidate: dict) -> bool:
     return bool(_AWARENESS_TOKENS.search(blob))
 
 
-def _promote_to_today_focus(candidates: list[dict]) -> None:
-    """Ensure 'Что важно сегодня' has at least 2 substantive items.
+_TODAY_FOCUS_TARGET = 3  # editorial minimum, was 2
+_TODAY_FOCUS_NORMAL_SCORE = 15
+_TODAY_FOCUS_FAILSAFE_SCORE = 5  # accept weaker candidates rather than ship empty
 
-    Substantive = practical_angle does NOT start with the writer's
-    auto-skip prefix 'Включать только…'. If the block is thinner than
-    that, mutate the strongest qualifying media_layer/gmp candidate's
-    primary_block to today_focus and rewrite its practical_angle to a
-    today-facing variant. Conservative: nothing happens unless the
-    candidate scores >= 15 and is fresh_24h or topical.
+
+def _promote_to_today_focus(candidates: list[dict]) -> None:
+    """Ensure 'Что важно сегодня' has at least _TODAY_FOCUS_TARGET substantive items.
+
+    Substantive = not an awareness press release and not the auto-skip
+    "Включать только…" placeholder. Routine GMMH/NHS press releases
+    that just happened to be tagged today_focus by their source aren't
+    counted as enough — we still pull in real news on top.
+
+    Two-pass promotion:
+
+    1. NORMAL pass: pull candidates scoring ≥ 15 (fresh_24h news with
+       GM/topical signals). Fills the bulk of the block on a normal day.
+
+    2. FAIL-SAFE pass: if today_focus would still ship empty or with
+       only 1 item after the normal pass, lower the bar to score ≥ 5
+       and promote the best available media_layer/gmp/council item.
+       Better a slightly off-target news in "Что важно сегодня" than
+       an empty block that breaks the required-block invariant.
+
+    Net effect: today_focus is never empty when last_24h has anything.
     """
 
-    substantive = [
-        candidate
-        for candidate in candidates
-        if isinstance(candidate, dict)
-        and candidate.get("primary_block") == "today_focus"
-        and not str(candidate.get("practical_angle") or "").startswith("Включать только")
-        and not _is_awareness_item(candidate)
-    ]
-    if len(substantive) >= 2:
+    substantive = _today_focus_substantive(candidates)
+    if len(substantive) >= _TODAY_FOCUS_TARGET:
         return
 
-    needed = 2 - len(substantive)
-    promotion_pool = [
-        candidate
-        for candidate in candidates
-        if isinstance(candidate, dict)
-        and candidate.get("category") in {"media_layer", "gmp", "council"}
-        and candidate.get("primary_block") in {"last_24h", "city_watch"}
-        and not candidate.get("promoted_to_today_focus")
-    ]
-    promotion_pool.sort(key=_today_focus_score, reverse=True)
-
     promoted_fingerprints = {
-        str(candidate.get("fingerprint") or "") for candidate in substantive
+        str(c.get("fingerprint") or "") for c in substantive
     }
 
-    for candidate in promotion_pool[:needed]:
-        if _today_focus_score(candidate) < 15:
-            return  # nothing strong enough — fail closed via existing fallback layer
-        fingerprint = str(candidate.get("fingerprint") or "")
-        if fingerprint and fingerprint in promoted_fingerprints:
-            continue
-        candidate["primary_block"] = "today_focus"
-        candidate["promoted_to_today_focus"] = True
-        candidate["practical_angle"] = _today_facing_practical_angle(candidate)
-        existing_reason = str(candidate.get("reason") or "").strip()
-        promotion_note = "Promoted to today_focus by today_focus_policy."
-        candidate["reason"] = (
-            f"{existing_reason} | {promotion_note}".strip(" |") if existing_reason else promotion_note
-        )
-        if fingerprint:
-            promoted_fingerprints.add(fingerprint)
+    def _do_promote(threshold: int, slots: int) -> int:
+        pool = [
+            c for c in candidates
+            if isinstance(c, dict)
+            and c.get("include")  # only promote items that will actually publish
+            and c.get("category") in {"media_layer", "gmp", "council"}
+            and c.get("primary_block") in {"last_24h", "city_watch"}
+            and not c.get("promoted_to_today_focus")
+            and str(c.get("fingerprint") or "") not in promoted_fingerprints
+        ]
+        pool.sort(key=_today_focus_score, reverse=True)
+        promoted_count = 0
+        for c in pool:
+            if promoted_count >= slots:
+                break
+            if _today_focus_score(c) < threshold:
+                break  # pool is sorted; nothing below either
+            fp = str(c.get("fingerprint") or "")
+            c["primary_block"] = "today_focus"
+            c["promoted_to_today_focus"] = True
+            c["practical_angle"] = _today_facing_practical_angle(c)
+            existing = str(c.get("reason") or "").strip()
+            note = f"Promoted to today_focus (threshold={threshold})."
+            c["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+            if fp:
+                promoted_fingerprints.add(fp)
+            promoted_count += 1
+        return promoted_count
+
+    # Pass 1 — normal threshold.
+    needed = _TODAY_FOCUS_TARGET - len(substantive)
+    _do_promote(_TODAY_FOCUS_NORMAL_SCORE, needed)
+
+    # Pass 2 — fail-safe. Recount substantive (promotion may have added some).
+    substantive = _today_focus_substantive(candidates)
+    if len(substantive) >= 1:
+        return  # at least one real news item is fine — don't dilute further
+    needed = max(1, _TODAY_FOCUS_TARGET - len(substantive))
+    _do_promote(_TODAY_FOCUS_FAILSAFE_SCORE, needed)
+
+
+def _today_focus_substantive(candidates: list[dict]) -> list[dict]:
+    """Today_focus items that are real news (not awareness/PR boilerplate)."""
+    return [
+        c for c in candidates
+        if isinstance(c, dict)
+        and c.get("primary_block") == "today_focus"
+        and not str(c.get("practical_angle") or "").startswith("Включать только")
+        and not _is_awareness_item(c)
+    ]
 
 
 _TRANSIT_DISRUPTION_RE = re.compile(
