@@ -401,6 +401,7 @@ def _validate_draft(
     rendered_fingerprints: set[str],
     current_day_london: str,
     errors: list[str],
+    warnings: list[str],
 ) -> None:
     if not draft_path.exists():
         errors.append(f"Missing draft digest: {draft_path}.")
@@ -433,10 +434,21 @@ def _validate_draft(
 
     sections = extract_sections(html_text)
     for block in REQUIRED_BLOCKS:
+        has_candidates_for_block = any(
+            PRIMARY_BLOCKS.get(str(candidate.get("primary_block") or "")) == block
+            for candidate in included_candidates
+            if isinstance(candidate, dict) and candidate.get("include")
+        )
         if block not in sections:
-            errors.append(f"Draft digest is missing required block: {block}.")
+            if block == "Что важно сегодня" and not has_candidates_for_block:
+                warnings.append("Draft has no «Что важно сегодня» section because no today_focus candidates survived.")
+            else:
+                errors.append(f"Draft digest is missing required block: {block}.")
         elif not [line for line in sections.get(block, []) if line.strip() != "•"]:
-            errors.append(f"Draft digest has no substantive item in required block: {block}.")
+            if block == "Что важно сегодня" and not has_candidates_for_block:
+                warnings.append("Draft has empty «Что важно сегодня» section because no today_focus candidates survived.")
+            else:
+                errors.append(f"Draft digest has no substantive item in required block: {block}.")
 
     visible_item_count = sum(
         1
@@ -1181,6 +1193,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         rendered_fingerprints=rendered_fingerprints,
         current_day_london=current_day_london,
         errors=errors,
+        warnings=warnings,
     )
 
     # Q9: Bad Digest Detector. Compute health verdict from writer + curator

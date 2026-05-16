@@ -5,6 +5,7 @@ from pathlib import Path
 
 from news_digest.pipeline.common import (
     LOW_SIGNAL_BLOCKS,
+    PRIMARY_BLOCKS,
     REQUIRED_BLOCKS,
     extract_sections,
     is_placeholder_practical_angle,
@@ -45,6 +46,14 @@ def _is_weak_city_candidate(candidate: dict) -> bool:
     if is_placeholder_practical_angle(practical_angle):
         return True
     return len(practical_angle) < MIN_CITY_PRACTICAL_ANGLE_LENGTH
+
+
+def _has_included_candidates_for_section(candidates: list[dict], section_name: str) -> bool:
+    return any(
+        PRIMARY_BLOCKS.get(str(candidate.get("primary_block") or "")) == section_name
+        for candidate in candidates
+        if isinstance(candidate, dict) and candidate.get("include")
+    )
 
 
 def edit_digest(project_root: Path) -> StageResult:
@@ -122,7 +131,10 @@ def edit_digest(project_root: Path) -> StageResult:
     required_to_check = [b for b in REQUIRED_BLOCKS if b != "Коротко"]
     for block in required_to_check:
         if block not in normalized_sections:
-            errors.append(f"Required block missing after editor pass: {block}.")
+            if block == "Что важно сегодня" and not _has_included_candidates_for_section(included_candidates, block):
+                warnings.append("No included today_focus candidates; omitted «Что важно сегодня» instead of blocking release.")
+            else:
+                errors.append(f"Required block missing after editor pass: {block}.")
 
     rendered: list[str] = []
     if draft_text:
