@@ -56,14 +56,23 @@ LONG_FORMAT_MIN_SENTENCES = 2
 SHORT_TICKET_BLOCKS = {"ticket_radar", "outside_gm_tickets"}
 SHORT_EVENT_BLOCKS = SHORT_TICKET_BLOCKS | {"weekend_activities"}
 TODAY_FOCUS_SECTION = "Что важно сегодня"
+# Order matters: backfill takes the first non-empty section. We previously
+# pulled from transport FIRST, which dumped bus-stop closures into "Что
+# важно сегодня" (those are not "important news of the day" — they're
+# already shown in the transport block above). Now media news leads;
+# transport is the last-resort fallback only when there's literally nothing
+# else to put up top.
 TODAY_FOCUS_BACKFILL_SECTIONS = (
-    "Общественный транспорт сегодня",
     "Что произошло за 24 часа",
     "Городской радар",
+    "Общественный транспорт сегодня",
 )
 TODAY_FOCUS_BACKFILL_TARGET = 2
 TODAY_FOCUS_MIN_SOURCE_REMAINING = {
-    "Что произошло за 24 часа": 1,
+    # Don't gut source blocks just to fill today_focus.
+    "Что произошло за 24 часа": 3,
+    "Городской радар": 4,
+    "Общественный транспорт сегодня": 1,
 }
 _BAD_EDITORIAL_PROSE_MARKERS = (
     "ticket office",
