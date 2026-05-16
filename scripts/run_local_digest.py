@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import logging
 import os
@@ -307,27 +307,131 @@ def cmd_send_file(file_path: str, parse_mode: str | None, force: bool) -> int:
 _ALREADY_FIXED_CAUSES: set[str] = {"money_format"}
 
 
-def _explain_source_failure(detail: str) -> tuple[str, bool]:
-    """Translate the raw fetch error into a sentence the editor understands.
+def _explain_source_failure(detail: str) -> str:
+    """Translate the raw fetch error into a one-sentence Russian summary.
 
-    Returns (plain_text, is_already_fixed). When `is_already_fixed` is True
-    the report frames the issue as informational ("починено в коде, со
-    следующего прогона должно вернуться").
+    Honest: no "уже исправлено" tag based on error type alone — that was
+    misleading when fixes deployed but the underlying CI block persisted.
+    Day-counter context is added separately by _source_streak_tag.
     """
     d = (detail or "").lower()
     if "http 403" in d:
-        return ("сайт заблокировал нашего бота (Cloudflare)", True)
+        return "сайт заблокировал нашего бота (Cloudflare / WAF)"
     if "http 404" in d:
-        return ("страница исчезла или переехала", False)
+        return "страница исчезла или переехала"
+    if "http 405" in d:
+        return "сайт отверг наш запрос (405 Method Not Allowed — обычно бот-защита)"
+    if "http 429" in d:
+        return "превышен лимит запросов (429 — нужен backoff)"
     if "http 5" in d:
-        return ("у источника проблемы на их стороне (5xx)", False)
+        return "у источника проблемы на их стороне (5xx)"
     if "timeout" in d or "timed out" in d:
-        return ("сайт не отвечает (либо у них даун, либо молча режут нас)", True)
+        return "сайт не отвечает (либо у них даун, либо молча режут нас)"
     if "no candidate links" in d:
-        return ("сайт ответил, но мы не нашли ссылок на новости — нужно поправить парсер", False)
+        return "сайт ответил, но мы не нашли ссылок на новости — нужно поправить парсер"
     if ("errno" in d and ("not known" in d or "nodename" in d)) or "dns" in d:
-        return ("домен не существует — переехал или закрыт", False)
-    return (detail[:100], False)
+        return "домен не существует — переехал или закрыт"
+    return detail[:100]
+
+
+def _translate_health_signal(sig: dict) -> str:
+    """Render a digest_health signal in plain Russian.
+
+    Signals come from release.py:_evaluate_digest_health with English
+    `detail` strings. We map by `name` (stable) and prefer our Russian
+    rewrite; if a new signal type appears we fall back to the raw detail.
+    """
+    name = str(sig.get("name") or "")
+    detail = str(sig.get("detail") or "")
+    if name == "too_few_items":
+        # "Only N item(s) rendered — below the 15-item floor."
+        m = re.search(r"\d+", detail)
+        n = m.group(0) if m else "?"
+        return f"Вышло мало пунктов: {n} (минимум 15). Похоже, источники массово не отдали данные."
+    if name == "few_items":
+        m = re.search(r"\d+", detail)
+        n = m.group(0) if m else "?"
+        return f"Пунктов меньше нормы: {n} (обычный день — 30–50)."
+    if name == "weather_empty":
+        return "Раздел погоды пустой — Met Office не отвечает."
+    if name == "transport_empty":
+        return "Транспортный раздел пустой — TfGM/Metrolink молчат."
+    if name == "all_news_thin":
+        # "All news sections thin: 24h=X, today=Y, radar=Z — possible coverage breakdown."
+        m_24h = re.search(r"24h=(\d+)", detail)
+        m_today = re.search(r"today=(\d+)", detail)
+        m_radar = re.search(r"radar=(\d+)", detail)
+        n24 = m_24h.group(1) if m_24h else "?"
+        nt = m_today.group(1) if m_today else "?"
+        nr = m_radar.group(1) if m_radar else "?"
+        return (f"Все новостные разделы тонкие: «За 24 часа» — {n24}, "
+                f"«Что важно сегодня» — {nt}, «Городской радар» — {nr}. "
+                f"Возможный сбой сбора.")
+    if name == "events_without_dates":
+        m = re.search(r"(\d+)/(\d+)", detail)
+        nodate = m.group(1) if m else "?"
+        total = m.group(2) if m else "?"
+        return (f"У {nodate} из {total} событий нет даты — читатель не сможет "
+                f"спланировать поход.")
+    if name == "high_semantic_duplicates":
+        m = re.search(r"\d+", detail)
+        n = m.group(0) if m else "?"
+        return f"{n} семантических дубликатов отброшено — сегодня необычно много шума в источниках."
+    if name == "low_writer_yield":
+        m = re.search(r"(\d+) of (\d+).*?(\d+%)", detail)
+        if m:
+            return (f"Из {m.group(2)} принятых кандидатов в выпуск попало {m.group(1)} "
+                    f"({m.group(3)}) — проверки качества режут слишком много.")
+        return "Проверки качества режут слишком много кандидатов — фильтры стоит ослабить."
+    # Fallback for any new signal type we haven't translated yet
+    return f"{name}: {detail[:140]}"
+
+
+def _source_streak_tag(source_name: str, today_iso: str) -> str:
+    """Look up how many days in a row this source has been failing.
+
+    Reads data/state/daily_index/*.jsonl files (last 14 days) and checks
+    whether the source had ANY successful candidate ingest on each day.
+    Returns a Russian tag like "новая проблема", "падает 3 дня подряд",
+    "падает неделю — пора отключить".
+    """
+    snapshot_dir = PROJECT_ROOT / "data" / "state" / "daily_index"
+    if not snapshot_dir.exists():
+        return ""
+    try:
+        today = datetime.strptime(today_iso, "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return ""
+    # Look back up to 14 days; count consecutive days where the source
+    # produced ZERO records in the snapshot (means it failed every fetch).
+    streak = 0
+    for back in range(0, 14):
+        day = today - timedelta(days=back)
+        path = snapshot_dir / f"{day.isoformat()}.jsonl"
+        if not path.exists():
+            # No snapshot for that day — can't tell, stop counting.
+            break
+        had_success = False
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                rec = json.loads(line)
+            except Exception:  # noqa: BLE001
+                continue
+            if rec.get("source_label") == source_name:
+                had_success = True
+                break
+        if had_success:
+            break
+        streak += 1
+    if streak <= 1:
+        return "новая проблема (первый день)"
+    if streak <= 3:
+        return f"падает {streak} дня подряд"
+    if streak <= 6:
+        return f"падает {streak} дней подряд"
+    return f"падает {streak} дней подряд — пора отключить источник"
 
 
 # Classification of writer/curator suspicious-reject reasons into
@@ -616,22 +720,22 @@ def cmd_send_warnings() -> int:
     if failed_sources:
         lines.append("🔌 ИСТОЧНИКИ КОТОРЫЕ НЕ ОТВЕТИЛИ")
         any_fixed = False
-        any_actionable = False
+        today_iso = report.get("run_date_london") or ""
+        chronic_count = 0
         for s in failed_sources[:10]:
             name = s.get("name") or ""
             detail = str(s.get("detail") or "")
-            plain, is_fixed = _explain_source_failure(detail)
-            marker = " (✅ уже исправлено)" if is_fixed else ""
-            if is_fixed:
-                any_fixed = True
-            else:
-                any_actionable = True
-            lines.append(f"  • {name} — {plain}{marker}")
+            plain = _explain_source_failure(detail)
+            streak_tag = _source_streak_tag(name, today_iso) if today_iso else ""
+            tail = f" ({streak_tag})" if streak_tag else ""
+            if streak_tag and "пора отключить" in streak_tag:
+                chronic_count += 1
+            lines.append(f"  • {name} — {plain}{tail}")
         if len(failed_sources) > 10:
             lines.append(f"  …и ещё {len(failed_sources) - 10}.")
-        if any_fixed and not any_actionable:
-            lines.append("    Все эти источники чинятся автоматически со следующего выпуска.")
-        elif any_actionable:
+        if chronic_count:
+            lines.append(f"    {chronic_count} источник(ов) падают неделю+ — стоит отключить и найти замену.")
+        else:
             lines.append("    Если повторяется 3+ дня — стоит проверить, не закрыли ли сайт совсем.")
         lines.append("")
 
@@ -640,7 +744,7 @@ def cmd_send_warnings() -> int:
         level_human = {"at_risk": "🟡 под риском", "unhealthy": "🔴 слабый выпуск"}.get(health_level, health_level)
         lines.append(f"⚖️ ОЦЕНКА КАЧЕСТВА: {level_human}")
         for sig in health_signals:
-            lines.append(f"  • {str(sig.get('detail') or '')[:160]}")
+            lines.append(f"  • {_translate_health_signal(sig)}")
         lines.append("")
 
     # ── Если кроме «всё в норме» сказать нечего — короткий happy summary
