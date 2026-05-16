@@ -54,6 +54,7 @@ LONG_FORMAT_CATEGORIES = {
 LONG_FORMAT_MIN_CHARS = 150
 LONG_FORMAT_MIN_SENTENCES = 2
 SHORT_TICKET_BLOCKS = {"ticket_radar", "outside_gm_tickets"}
+SHORT_EVENT_BLOCKS = SHORT_TICKET_BLOCKS | {"weekend_activities"}
 TODAY_FOCUS_SECTION = "Что важно сегодня"
 TODAY_FOCUS_BACKFILL_SECTIONS = (
     "Общественный транспорт сегодня",
@@ -236,6 +237,18 @@ _MONTHS = {
     "oct": 10, "october": 10,
     "nov": 11, "november": 11,
     "dec": 12, "december": 12,
+    "января": 1,
+    "февраля": 2,
+    "марта": 3,
+    "апреля": 4,
+    "мая": 5,
+    "июня": 6,
+    "июля": 7,
+    "августа": 8,
+    "сентября": 9,
+    "октября": 10,
+    "ноября": 11,
+    "декабря": 12,
 }
 
 
@@ -277,7 +290,7 @@ def _future_date_signal(text: str) -> bool:
             dates.append(date(year, month, day))
         except ValueError:
             continue
-    for match in re.finditer(r"\b(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]{3,9})(?:\s+(20\d{2}))?\b", lowered):
+    for match in re.finditer(r"\b(\d{1,2})(?:st|nd|rd|th)?\s+([a-zа-яё]{3,9})(?:\s+(20\d{2}))?\b", lowered):
         day_raw, month_raw, year_raw = match.groups()
         month = _MONTHS.get(month_raw)
         if not month:
@@ -285,6 +298,26 @@ def _future_date_signal(text: str) -> bool:
         year = int(year_raw) if year_raw else today.year
         try:
             dates.append(date(year, month, int(day_raw)))
+        except ValueError:
+            continue
+    for match in re.finditer(r"\b([a-z]{3,9})\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*,?\s*(20\d{2}))?\b", lowered):
+        month_raw, day_raw, year_raw = match.groups()
+        month = _MONTHS.get(month_raw)
+        if not month:
+            continue
+        year = int(year_raw) if year_raw else today.year
+        try:
+            dates.append(date(year, month, int(day_raw)))
+        except ValueError:
+            continue
+    for match in re.finditer(r"\b(\d{1,2})\s*[–-]\s*(\d{1,2})\s+([a-zа-яё]{3,9})(?:\s+(20\d{2}))?\b", lowered):
+        _start_day_raw, end_day_raw, month_raw, year_raw = match.groups()
+        month = _MONTHS.get(month_raw)
+        if not month:
+            continue
+        year = int(year_raw) if year_raw else today.year
+        try:
+            dates.append(date(year, month, int(end_day_raw)))
         except ValueError:
             continue
     return bool(dates and max(dates) >= today)
@@ -302,11 +335,38 @@ def _is_expired_event_candidate(candidate: dict, line: str = "") -> bool:
             candidate.get("title"),
             candidate.get("summary"),
             candidate.get("lead"),
+            candidate.get("evidence_text"),
             candidate.get("source_url"),
             line,
         )
     )
     return not _future_date_signal(text)
+
+
+def _weekend_activity_score(candidate: dict, line: str) -> float:
+    blob = " ".join(
+        str(value or "")
+        for value in (
+            candidate.get("source_label"),
+            candidate.get("title"),
+            candidate.get("summary"),
+            candidate.get("lead"),
+            candidate.get("evidence_text"),
+            line,
+        )
+    ).lower()
+    score = 0.0
+    if _future_date_signal(blob):
+        score += 40
+    if re.search(r"\b(?:market|makers?|car boot|food festival|festival|fair|flea)\b", blob):
+        score += 35
+    if re.search(r"\b(?:today|tomorrow|saturday|sunday|сегодня|завтра|суббот|воскрес|16\s*(?:мая|may)|17\s*(?:мая|may))\b", blob):
+        score += 25
+    if re.search(r"\b(?:free|ticket|tickets|booking|book|билет|бесплат|вход)\b|£\s*\d", blob):
+        score += 10
+    if re.search(r"\b(?:until|до)\s+(?:20\d{2}|december|декабр)", blob):
+        score -= 25
+    return score
 
 
 # Canonical money normaliser: maps £150m, £150 million, £150млн,
@@ -528,7 +588,7 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     if category in REQUIRE_DRAFT_LINE_CATEGORIES and sentence_count < 1:
         errors.append("draft_line must contain at least one complete sentence.")
     block_key = str(candidate.get("primary_block") or "").strip()
-    if category in LONG_FORMAT_CATEGORIES and block_key not in SHORT_TICKET_BLOCKS:
+    if category in LONG_FORMAT_CATEGORIES and block_key not in SHORT_EVENT_BLOCKS:
         if len(normalized) < LONG_FORMAT_MIN_CHARS:
             errors.append(
                 f"draft_line for long-format category needs ≥{LONG_FORMAT_MIN_CHARS} chars (got {len(normalized)})."
@@ -760,7 +820,12 @@ def write_digest(project_root: Path) -> StageResult:
             line = _attach_source_anchor(line, source_url, source_label)
             sections[section_name].append(line)
             section_sources[section_name].append(source_label)
-            score = _city_watch_score(candidate) if section_name == "Городской радар" else 0.0
+            if section_name == "Городской радар":
+                score = _city_watch_score(candidate)
+            elif section_name == "Выходные в GM":
+                score = _weekend_activity_score(candidate, line)
+            else:
+                score = 0.0
             section_scores[section_name].append(score)
         quality_counts["rendered_candidates"] += 1
         fingerprint = str(candidate.get("fingerprint") or "").strip()
@@ -810,10 +875,9 @@ def write_digest(project_root: Path) -> StageResult:
             continue
         srcs = section_sources.get(section_name, [])
         scores = section_scores.get(section_name, [])
-        # Re-rank «Городской радар» by editorial score so the 12-item cap
-        # keeps GMCA / council news and drops university PR / electron-spin
-        # research, rather than truncating in arbitrary source-registry order.
-        if section_name == "Городской радар" and scores:
+        # Re-rank capped sections so the cap keeps practical local value,
+        # rather than whichever source happened to run first.
+        if section_name in {"Городской радар", "Выходные в GM"} and scores:
             triples = sorted(
                 zip(lines, srcs + [""] * (len(lines) - len(srcs)),
                     scores + [0.0] * (len(lines) - len(scores))),
