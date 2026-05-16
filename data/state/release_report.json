@@ -1,85 +1,99 @@
 {
   "release_gate_version": 3,
-  "pipeline_run_id": "20260516T080050+0100",
-  "run_at_london": "2026-05-16T10:31:16.602269+01:00",
+  "pipeline_run_id": "20260516T105135+0100",
+  "run_at_london": "2026-05-16T10:55:29.663911+01:00",
   "run_date_london": "2026-05-16",
-  "release_decision": "pass",
-  "message": "Release passed. Promoted /home/runner/work/NewsManchester/NewsManchester/data/state/draft_digest.html to /home/runner/work/NewsManchester/NewsManchester/data/outgoing/current_digest.html.",
-  "errors": [],
+  "release_decision": "fail",
+  "message": "Digest release is blocked until collector, dedupe, validator, writer and gate inputs pass.",
+  "errors": [
+    "Draft digest contains bad editorial prose marker: уточняйте."
+  ],
   "warnings": [
     "LLM rewrite was degraded; writer/release quality gates handled the remaining candidates.",
-    "Section underflow: «Что важно в ближайшие 7 дней» shipped 0 items (min=3) while writer dropped 1 candidate(s) that targeted this section — quality gates may be too strict.",
-    "Last 24h block has fewer than 3 items despite available fresh city/news candidates.",
-    "Digest health [Risk] few_items: Only 16 item(s) rendered (typical day 30–50).",
-    "Digest health [Severe] all_news_thin: All news sections thin: 24h=2, today=2, radar=0 — possible coverage breakdown.",
-    "Source health: 5 source(s) failed today — check release_report.source_status for the list."
+    "Quality: 5 candidate(s) dropped for missing draft_line — LLM rewrite yield is low.",
+    "Quality: writer dropped many low-quality draft_lines: 23 of 60 included candidates.",
+    "Section underflow: «Футбол» shipped 0 items (min=2) while writer dropped 4 candidate(s) that targeted this section — quality gates may be too strict.",
+    "Source health: 5 source(s) failed today — check release_report.source_status for the list.",
+    "Rejected review: 1 suspiciously rejected candidate(s) — see release_report.reject_review."
   ],
   "lost_leads": [],
   "section_underflow": [
     {
-      "section": "Что важно в ближайшие 7 дней",
+      "section": "Футбол",
       "actual": 0,
-      "minimum": 3,
-      "dropped_by_writer": 1
+      "minimum": 2,
+      "dropped_by_writer": 4
     }
   ],
   "cost_summary": {
-    "total_calls": 10,
-    "total_cost_usd": 0.010433,
-    "total_prompt_tokens": 23740,
-    "total_completion_tokens": 4139,
+    "total_calls": 21,
+    "total_cost_usd": 0.042111,
+    "total_prompt_tokens": 108732,
+    "total_completion_tokens": 16211,
     "by_stage": {
       "llm_rewrite": {
-        "calls": 7,
-        "prompt_tokens": 14137,
-        "completion_tokens": 2119,
-        "cost_usd": 0.005618610000000001
+        "calls": 11,
+        "prompt_tokens": 66491,
+        "completion_tokens": 8201,
+        "cost_usd": 0.02189458
       },
       "curator": {
-        "calls": 3,
-        "prompt_tokens": 9603,
-        "completion_tokens": 2020,
-        "cost_usd": 0.004814810000000001
+        "calls": 10,
+        "prompt_tokens": 42241,
+        "completion_tokens": 8010,
+        "cost_usd": 0.020216070000000003
       }
     },
     "by_provider": {
       "DeepSeek": {
-        "calls": 8,
-        "prompt_tokens": 20546,
-        "completion_tokens": 3847,
-        "cost_usd": 0.009779120000000002
+        "calls": 16,
+        "prompt_tokens": 84850,
+        "completion_tokens": 13385,
+        "cost_usd": 0.037633
       },
       "OpenAI": {
+        "calls": 3,
+        "prompt_tokens": 19799,
+        "completion_tokens": 2513,
+        "cost_usd": 0.00447765
+      },
+      "Groq": {
         "calls": 2,
-        "prompt_tokens": 3194,
-        "completion_tokens": 292,
-        "cost_usd": 0.0006543
+        "prompt_tokens": 4083,
+        "completion_tokens": 313,
+        "cost_usd": 0.0
       }
     },
     "by_model": {
       "deepseek-chat": {
-        "calls": 8,
-        "prompt_tokens": 20546,
-        "completion_tokens": 3847,
-        "cost_usd": 0.009779120000000002
+        "calls": 16,
+        "prompt_tokens": 84850,
+        "completion_tokens": 13385,
+        "cost_usd": 0.037633
       },
       "gpt-4o-mini": {
+        "calls": 3,
+        "prompt_tokens": 19799,
+        "completion_tokens": 2513,
+        "cost_usd": 0.00447765
+      },
+      "llama-3.3-70b-versatile": {
         "calls": 2,
-        "prompt_tokens": 3194,
-        "completion_tokens": 292,
-        "cost_usd": 0.0006543
+        "prompt_tokens": 4083,
+        "completion_tokens": 313,
+        "cost_usd": 0.0
       }
     },
     "unknown_priced_models": []
   },
   "change_type_summary": {
     "counts": {
-      "new_story": 79,
-      "same_story_new_facts": 8,
-      "same_story_rehash": 46,
-      "follow_up": 17,
-      "reminder": 15,
-      "no_change": 101,
+      "new_story": 101,
+      "same_story_new_facts": 4,
+      "same_story_rehash": 63,
+      "follow_up": 13,
+      "reminder": 14,
+      "no_change": 106,
       "unclassified": 0
     },
     "auto_rejected_examples": [
@@ -101,6 +115,22 @@
       },
       {
         "change_type": "no_change",
+        "title": "Metrolink tram users warned of two weeks of works disruption",
+        "reason": "Без новых фактов: уже был 2026-05-16 как «Metrolink tram users warned of two weeks of works disruption».",
+        "previous_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c3v2d72py6yo",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "Metrolink tram users warned of two weeks of works disruption"
+      },
+      {
+        "change_type": "same_story_rehash",
+        "title": "Andy Burnham heads out for another run bright and early following Makerfield by-election go-ahead",
+        "reason": "Повтор сюжета без новых деталей: уже был 2026-05-16 как «Labour allows Andy Burnham to run for selection in pivotal by-election».",
+        "previous_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-ckgp2e0rrj4o",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "Labour allows Andy Burnham to run for selection in pivotal by-election"
+      },
+      {
+        "change_type": "no_change",
         "title": "Manchester's new 'Green wall' - will voters in Burnage and Moston ever return to Labour?",
         "reason": "Без новых фактов: уже был 2026-05-16 как «Manchester's new 'Green wall' - will voters in Burnage and Moston ever return to Labour?».",
         "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-manchesters-new-green-wall-voters-33948978",
@@ -114,14 +144,6 @@
         "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-i-much-cocaine-nose-started-33930855",
         "previous_published_day": "2026-05-16",
         "previous_title": "'I did so much cocaine my nose started to collapse'"
-      },
-      {
-        "change_type": "no_change",
-        "title": "Family's heartbreaking reaction as they're told beloved young woman could have survived",
-        "reason": "Без новых фактов: уже был 2026-05-16 как «Family's heartbreaking reaction as they're told beloved young woman could have survived».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-familys-heartbreaking-reaction-theyre-told-33954227",
-        "previous_published_day": "2026-05-16",
-        "previous_title": "Family's heartbreaking reaction as they're told beloved young woman could have survived"
       },
       {
         "change_type": "same_story_rehash",
@@ -141,52 +163,33 @@
       },
       {
         "change_type": "no_change",
+        "title": "Family's heartbreaking reaction as they're told beloved young woman could have survived",
+        "reason": "Без новых фактов: уже был 2026-05-16 как «Family's heartbreaking reaction as they're told beloved young woman could have survived».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-familys-heartbreaking-reaction-theyre-told-33954227",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "Family's heartbreaking reaction as they're told beloved young woman could have survived"
+      },
+      {
+        "change_type": "no_change",
         "title": "It has been slammed as 'horrendous', now the reason for ongoing M66 slip road lane closure has been revealed",
         "reason": "Без новых фактов: уже был 2026-05-16 как «It has been slammed as 'horrendous', now the reason for ongoing M66 slip road lane closure has been revealed».",
         "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-been-slammed-horrendous-now-reason-33955454",
         "previous_published_day": "2026-05-16",
         "previous_title": "It has been slammed as 'horrendous', now the reason for ongoing M66 slip road lane closure has been revealed"
-      },
-      {
-        "change_type": "same_story_rehash",
-        "title": "Andy Burnham LIVE as mayor given permission to stand in Makerfield by-election",
-        "reason": "Повтор сюжета без новых деталей: уже был 2026-05-16 как «Labour allows Andy Burnham to run for selection in pivotal by-election».",
-        "previous_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-ckgp2e0rrj4o",
-        "previous_published_day": "2026-05-16",
-        "previous_title": "Labour allows Andy Burnham to run for selection in pivotal by-election"
-      },
-      {
-        "change_type": "no_change",
-        "title": "Greater Manchester teacher took 'more than a million' up-skirt snaps of pupils with hidden cameras",
-        "reason": "Без новых фактов: уже был 2026-05-16 как «Greater Manchester teacher took 'more than a million' up-skirt snaps of pupils with hidden cameras».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-teacher-took-more-33954016",
-        "previous_published_day": "2026-05-16",
-        "previous_title": "Greater Manchester teacher took 'more than a million' up-skirt snaps of pupils with hidden cameras"
       }
     ]
   },
   "digest_health": {
-    "risk_level": "unhealthy",
-    "risk_score": 4,
-    "signals": [
-      {
-        "name": "few_items",
-        "severity": 1,
-        "detail": "Only 16 item(s) rendered (typical day 30–50)."
-      },
-      {
-        "name": "all_news_thin",
-        "severity": 3,
-        "detail": "All news sections thin: 24h=2, today=2, radar=0 — possible coverage breakdown."
-      }
-    ]
+    "risk_level": "healthy",
+    "risk_score": 0,
+    "signals": []
   },
   "source_status": {
     "counts": {
-      "ok": 35,
-      "partial": 5,
-      "stale": 18,
-      "empty": 9,
+      "ok": 55,
+      "partial": 6,
+      "stale": 17,
+      "empty": 10,
       "failed": 5
     },
     "sources": [
@@ -194,9 +197,9 @@
         "name": "BBC Manchester",
         "category": "media_layer",
         "status": "ok",
-        "detail": "4 item(s), 4 fresh in last 24h",
-        "candidate_count": 4,
-        "fresh_last_24h_count": 4
+        "detail": "5 item(s), 5 fresh in last 24h",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 5
       },
       {
         "name": "MEN",
@@ -426,8 +429,8 @@
         "name": "People's History Museum",
         "category": "culture_weekly",
         "status": "ok",
-        "detail": "1 item(s)",
-        "candidate_count": 1,
+        "detail": "2 item(s)",
+        "candidate_count": 2,
         "fresh_last_24h_count": 0
       },
       {
@@ -442,8 +445,16 @@
         "name": "Visit Manchester",
         "category": "culture_weekly",
         "status": "ok",
-        "detail": "1 item(s)",
-        "candidate_count": 1,
+        "detail": "5 item(s)",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Manchester's Finest Events",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "9 item(s)",
+        "candidate_count": 9,
         "fresh_last_24h_count": 0
       },
       {
@@ -503,6 +514,166 @@
         "fresh_last_24h_count": 0
       },
       {
+        "name": "PHM Makers Market",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "First Street Makers Market",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "South Manchester Food Festival",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Great Northern Makers Market",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Spinningfields Makers Market",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Levenshulme Artisan Market",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Northern Quarter Makers Market",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Altrincham Market",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Stockport Makers Market",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Urmston Artisan Market",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Chorlton Makers Market",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Barton Aerodrome Car Boot",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Bowlee Car Boot Sale",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "New Smithfield Sunday Market",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Burnage RFC Car Boot Sale",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "The BIG Stockport Car Boot",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Bolton Car Boot Sale",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Warrington Car Boot Sale",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "Holly Lane Car Boot Sale",
+        "category": "culture_weekly",
+        "status": "failed",
+        "detail": "HTTP 403",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0
+      },
+      {
+        "name": "The Manc Weekly Things To Do",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0
+      },
+      {
         "name": "Time Out Manchester",
         "category": "culture_weekly",
         "status": "ok",
@@ -553,9 +724,9 @@
       {
         "name": "Ticketmaster Liverpool Upcoming",
         "category": "venues_tickets",
-        "status": "failed",
-        "detail": "HTTP 429",
-        "candidate_count": 0,
+        "status": "partial",
+        "detail": "primary URL failed; switched to fallback https://app.ticketmaster.com/discovery/v2/events.json?city=Liverpool&countryCode=GB&classificationN",
+        "candidate_count": 5,
         "fresh_last_24h_count": 0
       },
       {
@@ -642,8 +813,8 @@
         "name": "Pedddle Makers Market",
         "category": "food_openings",
         "status": "ok",
-        "detail": "3 item(s)",
-        "candidate_count": 3,
+        "detail": "5 item(s)",
+        "candidate_count": 5,
         "fresh_last_24h_count": 0
       },
       {
@@ -682,8 +853,8 @@
         "name": "Manchester City",
         "category": "football",
         "status": "stale",
-        "detail": "4 item(s) but 0 fresh in last 24h — feed is dormant",
-        "candidate_count": 4,
+        "detail": "3 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 3,
         "fresh_last_24h_count": 0
       },
       {
@@ -697,9 +868,9 @@
       {
         "name": "Prolific North",
         "category": "tech_business",
-        "status": "stale",
-        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
-        "candidate_count": 5,
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "candidate_count": 0,
         "fresh_last_24h_count": 0
       },
       {
@@ -770,21 +941,82 @@
   },
   "reject_review": {
     "counts": {
-      "correctly_rejected": 6,
-      "borderline": 0,
-      "suspiciously_rejected": 0
+      "correctly_rejected": 54,
+      "borderline": 7,
+      "suspiciously_rejected": 1
     },
-    "suspiciously_rejected": [],
-    "borderline": []
+    "suspiciously_rejected": [
+      {
+        "stage": "writer",
+        "title": "The South Manchester Food Festival 2026: A Springtime Feast",
+        "category": "culture_weekly",
+        "primary_block": "weekend_activities",
+        "reasons": [
+          "Pound amount £10 not present in evidence_text."
+        ],
+        "is_lead": false
+      }
+    ],
+    "borderline": [
+      {
+        "stage": "curator",
+        "title": "Steal Their Style: From Mad Max to TK Maxx, a kaleidoscope of colour",
+        "source_label": "MEN",
+        "reason": "Evergreen-листинг о моде без конкретного события, даты или городского контекста.",
+        "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
+      },
+      {
+        "stage": "curator",
+        "title": "'Gavin and Stacey's Joanna Page inspired my health MOT, it's a good job I went'",
+        "source_label": "MEN",
+        "reason": "Личный опыт автора без новостного повода — нет даты, события или влияния на жителей GM.",
+        "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
+      },
+      {
+        "stage": "curator",
+        "title": "Test your Eurovision song contest knowledge with these 10 questions",
+        "source_label": "MEN",
+        "reason": "Evergreen-викторина без даты, события или связи с GM.",
+        "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
+      },
+      {
+        "stage": "curator",
+        "title": "P.Louise announces 'biggest deal in Boots history' - full list of UK stores stocking brand",
+        "source_label": "MEN",
+        "reason": "Чистый PR — анонс сделки бренда без новостного повода, нет конкретной даты или GM-локации.",
+        "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
+      },
+      {
+        "stage": "curator",
+        "title": "Fresh meningitis outbreak reignites calls for MenB catch-up jab - why many teenagers aren't protected",
+        "source_label": "MEN",
+        "reason": "Общенациональная новость без упоминания GM — нет локации или адреса в evidence_text.",
+        "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
+      },
+      {
+        "stage": "curator",
+        "title": "Parents of 'monster' abuser snatched her daughter off the street a month after she took her own life",
+        "source_label": "MEN",
+        "reason": "Новость из Preston Crown Court без связи с GM — нет упоминания Greater Manchester.",
+        "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
+      },
+      {
+        "stage": "curator",
+        "title": "Friday night pub quiz: Test your general knowledge with these 20 questions - May 15, 2026",
+        "source_label": "MEN",
+        "reason": "Evergreen-листинг (викторина) без конкретного события, влияющего на GM.",
+        "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
+      }
+    ]
   },
   "after_run_summary": {
-    "useful_items": 16,
-    "digest_risk_level": "unhealthy",
-    "digest_risk_score": 4,
-    "broken_sources": 14,
-    "stale_sources": 18,
-    "suspiciously_rejected": 0,
-    "borderline_rejected": 0,
+    "useful_items": 32,
+    "digest_risk_level": "healthy",
+    "digest_risk_score": 0,
+    "broken_sources": 15,
+    "stale_sources": 17,
+    "suspiciously_rejected": 1,
+    "borderline_rejected": 7,
     "lost_leads": 0,
     "section_underflow": 1
   },
