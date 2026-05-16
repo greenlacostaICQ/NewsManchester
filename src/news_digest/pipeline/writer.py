@@ -312,10 +312,31 @@ def _extract_money(text: str) -> set[tuple[float, str]]:
     return found
 
 
+def _money_amounts_match(line_amount: float, evidence_amounts: set[tuple[float, str]]) -> bool:
+    """Return True if `line_amount` reasonably equals any evidence amount.
+
+    Allowed editorial freedom (and ONLY this):
+      1. Exact match (any unit).
+      2. LLM rounded a *fractional* evidence value to the nearest whole.
+         Only fires when the evidence value has a non-zero fractional
+         part. "£11.8m → £12 млн" passes; "£100m → £105 млн" doesn't,
+         because £100m has no fraction to round.
+    """
+    for ea, _ in evidence_amounts:
+        if abs(line_amount - ea) < 0.01:
+            return True
+        has_fraction = abs(ea - round(ea)) > 0.001
+        if has_fraction and abs(line_amount - round(ea)) < 0.01:
+            return True
+    return False
+
+
 def _hallucination_flags(candidate: dict, line: str) -> list[str]:
     """Flag £-sums in `line` that don't appear in upstream
     evidence/title/summary/lead. Normalised comparison via _extract_money
-    so £230m ↔ £230млн match."""
+    so £230m ↔ £230млн match; also accepts editorial rounding via
+    _money_amounts_match (so £11.8m → £12 млн doesn't trip).
+    """
     evidence_blob = " ".join(
         str(candidate.get(field) or "")
         for field in ("title", "summary", "lead", "evidence_text")
@@ -328,9 +349,7 @@ def _hallucination_flags(candidate: dict, line: str) -> list[str]:
     for amount, unit in line_amounts:
         if (amount, unit) in evidence_amounts:
             continue
-        # Try fuzzy match: same amount, any unit (e.g. evidence had
-        # "£26.5 million" without the m suffix or vice versa).
-        if any(abs(amount - ea) < 0.01 for ea, _ in evidence_amounts):
+        if _money_amounts_match(amount, evidence_amounts):
             continue
         flags.append(f"Pound amount £{amount:g}{unit} not present in evidence_text.")
         break

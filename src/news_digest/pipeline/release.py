@@ -828,9 +828,11 @@ def _classify_rejected_candidates(
         elif source_label in _PREMIUM_SOURCE_PRIORITY and "дубл" not in reason.lower():
             # Premium source drop that isn't a dedup → at least borderline.
             why = f"Premium-источник {source_label} отбит без явной дедупликации."
+        # curator decisions don't carry the title — pull it from the
+        # paired candidate so the admin report shows something useful.
         record = {
             "stage": "curator",
-            "title": dec.get("title"),
+            "title": dec.get("title") or cand.get("title"),
             "source_label": source_label,
             "reason": reason,
             "why_flagged": why,
