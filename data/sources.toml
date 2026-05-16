@@ -653,6 +653,11 @@ report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.designmynight.com/manchester/whats-on/things-to-do-this-weekend-in-manchester"
 primary_block = "weekend_activities"
+# Dedicated parser walks <article class="card"> and emits one candidate
+# per venue/event instead of a single "DesignMyNight" item with the
+# page title. Implicit-weekend bypass in candidate_validator handles
+# the missing date since the page URL pins events to "this weekend".
+source_type = "html_designmynight"
 allowed_hosts = ["designmynight.com"]
 
 # Resident Advisor returns HTTP 403 to direct fetches — re-enable only with a browser/API path

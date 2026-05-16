@@ -767,14 +767,21 @@ _ENTITY_RE = re.compile(
 )
 # Drop generic English capitalised words that aren't entities but appear
 # in many headlines (start-of-sentence words, generic place mentions).
+# Note: "city" and "united" are intentionally NOT here — Man City / Man
+# United headlines often drop the prefix ("City unveil new kit", "United
+# sign Mainoo"), and we need the bare token to match across BBC/MEN
+# coverage of the same story.
 _ENTITY_STOPWORDS = frozenset({
-    "manchester", "greater", "city", "police", "council", "labour", "tory",
+    "manchester", "greater", "police", "council", "labour", "tory",
     "conservative", "reform", "court", "the", "new", "what", "how", "why",
     "when", "where", "labour", "liberal", "democrats", "green", "party",
     "and", "for", "with", "from", "about", "after", "before", "during",
     "today", "yesterday", "weekend", "week", "month", "year",
     "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
     "north", "south", "east", "west", "central", "north-west", "north-east",
+    # Generic news verbs that aren't entities even if capitalised at
+    # start of headline.
+    "premier", "league", "premier league",
 })
 
 
@@ -855,16 +862,31 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
 
             # FAST PATH — shared distinctive entity. If two titles both
             # mention the same proper noun (Burnham, Mainoo, Manchester
-            # United, Trafford Centre), treat as same story even when
-            # token Jaccard is low. Catches the classic political-story
-            # case where each headline picks different verbs around the
-            # same subject.
+            # United, Trafford Centre, City), treat as same story even
+            # when token Jaccard is low. Catches the classic political-
+            # story case where each headline picks different verbs around
+            # the same subject.
             shared_entities = entities_i & entities_j
-            if shared_entities and len(shared_entities) >= 1:
-                # Require at least one MULTI-WORD entity OR a 5+ char
-                # single-word entity to avoid false positives on common
-                # short words that survived the stopword filter.
-                strong = any(" " in e or len(e) >= 5 for e in shared_entities)
+            if shared_entities:
+                # "Strong" signal — any of:
+                #  - multi-word entity ("Andy Burnham", "Trafford Centre")
+                #  - 5+ char single word ("Mainoo", "Burnham")
+                #  - short word (4+ chars) that appears INSIDE a multi-word
+                #    entity in either title ("city" inside "manchester city")
+                multi_word_i = [e for e in entities_i if " " in e]
+                multi_word_j = [e for e in entities_j if " " in e]
+                strong = False
+                for e in shared_entities:
+                    if " " in e or len(e) >= 5:
+                        strong = True
+                        break
+                    if len(e) >= 4:
+                        for mw in multi_word_i + multi_word_j:
+                            if e in mw.split():
+                                strong = True
+                                break
+                    if strong:
+                        break
                 if strong:
                     rank_j = _source_rank(str(cj.get("source_label") or ""))
                     if rank_i <= rank_j:
