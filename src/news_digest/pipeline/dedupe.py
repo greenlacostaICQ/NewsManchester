@@ -103,7 +103,11 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         if previous is not None and (operational_repeat_ok or same_day_repeat_ok):
             candidate["dedupe_decision"] = "new"
             candidate["include"] = True
-            candidate["reason"] = candidate.get("reason") or "Operational block repeat is allowed while it remains relevant."
+            candidate["reason"] = candidate.get("reason") or (
+                "Same-day rerun repeat is allowed while correcting today's issue."
+                if same_day_repeat_ok
+                else "Operational block repeat is allowed while it remains relevant."
+            )
         elif calendar_carry_ok:
             candidate["dedupe_decision"] = "carry_over_with_label"
             candidate["include"] = True
@@ -500,6 +504,12 @@ def _classify_change_type(
     # Calendar carry-over (next_7_days reminders) was decided upstream.
     if decision == "carry_over_with_label":
         return "reminder"
+
+    if (
+        previous is not None
+        and str(previous.get("last_published_day_london") or "").strip() == today_london()
+    ):
+        return "same_story_new_facts"
 
     # Explicit new_phase set by candidate validator or curator means
     # "yes, same story, but a new development". Distinguishing this
