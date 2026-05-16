@@ -1,66 +1,129 @@
 {
   "release_gate_version": 3,
   "pipeline_run_id": "20260516T080050+0100",
-  "run_at_london": "2026-05-16T09:47:05.346090+01:00",
+  "run_at_london": "2026-05-16T10:28:26.707562+01:00",
   "run_date_london": "2026-05-16",
-  "release_decision": "pass",
-  "message": "Release passed. Promoted /home/runner/work/NewsManchester/NewsManchester/data/state/draft_digest.html to /home/runner/work/NewsManchester/NewsManchester/data/outgoing/current_digest.html.",
-  "errors": [],
+  "release_decision": "fail",
+  "message": "Digest release is blocked until collector, dedupe, validator, writer and gate inputs pass.",
+  "errors": [
+    "Last 24h block has fewer than 3 items despite available fresh city/news candidates."
+  ],
   "warnings": [
     "LLM rewrite was degraded; writer/release quality gates handled the remaining candidates.",
-    "Draft has no «Что важно сегодня» section because no today_focus candidates survived.",
+    "Section underflow: «Что важно в ближайшие 7 дней» shipped 0 items (min=3) while writer dropped 1 candidate(s) that targeted this section — quality gates may be too strict.",
+    "Digest health [Risk] few_items: Only 18 item(s) rendered (typical day 30–50).",
+    "Digest health [Severe] all_news_thin: All news sections thin: 24h=2, today=2, radar=0 — possible coverage breakdown.",
     "Source health: 5 source(s) failed today — check release_report.source_status for the list."
   ],
   "lost_leads": [],
-  "section_underflow": [],
+  "section_underflow": [
+    {
+      "section": "Что важно в ближайшие 7 дней",
+      "actual": 0,
+      "minimum": 3,
+      "dropped_by_writer": 1
+    }
+  ],
   "cost_summary": {
-    "total_calls": 13,
-    "total_cost_usd": 0.023321,
-    "total_prompt_tokens": 45785,
-    "total_completion_tokens": 9963,
+    "total_calls": 11,
+    "total_cost_usd": 0.010997,
+    "total_prompt_tokens": 26594,
+    "total_completion_tokens": 4378,
     "by_stage": {
       "llm_rewrite": {
-        "calls": 7,
-        "prompt_tokens": 22953,
-        "completion_tokens": 5210,
-        "cost_usd": 0.011928310000000001
+        "calls": 8,
+        "prompt_tokens": 17041,
+        "completion_tokens": 2403,
+        "cost_usd": 0.00624539
       },
       "curator": {
-        "calls": 6,
-        "prompt_tokens": 22832,
-        "completion_tokens": 4753,
-        "cost_usd": 0.011392939999999999
+        "calls": 3,
+        "prompt_tokens": 9553,
+        "completion_tokens": 1975,
+        "cost_usd": 0.00475181
       }
     },
     "by_provider": {
       "DeepSeek": {
-        "calls": 13,
-        "prompt_tokens": 45785,
-        "completion_tokens": 9963,
-        "cost_usd": 0.02332125
+        "calls": 8,
+        "prompt_tokens": 20890,
+        "completion_tokens": 3749,
+        "cost_usd": 0.0097642
+      },
+      "OpenAI": {
+        "calls": 3,
+        "prompt_tokens": 5704,
+        "completion_tokens": 629,
+        "cost_usd": 0.0012330000000000002
       }
     },
     "by_model": {
       "deepseek-chat": {
-        "calls": 13,
-        "prompt_tokens": 45785,
-        "completion_tokens": 9963,
-        "cost_usd": 0.02332125
+        "calls": 8,
+        "prompt_tokens": 20890,
+        "completion_tokens": 3749,
+        "cost_usd": 0.0097642
+      },
+      "gpt-4o-mini": {
+        "calls": 3,
+        "prompt_tokens": 5704,
+        "completion_tokens": 629,
+        "cost_usd": 0.0012330000000000002
       }
     },
     "unknown_priced_models": []
   },
   "change_type_summary": {
     "counts": {
-      "new_story": 111,
-      "same_story_new_facts": 2,
-      "same_story_rehash": 44,
-      "follow_up": 11,
-      "reminder": 19,
-      "no_change": 79,
+      "new_story": 79,
+      "same_story_new_facts": 8,
+      "same_story_rehash": 46,
+      "follow_up": 17,
+      "reminder": 15,
+      "no_change": 101,
       "unclassified": 0
     },
     "auto_rejected_examples": [
+      {
+        "change_type": "no_change",
+        "title": "We will fix adult social care failings, mayor says after damning report",
+        "reason": "Без новых фактов: уже был 2026-05-16 как «We will fix adult social care failings, mayor says after damning report».",
+        "previous_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c1l2e9zg638o",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "We will fix adult social care failings, mayor says after damning report"
+      },
+      {
+        "change_type": "no_change",
+        "title": "Labour allows Andy Burnham to run for selection in pivotal by-election",
+        "reason": "Без новых фактов: уже был 2026-05-16 как «Labour allows Andy Burnham to run for selection in pivotal by-election».",
+        "previous_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-ckgp2e0rrj4o",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "Labour allows Andy Burnham to run for selection in pivotal by-election"
+      },
+      {
+        "change_type": "no_change",
+        "title": "Manchester's new 'Green wall' - will voters in Burnage and Moston ever return to Labour?",
+        "reason": "Без новых фактов: уже был 2026-05-16 как «Manchester's new 'Green wall' - will voters in Burnage and Moston ever return to Labour?».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-manchesters-new-green-wall-voters-33948978",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "Manchester's new 'Green wall' - will voters in Burnage and Moston ever return to Labour?"
+      },
+      {
+        "change_type": "no_change",
+        "title": "'I did so much cocaine my nose started to collapse'",
+        "reason": "Без новых фактов: уже был 2026-05-16 как «'I did so much cocaine my nose started to collapse'».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-i-much-cocaine-nose-started-33930855",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "'I did so much cocaine my nose started to collapse'"
+      },
+      {
+        "change_type": "no_change",
+        "title": "Family's heartbreaking reaction as they're told beloved young woman could have survived",
+        "reason": "Без новых фактов: уже был 2026-05-16 как «Family's heartbreaking reaction as they're told beloved young woman could have survived».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-familys-heartbreaking-reaction-theyre-told-33954227",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "Family's heartbreaking reaction as they're told beloved young woman could have survived"
+      },
       {
         "change_type": "same_story_rehash",
         "title": "Elaborate Manchester Airport smuggling bid smashed as Mexican shipments flown in",
@@ -70,83 +133,54 @@
         "previous_title": "Pictures: Snow in Altrincham as Manchester Airport closes runway"
       },
       {
-        "change_type": "same_story_rehash",
-        "title": "Andy Burnham LIVE as mayor given permission to stand in Makerfield by-election",
-        "reason": "Повтор сюжета без новых деталей: уже был 2026-05-15 как «Hold on, could Andy Burnham actually lose the Makerfield by-election?».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-hold-on-could-andy-burnham-33949753",
-        "previous_published_day": "2026-05-15",
-        "previous_title": "Hold on, could Andy Burnham actually lose the Makerfield by-election?"
+        "change_type": "no_change",
+        "title": "Inside the hidden Afflecks sandwich shop where roast potatoes are the secret weapon",
+        "reason": "Без новых фактов: уже был 2026-05-16 как «Inside the hidden Afflecks sandwich shop where roast potatoes are the secret weapon».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-whats-on-food-drink-news-inside-hidden-afflecks-sandwich-shop-33934078",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "Inside the hidden Afflecks sandwich shop where roast potatoes are the secret weapon"
       },
       {
         "change_type": "no_change",
-        "title": "'It's a mug's move': On the streets of Ashton-in-Makerfield hours after it was thrust into a political firestorm",
-        "reason": "Без новых фактов: уже был 2026-05-15 как «'It's a mug's move': On the streets of Ashton-in-Makerfield hours after it was thrust into a political firestorm».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-its-mugs-move-streets-ashton-33949973",
-        "previous_published_day": "2026-05-15",
-        "previous_title": "'It's a mug's move': On the streets of Ashton-in-Makerfield hours after it was thrust into a political firestorm"
-      },
-      {
-        "change_type": "no_change",
-        "title": "28 shipments came in from the US - there wasn't just vintage clothing inside",
-        "reason": "Без новых фактов: уже был 2026-05-14 как «28 shipments came in from the US - there wasn't just vintage clothing inside».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-28-shipments-came-wasnt-just-33927705",
-        "previous_published_day": "2026-05-14",
-        "previous_title": "28 shipments came in from the US - there wasn't just vintage clothing inside"
-      },
-      {
-        "change_type": "no_change",
-        "title": "What is Andy Burnham's Manchesterism - and can it save Britain?",
-        "reason": "Без новых фактов: уже был 2026-05-10 как «What is Manchesterism - and can it save Britain?».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-what-manchesterism-can-save-britain-33906365",
-        "previous_published_day": "2026-05-10",
-        "previous_title": "What is Manchesterism - and can it save Britain?"
-      },
-      {
-        "change_type": "no_change",
-        "title": "The many lives of Andy Burnham",
-        "reason": "Без новых фактов: уже был 2026-05-14 как «The many lives of Andy Burnham».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-many-lives-andy-burnham-33941509",
-        "previous_published_day": "2026-05-14",
-        "previous_title": "The many lives of Andy Burnham"
-      },
-      {
-        "change_type": "no_change",
-        "title": "Firebombings, silk pyjamas and a rout for Reform",
-        "reason": "Без новых фактов: уже был 2026-05-12 как «Firebombings, silk pyjamas and a rout for Reform».",
-        "previous_fingerprint": "media-layer-the-mill-manchestermill-co-uk-firebombings-silk-pyjamas-and-a-rout-for-reform",
-        "previous_published_day": "2026-05-12",
-        "previous_title": "Firebombings, silk pyjamas and a rout for Reform"
-      },
-      {
-        "change_type": "no_change",
-        "title": "The strange case of Lewis Croden, Salford Reform's man behind the curtain",
-        "reason": "Без новых фактов: уже был 2026-05-07 как «The strange case of Lewis Croden, Salford Reform's man behind the curtain».",
-        "previous_fingerprint": "media-layer-the-mill-manchestermill-co-uk-the-strange-case-of-lewis-croden-salford-reforms-man-behind-the-curtain",
-        "previous_published_day": "2026-05-07",
-        "previous_title": "The strange case of Lewis Croden, Salford Reform's man behind the curtain"
+        "title": "It has been slammed as 'horrendous', now the reason for ongoing M66 slip road lane closure has been revealed",
+        "reason": "Без новых фактов: уже был 2026-05-16 как «It has been slammed as 'horrendous', now the reason for ongoing M66 slip road lane closure has been revealed».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-been-slammed-horrendous-now-reason-33955454",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "It has been slammed as 'horrendous', now the reason for ongoing M66 slip road lane closure has been revealed"
       },
       {
         "change_type": "same_story_rehash",
-        "title": "Council sets out plans to rework busy Manchester junction after ‘serious safety concerns'",
-        "reason": "Повтор сюжета без новых деталей: уже был 2026-05-14 как «Bold new plans set out to transform problem south Manchester junction | Manchester City Council».",
-        "previous_fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-bold-new-plans-set-out-to-transform-problem-south-manchester-junction",
-        "previous_published_day": "2026-05-14",
-        "previous_title": "Bold new plans set out to transform problem south Manchester junction | Manchester City Council"
+        "title": "Andy Burnham LIVE as mayor given permission to stand in Makerfield by-election",
+        "reason": "Повтор сюжета без новых деталей: уже был 2026-05-16 как «Labour allows Andy Burnham to run for selection in pivotal by-election».",
+        "previous_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-ckgp2e0rrj4o",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "Labour allows Andy Burnham to run for selection in pivotal by-election"
       },
       {
         "change_type": "no_change",
-        "title": "Police confirm man was arrested ‘on suspicion of making an explosive device' in Gay Village",
-        "reason": "Без новых фактов: уже был 2026-05-14 как «Police confirm man was arrested ‘on suspicion of making an explosive device' in Gay Village».",
-        "previous_fingerprint": "media-layer-the-manc-themanc-com-news-gay-village-arrest-manchester-chemicals",
-        "previous_published_day": "2026-05-14",
-        "previous_title": "Police confirm man was arrested ‘on suspicion of making an explosive device' in Gay Village"
+        "title": "Greater Manchester teacher took 'more than a million' up-skirt snaps of pupils with hidden cameras",
+        "reason": "Без новых фактов: уже был 2026-05-16 как «Greater Manchester teacher took 'more than a million' up-skirt snaps of pupils with hidden cameras».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-teacher-took-more-33954016",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "Greater Manchester teacher took 'more than a million' up-skirt snaps of pupils with hidden cameras"
       }
     ]
   },
   "digest_health": {
-    "risk_level": "healthy",
-    "risk_score": 0,
-    "signals": []
+    "risk_level": "unhealthy",
+    "risk_score": 4,
+    "signals": [
+      {
+        "name": "few_items",
+        "severity": 1,
+        "detail": "Only 18 item(s) rendered (typical day 30–50)."
+      },
+      {
+        "name": "all_news_thin",
+        "severity": 3,
+        "detail": "All news sections thin: 24h=2, today=2, radar=0 — possible coverage breakdown."
+      }
+    ]
   },
   "source_status": {
     "counts": {
@@ -737,38 +771,23 @@
   },
   "reject_review": {
     "counts": {
-      "correctly_rejected": 12,
-      "borderline": 2,
+      "correctly_rejected": 6,
+      "borderline": 0,
       "suspiciously_rejected": 0
     },
     "suspiciously_rejected": [],
-    "borderline": [
-      {
-        "stage": "curator",
-        "title": null,
-        "source_label": "The Mill",
-        "reason": "Устаревшая новость (stale, от 25 апреля). Evergreen-история про AI и Rightmove без конкретного события сегодня.",
-        "why_flagged": "Premium-источник The Mill отбит без явной дедупликации."
-      },
-      {
-        "stage": "curator",
-        "title": null,
-        "source_label": "The Manc",
-        "reason": "Устаревшая новость (stale, от 12 мая). Транспортный сбой, но уже не актуален для сегодняшнего дайджеста.",
-        "why_flagged": "Premium-источник The Manc отбит без явной дедупликации."
-      }
-    ]
+    "borderline": []
   },
   "after_run_summary": {
-    "useful_items": 38,
-    "digest_risk_level": "healthy",
-    "digest_risk_score": 0,
+    "useful_items": 18,
+    "digest_risk_level": "unhealthy",
+    "digest_risk_score": 4,
     "broken_sources": 14,
     "stale_sources": 18,
     "suspiciously_rejected": 0,
-    "borderline_rejected": 2,
+    "borderline_rejected": 0,
     "lost_leads": 0,
-    "section_underflow": 0
+    "section_underflow": 1
   },
   "prompt_versions": [
     {
@@ -778,33 +797,33 @@
     },
     {
       "name": "city_news",
-      "version": "v3",
-      "hash": "43bcf2be"
+      "version": "v4",
+      "hash": "aa26b44c"
     },
     {
       "name": "transport",
-      "version": "v2",
-      "hash": "9d8feded"
+      "version": "v4",
+      "hash": "127c0dad"
     },
     {
       "name": "events",
-      "version": "v2",
-      "hash": "bb75ca9a"
+      "version": "v3",
+      "hash": "b8e08e38"
     },
     {
       "name": "diaspora_events",
-      "version": "v1",
-      "hash": "1d282755"
+      "version": "v2",
+      "hash": "abfdc73d"
     },
     {
       "name": "business",
-      "version": "v2",
-      "hash": "7a296ca4"
+      "version": "v3",
+      "hash": "9b50a8de"
     },
     {
       "name": "football",
-      "version": "v2",
-      "hash": "bda1f513"
+      "version": "v3",
+      "hash": "4174398e"
     },
     {
       "name": "fix_translate",
