@@ -870,6 +870,89 @@ def _extract_the_manc_weekly_events(source: SourceDef, body: str) -> list[Extrac
     return items
 
 
+def _extract_designmynight_cards(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """DesignMyNight «things to do» — venue/event cards.
+
+    Page structure (verified live 2026-05-16):
+      <article id="card-X" class="card">
+        <h3 class="card__title">
+          <a href="..." title="Cherry Jam">Cherry Jam</a>
+        </h3>
+        <p>... description ...</p>
+      </article>
+
+    The generic HTML extractor produces a single "DesignMyNight" item
+    with the page title because <a> links have no useful text on the
+    listing page. This parser walks every card, extracts venue/event
+    title + URL + surrounding description, and emits one ExtractedItem
+    per real card.
+
+    Date handling: the page URL pattern is
+    ``…/things-to-do-this-weekend-in-manchester`` so every event is
+    implicitly for the current weekend. We don't fabricate a published_at
+    here — the implicit-weekend bypass in candidate_validator handles
+    that based on source_url.
+    """
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+
+    # Match each <article class="card"> block until its closing tag or
+    # the start of the next article. id="card-X" is the stable marker.
+    card_pattern = re.compile(
+        r'<article\b[^>]*\bid="card-([a-z0-9-]+)"[^>]*\bclass="[^"]*\bcard\b[^"]*"[^>]*>(.*?)(?=<article\b[^>]*\bid="card-|</main>|</body>)',
+        re.IGNORECASE | re.DOTALL,
+    )
+    for match in card_pattern.finditer(body):
+        card_id = match.group(1)
+        card_html = match.group(2)
+
+        # Inner anchor inside the title h3.
+        title_match = re.search(
+            r'<h[23]\b[^>]*\bclass="[^"]*card__title[^"]*"[^>]*>\s*<a\b[^>]*\bhref="([^"]+)"[^>]*>(.*?)</a>',
+            card_html,
+            re.IGNORECASE | re.DOTALL,
+        )
+        if not title_match:
+            continue
+        url = parse.urljoin(source.url, unescape(title_match.group(1).strip()))
+        title = _clean_title_text(re.sub(r"<[^>]+>", "", title_match.group(2)).strip())
+        if not title or len(title) < 3:
+            continue
+        if url in seen:
+            continue
+        seen.add(url)
+
+        # Description: every <p> inside the card, joined.
+        description_chunks = re.findall(
+            r'<p\b[^>]*>(.*?)</p>',
+            card_html,
+            re.IGNORECASE | re.DOTALL,
+        )
+        evidence_raw = " ".join(
+            re.sub(r"<[^>]+>", " ", chunk) for chunk in description_chunks
+        )
+        evidence = _clean_long_text(evidence_raw)
+        # Many DMN cards have a near-empty description — add the title
+        # so summary/lead derivation has something to work with.
+        if len(evidence) < 30:
+            evidence = title
+
+        items.append(
+            ExtractedItem(
+                title=title,
+                url=url,
+                published_at="",  # implicit-weekend; validator handles it
+                summary=_summary_from_evidence(evidence) or title,
+                lead=_derive_lead(source, title, evidence),
+                evidence_text=evidence[:2500],
+                enrichment_status="ok_dmn_card",
+            )
+        )
+        if len(items) >= source.max_candidates:
+            break
+    return items
+
+
 def _extract_eventbrite_events(source: SourceDef, body: str) -> list[ExtractedItem]:
     """Extract Eventbrite event links from an organiser/search page.
 
@@ -1215,6 +1298,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_phm_events(source, body)
     elif source.source_type == "html_the_manc_weekly_events":
         links = _extract_the_manc_weekly_events(source, body)
+    elif source.source_type == "html_designmynight":
+        links = _extract_designmynight_cards(source, body)
     elif "<rss" in body[:500].lower() or "<feed" in body[:500].lower():
         links = _extract_feed_items(source.url, body)
     else:

@@ -54,11 +54,16 @@ LONG_FORMAT_CATEGORIES = {
 LONG_FORMAT_MIN_CHARS = 150
 LONG_FORMAT_MIN_SENTENCES = 2
 SHORT_TICKET_BLOCKS = {"ticket_radar", "outside_gm_tickets"}
-# Event blocks where venue listings rarely have 150+ chars of evidence.
-# Skipping the LONG_FORMAT_MIN_CHARS / MIN_SENTENCES gate keeps real
-# events visible (Double Bill, Midge Ure, Palace Theatre Tour) instead
-# of dropping them for being a sentence too short.
-SHORT_EVENT_BLOCKS = SHORT_TICKET_BLOCKS | {"weekend_activities", "next_7_days", "future_announcements", "russian_events"}
+# Original short blocks: weekend events naturally fit in 100 chars,
+# tickets are intentionally short.
+SHORT_EVENT_BLOCKS = SHORT_TICKET_BLOCKS | {"weekend_activities"}
+# Sequential fallback: event blocks where we PREFER 150+ char cards
+# (more detail = better) but ACCEPT shorter ones when the source RSS
+# only gave us a thin evidence_text. Logic in _draft_line_quality_errors
+# checks evidence size before applying the LONG_FORMAT_MIN_CHARS gate.
+# We only relax when evidence was genuinely tiny (< 500 chars).
+EVENT_BLOCKS_RELAXABLE = {"next_7_days", "future_announcements", "russian_events"}
+EVENT_RELAX_EVIDENCE_THRESHOLD = 500
 TODAY_FOCUS_SECTION = "Что важно сегодня"
 # Order matters: backfill takes the first non-empty section. We previously
 # pulled from transport FIRST, which dumped bus-stop closures into "Что
@@ -653,15 +658,26 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     if category in REQUIRE_DRAFT_LINE_CATEGORIES and sentence_count < 1:
         errors.append("draft_line must contain at least one complete sentence.")
     block_key = str(candidate.get("primary_block") or "").strip()
+    # Sequential gate:
+    #  1. Always-short blocks (tickets, weekend) — no min_chars at all.
+    #  2. Relaxable event blocks (next_7_days, future_announcements,
+    #     russian_events) — apply min ONLY when evidence_text was rich
+    #     enough to write a full card. If source only gave us a thin
+    #     280-char teaser, accept whatever LLM produced rather than
+    #     dropping a real event for being a sentence too short.
     if category in LONG_FORMAT_CATEGORIES and block_key not in SHORT_EVENT_BLOCKS:
-        if len(normalized) < LONG_FORMAT_MIN_CHARS:
-            errors.append(
-                f"draft_line for long-format category needs ≥{LONG_FORMAT_MIN_CHARS} chars (got {len(normalized)})."
-            )
-        if sentence_count < LONG_FORMAT_MIN_SENTENCES:
-            errors.append(
-                f"draft_line for long-format category needs ≥{LONG_FORMAT_MIN_SENTENCES} sentences (got {sentence_count})."
-            )
+        evidence_len = len(str(candidate.get("evidence_text") or "").strip())
+        evidence_rich = evidence_len >= EVENT_RELAX_EVIDENCE_THRESHOLD
+        skip_min = (block_key in EVENT_BLOCKS_RELAXABLE) and not evidence_rich
+        if not skip_min:
+            if len(normalized) < LONG_FORMAT_MIN_CHARS:
+                errors.append(
+                    f"draft_line for long-format category needs ≥{LONG_FORMAT_MIN_CHARS} chars (got {len(normalized)})."
+                )
+            if sentence_count < LONG_FORMAT_MIN_SENTENCES:
+                errors.append(
+                    f"draft_line for long-format category needs ≥{LONG_FORMAT_MIN_SENTENCES} sentences (got {sentence_count})."
+                )
     lowered = text.lower()
     for marker in _BAD_EDITORIAL_PROSE_MARKERS:
         if marker in lowered:
