@@ -1,28 +1,25 @@
 {
   "release_gate_version": 3,
-  "pipeline_run_id": "20260516T111934+0100",
-  "run_at_london": "2026-05-16T11:23:43.630332+01:00",
+  "pipeline_run_id": "20260516T112611+0100",
+  "run_at_london": "2026-05-16T11:32:14.391499+01:00",
   "run_date_london": "2026-05-16",
-  "release_decision": "fail",
-  "message": "Digest release is blocked until collector, dedupe, validator, writer and gate inputs pass.",
-  "errors": [
-    "Draft digest contains bad editorial prose marker: обещает стать."
-  ],
+  "release_decision": "pass",
+  "message": "Release passed. Promoted /home/runner/work/NewsManchester/NewsManchester/data/state/draft_digest.html to /home/runner/work/NewsManchester/NewsManchester/data/outgoing/current_digest.html.",
+  "errors": [],
   "warnings": [
     "LLM rewrite was degraded; writer/release quality gates handled the remaining candidates.",
-    "Quality: 13 candidate(s) dropped for missing draft_line — LLM rewrite yield is low.",
-    "Section underflow: «Городской радар» shipped 4 items (min=5) while writer dropped 6 candidate(s) that targeted this section — quality gates may be too strict.",
+    "Quality: 10 candidate(s) dropped for missing draft_line — LLM rewrite yield is low.",
+    "Section underflow: «Что важно в ближайшие 7 дней» shipped 2 items (min=3) while writer dropped 5 candidate(s) that targeted this section — quality gates may be too strict.",
     "Section underflow: «Футбол» shipped 1 items (min=2) while writer dropped 1 candidate(s) that targeted this section — quality gates may be too strict.",
-    "Source health: 6 source(s) failed today — check release_report.source_status for the list.",
-    "Rejected review: 1 suspiciously rejected candidate(s) — see release_report.reject_review."
+    "Rejected review: 6 suspiciously rejected candidate(s) — see release_report.reject_review."
   ],
   "lost_leads": [],
   "section_underflow": [
     {
-      "section": "Городской радар",
-      "actual": 4,
-      "minimum": 5,
-      "dropped_by_writer": 6
+      "section": "Что важно в ближайшие 7 дней",
+      "actual": 2,
+      "minimum": 3,
+      "dropped_by_writer": 5
     },
     {
       "section": "Футбол",
@@ -32,61 +29,61 @@
     }
   ],
   "cost_summary": {
-    "total_calls": 24,
-    "total_cost_usd": 0.047508,
-    "total_prompt_tokens": 113339,
-    "total_completion_tokens": 18643,
+    "total_calls": 28,
+    "total_cost_usd": 0.05246,
+    "total_prompt_tokens": 130241,
+    "total_completion_tokens": 21069,
     "by_stage": {
       "llm_rewrite": {
-        "calls": 12,
-        "prompt_tokens": 60861,
-        "completion_tokens": 8620,
-        "cost_usd": 0.022313959999999997
+        "calls": 15,
+        "prompt_tokens": 72736,
+        "completion_tokens": 10291,
+        "cost_usd": 0.025077779999999994
       },
       "curator": {
-        "calls": 12,
-        "prompt_tokens": 52478,
-        "completion_tokens": 10023,
-        "cost_usd": 0.02519436
+        "calls": 13,
+        "prompt_tokens": 57505,
+        "completion_tokens": 10778,
+        "cost_usd": 0.02738215
       }
     },
     "by_provider": {
       "DeepSeek": {
-        "calls": 19,
-        "prompt_tokens": 95516,
-        "completion_tokens": 17008,
-        "cost_usd": 0.04449812
+        "calls": 20,
+        "prompt_tokens": 105689,
+        "completion_tokens": 18293,
+        "cost_usd": 0.04865833000000001
       },
       "OpenAI": {
-        "calls": 3,
-        "prompt_tokens": 14048,
-        "completion_tokens": 1505,
-        "cost_usd": 0.0030101999999999998
+        "calls": 4,
+        "prompt_tokens": 16100,
+        "completion_tokens": 2311,
+        "cost_usd": 0.0038016
       },
       "Groq": {
-        "calls": 2,
-        "prompt_tokens": 3775,
-        "completion_tokens": 130,
+        "calls": 4,
+        "prompt_tokens": 8452,
+        "completion_tokens": 465,
         "cost_usd": 0.0
       }
     },
     "by_model": {
       "deepseek-chat": {
-        "calls": 19,
-        "prompt_tokens": 95516,
-        "completion_tokens": 17008,
-        "cost_usd": 0.04449812
+        "calls": 20,
+        "prompt_tokens": 105689,
+        "completion_tokens": 18293,
+        "cost_usd": 0.04865833000000001
       },
       "gpt-4o-mini": {
-        "calls": 3,
-        "prompt_tokens": 14048,
-        "completion_tokens": 1505,
-        "cost_usd": 0.0030101999999999998
+        "calls": 4,
+        "prompt_tokens": 16100,
+        "completion_tokens": 2311,
+        "cost_usd": 0.0038016
       },
       "llama-3.3-70b-versatile": {
-        "calls": 2,
-        "prompt_tokens": 3775,
-        "completion_tokens": 130,
+        "calls": 4,
+        "prompt_tokens": 8452,
+        "completion_tokens": 465,
         "cost_usd": 0.0
       }
     },
@@ -94,12 +91,12 @@
   },
   "change_type_summary": {
     "counts": {
-      "new_story": 65,
-      "same_story_new_facts": 71,
-      "same_story_rehash": 64,
+      "new_story": 76,
+      "same_story_new_facts": 69,
+      "same_story_rehash": 70,
       "follow_up": 9,
-      "reminder": 8,
-      "no_change": 77,
+      "reminder": 13,
+      "no_change": 80,
       "unclassified": 0
     },
     "auto_rejected_examples": [
@@ -192,11 +189,11 @@
   },
   "source_status": {
     "counts": {
-      "ok": 55,
-      "partial": 5,
-      "stale": 17,
-      "empty": 10,
-      "failed": 6
+      "ok": 58,
+      "partial": 6,
+      "stale": 18,
+      "empty": 9,
+      "failed": 2
     },
     "sources": [
       {
@@ -250,9 +247,9 @@
       {
         "name": "Secret Manchester",
         "category": "media_layer",
-        "status": "empty",
-        "detail": "fetched but no candidate links parsed",
-        "candidate_count": 0,
+        "status": "stale",
+        "detail": "3 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 3,
         "fresh_last_24h_count": 0
       },
       {
@@ -282,10 +279,10 @@
       {
         "name": "Trafford Council",
         "category": "media_layer",
-        "status": "failed",
-        "detail": "HTTP 403",
-        "candidate_count": 0,
-        "fresh_last_24h_count": 0
+        "status": "ok",
+        "detail": "5 item(s), 3 fresh in last 24h",
+        "candidate_count": 5,
+        "fresh_last_24h_count": 3
       },
       {
         "name": "Stockport Council",
@@ -498,9 +495,9 @@
       {
         "name": "Eventbrite Manchester",
         "category": "culture_weekly",
-        "status": "failed",
-        "detail": "HTTP 405",
-        "candidate_count": 0,
+        "status": "ok",
+        "detail": "5 item(s)",
+        "candidate_count": 5,
         "fresh_last_24h_count": 0
       },
       {
@@ -514,9 +511,9 @@
       {
         "name": "Eventbrite Manchester Markets",
         "category": "culture_weekly",
-        "status": "failed",
-        "detail": "HTTP 405",
-        "candidate_count": 0,
+        "status": "ok",
+        "detail": "3 item(s)",
+        "candidate_count": 3,
         "fresh_last_24h_count": 0
       },
       {
@@ -738,9 +735,9 @@
       {
         "name": "Ticketmaster London Major Onsale",
         "category": "venues_tickets",
-        "status": "failed",
-        "detail": "HTTP 429",
-        "candidate_count": 0,
+        "status": "partial",
+        "detail": "primary URL failed; switched to fallback https://app.ticketmaster.com/discovery/v2/events.json?city=London&countryCode=GB&classificationName",
+        "candidate_count": 5,
         "fresh_last_24h_count": 0
       },
       {
@@ -819,8 +816,8 @@
         "name": "Pedddle Makers Market",
         "category": "food_openings",
         "status": "ok",
-        "detail": "3 item(s)",
-        "candidate_count": 3,
+        "detail": "5 item(s)",
+        "candidate_count": 5,
         "fresh_last_24h_count": 0
       },
       {
@@ -947,20 +944,52 @@
   },
   "reject_review": {
     "counts": {
-      "correctly_rejected": 54,
+      "correctly_rejected": 63,
       "borderline": 8,
-      "suspiciously_rejected": 1
+      "suspiciously_rejected": 6
     },
     "suspiciously_rejected": [
       {
-        "stage": "writer",
-        "title": "The South Manchester Food Festival 2026: A Springtime Feast",
-        "category": "culture_weekly",
-        "primary_block": "weekend_activities",
-        "reasons": [
-          "Pound amount £36 not present in evidence_text."
-        ],
-        "is_lead": false
+        "stage": "curator",
+        "title": "DesignMyNight",
+        "source_label": "DesignMyNight Manchester",
+        "reason": "Evergreen listing — событие с датами в 2026, нет срочного новостного повода.",
+        "why_flagged": "Curator pометил evergreen, но в evidence есть конкретная дата."
+      },
+      {
+        "stage": "curator",
+        "title": "DesignMyNight",
+        "source_label": "DesignMyNight Manchester",
+        "reason": "Evergreen listing — нет конкретного новостного события.",
+        "why_flagged": "Curator pометил evergreen, но в evidence есть конкретная дата."
+      },
+      {
+        "stage": "curator",
+        "title": "DesignMyNight",
+        "source_label": "DesignMyNight Manchester",
+        "reason": "Evergreen listing — повторяющееся событие без новостного повода.",
+        "why_flagged": "Curator pометил evergreen, но в evidence есть конкретная дата."
+      },
+      {
+        "stage": "curator",
+        "title": "DesignMyNight",
+        "source_label": "DesignMyNight Manchester",
+        "reason": "Evergreen listing — нет новостного триггера.",
+        "why_flagged": "Curator pометил evergreen, но в evidence есть конкретная дата."
+      },
+      {
+        "stage": "curator",
+        "title": "DesignMyNight",
+        "source_label": "DesignMyNight Manchester",
+        "reason": "Evergreen listing — нет новостного повода.",
+        "why_flagged": "Curator pометил evergreen, но в evidence есть конкретная дата."
+      },
+      {
+        "stage": "curator",
+        "title": "Bolton Car Boot - The Carboot Directory",
+        "source_label": "Bolton Car Boot Sale",
+        "reason": "Evergreen-листинг без конкретной даты события (каждое воскресенье, обновлено в 2024).",
+        "why_flagged": "Curator pометил evergreen, но в evidence есть конкретная дата."
       }
     ],
     "borderline": [
@@ -968,67 +997,67 @@
         "stage": "curator",
         "title": "Steal Their Style: From Mad Max to TK Maxx, a kaleidoscope of colour",
         "source_label": "MEN",
-        "reason": "Evergreen-листинг о моде без конкретной даты события или новостного повода.",
+        "reason": "Evergreen-листинг о моде без даты и конкретного события.",
         "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
       },
       {
         "stage": "curator",
         "title": "'Gavin and Stacey's Joanna Page inspired my health MOT, it's a good job I went'",
         "source_label": "MEN",
-        "reason": "Личный опыт health MOT без конкретного события или влияния на GM.",
+        "reason": "Личный опыт health MOT без новостного повода для GM.",
         "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
       },
       {
         "stage": "curator",
         "title": "Test your Eurovision song contest knowledge with these 10 questions",
         "source_label": "MEN",
-        "reason": "Evergreen-викторина без привязки к GM и без новостного повода.",
+        "reason": "Evergreen-викторина без даты и без GM-контекста.",
         "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
       },
       {
         "stage": "curator",
         "title": "P.Louise announces 'biggest deal in Boots history' - full list of UK stores stocking brand",
         "source_label": "MEN",
-        "reason": "PR-новость о бренде P.Louise без упоминания GM-адреса или локального события.",
+        "reason": "Чистый PR бренда без новостного повода в GM.",
         "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
       },
       {
         "stage": "curator",
         "title": "Fresh meningitis outbreak reignites calls for MenB catch-up jab - why many teenagers aren't protected",
         "source_label": "MEN",
-        "reason": "Общенациональная новость о менингите без упоминания GM.",
+        "reason": "Общенациональная новость без упоминания GM.",
         "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
       },
       {
         "stage": "curator",
         "title": "Parents of 'monster' abuser snatched her daughter off the street a month after she took her own life",
         "source_label": "MEN",
-        "reason": "Суд в Preston Crown Court, без упоминания GM.",
+        "reason": "Преступление в Престоне (Lancashire), не относится к GM.",
         "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
       },
       {
         "stage": "curator",
         "title": "Friday night pub quiz: Test your general knowledge with these 20 questions - May 15, 2026",
         "source_label": "MEN",
-        "reason": "Evergreen-листинг без конкретного события или даты, влияющей на GM.",
+        "reason": "Evergreen-листинг (викторина) без конкретного события или влияния на GM.",
         "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
       },
       {
         "stage": "curator",
         "title": "Local Elections 2026: Photo ID and polling arrangements message issued | Manchester City Council",
         "source_label": "Manchester Council",
-        "reason": "Новость о выборах от 22 апреля — устарела (stale), выборы уже прошли.",
+        "reason": "Устаревшая новость (stale) о выборах 7 мая, неактуальна для сегодня.",
         "why_flagged": "Premium-источник Manchester Council отбит без явной дедупликации."
       }
     ]
   },
   "after_run_summary": {
-    "useful_items": 55,
+    "useful_items": 53,
     "digest_risk_level": "healthy",
     "digest_risk_score": 0,
-    "broken_sources": 16,
-    "stale_sources": 17,
-    "suspiciously_rejected": 1,
+    "broken_sources": 11,
+    "stale_sources": 18,
+    "suspiciously_rejected": 6,
     "borderline_rejected": 8,
     "lost_leads": 0,
     "section_underflow": 2
