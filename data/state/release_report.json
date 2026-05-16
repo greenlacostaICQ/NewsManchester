@@ -1,89 +1,82 @@
 {
   "release_gate_version": 3,
-  "pipeline_run_id": "20260516T112611+0100",
-  "run_at_london": "2026-05-16T11:32:14.391499+01:00",
+  "pipeline_run_id": "20260516T153501+0100",
+  "run_at_london": "2026-05-16T15:40:57.172365+01:00",
   "run_date_london": "2026-05-16",
   "release_decision": "pass",
   "message": "Release passed. Promoted /home/runner/work/NewsManchester/NewsManchester/data/state/draft_digest.html to /home/runner/work/NewsManchester/NewsManchester/data/outgoing/current_digest.html.",
   "errors": [],
   "warnings": [
     "LLM rewrite was degraded; writer/release quality gates handled the remaining candidates.",
-    "Quality: 10 candidate(s) dropped for missing draft_line — LLM rewrite yield is low.",
-    "Section underflow: «Что важно в ближайшие 7 дней» shipped 2 items (min=3) while writer dropped 5 candidate(s) that targeted this section — quality gates may be too strict.",
-    "Section underflow: «Футбол» shipped 1 items (min=2) while writer dropped 1 candidate(s) that targeted this section — quality gates may be too strict.",
-    "Rejected review: 6 suspiciously rejected candidate(s) — see release_report.reject_review."
+    "Quality: 12 candidate(s) dropped for missing draft_line — LLM rewrite yield is low.",
+    "Section underflow: «Футбол» shipped 1 items (min=2) while writer dropped 3 candidate(s) that targeted this section — quality gates may be too strict.",
+    "Source health: 6 source(s) failed today — check release_report.source_status for the list."
   ],
   "lost_leads": [],
   "section_underflow": [
     {
-      "section": "Что важно в ближайшие 7 дней",
-      "actual": 2,
-      "minimum": 3,
-      "dropped_by_writer": 5
-    },
-    {
       "section": "Футбол",
       "actual": 1,
       "minimum": 2,
-      "dropped_by_writer": 1
+      "dropped_by_writer": 3
     }
   ],
   "cost_summary": {
-    "total_calls": 28,
-    "total_cost_usd": 0.05246,
-    "total_prompt_tokens": 130241,
-    "total_completion_tokens": 21069,
+    "total_calls": 26,
+    "total_cost_usd": 0.051722,
+    "total_prompt_tokens": 128392,
+    "total_completion_tokens": 21250,
     "by_stage": {
       "llm_rewrite": {
-        "calls": 15,
-        "prompt_tokens": 72736,
-        "completion_tokens": 10291,
-        "cost_usd": 0.025077779999999994
+        "calls": 14,
+        "prompt_tokens": 77232,
+        "completion_tokens": 11202,
+        "cost_usd": 0.02685592
       },
       "curator": {
-        "calls": 13,
-        "prompt_tokens": 57505,
-        "completion_tokens": 10778,
-        "cost_usd": 0.02738215
+        "calls": 12,
+        "prompt_tokens": 51160,
+        "completion_tokens": 10048,
+        "cost_usd": 0.024866
       }
     },
     "by_provider": {
       "DeepSeek": {
         "calls": 20,
-        "prompt_tokens": 105689,
-        "completion_tokens": 18293,
-        "cost_usd": 0.04865833000000001
+        "prompt_tokens": 100231,
+        "completion_tokens": 16890,
+        "cost_usd": 0.045641370000000014
       },
       "OpenAI": {
-        "calls": 4,
-        "prompt_tokens": 16100,
-        "completion_tokens": 2311,
-        "cost_usd": 0.0038016
+        "calls": 5,
+        "prompt_tokens": 24769,
+        "completion_tokens": 3942,
+        "cost_usd": 0.0060805500000000005
       },
       "Groq": {
-        "calls": 4,
-        "prompt_tokens": 8452,
-        "completion_tokens": 465,
+        "calls": 1,
+        "prompt_tokens": 3392,
+        "completion_tokens": 418,
         "cost_usd": 0.0
       }
     },
     "by_model": {
       "deepseek-chat": {
         "calls": 20,
-        "prompt_tokens": 105689,
-        "completion_tokens": 18293,
-        "cost_usd": 0.04865833000000001
+        "prompt_tokens": 100231,
+        "completion_tokens": 16890,
+        "cost_usd": 0.045641370000000014
       },
       "gpt-4o-mini": {
-        "calls": 4,
-        "prompt_tokens": 16100,
-        "completion_tokens": 2311,
-        "cost_usd": 0.0038016
+        "calls": 5,
+        "prompt_tokens": 24769,
+        "completion_tokens": 3942,
+        "cost_usd": 0.0060805500000000005
       },
       "llama-3.3-70b-versatile": {
-        "calls": 4,
-        "prompt_tokens": 8452,
-        "completion_tokens": 465,
+        "calls": 1,
+        "prompt_tokens": 3392,
+        "completion_tokens": 418,
         "cost_usd": 0.0
       }
     },
@@ -91,18 +84,26 @@
   },
   "change_type_summary": {
     "counts": {
-      "new_story": 76,
-      "same_story_new_facts": 69,
-      "same_story_rehash": 70,
+      "new_story": 69,
+      "same_story_new_facts": 62,
+      "same_story_rehash": 66,
       "follow_up": 9,
-      "reminder": 13,
+      "reminder": 12,
       "no_change": 80,
       "unclassified": 0
     },
     "auto_rejected_examples": [
       {
         "change_type": "same_story_rehash",
-        "title": "Andy Burnham heads out for another run bright and early following Makerfield by-election go-ahead",
+        "title": "Andy Burnham speaks for the first time since by-election go-ahead as he makes vow to 'fight'",
+        "reason": "Повтор сюжета без новых деталей: уже был 2026-05-16 как «Labour allows Andy Burnham to run for selection in pivotal by-election».",
+        "previous_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-ckgp2e0rrj4o",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "Labour allows Andy Burnham to run for selection in pivotal by-election"
+      },
+      {
+        "change_type": "same_story_rehash",
+        "title": "In the running! Andy Burnham heads out for another jog bright and early following by-election go-ahead",
         "reason": "Повтор сюжета без новых деталей: уже был 2026-05-16 как «Labour allows Andy Burnham to run for selection in pivotal by-election».",
         "previous_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-ckgp2e0rrj4o",
         "previous_published_day": "2026-05-16",
@@ -115,14 +116,6 @@
         "previous_fingerprint": "media-layer-altrincham-today-altrincham-todaynews-co-uk-weather-2025-01-05-pictures-snow-in-altrincham-as-manchester-airport-closes-runway",
         "previous_published_day": "2026-05-08",
         "previous_title": "Pictures: Snow in Altrincham as Manchester Airport closes runway"
-      },
-      {
-        "change_type": "same_story_rehash",
-        "title": "Andy Burnham LIVE as mayor given permission to stand in Makerfield by-election",
-        "reason": "Повтор сюжета без новых деталей: уже был 2026-05-16 как «Labour allows Andy Burnham to run for selection in pivotal by-election».",
-        "previous_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-ckgp2e0rrj4o",
-        "previous_published_day": "2026-05-16",
-        "previous_title": "Labour allows Andy Burnham to run for selection in pivotal by-election"
       },
       {
         "change_type": "no_change",
@@ -158,6 +151,14 @@
       },
       {
         "change_type": "no_change",
+        "title": "They kicked down her door and as her children screamed 'mama' filmed their vile attack on a mobile phone",
+        "reason": "Без новых фактов: уже был 2026-05-12 как «They kicked down her door and as her children screamed 'mama' filmed their vile attack on a mobile phone».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-kicked-down-door-children-screamed-33915200",
+        "previous_published_day": "2026-05-12",
+        "previous_title": "They kicked down her door and as her children screamed 'mama' filmed their vile attack on a mobile phone"
+      },
+      {
+        "change_type": "no_change",
         "title": "Firebombings, silk pyjamas and a rout for Reform",
         "reason": "Без новых фактов: уже был 2026-05-12 как «Firebombings, silk pyjamas and a rout for Reform».",
         "previous_fingerprint": "media-layer-the-mill-manchestermill-co-uk-firebombings-silk-pyjamas-and-a-rout-for-reform",
@@ -171,14 +172,6 @@
         "previous_fingerprint": "media-layer-the-mill-manchestermill-co-uk-the-strange-case-of-lewis-croden-salford-reforms-man-behind-the-curtain",
         "previous_published_day": "2026-05-07",
         "previous_title": "The strange case of Lewis Croden, Salford Reform's man behind the curtain"
-      },
-      {
-        "change_type": "same_story_rehash",
-        "title": "Council sets out plans to rework busy Manchester junction after ‘serious safety concerns'",
-        "reason": "Повтор сюжета без новых деталей: уже был 2026-05-14 как «Bold new plans set out to transform problem south Manchester junction | Manchester City Council».",
-        "previous_fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-bold-new-plans-set-out-to-transform-problem-south-manchester-junction",
-        "previous_published_day": "2026-05-14",
-        "previous_title": "Bold new plans set out to transform problem south Manchester junction | Manchester City Council"
       }
     ]
   },
@@ -189,28 +182,28 @@
   },
   "source_status": {
     "counts": {
-      "ok": 58,
+      "ok": 54,
       "partial": 6,
-      "stale": 18,
-      "empty": 9,
-      "failed": 2
+      "stale": 17,
+      "empty": 10,
+      "failed": 6
     },
     "sources": [
       {
         "name": "BBC Manchester",
         "category": "media_layer",
         "status": "ok",
-        "detail": "5 item(s), 5 fresh in last 24h",
-        "candidate_count": 5,
-        "fresh_last_24h_count": 5
+        "detail": "3 item(s), 3 fresh in last 24h",
+        "candidate_count": 3,
+        "fresh_last_24h_count": 3
       },
       {
         "name": "MEN",
         "category": "media_layer",
         "status": "ok",
-        "detail": "25 item(s), 20 fresh in last 24h",
+        "detail": "25 item(s), 19 fresh in last 24h",
         "candidate_count": 25,
-        "fresh_last_24h_count": 20
+        "fresh_last_24h_count": 19
       },
       {
         "name": "The Mill",
@@ -247,9 +240,9 @@
       {
         "name": "Secret Manchester",
         "category": "media_layer",
-        "status": "stale",
-        "detail": "3 item(s) but 0 fresh in last 24h — feed is dormant",
-        "candidate_count": 3,
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "candidate_count": 0,
         "fresh_last_24h_count": 0
       },
       {
@@ -279,10 +272,10 @@
       {
         "name": "Trafford Council",
         "category": "media_layer",
-        "status": "ok",
-        "detail": "5 item(s), 3 fresh in last 24h",
-        "candidate_count": 5,
-        "fresh_last_24h_count": 3
+        "status": "failed",
+        "detail": "HTTP 403",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0
       },
       {
         "name": "Stockport Council",
@@ -495,9 +488,9 @@
       {
         "name": "Eventbrite Manchester",
         "category": "culture_weekly",
-        "status": "ok",
-        "detail": "5 item(s)",
-        "candidate_count": 5,
+        "status": "failed",
+        "detail": "HTTP 405",
+        "candidate_count": 0,
         "fresh_last_24h_count": 0
       },
       {
@@ -511,9 +504,9 @@
       {
         "name": "Eventbrite Manchester Markets",
         "category": "culture_weekly",
-        "status": "ok",
-        "detail": "3 item(s)",
-        "candidate_count": 3,
+        "status": "failed",
+        "detail": "HTTP 405",
+        "candidate_count": 0,
         "fresh_last_24h_count": 0
       },
       {
@@ -655,9 +648,9 @@
       {
         "name": "Warrington Car Boot Sale",
         "category": "culture_weekly",
-        "status": "ok",
-        "detail": "1 item(s)",
-        "candidate_count": 1,
+        "status": "failed",
+        "detail": "timed out",
+        "candidate_count": 0,
         "fresh_last_24h_count": 0
       },
       {
@@ -944,123 +937,59 @@
   },
   "reject_review": {
     "counts": {
-      "correctly_rejected": 63,
-      "borderline": 8,
-      "suspiciously_rejected": 6
+      "correctly_rejected": 53,
+      "borderline": 5,
+      "suspiciously_rejected": 0
     },
-    "suspiciously_rejected": [
-      {
-        "stage": "curator",
-        "title": "DesignMyNight",
-        "source_label": "DesignMyNight Manchester",
-        "reason": "Evergreen listing — событие с датами в 2026, нет срочного новостного повода.",
-        "why_flagged": "Curator pометил evergreen, но в evidence есть конкретная дата."
-      },
-      {
-        "stage": "curator",
-        "title": "DesignMyNight",
-        "source_label": "DesignMyNight Manchester",
-        "reason": "Evergreen listing — нет конкретного новостного события.",
-        "why_flagged": "Curator pометил evergreen, но в evidence есть конкретная дата."
-      },
-      {
-        "stage": "curator",
-        "title": "DesignMyNight",
-        "source_label": "DesignMyNight Manchester",
-        "reason": "Evergreen listing — повторяющееся событие без новостного повода.",
-        "why_flagged": "Curator pометил evergreen, но в evidence есть конкретная дата."
-      },
-      {
-        "stage": "curator",
-        "title": "DesignMyNight",
-        "source_label": "DesignMyNight Manchester",
-        "reason": "Evergreen listing — нет новостного триггера.",
-        "why_flagged": "Curator pометил evergreen, но в evidence есть конкретная дата."
-      },
-      {
-        "stage": "curator",
-        "title": "DesignMyNight",
-        "source_label": "DesignMyNight Manchester",
-        "reason": "Evergreen listing — нет новостного повода.",
-        "why_flagged": "Curator pометил evergreen, но в evidence есть конкретная дата."
-      },
-      {
-        "stage": "curator",
-        "title": "Bolton Car Boot - The Carboot Directory",
-        "source_label": "Bolton Car Boot Sale",
-        "reason": "Evergreen-листинг без конкретной даты события (каждое воскресенье, обновлено в 2024).",
-        "why_flagged": "Curator pометил evergreen, но в evidence есть конкретная дата."
-      }
-    ],
+    "suspiciously_rejected": [],
     "borderline": [
       {
         "stage": "curator",
         "title": "Steal Their Style: From Mad Max to TK Maxx, a kaleidoscope of colour",
         "source_label": "MEN",
-        "reason": "Evergreen-листинг о моде без даты и конкретного события.",
-        "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
-      },
-      {
-        "stage": "curator",
-        "title": "'Gavin and Stacey's Joanna Page inspired my health MOT, it's a good job I went'",
-        "source_label": "MEN",
-        "reason": "Личный опыт health MOT без новостного повода для GM.",
+        "reason": "Evergreen-листинг о моде без конкретной даты события — не подходит.",
         "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
       },
       {
         "stage": "curator",
         "title": "Test your Eurovision song contest knowledge with these 10 questions",
         "source_label": "MEN",
-        "reason": "Evergreen-викторина без даты и без GM-контекста.",
+        "reason": "Evergreen-викторина без привязки к GM и без новостного события.",
         "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
       },
       {
         "stage": "curator",
         "title": "P.Louise announces 'biggest deal in Boots history' - full list of UK stores stocking brand",
         "source_label": "MEN",
-        "reason": "Чистый PR бренда без новостного повода в GM.",
-        "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
-      },
-      {
-        "stage": "curator",
-        "title": "Fresh meningitis outbreak reignites calls for MenB catch-up jab - why many teenagers aren't protected",
-        "source_label": "MEN",
-        "reason": "Общенациональная новость без упоминания GM.",
-        "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
-      },
-      {
-        "stage": "curator",
-        "title": "Parents of 'monster' abuser snatched her daughter off the street a month after she took her own life",
-        "source_label": "MEN",
-        "reason": "Преступление в Престоне (Lancashire), не относится к GM.",
+        "reason": "PR-новость о бренде без конкретного GM-адреса или события.",
         "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
       },
       {
         "stage": "curator",
         "title": "Friday night pub quiz: Test your general knowledge with these 20 questions - May 15, 2026",
         "source_label": "MEN",
-        "reason": "Evergreen-листинг (викторина) без конкретного события или влияния на GM.",
+        "reason": "Evergreen-викторина без привязки к GM и без новостного события.",
         "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
       },
       {
         "stage": "curator",
         "title": "Local Elections 2026: Photo ID and polling arrangements message issued | Manchester City Council",
         "source_label": "Manchester Council",
-        "reason": "Устаревшая новость (stale) о выборах 7 мая, неактуальна для сегодня.",
+        "reason": "Stale (опубликовано 22 апреля, выборы прошли 7 мая). Новость устарела.",
         "why_flagged": "Premium-источник Manchester Council отбит без явной дедупликации."
       }
     ]
   },
   "after_run_summary": {
-    "useful_items": 53,
+    "useful_items": 57,
     "digest_risk_level": "healthy",
     "digest_risk_score": 0,
-    "broken_sources": 11,
-    "stale_sources": 18,
-    "suspiciously_rejected": 6,
-    "borderline_rejected": 8,
+    "broken_sources": 16,
+    "stale_sources": 17,
+    "suspiciously_rejected": 0,
+    "borderline_rejected": 5,
     "lost_leads": 0,
-    "section_underflow": 2
+    "section_underflow": 1
   },
   "prompt_versions": [
     {
