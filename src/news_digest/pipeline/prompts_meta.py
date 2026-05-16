@@ -34,12 +34,12 @@ class PromptMeta:
 # and the release gate will surface them as a silent-drift signal.
 PROMPTS: tuple[PromptMeta, ...] = (
     PromptMeta(name="curator",         version="v3", hash=_h(_cur.CURATOR_PROMPT)),
-    PromptMeta(name="city_news",       version="v3", hash=_h(_lr.PROMPT_CITY_NEWS)),
-    PromptMeta(name="transport",       version="v2", hash=_h(_lr.PROMPT_TRANSPORT)),
-    PromptMeta(name="events",          version="v2", hash=_h(_lr.PROMPT_EVENTS)),
-    PromptMeta(name="diaspora_events", version="v1", hash=_h(_lr.PROMPT_DIASPORA_EVENTS)),
-    PromptMeta(name="business",        version="v2", hash=_h(_lr.PROMPT_BUSINESS)),
-    PromptMeta(name="football",        version="v2", hash=_h(_lr.PROMPT_FOOTBALL)),
+    PromptMeta(name="city_news",       version="v4", hash=_h(_lr.PROMPT_CITY_NEWS)),
+    PromptMeta(name="transport",       version="v4", hash=_h(_lr.PROMPT_TRANSPORT)),
+    PromptMeta(name="events",          version="v3", hash=_h(_lr.PROMPT_EVENTS)),
+    PromptMeta(name="diaspora_events", version="v2", hash=_h(_lr.PROMPT_DIASPORA_EVENTS)),
+    PromptMeta(name="business",        version="v3", hash=_h(_lr.PROMPT_BUSINESS)),
+    PromptMeta(name="football",        version="v3", hash=_h(_lr.PROMPT_FOOTBALL)),
     PromptMeta(name="fix_translate",   version="v1", hash=_h(_lr.FIX_TRANSLATE_SYSTEM)),
     PromptMeta(name="repair_draft",    version="v1", hash=_h(_lr.REPAIR_DRAFT_SYSTEM)),
     PromptMeta(name="dedupe_review",   version="v1", hash=_h(_dd._DEDUPE_REVIEW_PROMPT)),

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
 from pathlib import Path
 import re
 import shutil
+
+logger = logging.getLogger(__name__)
 
 from news_digest.pipeline.common import (
     LOW_SIGNAL_BLOCKS,
@@ -840,9 +843,11 @@ def _classify_rejected_candidates(
         elif source_label in _PREMIUM_SOURCE_PRIORITY and "дубл" not in reason.lower():
             # Premium source drop that isn't a dedup → at least borderline.
             why = f"Premium-источник {source_label} отбит без явной дедупликации."
+        # curator decisions don't carry the title — pull it from the
+        # paired candidate so the admin report shows something useful.
         record = {
             "stage": "curator",
-            "title": dec.get("title"),
+            "title": dec.get("title") or cand.get("title"),
             "source_label": source_label,
             "reason": reason,
             "why_flagged": why,
@@ -1291,6 +1296,17 @@ def build_release(project_root: Path) -> ReleaseResult:
         "output_path": str(output_path.resolve()),
     }
     write_json(report_path, report_payload)
+
+    # A0 — Daily Index Snapshot: append-only JSONL covering every
+    # candidate (published + rejected) so we can replay "what did we
+    # see on day X, and what did we choose to publish/drop". Written
+    # regardless of gate outcome so we never lose a day's record.
+    try:
+        from news_digest.pipeline.history import write_daily_index_snapshot  # noqa: PLC0415
+        write_daily_index_snapshot(project_root)
+    except Exception as exc:  # noqa: BLE001
+        # Snapshot is observational; never break the release on its failure.
+        logger.warning("daily_index snapshot failed: %s", exc)
 
     # Snapshot every successful gate to a separate file so a later failed
     # debug run does not erase the proof that the morning gate passed.

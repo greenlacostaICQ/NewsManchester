@@ -6,8 +6,8 @@ from pathlib import Path
 import re
 from urllib import parse
 
-from news_digest.pipeline.collector.filters import _has_weekend_date_signal
 from news_digest.pipeline.common import clean_url, now_london, pipeline_run_id_from, read_json, today_london, write_json
+from news_digest.pipeline.transport_classifier import classify_transport_candidate
 
 
 @dataclass(slots=True)
@@ -160,6 +160,74 @@ def _exclude_undated_event_like_candidate(candidate: dict) -> bool:
     return True
 
 
+# Hosts that gate full article bodies behind a subscription. RSS / preview
+# fetches return only a teaser, so any candidate from these hosts must carry
+# substantive evidence_text from the preview itself. The detector below drops
+# them when the preview body is too thin to write a self-contained card.
+_PAYWALL_HOSTS = frozenset({
+    "manchestermill.co.uk",
+    "www.manchestermill.co.uk",
+    "thelead.uk",
+    "www.thelead.uk",
+    "prolificnorth.co.uk",
+    "www.prolificnorth.co.uk",
+})
+
+_PAYWALL_STUB_MARKERS = (
+    "subscribe to continue",
+    "sign in to continue",
+    "join us to continue",
+    "subscribe to read",
+    "become a member",
+    "members only",
+    "log in to read",
+    "this is a members",
+    "this article is for paying",
+    "the rest of this article",
+    "support our journalism",
+    "this story is for subscribers",
+    "to keep reading",
+    "to read more",
+)
+
+
+def _exclude_paywall_stub(candidate: dict) -> bool:
+    """Drop premium-source candidates whose preview body is just a teaser.
+
+    Cheap deterministic check that runs before the rewrite stage and saves
+    LLM tokens on cards that would inevitably read as a vague rehash.
+    """
+    if not candidate.get("include"):
+        return False
+    url = str(candidate.get("source_url") or "")
+    host = parse.urlsplit(url).netloc.lower()
+    is_paywall_host = host in _PAYWALL_HOSTS
+    evidence_blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("evidence_text", "summary", "lead")
+    )
+    lowered = evidence_blob.lower()
+    has_paywall_stub = any(marker in lowered for marker in _PAYWALL_STUB_MARKERS)
+    if not (is_paywall_host or has_paywall_stub):
+        return False
+    # Paywall hosts: require at least ~220 chars of preview text to pass.
+    # Anything shorter is a teaser the LLM can only pad out into vagueness.
+    meaningful = len(re.sub(r"\s+", " ", evidence_blob).strip())
+    if is_paywall_host and meaningful < 220:
+        candidate["include"] = False
+        existing = str(candidate.get("reason") or "").strip()
+        note = f"Validator: paywall host {host} returned only {meaningful}c of preview body — full text not accessible."
+        candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+        return True
+    if has_paywall_stub:
+        candidate["include"] = False
+        existing = str(candidate.get("reason") or "").strip()
+        note = "Validator: evidence_text contains paywall stub markers, full text not accessible."
+        candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+        return True
+    return False
+
+
 def _exclude_thin_evidence_candidate(candidate: dict) -> bool:
     category = str(candidate.get("category") or "")
     if category not in {"media_layer", "gmp", "council", "public_services", "city_news", "tech_business", "football"}:
@@ -218,14 +286,19 @@ def validate_candidates(project_root: Path) -> StageResult:
         if candidate.get("include") and _is_topic_or_index_url(url):
             candidate["include"] = False
             candidate["reason"] = str(candidate.get("reason") or "").rstrip() + " | Validator: topic/index URL, not a standalone item."
-        if candidate.get("include") and candidate.get("primary_block") == "weekend_activities":
-            title = str(candidate.get("title") or "")
-            path = parse.urlsplit(url).path
-            if not _has_weekend_date_signal(title, path):
-                candidate["include"] = False
-                candidate["reason"] = str(candidate.get("reason") or "").rstrip() + " | Validator: no date signal for weekend block."
+        # NOTE: previously weekend_activities candidates were dropped here unless
+        # title+path carried a date token. evidence_text / summary were ignored,
+        # so venue events that carry the date in the page body were lost en masse.
+        # _exclude_undated_event_like_candidate below covers the same intent but
+        # reads the full candidate blob, so we let it handle the date check.
+        # Tag transport candidates with mode + Russian-facing operator so the
+        # rewriter never has to infer "Автобус:" vs "Metrolink:" from a
+        # TfGM roadworks bulletin. Idempotent and safe for non-transport.
+        classify_transport_candidate(candidate)
         if candidate.get("include"):
             _exclude_stale_ticket_onsale(candidate)
+        if candidate.get("include"):
+            _exclude_paywall_stub(candidate)
         if candidate.get("include"):
             _exclude_undated_event_like_candidate(candidate)
         if candidate.get("event_page_type") in {"homepage", "aggregator"}:

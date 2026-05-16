@@ -90,12 +90,19 @@ def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
     """Fetch via curl_cffi using Chrome TLS fingerprint.
 
     Used for hosts that block urllib's default TLS handshake via
-    Cloudflare bot challenge. Falls back to a single retry on transient
-    network errors to match the urllib path's resilience.
+    Cloudflare bot challenge.
 
-    We strip our default browser-shaped headers (UA, Accept, Accept-Language)
-    so curl_cffi can use its own impersonation-matched values. Source-specific
-    headers like Referer/Origin are preserved.
+    Cloudflare ratchets the WAF every few weeks: the cascade of
+    impersonation profiles below has grown over time as profiles age
+    out. When a host that previously worked starts returning 403, the
+    fix is almost always:
+
+      1. Add a newer profile name (chrome131+, safari18_0+, firefox133+).
+      2. Add the Sec-Fetch-* request headers that real browsers send —
+         WAF rules sometimes gate on their presence even though they're
+         technically optional.
+      3. Back off and retry on 403 (some WAF rate-limits release after
+         a few seconds).
     """
     from curl_cffi import requests as cffi_requests  # noqa: PLC0415
 
@@ -103,13 +110,32 @@ def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
         k: v for k, v in headers.items()
         if k not in {"User-Agent", "Accept", "Accept-Language", "X-Source-Tag"}
     }
+    # Sec-Fetch-* headers that real Chrome / Safari send for top-level
+    # navigations. Cloudflare's "Browser Integrity Check" rule reads
+    # them; missing values shift the bot-score toward block.
+    cffi_headers.setdefault("Sec-Fetch-Dest", "document")
+    cffi_headers.setdefault("Sec-Fetch-Mode", "navigate")
+    cffi_headers.setdefault("Sec-Fetch-Site", "none")
+    cffi_headers.setdefault("Sec-Fetch-User", "?1")
+    cffi_headers.setdefault("Upgrade-Insecure-Requests", "1")
 
-    # Some WAFs (notably gmp.police.uk on non-residential IP ranges like
-    # GitHub Actions runners) block the default Chrome fingerprint and
-    # accept a different one. Try a small cascade before giving up.
-    profiles = ("chrome", "chrome120", "safari17_0")
+    # Modern profiles first — Cloudflare's JA3/JA4 rules favour current
+    # browser fingerprints and increasingly block older ones outright.
+    # Keep older profiles as last-ditch fallback for hosts whose WAFs
+    # haven't been updated.
+    profiles = (
+        "chrome131",
+        "chrome124",
+        "chrome120",
+        "safari18_0",
+        "safari17_2_ios",
+        "safari17_0",
+        "firefox133",
+        "edge99",
+        "chrome",
+    )
     last_exc: Exception | None = None
-    for profile in profiles:
+    for profile_idx, profile in enumerate(profiles):
         for attempt in range(2):
             try:
                 response = cffi_requests.get(
@@ -124,9 +150,17 @@ def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
             except Exception as exc:  # noqa: BLE001
                 last_exc = exc
                 msg = str(exc)
+                # Transient network error → retry once with the same profile.
                 if attempt == 0 and not msg.startswith("HTTP "):
                     time.sleep(_FETCH_RETRY_BACKOFF_SECONDS)
                     continue
+                # 403 specifically: try a brief backoff before moving to
+                # next profile in case the WAF rate-limited us — sometimes
+                # the same profile passes 3-5 seconds later. Don't escalate
+                # other HTTP codes; 4xx other than 403 is usually
+                # permanent (URL renamed / endpoint deprecated).
+                if msg == "HTTP 403" and profile_idx < len(profiles) - 1:
+                    time.sleep(2.5)
                 break
     raise RuntimeError(str(last_exc) if last_exc else "curl_cffi fetch failed")
 

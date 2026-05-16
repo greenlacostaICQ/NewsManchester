@@ -59,6 +59,10 @@ _ANTI_HALLUCINATION = (
     "АНТИ-ВЫМЫСЕЛ: каждое имя, должность, число, сумма £, дата, адрес в твоём тексте ДОЛЖНЫ буквально присутствовать "
     "в title/summary/lead/evidence_text. Нет в evidence — нет в draft_line. Запрещены конструкции «по словам экспертов», "
     "«как ожидается», «вероятно», «по предварительным данным» — если этого нет в evidence.\n\n"
+    "ПРАВИЛО ПУСТОТЫ: если evidence_text короче ~120 символов осмысленного текста, ИЛИ содержит только тизер/анонс без сути "
+    "(«One of Manchester's most iconic…», «Details to follow», paywall-stub, «приобретено северное мероприятие» без названия "
+    "сделки/сумм/имён), ИЛИ ты понимаешь, что для самодостаточного пункта нужно бы что-то домыслить — верни draft_line=\"\". "
+    "Лучше пустая строка, чем туманная карточка вида «Совет призывает сказать нет нелегальному кредитованию» без сути.\n\n"
 )
 
 _LONG_FORMAT_RULES = (
@@ -71,22 +75,24 @@ _LONG_FORMAT_RULES = (
 )
 
 PROMPT_TRANSPORT = (
-    "Ты редактор дайджеста «Greater Manchester AM Brief». Пиши draft_line только для сбоев общественного транспорта (Metrolink, bus, rail, coach).\n\n"
-    "ФОРМАТ: «• », Telegram HTML, без ссылок, максимум 180 символов, весь текст на русском кроме названий линий/операторов/остановок.\n\n"
-    "ОПЕРАТОР — БЕРИ ИЗ TITLE, НЕ ИЗ SOURCE_LABEL.\n"
-    "Title вида «TransPennine Express: Disruption between A and B» → оператор = «TransPennine Express», НЕ «National Rail».\n"
-    "Title вида «Ashton/Eccles Lines - Minor Delay» → оператор = «Metrolink».\n\n"
-    "ЧЕТЫРЕ ОБЯЗАТЕЛЬНЫХ ЭЛЕМЕНТА в пункте (если есть в evidence):\n"
-    "1) Что не работает (задержки/отмены/объезд);\n"
-    "2) Между какими станциями или на какой линии;\n"
-    "3) До какого времени/даты;\n"
-    "4) Альтернатива (замещающий автобус, объезд).\n"
-    "Если какого-то элемента нет в evidence — пропусти, не выдумывай.\n\n"
-    "ПЕРЕВОДИ ВСЁ: «Disruption» → «сбой/задержки», «Minor Delay» → «небольшие задержки», «Bus Stop Closure» → «закрытие остановки», «Improvement Works» → «ремонтные работы», «Replacement Bus» → «замещающий автобус».\n"
-    "Английские слова в финальной строке (кроме названий линий/остановок) — ЗАПРЕЩЕНО.\n\n"
-    "«• Metrolink: с 17 мая по 1 июня нет трамваев на линии Bury между Bury Interchange и Crumpsall. Замещающий автобус с теми же остановками.»\n"
-    "«• Northern: задержки до 30 мин на маршрутах через Manchester Victoria — сигнальная неисправность.»\n"
-    "«• TransPennine Express: сбой между Selby и Hull — ремонт пути, ориентировочно до 18:00.»\n\n"
+    "Ты редактор Greater Manchester AM Brief. ВНИМАНИЕ: основной транспортный рендер выполняется детерминированным шаблоном "
+    "в transport_fill. Ты вызываешься ТОЛЬКО для тех алёртов, где структурный экстрактор не справился — это значит формат "
+    "необычный (driver shortage, tunnel inspection, signal box upgrade, special event closures и т.п.).\n\n"
+    "ФОРМАТ: «• », Telegram HTML, без ссылок, максимум 180 символов, текст на русском кроме названий линий/операторов/остановок.\n\n"
+    "ОПЕРАТОР — ВСЕГДА ИЗ TITLE, никогда «TfGM:».\n"
+    "  TransPennine Express → «TransPennine Express:»\n"
+    "  Northern → «Northern:»\n"
+    "  Metrolink / Bury Line / Ashton Lines → «Metrolink:»\n"
+    "  Bus Stop Closure / Road Closure с упоминанием bus services → «Автобусы:»\n\n"
+    "ПИШИ ТОЛЬКО ПО ФАКТАМ ИЗ EVIDENCE. Если evidence короткое (< 100 символов) и в нём нет ни линии, ни улицы, ни остановки, "
+    "ни маршрута — верни draft_line=\"\". Лучше пустая строка, чем выдуманный объезд или фейковая дата. "
+    "Заглушка-шаблон по title подключится автоматически на стадии writer.\n\n"
+    "ЕСЛИ ИНФОРМАЦИИ ХВАТАЕТ — структура: «• {Оператор}: {что не работает} {где} — {причина}; {альтернатива если есть}.»\n\n"
+    "ПЕРЕВОДИ: «Disruption» → «сбой/задержки», «Minor Delay» → «небольшие задержки», «Improvement Works» → «ремонтные работы», "
+    "«Replacement Bus» → «замещающий автобус». Английские слова кроме названий — ЗАПРЕЩЕНО.\n\n"
+    "Примеры:\n"
+    "«• Metrolink: 18 мая нет трамваев на Manchester Airport Line с 22:00 до закрытия — учения экстренных служб.»\n"
+    "«• Northern: задержки до 30 мин на маршрутах через Manchester Victoria — сигнальная неисправность.»\n\n"
     "Без «проверьте заранее», без «следите за обновлениями»."
     + _PROMPT_FOOTER
 )
@@ -369,6 +375,8 @@ def _call_provider_batch(
                     "published_at": c.get("published_at", ""),
                     "freshness_status": c.get("freshness_status", ""),
                     "borough": c.get("borough", ""),
+                    "expected_operator": c.get("expected_operator", ""),
+                    "transport_mode": c.get("transport_mode", ""),
                     "current_draft_line": c.get("draft_line", ""),
                 }
                 for c in batch
@@ -582,10 +590,20 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     # came from today's primary model.
     _enrich_recurring_events(candidates)
 
+    # Don't overwrite draft_lines that the deterministic transport_fill
+    # stage already produced (provider="transport_fill"). LLM tier-3 only
+    # fires for transport candidates the extractor couldn't handle —
+    # those leave draft_line empty so the filter below still grabs them.
+    def _already_deterministic(c: dict) -> bool:
+        line = str(c.get("draft_line") or "").strip()
+        prov = str(c.get("draft_line_provider") or "")
+        return bool(line and prov == "transport_fill")
+
     to_rewrite = [
         c for c in candidates
         if isinstance(c, dict) and c.get("include")
         and str(c.get("category") or "") != "weather"  # handcrafted line, no LLM needed
+        and not _already_deterministic(c)
     ]
     provider_override = os.environ.get("LLM_PROVIDER", "").lower().strip()
     model_override = os.environ.get("LLM_MODEL", "").strip()

@@ -21,6 +21,7 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.toponyms import restore_english_toponyms
 
 
 MODEL_WRITTEN_CATEGORIES = {"media_layer", "gmp", "council", "public_services", "food_openings"}
@@ -357,10 +358,31 @@ def _extract_money(text: str) -> set[tuple[float, str]]:
     return found
 
 
+def _money_amounts_match(line_amount: float, evidence_amounts: set[tuple[float, str]]) -> bool:
+    """Return True if `line_amount` reasonably equals any evidence amount.
+
+    Allowed editorial freedom (and ONLY this):
+      1. Exact match (any unit).
+      2. LLM rounded a *fractional* evidence value to the nearest whole.
+         Only fires when the evidence value has a non-zero fractional
+         part. "£11.8m → £12 млн" passes; "£100m → £105 млн" doesn't,
+         because £100m has no fraction to round.
+    """
+    for ea, _ in evidence_amounts:
+        if abs(line_amount - ea) < 0.01:
+            return True
+        has_fraction = abs(ea - round(ea)) > 0.001
+        if has_fraction and abs(line_amount - round(ea)) < 0.01:
+            return True
+    return False
+
+
 def _hallucination_flags(candidate: dict, line: str) -> list[str]:
     """Flag £-sums in `line` that don't appear in upstream
     evidence/title/summary/lead. Normalised comparison via _extract_money
-    so £230m ↔ £230млн match."""
+    so £230m ↔ £230млн match; also accepts editorial rounding via
+    _money_amounts_match (so £11.8m → £12 млн doesn't trip).
+    """
     evidence_blob = " ".join(
         str(candidate.get(field) or "")
         for field in ("title", "summary", "lead", "evidence_text")
@@ -373,9 +395,7 @@ def _hallucination_flags(candidate: dict, line: str) -> list[str]:
     for amount, unit in line_amounts:
         if (amount, unit) in evidence_amounts:
             continue
-        # Try fuzzy match: same amount, any unit (e.g. evidence had
-        # "£26.5 million" without the m suffix or vice versa).
-        if any(abs(amount - ea) < 0.01 for ea, _ in evidence_amounts):
+        if _money_amounts_match(amount, evidence_amounts):
             continue
         flags.append(f"Pound amount £{amount:g}{unit} not present in evidence_text.")
         break
@@ -521,6 +541,27 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
             break
     errors.extend(_sanity_flags(candidate, text))
     errors.extend(_hallucination_flags(candidate, text))
+    # Thin-evidence + long-draft = LLM padded a teaser into a vague card.
+    # We only check long-format categories (city news / events / business etc.) —
+    # transport / weather are intentionally short. Football already has its own
+    # "return draft_line=\"\"" rule in the prompt.
+    if category in LONG_FORMAT_CATEGORIES and category != "football":
+        evidence = str(candidate.get("evidence_text") or candidate.get("summary") or candidate.get("lead") or "")
+        evidence_meaningful = len(re.sub(r"\s+", " ", evidence).strip())
+        draft_len = len(normalized)
+        # Concrete signals: numbers, £-amount, date, capitalised proper noun pair.
+        has_concrete = bool(
+            re.search(r"\b\d{2,}", text)
+            or re.search(r"£\s*\d", text)
+            or re.search(r"\b(?:января|февраля|марта|апреля|мая|июня|июля|"
+                         r"августа|сентября|октября|ноября|декабря)\b", text, re.IGNORECASE)
+            or re.search(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b", text)
+        )
+        if evidence_meaningful < 150 and draft_len > 220 and not has_concrete:
+            errors.append(
+                f"draft_line padded from thin evidence "
+                f"(evidence={evidence_meaningful}c, draft={draft_len}c, no concrete signal)."
+            )
     return errors
 
 
@@ -618,6 +659,20 @@ def write_digest(project_root: Path) -> StageResult:
             if english_fields:
                 english_detected = True
 
+        if not line and category == "transport":
+            # Tier 4 transport safety net: never drop a transport alert.
+            # If transport_fill couldn't extract structure AND LLM tier-3
+            # returned empty, fall back to a minimal title-based stub so
+            # the reader still sees that something is happening.
+            stub_title = re.sub(r"\s+", " ", title).strip()
+            # Take the first phrase up to the first dash / pipe / period.
+            first_phrase = re.split(r"\s+[-–|]\s+|\.\s+", stub_title, maxsplit=1)[0]
+            first_phrase = first_phrase[:120].rstrip()
+            label = source_label or "Транспорт"
+            line = f"• {label}: {first_phrase} — подробности в источнике."
+            warnings.append(f"Candidate #{index}: transport tier-4 stub used (no extractor/LLM draft_line).")
+            logger.info("TIER4 transport stub | %s | %s", block_key, first_phrase[:80])
+
         if not line:
             if category in REQUIRE_DRAFT_LINE_CATEGORIES:
                 warnings.append(f"Candidate #{index} dropped: no model draft_line for {category!r}.")
@@ -680,6 +735,8 @@ def write_digest(project_root: Path) -> StageResult:
         # "Avatar, другой жанр" — the rewrite prompt says "не выдумывай жанр"
         # but gpt-4o-mini still tacks these phrases on. Strip them post-hoc.
         line = re.sub(r",\s*(?:жанр\s+не\s+указан|другой\s+жанр|жанр\s+не\s+определ[её]н|жанр\s+неизвестен)\s*(?=[.!?]|$)", "", line, flags=re.IGNORECASE)
+        # Restore English spellings for GM toponyms (Altrincham, Bury, Wigan, ...).
+        line = restore_english_toponyms(line)
         if candidate.get("is_lead"):
             # Lead story: no bullet, bold first sentence, placed in main_story block
             line = line.lstrip("• ").strip()
