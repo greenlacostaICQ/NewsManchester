@@ -677,6 +677,18 @@ def cmd_curator_pass() -> int:
     return 0
 
 
+def cmd_transport_fill() -> int:
+    """Deterministic transport-card rendering. Runs between curator-pass
+    and llm-rewrite so LLM only sees the few odd transport alerts that
+    don't fit the standard TfGM / Metrolink / National Rail templates.
+    """
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    from news_digest.pipeline.transport_fill import run_transport_fill  # noqa: PLC0415
+    result = run_transport_fill(PROJECT_ROOT)
+    print(json.dumps(_stage_payload(result), ensure_ascii=False))
+    return 0 if result.ok else 1
+
+
 def cmd_llm_rewrite() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     result = run_llm_rewrite(PROJECT_ROOT)
@@ -745,6 +757,10 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "curator-pass",
         help="Editorial curator: drop PR/evergreen candidates and mark lead story.",
+    )
+    subparsers.add_parser(
+        "transport-fill",
+        help="Deterministic transport-card rendering and active Metrolink reminders.",
     )
     subparsers.add_parser(
         "llm-rewrite",
@@ -838,6 +854,8 @@ def main() -> int:
         return cmd_validate_candidates()
     if args.command == "curator-pass":
         return cmd_curator_pass()
+    if args.command == "transport-fill":
+        return cmd_transport_fill()
     if args.command == "llm-rewrite":
         return cmd_llm_rewrite()
     if args.command == "write-digest":

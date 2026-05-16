@@ -48,6 +48,9 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROGAPIKEY }}
         run: python3 scripts/run_local_digest.py curator-pass
 
+      - name: Transport fill — deterministic templates + Metrolink reminders
+        run: python3 scripts/run_local_digest.py transport-fill
+
       - name: LLM rewrite — DeepSeek → OpenAI → Groq Llama
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}

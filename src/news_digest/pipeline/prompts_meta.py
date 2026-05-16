@@ -35,7 +35,7 @@ class PromptMeta:
 PROMPTS: tuple[PromptMeta, ...] = (
     PromptMeta(name="curator",         version="v3", hash=_h(_cur.CURATOR_PROMPT)),
     PromptMeta(name="city_news",       version="v4", hash=_h(_lr.PROMPT_CITY_NEWS)),
-    PromptMeta(name="transport",       version="v3", hash=_h(_lr.PROMPT_TRANSPORT)),
+    PromptMeta(name="transport",       version="v4", hash=_h(_lr.PROMPT_TRANSPORT)),
     PromptMeta(name="events",          version="v3", hash=_h(_lr.PROMPT_EVENTS)),
     PromptMeta(name="diaspora_events", version="v2", hash=_h(_lr.PROMPT_DIASPORA_EVENTS)),
     PromptMeta(name="business",        version="v3", hash=_h(_lr.PROMPT_BUSINESS)),

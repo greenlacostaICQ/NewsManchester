@@ -594,6 +594,20 @@ def write_digest(project_root: Path) -> StageResult:
             if english_fields:
                 english_detected = True
 
+        if not line and category == "transport":
+            # Tier 4 transport safety net: never drop a transport alert.
+            # If transport_fill couldn't extract structure AND LLM tier-3
+            # returned empty, fall back to a minimal title-based stub so
+            # the reader still sees that something is happening.
+            stub_title = re.sub(r"\s+", " ", title).strip()
+            # Take the first phrase up to the first dash / pipe / period.
+            first_phrase = re.split(r"\s+[-–|]\s+|\.\s+", stub_title, maxsplit=1)[0]
+            first_phrase = first_phrase[:120].rstrip()
+            label = source_label or "Транспорт"
+            line = f"• {label}: {first_phrase} — подробности в источнике."
+            warnings.append(f"Candidate #{index}: transport tier-4 stub used (no extractor/LLM draft_line).")
+            logger.info("TIER4 transport stub | %s | %s", block_key, first_phrase[:80])
+
         if not line:
             if category in REQUIRE_DRAFT_LINE_CATEGORIES:
                 warnings.append(f"Candidate #{index} dropped: no model draft_line for {category!r}.")
