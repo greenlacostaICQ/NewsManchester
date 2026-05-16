@@ -939,11 +939,17 @@ def _aggregate_cost(state_dir: Path) -> dict:
     from news_digest.pipeline.cost_tracker import summarise, CallRecord  # noqa: PLC0415
     records: list[CallRecord] = []
     for stage_file in state_dir.glob("cost_*.json"):
+        if stage_file.name == "cost_history.json":
+            continue
         try:
             payload = read_json(stage_file)
         except Exception:  # noqa: BLE001
             continue
+        if not isinstance(payload, dict):
+            continue
         for r in payload.get("records") or []:
+            if not isinstance(r, dict):
+                continue
             records.append(
                 CallRecord(
                     stage=str(r.get("stage") or ""),
