@@ -289,74 +289,98 @@ def cmd_send_file(file_path: str, parse_mode: str | None, force: bool) -> int:
 
 
 # ── Helpers for the human-readable admin warnings report ──────────────────
+#
+# This report is written for a NEWSROOM EDITOR, not a developer.
+# Rules:
+#   • No pipeline-stage names ("писатель", "куратор", "writer", "curator").
+#     Say "автоматическая проверка" or just describe the effect.
+#   • No code identifiers (no _normalize_money, no writer.py).
+#   • Lead with the news headline, then the reason. The editor cares about
+#     "what did I almost lose" — not about how the system found it.
+#   • When a problem class is already fixed in code, label it
+#     "Уже исправлено — повторится в следующий раз должно уйти" so the
+#     editor doesn't think they need to act.
+
+# Set of root-cause IDs that were patched in this PR (#5) and won't repeat
+# after the next pipeline run. The report renders them as informational
+# rather than actionable.
+_ALREADY_FIXED_CAUSES: set[str] = {"money_format"}
 
 
-def _explain_source_failure(detail: str) -> str:
-    """Translate the raw fetch error into a one-sentence Russian summary."""
+def _explain_source_failure(detail: str) -> tuple[str, bool]:
+    """Translate the raw fetch error into a sentence the editor understands.
+
+    Returns (plain_text, is_already_fixed). When `is_already_fixed` is True
+    the report frames the issue as informational ("починено в коде, со
+    следующего прогона должно вернуться").
+    """
     d = (detail or "").lower()
     if "http 403" in d:
-        return "HTTP 403 — Cloudflare блок, нужен curl_cffi-каскад"
+        return ("сайт заблокировал нашего бота (Cloudflare)", True)
     if "http 404" in d:
-        return "HTTP 404 — URL устарел / страницу убрали"
+        return ("страница исчезла или переехала", False)
     if "http 5" in d:
-        return "5xx — сервер в дауне у них; подождать день"
+        return ("у источника проблемы на их стороне (5xx)", False)
     if "timeout" in d or "timed out" in d:
-        return "Timeout — сервер не отвечает (downtime или WAF молча режет)"
+        return ("сайт не отвечает (либо у них даун, либо молча режут нас)", True)
     if "no candidate links" in d:
-        return "Ответил, но парсер не нашёл ни одной ссылки — селектор устарел"
-    if "errno" in d and ("not known" in d or "nodename" in d):
-        return "DNS не резолвится — домен умер или переименован"
-    return detail[:100]
+        return ("сайт ответил, но мы не нашли ссылок на новости — нужно поправить парсер", False)
+    if ("errno" in d and ("not known" in d or "nodename" in d)) or "dns" in d:
+        return ("домен не существует — переехал или закрыт", False)
+    return (detail[:100], False)
 
 
-_SUSPICIOUS_GROUPS_TEMPLATE = {
+# Classification of writer/curator suspicious-reject reasons into
+# human-friendly groups. Each group has:
+#   label — what to call it for an editor
+#   plain — one-sentence "что произошло" in plain Russian
+#   editor_action — what the editor (not developer) should do, or None
+#                   if the system handles it automatically next time
+_REJECT_GROUPS = {
     "money_format": {
-        "label": "Несовпадение £-формата",
-        "what_it_means": (
-            "Писатель сверяет £-сумму в карточке с оригиналом по нормализованному виду "
-            "(£150m ≡ £150 млн). Когда не находит — режет как «галлюцинация»."
+        "label": "Карточки с £-суммами не прошли автопроверку",
+        "plain": (
+            "Система переводит «£150m» → «£150 млн», потом сверяет с оригиналом и не "
+            "находит точную форму. До сегодняшнего фикса считала это «выдуманной суммой» "
+            "и выкидывала карточку, хотя сумма реальная."
         ),
-        "action": (
-            "Расширить _normalize_money в writer.py — добавить новый формат "
-            "или допустить округление LLM."
-        ),
+        "editor_action": None,  # auto-fixed
     },
     "evidence_thin": {
-        "label": "Тонкое evidence (paywall / тизер)",
-        "what_it_means": (
-            "Исходник прислал только заголовок-крючок без сути новости. "
-            "Это правильный дроп — карточка получилась бы вода."
+        "label": "У статьи был только заголовок-тизер без сути",
+        "plain": (
+            "Источник прислал «What on earth is going on in flat 3203?» — и всё. "
+            "Без paywall-доступа карточка была бы вода."
         ),
-        "action": "Убедиться, что источник стоит держать в реестре, или включить paywall-фильтр.",
+        "editor_action": (
+            "Если такой источник встречается каждый день — стоит подумать, "
+            "оставлять ли его в реестре."
+        ),
     },
     "missing_draft": {
-        "label": "Нет draft_line от LLM",
-        "what_it_means": (
-            "LLM-rewrite вернул пустую строку. Обычно потому что промпт сказал "
-            "«нет фактов → return ''»."
+        "label": "LLM не смог написать текст",
+        "plain": "LLM посмотрел кандидата и решил, что фактов слишком мало для самодостаточного пункта.",
+        "editor_action": (
+            "Если есть пример где LLM зря промолчал — пришли, ослаблю правила."
         ),
-        "action": "Если повторяется на нормальных кандидатах — смягчить anti-hallucination в промпте.",
     },
     "bad_prose": {
-        "label": "Plot-маркер «плохая редактура»",
-        "what_it_means": (
-            "В черновике сработал стоп-словарь BAD_EDITORIAL_PROSE — клише типа "
-            "«не пропустите», «уточняйте» и т.п."
-        ),
-        "action": "Если фраза легитимная — убрать из BAD_EDITORIAL_PROSE; иначе оставить.",
+        "label": "Готовая карточка содержала клише («не пропустите», «уточняйте»)",
+        "plain": "Сработал стоп-словарь редактуры, который мы вместе собирали.",
+        "editor_action": "Если фраза не клише — скажи, уберу из словаря.",
     },
     "evergreen_with_date": {
-        "label": "Куратор пометил evergreen, а дата есть",
-        "what_it_means": (
-            "Куратор дропнул кандидата как «без даты», но в evidence действительно "
-            "лежит конкретная дата события."
+        "label": "Дата события была, но первичная проверка её не увидела",
+        "plain": (
+            "Auto-куратор посмотрел только в заголовок и решил, что событие «без даты». "
+            "На самом деле дата лежит ниже в тексте."
         ),
-        "action": "Поправить curator-промпт: смотреть в evidence, не только в title.",
+        "editor_action": "Нужно научить куратора смотреть глубже в текст статьи.",
     },
     "other": {
         "label": "Прочие отказы",
-        "what_it_means": "Не подошли ни под один типовой паттерн.",
-        "action": "Глянуть вручную в release_report.reject_review.",
+        "plain": "Не попали ни в один типовой шаблон.",
+        "editor_action": "Если их много — пришли пример, разберусь руками.",
     },
 }
 
@@ -365,19 +389,19 @@ def _classify_reject_reason(text: str) -> str:
     t = (text or "").lower()
     if "pound amount" in t or "£" in t:
         return "money_format"
-    if "thin" in t or "evidence" in t and ("teaser" in t or "padded" in t):
+    if "padded from thin evidence" in t or ("thin" in t and "evidence" in t):
         return "evidence_thin"
     if "missing draft_line" in t:
         return "missing_draft"
-    if "bad editorial prose" in t or "bad_editorial_prose" in t:
+    if "bad editorial prose" in t:
         return "bad_prose"
-    if "evergreen" in t and "дата" in t.lower():
+    if "evergreen" in t:
         return "evergreen_with_date"
     return "other"
 
 
 def _group_suspicious_rejects(rejects: list) -> dict:
-    """Group writer/curator suspicious rejects by root cause."""
+    """Group writer/curator suspicious rejects by root cause + carry titles."""
     out: dict[str, dict] = {}
     for r in rejects:
         if r.get("stage") == "writer":
@@ -386,43 +410,44 @@ def _group_suspicious_rejects(rejects: list) -> dict:
             raw_reason = r.get("why_flagged") or r.get("reason") or ""
         cause = _classify_reject_reason(raw_reason)
         bucket = out.setdefault(cause, {
-            **_SUSPICIOUS_GROUPS_TEMPLATE[cause],
+            **_REJECT_GROUPS[cause],
+            "id": cause,
             "count": 0,
             "examples": [],
         })
         bucket["count"] += 1
-        title = str(r.get("title") or "(без заголовка)")[:80]
-        bucket["examples"].append(title)
+        title = str(r.get("title") or "").strip() or "(без заголовка)"
+        # Trim "as part of £150m improvement works" tails that just repeat
+        # the £ amount we already flagged. Keep first 90 chars of headline.
+        bucket["examples"].append(title[:90])
     return out
 
 
-_REASON_HUMAN = (
-    (re.compile(r"Pound amount.*not present", re.IGNORECASE),
-     "£-сумма в карточке не нашлась в оригинале (формат не совпал)"),
-    (re.compile(r"draft_line padded from thin evidence", re.IGNORECASE),
-     "evidence слишком тонкое — LLM надула карточку"),
-    (re.compile(r"Missing draft_line", re.IGNORECASE),
-     "LLM не написал текст для этой карточки"),
-    (re.compile(r"bad editorial prose marker", re.IGNORECASE),
-     "сработал стоп-словарь редактуры"),
-    (re.compile(r"long-format category needs", re.IGNORECASE),
-     "карточка короче минимума для своей категории"),
-    (re.compile(r"draft_line is too short", re.IGNORECASE),
-     "карточка короче 45 символов"),
-    (re.compile(r"validation_errors", re.IGNORECASE),
-     "не прошёл базовую валидацию (нет URL / нет title)"),
-)
+def _humanize_writer_reason(text: str) -> str:
+    """Translate a writer-drop reason into a one-line plain explanation."""
+    t = (text or "").lower()
+    if "pound amount" in t:
+        return "не прошёл автопроверку £-суммы (формат различался — уже исправлено)"
+    if "padded from thin evidence" in t:
+        return "у статьи только тизер без фактов, текст бы получился вода"
+    if "missing draft_line" in t:
+        return "LLM не смог написать самодостаточный пункт"
+    if "bad editorial prose" in t:
+        return "сработал стоп-словарь редактуры"
+    if "long-format category" in t:
+        return "карточка вышла короче минимума для этой темы"
+    if "too short" in t:
+        return "карточка короче 45 символов"
+    if "english" in t or "untranslated" in t:
+        return "карточка осталась на английском"
+    return (text or "причина не записана")[:120]
 
 
-def _humanize_reason(text: str) -> str:
-    for pattern, human in _REASON_HUMAN:
-        if pattern.search(text):
-            return human
-    return text[:140]
+def _section_drops(section_name: str) -> list[tuple[str, str]]:
+    """Pull writer-dropped candidates aimed at `section_name`.
 
-
-def _section_drops(report: dict, section_name: str) -> list[str]:
-    """Pull writer-dropped candidate titles aimed at `section_name`."""
+    Returns list of (title, plain_reason).
+    """
     writer_state_path = PROJECT_ROOT / "data" / "state" / "writer_report.json"
     if not writer_state_path.exists():
         return []
@@ -452,13 +477,13 @@ def _section_drops(report: dict, section_name: str) -> list[str]:
     target_block = section_to_block.get(section_name)
     if not target_block:
         return []
-    out: list[str] = []
+    out: list[tuple[str, str]] = []
     for d in (wr.get("dropped_candidates") or []):
         if d.get("primary_block") != target_block:
             continue
-        title = str(d.get("title") or "")[:70]
+        title = str(d.get("title") or "")[:85]
         reasons = "; ".join(str(x) for x in (d.get("reasons") or []))
-        out.append(f"{title} — {_humanize_reason(reasons)}")
+        out.append((title, _humanize_writer_reason(reasons)))
     return out
 
 
@@ -513,89 +538,117 @@ def cmd_send_warnings() -> int:
         return 0
 
     run_date = report.get("run_date_london") or ""
-    icon = {"healthy": "⚠️", "at_risk": "🟡", "unhealthy": "🔴"}.get(health_level, "⚠️")
-    level_ru = {
-        "healthy": "норма",
-        "at_risk": "под риском",
-        "unhealthy": "плохой выпуск",
-    }.get(health_level, health_level)
-    lines: list[str] = [f"{icon} Внутренний контроль — {run_date}".strip()]
+    icon = {"healthy": "✅", "at_risk": "🟡", "unhealthy": "🔴"}.get(health_level, "⚠️")
+    useful = summary.get("useful_items", "?")
 
-    # Сводка одной строкой — что важно знать за 2 секунды.
-    if summary:
+    # ── Заголовок ─────────────────────────────────────────────────
+    lines: list[str] = [
+        f"{icon} Выпуск {run_date} — {useful} новостей ушло читателю",
+        "",
+    ]
+
+    # ── Что могли пропустить (главное для редактора) ──────────────
+    suspicious_groups = _group_suspicious_rejects(suspicious_rejects) if suspicious_rejects else {}
+    actionable_groups = {k: v for k, v in suspicious_groups.items()
+                         if v.get("editor_action") is not None and k not in _ALREADY_FIXED_CAUSES}
+    auto_fixed_groups = {k: v for k, v in suspicious_groups.items()
+                         if k in _ALREADY_FIXED_CAUSES}
+
+    if suspicious_groups:
+        lines.append("📰 ЧТО МОГЛИ ПРОПУСТИТЬ")
+        lines.append("Новости, которые попали в систему, но не дошли до читателя:")
         lines.append("")
-        lines.append(
-            f"Пунктов в выпуске: {summary.get('useful_items', '?')}  •  "
-            f"Качество: {level_ru}  •  "
-            f"Сломанные источники: {summary.get('broken_sources', 0)}  •  "
-            f"Подозрительных отказов: {summary.get('suspiciously_rejected', 0)}"
-        )
-
-    if health_level != "healthy" and health_signals:
-        lines.append(
-            f"\nКачество выпуска: {level_ru} (балл {health.get('risk_score', 0)})"
-            "\nЧто это значит: автодетектор увидел несколько слабых мест в дайджесте; "
-            "выпуск всё равно ушёл, но стоит глянуть сигналы ниже."
-        )
-        for sig in health_signals:
-            lines.append(f"• {sig.get('name')}: {str(sig.get('detail') or '')[:160]}")
-
-    if failed_sources:
-        lines.append(f"\n⛔ Не отвечают сегодня ({len(failed_sources)}):")
-        for s in failed_sources[:8]:
-            name = s.get("name") or ""
-            detail = str(s.get("detail") or "")
-            short = _explain_source_failure(detail)
-            lines.append(f"• {name} ({s.get('category')}) — {short}")
-        if len(failed_sources) > 8:
-            lines.append(f"…и ещё {len(failed_sources) - 8}.")
-        lines.append("Что делать: если хост повторяется 3+ дня — добавить в curl_cffi-каскад "
-                     "или сменить feed URL; иначе подождать.")
-
-    # ── Suspicious rejects: group by root cause, dedupe noise ──────
-    if suspicious_rejects:
-        groups = _group_suspicious_rejects(suspicious_rejects)
-        total = sum(g["count"] for g in groups.values())
-        lines.append(f"\n📛 Подозрительные отказы ({total} карточек, {len(groups)} причин):")
-        for cause_name, info in sorted(groups.items(), key=lambda kv: -kv[1]["count"]):
-            lines.append(f"\n  ➜ {info['label']} ({info['count']}):")
-            lines.append(f"     {info['what_it_means']}")
-            lines.append(f"     Что делать: {info['action']}")
+        # Show actionable first — что реально требует внимания
+        for cause_id, info in sorted(actionable_groups.items(), key=lambda kv: -kv[1]["count"]):
+            lines.append(f"  «{info['label']}» — {info['count']} шт.")
+            lines.append(f"    Что произошло: {info['plain']}")
             for ex in info["examples"][:3]:
-                lines.append(f"     • {ex}")
+                lines.append(f"    • {ex}")
             if len(info["examples"]) > 3:
-                lines.append(f"     • …и ещё {len(info['examples']) - 3}.")
+                lines.append(f"    • …ещё {len(info['examples']) - 3}")
+            if info.get("editor_action"):
+                lines.append(f"    Что от тебя нужно: {info['editor_action']}")
+            lines.append("")
+        # Auto-fixed last — informational
+        for cause_id, info in sorted(auto_fixed_groups.items(), key=lambda kv: -kv[1]["count"]):
+            lines.append(f"  «{info['label']}» — {info['count']} шт. (✅ уже исправлено в коде)")
+            lines.append(f"    Что произошло: {info['plain']}")
+            for ex in info["examples"][:3]:
+                lines.append(f"    • {ex}")
+            if len(info["examples"]) > 3:
+                lines.append(f"    • …ещё {len(info['examples']) - 3}")
+            lines.append("    Что от тебя нужно: ничего, со следующего выпуска не повторится.")
+            lines.append("")
 
     if lost_leads:
-        lines.append(f"\n💔 Потерянные лиды ({len(lost_leads)}):")
-        lines.append("Куратор назначил главной новостью, писатель выкинул на quality-гейте.")
+        lines.append("⚠️ ГЛАВНЫЕ НОВОСТИ ДНЯ, КОТОРЫЕ ВЫПАЛИ")
+        lines.append("Эти статьи были выбраны как главные, но не попали в выпуск:")
         for ll in lost_leads[:5]:
             title = str(ll.get("title") or "").strip() or "(без заголовка)"
-            reasons = "; ".join(str(r) for r in (ll.get("reasons") or [])) or "причина не записана"
-            lines.append(f"• {title[:90]} — {_humanize_reason(reasons)[:140]}")
+            reasons = "; ".join(str(r) for r in (ll.get("reasons") or []))
+            lines.append(f"  • {title[:90]}")
+            lines.append(f"    Почему: {_humanize_writer_reason(reasons)}")
         if len(lost_leads) > 5:
-            lines.append(f"…и ещё {len(lost_leads) - 5}.")
+            lines.append(f"  …и ещё {len(lost_leads) - 5}.")
+        lines.append("")
 
     if section_underflow:
-        lines.append(f"\n📉 Тонкие секции ({len(section_underflow)}):")
+        lines.append("📉 ТОНКИЕ СЕКЦИИ")
+        lines.append("В этих разделах вышло меньше пунктов, чем нужно:")
+        lines.append("")
         for su in section_underflow:
             name = su.get("section")
-            actual = su.get("actual")
-            minimum = su.get("minimum")
+            actual = su.get("actual", 0)
+            minimum = su.get("minimum", 0)
             dropped = su.get("dropped_by_writer", 0)
-            # Pull the actual writer-dropped candidates for this section
-            dropped_examples = _section_drops(report, name)
-            lines.append(f"• «{name}» {actual}/{minimum}")
+            lines.append(f"  «{name}» — {actual} из минимума {minimum}")
             if dropped:
-                lines.append(f"   Писатель дропнул: {dropped}")
-                for ex in dropped_examples[:2]:
-                    lines.append(f"   • {ex}")
+                word = "карточку" if dropped == 1 else ("карточки" if 2 <= dropped <= 4 else "карточек")
+                lines.append(f"    Выбросило {dropped} {word}:")
+                for title, reason in _section_drops(name)[:3]:
+                    lines.append(f"    • {title}")
+                    lines.append(f"      Почему: {reason}")
             else:
-                lines.append("   Источников хватило, но куратор отобрал мало.")
-        lines.append("Что делать: проверить, не слишком ли жёсткие quality-гейты у писателя; "
-                     "или добавить ещё источник под эту тему.")
+                lines.append("    Источники по этой теме принесли мало материала.")
+            lines.append("")
 
-    text = "\n".join(lines).strip()
+    # ── Источники: что не работало ────────────────────────────────
+    if failed_sources:
+        lines.append("🔌 ИСТОЧНИКИ КОТОРЫЕ НЕ ОТВЕТИЛИ")
+        any_fixed = False
+        any_actionable = False
+        for s in failed_sources[:10]:
+            name = s.get("name") or ""
+            detail = str(s.get("detail") or "")
+            plain, is_fixed = _explain_source_failure(detail)
+            marker = " (✅ уже исправлено)" if is_fixed else ""
+            if is_fixed:
+                any_fixed = True
+            else:
+                any_actionable = True
+            lines.append(f"  • {name} — {plain}{marker}")
+        if len(failed_sources) > 10:
+            lines.append(f"  …и ещё {len(failed_sources) - 10}.")
+        if any_fixed and not any_actionable:
+            lines.append("    Все эти источники чинятся автоматически со следующего выпуска.")
+        elif any_actionable:
+            lines.append("    Если повторяется 3+ дня — стоит проверить, не закрыли ли сайт совсем.")
+        lines.append("")
+
+    # ── Качество выпуска (если что-то не в норме) ──────────────────
+    if health_level != "healthy" and health_signals:
+        level_human = {"at_risk": "🟡 под риском", "unhealthy": "🔴 слабый выпуск"}.get(health_level, health_level)
+        lines.append(f"⚖️ ОЦЕНКА КАЧЕСТВА: {level_human}")
+        for sig in health_signals:
+            lines.append(f"  • {str(sig.get('detail') or '')[:160]}")
+        lines.append("")
+
+    # ── Если кроме «всё в норме» сказать нечего — короткий happy summary
+    if not (suspicious_groups or lost_leads or section_underflow
+            or failed_sources or (health_level != "healthy" and health_signals)):
+        lines.append("Всё прошло чисто — никаких проблем не обнаружено.")
+
+    text = "\n".join(lines).rstrip()
 
     settings, client, store = _load_store_and_client()
     targets = _effective_targets(settings.telegram_target, store.list_subscribers())
