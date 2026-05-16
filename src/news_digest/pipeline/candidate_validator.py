@@ -144,6 +144,89 @@ def _has_computable_market_schedule(candidate: dict) -> bool:
     )
 
 
+_PAST_DATE_MONTH_RE = re.compile(
+    r"\b(?P<day>\d{1,2})(?:st|nd|rd|th)?\s+(?P<month>january|february|march|april|may|"
+    r"june|july|august|september|october|november|december)\b",
+    re.IGNORECASE,
+)
+_MONTH_NUM = {
+    "january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
+    "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12,
+}
+
+
+def _exclude_stale_event(candidate: dict) -> bool:
+    """Drop event candidates whose only date is already in the past.
+
+    Catches stale aggregator listings like "Urmston Artisan Market 2 мая"
+    surfacing in a 16 May digest — the LLM faithfully reproduced the
+    title without realising the date had passed.
+
+    Two date sources, in priority order:
+      1. summary's event_date=YYYY-MM-DD field (set by Eventbrite/Ticketmaster
+         parsers) — authoritative.
+      2. First "<day> <month>" mention anywhere in title/summary/lead/
+         evidence/source_url. Resolve year to current; if past, drop.
+
+    Only fires for event-block candidates so we don't accidentally
+    silence council news that mentions historical dates.
+    """
+    if not candidate.get("include"):
+        return False
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    event_like = (
+        category in {"culture_weekly", "venues_tickets", "russian_speaking_events"}
+        or block in _EVENT_BLOCKS
+    )
+    if not event_like:
+        return False
+
+    today = now_london().date()
+
+    # 1) authoritative structured date
+    summary = str(candidate.get("summary") or "")
+    event_dt = _summary_field_datetime(summary, "event_date")
+    if event_dt is not None and event_dt.date() < today:
+        candidate["include"] = False
+        existing = str(candidate.get("reason") or "").strip()
+        note = f"Validator: event_date {event_dt.date().isoformat()} is in the past."
+        candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+        return True
+
+    # 2) heuristic "<day> <month>" date in any blob field
+    blob = _candidate_blob(candidate)
+    candidates_dates: list = []
+    for m in _PAST_DATE_MONTH_RE.finditer(blob):
+        try:
+            day = int(m.group("day"))
+        except ValueError:
+            continue
+        month = _MONTH_NUM[m.group("month").lower()]
+        # Resolve year: closest future year if past in current year would be
+        # >180 days back, else current year.
+        try:
+            this_year = today.replace(year=today.year).replace(month=month, day=day)
+        except ValueError:
+            continue
+        if this_year < today and (today - this_year).days > 180:
+            this_year = this_year.replace(year=today.year + 1)
+        candidates_dates.append(this_year)
+
+    if not candidates_dates:
+        return False
+    # If EVERY mentioned date is past, drop. Otherwise let it through —
+    # presence of a future date means the card has something to offer.
+    if all(d < today for d in candidates_dates):
+        candidate["include"] = False
+        existing = str(candidate.get("reason") or "").strip()
+        latest_past = max(candidates_dates).isoformat()
+        note = f"Validator: all event dates are in the past (last seen {latest_past})."
+        candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+        return True
+    return False
+
+
 def _exclude_undated_event_like_candidate(candidate: dict) -> bool:
     category = str(candidate.get("category") or "")
     block = str(candidate.get("primary_block") or "")
@@ -304,6 +387,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _exclude_stale_ticket_onsale(candidate)
         if candidate.get("include"):
             _exclude_paywall_stub(candidate)
+        if candidate.get("include"):
+            _exclude_stale_event(candidate)
         if candidate.get("include"):
             _exclude_undated_event_like_candidate(candidate)
         if candidate.get("event_page_type") in {"homepage", "aggregator"}:
