@@ -1,82 +1,84 @@
 {
   "release_gate_version": 3,
-  "pipeline_run_id": "20260517T080044+0100",
-  "run_at_london": "2026-05-17T08:04:01.911077+01:00",
-  "run_date_london": "2026-05-17",
-  "release_decision": "pass",
-  "message": "Release passed. Promoted /home/runner/work/NewsManchester/NewsManchester/data/state/draft_digest.html to /home/runner/work/NewsManchester/NewsManchester/data/outgoing/current_digest.html.",
-  "errors": [],
+  "pipeline_run_id": "20260518T080044+0100",
+  "run_at_london": "2026-05-18T08:04:08.954403+01:00",
+  "run_date_london": "2026-05-18",
+  "release_decision": "fail",
+  "message": "Digest release is blocked until collector, dedupe, validator, writer and gate inputs pass.",
+  "errors": [
+    "Candidate #292 has invalid dedupe_decision: None."
+  ],
   "warnings": [
     "LLM rewrite was degraded; writer/release quality gates handled the remaining candidates.",
-    "Quality: writer dropped many low-quality draft_lines: 12 of 52 included candidates.",
-    "Section underflow: «Городской радар» shipped 4 items (min=5) while writer dropped 1 candidate(s) that targeted this section — quality gates may be too strict.",
-    "Digest health [Severe] all_news_thin: All news sections thin: 24h=3, today=2, radar=4 — possible coverage breakdown."
+    "Section underflow: «Городской радар» shipped 1 items (min=5) while writer dropped 1 candidate(s) that targeted this section — quality gates may be too strict.",
+    "Digest health [Severe] all_news_thin: All news sections thin: 24h=3, today=2, radar=1 — possible coverage breakdown.",
+    "Source health: 3 source(s) failed today — check release_report.source_status for the list."
   ],
   "lost_leads": [],
   "section_underflow": [
     {
       "section": "Городской радар",
-      "actual": 4,
+      "actual": 1,
       "minimum": 5,
       "dropped_by_writer": 1
     }
   ],
   "cost_summary": {
-    "total_calls": 21,
-    "total_cost_usd": 0.035198,
-    "total_prompt_tokens": 86266,
-    "total_completion_tokens": 13396,
+    "total_calls": 17,
+    "total_cost_usd": 0.027169,
+    "total_prompt_tokens": 65595,
+    "total_completion_tokens": 10091,
     "by_stage": {
       "llm_rewrite": {
-        "calls": 14,
-        "prompt_tokens": 50652,
-        "completion_tokens": 7522,
-        "cost_usd": 0.019120790000000002
+        "calls": 11,
+        "prompt_tokens": 37732,
+        "completion_tokens": 5448,
+        "cost_usd": 0.0145391
       },
       "curator": {
-        "calls": 7,
-        "prompt_tokens": 35614,
-        "completion_tokens": 5874,
-        "cost_usd": 0.01607718
+        "calls": 6,
+        "prompt_tokens": 27863,
+        "completion_tokens": 4643,
+        "cost_usd": 0.01263031
       }
     },
     "by_provider": {
       "DeepSeek": {
-        "calls": 15,
-        "prompt_tokens": 71856,
-        "completion_tokens": 11755,
-        "cost_usd": 0.032331620000000005
+        "calls": 12,
+        "prompt_tokens": 56823,
+        "completion_tokens": 9393,
+        "cost_usd": 0.025674510000000005
       },
       "OpenAI": {
-        "calls": 5,
-        "prompt_tokens": 12709,
-        "completion_tokens": 1600,
-        "cost_usd": 0.00286635
+        "calls": 4,
+        "prompt_tokens": 7450,
+        "completion_tokens": 629,
+        "cost_usd": 0.0014948999999999997
       },
       "Groq": {
         "calls": 1,
-        "prompt_tokens": 1701,
-        "completion_tokens": 41,
+        "prompt_tokens": 1322,
+        "completion_tokens": 69,
         "cost_usd": 0.0
       }
     },
     "by_model": {
       "deepseek-chat": {
-        "calls": 15,
-        "prompt_tokens": 71856,
-        "completion_tokens": 11755,
-        "cost_usd": 0.032331620000000005
+        "calls": 12,
+        "prompt_tokens": 56823,
+        "completion_tokens": 9393,
+        "cost_usd": 0.025674510000000005
       },
       "gpt-4o-mini": {
-        "calls": 5,
-        "prompt_tokens": 12709,
-        "completion_tokens": 1600,
-        "cost_usd": 0.00286635
+        "calls": 4,
+        "prompt_tokens": 7450,
+        "completion_tokens": 629,
+        "cost_usd": 0.0014948999999999997
       },
       "llama-3.3-70b-versatile": {
         "calls": 1,
-        "prompt_tokens": 1701,
-        "completion_tokens": 41,
+        "prompt_tokens": 1322,
+        "completion_tokens": 69,
         "cost_usd": 0.0
       }
     },
@@ -84,70 +86,54 @@
   },
   "change_type_summary": {
     "counts": {
-      "new_story": 83,
-      "same_story_new_facts": 4,
-      "same_story_rehash": 65,
+      "new_story": 73,
+      "same_story_new_facts": 2,
+      "same_story_rehash": 63,
       "follow_up": 16,
-      "reminder": 19,
-      "no_change": 119,
+      "reminder": 21,
+      "no_change": 116,
       "unclassified": 0
     },
     "auto_rejected_examples": [
       {
-        "change_type": "no_change",
-        "title": "Race Across the World cast unite to run in memory of Sam Gardiner",
-        "reason": "Без новых фактов: уже был 2026-05-16 как «Race Across the World cast unite to run in memory of Sam Gardiner».",
-        "previous_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-cvgzrd2yj5qo",
-        "previous_published_day": "2026-05-16",
-        "previous_title": "Race Across the World cast unite to run in memory of Sam Gardiner"
-      },
-      {
-        "change_type": "no_change",
-        "title": "We will fix adult social care failings, mayor says after damning report",
-        "reason": "Без новых фактов: уже был 2026-05-16 как «We will fix adult social care failings, mayor says after damning report».",
-        "previous_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c1l2e9zg638o",
-        "previous_published_day": "2026-05-16",
-        "previous_title": "We will fix adult social care failings, mayor says after damning report"
+        "change_type": "same_story_rehash",
+        "title": "The two huge billion-pound Greater Manchester projects at the heart of a new masterplan",
+        "reason": "Повтор сюжета без новых деталей: уже был 2026-05-09 как «Matcha Made set to launch at The Trafford Centre bringing a new wave of matcha to Manchester - About Manchester».",
+        "previous_fingerprint": "food-openings-about-manchester-food-drink-aboutmanchester-co-uk-matcha-made-set-to-launch-at-the-trafford-centre-bringing-a-new-wave-of-matcha-to-manchester",
+        "previous_published_day": "2026-05-09",
+        "previous_title": "Matcha Made set to launch at The Trafford Centre bringing a new wave of matcha to Manchester - About Manchester"
       },
       {
         "change_type": "same_story_rehash",
-        "title": "Six things Andy Burnham said today ahead of Makerfield by-election",
-        "reason": "Повтор сюжета без новых деталей: уже был 2026-05-15 как «Hold on, could Andy Burnham actually lose the Makerfield by-election?».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-hold-on-could-andy-burnham-33949753",
-        "previous_published_day": "2026-05-15",
-        "previous_title": "Hold on, could Andy Burnham actually lose the Makerfield by-election?"
+        "title": "The uncomfortable truth behind Greater Manchester's local election results",
+        "reason": "Повтор сюжета без новых деталей: уже был 2026-05-10 как «The full list of 2026 local election results for Greater Manchester — here's how each borough voted».",
+        "previous_fingerprint": "media-layer-secret-manchester-secretmanchester-com-greater-manchester-local-election-results-2026",
+        "previous_published_day": "2026-05-10",
+        "previous_title": "The full list of 2026 local election results for Greater Manchester — here's how each borough voted"
       },
       {
         "change_type": "no_change",
-        "title": "'I did so much cocaine my nose started to collapse'",
-        "reason": "Без новых фактов: уже был 2026-05-16 как «'I did so much cocaine my nose started to collapse'».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-i-much-cocaine-nose-started-33930855",
-        "previous_published_day": "2026-05-16",
-        "previous_title": "'I did so much cocaine my nose started to collapse'"
+        "title": "'I became a bus driver in Manchester - now people know me from TikTok'",
+        "reason": "Без новых фактов: уже был 2026-05-17 как «'I became a bus driver in Manchester - now people know me from TikTok'».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-i-became-bus-driver-manchester-33925695",
+        "previous_published_day": "2026-05-17",
+        "previous_title": "'I became a bus driver in Manchester - now people know me from TikTok'"
       },
       {
         "change_type": "no_change",
-        "title": "Burnham makes his move with a Makerfield gambit",
-        "reason": "Без новых фактов: уже был 2026-05-16 как «Burnham makes his move with a Makerfield gambit».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-burnham-makes-move-makerfield-gambit-33949839",
-        "previous_published_day": "2026-05-16",
-        "previous_title": "Burnham makes his move with a Makerfield gambit"
+        "title": "How do you solve a problem like Strangeways?",
+        "reason": "Без новых фактов: уже был 2026-05-17 как «How do you solve a problem like Strangeways?».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-how-you-solve-problem-like-33942311",
+        "previous_published_day": "2026-05-17",
+        "previous_title": "How do you solve a problem like Strangeways?"
       },
       {
         "change_type": "no_change",
-        "title": "Manchester's new 'Green wall' - will voters in Burnage and Moston ever return to Labour?",
-        "reason": "Без новых фактов: уже был 2026-05-16 как «Manchester's new 'Green wall' - will voters in Burnage and Moston ever return to Labour?».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-manchesters-new-green-wall-voters-33948978",
-        "previous_published_day": "2026-05-16",
-        "previous_title": "Manchester's new 'Green wall' - will voters in Burnage and Moston ever return to Labour?"
-      },
-      {
-        "change_type": "no_change",
-        "title": "'It's a mug's move': On the streets of Ashton-in-Makerfield hours after it was thrust into a political firestorm",
-        "reason": "Без новых фактов: уже был 2026-05-15 как «'It's a mug's move': On the streets of Ashton-in-Makerfield hours after it was thrust into a political firestorm».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-its-mugs-move-streets-ashton-33949973",
-        "previous_published_day": "2026-05-15",
-        "previous_title": "'It's a mug's move': On the streets of Ashton-in-Makerfield hours after it was thrust into a political firestorm"
+        "title": "'Andy Burnham once came into our pub and we made him pull his own pint'",
+        "reason": "Без новых фактов: уже был 2026-05-17 как «'Andy Burnham once came into our pub and we made him pull his own pint'».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-whats-on-food-drink-news-andy-burnham-once-came-pub-33942296",
+        "previous_published_day": "2026-05-17",
+        "previous_title": "'Andy Burnham once came into our pub and we made him pull his own pint'"
       },
       {
         "change_type": "no_change",
@@ -159,19 +145,35 @@
       },
       {
         "change_type": "no_change",
-        "title": "What is Andy Burnham's Manchesterism - and can it save Britain?",
-        "reason": "Без новых фактов: уже был 2026-05-10 как «What is Manchesterism - and can it save Britain?».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-what-manchesterism-can-save-britain-33906365",
-        "previous_published_day": "2026-05-10",
-        "previous_title": "What is Manchesterism - and can it save Britain?"
+        "title": "Manchester's new 'Green wall' - will voters in Burnage and Moston ever return to Labour?",
+        "reason": "Без новых фактов: уже был 2026-05-16 как «Manchester's new 'Green wall' - will voters in Burnage and Moston ever return to Labour?».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-manchesters-new-green-wall-voters-33948978",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "Manchester's new 'Green wall' - will voters in Burnage and Moston ever return to Labour?"
       },
       {
         "change_type": "no_change",
-        "title": "'Gavin and Stacey's Joanna Page inspired my health MOT, it's a good job I went'",
-        "reason": "Без новых фактов: уже был 2026-05-16 как «'Gavin and Stacey's Joanna Page inspired my health MOT, it's a good job I went'».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-health-gavin-staceys-joanna-page-inspired-33952433",
+        "title": "'Manchester changed forever after what happened in 1996 - adversity brought people together'",
+        "reason": "Без новых фактов: уже был 2026-05-17 как «'Manchester changed forever after what happened in 1996 - adversity brought people together'».",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-whats-on-whats-on-news-manchester-changed-forever-after-what-33947608",
+        "previous_published_day": "2026-05-17",
+        "previous_title": "'Manchester changed forever after what happened in 1996 - adversity brought people together'"
+      },
+      {
+        "change_type": "no_change",
+        "title": "Burnham out, Reform in? What happens to Greater Manchester after Andy",
+        "reason": "Без новых фактов: уже был 2026-05-16 как «Burnham out, Reform in? What happens to Greater Manchester after Andy».",
+        "previous_fingerprint": "media-layer-the-mill-manchestermill-co-uk-burnham-out-reform-in-what-happens-to-greater-manchester-after-andy",
         "previous_published_day": "2026-05-16",
-        "previous_title": "'Gavin and Stacey's Joanna Page inspired my health MOT, it's a good job I went'"
+        "previous_title": "Burnham out, Reform in? What happens to Greater Manchester after Andy"
+      },
+      {
+        "change_type": "no_change",
+        "title": "Firebombings, silk pyjamas and a rout for Reform",
+        "reason": "Без новых фактов: уже был 2026-05-12 как «Firebombings, silk pyjamas and a rout for Reform».",
+        "previous_fingerprint": "media-layer-the-mill-manchestermill-co-uk-firebombings-silk-pyjamas-and-a-rout-for-reform",
+        "previous_published_day": "2026-05-12",
+        "previous_title": "Firebombings, silk pyjamas and a rout for Reform"
       }
     ]
   },
@@ -182,34 +184,34 @@
       {
         "name": "all_news_thin",
         "severity": 3,
-        "detail": "All news sections thin: 24h=3, today=2, radar=4 — possible coverage breakdown."
+        "detail": "All news sections thin: 24h=3, today=2, radar=1 — possible coverage breakdown."
       }
     ]
   },
   "source_status": {
     "counts": {
-      "ok": 52,
+      "ok": 50,
       "partial": 6,
-      "stale": 22,
-      "empty": 11,
-      "failed": 0
+      "stale": 20,
+      "empty": 12,
+      "failed": 3
     },
     "sources": [
       {
         "name": "BBC Manchester",
         "category": "media_layer",
-        "status": "ok",
-        "detail": "2 item(s), 2 fresh in last 24h",
-        "candidate_count": 2,
-        "fresh_last_24h_count": 2
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0
       },
       {
         "name": "MEN",
         "category": "media_layer",
         "status": "ok",
-        "detail": "25 item(s), 21 fresh in last 24h",
+        "detail": "25 item(s), 22 fresh in last 24h",
         "candidate_count": 25,
-        "fresh_last_24h_count": 21
+        "fresh_last_24h_count": 22
       },
       {
         "name": "The Mill",
@@ -223,8 +225,8 @@
         "name": "The Manc",
         "category": "media_layer",
         "status": "stale",
-        "detail": "6 item(s) but 0 fresh in last 24h — feed is dormant",
-        "candidate_count": 6,
+        "detail": "7 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 7,
         "fresh_last_24h_count": 0
       },
       {
@@ -246,9 +248,9 @@
       {
         "name": "Secret Manchester",
         "category": "media_layer",
-        "status": "stale",
-        "detail": "3 item(s) but 0 fresh in last 24h — feed is dormant",
-        "candidate_count": 3,
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "candidate_count": 0,
         "fresh_last_24h_count": 0
       },
       {
@@ -270,9 +272,9 @@
       {
         "name": "Trafford Council",
         "category": "media_layer",
-        "status": "stale",
-        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
-        "candidate_count": 5,
+        "status": "failed",
+        "detail": "HTTP 403",
+        "candidate_count": 0,
         "fresh_last_24h_count": 0
       },
       {
@@ -375,8 +377,8 @@
         "name": "HOME",
         "category": "culture_weekly",
         "status": "ok",
-        "detail": "3 item(s)",
-        "candidate_count": 3,
+        "detail": "5 item(s)",
+        "candidate_count": 5,
         "fresh_last_24h_count": 0
       },
       {
@@ -423,8 +425,8 @@
         "name": "People's History Museum",
         "category": "culture_weekly",
         "status": "ok",
-        "detail": "2 item(s)",
-        "candidate_count": 2,
+        "detail": "3 item(s)",
+        "candidate_count": 3,
         "fresh_last_24h_count": 0
       },
       {
@@ -502,9 +504,9 @@
       {
         "name": "Eventbrite Manchester",
         "category": "culture_weekly",
-        "status": "ok",
-        "detail": "5 item(s)",
-        "candidate_count": 5,
+        "status": "failed",
+        "detail": "HTTP 405",
+        "candidate_count": 0,
         "fresh_last_24h_count": 0
       },
       {
@@ -518,9 +520,9 @@
       {
         "name": "Eventbrite Manchester Markets",
         "category": "culture_weekly",
-        "status": "ok",
-        "detail": "4 item(s)",
-        "candidate_count": 4,
+        "status": "failed",
+        "detail": "HTTP 405",
+        "candidate_count": 0,
         "fresh_last_24h_count": 0
       },
       {
@@ -550,9 +552,9 @@
       {
         "name": "Great Northern Makers Market",
         "category": "culture_weekly",
-        "status": "empty",
-        "detail": "fetched but no candidate links parsed",
-        "candidate_count": 0,
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
         "fresh_last_24h_count": 0
       },
       {
@@ -566,9 +568,9 @@
       {
         "name": "Levenshulme Artisan Market",
         "category": "culture_weekly",
-        "status": "empty",
-        "detail": "fetched but no candidate links parsed",
-        "candidate_count": 0,
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
         "fresh_last_24h_count": 0
       },
       {
@@ -894,9 +896,9 @@
       {
         "name": "EventFirst Diaspora",
         "category": "diaspora_events",
-        "status": "ok",
-        "detail": "1 item(s)",
-        "candidate_count": 1,
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "candidate_count": 0,
         "fresh_last_24h_count": 0
       },
       {
@@ -911,8 +913,8 @@
         "name": "UK Stand-Up Club Eventbrite",
         "category": "diaspora_events",
         "status": "ok",
-        "detail": "2 item(s)",
-        "candidate_count": 2,
+        "detail": "1 item(s)",
+        "candidate_count": 1,
         "fresh_last_24h_count": 0
       },
       {
@@ -927,36 +929,29 @@
   },
   "reject_review": {
     "counts": {
-      "correctly_rejected": 28,
-      "borderline": 2,
+      "correctly_rejected": 21,
+      "borderline": 1,
       "suspiciously_rejected": 0
     },
     "suspiciously_rejected": [],
     "borderline": [
       {
         "stage": "curator",
-        "title": "The Lazy Sunday Quiz: Test your general knowledge with these 10 questions - May 17, 2026",
+        "title": "SATs tests have started in school, see if you can answer these maths questions for primary kids",
         "source_label": "MEN",
-        "reason": "Evergreen-листинг (викторина) без конкретного события или новостного повода.",
-        "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
-      },
-      {
-        "stage": "curator",
-        "title": "What £500,000 buys you in Bolton - a barn conversion with rolling countryside views",
-        "source_label": "MEN",
-        "reason": "Evergreen-листинг недвижимости без новостного повода — просто 'дом недели'.",
+        "reason": "Evergreen-листинг без конкретной даты/события в GM (общенациональная тема SATs).",
         "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
       }
     ]
   },
   "after_run_summary": {
-    "useful_items": 39,
+    "useful_items": 35,
     "digest_risk_level": "unhealthy",
     "digest_risk_score": 3,
-    "broken_sources": 11,
-    "stale_sources": 22,
+    "broken_sources": 15,
+    "stale_sources": 20,
     "suspiciously_rejected": 0,
-    "borderline_rejected": 2,
+    "borderline_rejected": 1,
     "lost_leads": 0,
     "section_underflow": 1
   },
