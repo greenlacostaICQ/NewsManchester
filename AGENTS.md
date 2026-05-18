@@ -403,6 +403,24 @@ blockers.
 - `data/state/*.json` and `data/outgoing/*.html` are regenerated
   each run. Read for diagnosis, never edit by hand.
 
+## Editorial regression pack (tests/test_editorial_regression.py)
+
+Pinned-defect golden cases. 25–30 fast unittest cases covering the
+seven historical failure modes (no-date event, PR, not-GM, duplicate,
+stale event/synthetic, bad HTML in draft_line, untranslated English).
+Each case exercises a real deterministic predicate
+(`_exclude_*` / `_apply_intra_batch_dedup` / `_draft_line_quality_errors`
+/ `_is_obviously_non_gm_*` / `_is_stale_transport` / etc.) — no
+fixtures on disk, no LLM calls. Adding a case for a freshly-fixed
+defect: copy the live candidate fields into a new test method here,
+assert the predicate that should now catch it.
+
+Run with `PYTHONPATH=src python3 -m unittest discover -s tests`.
+CI: `.github/workflows/tests.yml` runs on every push to a non-`main`
+branch and every PR. `main` only runs the daily digest; tests are
+intentionally out of the release path so a failing test never blocks
+a send.
+
 ## Common task patterns
 
 - "Add a source" — new `SourceDef(...)` in
