@@ -1028,6 +1028,64 @@ def cmd_llm_rewrite() -> int:
     return 0 if result.ok else 1
 
 
+def cmd_prompt_versions() -> int:
+    from news_digest.pipeline.prompts_meta import (  # noqa: PLC0415
+        PROMPT_REGISTRY_VERSION,
+        snapshot,
+        validate_registry,
+    )
+
+    errors = validate_registry()
+    print(
+        json.dumps(
+            {
+                "prompt_registry_version": PROMPT_REGISTRY_VERSION,
+                "prompt_versions": snapshot(),
+                "errors": errors,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+    return 0 if not errors else 1
+
+
+def cmd_model_routing() -> int:
+    from news_digest.pipeline.model_routing import route_snapshot  # noqa: PLC0415
+
+    print(json.dumps(route_snapshot(), ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_cost_summary() -> int:
+    report = read_json(PROJECT_ROOT / "data" / "state" / "release_report.json", {})
+    cost_summary = report.get("cost_summary") or {}
+    payload = {
+        "run_date_london": report.get("run_date_london"),
+        "release_decision": report.get("release_decision"),
+        "cost_summary": cost_summary,
+    }
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0 if cost_summary else 1
+
+
+def cmd_reader_value_validation() -> int:
+    from news_digest.pipeline.reader_value import (  # noqa: PLC0415
+        evaluate_reader_value_labels,
+        write_reader_value_validation_report,
+    )
+
+    report = evaluate_reader_value_labels(PROJECT_ROOT)
+    report_path = write_reader_value_validation_report(PROJECT_ROOT)
+    payload = {
+        "report_path": str(report_path.resolve()),
+        "errors": report.get("errors", []),
+        "summary": report.get("summary", {}),
+    }
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0 if not payload["errors"] else 1
+
+
 def cmd_write_digest() -> int:
     result = write_digest(PROJECT_ROOT)
     print(json.dumps(_stage_payload(result), ensure_ascii=False, indent=2))
@@ -1096,7 +1154,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers.add_parser(
         "llm-rewrite",
-        help="Write Russian draft_lines via OpenAI → Gemini → Groq Llama provider chain.",
+        help="Write Russian draft_lines via quality rewrite route with resilient fallback.",
+    )
+    subparsers.add_parser(
+        "prompt-versions",
+        help="Print registered prompt versions and content hashes.",
+    )
+    subparsers.add_parser(
+        "model-routing",
+        help="Print default model routing policy for scoring, curation, rewrite, and fallback.",
+    )
+    subparsers.add_parser(
+        "cost-summary",
+        help="Print the latest release_report per-run LLM cost summary.",
+    )
+    subparsers.add_parser(
+        "reader-value-validation",
+        help="Validate reader-value scoring against the manual historical label set.",
     )
     subparsers.add_parser(
         "write-digest",
@@ -1190,6 +1264,14 @@ def main() -> int:
         return cmd_transport_fill()
     if args.command == "llm-rewrite":
         return cmd_llm_rewrite()
+    if args.command == "prompt-versions":
+        return cmd_prompt_versions()
+    if args.command == "model-routing":
+        return cmd_model_routing()
+    if args.command == "cost-summary":
+        return cmd_cost_summary()
+    if args.command == "reader-value-validation":
+        return cmd_reader_value_validation()
     if args.command == "write-digest":
         return cmd_write_digest()
     if args.command == "edit-digest":

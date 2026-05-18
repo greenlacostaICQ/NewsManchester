@@ -1,0 +1,127 @@
+"""Central model routing policy for LLM-backed pipeline decisions.
+
+The policy keeps cheap classification/reject tasks separate from higher
+stakes rewrite tasks. Environment overrides still work for local debugging,
+but the default route is explicit and reportable.
+"""
+
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+import os
+
+DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
+DEEPSEEK_MODEL = "deepseek-chat"
+OPENAI_BASE_URL = "https://api.openai.com/v1"
+OPENAI_REWRITE_MODEL = "gpt-4o-mini"
+OPENAI_SCORING_MODEL = "gpt-4o-mini"
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile"
+
+
+@dataclass(frozen=True, slots=True)
+class ModelRouteStep:
+    provider: str
+    provider_label: str
+    base_url: str
+    model: str
+    api_key_env: str
+    role: str
+    priority: int
+    batch_size: int | None = None
+    timeout_seconds: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ResolvedModelRouteStep:
+    provider: str
+    provider_label: str
+    base_url: str
+    model: str
+    api_key: str
+    api_key_env: str
+    role: str
+    priority: int
+    batch_size: int | None = None
+    timeout_seconds: int | None = None
+
+
+MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
+    "dedupe_review": (
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "cheap_scoring", 1),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "scoring_fallback", 2),
+        ModelRouteStep("groq", "Groq", GROQ_BASE_URL, GROQ_FALLBACK_MODEL, "GROQ_API_KEY", "resilient_fallback", 3, batch_size=6),
+    ),
+    "curator": (
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "cheap_scoring", 1),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "scoring_fallback", 2),
+        ModelRouteStep("groq", "Groq", GROQ_BASE_URL, GROQ_FALLBACK_MODEL, "GROQ_API_KEY", "resilient_fallback", 3, batch_size=6),
+    ),
+    "rewrite": (
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_rewrite", 1),
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "rewrite_fallback", 2),
+        ModelRouteStep("groq", "Groq", GROQ_BASE_URL, GROQ_FALLBACK_MODEL, "GROQ_API_KEY", "resilient_fallback", 3, batch_size=6),
+    ),
+}
+
+
+def provider_label_for_model(model: str) -> str:
+    if model.startswith("deepseek"):
+        return "DeepSeek"
+    if model.startswith("gpt-") or model.startswith("o1"):
+        return "OpenAI"
+    if model.startswith("llama") or "groq" in model.lower():
+        return "Groq"
+    return "unknown"
+
+
+def resolve_model_route(
+    route_name: str,
+    *,
+    provider_override: str = "",
+    base_url_override: str = "",
+    model_override: str = "",
+) -> list[ResolvedModelRouteStep]:
+    provider_override = provider_override.lower().strip()
+    if provider_override == "none":
+        return []
+    if provider_override and base_url_override and model_override:
+        return [
+            ResolvedModelRouteStep(
+                provider=provider_override,
+                provider_label=provider_override.title(),
+                base_url=base_url_override,
+                model=model_override,
+                api_key=os.environ.get("LLM_API_KEY", ""),
+                api_key_env="LLM_API_KEY",
+                role="manual_override",
+                priority=1,
+            )
+        ]
+    steps = MODEL_ROUTES.get(route_name, ())
+    return [
+        ResolvedModelRouteStep(
+            provider=step.provider,
+            provider_label=step.provider_label,
+            base_url=step.base_url,
+            model=step.model,
+            api_key=os.environ.get(step.api_key_env, ""),
+            api_key_env=step.api_key_env,
+            role=step.role,
+            priority=step.priority,
+            batch_size=step.batch_size,
+            timeout_seconds=step.timeout_seconds,
+        )
+        for step in steps
+    ]
+
+
+def route_snapshot() -> dict[str, list[dict[str, object]]]:
+    return {
+        name: [
+            {key: value for key, value in asdict(step).items() if key != "api_key_env"}
+            | {"api_key_env": step.api_key_env}
+            for step in steps
+        ]
+        for name, steps in MODEL_ROUTES.items()
+    }

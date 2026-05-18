@@ -9,30 +9,30 @@ from __future__ import annotations
 import json
 import logging
 import os
-import time
 from pathlib import Path
 import re
 
 from news_digest.pipeline.common import now_london, pipeline_run_id_from, read_json, today_london, write_json
+from news_digest.pipeline.model_routing import (
+    DEEPSEEK_BASE_URL,
+    DEEPSEEK_MODEL,
+    GROQ_BASE_URL,
+    GROQ_FALLBACK_MODEL,
+    OPENAI_BASE_URL,
+    OPENAI_SCORING_MODEL,
+    provider_label_for_model,
+    resolve_model_route,
+    route_snapshot,
+)
 
 logger = logging.getLogger(__name__)
 
-DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
-DEEPSEEK_MODEL = "deepseek-chat"
-OPENAI_BASE_URL = "https://api.openai.com/v1"
-OPENAI_MODEL = "gpt-4o-mini"
-GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-GROQ_MODEL = "llama-3.3-70b-versatile"
+OPENAI_MODEL = OPENAI_SCORING_MODEL
+GROQ_MODEL = GROQ_FALLBACK_MODEL
 
 
 def _provider_label(model: str) -> str:
-    if model.startswith("deepseek"):
-        return "DeepSeek"
-    if model.startswith("gpt-") or model.startswith("o1"):
-        return "OpenAI"
-    if model.startswith("llama") or "groq" in model.lower():
-        return "Groq"
-    return "unknown"
+    return provider_label_for_model(model)
 
 CURATOR_PROMPT = """Ты редакторский куратор дайджеста «Greater Manchester AM Brief».
 
@@ -233,14 +233,16 @@ def _call_curator_batch(batch: list[dict], client: object, model: str) -> list[d
         }
         for c in batch
     ]
+    messages = [
+        {"role": "system", "content": CURATOR_PROMPT},
+        {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+    ]
+    max_tokens = 4000
     response = client.chat.completions.create(
         model=model,
-        messages=[
-            {"role": "system", "content": CURATOR_PROMPT},
-            {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
-        ],
+        messages=messages,
         temperature=0.1,
-        max_tokens=4000,
+        max_tokens=max_tokens,
     )
     from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
     record_call_from_response(
@@ -249,6 +251,8 @@ def _call_curator_batch(batch: list[dict], client: object, model: str) -> list[d
         provider=_provider_label(model),
         model=model,
         prompt_name="curator",
+        messages=messages,
+        max_tokens=max_tokens,
     )
     raw = response.choices[0].message.content.strip()
     if raw.startswith("```"):
@@ -288,9 +292,19 @@ def run_curator_pass(project_root: Path) -> None:
     candidates_path = project_root / "data" / "state" / "candidates.json"
     report_path = project_root / "data" / "state" / "curator_report.json"
 
+    def _write_report(payload: dict) -> None:
+        from news_digest.pipeline.prompts_meta import snapshot as prompts_snapshot  # noqa: PLC0415
+
+        payload.setdefault("run_at", now_london().isoformat())
+        payload.setdefault("run_at_london", now_london().isoformat())
+        payload.setdefault("run_date_london", today_london())
+        payload["prompt_versions"] = prompts_snapshot()
+        payload.setdefault("model_route", route_snapshot().get("curator", []))
+        write_json(report_path, payload)
+
     if not candidates_path.exists():
         logger.warning("candidates.json not found, skipping curator pass.")
-        write_json(report_path, {"pipeline_run_id": "", "status": "skipped", "reason": "missing candidates.json", "run_at": now_london().isoformat(), "run_at_london": now_london().isoformat(), "run_date_london": today_london()})
+        _write_report({"pipeline_run_id": "", "status": "skipped", "reason": "missing candidates.json"})
         return
 
     payload = json.loads(candidates_path.read_text(encoding="utf-8"))
@@ -304,50 +318,41 @@ def run_curator_pass(project_root: Path) -> None:
     ]
     if not included:
         logger.info("Curator: no included candidates.")
-        write_json(report_path, {"pipeline_run_id": pipeline_run_id, "status": "skipped", "reason": "no included candidates", "run_at": now_london().isoformat(), "run_at_london": now_london().isoformat(), "run_date_london": today_london()})
+        _write_report({"pipeline_run_id": pipeline_run_id, "status": "skipped", "reason": "no included candidates"})
         return
 
     logger.info("Curator: reviewing %d included candidates.", len(included))
 
     provider_override = os.environ.get("LLM_PROVIDER", "").lower().strip()
-    if provider_override == "none":
+    base_url_override = os.environ.get("LLM_BASE_URL", "").strip()
+    model_override = os.environ.get("LLM_MODEL", "").strip()
+    model_route = resolve_model_route(
+        "curator",
+        provider_override=provider_override,
+        base_url_override=base_url_override,
+        model_override=model_override,
+    )
+    if not model_route:
         logger.info("LLM_PROVIDER=none — skipping curator pass.")
-        write_json(report_path, {"pipeline_run_id": pipeline_run_id, "status": "skipped", "reason": "LLM_PROVIDER=none", "run_at": now_london().isoformat(), "run_at_london": now_london().isoformat(), "run_date_london": today_london()})
+        _write_report({"pipeline_run_id": pipeline_run_id, "status": "skipped", "reason": "LLM_PROVIDER=none"})
         return
 
-    base_url = os.environ.get("LLM_BASE_URL") or DEEPSEEK_BASE_URL
-    model = os.environ.get("LLM_MODEL") or DEEPSEEK_MODEL
-    api_key = os.environ.get("LLM_API_KEY") or os.environ.get("DEEPSEEK_API_KEY", "")
-
-    decisions = _call_curator(included, api_key, base_url, model)
-
-    # OpenAI fallback
-    if not decisions:
-        logger.info("Curator: DeepSeek failed, trying OpenAI.")
-        time.sleep(1)
+    decisions: list[dict] = []
+    for step in model_route:
+        logger.info("Curator: trying %s/%s (%s).", step.provider_label, step.model, step.role)
         decisions = _call_curator(
             included,
-            os.environ.get("OPENAI_API_KEY", ""),
-            OPENAI_BASE_URL,
-            OPENAI_MODEL,
+            step.api_key,
+            step.base_url,
+            step.model,
+            batch_size=step.batch_size or _CURATOR_BATCH_SIZE,
         )
-
-    # Groq fallback — free tier safety net so the curator never silently
-    # skips and lets every candidate through unfiltered.
-    if not decisions:
-        logger.info("Curator: OpenAI failed, trying Groq.")
-        time.sleep(1)
-        decisions = _call_curator(
-            included,
-            os.environ.get("GROQ_API_KEY", ""),
-            GROQ_BASE_URL,
-            GROQ_MODEL,
-            batch_size=_CURATOR_GROQ_BATCH_SIZE,
-        )
+        if decisions:
+            break
 
     if not decisions:
         logger.warning("Curator: all providers failed — keeping existing include flags.")
-        write_json(report_path, {"pipeline_run_id": pipeline_run_id, "status": "skipped", "reason": "all providers failed", "run_at": now_london().isoformat(), "run_at_london": now_london().isoformat(), "run_date_london": today_london()})
+        _write_report({"pipeline_run_id": pipeline_run_id, "status": "skipped", "reason": "all providers failed"})
         return
 
     decision_map = {str(d.get("fingerprint") or ""): d for d in decisions if isinstance(d, dict)}
@@ -389,11 +394,8 @@ def run_curator_pass(project_root: Path) -> None:
     dump_stage(state_dir, "curator")
     cost_summary = summarise(snapshot(stage="curator"))
 
-    write_json(report_path, {
+    _write_report({
         "pipeline_run_id": pipeline_run_id,
-        "run_at": now_london().isoformat(),
-        "run_at_london": now_london().isoformat(),
-        "run_date_london": today_london(),
         "status": "complete",
         "reviewed": len(included),
         "dropped": dropped,
@@ -401,4 +403,5 @@ def run_curator_pass(project_root: Path) -> None:
         "lead_set": lead_set,
         "decisions": decisions,
         "cost_summary": cost_summary,
+        "model_route": route_snapshot().get("curator", []),
     })

@@ -662,13 +662,18 @@ def _call_dedupe_review_llm(
                 max_tokens=1500,
             )
             from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
-            from news_digest.pipeline.curator import _provider_label  # noqa: PLC0415
+            from news_digest.pipeline.model_routing import provider_label_for_model  # noqa: PLC0415
             record_call_from_response(
                 response=response,
                 stage="dedupe_review",
-                provider=_provider_label(model),
+                provider=provider_label_for_model(model),
                 model=model,
                 prompt_name="dedupe_review",
+                messages=[
+                    {"role": "system", "content": _DEDUPE_REVIEW_PROMPT},
+                    {"role": "user", "content": _json.dumps(user, ensure_ascii=False)},
+                ],
+                max_tokens=1500,
             )
             raw = response.choices[0].message.content.strip()
             if raw.startswith("```"):
@@ -704,22 +709,19 @@ def _review_borderline_with_llm(
         return {}
     logger.info("Dedupe LLM review: %d borderline candidate(s).", len(pairs))
 
-    # Same provider cascade as curator: DeepSeek → OpenAI → Groq.
-    from news_digest.pipeline.curator import (  # noqa: PLC0415
-        DEEPSEEK_BASE_URL, DEEPSEEK_MODEL,
-        OPENAI_BASE_URL, OPENAI_MODEL,
-        GROQ_BASE_URL, GROQ_MODEL,
+    from news_digest.pipeline.model_routing import resolve_model_route  # noqa: PLC0415
+
+    chains = resolve_model_route(
+        "dedupe_review",
+        provider_override=provider_override,
+        base_url_override=os.environ.get("LLM_BASE_URL", "").strip(),
+        model_override=os.environ.get("LLM_MODEL", "").strip(),
     )
-    chains = [
-        (os.environ.get("DEEPSEEK_API_KEY", ""), DEEPSEEK_BASE_URL, DEEPSEEK_MODEL),
-        (os.environ.get("OPENAI_API_KEY", ""),   OPENAI_BASE_URL,   OPENAI_MODEL),
-        (os.environ.get("GROQ_API_KEY", ""),     GROQ_BASE_URL,     GROQ_MODEL),
-    ]
     decisions: list[dict] = []
-    for api_key, base_url, model in chains:
-        if not api_key:
+    for step in chains:
+        if not step.api_key:
             continue
-        decisions = _call_dedupe_review_llm(pairs, api_key, base_url, model)
+        decisions = _call_dedupe_review_llm(pairs, step.api_key, step.base_url, step.model)
         if decisions:
             break
     if not decisions:

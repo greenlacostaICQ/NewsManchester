@@ -1,8 +1,8 @@
 """LLM rewrite stage — writes Russian draft_lines to candidates.json.
 
-Provider chain:
-  1. DeepSeek deepseek-chat — primary, paid, cheap (~$0.27/1M input)
-  2. OpenAI gpt-4o-mini    — backup, paid (~$0.15/1M input)
+Default model route:
+  1. OpenAI gpt-4o-mini    — quality rewrite primary
+  2. DeepSeek deepseek-chat — rewrite fallback
   3. Groq Llama-3.3-70B    — emergency fallback, free tier
   4. Rule-based in writer.py — final safety net, always fires if LLM unavailable
 
@@ -30,6 +30,16 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from news_digest.pipeline.common import now_london, pipeline_run_id_from, today_london, write_json
+from news_digest.pipeline.model_routing import (
+    DEEPSEEK_BASE_URL,
+    DEEPSEEK_MODEL,
+    GROQ_BASE_URL,
+    GROQ_FALLBACK_MODEL,
+    OPENAI_BASE_URL,
+    OPENAI_REWRITE_MODEL,
+    resolve_model_route,
+    route_snapshot,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,14 +51,7 @@ class StageResult:
     report_path: Path
 
 
-DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
-DEEPSEEK_MODEL = "deepseek-chat"  # alias for current production V3.x
-
-OPENAI_BASE_URL = "https://api.openai.com/v1"
-OPENAI_MODEL = "gpt-4o-mini"  # cheapest OpenAI model, ~$0.15/1M input tokens
-
-GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile"
+OPENAI_MODEL = OPENAI_REWRITE_MODEL
 
 _PROMPT_FOOTER = (
     '\nВерни ТОЛЬКО JSON-массив: [{"fingerprint": "...", "draft_line": "• ..."}]\n'
@@ -397,14 +400,16 @@ def _call_provider_batch(
         try:
             logger.info("%s: batch %d/%d — sending %d candidates to %s...",
                         provider_name, batch_idx, len(batches), len(batch), model)
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
+            ]
+            max_tokens = 8192
             response = client.chat.completions.create(
                 model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_content},
-                ],
+                messages=messages,
                 temperature=0.3,
-                max_tokens=8192,
+                max_tokens=max_tokens,
             )
             from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
             record_call_from_response(
@@ -413,6 +418,8 @@ def _call_provider_batch(
                 provider=provider_name.split("-", 1)[0],
                 model=model,
                 prompt_name=prompt_name,
+                messages=messages,
+                max_tokens=max_tokens,
             )
             raw = response.choices[0].message.content.strip()
             if raw.startswith("```"):
@@ -456,31 +463,33 @@ def _call_with_fallback(
         return {}
     if provider_override == "none":
         return {}
-    if provider_override and base_url_override and model_override:
-        return _call_provider_batch(
-            base_url_override, os.environ.get("LLM_API_KEY", ""),
-            model_override, candidates, provider_override + label_suffix,
-            system_prompt=prompt, prompt_name=prompt_name,
-        )
-    mapping = _call_provider_batch(
-        DEEPSEEK_BASE_URL, os.environ.get("DEEPSEEK_API_KEY", ""), DEEPSEEK_MODEL,
-        candidates, f"DeepSeek{label_suffix}", system_prompt=prompt, prompt_name=prompt_name,
+    route = resolve_model_route(
+        "rewrite",
+        provider_override=provider_override,
+        base_url_override=base_url_override,
+        model_override=model_override,
     )
-    missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
-    if missing:
-        time.sleep(1)
-        mapping.update(_call_provider_batch(
-            OPENAI_BASE_URL, os.environ.get("OPENAI_API_KEY", ""), OPENAI_MODEL,
-            missing, f"OpenAI{label_suffix}", system_prompt=prompt, prompt_name=prompt_name,
-        ))
-    missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
-    if missing:
-        time.sleep(1)
-        mapping.update(_call_provider_batch(
-            GROQ_BASE_URL, os.environ.get("GROQ_API_KEY", ""), GROQ_FALLBACK_MODEL,
-            missing, f"Groq{label_suffix}", batch_size=GROQ_BATCH_SIZE, system_prompt=prompt,
-            prompt_name=prompt_name,
-        ))
+    mapping: dict[str, str] = {}
+    missing = list(candidates)
+    for step in route:
+        if not missing:
+            break
+        if mapping:
+            time.sleep(1)
+        mapping.update(
+            _call_provider_batch(
+                step.base_url,
+                step.api_key,
+                step.model,
+                missing,
+                f"{step.provider_label}{label_suffix}",
+                timeout=step.timeout_seconds or 90,
+                batch_size=step.batch_size or BATCH_SIZE,
+                system_prompt=prompt,
+                prompt_name=prompt_name,
+            )
+        )
+        missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
     return mapping
 
 
@@ -573,6 +582,12 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     """Read candidates.json, fill Russian draft_lines for included candidates."""
     report_path = project_root / "data" / "state" / "llm_rewrite_report.json"
     candidates_path = project_root / "data" / "state" / "candidates.json"
+
+    def _prompt_versions() -> list[dict[str, str]]:
+        from news_digest.pipeline.prompts_meta import snapshot as prompts_snapshot  # noqa: PLC0415
+
+        return prompts_snapshot()
+
     if not candidates_path.exists():
         logger.warning("candidates.json not found, skipping LLM rewrite.")
         write_json(
@@ -584,6 +599,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "stage_status": "failed",
                 "errors": ["Missing data/state/candidates.json."],
                 "warnings": [],
+                "prompt_versions": _prompt_versions(),
+                "model_route": route_snapshot().get("rewrite", []),
             },
         )
         return StageResult(False, "Missing candidates.json.", report_path)
@@ -641,6 +658,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "applied": 0,
                 "fixed": 0,
                 "repaired": 0,
+                "prompt_versions": _prompt_versions(),
+                "model_route": route_snapshot().get("rewrite", []),
             },
         )
         return StageResult(True, "LLM rewrite disabled; continuing with writer/release gates.", report_path)
@@ -766,7 +785,6 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         warnings.append(f"{len(weak_after)} draft_line(s) still look weak after repair.")
 
     from news_digest.pipeline.cost_tracker import dump_stage, snapshot, summarise  # noqa: PLC0415
-    from news_digest.pipeline.prompts_meta import snapshot as prompts_snapshot  # noqa: PLC0415
     state_dir = project_root / "data" / "state"
     dump_stage(state_dir, "llm_rewrite")
     cost_summary = summarise(snapshot(stage="llm_rewrite"))
@@ -784,7 +802,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "fixed": fixed,
             "repaired": repaired,
             "cost_summary": cost_summary,
-            "prompt_versions": prompts_snapshot(),
+            "prompt_versions": _prompt_versions(),
+            "model_route": route_snapshot().get("rewrite", []),
             "missing_after": [
                 {
                     "fingerprint": c.get("fingerprint"),

@@ -50,6 +50,7 @@ mkdir -p \
   "$RUNTIME_ROOT/scripts" \
   "$RUNTIME_ROOT/src" \
   "$RUNTIME_ROOT/data" \
+  "$RUNTIME_ROOT/data/validation" \
   "$RUNTIME_ROOT/data/outgoing" \
   "$RUNTIME_ROOT/data/state" \
   "$RUNTIME_ROOT/data/archive"
@@ -62,14 +63,18 @@ rsync -a --delete "$PROJECT_ROOT/src/" "$RUNTIME_ROOT/src/" \
   || die "rsync src/ failed"
 
 copy_required "$PROJECT_ROOT/data/sources.toml" "$RUNTIME_ROOT/data/sources.toml"
+rsync -a --delete "$PROJECT_ROOT/data/validation/" "$RUNTIME_ROOT/data/validation/" \
+  || die "rsync data/validation/ failed"
 
 copy_required "$PROJECT_ROOT/scripts/run_local_digest.py" "$RUNTIME_ROOT/scripts/run_local_digest.py"
 copy_required "$PROJECT_ROOT/scripts/run_daily_digest.sh" "$RUNTIME_ROOT/scripts/run_daily_digest.sh"
 copy_required "$PROJECT_ROOT/scripts/process_bot_updates.sh" "$RUNTIME_ROOT/scripts/process_bot_updates.sh"
+copy_required "$PROJECT_ROOT/scripts/sync_runtime_bundle.sh" "$RUNTIME_ROOT/scripts/sync_runtime_bundle.sh"
 
 chmod +x \
   "$RUNTIME_ROOT/scripts/run_daily_digest.sh" \
-  "$RUNTIME_ROOT/scripts/process_bot_updates.sh"
+  "$RUNTIME_ROOT/scripts/process_bot_updates.sh" \
+  "$RUNTIME_ROOT/scripts/sync_runtime_bundle.sh"
 
 # --- State files: sync published_facts + dedupe_memory workspace → runtime.
 # These are the cross-day dedup history. Without sync, runtime and workspace
@@ -99,6 +104,9 @@ assert_runtime_match \
   "$PROJECT_ROOT/data/sources.toml" \
   "$RUNTIME_ROOT/data/sources.toml"
 assert_runtime_match \
+  "$PROJECT_ROOT/data/validation/reader_value_labels.json" \
+  "$RUNTIME_ROOT/data/validation/reader_value_labels.json"
+assert_runtime_match \
   "$PROJECT_ROOT/scripts/run_local_digest.py" \
   "$RUNTIME_ROOT/scripts/run_local_digest.py"
 assert_runtime_match \
@@ -107,6 +115,9 @@ assert_runtime_match \
 assert_runtime_match \
   "$PROJECT_ROOT/scripts/process_bot_updates.sh" \
   "$RUNTIME_ROOT/scripts/process_bot_updates.sh"
+assert_runtime_match \
+  "$PROJECT_ROOT/scripts/sync_runtime_bundle.sh" \
+  "$RUNTIME_ROOT/scripts/sync_runtime_bundle.sh"
 assert_runtime_match \
   "$PROJECT_ROOT/data/state/published_facts.json" \
   "$RUNTIME_ROOT/data/state/published_facts.json"
