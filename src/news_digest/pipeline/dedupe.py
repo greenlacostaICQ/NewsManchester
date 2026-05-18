@@ -220,6 +220,25 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             decision["llm_reviewed"] = True
 
     intra_batch_drops = _apply_intra_batch_dedup(candidates)
+
+    # I1: embeddings-based semantic dedup pass. Runs AFTER the
+    # deterministic Jaccard/entity pass so it only sees survivors,
+    # and AFTER the LLM borderline review so its borderline list is
+    # an honest "even with both passes, these still look similar".
+    # No-ops gracefully when OPENAI_API_KEY is unset.
+    try:
+        from news_digest.pipeline.semantic_dedupe import run_semantic_pass  # noqa: PLC0415
+
+        semantic_result = run_semantic_pass(
+            candidates=candidates,
+            published_facts=published,
+            state_dir=state_dir,
+        ).to_dict()
+    except Exception as exc:  # noqa: BLE001 — never block dedupe on semantic
+        import logging  # noqa: PLC0415
+        logging.getLogger(__name__).warning("semantic dedup pass failed: %s", exc)
+        semantic_result = {"enabled": False, "error": str(exc)}
+
     final_candidates_by_fp = {
         str(candidate.get("fingerprint") or ""): candidate
         for candidate in candidates
@@ -249,6 +268,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             "errors": errors,
             "decisions": decisions,
             "intra_batch_dedup_drops": intra_batch_drops,
+            "semantic_dedup_summary": semantic_result,
         },
     )
 
