@@ -1,12 +1,16 @@
 # Greater Manchester Morning Digest — source registry
 # Set enabled = false to disable a source without deleting it.
 # Fields: name, report_category, candidate_category, url, primary_block
-# Optional: source_type (default "html"), fallback_urls, allowed_hosts, enabled (default true)
+# Optional: source_type (default "html"), fallback_urls, allowed_hosts,
+#           enabled (default true), notes (editorial rationale —
+#           why this source is in the registry, used by I4 Best Source
+#           Selection and Q1/Q8 decisions; free-text, optional)
 
 # ── Media layer ────────────────────────────────────────────────────────────────
 
 [[sources]]
 name = "BBC Manchester"
+notes = "high-trust regional coverage"
 max_candidates = 15
 report_category = "media_layer"
 candidate_category = "media_layer"
@@ -18,6 +22,7 @@ allowed_hosts = ["bbc.com", "bbc.co.uk", "bbci.co.uk"]
 
 [[sources]]
 name = "MEN"
+notes = "broad local coverage; нужен жёсткий significance filter"
 report_category = "media_layer"
 candidate_category = "media_layer"
 url = "https://www.manchestereveningnews.co.uk/"
@@ -27,6 +32,7 @@ max_candidates = 25
 
 [[sources]]
 name = "The Mill"
+notes = "housing, civic life, politics, deeper context"
 report_category = "media_layer"
 candidate_category = "media_layer"
 url = "https://manchestermill.co.uk/rss/"
@@ -37,6 +43,7 @@ max_candidates = 10
 
 [[sources]]
 name = "The Manc"
+notes = "future announcements, theatre, culture, weekend planning and big city events"
 report_category = "media_layer"
 candidate_category = "media_layer"
 url = "https://themanc.com/category/news/"
@@ -45,6 +52,7 @@ max_candidates = 15
 
 [[sources]]
 name = "Altrincham Today"
+notes = "Trafford and neighbourhood-level signals"
 report_category = "media_layer"
 candidate_category = "media_layer"
 url = "https://altrincham.todaynews.co.uk/"
@@ -54,6 +62,7 @@ max_candidates = 10
 
 [[sources]]
 name = "I Love Manchester"
+notes = "openings, city guides, local events"
 report_category = "media_layer"
 candidate_category = "media_layer"
 url = "https://ilovemanchester.com/feed"
@@ -64,6 +73,7 @@ max_candidates = 10
 
 [[sources]]
 name = "Secret Manchester"
+notes = "events, exhibitions, food, markets"
 report_category = "media_layer"
 candidate_category = "media_layer"
 url = "https://secretmanchester.com/feed"
@@ -93,6 +103,7 @@ primary_block = "last_24h"
 
 [[sources]]
 name = "TfGM"
+notes = "приоритетный источник по Metrolink, Bee Network bus, travel alerts"
 report_category = "transport"
 candidate_category = "transport"
 url = "https://tfgm.com/travel-updates/travel-alerts"
@@ -102,6 +113,7 @@ allowed_hosts = ["tfgm.com"]
 
 [[sources]]
 name = "National Rail"
+notes = "для MVP — disruption pages; затем перейти на Darwin API"
 report_category = "transport"
 candidate_category = "transport"
 url = "https://www.nationalrail.co.uk/status-and-disruptions/"
@@ -120,6 +132,7 @@ primary_block = "today_focus"
 
 [[sources]]
 name = "GMCA"
+notes = "city-region decisions, transport politics, mayoral layer"
 report_category = "media_layer"
 candidate_category = "council"
 url = "https://www.greatermanchester-ca.gov.uk/"
@@ -130,6 +143,7 @@ allowed_hosts = ["greatermanchester-ca.gov.uk"]
 
 [[sources]]
 name = "Manchester Council"
+notes = "главный civic слой по Manchester"
 report_category = "media_layer"
 candidate_category = "council"
 url = "https://manchester2-search.funnelback.squiz.cloud/s/search.json?collection=manchester~sp-search&profile=news-archive_preview&query=&sort=dmetatimestamp&num_ranks=20&gscope1=news"
@@ -145,6 +159,7 @@ allowed_hosts = ["manchester.gov.uk"]
 # Salford news still comes through BBC Manchester and The Mill.
 [[sources]]
 name = "Salford Council"
+notes = "один из самых высокоотдающих council-источников (когда доступен)"
 enabled = false
 report_category = "media_layer"
 candidate_category = "council"
@@ -213,6 +228,7 @@ allowed_hosts = ["mynewsdesk.com"]
 
 [[sources]]
 name = "Wigan Council"
+notes = "district-level civic updates"
 report_category = "media_layer"
 candidate_category = "council"
 url = "https://www.wigan.gov.uk/News/News.aspx"
@@ -223,6 +239,7 @@ allowed_hosts = ["wigan.gov.uk"]
 
 [[sources]]
 name = "HOME"
+notes = "cinema, theatre, exhibitions"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://homemcr.org/whats-on/"
@@ -230,6 +247,7 @@ primary_block = "next_7_days"
 
 [[sources]]
 name = "Whitworth"
+notes = "exhibitions with long city relevance"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.whitworth.manchester.ac.uk/whats-on/events/"
@@ -237,6 +255,7 @@ primary_block = "next_7_days"
 
 [[sources]]
 name = "Factory International"
+notes = "выставки, performances, talks"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://factoryinternational.org/whats-on/"
@@ -259,6 +278,7 @@ allowed_hosts = ["atgtickets.com"]
 
 [[sources]]
 name = "Contact Theatre"
+notes = "theatre and youth-led programme with city relevance"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://contactmcr.com/whats-on/"
@@ -267,6 +287,7 @@ allowed_hosts = ["contactmcr.com"]
 
 [[sources]]
 name = "People's History Museum"
+notes = "exhibitions and public events with civic relevance"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://phm.org.uk/whats-on/"
@@ -276,6 +297,7 @@ allowed_hosts = ["phm.org.uk"]
 
 [[sources]]
 name = "John Rylands Library"
+notes = "exhibitions, talks and special programming"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.library.manchester.ac.uk/rylands/visit/events/"
@@ -284,6 +306,7 @@ allowed_hosts = ["library.manchester.ac.uk"]
 
 [[sources]]
 name = "Visit Manchester"
+notes = "broad discovery layer for weekly planning"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.visitmanchester.com/whats-on"
@@ -304,6 +327,7 @@ max_candidates = 12
 
 [[sources]]
 name = "Co-op Live"
+notes = "major arena shows, presale windows, venue-first source"
 report_category = "venues_tickets"
 candidate_category = "venues_tickets"
 url = "https://www.cooplive.com/events"
@@ -311,6 +335,7 @@ primary_block = "ticket_radar"
 
 [[sources]]
 name = "AO Arena"
+notes = "major arena shows"
 enabled = false  # SPA: server returns 19KB shell with 0 article links (Next.js)
 report_category = "venues_tickets"
 candidate_category = "venues_tickets"
@@ -461,6 +486,7 @@ max_candidates = 20
 
 [[sources]]
 name = "Manchester's Finest"
+notes = "openings, food, bars, hospitality signals"
 report_category = "food_openings"
 candidate_category = "food_openings"
 url = "https://www.manchestersfinest.com/category/eating-and-drinking/"
@@ -469,6 +495,7 @@ allowed_hosts = ["manchestersfinest.com"]
 
 [[sources]]
 name = "Confidentials"
+notes = "hospitality and openings"
 enabled = false  # Articles in this category are 2022-2024 stale; 21-day drop nukes all
 report_category = "food_openings"
 candidate_category = "food_openings"
@@ -602,6 +629,7 @@ allowed_hosts = ["investinmanchester.com"]
 
 [[sources]]
 name = "University of Salford"
+notes = "innovation, public events, partnerships"
 report_category = "media_layer"
 candidate_category = "media_layer"
 url = "https://www.salford.ac.uk/news/rss"
@@ -611,6 +639,7 @@ allowed_hosts = ["salford.ac.uk"]
 
 [[sources]]
 name = "University of Manchester"
+notes = "research, public lectures, city-impact dates"
 report_category = "media_layer"
 candidate_category = "media_layer"
 url = "https://www.manchester.ac.uk/about/news/feed/"
@@ -622,6 +651,7 @@ allowed_hosts = ["manchester.ac.uk"]
 # Disabled until a working endpoint is confirmed.
 [[sources]]
 name = "Manchester Metropolitan"
+notes = "events, research, city-impact dates"
 report_category = "tech_business"
 candidate_category = "tech_business"
 url = "https://www.mmu.ac.uk/news-and-events"
@@ -802,6 +832,7 @@ max_candidates = 1
 
 [[sources]]
 name = "Altrincham Market"
+notes = "resident changes and food openings outside city centre"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://visitaltrincham.com/business-directory/altrincham-market/"
@@ -989,6 +1020,7 @@ allowed_hosts = ["bolton.gov.uk"]
 
 [[sources]]
 name = "Manchester United"
+notes = "результаты, preview, squad news"
 report_category = "football"
 candidate_category = "football"
 url = "https://www.manutd.com/en/news"
@@ -996,6 +1028,7 @@ primary_block = "football"
 
 [[sources]]
 name = "Manchester City"
+notes = "результаты, preview, squad news"
 report_category = "football"
 candidate_category = "football"
 url = "https://www.mancity.com/news"
