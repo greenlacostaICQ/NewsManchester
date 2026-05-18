@@ -271,6 +271,20 @@ _MONTHS = {
     "ноября": 11,
     "декабря": 12,
 }
+_RU_MONTHS_GENITIVE = {
+    1: "января",
+    2: "февраля",
+    3: "марта",
+    4: "апреля",
+    5: "мая",
+    6: "июня",
+    7: "июля",
+    8: "августа",
+    9: "сентября",
+    10: "октября",
+    11: "ноября",
+    12: "декабря",
+}
 
 
 def _sanity_flags(candidate: dict, line: str) -> list[str]:
@@ -347,6 +361,85 @@ def _date_signals(text: str) -> list[date]:
 def _future_date_signal(text: str) -> bool:
     dates = _date_signals(text)
     return bool(dates and max(dates) >= now_london().date())
+
+
+def _format_ru_day_month(value: datetime | None) -> str:
+    if value is None:
+        return ""
+    return f"{value.day} {_RU_MONTHS_GENITIVE.get(value.month, '')}".strip()
+
+
+def _parse_ticket_datetime(candidate: dict) -> datetime | None:
+    summary = str(candidate.get("summary") or "")
+    for raw in (
+        candidate.get("published_at"),
+        candidate.get("event_date"),
+        candidate.get("event_end_date"),
+    ):
+        parsed = str(raw or "").strip()
+        if not parsed:
+            continue
+        try:
+            return datetime.fromisoformat(parsed.replace("Z", "+00:00")).astimezone(now_london().tzinfo)
+        except ValueError:
+            continue
+    match = re.search(r"\bevent_date=(20\d{2}-\d{2}-\d{2})(?:\s+(\d{2}:\d{2}))?", summary)
+    if match:
+        raw = match.group(1)
+        if match.group(2):
+            raw = f"{raw}T{match.group(2)}:00+01:00"
+        else:
+            raw = f"{raw}T12:00:00+01:00"
+        try:
+            return datetime.fromisoformat(raw)
+        except ValueError:
+            return None
+    title = str(candidate.get("title") or "")
+    title_match = re.search(r"\b(?:mon|tue|wed|thu|fri|sat|sun)\s+(\d{1,2})\s+([A-Za-z]{3,9})\s+(20\d{2})\b", title, re.IGNORECASE)
+    if title_match:
+        day_raw, month_raw, year_raw = title_match.groups()
+        month = _MONTHS.get(month_raw.lower())
+        if month:
+            try:
+                return datetime(int(year_raw), month, int(day_raw), 12, 0, 0)
+            except ValueError:
+                return None
+    return None
+
+
+def _ticket_headliner(title: str) -> str:
+    cleaned = re.sub(r"\s+", " ", str(title or "")).strip()
+    cleaned = re.split(r"\s+[—-]\s+event\b", cleaned, maxsplit=1, flags=re.IGNORECASE)[0]
+    cleaned = re.sub(r"\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b.*$", "", cleaned, flags=re.IGNORECASE).strip(" -–,")
+    return cleaned or "событие"
+
+
+def _ticket_venue(candidate: dict) -> str:
+    summary = str(candidate.get("summary") or "")
+    source_label = str(candidate.get("source_label") or "").strip()
+    first_chunk = summary.split("|", 1)[0].strip(" .")
+    first_chunk = re.sub(r"^(Manchester|Liverpool|London)\s+", "", first_chunk, flags=re.IGNORECASE).strip(" .")
+    if first_chunk and len(first_chunk) >= 4:
+        return first_chunk
+    return source_label
+
+
+def _build_ticket_fallback_line(candidate: dict) -> str:
+    title = _ticket_headliner(str(candidate.get("title") or ""))
+    venue = _ticket_venue(candidate)
+    practical = str(candidate.get("practical_angle") or "Проверьте время, вход и наличие билетов на официальной странице.").strip()
+    event_dt = _parse_ticket_datetime(candidate)
+    day_month = _format_ru_day_month(event_dt)
+    time_part = ""
+    if event_dt and event_dt.strftime("%H:%M") != "12:00":
+        time_part = f" в {event_dt.strftime('%H:%M')}"
+    if day_month and venue:
+        return f"• В {venue} {day_month}{time_part} — концерт {title}. {practical}"
+    if day_month:
+        return f"• {day_month}{time_part} — концерт {title}. {practical}"
+    if venue:
+        return f"• В {venue} — концерт {title}. {practical}"
+    return f"• Концерт {title}. {practical}"
 
 
 def _current_weekend_end() -> date:
@@ -831,6 +924,11 @@ def write_digest(project_root: Path) -> StageResult:
             line = f"• {label}: {first_phrase} — подробности в источнике."
             warnings.append(f"Candidate #{index}: transport tier-4 stub used (no extractor/LLM draft_line).")
             logger.info("TIER4 transport stub | %s | %s", block_key, first_phrase[:80])
+
+        if not line and category == "venues_tickets":
+            line = _build_ticket_fallback_line(candidate)
+            warnings.append(f"Candidate #{index}: ticket fallback stub used (no LLM draft_line).")
+            logger.info("TIER4 ticket stub | %s | %s", block_key, title[:80])
 
         if not line:
             if category in REQUIRE_DRAFT_LINE_CATEGORIES:

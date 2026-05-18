@@ -4,7 +4,7 @@ import unittest
 
 from news_digest.pipeline.dedupe import _similar_published_titles
 from news_digest.pipeline.transport_fill import _make_reminder_candidate
-from news_digest.pipeline.writer import _draft_line_quality_errors
+from news_digest.pipeline.writer import _build_ticket_fallback_line, _draft_line_quality_errors
 
 
 class DedupeTransportTest(unittest.TestCase):
@@ -69,6 +69,42 @@ class DedupeTransportTest(unittest.TestCase):
             "за работу с местными партнёрами и общественными проектами Greater Manchester."
         )
 
+        self.assertEqual(_draft_line_quality_errors(candidate, line), [])
+
+    def test_ticket_fallback_builds_ticketmaster_line_from_summary(self) -> None:
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "next_7_days",
+            "title": "Sofia and the Antoinettes — event 2026-05-19 — public sale 2026-03-11 10:00",
+            "summary": "Manchester The Deaf Institute. | Manchester | Pop | event_date=2026-05-19 19:00 | public_onsale=2026-03-11 10:00 | ticket_signal=upcoming_event",
+            "draft_line": "",
+            "practical_angle": "Проверьте время, вход и наличие билетов на официальной странице.",
+            "source_label": "Ticketmaster Manchester Upcoming",
+        }
+
+        line = _build_ticket_fallback_line(candidate)
+
+        self.assertIn("19 мая", line)
+        self.assertIn("The Deaf Institute", line)
+        self.assertIn("Sofia and the Antoinettes", line)
+        self.assertEqual(_draft_line_quality_errors(candidate, line), [])
+
+    def test_ticket_fallback_builds_coop_live_line_from_title(self) -> None:
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "Madison Beer the locket tour Sun 31 May 2026 Multiple times",
+            "summary": "",
+            "draft_line": "",
+            "practical_angle": "Проверьте время, вход и наличие билетов на официальной странице.",
+            "source_label": "Co-op Live",
+        }
+
+        line = _build_ticket_fallback_line(candidate)
+
+        self.assertIn("31 мая", line)
+        self.assertIn("Co-op Live", line)
+        self.assertIn("Madison Beer the locket tour", line)
         self.assertEqual(_draft_line_quality_errors(candidate, line), [])
 
 
