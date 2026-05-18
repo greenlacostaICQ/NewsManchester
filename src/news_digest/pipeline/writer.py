@@ -14,6 +14,7 @@ from news_digest.pipeline.common import (
     PRIMARY_BLOCKS,
     SECTION_MAX_ITEMS,
     SECTION_MAX_PER_SOURCE,
+    SECTION_MIN_ITEMS,
     is_placeholder_practical_angle,
     now_london,
     pipeline_run_id_from,
@@ -991,7 +992,9 @@ def write_digest(project_root: Path) -> StageResult:
                     continue
                 src_counts[src] = src_counts.get(src, 0) + 1
                 filtered.append(ln)
-            lines = filtered
+            min_items = SECTION_MIN_ITEMS.get(section_name, 0)
+            if not min_items or len(filtered) >= min_items or len(lines) < min_items:
+                lines = filtered
         cap = SECTION_MAX_ITEMS.get(section_name)
         if cap:
             lines = lines[:cap]
