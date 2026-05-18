@@ -15,6 +15,13 @@ from news_digest.pipeline.common import (
     write_json,
 )
 from news_digest.pipeline.history import ensure_history_files
+from news_digest.pipeline.semantic_dedupe import (
+    EMBEDDING_VERSION,
+    anchor_tokens,
+    cosine_similarity,
+    has_new_fact_signal,
+    semantic_embedding,
+)
 
 
 @dataclass(slots=True)
@@ -87,7 +94,14 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         previous = published_by_fp.get(fingerprint)
         normalized_title = normalize_title(str(candidate.get("title") or ""))
         original_title = str(candidate.get("title") or "")
-        similar_previous = _similar_published_titles(normalized_title, original_title, published_titles)
+        title_similar_previous = _similar_published_titles(normalized_title, original_title, published_titles)
+        semantic_previous = _semantic_published_matches(candidate, published_titles)
+        similar_previous = _merge_previous_matches(title_similar_previous, semantic_previous)
+        if semantic_previous:
+            candidate["semantic_dedupe_match"] = (
+                "embedding_only" if not title_similar_previous else "embedding_and_title"
+            )
+            candidate["semantic_dedupe_score"] = semantic_previous[0].get("overlap")
         candidate.setdefault("reason", "")
         candidate.setdefault("matched_previous_fingerprint", "")
 
@@ -131,19 +145,33 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             candidate["include"] = False
             candidate["reason"] = "Invalid dedupe decision."
 
+        prev_ref = previous or (
+            published_by_fp.get(str(similar_previous[0].get("fingerprint") or ""))
+            if similar_previous else None
+        )
+
         # Q6: classify what kind of change this candidate represents.
-        change_type = _classify_change_type(candidate, previous, similar_previous)
+        change_type = _classify_change_type(candidate, previous, similar_previous, prev_ref)
         candidate["change_type"] = change_type
+        if (
+            change_type in {"same_story_new_facts", "follow_up"}
+            and prev_ref is not None
+            and not (same_day_repeat_ok or operational_repeat_ok)
+            and str(candidate.get("dedupe_decision") or "") == "drop"
+        ):
+            candidate["dedupe_decision"] = "new_phase"
+            candidate["include"] = True
+            candidate["reason"] = (
+                "Same story, but semantic dedupe found concrete new facts."
+                if change_type == "same_story_new_facts"
+                else "Follow-up to a previous story with a new phase."
+            )
 
         # Q7: pull "previous fact" out into structured fields whenever
         # there's any prior match (exact fingerprint or title-similar),
         # not just for hard-rejects. Makes "почему отбили / на что
         # ссылается" queryable from JSON without parsing the reason
         # sentence.
-        prev_ref = previous or (
-            published_by_fp.get(str(similar_previous[0].get("fingerprint") or ""))
-            if similar_previous else None
-        )
         prev_fp = str(prev_ref.get("fingerprint") or "").strip() if prev_ref else ""
         prev_date = (
             str(prev_ref.get("first_published_day_london") or "").strip()
@@ -219,6 +247,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             decision["reason"] = rev["reason"]
             decision["llm_reviewed"] = True
 
+    semantic_guard = _apply_semantic_drop_guard(candidates)
     intra_batch_drops = _apply_intra_batch_dedup(candidates)
 
     # I1: embeddings-based semantic dedup pass. Runs AFTER the
@@ -249,6 +278,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         if not final_candidate:
             continue
         decision["decision"] = final_candidate.get("dedupe_decision")
+        decision["change_type"] = final_candidate.get("change_type")
         decision["reason"] = final_candidate.get("reason")
         decision["include"] = bool(final_candidate.get("include"))
 
@@ -267,6 +297,12 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             "stage_status": "complete" if not errors else "failed",
             "errors": errors,
             "decisions": decisions,
+            "semantic_embedding_version": EMBEDDING_VERSION,
+            "semantic_match_count": sum(
+                1 for c in candidates
+                if isinstance(c, dict) and str(c.get("semantic_dedupe_match") or "").startswith("embedding")
+            ),
+            "semantic_guard": semantic_guard,
             "intra_batch_dedup_drops": intra_batch_drops,
             "semantic_dedup_summary": semantic_result,
         },
@@ -516,6 +552,7 @@ def _classify_change_type(
     candidate: dict,
     previous: dict | None,
     similar_previous: list[dict],
+    previous_ref: dict | None = None,
 ) -> str:
     """Return one of:
       new_story, no_change, same_story_rehash, same_story_new_facts,
@@ -563,6 +600,9 @@ def _classify_change_type(
     ).lower()
     if any(marker in blob for marker in _FOLLOW_UP_MARKERS):
         return "follow_up"
+
+    if previous_ref is not None and has_new_fact_signal(candidate, previous_ref):
+        return "same_story_new_facts"
 
     # Exact fingerprint hit and the candidate text shows no follow-up
     # signal → republished without new substance.
@@ -614,10 +654,10 @@ def _borderline_pairs(
         # Find a previous reference: exact fingerprint or first similar.
         prev = published_by_fp.get(str(c.get("fingerprint") or ""))
         if not prev:
-            # We may have matched via title similarity earlier; the
-            # similar_previous list is in dedupe_memory's decision but
-            # not on the candidate — fall back to scanning all published
-            # by normalized title overlap once more.
+            prev = published_by_fp.get(str(c.get("previous_fingerprint") or ""))
+        if not prev:
+            prev = published_by_fp.get(str(c.get("matched_previous_fingerprint") or ""))
+        if not prev:
             continue
         pairs.append((c, prev))
     return pairs
@@ -956,6 +996,52 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
     return drops
 
 
+_SEMANTIC_ONLY_DROP_CAP_SHARE = 0.20
+_SEMANTIC_ONLY_DROP_MIN_CAP = 3
+
+
+def _apply_semantic_drop_guard(candidates: list[dict]) -> dict[str, object]:
+    """Fail-open guard for embedding-only cross-day drops.
+
+    Title/fingerprint dedupe is mature. Embedding-only dedupe is useful but
+    riskier, so if it would remove a large share of the eligible issue we
+    keep those candidates and report the guard instead of shrinking the day.
+    """
+    eligible = [
+        c for c in candidates
+        if isinstance(c, dict)
+        and str(c.get("primary_block") or "") not in {"weather", "transport"}
+    ]
+    semantic_only_drops = [
+        c for c in eligible
+        if c.get("semantic_dedupe_match") == "embedding_only"
+        and c.get("dedupe_decision") == "drop"
+        and c.get("change_type") in {"no_change", "same_story_rehash"}
+    ]
+    limit = max(_SEMANTIC_ONLY_DROP_MIN_CAP, int(len(eligible) * _SEMANTIC_ONLY_DROP_CAP_SHARE))
+    if len(semantic_only_drops) <= limit:
+        return {
+            "triggered": False,
+            "embedding_only_drops": len(semantic_only_drops),
+            "limit": limit,
+        }
+
+    for candidate in semantic_only_drops:
+        candidate["include"] = True
+        candidate["dedupe_decision"] = "new"
+        candidate["change_type"] = "new_story"
+        candidate["reason"] = (
+            "Semantic dedupe guard: kept because embedding-only drops exceeded "
+            "the daily safety cap; review manually."
+        )
+    return {
+        "triggered": True,
+        "embedding_only_drops": len(semantic_only_drops),
+        "limit": limit,
+        "restored": len(semantic_only_drops),
+    }
+
+
 def _entity_tokens(title: str) -> set[str]:
     """Capitalized words and numbers from the original title — likely proper nouns."""
     return {w.lower() for w in re.findall(r"\b(?:[A-Z][a-z]{1,}|[A-Z]{2,}|\d{2,})\b", title)}
@@ -989,3 +1075,87 @@ def _similar_published_titles(
             if len(entity_tokens & prev_entities) >= 2:
                 matches.append({"fingerprint": item.get("fingerprint"), "title": item.get("title"), "overlap": round(overlap, 2)})
     return matches[:3]
+
+
+_SEMANTIC_MATCH_THRESHOLD = 0.38
+_SEMANTIC_MATCH_HIGH_THRESHOLD = 0.55
+_SEMANTIC_MIN_SHARED_ANCHORS = 2
+_SEMANTIC_SKIP_BLOCKS = frozenset({
+    "weather",
+    "transport",
+    "weekend_activities",
+    "next_7_days",
+    "ticket_radar",
+    "outside_gm_tickets",
+    "russian_events",
+    "future_announcements",
+})
+
+
+def _published_embedding(item: dict) -> list[float]:
+    stored = item.get("semantic_embedding")
+    version = str(item.get("semantic_embedding_version") or "")
+    if (
+        version == EMBEDDING_VERSION
+        and isinstance(stored, list)
+        and all(isinstance(v, (int, float)) for v in stored)
+    ):
+        return [float(v) for v in stored]
+    return semantic_embedding(item)
+
+
+def _semantic_published_matches(candidate: dict, published_items: list[dict]) -> list[dict]:
+    block = str(candidate.get("primary_block") or "")
+    if block in _SEMANTIC_SKIP_BLOCKS:
+        return []
+    candidate_embedding = semantic_embedding(candidate)
+    candidate_anchors = anchor_tokens(candidate)
+    if len(candidate_anchors) < _SEMANTIC_MIN_SHARED_ANCHORS:
+        return []
+
+    matches: list[dict] = []
+    for item in published_items:
+        if not isinstance(item, dict):
+            continue
+        previous_block = str(item.get("primary_block") or "")
+        previous_category = str(item.get("category") or "")
+        candidate_category = str(candidate.get("category") or "")
+        if previous_block in _SEMANTIC_SKIP_BLOCKS:
+            continue
+        if (
+            _dedup_block_group(previous_block) != _dedup_block_group(block)
+            and previous_category != candidate_category
+        ):
+            continue
+        previous_anchors = anchor_tokens(item)
+        shared_anchors = candidate_anchors & previous_anchors
+        if len(shared_anchors) < _SEMANTIC_MIN_SHARED_ANCHORS:
+            continue
+        score = cosine_similarity(candidate_embedding, _published_embedding(item))
+        if score < _SEMANTIC_MATCH_THRESHOLD:
+            continue
+        if score < _SEMANTIC_MATCH_HIGH_THRESHOLD and len(shared_anchors) < 3:
+            continue
+        matches.append(
+            {
+                "fingerprint": item.get("fingerprint"),
+                "title": item.get("title"),
+                "overlap": round(score, 3),
+                "match_type": "semantic_embedding",
+                "shared_anchors": sorted(shared_anchors)[:8],
+            }
+        )
+    matches.sort(key=lambda m: float(m.get("overlap") or 0.0), reverse=True)
+    return matches[:3]
+
+
+def _merge_previous_matches(title_matches: list[dict], semantic_matches: list[dict]) -> list[dict]:
+    by_fp: dict[str, dict] = {}
+    for match in title_matches + semantic_matches:
+        fp = str(match.get("fingerprint") or "")
+        if not fp:
+            continue
+        existing = by_fp.get(fp)
+        if not existing or float(match.get("overlap") or 0.0) > float(existing.get("overlap") or 0.0):
+            by_fp[fp] = dict(match)
+    return sorted(by_fp.values(), key=lambda m: float(m.get("overlap") or 0.0), reverse=True)[:3]

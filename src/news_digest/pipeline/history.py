@@ -7,6 +7,11 @@ import re
 import shutil
 
 from news_digest.pipeline.common import normalize_title, read_json, today_london, write_json
+from news_digest.pipeline.semantic_dedupe import (
+    EMBEDDING_VERSION,
+    semantic_embedding,
+    semantic_text,
+)
 
 # Facts older than this are pruned from published_facts.json.
 # Must be >= the dedupe look-back window (7 days) with margin.
@@ -72,6 +77,9 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
                 "primary_block": candidate.get("primary_block"),
                 "source_label": candidate.get("source_label"),
                 "published_at": candidate.get("published_at"),
+                "semantic_embedding_version": EMBEDDING_VERSION,
+                "semantic_embedding": semantic_embedding(candidate),
+                "semantic_text": semantic_text(candidate)[:1200],
                 # A0 enrichment: borough + change_type so dedupe and "what
                 # was previously published" queries can filter by them.
                 "borough": _extract_borough_from_blob(candidate) or "",

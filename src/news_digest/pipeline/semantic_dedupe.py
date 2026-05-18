@@ -39,6 +39,7 @@ import hashlib
 import logging
 import math
 import os
+import re
 
 from news_digest.pipeline.common import now_london, read_json, write_json
 
@@ -611,4 +612,131 @@ def run_semantic_pass(
         intra_drops=intra_drops,
         cross_day_drops=cross_day_drops,
         borderline_pairs=borderline_pairs,
+    )
+
+
+# Compatibility helpers for deterministic cross-day guards and
+# published_facts enrichment. They are deliberately local/hash-based:
+# run_semantic_pass above may call OpenAI embeddings when available, but
+# these helpers must work in tests and in delivery-history writes even
+# when the network/API key is absent.
+EMBEDDING_VERSION = "semantic-hash-v1"
+EMBEDDING_DIMENSIONS = 96
+
+_WORD_RE = re.compile(r"[a-zA-Zа-яёА-ЯЁ0-9£$][a-zA-Zа-яёА-ЯЁ0-9£$'-]*")
+_MONEY_RE = re.compile(r"(?:£|\$)\s*\d+(?:[.,]\d+)?\s*(?:m|mn|million|bn|billion)?", re.IGNORECASE)
+_DATE_RE = re.compile(
+    r"\b(?:20\d{2}|\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?|"
+    r"\d{1,2}\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*|"
+    r"\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря))\b",
+    re.IGNORECASE,
+)
+_CAPITALISED_RE = re.compile(r"\b[A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})?\b")
+
+_LOCAL_STOPWORDS = frozenset({
+    "about", "after", "again", "against", "also", "amid", "and", "are", "been",
+    "before", "being", "but", "buy", "can", "could", "from", "greater", "have",
+    "into", "just", "latest", "local", "man", "manchester", "more", "near",
+    "news", "over", "said", "says", "that", "the", "their", "them", "then",
+    "there", "this", "today", "update", "updates", "what", "when", "where",
+    "which", "while", "woman", "with", "would", "year", "years", "your",
+    "боле", "будет", "были", "был", "для", "его", "или", "как", "манчестер",
+    "новост", "после", "при", "про", "сегодня", "что", "это",
+})
+_GENERIC_ANCHORS = frozenset({
+    "council", "police", "people", "public", "service", "services", "tickets",
+    "event", "events", "family", "first", "great", "live", "major", "music",
+    "plans", "road", "school", "story", "street", "ticket", "tickets", "weekend",
+})
+
+
+def semantic_text(item: dict) -> str:
+    return " ".join(
+        str(item.get(field) or "")
+        for field in ("title", "summary", "lead", "practical_angle", "evidence_text")
+    )
+
+
+def _local_tokens(text: str) -> list[str]:
+    out: list[str] = []
+    for raw in _WORD_RE.findall(str(text or "").lower()):
+        token = raw.strip("'-$£")
+        if len(token) < 3 or token in _LOCAL_STOPWORDS:
+            continue
+        out.append(token)
+    return out
+
+
+def _clean_entity_phrase(value: str) -> str:
+    parts = [
+        part for part in re.findall(r"[a-zA-Zа-яёА-ЯЁ0-9'-]+", str(value or "").lower())
+        if len(part) >= 3 and part not in _LOCAL_STOPWORDS and part not in _GENERIC_ANCHORS
+    ]
+    return " ".join(parts)
+
+
+def semantic_embedding(item: dict) -> list[float]:
+    vector = [0.0] * EMBEDDING_DIMENSIONS
+    toks = _local_tokens(semantic_text(item))
+    features = list(toks)
+    features.extend(f"{a}_{b}" for a, b in zip(toks, toks[1:]))
+    for feature in features:
+        digest = hashlib.blake2b(feature.encode("utf-8"), digest_size=8).digest()
+        bucket = int.from_bytes(digest[:4], "big") % EMBEDDING_DIMENSIONS
+        sign = 1.0 if digest[4] % 2 == 0 else -1.0
+        vector[bucket] += sign
+    norm = math.sqrt(sum(v * v for v in vector))
+    if not norm:
+        return vector
+    return [round(v / norm, 6) for v in vector]
+
+
+def cosine_similarity(left: list[float] | None, right: list[float] | None) -> float:
+    if not left or not right or len(left) != len(right):
+        return 0.0
+    return sum(a * b for a, b in zip(left, right))
+
+
+def anchor_tokens(item: dict) -> set[str]:
+    text = semantic_text(item)
+    anchors: set[str] = set()
+    for token in _local_tokens(text):
+        if len(token) >= 5 and token not in _GENERIC_ANCHORS:
+            anchors.add(token)
+    for match in _MONEY_RE.findall(text):
+        anchors.add(re.sub(r"\s+", "", match.lower()))
+    for match in _DATE_RE.findall(text):
+        anchors.add(re.sub(r"\s+", "", match.lower()))
+    for match in _CAPITALISED_RE.findall(str(item.get("title") or "")):
+        for part in _clean_entity_phrase(match).split():
+            if len(part) >= 4 and part not in _LOCAL_STOPWORDS and part not in _GENERIC_ANCHORS:
+                anchors.add(part)
+    return anchors
+
+
+def new_fact_tokens(item: dict) -> set[str]:
+    text = semantic_text(item)
+    tokens: set[str] = set()
+    for match in _MONEY_RE.findall(text):
+        tokens.add(re.sub(r"\s+", "", match.lower()))
+    for match in _DATE_RE.findall(text):
+        tokens.add(re.sub(r"\s+", "", match.lower()))
+    return tokens
+
+
+def has_new_fact_signal(candidate: dict, previous: dict | None) -> bool:
+    if not previous:
+        return False
+    previous_facts = new_fact_tokens(previous)
+    candidate_facts = new_fact_tokens(candidate)
+    if candidate_facts - previous_facts:
+        return True
+    blob = semantic_text(candidate).lower()
+    return any(
+        marker in blob
+        for marker in (
+            "charged", "convicted", "sentenced", "approved", "opened",
+            "comes into effect", "now in effect", "new details",
+            "обвин", "осужд", "приговор", "одобрен", "открыл", "вступает в силу",
+        )
     )
