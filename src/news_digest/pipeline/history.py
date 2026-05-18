@@ -7,6 +7,7 @@ import re
 import shutil
 
 from news_digest.pipeline.common import normalize_title, read_json, today_london, write_json
+from news_digest.pipeline.entity_extraction import enrich_candidate_entities, extract_entities
 from news_digest.pipeline.semantic_dedupe import (
     EMBEDDING_VERSION,
     semantic_embedding,
@@ -64,6 +65,7 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
     run_day_date = datetime.strptime(run_day, "%Y-%m-%d").date()
 
     for candidate in candidates:
+        enrich_candidate_entities(candidate)
         fingerprint = str(candidate.get("fingerprint") or "").strip()
         if not fingerprint:
             continue
@@ -80,6 +82,7 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
                 "semantic_embedding_version": EMBEDDING_VERSION,
                 "semantic_embedding": semantic_embedding(candidate),
                 "semantic_text": semantic_text(candidate)[:1200],
+                "entities": candidate.get("entities") or extract_entities(candidate),
                 # A0 enrichment: borough + change_type so dedupe and "what
                 # was previously published" queries can filter by them.
                 "borough": _extract_borough_from_blob(candidate) or "",
@@ -137,6 +140,10 @@ def _extract_borough_from_blob(candidate: dict) -> str:
     Returns an empty string when nothing matches. Used for both
     published_facts enrichment and the daily index snapshot.
     """
+    entities = candidate.get("entities") if isinstance(candidate.get("entities"), dict) else {}
+    boroughs = entities.get("boroughs") if isinstance(entities, dict) else []
+    if boroughs:
+        return str(boroughs[0])
     blob = " ".join(
         str(candidate.get(field) or "")
         for field in ("title", "lead", "summary", "evidence_text")
@@ -196,6 +203,7 @@ def write_daily_index_snapshot(project_root: Path) -> Path | None:
     for c in candidates:
         if not isinstance(c, dict):
             continue
+        enrich_candidate_entities(c)
         fp = str(c.get("fingerprint") or "")
         included = bool(c.get("include"))
         reject_reason = ""
@@ -217,6 +225,7 @@ def write_daily_index_snapshot(project_root: Path) -> Path | None:
             "category": c.get("category") or "",
             "primary_block": c.get("primary_block") or "",
             "borough": _extract_borough_from_blob(c),
+            "entities": c.get("entities") or extract_entities(c),
             "included": included,
             "change_type": c.get("change_type") or "",
             "reject_reason": reject_reason,

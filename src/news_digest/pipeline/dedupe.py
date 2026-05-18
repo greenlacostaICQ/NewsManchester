@@ -14,6 +14,7 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.entity_extraction import enrich_candidate_entities
 from news_digest.pipeline.history import ensure_history_files
 from news_digest.pipeline.semantic_dedupe import (
     EMBEDDING_VERSION,
@@ -88,6 +89,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         if not isinstance(candidate, dict):
             errors.append(f"Candidate #{index} is not an object.")
             continue
+        enrich_candidate_entities(candidate)
 
         fingerprint = fingerprint_for_candidate(candidate)
         candidate["fingerprint"] = fingerprint
