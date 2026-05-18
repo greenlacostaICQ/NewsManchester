@@ -152,6 +152,9 @@ jobs:
           git add -f data/state/cost_history.json || true
           git add -f data/state/cost_curator.json || true
           git add -f data/state/cost_llm_rewrite.json || true
+          # HTTP validator cache (ETag/Last-Modified). Persisting it between
+          # runs is what makes If-None-Match send a real value on day N+1.
+          git add -f data/state/fetch_cache.json || true
           git add -f data/state/bot_state.json || true
           git add -f data/state/delivery_state.json || true
           # Metrolink reminders need cross-day persistence so an active

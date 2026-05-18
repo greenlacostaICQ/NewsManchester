@@ -32,7 +32,7 @@ from .fallbacks import (
     _transport_fallback_candidates,
     _weather_candidate,
 )
-from .fetch import _fetch_source_body
+from .fetch import NotModified, _fetch_source_body, load_fetch_cache, save_fetch_cache
 from .routing import _promote_to_today_focus, _reroute_media_transit_to_transport
 from .sources import SOURCES
 from .summary import _looks_like_active_disruption
@@ -109,6 +109,7 @@ def _source_health_template(source) -> dict:
         "url": source.url,
         "checked": False,
         "fetched": False,
+        "not_modified": False,
         "candidate_count": 0,
         "publishable_count": 0,
         "dated_candidate_count": 0,
@@ -127,7 +128,25 @@ def _collect_single_source(source) -> tuple[dict, list[dict]]:
     started_at = time.perf_counter()
     try:
         fetch_started_at = time.perf_counter()
-        body, fetched_url, attempt_log = _fetch_source_body(source)
+        try:
+            body, fetched_url, attempt_log = _fetch_source_body(source)
+        except NotModified:
+            # 304: source's feed is byte-identical to last fetch. Skip
+            # parsing — every item it would contain is already known
+            # (already in published_facts.json or yesterday's candidates),
+            # and dedupe would drop them anyway. Mark as a healthy non-error
+            # state distinct from a real fetch failure.
+            source_health["fetch_duration_seconds"] = round(time.perf_counter() - fetch_started_at, 3)
+            source_health["checked"] = True
+            source_health["fetched"] = True
+            source_health["not_modified"] = True
+            source_health["fetched_url"] = _redact_sensitive_url(source.url)
+            # Treat not_modified as usable: the source IS reachable; we just
+            # have no new items today. Without this transport-style block
+            # health would falsely flip to "unhealthy" on quiet days.
+            source_health["usable_for_release"] = True
+            source_health["warnings"].append("304 Not Modified — no new content since last fetch")
+            return source_health, []
         source_health["fetch_duration_seconds"] = round(time.perf_counter() - fetch_started_at, 3)
         if fetched_url != source.url:
             source_health["warnings"].append(
@@ -192,8 +211,14 @@ def collect_digest(project_root: Path) -> StageResult:
     for source in SOURCES:
         report["categories"][source.report_category]["sources"].append(source.name)
 
+    # Load HTTP-validator cache once; fetchers add conditional headers and
+    # update the cache via module-level state. Flushed at the end of the run.
+    load_fetch_cache(state_dir)
+
     with ThreadPoolExecutor(max_workers=_COLLECTOR_MAX_WORKERS) as executor:
         source_results = list(executor.map(_collect_single_source, SOURCES))
+
+    save_fetch_cache(state_dir)
 
     for source, (source_health, source_candidates) in zip(SOURCES, source_results, strict=True):
         category_report = report["categories"][source.report_category]
@@ -216,6 +241,11 @@ def collect_digest(project_root: Path) -> StageResult:
             )
         if source_health["errors"]:
             category_report["errors"].append(f"{source.name}: {source_health['errors'][0]}")
+        elif source_health.get("not_modified"):
+            # 304 is a valid healthy state — do not log as an error or
+            # "filter-rejected everything" warning. The fetch_cache.json
+            # entry has the validators that will be re-sent next run.
+            pass
         elif not source_candidates:
             category_report["errors"].append(
                 f"{source.name}: fetched successfully but no candidate links passed filters"

@@ -3,18 +3,131 @@
 `_fetch_text` is the low-level call (single URL, default headers
 overridable). `_fetch_source_body` adds the primary-then-fallback
 strategy declared on `SourceDef.fallback_urls`.
+
+Optional ETag/Last-Modified cache (module-level): when enabled via
+`use_cache=True`, conditional headers (If-None-Match / If-Modified-Since)
+are sent based on the previous response, and 304 responses raise
+`NotModified` instead of returning a body. The cache file is loaded
+once via `load_fetch_cache(state_dir)` at the start of a run and
+flushed via `save_fetch_cache(state_dir)` at the end. Used only for
+the main per-source RSS/HTML fetch (core.py), NOT for one-shot
+article enrichment in extract.py.
 """
 
 from __future__ import annotations
 
+import json
+import logging
 import os
+import threading
 import time
-from datetime import UTC, timedelta
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from urllib import error, parse, request
 
 from news_digest.pipeline.common import now_london
 
 from .sources import SourceDef
+
+logger = logging.getLogger(__name__)
+
+
+class NotModified(Exception):
+    """Server returned HTTP 304 — cached version is still current."""
+
+
+# Cache layout: {url: {"etag": str, "last_modified": str, "fetched_at": ISO8601, "status": "200"|"304"}}
+# Module-level singleton because the collector is single-process; thread-safe
+# via the lock for ThreadPoolExecutor in core.py.
+_FETCH_CACHE: dict[str, dict] = {}
+_FETCH_CACHE_LOCK = threading.Lock()
+_FETCH_CACHE_FILENAME = "fetch_cache.json"
+
+# If a cache entry is older than this, ignore stored validators and do a
+# fresh fetch. Daily pipeline means yesterday's entries are ~24h old, so
+# the TTL must be > 24h to be useful at all. 7 days is a safe window: long
+# enough for normal daily runs to benefit, short enough that an upstream
+# ETag scheme change (e.g. server migration) is naturally healed within
+# a week.
+_FETCH_CACHE_TTL_SECONDS = 7 * 24 * 3600
+
+
+def load_fetch_cache(state_dir: Path) -> None:
+    """Load the on-disk cache into the module-level dict. Called once
+    at the start of a collector run before any fetches."""
+    path = state_dir / _FETCH_CACHE_FILENAME
+    with _FETCH_CACHE_LOCK:
+        _FETCH_CACHE.clear()
+        if not path.exists():
+            return
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as exc:
+            logger.warning("fetch_cache.json unreadable, ignoring (%s).", exc)
+            return
+        entries = raw.get("entries") if isinstance(raw, dict) else None
+        if isinstance(entries, dict):
+            _FETCH_CACHE.update({k: v for k, v in entries.items() if isinstance(v, dict)})
+
+
+def save_fetch_cache(state_dir: Path) -> None:
+    """Persist the module-level cache to disk. Called once at the end of
+    a collector run after all fetches complete."""
+    state_dir.mkdir(parents=True, exist_ok=True)
+    path = state_dir / _FETCH_CACHE_FILENAME
+    with _FETCH_CACHE_LOCK:
+        payload = {
+            "version": 1,
+            "updated_at_london": now_london().isoformat(),
+            "entries": dict(_FETCH_CACHE),
+        }
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _cache_entry_fresh(entry: dict) -> bool:
+    """True if the entry has validators and is younger than the TTL."""
+    if not entry or not (entry.get("etag") or entry.get("last_modified")):
+        return False
+    fetched_at = entry.get("fetched_at") or ""
+    if not fetched_at:
+        return False
+    try:
+        parsed = datetime.fromisoformat(fetched_at)
+    except ValueError:
+        return False
+    now = now_london()
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=now.tzinfo)
+    age = (now - parsed).total_seconds()
+    return 0 <= age <= _FETCH_CACHE_TTL_SECONDS
+
+
+def _conditional_headers(url: str) -> dict[str, str]:
+    """Return If-None-Match / If-Modified-Since headers for url, if we
+    have fresh cached validators. Empty dict otherwise."""
+    with _FETCH_CACHE_LOCK:
+        entry = dict(_FETCH_CACHE.get(url) or {})
+    if not _cache_entry_fresh(entry):
+        return {}
+    headers: dict[str, str] = {}
+    if entry.get("etag"):
+        headers["If-None-Match"] = entry["etag"]
+    if entry.get("last_modified"):
+        headers["If-Modified-Since"] = entry["last_modified"]
+    return headers
+
+
+def _store_cache_entry(url: str, *, etag: str = "", last_modified: str = "", status: str = "200") -> None:
+    """Update the module cache for url with new validators."""
+    with _FETCH_CACHE_LOCK:
+        existing = dict(_FETCH_CACHE.get(url) or {})
+        if etag:
+            existing["etag"] = etag
+        if last_modified:
+            existing["last_modified"] = last_modified
+        existing["fetched_at"] = now_london().isoformat()
+        existing["status"] = status
+        _FETCH_CACHE[url] = existing
 
 
 # Hosts that block urllib via Cloudflare bot challenge but pass through
@@ -86,7 +199,7 @@ _DEFAULT_FETCH_HEADERS: dict[str, str] = {
 }
 
 
-def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
+def _fetch_text_curl_cffi(url: str, headers: dict[str, str], *, use_cache: bool = False) -> str:
     """Fetch via curl_cffi using Chrome TLS fingerprint.
 
     Used for hosts that block urllib's default TLS handshake via
@@ -96,6 +209,11 @@ def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
     We strip our default browser-shaped headers (UA, Accept, Accept-Language)
     so curl_cffi can use its own impersonation-matched values. Source-specific
     headers like Referer/Origin are preserved.
+
+    With `use_cache=True`, conditional headers (If-None-Match /
+    If-Modified-Since) are sent when we have fresh validators, and a 304
+    response raises `NotModified`. Sending validators also nudges
+    Cloudflare-style WAFs that look for cache-aware client behaviour.
 
     HISTORY: 2026-05-15 added Sec-Fetch-* headers and a longer profile
     cascade (chrome131/safari18_0/firefox133/...) thinking it would help
@@ -112,6 +230,8 @@ def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
         k: v for k, v in headers.items()
         if k not in {"User-Agent", "Accept", "Accept-Language", "X-Source-Tag"}
     }
+    if use_cache:
+        cffi_headers.update(_conditional_headers(url))
 
     # Some WAFs (notably gmp.police.uk on non-residential IP ranges like
     # GitHub Actions runners) block the default Chrome fingerprint and
@@ -127,6 +247,9 @@ def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
                     impersonate=profile,
                     timeout=30,
                 )
+                if use_cache and response.status_code == 304:
+                    _store_cache_entry(url, status="304")
+                    raise NotModified(url)
                 if response.status_code >= 400:
                     # 429 — honour Retry-After once, then surface the error.
                     if response.status_code == 429:
@@ -137,7 +260,16 @@ def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
                             wait = 5
                         time.sleep(max(wait, 1))
                     raise RuntimeError(f"HTTP {response.status_code}")
+                if use_cache:
+                    _store_cache_entry(
+                        url,
+                        etag=str(response.headers.get("ETag", "") or ""),
+                        last_modified=str(response.headers.get("Last-Modified", "") or ""),
+                        status="200",
+                    )
                 return response.text
+            except NotModified:
+                raise
             except Exception as exc:  # noqa: BLE001
                 last_exc = exc
                 msg = str(exc)
@@ -148,7 +280,7 @@ def _fetch_text_curl_cffi(url: str, headers: dict[str, str]) -> str:
     raise RuntimeError(str(last_exc) if last_exc else "curl_cffi fetch failed")
 
 
-def _fetch_text(url: str, *, extra_headers: dict[str, str] | None = None) -> str:
+def _fetch_text(url: str, *, extra_headers: dict[str, str] | None = None, use_cache: bool = False) -> str:
     """Fetch a URL once, retry once on transient `URLError` (timeout, DNS).
 
     HTTPError (server-side 4xx/5xx) is treated as definitive and not
@@ -157,14 +289,20 @@ def _fetch_text(url: str, *, extra_headers: dict[str, str] | None = None) -> str
     For known Cloudflare-protected hosts we route through curl_cffi with
     a Chrome TLS-fingerprint impersonation — those hosts return 403/503
     to urllib's bare TLS handshake even with browser-shaped headers.
+
+    With `use_cache=True`, conditional headers are sent and 304 responses
+    raise `NotModified`. Default is False so one-shot callers (article
+    enrichment, weather, fallbacks) keep their existing semantics.
     """
 
     headers = dict(_DEFAULT_FETCH_HEADERS)
     if extra_headers:
         headers.update(extra_headers)
+    if use_cache:
+        headers.update(_conditional_headers(url))
 
     if _host_is_cloudflare_protected(url):
-        return _fetch_text_curl_cffi(url, headers)
+        return _fetch_text_curl_cffi(url, headers, use_cache=use_cache)
 
     req = request.Request(url, headers=headers)
     last_url_error: Exception | None = None
@@ -172,6 +310,13 @@ def _fetch_text(url: str, *, extra_headers: dict[str, str] | None = None) -> str
     for attempt in range(2):  # 1 initial + 1 retry
         try:
             with request.urlopen(req, timeout=30) as response:
+                if use_cache:
+                    _store_cache_entry(
+                        url,
+                        etag=str(response.headers.get("ETag", "") or ""),
+                        last_modified=str(response.headers.get("Last-Modified", "") or ""),
+                        status="200",
+                    )
                 # 4MB cap: Stockport Events RSS alone is ~1.5MB; MEN front
                 # page can exceed 900KB with images. 1.5MB cut mid-tag on
                 # bigger RSS feeds and broke the XML parser silently.
@@ -179,6 +324,11 @@ def _fetch_text(url: str, *, extra_headers: dict[str, str] | None = None) -> str
                 charset = response.headers.get_content_charset() or "utf-8"
                 return raw.decode(charset, errors="replace")
         except error.HTTPError as exc:
+            # 304 Not Modified — cache is current. urllib raises this
+            # as HTTPError; we surface it as NotModified for the caller.
+            if use_cache and exc.code == 304:
+                _store_cache_entry(url, status="304")
+                raise NotModified(url) from exc
             # Honour Retry-After on 429 (rate limit) — Ticketmaster's API
             # uses it on every rate-limit response. One retry after the
             # advertised wait usually clears it. Cap the wait at 30s so
@@ -227,6 +377,11 @@ def _fetch_source_body(source: SourceDef) -> tuple[str, str, list[str]]:
     is a list of human-readable failure notes for URLs we tried before
     succeeding (empty if the primary URL worked). Raises the last
     exception if everything fails.
+
+    Uses the ETag/Last-Modified cache (`use_cache=True`). If the server
+    returns 304 (cached version is still current), `NotModified` propagates
+    to the caller — collector.core treats this as a real "no new content"
+    signal, distinct from a fetch failure.
     """
 
     attempt_log: list[str] = []
@@ -234,8 +389,11 @@ def _fetch_source_body(source: SourceDef) -> tuple[str, str, list[str]]:
     source_headers = _source_fetch_headers(source)
     for candidate_url in (_resolve_url(source.url), *[_resolve_url(u) for u in source.fallback_urls]):
         try:
-            body = _fetch_text(candidate_url, extra_headers=source_headers)
+            body = _fetch_text(candidate_url, extra_headers=source_headers, use_cache=True)
             return body, candidate_url, attempt_log
+        except NotModified:
+            # Propagate — caller distinguishes "not modified" from "failed".
+            raise
         except Exception as exc:  # noqa: BLE001 - all failures are recorded.
             attempt_log.append(f"{candidate_url}: {exc}")
             last_exception = exc
