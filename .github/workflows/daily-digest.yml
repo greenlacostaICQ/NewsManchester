@@ -35,6 +35,10 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
           TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+          # I1: dedupe-digest now also runs a semantic pass via OpenAI
+          # embeddings. Falls back to deterministic-only when the key is
+          # missing — never blocks the release.
+          OPENAI_API_KEY: ${{ secrets.OPENAI }}
           FORCE_COLLECT: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
         run: |
           set -euo pipefail
@@ -158,6 +162,11 @@ jobs:
           # disruption appears every morning until end_date passes.
           git add -f data/state/active_tram_disruptions.json || true
           git add -f data/state/transport_fill_report.json || true
+          # I1: cross-day embedding cache. Persisting it across runs is
+          # the whole point — yesterday's vectors are reused without a
+          # new API call, so the daily semantic-dedup cost stays at the
+          # marginal "today's new candidates" only.
+          git add -f data/state/embedding_cache.json || true
           git add -f data/outgoing/current_digest.html || true
           if git diff --staged --quiet; then
             echo "No state changes to commit."

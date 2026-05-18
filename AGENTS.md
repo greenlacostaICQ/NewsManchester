@@ -384,7 +384,13 @@ blockers.
 
 - `collector_report.json` — per-category broad scan health
 - `candidates.json` — current scan output, mutated by dedupe/validator
-- `dedupe_memory.json` — today's dedupe decisions
+- `dedupe_memory.json` — today's dedupe decisions, including
+  `semantic_dedup_summary` (I1: model name, embedded/cache hit counts,
+  intra_drops[], cross_day_drops[], borderline_pairs[]).
+- `embedding_cache.json` — per-fingerprint cached embedding vectors
+  (text-embedding-3-small, 1536d). Content-hashed, pruned after 30d.
+  Persisted across runs by the daily workflow so steady-state semantic
+  dedup only embeds today's new candidates.
 - `candidate_validation_report.json` — validator output
 - `writer_report.json` — includes `rendered_candidate_fingerprints[]`
 - `editor_report.json` — line dedup + balance counts

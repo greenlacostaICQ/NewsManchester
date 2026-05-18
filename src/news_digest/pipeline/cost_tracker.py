@@ -31,6 +31,9 @@ PRICING_PER_MTOKEN: dict[str, dict[str, float]] = {
     "gpt-4o":                      {"input": 2.50, "output": 10.00},
     "llama-3.3-70b-versatile":     {"input": 0.0,  "output": 0.0},   # Groq free tier
     "llama-3.1-70b-versatile":     {"input": 0.0,  "output": 0.0},
+    # Embeddings: priced per input token only; completion is always 0
+    # for these endpoints so output multiplier is irrelevant.
+    "text-embedding-3-small":      {"input": 0.02, "output": 0.0},
 }
 
 

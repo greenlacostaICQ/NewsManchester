@@ -1023,6 +1023,25 @@ def _classify_rejected_candidates(
     }
 
 
+def _semantic_dedup_counts_from_memory(state_dir: Path) -> dict[str, int]:
+    """I1: pull intra/cross-day/borderline counts from dedupe_memory.json
+    so the after_run_summary dashboard surfaces them in one place."""
+    path = state_dir / "dedupe_memory.json"
+    if not path.exists():
+        return {"intra_drops": 0, "cross_day_drops": 0, "borderline": 0, "enabled": False}
+    try:
+        report = read_json(path)
+    except Exception:  # noqa: BLE001
+        return {"intra_drops": 0, "cross_day_drops": 0, "borderline": 0, "enabled": False}
+    summary = report.get("semantic_dedup_summary") or {}
+    return {
+        "intra_drops": int(summary.get("intra_drop_count") or 0),
+        "cross_day_drops": int(summary.get("cross_day_drop_count") or 0),
+        "borderline": int(summary.get("borderline_count") or 0),
+        "enabled": bool(summary.get("enabled")),
+    }
+
+
 def _build_after_run_summary(
     digest_health: dict,
     source_status: dict,
@@ -1031,9 +1050,11 @@ def _build_after_run_summary(
     lost_leads: list,
     section_underflow: list,
     synthetic_freshness: dict | None = None,
+    semantic_dedup: dict | None = None,
 ) -> dict[str, object]:
     """R3: compact post-run dashboard. One block, query-once."""
     rendered = int(((writer_report or {}).get("quality_counts") or {}).get("rendered_candidates") or 0)
+    sd = semantic_dedup or {}
     return {
         "useful_items": rendered,
         "digest_risk_level": digest_health.get("risk_level"),
@@ -1044,6 +1065,10 @@ def _build_after_run_summary(
         "stale_synthetic_items": int((synthetic_freshness or {}).get("stale_count") or 0),
         "suspiciously_rejected": reject_review["counts"].get("suspiciously_rejected", 0),
         "borderline_rejected": reject_review["counts"].get("borderline", 0),
+        "semantic_dedup_enabled": bool(sd.get("enabled")),
+        "semantic_intra_drops": int(sd.get("intra_drops") or 0),
+        "semantic_cross_day_drops": int(sd.get("cross_day_drops") or 0),
+        "semantic_borderline": int(sd.get("borderline") or 0),
         "lost_leads": len(lost_leads or []),
         "section_underflow": len(section_underflow or []),
     }
@@ -1428,6 +1453,8 @@ def build_release(project_root: Path) -> ReleaseResult:
             "suspiciously rejected candidate(s) — see release_report.reject_review."
         )
 
+    semantic_dedup_counts = _semantic_dedup_counts_from_memory(state_dir)
+
     # R3: after-run summary, single compact dashboard block.
     after_run_summary = _build_after_run_summary(
         digest_health=digest_health,
@@ -1437,6 +1464,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         lost_leads=lost_leads,
         section_underflow=section_underflow,
         synthetic_freshness=synthetic_freshness,
+        semantic_dedup=semantic_dedup_counts,
     )
 
     ok = not errors
