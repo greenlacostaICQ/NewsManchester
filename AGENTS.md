@@ -321,6 +321,10 @@ python3 -c "import json; r=json.load(open('data/state/writer_report.json')); pri
 # Per-category broad-scan health:
 python3 -c "import json; r=json.load(open('data/state/collector_report.json')); [print(k, c['publishable_count'], c.get('usable_for_release')) for k,c in r['categories'].items()]"
 
+# Per-source yield (O1): raw / curated / rendered — flags sources that
+# fetched OK but contributed nothing to the digest.
+python3 -c "import json; r=json.load(open('data/state/release_report.json')); rows=r['source_status']['sources']; print(f\"{'name':<32} {'cat':<18} {'status':<8} {'raw':>4} {'cur':>4} {'ren':>4}\"); [print(f\"{x['name'][:32]:<32} {x['category'][:18]:<18} {x['status']:<8} {x['candidate_count']:>4} {x['curated_count']:>4} {x['rendered_count']:>4}\") for x in rows if x['curated_count'] or x['rendered_count']]"
+
 # What's in published_facts (cross-day dedup history)?
 python3 -c "import json; r=json.load(open('data/state/published_facts.json')); print(len(r['facts']), 'facts; last_updated', r['last_updated_london'])"
 ```
@@ -384,7 +388,20 @@ blockers.
 - `candidate_validation_report.json` — validator output
 - `writer_report.json` — includes `rendered_candidate_fingerprints[]`
 - `editor_report.json` — line dedup + balance counts
-- `release_report.json` — gate verdict + `published_facts_updated`
+- `release_report.json` — gate verdict + `published_facts_updated`.
+  `source_status.sources[]` carries per-source `candidate_count` (raw),
+  `curated_count` (include=True after curator), `rendered_count`
+  (curated AND in writer's `rendered_candidate_fingerprints`).
+  `source_status.counts.zero_yield` flags sources that fetched OK but
+  contributed nothing to the digest. Synthetic sources (Met Office
+  weather, transport reminders) appear with `category="synthetic"`.
+  `synthetic_freshness` lists every synthetic candidate with its
+  `data_fetched_at` timestamp and `synthetic_stale` flag — populated
+  by the O2 freshness gate (refetch×2 on Met Office + Open-Meteo for
+  weather; 14-day freshness window on Metrolink reminders). When all
+  weather sources fail, the placeholder ships and the weather-block
+  digit check downgrades from error to warning so the digest never
+  blocks on a network outage.
 - `published_facts.json` — cross-day history (idempotent by fingerprint)
 - `last_sent_digest.html` — copy of last actually-sent digest
 - `delivery_state.json`, `bot_state.json` — Telegram bot state
@@ -402,6 +419,24 @@ blockers.
   guides are aspirational.
 - `data/state/*.json` and `data/outgoing/*.html` are regenerated
   each run. Read for diagnosis, never edit by hand.
+
+## Editorial regression pack (tests/test_editorial_regression.py)
+
+Pinned-defect golden cases. 25–30 fast unittest cases covering the
+seven historical failure modes (no-date event, PR, not-GM, duplicate,
+stale event/synthetic, bad HTML in draft_line, untranslated English).
+Each case exercises a real deterministic predicate
+(`_exclude_*` / `_apply_intra_batch_dedup` / `_draft_line_quality_errors`
+/ `_is_obviously_non_gm_*` / `_is_stale_transport` / etc.) — no
+fixtures on disk, no LLM calls. Adding a case for a freshly-fixed
+defect: copy the live candidate fields into a new test method here,
+assert the predicate that should now catch it.
+
+Run with `PYTHONPATH=src python3 -m unittest discover -s tests`.
+CI: `.github/workflows/tests.yml` runs on every push to a non-`main`
+branch and every PR. `main` only runs the daily digest; tests are
+intentionally out of the release path so a failing test never blocks
+a send.
 
 ## Common task patterns
 

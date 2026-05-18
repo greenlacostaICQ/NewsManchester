@@ -475,7 +475,25 @@ def _validate_draft(
 
     weather_lines = sections.get("Погода", [])
     if not weather_lines or not re.search(r"\d", " ".join(weather_lines)):
-        errors.append("Weather block is missing digits.")
+        # O2: if the synthetic weather candidate is flagged stale (Met
+        # Office + Open-Meteo both unreachable after refetch×2), the
+        # placeholder line has no digits by design. Downgrade to a
+        # warning instead of blocking the release — the digest still
+        # ships, just with an honest "data unavailable" weather block.
+        stale_weather = any(
+            isinstance(c, dict)
+            and c.get("primary_block") == "weather"
+            and c.get("synthetic_stale")
+            for c in included_candidates
+        )
+        if stale_weather:
+            warnings.append(
+                "Weather block has no digits — synthetic source flagged stale "
+                "(Met Office + Open-Meteo both unreachable after refetch×2). "
+                "Shipping placeholder."
+            )
+        else:
+            errors.append("Weather block is missing digits.")
 
     for section_name, lines in sections.items():
         for line in lines:
@@ -728,30 +746,166 @@ def _classify_source_status(entry: dict, category: str) -> tuple[str, str]:
     return "ok", f"{cands} item(s)" + (f", {fresh} fresh in last 24h" if fresh else "")
 
 
-def _summarise_source_health(scan_report: dict | None) -> dict[str, object]:
-    """R1: per-source status table + counts. Reads collector_report.json."""
-    counts: dict[str, int] = {"ok": 0, "partial": 0, "stale": 0, "empty": 0, "failed": 0}
-    sources: list[dict[str, str]] = []
-    if not scan_report:
-        return {"counts": counts, "sources": sources}
-    for cat_name, cat in (scan_report.get("categories") or {}).items():
-        if not isinstance(cat, dict):
+def _summarise_synthetic_freshness(candidates_report: dict | None) -> dict[str, object]:
+    """O2: surface every synthetic candidate's freshness state.
+
+    Returns:
+        - ``total`` — count of candidates with ``synthetic=True``.
+        - ``stale_count`` — how many of those are ``synthetic_stale=True``.
+        - ``stale_sources`` — sorted unique ``source_label`` of stale items.
+        - ``items[]`` — per-candidate triplet of (source_label,
+          data_fetched_at, attempts) for the release_report drilldown.
+    """
+    items: list[dict[str, object]] = []
+    stale_sources: set[str] = set()
+    total = 0
+    stale_count = 0
+    for candidate in (candidates_report or {}).get("candidates") or []:
+        if not isinstance(candidate, dict) or not candidate.get("synthetic"):
             continue
-        for entry in cat.get("source_health") or []:
-            if not isinstance(entry, dict):
+        total += 1
+        is_stale = bool(candidate.get("synthetic_stale"))
+        source_label = str(candidate.get("source_label") or "")
+        if is_stale:
+            stale_count += 1
+            if source_label:
+                stale_sources.add(source_label)
+        items.append(
+            {
+                "source_label": source_label,
+                "primary_block": str(candidate.get("primary_block") or ""),
+                "synthetic_stale": is_stale,
+                "data_fetched_at": candidate.get("data_fetched_at"),
+                "fetch_attempts": int(candidate.get("synthetic_fetch_attempts") or 0),
+            }
+        )
+    return {
+        "total": total,
+        "stale_count": stale_count,
+        "stale_sources": sorted(stale_sources),
+        "items": items,
+    }
+
+
+def _count_per_source_yield(
+    candidates_report: dict | None,
+    rendered_fingerprints: set[str] | list[str] | None,
+) -> dict[str, dict[str, int]]:
+    """O1: count, per source_label, how many candidates survived each
+    downstream stage. Two columns matter for editorial review:
+      - curated: include=True after curator (= what went into writer)
+      - rendered: curated AND fingerprint appears in writer's
+                  rendered_candidate_fingerprints (= what shipped in HTML).
+
+    rendered ≤ curated by construction. A source with curated>0 and
+    rendered=0 is a flag — its material was killed late (writer quality
+    gate, editor balance trim) and may need attention.
+    """
+    rendered_set = set(rendered_fingerprints or ())
+    yields: dict[str, dict[str, int]] = {}
+    for candidate in (candidates_report or {}).get("candidates") or []:
+        if not isinstance(candidate, dict):
+            continue
+        source_label = str(candidate.get("source_label") or "").strip()
+        if not source_label:
+            continue
+        record = yields.setdefault(source_label, {"curated": 0, "rendered": 0})
+        if not candidate.get("include"):
+            continue
+        record["curated"] += 1
+        fp = str(candidate.get("fingerprint") or "")
+        if fp and fp in rendered_set:
+            record["rendered"] += 1
+    return yields
+
+
+def _summarise_source_health(
+    scan_report: dict | None,
+    candidates_report: dict | None = None,
+    rendered_fingerprints: set[str] | list[str] | None = None,
+) -> dict[str, object]:
+    """R1: per-source status table + counts. Reads collector_report.json.
+
+    O1 extension: each source row also carries `curated_count` and
+    `rendered_count` so editorial review can see — at a glance — which
+    sources contributed material that actually shipped vs. which were
+    killed downstream. Synthetic sources that appear on candidates but
+    not in collector_report (Met Office weather, transport-fill
+    reminders) are appended as `category="synthetic"` rows so the table
+    is complete.
+    """
+    counts: dict[str, int] = {"ok": 0, "partial": 0, "stale": 0, "empty": 0, "failed": 0}
+    sources: list[dict[str, object]] = []
+    yields = _count_per_source_yield(candidates_report, rendered_fingerprints)
+    seen_names: set[str] = set()
+
+    if scan_report:
+        for cat_name, cat in (scan_report.get("categories") or {}).items():
+            if not isinstance(cat, dict):
                 continue
-            status, detail = _classify_source_status(entry, str(cat_name))
-            counts[status] = counts.get(status, 0) + 1
-            sources.append(
-                {
-                    "name": str(entry.get("name") or ""),
-                    "category": str(cat_name),
-                    "status": status,
-                    "detail": detail,
-                    "candidate_count": int(entry.get("candidate_count") or 0),
-                    "fresh_last_24h_count": int(entry.get("fresh_last_24h_count") or 0),
-                }
-            )
+            for entry in cat.get("source_health") or []:
+                if not isinstance(entry, dict):
+                    continue
+                status, detail = _classify_source_status(entry, str(cat_name))
+                counts[status] = counts.get(status, 0) + 1
+                name = str(entry.get("name") or "")
+                seen_names.add(name)
+                row_yield = yields.get(name) or {"curated": 0, "rendered": 0}
+                sources.append(
+                    {
+                        "name": name,
+                        "category": str(cat_name),
+                        "status": status,
+                        "detail": detail,
+                        "candidate_count": int(entry.get("candidate_count") or 0),
+                        "fresh_last_24h_count": int(entry.get("fresh_last_24h_count") or 0),
+                        "curated_count": int(row_yield["curated"]),
+                        "rendered_count": int(row_yield["rendered"]),
+                    }
+                )
+
+    # Append synthetic sources (Met Office weather, transport_fill
+    # reminders) that bypass the core collector. Status is derived from
+    # yield alone: rendered>0 ⇒ ok, curated>0 but rendered=0 ⇒ partial,
+    # everything else ⇒ empty.
+    for name, row in sorted(yields.items()):
+        if name in seen_names:
+            continue
+        if row["rendered"] > 0:
+            status = "ok"
+            detail = f"synthetic: {row['rendered']} item(s) rendered"
+        elif row["curated"] > 0:
+            status = "partial"
+            detail = f"synthetic: {row['curated']} curated but 0 rendered"
+        else:
+            status = "empty"
+            detail = "synthetic: no candidates survived"
+        counts[status] = counts.get(status, 0) + 1
+        sources.append(
+            {
+                "name": name,
+                "category": "synthetic",
+                "status": status,
+                "detail": detail,
+                "candidate_count": int(row["curated"]),
+                "fresh_last_24h_count": 0,
+                "curated_count": int(row["curated"]),
+                "rendered_count": int(row["rendered"]),
+            }
+        )
+
+    # Zero-yield sources: fetched OK but contributed nothing past the
+    # curator. Surface as a top-level counter so the after-run summary
+    # can flag silent waste (we kept fetching the feed but its output
+    # never reached the digest).
+    zero_yield = sum(
+        1
+        for row in sources
+        if row.get("category") != "synthetic"
+        and int(row.get("candidate_count") or 0) > 0
+        and int(row.get("rendered_count") or 0) == 0
+    )
+    counts["zero_yield"] = zero_yield
     return {"counts": counts, "sources": sources}
 
 
@@ -876,6 +1030,7 @@ def _build_after_run_summary(
     writer_report: dict | None,
     lost_leads: list,
     section_underflow: list,
+    synthetic_freshness: dict | None = None,
 ) -> dict[str, object]:
     """R3: compact post-run dashboard. One block, query-once."""
     rendered = int(((writer_report or {}).get("quality_counts") or {}).get("rendered_candidates") or 0)
@@ -885,6 +1040,8 @@ def _build_after_run_summary(
         "digest_risk_score": digest_health.get("risk_score"),
         "broken_sources": source_status["counts"].get("failed", 0) + source_status["counts"].get("empty", 0),
         "stale_sources": source_status["counts"].get("stale", 0),
+        "zero_yield_sources": source_status["counts"].get("zero_yield", 0),
+        "stale_synthetic_items": int((synthetic_freshness or {}).get("stale_count") or 0),
         "suspiciously_rejected": reject_review["counts"].get("suspiciously_rejected", 0),
         "borderline_rejected": reject_review["counts"].get("borderline", 0),
         "lost_leads": len(lost_leads or []),
@@ -1225,12 +1382,38 @@ def build_release(project_root: Path) -> ReleaseResult:
         prefix = "Severe" if int(sig["severity"]) >= 3 else "Risk"
         warnings.append(f"Digest health [{prefix}] {sig['name']}: {sig['detail']}")
 
-    # R1: per-source status table.
-    source_status = _summarise_source_health(scan_report)
+    # R1 + O1: per-source status table with curated/rendered yield columns.
+    source_status = _summarise_source_health(
+        scan_report,
+        candidates_report=candidates_report,
+        rendered_fingerprints=rendered_fingerprints,
+    )
     if source_status["counts"].get("failed", 0) >= 3:
         warnings.append(
             f"Source health: {source_status['counts']['failed']} source(s) failed today — "
             "check release_report.source_status for the list."
+        )
+    # O1: zero-yield sources — fetched OK but nothing rendered. Worth
+    # noticing when many feeds silently underperform, e.g. half the
+    # culture sources contributing zero to the digest. Threshold is
+    # intentionally loose (warnings only, never blocks the release).
+    zero_yield = int(source_status["counts"].get("zero_yield") or 0)
+    if zero_yield >= 10:
+        warnings.append(
+            f"Source yield: {zero_yield} source(s) fetched today but contributed nothing to "
+            "the digest — review release_report.source_status (sort by curated_count=0)."
+        )
+
+    # O2: synthetic freshness gate — any candidate flagged
+    # synthetic_stale=True went out as a placeholder because its upstream
+    # source was unreachable after refetch×2 (weather) or its persisted
+    # state hasn't been re-confirmed in 14+ days (transport reminder).
+    synthetic_freshness = _summarise_synthetic_freshness(candidates_report)
+    if synthetic_freshness["stale_count"]:
+        names = ", ".join(synthetic_freshness["stale_sources"]) or "unknown"
+        warnings.append(
+            f"Synthetic freshness: {synthetic_freshness['stale_count']} stale synthetic item(s) "
+            f"shipping with placeholder data — {names}. See release_report.synthetic_freshness."
         )
 
     # R2: rejected candidate review with borderline / suspicious flags.
@@ -1253,6 +1436,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         writer_report=writer_report,
         lost_leads=lost_leads,
         section_underflow=section_underflow,
+        synthetic_freshness=synthetic_freshness,
     )
 
     ok = not errors
@@ -1279,6 +1463,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "digest_health": digest_health,
         "source_status": source_status,
         "reject_review": reject_review,
+        "synthetic_freshness": synthetic_freshness,
         "after_run_summary": after_run_summary,
         "prompt_versions": _prompts_snapshot(),
         "prompt_drift": prompt_drift,
