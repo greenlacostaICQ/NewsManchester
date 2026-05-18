@@ -944,15 +944,16 @@ def _similar_published_titles(
     original_title: str,
     published_titles: list[dict],
 ) -> list[dict]:
-    title_tokens = set(normalized_title.split())
+    title_tokens = set(_title_tokens(original_title)) or set(normalized_title.split())
     entity_tokens = _entity_tokens(original_title)
-    if len(title_tokens) < 4:
+    if len(title_tokens) < 2:
         return []
     matches: list[dict] = []
     for item in published_titles:
-        previous_title = str(item.get("normalized_title") or "")
-        previous_tokens = set(previous_title.split())
-        if len(previous_tokens) < 4:
+        previous_tokens = set(_title_tokens(str(item.get("title") or ""))) or set(
+            str(item.get("normalized_title") or "").split()
+        )
+        if len(previous_tokens) < 2:
             continue
         union = title_tokens | previous_tokens
         overlap = len(title_tokens & previous_tokens) / max(len(union), 1)

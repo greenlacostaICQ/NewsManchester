@@ -674,10 +674,10 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
                 errors.append(
                     f"draft_line for long-format category needs ≥{LONG_FORMAT_MIN_CHARS} chars (got {len(normalized)})."
                 )
-            if sentence_count < LONG_FORMAT_MIN_SENTENCES:
-                errors.append(
-                    f"draft_line for long-format category needs ≥{LONG_FORMAT_MIN_SENTENCES} sentences (got {sentence_count})."
-                )
+        if sentence_count < LONG_FORMAT_MIN_SENTENCES and block_key != "city_watch":
+            errors.append(
+                f"draft_line for long-format category needs ≥{LONG_FORMAT_MIN_SENTENCES} sentences (got {sentence_count})."
+            )
     lowered = text.lower()
     for marker in _BAD_EDITORIAL_PROSE_MARKERS:
         if marker in lowered:

@@ -258,6 +258,8 @@ def _make_reminder_candidate(rec: dict, today_iso: str) -> dict:
         "published_at": today_iso,
         "published_date_london": today_iso,
         "freshness_status": "reminder",
+        "dedupe_decision": "new",
+        "change_type": "same_story_new_facts",
         "draft_line": line,
         "draft_line_provider": "transport_fill",
         "draft_line_model": "deterministic_reminder",
@@ -303,6 +305,11 @@ def run_transport_fill(project_root: Path) -> StageResult:
         # previous run during the same day), don't overwrite.
         existing_draft = str(c.get("draft_line") or "").strip()
         if existing_draft and str(c.get("draft_line_provider") or "") == "transport_fill":
+            if c.get("transport_reminder"):
+                if not c.get("dedupe_decision"):
+                    c["dedupe_decision"] = "new"
+                if not c.get("change_type"):
+                    c["change_type"] = "same_story_new_facts"
             continue
 
         card = extract_transport_card(c)

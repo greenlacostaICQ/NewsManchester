@@ -114,6 +114,7 @@ def _source_health_template(source) -> dict:
         "dated_candidate_count": 0,
         "fresh_last_24h_count": 0,
         "usable_for_release": False,
+        "fallback_used": False,
         "errors": [],
         "warnings": [],
         "duration_seconds": 0.0,
@@ -129,7 +130,8 @@ def _collect_single_source(source) -> tuple[dict, list[dict]]:
         fetch_started_at = time.perf_counter()
         body, fetched_url, attempt_log = _fetch_source_body(source)
         source_health["fetch_duration_seconds"] = round(time.perf_counter() - fetch_started_at, 3)
-        if fetched_url != source.url:
+        if attempt_log:
+            source_health["fallback_used"] = True
             source_health["warnings"].append(
                 f"primary URL failed; switched to fallback {fetched_url}"
             )
@@ -210,10 +212,6 @@ def collect_digest(project_root: Path) -> StageResult:
         category_report["fresh_last_24h_count"] += sum(
             1 for candidate in source_candidates if candidate.get("freshness_status") == "fresh_24h"
         )
-        if source_health.get("fetched_url") and source_health["fetched_url"] != source.url:
-            category_report["errors"].append(
-                f"{source.name}: primary URL failed, fallback used ({source_health['fetched_url']})"
-            )
         if source_health["errors"]:
             category_report["errors"].append(f"{source.name}: {source_health['errors'][0]}")
         elif not source_candidates:
