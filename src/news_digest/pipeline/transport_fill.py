@@ -239,10 +239,40 @@ def _record_to_card(rec: dict) -> TransportCard:
 def _make_reminder_candidate(rec: dict, today_iso: str) -> dict:
     """Build a synthetic candidate for a Metrolink disruption that has
     no fresh article today. Routed to the transport block as a reminder.
+
+    O2 freshness markers:
+      - ``data_fetched_at`` = ``first_seen`` (when the underlying TfGM
+        article was last actually observed). For undated open-ended
+        records this becomes the only freshness anchor and the regression
+        pack can assert it exists.
+      - ``synthetic_stale`` = True when ``first_seen`` is older than
+        :data:`_REMINDER_STALE_DAYS`. Stale reminders still ship (the
+        disruption may genuinely be ongoing) but the release report
+        flags them so editorial review can ask TfGM whether the closure
+        is actually over.
+      - ``synthetic_fetch_attempts`` = 0 because reminders are
+        synthesised from persisted state rather than fetched live.
     """
     card = _record_to_card(rec)
     line = render_reminder(card)
     fp = f"transport-reminder|{rec.get('key', '')}|{today_iso}"
+    first_seen = str(rec.get("first_seen") or "")
+    data_fetched_at: str | None = first_seen or None
+    synthetic_stale = False
+    if not first_seen:
+        # No anchor at all ⇒ we have no way to prove the disruption is
+        # still current ⇒ flag as stale.
+        synthetic_stale = True
+    else:
+        try:
+            today = date.fromisoformat(today_iso)
+            seen = date.fromisoformat(first_seen)
+            if (today - seen).days > _REMINDER_STALE_DAYS:
+                synthetic_stale = True
+        except (TypeError, ValueError):
+            # Unparseable first_seen ⇒ no usable anchor ⇒ treat as stale.
+            synthetic_stale = True
+            data_fetched_at = None
     return {
         "fingerprint": fp,
         "title": f"[reminder] {rec.get('operator', 'Metrolink')} {rec.get('line', '')} {rec.get('segment', '')}".strip(),
@@ -257,7 +287,7 @@ def _make_reminder_candidate(rec: dict, today_iso: str) -> dict:
         "source_url": rec.get("source_url") or "https://tfgm.com/",
         "published_at": today_iso,
         "published_date_london": today_iso,
-        "freshness_status": "reminder",
+        "freshness_status": "stale_synthetic" if synthetic_stale else "reminder",
         "dedupe_decision": "new",
         "change_type": "same_story_new_facts",
         "draft_line": line,
@@ -266,7 +296,22 @@ def _make_reminder_candidate(rec: dict, today_iso: str) -> dict:
         "draft_line_written_at": now_london().isoformat(),
         "reason": "Synthetic reminder for ongoing Metrolink disruption.",
         "transport_reminder": True,
+        # ── O2 freshness markers ─────────────────────────────────────────
+        "synthetic": True,
+        "data_fetched_at": data_fetched_at,
+        "synthetic_stale": synthetic_stale,
+        "synthetic_fetch_attempts": 0,
     }
+
+
+# Reminders synthesised from a `first_seen` older than this threshold
+# are flagged as stale. 14 days is a soft sanity bound: routine Metrolink
+# improvement works are typically 2-6 weeks, but a disruption record
+# that hasn't been re-confirmed by a fresh TfGM article for two full
+# weeks deserves a flag so editorial can check whether it's really
+# still going. Distinct from the existing 30-day hard cap which drops
+# undated records entirely.
+_REMINDER_STALE_DAYS = 14
 
 
 # ── Main stage ────────────────────────────────────────────────────────────

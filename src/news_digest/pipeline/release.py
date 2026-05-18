@@ -475,7 +475,25 @@ def _validate_draft(
 
     weather_lines = sections.get("Погода", [])
     if not weather_lines or not re.search(r"\d", " ".join(weather_lines)):
-        errors.append("Weather block is missing digits.")
+        # O2: if the synthetic weather candidate is flagged stale (Met
+        # Office + Open-Meteo both unreachable after refetch×2), the
+        # placeholder line has no digits by design. Downgrade to a
+        # warning instead of blocking the release — the digest still
+        # ships, just with an honest "data unavailable" weather block.
+        stale_weather = any(
+            isinstance(c, dict)
+            and c.get("primary_block") == "weather"
+            and c.get("synthetic_stale")
+            for c in included_candidates
+        )
+        if stale_weather:
+            warnings.append(
+                "Weather block has no digits — synthetic source flagged stale "
+                "(Met Office + Open-Meteo both unreachable after refetch×2). "
+                "Shipping placeholder."
+            )
+        else:
+            errors.append("Weather block is missing digits.")
 
     for section_name, lines in sections.items():
         for line in lines:
@@ -728,6 +746,47 @@ def _classify_source_status(entry: dict, category: str) -> tuple[str, str]:
     return "ok", f"{cands} item(s)" + (f", {fresh} fresh in last 24h" if fresh else "")
 
 
+def _summarise_synthetic_freshness(candidates_report: dict | None) -> dict[str, object]:
+    """O2: surface every synthetic candidate's freshness state.
+
+    Returns:
+        - ``total`` — count of candidates with ``synthetic=True``.
+        - ``stale_count`` — how many of those are ``synthetic_stale=True``.
+        - ``stale_sources`` — sorted unique ``source_label`` of stale items.
+        - ``items[]`` — per-candidate triplet of (source_label,
+          data_fetched_at, attempts) for the release_report drilldown.
+    """
+    items: list[dict[str, object]] = []
+    stale_sources: set[str] = set()
+    total = 0
+    stale_count = 0
+    for candidate in (candidates_report or {}).get("candidates") or []:
+        if not isinstance(candidate, dict) or not candidate.get("synthetic"):
+            continue
+        total += 1
+        is_stale = bool(candidate.get("synthetic_stale"))
+        source_label = str(candidate.get("source_label") or "")
+        if is_stale:
+            stale_count += 1
+            if source_label:
+                stale_sources.add(source_label)
+        items.append(
+            {
+                "source_label": source_label,
+                "primary_block": str(candidate.get("primary_block") or ""),
+                "synthetic_stale": is_stale,
+                "data_fetched_at": candidate.get("data_fetched_at"),
+                "fetch_attempts": int(candidate.get("synthetic_fetch_attempts") or 0),
+            }
+        )
+    return {
+        "total": total,
+        "stale_count": stale_count,
+        "stale_sources": sorted(stale_sources),
+        "items": items,
+    }
+
+
 def _count_per_source_yield(
     candidates_report: dict | None,
     rendered_fingerprints: set[str] | list[str] | None,
@@ -971,6 +1030,7 @@ def _build_after_run_summary(
     writer_report: dict | None,
     lost_leads: list,
     section_underflow: list,
+    synthetic_freshness: dict | None = None,
 ) -> dict[str, object]:
     """R3: compact post-run dashboard. One block, query-once."""
     rendered = int(((writer_report or {}).get("quality_counts") or {}).get("rendered_candidates") or 0)
@@ -981,6 +1041,7 @@ def _build_after_run_summary(
         "broken_sources": source_status["counts"].get("failed", 0) + source_status["counts"].get("empty", 0),
         "stale_sources": source_status["counts"].get("stale", 0),
         "zero_yield_sources": source_status["counts"].get("zero_yield", 0),
+        "stale_synthetic_items": int((synthetic_freshness or {}).get("stale_count") or 0),
         "suspiciously_rejected": reject_review["counts"].get("suspiciously_rejected", 0),
         "borderline_rejected": reject_review["counts"].get("borderline", 0),
         "lost_leads": len(lost_leads or []),
@@ -1343,6 +1404,18 @@ def build_release(project_root: Path) -> ReleaseResult:
             "the digest — review release_report.source_status (sort by curated_count=0)."
         )
 
+    # O2: synthetic freshness gate — any candidate flagged
+    # synthetic_stale=True went out as a placeholder because its upstream
+    # source was unreachable after refetch×2 (weather) or its persisted
+    # state hasn't been re-confirmed in 14+ days (transport reminder).
+    synthetic_freshness = _summarise_synthetic_freshness(candidates_report)
+    if synthetic_freshness["stale_count"]:
+        names = ", ".join(synthetic_freshness["stale_sources"]) or "unknown"
+        warnings.append(
+            f"Synthetic freshness: {synthetic_freshness['stale_count']} stale synthetic item(s) "
+            f"shipping with placeholder data — {names}. See release_report.synthetic_freshness."
+        )
+
     # R2: rejected candidate review with borderline / suspicious flags.
     reject_review = _classify_rejected_candidates(
         writer_report=writer_report,
@@ -1363,6 +1436,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         writer_report=writer_report,
         lost_leads=lost_leads,
         section_underflow=section_underflow,
+        synthetic_freshness=synthetic_freshness,
     )
 
     ok = not errors
@@ -1389,6 +1463,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "digest_health": digest_health,
         "source_status": source_status,
         "reject_review": reject_review,
+        "synthetic_freshness": synthetic_freshness,
         "after_run_summary": after_run_summary,
         "prompt_versions": _prompts_snapshot(),
         "prompt_drift": prompt_drift,

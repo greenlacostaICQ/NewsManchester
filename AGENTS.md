@@ -395,6 +395,13 @@ blockers.
   `source_status.counts.zero_yield` flags sources that fetched OK but
   contributed nothing to the digest. Synthetic sources (Met Office
   weather, transport reminders) appear with `category="synthetic"`.
+  `synthetic_freshness` lists every synthetic candidate with its
+  `data_fetched_at` timestamp and `synthetic_stale` flag — populated
+  by the O2 freshness gate (refetch×2 on Met Office + Open-Meteo for
+  weather; 14-day freshness window on Metrolink reminders). When all
+  weather sources fail, the placeholder ships and the weather-block
+  digit check downgrades from error to warning so the digest never
+  blocks on a network outage.
 - `published_facts.json` — cross-day history (idempotent by fingerprint)
 - `last_sent_digest.html` — copy of last actually-sent digest
 - `delivery_state.json`, `bot_state.json` — Telegram bot state
