@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import time
+from http import cookiejar
 from datetime import UTC, timedelta
 from urllib import error, parse, request
 
@@ -168,12 +169,14 @@ def _fetch_text(url: str, *, extra_headers: dict[str, str] | None = None) -> str
 
     current_url = url
     req = request.Request(current_url, headers=headers)
+    cookies = cookiejar.CookieJar()
+    opener = request.build_opener(request.HTTPCookieProcessor(cookies))
     last_url_error: Exception | None = None
     rate_limit_attempted = False
     redirect_count = 0
     for attempt in range(6):  # 1 initial + redirects/retry
         try:
-            with request.urlopen(req, timeout=30) as response:
+            with opener.open(req, timeout=30) as response:
                 # 4MB cap: Stockport Events RSS alone is ~1.5MB; MEN front
                 # page can exceed 900KB with images. 1.5MB cut mid-tag on
                 # bigger RSS feeds and broke the XML parser silently.
