@@ -72,7 +72,10 @@ class PromptVersioningTest(unittest.TestCase):
 
         self.assertEqual(routes["curator"][0]["role"], "cheap_scoring")
         self.assertEqual(routes["dedupe_review"][0]["role"], "cheap_scoring")
-        self.assertEqual(routes["rewrite"][0]["role"], "quality_rewrite")
+        self.assertEqual(routes["rewrite"][0]["role"], "fast_rewrite")
+        self.assertEqual(routes["rewrite"][0]["provider_label"], "DeepSeek")
+        self.assertEqual(routes["repair"][0]["role"], "quality_repair")
+        self.assertEqual(routes["repair"][0]["provider_label"], "OpenAI")
         self.assertEqual(routes["rewrite"][-1]["role"], "resilient_fallback")
 
     def test_model_route_override_uses_manual_single_step(self) -> None:

@@ -1,8 +1,8 @@
 """LLM rewrite stage — writes Russian draft_lines to candidates.json.
 
 Default model route:
-  1. OpenAI gpt-4o-mini    — quality rewrite primary
-  2. DeepSeek deepseek-chat — rewrite fallback
+  1. DeepSeek deepseek-chat — fast rewrite primary
+  2. OpenAI gpt-4o-mini    — quality fallback / repair
   3. Groq Llama-3.3-70B    — emergency fallback, free tier
   4. Rule-based in writer.py — final safety net, always fires if LLM unavailable
 
@@ -211,8 +211,8 @@ _CATEGORY_TO_PROMPT: dict[str, str] = {
 }
 
 
-BATCH_SIZE = 20      # default — used for OpenAI and Gemini
-GROQ_BATCH_SIZE = 8  # Groq free tier: 6000 TPM; 8 candidates ≈ 2700 tokens safely
+BATCH_SIZE = 20      # default — used for OpenAI/DeepSeek
+GROQ_BATCH_SIZE = 3  # Groq free tier TPM is tight once long prompts are included.
 
 FIX_TRANSLATE_SYSTEM = """Переведи строку новостного дайджеста на русский язык.
 Названия людей, мест, брендов, компаний, IT-терминов оставляй по-английски.
@@ -458,6 +458,7 @@ def _call_with_fallback(
     model_override: str,
     label_suffix: str = "",
     prompt_name: str = "unknown",
+    route_name: str = "rewrite",
 ) -> dict[str, str]:
     """Call provider chain with a specific prompt, return fingerprint→draft_line."""
     if not candidates:
@@ -465,7 +466,7 @@ def _call_with_fallback(
     if provider_override == "none":
         return {}
     route = resolve_model_route(
-        "rewrite",
+        route_name,
         provider_override=provider_override,
         base_url_override=base_url_override,
         model_override=model_override,
@@ -750,6 +751,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             model_override,
             label_suffix="-repair",
             prompt_name="repair_draft",
+            route_name="repair",
         )
 
         run_iso = now_london().isoformat()
