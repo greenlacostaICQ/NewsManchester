@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 from urllib import parse
 
+from news_digest.pipeline.city_intelligence import annotate_city_intelligence
 from news_digest.pipeline.common import clean_url, now_london, pipeline_run_id_from, read_json, today_london, write_json
 from news_digest.pipeline.transport_classifier import classify_transport_candidate
 
@@ -425,6 +426,7 @@ def validate_candidates(project_root: Path) -> StageResult:
         if candidate.get("include") and validation_errors:
             errors.append(f"Candidate #{index} failed validation.")
 
+    city_intelligence = annotate_city_intelligence(candidates)
     payload["run_at_london"] = now_london().isoformat()
     payload["run_date_london"] = today_london()
     pipeline_run_id = pipeline_run_id_from(payload)
@@ -437,6 +439,7 @@ def validate_candidates(project_root: Path) -> StageResult:
             "run_date_london": today_london(),
             "stage_status": "complete" if not errors else "failed",
             "errors": errors,
+            "city_intelligence": city_intelligence,
             "items": items,
         },
     )

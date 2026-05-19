@@ -21,6 +21,7 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.city_intelligence import summarise_city_intelligence
 
 
 BANNED_PLACEHOLDER_MARKERS = [
@@ -1064,10 +1065,17 @@ def _build_after_run_summary(
     section_underflow: list,
     synthetic_freshness: dict | None = None,
     semantic_dedup: dict | None = None,
+    city_intelligence: dict | None = None,
 ) -> dict[str, object]:
     """R3: compact post-run dashboard. One block, query-once."""
     rendered = int(((writer_report or {}).get("quality_counts") or {}).get("rendered_candidates") or 0)
     sd = semantic_dedup or {}
+    ci = city_intelligence or {}
+    topic_clusters = ci.get("topic_clusters") or {}
+    borough_coverage = ci.get("borough_coverage") or {}
+    borough_counts = borough_coverage.get("counts") or {}
+    dominant = borough_coverage.get("dominant_borough") or {}
+    skew_flags = borough_coverage.get("skew_flags") or []
     return {
         "useful_items": rendered,
         "digest_risk_level": digest_health.get("risk_level"),
@@ -1082,6 +1090,12 @@ def _build_after_run_summary(
         "semantic_intra_drops": int(sd.get("intra_drops") or 0),
         "semantic_cross_day_drops": int(sd.get("cross_day_drops") or 0),
         "semantic_borderline": int(sd.get("borderline") or 0),
+        "topic_cluster_count": int(topic_clusters.get("cluster_count") or 0),
+        "clustered_candidates": int(topic_clusters.get("clustered_candidate_count") or 0),
+        "included_borough_count": int(borough_counts.get("covered_boroughs_included") or 0),
+        "rendered_borough_count": int(borough_counts.get("covered_boroughs_rendered") or 0),
+        "dominant_borough": dominant.get("borough") if isinstance(dominant, dict) else None,
+        "borough_skew_flags": len(skew_flags) if isinstance(skew_flags, list) else 0,
         "lost_leads": len(lost_leads or []),
         "section_underflow": len(section_underflow or []),
     }
@@ -1495,6 +1509,12 @@ def build_release(project_root: Path) -> ReleaseResult:
         )
 
     semantic_dedup_counts = _semantic_dedup_counts_from_memory(state_dir)
+    city_intelligence = summarise_city_intelligence(
+        candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else [],
+        rendered_fingerprints=rendered_fingerprints,
+    )
+    for flag in (city_intelligence.get("borough_coverage") or {}).get("skew_flags") or []:
+        warnings.append(f"Borough coverage: {flag}")
 
     # R3: after-run summary, single compact dashboard block.
     after_run_summary = _build_after_run_summary(
@@ -1506,6 +1526,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         section_underflow=section_underflow,
         synthetic_freshness=synthetic_freshness,
         semantic_dedup=semantic_dedup_counts,
+        city_intelligence=city_intelligence,
     )
 
     ok = not errors
@@ -1533,6 +1554,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "source_status": source_status,
         "reject_review": reject_review,
         "synthetic_freshness": synthetic_freshness,
+        "city_intelligence": city_intelligence,
         "after_run_summary": after_run_summary,
         "prompt_versions": _prompts_snapshot(),
         "prompt_drift": prompt_drift,

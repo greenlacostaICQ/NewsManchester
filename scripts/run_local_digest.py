@@ -623,6 +623,11 @@ def cmd_send_warnings() -> int:
     summary = report.get("after_run_summary") or {}
     source_status = report.get("source_status") or {}
     reject_review = report.get("reject_review") or {}
+    city_intelligence = report.get("city_intelligence") or {}
+    borough_coverage = city_intelligence.get("borough_coverage") or {}
+    borough_skew_flags = [
+        str(flag) for flag in (borough_coverage.get("skew_flags") or []) if str(flag).strip()
+    ]
     suspicious_rejects = reject_review.get("suspiciously_rejected") or []
     src_counts = source_status.get("counts") or {}
     failed_sources = [
@@ -636,6 +641,7 @@ def cmd_send_warnings() -> int:
         or bool(section_underflow)
         or health_level != "healthy"
         or bool(suspicious_rejects)
+        or bool(borough_skew_flags)
         or src_counts.get("failed", 0) >= 3
     )
     if not has_signal:
@@ -721,6 +727,24 @@ def cmd_send_warnings() -> int:
                 lines.append("    Источники по этой теме принесли мало материала.")
             lines.append("")
 
+    if borough_skew_flags:
+        lines.append("🏙️ ПОКРЫТИЕ GM")
+        lines.append("Видно перекос по borough в сегодняшнем выпуске:")
+        for flag in borough_skew_flags[:4]:
+            lines.append(f"  • {flag}")
+        visible_rows = [
+            row for row in (borough_coverage.get("boroughs") or [])
+            if isinstance(row, dict) and int(row.get("rendered_count") or 0) > 0
+        ]
+        if visible_rows:
+            visible_rows.sort(key=lambda row: (-int(row.get("rendered_count") or 0), str(row.get("borough") or "")))
+            layout = ", ".join(
+                f"{row.get('borough')}: {int(row.get('rendered_count') or 0)}"
+                for row in visible_rows[:6]
+            )
+            lines.append(f"    Раскладка видимых пунктов: {layout}.")
+        lines.append("")
+
     # ── Источники: что не работало ────────────────────────────────
     if failed_sources:
         lines.append("🔌 ИСТОЧНИКИ КОТОРЫЕ НЕ ОТВЕТИЛИ")
@@ -754,7 +778,7 @@ def cmd_send_warnings() -> int:
 
     # ── Если кроме «всё в норме» сказать нечего — короткий happy summary
     if not (suspicious_groups or lost_leads or section_underflow
-            or failed_sources or (health_level != "healthy" and health_signals)):
+            or failed_sources or borough_skew_flags or (health_level != "healthy" and health_signals)):
         lines.append("Всё прошло чисто — никаких проблем не обнаружено.")
 
     text = "\n".join(lines).rstrip()
