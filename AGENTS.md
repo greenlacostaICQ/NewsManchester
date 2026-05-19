@@ -34,7 +34,10 @@ Each stage reads/writes its own `data/state/*.json` file.
 and updates `published_facts.json` for next-day dedupe.
 
 Sources are declared in `data/sources.toml` — set `enabled = false` to
-disable a source without touching Python.
+disable a source without touching Python. Each source can carry an
+optional `notes = "..."` field with editorial rationale (why it's in
+the registry, what role it plays). Surfaced on `SourceDef.notes`;
+used by I4 Best Source Selection and Q1/Q8 decisions.
 
 ## Operational notes
 
@@ -196,12 +199,6 @@ Task is about ... open ...
   Man Utd/Man City > media for football) used by dedupe and
   semantic_dedupe when collapsing same-story clusters:
   `src/news_digest/pipeline/source_selection.py`
-- Phase 2A fact schema, RSS prompt pack and LLM-vs-deterministic
-  comparison: `src/news_digest/pipeline/fact_extraction.py`
-- Phase 2B normalization contract, borough/entity dictionaries and
-  trusted-field metadata: `src/news_digest/pipeline/fact_normalization.py`
-- Phase 2C publishable-only rewrite pack and output contract:
-  `src/news_digest/pipeline/fact_rewrite.py`
 - writes/reads of `published_facts.json` and `last_sent_digest.html`:
   `src/news_digest/pipeline/history.py`
 - CLI / orchestration: `scripts/run_local_digest.py`,
@@ -405,9 +402,6 @@ blockers.
 
 ## Don't read unless asked
 
-- `data/experiments/` — Phase 2A/2B/2C debug artifacts (prompts, LLM
-  outputs, comparison JSONs). Read only if explicitly debugging a
-  specific experiment run. Never load these speculatively.
 - `docs/*.md` (large set of style guides and historical plans).
   Read only if the task is explicitly about prose style, source
   registry, or operational spec. Current code is authoritative; the
@@ -454,16 +448,6 @@ a send.
 - "Promote a candidate to today_focus" —
   `collector/routing.py:_promote_to_today_focus` and
   `_today_focus_score`.
-- "Adjust Phase 2A fact schema / prompt / comparator" —
-  `fact_extraction.py` (`fact_candidate_schema_payload`,
-  `build_rss_extraction_prompt`, `compare_fact_candidates`).
-- "Adjust Phase 2B trusted fields / borough aliases / canonical
-  entities" — `fact_normalization.py`
-  (`TRUSTED_EXTRACTION_FIELDS`, `BOROUGH_ALIAS_MAP`,
-  `ENTITY_CANONICAL_MAP`).
-- "Adjust Phase 2C rewrite pack / prompt / output schema" —
-  `fact_rewrite.py`
-  (`REWRITE_OUTPUT_SCHEMA`, `build_phase2c_rewrite_prompt`).
 - "Fix a fetch issue (403, redirects, headers)" —
   `collector/fetch.py:_fetch_text` or `_source_fetch_headers`.
 - "Add a new RSS/JSON parser shape" —

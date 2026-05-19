@@ -33,6 +33,11 @@ class SourceDef:
     # Per-source candidate cap. Big media (MEN, BBC) publish 20-40 stories/day;
     # councils and trade rags publish 1-5. Default 5 is safe for the long tail.
     max_candidates: int = 5
+    # Editorial rationale: why this source is in the registry and what
+    # role it plays in the digest. Used by I4 Best Source Selection and
+    # Q1/Q8 editorial decisions. Free-text, short. Empty for sources
+    # whose role is self-evident from name/category.
+    notes: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +68,7 @@ def _load_sources() -> tuple[SourceDef, ...]:
             fallback_urls=tuple(s.get("fallback_urls", [])),
             allowed_hosts=tuple(s.get("allowed_hosts", [])),
             max_candidates=int(s.get("max_candidates", 5)),
+            notes=str(s.get("notes", "")),
         )
         for s in _data["sources"]
         if s.get("enabled", True)
