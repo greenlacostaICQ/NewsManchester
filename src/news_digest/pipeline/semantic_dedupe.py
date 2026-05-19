@@ -373,9 +373,20 @@ class SemanticPassResult:
         }
 
 
-def _source_rank(label: str) -> int:
-    # Mirrors dedupe._SOURCE_PRIORITY. Inlined to avoid a circular import.
-    lower = str(label or "").lower()
+def _source_rank(label: str, category: str = "") -> int:
+    """Lower rank = better source. I4-aware.
+
+    Delegates to ``source_selection.source_rank`` (category + tier
+    aware). Legacy substring fallback covers media labels not yet in
+    the I4 registry. Kept inline (vs imported at module load) to
+    avoid a circular import via ``dedupe.py``.
+    """
+    from news_digest.pipeline.source_selection import SOURCE_TIER, source_rank
+
+    name = str(label or "")
+    if name in SOURCE_TIER or category:
+        return source_rank(name, category)
+    lower = name.lower()
     table = {
         "bbc": 0,
         "manchester evening news": 1, "men": 1,
@@ -456,7 +467,10 @@ def run_semantic_pass(
         vi = vectors.get(fp_i)
         if vi is None:
             continue
-        rank_i = _source_rank(str(ci.get("source_label") or ""))
+        rank_i = _source_rank(
+            str(ci.get("source_label") or ""),
+            str(ci.get("category") or ""),
+        )
         for cj in included[i + 1:]:
             fp_j = str(cj.get("fingerprint") or "")
             if fp_j in dropped_fps:
@@ -468,7 +482,10 @@ def run_semantic_pass(
             if sim is None:
                 continue
             if sim >= _HIGH_SIM_THRESHOLD:
-                rank_j = _source_rank(str(cj.get("source_label") or ""))
+                rank_j = _source_rank(
+                    str(cj.get("source_label") or ""),
+                    str(cj.get("category") or ""),
+                )
                 # Lower rank number = stronger source. Drop the weaker.
                 loser, kept = (cj, ci) if rank_i <= rank_j else (ci, cj)
                 loser_fp = str(loser.get("fingerprint") or "")

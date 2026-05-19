@@ -188,6 +188,14 @@ Task is about ... open ...
 - repeat detection across days: `src/news_digest/pipeline/dedupe.py`
 - shared constants and contracts (REQUIRED_BLOCKS, fingerprint,
   normalize_title): `src/news_digest/pipeline/common.py`
+- I3 structured event facts (event_name / venue / date / borough /
+  price / booking_url) for culture/venues/tickets/diaspora candidates:
+  `src/news_digest/pipeline/event_extraction.py`
+- I4 best-source-for-topic ranking (TfGM > MEN for transport;
+  Manchester Council > BBC for council; HOME > The Manc for events;
+  Man Utd/Man City > media for football) used by dedupe and
+  semantic_dedupe when collapsing same-story clusters:
+  `src/news_digest/pipeline/source_selection.py`
 - Phase 2A fact schema, RSS prompt pack and LLM-vs-deterministic
   comparison: `src/news_digest/pipeline/fact_extraction.py`
 - Phase 2B normalization contract, borough/entity dictionaries and
@@ -219,7 +227,7 @@ line numbers. Symbol names below are stable; line numbers are not.
 
 ### `src/news_digest/pipeline/collector/filters.py`
 
-- all helpers private — use `rg -n '^def '`
+- classes: `_SourcePolicy`
 - constants: `GM_TOKENS`
 
 ### `src/news_digest/pipeline/collector/extract.py`
@@ -240,52 +248,33 @@ line numbers. Symbol names below are stable; line numbers are not.
 
 - classes: `StageResult`
 - defs: `write_digest`
+- constants: `MODEL_WRITTEN_CATEGORIES`, `REQUIRE_DRAFT_LINE_CATEGORIES`, `LONG_FORMAT_CATEGORIES`, `LONG_FORMAT_MIN_CHARS`, `LONG_FORMAT_MIN_SENTENCES`, `SHORT_TICKET_BLOCKS`, `SHORT_EVENT_BLOCKS`, `EVENT_BLOCKS_RELAXABLE`, `EVENT_RELAX_EVIDENCE_THRESHOLD`, `TODAY_FOCUS_SECTION`, `TODAY_FOCUS_BACKFILL_SECTIONS`, `TODAY_FOCUS_BACKFILL_TARGET`, `TODAY_FOCUS_MIN_SOURCE_REMAINING`
 
 ### `src/news_digest/pipeline/editor.py`
 
 - classes: `StageResult`
 - defs: `edit_digest`
+- constants: `MIN_CITY_PRACTICAL_ANGLE_LENGTH`, `MAX_WEAK_CITY_CANDIDATE_SHARE`
 
 ### `src/news_digest/pipeline/release.py`
 
 - classes: `ReleaseResult`
 - defs: `initialize_release_inputs`, `build_release`
-- constants: `BANNED_MARKERS`, `BANNED_AUTHOR_VOICE`, `ENGLISH_PROSE_PATTERN`, `FAIL_CLOSED_SUMMARY`
+- constants: `BANNED_PLACEHOLDER_MARKERS`, `BANNED_AUTHOR_VOICE`, `BAD_EDITORIAL_PROSE`, `ENGLISH_PROSE_PATTERN`, `FAIL_CLOSED_SUMMARY`, `RELEASE_GATE_VERSION`
 
 ### `src/news_digest/pipeline/history.py`
 
-- defs: `ensure_history_files`, `update_published_facts`, `record_delivery_artifacts`
+- defs: `ensure_history_files`, `update_published_facts`, `record_delivery_artifacts`, `write_daily_index_snapshot`
 
 ### `src/news_digest/pipeline/common.py`
 
-- defs: `now_london`, `today_london`, `read_json`, `write_json`, `clean_url`, `canonical_url_identity`, `normalize_title`, `fingerprint_for_candidate`, `is_placeholder_practical_angle`, `extract_sections`
-- constants: `LONDON_TZ`, `REQUIRED_SCAN_CATEGORIES`, `REQUIRED_BLOCKS`, `LOW_SIGNAL_BLOCKS`, `VAGUE_PRACTICAL_ANGLES`, `PRIMARY_BLOCKS`
-
-### `src/news_digest/pipeline/config.py`
-
-- classes: `AgentSpec`
-- defs: `pipeline_config_payload`
-- constants: `AGENT_SPECS`
-
-### `src/news_digest/pipeline/fact_extraction.py`
-
-- defs: `fact_candidate_schema_payload`, `fact_candidate_batch_schema_payload`, `build_phase2a_rss_pack`, `build_rss_extraction_prompt`, `validate_fact_candidate_shape`, `compare_fact_candidates`
-- constants: `PHASE2A_SOURCE_LABELS`, `FACT_TYPES`, `BOROUGHS`, `ENTITY_TYPES`
-
-### `src/news_digest/pipeline/fact_normalization.py`
-
-- defs: `phase2b_contract_payload`, `normalize_fact_candidate`, `normalize_fact_candidates_file`
-- constants: `TRUSTED_EXTRACTION_FIELDS`, `BOROUGH_ALIAS_MAP`, `ENTITY_CANONICAL_MAP`
-
-### `src/news_digest/pipeline/fact_rewrite.py`
-
-- defs: `phase2c_rewrite_contract_payload`, `phase2c_active_rewrites_path`, `build_phase2c_rewrite_prompt`, `build_phase2c_rewrite_pack`, `activate_phase2c_rewrites`
-- constants: `REWRITE_OUTPUT_SCHEMA`, `PHASE2C_TRUSTED_SOURCE_LABELS`, `PHASE2C_ACTIVE_FILENAME`
+- defs: `now_london`, `today_london`, `new_pipeline_run_id`, `pipeline_run_id_from`, `read_json`, `write_json`, `clean_url`, `canonical_url_identity`, `normalize_title`, `fingerprint_for_candidate`, `is_placeholder_practical_angle`, `extract_sections`
+- constants: `LONDON_TZ`, `REQUIRED_SCAN_CATEGORIES`, `REQUIRED_BLOCKS`, `LOW_SIGNAL_BLOCKS`, `SECTION_MAX_ITEMS`, `SECTION_MIN_ITEMS`, `SECTION_MAX_PER_SOURCE`, `VAGUE_PRACTICAL_ANGLES`, `PRIMARY_BLOCKS`
 
 ### `scripts/run_local_digest.py`
 
-- defs: `cmd_bot_info`, `cmd_get_updates`, `cmd_process_updates`, `cmd_poll_updates`, `cmd_render_demo`, `cmd_send_demo`, `cmd_send_file`, `cmd_delivered_today`, `cmd_digest_status`, `cmd_build_digest`, `cmd_init_build_state`, `cmd_collect_digest`, `cmd_dedupe_digest`, `cmd_validate_candidates`, `cmd_write_digest`, `cmd_edit_digest`, `cmd_pipeline_config`, `cmd_phase2_fact_schema`, `cmd_phase2_rss_pack`, `cmd_phase2_compare_facts`, `cmd_phase2b_contract`, `cmd_phase2b_normalize`, `cmd_phase2c_contract`, `cmd_phase2c_build_pack`, `cmd_phase2c_activate_rewrites`, `build_parser`, `main`
-- constants: `PROJECT_ROOT`, `SRC_DIR`, `LONDON_TZ`
+- defs: `cmd_bot_info`, `cmd_get_updates`, `cmd_process_updates`, `cmd_poll_updates`, `cmd_render_demo`, `cmd_send_demo`, `cmd_send_file`, `cmd_send_warnings`, `cmd_send_weekly_cost`, `cmd_delivered_today`, `cmd_digest_status`, `cmd_build_digest`, `cmd_mark_pipeline_failed`, `cmd_init_build_state`, `cmd_collect_digest`, `cmd_dedupe_digest`, `cmd_validate_candidates`, `cmd_curator_pass`, `cmd_transport_fill`, `cmd_llm_rewrite`, `cmd_prompt_versions`, `cmd_model_routing`, `cmd_cost_summary`, `cmd_reader_value_validation`, `cmd_write_digest`, `cmd_edit_digest`, `build_parser`, `main`
+- constants: `PROJECT_ROOT`, `SRC_DIR`, `LONDON_TZ`, `REQUIRED_RELEASE_GATE_VERSION`
 
 _Anchors above are stable symbol names. Use `rg -n '^def NAME|^class NAME|^NAME ?='` to jump there._
 <!-- AUTOGENERATED:modules:end -->
