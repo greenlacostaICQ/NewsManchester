@@ -15,6 +15,7 @@ from news_digest.pipeline.common import (
     write_json,
 )
 from news_digest.pipeline.entity_extraction import enrich_candidate_entities
+from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.history import ensure_history_files
 from news_digest.pipeline.semantic_dedupe import (
     EMBEDDING_VERSION,
@@ -90,6 +91,8 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             errors.append(f"Candidate #{index} is not an object.")
             continue
         enrich_candidate_entities(candidate)
+        # I3: event facts depend on entities — must run AFTER entity pass.
+        enrich_candidate_event(candidate)
 
         fingerprint = fingerprint_for_candidate(candidate)
         candidate["fingerprint"] = fingerprint
@@ -319,6 +322,10 @@ _GM_BOROUGHS: frozenset[str] = frozenset({
     "altrincham", "stretford", "ashton", "eccles",
 })
 
+# Legacy substring-based media ranking. Kept ONLY as a same-tier
+# tie-breaker when neither candidate's source label is in the
+# category-aware registry maintained by source_selection.py (I4).
+# Source labels that ARE in source_selection.SOURCE_TIER win first.
 _SOURCE_PRIORITY: dict[str, int] = {
     "bbc": 0,
     "manchester evening news": 1, "men": 1,
@@ -508,10 +515,25 @@ def _extract_borough(title: str) -> str | None:
     return None
 
 
-def _source_rank(source_label: str) -> int:
-    label = str(source_label or "").lower()
+def _source_rank(source_label: str, category: str = "") -> int:
+    """Lower rank = better source. I4-aware.
+
+    Delegates to ``source_selection.source_rank`` (category + tier
+    aware) for any source label that appears in that registry. Falls
+    back to the legacy substring map only for the small set of media
+    sources whose labels are exact substrings of the source_label —
+    this keeps regressions impossible for ranges already covered by
+    the test suite while the I4 registry catches everything else.
+    """
+    from news_digest.pipeline.source_selection import SOURCE_TIER, source_rank
+
+    label = str(source_label or "")
+    if label in SOURCE_TIER or category:
+        # Registered in I4 OR we have a category to drive scoring.
+        return source_rank(label, category)
+    lowered = label.lower()
     for key, rank in _SOURCE_PRIORITY.items():
-        if key in label:
+        if key in lowered:
             return rank
     return 99
 
@@ -908,7 +930,10 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
         borough_i = _extract_borough(str(ci.get("title") or ""))
         block_i = str(ci.get("primary_block") or "")
         group_i = _dedup_block_group(block_i)
-        rank_i = _source_rank(str(ci.get("source_label") or ""))
+        rank_i = _source_rank(
+            str(ci.get("source_label") or ""),
+            str(ci.get("category") or ""),
+        )
 
         for j in range(i + 1, n):
             if j in to_drop:
@@ -952,7 +977,10 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                     if strong:
                         break
                 if strong:
-                    rank_j = _source_rank(str(cj.get("source_label") or ""))
+                    rank_j = _source_rank(
+                        str(cj.get("source_label") or ""),
+                        str(cj.get("category") or ""),
+                    )
                     if rank_i <= rank_j:
                         to_drop[j] = {"kept_index": i, "overlap": 0.0, "shared_entity": ",".join(sorted(shared_entities))[:60]}
                     else:
@@ -967,7 +995,10 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
             if overlap < 0.40:
                 continue
 
-            rank_j = _source_rank(str(cj.get("source_label") or ""))
+            rank_j = _source_rank(
+                str(cj.get("source_label") or ""),
+                str(cj.get("category") or ""),
+            )
             if rank_i <= rank_j:
                 to_drop[j] = {"kept_index": i, "overlap": round(overlap, 2)}
             else:
