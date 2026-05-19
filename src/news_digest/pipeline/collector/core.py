@@ -25,6 +25,7 @@ from news_digest.pipeline.common import (
     write_json,
 )
 from news_digest.pipeline.entity_extraction import enrich_candidates_entities
+from news_digest.pipeline.event_extraction import enrich_candidates_events
 from news_digest.pipeline.history import ensure_history_files
 
 from .extract import _extract_source_candidates
@@ -255,6 +256,9 @@ def collect_digest(project_root: Path) -> StageResult:
     _promote_to_today_focus(candidates)
     candidates.extend(_last_24h_fallback_candidates(candidates))
     enrich_candidates_entities(candidates)
+    # I3: structured event facts. Must run AFTER entity enrichment so
+    # extract_event() can reuse entities.venues / entities.boroughs.
+    enrich_candidates_events(candidates)
 
     checked_all = all(
         bool(report["categories"][key]["checked"])

@@ -390,6 +390,7 @@ def _call_provider_batch(
                     "freshness_status": c.get("freshness_status", ""),
                     "borough": c.get("borough", ""),
                     "entities": c.get("entities", {}),
+                    "event": c.get("event", {}),
                     "expected_operator": c.get("expected_operator", ""),
                     "transport_mode": c.get("transport_mode", ""),
                     "current_draft_line": c.get("draft_line", ""),
