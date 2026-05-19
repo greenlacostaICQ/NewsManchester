@@ -166,10 +166,12 @@ def _fetch_text(url: str, *, extra_headers: dict[str, str] | None = None) -> str
     if _host_is_cloudflare_protected(url):
         return _fetch_text_curl_cffi(url, headers)
 
-    req = request.Request(url, headers=headers)
+    current_url = url
+    req = request.Request(current_url, headers=headers)
     last_url_error: Exception | None = None
     rate_limit_attempted = False
-    for attempt in range(2):  # 1 initial + 1 retry
+    redirect_count = 0
+    for attempt in range(6):  # 1 initial + redirects/retry
         try:
             with request.urlopen(req, timeout=30) as response:
                 # 4MB cap: Stockport Events RSS alone is ~1.5MB; MEN front
@@ -179,6 +181,13 @@ def _fetch_text(url: str, *, extra_headers: dict[str, str] | None = None) -> str
                 charset = response.headers.get_content_charset() or "utf-8"
                 return raw.decode(charset, errors="replace")
         except error.HTTPError as exc:
+            if exc.code in {301, 302, 303, 307, 308}:
+                location = exc.headers.get("Location", "") if exc.headers else ""
+                if location and redirect_count < 4:
+                    redirect_count += 1
+                    current_url = parse.urljoin(current_url, location)
+                    req = request.Request(current_url, headers=headers)
+                    continue
             # Honour Retry-After on 429 (rate limit) — Ticketmaster's API
             # uses it on every rate-limit response. One retry after the
             # advertised wait usually clears it. Cap the wait at 30s so

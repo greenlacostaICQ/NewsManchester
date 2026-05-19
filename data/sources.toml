@@ -156,7 +156,8 @@ allowed_hosts = ["salford.gov.uk"]
 name = "Trafford Council"
 report_category = "media_layer"
 candidate_category = "council"
-url = "https://www.trafford.gov.uk/news"
+url = "https://www.trafford.gov.uk/"
+fallback_urls = ["https://www.trafford.gov.uk/news"]
 primary_block = "last_24h"
 allowed_hosts = ["trafford.gov.uk"]
 
@@ -307,7 +308,9 @@ name = "Co-op Live"
 report_category = "venues_tickets"
 candidate_category = "venues_tickets"
 url = "https://www.cooplive.com/events"
+fallback_urls = ["https://www.cooplive.com/events/", "https://www.cooplive.com/"]
 primary_block = "ticket_radar"
+allowed_hosts = ["cooplive.com"]
 
 [[sources]]
 name = "AO Arena"
@@ -680,6 +683,7 @@ allowed_hosts = ["fscmcr.co.uk"]
 
 [[sources]]
 name = "Eventbrite Manchester"
+enabled = false  # GitHub Actions runner gets HTTP 405 from Eventbrite search; covered by Skiddle/DesignMyNight/Manchester Rocks.
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.eventbrite.co.uk/d/united-kingdom--manchester/"
@@ -721,6 +725,7 @@ enabled = false
 # href + aria-label patterns. Includes Prestwich Makers Market, urban makers, etc.
 [[sources]]
 name = "Eventbrite Manchester Markets"
+enabled = false  # GitHub Actions runner gets HTTP 405 from Eventbrite search; direct market sources remain enabled below.
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.eventbrite.co.uk/d/united-kingdom--manchester/markets/"

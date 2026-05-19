@@ -789,7 +789,7 @@ def _summarise_synthetic_freshness(candidates_report: dict | None) -> dict[str, 
 
 def _count_per_source_yield(
     candidates_report: dict | None,
-    rendered_fingerprints: set[str] | list[str] | None,
+    rendered_fingerprints: set[str] | list[str] | dict | None,
 ) -> dict[str, dict[str, int]]:
     """O1: count, per source_label, how many candidates survived each
     downstream stage. Two columns matter for editorial review:
@@ -801,7 +801,10 @@ def _count_per_source_yield(
     rendered=0 is a flag — its material was killed late (writer quality
     gate, editor balance trim) and may need attention.
     """
-    rendered_set = set(rendered_fingerprints or ())
+    if isinstance(rendered_fingerprints, dict):
+        rendered_set = set(rendered_fingerprints.get("rendered_candidate_fingerprints") or ())
+    else:
+        rendered_set = set(rendered_fingerprints or ())
     yields: dict[str, dict[str, int]] = {}
     for candidate in (candidates_report or {}).get("candidates") or []:
         if not isinstance(candidate, dict):
@@ -822,7 +825,7 @@ def _count_per_source_yield(
 def _summarise_source_health(
     scan_report: dict | None,
     candidates_report: dict | None = None,
-    rendered_fingerprints: set[str] | list[str] | None = None,
+    rendered_fingerprints: set[str] | list[str] | dict | None = None,
 ) -> dict[str, object]:
     """R1: per-source status table + counts. Reads collector_report.json.
 
@@ -851,16 +854,22 @@ def _summarise_source_health(
                 name = str(entry.get("name") or "")
                 seen_names.add(name)
                 row_yield = yields.get(name) or {"curated": 0, "rendered": 0}
+                raw_count = int(entry.get("candidate_count") or 0)
+                accepted_count = int(row_yield["curated"])
                 sources.append(
                     {
                         "name": name,
                         "category": str(cat_name),
                         "status": status,
                         "detail": detail,
-                        "candidate_count": int(entry.get("candidate_count") or 0),
+                        "raw_count": raw_count,
+                        "accepted_count": accepted_count,
+                        "rejected_count": max(raw_count - accepted_count, 0),
+                        "rendered_count": int(row_yield["rendered"]),
+                        "failure_count": len(list(entry.get("errors") or [])),
+                        "candidate_count": raw_count,
                         "fresh_last_24h_count": int(entry.get("fresh_last_24h_count") or 0),
                         "curated_count": int(row_yield["curated"]),
-                        "rendered_count": int(row_yield["rendered"]),
                     }
                 )
 
@@ -887,10 +896,14 @@ def _summarise_source_health(
                 "category": "synthetic",
                 "status": status,
                 "detail": detail,
+                "raw_count": int(row["curated"]),
+                "accepted_count": int(row["curated"]),
+                "rejected_count": 0,
+                "rendered_count": int(row["rendered"]),
+                "failure_count": 0,
                 "candidate_count": int(row["curated"]),
                 "fresh_last_24h_count": 0,
                 "curated_count": int(row["curated"]),
-                "rendered_count": int(row["rendered"]),
             }
         )
 
@@ -1142,9 +1155,14 @@ def _aggregate_cost(state_dir: Path) -> dict:
                     provider=str(r.get("provider") or ""),
                     model=str(r.get("model") or ""),
                     prompt_name=str(r.get("prompt_name") or ""),
+                    prompt_version=str(r.get("prompt_version") or ""),
                     prompt_tokens=int(r.get("prompt_tokens") or 0),
                     completion_tokens=int(r.get("completion_tokens") or 0),
+                    estimated_prompt_tokens=int(r.get("estimated_prompt_tokens") or r.get("prompt_tokens") or 0),
+                    estimated_completion_tokens=int(r.get("estimated_completion_tokens") or r.get("completion_tokens") or 0),
                     cost_usd=float(r.get("cost_usd") or 0.0),
+                    estimated_cost_usd=float(r.get("estimated_cost_usd") or r.get("cost_usd") or 0.0),
+                    usage_source=str(r.get("usage_source") or "actual"),
                 )
             )
     return summarise(records)
@@ -1251,6 +1269,29 @@ def _append_cost_history(
     )
     history = history[-60:]
     write_json(history_path, history)
+
+
+def _write_outgoing_metadata(
+    metadata_path: Path,
+    *,
+    report_payload: dict,
+    prompt_versions: list[dict[str, str]],
+) -> None:
+    """Write sidecar metadata for the published digest."""
+    payload = {
+        "schema_version": 1,
+        "release_gate_version": report_payload.get("release_gate_version"),
+        "pipeline_run_id": report_payload.get("pipeline_run_id"),
+        "run_at_london": report_payload.get("run_at_london"),
+        "run_date_london": report_payload.get("run_date_london"),
+        "release_decision": report_payload.get("release_decision"),
+        "output_path": report_payload.get("output_path"),
+        "prompt_versions": prompt_versions,
+        "model_routing_policy": report_payload.get("model_routing_policy") or {},
+        "prompt_drift": report_payload.get("prompt_drift") or [],
+        "cost_summary": report_payload.get("cost_summary") or {},
+    }
+    write_json(metadata_path, payload)
 
 
 def build_release(project_root: Path) -> ReleaseResult:

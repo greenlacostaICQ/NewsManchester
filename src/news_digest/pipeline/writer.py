@@ -442,6 +442,39 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
     return f"• Концерт {title}. {practical}"
 
 
+def _service_fallback_subject(title: str) -> str:
+    cleaned = re.sub(r"\s*\|\s*News and Events\s*$", "", str(title or ""), flags=re.IGNORECASE)
+    replacements = (
+        (r"^NHS England's Independent Assurance Review published today$", "NHS England опубликовала независимый обзор качества"),
+        (r"^Greater Manchester Mental Health NHS Foundation Trust appoints new Chief Executive$", "GMMH назначил нового руководителя"),
+        (r"\bChief Executive\b", "руководителя"),
+        (r"\bIndependent Assurance Review\b", "независимый обзор качества"),
+        (r"\bpublished today\b", "опубликован сегодня"),
+        (r"\bappoints\b", "назначает"),
+    )
+    for pattern, repl in replacements:
+        cleaned = re.sub(pattern, repl, cleaned, flags=re.IGNORECASE)
+    return re.sub(r"\s+", " ", cleaned).strip(" .") or "опубликовано обновление"
+
+
+def _build_public_service_fallback_line(candidate: dict) -> str:
+    source_label = str(candidate.get("source_label") or "Public services").strip()
+    title = _service_fallback_subject(str(candidate.get("title") or ""))
+    summary = str(candidate.get("summary") or candidate.get("lead") or "").strip()
+    if "progress" in summary.lower() and "improv" in summary.lower():
+        detail = "в сообщении говорится о прогрессе в улучшении качества и безопасности помощи"
+    elif "appointment" in summary.lower() or "chief executive" in summary.lower():
+        detail = "это кадровое обновление может повлиять на управление сервисами"
+    elif summary:
+        detail = "это обновление касается работы сервиса и доступа к помощи"
+    else:
+        detail = "это обновление касается работы публичного сервиса"
+    return (
+        f"• {source_label}: {title}; {detail}. "
+        "Если вы пользуетесь этим сервисом, уточните актуальные изменения на странице организации."
+    )
+
+
 def _current_weekend_end() -> date:
     today = now_london().date()
     days_until_sunday = (6 - today.weekday()) % 7
@@ -929,6 +962,11 @@ def write_digest(project_root: Path) -> StageResult:
             line = _build_ticket_fallback_line(candidate)
             warnings.append(f"Candidate #{index}: ticket fallback stub used (no LLM draft_line).")
             logger.info("TIER4 ticket stub | %s | %s", block_key, title[:80])
+
+        if not line and category == "public_services":
+            line = _build_public_service_fallback_line(candidate)
+            warnings.append(f"Candidate #{index}: public-services fallback stub used (no LLM draft_line).")
+            logger.info("TIER4 public_services stub | %s | %s", block_key, title[:80])
 
         if not line:
             if category in REQUIRE_DRAFT_LINE_CATEGORIES:

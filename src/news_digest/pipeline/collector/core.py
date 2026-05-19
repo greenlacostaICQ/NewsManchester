@@ -244,7 +244,9 @@ def collect_digest(project_root: Path) -> StageResult:
 
     report["categories"]["public_services"]["active_disruption_today"] = any(
         isinstance(candidate, dict)
+        and candidate.get("include")
         and candidate.get("category") == "public_services"
+        and str(candidate.get("freshness_status") or "") != "stale"
         and _looks_like_active_disruption(str(candidate.get("title") or ""))
         for candidate in candidates
     )

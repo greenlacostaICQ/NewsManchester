@@ -4,7 +4,11 @@ import unittest
 
 from news_digest.pipeline.dedupe import _similar_published_titles
 from news_digest.pipeline.transport_fill import _make_reminder_candidate
-from news_digest.pipeline.writer import _build_ticket_fallback_line, _draft_line_quality_errors
+from news_digest.pipeline.writer import (
+    _build_public_service_fallback_line,
+    _build_ticket_fallback_line,
+    _draft_line_quality_errors,
+)
 
 
 class DedupeTransportTest(unittest.TestCase):
@@ -105,6 +109,28 @@ class DedupeTransportTest(unittest.TestCase):
         self.assertIn("31 мая", line)
         self.assertIn("Co-op Live", line)
         self.assertIn("Madison Beer the locket tour", line)
+        self.assertEqual(_draft_line_quality_errors(candidate, line), [])
+
+    def test_public_services_fallback_keeps_nhs_review_when_rewrite_misses(self) -> None:
+        candidate = {
+            "category": "public_services",
+            "primary_block": "today_focus",
+            "title": "NHS England's Independent Assurance Review published today | News and Events",
+            "summary": (
+                "Working with our service users, people and partners we have made significant progress "
+                "on our improvement journey and remain committed to improving safe, high-quality patient care."
+            ),
+            "lead": "",
+            "evidence_text": (
+                "Working with our service users, people and partners we have made significant progress "
+                "on our improvement journey and remain committed to improving safe, high-quality patient care."
+            ),
+            "source_label": "GMMH",
+        }
+
+        line = _build_public_service_fallback_line(candidate)
+
+        self.assertIn("независимый обзор качества", line)
         self.assertEqual(_draft_line_quality_errors(candidate, line), [])
 
 

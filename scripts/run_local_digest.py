@@ -631,7 +631,8 @@ def cmd_send_warnings() -> int:
 
     # Trigger when there is anything worth surfacing.
     has_signal = (
-        bool(lost_leads)
+        report.get("release_decision") != "pass"
+        or bool(lost_leads)
         or bool(section_underflow)
         or health_level != "healthy"
         or bool(suspicious_rejects)
@@ -642,14 +643,18 @@ def cmd_send_warnings() -> int:
         return 0
 
     run_date = report.get("run_date_london") or ""
+    release_decision = str(report.get("release_decision") or "").strip()
+    release_errors = [str(e) for e in (report.get("errors") or []) if str(e).strip()]
     icon = {"healthy": "✅", "at_risk": "🟡", "unhealthy": "🔴"}.get(health_level, "⚠️")
     useful = summary.get("useful_items", "?")
 
     # ── Заголовок ─────────────────────────────────────────────────
-    lines: list[str] = [
-        f"{icon} Выпуск {run_date} — {useful} новостей ушло читателю",
-        "",
-    ]
+    if release_decision == "pass":
+        header = f"{icon} Выпуск {run_date} — {useful} новостей ушло читателю"
+    else:
+        reason = f": {release_errors[0]}" if release_errors else ""
+        header = f"⛔ Выпуск {run_date} НЕ отправлен — release gate {release_decision or 'unknown'}{reason}"
+    lines: list[str] = [header, ""]
 
     # ── Что могли пропустить (главное для редактора) ──────────────
     suspicious_groups = _group_suspicious_rejects(suspicious_rejects) if suspicious_rejects else {}
