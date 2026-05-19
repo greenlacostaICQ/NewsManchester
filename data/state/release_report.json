@@ -1,72 +1,86 @@
 {
   "release_gate_version": 3,
-  "pipeline_run_id": "20260518T084113+0100",
-  "run_at_london": "2026-05-18T08:45:05.954391+01:00",
-  "run_date_london": "2026-05-18",
-  "release_decision": "pass",
-  "message": "Release passed. Promoted /home/runner/work/NewsManchester/NewsManchester/data/state/draft_digest.html to /home/runner/work/NewsManchester/NewsManchester/data/outgoing/current_digest.html.",
-  "errors": [],
+  "pipeline_run_id": "20260519T080049+0100",
+  "run_at_london": "2026-05-19T08:09:01.251833+01:00",
+  "run_date_london": "2026-05-19",
+  "release_decision": "fail",
+  "message": "Digest release is blocked until collector, dedupe, validator, writer and gate inputs pass.",
+  "errors": [
+    "Active public-services disruption is marked for today but not visible in the digest."
+  ],
   "warnings": [
-    "LLM rewrite was degraded; writer/release quality gates handled the remaining candidates."
+    "LLM rewrite was degraded; writer/release quality gates handled the remaining candidates.",
+    "Quality: 4 candidate(s) dropped for missing draft_line — LLM rewrite yield is low.",
+    "Section underflow: «Что важно сегодня» shipped 2 items (min=3) while writer dropped 1 candidate(s) that targeted this section — quality gates may be too strict.",
+    "Source health: 4 source(s) failed today — check release_report.source_status for the list.",
+    "Source yield: 52 source(s) fetched today but contributed nothing to the digest — review release_report.source_status (sort by curated_count=0).",
+    "Rejected review: 2 suspiciously rejected candidate(s) — see release_report.reject_review."
   ],
   "lost_leads": [],
-  "section_underflow": [],
+  "section_underflow": [
+    {
+      "section": "Что важно сегодня",
+      "actual": 2,
+      "minimum": 3,
+      "dropped_by_writer": 1
+    }
+  ],
   "cost_summary": {
-    "total_calls": 17,
-    "total_cost_usd": 0.03143,
-    "total_prompt_tokens": 73426,
-    "total_completion_tokens": 12530,
+    "total_calls": 23,
+    "total_cost_usd": 0.047653,
+    "total_prompt_tokens": 118797,
+    "total_completion_tokens": 18218,
     "by_stage": {
       "llm_rewrite": {
-        "calls": 9,
-        "prompt_tokens": 37882,
-        "completion_tokens": 6516,
-        "cost_usd": 0.01521724
+        "calls": 13,
+        "prompt_tokens": 70074,
+        "completion_tokens": 9874,
+        "cost_usd": 0.025319070000000006
       },
       "curator": {
-        "calls": 8,
-        "prompt_tokens": 35544,
-        "completion_tokens": 6014,
-        "cost_usd": 0.016212280000000003
+        "calls": 10,
+        "prompt_tokens": 48723,
+        "completion_tokens": 8344,
+        "cost_usd": 0.022333610000000004
       }
     },
     "by_provider": {
       "DeepSeek": {
-        "calls": 14,
-        "prompt_tokens": 65051,
-        "completion_tokens": 11440,
-        "cost_usd": 0.030147769999999997
+        "calls": 18,
+        "prompt_tokens": 97614,
+        "completion_tokens": 15901,
+        "cost_usd": 0.043846880000000005
       },
       "OpenAI": {
-        "calls": 2,
-        "prompt_tokens": 5457,
-        "completion_tokens": 772,
-        "cost_usd": 0.00128175
+        "calls": 4,
+        "prompt_tokens": 17400,
+        "completion_tokens": 1993,
+        "cost_usd": 0.0038058
       },
       "Groq": {
         "calls": 1,
-        "prompt_tokens": 2918,
-        "completion_tokens": 318,
+        "prompt_tokens": 3783,
+        "completion_tokens": 324,
         "cost_usd": 0.0
       }
     },
     "by_model": {
       "deepseek-chat": {
-        "calls": 14,
-        "prompt_tokens": 65051,
-        "completion_tokens": 11440,
-        "cost_usd": 0.030147769999999997
+        "calls": 18,
+        "prompt_tokens": 97614,
+        "completion_tokens": 15901,
+        "cost_usd": 0.043846880000000005
       },
       "gpt-4o-mini": {
-        "calls": 2,
-        "prompt_tokens": 5457,
-        "completion_tokens": 772,
-        "cost_usd": 0.00128175
+        "calls": 4,
+        "prompt_tokens": 17400,
+        "completion_tokens": 1993,
+        "cost_usd": 0.0038058
       },
       "llama-3.3-70b-versatile": {
         "calls": 1,
-        "prompt_tokens": 2918,
-        "completion_tokens": 318,
+        "prompt_tokens": 3783,
+        "completion_tokens": 324,
         "cost_usd": 0.0
       }
     },
@@ -74,15 +88,31 @@
   },
   "change_type_summary": {
     "counts": {
-      "new_story": 71,
-      "same_story_new_facts": 38,
-      "same_story_rehash": 41,
+      "new_story": 113,
+      "same_story_new_facts": 39,
+      "same_story_rehash": 42,
       "follow_up": 17,
-      "reminder": 18,
-      "no_change": 119,
+      "reminder": 24,
+      "no_change": 59,
       "unclassified": 0
     },
     "auto_rejected_examples": [
+      {
+        "change_type": "no_change",
+        "title": "He failed his A Levels and can't spell - but now runs his own company",
+        "reason": "Без новых фактов: уже был 2026-05-18 как «He failed his A Levels and can't spell - but now runs his own company». LLM-review: Тот же сюжет, просто новая редакция без новых фактов.",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-real-life-failed-levels-cant-spell-now-33885560",
+        "previous_published_day": "2026-05-18",
+        "previous_title": "He failed his A Levels and can't spell - but now runs his own company"
+      },
+      {
+        "change_type": "no_change",
+        "title": "'It's killed me to ask him if he wants to die, but he doesn't - he wants to fight'",
+        "reason": "Без новых фактов: уже был 2026-05-18 как «'It's killed me to ask him if he wants to die, but he doesn't - he wants to fight'». LLM-review: Тот же сюжет, просто новая редакция без новых фактов.",
+        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-its-killed-ask-him-wants-33945700",
+        "previous_published_day": "2026-05-18",
+        "previous_title": "'It's killed me to ask him if he wants to die, but he doesn't - he wants to fight'"
+      },
       {
         "change_type": "same_story_rehash",
         "title": "The uncomfortable truth behind Greater Manchester's local election results",
@@ -92,76 +122,60 @@
         "previous_title": "The full list of 2026 local election results for Greater Manchester — here's how each borough voted"
       },
       {
-        "change_type": "same_story_rehash",
-        "title": "Nigel Farage takes aim at Andy Burnham as Brexit row erupts in Makerfield by-election battle",
-        "reason": "Повтор сюжета без новых деталей: уже был 2026-05-15 как «Hold on, could Andy Burnham actually lose the Makerfield by-election?».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-hold-on-could-andy-burnham-33949753",
-        "previous_published_day": "2026-05-15",
-        "previous_title": "Hold on, could Andy Burnham actually lose the Makerfield by-election?"
-      },
-      {
-        "change_type": "no_change",
-        "title": "'I became a bus driver in Manchester - now people know me from TikTok'",
-        "reason": "Без новых фактов: уже был 2026-05-17 как «'I became a bus driver in Manchester - now people know me from TikTok'».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-i-became-bus-driver-manchester-33925695",
-        "previous_published_day": "2026-05-17",
-        "previous_title": "'I became a bus driver in Manchester - now people know me from TikTok'"
-      },
-      {
-        "change_type": "no_change",
-        "title": "How do you solve a problem like Strangeways?",
-        "reason": "Без новых фактов: уже был 2026-05-17 как «How do you solve a problem like Strangeways?».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-how-you-solve-problem-like-33942311",
-        "previous_published_day": "2026-05-17",
-        "previous_title": "How do you solve a problem like Strangeways?"
-      },
-      {
-        "change_type": "no_change",
-        "title": "'Andy Burnham once came into our pub and we made him pull his own pint'",
-        "reason": "Без новых фактов: уже был 2026-05-17 как «'Andy Burnham once came into our pub and we made him pull his own pint'».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-whats-on-food-drink-news-andy-burnham-once-came-pub-33942296",
-        "previous_published_day": "2026-05-17",
-        "previous_title": "'Andy Burnham once came into our pub and we made him pull his own pint'"
-      },
-      {
-        "change_type": "no_change",
-        "title": "28 shipments came in from the US - there wasn't just vintage clothing inside",
-        "reason": "Без новых фактов: уже был 2026-05-14 как «28 shipments came in from the US - there wasn't just vintage clothing inside».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-28-shipments-came-wasnt-just-33927705",
-        "previous_published_day": "2026-05-14",
-        "previous_title": "28 shipments came in from the US - there wasn't just vintage clothing inside"
-      },
-      {
-        "change_type": "no_change",
-        "title": "Manchester's new 'Green wall' - will voters in Burnage and Moston ever return to Labour?",
-        "reason": "Без новых фактов: уже был 2026-05-16 как «Manchester's new 'Green wall' - will voters in Burnage and Moston ever return to Labour?».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-manchesters-new-green-wall-voters-33948978",
-        "previous_published_day": "2026-05-16",
-        "previous_title": "Manchester's new 'Green wall' - will voters in Burnage and Moston ever return to Labour?"
-      },
-      {
-        "change_type": "no_change",
-        "title": "'Manchester changed forever after what happened in 1996 - adversity brought people together'",
-        "reason": "Без новых фактов: уже был 2026-05-17 как «'Manchester changed forever after what happened in 1996 - adversity brought people together'».",
-        "previous_fingerprint": "media-layer-men-manchestereveningnews-co-uk-whats-on-whats-on-news-manchester-changed-forever-after-what-33947608",
-        "previous_published_day": "2026-05-17",
-        "previous_title": "'Manchester changed forever after what happened in 1996 - adversity brought people together'"
-      },
-      {
-        "change_type": "no_change",
-        "title": "Burnham out, Reform in? What happens to Greater Manchester after Andy",
-        "reason": "Без новых фактов: уже был 2026-05-16 как «Burnham out, Reform in? What happens to Greater Manchester after Andy».",
-        "previous_fingerprint": "media-layer-the-mill-manchestermill-co-uk-burnham-out-reform-in-what-happens-to-greater-manchester-after-andy",
-        "previous_published_day": "2026-05-16",
-        "previous_title": "Burnham out, Reform in? What happens to Greater Manchester after Andy"
-      },
-      {
         "change_type": "no_change",
         "title": "Firebombings, silk pyjamas and a rout for Reform",
-        "reason": "Без новых фактов: уже был 2026-05-12 как «Firebombings, silk pyjamas and a rout for Reform».",
+        "reason": "Без новых фактов: уже был 2026-05-12 как «Firebombings, silk pyjamas and a rout for Reform». LLM-review: Тот же сюжет, просто новая редакция без новых фактов.",
         "previous_fingerprint": "media-layer-the-mill-manchestermill-co-uk-firebombings-silk-pyjamas-and-a-rout-for-reform",
         "previous_published_day": "2026-05-12",
         "previous_title": "Firebombings, silk pyjamas and a rout for Reform"
+      },
+      {
+        "change_type": "no_change",
+        "title": "Council gives market traders until 2028",
+        "reason": "Без новых фактов: уже был 2026-05-16 как «Council gives market traders until 2028». LLM-review: Тот же сюжет, просто новая редакция без новых фактов.",
+        "previous_fingerprint": "media-layer-the-mill-manchestermill-co-uk-council-gives-market-traders-until-2028",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "Council gives market traders until 2028"
+      },
+      {
+        "change_type": "no_change",
+        "title": "Northern Quarter residents keep finding their own flats on Rightmove. Is AI to blame?",
+        "reason": "Без новых фактов: уже был 2026-05-16 как «Northern Quarter residents keep finding their own flats on Rightmove. Is AI to blame?». LLM-review: Тот же сюжет, просто новая редакция без новых фактов.",
+        "previous_fingerprint": "media-layer-the-mill-manchestermill-co-uk-northern-quarter-residents-keep-finding-their-own-flats-on-rightmove-is-ai-to-blame",
+        "previous_published_day": "2026-05-16",
+        "previous_title": "Northern Quarter residents keep finding their own flats on Rightmove. Is AI to blame?"
+      },
+      {
+        "change_type": "same_story_rehash",
+        "title": "Council sets out plans to rework busy Manchester junction after ‘serious safety concerns'",
+        "reason": "Повтор сюжета без новых деталей: уже был 2026-05-14 как «Bold new plans set out to transform problem south Manchester junction | Manchester City Council».",
+        "previous_fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-bold-new-plans-set-out-to-transform-problem-south-manchester-junction",
+        "previous_published_day": "2026-05-14",
+        "previous_title": "Bold new plans set out to transform problem south Manchester junction | Manchester City Council"
+      },
+      {
+        "change_type": "no_change",
+        "title": "Canal Street cordoned off after ‘suspicious chemicals' reported at hotel",
+        "reason": "Без новых фактов: уже был 2026-05-12 как «Canal Street cordoned off after &#8216;suspicious chemicals&#8217; reported at hotel». LLM-review: Тот же сюжет, просто новая редакция без новых фактов.",
+        "previous_fingerprint": "media-layer-the-manc-themanc-com-news-canal-street-cordoned-off-after-suspicious-chemicals-reported-at-hotel",
+        "previous_published_day": "2026-05-12",
+        "previous_title": "Canal Street cordoned off after &#8216;suspicious chemicals&#8217; reported at hotel"
+      },
+      {
+        "change_type": "no_change",
+        "title": "Timperley office block earmarked for 34 new apartments",
+        "reason": "Без новых фактов: уже был 2026-05-07 как «Timperley office block earmarked for 34 new apartments». LLM-review: Тот же сюжет, просто новая редакция без новых фактов.",
+        "previous_fingerprint": "media-layer-altrincham-today-altrincham-todaynews-co-uk-altrincham-property-2026-05-07-timperley-office-block-earmarked-for-34-new-apartments",
+        "previous_published_day": "2026-05-07",
+        "previous_title": "Timperley office block earmarked for 34 new apartments"
+      },
+      {
+        "change_type": "no_change",
+        "title": "\"Major incident\" declared as homes flooded, cars stranded and canal breached after New Year's night of torrential rain",
+        "reason": "Без новых фактов: уже был 2026-05-10 как «\"Major incident\" declared as homes flooded, cars stranded and canal breached after New Year's night of torrential rain». LLM-review: Тот же сюжет, просто новая редакция без новых фактов.",
+        "previous_fingerprint": "media-layer-altrincham-today-altrincham-todaynews-co-uk-weather-2025-01-01-major-incident-altrincham-timperley-homes-flooded-cars-stranded-and-canal-breached",
+        "previous_published_day": "2026-05-10",
+        "previous_title": "\"Major incident\" declared as homes flooded, cars stranded and canal breached after New Year's night of torrential rain"
       }
     ]
   },
@@ -172,20 +186,23 @@
   },
   "source_status": {
     "counts": {
-      "ok": 55,
+      "ok": 62,
       "partial": 0,
-      "stale": 22,
-      "empty": 13,
-      "failed": 1
+      "stale": 16,
+      "empty": 10,
+      "failed": 4,
+      "zero_yield": 52
     },
     "sources": [
       {
         "name": "BBC Manchester",
         "category": "media_layer",
-        "status": "empty",
-        "detail": "fetched but no candidate links parsed",
-        "candidate_count": 0,
-        "fresh_last_24h_count": 0
+        "status": "ok",
+        "detail": "3 item(s), 3 fresh in last 24h",
+        "candidate_count": 3,
+        "fresh_last_24h_count": 3,
+        "curated_count": 3,
+        "rendered_count": 3
       },
       {
         "name": "MEN",
@@ -193,31 +210,39 @@
         "status": "ok",
         "detail": "25 item(s), 22 fresh in last 24h",
         "candidate_count": 25,
-        "fresh_last_24h_count": 22
+        "fresh_last_24h_count": 22,
+        "curated_count": 17,
+        "rendered_count": 15
       },
       {
         "name": "The Mill",
         "category": "media_layer",
-        "status": "stale",
-        "detail": "6 item(s) but 0 fresh in last 24h — feed is dormant",
-        "candidate_count": 6,
-        "fresh_last_24h_count": 0
+        "status": "ok",
+        "detail": "7 item(s), 1 fresh in last 24h",
+        "candidate_count": 7,
+        "fresh_last_24h_count": 1,
+        "curated_count": 1,
+        "rendered_count": 0
       },
       {
         "name": "The Manc",
         "category": "media_layer",
-        "status": "stale",
-        "detail": "7 item(s) but 0 fresh in last 24h — feed is dormant",
-        "candidate_count": 7,
-        "fresh_last_24h_count": 0
+        "status": "ok",
+        "detail": "8 item(s), 2 fresh in last 24h",
+        "candidate_count": 8,
+        "fresh_last_24h_count": 2,
+        "curated_count": 2,
+        "rendered_count": 2
       },
       {
         "name": "Altrincham Today",
         "category": "media_layer",
-        "status": "stale",
-        "detail": "10 item(s) but 0 fresh in last 24h — feed is dormant",
+        "status": "ok",
+        "detail": "10 item(s), 3 fresh in last 24h",
         "candidate_count": 10,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 3,
+        "curated_count": 3,
+        "rendered_count": 3
       },
       {
         "name": "I Love Manchester",
@@ -225,15 +250,19 @@
         "status": "stale",
         "detail": "4 item(s) but 0 fresh in last 24h — feed is dormant",
         "candidate_count": 4,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 3,
+        "rendered_count": 3
       },
       {
         "name": "Secret Manchester",
         "category": "media_layer",
-        "status": "stale",
-        "detail": "3 item(s) but 0 fresh in last 24h — feed is dormant",
-        "candidate_count": 3,
-        "fresh_last_24h_count": 0
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "GMCA",
@@ -241,7 +270,9 @@
         "status": "stale",
         "detail": "3 item(s) but 0 fresh in last 24h — feed is dormant",
         "candidate_count": 3,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Manchester Council",
@@ -249,23 +280,29 @@
         "status": "stale",
         "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 1
       },
       {
         "name": "Trafford Council",
         "category": "media_layer",
-        "status": "stale",
-        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
-        "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "status": "failed",
+        "detail": "HTTP 403",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Stockport Council",
         "category": "media_layer",
         "status": "stale",
-        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
-        "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "detail": "4 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 4,
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 1
       },
       {
         "name": "Oldham Council",
@@ -273,23 +310,29 @@
         "status": "stale",
         "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Rochdale Council",
         "category": "media_layer",
-        "status": "stale",
-        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
+        "status": "ok",
+        "detail": "5 item(s), 1 fresh in last 24h",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 1,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Bolton Council",
         "category": "media_layer",
-        "status": "stale",
-        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
+        "status": "ok",
+        "detail": "5 item(s), 2 fresh in last 24h",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 2,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Bury Council",
@@ -297,15 +340,19 @@
         "status": "stale",
         "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 1
       },
       {
         "name": "Wigan Council",
         "category": "media_layer",
-        "status": "failed",
-        "detail": "HTTP 504",
-        "candidate_count": 0,
-        "fresh_last_24h_count": 0
+        "status": "stale",
+        "detail": "3 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 3,
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 1
       },
       {
         "name": "University of Salford",
@@ -313,7 +360,9 @@
         "status": "stale",
         "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "University of Manchester",
@@ -321,7 +370,9 @@
         "status": "stale",
         "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 0
       },
       {
         "name": "TfGM",
@@ -329,7 +380,9 @@
         "status": "stale",
         "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 5,
+        "rendered_count": 5
       },
       {
         "name": "National Rail",
@@ -337,7 +390,9 @@
         "status": "stale",
         "detail": "2 item(s) but 0 fresh in last 24h — feed is dormant",
         "candidate_count": 2,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 1
       },
       {
         "name": "BBC Manchester public safety fallback",
@@ -345,15 +400,19 @@
         "status": "empty",
         "detail": "fetched but no candidate links parsed",
         "candidate_count": 0,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "GMMH",
         "category": "public_services",
         "status": "stale",
-        "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
-        "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "detail": "4 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 4,
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 0
       },
       {
         "name": "HOME",
@@ -361,7 +420,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 2,
+        "rendered_count": 2
       },
       {
         "name": "Whitworth",
@@ -369,7 +430,9 @@
         "status": "ok",
         "detail": "4 item(s)",
         "candidate_count": 4,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Factory International",
@@ -377,7 +440,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 0
       },
       {
         "name": "The Lowry",
@@ -385,7 +450,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 3,
+        "rendered_count": 3
       },
       {
         "name": "Palace Theatre",
@@ -393,7 +460,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Contact Theatre",
@@ -401,7 +470,9 @@
         "status": "ok",
         "detail": "2 item(s)",
         "candidate_count": 2,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "People's History Museum",
@@ -409,7 +480,9 @@
         "status": "ok",
         "detail": "3 item(s)",
         "candidate_count": 3,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 1
       },
       {
         "name": "John Rylands Library",
@@ -417,7 +490,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Visit Manchester",
@@ -425,15 +500,19 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Manchester's Finest Events",
         "category": "culture_weekly",
         "status": "ok",
-        "detail": "7 item(s)",
-        "candidate_count": 7,
-        "fresh_last_24h_count": 0
+        "detail": "8 item(s)",
+        "candidate_count": 8,
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 1
       },
       {
         "name": "Pedddle Markets",
@@ -441,7 +520,9 @@
         "status": "empty",
         "detail": "fetched but no candidate links parsed",
         "candidate_count": 0,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Pedddle Makers Market",
@@ -449,7 +530,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Manchester Wire",
@@ -457,7 +540,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 3,
+        "rendered_count": 1
       },
       {
         "name": "Creative Tourist Manchester",
@@ -465,7 +550,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 0
       },
       {
         "name": "DesignMyNight Manchester",
@@ -473,7 +560,9 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 0
       },
       {
         "name": "Fairfield Social Club",
@@ -481,15 +570,19 @@
         "status": "ok",
         "detail": "4 item(s)",
         "candidate_count": 4,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 0
       },
       {
         "name": "Eventbrite Manchester",
         "category": "culture_weekly",
-        "status": "ok",
-        "detail": "5 item(s)",
-        "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "status": "failed",
+        "detail": "HTTP 405",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Skiddle Manchester",
@@ -497,15 +590,19 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Eventbrite Manchester Markets",
         "category": "culture_weekly",
-        "status": "ok",
-        "detail": "4 item(s)",
-        "candidate_count": 4,
-        "fresh_last_24h_count": 0
+        "status": "failed",
+        "detail": "HTTP 405",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "PHM Makers Market",
@@ -513,7 +610,9 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "First Street Makers Market",
@@ -521,7 +620,9 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "South Manchester Food Festival",
@@ -529,15 +630,19 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Great Northern Makers Market",
         "category": "culture_weekly",
-        "status": "empty",
-        "detail": "fetched but no candidate links parsed",
-        "candidate_count": 0,
-        "fresh_last_24h_count": 0
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Spinningfields Makers Market",
@@ -545,15 +650,19 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Levenshulme Artisan Market",
         "category": "culture_weekly",
-        "status": "empty",
-        "detail": "fetched but no candidate links parsed",
-        "candidate_count": 0,
-        "fresh_last_24h_count": 0
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 0
       },
       {
         "name": "Northern Quarter Makers Market",
@@ -561,15 +670,19 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Altrincham Market",
         "category": "culture_weekly",
-        "status": "empty",
-        "detail": "fetched but no candidate links parsed",
-        "candidate_count": 0,
-        "fresh_last_24h_count": 0
+        "status": "ok",
+        "detail": "1 item(s)",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Stockport Makers Market",
@@ -577,7 +690,9 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Urmston Artisan Market",
@@ -585,7 +700,9 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Chorlton Makers Market",
@@ -593,7 +710,9 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Barton Aerodrome Car Boot",
@@ -601,7 +720,9 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 1
       },
       {
         "name": "Bowlee Car Boot Sale",
@@ -609,7 +730,9 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 1
       },
       {
         "name": "New Smithfield Sunday Market",
@@ -617,7 +740,9 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Burnage RFC Car Boot Sale",
@@ -625,7 +750,9 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "The BIG Stockport Car Boot",
@@ -633,7 +760,9 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Bolton Car Boot Sale",
@@ -641,7 +770,9 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Warrington Car Boot Sale",
@@ -649,7 +780,9 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "The Manc Weekly Things To Do",
@@ -657,7 +790,9 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Time Out Manchester",
@@ -665,7 +800,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Stockport Events",
@@ -673,15 +810,19 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 2,
+        "rendered_count": 0
       },
       {
         "name": "Co-op Live",
         "category": "venues_tickets",
-        "status": "ok",
-        "detail": "5 item(s)",
-        "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "status": "failed",
+        "detail": "HTTP 307",
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Ticketmaster Manchester Onsale",
@@ -689,7 +830,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Ticketmaster Liverpool Onsale",
@@ -697,7 +840,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Ticketmaster Manchester Upcoming",
@@ -705,7 +850,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 4,
+        "rendered_count": 4
       },
       {
         "name": "Ticketmaster Liverpool Upcoming",
@@ -713,7 +860,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Ticketmaster London Major Onsale",
@@ -721,7 +870,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Ticketmaster London Major Upcoming",
@@ -729,7 +880,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Bridgewater Hall",
@@ -737,7 +890,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Albert Hall Manchester",
@@ -745,7 +900,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Band on the Wall",
@@ -753,7 +910,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "RNCM",
@@ -761,7 +920,9 @@
         "status": "empty",
         "detail": "fetched but no candidate links parsed",
         "candidate_count": 0,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Manchester's Finest",
@@ -769,15 +930,19 @@
         "status": "ok",
         "detail": "3 item(s)",
         "candidate_count": 3,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 1
       },
       {
         "name": "About Manchester Food & Drink",
         "category": "food_openings",
         "status": "ok",
-        "detail": "1 item(s)",
-        "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "detail": "2 item(s)",
+        "candidate_count": 2,
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 1
       },
       {
         "name": "The Manc Eats",
@@ -785,7 +950,9 @@
         "status": "ok",
         "detail": "5 item(s)",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 4,
+        "rendered_count": 4
       },
       {
         "name": "ReMarket Mato",
@@ -793,7 +960,9 @@
         "status": "empty",
         "detail": "fetched but no candidate links parsed",
         "candidate_count": 0,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "VisitSalford Markets",
@@ -801,7 +970,9 @@
         "status": "ok",
         "detail": "2 item(s)",
         "candidate_count": 2,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "SK Lowdown Markets",
@@ -809,7 +980,9 @@
         "status": "ok",
         "detail": "3 item(s)",
         "candidate_count": 3,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 1
       },
       {
         "name": "Manchester United",
@@ -817,15 +990,19 @@
         "status": "stale",
         "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 3,
+        "rendered_count": 3
       },
       {
         "name": "Manchester City",
         "category": "football",
         "status": "stale",
-        "detail": "3 item(s) but 0 fresh in last 24h — feed is dormant",
-        "candidate_count": 3,
-        "fresh_last_24h_count": 0
+        "detail": "4 item(s) but 0 fresh in last 24h — feed is dormant",
+        "candidate_count": 4,
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 1
       },
       {
         "name": "Manchester Digital",
@@ -833,7 +1010,9 @@
         "status": "stale",
         "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Prolific North",
@@ -841,7 +1020,9 @@
         "status": "empty",
         "detail": "fetched but no candidate links parsed",
         "candidate_count": 0,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "BusinessCloud",
@@ -849,7 +1030,9 @@
         "status": "empty",
         "detail": "fetched but no candidate links parsed",
         "candidate_count": 0,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Bdaily Manchester",
@@ -857,7 +1040,9 @@
         "status": "empty",
         "detail": "fetched but no candidate links parsed",
         "candidate_count": 0,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "MIDAS Manchester",
@@ -865,7 +1050,9 @@
         "status": "stale",
         "detail": "5 item(s) but 0 fresh in last 24h — feed is dormant",
         "candidate_count": 5,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Manchester Academy Diaspora",
@@ -873,7 +1060,9 @@
         "status": "empty",
         "detail": "fetched but no candidate links parsed",
         "candidate_count": 0,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "EventFirst Diaspora",
@@ -881,7 +1070,9 @@
         "status": "empty",
         "detail": "fetched but no candidate links parsed",
         "candidate_count": 0,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "UK Stand-Up Club",
@@ -889,7 +1080,9 @@
         "status": "ok",
         "detail": "2 item(s)",
         "candidate_count": 2,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "UK Stand-Up Club Eventbrite",
@@ -897,7 +1090,9 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
       },
       {
         "name": "Kontramarka UK",
@@ -905,37 +1100,104 @@
         "status": "ok",
         "detail": "1 item(s)",
         "candidate_count": 1,
-        "fresh_last_24h_count": 0
+        "fresh_last_24h_count": 0,
+        "curated_count": 0,
+        "rendered_count": 0
+      },
+      {
+        "name": "Met Office",
+        "category": "synthetic",
+        "status": "ok",
+        "detail": "synthetic: 1 item(s) rendered",
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0,
+        "curated_count": 1,
+        "rendered_count": 1
       }
     ]
   },
   "reject_review": {
     "counts": {
-      "correctly_rejected": 36,
-      "borderline": 1,
-      "suspiciously_rejected": 0
+      "correctly_rejected": 32,
+      "borderline": 3,
+      "suspiciously_rejected": 2
     },
-    "suspiciously_rejected": [],
+    "suspiciously_rejected": [
+      {
+        "stage": "writer",
+        "title": "From £2k start to £200m Manchester leggings empire - the meteoric rise of Adanola founder Hyrum Cook",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "reasons": [
+          "Pound amount £2000 not present in evidence_text."
+        ],
+        "is_lead": false
+      },
+      {
+        "stage": "writer",
+        "title": "Entrepreneurial spirit or sheer greed? Why hundreds queued at Swatch stores that ended in chaos",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "reasons": [
+          "Pound amount £1600 not present in evidence_text."
+        ],
+        "is_lead": false
+      }
+    ],
     "borderline": [
       {
         "stage": "curator",
-        "title": "SATs tests have started in school, see if you can answer these maths questions for primary kids",
+        "title": "Tyson and Paris Fury's mega wedding gift to Venezuela and new husband Noah revealed",
         "source_label": "MEN",
-        "reason": "Evergreen-листинг без даты и конкретного события в GM.",
+        "reason": "Чистая светская хроника без новостного повода для GM.",
+        "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
+      },
+      {
+        "stage": "curator",
+        "title": "28 shipments came in from the US - there wasn't just vintage clothing inside",
+        "source_label": "MEN",
+        "reason": "Устаревшая новость (stale), опубликована 13 мая.",
+        "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
+      },
+      {
+        "stage": "curator",
+        "title": "Blackpool Air Show 2026 hit by massive Red Arrows blow",
+        "source_label": "MEN",
+        "reason": "Новость про Blackpool, не Greater Manchester — нет упоминания GM-локации.",
         "why_flagged": "Premium-источник MEN отбит без явной дедупликации."
       }
     ]
   },
+  "synthetic_freshness": {
+    "total": 1,
+    "stale_count": 0,
+    "stale_sources": [],
+    "items": [
+      {
+        "source_label": "Met Office",
+        "primary_block": "weather",
+        "synthetic_stale": false,
+        "data_fetched_at": "2026-05-19T08:00:51.187491+01:00",
+        "fetch_attempts": 1
+      }
+    ]
+  },
   "after_run_summary": {
-    "useful_items": 38,
+    "useful_items": 62,
     "digest_risk_level": "healthy",
     "digest_risk_score": 0,
     "broken_sources": 14,
-    "stale_sources": 22,
-    "suspiciously_rejected": 0,
-    "borderline_rejected": 1,
+    "stale_sources": 16,
+    "zero_yield_sources": 52,
+    "stale_synthetic_items": 0,
+    "suspiciously_rejected": 2,
+    "borderline_rejected": 3,
+    "semantic_dedup_enabled": true,
+    "semantic_intra_drops": 0,
+    "semantic_cross_day_drops": 0,
+    "semantic_borderline": 3,
     "lost_leads": 0,
-    "section_underflow": 0
+    "section_underflow": 1
   },
   "prompt_versions": [
     {
