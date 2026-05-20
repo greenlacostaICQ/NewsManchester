@@ -164,6 +164,9 @@ jobs:
           git add -f data/state/writer_report.json || true
           git add -f data/state/editor_report.json || true
           git add -f data/state/release_report.json || true
+          # HTTP-validator cache. Persisting it between runs is what
+          # makes If-None-Match send a real value on day N+1.
+          git add -f data/state/fetch_cache.json || true
           git add -f data/state/cost_history.json || true
           git add -f data/state/city_intelligence_history.json || true
           git add -f data/state/weekly_city_rollup.json || true

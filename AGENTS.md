@@ -222,6 +222,11 @@ line numbers. Symbol names below are stable; line numbers are not.
 - classes: `SourceDef`, `ExtractedItem`
 - constants: `SOURCES`
 
+### `src/news_digest/pipeline/collector/fetch.py`
+
+- classes: `NotModified`
+- defs: `load_fetch_cache`, `save_fetch_cache`
+
 ### `src/news_digest/pipeline/collector/filters.py`
 
 - classes: `_SourcePolicy`
@@ -270,7 +275,7 @@ line numbers. Symbol names below are stable; line numbers are not.
 
 ### `scripts/run_local_digest.py`
 
-- defs: `cmd_bot_info`, `cmd_get_updates`, `cmd_process_updates`, `cmd_poll_updates`, `cmd_render_demo`, `cmd_send_demo`, `cmd_send_file`, `cmd_send_warnings`, `cmd_send_weekly_cost`, `cmd_delivered_today`, `cmd_digest_status`, `cmd_build_digest`, `cmd_mark_pipeline_failed`, `cmd_init_build_state`, `cmd_collect_digest`, `cmd_dedupe_digest`, `cmd_validate_candidates`, `cmd_curator_pass`, `cmd_transport_fill`, `cmd_llm_rewrite`, `cmd_prompt_versions`, `cmd_model_routing`, `cmd_cost_summary`, `cmd_reader_value_validation`, `cmd_write_digest`, `cmd_edit_digest`, `build_parser`, `main`
+- defs: `cmd_bot_info`, `cmd_get_updates`, `cmd_process_updates`, `cmd_poll_updates`, `cmd_render_demo`, `cmd_send_demo`, `cmd_send_file`, `cmd_send_warnings`, `cmd_send_weekly_cost`, `cmd_weekly_city_rollup`, `cmd_send_weekly_city_rollup`, `cmd_delivered_today`, `cmd_digest_status`, `cmd_build_digest`, `cmd_mark_pipeline_failed`, `cmd_init_build_state`, `cmd_collect_digest`, `cmd_dedupe_digest`, `cmd_validate_candidates`, `cmd_curator_pass`, `cmd_transport_fill`, `cmd_llm_rewrite`, `cmd_prompt_versions`, `cmd_model_routing`, `cmd_cost_summary`, `cmd_reader_value_validation`, `cmd_write_digest`, `cmd_edit_digest`, `build_parser`, `main`
 - constants: `PROJECT_ROOT`, `SRC_DIR`, `LONDON_TZ`, `REQUIRED_RELEASE_GATE_VERSION`
 
 _Anchors above are stable symbol names. Use `rg -n '^def NAME|^class NAME|^NAME ?='` to jump there._
@@ -397,6 +402,12 @@ blockers.
 - `published_facts.json` — cross-day history (idempotent by fingerprint)
 - `last_sent_digest.html` — copy of last actually-sent digest
 - `delivery_state.json`, `bot_state.json` — Telegram bot state
+- `fetch_cache.json` — per-URL ETag / Last-Modified validators used by
+  the collector to send conditional GETs. 304 responses are treated as
+  "no new content" (source marked `not_modified=true` in
+  `collector_report.json`, parsing skipped). TTL 7 days; stale entries
+  are ignored. Loaded once per run via `load_fetch_cache` and flushed
+  via `save_fetch_cache` in `collector/fetch.py`.
 
 `data/outgoing/current_digest.html` — what gets sent.
 
