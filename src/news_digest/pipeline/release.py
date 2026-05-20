@@ -22,6 +22,10 @@ from news_digest.pipeline.common import (
     write_json,
 )
 from news_digest.pipeline.city_intelligence import summarise_city_intelligence
+from news_digest.pipeline.city_trends import (
+    append_city_intelligence_history,
+    build_trend_detection,
+)
 
 
 BANNED_PLACEHOLDER_MARKERS = [
@@ -1066,6 +1070,7 @@ def _build_after_run_summary(
     synthetic_freshness: dict | None = None,
     semantic_dedup: dict | None = None,
     city_intelligence: dict | None = None,
+    trend_detection: dict | None = None,
 ) -> dict[str, object]:
     """R3: compact post-run dashboard. One block, query-once."""
     rendered = int(((writer_report or {}).get("quality_counts") or {}).get("rendered_candidates") or 0)
@@ -1076,6 +1081,9 @@ def _build_after_run_summary(
     borough_counts = borough_coverage.get("counts") or {}
     dominant = borough_coverage.get("dominant_borough") or {}
     skew_flags = borough_coverage.get("skew_flags") or []
+    td = trend_detection or {}
+    rising_topics = td.get("rising_topics") or []
+    rising_entities = td.get("rising_entities") or []
     return {
         "useful_items": rendered,
         "digest_risk_level": digest_health.get("risk_level"),
@@ -1096,6 +1104,8 @@ def _build_after_run_summary(
         "rendered_borough_count": int(borough_counts.get("covered_boroughs_rendered") or 0),
         "dominant_borough": dominant.get("borough") if isinstance(dominant, dict) else None,
         "borough_skew_flags": len(skew_flags) if isinstance(skew_flags, list) else 0,
+        "rising_topics_7d": len(rising_topics) if isinstance(rising_topics, list) else 0,
+        "rising_entities_7d": len(rising_entities) if isinstance(rising_entities, list) else 0,
         "lost_leads": len(lost_leads or []),
         "section_underflow": len(section_underflow or []),
     }
@@ -1515,6 +1525,12 @@ def build_release(project_root: Path) -> ReleaseResult:
     )
     for flag in (city_intelligence.get("borough_coverage") or {}).get("skew_flags") or []:
         warnings.append(f"Borough coverage: {flag}")
+    trend_detection = build_trend_detection(
+        state_dir,
+        run_date_london=current_day_london,
+        candidates=candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else [],
+        rendered_fingerprints=rendered_fingerprints,
+    )
 
     # R3: after-run summary, single compact dashboard block.
     after_run_summary = _build_after_run_summary(
@@ -1527,6 +1543,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         synthetic_freshness=synthetic_freshness,
         semantic_dedup=semantic_dedup_counts,
         city_intelligence=city_intelligence,
+        trend_detection=trend_detection,
     )
 
     ok = not errors
@@ -1555,6 +1572,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "reject_review": reject_review,
         "synthetic_freshness": synthetic_freshness,
         "city_intelligence": city_intelligence,
+        "trend_detection": trend_detection,
         "after_run_summary": after_run_summary,
         "prompt_versions": _prompts_snapshot(),
         "prompt_drift": prompt_drift,
@@ -1582,6 +1600,16 @@ def build_release(project_root: Path) -> ReleaseResult:
     except Exception as exc:  # noqa: BLE001
         # Snapshot is observational; never break the release on its failure.
         logger.warning("daily_index snapshot failed: %s", exc)
+    try:
+        append_city_intelligence_history(
+            state_dir,
+            report_payload=report_payload,
+            candidates=candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else [],
+            rendered_fingerprints=rendered_fingerprints,
+            trend_detection=trend_detection,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("city intelligence history snapshot failed: %s", exc)
 
     # Snapshot every successful gate to a separate file so a later failed
     # debug run does not erase the proof that the morning gate passed.

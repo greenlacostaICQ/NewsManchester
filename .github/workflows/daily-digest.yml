@@ -106,6 +106,17 @@ jobs:
             echo "Not Sunday in Europe/London — skipping weekly cost summary."
           fi
 
+      - name: Send weekly city rollup (Sundays only)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
+          TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
+        run: |
+          if [ "$(TZ=Europe/London date +%u)" = "7" ]; then
+            python3 scripts/run_local_digest.py send-weekly-city-rollup
+          else
+            echo "Not Sunday in Europe/London — skipping weekly city rollup."
+          fi
+
       - name: Dump failure diagnostics
         if: failure()
         run: |
@@ -154,6 +165,9 @@ jobs:
           git add -f data/state/editor_report.json || true
           git add -f data/state/release_report.json || true
           git add -f data/state/cost_history.json || true
+          git add -f data/state/city_intelligence_history.json || true
+          git add -f data/state/weekly_city_rollup.json || true
+          git add -f data/state/daily_index/*.jsonl || true
           git add -f data/state/cost_curator.json || true
           git add -f data/state/cost_llm_rewrite.json || true
           git add -f data/state/llm_rewrite_report.json || true

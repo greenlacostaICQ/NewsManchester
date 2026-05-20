@@ -25,6 +25,10 @@ from news_digest.jobs.send_demo_digest import send_demo_digest
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector import collect_digest, initialize_collector_state
 from news_digest.pipeline.common import read_json, write_json
+from news_digest.pipeline.city_trends import (
+    build_weekly_city_rollup,
+    weekly_city_rollup_text,
+)
 from news_digest.pipeline.dedupe import dedupe_candidates, initialize_candidates_state
 from news_digest.pipeline.editor import edit_digest
 from news_digest.pipeline.history import ensure_history_files, record_delivery_artifacts
@@ -847,6 +851,29 @@ def cmd_send_weekly_cost() -> int:
     return 0
 
 
+def cmd_weekly_city_rollup() -> int:
+    state_dir = PROJECT_ROOT / "data" / "state"
+    rollup = build_weekly_city_rollup(state_dir)
+    print(json.dumps(rollup, ensure_ascii=False, indent=2))
+    return 0 if not rollup.get("errors") else 1
+
+
+def cmd_send_weekly_city_rollup() -> int:
+    state_dir = PROJECT_ROOT / "data" / "state"
+    rollup = build_weekly_city_rollup(state_dir)
+    text = weekly_city_rollup_text(rollup)
+
+    settings, client, store = _load_store_and_client()
+    targets = _effective_targets(settings.telegram_target, store.list_subscribers())
+    if not targets:
+        print("No Telegram targets. Skipping weekly city rollup.")
+        return 0
+    for target in targets:
+        client.send_text_in_chunks(target, text, parse_mode=None)
+    print(f"Sent weekly city rollup to {len(targets)} target(s).")
+    return 0 if not rollup.get("errors") else 1
+
+
 def cmd_delivered_today() -> int:
     settings, _, store = _load_store_and_client()
     payload = _delivered_today_payload(settings) or store.get_last_delivery()
@@ -1262,6 +1289,14 @@ def build_parser() -> argparse.ArgumentParser:
         "send-weekly-cost",
         help="Send a 7-day LLM cost summary to Telegram from cost_history.json.",
     )
+    subparsers.add_parser(
+        "weekly-city-rollup",
+        help="Build and print the 7-day city intelligence rollup.",
+    )
+    subparsers.add_parser(
+        "send-weekly-city-rollup",
+        help="Build and send the 7-day city intelligence rollup to Telegram.",
+    )
     return parser
 
 
@@ -1321,6 +1356,10 @@ def main() -> int:
         return cmd_send_warnings()
     if args.command == "send-weekly-cost":
         return cmd_send_weekly_cost()
+    if args.command == "weekly-city-rollup":
+        return cmd_weekly_city_rollup()
+    if args.command == "send-weekly-city-rollup":
+        return cmd_send_weekly_city_rollup()
 
     parser.error(f"Unknown command: {args.command}")
     return 2
