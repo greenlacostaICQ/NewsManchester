@@ -108,76 +108,144 @@ def validate_reader_value_labels(payload: dict) -> list[str]:
     return errors
 
 
-def reader_value_score(item: dict) -> int:
+_PRACTICAL_TODAY_BLOCKS = {
+    "transport", "weather", "today_focus", "lead_story", "last_24h",
+}
+
+
+def reader_value_score_with_trace(item: dict) -> tuple[int, list[dict[str, object]]]:
+    """Compute the reader-value score and emit a structured trace.
+
+    The trace is a list of contribution records:
+
+        [{"signal": "base_category:transport", "delta": 70},
+         {"signal": "block_bonus:transport", "delta": 20},
+         {"signal": "morning_practical_boost", "delta": 8},
+         ...]
+
+    Sprint Quality Fix 1 (1.12 / S3) — these traces are the substrate the
+    later personalisation model will train on. The reader's "useful / not
+    useful" reactions are joined against the trace to learn which signals
+    actually predict their preference. Until that model exists, traces
+    just go into release_report for inspection.
+    """
     category = str(item.get("category") or "")
     block = str(item.get("primary_block") or "")
     change_type = str(item.get("change_type") or "")
     title = str(item.get("title") or "")
     reject_reason = str(item.get("reject_reason") or "")
     if not reject_reason:
-        # Live candidates carry the drop justification in `reason`; the
-        # labels benchmark uses `reject_reason`. Treat both interchangeably
-        # so the score is meaningful on in-flight candidates too.
         reject_reason = str(item.get("reason") or "")
     text = f"{title} {reject_reason}"
 
-    score = _BASE_CATEGORY_SCORE.get(category, 35)
-    score += _BLOCK_BONUS.get(block, 0)
+    trace: list[dict[str, object]] = []
 
-    # Labels benchmark snapshots `included` (past-tense, what shipped);
-    # live candidates use `include` (current decision). Honor both.
+    def _add(signal: str, delta: int) -> None:
+        if delta == 0:
+            return
+        trace.append({"signal": signal, "delta": int(delta)})
+
+    score = 0
+    base = _BASE_CATEGORY_SCORE.get(category, 35)
+    score += base
+    _add(f"base_category:{category or 'unknown'}", base)
+
+    block_bonus = _BLOCK_BONUS.get(block, 0)
+    if block_bonus:
+        score += block_bonus
+        _add(f"block_bonus:{block}", block_bonus)
+
     included = item.get("included")
     if included is None:
         included = item.get("include")
     if included:
         score += 8
+        _add("included", 8)
     else:
         score -= 5
+        _add("not_included", -5)
 
     if change_type in {"same_story_new_facts", "new_phase", "follow_up"}:
         score += 12
+        _add(f"change_type:{change_type}", 12)
     elif change_type == "new_story":
         score += 5
+        _add("change_type:new_story", 5)
     elif change_type in {"no_change", "same_story_rehash"}:
         score -= 28
+        _add(f"change_type:{change_type}", -28)
     elif change_type == "reminder":
         score -= 8
+        _add("change_type:reminder", -8)
 
     if _HIGH_VALUE_TITLE_RE.search(title):
         score += 14
+        _add("title:high_value_keyword", 14)
     if _LOW_VALUE_TITLE_RE.search(title):
         score -= 18
+        _add("title:low_value_keyword", -18)
 
     lowered_reason = reject_reason.lower()
     if "same story kept from stronger source" in lowered_reason:
         score = min(score, 35)
+        _add("reason:dup_kept_stronger_cap_35", 0)
     if "duplicate" in lowered_reason or "дублик" in lowered_reason:
         score -= 18
+        _add("reason:duplicate", -18)
     if "no_change" in change_type or "без новых фактов" in lowered_reason or "повтор сюжета" in lowered_reason:
         score -= 22
+        _add("reason:no_new_facts", -22)
     if "evergreen" in lowered_reason or "листинг" in lowered_reason:
         score -= 24
+        _add("reason:evergreen", -24)
     if "устарев" in lowered_reason or "неактуальна" in lowered_reason:
         score -= 24
+        _add("reason:stale", -24)
     if "ваканс" in lowered_reason or "job advert" in lowered_reason:
         score -= 24
+        _add("reason:job_advert", -24)
     if "pr" in lowered_reason or "чистый pr" in lowered_reason or "ребрендинг" in lowered_reason:
         score -= 24
+        _add("reason:pr_filler", -24)
     if "outside current weekend" in lowered_reason or "expired event" in lowered_reason:
         score -= 18
+        _add("reason:outside_window", -18)
     if "не относится к greater manchester" in lowered_reason or "не в greater manchester" in lowered_reason:
         score -= 35
+        _add("reason:not_gm", -35)
     if "missing draft_line" in lowered_reason:
         score -= 8
+        _add("reason:missing_draft_line", -8)
     if "pending dedupe review" in lowered_reason:
         score -= 10
+        _add("reason:pending_dedupe", -10)
     if "no concrete upcoming date" in lowered_reason or "has no concrete upcoming date" in lowered_reason:
         score -= 22
+        _add("reason:no_upcoming_date", -22)
 
     if re.search(r"\b(london|liverpool)\b", text, flags=re.IGNORECASE) and block == "outside_gm_tickets":
         score -= 20
+        _add("outside_gm_with_london_or_liverpool", -20)
 
-    return max(0, min(100, int(score)))
+    # Morning practical boost (S5)
+    why_now = str(item.get("why_now") or "")
+    if why_now in {"happening_today", "deadline_soon", "new_today"} and block in _PRACTICAL_TODAY_BLOCKS:
+        score += 8
+        _add(f"morning_practical_boost:{why_now}", 8)
+    elif why_now == "ongoing" and block in {"transport", "today_focus"}:
+        score += 4
+        _add("morning_practical_boost:ongoing", 4)
+
+    clipped = max(0, min(100, int(score)))
+    if clipped != score:
+        _add("score_clipped_to_0_100", int(clipped - score))
+    return clipped, trace
+
+
+def reader_value_score(item: dict) -> int:
+    """Backward-compatible scalar API. Internally uses the traced variant."""
+    score, _ = reader_value_score_with_trace(item)
+    return score
 
 
 def predicted_label(score: int) -> str:
@@ -189,18 +257,20 @@ def predicted_label(score: int) -> str:
 
 
 def attach_reader_value(candidate: dict) -> dict:
-    """Stamp reader_value_score + reader_value_label onto a live candidate.
+    """Stamp reader_value_score + reader_value_label + scoring_trace onto a live candidate.
 
     Called by validate_candidates and curator_pass so the score is
     visible in candidates.json (and downstream stages can sort by it
-    without recomputing).
+    without recomputing). The trace (Sprint Fix 1 / S3) is preserved
+    on the candidate so release_report can ship it.
     """
 
     if not isinstance(candidate, dict):
         return candidate
-    score = reader_value_score(candidate)
+    score, trace = reader_value_score_with_trace(candidate)
     candidate["reader_value_score"] = score
     candidate["reader_value_label"] = predicted_label(score)
+    candidate["scoring_trace"] = trace
     return candidate
 
 

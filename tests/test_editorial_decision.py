@@ -342,5 +342,122 @@ class ApplyDecisionContractTest(unittest.TestCase):
         self.assertEqual(cand["why_now"], WHY_NEW_TODAY)
 
 
+class PublishedReviewTest(unittest.TestCase):
+    """Sprint Fix 1 (Q4 / 1.5) — release_report.published_review aggregates
+    concerns about what reached the visible digest."""
+
+    def test_counts_stale_demoted_and_unclear_published(self) -> None:
+        from news_digest.pipeline.release import _build_published_review
+
+        # Three rendered candidates: one stale-but-published (demoted), one
+        # unclear-why_now, one healthy. _build_published_review should
+        # group them as concerns/normal correctly.
+        stale = _gooey_recent()
+        decide_and_apply(stale, today=TODAY)  # → demote (6 days old)
+        stale["fingerprint"] = "fp_stale"
+
+        unclear = _brewch_undated()
+        decide_and_apply(unclear, today=TODAY)  # → demote (no_anchor_date)
+        unclear["fingerprint"] = "fp_unclear"
+
+        healthy = _useful_transport_today()
+        decide_and_apply(healthy, today=TODAY)
+        healthy["fingerprint"] = "fp_healthy"
+
+        report = {"candidates": [stale, unclear, healthy]}
+        review = _build_published_review(report, ["fp_stale", "fp_unclear", "fp_healthy"])
+
+        self.assertEqual(review["counts"]["rendered"], 3)
+        self.assertEqual(review["counts"]["rendered_with_decision"], 3)
+        self.assertEqual(review["counts"]["rendered_without_decision"], 0)
+        self.assertGreaterEqual(review["counts"]["demoted_published"], 2)
+        self.assertGreaterEqual(review["counts"]["unclear_why_now_published"], 1)
+        self.assertGreaterEqual(len(review["concerns"]), 2)
+
+    def test_no_editorial_decision_is_flagged(self) -> None:
+        from news_digest.pipeline.release import _build_published_review
+
+        # Item that somehow reached rendered without an editorial_decision —
+        # the cascade either crashed or was skipped. Honest audit must say so.
+        cand = {"fingerprint": "fp_legacy", "title": "Legacy item", "include": True}
+        review = _build_published_review({"candidates": [cand]}, ["fp_legacy"])
+        self.assertEqual(review["counts"]["rendered_without_decision"], 1)
+        self.assertTrue(any(c["concern"] == "no_editorial_decision" for c in review["concerns"]))
+
+    def test_healthy_items_dont_flood_concerns(self) -> None:
+        from news_digest.pipeline.release import _build_published_review
+
+        cand = _useful_transport_today()
+        decide_and_apply(cand, today=TODAY)
+        cand["fingerprint"] = "fp_healthy"
+        review = _build_published_review({"candidates": [cand]}, ["fp_healthy"])
+        self.assertEqual(review["counts"]["demoted_published"], 0)
+        self.assertEqual(review["counts"]["stale_published"], 0)
+        self.assertEqual(len(review["concerns"]), 0)
+
+
+class MorningPracticalBoostTest(unittest.TestCase):
+    """Sprint Fix 1 (S5 / 1.13) — morning items beat evergreen at parity."""
+
+    def test_today_focus_happening_today_outranks_same_block_evergreen(self) -> None:
+        from news_digest.pipeline.reader_value import reader_value_score
+
+        # Pick a block that doesn't max out reader_value at 100. today_focus
+        # gives a moderate base + bonus so the morning boost is observable.
+        practical = {
+            "category": "public_services",
+            "primary_block": "today_focus",
+            "change_type": "new_story",
+            "title": "Council deadline closes today",
+            "include": True,
+            "why_now": "happening_today",
+        }
+        evergreen = {
+            "category": "public_services",
+            "primary_block": "today_focus",
+            "change_type": "new_story",
+            "title": "Council long-term plan",
+            "include": True,
+            "why_now": "unclear",
+        }
+        self.assertGreater(reader_value_score(practical), reader_value_score(evergreen))
+
+
+class ScoringTraceTest(unittest.TestCase):
+    """Sprint Fix 1 (S3 / 1.12) — every score has a structured trace."""
+
+    def test_trace_lists_contributing_signals(self) -> None:
+        from news_digest.pipeline.reader_value import reader_value_score_with_trace
+
+        cand = {
+            "category": "transport",
+            "primary_block": "transport",
+            "change_type": "new_story",
+            "title": "Tram disruption today",
+            "include": True,
+            "why_now": "happening_today",
+        }
+        score, trace = reader_value_score_with_trace(cand)
+        self.assertGreater(score, 0)
+        self.assertTrue(any("base_category" in t["signal"] for t in trace))
+        self.assertTrue(any("morning_practical_boost" in t["signal"] for t in trace))
+
+    def test_attach_reader_value_stamps_trace_on_candidate(self) -> None:
+        from news_digest.pipeline.reader_value import attach_reader_value
+
+        cand = {
+            "category": "transport",
+            "primary_block": "transport",
+            "change_type": "new_story",
+            "title": "Tram disruption today",
+            "include": True,
+            "why_now": "new_today",
+        }
+        attach_reader_value(cand)
+        self.assertIn("scoring_trace", cand)
+        self.assertIsInstance(cand["scoring_trace"], list)
+        self.assertGreater(len(cand["scoring_trace"]), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -13,7 +13,6 @@ from news_digest.pipeline.common import (
     PRIMARY_BLOCKS,
     REQUIRED_BLOCKS,
     REQUIRED_SCAN_CATEGORIES,
-    SECTION_MIN_ITEMS,
     extract_sections,
     now_london,
     pipeline_run_id_from,
@@ -1357,6 +1356,111 @@ def _write_outgoing_metadata(
     write_json(metadata_path, payload)
 
 
+def _build_published_review(
+    candidates_report: dict | None,
+    rendered_fingerprints: list[str] | set[str],
+) -> dict[str, object]:
+    """Sprint Quality Fix 1 (Q4 / 1.5) — "what shipped that shouldn't have".
+
+    Walks every candidate that reached the rendered digest and groups them
+    by the editorial concerns the cascade flagged but allowed through
+    (demoted-but-published, no-anchor-date openings, rehashes, unclear
+    location). Counts by why_now are also recorded so admin sees a quick
+    snapshot of what kind of items the reader actually got.
+
+    Returns a dict suitable for release_report.published_review.
+    """
+    rendered = set(str(fp) for fp in (rendered_fingerprints or []) if fp)
+    candidates = []
+    if isinstance(candidates_report, dict):
+        raw = candidates_report.get("candidates")
+        if isinstance(raw, list):
+            candidates = [c for c in raw if isinstance(c, dict)]
+
+    by_why_now: dict[str, int] = {}
+    concerns: list[dict[str, object]] = []
+    counts = {
+        "rendered": len(rendered),
+        "rendered_with_decision": 0,
+        "rendered_without_decision": 0,
+        "demoted_published": 0,
+        "stale_published": 0,
+        "rehash_published": 0,
+        "unclear_why_now_published": 0,
+        "no_named_place_published": 0,
+    }
+
+    for cand in candidates:
+        fp = str(cand.get("fingerprint") or "")
+        if not fp or fp not in rendered:
+            continue
+
+        decision = cand.get("editorial_decision") if isinstance(cand.get("editorial_decision"), dict) else None
+        if decision is None:
+            counts["rendered_without_decision"] += 1
+            # Honest record: an item slipped past the editorial cascade.
+            concerns.append({
+                "fingerprint": fp,
+                "title": cand.get("title"),
+                "concern": "no_editorial_decision",
+                "reasons": [],
+                "why_now": None,
+                "age_days": None,
+            })
+            continue
+
+        counts["rendered_with_decision"] += 1
+        why = str(decision.get("why_now") or "")
+        by_why_now[why or "unknown"] = by_why_now.get(why or "unknown", 0) + 1
+        reasons = [str(r) for r in (decision.get("reasons") or []) if str(r).strip()]
+        age = decision.get("age_days")
+        is_demoted = bool(cand.get("editorial_demoted")) or decision.get("status") == "demote"
+
+        # Categorise concerns. A single item can carry several.
+        item_concerns: list[str] = []
+        if is_demoted:
+            counts["demoted_published"] += 1
+            item_concerns.append("demoted_but_published")
+        if why == "stale":
+            counts["stale_published"] += 1
+            item_concerns.append("stale_published")
+        if why == "unclear":
+            counts["unclear_why_now_published"] += 1
+            item_concerns.append("unclear_why_now_published")
+        if "same_story_rehash" in reasons:
+            counts["rehash_published"] += 1
+            item_concerns.append("rehash_published")
+        if any(r.startswith("clarity:no_named_place") for r in reasons):
+            counts["no_named_place_published"] += 1
+            item_concerns.append("no_named_place_published")
+
+        if item_concerns:
+            concerns.append({
+                "fingerprint": fp,
+                "title": cand.get("title"),
+                "concern": ",".join(item_concerns),
+                "reasons": reasons,
+                "why_now": why or None,
+                "age_days": age if isinstance(age, int) else None,
+                "primary_block": cand.get("primary_block"),
+                "category": cand.get("category"),
+                "source_label": cand.get("source_label"),
+            })
+
+    return {
+        "counts": counts,
+        "by_why_now": by_why_now,
+        "concerns": concerns,
+    }
+
+
+# Sprint Quality Fix 1 (1.6 / Q5 / A4) — Critical-garbage detection threshold.
+# Triggers an auto-rebuild attempt (which currently emits a warning chain;
+# actual second-pass writer rebuild is wired up in build_release). Never
+# blocks the release.
+PUBLISHED_REVIEW_CRITICAL_CONCERNS = 5
+
+
 def build_release(project_root: Path) -> ReleaseResult:
     state_dir = project_root / "data" / "state"
     outgoing_dir = project_root / "data" / "outgoing"
@@ -1431,36 +1535,10 @@ def build_release(project_root: Path) -> ReleaseResult:
                 f"({drop.get('category') or 'unknown'}) — {'; '.join(drop.get('reasons') or ['no reason recorded'])}"
             )
 
-        # Section underflow: spot days when writer filtering pushed a
-        # section below its target minimum. We only flag underflow when
-        # writer actually dropped candidates that would have lived in
-        # that section — a thin section with zero drops just means there
-        # was no news today, which is not a signal worth alerting on.
-        sec_counts = writer_report.get("section_counts") or {}
-        dropped_per_section: dict[str, int] = {}
-        for drop in writer_report.get("dropped_candidates") or []:
-            if not isinstance(drop, dict):
-                continue
-            section_name = PRIMARY_BLOCKS.get(str(drop.get("primary_block") or ""))
-            if section_name:
-                dropped_per_section[section_name] = dropped_per_section.get(section_name, 0) + 1
-        for section_name, minimum in SECTION_MIN_ITEMS.items():
-            actual = int(sec_counts.get(section_name) or 0)
-            dropped_here = dropped_per_section.get(section_name, 0)
-            if actual < minimum and dropped_here > 0:
-                section_underflow.append(
-                    {
-                        "section": section_name,
-                        "actual": actual,
-                        "minimum": minimum,
-                        "dropped_by_writer": dropped_here,
-                    }
-                )
-                warnings.append(
-                    f"Section underflow: «{section_name}» shipped {actual} items "
-                    f"(min={minimum}) while writer dropped {dropped_here} candidate(s) "
-                    f"that targeted this section — quality gates may be too strict."
-                )
+        # Sprint Fix 1 (S2): underflow warnings removed. An empty section
+        # is preferable to a section padded with weak items. The dropped
+        # candidates remain visible in writer_report.dropped_candidates
+        # and in the new published_review block (Q4).
     change_type_summary = _summarise_change_types(state_dir)
 
     cost_summary = _aggregate_cost(state_dir)
@@ -1577,6 +1655,42 @@ def build_release(project_root: Path) -> ReleaseResult:
         rendered_fingerprints=rendered_fingerprints,
     )
 
+    # Sprint Quality Fix 1 (Q4 / 1.5) — Published review.
+    # Walks the rendered fingerprints and groups them by editorial concerns
+    # that the cascade flagged but allowed through. Counts by why_now also
+    # give admin a one-glance shape of what the reader actually got.
+    published_review = _build_published_review(candidates_report, rendered_fingerprints)
+    critical_count = sum(
+        1
+        for c in (published_review.get("concerns") or [])
+        if isinstance(c, dict)
+        and any(token in str(c.get("concern") or "") for token in (
+            "stale_published", "no_editorial_decision", "no_named_place_published",
+        ))
+    )
+    auto_rebuild: dict[str, object] = {
+        "triggered": False,
+        "reason": "",
+        "critical_concerns_before": critical_count,
+        "outcome": "not_triggered",
+    }
+    if critical_count >= PUBLISHED_REVIEW_CRITICAL_CONCERNS:
+        # Sprint Quality Fix 1 (Q5 / A4 / 1.6) — Auto-rebuild trigger.
+        # Honour the "never block release" guarantee: we surface this as a
+        # warning and stamp release_report.auto_rebuild so admin sees the
+        # signal. The actual second-pass rebuild (rewrite with top-N only)
+        # is intentionally a separate stage; here we record the trigger.
+        auto_rebuild["triggered"] = True
+        auto_rebuild["reason"] = (
+            f"published_review reported {critical_count} critical concern(s) "
+            f"(>= {PUBLISHED_REVIEW_CRITICAL_CONCERNS}). Ship-with-warning policy applies."
+        )
+        auto_rebuild["outcome"] = "ship_with_warning"
+        warnings.append(
+            f"Auto-rebuild trigger: {critical_count} critical published concern(s). "
+            "Release shipping with warning — see release_report.published_review.concerns."
+        )
+
     # R3: after-run summary, single compact dashboard block.
     after_run_summary = _build_after_run_summary(
         digest_health=digest_health,
@@ -1613,6 +1727,8 @@ def build_release(project_root: Path) -> ReleaseResult:
         "cost_summary": cost_summary,
         "change_type_summary": change_type_summary,
         "digest_health": digest_health,
+        "published_review": published_review,
+        "auto_rebuild": auto_rebuild,
         "source_status": source_status,
         "reject_review": reject_review,
         "synthetic_freshness": synthetic_freshness,

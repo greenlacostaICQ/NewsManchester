@@ -14,7 +14,6 @@ from news_digest.pipeline.common import (
     PRIMARY_BLOCKS,
     SECTION_MAX_ITEMS,
     SECTION_MAX_PER_SOURCE,
-    SECTION_MIN_ITEMS,
     is_placeholder_practical_angle,
     now_london,
     pipeline_run_id_from,
@@ -1148,10 +1147,11 @@ def write_digest(project_root: Path) -> StageResult:
                 src_counts[src] = src_counts.get(src, 0) + 1
                 filtered.append(ln)
                 filtered_fps.append(fps[idx] if idx < len(fps) else "")
-            min_items = SECTION_MIN_ITEMS.get(section_name, 0)
-            if not min_items or len(filtered) >= min_items or len(lines) < min_items:
-                lines = filtered
-                fps = filtered_fps
+            # Sprint Fix 1 (S2): no soft minimums — per-source caps always
+            # apply. We'd rather ship a short section than a section padded
+            # by a single overactive source.
+            lines = filtered
+            fps = filtered_fps
         cap = SECTION_MAX_ITEMS.get(section_name)
         if cap:
             lines = lines[:cap]
@@ -1170,6 +1170,60 @@ def write_digest(project_root: Path) -> StageResult:
 
     quality_counts["rendered_candidates"] = len(rendered_candidate_fingerprints)
 
+    # Sprint Quality Fix 1 (S1 / 1.10) — two-zone digest shape.
+    # The rendered HTML still emits one ordered list (UX change is a
+    # separate task), but we annotate which fingerprints belong in the
+    # *top zone* (≤15 highest reader_value_score items the reader should
+    # see first) and which belong in the *full feed*. release_report
+    # surfaces the top-zone with its scoring_trace so admin sees *why*
+    # each item was picked.
+    by_fp: dict[str, dict] = {}
+    for candidate in candidates:
+        if isinstance(candidate, dict):
+            fp = str(candidate.get("fingerprint") or "")
+            if fp:
+                by_fp[fp] = candidate
+
+    TOP_ZONE_TARGET = 15
+    rendered_with_score: list[tuple[str, int, list[dict]]] = []
+    for fp in rendered_candidate_fingerprints:
+        cand = by_fp.get(fp) or {}
+        score = int(cand.get("reader_value_score") or 0)
+        trace = cand.get("scoring_trace") or []
+        if not isinstance(trace, list):
+            trace = []
+        rendered_with_score.append((fp, score, trace))
+    rendered_with_score.sort(key=lambda triple: triple[1], reverse=True)
+
+    top_zone_payload: list[dict[str, object]] = []
+    full_feed_payload: list[dict[str, object]] = []
+    for idx, (fp, score, trace) in enumerate(rendered_with_score):
+        cand = by_fp.get(fp) or {}
+        entry: dict[str, object] = {
+            "fingerprint": fp,
+            "title": cand.get("title"),
+            "primary_block": cand.get("primary_block"),
+            "category": cand.get("category"),
+            "source_label": cand.get("source_label"),
+            "reader_value_score": score,
+            "why_now": cand.get("why_now"),
+            "editorial_decision": cand.get("editorial_decision"),
+        }
+        if idx < TOP_ZONE_TARGET:
+            entry["scoring_trace"] = trace
+            top_zone_payload.append(entry)
+        else:
+            full_feed_payload.append(entry)
+
+    digest_shape = {
+        "top_zone_target": TOP_ZONE_TARGET,
+        "top_zone_count": len(top_zone_payload),
+        "full_feed_count": len(full_feed_payload),
+        "total_rendered": len(rendered_with_score),
+        "top_zone": top_zone_payload,
+        "full_feed": full_feed_payload,
+    }
+
     draft_path.write_text("\n".join(rendered).strip() + "\n", encoding="utf-8")
     write_json(
         report_path,
@@ -1184,6 +1238,7 @@ def write_digest(project_root: Path) -> StageResult:
             "section_counts": section_counts,
             "backfilled_today_focus": backfilled_today_focus,
             "rendered_candidate_fingerprints": rendered_candidate_fingerprints,
+            "digest_shape": digest_shape,
             "dropped_candidates": dropped_candidates,
             "draft_path": str(draft_path.resolve()),
         },
