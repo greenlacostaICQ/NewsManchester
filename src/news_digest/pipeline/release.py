@@ -957,6 +957,11 @@ def _classify_rejected_candidates(
     """R2: split rejected candidates into correctly_rejected / borderline /
     suspiciously_rejected. Suspicious gets the strongest visibility — those
     are likely false negatives we'd want to review by hand.
+
+    R3.3: any high reader_value_score drop is at least borderline — and
+    drops the model predicts as ``useful`` are surfaced as suspicious so a
+    regex-only classifier can't silently throw out items the score model
+    rates as worth shipping.
     """
     counts: dict[str, int] = {
         "correctly_rejected": 0,
@@ -965,6 +970,18 @@ def _classify_rejected_candidates(
     }
     suspicious: list[dict[str, object]] = []
     borderline: list[dict[str, object]] = []
+
+    candidates = (candidates_report or {}).get("candidates") or []
+    cand_by_fp: dict[str, dict] = {
+        str(c.get("fingerprint") or ""): c for c in candidates if isinstance(c, dict)
+    }
+
+    def _score_for(fp: str) -> tuple[int | None, str | None]:
+        cand = cand_by_fp.get(fp) or {}
+        score = cand.get("reader_value_score")
+        if not isinstance(score, (int, float)):
+            return None, None
+        return int(score), str(cand.get("reader_value_label") or "")
 
     # ── writer drops ──────────────────────────────────────────────────────
     for drop in (writer_report or {}).get("dropped_candidates") or []:
@@ -975,6 +992,13 @@ def _classify_rejected_candidates(
         suspicious_hit = is_lead or any(
             _SUSPICIOUS_DROP_REASON_RE.search(str(r) or "") for r in reasons
         )
+        fp = str(drop.get("fingerprint") or "")
+        score, label = _score_for(fp)
+        # A high editorial value score lifts a drop into review even if no
+        # regex tripped: a "useful"-class candidate should not get silently
+        # dropped at the writer stage.
+        score_suspicious = score is not None and (score >= 75 or label == "useful")
+        score_borderline = score is not None and score >= 60 and not score_suspicious
         record = {
             "stage": "writer",
             "title": drop.get("title"),
@@ -982,11 +1006,17 @@ def _classify_rejected_candidates(
             "primary_block": drop.get("primary_block"),
             "reasons": reasons,
             "is_lead": is_lead,
+            "reader_value_score": score,
+            "reader_value_label": label,
         }
-        if suspicious_hit:
+        if suspicious_hit or score_suspicious:
             counts["suspiciously_rejected"] += 1
             if len(suspicious) < 15:
                 suspicious.append(record)
+        elif score_borderline:
+            counts["borderline"] += 1
+            if len(borderline) < 10:
+                borderline.append(record)
         else:
             counts["correctly_rejected"] += 1
 
@@ -994,10 +1024,6 @@ def _classify_rejected_candidates(
     # Pull candidates with their evidence_text so we can re-check curator
     # drops for date hints (the "evergreen" justification is wrong if a
     # concrete date is actually in evidence).
-    candidates = (candidates_report or {}).get("candidates") or []
-    cand_by_fp: dict[str, dict] = {
-        str(c.get("fingerprint") or ""): c for c in candidates if isinstance(c, dict)
-    }
     for dec in (curator_report or {}).get("decisions") or []:
         if not isinstance(dec, dict) or dec.get("include"):
             continue
@@ -1006,6 +1032,9 @@ def _classify_rejected_candidates(
         reason = str(dec.get("reason") or "")
         source_label = str(cand.get("source_label") or "")
         evidence = str(cand.get("evidence_text") or "")
+        score, label = _score_for(fp)
+        score_suspicious = score is not None and (score >= 75 or label == "useful")
+        score_borderline = score is not None and score >= 60 and not score_suspicious
         suspicious_reason = False
         why = ""
         if "evergreen" in reason.lower() and _DATE_HINT_IN_EVIDENCE.search(evidence):
@@ -1014,6 +1043,10 @@ def _classify_rejected_candidates(
         elif source_label in _PREMIUM_SOURCE_PRIORITY and "дубл" not in reason.lower():
             # Premium source drop that isn't a dedup → at least borderline.
             why = f"Premium-источник {source_label} отбит без явной дедупликации."
+        if score_suspicious and not why:
+            why = f"Reader-value score={score} ({label}) — curator drop worth review."
+        elif score_borderline and not why:
+            why = f"Reader-value score={score} ({label}) — curator drop worth review."
         # curator decisions don't carry the title — pull it from the
         # paired candidate so the admin report shows something useful.
         record = {
@@ -1022,12 +1055,14 @@ def _classify_rejected_candidates(
             "source_label": source_label,
             "reason": reason,
             "why_flagged": why,
+            "reader_value_score": score,
+            "reader_value_label": label,
         }
-        if suspicious_reason:
+        if suspicious_reason or score_suspicious:
             counts["suspiciously_rejected"] += 1
             if len(suspicious) < 15:
                 suspicious.append(record)
-        elif why:
+        elif why or score_borderline:
             counts["borderline"] += 1
             if len(borderline) < 10:
                 borderline.append(record)

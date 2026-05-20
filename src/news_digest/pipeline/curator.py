@@ -386,6 +386,15 @@ def run_curator_pass(project_root: Path) -> None:
     semantic_dropped = _semantic_dedup_pass(candidates)
     dropped += semantic_dropped
 
+    # Refresh reader_value_score after curator can flip include / rewrite
+    # reason. Writer and release.py both sort/classify by this score, so
+    # it must reflect the curator's final decision.
+    from news_digest.pipeline.reader_value import attach_reader_value  # noqa: PLC0415
+
+    for candidate in candidates:
+        if isinstance(candidate, dict):
+            attach_reader_value(candidate)
+
     candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     logger.info("Curator: dropped %d candidates (semantic dedup: %d), lead=%s.", dropped, semantic_dropped, lead_set)
 

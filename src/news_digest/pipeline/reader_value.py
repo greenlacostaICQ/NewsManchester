@@ -114,12 +114,22 @@ def reader_value_score(item: dict) -> int:
     change_type = str(item.get("change_type") or "")
     title = str(item.get("title") or "")
     reject_reason = str(item.get("reject_reason") or "")
+    if not reject_reason:
+        # Live candidates carry the drop justification in `reason`; the
+        # labels benchmark uses `reject_reason`. Treat both interchangeably
+        # so the score is meaningful on in-flight candidates too.
+        reject_reason = str(item.get("reason") or "")
     text = f"{title} {reject_reason}"
 
     score = _BASE_CATEGORY_SCORE.get(category, 35)
     score += _BLOCK_BONUS.get(block, 0)
 
-    if item.get("included"):
+    # Labels benchmark snapshots `included` (past-tense, what shipped);
+    # live candidates use `include` (current decision). Honor both.
+    included = item.get("included")
+    if included is None:
+        included = item.get("include")
+    if included:
         score += 8
     else:
         score -= 5
@@ -176,6 +186,22 @@ def predicted_label(score: int) -> str:
     if score >= 38:
         return "neutral"
     return "should_not_include"
+
+
+def attach_reader_value(candidate: dict) -> dict:
+    """Stamp reader_value_score + reader_value_label onto a live candidate.
+
+    Called by validate_candidates and curator_pass so the score is
+    visible in candidates.json (and downstream stages can sort by it
+    without recomputing).
+    """
+
+    if not isinstance(candidate, dict):
+        return candidate
+    score = reader_value_score(candidate)
+    candidate["reader_value_score"] = score
+    candidate["reader_value_label"] = predicted_label(score)
+    return candidate
 
 
 def evaluate_reader_value_labels(project_root: Path) -> dict:

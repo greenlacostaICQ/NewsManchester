@@ -22,6 +22,7 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.reader_value import reader_value_score
 from news_digest.pipeline.toponyms import restore_english_toponyms
 from news_digest.pipeline.place_names import preserve_place_names
 
@@ -1068,7 +1069,14 @@ def write_digest(project_root: Path) -> StageResult:
             elif section_name == "Выходные в GM":
                 score = _weekend_activity_score(candidate, line)
             else:
-                score = 0.0
+                # Fall back to the editorial reader-value score so any
+                # capped section drops its weakest items first (instead
+                # of "whichever came last from the collector").
+                stored = candidate.get("reader_value_score")
+                if isinstance(stored, (int, float)):
+                    score = float(stored)
+                else:
+                    score = float(reader_value_score(candidate))
             section_scores[section_name].append(score)
             section_fingerprints[section_name].append(fingerprint)
 
@@ -1122,8 +1130,12 @@ def write_digest(project_root: Path) -> StageResult:
         scores = scores + [0.0] * (len(lines) - len(scores))
         fingerprints = fingerprints + [""] * (len(lines) - len(fingerprints))
         # Re-rank capped sections so the cap keeps practical local value,
-        # rather than whichever source happened to run first.
-        if section_name in {"Городской радар", "Выходные в GM"} and scores:
+        # rather than whichever source happened to run first. All sections
+        # that can be truncated by SECTION_MAX_ITEMS / per-source caps get
+        # re-ordered by score (specialized for Городской радар / Выходные,
+        # reader_value_score for everything else).
+        is_capped = section_name in SECTION_MAX_ITEMS or section_name in SECTION_MAX_PER_SOURCE
+        if is_capped and scores and any(s > 0 for s in scores):
             quads = sorted(
                 zip(lines, srcs, scores, fingerprints),
                 key=lambda quad: quad[2],

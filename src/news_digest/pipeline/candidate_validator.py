@@ -9,6 +9,7 @@ from urllib import parse
 from news_digest.pipeline.city_intelligence import annotate_city_intelligence
 from news_digest.pipeline.common import clean_url, now_london, pipeline_run_id_from, read_json, today_london, write_json
 from news_digest.pipeline.event_quality import event_quality_reject_reasons, event_quality_report
+from news_digest.pipeline.reader_value import attach_reader_value
 from news_digest.pipeline.transport_classifier import classify_transport_candidate
 
 
@@ -442,12 +443,15 @@ def validate_candidates(project_root: Path) -> StageResult:
 
         candidate["validation_errors"] = validation_errors
         candidate["validated"] = not validation_errors
+        attach_reader_value(candidate)
         items.append(
             {
                 "fingerprint": candidate.get("fingerprint"),
                 "title": candidate.get("title"),
                 "validated": not validation_errors,
                 "validation_errors": validation_errors,
+                "reader_value_score": candidate.get("reader_value_score"),
+                "reader_value_label": candidate.get("reader_value_label"),
             }
         )
 
