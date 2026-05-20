@@ -55,6 +55,7 @@ run_stage collect-digest
 run_stage dedupe-digest
 run_stage validate-candidates
 run_stage curator-pass
+run_stage transport-fill
 run_stage llm-rewrite
 run_stage write-digest
 run_stage edit-digest
