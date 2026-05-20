@@ -348,14 +348,18 @@ def _translate_health_signal(sig: dict) -> str:
     name = str(sig.get("name") or "")
     detail = str(sig.get("detail") or "")
     if name == "too_few_items":
-        # "Only N item(s) rendered — below the 15-item floor."
+        # "Only N item(s) rendered — below the 12-item hard floor."
         m = re.search(r"\d+", detail)
         n = m.group(0) if m else "?"
-        return f"Вышло мало пунктов: {n} (минимум 15). Похоже, источники массово не отдали данные."
+        return f"Вышло мало видимых пунктов: {n} (жёсткий минимум 12, цель 14–22)."
     if name == "few_items":
         m = re.search(r"\d+", detail)
         n = m.group(0) if m else "?"
-        return f"Пунктов меньше нормы: {n} (обычный день — 30–50)."
+        return f"Пунктов меньше нормы: {n} (цель — 14–22 видимых пункта)."
+    if name == "too_many_items":
+        m = re.search(r"\d+", detail)
+        n = m.group(0) if m else "?"
+        return f"Выпуск раздут: {n} видимых пунктов (цель — 14–22). Нужно ужесточить отбор."
     if name == "weather_empty":
         return "Раздел погоды пустой — Met Office не отвечает."
     if name == "transport_empty":
@@ -626,13 +630,20 @@ def cmd_send_warnings() -> int:
     health_signals = health.get("signals") or []
     summary = report.get("after_run_summary") or {}
     source_status = report.get("source_status") or {}
+    transport_coverage = report.get("transport_coverage") or {}
+    diaspora_diagnostics = report.get("diaspora_diagnostics") or {}
+    borderline_queue = report.get("borderline_queue") or {}
+    quality_scorecard = report.get("quality_scorecard") or {}
+    feedback_capture = report.get("feedback_capture") or {}
     reject_review = report.get("reject_review") or {}
+    published_review = report.get("published_review") or {}
     city_intelligence = report.get("city_intelligence") or {}
     borough_coverage = city_intelligence.get("borough_coverage") or {}
     borough_skew_flags = [
         str(flag) for flag in (borough_coverage.get("skew_flags") or []) if str(flag).strip()
     ]
     suspicious_rejects = reject_review.get("suspiciously_rejected") or []
+    suspicious_published = published_review.get("suspiciously_published") or []
     src_counts = source_status.get("counts") or {}
     failed_sources = [
         s for s in (source_status.get("sources") or []) if s.get("status") == "failed"
@@ -645,7 +656,11 @@ def cmd_send_warnings() -> int:
         or bool(section_underflow)
         or health_level != "healthy"
         or bool(suspicious_rejects)
+        or bool(suspicious_published)
         or bool(borough_skew_flags)
+        or transport_coverage.get("verdict") in {"found_not_rendered", "not_checked", "partially_checked"}
+        or diaspora_diagnostics.get("verdict") in {"checked_empty", "fetched_but_filtered", "accepted_not_rendered"}
+        or bool((borderline_queue.get("items") or []))
         or src_counts.get("failed", 0) >= 3
     )
     if not has_signal:
@@ -657,14 +672,32 @@ def cmd_send_warnings() -> int:
     release_errors = [str(e) for e in (report.get("errors") or []) if str(e).strip()]
     icon = {"healthy": "✅", "at_risk": "🟡", "unhealthy": "🔴"}.get(health_level, "⚠️")
     useful = summary.get("useful_items", "?")
+    writer_report = read_json(PROJECT_ROOT / "data" / "state" / "writer_report.json", {})
+    qc = (writer_report.get("quality_counts") or {}) if isinstance(writer_report, dict) else {}
+    included = int(qc.get("included_candidates") or 0)
+    rendered = int(qc.get("rendered_candidates") or 0)
+    dropped = (
+        int(qc.get("dropped_missing_draft_line") or 0)
+        + int(qc.get("dropped_english_passthrough") or 0)
+        + int(qc.get("dropped_low_quality") or 0)
+        + int(qc.get("blocked_for_quality") or 0)
+    )
 
     # ── Заголовок ─────────────────────────────────────────────────
     if release_decision == "pass":
-        header = f"{icon} Выпуск {run_date} — {useful} новостей ушло читателю"
+        header = f"{icon} Выпуск {run_date} — {useful} видимых пунктов в выпуске"
     else:
         reason = f": {release_errors[0]}" if release_errors else ""
         header = f"⛔ Выпуск {run_date} НЕ отправлен — release gate {release_decision or 'unknown'}{reason}"
     lines: list[str] = [header, ""]
+
+    if rendered or included or dropped:
+        lines.append("📦 СРЕЗ ПАЙПЛАЙНА")
+        lines.append(f"  • Принято после отбора: {included}")
+        lines.append(f"  • Видимых пунктов в HTML/Telegram: {rendered}")
+        lines.append(f"  • Отброшено поздними quality-gates: {dropped}")
+        lines.append("  Цель нормального выпуска: 14–22 видимых пункта.")
+        lines.append("")
 
     # ── Что могли пропустить (главное для редактора) ──────────────
     suspicious_groups = _group_suspicious_rejects(suspicious_rejects) if suspicious_rejects else {}
@@ -698,6 +731,61 @@ def cmd_send_warnings() -> int:
                 lines.append(f"    • …ещё {len(info['examples']) - 3}")
             lines.append("    Что от тебя нужно: ничего, со следующего выпуска не повторится.")
             lines.append("")
+
+    if suspicious_published:
+        lines.append("🚫 ЧТО ЗРЯ ПРОШЛО В ВЫПУСК")
+        lines.append("Видимые пункты, которые выглядят устаревшими или неуместными для daily:")
+        for item in suspicious_published[:8]:
+            title = str(item.get("title") or "").strip() or "(без заголовка)"
+            source = str(item.get("source_label") or "").strip()
+            reasons = "; ".join(str(r) for r in (item.get("reasons") or []))
+            tail = f" — {source}" if source else ""
+            lines.append(f"  • {title[:90]}{tail}")
+            lines.append(f"    Почему: {reasons[:160]}")
+        if len(suspicious_published) > 8:
+            lines.append(f"  …и ещё {len(suspicious_published) - 8}.")
+        lines.append("")
+
+    if borderline_queue.get("items"):
+        lines.append("🟨 BORDERLINE — ПОСМОТРЕТЬ РУКАМИ")
+        lines.append("Спорные пункты не отправлены автоматически:")
+        for item in (borderline_queue.get("items") or [])[:8]:
+            title = str(item.get("title") or "").strip() or "(без заголовка)"
+            fp = str(item.get("fingerprint") or "").strip()
+            warnings_txt = "; ".join(str(w) for w in (item.get("quality_warnings") or []))
+            lines.append(f"  • {title[:90]}")
+            if warnings_txt:
+                lines.append(f"    Почему: {warnings_txt[:180]}")
+            if fp:
+                lines.append(f"    Включить завтра: добавь fingerprint в manual_candidate_overrides.force_include: {fp}")
+        if len(borderline_queue.get("items") or []) > 8:
+            lines.append(f"  …и ещё {len(borderline_queue.get('items') or []) - 8}.")
+        lines.append("")
+
+    if quality_scorecard.get("today"):
+        today_q = quality_scorecard.get("today") or {}
+        lines.append("📊 КАРТОЧКА КАЧЕСТВА")
+        lines.append(
+            f"  • Видимых пунктов: {today_q.get('visible_count', 0)} из "
+            f"{today_q.get('full_count', 0)} кандидатов."
+        )
+        lines.append(
+            f"  • Подозрительно опубликовано: {today_q.get('suspicious_published', 0)}, "
+            f"непонятных: {today_q.get('unclear_visible', 0)}, повторов: {today_q.get('repeat_visible', 0)}."
+        )
+        top_sources = today_q.get("top_sources") or []
+        if top_sources:
+            compact = ", ".join(
+                f"{row.get('source_label')} {int(float(row.get('share') or 0) * 100)}%"
+                for row in top_sources[:3]
+            )
+            lines.append(f"  • Топ источников: {compact}.")
+        if feedback_capture:
+            lines.append(
+                f"  • Feedback dataset: {feedback_capture.get('labelled_items', 0)} размечено, "
+                f"{feedback_capture.get('pending_items', 0)} ждёт реакции."
+            )
+        lines.append("")
 
     if lost_leads:
         lines.append("⚠️ ГЛАВНЫЕ НОВОСТИ ДНЯ, КОТОРЫЕ ВЫПАЛИ")
@@ -749,6 +837,84 @@ def cmd_send_warnings() -> int:
             lines.append(f"    Раскладка видимых пунктов: {layout}.")
         lines.append("")
 
+    transport_verdict = str(transport_coverage.get("verdict") or "")
+    if transport_verdict in {"disruptions_rendered", "found_not_rendered", "checked_no_disruptions", "partially_checked", "not_checked"}:
+        lines.append("🚋 ТРАНСПОРТ: ЧТО ПРОВЕРЕНО")
+        if transport_verdict == "disruptions_rendered":
+            lines.append(
+                f"  • Найдено disruption: {transport_coverage.get('disruptions_found', 0)}, "
+                f"показано: {transport_coverage.get('disruptions_rendered', 0)}."
+            )
+        elif transport_verdict == "checked_no_disruptions":
+            lines.append("  • TfGM/transport sources проверены; серьёзных disruption-кандидатов не найдено.")
+        elif transport_verdict == "found_not_rendered":
+            lines.append(
+                f"  • Найдено {transport_coverage.get('disruptions_found', 0)} disruption-кандидатов, "
+                "но в выпуск ничего не попало — проверь writer/release gates."
+            )
+        elif transport_verdict == "partially_checked":
+            lines.append("  • Транспорт проверен частично: часть источников недоступна.")
+        else:
+            lines.append("  • Транспортные источники не были проверены — нельзя честно писать, что сбоев нет.")
+        flags = []
+        if transport_coverage.get("tfgm_checked"):
+            flags.append("TfGM")
+        if transport_coverage.get("metrolink_checked"):
+            flags.append("Metrolink")
+        if transport_coverage.get("national_rail_checked"):
+            flags.append("National Rail")
+        if flags:
+            lines.append(f"    Источники: {', '.join(flags)}.")
+        lines.append("")
+
+    if diaspora_diagnostics.get("verdict") in {"checked_empty", "fetched_but_filtered", "accepted_not_rendered"}:
+        lines.append("🎭 РУССКОЯЗЫЧНЫЙ БЛОК")
+        lines.append(
+            f"  • raw={diaspora_diagnostics.get('raw_count', 0)}, "
+            f"accepted={diaspora_diagnostics.get('accepted_count', 0)}, "
+            f"rendered={diaspora_diagnostics.get('rendered_count', 0)} "
+            f"({diaspora_diagnostics.get('verdict')})."
+        )
+        for row in (diaspora_diagnostics.get("sources") or [])[:5]:
+            name = str(row.get("name") or "")
+            detail = str(row.get("detail") or row.get("status") or "")
+            reasons = row.get("reject_reasons") or {}
+            lines.append(
+                f"  • {name}: fetched={row.get('raw_count', row.get('candidate_count', 0))}, "
+                f"accepted={row.get('accepted_count', row.get('curated_count', 0))}, "
+                f"rendered={row.get('rendered_count', 0)}."
+            )
+            if reasons:
+                top_reason = sorted(reasons.items(), key=lambda kv: -int(kv[1]))[0]
+                lines.append(f"    Главная причина отсечения: {top_reason[0]} ({top_reason[1]}).")
+            elif detail:
+                lines.append(f"    Статус: {detail[:160]}.")
+        lines.append("")
+
+    if source_status.get("sources"):
+        rows = [
+            row for row in source_status.get("sources") or []
+            if isinstance(row, dict)
+            and int(row.get("raw_count") or row.get("candidate_count") or 0) > 0
+            and int(row.get("rendered_count") or 0) == 0
+        ]
+        if rows:
+            lines.append("🧪 FUNNEL ПО ИСТОЧНИКАМ")
+            for row in rows[:8]:
+                reasons = row.get("reject_reasons") or {}
+                reason_txt = ""
+                if reasons:
+                    reason, count = sorted(reasons.items(), key=lambda kv: -int(kv[1]))[0]
+                    reason_txt = f"; главная причина: {reason} ({count})"
+                lines.append(
+                    f"  • {row.get('name')}: fetched={row.get('raw_count', row.get('candidate_count', 0))}, "
+                    f"accepted={row.get('accepted_count', row.get('curated_count', 0))}, "
+                    f"rendered={row.get('rendered_count', 0)}{reason_txt}"
+                )
+            if len(rows) > 8:
+                lines.append(f"  …и ещё {len(rows) - 8}.")
+            lines.append("")
+
     # ── Источники: что не работало ────────────────────────────────
     if failed_sources:
         lines.append("🔌 ИСТОЧНИКИ КОТОРЫЕ НЕ ОТВЕТИЛИ")
@@ -782,7 +948,11 @@ def cmd_send_warnings() -> int:
 
     # ── Если кроме «всё в норме» сказать нечего — короткий happy summary
     if not (suspicious_groups or lost_leads or section_underflow
-            or failed_sources or borough_skew_flags or (health_level != "healthy" and health_signals)):
+            or failed_sources or borough_skew_flags
+            or transport_coverage.get("verdict") in {"found_not_rendered", "not_checked", "partially_checked"}
+            or diaspora_diagnostics.get("verdict") in {"checked_empty", "fetched_but_filtered", "accepted_not_rendered"}
+            or borderline_queue.get("items")
+            or (health_level != "healthy" and health_signals)):
         lines.append("Всё прошло чисто — никаких проблем не обнаружено.")
 
     text = "\n".join(lines).rstrip()
@@ -1135,6 +1305,7 @@ def cmd_pipeline_config() -> int:
                     "dedupe-digest",
                     "validate-candidates",
                     "curator-pass",
+                    "transport-fill",
                     "llm-rewrite",
                     "write-digest",
                     "edit-digest",

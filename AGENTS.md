@@ -22,6 +22,7 @@ collect-digest
   → dedupe-digest
   → validate-candidates
   → curator-pass          # editorial LLM pass: drop PR/evergreen, pick lead story
+  → transport-fill        # ensure checked transport coverage / synthetic transport status
   → llm-rewrite           # 5 category-specific prompts (transport/city/events/business/football)
   → write-digest
   → edit-digest
@@ -57,9 +58,12 @@ One pass per stage; if uncertain, leave Python output as-is.
 4. Run `curator-pass`. The curator LLM sees all included candidates at
    once, drops PR/evergreen/non-GM, and marks `is_lead=true` on the top
    story. Review `data/state/curator_report.json` if lead selection looks wrong.
-5. Run `llm-rewrite`. Each candidate category gets its own prompt.
+5. Run `transport-fill`. Review `data/state/transport_fill_report.json`
+   if the transport block is empty or if TfGM/Metrolink coverage looks
+   different from the live status.
+6. Run `llm-rewrite`. Each candidate category gets its own prompt.
    Drop decisions from writer (no draft_line) are logged at INFO level.
-6. Run `write-digest`. Review `data/state/draft_digest.html`.
+7. Run `write-digest`. Review `data/state/draft_digest.html`.
    Candidate draft_line for transport / culture / football / ticket
    items to fallback prose. Each line must start with `•`, be
    self-contained, and use Telegram HTML emphasis (`<b>...</b>`) instead

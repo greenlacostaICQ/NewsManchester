@@ -1,14 +1,25 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 import re
 from urllib import parse
 
 from news_digest.pipeline.city_intelligence import annotate_city_intelligence
 from news_digest.pipeline.common import clean_url, now_london, pipeline_run_id_from, read_json, today_london, write_json
+from news_digest.pipeline.editorial_contracts import (
+    attach_scoring_trace,
+    crime_specificity_review,
+    event_schema_completeness,
+    infer_why_now,
+    property_specificity_review,
+    why_now_is_publishable,
+)
+from news_digest.pipeline.entity_extraction import enrich_candidate_entities
+from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.event_quality import event_quality_reject_reasons, event_quality_report
+from news_digest.pipeline.reader_value import attach_reader_value
 from news_digest.pipeline.transport_classifier import classify_transport_candidate
 
 
@@ -64,11 +75,22 @@ def _exclude_stale_ticket_onsale(candidate: dict) -> bool:
     onsale_at = _summary_field_datetime(summary, "public_onsale")
     if onsale_at is None or onsale_at >= now_london():
         return False
-    candidate["include"] = False
+    age_days = (now_london() - onsale_at).days
+    if age_days <= 3:
+        candidate["ticket_type"] = "on_sale_now"
+        return False
+    candidate["primary_block"] = "future_announcements"
+    candidate["ticket_type"] = "old_onsale"
+    if age_days > 14:
+        candidate["editorial_status"] = "borderline"
+        candidate["quality_warnings"] = sorted(set(
+            [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]
+            + [f"ticket_old_onsale:{age_days}d"]
+        ))
     existing = str(candidate.get("reason") or "").strip()
-    note = "Validator: public_onsale is already in the past."
+    note = f"Validator: public_onsale opened {age_days} day(s) ago; moved out of ticket_radar."
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
-    return True
+    return False
 
 
 _EVENT_BLOCKS = {
@@ -111,6 +133,16 @@ _MONTHS = (
 _CONCRETE_DATE_RE = re.compile(
     r"\b(?:20\d{2}[/-]\d{1,2}[/-]\d{1,2}|\d{1,2}(?:st|nd|rd|th)?\s+"
     r"(?:" + "|".join(_MONTHS) + r")(?:\s+20\d{2})?)\b",
+    re.IGNORECASE,
+)
+_EDITORIAL_DAY_MONTH_RE = re.compile(
+    r"\b(?P<day>\d{1,2})(?:st|nd|rd|th)?\s+(?P<month>january|february|march|april|may|"
+    r"june|july|august|september|october|november|december)\b",
+    re.IGNORECASE,
+)
+_EDITORIAL_MONTH_DAY_RE = re.compile(
+    r"\b(?P<month>january|february|march|april|may|june|july|august|september|"
+    r"october|november|december)\s+(?P<day>\d{1,2})(?:st|nd|rd|th)?\b",
     re.IGNORECASE,
 )
 
@@ -172,6 +204,121 @@ _MONTH_NUM = {
     "january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
     "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12,
 }
+
+
+def _append_reject(candidate: dict, code: str, note: str) -> None:
+    candidate["include"] = False
+    candidate["reject_reasons"] = sorted(set(
+        [str(r) for r in candidate.get("reject_reasons") or [] if str(r).strip()]
+        + [code]
+    ))
+    existing = str(candidate.get("reason") or "").strip()
+    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+
+
+def _explicit_dates_from_blob(candidate: dict) -> list[date]:
+    today = now_london().date()
+    out: list[date] = []
+    summary = str(candidate.get("summary") or "")
+    for field in ("event_date", "public_onsale"):
+        dt = _summary_field_datetime(summary, field)
+        if dt is not None:
+            out.append(dt.date())
+    blob = _candidate_blob(candidate)
+    for match in list(_EDITORIAL_DAY_MONTH_RE.finditer(blob)) + list(_EDITORIAL_MONTH_DAY_RE.finditer(blob)):
+        month = _MONTH_NUM.get(match.group("month").lower())
+        if not month:
+            continue
+        try:
+            parsed = date(today.year, month, int(match.group("day")))
+        except ValueError:
+            continue
+        if parsed < today.replace(day=1):
+            parsed = parsed.replace(year=parsed.year + 1)
+        out.append(parsed)
+    return out
+
+
+def _published_day(candidate: dict) -> date | None:
+    raw = str(candidate.get("published_at") or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).astimezone(now_london().tzinfo).date()
+    except ValueError:
+        return None
+
+
+_NEWS_UPDATE_MARKERS = re.compile(
+    r"\b("
+    r"today|this morning|this afternoon|yesterday|latest|update|updated|"
+    r"sentenced|jailed|convicted|verdict|charged|arrested|appeal|"
+    r"approved|rejected|confirmed|announced|launched|opened|closed|"
+    r"warning|disruption|strike|closure"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def _exclude_stale_news_without_new_phase(candidate: dict) -> bool:
+    """Drop old city/news items unless the text carries a clear new phase."""
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("primary_block") or "") in {"weather", "transport"}:
+        return False
+    if str(candidate.get("category") or "") not in {"media_layer", "gmp", "council", "public_services", "city_news", "tech_business", "football"}:
+        return False
+    pub_day = _published_day(candidate)
+    if pub_day is None:
+        return False
+    age_days = (now_london().date() - pub_day).days
+    if age_days <= 7:
+        return False
+    if _NEWS_UPDATE_MARKERS.search(_candidate_blob(candidate)):
+        return False
+    _append_reject(
+        candidate,
+        "stale_no_new_phase",
+        f"Validator: news item is {age_days} days old and has no clear new phase for today's digest.",
+    )
+    return True
+
+
+def _exclude_bad_food_opening_timing(candidate: dict) -> bool:
+    """Food/openings are daily-value only: recent openings or this-week promos."""
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("category") or "") != "food_openings" and str(candidate.get("primary_block") or "") != "openings":
+        return False
+    today = now_london().date()
+    explicit_dates = _explicit_dates_from_blob(candidate)
+    if explicit_dates:
+        latest = max(explicit_dates)
+        earliest = min(explicit_dates)
+        if latest < today - timedelta(days=3):
+            _append_reject(
+                candidate,
+                "stale_opening",
+                f"Validator: food/opening date {latest.isoformat()} is more than 3 days old.",
+            )
+            return True
+        if earliest > today + timedelta(days=30):
+            _append_reject(
+                candidate,
+                "future_opening_too_early",
+                f"Validator: food/opening date {earliest.isoformat()} is more than 30 days away.",
+            )
+            return True
+        return False
+    pub_day = _published_day(candidate)
+    if pub_day is not None and (today - pub_day).days > 7:
+        _append_reject(
+            candidate,
+            "stale_opening",
+            f"Validator: undated food/opening article is {(today - pub_day).days} days old.",
+        )
+        return True
+    return False
 
 
 def _exclude_stale_event(candidate: dict) -> bool:
@@ -405,6 +552,116 @@ def _exclude_thin_evidence_candidate(candidate: dict) -> bool:
     return True
 
 
+def _apply_specificity_review(candidate: dict) -> None:
+    """C3/C4: keep useful items, but make unclear crime/property items auditable.
+
+    Collector enrichment has already run before validation. Here we use the
+    enriched text rather than immediately rejecting: first mark borderline and
+    demote to city_watch; reject only when even the enriched fields are too
+    thin to tell the reader what happened / where.
+    """
+    if not candidate.get("include"):
+        return
+
+    reviews = {
+        "crime": crime_specificity_review(candidate),
+        "property": property_specificity_review(candidate),
+    }
+    applied = {name: review for name, review in reviews.items() if review.get("applies")}
+    if not applied:
+        return
+
+    candidate["specificity_review"] = applied
+    hard_reasons: list[str] = []
+    borderline_reasons: list[str] = []
+    for name, review in applied.items():
+        severity = str(review.get("severity") or "none")
+        missing = ",".join(str(item) for item in (review.get("missing") or []))
+        if severity == "hard":
+            hard_reasons.append(f"{name}_too_unclear:{missing}")
+        elif severity == "borderline":
+            borderline_reasons.append(f"{name}_borderline:{missing}")
+
+    if hard_reasons:
+        candidate["include"] = False
+        candidate["reject_reasons"] = sorted(set(
+            [str(r) for r in candidate.get("reject_reasons") or [] if str(r).strip()]
+            + hard_reasons
+        ))
+        existing = str(candidate.get("reason") or "").strip()
+        note = "Validator: enriched item is still too unclear for a self-contained digest card."
+        candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+        return
+
+    if borderline_reasons:
+        candidate["editorial_status"] = "borderline"
+        candidate["quality_warnings"] = sorted(set(
+            [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]
+            + borderline_reasons
+        ))
+        # Borderline specificity should not get top billing. Keep it
+        # reviewable but demote from today/24h blocks into city radar.
+        if str(candidate.get("primary_block") or "") in {"today_focus", "last_24h"}:
+            candidate["primary_block"] = "city_watch"
+            existing = str(candidate.get("reason") or "").strip()
+            note = "Validator: demoted to city_watch after specificity review."
+            candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+
+
+def _manual_override(candidate: dict, state_dir: Path) -> str:
+    fp = str(candidate.get("fingerprint") or "").strip()
+    if not fp:
+        return ""
+    path = state_dir / "manual_candidate_overrides.json"
+    payload = read_json(path, {"force_include": [], "force_exclude": []}) if path.exists() else {}
+    force_include = {str(item) for item in payload.get("force_include") or []}
+    force_exclude = {str(item) for item in payload.get("force_exclude") or []}
+    if fp in force_exclude:
+        candidate["include"] = False
+        candidate["editorial_status"] = "manual_excluded"
+        candidate["reject_reasons"] = sorted(set(
+            [str(r) for r in candidate.get("reject_reasons") or [] if str(r).strip()]
+            + ["manual_exclude"]
+        ))
+        return "force_exclude"
+    if fp in force_include:
+        candidate["include"] = True
+        candidate["editorial_status"] = "approved"
+        candidate["manual_override"] = "force_include"
+        candidate["quality_warnings"] = [
+            str(r) for r in candidate.get("quality_warnings") or []
+            if not str(r).startswith(("crime_borderline", "property_borderline", "event_schema_missing"))
+        ]
+        return "force_include"
+    return ""
+
+
+def _apply_why_now_gate(candidate: dict, *, manual_override: str = "") -> None:
+    """Q1: make today's reason explicit before the writer sees the item."""
+    why_now = infer_why_now(candidate)
+    candidate["why_now"] = why_now
+    if manual_override == "force_include" or not candidate.get("include"):
+        return
+    if why_now == "stale":
+        _append_reject(
+            candidate,
+            "why_now_stale",
+            "Validator: no publishable reason for today's morning issue; item is stale/no-change.",
+        )
+        return
+    if not why_now_is_publishable(why_now):
+        candidate["editorial_status"] = "borderline"
+        candidate["quality_warnings"] = sorted(set(
+            [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]
+            + [f"why_now_unclear:{why_now}"]
+        ))
+        if str(candidate.get("primary_block") or "") in {"today_focus", "last_24h"}:
+            candidate["primary_block"] = "city_watch"
+        existing = str(candidate.get("reason") or "").strip()
+        note = "Validator: held for manual review because why-now value is unclear."
+        candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+
+
 def validate_candidates(project_root: Path) -> StageResult:
     state_dir = project_root / "data" / "state"
     candidates_path = state_dir / "candidates.json"
@@ -419,6 +676,13 @@ def validate_candidates(project_root: Path) -> StageResult:
         if not isinstance(candidate, dict):
             errors.append(f"Candidate #{index} is not an object.")
             continue
+
+        # E2: enrichment happens before any validator gate. This prevents
+        # false "no date / no venue / unclear" decisions based on raw RSS
+        # snippets when the body or structured source fields already contain
+        # the missing facts.
+        enrich_candidate_entities(candidate)
+        enrich_candidate_event(candidate)
 
         validation_errors: list[str] = []
         url = clean_url(str(candidate.get("source_url") or "").strip())
@@ -452,18 +716,41 @@ def validate_candidates(project_root: Path) -> StageResult:
         # rewriter never has to infer "Автобус:" vs "Metrolink:" from a
         # TfGM roadworks bulletin. Idempotent and safe for non-transport.
         classify_transport_candidate(candidate)
+        manual = _manual_override(candidate, state_dir)
         if candidate.get("include"):
             _exclude_stale_ticket_onsale(candidate)
         if candidate.get("include"):
             _exclude_paywall_stub(candidate)
+        if candidate.get("include"):
+            _exclude_stale_news_without_new_phase(candidate)
+        if candidate.get("include"):
+            _exclude_bad_food_opening_timing(candidate)
+        if candidate.get("include"):
+            _apply_specificity_review(candidate)
         if candidate.get("include"):
             _exclude_stale_event(candidate)
         if candidate.get("include"):
             _exclude_undated_event_like_candidate(candidate)
         if candidate.get("include"):
             _exclude_under_specified_event(candidate)
+        completeness = event_schema_completeness(candidate)
+        if completeness.get("applies"):
+            candidate["event_schema_completeness"] = completeness
+            missing = completeness.get("missing") or []
+            if missing and candidate.get("include"):
+                candidate["quality_warnings"] = sorted(set(
+                    [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]
+                    + [f"event_schema_missing:{','.join(str(m) for m in missing)}"]
+                ))
+        if manual == "force_include":
+            candidate["include"] = True
+            candidate["editorial_status"] = "approved"
+        _apply_why_now_gate(candidate, manual_override=manual)
         if candidate.get("event_page_type") in {"homepage", "aggregator"}:
             validation_errors.append("Event candidate must use an official event page.")
+
+        attach_reader_value(candidate)
+        attach_scoring_trace(candidate)
 
         candidate["validation_errors"] = validation_errors
         candidate["validated"] = not validation_errors
@@ -474,7 +761,12 @@ def validate_candidates(project_root: Path) -> StageResult:
                 "validated": not validation_errors,
                 "validation_errors": validation_errors,
                 "event_quality": candidate.get("event_quality"),
+                "specificity_review": candidate.get("specificity_review"),
+                "event_schema_completeness": candidate.get("event_schema_completeness"),
+                "why_now": candidate.get("why_now") or "",
                 "reject_reasons": candidate.get("reject_reasons") or [],
+                "quality_warnings": candidate.get("quality_warnings") or [],
+                "editorial_status": candidate.get("editorial_status") or "",
             }
         )
 

@@ -11,6 +11,7 @@ HTML enrichment helpers used after re-fetching an article.
 
 from __future__ import annotations
 
+from datetime import datetime
 from html import unescape
 from html.parser import HTMLParser
 from urllib import parse
@@ -19,6 +20,7 @@ import re
 import xml.etree.ElementTree as ET
 
 from news_digest.pipeline.common import clean_url, fingerprint_for_candidate, now_london
+from news_digest.pipeline.editorial_contracts import is_major_ticket_venue
 
 from .dates import (
     _date_hint_from_text,
@@ -1172,6 +1174,7 @@ def _extract_ticketmaster_items(source: SourceDef, body: str) -> list[ExtractedI
             city = str((venues[0].get("city") or {}).get("name") or "").strip()
         if major_london_only and not _is_major_london_venue(venue):
             continue
+        major_venue = is_major_ticket_venue(venue)
         classifications = event.get("classifications") or []
         genre = ""
         if classifications:
@@ -1182,6 +1185,19 @@ def _extract_ticketmaster_items(source: SourceDef, body: str) -> list[ExtractedI
         if onsale_start:
             title_parts.append(f"public sale {onsale_start[:16].replace('T', ' ')}")
         display_title = " — ".join(title_parts)
+        ticket_type = "major_upcoming" if major_venue else "regular_upcoming"
+        if onsale_scan:
+            if onsale_start:
+                try:
+                    onsale_dt = datetime.fromisoformat(onsale_start)
+                    if onsale_dt <= now_london():
+                        ticket_type = "on_sale_now"
+                    else:
+                        ticket_type = "presale_soon"
+                except ValueError:
+                    ticket_type = "newly_listed"
+            else:
+                ticket_type = "newly_listed"
         summary_parts = [
             venue,
             city,
@@ -1189,6 +1205,8 @@ def _extract_ticketmaster_items(source: SourceDef, body: str) -> list[ExtractedI
             f"event_date={_format_ticketmaster_date(event_start_raw)}" if event_start_raw else "",
             f"public_onsale={_format_ticketmaster_date(onsale_start_raw)}" if onsale_start_raw else "",
             "ticket_signal=onsale" if onsale_scan else "ticket_signal=upcoming_event",
+            f"ticket_type={ticket_type}",
+            f"major_venue={'true' if major_venue else 'false'}",
         ]
         summary = " | ".join(filter(None, summary_parts))
         if title and url and _looks_like_candidate_title(display_title):

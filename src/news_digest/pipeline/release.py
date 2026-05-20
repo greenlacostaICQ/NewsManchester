@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
+from datetime import date, datetime, timedelta
 import logging
 from pathlib import Path
 import re
@@ -609,14 +611,13 @@ def _evaluate_digest_health(
     """Q9: aggregate quality signals into a single health verdict.
 
     severity 3 = severe regression (e.g. all news sections thin, fewer
-                 than 15 items rendered) — surfaces as 🔴 unhealthy
-    severity 2 = clear risk (no weather, undated events) — at_risk
-    severity 1 = soft risk (transport empty, few items 15-25)
+                 than 12 items rendered) — surfaces as 🔴 unhealthy
+    severity 2 = clear risk (no weather, undated events, bloated issue) — at_risk
+    severity 1 = soft risk (transport empty, few items 12-13)
 
-    Observational only: the verdict never blocks release. The operator's
-    rule is "ship and flag" — a flagged digest is more useful than no
-    digest. The Telegram admin alert escalates the icon to 🔴 when
-    unhealthy so the day stands out at a glance.
+    These signals are warning-only. The release gate blocks broken inputs
+    and invalid Telegram HTML, but editorial risk should ship with a loud
+    review report instead of silently suppressing the morning issue.
     """
     signals: list[dict[str, object]] = []
     qc = (writer_report or {}).get("quality_counts") or {}
@@ -624,17 +625,23 @@ def _evaluate_digest_health(
     rendered = int(qc.get("rendered_candidates") or 0)
     included = int(qc.get("included_candidates") or 0)
 
-    if rendered < 15:
+    if rendered < 12:
         signals.append({
             "name": "too_few_items",
             "severity": 3,
-            "detail": f"Only {rendered} item(s) rendered — below the 15-item floor.",
+            "detail": f"Only {rendered} item(s) rendered — below the 12-item hard floor.",
         })
-    elif rendered < 25:
+    elif rendered < 14:
         signals.append({
             "name": "few_items",
             "severity": 1,
-            "detail": f"Only {rendered} item(s) rendered (typical day 30–50).",
+            "detail": f"Only {rendered} item(s) rendered (target day 14–22).",
+        })
+    elif rendered > 22:
+        signals.append({
+            "name": "too_many_items",
+            "severity": 2,
+            "detail": f"{rendered} item(s) rendered — above the 22-item editorial cap target.",
         })
 
     if sc.get("Погода", 0) == 0:
@@ -795,7 +802,8 @@ def _summarise_synthetic_freshness(candidates_report: dict | None) -> dict[str, 
 def _count_per_source_yield(
     candidates_report: dict | None,
     rendered_fingerprints: set[str] | list[str] | dict | None,
-) -> dict[str, dict[str, int]]:
+    writer_report: dict | None = None,
+) -> dict[str, dict[str, object]]:
     """O1: count, per source_label, how many candidates survived each
     downstream stage. Two columns matter for editorial review:
       - curated: include=True after curator (= what went into writer)
@@ -810,20 +818,48 @@ def _count_per_source_yield(
         rendered_set = set(rendered_fingerprints.get("rendered_candidate_fingerprints") or ())
     else:
         rendered_set = set(rendered_fingerprints or ())
-    yields: dict[str, dict[str, int]] = {}
+    yields: dict[str, dict[str, object]] = {}
     for candidate in (candidates_report or {}).get("candidates") or []:
         if not isinstance(candidate, dict):
             continue
         source_label = str(candidate.get("source_label") or "").strip()
         if not source_label:
             continue
-        record = yields.setdefault(source_label, {"curated": 0, "rendered": 0})
+        record = yields.setdefault(source_label, {"curated": 0, "rendered": 0, "reject_reasons": {}})
         if not candidate.get("include"):
+            reasons = [str(r) for r in (candidate.get("reject_reasons") or []) if str(r).strip()]
+            if not reasons:
+                reason = str(candidate.get("reason") or "").strip()
+                reasons = [reason[:90] or "rejected_before_writer"]
+            reason_counts = record["reject_reasons"]
+            if isinstance(reason_counts, dict):
+                for reason in reasons:
+                    reason_counts[reason] = int(reason_counts.get(reason) or 0) + 1
             continue
-        record["curated"] += 1
+        record["curated"] = int(record["curated"]) + 1
         fp = str(candidate.get("fingerprint") or "")
         if fp and fp in rendered_set:
-            record["rendered"] += 1
+            record["rendered"] = int(record["rendered"]) + 1
+    cand_by_fp = {
+        str(c.get("fingerprint") or ""): c
+        for c in (candidates_report or {}).get("candidates") or []
+        if isinstance(c, dict)
+    }
+    for drop in (writer_report or {}).get("dropped_candidates") or []:
+        if not isinstance(drop, dict):
+            continue
+        fp = str(drop.get("fingerprint") or "")
+        cand = cand_by_fp.get(fp) or {}
+        source_label = str(cand.get("source_label") or drop.get("source_label") or "").strip()
+        if not source_label:
+            continue
+        record = yields.setdefault(source_label, {"curated": 0, "rendered": 0, "reject_reasons": {}})
+        reason_counts = record["reject_reasons"]
+        if not isinstance(reason_counts, dict):
+            continue
+        for reason in (drop.get("reasons") or ["writer_drop"]):
+            label = str(reason or "writer_drop").strip()[:90]
+            reason_counts[label] = int(reason_counts.get(label) or 0) + 1
     return yields
 
 
@@ -831,6 +867,7 @@ def _summarise_source_health(
     scan_report: dict | None,
     candidates_report: dict | None = None,
     rendered_fingerprints: set[str] | list[str] | dict | None = None,
+    writer_report: dict | None = None,
 ) -> dict[str, object]:
     """R1: per-source status table + counts. Reads collector_report.json.
 
@@ -844,7 +881,7 @@ def _summarise_source_health(
     """
     counts: dict[str, int] = {"ok": 0, "partial": 0, "stale": 0, "empty": 0, "failed": 0}
     sources: list[dict[str, object]] = []
-    yields = _count_per_source_yield(candidates_report, rendered_fingerprints)
+    yields = _count_per_source_yield(candidates_report, rendered_fingerprints, writer_report)
     seen_names: set[str] = set()
 
     if scan_report:
@@ -858,7 +895,7 @@ def _summarise_source_health(
                 counts[status] = counts.get(status, 0) + 1
                 name = str(entry.get("name") or "")
                 seen_names.add(name)
-                row_yield = yields.get(name) or {"curated": 0, "rendered": 0}
+                row_yield = yields.get(name) or {"curated": 0, "rendered": 0, "reject_reasons": {}}
                 raw_count = int(entry.get("candidate_count") or 0)
                 accepted_count = int(row_yield["curated"])
                 sources.append(
@@ -871,6 +908,7 @@ def _summarise_source_health(
                         "accepted_count": accepted_count,
                         "rejected_count": max(raw_count - accepted_count, 0),
                         "rendered_count": int(row_yield["rendered"]),
+                        "reject_reasons": row_yield.get("reject_reasons") or {},
                         "failure_count": len(list(entry.get("errors") or [])),
                         "candidate_count": raw_count,
                         "fresh_last_24h_count": int(entry.get("fresh_last_24h_count") or 0),
@@ -904,7 +942,8 @@ def _summarise_source_health(
                 "raw_count": int(row["curated"]),
                 "accepted_count": int(row["curated"]),
                 "rejected_count": 0,
-                "rendered_count": int(row["rendered"]),
+                    "rendered_count": int(row["rendered"]),
+                    "reject_reasons": row.get("reject_reasons") or {},
                 "failure_count": 0,
                 "candidate_count": int(row["curated"]),
                 "fresh_last_24h_count": 0,
@@ -927,6 +966,315 @@ def _summarise_source_health(
     return {"counts": counts, "sources": sources}
 
 
+def _summarise_transport_coverage(
+    scan_report: dict | None,
+    candidates_report: dict | None,
+    rendered_fingerprints: set[str] | list[str] | dict | None,
+) -> dict[str, object]:
+    rendered_set = set(rendered_fingerprints or ())
+    category = ((scan_report or {}).get("categories") or {}).get("transport") or {}
+    checked = bool(category.get("checked"))
+    source_flags = {"tfgm_checked": False, "metrolink_checked": False, "national_rail_checked": False}
+    rows: list[dict[str, object]] = []
+    for entry in category.get("source_health") or []:
+        if not isinstance(entry, dict):
+            continue
+        name = str(entry.get("name") or "")
+        lowered = name.lower()
+        if "tfgm" in lowered:
+            source_flags["tfgm_checked"] = True
+        if "metrolink" in lowered:
+            source_flags["metrolink_checked"] = True
+        if "national rail" in lowered:
+            source_flags["national_rail_checked"] = True
+        rows.append(
+            {
+                "name": name,
+                "status": "failed" if entry.get("errors") else "checked",
+                "raw_count": int(entry.get("candidate_count") or 0),
+                "errors": entry.get("errors") or [],
+            }
+        )
+    transport_candidates = [
+        c for c in (candidates_report or {}).get("candidates") or []
+        if isinstance(c, dict) and str(c.get("primary_block") or "") == "transport"
+    ]
+    found = [c for c in transport_candidates if c.get("include")]
+    rendered = [c for c in found if str(c.get("fingerprint") or "") in rendered_set]
+    if rendered:
+        verdict = "disruptions_rendered"
+    elif found:
+        verdict = "found_not_rendered"
+    elif checked and rows and not any(row["status"] == "failed" for row in rows):
+        verdict = "checked_no_disruptions"
+    elif checked:
+        verdict = "partially_checked"
+    else:
+        verdict = "not_checked"
+    return {
+        "checked": checked,
+        **source_flags,
+        "disruptions_found": len(found),
+        "disruptions_rendered": len(rendered),
+        "verdict": verdict,
+        "sources": rows,
+    }
+
+
+def _summarise_diaspora_diagnostics(scan_report: dict | None, source_status: dict) -> dict[str, object]:
+    category = ((scan_report or {}).get("categories") or {}).get("diaspora_events") or {}
+    rows = [
+        row for row in (source_status.get("sources") or [])
+        if isinstance(row, dict) and row.get("category") == "diaspora_events"
+    ]
+    raw = sum(int(row.get("raw_count") or row.get("candidate_count") or 0) for row in rows)
+    accepted = sum(int(row.get("accepted_count") or row.get("curated_count") or 0) for row in rows)
+    rendered = sum(int(row.get("rendered_count") or 0) for row in rows)
+    if rendered:
+        verdict = "rendered"
+    elif accepted:
+        verdict = "accepted_not_rendered"
+    elif raw:
+        verdict = "fetched_but_filtered"
+    elif category.get("checked"):
+        verdict = "checked_empty"
+    else:
+        verdict = "not_checked"
+    return {
+        "checked": bool(category.get("checked")),
+        "raw_count": raw,
+        "accepted_count": accepted,
+        "rendered_count": rendered,
+        "verdict": verdict,
+        "sources": rows,
+        "source_expansion_note": (
+            "RuPub/Telegram/VK should be added only through stable public event pages or an explicit RSS/API bridge; "
+            "do not scrape private social feeds directly in the daily release path."
+        ),
+    }
+
+
+def _candidate_by_source_url(candidates_report: dict | None) -> dict[str, dict]:
+    out: dict[str, dict] = {}
+    for candidate in (candidates_report or {}).get("candidates") or []:
+        if not isinstance(candidate, dict):
+            continue
+        url = str(candidate.get("source_url") or "").strip()
+        if url:
+            out[url] = candidate
+    return out
+
+
+def _rendered_html_lines(html_text: str) -> list[dict[str, object]]:
+    lines: list[dict[str, object]] = []
+    for line in html_text.splitlines():
+        raw = line.strip()
+        if not raw.startswith("•"):
+            continue
+        urls = re.findall(r'<a\b[^>]*href=["\']([^"\']+)["\']', raw, flags=re.IGNORECASE)
+        visible = _visible_text_from_html(raw)
+        lines.append({"html": raw, "visible_text": visible, "urls": urls})
+    return lines
+
+
+def _classify_rendered_html_quality(html_text: str, candidates_report: dict | None) -> dict[str, object]:
+    """A2: inspect what actually reached Telegram HTML, not candidates.json."""
+    by_url = _candidate_by_source_url(candidates_report)
+    bad: list[dict[str, object]] = []
+    for row in _rendered_html_lines(html_text):
+        matched = [by_url[url] for url in row["urls"] if url in by_url]
+        for candidate in matched:
+            reasons: list[str] = []
+            if candidate.get("editorial_status") == "borderline" and candidate.get("manual_override") != "force_include":
+                reasons.append("borderline_visible")
+            if candidate.get("reject_reasons"):
+                reasons.append("rejected_candidate_visible")
+            if candidate.get("quality_warnings") and any(
+                str(w).startswith(("crime_borderline", "property_borderline"))
+                for w in candidate.get("quality_warnings") or []
+            ):
+                reasons.append("unclear_candidate_visible")
+            if reasons:
+                bad.append(
+                    {
+                        "fingerprint": candidate.get("fingerprint"),
+                        "title": candidate.get("title"),
+                        "source_label": candidate.get("source_label"),
+                        "reasons": reasons,
+                        "visible_text": row["visible_text"],
+                    }
+                )
+    return {
+        "counts": {
+            "visible_lines": len(_rendered_html_lines(html_text)),
+            "bad_visible_items": len(bad),
+        },
+        "bad_visible_items": bad[:20],
+    }
+
+
+def _borderline_queue(candidates_report: dict | None, writer_report: dict | None) -> dict[str, object]:
+    writer_hold = {
+        str(drop.get("fingerprint") or "")
+        for drop in (writer_report or {}).get("dropped_candidates") or []
+        if isinstance(drop, dict)
+        and any("manual review" in str(reason).lower() for reason in (drop.get("reasons") or []))
+    }
+    items: list[dict[str, object]] = []
+    for candidate in (candidates_report or {}).get("candidates") or []:
+        if not isinstance(candidate, dict):
+            continue
+        fp = str(candidate.get("fingerprint") or "")
+        if candidate.get("editorial_status") != "borderline" and fp not in writer_hold:
+            continue
+        if candidate.get("manual_override") == "force_include":
+            continue
+        items.append(
+            {
+                "fingerprint": fp,
+                "title": candidate.get("title"),
+                "source_label": candidate.get("source_label"),
+                "primary_block": candidate.get("primary_block"),
+                "category": candidate.get("category"),
+                "quality_warnings": candidate.get("quality_warnings") or [],
+                "specificity_review": candidate.get("specificity_review") or {},
+                "event_schema_completeness": candidate.get("event_schema_completeness") or {},
+                "manual_include_hint": f'Add "{fp}" to data/state/manual_candidate_overrides.json force_include[]',
+            }
+        )
+    return {"counts": {"borderline": len(items)}, "items": items[:30]}
+
+
+def _quality_scorecard(
+    *,
+    state_dir: Path,
+    current_day_london: str,
+    candidates_report: dict | None,
+    writer_report: dict | None,
+    rendered_fingerprints: set[str],
+    source_status: dict,
+    published_review: dict,
+    transport_coverage: dict,
+) -> dict[str, object]:
+    candidates = [c for c in (candidates_report or {}).get("candidates") or [] if isinstance(c, dict)]
+    rendered = [c for c in candidates if str(c.get("fingerprint") or "") in rendered_fingerprints]
+    full_count = len(candidates)
+    visible_count = len(rendered)
+    source_counts = Counter(str(c.get("source_label") or "") for c in rendered if c.get("source_label"))
+    top_sources = [
+        {"source_label": name, "count": count, "share": round(count / visible_count, 3) if visible_count else 0}
+        for name, count in source_counts.most_common(3)
+    ]
+    stale_or_bad = int((published_review.get("counts") or {}).get("suspiciously_published") or 0)
+    unclear_visible = sum(
+        1 for c in rendered
+        if c.get("editorial_status") == "borderline"
+        or any(str(w).startswith(("crime_borderline", "property_borderline")) for w in c.get("quality_warnings") or [])
+    )
+    repeat_visible = sum(1 for c in rendered if str(c.get("change_type") or "") in {"no_change", "same_story_rehash"})
+    tickets = [c for c in candidates if str(c.get("primary_block") or "") in {"ticket_radar", "future_announcements", "next_7_days"} and str(c.get("category") or "") == "venues_tickets"]
+    rendered_ticket_fps = {str(c.get("fingerprint") or "") for c in rendered if str(c.get("category") or "") == "venues_tickets"}
+    ticket_types: dict[str, dict[str, int]] = {}
+    for c in tickets:
+        t = str(c.get("ticket_type") or "unknown")
+        row = ticket_types.setdefault(t, {"fetched": 0, "published": 0})
+        row["fetched"] += 1
+        if str(c.get("fingerprint") or "") in rendered_ticket_fps:
+            row["published"] += 1
+    metric_design = [
+        "top_size_vs_full_feed",
+        "published_stale_unclear_repeat_share",
+        "top_3_source_diversity",
+        "ticket_funnel_by_type",
+        "transport_checked_vs_rendered",
+        "seven_day_trend",
+    ]
+    history_path = state_dir / "quality_scorecard_history.json"
+    history = read_json(history_path, {"days": []}) if history_path.exists() else {"days": []}
+    days = [d for d in history.get("days") or [] if isinstance(d, dict) and d.get("date") != current_day_london]
+    today_row = {
+        "date": current_day_london,
+        "visible_count": visible_count,
+        "full_count": full_count,
+        "suspicious_published": stale_or_bad,
+        "unclear_visible": unclear_visible,
+        "repeat_visible": repeat_visible,
+    }
+    days.append(today_row)
+    days = days[-14:]
+    write_json(history_path, {"days": days})
+    week = days[-7:]
+    avg_visible = round(sum(int(d.get("visible_count") or 0) for d in week) / len(week), 2) if week else 0
+    return {
+        "metric_design": metric_design,
+        "today": {
+            "visible_count": visible_count,
+            "full_count": full_count,
+            "top_size_vs_full_feed": round(visible_count / full_count, 3) if full_count else 0,
+            "suspicious_published": stale_or_bad,
+            "unclear_visible": unclear_visible,
+            "repeat_visible": repeat_visible,
+            "top_sources": top_sources,
+            "ticket_types": ticket_types,
+            "transport": transport_coverage,
+            "source_zero_yield": int((source_status.get("counts") or {}).get("zero_yield") or 0),
+        },
+        "seven_day_trend": {
+            "days": week,
+            "avg_visible_count": avg_visible,
+        },
+    }
+
+
+def _update_feedback_items(
+    state_dir: Path,
+    current_day_london: str,
+    candidates_report: dict | None,
+    rendered_fingerprints: set[str],
+) -> dict[str, object]:
+    path = state_dir / "personalization_feedback.json"
+    payload = read_json(path, {"items": []}) if path.exists() else {"items": []}
+    existing = {
+        (str(item.get("date") or ""), str(item.get("fingerprint") or "")): item
+        for item in payload.get("items") or []
+        if isinstance(item, dict)
+    }
+    for candidate in (candidates_report or {}).get("candidates") or []:
+        if not isinstance(candidate, dict):
+            continue
+        fp = str(candidate.get("fingerprint") or "")
+        if not fp or fp not in rendered_fingerprints:
+            continue
+        key = (current_day_london, fp)
+        item = existing.get(key, {})
+        item.update(
+            {
+                "date": current_day_london,
+                "fingerprint": fp,
+                "title": candidate.get("title") or "",
+                "source_label": candidate.get("source_label") or "",
+                "category": candidate.get("category") or "",
+                "primary_block": candidate.get("primary_block") or "",
+                "scoring_trace": candidate.get("scoring_trace") or {},
+                "reaction": item.get("reaction"),
+                "reaction_source": item.get("reaction_source"),
+                "reaction_at_london": item.get("reaction_at_london"),
+            }
+        )
+        existing[key] = item
+    rows = sorted(existing.values(), key=lambda item: (str(item.get("date") or ""), str(item.get("fingerprint") or "")))
+    write_json(path, {"schema_version": 1, "items": rows[-1000:]})
+    pending = sum(1 for item in rows if not item.get("reaction"))
+    labelled = len(rows) - pending
+    return {
+        "path": str(path.resolve()),
+        "rendered_items_recorded_today": len([item for item in rows if item.get("date") == current_day_london]),
+        "total_items": len(rows),
+        "labelled_items": labelled,
+        "pending_items": pending,
+    }
+
+
 # R2: suspicious-reject classification.
 # Patterns in writer drop reasons that almost certainly point to an
 # LLM-formatting glitch rather than genuine low quality. £230m → £230млн
@@ -947,6 +1295,104 @@ _DATE_HINT_IN_EVIDENCE = re.compile(
 )
 _PREMIUM_SOURCE_PRIORITY = frozenset({"BBC Manchester", "MEN", "The Mill", "The Manc",
                                        "Manchester Council", "GMCA"})
+
+_PUBLISHED_UPDATE_MARKERS = re.compile(
+    r"\b(today|this morning|this afternoon|yesterday|latest|update|updated|"
+    r"sentenced|jailed|convicted|verdict|charged|arrested|appeal|"
+    r"approved|rejected|confirmed|announced|launched|opened|closed|"
+    r"warning|disruption|strike|closure)\b",
+    re.IGNORECASE,
+)
+
+
+def _parse_candidate_day(raw: object) -> date | None:
+    text = str(raw or "").strip()
+    if not text:
+        return None
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00")).astimezone(now_london().tzinfo).date()
+    except ValueError:
+        try:
+            return date.fromisoformat(text[:10])
+        except ValueError:
+            return None
+
+
+def _event_days(candidate: dict) -> list[date]:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    days: list[date] = []
+    for key in ("date_start", "date_end", "date"):
+        parsed = _parse_candidate_day(event.get(key))
+        if parsed:
+            days.append(parsed)
+    summary = str(candidate.get("summary") or "")
+    for key in ("event_date", "public_onsale"):
+        match = re.search(rf"\b{key}=(\d{{4}}-\d{{2}}-\d{{2}})", summary)
+        if match:
+            parsed = _parse_candidate_day(match.group(1))
+            if parsed:
+                days.append(parsed)
+    return days
+
+
+def _classify_published_candidates(
+    candidates_report: dict | None,
+    rendered_fingerprints: set[str],
+) -> dict[str, object]:
+    """Surface visible items that look editorially wrong after all gates.
+
+    Reject review catches false negatives. This catches false positives:
+    stale news, stale food openings, and far-future food openings that
+    reached the HTML anyway.
+    """
+    today = datetime.strptime(today_london(), "%Y-%m-%d").date()
+    suspicious: list[dict[str, object]] = []
+    for c in (candidates_report or {}).get("candidates") or []:
+        if not isinstance(c, dict):
+            continue
+        fp = str(c.get("fingerprint") or "")
+        if fp not in rendered_fingerprints:
+            continue
+        category = str(c.get("category") or "")
+        block = str(c.get("primary_block") or "")
+        title = str(c.get("title") or "")
+        blob = " ".join(str(c.get(field) or "") for field in ("title", "summary", "lead", "evidence_text"))
+        reasons: list[str] = []
+
+        if category in {"media_layer", "gmp", "council", "public_services", "city_news", "tech_business", "football"} and block not in {"weather", "transport"}:
+            pub_day = _parse_candidate_day(c.get("published_at"))
+            if pub_day is not None and (today - pub_day).days > 7 and not _PUBLISHED_UPDATE_MARKERS.search(blob):
+                reasons.append(f"news item is {(today - pub_day).days} days old without a clear new phase")
+
+        if category == "food_openings" or block == "openings":
+            days = _event_days(c)
+            if days and max(days) < today - timedelta(days=3):
+                reasons.append(f"food/opening date {max(days).isoformat()} is more than 3 days old")
+            if days and min(days) > today + timedelta(days=30):
+                reasons.append(f"food/opening date {min(days).isoformat()} is more than 30 days away")
+            pub_day = _parse_candidate_day(c.get("published_at"))
+            if not days and pub_day is not None and (today - pub_day).days > 7:
+                reasons.append(f"undated food/opening article is {(today - pub_day).days} days old")
+
+        if reasons:
+            suspicious.append(
+                {
+                    "fingerprint": fp,
+                    "title": title,
+                    "source_label": c.get("source_label"),
+                    "category": category,
+                    "primary_block": block,
+                    "reasons": reasons,
+                }
+            )
+
+    return {
+        "counts": {
+            "suspiciously_published": len(suspicious),
+            "warning_visible_items": len(suspicious),
+        },
+        "suspiciously_published": suspicious[:20],
+    }
 
 
 def _classify_rejected_candidates(
@@ -1492,13 +1938,11 @@ def build_release(project_root: Path) -> ReleaseResult:
         warnings=warnings,
     )
 
-    # Q9: Bad Digest Detector. Compute health verdict from writer + curator
-    # signals plus a date-marker scan over event sections. The detector is
-    # observational only — even a severity-3 (unhealthy) verdict goes out
-    # as warnings, never errors, because operator preference is "ship and
-    # flag" rather than "block and notify". The 🔴 icon in the Telegram
-    # admin message + risk_level=unhealthy in release_report still make
-    # the day stand out.
+    # Q9/S1/A4: Bad Digest Detector. Editorial failures are warning-only:
+    # the digest should ship with an explicit review report unless a
+    # technical release invariant (HTML/date/required stage contract) is
+    # broken. This preserves the operator rule: do not silently block a
+    # morning issue when we can still send and explain the risk.
     if draft_path.exists():
         try:
             health_sections = extract_sections(draft_path.read_text(encoding="utf-8"))
@@ -1516,6 +1960,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         scan_report,
         candidates_report=candidates_report,
         rendered_fingerprints=rendered_fingerprints,
+        writer_report=writer_report,
     )
     if source_status["counts"].get("failed", 0) >= 3:
         warnings.append(
@@ -1531,6 +1976,25 @@ def build_release(project_root: Path) -> ReleaseResult:
         warnings.append(
             f"Source yield: {zero_yield} source(s) fetched today but contributed nothing to "
             "the digest — review release_report.source_status (sort by curated_count=0)."
+        )
+    transport_coverage = _summarise_transport_coverage(
+        scan_report=scan_report,
+        candidates_report=candidates_report,
+        rendered_fingerprints=rendered_fingerprints,
+    )
+    if transport_coverage["verdict"] == "found_not_rendered":
+        warnings.append(
+            "Transport coverage: disruption candidates were found but none rendered — "
+            "review release_report.transport_coverage."
+        )
+    elif transport_coverage["verdict"] == "not_checked":
+        warnings.append("Transport coverage: transport sources were not checked.")
+
+    diaspora_diagnostics = _summarise_diaspora_diagnostics(scan_report, source_status)
+    if diaspora_diagnostics["verdict"] in {"checked_empty", "fetched_but_filtered", "accepted_not_rendered"}:
+        warnings.append(
+            "Diaspora diagnostics: russian_events block has no rendered item — "
+            f"{diaspora_diagnostics['verdict']}; review release_report.diaspora_diagnostics."
         )
 
     # O2: synthetic freshness gate — any candidate flagged
@@ -1556,6 +2020,31 @@ def build_release(project_root: Path) -> ReleaseResult:
             f"Rejected review: {reject_review['counts']['suspiciously_rejected']} "
             "suspiciously rejected candidate(s) — see release_report.reject_review."
         )
+    published_review = _classify_published_candidates(
+        candidates_report=candidates_report,
+        rendered_fingerprints=rendered_fingerprints,
+    )
+    if published_review["counts"].get("suspiciously_published", 0) > 0:
+        warnings.append(
+            f"Published review: {published_review['counts']['suspiciously_published']} "
+            "suspicious visible candidate(s) shipped with warning; see release_report.published_review."
+        )
+    rendered_html_review = {"counts": {"visible_lines": 0, "bad_visible_items": 0}, "bad_visible_items": []}
+    if draft_path.exists():
+        rendered_html_review = _classify_rendered_html_quality(
+            draft_path.read_text(encoding="utf-8"),
+            candidates_report,
+        )
+        if rendered_html_review["counts"].get("bad_visible_items", 0) > 0:
+            warnings.append(
+                "Rendered HTML review found bad visible item(s): "
+                "shipped with warning; see release_report.rendered_html_review."
+            )
+    borderline_queue = _borderline_queue(candidates_report, writer_report)
+    if borderline_queue["counts"].get("borderline", 0):
+        warnings.append(
+            f"Borderline queue: {borderline_queue['counts']['borderline']} candidate(s) held for manual review."
+        )
 
     semantic_dedup_counts = _semantic_dedup_counts_from_memory(state_dir)
     if int(semantic_dedup_counts.get("restored") or 0) > 0:
@@ -1574,6 +2063,22 @@ def build_release(project_root: Path) -> ReleaseResult:
         state_dir,
         run_date_london=current_day_london,
         candidates=candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else [],
+        rendered_fingerprints=rendered_fingerprints,
+    )
+    quality_scorecard = _quality_scorecard(
+        state_dir=state_dir,
+        current_day_london=current_day_london,
+        candidates_report=candidates_report,
+        writer_report=writer_report,
+        rendered_fingerprints=rendered_fingerprints,
+        source_status=source_status,
+        published_review=published_review,
+        transport_coverage=transport_coverage,
+    )
+    feedback_capture = _update_feedback_items(
+        state_dir=state_dir,
+        current_day_london=current_day_london,
+        candidates_report=candidates_report,
         rendered_fingerprints=rendered_fingerprints,
     )
 
@@ -1614,7 +2119,14 @@ def build_release(project_root: Path) -> ReleaseResult:
         "change_type_summary": change_type_summary,
         "digest_health": digest_health,
         "source_status": source_status,
+        "transport_coverage": transport_coverage,
+        "diaspora_diagnostics": diaspora_diagnostics,
         "reject_review": reject_review,
+        "published_review": published_review,
+        "rendered_html_review": rendered_html_review,
+        "borderline_queue": borderline_queue,
+        "quality_scorecard": quality_scorecard,
+        "feedback_capture": feedback_capture,
         "synthetic_freshness": synthetic_freshness,
         "city_intelligence": city_intelligence,
         "trend_detection": trend_detection,

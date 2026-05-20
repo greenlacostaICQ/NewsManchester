@@ -306,8 +306,8 @@ class StaleEventAndSyntheticTest(unittest.TestCase):
     date because the only date was historical. Past defect: TfGM bus
     closure from 4 days ago rendered as live disruption."""
 
-    def test_stale_ticket_onsale_dropped(self) -> None:
-        past = (now_london() - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M")
+    def test_stale_ticket_onsale_demoted_not_dropped(self) -> None:
+        past = (now_london() - timedelta(days=20)).strftime("%Y-%m-%d %H:%M")
         candidate = {
             "include": True,
             "category": "venues_tickets",
@@ -315,8 +315,10 @@ class StaleEventAndSyntheticTest(unittest.TestCase):
             "title": "Calum Scott — tour 2026",
             "summary": f"ticket_signal=onsale | public_onsale={past}",
         }
-        self.assertTrue(_exclude_stale_ticket_onsale(candidate))
-        self.assertFalse(candidate["include"])
+        self.assertFalse(_exclude_stale_ticket_onsale(candidate))
+        self.assertTrue(candidate["include"])
+        self.assertEqual(candidate["primary_block"], "future_announcements")
+        self.assertEqual(candidate["editorial_status"], "borderline")
         self.assertIn("public_onsale", candidate["reason"])
 
     def test_stale_event_only_past_date_dropped(self) -> None:

@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 import re
 
 from news_digest.pipeline.common import now_london
+from news_digest.pipeline.editorial_contracts import classify_ticket_type, ticket_venue
 
 from .dates import _parse_datetime_value
 from .filters import _has_gm_token
@@ -308,7 +309,8 @@ _TICKET_MONTHS = {
     "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
     "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
 }
-_TICKET_HORIZON_DAYS = 60
+_TICKET_HORIZON_DAYS = 540
+_TICKET_RADAR_STALE_ONSALE_DAYS = 14
 
 # Matches "event_date=YYYY-MM-DD" or "public_onsale=YYYY-MM-DD" in Ticketmaster summary fields.
 _SUMMARY_ISODATE_PATTERN = re.compile(
@@ -353,13 +355,13 @@ def _ticket_event_max_date(title: str) -> datetime | None:
 def _adjust_ticket_radar_block(candidate: dict) -> None:
     """Demote ticket items whose earliest date is past the radar horizon.
 
-    Items > 60 days out drop to 'future_announcements' (Дальние анонсы).
-    Items entirely in the past are excluded (include=False).
+    Major venues get a 540-day radar horizon. Regular upcoming events at
+    non-major venues move to normal event blocks so Ticket Radar stays about
+    actionable ticket opportunities, not every gig in date order. Items
+    entirely in the past are excluded (include=False).
 
-    For onsale items: if the public_onsale date has already passed, the item
-    is no longer a "ticket radar" (start-of-sale) candidate. We check the
-    event_date and either demote to future_announcements (event still ahead)
-    or drop (event also past).
+    For onsale items: recent public_onsale dates stay in Ticket Radar; older
+    on-sale cards are moved out and marked borderline after 14 days.
     """
 
     if candidate.get("primary_block") != "ticket_radar":
@@ -367,11 +369,18 @@ def _adjust_ticket_radar_block(candidate: dict) -> None:
 
     summary = str(candidate.get("summary") or "")
     today_dt = now_london()
+    ticket_type = classify_ticket_type(candidate)
 
     if "ticket_signal=onsale" in summary.lower():
         onsale_dt = _parse_summary_field_date(summary, "public_onsale")
         if onsale_dt is not None and onsale_dt < today_dt:
-            # The on-sale window already opened — this is no longer a radar alert.
+            # The on-sale window already opened. Keep very recent on-sales in
+            # Ticket Radar, but move older ones out so the block stays about
+            # new opportunities rather than a stale event calendar.
+            age_days = (today_dt - onsale_dt).days
+            if age_days <= 3:
+                candidate["ticket_type"] = "on_sale_now"
+                return
             event_dt = _parse_summary_field_date(summary, "event_date")
             if event_dt is None or event_dt < today_dt - timedelta(days=1):
                 candidate["include"] = False
@@ -381,9 +390,21 @@ def _adjust_ticket_radar_block(candidate: dict) -> None:
             else:
                 days_out = (event_dt - today_dt).days
                 candidate["primary_block"] = "future_announcements"
+                candidate["ticket_type"] = "old_onsale"
+                if age_days > _TICKET_RADAR_STALE_ONSALE_DAYS:
+                    candidate["editorial_status"] = "borderline"
+                    candidate["quality_warnings"] = sorted(set(
+                        [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]
+                        + [f"ticket_old_onsale:{age_days}d"]
+                    ))
                 existing_reason = str(candidate.get("reason") or "").strip()
-                note = f"Onsale already open; event ~{days_out} day(s) away, moved to future_announcements."
+                note = (
+                    f"Onsale opened {age_days} day(s) ago; event ~{days_out} day(s) away, "
+                    "moved out of ticket_radar."
+                )
                 candidate["reason"] = f"{existing_reason} | {note}".strip(" |") if existing_reason else note
+        else:
+            candidate["ticket_type"] = ticket_type
         return
 
     title = str(candidate.get("title") or "")
@@ -401,4 +422,19 @@ def _adjust_ticket_radar_block(candidate: dict) -> None:
         candidate["primary_block"] = "future_announcements"
         existing_reason = str(candidate.get("reason") or "").strip()
         note = f"Demoted from ticket_radar: earliest date is ~{days_out} day(s) away."
+        candidate["reason"] = f"{existing_reason} | {note}".strip(" |") if existing_reason else note
+        return
+
+    # Non-onsale upcoming events only deserve the Ticket Radar slot if they
+    # are major enough. Small/unknown venues stay in normal event planning
+    # blocks, so Ticket Radar reads like "act on tickets" rather than "all
+    # gigs in date order".
+    candidate["ticket_type"] = ticket_type
+    if ticket_type == "regular_upcoming":
+        event_dt = _parse_summary_field_date(summary, "event_date") or latest
+        days_to_event = (event_dt - today_dt).days
+        candidate["primary_block"] = "next_7_days" if days_to_event <= 7 else "future_announcements"
+        existing_reason = str(candidate.get("reason") or "").strip()
+        venue = ticket_venue(candidate)
+        note = f"Regular upcoming ticket at non-major venue ({venue}); moved out of ticket_radar."
         candidate["reason"] = f"{existing_reason} | {note}".strip(" |") if existing_reason else note

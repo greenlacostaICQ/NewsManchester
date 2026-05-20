@@ -453,6 +453,8 @@ def extract_event(candidate: dict, entities: dict | None = None) -> dict:
         "event_name": event_name,
         "venue": venue,
         "date": iso_date,
+        "date_start": iso_date,
+        "date_end": "",
         "date_text": date_text,
         "borough": borough,
         "price": price,

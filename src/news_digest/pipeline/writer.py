@@ -22,6 +22,7 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.editorial_contracts import classify_ticket_type, scrub_vague_ending
 from news_digest.pipeline.reader_value import reader_value_score
 from news_digest.pipeline.toponyms import restore_english_toponyms
 from news_digest.pipeline.place_names import preserve_place_names
@@ -129,6 +130,9 @@ _BAD_EDITORIAL_PROSE_MARKERS = (
     "время и дату уточняйте",
     "дату и время уточняйте",
     "уточните даты",
+    "проверьте детали",
+    "свяжитесь с организатор",
+    "проверьте сами",
 )
 
 
@@ -435,18 +439,26 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
     title = _ticket_headliner(str(candidate.get("title") or ""))
     venue = _ticket_venue(candidate)
     practical = str(candidate.get("practical_angle") or "Проверьте время, вход и наличие билетов на официальной странице.").strip()
+    ticket_type = classify_ticket_type(candidate)
+    type_prefix = {
+        "on_sale_now": "сейчас в продаже",
+        "presale_soon": "скоро откроется продажа",
+        "newly_listed": "новый анонс",
+        "major_upcoming": "крупный анонс",
+        "old_onsale": "продажа уже открыта",
+    }.get(ticket_type, "анонс")
     event_dt = _parse_ticket_datetime(candidate)
     day_month = _format_ru_day_month(event_dt)
     time_part = ""
     if event_dt and event_dt.strftime("%H:%M") != "12:00":
         time_part = f" в {event_dt.strftime('%H:%M')}"
     if day_month and venue:
-        return f"• В {venue} {day_month}{time_part} — концерт {title}. {practical}"
+        return f"• {type_prefix}: в {venue} {day_month}{time_part} — концерт {title}. {practical}"
     if day_month:
-        return f"• {day_month}{time_part} — концерт {title}. {practical}"
+        return f"• {type_prefix}: {day_month}{time_part} — концерт {title}. {practical}"
     if venue:
-        return f"• В {venue} — концерт {title}. {practical}"
-    return f"• Концерт {title}. {practical}"
+        return f"• {type_prefix}: в {venue} — концерт {title}. {practical}"
+    return f"• {type_prefix}: концерт {title}. {practical}"
 
 
 def _service_fallback_subject(title: str) -> str:
@@ -479,6 +491,31 @@ def _build_public_service_fallback_line(candidate: dict) -> str:
     return (
         f"• {source_label}: {title}; {detail}. "
         "Если вы пользуетесь этим сервисом, уточните актуальные изменения на странице организации."
+    )
+
+
+def _transport_empty_line(project_root: Path) -> str:
+    report = read_json(project_root / "data" / "state" / "collector_report.json", {})
+    transport = ((report.get("categories") or {}).get("transport") or {}) if isinstance(report, dict) else {}
+    checked = bool(transport.get("checked"))
+    health = [entry for entry in (transport.get("source_health") or []) if isinstance(entry, dict)]
+    if not checked:
+        return (
+            '• Транспорт: источники TfGM/Metrolink сегодня не были проверены — '
+            'перед поездкой проверьте официальный сервис. '
+            '<a href="https://tfgm.com/">TfGM</a>'
+        )
+    failed = [entry for entry in health if entry.get("errors")]
+    if health and len(failed) == len(health):
+        return (
+            '• Транспорт: TfGM/Metrolink сегодня недоступны для проверки — '
+            'перед поездкой проверьте официальный сервис. '
+            '<a href="https://tfgm.com/">TfGM</a>'
+        )
+    return (
+        '• Транспорт: проверенные TfGM/Metrolink источники не дали серьёзных '
+        'сбоев для выпуска — перед поездкой всё равно проверьте маршрут. '
+        '<a href="https://tfgm.com/">TfGM</a>'
     )
 
 
@@ -776,6 +813,9 @@ def _section_priority_score(candidate: dict, section_name: str, line: str) -> fl
     value_item = dict(candidate)
     value_item["included"] = True
     score = float(reader_value_score(value_item))
+    completeness = candidate.get("event_schema_completeness")
+    if isinstance(completeness, dict) and completeness.get("applies"):
+        score += (float(completeness.get("score") or 0) - 50.0) / 5.0
     if section_name == "Городской радар":
         score += _city_watch_score(candidate) / 4.0
     elif section_name == "Выходные в GM":
@@ -811,7 +851,8 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     #     enough to write a full card. If source only gave us a thin
     #     280-char teaser, accept whatever LLM produced rather than
     #     dropping a real event for being a sentence too short.
-    if category in LONG_FORMAT_CATEGORIES and block_key not in SHORT_EVENT_BLOCKS:
+    is_transport_block = block_key == "transport"
+    if category in LONG_FORMAT_CATEGORIES and block_key not in SHORT_EVENT_BLOCKS and not is_transport_block:
         evidence_len = len(str(candidate.get("evidence_text") or "").strip())
         evidence_rich = evidence_len >= EVENT_RELAX_EVIDENCE_THRESHOLD
         skip_min = (block_key in EVENT_BLOCKS_RELAXABLE) and not evidence_rich
@@ -835,7 +876,7 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     # We only check long-format categories (city news / events / business etc.) —
     # transport / weather are intentionally short. Football already has its own
     # "return draft_line=\"\"" rule in the prompt.
-    if category in LONG_FORMAT_CATEGORIES and category != "football":
+    if category in LONG_FORMAT_CATEGORIES and category != "football" and not is_transport_block:
         evidence = str(candidate.get("evidence_text") or candidate.get("summary") or candidate.get("lead") or "")
         evidence_meaningful = len(re.sub(r"\s+", " ", evidence).strip())
         draft_len = len(normalized)
@@ -893,6 +934,23 @@ def write_digest(project_root: Path) -> StageResult:
         if not isinstance(candidate, dict) or not candidate.get("include"):
             continue
         quality_counts["included_candidates"] += 1
+        if (
+            candidate.get("editorial_status") == "borderline"
+            and candidate.get("manual_override") != "force_include"
+        ):
+            warnings.append(f"Candidate #{index} held for manual review: borderline editorial status.")
+            quality_counts["held_for_editorial_quality"] += 1
+            dropped_candidates.append(
+                {
+                    "fingerprint": candidate.get("fingerprint"),
+                    "title": str(candidate.get("title") or ""),
+                    "category": str(candidate.get("category") or ""),
+                    "primary_block": str(candidate.get("primary_block") or ""),
+                    "is_lead": bool(candidate.get("is_lead")),
+                    "reasons": ["Held for manual review: borderline editorial status."],
+                }
+            )
+            continue
         if candidate.get("validation_errors"):
             errors.append(f"Candidate #{index} is include=true but still has validation_errors.")
             quality_counts["blocked_for_quality"] += 1
@@ -1029,6 +1087,13 @@ def write_digest(project_root: Path) -> StageResult:
                 rendered_parts.append(html.escape(summary.rstrip(".")) + ".")
             line = "• " + " ".join(rendered_parts).strip()
 
+        scrubbed_line, removed_vague_endings = scrub_vague_ending(line)
+        if removed_vague_endings:
+            warnings.append(
+                f"Candidate #{index}: removed vague ending(s): {', '.join(removed_vague_endings)}."
+            )
+            line = scrubbed_line
+
         draft_line_errors = _draft_line_quality_errors(candidate, line)
         if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
             warnings.append(
@@ -1089,6 +1154,12 @@ def write_digest(project_root: Path) -> StageResult:
         warnings.append(
             f"Writer backfilled «{TODAY_FOCUS_SECTION}» with {backfilled_today_focus} item(s) from other practical sections."
         )
+    if not sections.get("Общественный транспорт сегодня"):
+        sections["Общественный транспорт сегодня"] = [_transport_empty_line(project_root)]
+        section_sources["Общественный транспорт сегодня"] = ["TfGM"]
+        section_scores["Общественный транспорт сегодня"] = [0.0]
+        section_fingerprints["Общественный транспорт сегодня"] = [""]
+        warnings.append("Writer added honest empty-transport coverage line.")
 
     rendered: list[str] = [_title_line(), ""]
 

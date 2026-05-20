@@ -84,11 +84,13 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
                 "primary_block": candidate.get("primary_block"),
                 "source_label": candidate.get("source_label"),
                 "published_at": candidate.get("published_at"),
+                "why_now": candidate.get("why_now") or "",
                 "semantic_embedding_version": EMBEDDING_VERSION,
                 "semantic_embedding": semantic_embedding(candidate),
                 "semantic_text": semantic_text(candidate)[:1200],
                 "entities": candidate.get("entities") or extract_entities(candidate),
                 "event": candidate.get("event") or extract_event(candidate),
+                "scoring_trace": candidate.get("scoring_trace") or {},
                 # A0 enrichment: borough + change_type so dedupe and "what
                 # was previously published" queries can filter by them.
                 "borough": _extract_borough_from_blob(candidate) or "",
@@ -240,9 +242,11 @@ def write_daily_index_snapshot(project_root: Path) -> Path | None:
             "event": c.get("event") or extract_event(c),
             "included": included,
             "change_type": c.get("change_type") or "",
+            "why_now": c.get("why_now") or "",
             "reject_reason": reject_reason,
             "reader_value_score": value_score,
             "reader_value_label": predicted_label(value_score),
+            "scoring_trace": c.get("scoring_trace") or {},
         }
         lines.append(json.dumps(record, ensure_ascii=False))
 

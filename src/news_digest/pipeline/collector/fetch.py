@@ -91,6 +91,8 @@ def _resolve_url(url: str) -> str:
         "NOW_MINUS_1D_UTC": (now_utc - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "PLUS_14D_UTC": (now_utc + timedelta(days=14)).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "PLUS_30D_UTC": (now_utc + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "PLUS_365D_UTC": (now_utc + timedelta(days=365)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "PLUS_540D_UTC": (now_utc + timedelta(days=540)).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
 
     return re.sub(

@@ -26,6 +26,7 @@ class StateStore:
         self.run_state_path = state_dir / "run_state.json"
         self.bot_state_path = state_dir / "bot_state.json"
         self.delivery_state_path = state_dir / "delivery_state.json"
+        self.feedback_path = state_dir / "personalization_feedback.json"
 
     def _load_bot_state(self) -> dict:
         payload = _read_json(
@@ -75,6 +76,47 @@ class StateStore:
             return False
         payload["subscribers"] = [item for item in payload["subscribers"] if item != chat_id]
         self._save_bot_state(payload)
+        return True
+
+    def record_item_feedback(self, *, fingerprint: str, reaction: str, chat_id: str) -> bool:
+        fingerprint = str(fingerprint or "").strip()
+        reaction = str(reaction or "").strip()
+        if not fingerprint or reaction not in {"useful", "not_useful"}:
+            return False
+        payload = _read_json(self.feedback_path, {"schema_version": 1, "items": []})
+        items = payload.get("items")
+        if not isinstance(items, list):
+            items = []
+        now = datetime.now(LONDON_TZ).isoformat()
+        matched = False
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("fingerprint") or "") != fingerprint:
+                continue
+            item["reaction"] = reaction
+            item["reaction_source"] = f"telegram:{chat_id}"
+            item["reaction_at_london"] = now
+            matched = True
+            break
+        if not matched:
+            items.append(
+                {
+                    "date": datetime.now(LONDON_TZ).strftime("%Y-%m-%d"),
+                    "fingerprint": fingerprint,
+                    "reaction": reaction,
+                    "reaction_source": f"telegram:{chat_id}",
+                    "reaction_at_london": now,
+                    "title": "",
+                    "source_label": "",
+                    "category": "",
+                    "primary_block": "",
+                    "scoring_trace": {},
+                }
+            )
+        payload["schema_version"] = 1
+        payload["items"] = items[-1000:]
+        _write_json(self.feedback_path, payload)
         return True
 
     def get_last_delivery(self) -> dict:
