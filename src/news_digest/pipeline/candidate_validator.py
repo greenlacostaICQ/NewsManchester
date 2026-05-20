@@ -9,7 +9,6 @@ from urllib import parse
 from news_digest.pipeline.city_intelligence import annotate_city_intelligence
 from news_digest.pipeline.common import clean_url, now_london, pipeline_run_id_from, read_json, today_london, write_json
 from news_digest.pipeline.event_quality import event_quality_reject_reasons, event_quality_report
-from news_digest.pipeline.reader_value import attach_reader_value
 from news_digest.pipeline.transport_classifier import classify_transport_candidate
 
 
@@ -261,9 +260,59 @@ def _exclude_undated_event_like_candidate(candidate: dict) -> bool:
         return False
     if not any(term in lowered for term in _EVENT_LIKE_TERMS + _RELATIVE_UNDATED_TERMS):
         return False
+    report = event_quality_report(candidate)
+    if report.get("is_event"):
+        report["severity"] = "hard"
+        candidate["event_quality"] = report
     candidate["include"] = False
+    candidate["reject_reasons"] = sorted(set(
+        [str(r) for r in candidate.get("reject_reasons") or [] if str(r).strip()]
+        + ["no_date"]
+    ))
     existing = str(candidate.get("reason") or "").strip()
     note = "Validator: event-like candidate has no concrete upcoming date."
+    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    return True
+
+
+def _exclude_under_specified_event(candidate: dict) -> bool:
+    """Apply the event quality gate to the live pipeline.
+
+    The older validator only blocked stale/undated event-like candidates.
+    This enforces the product rule with two severities: missing date/source
+    is hard because the reader cannot act safely; missing borough/price is
+    soft because official event pages are still useful even when sparse.
+    """
+    if not candidate.get("include"):
+        return False
+    report = event_quality_report(candidate)
+    candidate["event_quality"] = report
+    if not report.get("is_event") or report.get("ok"):
+        return False
+
+    reasons = event_quality_reject_reasons(candidate)
+    missing = {str(item) for item in report.get("missing", [])}
+    hard_missing = missing & {"date", "source"}
+    if not hard_missing:
+        warnings = sorted(set(str(r) for r in reasons if str(r).strip()))
+        candidate["event_quality_warnings"] = warnings
+        candidate["event_quality"]["severity"] = "soft"
+        if warnings:
+            candidate["quality_warnings"] = sorted(set(
+                [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]
+                + [f"event_quality:{r}" for r in warnings]
+            ))
+        return False
+
+    candidate["event_quality"]["severity"] = "hard"
+    candidate["include"] = False
+    candidate["reject_reasons"] = sorted(set(
+        [str(r) for r in candidate.get("reject_reasons") or [] if str(r).strip()]
+        + reasons
+    ))
+    missing_text = ", ".join(str(item) for item in report.get("missing", []))
+    existing = str(candidate.get("reason") or "").strip()
+    note = f"Validator: event quality gate failed ({missing_text})."
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
     return True
 
@@ -334,31 +383,6 @@ def _exclude_paywall_stub(candidate: dict) -> bool:
         candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
         return True
     return False
-
-
-def _exclude_underspecified_event(candidate: dict) -> bool:
-    """Run the event quality gate as part of validation.
-
-    Event candidates that miss any of date/place/district/access/source
-    get include=false and a structured reject_reason. This is a soft drop:
-    no validation_error is appended, so the run never fails on it
-    (release-blocking is reserved for genuinely broken candidates).
-    """
-
-    if not candidate.get("include"):
-        return False
-    report = event_quality_report(candidate)
-    if not report.get("is_event") or report.get("ok"):
-        return False
-    reasons = event_quality_reject_reasons(candidate)
-    missing = [str(item) for item in (report.get("missing") or [])]
-    candidate["include"] = False
-    candidate["event_quality_report"] = report
-    candidate["reject_reason"] = reasons
-    existing = str(candidate.get("reason") or "").strip()
-    note = "Validator: event quality gate — missing " + (", ".join(missing) if missing else "signals") + "."
-    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
-    return True
 
 
 def _exclude_thin_evidence_candidate(candidate: dict) -> bool:
@@ -437,21 +461,20 @@ def validate_candidates(project_root: Path) -> StageResult:
         if candidate.get("include"):
             _exclude_undated_event_like_candidate(candidate)
         if candidate.get("include"):
-            _exclude_underspecified_event(candidate)
+            _exclude_under_specified_event(candidate)
         if candidate.get("event_page_type") in {"homepage", "aggregator"}:
             validation_errors.append("Event candidate must use an official event page.")
 
         candidate["validation_errors"] = validation_errors
         candidate["validated"] = not validation_errors
-        attach_reader_value(candidate)
         items.append(
             {
                 "fingerprint": candidate.get("fingerprint"),
                 "title": candidate.get("title"),
                 "validated": not validation_errors,
                 "validation_errors": validation_errors,
-                "reader_value_score": candidate.get("reader_value_score"),
-                "reader_value_label": candidate.get("reader_value_label"),
+                "event_quality": candidate.get("event_quality"),
+                "reject_reasons": candidate.get("reject_reasons") or [],
             }
         )
 

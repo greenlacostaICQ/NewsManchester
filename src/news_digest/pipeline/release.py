@@ -1087,11 +1087,14 @@ def _semantic_dedup_counts_from_memory(state_dir: Path) -> dict[str, int]:
     except Exception:  # noqa: BLE001
         return {"intra_drops": 0, "cross_day_drops": 0, "borderline": 0, "enabled": False}
     summary = report.get("semantic_dedup_summary") or {}
+    guard = report.get("semantic_guard") or {}
     return {
         "intra_drops": int(summary.get("intra_drop_count") or 0),
         "cross_day_drops": int(summary.get("cross_day_drop_count") or 0),
         "borderline": int(summary.get("borderline_count") or 0),
         "enabled": bool(summary.get("enabled")),
+        "restored": int(guard.get("restored") or 0),
+        "restored_candidates": guard.get("restored_candidates") or [],
     }
 
 
@@ -1133,6 +1136,7 @@ def _build_after_run_summary(
         "semantic_intra_drops": int(sd.get("intra_drops") or 0),
         "semantic_cross_day_drops": int(sd.get("cross_day_drops") or 0),
         "semantic_borderline": int(sd.get("borderline") or 0),
+        "semantic_restored_by_guard": int(sd.get("restored") or 0),
         "topic_cluster_count": int(topic_clusters.get("cluster_count") or 0),
         "clustered_candidates": int(topic_clusters.get("clustered_candidate_count") or 0),
         "included_borough_count": int(borough_counts.get("covered_boroughs_included") or 0),
@@ -1554,6 +1558,12 @@ def build_release(project_root: Path) -> ReleaseResult:
         )
 
     semantic_dedup_counts = _semantic_dedup_counts_from_memory(state_dir)
+    if int(semantic_dedup_counts.get("restored") or 0) > 0:
+        warnings.append(
+            "Semantic dedupe guard restored "
+            f"{semantic_dedup_counts['restored']} embedding-only drop(s) — "
+            "review release_report.after_run_summary and dedupe_memory.semantic_guard."
+        )
     city_intelligence = summarise_city_intelligence(
         candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else [],
         rendered_fingerprints=rendered_fingerprints,

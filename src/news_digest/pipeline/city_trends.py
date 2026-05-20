@@ -375,18 +375,11 @@ def build_weekly_city_rollup(
 ) -> dict[str, object]:
     history = load_city_history(state_dir)
     if not history:
-        # Empty history is a "not yet seeded" state, not a failure. The
-        # daily digest pipeline builds city_intelligence_history.json on
-        # first successful release, so on a fresh install (or the first
-        # Sunday after a wipe) this Cron tick has nothing to summarise.
-        # Surface it as a warning payload so the Sunday automation keeps
-        # exit 0 — caller treats `errors` as fatal, `warnings` as soft.
         rollup = {
             "schema_version": CITY_TRENDS_SCHEMA_VERSION,
             "generated_at_london": now_london().isoformat(),
             "period": {"start": None, "end": end_date_london, "days": 0},
-            "warnings": ["city_intelligence_history.json is empty — no runs yet to summarise."],
-            "errors": [],
+            "errors": ["city_intelligence_history.json is empty"],
         }
         write_json(_rollup_path(state_dir), rollup)
         return rollup
@@ -493,14 +486,6 @@ def weekly_city_rollup_text(rollup: dict) -> str:
         f"🏙️ Weekly city rollup — {period.get('start') or '?'} → {period.get('end') or '?'}",
         f"Runs: {(rollup.get('totals') or {}).get('runs', 0)}  •  Items: {(rollup.get('totals') or {}).get('items', 0)}",
     ]
-    warnings = rollup.get("warnings") or []
-    if warnings:
-        lines.append("Notes:")
-        lines.extend(f"• {warning}" for warning in warnings)
-        # An empty-history warning means there's nothing else to render —
-        # return early so the report stays a one-screen status note.
-        return "\n".join(lines)
-
     errors = rollup.get("errors") or []
     if errors:
         lines.append("Problems:")

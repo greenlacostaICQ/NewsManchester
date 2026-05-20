@@ -271,12 +271,6 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         import logging  # noqa: PLC0415
         logging.getLogger(__name__).warning("semantic dedup pass failed: %s", exc)
         semantic_result = {"enabled": False, "error": str(exc)}
-
-    # Guard runs LAST so it sees both deterministic and embedding-pass
-    # drops, including cross-day rehashes that the embedding pass marks
-    # ``same_story_rehash``. Restoring any over-aggressive drops here is
-    # safe — they were already in candidates.json with include=true at
-    # the start of the stage.
     semantic_guard = _apply_semantic_drop_guard(candidates)
 
     final_candidates_by_fp = {
@@ -1040,61 +1034,44 @@ _SEMANTIC_ONLY_DROP_MIN_CAP = 3
 
 
 def _apply_semantic_drop_guard(candidates: list[dict]) -> dict[str, object]:
-    """Fail-open guard for embedding-only drops.
+    """Fail-open guard for embedding-only cross-day drops.
 
-    Title/fingerprint dedupe is mature. Embedding-only dedupe — both the
-    legacy token-overlap signal (``semantic_dedupe_match=embedding_only``)
-    and the OpenAI-embedding pass (``semantic_match_kind in
-    {intra_batch, cross_day}``) — is riskier, so if it would remove a
-    large share of the eligible issue we keep those candidates and
-    report the guard instead of shrinking the day.
-
-    Must run AFTER ``run_semantic_pass`` so the embedding-pass drops are
-    visible. Earlier versions ran before the pass and only protected
-    against the deterministic signal — embedding-pass cross-day drops
-    bypassed the guard entirely.
+    Title/fingerprint dedupe is mature. Embedding-only dedupe is useful but
+    riskier, so if it would remove a large share of the eligible issue we
+    keep those candidates and report the guard instead of shrinking the day.
     """
     eligible = [
         c for c in candidates
         if isinstance(c, dict)
         and str(c.get("primary_block") or "") not in {"weather", "transport"}
     ]
-    intra_batch_drops: list[dict] = []
-    cross_day_drops: list[dict] = []
-    deterministic_drops: list[dict] = []
-    for c in eligible:
-        if c.get("dedupe_decision") != "drop":
-            continue
-        kind = str(c.get("semantic_match_kind") or "")
-        change_type = str(c.get("change_type") or "")
-        if kind == "intra_batch":
-            intra_batch_drops.append(c)
-            continue
-        if kind == "cross_day" and change_type in {"no_change", "same_story_rehash"}:
-            cross_day_drops.append(c)
-            continue
-        if (
-            c.get("semantic_dedupe_match") == "embedding_only"
-            and change_type in {"no_change", "same_story_rehash"}
-        ):
-            deterministic_drops.append(c)
-
-    semantic_only_drops = intra_batch_drops + cross_day_drops + deterministic_drops
-    breakdown = {
-        "intra_batch": len(intra_batch_drops),
-        "cross_day": len(cross_day_drops),
-        "deterministic": len(deterministic_drops),
-    }
+    semantic_only_drops = [
+        c for c in eligible
+        if c.get("semantic_dedupe_match") == "embedding_only"
+        and c.get("dedupe_decision") == "drop"
+        and c.get("change_type") in {"no_change", "same_story_rehash"}
+    ]
     limit = max(_SEMANTIC_ONLY_DROP_MIN_CAP, int(len(eligible) * _SEMANTIC_ONLY_DROP_CAP_SHARE))
     if len(semantic_only_drops) <= limit:
         return {
             "triggered": False,
             "embedding_only_drops": len(semantic_only_drops),
             "limit": limit,
-            "breakdown": breakdown,
         }
 
+    restored_candidates: list[dict[str, object]] = []
     for candidate in semantic_only_drops:
+        restored_candidates.append(
+            {
+                "fingerprint": candidate.get("fingerprint"),
+                "title": candidate.get("title"),
+                "source_label": candidate.get("source_label"),
+                "primary_block": candidate.get("primary_block"),
+                "semantic_match_sim": candidate.get("semantic_match_sim"),
+                "semantic_match_fingerprint": candidate.get("semantic_match_fingerprint"),
+                "previous_reason": candidate.get("reason"),
+            }
+        )
         candidate["include"] = True
         candidate["dedupe_decision"] = "new"
         candidate["change_type"] = "new_story"
@@ -1107,7 +1084,7 @@ def _apply_semantic_drop_guard(candidates: list[dict]) -> dict[str, object]:
         "embedding_only_drops": len(semantic_only_drops),
         "limit": limit,
         "restored": len(semantic_only_drops),
-        "breakdown": breakdown,
+        "restored_candidates": restored_candidates,
     }
 
 

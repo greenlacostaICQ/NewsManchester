@@ -771,6 +771,18 @@ def _city_watch_score(candidate: dict) -> float:
     return score
 
 
+def _section_priority_score(candidate: dict, section_name: str, line: str) -> float:
+    """Shared reader-value score used when capped sections choose survivors."""
+    value_item = dict(candidate)
+    value_item["included"] = True
+    score = float(reader_value_score(value_item))
+    if section_name == "Городской радар":
+        score += _city_watch_score(candidate) / 4.0
+    elif section_name == "Выходные в GM":
+        score += _weekend_activity_score(candidate, line) / 4.0
+    return score
+
+
 def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     text = str(line or "").strip()
     errors: list[str] = []
@@ -856,14 +868,14 @@ def write_digest(project_root: Path) -> StageResult:
     # Parallel list of source_labels per section (same indices as sections[*]).
     # Used to apply SECTION_MAX_PER_SOURCE caps at render time.
     section_sources: dict[str, list[str]] = {h: [] for h in PRIMARY_BLOCKS.values()}
+    # Parallel list of candidate fingerprints per section. This is written
+    # after all caps/filtering so published_facts only records items that
+    # actually reached the Telegram HTML.
+    section_fingerprints: dict[str, list[str]] = {h: [] for h in PRIMARY_BLOCKS.values()}
     # Editorial priority score per line — populated only for «Городской радар»
     # where we re-sort candidates before truncation so the cap drops the
     # weakest items (PR releases) rather than whatever happened to come last.
     section_scores: dict[str, list[float]] = {h: [] for h in PRIMARY_BLOCKS.values()}
-    # Parallel list of fingerprints. Kept in sync with `sections[*]` so that
-    # after caps / reordering we can recompute which candidates actually made
-    # it into the published HTML (vs. which were merely include=true).
-    section_fingerprints: dict[str, list[str]] = {h: [] for h in PRIMARY_BLOCKS.values()}
     errors: list[str] = []
     warnings: list[str] = []
     quality_counts = {
@@ -1042,7 +1054,6 @@ def write_digest(project_root: Path) -> StageResult:
         line = re.sub(r",\s*(?:жанр\s+не\s+указан|другой\s+жанр|жанр\s+не\s+определ[её]н|жанр\s+неизвестен)\s*(?=[.!?]|$)", "", line, flags=re.IGNORECASE)
         # Restore English spellings for GM toponyms (Altrincham, Bury, Wigan, ...).
         line = restore_english_toponyms(line)
-        fingerprint = str(candidate.get("fingerprint") or "").strip()
         if candidate.get("is_lead"):
             # Lead story: no bullet, bold first sentence, placed in main_story block
             line = line.lstrip("• ").strip()
@@ -1056,7 +1067,7 @@ def write_digest(project_root: Path) -> StageResult:
             sections.setdefault("Главная история дня", []).insert(0, line)
             section_sources.setdefault("Главная история дня", []).insert(0, source_label)
             section_scores.setdefault("Главная история дня", []).insert(0, 0.0)
-            section_fingerprints.setdefault("Главная история дня", []).insert(0, fingerprint)
+            section_fingerprints.setdefault("Главная история дня", []).insert(0, str(candidate.get("fingerprint") or "").strip())
         else:
             if not line.startswith("• "):
                 line = f"• {line}"
@@ -1064,21 +1075,8 @@ def write_digest(project_root: Path) -> StageResult:
             line = _attach_source_anchor(line, source_url, source_label)
             sections[section_name].append(line)
             section_sources[section_name].append(source_label)
-            if section_name == "Городской радар":
-                score = _city_watch_score(candidate)
-            elif section_name == "Выходные в GM":
-                score = _weekend_activity_score(candidate, line)
-            else:
-                # Fall back to the editorial reader-value score so any
-                # capped section drops its weakest items first (instead
-                # of "whichever came last from the collector").
-                stored = candidate.get("reader_value_score")
-                if isinstance(stored, (int, float)):
-                    score = float(stored)
-                else:
-                    score = float(reader_value_score(candidate))
-            section_scores[section_name].append(score)
-            section_fingerprints[section_name].append(fingerprint)
+            section_fingerprints[section_name].append(str(candidate.get("fingerprint") or "").strip())
+            section_scores[section_name].append(_section_priority_score(candidate, section_name, line))
 
     missing_draft_count = quality_counts["dropped_missing_draft_line"]
     if missing_draft_count:
@@ -1124,46 +1122,40 @@ def write_digest(project_root: Path) -> StageResult:
             continue
         srcs = section_sources.get(section_name, [])
         scores = section_scores.get(section_name, [])
-        fingerprints = section_fingerprints.get(section_name, [])
-        # Pad parallel lists so zip/index access stays aligned with `lines`.
-        srcs = srcs + [""] * (len(lines) - len(srcs))
-        scores = scores + [0.0] * (len(lines) - len(scores))
-        fingerprints = fingerprints + [""] * (len(lines) - len(fingerprints))
+        fps = section_fingerprints.get(section_name, [])
         # Re-rank capped sections so the cap keeps practical local value,
-        # rather than whichever source happened to run first. All sections
-        # that can be truncated by SECTION_MAX_ITEMS / per-source caps get
-        # re-ordered by score (specialized for Городской радар / Выходные,
-        # reader_value_score for everything else).
-        is_capped = section_name in SECTION_MAX_ITEMS or section_name in SECTION_MAX_PER_SOURCE
-        if is_capped and scores and any(s > 0 for s in scores):
-            quads = sorted(
-                zip(lines, srcs, scores, fingerprints),
-                key=lambda quad: quad[2],
+        # rather than whichever source happened to run first.
+        if section_name in SECTION_MAX_ITEMS and scores:
+            triples = sorted(
+                zip(lines, srcs + [""] * (len(lines) - len(srcs)),
+                    scores + [0.0] * (len(lines) - len(scores)),
+                    fps + [""] * (len(lines) - len(fps))),
+                key=lambda triple: triple[2],
                 reverse=True,
             )
-            lines = [q[0] for q in quads]
-            srcs = [q[1] for q in quads]
-            fingerprints = [q[3] for q in quads]
+            lines = [t[0] for t in triples]
+            srcs = [t[1] for t in triples]
+            fps = [t[3] for t in triples]
         per_source_cap = SECTION_MAX_PER_SOURCE.get(section_name)
         if per_source_cap:
             src_counts: dict[str, int] = {}
-            filtered_lines: list[str] = []
+            filtered: list[str] = []
             filtered_fps: list[str] = []
             for idx, ln in enumerate(lines):
                 src = srcs[idx] if idx < len(srcs) else ""
                 if src_counts.get(src, 0) >= per_source_cap:
                     continue
                 src_counts[src] = src_counts.get(src, 0) + 1
-                filtered_lines.append(ln)
-                filtered_fps.append(fingerprints[idx] if idx < len(fingerprints) else "")
+                filtered.append(ln)
+                filtered_fps.append(fps[idx] if idx < len(fps) else "")
             min_items = SECTION_MIN_ITEMS.get(section_name, 0)
-            if not min_items or len(filtered_lines) >= min_items or len(lines) < min_items:
-                lines = filtered_lines
-                fingerprints = filtered_fps
+            if not min_items or len(filtered) >= min_items or len(lines) < min_items:
+                lines = filtered
+                fps = filtered_fps
         cap = SECTION_MAX_ITEMS.get(section_name)
         if cap:
             lines = lines[:cap]
-            fingerprints = fingerprints[:cap]
+            fps = fps[:cap]
         # Per-source / per-section caps can filter every remaining line —
         # don't emit a bare section header in that case, the release gate
         # rejects empty low-signal blocks.
@@ -1171,16 +1163,12 @@ def write_digest(project_root: Path) -> StageResult:
             section_counts[section_name] = 0
             continue
         section_counts[section_name] = len(lines)
-        for fp in fingerprints:
-            if fp:
-                rendered_candidate_fingerprints.append(fp)
+        rendered_candidate_fingerprints.extend(fp for fp in fps if fp)
         rendered.append(f"<b>{section_name}</b>")
         rendered.extend(lines)
         rendered.append("")
-    # Recompute rendered_candidates from the post-cap section counts so
-    # quality_counts reflects what actually shipped, not what was merely
-    # include=true at the start of the writer loop.
-    quality_counts["rendered_candidates"] = sum(section_counts.values())
+
+    quality_counts["rendered_candidates"] = len(rendered_candidate_fingerprints)
 
     draft_path.write_text("\n".join(rendered).strip() + "\n", encoding="utf-8")
     write_json(

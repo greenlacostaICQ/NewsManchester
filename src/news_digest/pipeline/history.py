@@ -9,6 +9,7 @@ import shutil
 from news_digest.pipeline.common import normalize_title, read_json, today_london, write_json
 from news_digest.pipeline.entity_extraction import enrich_candidate_entities, extract_entities
 from news_digest.pipeline.event_extraction import enrich_candidate_event, extract_event
+from news_digest.pipeline.reader_value import predicted_label, reader_value_score
 from news_digest.pipeline.semantic_dedupe import (
     EMBEDDING_VERSION,
     semantic_embedding,
@@ -221,6 +222,10 @@ def write_daily_index_snapshot(project_root: Path) -> Path | None:
             # Curator included it, writer dropped it post-quality-check.
             reject_reason = drop_reasons[fp]
             included = False
+        value_item = dict(c)
+        value_item["included"] = included
+        value_item["reject_reason"] = reject_reason
+        value_score = reader_value_score(value_item)
         record = {
             "ts": today,
             "pipeline_run_id": pipeline_run_id,
@@ -236,6 +241,8 @@ def write_daily_index_snapshot(project_root: Path) -> Path | None:
             "included": included,
             "change_type": c.get("change_type") or "",
             "reject_reason": reject_reason,
+            "reader_value_score": value_score,
+            "reader_value_label": predicted_label(value_score),
         }
         lines.append(json.dumps(record, ensure_ascii=False))
 

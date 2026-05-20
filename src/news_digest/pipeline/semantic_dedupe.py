@@ -580,6 +580,7 @@ def run_semantic_pass(
                 c["semantic_match_sim"] = round(best_sim, 4)
                 c["semantic_match_fingerprint"] = best_fact_fp
                 c["semantic_match_kind"] = "cross_day"
+                c["semantic_dedupe_match"] = "embedding_only"
                 if follow_up:
                     c["change_type"] = "follow_up"
                     c["reason"] = (

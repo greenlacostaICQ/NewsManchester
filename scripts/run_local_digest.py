@@ -855,7 +855,7 @@ def cmd_weekly_city_rollup() -> int:
     state_dir = PROJECT_ROOT / "data" / "state"
     rollup = build_weekly_city_rollup(state_dir)
     print(json.dumps(rollup, ensure_ascii=False, indent=2))
-    return 0 if not rollup.get("errors") else 1
+    return 0 if _weekly_city_rollup_errors_are_non_blocking(rollup) else 1
 
 
 def cmd_send_weekly_city_rollup() -> int:
@@ -871,7 +871,12 @@ def cmd_send_weekly_city_rollup() -> int:
     for target in targets:
         client.send_text_in_chunks(target, text, parse_mode=None)
     print(f"Sent weekly city rollup to {len(targets)} target(s).")
-    return 0 if not rollup.get("errors") else 1
+    return 0 if _weekly_city_rollup_errors_are_non_blocking(rollup) else 1
+
+
+def _weekly_city_rollup_errors_are_non_blocking(rollup: dict) -> bool:
+    errors = [str(err) for err in rollup.get("errors") or []]
+    return not errors or errors == ["city_intelligence_history.json is empty"]
 
 
 def cmd_delivered_today() -> int:
@@ -1113,6 +1118,41 @@ def cmd_model_routing() -> int:
     return 0
 
 
+def cmd_pipeline_config() -> int:
+    from news_digest.pipeline.model_routing import route_snapshot  # noqa: PLC0415
+    from news_digest.pipeline.prompts_meta import (  # noqa: PLC0415
+        PROMPT_REGISTRY_VERSION,
+        snapshot,
+        validate_registry,
+    )
+
+    prompt_errors = validate_registry()
+    print(
+        json.dumps(
+            {
+                "pipeline": [
+                    "collect-digest",
+                    "dedupe-digest",
+                    "validate-candidates",
+                    "curator-pass",
+                    "llm-rewrite",
+                    "write-digest",
+                    "edit-digest",
+                    "build-digest",
+                ],
+                "required_release_gate_version": REQUIRED_RELEASE_GATE_VERSION,
+                "prompt_registry_version": PROMPT_REGISTRY_VERSION,
+                "prompt_versions": snapshot(),
+                "prompt_errors": prompt_errors,
+                "model_routing": route_snapshot(),
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+    return 0 if not prompt_errors else 1
+
+
 def cmd_cost_summary() -> int:
     report = read_json(PROJECT_ROOT / "data" / "state" / "release_report.json", {})
     cost_summary = report.get("cost_summary") or {}
@@ -1219,6 +1259,10 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "model-routing",
         help="Print default model routing policy for scoring, curation, rewrite, and fallback.",
+    )
+    subparsers.add_parser(
+        "pipeline-config",
+        help="Print pipeline stages, release gate version, prompt registry and model routing.",
     )
     subparsers.add_parser(
         "cost-summary",
@@ -1332,6 +1376,8 @@ def main() -> int:
         return cmd_prompt_versions()
     if args.command == "model-routing":
         return cmd_model_routing()
+    if args.command == "pipeline-config":
+        return cmd_pipeline_config()
     if args.command == "cost-summary":
         return cmd_cost_summary()
     if args.command == "reader-value-validation":

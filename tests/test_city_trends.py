@@ -11,6 +11,7 @@ from news_digest.pipeline.city_trends import (
     load_city_history,
 )
 from news_digest.pipeline.common import write_json
+from scripts.run_local_digest import _weekly_city_rollup_errors_are_non_blocking
 
 
 def _candidate(
@@ -118,8 +119,41 @@ class TrendDetectionTest(unittest.TestCase):
         self.assertEqual(history[0]["item_count"], 2)
         self.assertEqual(history[0]["boroughs"], {"Stockport": 2})
 
+    def test_daily_history_writer_creates_history_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+            report = {
+                "run_date_london": "2026-05-20",
+                "release_decision": "pass",
+                "warnings": [],
+                "source_status": {"counts": {"failed": 0}},
+                "digest_health": {"risk_level": "healthy"},
+                "city_intelligence": {"borough_coverage": {"skew_flags": []}},
+            }
+
+            path = append_city_intelligence_history(
+                state_dir,
+                report_payload=report,
+                candidates=[_candidate("fp-a", "Trafford market", topic_tags=["culture"], boroughs=["Trafford"])],
+            )
+
+            self.assertTrue(path.exists())
+            history = load_city_history(state_dir)
+            self.assertEqual(len(history), 1)
+            self.assertEqual(history[0]["run_date_london"], "2026-05-20")
+
 
 class WeeklyRollupTest(unittest.TestCase):
+    def test_empty_history_rollup_is_non_blocking(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+
+            rollup = build_weekly_city_rollup(state_dir, end_date_london="2026-05-20")
+
+        self.assertEqual(rollup["period"]["days"], 0)
+        self.assertEqual(rollup["errors"], ["city_intelligence_history.json is empty"])
+        self.assertTrue(_weekly_city_rollup_errors_are_non_blocking(rollup))
+
     def test_weekly_rollup_summarises_topics_boroughs_events_and_risks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             state_dir = Path(tmp)
