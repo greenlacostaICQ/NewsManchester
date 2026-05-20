@@ -8,6 +8,7 @@ from urllib import parse
 
 from news_digest.pipeline.city_intelligence import annotate_city_intelligence
 from news_digest.pipeline.common import clean_url, now_london, pipeline_run_id_from, read_json, today_london, write_json
+from news_digest.pipeline.event_quality import event_quality_reject_reasons, event_quality_report
 from news_digest.pipeline.transport_classifier import classify_transport_candidate
 
 
@@ -334,6 +335,31 @@ def _exclude_paywall_stub(candidate: dict) -> bool:
     return False
 
 
+def _exclude_underspecified_event(candidate: dict) -> bool:
+    """Run the event quality gate as part of validation.
+
+    Event candidates that miss any of date/place/district/access/source
+    get include=false and a structured reject_reason. This is a soft drop:
+    no validation_error is appended, so the run never fails on it
+    (release-blocking is reserved for genuinely broken candidates).
+    """
+
+    if not candidate.get("include"):
+        return False
+    report = event_quality_report(candidate)
+    if not report.get("is_event") or report.get("ok"):
+        return False
+    reasons = event_quality_reject_reasons(candidate)
+    missing = [str(item) for item in (report.get("missing") or [])]
+    candidate["include"] = False
+    candidate["event_quality_report"] = report
+    candidate["reject_reason"] = reasons
+    existing = str(candidate.get("reason") or "").strip()
+    note = "Validator: event quality gate — missing " + (", ".join(missing) if missing else "signals") + "."
+    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    return True
+
+
 def _exclude_thin_evidence_candidate(candidate: dict) -> bool:
     category = str(candidate.get("category") or "")
     if category not in {"media_layer", "gmp", "council", "public_services", "city_news", "tech_business", "football"}:
@@ -409,6 +435,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _exclude_stale_event(candidate)
         if candidate.get("include"):
             _exclude_undated_event_like_candidate(candidate)
+        if candidate.get("include"):
+            _exclude_underspecified_event(candidate)
         if candidate.get("event_page_type") in {"homepage", "aggregator"}:
             validation_errors.append("Event candidate must use an official event page.")
 
