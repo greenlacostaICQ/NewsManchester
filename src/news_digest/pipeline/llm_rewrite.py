@@ -354,8 +354,17 @@ def _call_provider_batch(
     batch_size: int = BATCH_SIZE,
     system_prompt: str = PROMPT_CITY_NEWS,
     prompt_name: str = "unknown",
+    today_date: str = "",
 ) -> dict[str, str]:
-    """Call one provider in batches. Returns fingerprint→draft_line."""
+    """Call one provider in batches. Returns fingerprint→draft_line.
+
+    ``today_date``, when set, is injected into the user payload (NOT the
+    system prompt) as ``{"today_date": ..., "candidates": [...]}`` so the
+    system prefix stays byte-stable across days and DeepSeek / OpenAI can
+    cache it (DeepSeek ``prompt_cache_hit_tokens``, OpenAI
+    ``prompt_tokens_details.cached_tokens``). Only date-aware prompts
+    pass a non-empty value.
+    """
     if not api_key:
         logger.warning("%s: API key not set, skipping.", provider_name)
         return {}
@@ -373,32 +382,34 @@ def _call_provider_batch(
     logger.info("%s: %d candidates → %d batch(es) of ≤%d.", provider_name, len(candidates), len(batches), batch_size)
 
     for batch_idx, batch in enumerate(batches, start=1):
-        user_content = json.dumps(
-            [
-                {
-                    "fingerprint": c.get("fingerprint", ""),
-                    "title": c.get("title", ""),
-                    "summary": c.get("summary", ""),
-                    "lead": c.get("lead", ""),
-                    "evidence_text": c.get("evidence_text", ""),
-                    "category": c.get("category", ""),
-                    "primary_block": c.get("primary_block", ""),
-                    "practical_angle": c.get("practical_angle", ""),
-                    "source_label": c.get("source_label", ""),
-                    "source_url": c.get("source_url", ""),
-                    "published_at": c.get("published_at", ""),
-                    "freshness_status": c.get("freshness_status", ""),
-                    "borough": c.get("borough", ""),
-                    "entities": c.get("entities", {}),
-                    "event": c.get("event", {}),
-                    "expected_operator": c.get("expected_operator", ""),
-                    "transport_mode": c.get("transport_mode", ""),
-                    "current_draft_line": c.get("draft_line", ""),
-                }
-                for c in batch
-            ],
-            ensure_ascii=False,
-        )
+        batch_items = [
+            {
+                "fingerprint": c.get("fingerprint", ""),
+                "title": c.get("title", ""),
+                "summary": c.get("summary", ""),
+                "lead": c.get("lead", ""),
+                "evidence_text": c.get("evidence_text", ""),
+                "category": c.get("category", ""),
+                "primary_block": c.get("primary_block", ""),
+                "practical_angle": c.get("practical_angle", ""),
+                "source_label": c.get("source_label", ""),
+                "source_url": c.get("source_url", ""),
+                "published_at": c.get("published_at", ""),
+                "freshness_status": c.get("freshness_status", ""),
+                "borough": c.get("borough", ""),
+                "entities": c.get("entities", {}),
+                "event": c.get("event", {}),
+                "expected_operator": c.get("expected_operator", ""),
+                "transport_mode": c.get("transport_mode", ""),
+                "current_draft_line": c.get("draft_line", ""),
+            }
+            for c in batch
+        ]
+        if today_date:
+            user_payload: object = {"today_date": today_date, "candidates": batch_items}
+        else:
+            user_payload = batch_items
+        user_content = json.dumps(user_payload, ensure_ascii=False)
         try:
             logger.info("%s: batch %d/%d — sending %d candidates to %s...",
                         provider_name, batch_idx, len(batches), len(batch), model)
@@ -460,6 +471,7 @@ def _call_with_fallback(
     label_suffix: str = "",
     prompt_name: str = "unknown",
     route_name: str = "rewrite",
+    today_date: str = "",
 ) -> dict[str, str]:
     """Call provider chain with a specific prompt, return fingerprint→draft_line."""
     if not candidates:
@@ -490,6 +502,7 @@ def _call_with_fallback(
                 batch_size=step.batch_size or BATCH_SIZE,
                 system_prompt=prompt,
                 prompt_name=prompt_name,
+                today_date=today_date,
             )
         )
         missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
@@ -673,15 +686,13 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         logger.info("LLM rewrite: %d candidates need draft_lines.", len(to_rewrite))
 
         # Group by prompt type and call each group separately.
-        # For prompts that need current date (business/events/diaspora — recurring
-        # markets, date computation), inject TODAY_DATE header at the top.
+        # TODAY_DATE is passed via the user payload (not the system prompt)
+        # so the system prefix is byte-stable across days and DeepSeek /
+        # OpenAI prompt caching can reuse it on day N+1. Only date-aware
+        # prompts get a non-empty today_date — others stay on the legacy
+        # bare-list payload shape.
         _DATE_AWARE_PROMPTS = {PROMPT_BUSINESS, PROMPT_EVENTS, PROMPT_DIASPORA_EVENTS}
         _today = today_london()
-
-        def _with_date_header(prompt: str) -> str:
-            if prompt in _DATE_AWARE_PROMPTS:
-                return f"TODAY_DATE={_today}\n\n" + prompt
-            return prompt
 
         groups: dict[str, list[dict]] = {}
         for c in to_rewrite:
@@ -692,9 +703,11 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         mapping: dict[str, str] = {}
         for prompt, group in groups.items():
             logger.info("LLM rewrite: calling group of %d candidates.", len(group))
+            today_for_group = _today if prompt in _DATE_AWARE_PROMPTS else ""
             mapping.update(_call_with_fallback(
-                group, _with_date_header(prompt), provider_override, base_url_override, model_override,
+                group, prompt, provider_override, base_url_override, model_override,
                 prompt_name=prompt_name_for(prompt),
+                today_date=today_for_group,
             ))
 
         run_iso = now_london().isoformat()
