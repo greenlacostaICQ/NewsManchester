@@ -8,6 +8,7 @@ from urllib import parse
 
 from news_digest.pipeline.city_intelligence import annotate_city_intelligence
 from news_digest.pipeline.common import clean_url, now_london, pipeline_run_id_from, read_json, today_london, write_json
+from news_digest.pipeline.editorial_decision import decide_and_apply
 from news_digest.pipeline.event_quality import event_quality_reject_reasons, event_quality_report
 from news_digest.pipeline.transport_classifier import classify_transport_candidate
 
@@ -465,6 +466,13 @@ def validate_candidates(project_root: Path) -> StageResult:
         if candidate.get("event_page_type") in {"homepage", "aggregator"}:
             validation_errors.append("Event candidate must use an official event page.")
 
+        # Sprint Quality Fix 1 — editorial decision cascade. Runs after the
+        # legacy excluders so candidates already dropped stay dropped, but
+        # surviving candidates pick up structured why_now / freshness /
+        # borderline signals. Cascade is layered on top of the include
+        # boolean — see editorial_decision.apply_decision for the mapping.
+        decide_and_apply(candidate, today=now_london().date())
+
         candidate["validation_errors"] = validation_errors
         candidate["validated"] = not validation_errors
         items.append(
@@ -475,6 +483,10 @@ def validate_candidates(project_root: Path) -> StageResult:
                 "validation_errors": validation_errors,
                 "event_quality": candidate.get("event_quality"),
                 "reject_reasons": candidate.get("reject_reasons") or [],
+                "editorial_decision": candidate.get("editorial_decision"),
+                "why_now": candidate.get("why_now"),
+                "borderline": bool(candidate.get("borderline")),
+                "editorial_demoted": bool(candidate.get("editorial_demoted")),
             }
         )
 
