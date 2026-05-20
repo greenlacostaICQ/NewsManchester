@@ -53,6 +53,8 @@ class StageResult:
 
 OPENAI_MODEL = OPENAI_REWRITE_MODEL
 
+ProviderMapping = dict[str, tuple[str, str, str]]
+
 _PROMPT_FOOTER = (
     '\nВерни ТОЛЬКО JSON-массив: [{"fingerprint": "...", "draft_line": "• ..."}]\n'
     "Никакого markdown, никаких пояснений — только JSON."
@@ -270,6 +272,12 @@ _REPAIR_BAD_MARKERS = (
 )
 
 
+def _writer_quality_errors(candidate: dict, line: str) -> list[str]:
+    from news_digest.pipeline.writer import _draft_line_quality_errors  # noqa: PLC0415
+
+    return _draft_line_quality_errors(candidate, line)
+
+
 def _cyrillic_ratio(text: str) -> float:
     non_space = re.sub(r"\s", "", text)
     if not non_space:
@@ -323,6 +331,9 @@ def _needs_quality_repair(candidate: dict) -> bool:
     primary_block = str(candidate.get("primary_block") or "")
     if category not in _LONG_FORMAT_CATEGORIES_FOR_REPAIR | {"transport"}:
         return False
+    writer_errors = _writer_quality_errors(candidate, line)
+    if writer_errors:
+        return True
     normalized = re.sub(r"\s+", " ", line)
     lowered = normalized.lower()
     sentence_count = len(re.findall(r"[.!?]", normalized))
@@ -344,6 +355,136 @@ def _needs_quality_repair(candidate: dict) -> bool:
     return False
 
 
+def _diagnostic_excerpt(text: str, limit: int = 700) -> str:
+    return re.sub(r"\s+", " ", str(text or "")).strip()[:limit]
+
+
+def _parse_provider_results(
+    raw: str,
+    batch: list[dict],
+    provider_name: str,
+    model: str,
+    prompt_name: str,
+    batch_idx: int,
+    total_batches: int,
+) -> tuple[ProviderMapping, dict]:
+    expected = {str(c.get("fingerprint") or "").strip(): c for c in batch}
+    rejected_counts = {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "empty_draft_line": 0,
+        "missing_bullet": 0,
+        "too_short": 0,
+        "duplicate_fingerprint": 0,
+    }
+    diagnostic = {
+        "provider": provider_name,
+        "model": model,
+        "prompt_name": prompt_name,
+        "batch_index": batch_idx,
+        "batch_count": total_batches,
+        "sent": len(batch),
+        "returned_items": 0,
+        "accepted": 0,
+        "rejected_counts": rejected_counts,
+        "rejected_examples": [],
+        "missing_candidates": [],
+    }
+
+    cleaned = str(raw or "").strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("```", 2)[1]
+        if cleaned.startswith("json"):
+            cleaned = cleaned[4:]
+        cleaned = cleaned.rsplit("```", 1)[0]
+
+    try:
+        results = json.loads(cleaned.strip())
+    except json.JSONDecodeError as exc:
+        diagnostic["parse_error"] = f"{exc.__class__.__name__}: {exc}"
+        diagnostic["raw_excerpt"] = _diagnostic_excerpt(cleaned)
+        return {}, diagnostic
+
+    if isinstance(results, dict):
+        for key in ("items", "results", "draft_lines"):
+            if isinstance(results.get(key), list):
+                diagnostic["coerced_from_object_key"] = key
+                results = results[key]
+                break
+        else:
+            diagnostic["parse_error"] = "JSON root is an object, not a list."
+            diagnostic["raw_excerpt"] = _diagnostic_excerpt(cleaned)
+            return {}, diagnostic
+
+    if not isinstance(results, list):
+        diagnostic["parse_error"] = f"JSON root is {type(results).__name__}, not a list."
+        diagnostic["raw_excerpt"] = _diagnostic_excerpt(cleaned)
+        return {}, diagnostic
+
+    mapping: ProviderMapping = {}
+
+    def _example(reason: str, item: object, fp: str = "", draft_line: str = "") -> None:
+        examples = diagnostic["rejected_examples"]
+        if len(examples) >= 5:
+            return
+        examples.append(
+            {
+                "reason": reason,
+                "fingerprint": fp,
+                "draft_line_excerpt": _diagnostic_excerpt(draft_line, limit=180),
+                "item_excerpt": _diagnostic_excerpt(json.dumps(item, ensure_ascii=False), limit=240),
+            }
+        )
+
+    for item in results:
+        diagnostic["returned_items"] += 1
+        if not isinstance(item, dict):
+            rejected_counts["bad_item_shape"] += 1
+            _example("bad_item_shape", item)
+            continue
+        fp = str(item.get("fingerprint") or "").strip()
+        dl = str(item.get("draft_line") or "").strip()
+        if not fp:
+            rejected_counts["missing_fingerprint"] += 1
+            _example("missing_fingerprint", item, fp, dl)
+            continue
+        if fp not in expected:
+            rejected_counts["unknown_fingerprint"] += 1
+            _example("unknown_fingerprint", item, fp, dl)
+            continue
+        if not dl:
+            rejected_counts["empty_draft_line"] += 1
+            _example("empty_draft_line", item, fp, dl)
+            continue
+        if not dl.startswith("• "):
+            rejected_counts["missing_bullet"] += 1
+            _example("missing_bullet", item, fp, dl)
+            continue
+        if len(dl) < 15:
+            rejected_counts["too_short"] += 1
+            _example("too_short", item, fp, dl)
+            continue
+        if fp in mapping:
+            rejected_counts["duplicate_fingerprint"] += 1
+        mapping[fp] = (dl, provider_name, model)
+
+    diagnostic["accepted"] = len(mapping)
+    missing = [fp for fp in expected if fp not in mapping]
+    diagnostic["missing_candidates"] = [
+        {
+            "fingerprint": fp,
+            "title": expected[fp].get("title"),
+            "category": expected[fp].get("category"),
+            "primary_block": expected[fp].get("primary_block"),
+        }
+        for fp in missing[:8]
+    ]
+    if diagnostic["accepted"] < diagnostic["sent"]:
+        diagnostic["raw_excerpt"] = _diagnostic_excerpt(cleaned)
+    return mapping, diagnostic
+
+
 def _call_provider_batch(
     base_url: str,
     api_key: str,
@@ -355,7 +496,8 @@ def _call_provider_batch(
     system_prompt: str = PROMPT_CITY_NEWS,
     prompt_name: str = "unknown",
     today_date: str = "",
-) -> dict[str, str]:
+    diagnostics: list[dict] | None = None,
+) -> ProviderMapping:
     """Call one provider in batches. Returns fingerprint→draft_line.
 
     ``today_date``, when set, is injected into the user payload (NOT the
@@ -376,7 +518,7 @@ def _call_provider_batch(
         return {}
 
     client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
-    mapping: dict[str, str] = {}
+    mapping: ProviderMapping = {}
 
     batches = [candidates[i: i + batch_size] for i in range(0, len(candidates), batch_size)]
     logger.info("%s: %d candidates → %d batch(es) of ≤%d.", provider_name, len(candidates), len(batches), batch_size)
@@ -435,24 +577,46 @@ def _call_provider_batch(
                 max_tokens=max_tokens,
             )
             raw = response.choices[0].message.content.strip()
-            if raw.startswith("```"):
-                raw = raw.split("```", 2)[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
-                raw = raw.rsplit("```", 1)[0]
-            results = json.loads(raw.strip())
-            batch_hits = 0
-            for item in results:
-                fp = str(item.get("fingerprint") or "").strip()
-                dl = str(item.get("draft_line") or "").strip()
-                if fp and dl and dl.startswith("• ") and len(dl) >= 15:
-                    mapping[fp] = (dl, provider_name, model)
-                    batch_hits += 1
+            batch_mapping, batch_diagnostic = _parse_provider_results(
+                raw=raw,
+                batch=batch,
+                provider_name=provider_name,
+                model=model,
+                prompt_name=prompt_name,
+                batch_idx=batch_idx,
+                total_batches=len(batches),
+            )
+            mapping.update(batch_mapping)
+            batch_hits = batch_diagnostic["accepted"]
+            if diagnostics is not None:
+                diagnostics.append(batch_diagnostic)
             logger.info("%s: batch %d/%d → %d draft_lines.", provider_name, batch_idx, len(batches), batch_hits)
+            if batch_hits < len(batch):
+                logger.info(
+                    "%s: batch %d/%d rejected_counts=%s",
+                    provider_name,
+                    batch_idx,
+                    len(batches),
+                    batch_diagnostic.get("rejected_counts", {}),
+                )
             if batch_idx < len(batches):
                 time.sleep(1)  # small pause between batches
         except Exception as exc:  # noqa: BLE001
             logger.warning("%s: batch %d/%d failed — %s", provider_name, batch_idx, len(batches), exc)
+            if diagnostics is not None:
+                diagnostics.append(
+                    {
+                        "provider": provider_name,
+                        "model": model,
+                        "prompt_name": prompt_name,
+                        "batch_index": batch_idx,
+                        "batch_count": len(batches),
+                        "sent": len(batch),
+                        "returned_items": 0,
+                        "accepted": 0,
+                        "error": f"{exc.__class__.__name__}: {exc}",
+                    }
+                )
 
     logger.info("%s: total %d valid draft_lines.", provider_name, len(mapping))
     return mapping
@@ -472,7 +636,8 @@ def _call_with_fallback(
     prompt_name: str = "unknown",
     route_name: str = "rewrite",
     today_date: str = "",
-) -> dict[str, str]:
+    diagnostics: list[dict] | None = None,
+) -> ProviderMapping:
     """Call provider chain with a specific prompt, return fingerprint→draft_line."""
     if not candidates:
         return {}
@@ -484,7 +649,7 @@ def _call_with_fallback(
         base_url_override=base_url_override,
         model_override=model_override,
     )
-    mapping: dict[str, str] = {}
+    mapping: ProviderMapping = {}
     missing = list(candidates)
     for step in route:
         if not missing:
@@ -503,6 +668,7 @@ def _call_with_fallback(
                 system_prompt=prompt,
                 prompt_name=prompt_name,
                 today_date=today_date,
+                diagnostics=diagnostics,
             )
         )
         missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
@@ -654,6 +820,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     base_url_override = os.environ.get("LLM_BASE_URL", "").strip()
     errors: list[str] = []
     warnings: list[str] = []
+    provider_batch_diagnostics: list[dict] = []
+    repair_rejections: list[dict] = []
     applied = 0
     fixed = 0
     repaired = 0
@@ -700,7 +868,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             groups.setdefault(prompt, []).append(c)
 
         from news_digest.pipeline.prompts_meta import prompt_name_for  # noqa: PLC0415
-        mapping: dict[str, str] = {}
+        mapping: ProviderMapping = {}
         for prompt, group in groups.items():
             logger.info("LLM rewrite: calling group of %d candidates.", len(group))
             today_for_group = _today if prompt in _DATE_AWARE_PROMPTS else ""
@@ -708,6 +876,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 group, prompt, provider_override, base_url_override, model_override,
                 prompt_name=prompt_name_for(prompt),
                 today_date=today_for_group,
+                diagnostics=provider_batch_diagnostics,
             ))
 
         run_iso = now_london().isoformat()
@@ -733,7 +902,16 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     if to_fix:
         logger.info("LLM fix pass: %d English-dominant draft_lines, re-translating.", len(to_fix))
         fix_candidates = [{"fingerprint": c.get("fingerprint", ""), "draft_line": c.get("draft_line", "")} for c in to_fix]
-        fix_mapping = _call_with_fallback(fix_candidates, FIX_TRANSLATE_SYSTEM, provider_override, base_url_override, model_override, label_suffix="-fix", prompt_name="fix_translate")
+        fix_mapping = _call_with_fallback(
+            fix_candidates,
+            FIX_TRANSLATE_SYSTEM,
+            provider_override,
+            base_url_override,
+            model_override,
+            label_suffix="-fix",
+            prompt_name="fix_translate",
+            diagnostics=provider_batch_diagnostics,
+        )
 
         run_iso = now_london().isoformat()
         for candidate in candidates:
@@ -766,6 +944,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             label_suffix="-repair",
             prompt_name="repair_draft",
             route_name="repair",
+            diagnostics=provider_batch_diagnostics,
         )
 
         run_iso = now_london().isoformat()
@@ -774,12 +953,26 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             if fp not in repair_mapping:
                 continue
             replacement, prov, model_name = repair_mapping[fp]
-            if replacement and replacement.startswith("• ") and len(re.sub(r"\s+", " ", replacement)) >= 70:
+            quality_errors = _writer_quality_errors(candidate, replacement)
+            if replacement and not quality_errors:
                 candidate["draft_line"] = replacement
                 candidate["draft_line_provider"] = prov
                 candidate["draft_line_model"] = model_name
                 candidate["draft_line_written_at"] = run_iso
                 repaired += 1
+            else:
+                repair_rejections.append(
+                    {
+                        "fingerprint": candidate.get("fingerprint"),
+                        "title": candidate.get("title"),
+                        "category": candidate.get("category"),
+                        "primary_block": candidate.get("primary_block"),
+                        "provider": prov,
+                        "model": model_name,
+                        "quality_errors": quality_errors,
+                        "draft_line_excerpt": _diagnostic_excerpt(replacement, limit=240),
+                    }
+                )
 
         if repaired:
             candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -800,6 +993,10 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         )
     if weak_after:
         warnings.append(f"{len(weak_after)} draft_line(s) still look weak after repair.")
+    if repair_rejections:
+        warnings.append(
+            f"Repair pass rejected {len(repair_rejections)} replacement(s) that still failed writer quality gate."
+        )
 
     from news_digest.pipeline.cost_tracker import dump_stage, snapshot, summarise  # noqa: PLC0415
     state_dir = project_root / "data" / "state"
@@ -821,6 +1018,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "cost_summary": cost_summary,
             "prompt_versions": _prompt_versions(),
             "model_route": route_snapshot().get("rewrite", []),
+            "provider_batch_diagnostics": provider_batch_diagnostics,
+            "repair_rejections": repair_rejections[:30],
             "missing_after": [
                 {
                     "fingerprint": c.get("fingerprint"),
