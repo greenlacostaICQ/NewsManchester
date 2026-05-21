@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import html
 import logging
 from pathlib import Path
@@ -80,6 +80,7 @@ TODAY_FOCUS_BACKFILL_SECTIONS = (
     "Общественный транспорт сегодня",
 )
 TODAY_FOCUS_BACKFILL_TARGET = 2
+TODAY_FOCUS_BACKFILL_MIN_SCORE = 67.5
 TODAY_FOCUS_MIN_SOURCE_REMAINING = {
     # Don't gut source blocks just to fill today_focus.
     "Что произошло за 24 часа": 3,
@@ -186,8 +187,25 @@ def _backfill_today_focus(
         sources = section_sources.get(source_section) or []
         scores = section_scores.get(source_section) or []
         fingerprints = section_fingerprints.get(source_section) or []
+        if scores:
+            ranked = sorted(
+                zip(
+                    lines,
+                    sources + [""] * (len(lines) - len(sources)),
+                    scores + [0.0] * (len(lines) - len(scores)),
+                    fingerprints + [""] * (len(lines) - len(fingerprints)),
+                ),
+                key=lambda item: item[2],
+                reverse=True,
+            )
+            lines = [item[0] for item in ranked]
+            sources = [item[1] for item in ranked]
+            scores = [item[2] for item in ranked]
+            fingerprints = [item[3] for item in ranked]
         min_remaining = TODAY_FOCUS_MIN_SOURCE_REMAINING.get(source_section, 0)
         while lines and moved < TODAY_FOCUS_BACKFILL_TARGET and len(lines) > min_remaining:
+            if scores and scores[0] < TODAY_FOCUS_BACKFILL_MIN_SCORE:
+                break
             sections[TODAY_FOCUS_SECTION].append(lines.pop(0))
             section_sources[TODAY_FOCUS_SECTION].append(sources.pop(0) if sources else "")
             section_scores[TODAY_FOCUS_SECTION].append(scores.pop(0) if scores else 0.0)
@@ -439,14 +457,15 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
     title = _ticket_headliner(str(candidate.get("title") or ""))
     venue = _ticket_venue(candidate)
     practical = str(candidate.get("practical_angle") or "Проверьте время, вход и наличие билетов на официальной странице.").strip()
-    ticket_type = classify_ticket_type(candidate)
+    ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
     type_prefix = {
-        "on_sale_now": "сейчас в продаже",
-        "presale_soon": "скоро откроется продажа",
-        "newly_listed": "новый анонс",
-        "major_upcoming": "крупный анонс",
-        "old_onsale": "продажа уже открыта",
-    }.get(ticket_type, "анонс")
+        "on_sale_now": "Сейчас в продаже",
+        "presale_soon": "Скоро откроется продажа",
+        "newly_listed": "Новый анонс",
+        "major_upcoming": "Крупный анонс",
+        "old_onsale": "Продажа уже открыта",
+        "old_public_sale": "Билеты уже в продаже",
+    }.get(ticket_type, "Анонс")
     event_dt = _parse_ticket_datetime(candidate)
     day_month = _format_ru_day_month(event_dt)
     time_part = ""
@@ -459,6 +478,29 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
     if venue:
         return f"• {type_prefix}: в {venue} — концерт {title}. {practical}"
     return f"• {type_prefix}: концерт {title}. {practical}"
+
+
+def _ticket_public_onsale_datetime(candidate: dict) -> datetime | None:
+    match = re.search(
+        r"\bpublic_onsale=(20\d{2}-\d{2}-\d{2})(?:\s+(\d{2}:\d{2}))?",
+        str(candidate.get("summary") or ""),
+    )
+    if not match:
+        return None
+    raw = f"{match.group(1)}T{match.group(2) or '12:00'}:00+01:00"
+    try:
+        return datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+
+
+def _line_claims_future_ticket_sale(candidate: dict, line: str) -> bool:
+    if str(candidate.get("category") or "") != "venues_tickets":
+        return False
+    onsale_at = _ticket_public_onsale_datetime(candidate)
+    if onsale_at is None or onsale_at.date() >= now_london().date():
+        return False
+    return bool(re.search(r"\b(?:поступ(?:ят|ит)?|старт(?:ует|уют)|откро(?:ется|ются))\s+в\s+продаж", line, flags=re.IGNORECASE))
 
 
 def _service_fallback_subject(title: str) -> str:
@@ -519,15 +561,33 @@ def _transport_empty_line(project_root: Path) -> str:
     )
 
 
+def _is_late_may_bank_holiday(day: date) -> bool:
+    if day.month != 5 or day.weekday() != 0:
+        return False
+    return day + timedelta(days=7) > date(day.year, 5, 31)
+
+
+def _current_weekend_start() -> date:
+    today = now_london().date()
+    friday = today + timedelta(days=(4 - today.weekday()) % 7)
+    if today.weekday() in {5, 6} or _is_late_may_bank_holiday(today):
+        return today
+    return friday
+
+
 def _current_weekend_end() -> date:
     today = now_london().date()
     days_until_sunday = (6 - today.weekday()) % 7
-    return date.fromordinal(today.toordinal() + days_until_sunday)
+    sunday = today + timedelta(days=days_until_sunday)
+    bank_monday = sunday + timedelta(days=1)
+    if _is_late_may_bank_holiday(bank_monday):
+        return bank_monday
+    return sunday
 
 
 def _has_current_weekend_recurring_signal(text: str) -> bool:
     lowered = str(text or "").lower()
-    today = now_london().date()
+    today = _current_weekend_start()
     weekend_end = _current_weekend_end()
     weekdays = {
         date.fromordinal(ordinal).weekday()
@@ -555,7 +615,7 @@ def _is_outside_current_weekend_candidate(candidate: dict, line: str = "") -> bo
         )
     )
     dates = _date_signals(text)
-    today = now_london().date()
+    today = _current_weekend_start()
     weekend_end = _current_weekend_end()
     if any(today <= day <= weekend_end for day in dates):
         return False
@@ -607,6 +667,45 @@ def _weekend_activity_score(candidate: dict, line: str) -> float:
         score += 10
     if re.search(r"\b(?:until|до)\s+(?:20\d{2}|december|декабр)", blob):
         score -= 25
+    return score
+
+
+def _event_planning_score(candidate: dict, line: str) -> float:
+    blob = " ".join(
+        str(value or "")
+        for value in (
+            candidate.get("source_label"),
+            candidate.get("title"),
+            candidate.get("summary"),
+            candidate.get("lead"),
+            candidate.get("evidence_text"),
+            line,
+        )
+    ).lower()
+    today = now_london().date()
+    dates = _date_signals(blob)
+    future_dates = sorted(day for day in dates if day >= today)
+    score = 0.0
+    if future_dates:
+        days_out = (future_dates[0] - today).days
+        if 1 <= days_out <= 7:
+            score += 45
+        elif days_out == 0:
+            score += 10
+        elif days_out <= 30:
+            score += 15
+        if len(future_dates) >= 2 and (max(future_dates) - min(future_dates)).days > 30:
+            score -= 25
+    if re.search(r"\b(?:festival|market|makers?|car boot|concert|gig|comedy|workshop|talk|trail)\b", blob):
+        score += 25
+    if re.search(r"\b(?:free|бесплат|£\s*\d|ticket|tickets|booking|book)\b", blob):
+        score += 10
+    if re.search(r"\b(?:film|cinema|screening|15\)|12a\)|pg\))\b", blob):
+        score -= 20
+    if re.search(r"\b(?:exhibition|выставк).*\b(?:october|november|december|20\d{2})\b", blob):
+        score -= 15
+    if re.search(r"\b(?:weekly|every|кажд)\b", blob):
+        score -= 8
     return score
 
 
@@ -820,6 +919,8 @@ def _section_priority_score(candidate: dict, section_name: str, line: str) -> fl
         score += _city_watch_score(candidate) / 4.0
     elif section_name == "Выходные в GM":
         score += _weekend_activity_score(candidate, line) / 4.0
+    elif section_name == "Что важно в ближайшие 7 дней":
+        score += _event_planning_score(candidate, line) / 4.0
     return score
 
 
@@ -1093,6 +1194,11 @@ def write_digest(project_root: Path) -> StageResult:
                 f"Candidate #{index}: removed vague ending(s): {', '.join(removed_vague_endings)}."
             )
             line = scrubbed_line
+        if _line_claims_future_ticket_sale(candidate, line):
+            line = _build_ticket_fallback_line(candidate)
+            warnings.append(
+                f"Candidate #{index}: replaced stale ticket-sale wording with deterministic ticket line."
+            )
 
         draft_line_errors = _draft_line_quality_errors(candidate, line)
         if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:

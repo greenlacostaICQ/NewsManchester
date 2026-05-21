@@ -370,9 +370,26 @@ def _adjust_ticket_radar_block(candidate: dict) -> None:
     summary = str(candidate.get("summary") or "")
     today_dt = now_london()
     ticket_type = classify_ticket_type(candidate)
+    onsale_dt = _parse_summary_field_date(summary, "public_onsale")
+    event_dt = _parse_summary_field_date(summary, "event_date")
+
+    if (
+        onsale_dt is not None
+        and onsale_dt < today_dt - timedelta(days=3)
+        and ticket_type in {"major_upcoming", "regular_upcoming"}
+    ):
+        days_to_event = (event_dt - today_dt).days if event_dt is not None else 999
+        candidate["primary_block"] = "next_7_days" if 0 <= days_to_event <= 7 else "future_announcements"
+        candidate["ticket_type"] = "old_public_sale"
+        existing_reason = str(candidate.get("reason") or "").strip()
+        note = (
+            f"Ticket public sale opened {(today_dt - onsale_dt).days} day(s) ago; "
+            "moved out of ticket_radar."
+        )
+        candidate["reason"] = f"{existing_reason} | {note}".strip(" |") if existing_reason else note
+        return
 
     if "ticket_signal=onsale" in summary.lower():
-        onsale_dt = _parse_summary_field_date(summary, "public_onsale")
         if onsale_dt is not None and onsale_dt < today_dt:
             # The on-sale window already opened. Keep very recent on-sales in
             # Ticket Radar, but move older ones out so the block stays about
@@ -381,7 +398,6 @@ def _adjust_ticket_radar_block(candidate: dict) -> None:
             if age_days <= 3:
                 candidate["ticket_type"] = "on_sale_now"
                 return
-            event_dt = _parse_summary_field_date(summary, "event_date")
             if event_dt is None or event_dt < today_dt - timedelta(days=1):
                 candidate["include"] = False
                 candidate["reason"] = (

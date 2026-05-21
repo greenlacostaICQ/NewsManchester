@@ -70,7 +70,8 @@ def _exclude_stale_ticket_onsale(candidate: dict) -> bool:
     if str(candidate.get("category") or "") != "venues_tickets":
         return False
     summary = str(candidate.get("summary") or "")
-    if "ticket_signal=onsale" not in summary.lower():
+    lowered = summary.lower()
+    if "ticket_signal=onsale" not in lowered and "public_onsale=" not in lowered:
         return False
     onsale_at = _summary_field_datetime(summary, "public_onsale")
     if onsale_at is None or onsale_at >= now_london():
@@ -78,6 +79,15 @@ def _exclude_stale_ticket_onsale(candidate: dict) -> bool:
     age_days = (now_london() - onsale_at).days
     if age_days <= 3:
         candidate["ticket_type"] = "on_sale_now"
+        return False
+    event_at = _summary_field_datetime(summary, "event_date")
+    if "ticket_signal=upcoming_event" in lowered:
+        days_to_event = (event_at.date() - now_london().date()).days if event_at else 999
+        candidate["primary_block"] = "next_7_days" if 0 <= days_to_event <= 7 else "future_announcements"
+        candidate["ticket_type"] = "old_public_sale"
+        existing = str(candidate.get("reason") or "").strip()
+        note = f"Validator: public_onsale opened {age_days} day(s) ago; moved out of ticket_radar."
+        candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
         return False
     candidate["primary_block"] = "future_announcements"
     candidate["ticket_type"] = "old_onsale"
@@ -258,6 +268,167 @@ _NEWS_UPDATE_MARKERS = re.compile(
     r")\b",
     re.IGNORECASE,
 )
+
+
+_SOFT_CIVIC_PR_RE = re.compile(
+    r"\b("
+    r"billie\s+bee|world\s+bee\s+day|beeline\s+for\s+summer\s+holidays|"
+    r"lord\s+mayor|mayor-making|"
+    r"creative\s+health\s+leads?\s+programme|selected\s+to\s+get\s+creative\s+with\s+approach\s+to\s+health|"
+    r"community\s+champions?|pride\s+in\s+place|"
+    r"becomes?\s+(?:an?\s+)?(?:ams\s+)?fellow|academy\s+of\s+medical\s+sciences|"
+    r"award(?:ed|s)?|shortlisted|celebrat(?:e|ing|ion)"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_LOW_VALUE_LIFESTYLE_RE = re.compile(
+    r"\b("
+    r"race\s+across\s+the\s+world|bbc\s+show|reality\s+show|"
+    r"coronation\s+street\s+star|soap\s+star|tv\s+star|"
+    r"celebrity|influencer"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_LOW_VALUE_FOOTBALL_RE = re.compile(
+    r"\b("
+    r"connection\s+with\s+our\s+fans|farewell\s+interview|"
+    r"fan\s+of\s+the\s+club\s+for\s+the\s+rest\s+of\s+my\s+life|"
+    r"bespoke\s+shirts?|programme\s+cover|training\s+gallery"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_STRONG_NON_GM_RE = re.compile(
+    r"\b("
+    r"warrington|cheshire|liverpool|london|leeds|sheffield|birmingham|"
+    r"texas|america|usa|united\s+states"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_LOCAL_SIGNAL_RE = re.compile(
+    r"\b("
+    r"manchester|salford|stockport|trafford|tameside|rochdale|oldham|"
+    r"wigan|bolton|bury|altrincham|ashton-under-lyne|ashton under lyne|"
+    r"prestwich|eccles|burnage|romiley|swinton|ancoats|cheadle|didsbury|"
+    r"chorlton|fallowfield|rusholme|harpurhey|openshaw|wythenshawe|"
+    r"old trafford|gmca|gmp|tfgm|metrolink|bee network"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def _news_text_without_publisher_chrome(candidate: dict) -> str:
+    text = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead")
+    )
+    text = re.sub(r"\bnews\s+greater\s+manchester\s+news\b", " ", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bgreater\s+manchester\s+news\b", " ", text, flags=re.IGNORECASE)
+    return text
+
+
+def _exclude_non_gm_news(candidate: dict) -> bool:
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("category") or "") not in {"media_layer", "gmp", "public_services", "tech_business"}:
+        return False
+    text = _news_text_without_publisher_chrome(candidate)
+    if not _STRONG_NON_GM_RE.search(text):
+        return False
+    if _LOCAL_SIGNAL_RE.search(text):
+        return False
+    _append_reject(
+        candidate,
+        "not_gm",
+        "Validator: story is centred outside Greater Manchester; publisher section chrome was ignored.",
+    )
+    return True
+
+
+def _exclude_low_value_news(candidate: dict) -> bool:
+    if not candidate.get("include"):
+        return False
+    category = str(candidate.get("category") or "")
+    block = str(candidate.get("primary_block") or "")
+    text = _news_text_without_publisher_chrome(candidate)
+    if category in {"media_layer", "council", "public_services"} and _SOFT_CIVIC_PR_RE.search(text):
+        _append_reject(
+            candidate,
+            "weak_value_civic_pr",
+            "Validator: soft civic/award/awareness item has no practical reader value for the morning issue.",
+        )
+        return True
+    if category == "media_layer" and block in {"last_24h", "today_focus", "city_watch"} and _LOW_VALUE_LIFESTYLE_RE.search(text):
+        _append_reject(
+            candidate,
+            "weak_value_lifestyle",
+            "Validator: entertainment/lifestyle item is only loosely local and has no practical GM impact.",
+        )
+        return True
+    if category == "football" and _LOW_VALUE_FOOTBALL_RE.search(text):
+        _append_reject(
+            candidate,
+            "weak_value_football_pr",
+            "Validator: football item is club PR/farewell filler rather than match, transfer, injury, or ticket news.",
+        )
+        return True
+    return False
+
+
+def _exclude_stale_undated_news_from_text(candidate: dict) -> bool:
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("category") or "") not in {"media_layer", "gmp", "council", "public_services", "city_news"}:
+        return False
+    if _published_day(candidate) is not None:
+        return False
+    dates = _explicit_dates_from_blob(candidate)
+    if not dates:
+        return False
+    today = now_london().date()
+    if max(dates) >= today:
+        return False
+    age_days = (today - max(dates)).days
+    if age_days <= 7:
+        return False
+    _append_reject(
+        candidate,
+        "stale_undated_news",
+        f"Validator: undated news item only mentions old dates (latest {max(dates).isoformat()}).",
+    )
+    return True
+
+
+def _exclude_wrong_food_opening_category(candidate: dict) -> bool:
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("category") or "") != "food_openings" and str(candidate.get("primary_block") or "") != "openings":
+        return False
+    text = _candidate_blob(candidate).lower()
+    if "coronation street experience" in text:
+        _append_reject(
+            candidate,
+            "wrong_openings_category",
+            "Validator: visitor attraction is not a food/opening/market item.",
+        )
+        return True
+    food_or_market = re.search(
+        r"\b(food|restaurant|cafe|caf[eé]|coffee|bar|pub|brewery|beer|pizza|"
+        r"kitchen|dining|bakery|market|makers|opening|opened|opens)\b",
+        text,
+        re.IGNORECASE,
+    )
+    if food_or_market:
+        return False
+    _append_reject(
+        candidate,
+        "wrong_openings_category",
+        "Validator: openings block item is not food, drink, market, or a new venue opening.",
+    )
+    return True
 
 
 def _exclude_stale_news_without_new_phase(candidate: dict) -> bool:
@@ -720,9 +891,17 @@ def validate_candidates(project_root: Path) -> StageResult:
         if candidate.get("include"):
             _exclude_stale_ticket_onsale(candidate)
         if candidate.get("include"):
+            _exclude_non_gm_news(candidate)
+        if candidate.get("include"):
+            _exclude_low_value_news(candidate)
+        if candidate.get("include"):
+            _exclude_stale_undated_news_from_text(candidate)
+        if candidate.get("include"):
             _exclude_paywall_stub(candidate)
         if candidate.get("include"):
             _exclude_stale_news_without_new_phase(candidate)
+        if candidate.get("include"):
+            _exclude_wrong_food_opening_category(candidate)
         if candidate.get("include"):
             _exclude_bad_food_opening_timing(candidate)
         if candidate.get("include"):
