@@ -27,8 +27,9 @@ Thresholds:
 Cache:
     ``data/state/embedding_cache.json`` keyed by fingerprint.
     Vectors are invalidated when the content hash (title + lead +
-    evidence_text excerpt) changes. Stale entries older than 30 days
-    are pruned to keep the file from growing forever.
+    evidence_text excerpt) changes. Stale entries older than 14 days
+    are pruned to keep the file from growing forever (cross-day dedup
+    window is 7 days, so 14d gives a 2× safety margin without bloat).
 """
 from __future__ import annotations
 
@@ -51,7 +52,7 @@ logger = logging.getLogger(__name__)
 _EMBED_MODEL = "text-embedding-3-small"
 _EMBED_DIM = 1536
 _EMBED_BATCH_SIZE = 64
-_CACHE_MAX_AGE_DAYS = 30
+_CACHE_MAX_AGE_DAYS = 14
 _CACHE_FILENAME = "embedding_cache.json"
 
 # Drop the weaker candidate / treat as cross-day rehash above this cosine.
