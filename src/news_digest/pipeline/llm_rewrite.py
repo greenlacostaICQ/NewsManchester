@@ -278,6 +278,14 @@ def _writer_quality_errors(candidate: dict, line: str) -> list[str]:
     return _draft_line_quality_errors(candidate, line)
 
 
+def _skip_llm_for_manual_review(candidate: dict) -> bool:
+    """Do not spend model calls on items the writer will hold anyway."""
+    return (
+        str(candidate.get("editorial_status") or "") == "borderline"
+        and str(candidate.get("manual_override") or "") != "force_include"
+    )
+
+
 def _cyrillic_ratio(text: str) -> float:
     non_space = re.sub(r"\s", "", text)
     if not non_space:
@@ -814,7 +822,12 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         if isinstance(c, dict) and c.get("include")
         and str(c.get("category") or "") != "weather"  # handcrafted line, no LLM needed
         and not _already_deterministic(c)
+        and not _skip_llm_for_manual_review(c)
     ]
+    skipped_manual_review = sum(
+        1 for c in candidates
+        if isinstance(c, dict) and c.get("include") and _skip_llm_for_manual_review(c)
+    )
     provider_override = os.environ.get("LLM_PROVIDER", "").lower().strip()
     model_override = os.environ.get("LLM_MODEL", "").strip()
     base_url_override = os.environ.get("LLM_BASE_URL", "").strip()
@@ -839,6 +852,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "errors": errors,
                 "warnings": warnings,
                 "included_for_rewrite": len(to_rewrite),
+                "skipped_manual_review": skipped_manual_review,
                 "applied": 0,
                 "fixed": 0,
                 "repaired": 0,
@@ -897,6 +911,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     to_fix = [
         c for c in candidates
         if isinstance(c, dict) and c.get("include")
+        and not _skip_llm_for_manual_review(c)
         and _needs_translation_fix(str(c.get("draft_line") or ""))
     ]
     if to_fix:
@@ -931,7 +946,9 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
 
     to_repair = [
         c for c in candidates
-        if isinstance(c, dict) and c.get("include") and _needs_quality_repair(c)
+        if isinstance(c, dict) and c.get("include")
+        and not _skip_llm_for_manual_review(c)
+        and _needs_quality_repair(c)
     ]
     if to_repair:
         logger.info("LLM repair pass: %d weak draft_lines, rewriting editorially.", len(to_repair))
@@ -1012,6 +1029,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "errors": errors,
             "warnings": warnings,
             "included_for_rewrite": len(to_rewrite),
+            "skipped_manual_review": skipped_manual_review,
             "applied": applied,
             "fixed": fixed,
             "repaired": repaired,

@@ -1,7 +1,12 @@
 import json
 import unittest
 
-from news_digest.pipeline.llm_rewrite import _needs_quality_repair, _parse_provider_results
+from news_digest.pipeline.llm_rewrite import (
+    _needs_quality_repair,
+    _parse_provider_results,
+    _skip_llm_for_manual_review,
+)
+from news_digest.pipeline.curator import _skip_curator_for_manual_review
 
 
 def _candidate(fingerprint: str, title: str = "Test story") -> dict:
@@ -77,6 +82,24 @@ class LlmRewriteDiagnosticsTests(unittest.TestCase):
         candidate["draft_line"] = "• Манчестер: совет опубликовал короткое обновление."
 
         self.assertTrue(_needs_quality_repair(candidate))
+
+    def test_borderline_items_are_not_sent_to_llm_without_manual_override(self) -> None:
+        candidate = _candidate("fp-1")
+        candidate["include"] = True
+        candidate["editorial_status"] = "borderline"
+
+        self.assertTrue(_skip_llm_for_manual_review(candidate))
+
+        candidate["manual_override"] = "force_include"
+        self.assertFalse(_skip_llm_for_manual_review(candidate))
+        self.assertFalse(_skip_curator_for_manual_review(candidate))
+
+    def test_curator_also_skips_borderline_without_manual_override(self) -> None:
+        candidate = _candidate("fp-1")
+        candidate["include"] = True
+        candidate["editorial_status"] = "borderline"
+
+        self.assertTrue(_skip_curator_for_manual_review(candidate))
 
 
 if __name__ == "__main__":

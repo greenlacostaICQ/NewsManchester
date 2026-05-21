@@ -81,6 +81,13 @@ def _is_curator_protected(candidate: dict) -> bool:
     )
 
 
+def _skip_curator_for_manual_review(candidate: dict) -> bool:
+    return (
+        str(candidate.get("editorial_status") or "") == "borderline"
+        and str(candidate.get("manual_override") or "") != "force_include"
+    )
+
+
 def _infer_borough(candidate: dict) -> str:
     text = " ".join(
         str(candidate.get(field) or "")
@@ -314,11 +321,22 @@ def run_curator_pass(project_root: Path) -> None:
     included = [
         c
         for c in candidates
-        if isinstance(c, dict) and c.get("include") and not _is_curator_protected(c)
+        if isinstance(c, dict) and c.get("include")
+        and not _is_curator_protected(c)
+        and not _skip_curator_for_manual_review(c)
     ]
+    skipped_manual_review = sum(
+        1 for c in candidates
+        if isinstance(c, dict) and c.get("include") and _skip_curator_for_manual_review(c)
+    )
     if not included:
         logger.info("Curator: no included candidates.")
-        _write_report({"pipeline_run_id": pipeline_run_id, "status": "skipped", "reason": "no included candidates"})
+        _write_report({
+            "pipeline_run_id": pipeline_run_id,
+            "status": "skipped",
+            "reason": "no included candidates",
+            "skipped_manual_review": skipped_manual_review,
+        })
         return
 
     logger.info("Curator: reviewing %d included candidates.", len(included))
@@ -407,6 +425,7 @@ def run_curator_pass(project_root: Path) -> None:
         "pipeline_run_id": pipeline_run_id,
         "status": "complete",
         "reviewed": len(included),
+        "skipped_manual_review": skipped_manual_review,
         "dropped": dropped,
         "semantic_dropped": semantic_dropped,
         "lead_set": lead_set,

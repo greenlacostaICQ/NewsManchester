@@ -8,6 +8,7 @@ from io import StringIO
 from pathlib import Path
 
 from news_digest.pipeline.candidate_validator import validate_candidates
+from news_digest.pipeline.common import now_london
 from news_digest.pipeline.editorial_contracts import scrub_vague_ending
 from news_digest.pipeline.collector.routing import _TICKET_HORIZON_DAYS
 from news_digest.pipeline.dedupe import _apply_semantic_drop_guard
@@ -303,15 +304,17 @@ class EventQualityPipelineTest(unittest.TestCase):
             root = Path(tmp)
             state_dir = root / "data" / "state"
             state_dir.mkdir(parents=True)
+            event_day = now_london().date()
+            event_text = f"{event_day.day} {event_day.strftime('%B')}"
             candidate = {
                 "include": True,
                 "fingerprint": "event-2",
                 "category": "culture_weekly",
                 "primary_block": "next_7_days",
-                "title": "Workshop on 20 May at The Gallery",
+                "title": f"Workshop on {event_text} at The Gallery",
                 "summary": "Free tickets for a workshop.",
                 "lead": "",
-                "evidence_text": "Free tickets for a workshop on 20 May at The Gallery.",
+                "evidence_text": f"Free tickets for a workshop on {event_text} at The Gallery.",
                 "source_label": "Venue",
                 "source_url": "https://example.test/event",
                 "dedupe_decision": "new",
