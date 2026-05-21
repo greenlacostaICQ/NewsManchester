@@ -874,6 +874,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         # prompts get a non-empty today_date — others stay on the legacy
         # bare-list payload shape.
         _DATE_AWARE_PROMPTS = {PROMPT_BUSINESS, PROMPT_EVENTS, PROMPT_DIASPORA_EVENTS}
+        _EVENTS_PROMPTS = {PROMPT_EVENTS, PROMPT_DIASPORA_EVENTS}
         _today = today_london()
 
         groups: dict[str, list[dict]] = {}
@@ -886,9 +887,11 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         for prompt, group in groups.items():
             logger.info("LLM rewrite: calling group of %d candidates.", len(group))
             today_for_group = _today if prompt in _DATE_AWARE_PROMPTS else ""
+            route_for_group = "events_rewrite" if prompt in _EVENTS_PROMPTS else "rewrite"
             mapping.update(_call_with_fallback(
                 group, prompt, provider_override, base_url_override, model_override,
                 prompt_name=prompt_name_for(prompt),
+                route_name=route_for_group,
                 today_date=today_for_group,
                 diagnostics=provider_batch_diagnostics,
             ))
