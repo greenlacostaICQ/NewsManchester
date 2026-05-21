@@ -657,13 +657,21 @@ def _call_with_fallback(
         base_url_override=base_url_override,
         model_override=model_override,
     )
+    from news_digest.pipeline import provider_health  # noqa: PLC0415
     mapping: ProviderMapping = {}
     missing = list(candidates)
     for step in route:
         if not missing:
             break
+        if provider_health.is_dead(step.provider):
+            logger.info(
+                "Skipping %s — circuit breaker tripped earlier this run.",
+                step.provider_label,
+            )
+            continue
         if mapping:
             time.sleep(1)
+        before = len(mapping)
         mapping.update(
             _call_provider_batch(
                 step.base_url,
@@ -679,6 +687,10 @@ def _call_with_fallback(
                 diagnostics=diagnostics,
             )
         )
+        if len(mapping) > before:
+            provider_health.record_success(step.provider)
+        else:
+            provider_health.record_failure(step.provider)
         missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
     return mapping
 

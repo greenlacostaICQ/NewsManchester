@@ -355,8 +355,15 @@ def run_curator_pass(project_root: Path) -> None:
         _write_report({"pipeline_run_id": pipeline_run_id, "status": "skipped", "reason": "LLM_PROVIDER=none"})
         return
 
+    from news_digest.pipeline import provider_health  # noqa: PLC0415
     decisions: list[dict] = []
     for step in model_route:
+        if provider_health.is_dead(step.provider):
+            logger.info(
+                "Curator: skipping %s — circuit breaker tripped earlier this run.",
+                step.provider_label,
+            )
+            continue
         logger.info("Curator: trying %s/%s (%s).", step.provider_label, step.model, step.role)
         decisions = _call_curator(
             included,
@@ -366,7 +373,9 @@ def run_curator_pass(project_root: Path) -> None:
             batch_size=step.batch_size or _CURATOR_BATCH_SIZE,
         )
         if decisions:
+            provider_health.record_success(step.provider)
             break
+        provider_health.record_failure(step.provider)
 
     if not decisions:
         logger.warning("Curator: all providers failed — keeping existing include flags.")
