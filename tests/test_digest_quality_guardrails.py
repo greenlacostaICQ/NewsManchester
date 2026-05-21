@@ -236,6 +236,23 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(any("visitmanchester.com" in source.url for source in sources))
         self.assertTrue(any("cityco.com" in source.url for source in sources))
 
+    def test_weekend_section_has_broad_guide_sources_not_only_direct_pages(self) -> None:
+        guide_sources = [
+            source.name
+            for source in SOURCES
+            if source.primary_block == "weekend_activities"
+            and source.source_type in {
+                "html_visitmanchester_events",
+                "html_sectioned_event_guide",
+                "html_designmynight",
+            }
+        ]
+
+        self.assertGreaterEqual(len(guide_sources), 8)
+        self.assertIn("Visit Manchester Weekend", guide_sources)
+        self.assertIn("Secret Manchester May Guide", guide_sources)
+        self.assertIn("Manchester Theatres Weekend", [source.name for source in SOURCES])
+
 
 if __name__ == "__main__":
     unittest.main()

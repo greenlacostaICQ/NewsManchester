@@ -89,6 +89,35 @@ class MarketEventSourcesTest(unittest.TestCase):
         self.assertIn("#the-flat-baker-pistachio-festival", candidate["source_url"])
         self.assertTrue(event_quality_report(candidate)["ok"])
 
+    def test_sectioned_event_guide_extracts_individual_weekend_picks(self) -> None:
+        source = SourceDef(
+            name="Secret Manchester May Guide",
+            report_category="culture_weekly",
+            candidate_category="culture_weekly",
+            url="https://secretmanchester.com/things-to-do-in-may/",
+            primary_block="weekend_activities",
+            source_type="html_sectioned_event_guide",
+            allowed_hosts=("secretmanchester.com",),
+            max_candidates=12,
+        )
+        html = """
+        <article>
+          <h2>Visit Wythenshawe Park &amp; Gardens for a huge food and drink festival</h2>
+          <p>Wythenshawe Park, Wythenshawe Road, Manchester, M23 0AB</p>
+          <p>16 May 2026 – 17 May 2026</p>
+          <p>The festival has live chef demos, live music, artisan markets and family-friendly activities.</p>
+          <h2>Subscribe to our newsletter</h2>
+          <p>Get offers by email.</p>
+        </article>
+        """
+
+        [candidate] = _extract_source_candidates(source, html)
+
+        self.assertEqual(candidate["title"], "Visit Wythenshawe Park & Gardens for a huge food and drink festival")
+        self.assertEqual(candidate["primary_block"], "weekend_activities")
+        self.assertIn("Wythenshawe Park", candidate["evidence_text"])
+        self.assertTrue(event_quality_report(candidate)["ok"])
+
     def test_car_boot_without_ticket_language_can_pass_with_source(self) -> None:
         candidate = {
             "category": "culture_weekly",

@@ -872,6 +872,107 @@ def _extract_the_manc_weekly_events(source: SourceDef, body: str) -> list[Extrac
     return items
 
 
+_SECTIONED_GUIDE_TERMS = (
+    "market",
+    "makers",
+    "festival",
+    "fair",
+    "car boot",
+    "flea",
+    "food",
+    "drink",
+    "family",
+    "kids",
+    "free",
+    "exhibition",
+    "immersive",
+    "theatre",
+    "gig",
+    "concert",
+    "music",
+    "comedy",
+    "club",
+    "planetarium",
+    "bank holiday",
+    "workshop",
+    "trail",
+    "outdoor",
+    "pop-up",
+    "co-op live",
+    "ao arena",
+    "o2 apollo",
+    "academy",
+    "cathedral",
+)
+
+
+def _extract_sectioned_event_guide(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Extract individual events from editorial guide pages.
+
+    Secret Manchester / Creative Tourist / similar pages often expose the best
+    weekend picks as H2/H3 sections rather than listing cards. A generic link
+    scraper sees only "Read more"; this keeps the heading plus the facts beneath
+    it as one candidate.
+    """
+
+    article_match = re.search(
+        r"<(?:article|main)[^>]*>(.*?)</(?:article|main)>",
+        body,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    html_text = article_match.group(1) if article_match else body
+    starts = list(re.finditer(r"<h[23]\b[^>]*>(.*?)</h[23]>", html_text, flags=re.IGNORECASE | re.DOTALL))
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    for index, match in enumerate(starts):
+        heading_html = match.group(1)
+        link_match = re.search(r'<a\b[^>]*\bhref="([^"]+)"[^>]*>(.*?)</a>', heading_html, flags=re.IGNORECASE | re.DOTALL)
+        if link_match:
+            url = parse.urljoin(source.url, unescape(link_match.group(1).strip()))
+            raw_title = link_match.group(2)
+        else:
+            raw_title = heading_html
+            url = ""
+        title = _clean_title_text(_clean_long_text(raw_title))
+        if not title or title.lower().startswith(("advertisement", "read more", "share")):
+            continue
+        block_start = match.end()
+        block_end = starts[index + 1].start() if index + 1 < len(starts) else len(html_text)
+        block_html = html_text[block_start:block_end]
+        evidence = _clean_long_text(block_html)
+        if len(evidence) < 60:
+            continue
+        combined = f"{title} {evidence}"
+        lowered = combined.lower()
+        if not any(term in lowered for term in _SECTIONED_GUIDE_TERMS):
+            continue
+        if not re.search(r"\b(?:20\d{2}|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|today|tomorrow|weekend|saturday|sunday|monday)\b", lowered):
+            continue
+        slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:80]
+        if not url:
+            url = f"{source.url}#{slug}"
+        base_url = clean_url(url)
+        normalized_url = f"{base_url}#{slug}" if clean_url(source.url) == base_url else base_url
+        if normalized_url in seen:
+            continue
+        seen.add(normalized_url)
+        if _looks_like_candidate_title(title):
+            items.append(
+                ExtractedItem(
+                    title=title,
+                    url=normalized_url,
+                    published_at=_extract_text_date_hint(combined),
+                    summary=_summary_from_evidence(evidence) or title,
+                    lead=_derive_lead(source, title, evidence),
+                    evidence_text=evidence[:6000],
+                    enrichment_status="ok_sectioned_guide",
+                )
+            )
+        if len(items) >= source.max_candidates:
+            break
+    return items
+
+
 def _extract_designmynight_cards(source: SourceDef, body: str) -> list[ExtractedItem]:
     """DesignMyNight «things to do» — venue/event cards.
 
@@ -1316,6 +1417,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_phm_events(source, body)
     elif source.source_type == "html_the_manc_weekly_events":
         links = _extract_the_manc_weekly_events(source, body)
+    elif source.source_type == "html_sectioned_event_guide":
+        links = _extract_sectioned_event_guide(source, body)
     elif source.source_type == "html_designmynight":
         links = _extract_designmynight_cards(source, body)
     elif "<rss" in body[:500].lower() or "<feed" in body[:500].lower():
@@ -1336,8 +1439,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
     for item in links:
         base_url = clean_url(item.url)
         fragment = parse.urlsplit(item.url).fragment
-        normalized_url = f"{base_url}#{fragment}" if source.source_type == "html_the_manc_weekly_events" and fragment else base_url
-        same_source_page = source.source_type in {"html_page_event", "html_the_manc_weekly_events"} and base_url == clean_url(source.url)
+        normalized_url = f"{base_url}#{fragment}" if source.source_type in {"html_the_manc_weekly_events", "html_sectioned_event_guide"} and fragment else base_url
+        same_source_page = source.source_type in {"html_page_event", "html_the_manc_weekly_events", "html_sectioned_event_guide"} and base_url == clean_url(source.url)
         if not same_source_page and not _is_allowed_source_link(source, base_url, item.title, item.summary):
             continue
         if normalized_url in seen:

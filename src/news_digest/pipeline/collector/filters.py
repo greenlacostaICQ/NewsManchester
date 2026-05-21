@@ -789,10 +789,20 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
         block_evergreen=True,
         require_gm_or_date=True,
     ),
+    "Creative Tourist Bank Holiday": _SourcePolicy(
+        min_path_depth=2,
+        block_evergreen=True,
+        require_gm_or_date=True,
+    ),
     "DesignMyNight Manchester": _SourcePolicy(
         min_path_depth=4,
         path_must_start="/manchester/whats-on/",
         path_banned_segments=("/things-to-do", "/best-", "/guide-", "/clubs", "/bars", "/restaurants"),
+        block_evergreen=True,
+    ),
+    "DesignMyNight Bank Holiday": _SourcePolicy(
+        min_path_depth=4,
+        path_must_start="/manchester/whats-on/",
         block_evergreen=True,
     ),
     "Fairfield Social Club": _SourcePolicy(
@@ -801,6 +811,33 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
         require_event_path_or_date=True,
     ),
     "Skiddle Manchester": _SourcePolicy(path_must_contain=("/whats-on/",), min_path_depth=4),
+    "Skiddle Manchester Bank Holiday": _SourcePolicy(path_must_contain=("/whats-on/",), min_path_depth=4),
+    "Sofar Manchester Bank Holiday": _SourcePolicy(path_must_contain=("/cities/manchester/", "/events/"), min_path_depth=3),
+    "Secret Manchester May Guide": _SourcePolicy(
+        min_path_depth=1,
+        block_non_gm_weekend=True,
+        require_gm_or_date=True,
+    ),
+    "Secret Manchester Weekend Guide": _SourcePolicy(
+        min_path_depth=1,
+        block_non_gm_weekend=True,
+        require_gm_or_date=True,
+    ),
+    "Secret Manchester Gigs": _SourcePolicy(
+        min_path_depth=1,
+        block_non_gm_weekend=True,
+        require_gm_or_date=True,
+    ),
+    "Manchester Theatres Weekend": _SourcePolicy(
+        min_path_depth=2,
+        path_must_contain=("/whatson/", "/events/", "/show/", "/whats-on/"),
+        block_non_gm_weekend=True,
+    ),
+    "Manchester Theatres Next Weekend": _SourcePolicy(
+        min_path_depth=2,
+        path_must_contain=("/whatson/", "/events/", "/show/", "/whats-on/"),
+        block_non_gm_weekend=True,
+    ),
     "Eventbrite Manchester": _SourcePolicy(
         path_all_must_contain=("/e/", "tickets-"),
         block_non_gm_weekend=True,
@@ -848,6 +885,18 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     "Stockport Events": _SourcePolicy(path_must_contain=("/events/",), min_path_depth=2),
     "Bolton Events": _SourcePolicy(path_must_contain=("/events/",), min_path_depth=2),
     "Visit Manchester": _SourcePolicy(
+        block_evergreen=True,
+        block_non_gm_weekend=True,
+    ),
+    "Visit Manchester This Week": _SourcePolicy(
+        block_evergreen=True,
+        block_non_gm_weekend=True,
+    ),
+    "Visit Manchester Weekend": _SourcePolicy(
+        block_evergreen=True,
+        block_non_gm_weekend=True,
+    ),
+    "Visit Manchester Bank Holiday Guide": _SourcePolicy(
         block_evergreen=True,
         block_non_gm_weekend=True,
     ),
