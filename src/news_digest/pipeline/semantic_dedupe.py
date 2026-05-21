@@ -36,12 +36,13 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import hashlib
+import json
 import logging
 import math
 import os
 import re
 
-from news_digest.pipeline.common import now_london, read_json, write_json
+from news_digest.pipeline.common import now_london, read_json
 
 
 logger = logging.getLogger(__name__)
@@ -108,7 +109,11 @@ def _load_cache(state_dir: Path) -> dict:
 
 
 def _save_cache(state_dir: Path, cache: dict) -> None:
-    write_json(state_dir / _CACHE_FILENAME, cache)
+    # Embedding vectors dominate this file. Compact JSON keeps the
+    # persisted cross-day cache useful without bloating the state commit.
+    path = state_dir / _CACHE_FILENAME
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 
 def _prune_cache(cache: dict, *, now_iso: str | None = None) -> int:
