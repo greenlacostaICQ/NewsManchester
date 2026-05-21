@@ -47,7 +47,10 @@ class StageResult:
     report_path: Path
 
 
-_COLLECTOR_MAX_WORKERS = 6
+# 89 sources today; widening the pool from 6 → 12 halves the rounds.
+# Cloudflare-protected sources still go through the curl_cffi cascade
+# inside _fetch_source_body, so per-source resilience is unchanged.
+_COLLECTOR_MAX_WORKERS = 12
 _SENSITIVE_QUERY_KEYS = {"apikey", "api_key", "key", "token", "access_token"}
 
 
