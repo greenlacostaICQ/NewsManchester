@@ -93,9 +93,14 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
         "Contact Theatre",
         "John Rylands Library",
         "Palace Theatre",
+        "Manchester Flower Festival",
+        "Manchester Flower Festival CityCo",
+        "Manchester Flower Festival CityCo News",
         # Discovery layer (multi-venue, broad reach).
         "Visit Manchester",
         # Aggregators last.
+        "I Love Manchester Flower Festival",
+        "Manchester's Finest Flower Festival",
         "The Manc Weekly Things To Do",
         "The Manc",
         "Manchester Wire",
@@ -202,6 +207,9 @@ SOURCE_TIER: dict[str, int] = {
     "University of Salford": 1,
     "Manchester Metropolitan": 1,
     "GMMH": 1,
+    "Manchester Flower Festival": 1,
+    "Manchester Flower Festival CityCo": 1,
+    "Manchester Flower Festival CityCo News": 1,
 
     # ── Tier 2: regional / national authoritative media ─────────────────
     "BBC Manchester": 2,
@@ -227,7 +235,9 @@ SOURCE_TIER: dict[str, int] = {
     "The Manc Weekly Things To Do": 3,
     "Manchester's Finest": 3,
     "Manchester's Finest Events": 3,
+    "Manchester's Finest Flower Festival": 3,
     "I Love Manchester": 3,
+    "I Love Manchester Flower Festival": 3,
     "Secret Manchester": 3,
     "Altrincham Today": 3,
     "About Manchester Food & Drink": 3,

@@ -7,6 +7,7 @@ from pathlib import Path
 
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector.routing import _adjust_ticket_radar_block
+from news_digest.pipeline.collector.sources import SOURCES
 from news_digest.pipeline.common import now_london
 from news_digest.pipeline.dedupe import _apply_intra_batch_dedup
 from news_digest.pipeline.writer import _build_ticket_fallback_line
@@ -221,6 +222,19 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         )
 
         self.assertTrue(updated["include"])
+
+    def test_flower_festival_has_redundant_weekend_sources(self) -> None:
+        sources = [
+            source
+            for source in SOURCES
+            if "flower festival" in source.name.lower()
+            and source.primary_block == "weekend_activities"
+            and source.source_type == "html_page_event"
+        ]
+
+        self.assertGreaterEqual(len(sources), 4)
+        self.assertTrue(any("visitmanchester.com" in source.url for source in sources))
+        self.assertTrue(any("cityco.com" in source.url for source in sources))
 
 
 if __name__ == "__main__":
