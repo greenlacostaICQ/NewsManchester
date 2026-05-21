@@ -26,6 +26,8 @@ _DATE_RE = re.compile(
 _RECURRING_MARKET_RE = re.compile(
     r"\b(?:every|each|all|most|first|1st|second|2nd|third|3rd|last)\s+(?:saturday|sunday|weekend|month)\b|"
     r"\bruns?\s+(?:on\s+)?(?:saturdays?|sundays?|bank holiday mondays?)\b|"
+    r"\bopen(?:ing)?\s+(?:hours?\s+)?(?:on\s+)?(?:saturdays?|sundays?|weekends?)\b|"
+    r"\b(?:saturdays?|sundays?|weekends?)\b.{0,80}\b(?:open|trading|market|car boot)\b|"
     r"\b(?:saturday|sunday)\s+market\b",
     re.IGNORECASE,
 )

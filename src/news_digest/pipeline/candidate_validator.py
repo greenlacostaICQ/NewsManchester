@@ -80,13 +80,13 @@ def _exclude_stale_ticket_onsale(candidate: dict) -> bool:
     if age_days <= 3:
         candidate["ticket_type"] = "on_sale_now"
         return False
-    event_at = _summary_field_datetime(summary, "event_date")
     if "ticket_signal=upcoming_event" in lowered:
-        days_to_event = (event_at.date() - now_london().date()).days if event_at else 999
-        candidate["primary_block"] = "next_7_days" if 0 <= days_to_event <= 7 else "future_announcements"
         candidate["ticket_type"] = "old_public_sale"
         existing = str(candidate.get("reason") or "").strip()
-        note = f"Validator: public_onsale opened {age_days} day(s) ago; moved out of ticket_radar."
+        note = (
+            f"Validator: public_onsale opened {age_days} day(s) ago; "
+            "kept in ticket_radar as already-on-sale coverage."
+        )
         candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
         return False
     candidate["primary_block"] = "future_announcements"
@@ -197,9 +197,16 @@ def _has_future_or_concrete_date(candidate: dict) -> bool:
 
 def _has_computable_market_schedule(candidate: dict) -> bool:
     lowered = _candidate_blob(candidate).lower()
-    return "market" in lowered and bool(
+    market_like = "market" in lowered or "car boot" in lowered
+    if not market_like:
+        return False
+    return bool(
         re.search(
-            r"\b(?:every|first|1st|second|2nd|third|3rd|last)\s+(?:saturday|sunday|weekend|month)\b",
+            r"\b(?:every|each|all|most|weekly|first|1st|second|2nd|third|3rd|last)\s+"
+            r"(?:saturday|sunday|weekend|month)\b|"
+            r"\bruns?\s+(?:on\s+)?(?:saturdays?|sundays?|weekends?|bank holiday mondays?)\b|"
+            r"\bopen(?:ing)?\s+(?:hours?\s+)?(?:on\s+)?(?:saturdays?|sundays?|weekends?)\b|"
+            r"\b(?:saturdays?|sundays?|weekends?)\b.{0,80}\b(?:open|trading|market|car boot)\b",
             lowered,
         )
     )

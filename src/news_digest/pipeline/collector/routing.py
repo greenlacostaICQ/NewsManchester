@@ -3,7 +3,7 @@
 `_freshness_status` and `_resolve_primary_block` decide where a fresh
 candidate lands. `_promote_to_today_focus` (and helpers) is the
 "pull-up" pass that ensures Что важно сегодня has substantive material.
-`_adjust_ticket_radar_block` demotes far-future ticket items.
+`_adjust_ticket_radar_block` classifies ticket opportunities.
 """
 
 from __future__ import annotations
@@ -353,15 +353,13 @@ def _ticket_event_max_date(title: str) -> datetime | None:
 
 
 def _adjust_ticket_radar_block(candidate: dict) -> None:
-    """Demote ticket items whose earliest date is past the radar horizon.
+    """Classify ticket items and demote only non-actionable calendar filler.
 
     Major venues get a 540-day radar horizon. Regular upcoming events at
-    non-major venues move to normal event blocks so Ticket Radar stays about
-    actionable ticket opportunities, not every gig in date order. Items
-    entirely in the past are excluded (include=False).
-
-    For onsale items: recent public_onsale dates stay in Ticket Radar; older
-    on-sale cards are moved out and marked borderline after 14 days.
+    non-major venues move to normal event blocks unless they are close enough
+    for planning. Older public-sale metadata still belongs in Ticket Radar
+    when the event itself is upcoming: the writer must say "already on sale",
+    not pretend the past sale date is future.
     """
 
     if candidate.get("primary_block") != "ticket_radar":
@@ -378,13 +376,11 @@ def _adjust_ticket_radar_block(candidate: dict) -> None:
         and onsale_dt < today_dt - timedelta(days=3)
         and ticket_type in {"major_upcoming", "regular_upcoming"}
     ):
-        days_to_event = (event_dt - today_dt).days if event_dt is not None else 999
-        candidate["primary_block"] = "next_7_days" if 0 <= days_to_event <= 7 else "future_announcements"
         candidate["ticket_type"] = "old_public_sale"
         existing_reason = str(candidate.get("reason") or "").strip()
         note = (
             f"Ticket public sale opened {(today_dt - onsale_dt).days} day(s) ago; "
-            "moved out of ticket_radar."
+            "kept in ticket_radar as already-on-sale coverage."
         )
         candidate["reason"] = f"{existing_reason} | {note}".strip(" |") if existing_reason else note
         return

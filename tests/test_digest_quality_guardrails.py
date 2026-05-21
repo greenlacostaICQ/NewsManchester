@@ -8,6 +8,8 @@ from pathlib import Path
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector.routing import _adjust_ticket_radar_block
 from news_digest.pipeline.common import now_london
+from news_digest.pipeline.dedupe import _apply_intra_batch_dedup
+from news_digest.pipeline.writer import _build_ticket_fallback_line
 
 
 class DigestQualityGuardrailsTest(unittest.TestCase):
@@ -140,7 +142,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertFalse(updated["include"])
         self.assertIn("stale_undated_news", updated["reject_reasons"])
 
-    def test_old_public_sale_upcoming_event_moves_out_of_ticket_radar(self) -> None:
+    def test_old_public_sale_upcoming_event_stays_in_ticket_radar(self) -> None:
         candidate = {
             "include": True,
             "category": "venues_tickets",
@@ -155,8 +157,70 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         _adjust_ticket_radar_block(candidate)
 
-        self.assertEqual(candidate["primary_block"], "next_7_days")
+        self.assertEqual(candidate["primary_block"], "ticket_radar")
         self.assertEqual(candidate["ticket_type"], "old_public_sale")
+
+    def test_old_public_sale_fallback_says_already_on_sale_and_keeps_genre(self) -> None:
+        line = _build_ticket_fallback_line(
+            {
+                "category": "venues_tickets",
+                "primary_block": "ticket_radar",
+                "title": "Example",
+                "ticket_type": "old_public_sale",
+                "summary": (
+                    "O2 Victoria Warehouse Manchester | Manchester | Electronic | "
+                    "event_date=2026-05-24 19:00 | public_onsale=2025-11-14 10:00 | "
+                    "ticket_signal=upcoming_event | ticket_type=regular_upcoming | major_venue=false"
+                ),
+                "practical_angle": "Проверьте наличие билетов на официальной странице.",
+            }
+        )
+
+        self.assertIn("Билеты уже в продаже", line)
+        self.assertIn("(Electronic)", line)
+        self.assertNotIn("поступят в продажу", line.lower())
+
+    def test_distinct_car_boot_and_market_sources_do_not_collapse(self) -> None:
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "bowlee",
+                "title": "Casual trading | Casual trading | Rochdale Council",
+                "summary": "Every Sunday at Bowlee Community Park.",
+                "primary_block": "weekend_activities",
+                "source_label": "Bowlee Car Boot Sale",
+            },
+            {
+                "include": True,
+                "fingerprint": "new-smithfield",
+                "title": "Casual trading | Casual trading | Manchester City Council",
+                "summary": "Sunday trading at New Smithfield Market.",
+                "primary_block": "weekend_activities",
+                "source_label": "New Smithfield Sunday Market",
+            },
+        ]
+
+        self.assertEqual(_apply_intra_batch_dedup(candidates), [])
+
+    def test_recurring_market_open_on_weekend_passes_date_validator(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "altrincham-market",
+                "category": "culture_weekly",
+                "primary_block": "weekend_activities",
+                "title": "Altrincham Market",
+                "summary": "Altrincham Market is open on Saturday and Sunday with food, drink and traders.",
+                "lead": "",
+                "evidence_text": "Opening hours: open Saturday and Sunday at Market House, Altrincham.",
+                "source_label": "Altrincham Market",
+                "source_url": "https://visitaltrincham.com/business-directory/altrincham-market/",
+                "dedupe_decision": "new",
+                "change_type": "new_story",
+            }
+        )
+
+        self.assertTrue(updated["include"])
 
 
 if __name__ == "__main__":

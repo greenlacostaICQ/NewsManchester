@@ -453,9 +453,33 @@ def _ticket_venue(candidate: dict) -> str:
     return source_label
 
 
+def _ticket_genre(candidate: dict) -> str:
+    summary = str(candidate.get("summary") or "")
+    chunks = [chunk.strip(" .") for chunk in summary.split("|")]
+    ignored = {
+        "manchester",
+        "liverpool",
+        "london",
+        "greater manchester",
+        "united kingdom",
+        "uk",
+    }
+    for chunk in chunks[1:4]:
+        lowered = chunk.lower()
+        if not chunk or lowered in ignored:
+            continue
+        if "=" in chunk or lowered.startswith("ticket_"):
+            continue
+        if re.search(r"\b(?:arena|hall|warehouse|academy|institute|studios|club|depot|apollo|ritz|theatre|stadium)\b", lowered):
+            continue
+        return chunk
+    return ""
+
+
 def _build_ticket_fallback_line(candidate: dict) -> str:
     title = _ticket_headliner(str(candidate.get("title") or ""))
     venue = _ticket_venue(candidate)
+    genre = _ticket_genre(candidate)
     practical = str(candidate.get("practical_angle") or "Проверьте время, вход и наличие билетов на официальной странице.").strip()
     ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
     type_prefix = {
@@ -471,13 +495,14 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
     time_part = ""
     if event_dt and event_dt.strftime("%H:%M") != "12:00":
         time_part = f" в {event_dt.strftime('%H:%M')}"
+    genre_part = f" ({genre})" if genre else ""
     if day_month and venue:
-        return f"• {type_prefix}: в {venue} {day_month}{time_part} — концерт {title}. {practical}"
+        return f"• {type_prefix}: в {venue} {day_month}{time_part} — концерт {title}{genre_part}. {practical}"
     if day_month:
-        return f"• {type_prefix}: {day_month}{time_part} — концерт {title}. {practical}"
+        return f"• {type_prefix}: {day_month}{time_part} — концерт {title}{genre_part}. {practical}"
     if venue:
-        return f"• {type_prefix}: в {venue} — концерт {title}. {practical}"
-    return f"• {type_prefix}: концерт {title}. {practical}"
+        return f"• {type_prefix}: в {venue} — концерт {title}{genre_part}. {practical}"
+    return f"• {type_prefix}: концерт {title}{genre_part}. {practical}"
 
 
 def _ticket_public_onsale_datetime(candidate: dict) -> datetime | None:
@@ -568,6 +593,8 @@ def _is_late_may_bank_holiday(day: date) -> bool:
 
 
 def _current_weekend_start() -> date:
+    # Weekend planning is shown from Thursday, but the item window starts on
+    # Friday so Thursday one-offs do not crowd out bank-holiday weekend picks.
     today = now_london().date()
     friday = today + timedelta(days=(4 - today.weekday()) % 7)
     if today.weekday() in {5, 6} or _is_late_may_bank_holiday(today):

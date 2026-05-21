@@ -905,6 +905,47 @@ def _dedup_block_group(primary_block: str) -> str:
     return primary_block
 
 
+_MARKET_LISTING_RE = re.compile(r"\b(?:market|car boot|makers market|artisan market|flea market)\b", re.IGNORECASE)
+_GENERIC_MARKET_TITLE_RE = re.compile(r"\b(?:casual trading|market|markets|what'?s on|events?)\b", re.IGNORECASE)
+
+
+def _is_market_listing(candidate: dict) -> bool:
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "source_label")
+    )
+    return bool(_MARKET_LISTING_RE.search(blob))
+
+
+def _market_identity_tokens(candidate: dict) -> set[str]:
+    text = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("source_label", "title", "summary", "evidence_text")
+    ).lower()
+    tokens: set[str] = set()
+    for phrase in re.findall(
+        r"\b(?:new smithfield|bowlee|barton|burnage|altrincham|northern quarter|"
+        r"stockport|urmston|chorlton|levenshulme|first street|makers?|artisan|"
+        r"aerodrome|community park|market house)\b",
+        text,
+    ):
+        tokens.add(re.sub(r"\s+", " ", phrase).strip())
+    source_label = str(candidate.get("source_label") or "").strip().lower()
+    if source_label and not _GENERIC_MARKET_TITLE_RE.fullmatch(source_label):
+        tokens.add(source_label)
+    return tokens
+
+
+def _distinct_market_listing_pair(first: dict, second: dict) -> bool:
+    if not (_is_market_listing(first) and _is_market_listing(second)):
+        return False
+    first_ids = _market_identity_tokens(first)
+    second_ids = _market_identity_tokens(second)
+    if not first_ids or not second_ids:
+        return False
+    return first_ids.isdisjoint(second_ids)
+
+
 def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
     """Drop topic-duplicates within the batch, keeping the strongest source.
 
@@ -945,6 +986,8 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
             borough_j = _extract_borough(str(cj.get("title") or ""))
             if borough_i != borough_j:
                 continue  # different boroughs = different stories
+            if _distinct_market_listing_pair(ci, cj):
+                continue  # same generic listing wording, different market/venue
 
             tokens_j = _title_tokens(str(cj.get("title") or ""))
             entities_j = _title_entities(str(cj.get("title") or ""))
