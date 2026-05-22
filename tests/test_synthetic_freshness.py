@@ -14,6 +14,7 @@ from datetime import date, datetime, timedelta
 from unittest import mock
 
 from news_digest.pipeline.collector import fallbacks
+from news_digest.pipeline.collector.weather import _met_office_practical_angle
 from news_digest.pipeline.release import _summarise_synthetic_freshness
 from news_digest.pipeline.transport_fill import _make_reminder_candidate
 
@@ -69,6 +70,27 @@ class WeatherCandidateFreshnessTest(unittest.TestCase):
         '<h4>Today:</h4><p>Sunny intervals.</p>'
         '</body></html>'
     )
+
+    def test_high_rain_probability_is_not_written_as_heavy_rain_by_itself(self) -> None:
+        practical = _met_office_practical_angle(
+            "Bright spells.",
+            "Sunny intervals, with a few showers possible later.",
+            70,
+        )
+
+        self.assertIn("высокий риск локальных осадков", practical)
+        self.assertNotIn("сильные осадки", practical)
+        self.assertNotIn("зонт обязателен", practical)
+
+    def test_heavy_rain_wording_requires_met_office_rain_prose(self) -> None:
+        practical = _met_office_practical_angle(
+            "Heavy rain possible later.",
+            "Cloudy with persistent rain arriving in the evening.",
+            70,
+        )
+
+        self.assertIn("сильные осадки", practical)
+        self.assertIn("проверьте локальный радар", practical)
 
     def test_live_met_office_fetch_marks_candidate_fresh(self) -> None:
         with mock.patch.object(
