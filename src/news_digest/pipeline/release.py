@@ -589,16 +589,29 @@ _EVENT_SECTIONS_FOR_DATE_CHECK = frozenset({
     "Русскоязычные концерты и стендап UK",
 })
 
-# Date markers: Russian/ASCII numeric dates, Russian month names, weekday
-# accusative forms ("в субботу"), "сегодня"/"завтра"/"послезавтра", or a
-# year. Anchored on word boundaries via the surrounding regex.
+# Date markers (S3 expanded): numeric dates, Russian month names, weekday
+# forms ("в субботу"), "сегодня"/"завтра", year, range markers ("до 24
+# мая", "с 15 по 24"), AND recurring/permanent phrases that are valid
+# time anchors for recurring events ("каждое воскресенье", "работает
+# постоянно", "по выходным"). Anchored on word boundaries.
 _DATE_MARKER_RE = re.compile(
     r"\b\d{1,2}\s*(?:января|февраля|марта|апреля|мая|июня|июля|"
     r"августа|сентября|октября|ноября|декабря)\b"
     r"|\b\d{1,2}[/.\-]\d{1,2}\b"
     r"|\bв\s+(?:понедельник|вторник|среду|четверг|пятницу|субботу|воскресенье)\b"
     r"|\b(?:сегодня|завтра|послезавтра)\b"
-    r"|\b20\d{2}\b",
+    r"|\b20\d{2}\b"
+    # Recurring / permanent markers — also valid time anchors.
+    r"|\bкажд(?:ое|ую|ый|ого|ой)\s+(?:воскресенье|субботу|неделю|месяц|"
+    r"день|вечер|пятницу|понедельник|вторник|среду|четверг)\b"
+    r"|\bеженедельн\w*\b|\bежемесячн\w*\b"
+    r"|\bпостоянно\s+работает\b|\bработает\s+(?:постоянно|по\s+выходным|"
+    r"каждый\s+день|круглогодично)\b"
+    r"|\bпо\s+выходным\b|\bв\s+будни\b"
+    # Range / open-ended ("идёт до 24 мая", "с 15 мая", "до конца сентября").
+    r"|\bдо\s+(?:конца\s+)?(?:января|февраля|марта|апреля|мая|июня|июля|"
+    r"августа|сентября|октября|ноября|декабря)\b"
+    r"|\bидёт\s+до\b|\bидет\s+до\b",
     re.IGNORECASE,
 )
 
@@ -1804,6 +1817,77 @@ def _build_after_run_summary(
     }
 
 
+def _summarise_event_completeness(
+    candidates_report: dict | None,
+    rendered_fingerprints: set[str],
+    sections: dict[str, list[str]] | None,
+) -> dict[str, object]:
+    """S3: surface published event cards that lost their date or venue
+    on the rewrite path.
+
+    For each rendered candidate whose primary_block is an event block:
+      - if the draft_line has no date marker AT ALL (even though the
+        extracted event has a date_iso or date_text), flag as
+        "lost_date" — the rewriter dropped the time anchor.
+      - if the candidate has an extracted event.venue but the venue
+        name does not appear anywhere in the draft_line, flag as
+        "lost_venue".
+
+    Warning-only — the digest still ships per the never-block rule.
+    Pure surfacing so the support report shows "events shipped without
+    when/where".
+    """
+    counts = {"checked": 0, "missing_date": 0, "missing_venue": 0}
+    issues: list[dict[str, object]] = []
+    if not isinstance(candidates_report, dict):
+        return {"counts": counts, "issues": issues}
+    event_blocks = _EVENT_SECTIONS_FOR_DATE_CHECK
+    # Map block-id -> section name; only blocks that end up in event sections.
+    event_block_ids = {
+        block_id for block_id, sec_name in PRIMARY_BLOCKS.items()
+        if sec_name in event_blocks
+    }
+    for candidate in candidates_report.get("candidates") or []:
+        if not isinstance(candidate, dict):
+            continue
+        fp = str(candidate.get("fingerprint") or "")
+        if fp not in rendered_fingerprints:
+            continue
+        block = str(candidate.get("primary_block") or "")
+        if block not in event_block_ids:
+            continue
+        counts["checked"] += 1
+        draft_line = str(candidate.get("draft_line") or "")
+        visible = re.sub(r"<[^>]+>", " ", draft_line)
+        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        has_extracted_date = bool(
+            event.get("date_iso") or event.get("date_text") or event.get("is_recurring")
+        )
+        has_date_in_text = bool(_DATE_MARKER_RE.search(visible))
+        if has_extracted_date and not has_date_in_text:
+            counts["missing_date"] += 1
+            issues.append({
+                "fingerprint": fp,
+                "title": str(candidate.get("title") or "")[:140],
+                "primary_block": block,
+                "issue": "missing_date",
+                "detail": "event has extracted date but draft_line has no time anchor",
+            })
+        venue = str(event.get("venue") or "").strip()
+        if venue and len(venue) >= 4:
+            # Simple containment check — case-insensitive.
+            if venue.lower() not in visible.lower():
+                counts["missing_venue"] += 1
+                issues.append({
+                    "fingerprint": fp,
+                    "title": str(candidate.get("title") or "")[:140],
+                    "primary_block": block,
+                    "issue": "missing_venue",
+                    "detail": f"event.venue=«{venue}» not in draft_line",
+                })
+    return {"counts": counts, "issues": issues[:30]}
+
+
 def _summarise_cross_day_recurrence(candidates_report: dict | None) -> dict[str, object]:
     """S2: surface candidates blocked because the same person/incident
     was published in the previous days.
@@ -2155,6 +2239,9 @@ def build_release(project_root: Path) -> ReleaseResult:
                 )
     change_type_summary = _summarise_change_types(state_dir)
     cross_day_recurrence = _summarise_cross_day_recurrence(candidates_report)
+    event_completeness = _summarise_event_completeness(
+        candidates_report, rendered_fingerprints, None,
+    )
 
     cost_summary = _aggregate_cost(state_dir)
     if cost_summary["unknown_priced_models"]:
@@ -2380,6 +2467,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "cost_summary": cost_summary,
         "change_type_summary": change_type_summary,
         "cross_day_recurrence": cross_day_recurrence,
+        "event_completeness": event_completeness,
         "digest_health": digest_health,
         "source_status": source_status,
         "transport_coverage": transport_coverage,
