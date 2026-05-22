@@ -2262,10 +2262,6 @@ def build_release(project_root: Path) -> ReleaseResult:
             f"Event miss review: {critical_event_misses} high-value event/ticket candidate(s) "
             "were collected but not published — see release_report.event_miss_review."
         )
-        errors.append(
-            f"Critical event miss: {critical_event_misses} high-value event/ticket candidate(s) "
-            "found but not published. Review release_report.event_miss_review before sending."
-        )
     borderline_queue = _borderline_queue(candidates_report, writer_report)
     if borderline_queue["counts"].get("borderline", 0):
         warnings.append(

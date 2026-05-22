@@ -8,12 +8,13 @@ from io import StringIO
 from pathlib import Path
 
 from news_digest.pipeline.candidate_validator import validate_candidates
-from news_digest.pipeline.common import now_london
+from news_digest.pipeline.common import REQUIRED_SCAN_CATEGORIES, now_london
 from news_digest.pipeline.editorial_contracts import scrub_vague_ending
 from news_digest.pipeline.collector.routing import _TICKET_HORIZON_DAYS
 from news_digest.pipeline.dedupe import _apply_semantic_drop_guard
 from news_digest.pipeline.history import write_daily_index_snapshot
 from news_digest.pipeline.release import (
+    build_release,
     _classify_published_candidates,
     _classify_rendered_html_quality,
     _event_miss_review,
@@ -905,6 +906,132 @@ class PublishedReviewTest(unittest.TestCase):
 
         self.assertEqual(review["counts"]["critical_misses"], 0)
         self.assertEqual(review["items"][0]["verdict"], "covered_by_rendered_duplicate")
+
+    def test_event_miss_warning_does_not_block_release(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            run_date = now_london().strftime("%Y-%m-%d")
+            run_id = "event-miss-warning-test"
+            categories = {
+                key: {
+                    "checked": True,
+                    "usable_for_release": True,
+                    "candidate_count": 1,
+                    "publishable_count": 1,
+                    "sources": [],
+                    "source_health": [],
+                }
+                for key in REQUIRED_SCAN_CATEGORIES
+            }
+            categories["public_services"]["active_disruption_today"] = False
+            (state_dir / "collector_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "categories": categories,
+            }), encoding="utf-8")
+            candidates = [
+                {
+                    "fingerprint": "city-1",
+                    "title": "Manchester council confirms service change",
+                    "source_label": "Manchester Council",
+                    "source_url": "https://example.test/city-1",
+                    "category": "council",
+                    "primary_block": "today_focus",
+                    "include": True,
+                    "dedupe_decision": "new",
+                    "summary": "Manchester council confirmed a service change today.",
+                },
+                {
+                    "fingerprint": "city-2",
+                    "title": "Stockport transport works confirmed",
+                    "source_label": "BBC Manchester",
+                    "source_url": "https://example.test/city-2",
+                    "category": "media_layer",
+                    "primary_block": "last_24h",
+                    "include": True,
+                    "dedupe_decision": "new",
+                    "freshness_status": "fresh_24h",
+                    "summary": "A local transport update was confirmed today.",
+                },
+                {
+                    "fingerprint": "missed-event",
+                    "title": "The Manchester Flower Festival",
+                    "source_label": "Manchester Flower Festival CityCo News",
+                    "source_url": "https://example.test/flower",
+                    "category": "culture_weekly",
+                    "primary_block": "weekend_activities",
+                    "include": False,
+                    "dedupe_decision": "drop",
+                    "reason": "Intra-batch topic duplicate — same story kept from stronger source.",
+                    "summary": "Free festival at St Ann's Square and King Street.",
+                    "event": {
+                        "date_start": run_date,
+                        "date_text": "today",
+                        "price": "free",
+                        "borough": "Manchester",
+                    },
+                },
+            ]
+            (state_dir / "candidates.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "candidates": candidates,
+            }), encoding="utf-8")
+            (state_dir / "curator_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "status": "complete",
+                "reviewed": 2,
+            }), encoding="utf-8")
+            (state_dir / "llm_rewrite_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "stage_status": "complete",
+            }), encoding="utf-8")
+            (state_dir / "writer_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "stage_status": "complete",
+                "rendered_candidate_fingerprints": ["city-1", "city-2"],
+                "quality_counts": {"included_candidates": 2, "rendered_candidates": 2},
+                "section_counts": {"Погода": 1, "Что важно сегодня": 1, "Что произошло за 24 часа": 1},
+                "dropped_candidates": [],
+            }), encoding="utf-8")
+            (state_dir / "editor_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "stage_status": "complete",
+            }), encoding="utf-8")
+            (state_dir / "dedupe_memory.json").write_text(json.dumps({
+                "intra_batch_dedup_drops": [
+                    {
+                        "fingerprint": "missed-event",
+                        "kept_fingerprint": "unrendered-other-event",
+                        "kept_title": "Other unrelated festival",
+                    }
+                ]
+            }), encoding="utf-8")
+            (state_dir / "draft_digest.html").write_text(
+                f"<b>Greater Manchester Brief — {run_date}, 08:00</b>\n\n"
+                "<b>Погода</b>\n"
+                "• Погода: 12-16°C. <a href=\"https://example.test/weather\">Met Office</a>\n\n"
+                "<b>Что важно сегодня</b>\n"
+                "• Manchester council confirms service change. <a href=\"https://example.test/city-1\">Manchester Council</a>\n\n"
+                "<b>Что произошло за 24 часа</b>\n"
+                "• Stockport transport works confirmed. <a href=\"https://example.test/city-2\">BBC Manchester</a>\n",
+                encoding="utf-8",
+            )
+
+            result = build_release(root)
+            report = json.loads((state_dir / "release_report.json").read_text(encoding="utf-8"))
+
+            self.assertTrue(result.ok)
+            self.assertEqual(report["release_decision"], "pass")
+            self.assertEqual(report["errors"], [])
+            self.assertEqual(report["event_miss_review"]["counts"]["critical_misses"], 1)
+            self.assertTrue(any("Event miss review" in warning for warning in report["warnings"]))
 
     def test_release_review_flags_bad_visible_items(self) -> None:
         candidates = [
