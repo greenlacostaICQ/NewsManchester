@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import OrderedDict
 import re
 
-ENTITY_SCHEMA_VERSION = 1
+ENTITY_SCHEMA_VERSION = 2  # added "people" bucket for cross-day same-victim/same-suspect dedup
 
 
 def _rx(value: str) -> re.Pattern[str]:
@@ -136,6 +136,128 @@ _COMPANY_SUFFIX_RE = re.compile(
 _TEXT_FIELDS = ("title", "summary", "lead", "practical_angle", "evidence_text", "source_label")
 
 
+# --- People extraction (cross-day same-victim/same-suspect dedup) -----
+#
+# We don't ship a real NER. Instead we look for capitalised name-shaped
+# tokens that sit next to phrases that tag someone as a real person in
+# the news sense (victim, accused, organiser, family of, the 17-year-old).
+# This catches Erica de Souza Correa, Mohanad Goobe, Ian Brown, etc.,
+# while rejecting "Manchester Arena", "Greater Manchester Police",
+# "The Lowry" — those are venues/orgs.
+#
+# False positives are filtered against the entity stopword list below and
+# against a length / capitalisation check inside _candidate_people.
+
+# Phrases that indicate the next/previous capitalised name is a person.
+# Cyrillic + Latin variants. We compile WITHOUT IGNORECASE so that the
+# uppercase character classes in the name capture group ([A-Z], [А-ЯЁ])
+# stay strict — otherwise lowercase verbs after the name leak into the
+# captured group ("Mohanad Goobe in Moss"). The anchor phrases at the
+# edges are simple lowercase words so case-sensitivity costs us nothing
+# on the anchor side.
+_EN_NAME = r"[A-Z][A-Za-z'’-]{1,}(?:\s+(?:de\s+|van\s+|von\s+)?[A-Z][A-Za-z'’-]{1,}){1,3}"
+_RU_NAME = r"[А-ЯЁ][А-Яа-яёЁ'’-]{1,}(?:\s+(?:де\s+|фон\s+|ван\s+)?[А-ЯЁ][А-Яа-яёЁ'’-]{1,}){1,4}"
+
+# Inline (?i:...) makes ONLY the anchor word case-insensitive (so
+# "Семья" matches the lowercase "семь[а-яё]+" pattern). The name group
+# stays case-sensitive — [A-Z]/[А-ЯЁ] reject lowercase verbs that would
+# otherwise leak into the captured group.
+_PEOPLE_ANCHOR_PATTERNS = (
+    # English: anchor word → capitalised name follows.
+    rf"(?i:victim|deceased|accused|suspect|defendant|killer|attacker|"
+    rf"witness|complainant|driver|cyclist|pedestrian|"
+    rf"the\s+(?:teenager|man|woman|boy|girl|teen|youth))\s+({_EN_NAME})",
+    # English: name → trailing verb.
+    rf"({_EN_NAME})\s*,?\s*"
+    rf"(?i:has\s+been\s+(?:charged|jailed|sentenced|named|killed|attacked|murdered)|"
+    rf"was\s+(?:charged|jailed|sentenced|killed|attacked|murdered|named|hit)|"
+    rf"died|pleaded\s+(?:guilty|not\s+guilty)|appeared\s+in\s+court|"
+    rf"is\s+accused|has\s+been\s+remanded)",
+    # English age-prefixed: "15-year-old Mohanad Goobe".
+    rf"(?i:\d{{1,3}}-year-old)\s+({_EN_NAME})",
+    # Russian: anchor word → name follows.
+    rf"(?i:жертв[а-яё]*|погибш[а-яё]+|подозреваем[а-яё]+|обвиняем[а-яё]+|"
+    rf"осуждённ[а-яё]+|свидетель|пострадавш[а-яё]+|водитель|велосипедист|"
+    rf"пешеход|семь[а-яё]+|близк[а-яё]+|родственник[а-яё]*|\d{{1,3}}-летн[а-яё]+)\s+"
+    rf"({_RU_NAME})",
+    # Russian: name → trailing verb.
+    rf"({_RU_NAME})\s*,?\s*"
+    rf"(?i:погиб(?:ла)?|убил(?:а)?|арестован(?:а)?|осуждён(?:а)?|приговорён(?:а)?|"
+    rf"обвиняется|обвинён(?:а)?|разыскивается|задержан(?:а)?|"
+    rf"скончал(?:ся|ась)|подозревается)",
+)
+_PEOPLE_ANCHOR_RE = tuple(re.compile(pat, re.UNICODE) for pat in _PEOPLE_ANCHOR_PATTERNS)
+
+# Tokens that look name-shaped but are place/org/role and must NEVER be
+# treated as a person. Lower-cased compare.
+_PEOPLE_STOPWORDS = frozenset({
+    "manchester", "greater manchester", "greater manchester police",
+    "manchester arena", "manchester city", "manchester united",
+    "salford", "salford city", "bolton", "bury", "oldham", "rochdale",
+    "stockport", "tameside", "trafford", "wigan",
+    "manchester piccadilly", "manchester victoria", "piccadilly",
+    "manchester airport", "the lowry", "the deaf institute",
+    "gmp", "tfgm", "nhs", "metrolink", "national rail",
+    "manchester city council", "bbc manchester", "the manc", "men",
+    "premier league", "city centre", "town centre", "bank holiday",
+    "manchester arena bombing",
+    # Anniversary/commemoration is not a person.
+    "manchester arena attack", "ariana grande concert",
+})
+
+
+def _looks_like_person_name(name: str) -> bool:
+    """Filter for plausible person names: at least one space (first+last),
+    each word starts with a capital, total length 6-60, not in stopwords.
+    Rejects URLs, dates, all-caps acronyms, single tokens.
+    """
+    cleaned = re.sub(r"\s+", " ", name).strip(" ,.;:|-'\"")
+    if not cleaned or len(cleaned) < 6 or len(cleaned) > 60:
+        return False
+    if cleaned.lower() in _PEOPLE_STOPWORDS:
+        return False
+    # Must have at least two capitalised words, neither all-uppercase.
+    words = cleaned.split()
+    if len(words) < 2:
+        return False
+    # Particles/prepositions inside names: lowercase EN + RU.
+    particles = {
+        "de", "van", "von", "der", "of", "the", "la", "le", "del", "di",
+        "де", "фон", "ван", "ди", "ла", "ле",
+    }
+    for word in words:
+        if word.lower() in particles:
+            continue
+        if not word[:1].isupper():
+            return False
+        if word.isupper() and len(word) > 3:
+            # All-caps acronyms like NHS, GMP, BBC.
+            return False
+    return True
+
+
+def _normalize_person_name(name: str) -> str:
+    """Canonical form for cross-day matching: lowercase, single-spaced."""
+    return re.sub(r"\s+", " ", name).strip(" ,.;:|-'\"").lower()
+
+
+def _candidate_people(blob: str) -> list[str]:
+    """Find person-name candidates by anchored regex, dedupe by canonical
+    form, return original-cased names in document order.
+    """
+    seen: dict[str, str] = {}
+    for pattern in _PEOPLE_ANCHOR_RE:
+        for match in pattern.finditer(blob):
+            name = match.group(1)
+            if not _looks_like_person_name(name):
+                continue
+            canon = _normalize_person_name(name)
+            if canon not in seen:
+                cleaned = re.sub(r"\s+", " ", name).strip(" ,.;:|-'\"")
+                seen[canon] = cleaned
+    return list(seen.values())
+
+
 def _candidate_blob(candidate: dict) -> str:
     return " ".join(str(candidate.get(field) or "") for field in _TEXT_FIELDS)
 
@@ -243,9 +365,12 @@ def extract_entities(candidate: dict) -> dict:
         if bucket:
             by_type[bucket].append(str(entity["name"]))
 
+    people = _candidate_people(text)
+
     return {
         "schema_version": ENTITY_SCHEMA_VERSION,
         **by_type,
+        "people": people,
         "all": entities,
     }
 

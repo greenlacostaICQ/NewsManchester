@@ -9,8 +9,18 @@ from pathlib import Path
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector.routing import _adjust_ticket_radar_block
 from news_digest.pipeline.collector.sources import SOURCES
-from news_digest.pipeline.common import now_london
-from news_digest.pipeline.dedupe import _apply_intra_batch_dedup
+from news_digest.pipeline.common import (
+    fingerprint_for_candidate,
+    now_london,
+    today_london,
+)
+from news_digest.pipeline.dedupe import (
+    _apply_intra_batch_dedup,
+    _normalise_person_tokens,
+    _people_published_matches,
+    dedupe_candidates,
+)
+from news_digest.pipeline.entity_extraction import extract_entities
 from news_digest.pipeline.writer import _build_ticket_fallback_line
 
 
@@ -533,6 +543,272 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         )
         reject_reasons = updated.get("reject_reasons") or []
         self.assertIn("book_author_misrouted", reject_reasons)
+
+    # ---------------------------------------------------------------
+    # S2 — cross-day entity dedup (same-victim / same-suspect repeats)
+    # User feedback 2026-05-22:
+    #   «Эрика 3 денб получаю эту новость где проверка??»
+    #   «Manchester Arena теракт ОПЯТЬ ПРО ТЕРРАКТ»
+    # ---------------------------------------------------------------
+
+    def test_people_extraction_finds_russian_victim_name(self) -> None:
+        """Stable contract: extract_entities must surface 'Эрика де Соуза
+        Корреа' both nominative ('Эрика') and genitive ('Эрики') from a
+        typical Russian news blob so the cross-day matcher can align
+        them.
+        """
+        entities = extract_entities(
+            {
+                "title": "Семья 17-летней Эрики де Соуза Корреа",
+                "summary": "17-летняя Эрика де Соуза Корреа погибла во время полицейской погони 5 мая.",
+            }
+        )
+        people = entities.get("people") or []
+        self.assertGreaterEqual(len(people), 1)
+        joined = " | ".join(people).lower()
+        self.assertIn("соуза", joined)
+        self.assertIn("корреа", joined)
+
+    def test_people_normalisation_aligns_russian_morphology(self) -> None:
+        """Эрика (nom.) and Эрики (gen.) must share >=2 normalised
+        tokens so they match across days.
+        """
+        a = _normalise_person_tokens("Эрика де Соуза Корреа")
+        b = _normalise_person_tokens("Эрики де Соуза Корреа")
+        # Both should contain stems for Souza and Correa (case-stripped).
+        shared = a & b
+        self.assertGreaterEqual(
+            len(shared), 2,
+            f"Russian morphology stripping failed: a={a}, b={b}, shared={shared}",
+        )
+
+    def test_different_people_do_not_match_across_day(self) -> None:
+        """John Smith published yesterday must NOT block Jane Doe today
+        — single-surname overlaps below the 2-token threshold.
+        """
+        cand = {
+            "primary_block": "city_watch",
+            "category": "media_layer",
+            "entities": {
+                "people": ["Jane Doe"],
+            },
+        }
+        fact = {
+            "fingerprint": "smith-yesterday",
+            "title": "John Smith charged",
+            "entities": {"people": ["John Smith"]},
+            "primary_block": "city_watch",
+        }
+        matches = _people_published_matches(cand, [fact])
+        self.assertEqual(matches, [])
+
+    def test_same_victim_cross_day_yields_people_match(self) -> None:
+        """Direct test of the matcher: today's «Эрика де Соуза Корреа»
+        candidate vs yesterday's published fact with the same person —
+        must return a non-empty match with shared_tokens >= 2.
+        """
+        cand = {
+            "primary_block": "city_watch",
+            "category": "media_layer",
+            "entities": {"people": ["Эрика де Соуза Корреа"]},
+        }
+        fact = {
+            "fingerprint": "erica-yesterday",
+            "title": "Семья 17-летней Эрики де Соуза Корреа",
+            "entities": {"people": ["Эрики де Соуза Корреа"]},
+            "primary_block": "city_watch",
+        }
+        matches = _people_published_matches(cand, [fact])
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]["match_type"], "people_entity")
+        self.assertGreaterEqual(int(matches[0]["shared_tokens"]), 2)
+
+    def test_cross_day_same_victim_blocks_candidate(self) -> None:
+        """User feedback: «Эрика 3 денб получаю эту новость где проверка??».
+
+        Integration through dedupe_candidates: with Эрика published two
+        days ago in published_facts.json, a fresh candidate about her
+        from a different outlet must be blocked with
+        cross_day_entity_repeat=True and dedupe_decision='drop'.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+
+            today = today_london()
+            # Pre-seed published_facts with a story about Erica from
+            # two days ago — different outlet, different URL.
+            (state_dir / "published_facts.json").write_text(
+                json.dumps(
+                    {
+                        "last_updated_london": today,
+                        "facts": [
+                            {
+                                "fingerprint": "yesterday-bbc-erica",
+                                "title": "Family of 17-year-old Erica de Souza Correa speaks out",
+                                "normalized_title": "family of 17 year old erica de souza correa speaks out",
+                                "category": "media_layer",
+                                "primary_block": "city_watch",
+                                "source_label": "BBC Manchester",
+                                "entities": {
+                                    "schema_version": 2,
+                                    "boroughs": ["Bolton"],
+                                    "people": ["Erica de Souza Correa"],
+                                    "all": [],
+                                },
+                                "first_published_day_london": today,
+                                "last_published_day_london": today,
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            # Important: this candidate is a PURE rehash — same victim
+            # but no new fact (no suspect name, no court date, no new
+            # figure). If we accidentally include a date or number here,
+            # has_new_fact_signal upgrades the verdict to
+            # same_story_new_facts and the block doesn't fire. That's
+            # actually correct behaviour, but it doesn't exercise the
+            # "Эрика 3 дня подряд" path we want to lock down here.
+            today_candidate = {
+                "fingerprint": "today-themanc-erica",
+                "include": True,
+                "dedupe_decision": "new",
+                "category": "media_layer",
+                "primary_block": "city_watch",
+                "title": "Семья Эрики де Соуза Корреа выразила скорбь",
+                "summary": (
+                    "Близкие Эрики де Соуза Корреа продолжают переживать "
+                    "потерю. Семья просит общественность уважать их частную жизнь."
+                ),
+                "lead": "",
+                "evidence_text": (
+                    "Семья Эрики де Соуза Корреа выразила скорбь."
+                ),
+                "source_label": "The Manc",
+                "source_url": "https://example.test/themanc/erica-grief",
+                "published_at": now_london().isoformat(),
+            }
+            (state_dir / "candidates.json").write_text(
+                json.dumps(
+                    {
+                        "pipeline_run_id": "t",
+                        "run_date_london": today,
+                        "candidates": [today_candidate],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            # dedupe_candidates may flag synthetic test data with
+            # "missing reason" errors; that's ok — what we care about
+            # is the candidate's final state.
+            dedupe_candidates(root)
+            out = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))
+            updated = out["candidates"][0]
+            self.assertFalse(
+                updated.get("include"),
+                f"Same victim cross-day was not blocked: reason={updated.get('reason')}",
+            )
+            self.assertTrue(
+                updated.get("cross_day_entity_repeat"),
+                f"cross_day_entity_repeat flag not set: {updated}",
+            )
+
+    def test_cross_day_same_victim_with_new_fact_passes(self) -> None:
+        """Защита от слишком жёсткого dedup: если карточка тех же людей
+        с новым явным фактом (имя обвиняемого + дата суда + цифра
+        приговора) — должна пройти как same_story_new_facts, не block.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            today = today_london()
+            (state_dir / "published_facts.json").write_text(
+                json.dumps(
+                    {
+                        "last_updated_london": today,
+                        "facts": [
+                            {
+                                "fingerprint": "yesterday-bbc-erica",
+                                "title": "Family of Erica de Souza Correa speaks",
+                                "normalized_title": "family of erica de souza correa speaks",
+                                "category": "media_layer",
+                                "primary_block": "city_watch",
+                                "source_label": "BBC Manchester",
+                                "entities": {
+                                    "schema_version": 2,
+                                    "people": ["Erica de Souza Correa"],
+                                    "all": [],
+                                },
+                                "first_published_day_london": today,
+                                "last_published_day_london": today,
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            today_candidate = {
+                "fingerprint": "today-newfact-erica",
+                "include": True,
+                "dedupe_decision": "new",
+                "category": "media_layer",
+                "primary_block": "city_watch",
+                "title": "Bolton officer Mark Davies charged in Erica de Souza Correa pursuit case",
+                "summary": (
+                    "Mark Davies, the officer at the wheel during the pursuit "
+                    "that killed 17-year-old Erica de Souza Correa, has been "
+                    "charged with dangerous driving. The trial is set for "
+                    "16 September 2026. The Crown said damages of £250,000 "
+                    "are being sought."
+                ),
+                "lead": "",
+                "evidence_text": (
+                    "Mark Davies has been charged with dangerous driving "
+                    "causing death. Trial: 16 September 2026. "
+                    "Damages claim £250,000."
+                ),
+                "source_label": "MEN",
+                "source_url": "https://example.test/men/erica-officer-charged",
+                "published_at": now_london().isoformat(),
+            }
+            (state_dir / "candidates.json").write_text(
+                json.dumps(
+                    {
+                        "pipeline_run_id": "t",
+                        "run_date_london": today,
+                        "candidates": [today_candidate],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            # dedupe_candidates may flag synthetic test data with
+            # "missing reason" errors; that's ok — what we care about
+            # is the candidate's final state.
+            dedupe_candidates(root)
+            out = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))
+            updated = out["candidates"][0]
+            # Either still include=True (new facts upgraded it back), or
+            # change_type marked as same_story_new_facts — we accept both
+            # outcomes as "didn't silently drop the new development".
+            include_or_upgrade_ok = (
+                updated.get("include") is True
+                or str(updated.get("change_type") or "") == "same_story_new_facts"
+            )
+            self.assertTrue(
+                include_or_upgrade_ok,
+                f"News with a new fact was silently blocked: {updated}",
+            )
 
     def test_genuine_tech_startup_is_not_blocked_by_book_guard(self) -> None:
         """Defensive: a real tech-author crossover must still pass.

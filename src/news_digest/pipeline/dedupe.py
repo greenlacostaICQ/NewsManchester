@@ -101,12 +101,27 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         original_title = str(candidate.get("title") or "")
         title_similar_previous = _similar_published_titles(normalized_title, original_title, published_titles)
         semantic_previous = _semantic_published_matches(candidate, published_titles)
-        similar_previous = _merge_previous_matches(title_similar_previous, semantic_previous)
+        people_previous = _people_published_matches(candidate, published_titles)
+        similar_previous = _merge_previous_matches(
+            title_similar_previous, semantic_previous, people_previous,
+        )
         if semantic_previous:
             candidate["semantic_dedupe_match"] = (
                 "embedding_only" if not title_similar_previous else "embedding_and_title"
             )
             candidate["semantic_dedupe_score"] = semantic_previous[0].get("overlap")
+        if people_previous:
+            # S2: surface the people match separately so the support
+            # report can show "blocked because Erica de Souza Correa
+            # was already published 2 days ago".
+            top_person_match = people_previous[0]
+            candidate["people_dedupe_match"] = {
+                "matched_person_today": top_person_match.get("matched_person_today"),
+                "matched_person_previously": top_person_match.get("matched_person_previously"),
+                "previous_fingerprint": top_person_match.get("fingerprint"),
+                "previous_title": top_person_match.get("title"),
+                "shared_tokens": top_person_match.get("shared_tokens"),
+            }
         candidate.setdefault("reason", "")
         candidate.setdefault("matched_previous_fingerprint", "")
 
@@ -194,12 +209,22 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 if change_type == "no_change"
                 else "Повтор сюжета без новых деталей: уже был"
             )
+            # S2: when the previous match came from a people-entity hit
+            # (BBC vs MEN vs The Manc on the same victim), call that out
+            # explicitly so the support report can group these blocks.
+            person_tag = ""
+            if isinstance(candidate.get("people_dedupe_match"), dict):
+                pm = candidate["people_dedupe_match"]
+                today_name = pm.get("matched_person_today")
+                if today_name:
+                    person_tag = f" — та же фигурант(а) {today_name}"
+                    candidate["cross_day_entity_repeat"] = True
             if prev_date and prev_title:
                 candidate["reason"] = (
-                    f"{human_prefix} {prev_date} как «{prev_title[:120]}»."
+                    f"{human_prefix} {prev_date} как «{prev_title[:120]}»{person_tag}."
                 )
             elif prev_title:
-                candidate["reason"] = f"{human_prefix} ранее как «{prev_title[:120]}»."
+                candidate["reason"] = f"{human_prefix} ранее как «{prev_title[:120]}»{person_tag}."
             # If we ended up here without a dedupe drop yet, enforce one —
             # UNLESS the same-day rerun exemption already accepted this
             # candidate (operational/manual rerun reading earlier in this
@@ -1331,13 +1356,152 @@ def _semantic_published_matches(candidate: dict, published_items: list[dict]) ->
     return matches[:3]
 
 
-def _merge_previous_matches(title_matches: list[dict], semantic_matches: list[dict]) -> list[dict]:
+def _merge_previous_matches(*match_lists: list[dict]) -> list[dict]:
+    """Merge any number of match-lists (title / semantic / people),
+    keeping the strongest overlap per fingerprint.
+    """
     by_fp: dict[str, dict] = {}
-    for match in title_matches + semantic_matches:
-        fp = str(match.get("fingerprint") or "")
-        if not fp:
+    for match_list in match_lists:
+        for match in match_list:
+            fp = str(match.get("fingerprint") or "")
+            if not fp:
+                continue
+            existing = by_fp.get(fp)
+            if not existing or float(match.get("overlap") or 0.0) > float(existing.get("overlap") or 0.0):
+                by_fp[fp] = dict(match)
+    return sorted(by_fp.values(), key=lambda m: float(m.get("overlap") or 0.0), reverse=True)[:5]
+
+
+# Cyrillic → Latin transliteration so "Эрика" matches "Erica" cross-day
+# when one outlet runs the story in Russian and another in English.
+# Approximate ISO-9 / BGN-style; we only need enough fidelity that token
+# overlap > 1 — not a publishable transliteration.
+_CYR_TO_LAT = {
+    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e",
+    "ё": "e", "ж": "zh", "з": "z", "и": "i", "й": "i", "к": "k",
+    "л": "l", "м": "m", "н": "n", "о": "o", "п": "p", "р": "r",
+    "с": "s", "т": "t", "у": "u", "ф": "f", "х": "kh", "ц": "ts",
+    "ч": "ch", "ш": "sh", "щ": "sch", "ъ": "", "ы": "y", "ь": "",
+    "э": "e", "ю": "yu", "я": "ya",
+}
+
+
+def _transliterate_cyr(token: str) -> str:
+    return "".join(_CYR_TO_LAT.get(ch, ch) for ch in token)
+
+
+def _normalise_person_tokens(name: str) -> set[str]:
+    """Lowercase + drop short particles. Returns the set of tokens used
+    to compare two people-name strings.
+
+    Two scripts can describe the same person — "Эрика де Соуза Корреа"
+    (Russian) and "Erica de Souza Correa" (English) refer to the same
+    victim. We strip Russian case suffixes, then also emit a
+    transliterated Latin copy of every Cyrillic-origin token so the set
+    overlap works across languages.
+    """
+    parts: set[str] = set()
+    for raw in re.split(r"\s+", name.strip().lower()):
+        token = raw.strip("., '\"")
+        if not token or len(token) < 3:
             continue
-        existing = by_fp.get(fp)
-        if not existing or float(match.get("overlap") or 0.0) > float(existing.get("overlap") or 0.0):
-            by_fp[fp] = dict(match)
-    return sorted(by_fp.values(), key=lambda m: float(m.get("overlap") or 0.0), reverse=True)[:3]
+        if token in {"de", "van", "von", "der", "of", "the", "la", "le",
+                     "del", "di", "де", "фон", "ван", "ди", "ла", "ле"}:
+            continue
+        # Strip trailing case suffix — Cyrillic OR Latin vowel.
+        # Both 'Эрика' and 'Erica' lose their trailing -а/-a so they
+        # land on the same stem cross-language.
+        for suf in ("ой", "ом", "ах", "ам", "ами"):
+            if token.endswith(suf) and len(token) > 4:
+                token = token[: -len(suf)]
+                break
+        else:
+            if len(token) > 4 and token[-1] in "аеиоуыэюяёaeiouy":
+                token = token[:-1]
+        parts.add(token)
+        # Cross-language transliteration: if the token contains Cyrillic
+        # letters, emit a Latin copy so it can overlap with English
+        # forms of the same name. Also emit a k→c variant because real
+        # English spelling often uses 'c' where strict transliteration
+        # gives 'k' (Корреа → Korrea vs Correa).
+        if any(ch in _CYR_TO_LAT for ch in token):
+            lat = _transliterate_cyr(token)
+            if lat and lat != token:
+                if len(lat) > 4 and lat[-1] in "aeiouy":
+                    lat = lat[:-1]
+                parts.add(lat)
+                if "k" in lat:
+                    parts.add(lat.replace("k", "c"))
+        else:
+            # Latin-input token: also emit k↔c alternates so an English
+            # name with 'k' lines up with a Cyrillic-transliterated 'c'.
+            if "k" in token:
+                parts.add(token.replace("k", "c"))
+            elif "c" in token:
+                parts.add(token.replace("c", "k"))
+    return parts
+
+
+def _people_published_matches(
+    candidate: dict, published_items: list[dict],
+) -> list[dict]:
+    """Find published items that share a real person with the candidate.
+
+    Two people-names match when their normalised token sets share at
+    least 2 tokens — enough to align "Эрика де Соуза Корреа" with
+    "Эрики де Соуза Корреа" (different cases) or "Erica de Souza
+    Correa" with "Erica Souza" (truncated). Single common surnames
+    like "Smith" never reach the threshold alone.
+    """
+    block = str(candidate.get("primary_block") or "")
+    if block in _SEMANTIC_SKIP_BLOCKS:
+        return []
+    entities = candidate.get("entities")
+    if not isinstance(entities, dict):
+        return []
+    candidate_names = entities.get("people") or []
+    if not candidate_names:
+        return []
+    candidate_token_sets = [_normalise_person_tokens(name) for name in candidate_names]
+    candidate_token_sets = [tokens for tokens in candidate_token_sets if len(tokens) >= 2]
+    if not candidate_token_sets:
+        return []
+
+    matches: list[dict] = []
+    for item in published_items:
+        if not isinstance(item, dict):
+            continue
+        previous_entities = item.get("entities")
+        if not isinstance(previous_entities, dict):
+            continue
+        previous_names = previous_entities.get("people") or []
+        if not previous_names:
+            continue
+        best_shared: tuple[str, str, int] | None = None
+        for cand_name, cand_tokens in zip(candidate_names, candidate_token_sets):
+            for prev_name in previous_names:
+                prev_tokens = _normalise_person_tokens(prev_name)
+                if len(prev_tokens) < 2:
+                    continue
+                shared = cand_tokens & prev_tokens
+                if len(shared) >= 2 and (best_shared is None or len(shared) > best_shared[2]):
+                    best_shared = (cand_name, prev_name, len(shared))
+        if best_shared is None:
+            continue
+        # Score scales 0.78–0.95 depending on token-overlap strength so
+        # the people match competes fairly with semantic overlap when
+        # merge_previous_matches dedupes by fingerprint.
+        score = min(0.95, 0.75 + 0.05 * best_shared[2])
+        matches.append(
+            {
+                "fingerprint": item.get("fingerprint"),
+                "title": item.get("title"),
+                "overlap": round(score, 3),
+                "match_type": "people_entity",
+                "matched_person_today": best_shared[0],
+                "matched_person_previously": best_shared[1],
+                "shared_tokens": best_shared[2],
+            }
+        )
+    matches.sort(key=lambda m: float(m.get("overlap") or 0.0), reverse=True)
+    return matches[:3]

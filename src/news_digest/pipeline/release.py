@@ -1804,6 +1804,44 @@ def _build_after_run_summary(
     }
 
 
+def _summarise_cross_day_recurrence(candidates_report: dict | None) -> dict[str, object]:
+    """S2: surface candidates blocked because the same person/incident
+    was published in the previous days.
+
+    Each entry includes both names (today's surface form + the form
+    matched in published_facts), the previous title and date so the
+    Telegram admin can recognise the block — e.g. "Эрика де Соуза
+    Корреа уже была 21 мая как «Семья 17-летней Эрики де Соуза Корреа
+    выразила скорбь»".
+    """
+    blocked: list[dict[str, object]] = []
+    if not isinstance(candidates_report, dict):
+        return {"counts": {"blocked": 0}, "blocked": blocked}
+    for candidate in candidates_report.get("candidates") or []:
+        if not isinstance(candidate, dict):
+            continue
+        if not candidate.get("cross_day_entity_repeat"):
+            continue
+        match = candidate.get("people_dedupe_match") if isinstance(candidate.get("people_dedupe_match"), dict) else {}
+        blocked.append(
+            {
+                "fingerprint": candidate.get("fingerprint"),
+                "title": str(candidate.get("title") or "")[:160],
+                "source_label": candidate.get("source_label"),
+                "matched_person_today": match.get("matched_person_today"),
+                "matched_person_previously": match.get("matched_person_previously"),
+                "previous_fingerprint": match.get("previous_fingerprint"),
+                "previous_title": (candidate.get("previous_title") or match.get("previous_title") or "")[:160],
+                "previous_published_day": candidate.get("previous_published_day"),
+                "change_type": candidate.get("change_type"),
+            }
+        )
+    return {
+        "counts": {"blocked": len(blocked)},
+        "blocked": blocked[:20],
+    }
+
+
 def _summarise_change_types(state_dir: Path) -> dict[str, object]:
     """Count change_type buckets from dedupe_memory.json (Q6/Q7).
     Surface counts + a handful of concrete rejected examples so the
@@ -2116,6 +2154,7 @@ def build_release(project_root: Path) -> ReleaseResult:
                     f"that targeted this section — quality gates may be too strict."
                 )
     change_type_summary = _summarise_change_types(state_dir)
+    cross_day_recurrence = _summarise_cross_day_recurrence(candidates_report)
 
     cost_summary = _aggregate_cost(state_dir)
     if cost_summary["unknown_priced_models"]:
@@ -2340,6 +2379,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "section_underflow": section_underflow,
         "cost_summary": cost_summary,
         "change_type_summary": change_type_summary,
+        "cross_day_recurrence": cross_day_recurrence,
         "digest_health": digest_health,
         "source_status": source_status,
         "transport_coverage": transport_coverage,
