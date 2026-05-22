@@ -1372,12 +1372,33 @@ def _merge_previous_matches(*match_lists: list[dict]) -> list[dict]:
     return sorted(by_fp.values(), key=lambda m: float(m.get("overlap") or 0.0), reverse=True)[:5]
 
 
+# Cyrillic → Latin transliteration so "Эрика" matches "Erica" cross-day
+# when one outlet runs the story in Russian and another in English.
+# Approximate ISO-9 / BGN-style; we only need enough fidelity that token
+# overlap > 1 — not a publishable transliteration.
+_CYR_TO_LAT = {
+    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e",
+    "ё": "e", "ж": "zh", "з": "z", "и": "i", "й": "i", "к": "k",
+    "л": "l", "м": "m", "н": "n", "о": "o", "п": "p", "р": "r",
+    "с": "s", "т": "t", "у": "u", "ф": "f", "х": "kh", "ц": "ts",
+    "ч": "ch", "ш": "sh", "щ": "sch", "ъ": "", "ы": "y", "ь": "",
+    "э": "e", "ю": "yu", "я": "ya",
+}
+
+
+def _transliterate_cyr(token: str) -> str:
+    return "".join(_CYR_TO_LAT.get(ch, ch) for ch in token)
+
+
 def _normalise_person_tokens(name: str) -> set[str]:
     """Lowercase + drop short particles. Returns the set of tokens used
-    to compare two people-name strings. Russian morphology means
-    surface forms differ (Эрика vs Эрики), so we strip Cyrillic case
-    suffixes from short trailing characters and rely on multi-token
-    overlap for the actual match.
+    to compare two people-name strings.
+
+    Two scripts can describe the same person — "Эрика де Соуза Корреа"
+    (Russian) and "Erica de Souza Correa" (English) refer to the same
+    victim. We strip Russian case suffixes, then also emit a
+    transliterated Latin copy of every Cyrillic-origin token so the set
+    overlap works across languages.
     """
     parts: set[str] = set()
     for raw in re.split(r"\s+", name.strip().lower()):
@@ -1387,15 +1408,37 @@ def _normalise_person_tokens(name: str) -> set[str]:
         if token in {"de", "van", "von", "der", "of", "the", "la", "le",
                      "del", "di", "де", "фон", "ван", "ди", "ла", "ле"}:
             continue
-        # Trim trailing Cyrillic case endings: -а/-и/-у/-е/-ы/-ой/-ом/-ах.
+        # Strip trailing case suffix — Cyrillic OR Latin vowel.
+        # Both 'Эрика' and 'Erica' lose their trailing -а/-a so they
+        # land on the same stem cross-language.
         for suf in ("ой", "ом", "ах", "ам", "ами"):
             if token.endswith(suf) and len(token) > 4:
                 token = token[: -len(suf)]
                 break
         else:
-            if len(token) > 4 and token[-1] in "аеиоуыэюяё":
+            if len(token) > 4 and token[-1] in "аеиоуыэюяёaeiouy":
                 token = token[:-1]
         parts.add(token)
+        # Cross-language transliteration: if the token contains Cyrillic
+        # letters, emit a Latin copy so it can overlap with English
+        # forms of the same name. Also emit a k→c variant because real
+        # English spelling often uses 'c' where strict transliteration
+        # gives 'k' (Корреа → Korrea vs Correa).
+        if any(ch in _CYR_TO_LAT for ch in token):
+            lat = _transliterate_cyr(token)
+            if lat and lat != token:
+                if len(lat) > 4 and lat[-1] in "aeiouy":
+                    lat = lat[:-1]
+                parts.add(lat)
+                if "k" in lat:
+                    parts.add(lat.replace("k", "c"))
+        else:
+            # Latin-input token: also emit k↔c alternates so an English
+            # name with 'k' lines up with a Cyrillic-transliterated 'c'.
+            if "k" in token:
+                parts.add(token.replace("k", "c"))
+            elif "c" in token:
+                parts.add(token.replace("c", "k"))
     return parts
 
 

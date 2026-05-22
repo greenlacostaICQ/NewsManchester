@@ -158,34 +158,34 @@ _TEXT_FIELDS = ("title", "summary", "lead", "practical_angle", "evidence_text", 
 _EN_NAME = r"[A-Z][A-Za-z'’-]{1,}(?:\s+(?:de\s+|van\s+|von\s+)?[A-Z][A-Za-z'’-]{1,}){1,3}"
 _RU_NAME = r"[А-ЯЁ][А-Яа-яёЁ'’-]{1,}(?:\s+(?:де\s+|фон\s+|ван\s+)?[А-ЯЁ][А-Яа-яёЁ'’-]{1,}){1,4}"
 
+# Inline (?i:...) makes ONLY the anchor word case-insensitive (so
+# "Семья" matches the lowercase "семь[а-яё]+" pattern). The name group
+# stays case-sensitive — [A-Z]/[А-ЯЁ] reject lowercase verbs that would
+# otherwise leak into the captured group.
 _PEOPLE_ANCHOR_PATTERNS = (
-    # English: anchor word (lower-case) → capitalised name follows.
-    rf"(?:victim|deceased|accused|suspect|defendant|killer|attacker|"
+    # English: anchor word → capitalised name follows.
+    rf"(?i:victim|deceased|accused|suspect|defendant|killer|attacker|"
     rf"witness|complainant|driver|cyclist|pedestrian|"
     rf"the\s+(?:teenager|man|woman|boy|girl|teen|youth))\s+({_EN_NAME})",
-    # English: name → trailing verb (lower-case).
+    # English: name → trailing verb.
     rf"({_EN_NAME})\s*,?\s*"
-    rf"(?:has\s+been\s+(?:charged|jailed|sentenced|named|killed|attacked|murdered)|"
+    rf"(?i:has\s+been\s+(?:charged|jailed|sentenced|named|killed|attacked|murdered)|"
     rf"was\s+(?:charged|jailed|sentenced|killed|attacked|murdered|named|hit)|"
     rf"died|pleaded\s+(?:guilty|not\s+guilty)|appeared\s+in\s+court|"
     rf"is\s+accused|has\s+been\s+remanded)",
     # English age-prefixed: "15-year-old Mohanad Goobe".
-    rf"\d{{1,3}}-year-old\s+({_EN_NAME})",
-    # Russian: anchor word → name follows. Russian morphology means the
-    # anchor word has many forms (жертва / жертвой / жертвы …) so we
-    # accept any single lower-case Cyrillic token of plausible shape
-    # right after the role keyword, then the capitalised name.
-    rf"(?:жертв[а-яё]*|погибш[а-яё]+|подозреваем[а-яё]+|обвиняем[а-яё]+|"
+    rf"(?i:\d{{1,3}}-year-old)\s+({_EN_NAME})",
+    # Russian: anchor word → name follows.
+    rf"(?i:жертв[а-яё]*|погибш[а-яё]+|подозреваем[а-яё]+|обвиняем[а-яё]+|"
     rf"осуждённ[а-яё]+|свидетель|пострадавш[а-яё]+|водитель|велосипедист|"
-    rf"пешеход|семь[а-яё]+|родственник[а-яё]*|\d{{1,3}}-летн[а-яё]+)\s+"
+    rf"пешеход|семь[а-яё]+|близк[а-яё]+|родственник[а-яё]*|\d{{1,3}}-летн[а-яё]+)\s+"
     rf"({_RU_NAME})",
     # Russian: name → trailing verb.
     rf"({_RU_NAME})\s*,?\s*"
-    rf"(?:погиб(?:ла)?|убил(?:а)?|арестован(?:а)?|осуждён(?:а)?|приговорён(?:а)?|"
+    rf"(?i:погиб(?:ла)?|убил(?:а)?|арестован(?:а)?|осуждён(?:а)?|приговорён(?:а)?|"
     rf"обвиняется|обвинён(?:а)?|разыскивается|задержан(?:а)?|"
     rf"скончал(?:ся|ась)|подозревается)",
 )
-# UNICODE flag matters for the Russian patterns; no IGNORECASE.
 _PEOPLE_ANCHOR_RE = tuple(re.compile(pat, re.UNICODE) for pat in _PEOPLE_ANCHOR_PATTERNS)
 
 # Tokens that look name-shaped but are place/org/role and must NEVER be
