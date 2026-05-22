@@ -16,6 +16,7 @@ from news_digest.pipeline.history import write_daily_index_snapshot
 from news_digest.pipeline.release import (
     _classify_published_candidates,
     _classify_rendered_html_quality,
+    _event_miss_review,
     _quality_scorecard,
     _borderline_queue,
     _summarise_diaspora_diagnostics,
@@ -797,8 +798,114 @@ class AdminAlertCopyTest(unittest.TestCase):
         for phrase in forbidden:
             self.assertNotIn(phrase, joined)
 
+        event_issues = _support_top_issues(
+            rendered=18,
+            health_level="healthy",
+            health_signals=[],
+            writer_report={},
+            transport_coverage={"metrolink_checked": True},
+            quality_scorecard={"today": {"ticket_types": {}}},
+            source_status={"counts": {"failed": 0}},
+            synthetic_freshness={"stale_count": 0},
+            prompt_drift=[],
+            cost_summary={"unknown_priced_models": []},
+            warnings=[],
+            suspicious_rejects=[],
+            suspicious_published=[],
+            borderline_queue={"counts": {"borderline": 0}},
+            event_miss_review={"counts": {"critical_misses": 2}},
+        )
+        self.assertIn("Потеряны важные события", event_issues[0][0])
+
 
 class PublishedReviewTest(unittest.TestCase):
+    def test_event_miss_review_flags_false_duplicate_weekend_event(self) -> None:
+        candidates = [
+            {
+                "fingerprint": "flower",
+                "title": "The Manchester Flower Festival",
+                "source_label": "Manchester Flower Festival CityCo News",
+                "category": "culture_weekly",
+                "primary_block": "weekend_activities",
+                "include": False,
+                "reason": "Intra-batch topic duplicate — same story kept from stronger source.",
+                "summary": "Free festival at St Ann's Square and King Street.",
+                "event": {
+                    "date_start": "2026-05-23",
+                    "date_text": "23-25 May 2026",
+                    "price": "free",
+                    "borough": "Manchester",
+                },
+            },
+            {
+                "fingerprint": "germaine",
+                "title": "A Possibility | Germaine Kruip | Manchester International Festival 2025",
+                "source_label": "Factory International",
+                "category": "culture_weekly",
+                "primary_block": "next_7_days",
+                "include": True,
+                "event": {"date_start": "2026-05-24"},
+            },
+        ]
+
+        review = _event_miss_review(
+            {"candidates": candidates},
+            {},
+            rendered_fingerprints={"germaine"},
+            current_day_london="2026-05-22",
+            dedupe_memory={
+                "intra_batch_dedup_drops": [
+                    {
+                        "fingerprint": "flower",
+                        "kept_fingerprint": "germaine",
+                        "kept_title": "A Possibility | Germaine Kruip | Manchester International Festival 2025",
+                        "kept_source_label": "Factory International",
+                    }
+                ]
+            },
+        )
+
+        self.assertEqual(review["counts"]["critical_misses"], 1)
+        self.assertEqual(review["critical_misses"][0]["verdict"], "dedupe_lost_event")
+
+    def test_event_miss_review_ignores_duplicate_covered_by_rendered_item(self) -> None:
+        candidates = [
+            {
+                "fingerprint": "flower-duplicate",
+                "title": "The Manchester Flower Festival",
+                "source_label": "Manchester Flower Festival",
+                "category": "culture_weekly",
+                "primary_block": "weekend_activities",
+                "include": False,
+                "summary": "Free festival at St Ann's Square and King Street.",
+                "event": {"date_start": "2026-05-23", "date_text": "23-25 May 2026", "price": "free", "borough": "Manchester"},
+            },
+            {
+                "fingerprint": "flower-winner",
+                "title": "The Manchester Flower Festival returns for 2026",
+                "source_label": "Manchester Flower Festival CityCo News",
+                "category": "culture_weekly",
+                "primary_block": "weekend_activities",
+                "include": True,
+                "event": {"date_start": "2026-05-23"},
+            },
+        ]
+
+        review = _event_miss_review(
+            {"candidates": candidates},
+            {},
+            rendered_fingerprints={"flower-winner"},
+            current_day_london="2026-05-22",
+            dedupe_memory={
+                "intra_batch_dedup_drops": [
+                    {"fingerprint": "flower-duplicate", "kept_fingerprint": "flower-winner"}
+                ]
+            },
+        )
+
+        self.assertEqual(review["counts"]["critical_misses"], 0)
+        self.assertEqual(review["items"][0]["verdict"], "covered_by_rendered_duplicate")
+
     def test_release_review_flags_bad_visible_items(self) -> None:
         candidates = [
             {

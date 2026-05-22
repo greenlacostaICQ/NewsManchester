@@ -559,8 +559,17 @@ def _support_top_issues(
     suspicious_rejects: list,
     suspicious_published: list,
     borderline_queue: dict,
+    event_miss_review: dict | None = None,
 ) -> list[tuple[str, str]]:
     issues: list[tuple[int, str, str]] = []
+    event_miss_counts = ((event_miss_review or {}).get("counts") or {})
+    critical_event_misses = int(event_miss_counts.get("critical_misses") or 0)
+    if critical_event_misses:
+        issues.append((
+            110,
+            f"Потеряны важные события/билеты: {critical_event_misses}.",
+            "Открыть блок «Важные события, которые не дошли»; если причина не «покрыто дублем», чинить gate до следующей отправки.",
+        ))
     if rendered > 22:
         issues.append((
             100,
@@ -891,6 +900,7 @@ def cmd_send_warnings() -> int:
     reject_review = report.get("reject_review") or {}
     published_review = report.get("published_review") or {}
     city_intelligence = report.get("city_intelligence") or {}
+    event_miss_review = report.get("event_miss_review") or {}
     borough_coverage = city_intelligence.get("borough_coverage") or {}
     borough_skew_flags = [
         str(flag) for flag in (borough_coverage.get("skew_flags") or []) if str(flag).strip()
@@ -915,6 +925,7 @@ def cmd_send_warnings() -> int:
         or transport_coverage.get("verdict") in {"found_not_rendered", "not_checked", "partially_checked"}
         or diaspora_diagnostics.get("verdict") in {"checked_empty", "fetched_but_filtered", "accepted_not_rendered"}
         or bool((borderline_queue.get("items") or []))
+        or int(((event_miss_review.get("counts") or {}).get("critical_misses") or 0)) > 0
         or bool(failed_sources)
         or int((synthetic_freshness or {}).get("stale_count") or 0) > 0
         or bool(prompt_drift)
@@ -974,6 +985,7 @@ def cmd_send_warnings() -> int:
         suspicious_rejects=suspicious_rejects,
         suspicious_published=suspicious_published,
         borderline_queue=borderline_queue,
+        event_miss_review=event_miss_review,
     )
     if top_issues:
         lines.append("🚨 ГЛАВНОЕ СЕГОДНЯ")
@@ -1015,6 +1027,33 @@ def cmd_send_warnings() -> int:
                     reason, count = sorted(reasons.items(), key=lambda kv: -int(kv[1]))[0]
                     reason_txt = f"; причина: {_humanize_source_reason(reason)} ({count})"
                 lines.append(f"    • {_source_name_human(str(row.get('name') or ''))}: {_source_counts_phrase(row)}{reason_txt}.")
+        lines.append("")
+
+    event_miss_items = event_miss_review.get("critical_misses") or []
+    if event_miss_items:
+        lines.append("🎭 ВАЖНЫЕ СОБЫТИЯ, КОТОРЫЕ НЕ ДОШЛИ")
+        lines.append("Система нашла событие/билет с датой в ближайшие дни, но оно не попало к читателю:")
+        for item in event_miss_items[:8]:
+            title = str(item.get("title") or "").strip() or "(без заголовка)"
+            source = str(item.get("source_label") or "").strip()
+            verdict = str(item.get("verdict") or "")
+            days_out = item.get("days_out")
+            when = "сегодня" if days_out == 0 else f"через {days_out} дн." if isinstance(days_out, int) else "дата рядом"
+            kept = str(item.get("kept_title") or "").strip()
+            source_tail = f" — {source}" if source else ""
+            lines.append(f"  • {title[:90]}{source_tail} ({when})")
+            if verdict == "dedupe_lost_event" and kept:
+                lines.append(f"    Что случилось: дедупликация сочла дублем другого материала: {kept[:100]}.")
+            elif verdict == "selected_but_not_published":
+                lines.append("    Что случилось: материал прошёл отбор, но выпал на финальных лимитах секции.")
+            elif verdict == "writer_dropped_event":
+                lines.append("    Что случилось: материал снял writer на финальной проверке текста.")
+            else:
+                reason = str(item.get("reason") or "").strip()
+                lines.append(f"    Что случилось: {reason[:140] if reason else 'точная причина в release_report.event_miss_review'}.")
+        if len(event_miss_items) > 8:
+            lines.append(f"  …и ещё {len(event_miss_items) - 8}.")
+        lines.append("  Это критический сигнал: выпуск не должен отправляться, пока такие пункты не разобраны.")
         lines.append("")
 
     # ── Что могли пропустить (главное для редактора) ──────────────
