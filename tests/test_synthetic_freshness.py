@@ -13,7 +13,7 @@ import unittest
 from datetime import date, datetime, timedelta
 from unittest import mock
 
-from news_digest.pipeline.collector import fallbacks
+from news_digest.pipeline.collector import fallbacks, weather
 from news_digest.pipeline.collector.weather import _met_office_practical_angle
 from news_digest.pipeline.release import _summarise_synthetic_freshness
 from news_digest.pipeline.transport_fill import _make_reminder_candidate
@@ -104,6 +104,48 @@ class WeatherCandidateFreshnessTest(unittest.TestCase):
         self.assertEqual(candidate["source_label"], "Met Office")
         # Live data path must include digits in draft_line.
         self.assertRegex(candidate["draft_line"], r"\d+-\d+°C")
+
+    def test_met_office_v2_parser_scopes_precipitation_to_today_section(self) -> None:
+        html = """
+        <div id="2026-05-22" class="forecast-table-section">
+          <table><tbody>
+            <tr class="step-time">
+              <td><div class="time-step-hours">14:00</div></td>
+              <td><div class="time-step-hours">21:00</div></td>
+              <td><div class="time-step-hours">23:00</div></td>
+            </tr>
+            <tr><th class="tooltip-header">Weather symbols</th>
+              <td><img alt="Sunny intervals"></td><td><img alt="Sunny day"></td>
+            </tr>
+            <tr><th class="tooltip-header">Chance of precipitation</th>
+              <td><div data-value="0">&lt;5%</div></td>
+              <td><div data-value="0">&lt;5%</div></td>
+              <td><div data-value="43">40%</div></td>
+            </tr>
+            <tr><th class="tooltip-header">Temperature</th>
+              <td><div data-unit="temperature" data-c="25°">25°</div></td>
+              <td><div data-unit="temperature" data-c="18°">18°</div></td>
+              <td><div data-unit="temperature" data-c="17°">17°</div></td>
+            </tr>
+          </tbody></table>
+        </div>
+        <div id="2026-05-23" class="forecast-table-section">
+          <table><tbody>
+            <tr><th class="tooltip-header">Chance of precipitation</th>
+              <td><div data-value="95">95%</div></td>
+            </tr>
+            <tr><th class="tooltip-header">Temperature</th>
+              <td><div data-unit="temperature" data-c="10°">10°</div></td>
+            </tr>
+          </tbody></table>
+        </div>
+        """
+
+        with mock.patch.object(weather, "today_london", return_value="2026-05-22"):
+            min_temp, max_temp, rain_probability, practical = weather._extract_met_office_weather(html)
+
+        self.assertEqual((min_temp, max_temp, rain_probability), (17, 25, 0))
+        self.assertEqual(practical, "Днём заметно теплее утра.")
 
     def test_met_office_failure_falls_back_to_open_meteo(self) -> None:
         open_meteo_body = (

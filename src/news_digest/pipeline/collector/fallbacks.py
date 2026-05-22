@@ -73,7 +73,7 @@ def _fetch_with_retries(url: str, *, attempts: int = _SYNTHETIC_FETCH_ATTEMPTS) 
 
 def _weather_candidate() -> dict:
     current = now_london()
-    weather_url = "https://weather.metoffice.gov.uk/forecast/gcw2hzs1u"
+    weather_url = "https://weather.metoffice.gov.uk/forecast/gcw2hzs1u?new-design=false"
     fallback_url = (
         "https://api.open-meteo.com/v1/forecast"
         "?latitude=53.4808&longitude=-2.2426"
