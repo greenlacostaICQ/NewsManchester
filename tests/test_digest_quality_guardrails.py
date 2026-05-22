@@ -236,6 +236,106 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(any("visitmanchester.com" in source.url for source in sources))
         self.assertTrue(any("cityco.com" in source.url for source in sources))
 
+    def test_flower_festival_does_not_collapse_into_unrelated_festival(self) -> None:
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "flower-festival",
+                "title": "The Manchester Flower Festival",
+                "summary": "Saturday 23 to Monday 25 May 2026 at St Ann's Square and King Street.",
+                "primary_block": "weekend_activities",
+                "category": "culture_weekly",
+                "source_label": "Manchester Flower Festival",
+            },
+            {
+                "include": True,
+                "fingerprint": "mif-installation",
+                "title": "A Possibility | Germaine Kruip | Manchester International Festival 2025",
+                "summary": "A Factory International artwork listing.",
+                "primary_block": "next_7_days",
+                "category": "culture_weekly",
+                "source_label": "Factory International",
+            },
+        ]
+
+        drops = _apply_intra_batch_dedup(candidates)
+
+        self.assertEqual(drops, [])
+        self.assertTrue(candidates[0]["include"])
+
+    def test_generic_the_manchester_prefix_is_not_a_dedupe_entity(self) -> None:
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "flower-festival",
+                "title": "The Manchester Flower Festival",
+                "summary": "City-centre floral trail.",
+                "primary_block": "weekend_activities",
+                "category": "culture_weekly",
+                "source_label": "Manchester Flower Festival",
+            },
+            {
+                "include": True,
+                "fingerprint": "museum-event",
+                "title": "The Manchester Museum announces weekend dinosaur trail",
+                "summary": "Museum family activity this weekend.",
+                "primary_block": "weekend_activities",
+                "category": "culture_weekly",
+                "source_label": "Manchester Museum",
+            },
+        ]
+
+        self.assertEqual(_apply_intra_batch_dedup(candidates), [])
+
+    def test_flower_festival_duplicate_sources_keep_clean_event_facts(self) -> None:
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "visit-flower",
+                "title": "The Manchester Flower Festival",
+                "summary": "Celebrate the start of summer at The Manchester Flower Festival.",
+                "evidence_text": "Page chrome for Palace Theatre and Opera House. Saturday 23 - Monday 25 May 2026.",
+                "primary_block": "weekend_activities",
+                "category": "culture_weekly",
+                "source_label": "Manchester Flower Festival",
+                "event": {
+                    "event_name": "The",
+                    "venue": "Palace Theatre",
+                    "date_start": "2026-05-25",
+                    "date_text": "25 May 2026",
+                    "price": "free",
+                    "borough": "Manchester",
+                },
+            },
+            {
+                "include": True,
+                "fingerprint": "cityco-flower-news",
+                "title": "The Manchester Flower Festival returns for 2026",
+                "summary": (
+                    "The Manchester Flower Festival returns from Saturday 23 to Monday 25 May 2026, "
+                    "transforming St Ann's Square and King Street with a free city-centre trail."
+                ),
+                "evidence_text": "Manchester city centre, St Ann's Square and King Street, free festival.",
+                "primary_block": "weekend_activities",
+                "category": "culture_weekly",
+                "source_label": "Manchester Flower Festival CityCo News",
+                "event": {
+                    "event_name": "The Manchester Flower Festival returns for 2026",
+                    "venue": "",
+                    "date_start": "2026-05-23",
+                    "date_text": "23-25 May 2026",
+                    "price": "free",
+                    "borough": "Manchester",
+                },
+            },
+        ]
+
+        drops = _apply_intra_batch_dedup(candidates)
+
+        self.assertFalse(candidates[0]["include"])
+        self.assertTrue(candidates[1]["include"])
+        self.assertEqual(drops[0]["kept_fingerprint"], "cityco-flower-news")
+
     def test_weekend_section_has_broad_guide_sources_not_only_direct_pages(self) -> None:
         guide_sources = [
             source.name

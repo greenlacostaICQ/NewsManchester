@@ -865,6 +865,12 @@ _ENTITY_STOPWORDS = frozenset({
     "today", "yesterday", "weekend", "week", "month", "year",
     "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
     "north", "south", "east", "west", "central", "north-west", "north-east",
+    # Generic event/category words are not distinctive entities. Treating
+    # "Festival" as a strong shared entity made Manchester Flower Festival
+    # collapse into unrelated Manchester International/Folk/Jazz Festival
+    # items even with zero title-token overlap.
+    "event", "events", "festival", "festivals", "show", "trail", "tour",
+    "workshop", "workshops", "market", "markets", "tickets", "ticket",
     # Generic news verbs that aren't entities even if capitalised at
     # start of headline.
     "premier", "league", "premier league",
@@ -882,10 +888,11 @@ def _title_entities(title: str) -> frozenset[str]:
     entities = set()
     for m in _ENTITY_RE.finditer(text):
         name = m.group(1).lower()
+        name_words = name.split()
         # Include both the full match and individual words for partial overlap.
-        if name not in _ENTITY_STOPWORDS:
+        if name not in _ENTITY_STOPWORDS and any(word not in _ENTITY_STOPWORDS for word in name_words):
             entities.add(name)
-        for word in name.split():
+        for word in name_words:
             if word not in _ENTITY_STOPWORDS and len(word) >= 4:
                 entities.add(word)
     return frozenset(entities)
@@ -944,6 +951,92 @@ def _distinct_market_listing_pair(first: dict, second: dict) -> bool:
     if not first_ids or not second_ids:
         return False
     return first_ids.isdisjoint(second_ids)
+
+
+_EVENT_DEDUPE_BLOCKS = frozenset({
+    "weekend_activities",
+    "next_7_days",
+    "future_announcements",
+    "ticket_radar",
+    "outside_gm_tickets",
+    "russian_events",
+})
+_EVENT_DEDUPE_CATEGORIES = frozenset({
+    "culture_weekly",
+    "venues_tickets",
+    "russian_speaking_events",
+    "diaspora_events",
+})
+_RANGE_DATE_RE = re.compile(r"(?:\d{1,2}\s*[–—-]\s*\d{1,2}|(?:to|until)\s+\d{1,2})", re.IGNORECASE)
+_PAGE_CHROME_VENUES = frozenset({
+    "palace theatre",
+    "opera house",
+    "manchester opera house",
+})
+
+
+def _event_candidate_quality(candidate: dict) -> int:
+    """Tie-break duplicate event listings by usable event facts.
+
+    Source authority still wins first. This only decides between sources
+    with the same authority score, where "first URL wins" can keep a
+    page-chrome scrape over a cleaner organiser/news page.
+    """
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    if block not in _EVENT_DEDUPE_BLOCKS and category not in _EVENT_DEDUPE_CATEGORIES:
+        return 0
+
+    event = candidate.get("event")
+    if not isinstance(event, dict):
+        event = {}
+    title = str(candidate.get("title") or "")
+    summary = str(candidate.get("summary") or "")
+    lead = str(candidate.get("lead") or "")
+    evidence = str(candidate.get("evidence_text") or "")
+    front_text = f"{title} {summary} {lead}".lower()
+
+    score = 0
+    event_name = str(event.get("event_name") or "").strip()
+    if len(event_name) >= 8 and event_name.lower() not in {"the", "event", "events"}:
+        score += 4
+    elif event_name:
+        score -= 4
+
+    date_text = str(event.get("date_text") or "")
+    if event.get("date_start"):
+        score += 2
+    if event.get("date_end") or _RANGE_DATE_RE.search(date_text):
+        score += 3
+    if event.get("borough"):
+        score += 1
+    if event.get("price"):
+        score += 2
+    if event.get("booking_url"):
+        score += 1
+
+    venue = str(event.get("venue") or "").strip()
+    if venue:
+        score += 2
+        if venue.lower() in _PAGE_CHROME_VENUES and venue.lower() not in front_text:
+            score -= 5
+
+    if len(summary) >= 140:
+        score += 1
+    if len(evidence) >= 700:
+        score += 1
+    return score
+
+
+def _prefer_dedupe_candidate(first: dict, second: dict, first_rank: int, second_rank: int) -> bool:
+    """Return True when the first candidate should survive a duplicate pair."""
+    if first_rank != second_rank:
+        return first_rank < second_rank
+    first_quality = _event_candidate_quality(first)
+    second_quality = _event_candidate_quality(second)
+    if first_quality != second_quality:
+        return first_quality > second_quality
+    return True
 
 
 def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
@@ -1024,7 +1117,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                         str(cj.get("source_label") or ""),
                         str(cj.get("category") or ""),
                     )
-                    if rank_i <= rank_j:
+                    if _prefer_dedupe_candidate(ci, cj, rank_i, rank_j):
                         to_drop[j] = {"kept_index": i, "overlap": 0.0, "shared_entity": ",".join(sorted(shared_entities))[:60]}
                     else:
                         to_drop[i] = {"kept_index": j, "overlap": 0.0, "shared_entity": ",".join(sorted(shared_entities))[:60]}
@@ -1042,7 +1135,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                 str(cj.get("source_label") or ""),
                 str(cj.get("category") or ""),
             )
-            if rank_i <= rank_j:
+            if _prefer_dedupe_candidate(ci, cj, rank_i, rank_j):
                 to_drop[j] = {"kept_index": i, "overlap": round(overlap, 2)}
             else:
                 to_drop[i] = {"kept_index": j, "overlap": round(overlap, 2)}

@@ -53,6 +53,59 @@ NewsManchester: зачем это делали, какой эффект ожид
   синхронизировать runtime bundle;
 - после push проверять, что `HEAD` и `origin/main` совпадают.
 
+## Инцидент качества: Manchester Flower Festival не попал в выпуск 2026-05-22
+
+Что произошло:
+
+- источники по Manchester Flower Festival действительно были добавлены;
+- collector создал 5 кандидатов по Flower Festival;
+- validator не нашёл ошибок;
+- затем intra-batch dedupe ошибочно зарезал все Flower-кандидаты как дубликаты
+  unrelated Factory International item: `A Possibility | Germaine Kruip |
+  Manchester International Festival 2025`;
+- причина была в том, что слово `Festival` считалось сильной общей сущностью,
+  даже когда overlap заголовков был `0.0`.
+
+Почему это важно:
+
+- это не была проблема отсутствующих источников;
+- это был silent editorial failure: нужное событие было найдено, но
+  deterministic dedupe неверно решил, что оно уже покрыто другим фестивалем;
+- такие ошибки особенно опасны для weekend planning, потому что пользователь
+  теряет полезное событие именно перед выходными.
+
+Что исправлено:
+
+- generic event/category words больше не считаются distinctive entities для
+  дедупликации: `festival`, `event`, `show`, `trail`, `market`, `tickets` и
+  похожие слова;
+- generic prefix `The Manchester` больше не создаёт ложную entity-связь между
+  разными городскими событиями;
+- при дублях одного и того же события дедупликация больше не оставляет первый
+  URL автоматически: при равной авторитетности выбирается кандидат с лучшими
+  event facts — нормальное название, диапазон дат, цена/free, borough, venue;
+- добавлены regression tests на:
+  - Flower Festival vs Manchester International Festival не схлопываются;
+  - `The Manchester ...` не схлопывает разные события;
+  - внутри Flower-кластера сохраняется более чистый CityCo News candidate, а
+    не page-chrome scrape.
+
+Проверка:
+
+- локальная симуляция на реальных кандидатах 2026-05-22 теперь оставляет два
+  разных события:
+  - `A Possibility | Germaine Kruip | Manchester International Festival 2025`;
+  - `The Manchester Flower Festival returns for 2026`;
+- дубли Flower Festival схлопываются в один лучший кандидат:
+  `Manchester Flower Festival CityCo News`, с `23–25 May 2026` и `free`.
+
+Оставшийся риск:
+
+- это защищает от конкретного класса false duplicate, но не гарантирует, что
+  все будущие важные weekend events попадут в финальные 14-22 пункта;
+- следующий слой контроля должен смотреть не только на source coverage, но и
+  на high-value weekend misses после финального section cap.
+
 ## Крупные направления изменений
 
 ### 1. Редакторское качество отбора
@@ -695,4 +748,3 @@ NewsManchester: зачем это делали, какой эффект ожид
 
 6. Предупреждающие проверки полезны, но они не всегда останавливают плохой
    выпуск.
-
