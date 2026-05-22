@@ -810,6 +810,145 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
                 f"News with a new fact was silently blocked: {updated}",
             )
 
+    # ---------------------------------------------------------------
+    # S3 — three event templates + post-rewrite completeness review
+    # User feedback 2026-05-22:
+    #   «Burnage RFC мне не нужно описание»
+    #   «Manchester Jazz Festival какое нахуй 15 мая и что значит 24 мая»
+    #   «Alcotraz это разве не постоянный бар?»
+    #   «Big Manchester Bake что значит с 22 мая каждый день или 1 день»
+    # ---------------------------------------------------------------
+
+    def test_date_marker_recognises_russian_month_dates(self) -> None:
+        from news_digest.pipeline.release import _DATE_MARKER_RE
+        self.assertIsNotNone(_DATE_MARKER_RE.search("в субботу 23 мая в 19:00"))
+        self.assertIsNotNone(_DATE_MARKER_RE.search("концерт 24 октября"))
+
+    def test_date_marker_recognises_recurring_phrase(self) -> None:
+        """User: «каждое воскресенье до сентября» — это валидный временной
+        маркер для повторяющегося события, не «нет даты»."""
+        from news_digest.pipeline.release import _DATE_MARKER_RE
+        self.assertIsNotNone(_DATE_MARKER_RE.search("каждое воскресенье до конца августа"))
+        self.assertIsNotNone(_DATE_MARKER_RE.search("каждую субботу в 10:00"))
+        self.assertIsNotNone(_DATE_MARKER_RE.search("еженедельно по воскресеньям"))
+
+    def test_date_marker_recognises_permanent_phrase(self) -> None:
+        """User: «Alcotraz это разве не постоянный бар?» — «постоянно
+        работает» / «работает по выходным» считаются валидной датой."""
+        from news_digest.pipeline.release import _DATE_MARKER_RE
+        self.assertIsNotNone(_DATE_MARKER_RE.search("постоянно работает"))
+        self.assertIsNotNone(_DATE_MARKER_RE.search("работает по выходным"))
+        self.assertIsNotNone(_DATE_MARKER_RE.search("работает круглогодично"))
+
+    def test_date_marker_recognises_range_until_phrase(self) -> None:
+        """User: «Manchester Jazz Festival какое нахуй 15 мая и что
+        значит 24 мая» — «идёт до 24 мая» / «до конца сентября» теперь
+        тоже валидные маркеры (с явной end-date)."""
+        from news_digest.pipeline.release import _DATE_MARKER_RE
+        self.assertIsNotNone(_DATE_MARKER_RE.search("идёт до 24 мая"))
+        self.assertIsNotNone(_DATE_MARKER_RE.search("до конца сентября"))
+
+    def test_event_completeness_flags_missing_date(self) -> None:
+        """User feedback: «Burnage RFC мне не нужно описание когда и
+        что мне надо получать инфо там то тогда то ярмарка что ты
+        мне даешь?»
+
+        If the candidate has an extracted event.date_iso but the
+        rewriter produced a draft_line without any time anchor, the
+        post-rewrite review must surface it as missing_date.
+        """
+        from news_digest.pipeline.release import _summarise_event_completeness
+        candidates_report = {
+            "candidates": [
+                {
+                    "fingerprint": "no-date-event",
+                    "primary_block": "weekend_activities",
+                    "draft_line": "• Burnage RFC, популярная воскресная распродажа. Сезон проходит на свежем воздухе с большим количеством продавцов.",
+                    "title": "Burnage RFC Car Boot",
+                    "event": {
+                        "venue": "Burnage RFC",
+                        "date_iso": "2026-05-25",
+                        "date_text": "Sunday 25 May",
+                        "is_recurring": False,
+                    },
+                }
+            ],
+        }
+        rendered = {"no-date-event"}
+        result = _summarise_event_completeness(candidates_report, rendered, None)
+        self.assertEqual(result["counts"]["missing_date"], 1)
+        self.assertTrue(
+            any(issue["issue"] == "missing_date" for issue in result["issues"]),
+            f"missing_date not surfaced: {result}",
+        )
+
+    def test_event_completeness_passes_when_recurring_marker_present(self) -> None:
+        """Defensive: a recurring event card that says «каждое
+        воскресенье до сентября» must NOT be flagged as missing_date.
+        """
+        from news_digest.pipeline.release import _summarise_event_completeness
+        candidates_report = {
+            "candidates": [
+                {
+                    "fingerprint": "recurring-ok",
+                    "primary_block": "weekend_activities",
+                    "draft_line": "• Burnage RFC car boot — каждое воскресенье до конца августа, 6:00 для продавцов.",
+                    "title": "Burnage RFC Car Boot",
+                    "event": {
+                        "venue": "Burnage RFC",
+                        "is_recurring": True,
+                    },
+                }
+            ],
+        }
+        rendered = {"recurring-ok"}
+        result = _summarise_event_completeness(candidates_report, rendered, None)
+        self.assertEqual(result["counts"]["missing_date"], 0)
+        self.assertEqual(result["counts"]["missing_venue"], 0)
+
+    def test_event_completeness_flags_missing_venue(self) -> None:
+        """Carlo missing venue gets surfaced (warning-only)."""
+        from news_digest.pipeline.release import _summarise_event_completeness
+        candidates_report = {
+            "candidates": [
+                {
+                    "fingerprint": "no-venue-event",
+                    "primary_block": "weekend_activities",
+                    "draft_line": "• 25 мая — концерт без указания места проведения.",
+                    "title": "Concert",
+                    "event": {
+                        "venue": "The Deaf Institute",
+                        "date_iso": "2026-05-25",
+                    },
+                }
+            ],
+        }
+        rendered = {"no-venue-event"}
+        result = _summarise_event_completeness(candidates_report, rendered, None)
+        self.assertEqual(result["counts"]["missing_venue"], 1)
+
+    def test_events_prompt_is_v4_with_three_templates(self) -> None:
+        """The events prompt v4 must mention all three template buckets
+        (one-off / festival / recurring) so the LLM picks one explicitly.
+        """
+        from news_digest.pipeline import llm_rewrite as _lr
+        from news_digest.pipeline.prompts_meta import by_name
+        events_meta = by_name().get("events")
+        self.assertIsNotNone(events_meta)
+        self.assertEqual(events_meta.version, "v4", f"events version not bumped to v4: {events_meta}")
+        prompt = _lr.PROMPT_EVENTS
+        self.assertIn("ТОЧЕЧНОЕ", prompt)
+        self.assertIn("ФЕСТИВАЛЬ", prompt)
+        self.assertIn("ПОВТОРЯЮЩЕЕСЯ", prompt)
+
+    def test_diaspora_events_prompt_is_v3_with_recurring_template(self) -> None:
+        from news_digest.pipeline import llm_rewrite as _lr
+        from news_digest.pipeline.prompts_meta import by_name
+        meta = by_name().get("diaspora_events")
+        self.assertIsNotNone(meta)
+        self.assertEqual(meta.version, "v3", f"diaspora events version not bumped: {meta}")
+        self.assertIn("каждую субботу", _lr.PROMPT_DIASPORA_EVENTS)
+
     def test_genuine_tech_startup_is_not_blocked_by_book_guard(self) -> None:
         """Defensive: a real tech-author crossover must still pass.
 

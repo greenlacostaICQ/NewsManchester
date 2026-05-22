@@ -902,6 +902,7 @@ def cmd_send_warnings() -> int:
     city_intelligence = report.get("city_intelligence") or {}
     event_miss_review = report.get("event_miss_review") or {}
     cross_day_recurrence = report.get("cross_day_recurrence") or {}
+    event_completeness = report.get("event_completeness") or {}
     borough_coverage = city_intelligence.get("borough_coverage") or {}
     borough_skew_flags = [
         str(flag) for flag in (borough_coverage.get("skew_flags") or []) if str(flag).strip()
@@ -915,6 +916,8 @@ def cmd_send_warnings() -> int:
 
     # Trigger when there is anything worth surfacing.
     cross_day_blocked = int(((cross_day_recurrence.get("counts") or {}).get("blocked") or 0))
+    ec_counts = event_completeness.get("counts") or {}
+    event_incomplete = int(ec_counts.get("missing_date") or 0) + int(ec_counts.get("missing_venue") or 0)
     has_signal = (
         report.get("release_decision") != "pass"
         or bool(report.get("warnings"))
@@ -933,6 +936,7 @@ def cmd_send_warnings() -> int:
         or bool(prompt_drift)
         or bool((cost_summary or {}).get("unknown_priced_models") or [])
         or cross_day_blocked > 0
+        or event_incomplete > 0
     )
     if not has_signal:
         print("Healthy run with no signals. Nothing to alert on.")
@@ -1119,6 +1123,28 @@ def cmd_send_warnings() -> int:
         if len(borderline_queue.get("items") or []) > 8:
             lines.append(f"  …и ещё {len(borderline_queue.get('items') or []) - 8}.")
         lines.append("  Технические ID скрыты из Telegram; для ручного включения они сохранены в JSON-отчёте.")
+        lines.append("")
+
+    ec_issues = event_completeness.get("issues") or []
+    if ec_issues:
+        lines.append("📅 СОБЫТИЯ БЕЗ ДАТЫ ИЛИ МЕСТА")
+        missing_date_n = int(ec_counts.get("missing_date") or 0)
+        missing_venue_n = int(ec_counts.get("missing_venue") or 0)
+        checked_n = int(ec_counts.get("checked") or 0)
+        lines.append(
+            f"Из {checked_n} опубликованных событий: без даты — {missing_date_n}, "
+            f"без места — {missing_venue_n}. Это значит rewrite потерял базовую "
+            f"информацию, читателю непонятно когда/где."
+        )
+        for row in ec_issues[:6]:
+            title = str(row.get("title") or "").strip()
+            issue = str(row.get("issue") or "")
+            detail = str(row.get("detail") or "")
+            lines.append(f"  • {title[:90]}")
+            label = "нет даты в карточке" if issue == "missing_date" else "нет места в карточке"
+            lines.append(f"    Проблема: {label}. {detail}")
+        if len(ec_issues) > 6:
+            lines.append(f"  …и ещё {len(ec_issues) - 6} событий с похожей проблемой.")
         lines.append("")
 
     cross_day_blocked_list = cross_day_recurrence.get("blocked") or []
