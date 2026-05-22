@@ -214,13 +214,63 @@ def _has_computable_market_schedule(candidate: dict) -> bool:
 
 _PAST_DATE_MONTH_RE = re.compile(
     r"\b(?P<day>\d{1,2})(?:st|nd|rd|th)?\s+(?P<month>january|february|march|april|may|"
-    r"june|july|august|september|october|november|december)\b",
+    r"june|july|august|september|october|november|december|"
+    r"января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\b",
     re.IGNORECASE,
 )
 _MONTH_NUM = {
     "january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
     "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12,
+    # Russian month names appear in LLM-rewritten draft_line / Russian
+    # source titles. Match them with the same year-resolution heuristic
+    # as English so a "5 апреля" reference in a 22 May digest is treated
+    # the same as "5 April" — i.e. a date that has already passed.
+    "января": 1, "февраля": 2, "марта": 3, "апреля": 4, "мая": 5, "июня": 6,
+    "июля": 7, "августа": 8, "сентября": 9, "октября": 10, "ноября": 11, "декабря": 12,
 }
+
+
+# Recurring-event patterns. If a card with only past dates also carries
+# one of these signals, the underlying event is still active and we
+# should keep the card (and let the rewriter say "каждое воскресенье"
+# instead of the dead start date). Covers both market-style recurrence
+# already detected by _has_computable_market_schedule and broader cases
+# like "season runs until 30 September" / "сезон до 30 сентября" /
+# "every Sunday" / "каждое воскресенье" / "weekly" / "monthly" /
+# "runs until DD month" / "идёт до DD месяц".
+_RECURRENCE_PATTERN_RE = re.compile(
+    r"\b(?:"
+    r"every\s+(?:sunday|saturday|weekend|monday|tuesday|wednesday|thursday|friday|week|month|day)|"
+    r"weekly|monthly|each\s+(?:week|month|sunday|saturday|weekend)|"
+    r"runs?\s+(?:until|through|to)\s+\d|season\s+runs?|"
+    r"season\s+(?:until|through|to)\s+\d|"
+    r"открыт(?:а|о|ы)?\s+с\s+\d|сезон\s+(?:до|по|с)\s+\d|"
+    r"каждое\s+(?:воскресенье|субботу|воскресение)|"
+    r"каждую\s+(?:субботу|неделю|пятницу|пятницу)|"
+    r"еженедельно|ежемесячно|"
+    r"работает\s+(?:до|с|по)\s+\d|идёт\s+до\s+\d|идет\s+до\s+\d|"
+    r"проходит\s+(?:до|каждое|каждую|еженедельно)"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def _has_recurrence_pattern(candidate: dict) -> bool:
+    """True when card mentions a recurring schedule or active season.
+
+    Used by _exclude_stale_event: if the only mentioned date is in the
+    past but the card also says "every Sunday" or "season runs until
+    30 September", the event is still active — don't drop, mark
+    is_recurring so the rewriter knows to say "каждое воскресенье"
+    rather than the dead start date.
+
+    Already-existing _has_computable_market_schedule catches the
+    market/car-boot subset; this is the general one.
+    """
+    if _has_computable_market_schedule(candidate):
+        return True
+    blob = _candidate_blob(candidate)
+    return bool(_RECURRENCE_PATTERN_RE.search(blob))
 
 
 def _append_reject(candidate: dict, code: str, note: str) -> None:
@@ -499,6 +549,63 @@ def _exclude_bad_food_opening_timing(candidate: dict) -> bool:
     return False
 
 
+_BOOK_AUTHOR_MARKERS_RE = re.compile(
+    r"\b(?:bestseller|best-?selling|memoir|autobiography|novelist|"
+    r"novel|book\s+(?:hits|launch|tour|signing|release)|her\s+book|his\s+book|"
+    r"(?:author|writer)\s+(?:of|hits|launches|releases|signs)|"
+    r"автор(?:ом)?\s+(?:книги|бестселлера|мемуаров)|"
+    r"книга|бестселлер|мемуары|роман|выпустил(?:а)?\s+книгу|"
+    r"опубликовал(?:а)?\s+книгу)\b",
+    re.IGNORECASE,
+)
+_TECH_MARKERS_RE = re.compile(
+    r"\b(?:tech|software|startup|стартап|SaaS|AI|ML|fintech|"
+    r"deeptech|biotech|cyber|cybersecurity|app\s+launch|platform\s+launch|"
+    r"funding\s+round|series\s+[a-c]|seed\s+round|venture|"
+    r"разработчик|программист|алгоритм|искусственн(?:ый|ого)\s+интеллект)\b",
+    re.IGNORECASE,
+)
+
+
+def _exclude_book_author_in_tech_business(candidate: dict) -> bool:
+    """tech_business cards about book authors/bestsellers are not tech news.
+
+    Lindsey Meredith ("AUTHORity" beats Seth Godin on Amazon) is a book
+    industry story, not an IT/business story. The Bdaily routing puts
+    her in tech_business because the source is a business-news outlet,
+    but the content has nothing to do with tech, software, or startups.
+
+    Reject when ALL of:
+      - category is tech_business or food_openings (similar misroute risk)
+      - title+summary mentions a book/author marker
+      - title+summary does NOT mention a tech/startup marker
+
+    Local event hooks (book signing 30 May at HOME) are intentionally
+    NOT routed here yet — those would belong in culture_weekly via a
+    proper reroute, which we'll add in S4 when we touch the broader
+    weak-item / human-interest filter.
+    """
+    if not candidate.get("include"):
+        return False
+    category = str(candidate.get("category") or "")
+    if category not in {"tech_business", "food_openings"}:
+        return False
+    blob = _candidate_blob(candidate)
+    if not _BOOK_AUTHOR_MARKERS_RE.search(blob):
+        return False
+    if _TECH_MARKERS_RE.search(blob):
+        # Card mentions both — likely a tech-author crossover; let it
+        # through and rely on other gates.
+        return False
+    _append_reject(
+        candidate,
+        "book_author_misrouted",
+        "Validator: book/author story misrouted to tech_business — "
+        "no tech/startup signal, no local-event hook.",
+    )
+    return True
+
+
 def _exclude_stale_event(candidate: dict) -> bool:
     """Drop event candidates whose only date is already in the past.
 
@@ -532,6 +639,15 @@ def _exclude_stale_event(candidate: dict) -> bool:
     summary = str(candidate.get("summary") or "")
     event_dt = _summary_field_datetime(summary, "event_date")
     if event_dt is not None and event_dt.date() < today:
+        # Recurring schedules: don't reject — mark is_recurring so the
+        # rewriter says "каждое воскресенье" rather than the dead start
+        # date. Bowlee Car Boot Sale's start_date is 5 April but the
+        # market runs every Sunday until September; that's still useful.
+        if _has_recurrence_pattern(candidate):
+            event = candidate.get("event")
+            if isinstance(event, dict):
+                event["is_recurring"] = True
+            return False
         candidate["include"] = False
         existing = str(candidate.get("reason") or "").strip()
         note = f"Validator: event_date {event_dt.date().isoformat()} is in the past."
@@ -562,6 +678,12 @@ def _exclude_stale_event(candidate: dict) -> bool:
     # If EVERY mentioned date is past, drop. Otherwise let it through —
     # presence of a future date means the card has something to offer.
     if all(d < today for d in candidates_dates):
+        # Recurring schedules with a past start date: keep, mark recurring.
+        if _has_recurrence_pattern(candidate):
+            event = candidate.get("event")
+            if isinstance(event, dict):
+                event["is_recurring"] = True
+            return False
         candidate["include"] = False
         existing = str(candidate.get("reason") or "").strip()
         latest_past = max(candidates_dates).isoformat()
@@ -569,6 +691,126 @@ def _exclude_stale_event(candidate: dict) -> bool:
         candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
         return True
     return False
+
+
+def _demote_distant_weekend_event(candidate: dict) -> bool:
+    """Hard cutoff for «Выходные в GM»: only events within next 3 days stay.
+
+    Without this, an Eventbrite listing for 6 June at today=22 May ends
+    up under "Weekend in GM" simply because its source primary_block is
+    weekend_activities. Demote based on the earliest dated occurrence:
+
+    - in [today, today+3]:  keep in weekend_activities.
+    - in [today+4, today+7]: demote to next_7_days.
+    - in [today+8, today+30]: demote to future_announcements.
+    - beyond today+30:      drop (no actionable horizon).
+    - no dated occurrence:  keep (recurring or implicit-weekend
+                            aggregator already handled by other gates).
+
+    Recurring events (is_recurring=True from _exclude_stale_event):
+    keep in weekend_activities only if the next sat/sun is within 3 days,
+    otherwise demote to next_7_days so it resurfaces closer to the
+    weekend.
+    """
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("primary_block") or "") != "weekend_activities":
+        return False
+
+    today = now_london().date()
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+
+    # If _exclude_stale_event has explicitly tagged the card as recurring
+    # (past start date + "every Sunday" / "сезон до"), trust that and go
+    # straight to the recurring branch. Without this short-circuit,
+    # _explicit_dates_from_blob would auto-roll the past start date
+    # ("5 April") to next year (2027-04-05) and the concrete-date
+    # branch would drop the card as "318 days out".
+    if event.get("is_recurring") is True:
+        days_to_sat = (5 - today.weekday()) % 7
+        days_to_sun = (6 - today.weekday()) % 7
+        nearest_weekend_day = min(days_to_sat, days_to_sun)
+        if nearest_weekend_day <= 3:
+            return False
+        candidate["primary_block"] = "next_7_days"
+        existing = str(candidate.get("reason") or "").strip()
+        note = (
+            f"Demoted from weekend_activities: recurring event's next "
+            f"weekend occurrence is {nearest_weekend_day} days out."
+        )
+        candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+        return True
+
+    # Otherwise: concrete future date wins over recurrence detection.
+    # A card that explicitly says "6 June" is about that specific
+    # Saturday, not about "every Sunday" — even if the phrase
+    # "Saturday market" appears in the summary and trips the
+    # recurrence heuristic.
+    dates: list[date] = []
+    summary = str(candidate.get("summary") or "")
+    event_dt = _summary_field_datetime(summary, "event_date")
+    if event_dt is not None:
+        dates.append(event_dt.date())
+    iso_field = str(event.get("date_iso") or "").strip()
+    if iso_field:
+        try:
+            dates.append(date.fromisoformat(iso_field))
+        except (TypeError, ValueError):
+            pass
+    dates.extend(_explicit_dates_from_blob(candidate))
+
+    future_dates = [d for d in dates if d >= today]
+    if future_dates:
+        earliest = min(future_dates)
+        days_out = (earliest - today).days
+        if days_out <= 3:
+            return False
+        if days_out <= 7:
+            candidate["primary_block"] = "next_7_days"
+            target = "next_7_days"
+        elif days_out <= 30:
+            candidate["primary_block"] = "future_announcements"
+            target = "future_announcements"
+        else:
+            candidate["include"] = False
+            existing = str(candidate.get("reason") or "").strip()
+            note = (
+                f"Validator: weekend_activities item dated {earliest.isoformat()} "
+                f"is {days_out} days out — beyond the 30-day actionable horizon."
+            )
+            candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+            return True
+        existing = str(candidate.get("reason") or "").strip()
+        note = (
+            f"Demoted from weekend_activities to {target}: earliest date "
+            f"{earliest.isoformat()} is {days_out} days out."
+        )
+        candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+        return True
+
+    # No concrete future date. Fall back to recurrence detection — if
+    # the card describes a recurring market/season ("every Sunday",
+    # "сезон до сентября"), check whether the next weekend day is
+    # within the 3-day window. Otherwise leave the card alone.
+    explicit_recurring = event.get("is_recurring")
+    if explicit_recurring is False:
+        return False
+    recurring = bool(explicit_recurring) or _has_recurrence_pattern(candidate)
+    if not recurring:
+        return False
+    days_to_sat = (5 - today.weekday()) % 7
+    days_to_sun = (6 - today.weekday()) % 7
+    nearest_weekend_day = min(days_to_sat, days_to_sun)
+    if nearest_weekend_day <= 3:
+        return False
+    candidate["primary_block"] = "next_7_days"
+    existing = str(candidate.get("reason") or "").strip()
+    note = (
+        f"Demoted from weekend_activities: recurring event's next "
+        f"weekend occurrence is {nearest_weekend_day} days out."
+    )
+    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    return True
 
 
 def _exclude_undated_event_like_candidate(candidate: dict) -> bool:
@@ -902,6 +1144,8 @@ def validate_candidates(project_root: Path) -> StageResult:
         if candidate.get("include"):
             _exclude_low_value_news(candidate)
         if candidate.get("include"):
+            _exclude_book_author_in_tech_business(candidate)
+        if candidate.get("include"):
             _exclude_stale_undated_news_from_text(candidate)
         if candidate.get("include"):
             _exclude_paywall_stub(candidate)
@@ -915,6 +1159,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _apply_specificity_review(candidate)
         if candidate.get("include"):
             _exclude_stale_event(candidate)
+        if candidate.get("include"):
+            _demote_distant_weekend_event(candidate)
         if candidate.get("include"):
             _exclude_undated_event_like_candidate(candidate)
         if candidate.get("include"):
