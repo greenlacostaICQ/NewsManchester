@@ -24,7 +24,22 @@ from news_digest.pipeline.release import (
     _update_feedback_items,
 )
 from news_digest.pipeline.writer import write_digest
-from scripts.run_local_digest import _translate_health_signal, cmd_pipeline_config
+from scripts.run_local_digest import (
+    _borderline_verdict,
+    _diaspora_verdict_human,
+    _explain_source_failure,
+    _humanize_quality_warning,
+    _humanize_borough_flag,
+    _humanize_source_reason,
+    _section_name_human,
+    _section_shape_rows,
+    _source_counts_phrase,
+    _support_top_issues,
+    _ticket_type_human,
+    _ticketmaster_rows,
+    _translate_health_signal,
+    cmd_pipeline_config,
+)
 
 
 class WriterRenderedFingerprintTest(unittest.TestCase):
@@ -711,7 +726,7 @@ class AdminAlertCopyTest(unittest.TestCase):
             }
         )
 
-        self.assertIn("74 видимых пунктов", text)
+        self.assertIn("74 опубликованных пунктов", text)
         self.assertIn("14–22", text)
 
     def test_pipeline_config_includes_transport_fill_between_curator_and_rewrite(self) -> None:
@@ -723,6 +738,64 @@ class AdminAlertCopyTest(unittest.TestCase):
         pipeline = json.loads(buf.getvalue())["pipeline"]
         self.assertLess(pipeline.index("curator-pass"), pipeline.index("transport-fill"))
         self.assertLess(pipeline.index("transport-fill"), pipeline.index("llm-rewrite"))
+
+    def test_admin_support_copy_uses_product_language_not_pipeline_jargon(self) -> None:
+        self.assertIn("не ясно, что именно произошло", _humanize_quality_warning("property_borderline:decision_or_action"))
+        self.assertIn("не Greater Manchester", _humanize_source_reason("Curator drop: Событие в Лондоне, не относится к GM."))
+        self.assertEqual(_diaspora_verdict_human("fetched_but_filtered"), "события нашлись, но все отсеялись фильтрами")
+        self.assertEqual(
+            _source_counts_phrase({"raw_count": 2, "accepted_count": 1, "rendered_count": 0}),
+            "нашли 2, прошло отбор 1, опубликовано 0",
+        )
+        self.assertIn("5xx", _explain_source_failure("HTTP 500 server error"))
+
+    def test_admin_support_surfaces_missing_operational_sections(self) -> None:
+        rows = _section_shape_rows({"section_counts": {"Билеты / Ticket Radar": 6, "Что важно сегодня": 2}})
+        by_name = {row["section"]: row for row in rows}
+        self.assertEqual(by_name["Билеты / Ticket Radar"]["max"], 6)
+        self.assertEqual(by_name["Что важно сегодня"]["status"], "ниже минимума")
+        self.assertEqual(_section_name_human("Билеты / Ticket Radar"), "Билеты и концерты")
+        self.assertIn(
+            "нет опубликованных пунктов",
+            _humanize_borough_flag("В 1 GM borough(s) ноль видимых пунктов: Tameside."),
+        )
+        self.assertEqual(_ticket_type_human("presale_soon"), "скоро пресейл/старт продаж")
+        ticket_rows = _ticketmaster_rows(
+            {"sources": [{"name": "Ticketmaster Manchester Upcoming"}, {"name": "BBC Manchester"}]}
+        )
+        self.assertEqual(len(ticket_rows), 1)
+        self.assertIn(
+            "спорно",
+            _borderline_verdict({"quality_warnings": ["crime_borderline:what_happened"]}),
+        )
+        self.assertIn(
+            "ошибку извлечения",
+            _borderline_verdict({"quality_warnings": ["event_schema_missing:no_date"]}),
+        )
+
+        issues = _support_top_issues(
+            rendered=47,
+            health_level="at_risk",
+            health_signals=[],
+            writer_report={},
+            transport_coverage={"metrolink_checked": False},
+            quality_scorecard={"today": {"ticket_types": {"unknown": {"fetched": 47, "published": 6}}}},
+            source_status={"counts": {"failed": 1}},
+            synthetic_freshness={"stale_count": 0},
+            prompt_drift=[],
+            cost_summary={"unknown_priced_models": []},
+            warnings=["LLM rewrite was degraded; writer/release quality gates handled the remaining candidates."],
+            suspicious_rejects=[],
+            suspicious_published=[],
+            borderline_queue={"counts": {"borderline": 48}},
+        )
+        joined = " ".join(title for title, _ in issues)
+        self.assertIn("Выпуск раздут", joined)
+        self.assertIn("Генерация текста", joined)
+        self.assertIn("Metrolink", joined)
+        forbidden = ("LLM rewrite", "provider/model", "Ticket Radar", "synthetic-карточки", "Prompt drift")
+        for phrase in forbidden:
+            self.assertNotIn(phrase, joined)
 
 
 class PublishedReviewTest(unittest.TestCase):

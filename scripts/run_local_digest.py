@@ -24,7 +24,7 @@ from news_digest.delivery.telegram import TelegramTransportError
 from news_digest.jobs.send_demo_digest import send_demo_digest
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector import collect_digest, initialize_collector_state
-from news_digest.pipeline.common import read_json, write_json
+from news_digest.pipeline.common import SECTION_MAX_ITEMS, SECTION_MIN_ITEMS, read_json, write_json
 from news_digest.pipeline.city_trends import (
     build_weekly_city_rollup,
     weekly_city_rollup_text,
@@ -328,11 +328,11 @@ def _explain_source_failure(detail: str) -> str:
     if "http 429" in d:
         return "превышен лимит запросов (429 — нужен backoff)"
     if "http 5" in d:
-        return "у источника проблемы на их стороне (5xx)"
+        return "сервер источника вернул ошибку 5xx — сайт временно сломан на их стороне"
     if "timeout" in d or "timed out" in d:
         return "сайт не отвечает (либо у них даун, либо молча режут нас)"
     if "no candidate links" in d:
-        return "сайт ответил, но мы не нашли ссылок на новости — нужно поправить парсер"
+        return "сайт ответил, но парсер не нашёл ссылок на материалы"
     if ("errno" in d and ("not known" in d or "nodename" in d)) or "dns" in d:
         return "домен не существует — переехал или закрыт"
     return detail[:100]
@@ -351,15 +351,15 @@ def _translate_health_signal(sig: dict) -> str:
         # "Only N item(s) rendered — below the 12-item hard floor."
         m = re.search(r"\d+", detail)
         n = m.group(0) if m else "?"
-        return f"Вышло мало видимых пунктов: {n} (жёсткий минимум 12, цель 14–22)."
+        return f"Вышло мало опубликованных пунктов: {n} (жёсткий минимум 12, цель 14–22)."
     if name == "few_items":
         m = re.search(r"\d+", detail)
         n = m.group(0) if m else "?"
-        return f"Пунктов меньше нормы: {n} (цель — 14–22 видимых пункта)."
+        return f"Пунктов меньше нормы: {n} (цель — 14–22 опубликованных пункта)."
     if name == "too_many_items":
         m = re.search(r"\d+", detail)
         n = m.group(0) if m else "?"
-        return f"Выпуск раздут: {n} видимых пунктов (цель — 14–22). Нужно ужесточить отбор."
+        return f"Выпуск раздут: {n} опубликованных пунктов (цель — 14–22). Нужно ужесточить отбор."
     if name == "weather_empty":
         return "Раздел погоды пустой — Met Office не отвечает."
     if name == "transport_empty":
@@ -390,9 +390,259 @@ def _translate_health_signal(sig: dict) -> str:
         if m:
             return (f"Из {m.group(2)} принятых кандидатов в выпуск попало {m.group(1)} "
                     f"({m.group(3)}) — проверки качества режут слишком много.")
-        return "Проверки качества режут слишком много кандидатов — фильтры стоит ослабить."
+        return "Проверки качества режут слишком много материалов — фильтры стоит ослабить."
     # Fallback for any new signal type we haven't translated yet
     return f"{name}: {detail[:140]}"
+
+
+def _humanize_quality_warning(raw: str) -> str:
+    text = str(raw or "").strip()
+    lowered = text.lower()
+    if lowered.startswith("property_borderline:"):
+        missing = lowered.split(":", 1)[1]
+        bits = []
+        if "decision_or_action" in missing:
+            bits.append("не ясно, что именно произошло: продажа, заявка, решение совета или просто витрина")
+        if "specific_location" in missing:
+            bits.append("не хватает конкретного места: название здания, улица или узнаваемая площадка")
+        return "Недвижимость/планирование: " + "; ".join(bits or ["не хватает конкретики"])
+    if lowered.startswith("crime_borderline:"):
+        missing = lowered.split(":", 1)[1]
+        bits = []
+        if "what_happened" in missing:
+            bits.append("не хватает ясного описания, что именно произошло")
+        if "who_affected" in missing:
+            bits.append("не понятно, кого это касается")
+        if "where" in missing:
+            bits.append("не хватает места")
+        if "why_now" in missing:
+            bits.append("не ясно, почему это важно сегодня")
+        return "Инцидент/суд/полиция: " + "; ".join(bits or ["не хватает конкретики"])
+    if lowered.startswith("why_now_unclear"):
+        return "Не ясно, почему это должно попасть именно в сегодняшний утренний выпуск"
+    if lowered.startswith("event_schema_missing:"):
+        missing = lowered.split(":", 1)[1].replace(",", ", ")
+        return f"Событие неполное: не хватает {missing}"
+    if lowered.startswith("ticket_old_onsale:"):
+        return "Билеты уже давно в продаже; нет нового повода показывать их сегодня"
+    return text
+
+
+def _borderline_verdict(item: dict) -> str:
+    warnings = [str(w).lower() for w in (item.get("quality_warnings") or [])]
+    joined = " ".join(warnings)
+    if "event_schema_missing:no_date" in joined or "date_in_body" in joined:
+        return "похоже на ошибку извлечения данных — проверить, была ли дата в тексте материала"
+    if "ticket_old_onsale" in joined or "why_now_unclear" in joined:
+        return "скорее правильно удержано — нет нового повода для сегодняшнего выпуска"
+    if "property_borderline" in joined or "crime_borderline" in joined:
+        return "спорно — нужна ручная редакторская проверка конкретики"
+    if "source_thin" in joined or "weak_value" in joined:
+        return "скорее правильно удержано — мало пользы или фактов для читателя"
+    return "спорно — причина удержания требует проверки"
+
+
+def _humanize_source_reason(raw: str) -> str:
+    reason = str(raw or "").strip()
+    lowered = reason.lower()
+    if "intra-batch topic duplicate" in lowered or "same story kept from stronger source" in lowered:
+        return "дубликат темы: такую же историю взяли из более сильного источника"
+    if "curator drop" in lowered and "лондон" in lowered:
+        return "не Greater Manchester: событие относится к Лондону"
+    if "not greater manchester" in lowered or "не относится к gm" in lowered:
+        return "не Greater Manchester"
+    if "no_date" in lowered or "without date" in lowered:
+        return "не нашли рабочую дату события"
+    if "regular_upcoming_non_major" in lowered:
+        return "обычный небольшой концерт или событие, не уровень билетного блока"
+    if "held for manual review" in lowered or "borderline editorial status" in lowered:
+        return "удержано для ручной проверки: фактов недостаточно для уверенной публикации"
+    if "stale" in lowered:
+        return "устаревшее или без нового повода"
+    return reason[:140]
+
+
+def _source_name_human(name: str) -> str:
+    text = str(name or "")
+    return (
+        text
+        .replace("BBC Manchester public safety fallback", "BBC Manchester, резервный источник по происшествиям")
+    )
+
+
+def _source_counts_phrase(row: dict) -> str:
+    found = int(row.get("raw_count", row.get("candidate_count", 0)) or 0)
+    passed = int(row.get("accepted_count", row.get("curated_count", 0)) or 0)
+    published = int(row.get("rendered_count", 0) or 0)
+    return f"нашли {found}, прошло отбор {passed}, опубликовано {published}"
+
+
+def _section_shape_rows(writer_report: dict) -> list[dict[str, object]]:
+    counts = (writer_report.get("section_counts") or {}) if isinstance(writer_report, dict) else {}
+    names = sorted(set(counts) | set(SECTION_MAX_ITEMS) | set(SECTION_MIN_ITEMS))
+    rows: list[dict[str, object]] = []
+    for name in names:
+        actual = int(counts.get(name) or 0)
+        max_items = SECTION_MAX_ITEMS.get(name)
+        min_items = SECTION_MIN_ITEMS.get(name)
+        status = "в норме"
+        if max_items is not None and actual > max_items:
+            status = "выше лимита"
+        elif min_items is not None and actual < min_items:
+            status = "ниже минимума"
+        rows.append(
+            {
+                "section": name,
+                "actual": actual,
+                "min": min_items,
+                "max": max_items,
+                "status": status,
+            }
+        )
+    return rows
+
+
+def _section_name_human(section: str) -> str:
+    return {
+        "Билеты / Ticket Radar": "Билеты и концерты",
+    }.get(str(section or ""), str(section or "Без названия"))
+
+
+def _humanize_borough_flag(flag: str) -> str:
+    text = str(flag or "")
+    m = re.search(r"В\s+(\d+)\s+GM borough\(s\)\s+ноль видимых пунктов:\s*(.+)", text)
+    if m:
+        count = int(m.group(1))
+        noun = "районе" if count == 1 else "районах"
+        boroughs = m.group(2).strip().rstrip(".")
+        return f"В {count} {noun} Greater Manchester нет опубликованных пунктов: {boroughs}."
+    return (
+        text
+        .replace("GM borough(s)", "районах Greater Manchester")
+        .replace("видимых пунктов", "опубликованных пунктов")
+        .replace("rendered", "опубликованных")
+    )
+
+
+def _ticket_type_human(ticket_type: str) -> str:
+    return {
+        "on_sale_now": "сейчас в продаже",
+        "presale_soon": "скоро пресейл/старт продаж",
+        "newly_listed": "новые листинги",
+        "major_upcoming": "крупные будущие концерты",
+        "regular_upcoming": "обычные будущие события",
+        "old_onsale": "старые продажи, демотированы",
+        "unknown": "тип не распознан",
+    }.get(str(ticket_type or ""), str(ticket_type or "неизвестно"))
+
+
+def _ticketmaster_rows(source_status: dict) -> list[dict]:
+    return [
+        row for row in (source_status.get("sources") or [])
+        if isinstance(row, dict) and "ticketmaster" in str(row.get("name") or "").lower()
+    ]
+
+
+def _support_top_issues(
+    *,
+    rendered: int,
+    health_level: str,
+    health_signals: list,
+    writer_report: dict,
+    transport_coverage: dict,
+    quality_scorecard: dict,
+    source_status: dict,
+    synthetic_freshness: dict,
+    prompt_drift: list,
+    cost_summary: dict,
+    warnings: list[str],
+    suspicious_rejects: list,
+    suspicious_published: list,
+    borderline_queue: dict,
+) -> list[tuple[str, str]]:
+    issues: list[tuple[int, str, str]] = []
+    if rendered > 22:
+        issues.append((
+            100,
+            f"Выпуск раздут: {rendered} пунктов при норме 14–22.",
+            "Посмотри блок «Секции и лимиты» и снижай лимиты или приоритеты самых длинных разделов.",
+        ))
+    if any(str(w).lower().startswith("llm rewrite was degraded") for w in warnings):
+        issues.append((
+            95,
+            "Генерация текста работала в аварийном режиме.",
+            "Проверить отчёт генерации текста: какая модель не сработала и какие пункты были добраны запасной логикой.",
+        ))
+    if not transport_coverage.get("metrolink_checked"):
+        issues.append((
+            90,
+            "Metrolink не проверен как отдельный источник.",
+            "Не считать транспортную картину полной; проверить источник Metrolink или добавить явную запасную проверку.",
+        ))
+    ticket_types = ((quality_scorecard.get("today") or {}).get("ticket_types") or {})
+    unknown_tickets = int((ticket_types.get("unknown") or {}).get("fetched") or 0)
+    if unknown_tickets:
+        issues.append((
+            85,
+            f"Билетный блок плохо классифицирует события: {unknown_tickets} материалов с типом «не распознан».",
+            "Починить определение типа билета: старт продаж, пресейл, новый анонс или обычный календарь.",
+        ))
+    if int((synthetic_freshness or {}).get("stale_count") or 0) > 0:
+        issues.append((
+            80,
+            f"Есть устаревшие служебные карточки: {synthetic_freshness.get('stale_count')}.",
+            "Не доверять погоде или транспортной заглушке без проверки времени обновления.",
+        ))
+    if prompt_drift:
+        issues.append((
+            75,
+            f"Промпты изменились без явного обновления версии: {len(prompt_drift)}.",
+            "Поднять версию промпта или откатить незапланированное изменение.",
+        ))
+    unknown_models = cost_summary.get("unknown_priced_models") or []
+    if unknown_models:
+        issues.append((
+            70,
+            f"Учёт стоимости не знает цену моделей: {', '.join(str(m) for m in unknown_models)}.",
+            "Добавить цены в таблицу стоимости, иначе стоимость дня может быть занижена.",
+        ))
+    if suspicious_published:
+        issues.append((
+            68,
+            f"Самопроверка считает {len(suspicious_published)} опубликованных пункт(ов) подозрительными.",
+            "Открыть блок «Что зря прошло в выпуск» и усилить gate.",
+        ))
+    if suspicious_rejects:
+        issues.append((
+            60,
+            f"Есть {len(suspicious_rejects)} возможных ложных отклонений.",
+            "Проверить «Возможно зря отклонили» и решить: чинить extraction или оставить отказ.",
+        ))
+    borderline_count = int(((borderline_queue or {}).get("counts") or {}).get("borderline") or 0)
+    if borderline_count >= 20:
+        issues.append((
+            55,
+            f"Слишком много спорных материалов: {borderline_count}.",
+            "Разобрать топ причин borderline; вероятно, часть правил слишком широко матчится.",
+        ))
+    if int((source_status.get("counts") or {}).get("failed") or 0):
+        issues.append((
+            40,
+            f"Не ответили источники: {(source_status.get('counts') or {}).get('failed')}.",
+            "Проверить только если повторяется несколько дней или это ключевой источник.",
+        ))
+    issues.sort(key=lambda row: -row[0])
+    return [(title, action) for _, title, action in issues[:3]]
+
+
+def _diaspora_verdict_human(verdict: str) -> str:
+    return {
+        "checked_empty": "источники проверены, подходящих событий не найдено",
+        "fetched_but_filtered": "события нашлись, но все отсеялись фильтрами",
+        "accepted_not_rendered": "события прошли отбор, но не попали в финальный выпуск",
+        "rendered": "русскоязычные события опубликованы",
+        "not_checked": "источники не были проверены",
+    }.get(str(verdict or ""), str(verdict or "неизвестно"))
 
 
 def _source_streak_tag(source_name: str, today_iso: str) -> str:
@@ -482,12 +732,12 @@ _REJECT_GROUPS = {
         "editor_action": "Если фраза не клише — скажи, уберу из словаря.",
     },
     "evergreen_with_date": {
-        "label": "Дата события была, но первичная проверка её не увидела",
+        "label": "Событие могло быть отклонено как «без даты»",
         "plain": (
-            "Auto-куратор посмотрел только в заголовок и решил, что событие «без даты». "
-            "На самом деле дата лежит ниже в тексте."
+            "Дата могла быть не в заголовке, а ниже в тексте или в метаданных. "
+            "Если это повторяется на одном источнике, нужно чинить извлечение дат для него."
         ),
-        "editor_action": "Нужно научить куратора смотреть глубже в текст статьи.",
+        "editor_action": "системная задача — проверить извлечение дат из полного текста для этого источника; от тебя действий не требуется.",
     },
     "other": {
         "label": "Прочие отказы",
@@ -635,6 +885,9 @@ def cmd_send_warnings() -> int:
     borderline_queue = report.get("borderline_queue") or {}
     quality_scorecard = report.get("quality_scorecard") or {}
     feedback_capture = report.get("feedback_capture") or {}
+    synthetic_freshness = report.get("synthetic_freshness") or {}
+    cost_summary = report.get("cost_summary") or {}
+    prompt_drift = report.get("prompt_drift") or []
     reject_review = report.get("reject_review") or {}
     published_review = report.get("published_review") or {}
     city_intelligence = report.get("city_intelligence") or {}
@@ -652,6 +905,7 @@ def cmd_send_warnings() -> int:
     # Trigger when there is anything worth surfacing.
     has_signal = (
         report.get("release_decision") != "pass"
+        or bool(report.get("warnings"))
         or bool(lost_leads)
         or bool(section_underflow)
         or health_level != "healthy"
@@ -661,7 +915,10 @@ def cmd_send_warnings() -> int:
         or transport_coverage.get("verdict") in {"found_not_rendered", "not_checked", "partially_checked"}
         or diaspora_diagnostics.get("verdict") in {"checked_empty", "fetched_but_filtered", "accepted_not_rendered"}
         or bool((borderline_queue.get("items") or []))
-        or src_counts.get("failed", 0) >= 3
+        or bool(failed_sources)
+        or int((synthetic_freshness or {}).get("stale_count") or 0) > 0
+        or bool(prompt_drift)
+        or bool((cost_summary or {}).get("unknown_priced_models") or [])
     )
     if not has_signal:
         print("Healthy run with no signals. Nothing to alert on.")
@@ -685,18 +942,79 @@ def cmd_send_warnings() -> int:
 
     # ── Заголовок ─────────────────────────────────────────────────
     if release_decision == "pass":
-        header = f"{icon} Выпуск {run_date} — {useful} видимых пунктов в выпуске"
+        if health_level == "at_risk" and rendered > 22:
+            header = f"{icon} Выпуск {run_date}: отправлен, но слишком длинный — {rendered} пунктов (норма 14–22)"
+        else:
+            header = f"{icon} Выпуск {run_date}: отправлен — {useful} пунктов"
     else:
         reason = f": {release_errors[0]}" if release_errors else ""
         header = f"⛔ Выпуск {run_date} НЕ отправлен — release gate {release_decision or 'unknown'}{reason}"
     lines: list[str] = [header, ""]
 
     if rendered or included or dropped:
-        lines.append("📦 СРЕЗ ПАЙПЛАЙНА")
-        lines.append(f"  • Принято после отбора: {included}")
-        lines.append(f"  • Видимых пунктов в HTML/Telegram: {rendered}")
-        lines.append(f"  • Отброшено поздними quality-gates: {dropped}")
-        lines.append("  Цель нормального выпуска: 14–22 видимых пункта.")
+        lines.append("📌 ИТОГ ВЫПУСКА")
+        lines.append(f"  • Читатель увидел: {rendered} пунктов.")
+        lines.append(f"  • После редакционного отбора осталось: {included} материалов.")
+        lines.append(f"  • На финальной проверке снято: {dropped} материалов с плохим/пустым текстом.")
+        lines.append("  • Норма для утреннего выпуска: 14–22 пункта.")
+        lines.append("")
+
+    top_issues = _support_top_issues(
+        rendered=rendered,
+        health_level=health_level,
+        health_signals=health_signals,
+        writer_report=writer_report,
+        transport_coverage=transport_coverage,
+        quality_scorecard=quality_scorecard,
+        source_status=source_status,
+        synthetic_freshness=synthetic_freshness,
+        prompt_drift=prompt_drift,
+        cost_summary=cost_summary,
+        warnings=[str(w) for w in (report.get("warnings") or [])],
+        suspicious_rejects=suspicious_rejects,
+        suspicious_published=suspicious_published,
+        borderline_queue=borderline_queue,
+    )
+    if top_issues:
+        lines.append("🚨 ГЛАВНОЕ СЕГОДНЯ")
+        for idx, (title, action) in enumerate(top_issues, start=1):
+            lines.append(f"  {idx}. {title}")
+            lines.append(f"     Что делать: {action}")
+        lines.append("")
+
+    section_rows = _section_shape_rows(writer_report)
+    if section_rows:
+        lines.append("📐 СЕКЦИИ И ЛИМИТЫ")
+        lines.append("Показывает, какие блоки раздувают или просаживают выпуск:")
+        for row in sorted(section_rows, key=lambda r: (-int(r["actual"]), str(r["section"]))):
+            actual = int(row["actual"])
+            if actual == 0 and row["min"] is None and row["max"] is None:
+                continue
+            min_part = f"минимум {row['min']}" if row["min"] is not None else "без минимума"
+            max_part = f"лимит {row['max']}" if row["max"] is not None else "без лимита"
+            lines.append(f"  • {_section_name_human(str(row['section']))}: {actual} ({min_part}, {max_part}) — {row['status']}.")
+        lines.append("")
+
+    today_quality = (quality_scorecard.get("today") or {}) if isinstance(quality_scorecard, dict) else {}
+    ticket_types = today_quality.get("ticket_types") or {}
+    ticket_rows = _ticketmaster_rows(source_status)
+    if ticket_types or ticket_rows:
+        lines.append("🎟️ БИЛЕТЫ И КОНЦЕРТЫ")
+        if ticket_types:
+            for ticket_type, counts in sorted(ticket_types.items()):
+                lines.append(
+                    f"  • {_ticket_type_human(ticket_type)}: найдено {counts.get('fetched', 0)}, "
+                    f"опубликовано {counts.get('published', 0)}."
+                )
+        if ticket_rows:
+            lines.append("  Источники билетов:")
+            for row in ticket_rows[:6]:
+                reasons = row.get("reject_reasons") or {}
+                reason_txt = ""
+                if reasons:
+                    reason, count = sorted(reasons.items(), key=lambda kv: -int(kv[1]))[0]
+                    reason_txt = f"; причина: {_humanize_source_reason(reason)} ({count})"
+                lines.append(f"    • {_source_name_human(str(row.get('name') or ''))}: {_source_counts_phrase(row)}{reason_txt}.")
         lines.append("")
 
     # ── Что могли пропустить (главное для редактора) ──────────────
@@ -707,8 +1025,8 @@ def cmd_send_warnings() -> int:
                          if k in _ALREADY_FIXED_CAUSES}
 
     if suspicious_groups:
-        lines.append("📰 ЧТО МОГЛИ ПРОПУСТИТЬ")
-        lines.append("Новости, которые попали в систему, но не дошли до читателя:")
+        lines.append("📰 ВОЗМОЖНО ЗРЯ ОТКЛОНИЛИ")
+        lines.append("Материалы, которые система увидела, но не опубликовала; причина отказа выглядит спорной:")
         lines.append("")
         # Show actionable first — что реально требует внимания
         for cause_id, info in sorted(actionable_groups.items(), key=lambda kv: -kv[1]["count"]):
@@ -719,7 +1037,7 @@ def cmd_send_warnings() -> int:
             if len(info["examples"]) > 3:
                 lines.append(f"    • …ещё {len(info['examples']) - 3}")
             if info.get("editor_action"):
-                lines.append(f"    Что от тебя нужно: {info['editor_action']}")
+                lines.append(f"    Следующий шаг: {info['editor_action']}")
             lines.append("")
         # Auto-fixed last — informational
         for cause_id, info in sorted(auto_fixed_groups.items(), key=lambda kv: -kv[1]["count"]):
@@ -747,31 +1065,30 @@ def cmd_send_warnings() -> int:
         lines.append("")
 
     if borderline_queue.get("items"):
-        lines.append("🟨 BORDERLINE — ПОСМОТРЕТЬ РУКАМИ")
-        lines.append("Спорные пункты не отправлены автоматически:")
+        lines.append("🟨 СПОРНЫЕ МАТЕРИАЛЫ — НЕ ОПУБЛИКОВАНЫ")
+        lines.append("Система удержала их, потому что фактов недостаточно для уверенной публикации:")
         for item in (borderline_queue.get("items") or [])[:8]:
             title = str(item.get("title") or "").strip() or "(без заголовка)"
-            fp = str(item.get("fingerprint") or "").strip()
-            warnings_txt = "; ".join(str(w) for w in (item.get("quality_warnings") or []))
+            warnings_txt = "; ".join(_humanize_quality_warning(str(w)) for w in (item.get("quality_warnings") or []))
             lines.append(f"  • {title[:90]}")
             if warnings_txt:
                 lines.append(f"    Почему: {warnings_txt[:180]}")
-            if fp:
-                lines.append(f"    Включить завтра: добавь fingerprint в manual_candidate_overrides.force_include: {fp}")
+            lines.append(f"    Вердикт: {_borderline_verdict(item)}.")
         if len(borderline_queue.get("items") or []) > 8:
             lines.append(f"  …и ещё {len(borderline_queue.get('items') or []) - 8}.")
+        lines.append("  Технические ID скрыты из Telegram; для ручного включения они сохранены в JSON-отчёте.")
         lines.append("")
 
     if quality_scorecard.get("today"):
         today_q = quality_scorecard.get("today") or {}
-        lines.append("📊 КАРТОЧКА КАЧЕСТВА")
+        lines.append("📊 КОНТРОЛЬ КАЧЕСТВА")
         lines.append(
-            f"  • Видимых пунктов: {today_q.get('visible_count', 0)} из "
-            f"{today_q.get('full_count', 0)} кандидатов."
+            f"  • Система просмотрела {today_q.get('full_count', 0)} материалов; "
+            f"в выпуск попали {today_q.get('visible_count', 0)}."
         )
         lines.append(
-            f"  • Подозрительно опубликовано: {today_q.get('suspicious_published', 0)}, "
-            f"непонятных: {today_q.get('unclear_visible', 0)}, повторов: {today_q.get('repeat_visible', 0)}."
+            f"  • После финальной самопроверки: устаревших/неуместных — {today_q.get('suspicious_published', 0)}, "
+            f"непонятных — {today_q.get('unclear_visible', 0)}, повторов — {today_q.get('repeat_visible', 0)}."
         )
         top_sources = today_q.get("top_sources") or []
         if top_sources:
@@ -782,8 +1099,8 @@ def cmd_send_warnings() -> int:
             lines.append(f"  • Топ источников: {compact}.")
         if feedback_capture:
             lines.append(
-                f"  • Feedback dataset: {feedback_capture.get('labelled_items', 0)} размечено, "
-                f"{feedback_capture.get('pending_items', 0)} ждёт реакции."
+                f"  • Ручная оценка пользы: {feedback_capture.get('labelled_items', 0)} пунктов оценено; "
+                f"{feedback_capture.get('pending_items', 0)} можно оценить позже для будущей персонализации."
             )
         lines.append("")
 
@@ -808,7 +1125,7 @@ def cmd_send_warnings() -> int:
             actual = su.get("actual", 0)
             minimum = su.get("minimum", 0)
             dropped = su.get("dropped_by_writer", 0)
-            lines.append(f"  «{name}» — {actual} из минимума {minimum}")
+            lines.append(f"  «{_section_name_human(str(name))}» — {actual} из минимума {minimum}")
             if dropped:
                 word = "карточку" if dropped == 1 else ("карточки" if 2 <= dropped <= 4 else "карточек")
                 lines.append(f"    Выбросило {dropped} {word}:")
@@ -821,9 +1138,9 @@ def cmd_send_warnings() -> int:
 
     if borough_skew_flags:
         lines.append("🏙️ ПОКРЫТИЕ GM")
-        lines.append("Видно перекос по borough в сегодняшнем выпуске:")
+        lines.append("Распределение по районам Greater Manchester сегодня неровное:")
         for flag in borough_skew_flags[:4]:
-            lines.append(f"  • {flag}")
+            lines.append(f"  • {_humanize_borough_flag(flag)}")
         visible_rows = [
             row for row in (borough_coverage.get("boroughs") or [])
             if isinstance(row, dict) and int(row.get("rendered_count") or 0) > 0
@@ -834,7 +1151,7 @@ def cmd_send_warnings() -> int:
                 f"{row.get('borough')}: {int(row.get('rendered_count') or 0)}"
                 for row in visible_rows[:6]
             )
-            lines.append(f"    Раскладка видимых пунктов: {layout}.")
+            lines.append(f"    Раскладка опубликованных пунктов: {layout}.")
         lines.append("")
 
     transport_verdict = str(transport_coverage.get("verdict") or "")
@@ -842,15 +1159,15 @@ def cmd_send_warnings() -> int:
         lines.append("🚋 ТРАНСПОРТ: ЧТО ПРОВЕРЕНО")
         if transport_verdict == "disruptions_rendered":
             lines.append(
-                f"  • Найдено disruption: {transport_coverage.get('disruptions_found', 0)}, "
-                f"показано: {transport_coverage.get('disruptions_rendered', 0)}."
+                f"  • Найдено ограничений/сбоев: {transport_coverage.get('disruptions_found', 0)}, "
+                f"опубликовано: {transport_coverage.get('disruptions_rendered', 0)}."
             )
         elif transport_verdict == "checked_no_disruptions":
-            lines.append("  • TfGM/transport sources проверены; серьёзных disruption-кандидатов не найдено.")
+            lines.append("  • Транспортные источники проверены; серьёзных ограничений или сбоев не найдено.")
         elif transport_verdict == "found_not_rendered":
             lines.append(
-                f"  • Найдено {transport_coverage.get('disruptions_found', 0)} disruption-кандидатов, "
-                "но в выпуск ничего не попало — проверь writer/release gates."
+                f"  • Найдено {transport_coverage.get('disruptions_found', 0)} транспортных ограничений, "
+                "но в выпуск ничего не попало — нужно проверить финальные правила публикации."
             )
         elif transport_verdict == "partially_checked":
             lines.append("  • Транспорт проверен частично: часть источников недоступна.")
@@ -865,33 +1182,98 @@ def cmd_send_warnings() -> int:
             flags.append("National Rail")
         if flags:
             lines.append(f"    Источники: {', '.join(flags)}.")
+        missing_flags = []
+        if not transport_coverage.get("tfgm_checked"):
+            missing_flags.append("TfGM")
+        if not transport_coverage.get("metrolink_checked"):
+            missing_flags.append("Metrolink")
+        if not transport_coverage.get("national_rail_checked"):
+            missing_flags.append("National Rail")
+        if missing_flags:
+            lines.append(f"    Не проверено явно: {', '.join(missing_flags)}.")
+        lines.append("")
+
+    if synthetic_freshness:
+        lines.append("🧯 СВЕЖЕСТЬ СЛУЖЕБНЫХ КАРТОЧЕК")
+        stale = int(synthetic_freshness.get("stale_count") or 0)
+        total_synth = int(synthetic_freshness.get("total") or 0)
+        lines.append(f"  • Служебных карточек: {total_synth}; устаревших: {stale}.")
+        for item in (synthetic_freshness.get("items") or [])[:5]:
+            label = item.get("source_label") or "unknown"
+            fetched_at = item.get("data_fetched_at") or "нет времени обновления"
+            state = "устарело" if item.get("synthetic_stale") else "свежее"
+            lines.append(f"  • {label}: {state}, данные от {fetched_at}.")
+        lines.append("")
+
+    semantic = summary or {}
+    if semantic.get("semantic_dedup_enabled") is not None:
+        lines.append("🧬 ПОХОЖИЕ НОВОСТИ И ДУБЛИ")
+        lines.append(
+            f"  • Включён: {'да' if semantic.get('semantic_dedup_enabled') else 'нет'}; "
+            f"внутри дня снято {semantic.get('semantic_intra_drops', 0)}, "
+            f"между днями снято {semantic.get('semantic_cross_day_drops', 0)}, "
+            f"спорных пар {semantic.get('semantic_borderline', 0)}, "
+            f"возвращено защитным правилом {semantic.get('semantic_restored_by_guard', 0)}."
+        )
+        lines.append("")
+
+    if cost_summary or prompt_drift or any(str(w).lower().startswith("llm rewrite was degraded") for w in (report.get("warnings") or [])):
+        lines.append("🤖 ГЕНЕРАЦИЯ, ПРОМПТЫ И СТОИМОСТЬ")
+        if any(str(w).lower().startswith("llm rewrite was degraded") for w in (report.get("warnings") or [])):
+            lines.append("  • Генерация текста: аварийный режим — часть пунктов добрана запасной логикой.")
+        if cost_summary:
+            lines.append(
+                f"  • Стоимость запуска: ${float(cost_summary.get('total_cost_usd') or 0):.4f}; "
+                f"вызовов моделей: {cost_summary.get('total_calls', 0)}."
+            )
+            unknown_models = cost_summary.get("unknown_priced_models") or []
+            if unknown_models:
+                lines.append(f"  • Без цены в cost monitor: {', '.join(str(m) for m in unknown_models)}.")
+        if prompt_drift:
+            lines.append(f"  • Изменения промптов: {len(prompt_drift)} промпт(ов) поменялись без явного обновления версии.")
+        else:
+            lines.append("  • Изменения промптов: не обнаружены.")
         lines.append("")
 
     if diaspora_diagnostics.get("verdict") in {"checked_empty", "fetched_but_filtered", "accepted_not_rendered"}:
         lines.append("🎭 РУССКОЯЗЫЧНЫЙ БЛОК")
+        verdict = str(diaspora_diagnostics.get("verdict") or "")
+        lines.append(f"  • Итог: {_diaspora_verdict_human(verdict)}.")
         lines.append(
-            f"  • raw={diaspora_diagnostics.get('raw_count', 0)}, "
-            f"accepted={diaspora_diagnostics.get('accepted_count', 0)}, "
-            f"rendered={diaspora_diagnostics.get('rendered_count', 0)} "
-            f"({diaspora_diagnostics.get('verdict')})."
+            f"  • Нашли {diaspora_diagnostics.get('raw_count', 0)} материалов, "
+            f"прошло отбор {diaspora_diagnostics.get('accepted_count', 0)}, "
+            f"опубликовано {diaspora_diagnostics.get('rendered_count', 0)}."
         )
         for row in (diaspora_diagnostics.get("sources") or [])[:5]:
             name = str(row.get("name") or "")
             detail = str(row.get("detail") or row.get("status") or "")
             reasons = row.get("reject_reasons") or {}
-            lines.append(
-                f"  • {name}: fetched={row.get('raw_count', row.get('candidate_count', 0))}, "
-                f"accepted={row.get('accepted_count', row.get('curated_count', 0))}, "
-                f"rendered={row.get('rendered_count', 0)}."
-            )
+            lines.append(f"  • {_source_name_human(name)}: {_source_counts_phrase(row)}.")
             if reasons:
                 top_reason = sorted(reasons.items(), key=lambda kv: -int(kv[1]))[0]
-                lines.append(f"    Главная причина отсечения: {top_reason[0]} ({top_reason[1]}).")
+                lines.append(f"    Почему не вошло: {_humanize_source_reason(top_reason[0])} ({top_reason[1]}).")
             elif detail:
-                lines.append(f"    Статус: {detail[:160]}.")
+                lines.append(f"    Статус: {_explain_source_failure(detail) if 'no candidate links' in detail.lower() else detail[:160]}.")
         lines.append("")
 
     if source_status.get("sources"):
+        counts = source_status.get("counts") or {}
+        lines.append("📡 ЗДОРОВЬЕ ИСТОЧНИКОВ")
+        lines.append(
+            f"  • Работают: {counts.get('ok', 0)}, не ответили: {counts.get('failed', 0)}, "
+            f"пустые: {counts.get('empty', 0)}, без новых материалов: {counts.get('stale', 0)}, "
+            f"без вклада в выпуск: {counts.get('zero_yield', 0)}."
+        )
+        for status, label in (("failed", "Не ответили"), ("empty", "Пустые"), ("stale", "Без новых материалов")):
+            status_rows = [
+                row for row in source_status.get("sources") or []
+                if isinstance(row, dict) and row.get("status") == status
+            ]
+            if status_rows:
+                names = ", ".join(_source_name_human(str(row.get("name") or "")) for row in status_rows[:4])
+                suffix = f" и ещё {len(status_rows) - 4}" if len(status_rows) > 4 else ""
+                lines.append(f"  • {label}: {names}{suffix}.")
+        lines.append("")
         rows = [
             row for row in source_status.get("sources") or []
             if isinstance(row, dict)
@@ -899,20 +1281,18 @@ def cmd_send_warnings() -> int:
             and int(row.get("rendered_count") or 0) == 0
         ]
         if rows:
-            lines.append("🧪 FUNNEL ПО ИСТОЧНИКАМ")
+            lines.append("🧪 ИСТОЧНИКИ БЕЗ ВКЛАДА В ВЫПУСК")
+            lines.append("Эти источники дали материалы, но в финальный выпуск ничего не попало:")
             for row in rows[:8]:
                 reasons = row.get("reject_reasons") or {}
                 reason_txt = ""
                 if reasons:
                     reason, count = sorted(reasons.items(), key=lambda kv: -int(kv[1]))[0]
-                    reason_txt = f"; главная причина: {reason} ({count})"
-                lines.append(
-                    f"  • {row.get('name')}: fetched={row.get('raw_count', row.get('candidate_count', 0))}, "
-                    f"accepted={row.get('accepted_count', row.get('curated_count', 0))}, "
-                    f"rendered={row.get('rendered_count', 0)}{reason_txt}"
-                )
+                    reason_txt = f"; причина: {_humanize_source_reason(reason)} ({count})"
+                lines.append(f"  • {_source_name_human(str(row.get('name') or ''))}: {_source_counts_phrase(row)}{reason_txt}.")
             if len(rows) > 8:
                 lines.append(f"  …и ещё {len(rows) - 8}.")
+            lines.append("  Полная таблица сохранена в техническом JSON-отчёте.")
             lines.append("")
 
     # ── Источники: что не работало ────────────────────────────────
@@ -929,7 +1309,7 @@ def cmd_send_warnings() -> int:
             tail = f" ({streak_tag})" if streak_tag else ""
             if streak_tag and "пора отключить" in streak_tag:
                 chronic_count += 1
-            lines.append(f"  • {name} — {plain}{tail}")
+            lines.append(f"  • {_source_name_human(str(name))} — {plain}{tail}")
         if len(failed_sources) > 10:
             lines.append(f"  …и ещё {len(failed_sources) - 10}.")
         if chronic_count:
@@ -949,6 +1329,10 @@ def cmd_send_warnings() -> int:
     # ── Если кроме «всё в норме» сказать нечего — короткий happy summary
     if not (suspicious_groups or lost_leads or section_underflow
             or failed_sources or borough_skew_flags
+            or report.get("warnings")
+            or prompt_drift
+            or int((synthetic_freshness or {}).get("stale_count") or 0) > 0
+            or bool((cost_summary or {}).get("unknown_priced_models") or [])
             or transport_coverage.get("verdict") in {"found_not_rendered", "not_checked", "partially_checked"}
             or diaspora_diagnostics.get("verdict") in {"checked_empty", "fetched_but_filtered", "accepted_not_rendered"}
             or borderline_queue.get("items")
