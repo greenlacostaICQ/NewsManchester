@@ -901,6 +901,7 @@ def cmd_send_warnings() -> int:
     published_review = report.get("published_review") or {}
     city_intelligence = report.get("city_intelligence") or {}
     event_miss_review = report.get("event_miss_review") or {}
+    cross_day_recurrence = report.get("cross_day_recurrence") or {}
     borough_coverage = city_intelligence.get("borough_coverage") or {}
     borough_skew_flags = [
         str(flag) for flag in (borough_coverage.get("skew_flags") or []) if str(flag).strip()
@@ -913,6 +914,7 @@ def cmd_send_warnings() -> int:
     ]
 
     # Trigger when there is anything worth surfacing.
+    cross_day_blocked = int(((cross_day_recurrence.get("counts") or {}).get("blocked") or 0))
     has_signal = (
         report.get("release_decision") != "pass"
         or bool(report.get("warnings"))
@@ -930,6 +932,7 @@ def cmd_send_warnings() -> int:
         or int((synthetic_freshness or {}).get("stale_count") or 0) > 0
         or bool(prompt_drift)
         or bool((cost_summary or {}).get("unknown_priced_models") or [])
+        or cross_day_blocked > 0
     )
     if not has_signal:
         print("Healthy run with no signals. Nothing to alert on.")
@@ -1116,6 +1119,36 @@ def cmd_send_warnings() -> int:
         if len(borderline_queue.get("items") or []) > 8:
             lines.append(f"  …и ещё {len(borderline_queue.get('items') or []) - 8}.")
         lines.append("  Технические ID скрыты из Telegram; для ручного включения они сохранены в JSON-отчёте.")
+        lines.append("")
+
+    cross_day_blocked_list = cross_day_recurrence.get("blocked") or []
+    if cross_day_blocked_list:
+        lines.append("🔁 ПОВТОРЫ ПО ФИГУРАНТАМ")
+        lines.append(
+            f"Снято материалов потому что та же фигурант(а) уже была в выпуске: "
+            f"{len(cross_day_blocked_list)}."
+        )
+        for row in cross_day_blocked_list[:6]:
+            today_name = str(row.get("matched_person_today") or "").strip()
+            prev_day = str(row.get("previous_published_day") or "").strip()
+            prev_title = str(row.get("previous_title") or "").strip()
+            source = str(row.get("source_label") or "").strip()
+            today_title = str(row.get("title") or "").strip()
+            source_tail = f" ({source})" if source else ""
+            who = today_name or "тот же сюжет"
+            when = f"уже был {prev_day}" if prev_day else "уже публиковался"
+            if prev_title:
+                lines.append(f"  • «{today_title[:90]}»{source_tail}")
+                lines.append(f"    {who}: {when} как «{prev_title[:90]}».")
+            else:
+                lines.append(f"  • «{today_title[:90]}»{source_tail} — {who}, {when}.")
+        if len(cross_day_blocked_list) > 6:
+            lines.append(f"  …и ещё {len(cross_day_blocked_list) - 6} материал(ов).")
+        lines.append(
+            "Если по факту это была НОВАЯ информация (имя обвиняемого, "
+            "дата суда, цифра ущерба) — значит детектор недо-увидел "
+            "новый факт; напиши пример, добавим в тест."
+        )
         lines.append("")
 
     if quality_scorecard.get("today"):
