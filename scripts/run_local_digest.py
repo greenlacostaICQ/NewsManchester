@@ -904,6 +904,7 @@ def cmd_send_warnings() -> int:
     cross_day_recurrence = report.get("cross_day_recurrence") or {}
     event_completeness = report.get("event_completeness") or {}
     news_lead_quality = report.get("news_lead_quality") or {}
+    post_publish_judge = report.get("post_publish_judge") or {}
     borough_coverage = city_intelligence.get("borough_coverage") or {}
     borough_skew_flags = [
         str(flag) for flag in (borough_coverage.get("skew_flags") or []) if str(flag).strip()
@@ -921,6 +922,7 @@ def cmd_send_warnings() -> int:
     event_incomplete = int(ec_counts.get("missing_date") or 0) + int(ec_counts.get("missing_venue") or 0)
     lead_counts = news_lead_quality.get("counts") or {}
     bad_leads = int(lead_counts.get("quote_lead") or 0) + int(lead_counts.get("narrative_lead") or 0)
+    judge_signals = list((post_publish_judge.get("drift") or {}).get("signals") or [])
     has_signal = (
         report.get("release_decision") != "pass"
         or bool(report.get("warnings"))
@@ -941,6 +943,7 @@ def cmd_send_warnings() -> int:
         or cross_day_blocked > 0
         or event_incomplete > 0
         or bad_leads > 0
+        or bool(judge_signals)
     )
     if not has_signal:
         print("Healthy run with no signals. Nothing to alert on.")
@@ -1127,6 +1130,59 @@ def cmd_send_warnings() -> int:
         if len(borderline_queue.get("items") or []) > 8:
             lines.append(f"  …и ещё {len(borderline_queue.get('items') or []) - 8}.")
         lines.append("  Технические ID скрыты из Telegram; для ручного включения они сохранены в JSON-отчёте.")
+        lines.append("")
+
+    if post_publish_judge.get("eval") or judge_signals or post_publish_judge.get("drift", {}).get("status") in {"warming_up", "ok"}:
+        judge_eval = post_publish_judge.get("eval") or {}
+        judge_drift = post_publish_judge.get("drift") or {}
+        judge_status = str(post_publish_judge.get("status") or "")
+        baseline_days = int(judge_drift.get("baseline_days") or 0)
+        lines.append("🧪 ОЦЕНКА КАЧЕСТВА (POST-PUBLISH JUDGE)")
+        if judge_status == "ok" and judge_eval:
+            lines.append(
+                "  • Сегодняшние оценки (по шкале 0–5): "
+                f"факт {judge_eval.get('factuality', '?')}, "
+                f"новизна {judge_eval.get('novelty', '?')}, "
+                f"разнообразие источников {judge_eval.get('source_diversity', '?')}, "
+                f"плотность сигнала {judge_eval.get('signal_density', '?')}, "
+                f"связность {judge_eval.get('coherence', '?')}."
+            )
+            judge_notes = str(judge_eval.get("notes") or "").strip()
+            if judge_notes:
+                lines.append(f"  • Что заметил судья: {judge_notes}")
+        elif judge_status:
+            lines.append(
+                f"  • Сегодня судью не запустить: {post_publish_judge.get('reason') or judge_status}."
+            )
+        if baseline_days < 14:
+            lines.append(
+                f"  • Базовая линия ещё накапливается: {baseline_days} дней из 14 "
+                f"минимально нужных. Дрейф пока не считается."
+            )
+        if judge_signals:
+            lines.append(
+                "  • Просадки vs 30-дневной нормы (минимум 1σ ниже среднего):"
+            )
+            axis_label = {
+                "factuality": "факт",
+                "novelty": "новизна",
+                "source_diversity": "разнообразие источников",
+                "signal_density": "плотность сигнала",
+                "coherence": "связность",
+            }
+            for sig in judge_signals:
+                axis = str(sig.get("axis") or "")
+                pretty = axis_label.get(axis, axis)
+                lines.append(
+                    f"    – {pretty}: сегодня {sig.get('today')}, "
+                    f"30-дневная норма {sig.get('baseline_mean')} "
+                    f"(σ={sig.get('baseline_sigma')}, "
+                    f"−{sig.get('sigmas_below_baseline')}σ)."
+                )
+            lines.append(
+                "  Если просадка реальная — посмотри какие карточки попали "
+                "сегодня и не сделал ли rewrite шаг назад."
+            )
         lines.append("")
 
     lead_issues = news_lead_quality.get("issues") or []
@@ -1558,6 +1614,43 @@ def cmd_send_weekly_city_rollup() -> int:
 def _weekly_city_rollup_errors_are_non_blocking(rollup: dict) -> bool:
     errors = [str(err) for err in rollup.get("errors") or []]
     return not errors or errors == ["city_intelligence_history.json is empty"]
+
+
+def cmd_post_publish_judge() -> int:
+    """S6: score today's published digest, append to digest_evals.jsonl,
+    print the drift report. Exits 0 even on judge failure — the gate
+    never blocks for the judge's sake. The drift output is also written
+    into release_report.json so cmd_send_warnings can surface it.
+    """
+    from news_digest.pipeline.post_publish_judge import evaluate_today  # noqa: PLC0415
+
+    pipeline_run_id = ""
+    release_report_path = PROJECT_ROOT / "data" / "state" / "release_report.json"
+    if release_report_path.exists():
+        try:
+            existing_report = json.loads(release_report_path.read_text(encoding="utf-8"))
+            pipeline_run_id = str(existing_report.get("pipeline_run_id") or "")
+        except (OSError, json.JSONDecodeError):
+            existing_report = {}
+    else:
+        existing_report = {}
+
+    result = evaluate_today(PROJECT_ROOT, pipeline_run_id=pipeline_run_id)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    # Stamp drift into release_report.json so send-warnings can read it
+    # without re-running the judge. Idempotent: only adds fields, doesn't
+    # touch anything else.
+    if isinstance(existing_report, dict):
+        existing_report["post_publish_judge"] = result
+        try:
+            release_report_path.write_text(
+                json.dumps(existing_report, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+        except OSError as exc:
+            print(f"Warning: could not write post_publish_judge into release_report.json: {exc}")
+    return 0
 
 
 def cmd_delivered_today() -> int:
@@ -2023,6 +2116,15 @@ def build_parser() -> argparse.ArgumentParser:
         "send-weekly-city-rollup",
         help="Build and send the 7-day city intelligence rollup to Telegram.",
     )
+    subparsers.add_parser(
+        "post-publish-judge",
+        help=(
+            "Score today's already-published digest on 5 quality axes "
+            "(factuality, novelty, source_diversity, signal_density, "
+            "coherence) via gpt-4o-mini and append to digest_evals.jsonl. "
+            "Computes drift vs 30-day baseline. Never blocks the pipeline."
+        ),
+    )
     return parser
 
 
@@ -2088,6 +2190,8 @@ def main() -> int:
         return cmd_weekly_city_rollup()
     if args.command == "send-weekly-city-rollup":
         return cmd_send_weekly_city_rollup()
+    if args.command == "post-publish-judge":
+        return cmd_post_publish_judge()
 
     parser.error(f"Unknown command: {args.command}")
     return 2

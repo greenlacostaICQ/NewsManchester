@@ -17,6 +17,7 @@ import re
 from news_digest.pipeline import llm_rewrite as _lr
 from news_digest.pipeline import curator as _cur
 from news_digest.pipeline import dedupe as _dd
+from news_digest.pipeline import post_publish_judge as _ppj
 
 PROMPT_REGISTRY_VERSION = 1
 
@@ -57,6 +58,8 @@ PROMPTS: tuple[PromptMeta, ...] = (
     PromptMeta(name="fix_translate",   version="v1", hash=_h(_lr.FIX_TRANSLATE_SYSTEM)),
     PromptMeta(name="repair_draft",    version="v1", hash=_h(_lr.REPAIR_DRAFT_SYSTEM)),
     PromptMeta(name="dedupe_review",   version="v1", hash=_h(_dd._DEDUPE_REVIEW_PROMPT)),
+    PromptMeta(name="post_publish_judge", version=_ppj.JUDGE_PROMPT_VERSION,
+               hash=_h(_ppj.JUDGE_PROMPT)),
 )
 
 
