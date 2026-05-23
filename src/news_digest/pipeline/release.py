@@ -1817,6 +1817,84 @@ def _build_after_run_summary(
     }
 
 
+# S5 — first sentence anti-patterns for news cards. We don't enforce a
+# perfect lead, just block the obvious cases that broke 22 May digest:
+# quote-lead and narrative-житель/жительница-lead. Warning-only.
+_QUOTE_LEAD_RE = re.compile(r'^\s*•?\s*[«"„]', re.UNICODE)
+_NARRATIVE_LEAD_RE = re.compile(
+    r"^\s*•?\s*"
+    r"(?:<[^>]+>\s*)?"          # optional <b>...</b> wrapper for borough
+    r"(?:[А-ЯЁA-Z][а-яёa-z]+:\s*)?"  # optional "Bolton:" prefix
+    r"(?:местн(?:ая|ый)\s+жит(?:ель|ельница)|"
+    r"(?:многие|местные)\s+жители|"
+    r"жительница\s+[А-ЯЁA-Z]|"
+    r"(?:одна\s+из|туристическ)|"
+    r"a\s+local\s+(?:resident|woman|man)|local\s+resident)",
+    re.IGNORECASE | re.UNICODE,
+)
+# Cards in these sections get the lead-quality check applied.
+_NEWS_LEAD_BLOCKS = frozenset({
+    "last_24h", "today_focus", "city_watch", "transport",
+})
+
+
+def _summarise_news_lead_quality(
+    candidates_report: dict | None,
+    rendered_fingerprints: set[str],
+) -> dict[str, object]:
+    """S5: warn when a published news card opens with a quote, a
+    "местная жительница" narrative, or a generic non-fact phrase.
+
+    Warning-only — the digest still ships per the never-block rule.
+    The point is to surface in the Telegram admin report which cards
+    lost their lead-first structure, so the reader doesn't have to
+    write the complaint.
+    """
+    counts = {"checked": 0, "quote_lead": 0, "narrative_lead": 0}
+    issues: list[dict[str, object]] = []
+    if not isinstance(candidates_report, dict):
+        return {"counts": counts, "issues": issues}
+    for candidate in candidates_report.get("candidates") or []:
+        if not isinstance(candidate, dict):
+            continue
+        fp = str(candidate.get("fingerprint") or "")
+        if fp not in rendered_fingerprints:
+            continue
+        block = str(candidate.get("primary_block") or "")
+        if block not in _NEWS_LEAD_BLOCKS:
+            continue
+        category = str(candidate.get("category") or "")
+        if category not in {"media_layer", "gmp", "council", "public_services",
+                            "city_news", "tech_business", "transport"}:
+            continue
+        counts["checked"] += 1
+        draft_line = str(candidate.get("draft_line") or "")
+        # Strip HTML tags but keep the first 200 chars so we look at the
+        # opening clause, not the whole card.
+        visible = re.sub(r"<[^>]+>", " ", draft_line)
+        opener = visible[:200]
+        if _QUOTE_LEAD_RE.search(opener):
+            counts["quote_lead"] += 1
+            issues.append({
+                "fingerprint": fp,
+                "title": str(candidate.get("title") or "")[:140],
+                "primary_block": block,
+                "issue": "quote_lead",
+                "detail": "карточка начинается с прямой цитаты, не с факта",
+            })
+            continue
+        if _NARRATIVE_LEAD_RE.search(opener):
+            counts["narrative_lead"] += 1
+            issues.append({
+                "fingerprint": fp,
+                "title": str(candidate.get("title") or "")[:140],
+                "primary_block": block,
+                "issue": "narrative_lead",
+                "detail": "карточка начинается с «местного жителя/жительницы», не с факта",
+            })
+    return {"counts": counts, "issues": issues[:20]}
+
+
 def _summarise_event_completeness(
     candidates_report: dict | None,
     rendered_fingerprints: set[str],
@@ -2242,6 +2320,9 @@ def build_release(project_root: Path) -> ReleaseResult:
     event_completeness = _summarise_event_completeness(
         candidates_report, rendered_fingerprints, None,
     )
+    news_lead_quality = _summarise_news_lead_quality(
+        candidates_report, rendered_fingerprints,
+    )
 
     cost_summary = _aggregate_cost(state_dir)
     if cost_summary["unknown_priced_models"]:
@@ -2468,6 +2549,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "change_type_summary": change_type_summary,
         "cross_day_recurrence": cross_day_recurrence,
         "event_completeness": event_completeness,
+        "news_lead_quality": news_lead_quality,
         "digest_health": digest_health,
         "source_status": source_status,
         "transport_coverage": transport_coverage,

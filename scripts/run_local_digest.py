@@ -903,6 +903,7 @@ def cmd_send_warnings() -> int:
     event_miss_review = report.get("event_miss_review") or {}
     cross_day_recurrence = report.get("cross_day_recurrence") or {}
     event_completeness = report.get("event_completeness") or {}
+    news_lead_quality = report.get("news_lead_quality") or {}
     borough_coverage = city_intelligence.get("borough_coverage") or {}
     borough_skew_flags = [
         str(flag) for flag in (borough_coverage.get("skew_flags") or []) if str(flag).strip()
@@ -918,6 +919,8 @@ def cmd_send_warnings() -> int:
     cross_day_blocked = int(((cross_day_recurrence.get("counts") or {}).get("blocked") or 0))
     ec_counts = event_completeness.get("counts") or {}
     event_incomplete = int(ec_counts.get("missing_date") or 0) + int(ec_counts.get("missing_venue") or 0)
+    lead_counts = news_lead_quality.get("counts") or {}
+    bad_leads = int(lead_counts.get("quote_lead") or 0) + int(lead_counts.get("narrative_lead") or 0)
     has_signal = (
         report.get("release_decision") != "pass"
         or bool(report.get("warnings"))
@@ -937,6 +940,7 @@ def cmd_send_warnings() -> int:
         or bool((cost_summary or {}).get("unknown_priced_models") or [])
         or cross_day_blocked > 0
         or event_incomplete > 0
+        or bad_leads > 0
     )
     if not has_signal:
         print("Healthy run with no signals. Nothing to alert on.")
@@ -1123,6 +1127,31 @@ def cmd_send_warnings() -> int:
         if len(borderline_queue.get("items") or []) > 8:
             lines.append(f"  …и ещё {len(borderline_queue.get('items') or []) - 8}.")
         lines.append("  Технические ID скрыты из Telegram; для ручного включения они сохранены в JSON-отчёте.")
+        lines.append("")
+
+    lead_issues = news_lead_quality.get("issues") or []
+    if lead_issues:
+        lines.append("📰 НОВОСТИ БЕЗ ЛИДА-ФАКТА")
+        quote_n = int(lead_counts.get("quote_lead") or 0)
+        narr_n = int(lead_counts.get("narrative_lead") or 0)
+        checked_n = int(lead_counts.get("checked") or 0)
+        lines.append(
+            f"Из {checked_n} опубликованных новостей: начинаются с цитаты — {quote_n}, "
+            f"с описания жительницы/жителя — {narr_n}. Читатель не понимает что произошло "
+            f"из первой фразы."
+        )
+        for row in lead_issues[:6]:
+            title = str(row.get("title") or "").strip()
+            issue = str(row.get("issue") or "")
+            detail = str(row.get("detail") or "")
+            label = (
+                "цитата вместо факта" if issue == "quote_lead"
+                else "narrative-лид вместо факта"
+            )
+            lines.append(f"  • {title[:90]}")
+            lines.append(f"    Проблема: {label}. {detail}")
+        if len(lead_issues) > 6:
+            lines.append(f"  …и ещё {len(lead_issues) - 6} новостей.")
         lines.append("")
 
     ec_issues = event_completeness.get("issues") or []
