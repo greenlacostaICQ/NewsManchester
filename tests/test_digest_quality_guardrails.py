@@ -1138,6 +1138,116 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             "historical_no_news_angle", updated.get("reject_reasons") or []
         )
 
+    # ---------------------------------------------------------------
+    # S5 — lead-first news cards + quote/narrative-lead detector.
+    # User feedback 2026-05-22:
+    #   «Trafford складской проект потом дорога нихера непонятно»
+    #   «Sudden junction новость как дерьмо нихрена не понятно»
+    #   «Heywood пожар можно было сделать новость 6 часов»
+    #   «Univ алкоголь мог бы сказать плохо хорошо или как»
+    # ---------------------------------------------------------------
+
+    def test_city_news_prompt_is_v5_with_lead_first_structure(self) -> None:
+        """The city-news prompt v5 must explicitly require lead-first
+        structure (fact first, details next, what-next last) and ban
+        quote/narrative leads.
+        """
+        from news_digest.pipeline import llm_rewrite as _lr
+        from news_digest.pipeline.prompts_meta import by_name
+        meta = by_name().get("city_news")
+        self.assertIsNotNone(meta)
+        self.assertEqual(meta.version, "v5", f"city_news not bumped to v5: {meta}")
+        prompt = _lr.PROMPT_CITY_NEWS
+        self.assertIn("ОБЯЗАТЕЛЬНАЯ СТРУКТУРА", prompt)
+        self.assertIn("ЛИД-ФАКТ", prompt)
+        # Required field guidance per type.
+        self.assertIn("Пожар", prompt)
+        self.assertIn("Планирование", prompt)
+        self.assertIn("Наука", prompt)
+        # Banned openers.
+        self.assertIn("прямой цитаты", prompt)
+
+    def test_quote_lead_is_flagged_in_release_report(self) -> None:
+        """User feedback: «Sudden junction новость как дерьмо нихрена
+        непонятно» — a draft_line opening with a direct quote in
+        quotes must be surfaced as quote_lead.
+        """
+        from news_digest.pipeline.release import _summarise_news_lead_quality
+        candidates_report = {
+            "candidates": [
+                {
+                    "fingerprint": "sudden-quote-lead",
+                    "primary_block": "city_watch",
+                    "category": "media_layer",
+                    "draft_line": "• «Я была в ужасе от обилия конусов» — местная жительница Madeeha Sheikh о работах на Sudden junction.",
+                    "title": "Sudden junction works",
+                }
+            ],
+        }
+        result = _summarise_news_lead_quality(candidates_report, {"sudden-quote-lead"})
+        self.assertEqual(result["counts"]["quote_lead"], 1)
+        self.assertTrue(
+            any(issue["issue"] == "quote_lead" for issue in result["issues"]),
+        )
+
+    def test_narrative_lead_about_resident_is_flagged(self) -> None:
+        """User: «Trafford складской проект потом дорога нихера не понятно»
+        — cards that open with a "местная жительница ..." sentence
+        instead of the news fact get surfaced.
+        """
+        from news_digest.pipeline.release import _summarise_news_lead_quality
+        candidates_report = {
+            "candidates": [
+                {
+                    "fingerprint": "narr-lead",
+                    "primary_block": "city_watch",
+                    "category": "media_layer",
+                    "draft_line": "• Местная жительница Madeeha Sheikh заявила, что в понедельник утром «была в ужасе» от обилия конусов и барьеров.",
+                    "title": "Sudden junction roadworks",
+                }
+            ],
+        }
+        result = _summarise_news_lead_quality(candidates_report, {"narr-lead"})
+        self.assertEqual(result["counts"]["narrative_lead"], 1)
+
+    def test_fact_lead_is_not_flagged(self) -> None:
+        """Defensive: a proper fact-first lead must NOT be flagged."""
+        from news_digest.pipeline.release import _summarise_news_lead_quality
+        candidates_report = {
+            "candidates": [
+                {
+                    "fingerprint": "good-lead",
+                    "primary_block": "last_24h",
+                    "category": "media_layer",
+                    "draft_line": "• Trafford: советники отклонили склад Wain Estates в Carrington — план требовал вырубки 10 000+ деревьев. Решение принято вопреки рекомендации чиновников.",
+                    "title": "Trafford rejects Wain Estates",
+                }
+            ],
+        }
+        result = _summarise_news_lead_quality(candidates_report, {"good-lead"})
+        self.assertEqual(result["counts"]["quote_lead"], 0)
+        self.assertEqual(result["counts"]["narrative_lead"], 0)
+
+    def test_event_card_is_not_checked_by_news_lead_detector(self) -> None:
+        """Defensive: event cards have their own structure (S3 templates),
+        the news-lead detector should NOT touch them.
+        """
+        from news_digest.pipeline.release import _summarise_news_lead_quality
+        candidates_report = {
+            "candidates": [
+                {
+                    "fingerprint": "event-quote-allowed",
+                    "primary_block": "weekend_activities",
+                    "category": "culture_weekly",
+                    "draft_line": "• «Это незабываемо» — режиссёр о новой постановке в HOME 22 мая в 20:00.",
+                    "title": "HOME play",
+                }
+            ],
+        }
+        result = _summarise_news_lead_quality(candidates_report, {"event-quote-allowed"})
+        # Event card not checked at all (block is weekend_activities).
+        self.assertEqual(result["counts"]["checked"], 0)
+
     def test_genuine_tech_startup_is_not_blocked_by_book_guard(self) -> None:
         """Defensive: a real tech-author crossover must still pass.
 

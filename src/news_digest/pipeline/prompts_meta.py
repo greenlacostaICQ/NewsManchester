@@ -44,7 +44,9 @@ _PROMPT_VERSION_RE = re.compile(r"^v\d+(?:\.\d+){0,2}$")
 # and the release gate will surface them as a silent-drift signal.
 PROMPTS: tuple[PromptMeta, ...] = (
     PromptMeta(name="curator",         version="v3", hash=_h(_cur.CURATOR_PROMPT)),
-    PromptMeta(name="city_news",       version="v4", hash=_h(_lr.PROMPT_CITY_NEWS)),
+    # v5: lead-first structure (S5) — first sentence must be a news
+    # fact (subject + action + outcome), not a quote or description.
+    PromptMeta(name="city_news",       version="v5", hash=_h(_lr.PROMPT_CITY_NEWS)),
     PromptMeta(name="transport",       version="v4", hash=_h(_lr.PROMPT_TRANSPORT)),
     # v4: three explicit templates (one-off / festival / recurring) +
     # event.is_recurring guidance, S3 sprint.
