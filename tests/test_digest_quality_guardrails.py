@@ -949,6 +949,195 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertEqual(meta.version, "v3", f"diaspora events version not bumped: {meta}")
         self.assertIn("каждую субботу", _lr.PROMPT_DIASPORA_EVENTS)
 
+    # ---------------------------------------------------------------
+    # S4 — weak items with hard protection against killing real news.
+    # User feedback 2026-05-22:
+    #   «Ian Brown зашёл в магазин — непонятно»
+    #   «второй день получаю такие новости вчера было про дислексию»
+    #   «Salford Винни Клей 90-х годов — уже было и зачем мне сейчас»
+    # ---------------------------------------------------------------
+
+    def test_celebrity_sighting_without_news_angle_is_rejected(self) -> None:
+        """User feedback: «Ian Brown зашёл в магазин — непонятно»."""
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "ian-brown-shop",
+                "category": "media_layer",
+                "primary_block": "city_watch",
+                "title": "Ian Brown of Stone Roses signs records at Tasty Records",
+                "summary": (
+                    "Stone Roses frontman Ian Brown popped in to Tasty Records "
+                    "in Altrincham yesterday and signed a copy of the debut album. "
+                    "The shop joked they would sell it for a good offer."
+                ),
+                "lead": "Ian Brown stopped by the indie record shop.",
+                "evidence_text": "Ian Brown visited the record shop and signed an album.",
+                "source_label": "MEN",
+                "source_url": "https://example.test/ian-brown-shop",
+                "published_at": now_london().isoformat(),
+            }
+        )
+        self.assertFalse(
+            updated.get("include"),
+            f"Celebrity sighting was kept: {updated.get('reason')}",
+        )
+        self.assertIn("celebrity_sighting", updated.get("reject_reasons") or [])
+
+    def test_celebrity_with_real_news_anchor_is_kept(self) -> None:
+        """Defensive: a celebrity who opens a charity or is charged
+        with something must pass — that IS news.
+        """
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "ian-brown-charity",
+                "category": "media_layer",
+                "primary_block": "city_watch",
+                "title": "Ian Brown opens new music charity in Manchester",
+                "summary": (
+                    "Stone Roses frontman Ian Brown opened a new music charity "
+                    "for £250,000 in Bolton today, supporting 30 local teens."
+                ),
+                "lead": "",
+                "evidence_text": "Ian Brown opens charity, £250,000 grant, Bolton.",
+                "source_label": "MEN",
+                "source_url": "https://example.test/ian-brown-charity",
+                "published_at": now_london().isoformat(),
+                "entities": {"schema_version": 2, "boroughs": ["Bolton"], "all": []},
+            }
+        )
+        # Charity-opening with location + sum is news, not a sighting.
+        self.assertNotIn("celebrity_sighting", updated.get("reject_reasons") or [])
+
+    def test_motivational_human_interest_without_anchor_is_rejected(self) -> None:
+        """User feedback: «второй день получаю такие новости вчера было
+        про какого кто экзамен завалили и стал успешным, нахера мне это?».
+        """
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "cameron-bell-mot",
+                "category": "tech_business",
+                "primary_block": "city_watch",
+                "title": "Cameron Bell, 28, failed his A-levels but is now a CEO",
+                "summary": (
+                    "Cameron Bell, who has dyslexia, was told he would never "
+                    "succeed after failing his A-levels but now runs his own "
+                    "company, inspiring other young people."
+                ),
+                "lead": "Cameron Bell overcame failure to become CEO.",
+                "evidence_text": (
+                    "Cameron Bell, after failing his A-levels, now inspires "
+                    "others and runs his own firm."
+                ),
+                "source_label": "MEN",
+                "source_url": "https://example.test/cameron-bell",
+                "published_at": now_london().isoformat(),
+            }
+        )
+        self.assertFalse(
+            updated.get("include"),
+            f"Motivational filler was kept: {updated.get('reason')}",
+        )
+        self.assertIn(
+            "motivational_human_interest", updated.get("reject_reasons") or []
+        )
+
+    def test_motivational_with_local_event_anchor_is_kept(self) -> None:
+        """Defensive: «Cameron Bell открывает офис в Bolton 28 мая» —
+        the same motivational subject becomes news when paired with a
+        concrete local action.
+        """
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "cameron-bell-office",
+                "category": "tech_business",
+                "primary_block": "city_watch",
+                "title": "Cameron Bell, 28, opens new tech office in Bolton on 28 May",
+                "summary": (
+                    "Cameron Bell, who has dyslexia, opens his new startup office "
+                    "in Bolton on 28 May with £500,000 of seed funding."
+                ),
+                "lead": "",
+                "evidence_text": (
+                    "Cameron Bell opens Bolton office on 28 May, £500,000 seed, "
+                    "10 new jobs."
+                ),
+                "source_label": "MEN",
+                "source_url": "https://example.test/cameron-bell-office",
+                "published_at": now_london().isoformat(),
+                "entities": {"schema_version": 2, "boroughs": ["Bolton"], "all": []},
+            }
+        )
+        self.assertNotIn(
+            "motivational_human_interest", updated.get("reject_reasons") or []
+        )
+
+    def test_historical_archive_without_news_hook_is_rejected(self) -> None:
+        """User feedback: «Salford Винни Клей 90-х годов — уже было и
+        зачем мне эта новость про город сейчас»."""
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "vinnie-clay-archive",
+                "category": "media_layer",
+                "primary_block": "city_watch",
+                "title": "Vinnie Clay, one of Salford's most feared gangsters of the 90s",
+                "summary": (
+                    "Vinnie Clay became famous in the 90s for a samurai sword "
+                    "attack. He was one of the most feared figures of the era."
+                ),
+                "lead": "Vinnie Clay was a notorious Salford gangster.",
+                "evidence_text": (
+                    "Vinnie Clay was a notorious 1990s Salford figure involved in "
+                    "various crimes."
+                ),
+                "source_label": "MEN",
+                "source_url": "https://example.test/vinnie-clay-archive",
+                "published_at": now_london().isoformat(),
+            }
+        )
+        self.assertFalse(
+            updated.get("include"),
+            f"Historical archive was kept: {updated.get('reason')}",
+        )
+        self.assertIn(
+            "historical_no_news_angle", updated.get("reject_reasons") or []
+        )
+
+    def test_historical_subject_with_fresh_crime_is_kept(self) -> None:
+        """Defensive: «гангстер 90-х убил вчера кого-то» — historical
+        figure + fresh crime verb + fresh date — MUST pass.
+        """
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "vinnie-clay-fresh",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "Vinnie Clay, notorious 90s Salford gangster, charged with murder yesterday",
+                "summary": (
+                    "Vinnie Clay, one of Salford's most feared gangsters of the 90s, "
+                    "was charged yesterday with the murder of a 34-year-old man in "
+                    "Salford. The trial is set for 15 September."
+                ),
+                "lead": "Vinnie Clay was charged yesterday with murder in Salford.",
+                "evidence_text": (
+                    "Vinnie Clay charged with murder yesterday. Victim 34. Trial "
+                    "15 September."
+                ),
+                "source_label": "MEN",
+                "source_url": "https://example.test/vinnie-clay-fresh",
+                "published_at": now_london().isoformat(),
+                "entities": {"schema_version": 2, "boroughs": ["Salford"], "all": []},
+            }
+        )
+        self.assertNotIn(
+            "historical_no_news_angle", updated.get("reject_reasons") or []
+        )
+
     def test_genuine_tech_startup_is_not_blocked_by_book_guard(self) -> None:
         """Defensive: a real tech-author crossover must still pass.
 

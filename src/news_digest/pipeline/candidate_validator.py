@@ -405,6 +405,172 @@ def _exclude_non_gm_news(candidate: dict) -> bool:
     return True
 
 
+# ---------------------------------------------------------------------
+# S4 — weak-item predicates with hard protection against "killed a real
+# news story".
+#
+# Each predicate rejects ONLY if all three conditions hold:
+#   1. The text matches the predicate's class signature.
+#   2. There is no "news anchor" in the candidate (no fresh date,
+#      no GM-location entity, no name-other-than-the-subject, no
+#      money/casualty figure, no crime/civic verb).
+#   3. There is no follow-up keyword indicating a current event
+#      (charged / убил / arrested / opens / launches / closed).
+# A single anchor wins and the candidate passes — "gangster from the
+# 90s killed someone yesterday" is news, not historical filler.
+
+_CELEBRITY_SIGHTING_RE = re.compile(
+    r"\b(?:visited|popped\s+in|stopped\s+by|stopped\s+off|signed\s+(?:records|copies|autographs)|"
+    r"posed\s+with|took\s+(?:photos|selfies)\s+with|"
+    r"surprised\s+(?:fans|customers|staff)\s+at|"
+    r"зашёл\s+в|зашла\s+в|посетил|посетила|"
+    r"расписал(?:ся|ась)|сфотографировал(?:ся|ась))\b",
+    re.IGNORECASE,
+)
+_MOTIVATIONAL_OVERCAME_RE = re.compile(
+    r"\b(?:overcame|inspires|inspiring|turned\s+(?:his|her|their)\s+life|"
+    r"from\s+(?:failure|nothing|homeless)|"
+    r"after\s+being\s+(?:diagnosed|told|rejected)|"
+    r"now\s+(?:helps|inspires|leads|teaches|runs)|"
+    r"after\s+failing|despite\s+(?:dyslexia|adhd|autism|setback)|"
+    r"стал(?:а)?\s+успешн(?:ым|ой)|преодоле(?:л|ла|ли)|"
+    r"вдохновля(?:ет|ют)\s+(?:других|молод|других\s+людей)|"
+    r"провалил(?:а)?\s+(?:экзамен|школу|собеседование))\b",
+    re.IGNORECASE,
+)
+_HISTORICAL_NO_NEWS_RE = re.compile(
+    r"\b(?:in\s+the\s+(?:80s|90s|2000s|seventies|eighties|nineties)|"
+    r"one\s+of\s+(?:the\s+)?(?:most|biggest)\s+(?:notorious|feared|famous)|"
+    r"was\s+(?:once|formerly|previously)\s+known|"
+    r"became\s+famous\s+(?:in|during)|"
+    r"гангстер(?:ов)?\s+(?:80|90|2000)-х|"
+    r"в\s+(?:80|90|2000)-х\s+(?:годах)?|"
+    r"один\s+из\s+(?:самых)?\s+(?:известных|страшных|знаменитых)\s+(?:гангстеров|преступников))\b",
+    re.IGNORECASE,
+)
+
+# "News anchor" signals — at least one means the card carries a current
+# story worth publishing. Designed to be permissive on purpose: the
+# whole point of S4 is to leave news alone and only kill pure filler.
+_NEWS_ANCHOR_VERBS_RE = re.compile(
+    r"\b(?:killed|murdered|stabbed|shot|charged|arrested|jailed|sentenced|"
+    r"convicted|cleared|fined|fired|sacked|opens|opening|opened|closes|"
+    r"closing|closed|launches|launching|launched|approves|approved|"
+    r"rejects|rejected|appeal|appealed|inquest|trial|verdict|"
+    r"убил(?:а)?|зарезал(?:а)?|застрелил(?:а)?|арестован(?:а)?|"
+    r"задержан(?:а)?|осуждён(?:а)?|приговорён(?:а)?|обвинён(?:а)?|"
+    r"открывает(?:ся)?|откро(?:ет|ется)|закрывает(?:ся)?|"
+    r"одобр(?:ил|ила|или|ен)|отклон(?:ил|ила|или|ён)|"
+    r"приговор|суд|расследовани[ея]|инквест|инцидент|"
+    r"погиб(?:ла)?|пострадал(?:а|и))\b",
+    re.IGNORECASE,
+)
+_RECENT_DATE_HINT_RE = re.compile(
+    r"\b(?:yesterday|today|this\s+morning|last\s+night|earlier\s+this\s+week|"
+    r"вчера|сегодня|утром|накануне|на\s+днях|на\s+этой\s+неделе)\b",
+    re.IGNORECASE,
+)
+_MONEY_OR_CASUALTY_RE = re.compile(
+    r"£\s*\d|\b\d+\s+(?:people|residents|victims|пострадавш|жертв|погибш|раненых)\b|"
+    r"\b(?:£|\$)\d{2,}\b",
+    re.IGNORECASE,
+)
+
+
+def _has_news_anchor(candidate: dict) -> bool:
+    """A card has a 'news anchor' when it carries a STRONG signal of
+    current news:
+      - crime / civic / business verb (charged / убил / opens /
+        approved / fined / sentenced)
+      - a money sum (£250k) or a casualty count (3 пострадавших)
+
+    Note: weak signals like "yesterday", a borough name on its own, a
+    district or a station are NOT enough — every celebrity-sighting
+    and historical-gangster card mentions a Greater Manchester
+    borough, and that's exactly the noise S4 needs to remove. Crime
+    + borough together still pass via the verb match.
+    """
+    blob = _candidate_blob(candidate)
+    if _NEWS_ANCHOR_VERBS_RE.search(blob):
+        return True
+    if _MONEY_OR_CASUALTY_RE.search(blob):
+        return True
+    return False
+
+
+def _exclude_celebrity_sighting(candidate: dict) -> bool:
+    """User feedback: «Ian Brown зашёл в магазин — непонятно».
+
+    Cards where a known figure visits / signs / poses, without any
+    news angle (no crime, no opening/closing, no fresh date, no
+    money/casualty figure) — drop. If anchor present (e.g. the same
+    person at a charity event that opened today in Bolton), pass.
+    """
+    if not candidate.get("include"):
+        return False
+    blob = _candidate_blob(candidate)
+    if not _CELEBRITY_SIGHTING_RE.search(blob):
+        return False
+    if _has_news_anchor(candidate):
+        return False
+    _append_reject(
+        candidate,
+        "celebrity_sighting",
+        "Validator: celebrity-sighting card has no news angle "
+        "(no crime/civic verb, no fresh date, no money/casualty, no GM borough).",
+    )
+    return True
+
+
+def _exclude_motivational_human_interest(candidate: dict) -> bool:
+    """User feedback: «второй день получаю такие новости вчера было
+    про какого кто экзамен завалили и стал успешным, нахера мне это?».
+
+    Drops "X overcame Y, now is Z" inspirational cards UNLESS they
+    carry an anchor (opens an office in Bolton on 28 May, runs a
+    workshop on a specific date, etc.).
+    """
+    if not candidate.get("include"):
+        return False
+    blob = _candidate_blob(candidate)
+    if not _MOTIVATIONAL_OVERCAME_RE.search(blob):
+        return False
+    if _has_news_anchor(candidate):
+        return False
+    _append_reject(
+        candidate,
+        "motivational_human_interest",
+        "Validator: motivational human-interest card has no GM action "
+        "anchor (no event date, no opening/launch, no GM borough).",
+    )
+    return True
+
+
+def _exclude_historical_no_news_angle(candidate: dict) -> bool:
+    """User feedback: «Salford Винни Клей 90-х годов — уже было и
+    зачем мне эта новость про город сейчас».
+
+    Historical archive stories without a fresh news hook are dropped.
+    Protection: if the card mentions "yesterday killed" / "charged
+    today" / a fresh court date / a current arrest, it passes — that
+    IS news even if the subject is a 90s figure.
+    """
+    if not candidate.get("include"):
+        return False
+    blob = _candidate_blob(candidate)
+    if not _HISTORICAL_NO_NEWS_RE.search(blob):
+        return False
+    if _has_news_anchor(candidate):
+        return False
+    _append_reject(
+        candidate,
+        "historical_no_news_angle",
+        "Validator: historical archive story has no current news hook "
+        "(no fresh date, no crime verb, no civic action).",
+    )
+    return True
+
+
 def _exclude_low_value_news(candidate: dict) -> bool:
     if not candidate.get("include"):
         return False
@@ -1143,6 +1309,12 @@ def validate_candidates(project_root: Path) -> StageResult:
             _exclude_non_gm_news(candidate)
         if candidate.get("include"):
             _exclude_low_value_news(candidate)
+        if candidate.get("include"):
+            _exclude_celebrity_sighting(candidate)
+        if candidate.get("include"):
+            _exclude_motivational_human_interest(candidate)
+        if candidate.get("include"):
+            _exclude_historical_no_news_angle(candidate)
         if candidate.get("include"):
             _exclude_book_author_in_tech_business(candidate)
         if candidate.get("include"):
