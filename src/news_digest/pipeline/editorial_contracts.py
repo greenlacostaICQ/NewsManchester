@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import re
 
-from news_digest.pipeline.common import now_london
+from news_digest.pipeline.common import normalize_title, now_london
 
 
 MAJOR_TICKET_VENUES: tuple[str, ...] = (
@@ -325,6 +325,7 @@ def attach_scoring_trace(candidate: dict) -> dict:
             "reader_value_label": candidate.get("reader_value_label"),
             "why_now": candidate.get("why_now") or "",
             "editorial_status": candidate.get("editorial_status") or "",
+            "editorial_contract": candidate.get("editorial_contract") or {},
             "quality_warnings": candidate.get("quality_warnings") or [],
             "reject_reasons": candidate.get("reject_reasons") or [],
             "event_schema_completeness": candidate.get("event_schema_completeness") or {},
@@ -383,3 +384,504 @@ def why_now_is_publishable(why_now: str) -> bool:
         "today_weather",
         "ticket_opportunity",
     }
+
+
+EDITORIAL_CONTRACT_VERSION = "2026-05-23.1"
+
+_EVENT_BLOCKS = {
+    "weekend_activities",
+    "next_7_days",
+    "future_announcements",
+    "ticket_radar",
+    "outside_gm_tickets",
+    "russian_events",
+}
+_OPERATIONAL_BLOCKS = {"weather", "transport"}
+_SPECIFIC_TOPIC_PREFIXES = (
+    "politics:",
+    "memorial:",
+    "incident:",
+    "opening:",
+    "event:",
+    "research:",
+    "planning:",
+    "property:",
+    "ticket:",
+)
+
+_HUMAN_INTEREST_RE = re.compile(
+    r"\b(?:"
+    r"first\s+job|too\s+stupid|question(?:ed)?\s+if\s+i\s+was|"
+    r"failed\s+(?:his|her|their|my)?\s*a-?levels?|"
+    r"dyslexia|dream(?:ed|t)?s?\s+of\s+(?:making|becoming|a\s+career)|"
+    r"next\s+big\s+name|proper\s+career|"
+    r"classic\s+sports\s+story|getting\s+an\s+injury|"
+    r"pandemic\s+(?:inspired|sparked)|now\s+(?:helps|inspires|teaches|runs)|"
+    r"turning\s+point|not\s+knowing\s+what\s+i\s+wanted|"
+    r"overcame|inspir(?:e|es|ing)|turned\s+(?:his|her|their)\s+life|"
+    r"struggled\s+at\s+school|told\s+(?:he|she|they|i)\s+would\s+never|"
+    r"вдохновля(?:ет|ют)|преодоле(?:л|ла|ли)|провалил(?:а)?\s+экзамен"
+    r")\b",
+    re.IGNORECASE,
+)
+_LOCAL_ACTION_RE = re.compile(
+    r"\b(?:"
+    r"opens?|opening|opened|launch(?:es|ed|ing)?|starts?|started|"
+    r"announc(?:es|ed|ing)|confirm(?:s|ed|ing)|approv(?:es|ed)|reject(?:s|ed)|"
+    r"consultation|deadline|trial|pilot|funding|seed|investment|jobs?|"
+    r"charged|arrested|sentenced|jailed|convicted|verdict|inquest|appeal|"
+    r"closed|reopened|fire|crash|collision|killed|died|death|strike|"
+    r"открыв|запуска|объяв|подтверд|одобр|отклони|консультац|срок|"
+    r"арест|обвин|приговор|суд|пожар|авар|погиб|забастов"
+    r")\b",
+    re.IGNORECASE,
+)
+_BOOKABLE_ACTIVITY_RE = re.compile(
+    r"\b(?:"
+    r"designmynight|alcotraz|treasure\s+hunt|escape\s+room|cocktail\s+bar|"
+    r"big\s+manchester\s+bake|available\s+from|bookable|things?\s+to\s+do|"
+    r"experience|immersive|bottomless|brunch|yoga|paint\s+and\s+sip|"
+    r"можно\s+забронировать|квест|иммерсив|коктейльн"
+    r")\b",
+    re.IGNORECASE,
+)
+_RECURRING_EVENT_RE = re.compile(
+    r"\b(?:every|weekly|each)\s+(?:saturdays?|sundays?|mondays?|tuesdays?|wednesdays?|thursdays?|fridays?)\b|"
+    r"\b(?:runs?|regular|returns?)\s+(?:on\s+)?(?:saturdays?|sundays?|bank\s+holiday\s+mondays?)\b|"
+    r"\bnext\s+dates?\b.{0,80}\b(?:saturday|sunday|monday)\b|"
+    r"\b(?:saturdays?|sundays?)\s+(?:until|through|throughout)\b|"
+    r"\b(?:кажд(?:ую|ое|ый|ые)|по)\s+(?:суббот|воскрес|понедельник|вторник|сред|четверг|пятниц)",
+    re.IGNORECASE,
+)
+_FESTIVAL_RE = re.compile(r"\b(?:festival|фестивал|jazz\s+festival|flower\s+festival)\b", re.IGNORECASE)
+_RESEARCH_RE = re.compile(
+    r"\b(?:research|study|researchers?|professor|university|academy\s+of\s+medical\s+sciences|"
+    r"исследован|профессор|университет|академи[яи]\s+медицинских\s+наук)\b",
+    re.IGNORECASE,
+)
+_MEMORIAL_RE = re.compile(
+    r"\b(?:manchester\s+arena|arena\s+(?:attack|bombing)|ariana\s+grande|"
+    r"22\s+(?:people|lives)|terror\s+attack|теракт|годовщин)\b",
+    re.IGNORECASE,
+)
+_PUBLIC_SERVICE_STALE_RE = re.compile(
+    r"\b(?:resident\s+doctors?|junior\s+doctors?|strike|забастовк)\b.*\b(?:0?7\s+april|0?13\s+april|апрел)",
+    re.IGNORECASE | re.DOTALL,
+)
+_OLD_EXISTING_FOOD_RE = re.compile(
+    r"\b(?:since|from|started|began|launched)\s+(?:in\s+)?20(?:1\d|2[0-3])\b|"
+    r"\b(?:back\s+in|starting\s+off\s+life\s+as|started\s+life\s+as).{0,80}\b20(?:1\d|2[0-3])\b|"
+    r"\bработа(?:ет|ла)\s+с\s+20(?:1\d|2[0-3])\b",
+    re.IGNORECASE,
+)
+_REAL_OPENING_ACTION_RE = re.compile(
+    r"\b(?:opens?|opening|launch(?:es|ed)?|new\s+(?:site|venue|branch|home)|"
+    r"second\s+(?:site|branch)|reopen(?:s|ed|ing)|from\s+\d{1,2}\s+[a-z]+|"
+    r"in\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+20\d{2}|"
+    r"с\s+\d{1,2}\s+[а-яё]+)\b",
+    re.IGNORECASE,
+)
+_NEW_PHASE_RE = re.compile(
+    r"\b(?:"
+    r"charged|arrested|sentenced|jailed|convicted|verdict|trial|hearing|inquest|appeal|cps|"
+    r"approved|rejected|submitted|consultation|deadline|opens?|opened|reopens?|launched|"
+    r"confirmed|announced|updated|new\s+date|sale\s+(?:starts|opens)|on\s+sale|"
+    r"обвин|арест|приговор|вердикт|слушан|расследован|одобр|отклон|подан|консультац|"
+    r"откры|запуск|подтверд|обнов|новая\s+дат|продаж"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_TOPIC_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("politics:makerfield_by_election_2026", re.compile(r"\b(?:makerfield|josh\s+simons|andy\s+burnham.*makerfield|by-?election.*makerfield)\b", re.IGNORECASE)),
+    ("memorial:manchester_arena_anniversary", _MEMORIAL_RE),
+    ("incident:bolton_erika_de_souza_correia", re.compile(r"\b(?:erika\s+de\s+souza|de\s+souza\s+correia|walker\s+fold|police\s+pursuit)\b", re.IGNORECASE)),
+    ("opening:grub_stretford", re.compile(r"\b(?:grub\b.*stretford|stretford.*\bgrub\b|sir\s+tony\s+lloyd\s+square)\b", re.IGNORECASE)),
+    ("opening:old_abbey_taphouse_hulme", re.compile(r"\b(?:old\s+abbey\s+taphouse|the\s+abbey.*hulme|guildhall\s+road)\b", re.IGNORECASE)),
+    ("property:pelican_inn_altrincham_north_lodge", re.compile(r"\b(?:pelican\s+inn|altrincham\s+north\s+lodge|greene\s+king.*timperley)\b", re.IGNORECASE)),
+    ("event:manchester_flower_festival_2026", re.compile(r"\b(?:manchester\s+flower\s+festival|floral\s+trail)\b", re.IGNORECASE)),
+    ("event:manchester_jazz_festival_2026", re.compile(r"\b(?:manchester\s+jazz\s+festival|yellowjackets|china\s+moses|andy\s+sheppard)\b", re.IGNORECASE)),
+    ("event:bowlee_car_boot_sale", re.compile(r"\b(?:bowlee|bowlee\s+community\s+park)\b", re.IGNORECASE)),
+    ("event:barton_aerodrome_car_boot", re.compile(r"\b(?:barton\s+aerodrome)\b", re.IGNORECASE)),
+    ("event:big_stockport_car_boot", re.compile(r"\b(?:big\s+stockport\s+car\s+boot|waterside\s+farm|otterspool\s+road|romiley)\b", re.IGNORECASE)),
+    ("event:rent_hope_mill_theatre", re.compile(r"\b(?:\brent\b.*(?:ancoats|hope\s+mill|stranger\s+things)|hope\s+mill.*\brent\b)\b", re.IGNORECASE)),
+    ("research:alcohol_addiction_recovery_brain", re.compile(r"\b(?:alcohol(?:ic)?\s+addiction|alcohol\s+dependence|recovery.*brain|brain.*recovery.*alcohol)\b", re.IGNORECASE)),
+)
+
+_WEEKDAY_NAMES: dict[int, str] = {
+    0: "понедельник",
+    1: "вторник",
+    2: "среду",
+    3: "четверг",
+    4: "пятницу",
+    5: "субботу",
+    6: "воскресенье",
+}
+_RU_MONTHS_GENITIVE = {
+    1: "января",
+    2: "февраля",
+    3: "марта",
+    4: "апреля",
+    5: "мая",
+    6: "июня",
+    7: "июля",
+    8: "августа",
+    9: "сентября",
+    10: "октября",
+    11: "ноября",
+    12: "декабря",
+}
+
+
+def _contract_blob(candidate: dict) -> str:
+    return " ".join(
+        str(candidate.get(field) or "")
+        for field in (
+            "title",
+            "summary",
+            "lead",
+            "practical_angle",
+            "evidence_text",
+            "source_label",
+            "source_url",
+        )
+    )
+
+
+def _topic_key(candidate: dict, story_type: str = "", event_shape: str = "") -> str:
+    blob = _contract_blob(candidate)
+    short_blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "source_label")
+    )
+    for key, pattern in _TOPIC_PATTERNS:
+        if pattern.search(short_blob):
+            return key
+    for key, pattern in _TOPIC_PATTERNS:
+        if pattern.search(blob):
+            return key
+    if str(candidate.get("category") or "") == "venues_tickets":
+        title = re.sub(r"\s+[—–-]\s+(?:event|public\s+sale).*$", "", str(candidate.get("title") or ""), flags=re.IGNORECASE)
+        venue = ticket_venue(candidate)
+        return "ticket:" + normalize_title(f"{title} {venue}")[:120]
+    if event_shape and event_shape != "none":
+        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        title = str(event.get("event_name") or candidate.get("title") or "")
+        venue = str(event.get("venue") or ticket_venue(candidate) or candidate.get("source_label") or "")
+        return "event:" + normalize_title(f"{title} {venue}")[:120]
+    if story_type in {"research", "human_interest", "soft_news"}:
+        return f"{story_type}:" + normalize_title(str(candidate.get("title") or ""))[:120]
+    source = normalize_title(str(candidate.get("source_label") or ""))
+    title = normalize_title(str(candidate.get("title") or ""))
+    return "generic:" + normalize_title(f"{source} {title}")[:140]
+
+
+def _event_shape(candidate: dict) -> str:
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    if category == "venues_tickets" or block in {"ticket_radar", "outside_gm_tickets"}:
+        return "ticket"
+    if block not in _EVENT_BLOCKS and category not in {"culture_weekly", "russian_speaking_events"}:
+        return "none"
+    blob = _contract_blob(candidate)
+    bookable_blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "practical_angle", "evidence_text", "source_label")
+    )
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    if event.get("is_recurring") or _RECURRING_EVENT_RE.search(blob):
+        return "recurring"
+    if _BOOKABLE_ACTIVITY_RE.search(bookable_blob) and not re.search(r"\b(?:car boot|market|festival|fair)\b", bookable_blob, re.IGNORECASE):
+        return "bookable_activity"
+    if _FESTIVAL_RE.search(blob):
+        return "festival"
+    if event.get("date_start") or event.get("date") or summary_field_datetime(str(candidate.get("summary") or ""), "event_date"):
+        return "one_off"
+    return "event_like"
+
+
+def _story_type(candidate: dict, event_shape: str) -> str:
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    source = str(candidate.get("source_label") or "").lower()
+    blob = _contract_blob(candidate)
+    lowered = blob.lower()
+    if block in _OPERATIONAL_BLOCKS:
+        return block
+    if event_shape == "ticket":
+        return "ticket"
+    if event_shape != "none":
+        return "event"
+    if _MEMORIAL_RE.search(blob):
+        return "memorial"
+    if _HUMAN_INTEREST_RE.search(blob):
+        return "human_interest"
+    if _RESEARCH_RE.search(blob) or "university" in source:
+        return "research"
+    if category == "food_openings" or block == "openings":
+        if _OLD_EXISTING_FOOD_RE.search(blob) and not _REAL_OPENING_ACTION_RE.search(blob):
+            return "old_existing_food"
+        return "opening"
+    if re.search(r"\b(?:planning|development|application|developer|housing|pub|building|site|junction|road\s+scheme)\b", lowered):
+        return "planning"
+    if re.search(r"\b(?:police|gmp|court|charged|arrested|sentenced|crash|collision|fire|death|killed|died)\b", lowered):
+        return "incident"
+    if re.search(r"\b(?:council|mayor|election|by-?election|candidate|consultation)\b", lowered):
+        return "civic"
+    if re.search(r"\b(?:award|celebration|anniversary|selected|fellow|lord\s+mayor|community\s+champion)\b", lowered):
+        return "soft_news"
+    return "news"
+
+
+def _anchor_type(candidate: dict, story_type: str, event_shape: str) -> str:
+    block = str(candidate.get("primary_block") or "")
+    if block == "weather":
+        return "today_weather"
+    if block == "transport":
+        return "service_status"
+    if story_type == "ticket":
+        return "ticket_opportunity"
+    if event_shape in {"one_off", "festival"}:
+        return "dated_event"
+    if event_shape == "recurring":
+        return "recurring_occurrence"
+    if event_shape == "bookable_activity":
+        return "bookable_listing"
+    blob = _contract_blob(candidate)
+    if _MEMORIAL_RE.search(blob):
+        if re.search(r"\b(?:today|22\s+may|anniversary|годовщин|сегодня)\b", blob, re.IGNORECASE):
+            return "anniversary_today"
+        return "memorial_plan"
+    if _PUBLIC_SERVICE_STALE_RE.search(blob):
+        return "stale_public_service"
+    if _NEW_PHASE_RE.search(blob):
+        return "new_phase"
+    if _LOCAL_ACTION_RE.search(blob):
+        return "local_action"
+    if story_type == "research":
+        return "research_publication"
+    if story_type == "human_interest":
+        return "biographical_profile"
+    return "none"
+
+
+def _publish_tier(candidate: dict, story_type: str, event_shape: str, anchor_type: str) -> str:
+    block = str(candidate.get("primary_block") or "")
+    if block in {"weather", "transport"}:
+        return "must_include"
+    if anchor_type == "stale_public_service":
+        return "reject"
+    if story_type == "old_existing_food":
+        return "reject"
+    if story_type == "human_interest" and anchor_type in {"biographical_profile", "none"}:
+        return "reject"
+    if story_type == "soft_news" and anchor_type in {"none", "local_action"}:
+        return "filler"
+    if story_type == "research" and anchor_type == "research_publication":
+        return "filler"
+    if event_shape == "bookable_activity":
+        return "filler"
+    if event_shape in {"festival", "recurring"}:
+        return "strong"
+    if story_type in {"incident", "planning", "civic", "opening", "memorial"} and anchor_type != "none":
+        return "strong"
+    if story_type == "ticket":
+        ticket_type = classify_ticket_type(candidate)
+        if ticket_type in {"on_sale_now", "presale_soon", "newly_listed", "major_upcoming"}:
+            return "strong"
+        return "optional"
+    if anchor_type in {"new_phase", "local_action", "dated_event", "recurring_occurrence"}:
+        return "optional"
+    return "filler"
+
+
+def _weekday_from_text(text: str) -> int | None:
+    lowered = text.lower()
+    if re.search(r"\b(?:saturdays?|суббот)", lowered):
+        return 5
+    if re.search(r"\b(?:sundays?|воскрес)", lowered):
+        return 6
+    if re.search(r"\b(?:mondays?|понедельник)", lowered):
+        return 0
+    if re.search(r"\b(?:tuesdays?|вторник)", lowered):
+        return 1
+    if re.search(r"\b(?:wednesdays?|сред)", lowered):
+        return 2
+    if re.search(r"\b(?:thursdays?|четверг)", lowered):
+        return 3
+    if re.search(r"\b(?:fridays?|пятниц)", lowered):
+        return 4
+    return None
+
+
+def _next_weekday(day: int, *, today: date | None = None) -> date:
+    base = today or now_london().date()
+    delta = (day - base.weekday()) % 7
+    return base + timedelta(days=delta)
+
+
+def event_occurrence(candidate: dict) -> dict[str, object]:
+    """Return the actionable occurrence the reader needs, not stale start dates."""
+    shape = _event_shape(candidate)
+    blob = _contract_blob(candidate)
+    today = now_london().date()
+    if shape == "recurring":
+        weekday = _weekday_from_text(blob)
+        if weekday is None:
+            return {"shape": shape, "date": "", "date_text": "повторяющееся событие"}
+        occurrence = _next_weekday(weekday, today=today)
+        return {
+            "shape": shape,
+            "weekday": weekday,
+            "date": occurrence.isoformat(),
+            "date_text": f"в {_WEEKDAY_NAMES[weekday]} {occurrence.day} {_RU_MONTHS_GENITIVE[occurrence.month]}",
+        }
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    raw = str(event.get("date_start") or event.get("date") or "").strip()
+    if raw:
+        try:
+            parsed = datetime.fromisoformat(raw.replace("Z", "+00:00")).date()
+            return {
+                "shape": shape,
+                "date": parsed.isoformat(),
+                "date_text": f"{parsed.day} {_RU_MONTHS_GENITIVE[parsed.month]}",
+            }
+        except ValueError:
+            pass
+    event_dt = summary_field_datetime(str(candidate.get("summary") or ""), "event_date")
+    if event_dt:
+        parsed = event_dt.date()
+        return {
+            "shape": shape,
+            "date": parsed.isoformat(),
+            "date_text": f"{parsed.day} {_RU_MONTHS_GENITIVE[parsed.month]}",
+        }
+    return {"shape": shape, "date": "", "date_text": ""}
+
+
+def build_editorial_contract(candidate: dict) -> dict[str, object]:
+    if not isinstance(candidate, dict):
+        return {}
+    event_shape = _event_shape(candidate)
+    story_type = _story_type(candidate, event_shape)
+    anchor_type = _anchor_type(candidate, story_type, event_shape)
+    tier = _publish_tier(candidate, story_type, event_shape, anchor_type)
+    occurrence = event_occurrence(candidate) if event_shape != "none" else {}
+    topic_key = _topic_key(candidate, story_type, event_shape)
+    reject_reason = ""
+    if tier == "reject":
+        if story_type == "human_interest":
+            reject_reason = "no_news_anchor"
+        elif story_type == "old_existing_food":
+            reject_reason = "old_existing_food"
+        elif anchor_type == "stale_public_service":
+            reject_reason = "stale_public_service"
+        else:
+            reject_reason = "editorial_contract_reject"
+    return {
+        "version": EDITORIAL_CONTRACT_VERSION,
+        "story_type": story_type,
+        "topic_key": topic_key,
+        "anchor_type": anchor_type,
+        "event_shape": event_shape,
+        "occurrence": occurrence,
+        "publish_tier": tier,
+        "reject_reason": reject_reason,
+        "section_policy": {
+            "allow_public": tier != "reject",
+            "global_budget_class": "public_utility" if tier in {"must_include", "strong"} else tier,
+            "repeat_ttl_days": 3 if story_type in {"incident", "memorial", "opening", "research"} else 1,
+        },
+    }
+
+
+def attach_editorial_contract(candidate: dict) -> dict:
+    if not isinstance(candidate, dict):
+        return candidate
+    contract = build_editorial_contract(candidate)
+    candidate["editorial_contract"] = contract
+    candidate["topic_key"] = contract.get("topic_key", "")
+    candidate["publish_tier"] = contract.get("publish_tier", "")
+    if contract.get("event_shape") and contract.get("event_shape") != "none":
+        candidate["event_shape"] = contract.get("event_shape")
+    if contract.get("occurrence"):
+        candidate["event_occurrence"] = contract.get("occurrence")
+    return candidate
+
+
+def topic_key_for_candidate(candidate: dict) -> str:
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    if not contract:
+        contract = build_editorial_contract(candidate)
+    return str(contract.get("topic_key") or "")
+
+
+def is_specific_topic_key(topic_key: str) -> bool:
+    key = str(topic_key or "")
+    return any(key.startswith(prefix) for prefix in _SPECIFIC_TOPIC_PREFIXES)
+
+
+def lifecycle_repeat_review(candidate: dict, previous: dict) -> dict[str, object]:
+    """Cross-day repeat policy for named topics.
+
+    This is intentionally narrow: only specific topic keys are eligible.
+    It avoids the dangerous "similar word" behaviour that could suppress
+    unrelated stories across boroughs.
+    """
+    current_contract = build_editorial_contract(candidate)
+    previous_contract = (
+        previous.get("editorial_contract")
+        if isinstance(previous.get("editorial_contract"), dict)
+        else build_editorial_contract(previous)
+    )
+    topic = str(current_contract.get("topic_key") or "")
+    if not topic or topic != str(previous_contract.get("topic_key") or ""):
+        return {"repeat": False, "reason": "different_topic"}
+    if not is_specific_topic_key(topic):
+        return {"repeat": False, "reason": "generic_topic"}
+    if str(candidate.get("primary_block") or "") in _OPERATIONAL_BLOCKS:
+        return {"repeat": False, "reason": "operational_repeat_allowed"}
+
+    anchor = str(current_contract.get("anchor_type") or "")
+    story_type = str(current_contract.get("story_type") or "")
+    event_shape = str(current_contract.get("event_shape") or "")
+    if event_shape in {"ticket", "recurring", "festival", "one_off"}:
+        current_occurrence = ((current_contract.get("occurrence") or {}) if isinstance(current_contract.get("occurrence"), dict) else {})
+        previous_occurrence = ((previous_contract.get("occurrence") or {}) if isinstance(previous_contract.get("occurrence"), dict) else {})
+        if current_occurrence.get("date") and current_occurrence.get("date") != previous_occurrence.get("date"):
+            return {"repeat": False, "reason": "new_event_occurrence"}
+
+    if anchor in {"new_phase", "dated_event", "ticket_opportunity", "service_status", "today_weather"}:
+        return {"repeat": False, "reason": f"publishable_anchor:{anchor}"}
+    if story_type in {"incident", "memorial", "opening", "research", "human_interest", "soft_news"}:
+        return {
+            "repeat": True,
+            "topic_key": topic,
+            "reason": f"topic_lifecycle_rehash:{story_type}:{anchor}",
+        }
+    return {"repeat": False, "reason": "not_lifecycle_suppressed"}
+
+
+def copy_invariant_errors(candidate: dict, line: str) -> list[str]:
+    text = str(line or "")
+    errors: list[str] = []
+    lowered = text.lower()
+    if re.search(r"(?:вероятность\s+осадков\s+)?до\s+0\s*%", lowered):
+        errors.append("weather_zero_percent_wording")
+    if "днём заметно теплее утра" in lowered or "днем заметно теплее утра" in lowered:
+        errors.append("weather_empty_temperature_comparison")
+    if re.search(r"\bГМ\b", text):
+        errors.append("unexplained_gm_abbreviation")
+    if re.search(r"заброшенн\w*\s+(?:паб|здани|мотел|объект).{0,80}\bзакры", lowered, re.DOTALL):
+        errors.append("abandoned_building_closed_contradiction")
+    if str(candidate.get("category") or "") == "venues_tickets":
+        onsale_at = summary_field_datetime(str(candidate.get("summary") or ""), "public_onsale")
+        if onsale_at and onsale_at.date() < now_london().date():
+            if re.search(
+                r"\b(?:будут\s+доступны|станут\s+доступны|будут\s+в\s+продаже|"
+                r"поступ(?:ят|ит)?\s+в\s+продаж|старт(?:ует|уют)\s+продаж|"
+                r"откро(?:ется|ются)\s+продаж)",
+                lowered,
+            ):
+                errors.append("past_ticket_sale_written_as_future")
+    return errors

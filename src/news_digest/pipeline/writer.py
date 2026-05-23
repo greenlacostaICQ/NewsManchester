@@ -22,7 +22,12 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
-from news_digest.pipeline.editorial_contracts import classify_ticket_type, scrub_vague_ending
+from news_digest.pipeline.editorial_contracts import (
+    attach_editorial_contract,
+    classify_ticket_type,
+    copy_invariant_errors,
+    scrub_vague_ending,
+)
 from news_digest.pipeline.reader_value import reader_value_score
 from news_digest.pipeline.toponyms import restore_english_toponyms
 from news_digest.pipeline.place_names import preserve_place_names
@@ -104,6 +109,8 @@ DEGRADED_LLM_SECTION_MAX_ITEMS = {
     "Футбол": 2,
     "Русскоязычные концерты и стендап UK": 3,
 }
+
+PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 22
 _BAD_EDITORIAL_PROSE_MARKERS = (
     "ticket office",
     "слот входа",
@@ -190,6 +197,7 @@ def _backfill_today_focus(
     section_scores: dict[str, list[float]],
     section_fingerprints: dict[str, list[str]],
     section_titles: dict[str, list[str]],
+    source_sections: tuple[str, ...] = TODAY_FOCUS_BACKFILL_SECTIONS,
 ) -> int:
     if sections.get(TODAY_FOCUS_SECTION):
         return 0
@@ -201,7 +209,7 @@ def _backfill_today_focus(
     section_fingerprints.setdefault(TODAY_FOCUS_SECTION, [])
     section_titles.setdefault(TODAY_FOCUS_SECTION, [])
 
-    for source_section in TODAY_FOCUS_BACKFILL_SECTIONS:
+    for source_section in source_sections:
         lines = sections.get(source_section) or []
         sources = section_sources.get(source_section) or []
         scores = section_scores.get(source_section) or []
@@ -560,7 +568,226 @@ def _line_claims_future_ticket_sale(candidate: dict, line: str) -> bool:
     onsale_at = _ticket_public_onsale_datetime(candidate)
     if onsale_at is None or onsale_at.date() >= now_london().date():
         return False
-    return bool(re.search(r"\b(?:поступ(?:ят|ит)?|старт(?:ует|уют)|откро(?:ется|ются))\s+в\s+продаж", line, flags=re.IGNORECASE))
+    return bool(
+        re.search(
+            r"\b(?:"
+            r"будут\s+доступны|станут\s+доступны|будут\s+в\s+продаже|"
+            r"поступ(?:ят|ит)?\s+в\s+продаж|"
+            r"старт(?:ует|уют)\s+(?:в\s+)?продаж|"
+            r"откро(?:ется|ются)\s+(?:в\s+)?продаж"
+            r")",
+            line,
+            flags=re.IGNORECASE,
+        )
+    )
+
+
+def _sourceish_event_name(candidate: dict) -> str:
+    title = re.sub(r"\s+", " ", str(candidate.get("title") or "")).strip()
+    source = re.sub(r"\s+", " ", str(candidate.get("source_label") or "")).strip()
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    name = str(event.get("event_name") or "").strip()
+    if name and len(name) <= 80:
+        return name
+    if source and re.search(r"\b(?:car boot|flower festival|jazz festival|market|festival)\b", source, re.IGNORECASE):
+        return source
+    title = re.sub(r"\s+(?:season\s+)?opens?\s+\d{1,2}\s+[A-Za-zА-Яа-яЁё]+.*$", "", title, flags=re.IGNORECASE)
+    title = re.sub(r"\s+[—–-]\s+(?:event|public\s+sale).*$", "", title, flags=re.IGNORECASE)
+    return title[:90].strip(" .-–") or source or "событие"
+
+
+def _event_venue(candidate: dict) -> str:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    venue = str(event.get("venue") or "").strip()
+    if venue and venue.lower() not in {"greater manchester", "manchester", "bury", "rochdale", "salford"}:
+        return venue
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("summary", "lead", "evidence_text", "title")
+    )
+    for pattern in (
+        r"\b(Bowlee Community Park)\b",
+        r"\b(Barton Aerodrome)\b",
+        r"\b(Waterside Farm)\b",
+        r"\b(St Ann'?s Square)\b",
+        r"\b(First Street)\b",
+        r"\b(Salford Quays)\b",
+    ):
+        match = re.search(pattern, blob, flags=re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return ""
+
+
+def _format_event_time(raw_hour: str, raw_minute: str = "", meridiem: str = "") -> str:
+    try:
+        hour = int(raw_hour)
+    except ValueError:
+        return raw_hour
+    minute = raw_minute or "00"
+    mer = meridiem.lower()
+    if mer == "pm" and hour < 12:
+        hour += 12
+    if mer == "am" and hour == 12:
+        hour = 0
+    return f"{hour}:{minute.zfill(2)}"
+
+
+def _extract_event_practical_details(candidate: dict) -> list[str]:
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("summary", "lead", "evidence_text", "practical_angle", "draft_line")
+    )
+    details: list[str] = []
+    seller = re.search(
+        r"(?:sellers?|продавц[ыа-я]*)\s*(?:arrive\s*)?(?:from|с)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?",
+        blob,
+        flags=re.IGNORECASE,
+    )
+    buyer = re.search(
+        r"(?:buyers?|покупател[ьи])\s*(?:from|с)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?",
+        blob,
+        flags=re.IGNORECASE,
+    )
+    if seller or buyer:
+        parts = []
+        if seller:
+            parts.append(f"продавцы с {_format_event_time(seller.group(1), seller.group(2) or '', seller.group(3) or '')}")
+        if buyer:
+            parts.append(f"покупатели с {_format_event_time(buyer.group(1), buyer.group(2) or '', buyer.group(3) or '')}")
+        details.append(", ".join(parts))
+    else:
+        time_context = re.search(r"\btime\b.{0,90}", blob, flags=re.IGNORECASE)
+        time_source = time_context.group(0) if time_context else blob[:500]
+        time_matches = re.findall(
+            r"\b(?:from\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b|\b(\d{1,2}):(\d{2})\b",
+            time_source,
+            flags=re.IGNORECASE,
+        )
+        formatted_times = []
+        for h1, m1, mer, h2, m2 in time_matches:
+            if h1:
+                formatted_times.append(_format_event_time(h1, m1, mer))
+            elif h2:
+                formatted_times.append(f"{int(h2)}:{m2}")
+        if formatted_times:
+            details.append("время: " + ", ".join(dict.fromkeys(formatted_times[:3])))
+    prices = re.findall(r"£\s*\d+(?:\.\d{1,2})?", blob)
+    if prices:
+        details.append("цены: " + ", ".join(dict.fromkeys(prices[:4])))
+    if re.search(r"\b(?:free\s+(?:entry|admission|event)|entry\s+free|admission\s+free)\b|бесплатн(?:ый|о|ая)\s+вход", blob, re.IGNORECASE):
+        details.append("вход бесплатный")
+    if re.search(
+        r"\bno\s+(?:booking|pre-?booking)|no\s+need\s+to\s+book|"
+        r"do\s+not\s+need\s+to\s+pre-?book|pre-?booking\s+is\s+not\s+required|"
+        r"предварительн\w+\s+запис",
+        blob,
+        re.IGNORECASE,
+    ):
+        details.append("запись не нужна")
+    elif re.search(r"\bbook(?:ing)?|tickets?|билет", blob, re.IGNORECASE) and not re.search(r"\bcar boot|market\b", blob, re.IGNORECASE):
+        details.append("проверьте билеты")
+    return details[:3]
+
+
+def _build_recurring_event_fallback_line(candidate: dict) -> str:
+    attach_editorial_contract(candidate)
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    occurrence = contract.get("occurrence") if isinstance(contract.get("occurrence"), dict) else {}
+    date_text = str(occurrence.get("date_text") or "").strip()
+    name = _sourceish_event_name(candidate)
+    venue = _event_venue(candidate)
+    details = _extract_event_practical_details(candidate)
+    where = f" в {venue}" if venue and venue.lower() not in name.lower() else ""
+    prefix = f"{date_text.capitalize()} — " if date_text else "В ближайший день расписания — "
+    tail = "; ".join(details)
+    tail = f". {tail.capitalize()}." if tail else ". Проверьте время и условия перед выездом."
+    return f"• {prefix}{name}{where}{tail}"
+
+
+def _build_festival_fallback_line(candidate: dict) -> str:
+    title_blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "source_label")
+    )
+    lowered = title_blob.lower()
+    if "flower festival" in lowered:
+        return (
+            "• 23–25 мая — Manchester Flower Festival в центре города: St Ann’s Square, "
+            "King Street и соседние улицы. Вход бесплатный; держите в планах прогулку, "
+            "маршрут и время мастер-классов."
+        )
+    if "jazz festival" in lowered:
+        return (
+            "• До 24 мая — Manchester Jazz Festival на городских площадках. "
+            "В эти выходные проверьте сегодняшние концерты, площадку и билеты, "
+            "а старую программу открытия 15–17 мая не используйте для планирования."
+        )
+    name = _sourceish_event_name(candidate)
+    occurrence = (candidate.get("editorial_contract") or {}).get("occurrence") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    date_text = str((occurrence or {}).get("date_text") or "").strip()
+    prefix = f"{date_text} — " if date_text else ""
+    details = _extract_event_practical_details(candidate)
+    tail = "; ".join(details)
+    tail = f". {tail.capitalize()}." if tail else ". Проверьте актуальную программу и билеты."
+    return f"• {prefix}{name}{tail}"
+
+
+def _build_bookable_activity_fallback_line(candidate: dict) -> str:
+    name = _sourceish_event_name(candidate)
+    venue = _event_venue(candidate)
+    details = _extract_event_practical_details(candidate)
+    where = f" в {venue}" if venue and venue.lower() not in name.lower() else ""
+    tail = "; ".join(details)
+    tail = f". {tail.capitalize()}." if tail else ". Проверьте свободные слоты перед оплатой."
+    return f"• На эти выходные можно забронировать {name}{where}{tail}"
+
+
+def _repair_weather_line(line: str) -> str:
+    text = str(line or "")
+    text = re.sub(
+        r"вероятность\s+осадков\s+до\s+0\s*%",
+        "осадков почти не ждут",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(r"\s*Дн[её]м заметно теплее утра\.\s*", " ", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def _repair_editorial_contract_line(candidate: dict, line: str) -> tuple[str, list[str]]:
+    attach_editorial_contract(candidate)
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    event_shape = str(contract.get("event_shape") or "")
+    repaired = str(line or "").strip()
+    reasons: list[str] = []
+    if str(candidate.get("primary_block") or "") == "weather":
+        updated = _repair_weather_line(repaired)
+        if updated != repaired:
+            repaired = updated
+            reasons.append("weather_wording")
+    if event_shape == "recurring" and str(candidate.get("primary_block") or "") == "weekend_activities":
+        # Recurring items must lead with the next occurrence. The season
+        # start/end can be supporting detail, never the lead.
+        if re.search(r"\b(?:до|until)\s+\d{1,2}\s+[A-Za-zА-Яа-яЁё]+|opens?\s+\d{1,2}\s+[A-Za-zА-Яа-яЁё]+|с\s+\d{1,2}\s+[а-яё]+", repaired, flags=re.IGNORECASE):
+            repaired = _build_recurring_event_fallback_line(candidate)
+            reasons.append("recurring_occurrence_first")
+    elif event_shape == "festival":
+        if re.search(r"\b15\s*[–-]\s*17\s+(?:may|мая)\b", repaired, flags=re.IGNORECASE):
+            repaired = _build_festival_fallback_line(candidate)
+            reasons.append("festival_current_window")
+    elif event_shape == "bookable_activity":
+        if re.search(r"\b(?:доступно\s+с|available\s+from|с\s+2[23]\s+мая)\b", repaired, flags=re.IGNORECASE):
+            repaired = _build_bookable_activity_fallback_line(candidate)
+            reasons.append("bookable_weekend_language")
+    if re.search(r"\bГМ\b", repaired):
+        repaired = re.sub(r"\bГМ\b", "Greater Manchester", repaired)
+        reasons.append("gm_abbreviation")
+    if re.search(r"заброшенн\w*\s+(?:паб|здани|мотел|объект).{0,80}\bзакры", repaired, re.IGNORECASE | re.DOTALL):
+        repaired = re.sub(r"\bбыли\s+закрыты\b|\bбыл\s+закрыт\b|\bзакрыли\b", "обезопасят", repaired, flags=re.IGNORECASE)
+        reasons.append("abandoned_building_contradiction")
+    return repaired, reasons
 
 
 def _service_fallback_subject(title: str) -> str:
@@ -723,6 +950,10 @@ def _weekend_activity_score(candidate: dict, line: str) -> float:
         score += 40
     if re.search(r"\b(?:market|makers?|car boot|food festival|festival|fair|flea)\b", blob):
         score += 35
+    if re.search(r"\b(?:flower festival|jazz festival|car boot|makers market|food festival)\b", blob):
+        score += 25
+    if re.search(r"\b(?:designmynight|alcotraz|treasure hunt|escape room|cocktail bar|big manchester bake|kitty yoga|bottomless)\b", blob):
+        score -= 55
     if re.search(r"\b(?:today|tomorrow|saturday|sunday|сегодня|завтра|суббот|воскрес|16\s*(?:мая|may)|17\s*(?:мая|may))\b", blob):
         score += 25
     if re.search(r"\b(?:free|ticket|tickets|booking|book|билет|бесплат|вход)\b|£\s*\d", blob):
@@ -971,9 +1202,27 @@ def _city_watch_score(candidate: dict) -> float:
 
 def _section_priority_score(candidate: dict, section_name: str, line: str) -> float:
     """Shared reader-value score used when capped sections choose survivors."""
+    attach_editorial_contract(candidate)
     value_item = dict(candidate)
     value_item["included"] = True
     score = float(reader_value_score(value_item))
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    tier = str(contract.get("publish_tier") or candidate.get("publish_tier") or "")
+    score += {
+        "must_include": 80.0,
+        "strong": 35.0,
+        "optional": 5.0,
+        "filler": -45.0,
+        "reject": -200.0,
+    }.get(tier, 0.0)
+    event_shape = str(contract.get("event_shape") or candidate.get("event_shape") or "")
+    if event_shape == "bookable_activity":
+        score -= 45.0
+    elif event_shape in {"festival", "recurring"}:
+        score += 22.0
+    story_type = str(contract.get("story_type") or "")
+    if story_type in {"human_interest", "soft_news", "research"}:
+        score -= 35.0
     completeness = candidate.get("event_schema_completeness")
     if isinstance(completeness, dict) and completeness.get("applies"):
         score += (float(completeness.get("score") or 0) - 50.0) / 5.0
@@ -1034,6 +1283,8 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
             errors.append(f"draft_line contains bad editorial prose marker: {marker}.")
             break
     errors.extend(_sanity_flags(candidate, text))
+    for invariant in copy_invariant_errors(candidate, text):
+        errors.append(f"copy invariant failed: {invariant}.")
     errors.extend(_hallucination_flags(candidate, text))
     # Thin-evidence + long-draft = LLM padded a teaser into a vague card.
     # We only check long-format categories (city news / events / business etc.) —
@@ -1095,10 +1346,12 @@ def write_digest(project_root: Path) -> StageResult:
     }
     dropped_candidates: list[dict[str, object]] = []
     degraded_shrink_dropped: list[dict[str, object]] = []
+    global_budget_dropped: list[dict[str, object]] = []
 
     for index, candidate in enumerate(candidates, start=1):
         if not isinstance(candidate, dict) or not candidate.get("include"):
             continue
+        attach_editorial_contract(candidate)
         quality_counts["included_candidates"] += 1
         if (
             candidate.get("editorial_status") == "borderline"
@@ -1264,6 +1517,11 @@ def write_digest(project_root: Path) -> StageResult:
             warnings.append(
                 f"Candidate #{index}: replaced stale ticket-sale wording with deterministic ticket line."
             )
+        line, repair_reasons = _repair_editorial_contract_line(candidate, line)
+        if repair_reasons:
+            warnings.append(
+                f"Candidate #{index}: editorial contract repaired line ({', '.join(repair_reasons)})."
+            )
 
         draft_line_errors = _draft_line_quality_errors(candidate, line)
         if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
@@ -1328,6 +1586,11 @@ def write_digest(project_root: Path) -> StageResult:
         section_scores,
         section_fingerprints,
         section_titles,
+        tuple(
+            section
+            for section in TODAY_FOCUS_BACKFILL_SECTIONS
+            if not (llm_degraded and section == "Городской радар")
+        ),
     )
     if backfilled_today_focus:
         warnings.append(
@@ -1367,6 +1630,7 @@ def write_digest(project_root: Path) -> StageResult:
     ]
     section_counts: dict[str, int] = {}
     rendered_candidate_fingerprints: list[str] = []
+    visible_item_count = 0
     for section_name in ordered_sections:
         lines = sections.get(section_name, [])
         if not lines:
@@ -1439,6 +1703,37 @@ def write_digest(project_root: Path) -> StageResult:
             fps = fps[:cap]
             scores = scores[:cap]
             titles = titles[:cap]
+        remaining_budget = PUBLIC_DIGEST_MAX_VISIBLE_ITEMS - visible_item_count
+        if remaining_budget <= 0:
+            for idx, ln in enumerate(lines):
+                global_budget_dropped.append(
+                    {
+                        "section": section_name,
+                        "fingerprint": fps[idx] if idx < len(fps) else "",
+                        "title": titles[idx] if idx < len(titles) else re.sub(r"<[^>]+>", "", ln)[:120],
+                        "source_label": srcs[idx] if idx < len(srcs) else "",
+                        "reader_value_score": scores[idx] if idx < len(scores) else 0.0,
+                        "reason": f"Public digest budget cap {PUBLIC_DIGEST_MAX_VISIBLE_ITEMS} reached.",
+                    }
+                )
+            section_counts[section_name] = 0
+            continue
+        if len(lines) > remaining_budget:
+            for idx in range(remaining_budget, len(lines)):
+                global_budget_dropped.append(
+                    {
+                        "section": section_name,
+                        "fingerprint": fps[idx] if idx < len(fps) else "",
+                        "title": titles[idx] if idx < len(titles) else re.sub(r"<[^>]+>", "", lines[idx])[:120],
+                        "source_label": srcs[idx] if idx < len(srcs) else "",
+                        "reader_value_score": scores[idx] if idx < len(scores) else 0.0,
+                        "reason": f"Public digest budget cap {PUBLIC_DIGEST_MAX_VISIBLE_ITEMS} reached.",
+                    }
+                )
+            lines = lines[:remaining_budget]
+            fps = fps[:remaining_budget]
+            scores = scores[:remaining_budget]
+            titles = titles[:remaining_budget]
         # Per-source / per-section caps can filter every remaining line —
         # don't emit a bare section header in that case, the release gate
         # rejects empty low-signal blocks.
@@ -1446,6 +1741,7 @@ def write_digest(project_root: Path) -> StageResult:
             section_counts[section_name] = 0
             continue
         section_counts[section_name] = len(lines)
+        visible_item_count += len(lines)
         rendered_candidate_fingerprints.extend(fp for fp in fps if fp)
         rendered.append(f"<b>{section_name}</b>")
         rendered.extend(lines)
@@ -1456,6 +1752,11 @@ def write_digest(project_root: Path) -> StageResult:
         warnings.append(
             "LLM degraded shrink held "
             f"{len(degraded_shrink_dropped)} lower-priority item(s) out of the digest."
+        )
+    if global_budget_dropped:
+        warnings.append(
+            "Public issue budget held "
+            f"{len(global_budget_dropped)} lower-priority item(s) out of the digest."
         )
 
     draft_path.write_text("\n".join(rendered).strip() + "\n", encoding="utf-8")
@@ -1470,6 +1771,12 @@ def write_digest(project_root: Path) -> StageResult:
             "warnings": warnings,
             "quality_counts": quality_counts,
             "section_counts": section_counts,
+            "visible_item_count": visible_item_count,
+            "public_digest_budget": {
+                "max_visible_items": PUBLIC_DIGEST_MAX_VISIBLE_ITEMS,
+                "dropped_count": len(global_budget_dropped),
+                "dropped_items": global_budget_dropped[:80],
+            },
             "backfilled_today_focus": backfilled_today_focus,
             "degraded_shrink": {
                 "enabled": bool(llm_degraded),

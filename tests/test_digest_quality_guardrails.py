@@ -21,7 +21,14 @@ from news_digest.pipeline.dedupe import (
     dedupe_candidates,
 )
 from news_digest.pipeline.entity_extraction import extract_entities
-from news_digest.pipeline.writer import _build_ticket_fallback_line
+from news_digest.pipeline.editorial_contracts import build_editorial_contract, copy_invariant_errors
+from news_digest.pipeline.writer import (
+    _build_recurring_event_fallback_line,
+    _build_ticket_fallback_line,
+    _line_claims_future_ticket_sale,
+    _repair_editorial_contract_line,
+    _section_priority_score,
+)
 
 
 class DigestQualityGuardrailsTest(unittest.TestCase):
@@ -414,6 +421,30 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             event.get("is_recurring"),
             f"event.is_recurring not set; event={event}",
         )
+
+    def test_recurring_market_writer_leads_with_next_occurrence(self) -> None:
+        candidate = {
+            "include": True,
+            "fingerprint": "bowlee-car-boot-recurring",
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": "Bowlee Community Park Car Boot Sale season opens 5 April",
+            "summary": (
+                "The Bowlee Car Boot Sale season opens on 5 April and runs every Sunday "
+                "through to 11 October. Entry £2.50 for shoppers, £15 per car."
+            ),
+            "lead": "Bowlee Community Park, every Sunday until October.",
+            "evidence_text": "Sellers arrive from 6am; buyers from 7am every Sunday.",
+            "source_label": "Bowlee Car Boot Sale",
+            "source_url": "https://example.test/bowlee-car-boot",
+            "event": {"is_recurring": True},
+        }
+
+        line = _build_recurring_event_fallback_line(candidate)
+
+        self.assertIn("воскресенье", line.lower())
+        self.assertIn("Bowlee", line)
+        self.assertNotRegex(line, r"5\s+апреля|5\s+April")
 
     def test_one_off_event_with_only_russian_past_date_is_rejected(self) -> None:
         """Past dates in Russian month names must be caught.
@@ -1044,6 +1075,61 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             "motivational_human_interest", updated.get("reject_reasons") or []
         )
 
+    def test_georgia_style_first_job_profile_is_rejected_by_contract(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "georgia-first-job",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "My first job made me question if I was too stupid to work",
+                "summary": (
+                    "Georgia Sweeney now helps other young people after her first job "
+                    "left her feeling insecure."
+                ),
+                "lead": "",
+                "evidence_text": "She shares her experience to inspire young people.",
+                "source_label": "MEN",
+                "source_url": "https://example.test/georgia-first-job",
+                "published_at": now_london().isoformat(),
+                "dedupe_decision": "new",
+                "change_type": "new_story",
+            }
+        )
+
+        self.assertFalse(updated.get("include"))
+        self.assertIn("motivational_human_interest", updated.get("reject_reasons") or [])
+        self.assertEqual(
+            (updated.get("editorial_contract") or {}).get("story_type"),
+            "human_interest",
+        )
+
+    def test_kieran_style_career_pivot_profile_is_rejected(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "kieran-career-pivot",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "He wanted to be the next big name, but nine days changed everything",
+                "summary": (
+                    "Kieran O'Reilly had dreams of making it in rugby, then an injury "
+                    "and the pandemic became a turning point before he decided on a "
+                    "proper career in cooking."
+                ),
+                "lead": "",
+                "evidence_text": "He says he had been not knowing what he wanted and now enjoys cooking.",
+                "source_label": "MEN",
+                "source_url": "https://example.test/kieran-career-pivot",
+                "published_at": now_london().isoformat(),
+                "dedupe_decision": "new",
+                "change_type": "new_story",
+            }
+        )
+
+        self.assertFalse(updated.get("include"))
+        self.assertIn("motivational_human_interest", updated.get("reject_reasons") or [])
+
     def test_motivational_with_local_event_anchor_is_kept(self) -> None:
         """Defensive: «Cameron Bell открывает офис в Bolton 28 мая» —
         the same motivational subject becomes news when paired with a
@@ -1074,6 +1160,161 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertNotIn(
             "motivational_human_interest", updated.get("reject_reasons") or []
         )
+
+    def test_ticket_copy_invariant_catches_past_sale_as_future(self) -> None:
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "Doja Cat — event 2026-05-23 — public sale 2025-10-03 10:00",
+            "summary": (
+                "Co-op Live | Manchester | Hip-Hop/Rap | event_date=2026-05-23 19:30 | "
+                "public_onsale=2025-10-03 10:00 | ticket_signal=upcoming_event"
+            ),
+            "source_label": "Ticketmaster Manchester Upcoming",
+        }
+        line = "• В Co-op Live 23 мая — концерт Doja Cat. Билеты будут доступны на Ticketmaster с 3 октября 2025 года."
+
+        self.assertTrue(_line_claims_future_ticket_sale(candidate, line))
+        self.assertIn("past_ticket_sale_written_as_future", copy_invariant_errors(candidate, line))
+
+    def test_weather_copy_invariant_is_repaired_not_published(self) -> None:
+        candidate = {
+            "category": "weather",
+            "primary_block": "weather",
+            "title": "Weather",
+            "source_label": "Met Office",
+        }
+        line = "• Погода: 15-21°C, вероятность осадков до 0%. Днём заметно теплее утра."
+
+        repaired, reasons = _repair_editorial_contract_line(candidate, line)
+
+        self.assertIn("weather_wording", reasons)
+        self.assertNotIn("до 0%", repaired)
+        self.assertNotIn("Днём заметно теплее утра", repaired)
+
+    def test_bookable_activity_scores_below_real_weekend_event(self) -> None:
+        car_boot = {
+            "include": True,
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": "Bowlee Car Boot Sale every Sunday",
+            "summary": "Every Sunday at Bowlee Community Park. Entry £2.50.",
+            "source_label": "Bowlee Car Boot Sale",
+            "source_url": "https://example.test/bowlee",
+            "event": {"is_recurring": True},
+        }
+        bookable = {
+            "include": True,
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": "Alcotraz Penitentiary immersive cocktail bar",
+            "summary": "DesignMyNight bookable experience available from 23 May. Tickets from £40.",
+            "source_label": "DesignMyNight Bank Holiday",
+            "source_url": "https://example.test/alcotraz",
+        }
+        real_score = _section_priority_score(car_boot, "Выходные в GM", "• В воскресенье — Bowlee Car Boot Sale.")
+        bookable_score = _section_priority_score(bookable, "Выходные в GM", "• На эти выходные можно забронировать Alcotraz.")
+
+        self.assertGreater(real_score, bookable_score + 40)
+        self.assertEqual(build_editorial_contract(bookable)["event_shape"], "bookable_activity")
+
+    def test_barton_recurring_car_boot_is_not_bookable_or_bowlee(self) -> None:
+        candidate = {
+            "include": True,
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": "Barton Aerodrome Car Boot Sale",
+            "summary": (
+                "A popular Saturday car boot sale in Eccles. Next dates Saturday, "
+                "23 May 2026 and Saturday, 30 May 2026."
+            ),
+            "evidence_text": "Barton Aerodrome hosts regular 2026 car boot sales. No pre-booking is required.",
+            "source_label": "Barton Aerodrome Car Boot",
+            "source_url": "https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+        }
+
+        contract = build_editorial_contract(candidate)
+
+        self.assertEqual(contract["topic_key"], "event:barton_aerodrome_car_boot")
+        self.assertEqual(contract["event_shape"], "recurring")
+
+    def test_old_existing_cafe_profile_is_rejected_from_openings(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "grounded-mcr-profile",
+                "category": "food_openings",
+                "primary_block": "openings",
+                "title": "Grounded MCR - the Levenshulme community cafe crafting coffee",
+                "summary": (
+                    "Starting off life as a little coffee trike back in 2021, "
+                    "Grounded MCR is now based inside a container in Cringle Park."
+                ),
+                "lead": "",
+                "evidence_text": "The cafe serves coffee and food and works with community partners.",
+                "source_label": "The Manc Eats",
+                "source_url": "https://example.test/grounded-mcr",
+                "published_at": now_london().isoformat(),
+            }
+        )
+
+        self.assertFalse(updated.get("include"))
+        self.assertIn("old_existing_food", updated.get("reject_reasons") or [])
+
+    def test_old_april_resident_doctors_strike_is_rejected(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "resident-doctors-april-strike",
+                "category": "public_services",
+                "primary_block": "city_watch",
+                "title": "Strike action taking place in April 2026 | News and Events",
+                "summary": (
+                    "Resident doctors across England will take part in strike action "
+                    "from 7am on Tuesday 07 April until 7am on Monday 13 April."
+                ),
+                "lead": "",
+                "evidence_text": "Patients should attend appointments as planned if not contacted.",
+                "source_label": "GMMH",
+                "source_url": "https://example.test/april-strike",
+                "published_at": now_london().isoformat(),
+            }
+        )
+
+        self.assertFalse(updated.get("include"))
+        self.assertIn("stale_public_service", updated.get("reject_reasons") or [])
+
+    def test_topic_contract_dedupes_makerfield_variants_in_same_issue(self) -> None:
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "makerfield-bbc",
+                "dedupe_decision": "new",
+                "category": "media_layer",
+                "primary_block": "today_focus",
+                "title": "Makerfield by-election candidates announced after Josh Simons quits",
+                "summary": "The by-election in Makerfield will be held on 18 June.",
+                "source_label": "BBC Manchester",
+                "source_url": "https://example.test/makerfield-bbc",
+            },
+            {
+                "include": True,
+                "fingerprint": "makerfield-men",
+                "dedupe_decision": "new",
+                "category": "media_layer",
+                "primary_block": "today_focus",
+                "title": "Andy Burnham says he will risk everything over Makerfield election",
+                "summary": "Burnham spoke about the Makerfield by-election campaign.",
+                "source_label": "MEN",
+                "source_url": "https://example.test/makerfield-men",
+            },
+        ]
+
+        drops = _apply_intra_batch_dedup(candidates)
+
+        self.assertEqual(len(drops), 1)
+        self.assertEqual(drops[0]["topic_key"], "politics:makerfield_by_election_2026")
+        self.assertEqual(sum(1 for item in candidates if item["include"]), 1)
 
     def test_historical_archive_without_news_hook_is_rejected(self) -> None:
         """User feedback: «Salford Винни Клей 90-х годов — уже было и

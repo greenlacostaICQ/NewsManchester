@@ -140,6 +140,8 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
         "Ticketmaster Liverpool Upcoming",
         "Ticketmaster London Major Onsale",
         "Ticketmaster London Major Upcoming",
+        "Ticketmaster UK Major Onsale",
+        "Ticketmaster UK Major Upcoming",
     ),
     "russian_speaking_events": (
         "Manchester Academy Diaspora",
@@ -240,6 +242,8 @@ SOURCE_TIER: dict[str, int] = {
     "Ticketmaster Liverpool Upcoming": 2,
     "Ticketmaster London Major Onsale": 2,
     "Ticketmaster London Major Upcoming": 2,
+    "Ticketmaster UK Major Onsale": 2,
+    "Ticketmaster UK Major Upcoming": 2,
     "Visit Manchester": 2,
     "Visit Manchester This Week": 2,
     "Visit Manchester Weekend": 2,

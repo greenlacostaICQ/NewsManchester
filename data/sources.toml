@@ -439,6 +439,28 @@ primary_block = "ticket_radar"
 allowed_hosts = ["ticketmaster.co.uk", "ticketmaster.com"]
 max_candidates = 25
 
+[[sources]]
+name = "Ticketmaster UK Major Onsale"
+notes = "major England/UK music onsales outside GM; filtered to arena/stadium/festival-scale venues so national ticket alerts do not flood the local digest"
+report_category = "venues_tickets"
+candidate_category = "venues_tickets"
+source_type = "json_ticketmaster"
+url = "https://app.ticketmaster.com/discovery/v2/events.json?countryCode=GB&classificationName=music&size=200&sort=onSaleStartDate,asc&onsaleStartDateTime={NOW_MINUS_1D_UTC}&onsaleEndDateTime={PLUS_30D_UTC}&apikey={TICKETMASTER_API_KEY}"
+primary_block = "outside_gm_tickets"
+allowed_hosts = ["ticketmaster.co.uk", "ticketmaster.com"]
+max_candidates = 25
+
+[[sources]]
+name = "Ticketmaster UK Major Upcoming"
+notes = "major England/UK music events outside GM; keeps nationally important concerts/festivals visible when tickets are already on sale"
+report_category = "venues_tickets"
+candidate_category = "venues_tickets"
+source_type = "json_ticketmaster"
+url = "https://app.ticketmaster.com/discovery/v2/events.json?countryCode=GB&classificationName=music&size=200&sort=date,asc&startDateTime={NOW_UTC}&endDateTime={PLUS_540D_UTC}&apikey={TICKETMASTER_API_KEY}"
+primary_block = "outside_gm_tickets"
+allowed_hosts = ["ticketmaster.co.uk", "ticketmaster.com"]
+max_candidates = 25
+
 # ── Official Venues (HTML/sitemap) ────────────────────────────────────────────
 
 [[sources]]

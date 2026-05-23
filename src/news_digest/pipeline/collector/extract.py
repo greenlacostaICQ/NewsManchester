@@ -1226,13 +1226,23 @@ def _extract_funnelback_items(body: str) -> list[ExtractedItem]:
 
 _TICKETMASTER_MAJOR_LONDON_VENUES = (
     "alexandra palace",
+    "american express stadium",
     "eventim apollo",
     "hyde park",
+    "knebworth",
+    "liverpool anfield",
     "london stadium",
+    "lytham festival",
+    "murrayfield",
+    "o2 academy brixton",
     "ovo arena",
+    "principality stadium",
     "royal albert hall",
+    "st james' park",
+    "st. james' park",
     "the o2",
     "tottenham hotspur stadium",
+    "utilita arena",
     "wembley arena",
     "wembley stadium",
 )
@@ -1257,6 +1267,7 @@ def _extract_ticketmaster_items(source: SourceDef, body: str) -> list[ExtractedI
     events = (payload.get("_embedded") or {}).get("events") or []
     items: list[ExtractedItem] = []
     major_london_only = "london major" in source.name.lower()
+    major_uk_only = "uk major" in source.name.lower()
     onsale_scan = "onsale" in source.name.lower()
     for event in events:
         title = str(event.get("name") or "").strip()
@@ -1276,6 +1287,10 @@ def _extract_ticketmaster_items(source: SourceDef, body: str) -> list[ExtractedI
         if major_london_only and not _is_major_london_venue(venue):
             continue
         major_venue = is_major_ticket_venue(venue)
+        if major_uk_only and not (major_venue or _is_major_london_venue(venue)):
+            continue
+        if major_uk_only and _is_major_london_venue(venue):
+            major_venue = True
         classifications = event.get("classifications") or []
         genre = ""
         if classifications:
@@ -1324,7 +1339,11 @@ def _extract_ticketmaster_items(source: SourceDef, body: str) -> list[ExtractedI
 
 def _is_outside_gm_ticket_source(source: SourceDef) -> bool:
     lowered = source.name.lower()
-    return "ticketmaster liverpool" in lowered or "ticketmaster london major" in lowered
+    return (
+        "ticketmaster liverpool" in lowered
+        or "ticketmaster london major" in lowered
+        or "ticketmaster uk major" in lowered
+    )
 
 
 def _extract_wp_rest_items(body: str) -> list[ExtractedItem]:

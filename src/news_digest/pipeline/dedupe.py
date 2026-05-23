@@ -14,6 +14,12 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.editorial_contracts import (
+    attach_editorial_contract,
+    is_specific_topic_key,
+    lifecycle_repeat_review,
+    topic_key_for_candidate,
+)
 from news_digest.pipeline.entity_extraction import enrich_candidate_entities
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.history import ensure_history_files
@@ -82,6 +88,13 @@ def dedupe_candidates(project_root: Path) -> StageResult:
     published_titles = [
         item for item in published if isinstance(item, dict) and item.get("normalized_title")
     ]
+    published_by_topic: dict[str, list[dict]] = {}
+    for item in published:
+        if not isinstance(item, dict):
+            continue
+        topic_key = topic_key_for_candidate(item)
+        if is_specific_topic_key(topic_key):
+            published_by_topic.setdefault(topic_key, []).append(item)
 
     errors: list[str] = []
     decisions: list[dict] = []
@@ -93,6 +106,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         enrich_candidate_entities(candidate)
         # I3: event facts depend on entities — must run AFTER entity pass.
         enrich_candidate_event(candidate)
+        attach_editorial_contract(candidate)
 
         fingerprint = fingerprint_for_candidate(candidate)
         candidate["fingerprint"] = fingerprint
@@ -102,9 +116,21 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         title_similar_previous = _similar_published_titles(normalized_title, original_title, published_titles)
         semantic_previous = _semantic_published_matches(candidate, published_titles)
         people_previous = _people_published_matches(candidate, published_titles)
+        topic_previous = _topic_published_matches(candidate, published_by_topic)
         similar_previous = _merge_previous_matches(
-            title_similar_previous, semantic_previous, people_previous,
+            title_similar_previous, semantic_previous, people_previous, topic_previous,
         )
+        if topic_previous:
+            candidate["topic_lifecycle_match"] = {
+                "topic_key": topic_key_for_candidate(candidate),
+                "previous_fingerprint": topic_previous[0].get("fingerprint"),
+                "previous_title": topic_previous[0].get("title"),
+                "previous_published_day": (
+                    topic_previous[0].get("last_published_day_london")
+                    or topic_previous[0].get("first_published_day_london")
+                    or ""
+                ),
+            }
         if semantic_previous:
             candidate["semantic_dedupe_match"] = (
                 "embedding_only" if not title_similar_previous else "embedding_and_title"
@@ -187,6 +213,22 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 else "Follow-up to a previous story with a new phase."
             )
 
+        lifecycle_review = (
+            lifecycle_repeat_review(candidate, prev_ref)
+            if prev_ref is not None and not (same_day_repeat_ok or operational_repeat_ok)
+            else {"repeat": False}
+        )
+        if lifecycle_review.get("repeat"):
+            candidate["dedupe_decision"] = "drop"
+            candidate["include"] = False
+            candidate["change_type"] = "same_story_rehash"
+            candidate["topic_lifecycle_repeat"] = lifecycle_review
+            candidate["reason"] = (
+                "Повтор темы без новой фазы: уже был"
+                f" {prev_ref.get('last_published_day_london') or prev_ref.get('first_published_day_london') or 'ранее'}"
+                f" как «{str(prev_ref.get('title') or '')[:120]}»."
+            )
+
         # Q7: pull "previous fact" out into structured fields whenever
         # there's any prior match (exact fingerprint or title-similar),
         # not just for hard-rejects. Makes "почему отбили / на что
@@ -259,6 +301,8 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 "previous_fingerprint": prev_fp,
                 "previous_published_day": prev_date,
                 "previous_title": prev_title,
+                "topic_key": topic_key_for_candidate(candidate),
+                "topic_lifecycle_repeat": candidate.get("topic_lifecycle_repeat") or {},
                 "carry_over_label": candidate.get("carry_over_label"),
                 "similar_previous": similar_previous,
             }
@@ -530,6 +574,32 @@ def _calendar_item_should_carry_over(candidate: dict, previous: dict) -> bool:
     # Food/opening pages often lack machine-readable event dates. Keep them
     # eligible briefly instead of dropping an opening forever after one URL hit.
     return primary_block == "openings" or category == "food_openings"
+
+
+def _topic_published_matches(candidate: dict, published_by_topic: dict[str, list[dict]]) -> list[dict]:
+    topic_key = topic_key_for_candidate(candidate)
+    if not is_specific_topic_key(topic_key):
+        return []
+    matches = list(published_by_topic.get(topic_key) or [])
+    if not matches:
+        return []
+
+    def _recent_key(item: dict) -> str:
+        return str(
+            item.get("last_published_day_london")
+            or item.get("first_published_day_london")
+            or item.get("published_day_london")
+            or ""
+        )
+
+    matches.sort(key=_recent_key, reverse=True)
+    out: list[dict] = []
+    for item in matches[:5]:
+        copy = dict(item)
+        copy["overlap"] = 1.0
+        copy["match_type"] = "topic_lifecycle"
+        out.append(copy)
+    return out
 
 
 def _extract_borough(title: str) -> str | None:
@@ -1076,6 +1146,8 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
     The candidate with the lower source priority rank is dropped.
     """
     included = [c for c in candidates if isinstance(c, dict) and c.get("include")]
+    for candidate in included:
+        attach_editorial_contract(candidate)
     n = len(included)
 
     to_drop: dict[int, dict] = {}
@@ -1089,6 +1161,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
         borough_i = _extract_borough(str(ci.get("title") or ""))
         block_i = str(ci.get("primary_block") or "")
         group_i = _dedup_block_group(block_i)
+        topic_i = topic_key_for_candidate(ci)
         rank_i = _source_rank(
             str(ci.get("source_label") or ""),
             str(ci.get("category") or ""),
@@ -1099,6 +1172,27 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                 continue
             cj = included[j]
             if _dedup_block_group(str(cj.get("primary_block") or "")) != group_i:
+                continue
+
+            topic_j = topic_key_for_candidate(cj)
+            if topic_i and topic_i == topic_j and is_specific_topic_key(topic_i):
+                rank_j = _source_rank(
+                    str(cj.get("source_label") or ""),
+                    str(cj.get("category") or ""),
+                )
+                if _prefer_dedupe_candidate(ci, cj, rank_i, rank_j):
+                    to_drop[j] = {
+                        "kept_index": i,
+                        "overlap": 1.0,
+                        "topic_key": topic_i,
+                    }
+                else:
+                    to_drop[i] = {
+                        "kept_index": j,
+                        "overlap": 1.0,
+                        "topic_key": topic_i,
+                    }
+                    break
                 continue
 
             borough_j = _extract_borough(str(cj.get("title") or ""))
@@ -1184,6 +1278,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                 "kept_source_label": kept.get("source_label"),
                 "kept_primary_block": kept.get("primary_block"),
                 "overlap": drop_context["overlap"],
+                "topic_key": drop_context.get("topic_key") or "",
                 "reason": c["reason"],
             }
         )

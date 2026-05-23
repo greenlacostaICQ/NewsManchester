@@ -9,6 +9,7 @@ from urllib import parse
 from news_digest.pipeline.city_intelligence import annotate_city_intelligence
 from news_digest.pipeline.common import clean_url, now_london, pipeline_run_id_from, read_json, today_london, write_json
 from news_digest.pipeline.editorial_contracts import (
+    attach_editorial_contract,
     attach_scoring_trace,
     crime_specificity_review,
     event_schema_completeness,
@@ -429,6 +430,10 @@ _CELEBRITY_SIGHTING_RE = re.compile(
 )
 _MOTIVATIONAL_OVERCAME_RE = re.compile(
     r"\b(?:overcame|inspires|inspiring|turned\s+(?:his|her|their)\s+life|"
+    r"first\s+job|too\s+stupid|question(?:ed)?\s+if\s+i\s+was|"
+    r"dream(?:ed|t)?s?\s+of\s+(?:making|becoming|a\s+career)|"
+    r"next\s+big\s+name|proper\s+career|classic\s+sports\s+story|getting\s+an\s+injury|"
+    r"pandemic\s+(?:inspired|sparked)|turning\s+point|not\s+knowing\s+what\s+i\s+wanted|"
     r"from\s+(?:failure|nothing|homeless)|"
     r"after\s+being\s+(?:diagnosed|told|rejected)|"
     r"now\s+(?:helps|inspires|leads|teaches|runs)|"
@@ -543,6 +548,34 @@ def _exclude_motivational_human_interest(candidate: dict) -> bool:
         "Validator: motivational human-interest card has no GM action "
         "anchor (no event date, no opening/launch, no GM borough).",
     )
+    return True
+
+
+def _exclude_by_editorial_contract(candidate: dict) -> bool:
+    """Single editorial-contract gate for systemic rejects.
+
+    This does not replace the older targeted predicates; it catches the
+    pattern-level failures that keep recurring under new wording: pure
+    motivational profiles, old-existing food/opening cards, and stale
+    public-service notices. All are auditable through
+    candidate.editorial_contract rather than hidden in writer prose.
+    """
+    if not candidate.get("include"):
+        return False
+    attach_editorial_contract(candidate)
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    reject_reason = str(contract.get("reject_reason") or "").strip()
+    if not reject_reason:
+        return False
+    story_type = str(contract.get("story_type") or "")
+    code = reject_reason
+    if story_type == "human_interest":
+        code = "motivational_human_interest"
+    note = (
+        "Validator: editorial_contract rejected item "
+        f"(story_type={story_type}, anchor={contract.get('anchor_type')}, tier={contract.get('publish_tier')})."
+    )
+    _append_reject(candidate, code, note)
     return True
 
 
@@ -1302,7 +1335,10 @@ def validate_candidates(project_root: Path) -> StageResult:
         # rewriter never has to infer "Автобус:" vs "Metrolink:" from a
         # TfGM roadworks bulletin. Idempotent and safe for non-transport.
         classify_transport_candidate(candidate)
+        attach_editorial_contract(candidate)
         manual = _manual_override(candidate, state_dir)
+        if candidate.get("include") and manual != "force_include":
+            _exclude_by_editorial_contract(candidate)
         if candidate.get("include"):
             _exclude_stale_ticket_onsale(candidate)
         if candidate.get("include"):
@@ -1349,7 +1385,9 @@ def validate_candidates(project_root: Path) -> StageResult:
         if manual == "force_include":
             candidate["include"] = True
             candidate["editorial_status"] = "approved"
+        attach_editorial_contract(candidate)
         _apply_why_now_gate(candidate, manual_override=manual)
+        attach_editorial_contract(candidate)
         if candidate.get("event_page_type") in {"homepage", "aggregator"}:
             validation_errors.append("Event candidate must use an official event page.")
 
@@ -1368,6 +1406,7 @@ def validate_candidates(project_root: Path) -> StageResult:
                 "specificity_review": candidate.get("specificity_review"),
                 "event_schema_completeness": candidate.get("event_schema_completeness"),
                 "why_now": candidate.get("why_now") or "",
+                "editorial_contract": candidate.get("editorial_contract") or {},
                 "reject_reasons": candidate.get("reject_reasons") or [],
                 "quality_warnings": candidate.get("quality_warnings") or [],
                 "editorial_status": candidate.get("editorial_status") or "",
