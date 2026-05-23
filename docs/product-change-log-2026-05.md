@@ -318,6 +318,62 @@ NewsManchester: зачем это делали, какой эффект ожид
 
 ## Хронология изменений
 
+### 2026-05-23 (S4 sprint — weak items с защитой от «отсёк важное»)
+
+Что изменилось:
+
+- **Три новых валидатора, каждый с тройным условием.** Карточка
+  отвергается только если выполняются **три** условия одновременно:
+  совпадает «слабый» паттерн, нет news-anchor, нет crime/civic verb.
+- **`_exclude_celebrity_sighting`** ловит «X посетил Y / зашёл / signed /
+  popped in / расписался» — без news angle. Закрывает «Ian Brown зашёл
+  в магазин — непонятно».
+- **`_exclude_motivational_human_interest`** ловит «X преодолел / inspires
+  others / failed but now CEO / стал успешным» — без локальной привязки.
+  Закрывает «второй день получаю такие новости вчера было про дислексию».
+- **`_exclude_historical_no_news_angle`** ловит «гангстер 90-х / в 80-х /
+  one of the most feared» — без свежего повода. Закрывает «Винни Клей
+  90-х — уже было и зачем мне сейчас».
+
+Защита от ложных срабатываний (главное в S4):
+
+- **Если есть «news anchor» — карточка проходит**, независимо от
+  слабого паттерна.
+- News anchor = crime/civic/business verb (`charged / убил / opens /
+  approved / sentenced / fined / opens / launches`) **ИЛИ** money сумма
+  (£250k) **ИЛИ** casualty count (3 wounded).
+- Анкеры намеренно узкие. «Yesterday» в исходнике, упоминание borough,
+  district или station сами по себе — **НЕ** anchor. Любой celebrity-
+  sighting упоминает «yesterday in Altrincham», и это noise.
+- Crime + borough вместе проходят через crime verb, не через borough.
+- Защитные тесты:
+  - «Cameron Bell открывает офис в Bolton 28 мая, £500k seed» →
+    проходит (есть `opens` + £).
+  - «гангстер 90-х Vinnie Clay charged with murder yesterday» →
+    проходит (есть `charged`).
+  - «Ian Brown opens new music charity in Manchester for £250k» →
+    проходит (есть `opens` + £).
+
+Что закрыто из жалоб 22 мая:
+
+- «Ian Brown зашёл в магазин — непонятно» — закрыто.
+- «Cameron Bell дислексия → CEO» / «Georgia Sweeney дислексия →
+  помогает другим» — закрыто.
+- «Salford Винни Клей 90-х годов» — закрыто.
+- «Lindsey Meredith автор книги» — уже закрыто в S1 через book guard.
+
+Проверка:
+
+- 6 новых golden test'ов (3 reject + 3 защитных).
+- Полный набор: 297 тестов OK.
+
+Оставшийся риск:
+
+- Регексы покрывают типичные формулировки на английском и русском, но
+  редкая стилистика может проскользнуть. Появятся новые жалобы — добавим
+  тест.
+- Реальная проверка в утреннем выпуске 24 мая.
+
 ### 2026-05-22 (S3 sprint — три шаблона событий + completeness review)
 
 Что изменилось:
