@@ -83,6 +83,18 @@ jobs:
         run: |
           python3 scripts/run_local_digest.py send-file data/outgoing/current_digest.html --parse-mode HTML $FORCE_FLAG
 
+      - name: Post-publish quality judge (S6)
+        # Runs AFTER the digest ships so the judge scores exactly what
+        # the reader saw. Never blocks: if OPENAI_API_KEY is missing or
+        # the LLM call errors, the step prints and exits 0. Drift is
+        # written into release_report.json so send-warnings can surface
+        # it without rerunning the judge.
+        if: always()
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI }}
+        run: |
+          python3 scripts/run_local_digest.py post-publish-judge
+
       - name: Send internal warnings to Telegram (if any)
         # Always run so a blocked digest (release_decision=fail with
         # unhealthy health) still notifies the chat. Script no-ops when
@@ -187,6 +199,9 @@ jobs:
           # new API call, so the daily semantic-dedup cost stays at the
           # marginal "today's new candidates" only.
           git add -f data/state/embedding_cache.json || true
+          # S6: post-publish judge eval history. Persistent across days
+          # so drift detection has a 30-day baseline to compare against.
+          git add -f data/state/digest_evals.jsonl || true
           git add -f data/outgoing/current_digest.html || true
           if git diff --staged --quiet; then
             echo "No state changes to commit."
