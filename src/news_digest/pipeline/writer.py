@@ -87,6 +87,23 @@ TODAY_FOCUS_MIN_SOURCE_REMAINING = {
     "Городской радар": 4,
     "Общественный транспорт сегодня": 1,
 }
+
+# When the LLM rewrite stage is degraded, keep the digest conservative:
+# publish the most useful lines from each soft section and expose exactly
+# what was held in writer_report.degraded_shrink for review. This is not the
+# global issue budget; it only applies on days when generation quality is
+# already known to be weaker.
+DEGRADED_LLM_SECTION_MAX_ITEMS = {
+    "Что произошло за 24 часа": 6,
+    "Городской радар": 5,
+    "Выходные в GM": 5,
+    "Что важно в ближайшие 7 дней": 4,
+    "Билеты / Ticket Radar": 3,
+    "Еда, открытия и рынки": 2,
+    "IT и бизнес": 2,
+    "Футбол": 2,
+    "Русскоязычные концерты и стендап UK": 3,
+}
 _BAD_EDITORIAL_PROSE_MARKERS = (
     "ticket office",
     "слот входа",
@@ -172,6 +189,7 @@ def _backfill_today_focus(
     section_sources: dict[str, list[str]],
     section_scores: dict[str, list[float]],
     section_fingerprints: dict[str, list[str]],
+    section_titles: dict[str, list[str]],
 ) -> int:
     if sections.get(TODAY_FOCUS_SECTION):
         return 0
@@ -181,12 +199,14 @@ def _backfill_today_focus(
     section_sources.setdefault(TODAY_FOCUS_SECTION, [])
     section_scores.setdefault(TODAY_FOCUS_SECTION, [])
     section_fingerprints.setdefault(TODAY_FOCUS_SECTION, [])
+    section_titles.setdefault(TODAY_FOCUS_SECTION, [])
 
     for source_section in TODAY_FOCUS_BACKFILL_SECTIONS:
         lines = sections.get(source_section) or []
         sources = section_sources.get(source_section) or []
         scores = section_scores.get(source_section) or []
         fingerprints = section_fingerprints.get(source_section) or []
+        titles = section_titles.get(source_section) or []
         if scores:
             ranked = sorted(
                 zip(
@@ -194,6 +214,7 @@ def _backfill_today_focus(
                     sources + [""] * (len(lines) - len(sources)),
                     scores + [0.0] * (len(lines) - len(scores)),
                     fingerprints + [""] * (len(lines) - len(fingerprints)),
+                    titles + [""] * (len(lines) - len(titles)),
                 ),
                 key=lambda item: item[2],
                 reverse=True,
@@ -202,6 +223,7 @@ def _backfill_today_focus(
             sources = [item[1] for item in ranked]
             scores = [item[2] for item in ranked]
             fingerprints = [item[3] for item in ranked]
+            titles = [item[4] for item in ranked]
         min_remaining = TODAY_FOCUS_MIN_SOURCE_REMAINING.get(source_section, 0)
         while lines and moved < TODAY_FOCUS_BACKFILL_TARGET and len(lines) > min_remaining:
             if scores and scores[0] < TODAY_FOCUS_BACKFILL_MIN_SCORE:
@@ -210,11 +232,13 @@ def _backfill_today_focus(
             section_sources[TODAY_FOCUS_SECTION].append(sources.pop(0) if sources else "")
             section_scores[TODAY_FOCUS_SECTION].append(scores.pop(0) if scores else 0.0)
             section_fingerprints[TODAY_FOCUS_SECTION].append(fingerprints.pop(0) if fingerprints else "")
+            section_titles[TODAY_FOCUS_SECTION].append(titles.pop(0) if titles else "")
             moved += 1
         sections[source_section] = lines
         section_sources[source_section] = sources
         section_scores[source_section] = scores
         section_fingerprints[source_section] = fingerprints
+        section_titles[source_section] = titles
         if moved >= TODAY_FOCUS_BACKFILL_TARGET:
             break
 
@@ -223,6 +247,7 @@ def _backfill_today_focus(
         section_sources.pop(TODAY_FOCUS_SECTION, None)
         section_scores.pop(TODAY_FOCUS_SECTION, None)
         section_fingerprints.pop(TODAY_FOCUS_SECTION, None)
+        section_titles.pop(TODAY_FOCUS_SECTION, None)
     return moved
 
 
@@ -244,6 +269,16 @@ def _looks_like_untranslated_english(value: str) -> bool:
     }
     stopword_hits = sum(1 for word in latin_words if word.lower() in stopwords)
     return stopword_hits >= 2
+
+
+def _llm_rewrite_is_degraded(state_dir: Path) -> tuple[bool, dict]:
+    report = read_json(state_dir / "llm_rewrite_report.json", {})
+    if not isinstance(report, dict):
+        return False, {}
+    status = str(report.get("stage_status") or "").strip().lower()
+    warnings = [str(w) for w in (report.get("warnings") or [])]
+    degraded = status == "degraded" or any("degraded" in w.lower() for w in warnings)
+    return degraded, report
 
 
 def _source_anchor(source_url: str, source_label: str) -> str:
@@ -1033,6 +1068,7 @@ def write_digest(project_root: Path) -> StageResult:
     payload = read_json(candidates_path, {"candidates": []})
     pipeline_run_id = pipeline_run_id_from(payload)
     candidates = payload.get("candidates", [])
+    llm_degraded, llm_rewrite_report = _llm_rewrite_is_degraded(state_dir)
     sections = {heading: [] for heading in PRIMARY_BLOCKS.values()}
     # Parallel list of source_labels per section (same indices as sections[*]).
     # Used to apply SECTION_MAX_PER_SOURCE caps at render time.
@@ -1045,6 +1081,7 @@ def write_digest(project_root: Path) -> StageResult:
     # where we re-sort candidates before truncation so the cap drops the
     # weakest items (PR releases) rather than whatever happened to come last.
     section_scores: dict[str, list[float]] = {h: [] for h in PRIMARY_BLOCKS.values()}
+    section_titles: dict[str, list[str]] = {h: [] for h in PRIMARY_BLOCKS.values()}
     errors: list[str] = []
     warnings: list[str] = []
     quality_counts = {
@@ -1057,6 +1094,7 @@ def write_digest(project_root: Path) -> StageResult:
         "dropped_low_quality": 0,
     }
     dropped_candidates: list[dict[str, object]] = []
+    degraded_shrink_dropped: list[dict[str, object]] = []
 
     for index, candidate in enumerate(candidates, start=1):
         if not isinstance(candidate, dict) or not candidate.get("include"):
@@ -1266,6 +1304,7 @@ def write_digest(project_root: Path) -> StageResult:
             section_sources.setdefault("Главная история дня", []).insert(0, source_label)
             section_scores.setdefault("Главная история дня", []).insert(0, 0.0)
             section_fingerprints.setdefault("Главная история дня", []).insert(0, str(candidate.get("fingerprint") or "").strip())
+            section_titles.setdefault("Главная история дня", []).insert(0, title)
         else:
             if not line.startswith("• "):
                 line = f"• {line}"
@@ -1275,6 +1314,7 @@ def write_digest(project_root: Path) -> StageResult:
             section_sources[section_name].append(source_label)
             section_fingerprints[section_name].append(str(candidate.get("fingerprint") or "").strip())
             section_scores[section_name].append(_section_priority_score(candidate, section_name, line))
+            section_titles[section_name].append(title)
 
     missing_draft_count = quality_counts["dropped_missing_draft_line"]
     if missing_draft_count:
@@ -1282,7 +1322,13 @@ def write_digest(project_root: Path) -> StageResult:
             f"Writer dropped {missing_draft_count} included candidate(s) with missing draft_line — digest continues."
         )
 
-    backfilled_today_focus = _backfill_today_focus(sections, section_sources, section_scores, section_fingerprints)
+    backfilled_today_focus = _backfill_today_focus(
+        sections,
+        section_sources,
+        section_scores,
+        section_fingerprints,
+        section_titles,
+    )
     if backfilled_today_focus:
         warnings.append(
             f"Writer backfilled «{TODAY_FOCUS_SECTION}» with {backfilled_today_focus} item(s) from other practical sections."
@@ -1292,6 +1338,7 @@ def write_digest(project_root: Path) -> StageResult:
         section_sources["Общественный транспорт сегодня"] = ["TfGM"]
         section_scores["Общественный транспорт сегодня"] = [0.0]
         section_fingerprints["Общественный транспорт сегодня"] = [""]
+        section_titles["Общественный транспорт сегодня"] = ["Транспорт проверен"]
         warnings.append("Writer added honest empty-transport coverage line.")
 
     rendered: list[str] = [_title_line(), ""]
@@ -1327,39 +1374,71 @@ def write_digest(project_root: Path) -> StageResult:
         srcs = section_sources.get(section_name, [])
         scores = section_scores.get(section_name, [])
         fps = section_fingerprints.get(section_name, [])
+        titles = section_titles.get(section_name, [])
         # Re-rank capped sections so the cap keeps practical local value,
         # rather than whichever source happened to run first.
         if section_name in SECTION_MAX_ITEMS and scores:
             triples = sorted(
                 zip(lines, srcs + [""] * (len(lines) - len(srcs)),
                     scores + [0.0] * (len(lines) - len(scores)),
-                    fps + [""] * (len(lines) - len(fps))),
+                    fps + [""] * (len(lines) - len(fps)),
+                    titles + [""] * (len(lines) - len(titles))),
                 key=lambda triple: triple[2],
                 reverse=True,
             )
             lines = [t[0] for t in triples]
             srcs = [t[1] for t in triples]
             fps = [t[3] for t in triples]
+            scores = [t[2] for t in triples]
+            titles = [t[4] for t in triples]
         per_source_cap = SECTION_MAX_PER_SOURCE.get(section_name)
         if per_source_cap:
             src_counts: dict[str, int] = {}
             filtered: list[str] = []
+            filtered_srcs: list[str] = []
             filtered_fps: list[str] = []
+            filtered_scores: list[float] = []
+            filtered_titles: list[str] = []
             for idx, ln in enumerate(lines):
                 src = srcs[idx] if idx < len(srcs) else ""
                 if src_counts.get(src, 0) >= per_source_cap:
                     continue
                 src_counts[src] = src_counts.get(src, 0) + 1
                 filtered.append(ln)
+                filtered_srcs.append(src)
                 filtered_fps.append(fps[idx] if idx < len(fps) else "")
+                filtered_scores.append(scores[idx] if idx < len(scores) else 0.0)
+                filtered_titles.append(titles[idx] if idx < len(titles) else "")
             min_items = SECTION_MIN_ITEMS.get(section_name, 0)
             if not min_items or len(filtered) >= min_items or len(lines) < min_items:
                 lines = filtered
+                srcs = filtered_srcs
                 fps = filtered_fps
-        cap = SECTION_MAX_ITEMS.get(section_name)
+                scores = filtered_scores
+                titles = filtered_titles
+        normal_cap = SECTION_MAX_ITEMS.get(section_name)
+        degraded_cap = DEGRADED_LLM_SECTION_MAX_ITEMS.get(section_name) if llm_degraded else None
+        cap = normal_cap
+        if degraded_cap is not None:
+            cap = min(cap, degraded_cap) if cap else degraded_cap
         if cap:
+            if llm_degraded and degraded_cap is not None and len(lines) > cap:
+                normal_cutoff = normal_cap if normal_cap is not None else len(lines)
+                for idx in range(cap, min(len(lines), normal_cutoff)):
+                    degraded_shrink_dropped.append(
+                        {
+                            "section": section_name,
+                            "fingerprint": fps[idx] if idx < len(fps) else "",
+                            "title": titles[idx] if idx < len(titles) else re.sub(r"<[^>]+>", "", lines[idx])[:120],
+                            "source_label": srcs[idx] if idx < len(srcs) else "",
+                            "reader_value_score": scores[idx] if idx < len(scores) else 0.0,
+                            "reason": "LLM rewrite was degraded; held lower-priority item for review.",
+                        }
+                    )
             lines = lines[:cap]
             fps = fps[:cap]
+            scores = scores[:cap]
+            titles = titles[:cap]
         # Per-source / per-section caps can filter every remaining line —
         # don't emit a bare section header in that case, the release gate
         # rejects empty low-signal blocks.
@@ -1373,6 +1452,11 @@ def write_digest(project_root: Path) -> StageResult:
         rendered.append("")
 
     quality_counts["rendered_candidates"] = len(rendered_candidate_fingerprints)
+    if degraded_shrink_dropped:
+        warnings.append(
+            "LLM degraded shrink held "
+            f"{len(degraded_shrink_dropped)} lower-priority item(s) out of the digest."
+        )
 
     draft_path.write_text("\n".join(rendered).strip() + "\n", encoding="utf-8")
     write_json(
@@ -1387,6 +1471,13 @@ def write_digest(project_root: Path) -> StageResult:
             "quality_counts": quality_counts,
             "section_counts": section_counts,
             "backfilled_today_focus": backfilled_today_focus,
+            "degraded_shrink": {
+                "enabled": bool(llm_degraded),
+                "llm_stage_status": str(llm_rewrite_report.get("stage_status") or "") if llm_rewrite_report else "",
+                "caps": DEGRADED_LLM_SECTION_MAX_ITEMS if llm_degraded else {},
+                "dropped_count": len(degraded_shrink_dropped),
+                "dropped_items": degraded_shrink_dropped[:50],
+            },
             "rendered_candidate_fingerprints": rendered_candidate_fingerprints,
             "dropped_candidates": dropped_candidates,
             "draft_path": str(draft_path.resolve()),

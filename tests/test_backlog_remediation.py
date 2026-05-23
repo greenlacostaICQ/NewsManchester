@@ -36,6 +36,7 @@ from scripts.run_local_digest import (
     _section_name_human,
     _section_shape_rows,
     _source_counts_phrase,
+    _build_product_support_text,
     _support_top_issues,
     _ticket_type_human,
     _ticketmaster_rows,
@@ -110,6 +111,53 @@ class WriterRenderedFingerprintTest(unittest.TestCase):
             self.assertEqual(report["quality_counts"]["rendered_candidates"], 14)
             self.assertEqual(len(report["rendered_candidate_fingerprints"]), 14)
             self.assertNotIn("fp-14", report["rendered_candidate_fingerprints"])
+
+    def test_degraded_llm_shrink_holds_lower_priority_soft_section_items(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            candidates = []
+            for idx in range(8):
+                candidates.append(
+                    {
+                        "fingerprint": f"city-{idx}",
+                        "include": True,
+                        "category": "media_layer",
+                        "primary_block": "city_watch",
+                        "title": f"City item {idx}",
+                        "lead": f"Manchester council confirmed useful local change {idx}.",
+                        "summary": f"Residents get a concrete update with dates and affected services {idx}.",
+                        "evidence_text": (
+                            f"Manchester council confirmed useful local change {idx}. Residents get a concrete "
+                            "update with dates, affected services, local impact, borough context, and a clear "
+                            "reason to check whether the change affects their routine this week."
+                        ),
+                        "practical_angle": "Проверьте, касается ли это вашего района.",
+                        "source_label": f"Source {idx}",
+                        "source_url": f"https://example.test/{idx}",
+                        "draft_line": (
+                            f"• Manchester: совет подтвердил практическое изменение {idx}, которое касается жителей "
+                            "района и ближайших сервисов. В тексте есть конкретный повод, дата и понятное действие "
+                            "для читателя, поэтому пункт можно оценить без догадок."
+                        ),
+                        "reader_value_score": 100 - idx,
+                    }
+                )
+            (state_dir / "candidates.json").write_text(json.dumps({"candidates": candidates}), encoding="utf-8")
+            (state_dir / "llm_rewrite_report.json").write_text(
+                json.dumps({"stage_status": "degraded", "warnings": ["LLM rewrite yield low"]}),
+                encoding="utf-8",
+            )
+
+            result = write_digest(root)
+            self.assertTrue(result.ok)
+            report = json.loads((state_dir / "writer_report.json").read_text(encoding="utf-8"))
+
+            self.assertEqual(report["section_counts"]["Городской радар"], 5)
+            self.assertEqual(report["degraded_shrink"]["dropped_count"], 3)
+            self.assertEqual(len(report["rendered_candidate_fingerprints"]), 5)
+            self.assertNotIn("city-7", report["rendered_candidate_fingerprints"])
 
     def test_borderline_candidate_is_held_not_rendered(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -816,7 +864,85 @@ class AdminAlertCopyTest(unittest.TestCase):
             borderline_queue={"counts": {"borderline": 0}},
             event_miss_review={"counts": {"critical_misses": 2}},
         )
-        self.assertIn("Потеряны важные события", event_issues[0][0])
+        self.assertIn("Возможные пропуски", event_issues[0][0])
+
+    def test_product_support_report_is_human_sized_and_hides_technical_dump(self) -> None:
+        report = {
+            "run_date_london": "2026-05-23",
+            "release_decision": "pass",
+            "warnings": ["LLM rewrite was degraded; writer/release quality gates handled the remaining candidates."],
+            "digest_health": {"risk_level": "at_risk", "signals": []},
+            "quality_scorecard": {
+                "today": {
+                    "ticket_types": {
+                        "old_public_sale": {"fetched": 28, "published": 5},
+                        "unknown": {"fetched": 18, "published": 1},
+                    }
+                }
+            },
+            "event_miss_review": {
+                "counts": {"critical_misses": 2},
+                "critical_misses": [
+                    {
+                        "title": "Sasha & John Digweed Manchester 2026",
+                        "verdict": "dedupe_lost_event",
+                        "kept_title": "Bulletin of the John Rylands Library",
+                        "days_out": 1,
+                        "score": 9,
+                    },
+                    {
+                        "title": "Neddy Goes To Glasto",
+                        "verdict": "writer_dropped_event",
+                        "days_out": 0,
+                        "score": 8,
+                    },
+                ],
+            },
+            "borderline_queue": {
+                "counts": {"borderline": 52},
+                "items": [
+                    {"title": "Man shot in Prestwich", "quality_warnings": ["crime_borderline:what_happened"]},
+                    {"title": "Office building plan", "quality_warnings": ["property_borderline:decision_or_action"]},
+                ],
+            },
+            "transport_coverage": {
+                "verdict": "disruptions_rendered",
+                "tfgm_checked": True,
+                "metrolink_checked": False,
+                "national_rail_checked": True,
+                "disruptions_found": 3,
+                "disruptions_rendered": 3,
+            },
+            "source_status": {
+                "counts": {"ok": 72, "failed": 0, "empty": 19, "stale": 16, "zero_yield": 61},
+                "sources": [],
+            },
+        }
+        writer = {
+            "quality_counts": {
+                "included_candidates": 124,
+                "rendered_candidates": 47,
+                "dropped_missing_draft_line": 3,
+                "dropped_low_quality": 9,
+            },
+            "section_counts": {
+                "Городской радар": 9,
+                "Выходные в GM": 8,
+                "Билеты / Ticket Radar": 6,
+                "Погода": 1,
+            },
+            "degraded_shrink": {"enabled": True, "dropped_count": 7},
+        }
+        text = _build_product_support_text(report, writer)
+
+        self.assertIn("опубликовано 47 пунктов", text)
+        self.assertIn("Возможные пропуски", text)
+        self.assertIn("ложный дубль", text)
+        self.assertIn("Metrolink: не проверен отдельно", text)
+        self.assertIn("Осторожный режим: удержано 7", text)
+        self.assertIn("полный список скрыт из Telegram", text)
+        for forbidden in ("fingerprint", "rendered", "accepted", "fetched=", "zero-yield"):
+            self.assertNotIn(forbidden, text)
 
 
 class PublishedReviewTest(unittest.TestCase):
