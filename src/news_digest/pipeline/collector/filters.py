@@ -614,8 +614,28 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     "GMP": _SourcePolicy(path_must_contain=("/news/greater-manchester/news/news/",)),
     # ── Media layer ───────────────────────────────────────────────────────────
     "MEN": _SourcePolicy(
-        path_must_contain=("/news/", "/whats-on/"),
+        path_must_contain=("/news/greater-manchester-news/",),
         path_banned_segments=("/all-about/", "/topic/", "/author/", "/newsletter/"),
+        min_title_len=18,
+    ),
+    "MEN Latest News": _SourcePolicy(
+        path_must_contain=("/news/greater-manchester-news/",),
+        path_banned_segments=("/all-about/", "/topic/", "/author/", "/newsletter/"),
+        min_title_len=18,
+    ),
+    "ITV Granada Greater Manchester": _SourcePolicy(
+        path_must_contain=("/news/granada/",),
+        path_banned_segments=("/topic/", "/weather/", "/watch/"),
+        min_title_len=18,
+    ),
+    "Place North West": _SourcePolicy(
+        path_banned_segments=("/events/", "/jobs/", "/author/", "/category/", "/tag/", "/newsletter/", "/subscribe/"),
+        min_title_len=18,
+    ),
+    "About Manchester News": _SourcePolicy(
+        path_banned_segments=("/category/", "/tag/", "/author/", "/page/"),
+        require_gm_token=True,
+        min_title_len=18,
     ),
     "The Mill": _SourcePolicy(
         path_banned_segments=("/tag/", "/author/", "/page/"),
@@ -966,10 +986,28 @@ def _source_override(
     """Return True/False for sources whose logic can't be expressed as _SourcePolicy.
     Return None to fall through to policy/default evaluation.
     """
-    if source.name == "BBC Manchester":
+    if source.name in {"BBC Manchester", "BBC Manchester Web"}:
         if not ("/news/articles/" in lowered_path or "/news/uk-england-" in lowered_path):
             return False
-        return _has_gm_token(lowered_title, lowered_path, lowered_summary)
+        # These inputs are already scoped to BBC Manchester. Requiring a
+        # Manchester token in every headline silently lost local articles like
+        # "Ditch your car..." where the region marker is page context, not
+        # link text. Downstream non-GM validation still catches false positives.
+        return True
+
+    if source.name == "Place North West":
+        if any(t in lowered_path for t in ("/events/", "/jobs/", "/author/", "/category/", "/tag/", "/newsletter/", "/subscribe/")):
+            return False
+        blob = f"{lowered_title} {lowered_summary}"
+        built_environment_terms = (
+            "planning", "approved", "submitted", "development", "developer",
+            "tower", "skyscraper", "hotel", "office", "homes", "apartments",
+            "regeneration", "redevelopment", "site", "scheme", "industrial",
+            "construction", "residential", "flats", "affordable", "sq ft",
+            "mall", "takes control", "property",
+        )
+        gm_or_mcr = _has_gm_token(lowered_title, lowered_path, lowered_summary) or re.search(r"\bmcr\b", blob)
+        return bool(gm_or_mcr and any(term in blob for term in built_environment_terms))
 
     if source.name == "BBC Manchester public safety fallback":
         if not ("/news/articles/" in lowered_path or "/news/uk-england-" in lowered_path):

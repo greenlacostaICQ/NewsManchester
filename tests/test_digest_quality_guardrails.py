@@ -25,6 +25,7 @@ from news_digest.pipeline.editorial_contracts import build_editorial_contract, c
 from news_digest.pipeline.writer import (
     _build_recurring_event_fallback_line,
     _build_ticket_fallback_line,
+    _contract_public_drop_reason,
     _line_claims_future_ticket_sale,
     _repair_editorial_contract_line,
     _section_priority_score,
@@ -1104,6 +1105,121 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             "human_interest",
         )
 
+    def test_men_garage_to_millions_profile_is_rejected(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "emma-thackray-profile",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "'We started in a garage in Altrincham, now our hobby is worth millions'",
+                "summary": (
+                    "Emma Thackray turned a hobby making non-alcoholic drinks "
+                    "in a garage into an international company and launched "
+                    "a new soda linked to a Hollywood film."
+                ),
+                "source_label": "MEN",
+                "source_url": "https://example.test/emma-thackray",
+                "published_at": now_london().isoformat(),
+                "change_type": "new_story",
+            }
+        )
+
+        self.assertFalse(updated.get("include"))
+        self.assertIn("motivational_human_interest", updated.get("reject_reasons") or [])
+
+    def test_private_property_listing_is_rejected_from_news(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "salford-house-listing",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "What £500,000 buys you in Salford - a huge seven-bed house with four floors",
+                "summary": "A seven-bed semi-detached house is for sale after 23 years.",
+                "source_label": "MEN",
+                "source_url": "https://example.test/property-listing",
+                "published_at": now_london().isoformat(),
+                "change_type": "new_story",
+            }
+        )
+
+        self.assertFalse(updated.get("include"))
+        self.assertIn("property_listing", updated.get("reject_reasons") or [])
+
+    def test_day_out_guide_is_rejected_from_news(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "delamere-water-park-guide",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "The water park near Manchester with an inflatable Aqua Park, floating obstacle course and more",
+                "summary": "The Cheshire attraction is perfect for a sunny day out near Manchester.",
+                "source_label": "MEN",
+                "source_url": "https://example.test/water-park-guide",
+                "published_at": now_london().isoformat(),
+                "change_type": "new_story",
+            }
+        )
+
+        self.assertFalse(updated.get("include"))
+        self.assertIn("day_out_guide", updated.get("reject_reasons") or [])
+
+    def test_real_development_and_cost_news_are_not_filler(self) -> None:
+        real_items = [
+            {
+                "title": "Manchester hotel plan for Charles Street Maldron site submitted",
+                "summary": "Developers have submitted plans for a new hotel building on Charles Street in Manchester city centre.",
+                "source_url": "https://example.test/manchester-hotel-charles-street-maldron",
+            },
+            {
+                "title": "Manchester CIS Tower plan would turn landmark into skyscraper homes",
+                "summary": "A developer has lodged a planning application for the CIS Tower in Manchester.",
+                "source_url": "https://example.test/manchester-cis-tower-plan-skyscraper",
+            },
+            {
+                "title": "Parking in Manchester is getting more expensive",
+                "summary": "New parking charges in Manchester city centre affect drivers from this week.",
+                "source_url": "https://example.test/parking-manchester-getting-expensive",
+            },
+        ]
+        for item in real_items:
+            with self.subTest(item=item["title"]):
+                candidate = {
+                    "include": True,
+                    "fingerprint": item["source_url"],
+                    "category": "media_layer",
+                    "primary_block": "last_24h",
+                    "title": item["title"],
+                    "summary": item["summary"],
+                    "source_label": "MEN",
+                    "source_url": item["source_url"],
+                    "published_at": now_london().isoformat(),
+                    "change_type": "new_story",
+                }
+                contract = build_editorial_contract(candidate)
+                self.assertNotEqual(contract["publish_tier"], "filler")
+                self.assertFalse(contract.get("reject_reason"))
+
+    def test_road_only_transport_is_rejected(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "smithy-bridge-road",
+                "category": "transport",
+                "primary_block": "transport",
+                "title": "Smithy Bridge Road, Littleborough - Road Closure",
+                "summary": "Road closure due to works.",
+                "source_label": "TfGM",
+                "source_url": "https://tfgm.com/travel-updates/travel-alerts/smithy-bridge-road-littleborough-road-closure",
+                "published_at": now_london().isoformat(),
+            }
+        )
+
+        self.assertFalse(updated.get("include"))
+        self.assertIn("road_only_transport", updated.get("reject_reasons") or [])
+
     def test_kieran_style_career_pivot_profile_is_rejected(self) -> None:
         updated = self._validate_one(
             {
@@ -1190,6 +1306,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertIn("weather_wording", reasons)
         self.assertNotIn("до 0%", repaired)
+        self.assertIn("без существенных осадков", repaired)
         self.assertNotIn("Днём заметно теплее утра", repaired)
 
     def test_bookable_activity_scores_below_real_weekend_event(self) -> None:
@@ -1217,6 +1334,22 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertGreater(real_score, bookable_score + 40)
         self.assertEqual(build_editorial_contract(bookable)["event_shape"], "bookable_activity")
+        bookable["editorial_contract"] = build_editorial_contract(bookable)
+        self.assertEqual(_contract_public_drop_reason(bookable), "bookable_activity_filler")
+
+    def test_core_news_sources_use_news_surfaces_not_homepage_only(self) -> None:
+        by_name = {source.name: source for source in SOURCES}
+        self.assertIn("BBC Manchester Web", by_name)
+        self.assertIn("MEN Latest News", by_name)
+        self.assertIn("ITV Granada Greater Manchester", by_name)
+        self.assertIn("Place North West", by_name)
+        self.assertIn("About Manchester News", by_name)
+        self.assertEqual(
+            by_name["MEN"].url,
+            "https://www.manchestereveningnews.co.uk/news/greater-manchester-news/",
+        )
+        self.assertEqual(by_name["MEN Latest News"].url, "https://www.manchestereveningnews.co.uk/news/")
+        self.assertEqual(by_name["About Manchester News"].url, "https://aboutmanchester.co.uk/latest/")
 
     def test_barton_recurring_car_boot_is_not_bookable_or_bowlee(self) -> None:
         candidate = {

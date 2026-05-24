@@ -411,6 +411,7 @@ _SPECIFIC_TOPIC_PREFIXES = (
 
 _HUMAN_INTEREST_RE = re.compile(
     r"\b(?:"
+    r"started\s+in\s+a\s+garage|hobby\s+is\s+worth\s+millions|garage\s+in\s+altrincham|"
     r"first\s+job|too\s+stupid|question(?:ed)?\s+if\s+i\s+was|"
     r"failed\s+(?:his|her|their|my)?\s*a-?levels?|"
     r"dyslexia|dream(?:ed|t)?s?\s+of\s+(?:making|becoming|a\s+career)|"
@@ -424,9 +425,33 @@ _HUMAN_INTEREST_RE = re.compile(
     r")\b",
     re.IGNORECASE,
 )
+_PRIVATE_PROPERTY_LISTING_RE = re.compile(
+    r"\b(?:"
+    r"what\s+£?\d[\d,]*(?:k|,\d{3})?\s+buys\s+you|"
+    r"for\s+sale|on\s+the\s+market|asking\s+price|guide\s+price|"
+    r"semi[-\s]?detached|detached\s+house|terraced\s+house|"
+    r"bed(?:room)?\s+(?:home|house)|\d+[-\s]bed(?:room)?"
+    r")\b",
+    re.IGNORECASE,
+)
+_DAY_OUT_GUIDE_RE = re.compile(
+    r"\b(?:"
+    r"things?\s+to\s+do|day\s+out|perfect\s+for\s+(?:a\s+)?sunny\s+day|"
+    r"free\s+(?:play\s+park|park)|water\s+park|beach|villages?\s+near|"
+    r"watch\s+planes?\s+(?:take\s+off|coming\s+into\s+land)|"
+    r"beer\s+garden\s+where\s+you\s+can\s+watch|"
+    r"family\s+editor|kids\s+can\s+watch|near\s+manchester"
+    r")\b",
+    re.IGNORECASE,
+)
+_LOCAL_COST_RE = re.compile(
+    r"\b(?:parking|car\s+park|bus\s+fare|fares?|council\s+tax|rent|rents|"
+    r"price(?:s)?|cost(?:s)?|expensive|charges?|tariff)\b",
+    re.IGNORECASE,
+)
 _LOCAL_ACTION_RE = re.compile(
     r"\b(?:"
-    r"opens?|opening|opened|launch(?:es|ed|ing)?|starts?|started|"
+    r"opens?|opening|opened|launch(?:es|ed|ing)?|starts?|started|plans?|planned|"
     r"announc(?:es|ed|ing)|confirm(?:s|ed|ing)|approv(?:es|ed)|reject(?:s|ed)|"
     r"consultation|deadline|trial|pilot|funding|seed|investment|jobs?|"
     r"charged|arrested|sentenced|jailed|convicted|verdict|inquest|appeal|"
@@ -481,11 +506,27 @@ _REAL_OPENING_ACTION_RE = re.compile(
     r"с\s+\d{1,2}\s+[а-яё]+)\b",
     re.IGNORECASE,
 )
+
+
+def _human_interest_has_public_anchor(candidate: dict) -> bool:
+    blob = _contract_blob(candidate).lower()
+    return bool(
+        re.search(
+            r"\b(?:"
+            r"opens?|opened|opening|launch(?:es|ed|ing)?\s+(?:a\s+)?(?:office|site|venue|charity|workshop|programme)|"
+            r"new\s+(?:office|site|venue|charity|workshop|programme)|"
+            r"jobs?|funding|seed|investment|grant|"
+            r"event\s+on|workshop\s+on"
+            r")\b",
+            blob,
+            re.IGNORECASE,
+        )
+    )
 _NEW_PHASE_RE = re.compile(
     r"\b(?:"
     r"charged|arrested|sentenced|jailed|convicted|verdict|trial|hearing|inquest|appeal|cps|"
     r"approved|rejected|submitted|consultation|deadline|opens?|opened|reopens?|launched|"
-    r"confirmed|announced|updated|new\s+date|sale\s+(?:starts|opens)|on\s+sale|"
+    r"confirmed|announced|updated|plans?|planned|new\s+date|sale\s+(?:starts|opens)|on\s+sale|"
     r"обвин|арест|приговор|вердикт|слушан|расследован|одобр|отклон|подан|консультац|"
     r"откры|запуск|подтверд|обнов|новая\s+дат|продаж"
     r")\b",
@@ -614,7 +655,19 @@ def _story_type(candidate: dict, event_shape: str) -> str:
         return "event"
     if _MEMORIAL_RE.search(blob):
         return "memorial"
+    if _PRIVATE_PROPERTY_LISTING_RE.search(blob) and not re.search(
+        r"\b(?:planning|development|developer|approved|submitted|council|hotel|tower|skyscraper|office|scheme|regeneration)\b",
+        lowered,
+    ):
+        return "property_listing"
+    if _DAY_OUT_GUIDE_RE.search(blob) and not re.search(
+        r"\b(?:opens?|opened|launch(?:es|ed)?|closed|closure|planning|approved|submitted|fire|court|police|charged|arrested)\b",
+        lowered,
+    ):
+        return "day_out_guide"
     if _HUMAN_INTEREST_RE.search(blob):
+        return "human_interest"
+    if re.search(r"\b(?:started\s+in\s+a\s+garage|hobby\s+is\s+worth\s+millions|turned\s+(?:a\s+)?hobby|from\s+garage)\b", lowered):
         return "human_interest"
     if _RESEARCH_RE.search(blob) or "university" in source:
         return "research"
@@ -622,8 +675,10 @@ def _story_type(candidate: dict, event_shape: str) -> str:
         if _OLD_EXISTING_FOOD_RE.search(blob) and not _REAL_OPENING_ACTION_RE.search(blob):
             return "old_existing_food"
         return "opening"
-    if re.search(r"\b(?:planning|development|application|developer|housing|pub|building|site|junction|road\s+scheme)\b", lowered):
+    if re.search(r"\b(?:planning|development|application|developer|housing|hotel|tower|skyscraper|pub|building|site|junction|road\s+scheme)\b", lowered):
         return "planning"
+    if _LOCAL_COST_RE.search(blob) and _LOCATION_SIGNAL.search(blob):
+        return "local_cost"
     if re.search(r"\b(?:police|gmp|court|charged|arrested|sentenced|crash|collision|fire|death|killed|died)\b", lowered):
         return "incident"
     if re.search(r"\b(?:council|mayor|election|by-?election|candidate|consultation)\b", lowered):
@@ -662,6 +717,8 @@ def _anchor_type(candidate: dict, story_type: str, event_shape: str) -> str:
         return "research_publication"
     if story_type == "human_interest":
         return "biographical_profile"
+    if story_type == "local_cost" and why_now_is_publishable(infer_why_now(candidate)):
+        return "new_local_cost"
     return "none"
 
 
@@ -671,9 +728,9 @@ def _publish_tier(candidate: dict, story_type: str, event_shape: str, anchor_typ
         return "must_include"
     if anchor_type == "stale_public_service":
         return "reject"
-    if story_type == "old_existing_food":
+    if story_type in {"old_existing_food", "property_listing", "day_out_guide"}:
         return "reject"
-    if story_type == "human_interest" and anchor_type in {"biographical_profile", "none"}:
+    if story_type == "human_interest" and not _human_interest_has_public_anchor(candidate):
         return "reject"
     if story_type == "soft_news" and anchor_type in {"none", "local_action"}:
         return "filler"
@@ -683,7 +740,7 @@ def _publish_tier(candidate: dict, story_type: str, event_shape: str, anchor_typ
         return "filler"
     if event_shape in {"festival", "recurring"}:
         return "strong"
-    if story_type in {"incident", "planning", "civic", "opening", "memorial"} and anchor_type != "none":
+    if story_type in {"incident", "planning", "civic", "opening", "memorial", "local_cost"} and anchor_type != "none":
         return "strong"
     if story_type == "ticket":
         ticket_type = classify_ticket_type(candidate)
@@ -774,6 +831,10 @@ def build_editorial_contract(candidate: dict) -> dict[str, object]:
             reject_reason = "no_news_anchor"
         elif story_type == "old_existing_food":
             reject_reason = "old_existing_food"
+        elif story_type == "property_listing":
+            reject_reason = "property_listing"
+        elif story_type == "day_out_guide":
+            reject_reason = "day_out_guide"
         elif anchor_type == "stale_public_service":
             reject_reason = "stale_public_service"
         else:

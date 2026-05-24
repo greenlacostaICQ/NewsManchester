@@ -21,14 +21,64 @@ fallback_urls = ["https://www.bbc.com/news/england/manchester"]
 allowed_hosts = ["bbc.com", "bbc.co.uk", "bbci.co.uk"]
 
 [[sources]]
-name = "MEN"
-notes = "broad local coverage; нужен жёсткий significance filter"
+name = "BBC Manchester Web"
+notes = "BBC region page backup; RSS can expose only 1-2 stories on quiet runs"
+max_candidates = 20
 report_category = "media_layer"
 candidate_category = "media_layer"
-url = "https://www.manchestereveningnews.co.uk/"
+url = "https://www.bbc.co.uk/news/england/manchester"
+primary_block = "last_24h"
+allowed_hosts = ["bbc.com", "bbc.co.uk"]
+
+[[sources]]
+name = "MEN"
+notes = "core Greater Manchester news category; homepage was too lifestyle-heavy"
+report_category = "media_layer"
+candidate_category = "media_layer"
+url = "https://www.manchestereveningnews.co.uk/news/greater-manchester-news/"
 primary_block = "last_24h"
 allowed_hosts = ["manchestereveningnews.co.uk"]
-max_candidates = 25
+max_candidates = 40
+
+[[sources]]
+name = "MEN Latest News"
+notes = "second MEN news surface; catches local GM stories that miss the category front"
+report_category = "media_layer"
+candidate_category = "media_layer"
+url = "https://www.manchestereveningnews.co.uk/news/"
+primary_block = "last_24h"
+allowed_hosts = ["manchestereveningnews.co.uk"]
+max_candidates = 40
+
+[[sources]]
+name = "ITV Granada Greater Manchester"
+notes = "broadcast-news backup for public safety, courts, transport and civic stories"
+report_category = "media_layer"
+candidate_category = "media_layer"
+url = "https://www.itv.com/news/granada/topic/greater-manchester"
+primary_block = "last_24h"
+allowed_hosts = ["itv.com"]
+max_candidates = 15
+
+[[sources]]
+name = "Place North West"
+notes = "planning, property development and city-centre built-environment news"
+report_category = "media_layer"
+candidate_category = "media_layer"
+url = "https://www.placenorthwest.co.uk/"
+primary_block = "last_24h"
+allowed_hosts = ["placenorthwest.co.uk"]
+max_candidates = 15
+
+[[sources]]
+name = "About Manchester News"
+notes = "local news backup; helps when MEN/BBC front pages are thin"
+report_category = "media_layer"
+candidate_category = "media_layer"
+url = "https://aboutmanchester.co.uk/latest/"
+primary_block = "last_24h"
+allowed_hosts = ["aboutmanchester.co.uk"]
+max_candidates = 15
 
 [[sources]]
 name = "The Mill"

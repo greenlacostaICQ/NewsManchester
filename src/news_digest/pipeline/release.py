@@ -1306,8 +1306,19 @@ _DATE_HINT_IN_EVIDENCE = re.compile(
     r"|\bв\s+(?:понедельник|вторник|среду|четверг|пятницу|субботу|воскресенье)\b",
     re.IGNORECASE,
 )
-_PREMIUM_SOURCE_PRIORITY = frozenset({"BBC Manchester", "MEN", "The Mill", "The Manc",
-                                       "Manchester Council", "GMCA"})
+_PREMIUM_SOURCE_PRIORITY = frozenset({
+    "BBC Manchester",
+    "BBC Manchester Web",
+    "MEN",
+    "MEN Latest News",
+    "ITV Granada Greater Manchester",
+    "Place North West",
+    "About Manchester News",
+    "The Mill",
+    "The Manc",
+    "Manchester Council",
+    "GMCA",
+})
 
 _PUBLISHED_UPDATE_MARKERS = re.compile(
     r"\b(today|this morning|this afternoon|yesterday|latest|update|updated|"

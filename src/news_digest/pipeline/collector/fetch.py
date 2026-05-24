@@ -69,6 +69,7 @@ _CLOUDFLARE_PROTECTED_HOSTS: tuple[str, ...] = (
     "rncm.ac.uk",
     "eventbrite.co.uk",
     "eventbrite.com",
+    "itv.com",
     "visitsalford.info",
 )
 

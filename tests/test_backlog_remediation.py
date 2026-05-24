@@ -4,6 +4,7 @@ import json
 import tempfile
 import unittest
 from contextlib import redirect_stdout
+from datetime import timedelta
 from io import StringIO
 from pathlib import Path
 
@@ -492,17 +493,19 @@ class EventQualityPipelineTest(unittest.TestCase):
         self.assertIn("future_opening_too_early", future["reject_reasons"])
 
     def test_validator_keeps_today_food_opening(self) -> None:
+        today = now_london().date()
+        date_text = f"{today.day} {today.strftime('%B')}"
         updated = self._validate_one(
             {
                 "include": True,
                 "fingerprint": "bunsik",
                 "category": "food_openings",
                 "primary_block": "openings",
-                "title": "Bunsik opens at Trafford Centre on 20 May",
-                "summary": "The Trafford Centre opening runs 20 May with launch offers.",
+                "title": f"Bunsik opens at Trafford Centre on {date_text}",
+                "summary": f"The Trafford Centre opening runs {date_text} with launch offers.",
                 "lead": "",
-                "evidence_text": "The Trafford Centre opening runs 20 May with launch offers.",
-                "published_at": "2026-05-20T09:00:00+01:00",
+                "evidence_text": f"The Trafford Centre opening runs {date_text} with launch offers.",
+                "published_at": f"{today.isoformat()}T09:00:00+01:00",
                 "source_label": "Food Source",
                 "source_url": "https://example.test/bunsik",
                 "dedupe_decision": "new",
@@ -1160,6 +1163,9 @@ class PublishedReviewTest(unittest.TestCase):
             self.assertTrue(any("Event miss review" in warning for warning in report["warnings"]))
 
     def test_release_review_flags_bad_visible_items(self) -> None:
+        today = now_london().date()
+        old_news_day = today - timedelta(days=25)
+        stale_food_day = today - timedelta(days=10)
         candidates = [
             {
                 "fingerprint": "gmca-old",
@@ -1167,7 +1173,7 @@ class PublishedReviewTest(unittest.TestCase):
                 "source_label": "GMCA",
                 "category": "council",
                 "primary_block": "city_watch",
-                "published_at": "2026-04-29T09:00:00+01:00",
+                "published_at": f"{old_news_day.isoformat()}T09:00:00+01:00",
                 "summary": "A general statement was issued after an old incident.",
             },
             {
@@ -1176,8 +1182,8 @@ class PublishedReviewTest(unittest.TestCase):
                 "source_label": "Food Source",
                 "category": "food_openings",
                 "primary_block": "openings",
-                "published_at": "2026-05-01T09:00:00+01:00",
-                "event": {"date_start": "2026-05-01"},
+                "published_at": f"{stale_food_day.isoformat()}T09:00:00+01:00",
+                "event": {"date_start": stale_food_day.isoformat()},
             },
             {
                 "fingerprint": "food-current",
@@ -1185,8 +1191,8 @@ class PublishedReviewTest(unittest.TestCase):
                 "source_label": "Food Source",
                 "category": "food_openings",
                 "primary_block": "openings",
-                "published_at": "2026-05-20T09:00:00+01:00",
-                "event": {"date_start": "2026-05-20"},
+                "published_at": f"{today.isoformat()}T09:00:00+01:00",
+                "event": {"date_start": today.isoformat()},
             },
         ]
 
@@ -1214,6 +1220,9 @@ class PublishedReviewTest(unittest.TestCase):
         self.assertIn("74", health)
 
     def test_anti_golden_2026_05_20_visible_garbage_is_warning_only(self) -> None:
+        today = now_london().date()
+        old_news_day = today - timedelta(days=25)
+        stale_food_day = today - timedelta(days=10)
         candidates = [
             {
                 "fingerprint": "old-gmca",
@@ -1221,7 +1230,7 @@ class PublishedReviewTest(unittest.TestCase):
                 "source_label": "GMCA",
                 "category": "council",
                 "primary_block": "city_watch",
-                "published_at": "2026-04-29T09:00:00+01:00",
+                "published_at": f"{old_news_day.isoformat()}T09:00:00+01:00",
                 "summary": "Mayor comments on community concern after an old incident.",
             },
             {
@@ -1230,8 +1239,8 @@ class PublishedReviewTest(unittest.TestCase):
                 "source_label": "Manchester's Finest",
                 "category": "food_openings",
                 "primary_block": "openings",
-                "published_at": "2026-05-01T09:00:00+01:00",
-                "event": {"date_start": "2026-05-01"},
+                "published_at": f"{stale_food_day.isoformat()}T09:00:00+01:00",
+                "event": {"date_start": stale_food_day.isoformat()},
             },
             {
                 "fingerprint": "bunsik-today",
@@ -1239,8 +1248,8 @@ class PublishedReviewTest(unittest.TestCase):
                 "source_label": "About Manchester",
                 "category": "food_openings",
                 "primary_block": "openings",
-                "published_at": "2026-05-20T09:00:00+01:00",
-                "event": {"date_start": "2026-05-20"},
+                "published_at": f"{today.isoformat()}T09:00:00+01:00",
+                "event": {"date_start": today.isoformat()},
             },
         ]
 

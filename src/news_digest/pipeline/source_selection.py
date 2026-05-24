@@ -50,7 +50,10 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
         # active source for public-safety stories.
         "BBC Manchester public safety fallback",
         "BBC Manchester",
+        "BBC Manchester Web",
+        "ITV Granada Greater Manchester",
         "MEN",
+        "MEN Latest News",
     ),
     "council": (
         # Borough-specific stories should prefer the borough's own
@@ -70,14 +73,20 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
         "Tameside Council",
         "GMCA",
         "BBC Manchester",
+        "BBC Manchester Web",
         "The Mill",
         "MEN",
+        "MEN Latest News",
+        "ITV Granada Greater Manchester",
+        "Place North West",
     ),
     "football": (
         "Manchester United",
         "Manchester City",
         "BBC Manchester",
+        "BBC Manchester Web",
         "MEN",
+        "MEN Latest News",
     ),
     "culture_weekly": (
         # Venue-direct sources first — they own the listing.
@@ -159,7 +168,9 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
         "GMMH",
         "GMCA",
         "BBC Manchester",
+        "BBC Manchester Web",
         "MEN",
+        "MEN Latest News",
     ),
     "tech_business": (
         "MIDAS Manchester",
@@ -174,8 +185,13 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
     "media_layer": (
         # General-news ladder (no category-specific preference).
         "BBC Manchester",
+        "BBC Manchester Web",
         "MEN",
+        "MEN Latest News",
         "The Mill",
+        "ITV Granada Greater Manchester",
+        "Place North West",
+        "About Manchester News",
         "Altrincham Today",
         "The Manc",
         "I Love Manchester",
@@ -227,9 +243,14 @@ SOURCE_TIER: dict[str, int] = {
 
     # ── Tier 2: regional / national authoritative media ─────────────────
     "BBC Manchester": 2,
+    "BBC Manchester Web": 2,
     "BBC Manchester public safety fallback": 2,
+    "ITV Granada Greater Manchester": 2,
     "MEN": 2,
+    "MEN Latest News": 2,
     "The Mill": 2,
+    "Place North West": 2,
+    "About Manchester News": 2,
     "MIDAS Manchester": 2,
     "Prolific North": 2,
     "BusinessCloud": 2,

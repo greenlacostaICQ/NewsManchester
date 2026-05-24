@@ -82,7 +82,6 @@ TODAY_FOCUS_SECTION = "Что важно сегодня"
 TODAY_FOCUS_BACKFILL_SECTIONS = (
     "Что произошло за 24 часа",
     "Городской радар",
-    "Общественный транспорт сегодня",
 )
 TODAY_FOCUS_BACKFILL_TARGET = 2
 TODAY_FOCUS_BACKFILL_MIN_SCORE = 67.5
@@ -90,7 +89,6 @@ TODAY_FOCUS_MIN_SOURCE_REMAINING = {
     # Don't gut source blocks just to fill today_focus.
     "Что произошло за 24 часа": 3,
     "Городской радар": 4,
-    "Общественный транспорт сегодня": 1,
 }
 
 # When the LLM rewrite stage is degraded, keep the digest conservative:
@@ -257,6 +255,34 @@ def _backfill_today_focus(
         section_fingerprints.pop(TODAY_FOCUS_SECTION, None)
         section_titles.pop(TODAY_FOCUS_SECTION, None)
     return moved
+
+
+def _contract_public_drop_reason(candidate: dict) -> str:
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    tier = str(contract.get("publish_tier") or candidate.get("publish_tier") or "")
+    event_shape = str(contract.get("event_shape") or candidate.get("event_shape") or "")
+    reject_reason = str(contract.get("reject_reason") or "")
+    if reject_reason:
+        return f"editorial_contract:{reject_reason}"
+    if block == "transport" and str(candidate.get("transport_mode") or "") == "road":
+        return "road_only_transport"
+    if (
+        tier == "filler"
+        and block in {"last_24h", "today_focus", "city_watch"}
+        and category in {"media_layer", "council", "public_services", "gmp", "city_news"}
+    ):
+        return "editorial_filler"
+    if event_shape == "bookable_activity" and (
+        block == "weekend_activities"
+        or (
+            block == "next_7_days"
+            and "designmynight" in str(candidate.get("source_label") or "").lower()
+        )
+    ):
+        return "bookable_activity_filler"
+    return ""
 
 
 def _contains_cyrillic(value: str) -> bool:
@@ -747,7 +773,7 @@ def _repair_weather_line(line: str) -> str:
     text = str(line or "")
     text = re.sub(
         r"вероятность\s+осадков\s+до\s+0\s*%",
-        "осадков почти не ждут",
+        "без существенных осадков",
         text,
         flags=re.IGNORECASE,
     )
@@ -770,7 +796,7 @@ def _repair_editorial_contract_line(candidate: dict, line: str) -> tuple[str, li
     if event_shape == "recurring" and str(candidate.get("primary_block") or "") == "weekend_activities":
         # Recurring items must lead with the next occurrence. The season
         # start/end can be supporting detail, never the lead.
-        if re.search(r"\b(?:до|until)\s+\d{1,2}\s+[A-Za-zА-Яа-яЁё]+|opens?\s+\d{1,2}\s+[A-Za-zА-Яа-яЁё]+|с\s+\d{1,2}\s+[а-яё]+", repaired, flags=re.IGNORECASE):
+        if re.search(r"\b(?:до|until)\s+\d{1,2}\s+[A-Za-zА-Яа-яЁё]+|opens?\s+\d{1,2}\s+[A-Za-zА-Яа-яЁё]+|с\s+\d{1,2}\s+[а-яё]+|\b(?:every|each)\s+(?:saturday|sunday)|\bкажд(?:ую|ое|ый|ые)\s+(?:суббот|воскрес)", repaired, flags=re.IGNORECASE):
             repaired = _build_recurring_event_fallback_line(candidate)
             reasons.append("recurring_occurrence_first")
     elif event_shape == "festival":
@@ -1353,6 +1379,21 @@ def write_digest(project_root: Path) -> StageResult:
             continue
         attach_editorial_contract(candidate)
         quality_counts["included_candidates"] += 1
+        contract_drop_reason = _contract_public_drop_reason(candidate)
+        if contract_drop_reason and candidate.get("manual_override") != "force_include":
+            warnings.append(f"Candidate #{index} dropped by editorial contract: {contract_drop_reason}.")
+            quality_counts["dropped_low_quality"] += 1
+            dropped_candidates.append(
+                {
+                    "fingerprint": candidate.get("fingerprint"),
+                    "title": str(candidate.get("title") or ""),
+                    "category": str(candidate.get("category") or ""),
+                    "primary_block": str(candidate.get("primary_block") or ""),
+                    "is_lead": bool(candidate.get("is_lead")),
+                    "reasons": [contract_drop_reason],
+                }
+            )
+            continue
         if (
             candidate.get("editorial_status") == "borderline"
             and candidate.get("manual_override") != "force_include"

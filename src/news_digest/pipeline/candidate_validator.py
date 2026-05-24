@@ -566,7 +566,26 @@ def _exclude_by_editorial_contract(candidate: dict) -> bool:
     contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
     reject_reason = str(contract.get("reject_reason") or "").strip()
     if not reject_reason:
-        return False
+        tier = str(contract.get("publish_tier") or "").strip()
+        event_shape = str(contract.get("event_shape") or "").strip()
+        block = str(candidate.get("primary_block") or "")
+        category = str(candidate.get("category") or "")
+        if (
+            tier == "filler"
+            and block in {"last_24h", "today_focus", "city_watch"}
+            and category in {"media_layer", "city_news", "gmp"}
+        ):
+            reject_reason = "editorial_filler"
+        elif event_shape == "bookable_activity" and (
+            block == "weekend_activities"
+            or (
+                block == "next_7_days"
+                and "designmynight" in str(candidate.get("source_label") or "").lower()
+            )
+        ):
+            reject_reason = "bookable_activity_filler"
+        else:
+            return False
     story_type = str(contract.get("story_type") or "")
     code = reject_reason
     if story_type == "human_interest":
@@ -576,6 +595,21 @@ def _exclude_by_editorial_contract(candidate: dict) -> bool:
         f"(story_type={story_type}, anchor={contract.get('anchor_type')}, tier={contract.get('publish_tier')})."
     )
     _append_reject(candidate, code, note)
+    return True
+
+
+def _exclude_road_only_transport(candidate: dict) -> bool:
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("primary_block") or "") != "transport" and str(candidate.get("category") or "") != "transport":
+        return False
+    if str(candidate.get("transport_mode") or "") != "road":
+        return False
+    _append_reject(
+        candidate,
+        "road_only_transport",
+        "Validator: road-only TfGM alert is not public transport coverage.",
+    )
     return True
 
 
@@ -1338,7 +1372,7 @@ def validate_candidates(project_root: Path) -> StageResult:
         attach_editorial_contract(candidate)
         manual = _manual_override(candidate, state_dir)
         if candidate.get("include") and manual != "force_include":
-            _exclude_by_editorial_contract(candidate)
+            _exclude_road_only_transport(candidate)
         if candidate.get("include"):
             _exclude_stale_ticket_onsale(candidate)
         if candidate.get("include"):
@@ -1355,6 +1389,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _exclude_book_author_in_tech_business(candidate)
         if candidate.get("include"):
             _exclude_stale_undated_news_from_text(candidate)
+        if candidate.get("include") and manual != "force_include":
+            _exclude_by_editorial_contract(candidate)
         if candidate.get("include"):
             _exclude_paywall_stub(candidate)
         if candidate.get("include"):
