@@ -1311,6 +1311,7 @@ _PREMIUM_SOURCE_PRIORITY = frozenset({
     "BBC Manchester Web",
     "MEN",
     "MEN Latest News",
+    "MEN News Sitemap",
     "ITV Granada Greater Manchester",
     "Place North West",
     "About Manchester News",

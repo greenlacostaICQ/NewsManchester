@@ -623,6 +623,11 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
         path_banned_segments=("/all-about/", "/topic/", "/author/", "/newsletter/"),
         min_title_len=18,
     ),
+    "MEN News Sitemap": _SourcePolicy(
+        path_must_contain=("/news/greater-manchester-news/",),
+        path_banned_segments=("/all-about/", "/topic/", "/author/", "/newsletter/"),
+        min_title_len=18,
+    ),
     "ITV Granada Greater Manchester": _SourcePolicy(
         path_must_contain=("/news/granada/",),
         path_banned_segments=("/topic/", "/weather/", "/watch/"),

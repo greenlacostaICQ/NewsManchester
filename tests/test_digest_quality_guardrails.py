@@ -1341,6 +1341,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         by_name = {source.name: source for source in SOURCES}
         self.assertIn("BBC Manchester Web", by_name)
         self.assertIn("MEN Latest News", by_name)
+        self.assertIn("MEN News Sitemap", by_name)
         self.assertIn("ITV Granada Greater Manchester", by_name)
         self.assertIn("Place North West", by_name)
         self.assertIn("About Manchester News", by_name)
@@ -1349,6 +1350,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             "https://www.manchestereveningnews.co.uk/news/greater-manchester-news/",
         )
         self.assertEqual(by_name["MEN Latest News"].url, "https://www.manchestereveningnews.co.uk/news/")
+        self.assertEqual(by_name["MEN News Sitemap"].source_type, "xml_sitemap")
         self.assertEqual(by_name["About Manchester News"].url, "https://aboutmanchester.co.uk/latest/")
 
     def test_barton_recurring_car_boot_is_not_bookable_or_bowlee(self) -> None:

@@ -54,6 +54,7 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
         "ITV Granada Greater Manchester",
         "MEN",
         "MEN Latest News",
+        "MEN News Sitemap",
     ),
     "council": (
         # Borough-specific stories should prefer the borough's own
@@ -77,6 +78,7 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
         "The Mill",
         "MEN",
         "MEN Latest News",
+        "MEN News Sitemap",
         "ITV Granada Greater Manchester",
         "Place North West",
     ),
@@ -87,6 +89,7 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
         "BBC Manchester Web",
         "MEN",
         "MEN Latest News",
+        "MEN News Sitemap",
     ),
     "culture_weekly": (
         # Venue-direct sources first — they own the listing.
@@ -171,6 +174,7 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
         "BBC Manchester Web",
         "MEN",
         "MEN Latest News",
+        "MEN News Sitemap",
     ),
     "tech_business": (
         "MIDAS Manchester",
@@ -188,6 +192,7 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
         "BBC Manchester Web",
         "MEN",
         "MEN Latest News",
+        "MEN News Sitemap",
         "The Mill",
         "ITV Granada Greater Manchester",
         "Place North West",
@@ -248,6 +253,7 @@ SOURCE_TIER: dict[str, int] = {
     "ITV Granada Greater Manchester": 2,
     "MEN": 2,
     "MEN Latest News": 2,
+    "MEN News Sitemap": 2,
     "The Mill": 2,
     "Place North West": 2,
     "About Manchester News": 2,
