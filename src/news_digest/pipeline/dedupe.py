@@ -876,13 +876,22 @@ def _review_borderline_with_llm(
         base_url_override=os.environ.get("LLM_BASE_URL", "").strip(),
         model_override=os.environ.get("LLM_MODEL", "").strip(),
     )
+    from news_digest.pipeline import provider_health  # noqa: PLC0415
     decisions: list[dict] = []
     for step in chains:
         if not step.api_key:
             continue
+        if provider_health.is_dead(step.provider):
+            logger.info(
+                "Dedupe review: skipping %s — circuit breaker tripped earlier this run.",
+                step.provider_label,
+            )
+            continue
         decisions = _call_dedupe_review_llm(pairs, step.api_key, step.base_url, step.model)
         if decisions:
+            provider_health.record_success(step.provider)
             break
+        provider_health.record_failure(step.provider)
     if not decisions:
         logger.info("Dedupe LLM review: all providers failed — keeping heuristic verdicts.")
         return {}
