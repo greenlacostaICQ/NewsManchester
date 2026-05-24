@@ -794,7 +794,7 @@ def _call_dedupe_review_llm(
         from openai import OpenAI  # noqa: PLC0415
     except ImportError:  # pragma: no cover
         return []
-    client = OpenAI(api_key=api_key, base_url=base_url, timeout=45, max_retries=0)
+    client = OpenAI(api_key=api_key, base_url=base_url, timeout=20, max_retries=0)
     results: list[dict] = []
     for i in range(0, len(pairs), _BORDERLINE_BATCH_SIZE):
         batch = pairs[i: i + _BORDERLINE_BATCH_SIZE]

@@ -280,8 +280,9 @@ def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: st
         return []
 
     # max_retries=0: don't burn 3×60s on a dead endpoint — fail fast and let
-    # run_curator_pass try the next provider in the chain.
-    client = OpenAI(api_key=api_key, base_url=base_url, timeout=45, max_retries=0)
+    # run_curator_pass try the next provider in the chain. 20s cap is well
+    # above the typical 3-8s curator response so legitimate calls still pass.
+    client = OpenAI(api_key=api_key, base_url=base_url, timeout=20, max_retries=0)
     results: list[dict] = []
     batches = [candidates[i:i + batch_size] for i in range(0, len(candidates), batch_size)]
     for i, batch in enumerate(batches):
