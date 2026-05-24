@@ -568,8 +568,8 @@ def _support_top_issues(
     if critical_event_misses:
         issues.append((
             110,
-            f"Возможные пропуски событий/билетов: {critical_event_misses}.",
-            "Посмотреть топ примеров: часть может быть реальным багом, часть — корректным отказом или продуктовым решением.",
+            f"Событийный pipeline подозрителен: {critical_event_misses} возможных пропусков.",
+            "Это не значит, что все они точно потеряны; главный риск — ложные дубли и события без нормального финального текста.",
         ))
     if rendered > 22:
         issues.append((
@@ -581,13 +581,13 @@ def _support_top_issues(
         issues.append((
             95,
             "Генерация текста работала нестабильно.",
-            "Проверить, сколько пунктов переписала модель и что удержал осторожный режим.",
+            "Часть материалов не получила нормальный финальный текст; слабые пункты должны удерживаться, а не публиковаться.",
         ))
     if not transport_coverage.get("metrolink_checked"):
         issues.append((
             90,
             "Metrolink не проверен как отдельный источник.",
-            "Не считать транспортную картину полной; проверить источник Metrolink или добавить явную запасную проверку.",
+            "Автобусы/TfGM и rail проверены, но по трамваям нет отдельного подтверждения.",
         ))
     ticket_types = ((quality_scorecard.get("today") or {}).get("ticket_types") or {})
     unknown_tickets = int((ticket_types.get("unknown") or {}).get("fetched") or 0)
@@ -688,6 +688,8 @@ def _event_miss_plain_reason(item: dict) -> str:
 
 def _event_miss_summary(event_miss_review: dict) -> dict[str, object]:
     items = list(event_miss_review.get("critical_misses") or [])
+    counts = event_miss_review.get("counts") or {}
+    total = int(counts.get("critical_misses") or len(items))
     buckets: dict[str, int] = {}
     for item in items:
         bucket = _event_miss_bucket(item if isinstance(item, dict) else {})
@@ -707,8 +709,21 @@ def _event_miss_summary(event_miss_review: dict) -> dict[str, object]:
             int(item.get("days_out") if item.get("days_out") is not None else 999),
             -int(item.get("score") or 0),
         ),
-    )[:5]
-    return {"total": len(items), "buckets": buckets, "top": top}
+    )[:3]
+    return {"total": total, "shown_total": len(items), "buckets": buckets, "top": top}
+
+
+def _russian_counted_phrase(count: int, one: str, few: str, many: str) -> str:
+    number = abs(int(count))
+    if number % 100 in {11, 12, 13, 14}:
+        noun = many
+    elif number % 10 == 1:
+        noun = one
+    elif number % 10 in {2, 3, 4}:
+        noun = few
+    else:
+        noun = many
+    return f"{count} {noun}"
 
 
 def _compact_section_pressure(writer_report: dict) -> list[str]:
@@ -781,9 +796,9 @@ def _support_actions(
     actions: list[str] = []
     buckets = event_summary.get("buckets") or {}
     if int(buckets.get("вероятная ошибка дедупликации") or 0):
-        actions.append("Проверить ложные дубли событий: это может скрывать концерты и weekend events.")
+        actions.append("Авторазбор: проверить ложные дубли событий, потому что они могут скрывать концерты и weekend events.")
     if int(buckets.get("ошибка генерации текста") or 0):
-        actions.append("Проверить события, снятые writer: возможно, факты были, но текст не собрался.")
+        actions.append("Авторазбор: проверить события, снятые writer; возможно, факты были, но текст не собрался.")
     if int((ticket_types.get("unknown") or {}).get("fetched") or 0):
         actions.append("Разобрать билетные карточки с нераспознанным типом; такие не должны публиковаться автоматически.")
     if int((ticket_types.get("old_public_sale") or {}).get("published") or 0):
@@ -794,11 +809,11 @@ def _support_actions(
     shrink = writer_report.get("degraded_shrink") or {}
     if degraded:
         if int(shrink.get("dropped_count") or 0):
-            actions.append("Посмотреть, что удержал осторожный режим генерации, и подтвердить, что слабые пункты сняты правильно.")
+            actions.append("Авторазбор: сверить, что осторожный режим удержал слабые пункты, а не важные концерты/события.")
         else:
-            actions.append("Проверить нестабильную генерацию: модель работала неидеально, но осторожный режим ничего не снял.")
+            actions.append("Авторазбор: генерация была нестабильной, но осторожный режим ничего не снял.")
     if borderline_count >= 20:
-        actions.append("Разобрать top-причины удержанных материалов; полный список не нужен в Telegram.")
+        actions.append("Авторазбор: сгруппировать удержанные материалы по причинам и найти слишком широкие правила.")
     if rendered > 22:
         actions.append("Отдельно принять global budget для выпуска: сейчас секции по отдельности могут быть нормальными, а выпуск раздут.")
     return actions[:5]
@@ -844,7 +859,7 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
     if rendered > 22:
         lines.append("Выпуск слишком длинный: читателю трудно отделить важное от второстепенного.")
     elif degraded:
-        lines.append("Выпуск отправлен, но генерация текста работала нестабильно.")
+        lines.append("Объём выпуска нормальный, но есть риск качества: генерация текста работала нестабильно.")
     elif int(event_summary.get("total") or 0):
         lines.append("Выпуск отправлен, но есть возможные пропуски событий или билетов.")
     else:
@@ -878,23 +893,35 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
 
     pressure = _compact_section_pressure(writer_report)
     if pressure:
-        lines.append("📐 Что раздуло выпуск")
+        if rendered > 22:
+            lines.append("📐 Что раздуло выпуск")
+        else:
+            lines.append("📐 Состав выпуска")
         for item in pressure:
             lines.append(f"• {item}.")
-        lines.append("Полная разбивка по секциям сохранена в JSON-отчёте.")
+        if rendered > 22:
+            lines.append("Проблема: сумма секций делает выпуск слишком длинным. Полная разбивка сохранена в JSON.")
+        else:
+            lines.append("Объём в норме; проблема сегодня не длина выпуска, а пропуски событий и нестабильная генерация.")
         lines.append("")
 
     if ticket_types or _ticketmaster_rows(source_status):
         lines.append("🎟️ Билеты и события")
+        total_ticket_found = 0
+        total_ticket_published = 0
         if ticket_types:
             for ticket_type in ("on_sale_now", "presale_soon", "newly_listed", "major_upcoming", "old_public_sale", "old_onsale", "unknown"):
                 counts = ticket_types.get(ticket_type)
                 if not counts:
                     continue
+                total_ticket_found += int(counts.get("fetched") or 0)
+                total_ticket_published += int(counts.get("published") or 0)
                 lines.append(
                     f"• {_ticket_type_human(ticket_type)}: найдено {counts.get('fetched', 0)}, "
                     f"опубликовано {counts.get('published', 0)}."
                 )
+        if total_ticket_found and not total_ticket_published:
+            lines.append("Итог: билетный блок пустой не потому, что ничего не найдено; фильтры/проверки не дали ни одной карточке пройти в выпуск.")
         ticket_rows = _ticketmaster_rows(source_status)
         if ticket_rows:
             zero_published = sum(1 for row in ticket_rows if int(row.get("raw_count") or 0) and not int(row.get("rendered_count") or 0))
@@ -905,19 +932,25 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
         lines.append("⚠️ Возможные пропуски событий")
         buckets = event_summary.get("buckets") or {}
         bucket_text = ", ".join(f"{name}: {count}" for name, count in sorted(buckets.items()))
-        lines.append(f"Всего найдено системой: {event_summary.get('total')}. Разбор: {bucket_text}.")
+        shown_total = int(event_summary.get("shown_total") or 0)
+        shown_tail = f"; в Telegram показан топ-{min(shown_total, 3)}" if shown_total else ""
+        lines.append(
+            f"Система пометила {_russian_counted_phrase(int(event_summary.get('total') or 0), 'возможный пропуск', 'возможных пропуска', 'возможных пропусков')}{shown_tail}. "
+            "Это не значит, что все они точно должны были выйти."
+        )
+        if bucket_text:
+            lines.append(f"В первых {shown_total} примерах из JSON: {bucket_text}.")
         for item in event_summary.get("top") or []:
             days_out = item.get("days_out")
             when = "сегодня" if days_out == 0 else f"через {days_out} дн." if isinstance(days_out, int) else "дата рядом"
             lines.append(f"• {str(item.get('title') or '')[:80]} ({when})")
             lines.append(f"  Вердикт: {_event_miss_bucket(item)} — {_event_miss_plain_reason(item)}.")
-        lines.append("Полный список возможных пропусков сохранён в release_report.json.")
+        lines.append("Вывод: это автозадача для event-dedupe/writer, а не список для ручного чтения утром.")
         lines.append("")
 
     if borderline_count:
         lines.append("🟨 Удержано для проверки")
-        noun = "материал" if borderline_count == 1 else ("материала" if 2 <= borderline_count % 10 <= 4 and borderline_count % 100 not in {12, 13, 14} else "материалов")
-        lines.append(f"Удержано {borderline_count} {noun}; полный список скрыт из Telegram и сохранён в JSON.")
+        lines.append(f"Удержано {_russian_counted_phrase(borderline_count, 'материал', 'материала', 'материалов')}; полный список скрыт из Telegram и сохранён в JSON.")
         reason_counter: dict[str, int] = {}
         for item in (borderline_queue.get("items") or []):
             for warning in item.get("quality_warnings") or []:
@@ -925,6 +958,7 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
                 reason_counter[reason] = reason_counter.get(reason, 0) + 1
         for reason, count in sorted(reason_counter.items(), key=lambda kv: -kv[1])[:3]:
             lines.append(f"• {reason}: {count}.")
+        lines.append("Смысл: это карантин, а не список «проёбанных новостей»; надо чинить слишком широкие правила, если сюда попадает важное.")
         for item in (borderline_queue.get("items") or [])[:3]:
             title = str(item.get("title") or "").strip()
             lines.append(f"• Пример: {title[:85]}")
@@ -945,6 +979,8 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
             lines.append("Серьёзных ограничений не найдено.")
         elif transport_verdict == "found_not_rendered":
             lines.append("Ограничения найдены, но не опубликованы — это нужно проверить.")
+        if not transport_coverage.get("metrolink_checked"):
+            lines.append("Смысл: транспортные ограничения показаны, но отдельного подтверждения по трамваям нет.")
         lines.append("")
 
     if degraded or shrink:
@@ -952,20 +988,28 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
         applied = llm_report.get("applied")
         total = llm_report.get("included_for_rewrite")
         if applied is not None and total is not None:
-            lines.append(f"Модель нормально переписала {applied} из {total} материалов для финального текста.")
+            missing = max(0, int(total or 0) - int(applied or 0))
+            lines.append(f"Модель написала финальный текст для {applied} из {total} материалов; без нормального текста осталось {missing}.")
+        weak_after = llm_report.get("weak_after") or []
+        if weak_after:
+            lines.append(f"После ремонта текста всё ещё слабых карточек: {len(weak_after)}.")
         if llm_report.get("warnings"):
             lines.append(f"Предупреждение: {_humanize_llm_warning(str((llm_report.get('warnings') or [''])[0]))}.")
         if shrink:
             lines.append(
                 f"Осторожный режим: удержано {int(shrink.get('dropped_count') or 0)} низкоприоритетных пунктов; "
-                "их можно проверить в writer_report.degraded_shrink."
+                "список сохранён в writer_report.degraded_shrink."
             )
         lines.append("")
 
     if source_status.get("sources"):
         lines.append("📡 Источники")
+        failed = int((source_status.get("counts") or {}).get("failed") or 0)
+        if not failed:
+            lines.append("• Критичных падений источников нет.")
         for line in _source_health_compact(source_status):
             lines.append(f"• {line}")
+        lines.append("Смысл: «без вклада» не значит плохой источник; многие источники резервные или сегодня не дали материала уровня выпуска.")
         lines.append("")
 
     actions = _support_actions(
@@ -978,7 +1022,7 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
         borderline_count=borderline_count,
     )
     if actions:
-        lines.append("🔧 Что проверить до завтра")
+        lines.append("🔧 Что система должна разобрать до завтра")
         for idx, action in enumerate(actions, start=1):
             lines.append(f"{idx}. {action}")
         lines.append("")

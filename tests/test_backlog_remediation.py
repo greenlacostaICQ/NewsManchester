@@ -864,7 +864,7 @@ class AdminAlertCopyTest(unittest.TestCase):
             borderline_queue={"counts": {"borderline": 0}},
             event_miss_review={"counts": {"critical_misses": 2}},
         )
-        self.assertIn("Возможные пропуски", event_issues[0][0])
+        self.assertIn("Событийный pipeline", event_issues[0][0])
 
     def test_product_support_report_is_human_sized_and_hides_technical_dump(self) -> None:
         report = {
