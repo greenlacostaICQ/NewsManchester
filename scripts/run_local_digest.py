@@ -750,10 +750,15 @@ def _transport_source_line(label: str, checked: bool, transport_coverage: dict) 
 
 def _source_health_compact(source_status: dict) -> list[str]:
     counts = source_status.get("counts") or {}
+    total_sources = sum(
+        int(counts.get(key) or 0)
+        for key in ("ok", "failed", "partial", "empty", "stale")
+    )
     lines = [
         (
-            f"Работают: {counts.get('ok', 0)}, не ответили: {counts.get('failed', 0)}, "
-            f"пустые: {counts.get('empty', 0)}, без новых материалов: {counts.get('stale', 0)}."
+            f"Проверено источников: {total_sources}. Статусы: работают {counts.get('ok', 0)}, "
+            f"не ответили {counts.get('failed', 0)}, пустые {counts.get('empty', 0)}, "
+            f"без новых материалов {counts.get('stale', 0)}."
         )
     ]
     for status, label in (("failed", "Не ответили"), ("empty", "Пустые"), ("stale", "Без новых материалов")):
@@ -766,7 +771,10 @@ def _source_health_compact(source_status: dict) -> list[str]:
             suffix = f" и ещё {len(rows) - 4}" if len(rows) > 4 else ""
             lines.append(f"{label}: {names}{suffix}.")
     if int(counts.get("zero_yield") or 0):
-        lines.append(f"Без вклада в выпуск: {counts.get('zero_yield')} источников; полный список в JSON.")
+        lines.append(
+            f"Отдельная метрика: {counts.get('zero_yield')} источника сработали, "
+            "но ничего не дали в финальный выпуск; это пересекается со статусами выше."
+        )
     return lines
 
 
