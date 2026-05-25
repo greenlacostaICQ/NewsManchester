@@ -430,6 +430,102 @@ class EventQualityPipelineTest(unittest.TestCase):
         self.assertFalse(updated["include"])
         self.assertIn("stale_no_new_phase", updated["reject_reasons"])
 
+    def test_validator_blocks_cross_day_rehash_of_food_opening(self) -> None:
+        """2026-05-25 complaint: GRUB Stretford shipped 4 days in a row.
+
+        Same fingerprint already in yesterday's daily_index must be
+        blocked today as cross_day_rehash — regardless of LLM-assigned
+        change_type ('reminder' / 'same_story_new_facts').
+        """
+        from datetime import date, timedelta
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            (state_dir / "daily_index").mkdir(parents=True)
+            yesterday = (date.today() - timedelta(days=1)).isoformat()
+            (state_dir / "daily_index" / f"{yesterday}.jsonl").write_text(
+                json.dumps({
+                    "fingerprint": "grub-stretford",
+                    "included": True,
+                    "title": "GRUB takes over Stretford car park",
+                    "ts": yesterday,
+                }) + "\n",
+                encoding="utf-8",
+            )
+            (state_dir / "candidates.json").write_text(
+                json.dumps({
+                    "pipeline_run_id": "test",
+                    "candidates": [{
+                        "include": True,
+                        "fingerprint": "grub-stretford",
+                        "category": "food_openings",
+                        "primary_block": "openings",
+                        "title": "GRUB opens new street food market at Stretford car park",
+                        "summary": "Reminder about the foodhall opening",
+                        "evidence_text": "Bakery and street food market opens at Stretford multi-storey.",
+                        "published_at": (date.today() - timedelta(days=4)).isoformat() + "T09:00:00+01:00",
+                        "source_label": "Manchester's Finest",
+                        "source_url": "https://example.test/grub-stretford-opens-food-market",
+                        "dedupe_decision": "new",
+                    }],
+                }, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            validate_candidates(root)
+            payload = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))
+            cand = payload["candidates"][0]
+            self.assertFalse(
+                cand["include"],
+                msg=f"Cross-day rehash should be blocked but include={cand['include']}; reason={cand.get('reason')}",
+            )
+            self.assertIn("cross_day_rehash", cand.get("reject_reasons") or [])
+
+    def test_validator_does_not_block_cross_day_for_transport_disruption(self) -> None:
+        """Ongoing transport disruption legitimately re-appears each day —
+        operational blocks are exempt from cross_day_rehash."""
+        from datetime import date, timedelta
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            (state_dir / "daily_index").mkdir(parents=True)
+            yesterday = (date.today() - timedelta(days=1)).isoformat()
+            (state_dir / "daily_index" / f"{yesterday}.jsonl").write_text(
+                json.dumps({
+                    "fingerprint": "rochdale-line-works",
+                    "included": True,
+                    "title": "Rochdale Line - Tram Improvement Works",
+                    "ts": yesterday,
+                }) + "\n",
+                encoding="utf-8",
+            )
+            (state_dir / "candidates.json").write_text(
+                json.dumps({
+                    "pipeline_run_id": "test",
+                    "candidates": [{
+                        "include": True,
+                        "fingerprint": "rochdale-line-works",
+                        "category": "transport",
+                        "primary_block": "transport",
+                        "title": "Rochdale Line - Tram Improvement Works",
+                        "summary": "Works continue until 29 May",
+                        "evidence_text": "Replacement bus until 29 May between Victoria and Rochdale Town Centre.",
+                        "published_at": date.today().isoformat() + "T09:00:00+01:00",
+                        "source_label": "TfGM",
+                        "source_url": "https://tfgm.com/travel-updates/rochdale-line-works",
+                        "dedupe_decision": "new",
+                    }],
+                }, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            validate_candidates(root)
+            payload = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))
+            cand = payload["candidates"][0]
+            self.assertTrue(
+                cand["include"],
+                msg="Transport disruption must not be blocked by cross_day_rehash",
+            )
+            self.assertNotIn("cross_day_rehash", cand.get("reject_reasons") or [])
+
     def test_validator_holds_unclear_why_now_for_manual_review(self) -> None:
         updated = self._validate_one(
             {

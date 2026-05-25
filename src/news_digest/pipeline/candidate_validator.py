@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+import json
 from pathlib import Path
 import re
 from urllib import parse
@@ -1311,6 +1312,104 @@ def _manual_override(candidate: dict, state_dir: Path) -> str:
     return ""
 
 
+# Anchor types that legitimately re-appear day after day. Conservative
+# on purpose: transport service status, weather, dated events with a
+# concrete future date, on-sale ticket windows. Everything else (including
+# anchors like ``new_phase`` and ``local_action`` that LLMs assign liberally
+# to repeats) is fair game for cross-day stale-rehash blocking.
+_ALWAYS_PUBLISHABLE_REPEAT_ANCHORS = frozenset({
+    "service_status",       # ongoing transport / road / utility disruption
+    "today_weather",        # daily weather card
+    "dated_event",          # event with a concrete future date
+    "ticket_opportunity",   # on-sale / presale window
+    "ongoing_disruption",   # explicit ongoing flag
+})
+
+
+def _exclude_cross_day_rehash(candidate: dict, state_dir: Path) -> bool:
+    """Block items whose fingerprint already shipped in the digest within
+    the past few days.
+
+    Catches "ЭТО ДАЕТСЯ УЖЕ 3 ДЕНЬ" complaints from 2026-05-25: GRUB
+    Stretford foodhall (4 days in a row), Rochdale historic bridge
+    (3 days), Pelican Inn Timperley (3 days). All have why_now and an
+    editorial_contract but the contract's anchor_type (local_action,
+    planning) is not on the always-publishable list, so a same-fingerprint
+    repeat from a previous day is a stale rehash and must not visible.
+
+    The check reads daily_index/YYYY-MM-DD.jsonl files for the last
+    ``repeat_ttl_days`` days plus one. Days are skipped silently if the
+    file is missing. The block is a hard reject — owner's rule "never
+    block the release" still applies because the digest ships regardless
+    (just without this item).
+    """
+    if not candidate.get("include"):
+        return False
+    fingerprint = str(candidate.get("fingerprint") or "").strip()
+    if not fingerprint:
+        return False
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    anchor = str(contract.get("anchor_type") or "")
+    if anchor in _ALWAYS_PUBLISHABLE_REPEAT_ANCHORS:
+        return False
+    # Operational blocks (transport, weather) self-manage rotation via
+    # transport_fill and synthetic_freshness; never gate them here.
+    block = str(candidate.get("primary_block") or "")
+    if block in {"transport", "weather"}:
+        return False
+
+    policy = contract.get("section_policy") if isinstance(contract.get("section_policy"), dict) else {}
+    try:
+        ttl_days = max(1, int(policy.get("repeat_ttl_days") or 1))
+    except (TypeError, ValueError):
+        ttl_days = 1
+    # Look back ttl_days + 1 to catch the day before yesterday for
+    # short-TTL items (default 1d means "yesterday").
+    lookback = ttl_days + 1
+
+    today = now_london().date()
+    daily_dir = state_dir / "daily_index"
+    if not daily_dir.exists():
+        return False
+
+    for offset in range(1, lookback + 1):
+        check_day = (today - timedelta(days=offset)).isoformat()
+        path = daily_dir / f"{check_day}.jsonl"
+        if not path.exists():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for line in text.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+            except ValueError:
+                continue
+            if str(rec.get("fingerprint") or "") != fingerprint:
+                continue
+            if not rec.get("included"):
+                continue
+            # Hit — same fingerprint already shipped on a previous day.
+            candidate["include"] = False
+            candidate["change_type"] = "same_story_rehash"
+            existing = str(candidate.get("reason") or "").strip()
+            note = (
+                f"Validator: cross-day rehash — fingerprint already shipped on {check_day} "
+                f"(anchor={anchor or 'unknown'}, ttl={ttl_days}d)."
+            )
+            candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+            candidate["reject_reasons"] = sorted(set(
+                [str(r) for r in candidate.get("reject_reasons") or [] if str(r).strip()]
+                + ["cross_day_rehash"]
+            ))
+            return True
+    return False
+
+
 def _apply_why_now_gate(candidate: dict, *, manual_override: str = "") -> None:
     """Q1: make today's reason explicit before the writer sees the item."""
     why_now = infer_why_now(candidate)
@@ -1393,6 +1492,8 @@ def validate_candidates(project_root: Path) -> StageResult:
         classify_transport_candidate(candidate)
         attach_editorial_contract(candidate)
         manual = _manual_override(candidate, state_dir)
+        if candidate.get("include") and manual != "force_include":
+            _exclude_cross_day_rehash(candidate, state_dir)
         if candidate.get("include") and manual != "force_include":
             _exclude_road_only_transport(candidate)
         if candidate.get("include"):
