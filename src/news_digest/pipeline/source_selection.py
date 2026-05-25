@@ -179,6 +179,7 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
     "tech_business": (
         "MIDAS Manchester",
         "Prolific North",
+        "Prolific North Manchester",
         "BusinessCloud",
         "Manchester Digital",
         "Bdaily Manchester",
@@ -259,6 +260,7 @@ SOURCE_TIER: dict[str, int] = {
     "About Manchester News": 2,
     "MIDAS Manchester": 2,
     "Prolific North": 2,
+    "Prolific North Manchester": 2,
     "BusinessCloud": 2,
     "Bdaily Manchester": 2,
     "Manchester Digital": 2,

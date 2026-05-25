@@ -42,6 +42,7 @@ from news_digest.pipeline.dedupe import (
     _apply_intra_batch_dedup,
     _similar_published_titles,
 )
+from news_digest.pipeline.editorial_contracts import topic_key_for_candidate
 from news_digest.pipeline.event_quality import (
     event_quality_report,
     is_event_candidate,
@@ -273,6 +274,84 @@ class DuplicateTest(unittest.TestCase):
         ]
         drops = _apply_intra_batch_dedup(candidates)
         self.assertEqual(drops, [])
+
+    def test_unrelated_ticket_events_are_not_deduped_by_generic_event_words(self) -> None:
+        # 2026-05-25 defect: unrelated concerts collapsed because both titles
+        # shared generic capitalised words such as Live / Concert.
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "avatar-orchestra",
+                "dedupe_decision": "new",
+                "category": "venues_tickets",
+                "primary_block": "ticket_radar",
+                "title": "Avatar - The Last Airbender - Film With Live Orchestra — event 2026-10-05 — public sale 2025-05-02 10:00",
+                "summary": "event_date=2026-10-05 venue=Bridgewater Hall",
+                "source_label": "Ticketmaster Manchester Upcoming",
+                "source_url": "https://example.test/avatar-orchestra",
+            },
+            {
+                "include": True,
+                "fingerprint": "kumar-sanu",
+                "dedupe_decision": "new",
+                "category": "venues_tickets",
+                "primary_block": "ticket_radar",
+                "title": "Kumar Sanu Live In Concert — event 2026-05-25 — public sale 2026-04-14 10:00",
+                "summary": "event_date=2026-05-25 venue=O2 Apollo Manchester",
+                "source_label": "Ticketmaster Manchester Upcoming",
+                "source_url": "https://example.test/kumar-sanu",
+            },
+        ]
+        drops = _apply_intra_batch_dedup(candidates)
+        self.assertEqual(drops, [])
+        self.assertTrue(all(item["include"] for item in candidates))
+
+    def test_venue_premium_ticket_events_require_specific_overlap(self) -> None:
+        # "Venue Premium Tickets" is Ticketmaster packaging, not the event.
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "calum-scott-premium",
+                "dedupe_decision": "new",
+                "category": "venues_tickets",
+                "primary_block": "ticket_radar",
+                "title": "Venue Premium Tickets - Calum Scott — event 2026-05-27 — public sale 2025-04-11 09:00",
+                "summary": "event_date=2026-05-27 venue=O2 Apollo Manchester",
+                "source_label": "Ticketmaster Manchester Upcoming",
+                "source_url": "https://example.test/calum-scott",
+            },
+            {
+                "include": True,
+                "fingerprint": "dermot-kennedy-premium",
+                "dedupe_decision": "new",
+                "category": "venues_tickets",
+                "primary_block": "ticket_radar",
+                "title": "Venue Premium Tickets - Dermot Kennedy — event 2026-05-30 — public sale 2025-10-03 10:00",
+                "summary": "event_date=2026-05-30 venue=Co-op Live",
+                "source_label": "Ticketmaster Manchester Upcoming",
+                "source_url": "https://example.test/dermot-kennedy",
+            },
+        ]
+        drops = _apply_intra_batch_dedup(candidates)
+        self.assertEqual(drops, [])
+
+    def test_topic_key_ignores_unrelated_event_page_chrome(self) -> None:
+        # 2026-05 defect: evidence_text page chrome mentioned an event and
+        # caused a council/news item to inherit that event topic.
+        candidate = {
+            "include": True,
+            "fingerprint": "stockport-local-election",
+            "category": "media_layer",
+            "primary_block": "city_watch",
+            "title": "Stockport local election 2026 results - Stockport Council",
+            "summary": "Council results were published for Stockport wards.",
+            "source_label": "Stockport Council",
+            "evidence_text": "Related links: The BIG Stockport Car Boot, Romiley.",
+        }
+        self.assertNotEqual(
+            topic_key_for_candidate(candidate),
+            "event:big_stockport_car_boot",
+        )
 
     def test_cross_day_published_title_match_via_entities(self) -> None:
         """Yesterday's published 'Mainoo signs new deal' must match

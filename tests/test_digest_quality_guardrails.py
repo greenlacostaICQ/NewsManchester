@@ -1393,6 +1393,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertIn("ITV Granada Greater Manchester", by_name)
         self.assertIn("Place North West", by_name)
         self.assertIn("About Manchester News", by_name)
+        self.assertIn("Prolific North Manchester", by_name)
         self.assertEqual(
             by_name["MEN"].url,
             "https://www.manchestereveningnews.co.uk/news/greater-manchester-news/",
@@ -1401,6 +1402,11 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertEqual(by_name["MEN News Sitemap"].source_type, "xml_sitemap")
         self.assertEqual(by_name["About Manchester News"].url, "https://aboutmanchester.co.uk/feed/")
         self.assertEqual(by_name["About Manchester News"].source_type, "rss")
+        self.assertEqual(
+            by_name["Prolific North Manchester"].url,
+            "https://www.prolificnorth.co.uk/location/manchester/feed/",
+        )
+        self.assertEqual(by_name["Prolific North Manchester"].primary_block, "tech_business")
 
     def test_soft_sources_are_not_in_hard_news_layer(self) -> None:
         by_name = {source.name: source for source in SOURCES}

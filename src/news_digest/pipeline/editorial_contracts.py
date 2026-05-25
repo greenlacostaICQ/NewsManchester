@@ -619,9 +619,9 @@ def _topic_key(candidate: dict, story_type: str = "", event_shape: str = "") -> 
     for key, pattern in _TOPIC_PATTERNS:
         if pattern.search(short_blob):
             return key
-    for key, pattern in _TOPIC_PATTERNS:
-        if pattern.search(blob):
-            return key
+    # Do not scan evidence_text/source_url for named topics: event pages often
+    # contain unrelated page chrome and recommendation links, which previously
+    # made unrelated stories inherit a specific event topic.
     if str(candidate.get("category") or "") == "venues_tickets":
         title = re.sub(r"\s+[—–-]\s+(?:event|public\s+sale).*$", "", str(candidate.get("title") or ""), flags=re.IGNORECASE)
         venue = ticket_venue(candidate)

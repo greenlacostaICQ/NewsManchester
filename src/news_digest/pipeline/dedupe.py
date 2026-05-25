@@ -409,6 +409,10 @@ _TITLE_STOPWORDS: frozenset[str] = frozenset({
     "a", "an", "the", "and", "or", "but", "in", "on", "at", "to",
     "of", "for", "with", "from", "is", "are", "was", "were", "be",
     "been", "has", "have", "had", "by", "as", "it", "its",
+    # Ticket/event packaging terms. These are not the event identity and
+    # should not make unrelated listings look similar.
+    "ticket", "tickets", "event", "public", "sale", "venue", "premium",
+    "live", "concert", "concerts",
 })
 
 _CALENDAR_CARRY_BLOCKS: frozenset[str] = frozenset({
@@ -975,6 +979,8 @@ _ENTITY_STOPWORDS = frozenset({
     # items even with zero title-token overlap.
     "event", "events", "festival", "festivals", "show", "trail", "tour",
     "workshop", "workshops", "market", "markets", "tickets", "ticket",
+    "live", "concert", "concerts", "venue", "premium", "film", "orchestra",
+    "tribute", "future", "vintage",
     # Generic news verbs that aren't entities even if capitalised at
     # start of headline.
     "premier", "league", "premier league",
@@ -1170,6 +1176,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
         borough_i = _extract_borough(str(ci.get("title") or ""))
         block_i = str(ci.get("primary_block") or "")
         group_i = _dedup_block_group(block_i)
+        is_event_ticket_group = group_i == _dedup_block_group("ticket_radar")
         topic_i = topic_key_for_candidate(ci)
         rank_i = _source_rank(
             str(ci.get("source_label") or ""),
@@ -1220,7 +1227,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
             # story case where each headline picks different verbs around
             # the same subject.
             shared_entities = entities_i & entities_j
-            if shared_entities:
+            if shared_entities and not is_event_ticket_group:
                 # "Strong" signal — any of:
                 #  - multi-word entity ("Andy Burnham", "Trafford Centre")
                 #  - 5+ char single word ("Mainoo", "Burnham")

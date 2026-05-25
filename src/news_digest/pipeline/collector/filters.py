@@ -790,6 +790,7 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     # ── Tech / Business ───────────────────────────────────────────────────────
     # Manchester Digital: override below (GM token OR tech terms)
     "Prolific North": _SourcePolicy(path_must_contain=("/news/",), require_gm_token=True),
+    "Prolific North Manchester": _SourcePolicy(path_must_contain=("/news/",), require_gm_token=True),
     "BusinessCloud": _SourcePolicy(
         path_banned_segments=("/tag/", "/category/", "/author/", "/page/"),
         min_path_depth=2,
