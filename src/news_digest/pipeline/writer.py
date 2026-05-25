@@ -803,14 +803,38 @@ def _build_bookable_activity_fallback_line(candidate: dict) -> str:
 
 def _repair_weather_line(line: str) -> str:
     text = str(line or "")
-    text = re.sub(
-        r",?\s*вероятность\s+осадков\s+до\s+0\s*%",
-        "; без существенных осадков",
-        text,
-        flags=re.IGNORECASE,
-    )
-    text = re.sub(r"\bосадков\s+почти\s+не\s+ждут\b", "без существенных осадков", text, flags=re.IGNORECASE)
+    # 2026-05-25 complaint: when the max temperature is 25°C+, the phrase
+    # "без существенных осадков" reads tone-deaf — pull max_temp out of the
+    # line and tone the rewrite to match. Otherwise keep the previous
+    # cold/mild-day behaviour.
+    max_temp_match = re.search(r"\b(-?\d{1,2})\s*[-–—]\s*(\d{1,2})\s*°?\s*C", text)
+    max_temp = int(max_temp_match.group(2)) if max_temp_match else None
+    is_hot_day = max_temp is not None and max_temp >= 25
+
+    if is_hot_day:
+        # Drop the "rain probability up to 0%" filler on a hot day rather
+        # than rewriting it to "без существенных осадков" — the heat is
+        # the news, not the dry forecast.
+        text = re.sub(
+            r",?\s*вероятность\s+осадков\s+до\s+0\s*%",
+            "",
+            text,
+            flags=re.IGNORECASE,
+        )
+        text = re.sub(r"\bосадков\s+почти\s+не\s+ждут\b", "", text, flags=re.IGNORECASE)
+    else:
+        text = re.sub(
+            r",?\s*вероятность\s+осадков\s+до\s+0\s*%",
+            "; без существенных осадков",
+            text,
+            flags=re.IGNORECASE,
+        )
+        text = re.sub(r"\bосадков\s+почти\s+не\s+ждут\b", "без существенных осадков", text, flags=re.IGNORECASE)
+
     text = re.sub(r"\s*Дн[её]м заметно теплее утра\.\s*", " ", text, flags=re.IGNORECASE)
+    # Clean up doubled punctuation from removed fragments.
+    text = re.sub(r"\s*;\s*;\s*", "; ", text)
+    text = re.sub(r"\s*;\s*\.", ".", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
 

@@ -78,22 +78,58 @@ def _weather_draft_line(
     practical: str,
     source_label: str,
 ) -> str:
+    """Compose the weather card.
+
+    2026-05-25 complaint: at max_temp=32°C the line said "без существенных
+    осадков" first and only then mentioned anything else — tone-deaf for
+    a heatwave. By UK standards 25°C is already warm and 30°C is a proper
+    heat advisory; surface that before precipitation.
+    """
     temp = f"{min_temp}-{max_temp}°C"
-    if rain_probability <= 0:
-        rain_part = "без существенных осадков"
-    elif rain_probability < 30:
-        rain_part = f"низкий риск осадков, до {rain_probability}%"
+    fragments: list[str] = []
+
+    # ── Heat advisory (UK humidity makes 25°C+ feel hot indoors) ──
+    if max_temp >= 30:
+        fragments.append(f"жаркий день, до {max_temp}°C")
+        heat_severity = "high"
+    elif max_temp >= 27:
+        fragments.append(f"тёплый день, до {max_temp}°C — берегитесь обезвоживания")
+        heat_severity = "moderate"
+    elif max_temp >= 25:
+        fragments.append("по UK-меркам жарко")
+        heat_severity = "mild"
     else:
-        rain_part = f"вероятность осадков до {rain_probability}%"
+        heat_severity = "none"
+
+    # ── Precipitation ──
+    # When a heat advisory is already shown, suppress the awkward "без
+    # существенных осадков" — it reads as if dry weather is the headline
+    # instead of the heat. Keep the rain probability only when it is
+    # actually non-trivial.
+    if rain_probability >= 30:
+        fragments.append(f"вероятность осадков до {rain_probability}%")
+    elif 0 < rain_probability < 30:
+        fragments.append(f"низкий риск осадков, до {rain_probability}%")
+    elif heat_severity == "none":
+        # Mild/cold day with dry forecast — the original phrasing fits.
+        fragments.append("без существенных осадков")
+    # else: hot day, no rain → drop the "без осадков" bit entirely.
+
     practical = str(practical or "").strip()
     if not practical:
-        if rain_probability >= 60:
+        if heat_severity == "high":
+            practical = "Тонкая одежда, головной убор, бутылка воды с собой. Избегайте прямого солнца 12–16."
+        elif heat_severity == "moderate":
+            practical = "Берите воду и держитесь тени в середине дня."
+        elif rain_probability >= 60:
             practical = "Перед выходом проверьте локальный радар."
         elif rain_probability >= 30:
             practical = "Во второй половине дня возможны локальные осадки."
         else:
             practical = "Погодных ограничений на день не видно."
-    return f"• Погода: {temp}; {rain_part}. {practical} {source_label}"
+
+    body = "; ".join(fragments) if fragments else "без особенностей"
+    return f"• Погода: {temp}; {body}. {practical} {source_label}"
 
 
 def _weather_candidate() -> dict:

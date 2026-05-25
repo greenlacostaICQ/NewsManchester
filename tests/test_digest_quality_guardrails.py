@@ -1323,6 +1323,11 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertNotIn("до 0%", line)
         self.assertNotIn("почти не ждут", line)
 
+    def test_weather_draft_line_32c_says_heat_not_dry(self) -> None:
+        line = _weather_draft_line(19, 32, 0, "", "Met Office")
+        self.assertIn("жарк", line.lower())
+        self.assertNotIn("без существенных осадков", line)
+
     def test_global_budget_reserves_slots_for_events_tickets_and_football(self) -> None:
         sections = {
             "Что произошло за 24 часа": ["x"] * 9,
