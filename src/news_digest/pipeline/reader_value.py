@@ -177,6 +177,24 @@ def reader_value_score(item: dict) -> int:
     if re.search(r"\b(london|liverpool)\b", text, flags=re.IGNORECASE) and block == "outside_gm_tickets":
         score -= 20
 
+    # Morning practical boost (Sprint Quality Fix 1 / S5).
+    # The digest lands at ~8am London time. Items the reader can act on
+    # *today* (transport disruption now, deadline closing today, event
+    # happening today) get a small additive boost so they outrank
+    # evergreen / "read whenever" material when ranking decides what
+    # surfaces first. why_now is stamped by editorial_contracts.infer_why_now
+    # before this scorer runs.
+    why_now = str(item.get("why_now") or "")
+    if why_now in {"happening_today", "deadline_soon", "new_today"} and block in {
+        "transport", "weather", "today_focus", "lead_story", "last_24h",
+    }:
+        score += 8
+    elif why_now == "ongoing" and block in {"transport", "today_focus"}:
+        # Ongoing-disruption reminders are useful on the morning of
+        # day-of-impact. Bump modestly so they don't get crowded out by
+        # fresher but less actionable headlines.
+        score += 4
+
     return max(0, min(100, int(score)))
 
 

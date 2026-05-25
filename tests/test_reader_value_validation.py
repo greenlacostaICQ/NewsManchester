@@ -48,5 +48,70 @@ class ReaderValueValidationTest(unittest.TestCase):
         self.assertEqual(predicted_label(reader_value_score(item)), "should_not_include")
 
 
+class MorningPracticalBoostTest(unittest.TestCase):
+    """Sprint Quality Fix 1 (S5 / 1.13) — items the reader can act on this
+    morning outrank evergreen material at parity."""
+
+    def test_today_focus_happening_today_outranks_same_block_evergreen(self) -> None:
+        # today_focus has a moderate base so the +8 boost is observable
+        # (transport already maxes the scale).
+        practical = {
+            "category": "public_services",
+            "primary_block": "today_focus",
+            "change_type": "new_story",
+            "title": "Council deadline closes today",
+            "include": True,
+            "why_now": "happening_today",
+        }
+        evergreen = {
+            "category": "public_services",
+            "primary_block": "today_focus",
+            "change_type": "new_story",
+            "title": "Council long-term plan",
+            "include": True,
+            "why_now": "unclear",
+        }
+        self.assertGreater(
+            reader_value_score(practical),
+            reader_value_score(evergreen),
+        )
+
+    def test_ongoing_transport_gets_smaller_bump(self) -> None:
+        # Same title in both to isolate the why_now effect from
+        # _HIGH_VALUE_TITLE_RE bonuses. We only want to compare the boost.
+        ongoing = {
+            "category": "public_services",
+            "primary_block": "today_focus",
+            "change_type": "reminder",
+            "title": "Service notice",
+            "include": True,
+            "why_now": "ongoing",
+        }
+        no_why_now = dict(ongoing)
+        no_why_now["why_now"] = "unclear"
+        self.assertGreater(
+            reader_value_score(ongoing),
+            reader_value_score(no_why_now),
+        )
+
+    def test_boost_only_fires_in_practical_blocks(self) -> None:
+        # outside_gm_tickets is not a practical morning block; why_now
+        # shouldn't bump it.
+        with_why = {
+            "category": "venues_tickets",
+            "primary_block": "outside_gm_tickets",
+            "change_type": "new_story",
+            "title": "Concert in another city",
+            "include": True,
+            "why_now": "happening_today",
+        }
+        without_why = dict(with_why)
+        without_why["why_now"] = "unclear"
+        self.assertEqual(
+            reader_value_score(with_why),
+            reader_value_score(without_why),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
