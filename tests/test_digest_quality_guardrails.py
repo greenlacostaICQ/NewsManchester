@@ -369,7 +369,10 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             }
         ]
 
-        self.assertGreaterEqual(len(guide_sources), 8)
+        # One old broad guide (Creative Tourist Bank Holiday) is intentionally
+        # disabled when its live page is stale; keep the guardrail broad
+        # without requiring stale sources to stay enabled.
+        self.assertGreaterEqual(len(guide_sources), 7)
         self.assertIn("Visit Manchester Weekend", guide_sources)
         self.assertIn("Secret Manchester May Guide", guide_sources)
         self.assertIn("Manchester Theatres Weekend", [source.name for source in SOURCES])
@@ -1396,7 +1399,35 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         )
         self.assertEqual(by_name["MEN Latest News"].url, "https://www.manchestereveningnews.co.uk/news/")
         self.assertEqual(by_name["MEN News Sitemap"].source_type, "xml_sitemap")
-        self.assertEqual(by_name["About Manchester News"].url, "https://aboutmanchester.co.uk/latest/")
+        self.assertEqual(by_name["About Manchester News"].url, "https://aboutmanchester.co.uk/feed/")
+        self.assertEqual(by_name["About Manchester News"].source_type, "rss")
+
+    def test_soft_sources_are_not_in_hard_news_layer(self) -> None:
+        by_name = {source.name: source for source in SOURCES}
+        for source_name in ("The Manc", "I Love Manchester", "Secret Manchester", "University of Manchester", "University of Salford"):
+            self.assertNotIn(source_name, by_name)
+
+    def test_men_soft_fluff_is_not_publishable_news(self) -> None:
+        examples = [
+            "Lazy Sunday Quiz: 20 general knowledge questions to test your family",
+            "Wythenshawe dad goes viral after installing 12ft pool in his garden",
+            "All the places you can't fly a drone in Greater Manchester this weekend",
+        ]
+        for title in examples:
+            with self.subTest(title=title):
+                contract = build_editorial_contract(
+                    {
+                        "include": True,
+                        "category": "media_layer",
+                        "primary_block": "last_24h",
+                        "title": title,
+                        "summary": title,
+                        "source_label": "MEN",
+                        "source_url": "https://www.manchestereveningnews.co.uk/news/greater-manchester-news/example-34000000",
+                    }
+                )
+                self.assertIn(contract["story_type"], {"soft_news", "day_out_guide"})
+                self.assertIn(contract["publish_tier"], {"filler", "reject"})
 
     def test_public_realm_story_gets_specific_repeat_key(self) -> None:
         bridge = {

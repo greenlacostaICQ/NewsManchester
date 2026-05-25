@@ -83,11 +83,12 @@ max_candidates = 15
 
 [[sources]]
 name = "About Manchester News"
-notes = "local news backup; helps when MEN/BBC front pages are thin"
+notes = "local news backup via RSS; HTML /latest page has no useful daily dates"
 report_category = "media_layer"
 candidate_category = "media_layer"
-url = "https://aboutmanchester.co.uk/latest/"
+url = "https://aboutmanchester.co.uk/feed/"
 primary_block = "last_24h"
+source_type = "rss"
 allowed_hosts = ["aboutmanchester.co.uk"]
 max_candidates = 15
 
@@ -104,26 +105,30 @@ max_candidates = 10
 
 [[sources]]
 name = "The Manc"
-notes = "future announcements, theatre, culture, weekend planning and big city events"
+enabled = false
+notes = "soft/lifestyle surface, not a reliable hard-news feed; event/eats-specific The Manc sources remain enabled below"
 report_category = "media_layer"
 candidate_category = "media_layer"
-url = "https://themanc.com/category/news/"
+url = "https://themanc.com/category/news/feed/"
 primary_block = "last_24h"
+source_type = "rss"
 max_candidates = 15
 
 [[sources]]
 name = "Altrincham Today"
-notes = "Trafford and neighbourhood-level signals"
+notes = "Trafford and neighbourhood-level signals via RSS; homepage carries stale cards"
 report_category = "media_layer"
 candidate_category = "media_layer"
-url = "https://altrincham.todaynews.co.uk/"
+url = "https://altrincham.todaynews.co.uk/feed/"
 primary_block = "last_24h"
+source_type = "rss"
 allowed_hosts = ["altrincham.todaynews.co.uk"]
 max_candidates = 10
 
 [[sources]]
 name = "I Love Manchester"
-notes = "openings, city guides, local events"
+enabled = false
+notes = "soft city guides/events, not hard-news coverage; dedicated Flower Festival/event sources remain enabled"
 report_category = "media_layer"
 candidate_category = "media_layer"
 url = "https://ilovemanchester.com/feed"
@@ -134,7 +139,8 @@ max_candidates = 10
 
 [[sources]]
 name = "Secret Manchester"
-notes = "events, exhibitions, food, markets"
+enabled = false
+notes = "soft events/listicles, not hard-news coverage; dedicated weekend/gig guide sources remain enabled"
 report_category = "media_layer"
 candidate_category = "media_layer"
 url = "https://secretmanchester.com/feed"
@@ -561,11 +567,11 @@ allowed_hosts = ["rncm.ac.uk"]
 # ── Russian-speaking / diaspora concerts & stand-up ──────────────────────────
 
 [[sources]]
-name = "Manchester Academy Diaspora"
-report_category = "diaspora_events"
-candidate_category = "russian_speaking_events"
+name = "Manchester Academy"
+report_category = "venues_tickets"
+candidate_category = "venues_tickets"
 url = "https://www.manchesteracademy.net/"
-primary_block = "russian_events"
+primary_block = "ticket_radar"
 allowed_hosts = ["manchesteracademy.net", "ticketline.co.uk"]
 max_candidates = 20
 
@@ -647,6 +653,7 @@ allowed_hosts = ["themanc.com"]
 
 [[sources]]
 name = "Pedddle Markets"
+enabled = false  # National homepage; current live cards are non-GM (e.g. Oswestry/Shropshire). Direct GM Pedddle market pages stay enabled below.
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://pedddle.com/"
@@ -684,6 +691,7 @@ allowed_hosts = ["manchester-rocks.co.uk"]
 
 [[sources]]
 name = "ReMarket Mato"
+enabled = false  # Live venue page currently says "No upcoming events scheduled"; avoid daily empty-source noise until an upcoming feed/page exists.
 report_category = "food_openings"
 candidate_category = "food_openings"
 url = "https://ma.to/venue/remarket_mcr"
@@ -755,7 +763,8 @@ allowed_hosts = ["investinmanchester.com"]
 
 [[sources]]
 name = "University of Salford"
-notes = "innovation, public events, partnerships"
+enabled = false
+notes = "university PR/research feed; disable from hard-news layer unless a concrete city-impact source is added"
 report_category = "media_layer"
 candidate_category = "media_layer"
 url = "https://www.salford.ac.uk/news/rss"
@@ -765,7 +774,8 @@ allowed_hosts = ["salford.ac.uk"]
 
 [[sources]]
 name = "University of Manchester"
-notes = "research, public lectures, city-impact dates"
+enabled = false
+notes = "university PR/research feed; disable from hard-news layer unless a concrete city-impact source is added"
 report_category = "media_layer"
 candidate_category = "media_layer"
 url = "https://www.manchester.ac.uk/about/news/feed/"
@@ -806,6 +816,7 @@ allowed_hosts = ["creativetourist.com"]
 [[sources]]
 name = "Creative Tourist Bank Holiday"
 notes = "curated bank-holiday guide; catches festivals, markets and family picks"
+enabled = false  # Current page is stale 2025 evergreen/travel content, not a 2026 GM weekend source.
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.creativetourist.com/bank-holiday/"

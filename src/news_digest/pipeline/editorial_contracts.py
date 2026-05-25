@@ -442,7 +442,19 @@ _DAY_OUT_GUIDE_RE = re.compile(
     r"free\s+(?:play\s+park|park)|water\s+park|beach|villages?\s+near|"
     r"watch\s+planes?\s+(?:take\s+off|coming\s+into\s+land)|"
     r"beer\s+garden\s+where\s+you\s+can\s+watch|"
+    r"all\s+the\s+places\s+you\s+can(?:not|'t)?|where\s+you\s+can(?:not|'t)|"
     r"family\s+editor|kids\s+can\s+watch|near\s+manchester"
+    r")\b",
+    re.IGNORECASE,
+)
+_SOFT_NEWS_RE = re.compile(
+    r"\b(?:"
+    r"quiz|general\s+knowledge|lazy\s+sunday|goes\s+viral|gone\s+viral|"
+    r"viral\s+(?:video|clip|post)|"
+    r"(?:dad|mum|couple|family).{0,60}\b(?:pool|garden|diy|hack)|"
+    r"12ft\s+pool|garden\s+pool|"
+    r"bargain\s+(?:hunter|home|house|garden)|"
+    r"readers?\s+react|people\s+are\s+saying"
     r")\b",
     re.IGNORECASE,
 )
@@ -685,6 +697,8 @@ def _story_type(candidate: dict, event_shape: str) -> str:
         lowered,
     ):
         return "day_out_guide"
+    if _SOFT_NEWS_RE.search(blob):
+        return "soft_news"
     if _HUMAN_INTEREST_RE.search(blob):
         return "human_interest"
     if re.search(r"\b(?:started\s+in\s+a\s+garage|hobby\s+is\s+worth\s+millions|turned\s+(?:a\s+)?hobby|from\s+garage)\b", lowered):

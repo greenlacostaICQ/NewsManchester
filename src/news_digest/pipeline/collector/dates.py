@@ -91,6 +91,10 @@ def _published_at_from_title_or_url(title: str, url: str) -> str | None:
     if numeric:
         year, month, day = numeric.groups()
         return _local_noon(int(year), int(month), int(day))
+    slug_numeric = re.search(r"\b(20\d{2})-(\d{1,2})-(\d{1,2})(?:-\d{1,2}-\d{1,2}(?:-\d{1,2})?)?\b", path)
+    if slug_numeric:
+        year, month, day = slug_numeric.groups()
+        return _local_noon(int(year), int(month), int(day))
 
     month_names = {
         "january": 1,

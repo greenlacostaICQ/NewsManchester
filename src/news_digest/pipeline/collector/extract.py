@@ -68,13 +68,20 @@ class LinkExtractor(HTMLParser):
         self.links: list[ExtractedItem] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "img" and self._href:
+            attrs_dict = dict(attrs)
+            alt = attrs_dict.get("alt")
+            if alt:
+                self._text.append(alt)
+            return
         if tag != "a":
             return
         attrs_dict = dict(attrs)
         href = attrs_dict.get("href")
         if href:
             self._href = parse.urljoin(self.base_url, href)
-            self._text = []
+            label = attrs_dict.get("aria-label") or attrs_dict.get("title") or ""
+            self._text = [label] if label else []
 
     def handle_data(self, data: str) -> None:
         if self._href:
@@ -890,6 +897,9 @@ _SECTIONED_GUIDE_TERMS = (
     "gig",
     "concert",
     "music",
+    "show",
+    "arena",
+    "tour",
     "comedy",
     "club",
     "planetarium",
@@ -904,6 +914,17 @@ _SECTIONED_GUIDE_TERMS = (
     "academy",
     "cathedral",
 )
+
+
+def _looks_like_sectioned_event_title(title: str) -> bool:
+    lowered = str(title or "").lower().strip()
+    if not (4 <= len(lowered) <= 160):
+        return False
+    blocked = (
+        "advertisement", "subscribe", "newsletter", "privacy", "cookie",
+        "discover our cities", "about secret manchester",
+    )
+    return not any(term in lowered for term in blocked)
 
 
 def _extract_sectioned_event_guide(source: SourceDef, body: str) -> list[ExtractedItem]:
@@ -956,7 +977,7 @@ def _extract_sectioned_event_guide(source: SourceDef, body: str) -> list[Extract
         if normalized_url in seen:
             continue
         seen.add(normalized_url)
-        if _looks_like_candidate_title(title):
+        if _looks_like_candidate_title(title) or _looks_like_sectioned_event_title(title):
             items.append(
                 ExtractedItem(
                     title=title,
@@ -968,6 +989,78 @@ def _extract_sectioned_event_guide(source: SourceDef, body: str) -> list[Extract
                     enrichment_status="ok_sectioned_guide",
                 )
             )
+        if len(items) >= source.max_candidates:
+            break
+    return items
+
+
+def _extract_rncm_items(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """RNCM event cards use image/aria labels, not useful anchor text."""
+    month_map = {
+        "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+        "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+    }
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    event_blocks = re.findall(
+        r'<div class="event\s[^"]*"[^>]*>(.*?)(?=<div class="event\s|</div>\s*</div>\s*</div>)',
+        body,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    for block in event_blocks:
+        href_match = re.search(
+            r'<a\b[^>]*\bhref="(https://www\.rncm\.ac\.uk/performance/[^"]+)"[^>]*',
+            block,
+            flags=re.IGNORECASE,
+        )
+        title_match = re.search(r"<h2\b[^>]*>(.*?)</h2>", block, flags=re.IGNORECASE | re.DOTALL)
+        if not href_match or not title_match:
+            continue
+        url = clean_url(href_match.group(1))
+        if url in seen:
+            continue
+        seen.add(url)
+        title = _clean_title_text(_clean_event_card_field(title_match.group(1)))
+        if not title or len(title) < 4:
+            continue
+        date_text = ""
+        date_match = re.search(
+            r'<div class="event-date">\s*([A-Za-z]{3})\s*(\d{1,2})',
+            block,
+            flags=re.IGNORECASE,
+        )
+        published_at = None
+        if date_match:
+            month = month_map.get(date_match.group(1).lower())
+            day = int(date_match.group(2))
+            if month:
+                try:
+                    event_dt = now_london().replace(
+                        month=month, day=day, hour=12, minute=0, second=0, microsecond=0
+                    )
+                    if event_dt.date() < now_london().date():
+                        event_dt = event_dt.replace(year=event_dt.year + 1)
+                    published_at = event_dt.isoformat()
+                    date_text = event_dt.strftime("%Y-%m-%d")
+                except ValueError:
+                    published_at = None
+        promoter_match = re.search(
+            r'<div class="title">\s*<h2\b[^>]*>.*?</h2>\s*<span>\s*(.*?)\s*</span>',
+            block,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        promoter = _clean_event_card_field(promoter_match.group(1)) if promoter_match else ""
+        summary = _clean_snippet(" | ".join(part for part in ("RNCM", promoter, date_text, "tickets") if part))
+        items.append(
+            ExtractedItem(
+                title=title,
+                url=url,
+                published_at=published_at,
+                summary=summary,
+                evidence_text=summary,
+                enrichment_status="ok_rncm_card",
+            )
+        )
         if len(items) >= source.max_candidates:
             break
     return items
@@ -1049,6 +1142,83 @@ def _extract_designmynight_cards(source: SourceDef, body: str) -> list[Extracted
                 lead=_derive_lead(source, title, evidence),
                 evidence_text=evidence[:2500],
                 enrichment_status="ok_dmn_card",
+            )
+        )
+        if len(items) >= source.max_candidates:
+            break
+    return items
+
+
+def _extract_skiddle_items(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Extract real Skiddle event cards instead of navigation links."""
+    month_map = {
+        "jan": 1, "january": 1, "feb": 2, "february": 2, "mar": 3, "march": 3,
+        "apr": 4, "april": 4, "may": 5, "jun": 6, "june": 6, "jul": 7, "july": 7,
+        "aug": 8, "august": 8, "sep": 9, "september": 9, "oct": 10, "october": 10,
+        "nov": 11, "november": 11, "dec": 12, "december": 12,
+    }
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    card_pattern = re.compile(
+        r'<a\b[^>]*\bhref="(https://www\.skiddle\.com/whats-on/Manchester/[^"]+/)"[^>]*>(.*?)</a>',
+        re.IGNORECASE | re.DOTALL,
+    )
+    for match in card_pattern.finditer(body):
+        url = clean_url(match.group(1))
+        if url in seen or "/may-bank-holiday-events" in url.lower():
+            continue
+        seen.add(url)
+        card_html = match.group(2)
+        alt_match = re.search(r'<img\b[^>]*\balt="([^"]+)"', card_html, flags=re.IGNORECASE)
+        raw_title = _clean_event_card_field(alt_match.group(1)) if alt_match else _title_from_slug(url)
+        title = _clean_title_text(raw_title)
+        if not title or len(title) < 4:
+            continue
+        evidence = _clean_long_text(card_html)
+        published_at = _parse_datetime_value_flexible(evidence)
+        if not published_at:
+            date_match = re.search(
+                r"\b(?:mon|tue|wed|thu|fri|sat|sun)?[a-z]*\s*"
+                r"(\d{1,2})(?:st|nd|rd|th)?\s+"
+                r"(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|"
+                r"jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)"
+                r"\s+(20\d{2})(?:\s+(\d{1,2}):(\d{2})(am|pm)?)?",
+                evidence,
+                flags=re.IGNORECASE,
+            )
+            if date_match:
+                day, month_name, year, hour, minute, ampm = date_match.groups()
+                month = month_map.get(month_name.lower())
+                if month:
+                    hour_int = int(hour or 12)
+                    if ampm:
+                        marker = ampm.lower()
+                        if marker == "pm" and hour_int < 12:
+                            hour_int += 12
+                        elif marker == "am" and hour_int == 12:
+                            hour_int = 0
+                    try:
+                        published_at = now_london().replace(
+                            year=int(year),
+                            month=month,
+                            day=int(day),
+                            hour=hour_int,
+                            minute=int(minute or 0),
+                            second=0,
+                            microsecond=0,
+                        ).isoformat()
+                    except ValueError:
+                        published_at = None
+        summary = _summary_from_evidence(evidence) or title
+        items.append(
+            ExtractedItem(
+                title=title,
+                url=url,
+                published_at=published_at,
+                summary=summary,
+                lead=_derive_lead(source, title, evidence),
+                evidence_text=evidence[:4000],
+                enrichment_status="ok_skiddle_card",
             )
         )
         if len(items) >= source.max_candidates:
@@ -1440,6 +1610,10 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_sectioned_event_guide(source, body)
     elif source.source_type == "html_designmynight":
         links = _extract_designmynight_cards(source, body)
+    elif source.name in {"Skiddle Manchester", "Skiddle Manchester Bank Holiday"}:
+        links = _extract_skiddle_items(source, body)
+    elif source.name == "RNCM":
+        links = _extract_rncm_items(source, body)
     elif "<rss" in body[:500].lower() or "<feed" in body[:500].lower():
         links = _extract_feed_items(source.url, body)
     else:

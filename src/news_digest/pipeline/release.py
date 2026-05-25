@@ -761,6 +761,8 @@ def _classify_source_status(entry: dict, category: str) -> tuple[str, str]:
     fresh = int(entry.get("fresh_last_24h_count") or 0)
     if not fetched or errors:
         return "failed", (errors[0] if errors else "fetch failed")[:140]
+    if entry.get("not_modified"):
+        return "stale", "source reachable; no changed content since last run (304 Not Modified)"
     if cands == 0:
         return "empty", "fetched but no candidate links parsed"
     # Stale only applies to news feeds expected to publish daily.

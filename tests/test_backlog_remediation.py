@@ -658,6 +658,32 @@ class SourceFunnelDiagnosticsTest(unittest.TestCase):
         self.assertEqual(row["rendered_count"], 0)
         self.assertEqual(row["reject_reasons"]["regular_upcoming_non_major"], 1)
 
+    def test_not_modified_source_is_no_new_material_not_empty(self) -> None:
+        scan_report = {
+            "categories": {
+                "culture_weekly": {
+                    "source_health": [
+                        {
+                            "name": "Spinningfields Makers Market",
+                            "fetched": True,
+                            "not_modified": True,
+                            "candidate_count": 0,
+                            "fresh_last_24h_count": 0,
+                            "errors": [],
+                            "warnings": ["304 Not Modified — no new content since last fetch"],
+                        }
+                    ]
+                }
+            }
+        }
+
+        status = _summarise_source_health(scan_report, {"candidates": []}, set(), {})
+        [row] = status["sources"]
+
+        self.assertEqual(row["status"], "stale")
+        self.assertEqual(status["counts"]["empty"], 0)
+        self.assertEqual(status["counts"]["stale"], 1)
+
     def test_transport_coverage_distinguishes_checked_empty_from_not_checked(self) -> None:
         checked = _summarise_transport_coverage(
             {"categories": {"transport": {"checked": True, "source_health": [{"name": "TfGM", "candidate_count": 0}]}}},

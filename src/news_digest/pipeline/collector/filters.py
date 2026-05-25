@@ -27,6 +27,7 @@ GM_TOKENS: tuple[str, ...] = (
     "rochdale",
     "oldham",
     "wigan",
+    "makerfield",
     "bolton",
     "bury",
     "altrincham",
@@ -56,6 +57,7 @@ GM_TOKENS: tuple[str, ...] = (
     "sale",
     "stretford",
     "wythenshawe",
+    "wythenshaw",
     "old trafford",
     "wilmslow",
     "styal",
@@ -267,6 +269,7 @@ _DIASPORA_LANGUAGE_OR_PROMOTER_TERMS: tuple[str, ...] = (
     "post-soviet",
     "eventcartel",
     "event cartel",
+    "eventfirst",
     "beyondbasket",
     "broland",
     "kontramarka",
@@ -616,16 +619,19 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     "MEN": _SourcePolicy(
         path_must_contain=("/news/greater-manchester-news/",),
         path_banned_segments=("/all-about/", "/topic/", "/author/", "/newsletter/"),
+        blocked_title_tokens=("quiz", "goes viral"),
         min_title_len=18,
     ),
     "MEN Latest News": _SourcePolicy(
         path_must_contain=("/news/greater-manchester-news/",),
         path_banned_segments=("/all-about/", "/topic/", "/author/", "/newsletter/"),
+        blocked_title_tokens=("quiz", "goes viral"),
         min_title_len=18,
     ),
     "MEN News Sitemap": _SourcePolicy(
         path_must_contain=("/news/greater-manchester-news/",),
         path_banned_segments=("/all-about/", "/topic/", "/author/", "/newsletter/"),
+        blocked_title_tokens=("quiz", "goes viral"),
         min_title_len=18,
     ),
     "ITV Granada Greater Manchester": _SourcePolicy(
@@ -644,6 +650,11 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     ),
     "The Mill": _SourcePolicy(
         path_banned_segments=("/tag/", "/author/", "/page/"),
+        min_title_len=18,
+    ),
+    "Altrincham Today": _SourcePolicy(
+        path_banned_segments=("/author/", "/tag/", "/category/", "/page/"),
+        blocked_title_tokens=("job:", "jobs:", "vacancy", "recruiting"),
         min_title_len=18,
     ),
     "The Manc": _SourcePolicy(
@@ -697,10 +708,10 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     "Bridgewater Hall": _SourcePolicy(path_must_contain=("/whats-on/",), min_path_depth=2),
     "Albert Hall Manchester": _SourcePolicy(path_must_contain=("/event/",), min_path_depth=2),
     "Band on the Wall": _SourcePolicy(path_must_contain=("/2026/", "/2025/"), min_path_depth=3),
-    "RNCM": _SourcePolicy(path_must_contain=("/performance-and-events/",), min_path_depth=3),
+    "RNCM": _SourcePolicy(path_must_contain=("/performance/",), min_path_depth=2),
     # ── Russian-speaking / diaspora events ───────────────────────────────────
-    "Manchester Academy Diaspora": _SourcePolicy(
-        path_must_contain=("/order/tickets/", "/event/"),
+    "Manchester Academy": _SourcePolicy(
+        path_must_contain=("/order/gateway/", "/order/tickets/", "/event/"),
         min_path_depth=2,
     ),
     "EventFirst Diaspora": _SourcePolicy(path_must_start="/event/", min_path_depth=2),
@@ -1019,11 +1030,15 @@ def _source_override(
             return False
         public_safety_terms = (
             "police", "gmp", "arrest", "charged", "court", "stab",
-            "murder", "assault", "fire", "crash", "drug",
+            "murder", "assault", "fire", "crash", "drug", "dies",
+            "died", "death", "jailed", "sentenced", "abduct",
+            "missing", "rape", "fraud", "investigation", "officer",
+            "life-threatening", "seriously hurt", "shot",
         )
-        return _has_gm_token(lowered_title, lowered_path) and any(
-            term in lowered_title for term in public_safety_terms
-        )
+        # The BBC Manchester page is already region-scoped; many local
+        # public-safety links do not repeat "Manchester" in the anchor text.
+        # Downstream validators still reject genuinely non-GM material.
+        return any(term in f"{lowered_title} {lowered_summary}" for term in public_safety_terms)
 
     if source.name == "National Rail":
         if not ("/status-and-disruptions" in lowered_path or "/engineering-works/" in lowered_path):

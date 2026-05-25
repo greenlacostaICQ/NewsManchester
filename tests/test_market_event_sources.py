@@ -118,6 +118,102 @@ class MarketEventSourcesTest(unittest.TestCase):
         self.assertIn("Wythenshawe Park", candidate["evidence_text"])
         self.assertTrue(event_quality_report(candidate)["ok"])
 
+    def test_sectioned_event_guide_keeps_short_gig_titles(self) -> None:
+        source = SourceDef(
+            name="Secret Manchester Gigs",
+            report_category="culture_weekly",
+            candidate_category="culture_weekly",
+            url="https://secretmanchester.com/gigs-in-manchester/",
+            primary_block="weekend_activities",
+            source_type="html_sectioned_event_guide",
+            allowed_hosts=("secretmanchester.com",),
+            max_candidates=12,
+        )
+        html = """
+        <article>
+          <h2>Kraftwerk</h2>
+          <p>O2 Apollo Manchester May 22, 23.</p>
+          <p>The band brings its Multimedia Tour to Manchester with tickets available.</p>
+        </article>
+        """
+
+        [candidate] = _extract_source_candidates(source, html)
+
+        self.assertEqual(candidate["title"], "Kraftwerk")
+        self.assertIn("O2 Apollo", candidate["evidence_text"])
+
+    def test_rncm_cards_extract_from_aria_event_markup(self) -> None:
+        source = SourceDef(
+            name="RNCM",
+            report_category="venues_tickets",
+            candidate_category="venues_tickets",
+            url="https://www.rncm.ac.uk/whats-on/",
+            primary_block="next_7_days",
+            allowed_hosts=("rncm.ac.uk",),
+            max_candidates=5,
+        )
+        html = """
+        <div class="event tab-3 dts-3 cf">
+          <a href="https://www.rncm.ac.uk/performance/rickie-lee-jones/" aria-label="Rickie Lee Jones">
+            <div class="event-picture"></div>
+          </a>
+          <div class="event-date">May 30<span>th</span></div>
+          <div class="event-details">
+            <div class="title"><h2>Rickie Lee Jones</h2><span>Senbla Ltd</span></div>
+          </div>
+        </div>
+        """
+
+        [candidate] = _extract_source_candidates(source, html)
+
+        self.assertEqual(candidate["title"], "Rickie Lee Jones")
+        self.assertEqual(candidate["published_date_london"], "2026-05-30")
+        self.assertEqual(candidate["source_url"], "https://rncm.ac.uk/performance/rickie-lee-jones")
+
+    def test_skiddle_cards_extract_event_link_and_date(self) -> None:
+        source = SourceDef(
+            name="Skiddle Manchester Bank Holiday",
+            report_category="culture_weekly",
+            candidate_category="culture_weekly",
+            url="https://www.skiddle.com/whats-on/manchester/may-bank-holiday-events/",
+            primary_block="weekend_activities",
+            allowed_hosts=("skiddle.com",),
+            max_candidates=10,
+        )
+        html = """
+        <a href="https://www.skiddle.com/whats-on/Manchester/Bowlers-Exhibition-Centre/Manchester-Forever/42415400/">
+          <img alt="Manchester Forever at Bowlers Exhibition Centre">
+          <span>Manchester Forever Saturday 1st May 2027 2:00pm - 11:45pm</span>
+          <span>Bowlers Exhibition Centre, Manchester</span>
+        </a>
+        """
+
+        [candidate] = _extract_source_candidates(source, html)
+
+        self.assertEqual(candidate["title"], "Manchester Forever at Bowlers Exhibition Centre")
+        self.assertEqual(candidate["published_date_london"], "2027-05-01")
+
+    def test_manchester_academy_slug_supplies_event_date(self) -> None:
+        source = SourceDef(
+            name="Manchester Academy",
+            report_category="venues_tickets",
+            candidate_category="venues_tickets",
+            url="https://www.manchesteracademy.net/",
+            primary_block="ticket_radar",
+            allowed_hosts=("manchesteracademy.net",),
+            max_candidates=20,
+        )
+        html = """
+        <a href="/order/gateway/13380549/jamie-webster-manchester-academy-2026-09-11-19-00-00">
+          Jamie Webster + support Fri 11th Sep, 19:00 On sale Fri 29th May, 10:00
+        </a>
+        """
+
+        [candidate] = _extract_source_candidates(source, html)
+
+        self.assertIn("Jamie Webster", candidate["title"])
+        self.assertEqual(candidate["published_date_london"], "2026-09-11")
+
     def test_car_boot_without_ticket_language_can_pass_with_source(self) -> None:
         candidate = {
             "category": "culture_weekly",
