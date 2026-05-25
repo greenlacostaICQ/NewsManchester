@@ -38,6 +38,10 @@ class SourceDef:
     # Q1/Q8 editorial decisions. Free-text, short. Empty for sources
     # whose role is self-evident from name/category.
     notes: str = ""
+    # Source contract controls health semantics. A hard-news feed is
+    # judged by publication freshness; an event calendar by upcoming
+    # event coverage; a ticket source by API/window coverage.
+    source_contract: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,6 +73,7 @@ def _load_sources() -> tuple[SourceDef, ...]:
             allowed_hosts=tuple(s.get("allowed_hosts", [])),
             max_candidates=int(s.get("max_candidates", 5)),
             notes=str(s.get("notes", "")),
+            source_contract=str(s.get("source_contract", "")),
         )
         for s in _data["sources"]
         if s.get("enabled", True)

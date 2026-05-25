@@ -12,7 +12,9 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from datetime import timedelta
 from pathlib import Path
+import os
 import re
 import time
 from urllib import parse
@@ -35,6 +37,7 @@ from .fallbacks import (
     _weather_candidate,
 )
 from .fetch import NotModified, _fetch_source_body, load_fetch_cache, save_fetch_cache
+from .dates import _parse_datetime_value
 from .routing import _promote_to_today_focus, _reroute_media_transit_to_transport
 from .sources import SOURCES
 from .summary import _looks_like_active_disruption
@@ -52,6 +55,40 @@ class StageResult:
 # inside _fetch_source_body, so per-source resilience is unchanged.
 _COLLECTOR_MAX_WORKERS = 12
 _SENSITIVE_QUERY_KEYS = {"apikey", "api_key", "key", "token", "access_token"}
+_HARD_NEWS_SOURCES = {
+    "BBC Manchester",
+    "BBC Manchester Web",
+    "BBC Manchester public safety fallback",
+    "MEN",
+    "MEN Latest News",
+    "MEN News Sitemap",
+    "About Manchester News",
+}
+_OFFICIAL_BACKGROUND_SOURCES = {
+    "GMCA",
+    "Manchester Council",
+    "Stockport Council",
+    "Oldham Council",
+    "Rochdale Council",
+    "Bolton Council",
+    "Bury Council",
+    "Wigan Council",
+    "Trafford Council",
+    "Salford Council",
+    "Tameside Council",
+}
+_EVENT_SOURCE_TYPES = {
+    "html_eventbrite",
+    "html_eventbrite_events",
+    "html_page_event",
+    "html_visitmanchester_events",
+    "html_phm_events",
+    "html_the_manc_weekly_events",
+    "html_sectioned_event_guide",
+    "html_designmynight",
+    "html_eventfirst",
+    "html_kontramarka",
+}
 
 
 def _redact_sensitive_url(value: str) -> str:
@@ -78,6 +115,58 @@ def _redact_sensitive_text(value: str) -> str:
         return _redact_sensitive_url(raw_url.rstrip(":")) + suffix
 
     return re.sub(r"https?://\S+", _replace, str(value or ""))
+
+
+def _source_contract(source) -> str:
+    explicit = str(getattr(source, "source_contract", "") or "").strip()
+    if explicit:
+        return explicit
+    if source.source_type == "json_ticketmaster":
+        return "ticket_api"
+    if source.report_category == "transport":
+        return "transport_live"
+    if source.name in _HARD_NEWS_SOURCES:
+        return "hard_news_daily"
+    if source.name in _OFFICIAL_BACKGROUND_SOURCES:
+        return "official_background"
+    if source.report_category == "media_layer":
+        return "news_periodic"
+    if source.report_category == "venues_tickets":
+        return "venue_calendar"
+    if source.report_category in {"culture_weekly", "diaspora_events"} or source.source_type in _EVENT_SOURCE_TYPES:
+        return "event_calendar"
+    if source.report_category == "food_openings":
+        return "openings_watch"
+    if source.report_category == "football":
+        return "football_official"
+    if source.report_category == "tech_business":
+        return "business_news"
+    if source.report_category == "public_services":
+        return "official_background"
+    return "generic"
+
+
+def _candidate_has_upcoming_date(candidate: dict) -> bool:
+    parsed = _parse_datetime_value(str(candidate.get("published_at") or ""))
+    if parsed is None:
+        return False
+    now = now_london()
+    return (now - timedelta(days=1)) <= parsed <= (now + timedelta(days=540))
+
+
+def _coverage_signal_count(source, candidates: list[dict]) -> tuple[int, str]:
+    contract = _source_contract(source)
+    if contract == "hard_news_daily":
+        return (
+            sum(1 for candidate in candidates if candidate.get("freshness_status") == "fresh_24h"),
+            "fresh published items",
+        )
+    if contract in {"event_calendar", "venue_calendar", "ticket_api"}:
+        dated = sum(1 for candidate in candidates if _candidate_has_upcoming_date(candidate))
+        return (dated or len(candidates), "upcoming dated items" if dated else "items")
+    if contract == "transport_live":
+        return (len(candidates), "live/known transport items")
+    return (len(candidates), "items")
 
 
 def _default_report() -> dict:
@@ -112,6 +201,7 @@ def _source_health_template(source) -> dict:
     return {
         "name": source.name,
         "url": source.url,
+        "source_contract": _source_contract(source),
         "checked": False,
         "fetched": False,
         "not_modified": False,
@@ -119,6 +209,8 @@ def _source_health_template(source) -> dict:
         "publishable_count": 0,
         "dated_candidate_count": 0,
         "fresh_last_24h_count": 0,
+        "coverage_signal_count": 0,
+        "coverage_signal_label": "",
         "usable_for_release": False,
         "fallback_used": False,
         "errors": [],
@@ -133,6 +225,8 @@ def _collect_single_source(source) -> tuple[dict, list[dict]]:
     source_health = _source_health_template(source)
     started_at = time.perf_counter()
     try:
+        if source.source_type == "json_ticketmaster" and not os.environ.get("TICKETMASTER_API_KEY", "").strip():
+            raise RuntimeError("missing TICKETMASTER_API_KEY for Ticketmaster API source")
         fetch_started_at = time.perf_counter()
         try:
             body, fetched_url, attempt_log = _fetch_source_body(source)
@@ -178,9 +272,10 @@ def _collect_single_source(source) -> tuple[dict, list[dict]]:
         source_health["fresh_last_24h_count"] = sum(
             1 for candidate in source_candidates if candidate.get("freshness_status") == "fresh_24h"
         )
-        source_health["usable_for_release"] = bool(source_candidates) or source.report_category in {
-            "transport"
-        }
+        signal_count, signal_label = _coverage_signal_count(source, source_candidates)
+        source_health["coverage_signal_count"] = signal_count
+        source_health["coverage_signal_label"] = signal_label
+        source_health["usable_for_release"] = bool(signal_count) or source.report_category in {"transport"}
         if not source_candidates:
             message = f"{source.name}: fetched successfully but no candidate links passed filters"
             source_health["warnings"].append(message)
@@ -250,7 +345,7 @@ def collect_digest(project_root: Path) -> StageResult:
             # everything" warning and any error log; the validators in
             # fetch_cache.json carry over so tomorrow re-sends them.
             pass
-        elif not source_candidates:
+        elif not source_candidates and source_health.get("source_contract") in {"hard_news_daily", "ticket_api"}:
             category_report["errors"].append(
                 f"{source.name}: fetched successfully but no candidate links passed filters"
             )

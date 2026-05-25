@@ -759,14 +759,24 @@ def _classify_source_status(entry: dict, category: str) -> tuple[str, str]:
     fetched = bool(entry.get("fetched"))
     cands = int(entry.get("candidate_count") or 0)
     fresh = int(entry.get("fresh_last_24h_count") or 0)
+    contract = str(entry.get("source_contract") or "")
+    signal = int(entry.get("coverage_signal_count") or 0)
+    signal_label = str(entry.get("coverage_signal_label") or "coverage item(s)")
     if not fetched or errors:
         return "failed", (errors[0] if errors else "fetch failed")[:140]
     if entry.get("not_modified"):
         return "stale", "source reachable; no changed content since last run (304 Not Modified)"
     if cands == 0:
         return "empty", "fetched but no candidate links parsed"
-    # Stale only applies to news feeds expected to publish daily.
-    if category in _FRESHNESS_SENSITIVE_CATEGORIES and fresh == 0:
+    if contract == "hard_news_daily" and fresh == 0:
+        return "stale", f"{cands} item(s) but 0 fresh in last 24h — feed is dormant"
+    if contract in {"event_calendar", "venue_calendar", "ticket_api"}:
+        if signal == 0:
+            return "empty", f"{cands} item(s) but 0 usable {signal_label}"
+        if warnings:
+            return "partial", "; ".join(warnings)[:140]
+        return "ok", f"{signal} {signal_label}"
+    if category in _FRESHNESS_SENSITIVE_CATEGORIES and fresh == 0 and contract in {"transport_live"}:
         return "stale", f"{cands} item(s) but 0 fresh in last 24h — feed is dormant"
     if warnings:
         return "partial", "; ".join(warnings)[:140]
@@ -927,6 +937,9 @@ def _summarise_source_health(
                         "failure_count": len(list(entry.get("errors") or [])),
                         "candidate_count": raw_count,
                         "fresh_last_24h_count": int(entry.get("fresh_last_24h_count") or 0),
+                        "source_contract": str(entry.get("source_contract") or ""),
+                        "coverage_signal_count": int(entry.get("coverage_signal_count") or 0),
+                        "coverage_signal_label": str(entry.get("coverage_signal_label") or ""),
                         "curated_count": int(row_yield["curated"]),
                     }
                 )

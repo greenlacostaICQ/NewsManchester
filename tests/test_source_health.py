@@ -199,6 +199,51 @@ class SourceHealthSummaryWithYieldTest(unittest.TestCase):
         # zero_yield counter present even with no candidates context.
         self.assertIn("zero_yield", result["counts"])
 
+    def test_event_calendar_uses_coverage_signal_not_fresh_24h(self) -> None:
+        scan = {
+            "categories": {
+                "culture_weekly": {
+                    "source_health": [
+                        {
+                            "name": "Visit Manchester Weekend",
+                            "fetched": True,
+                            "candidate_count": 12,
+                            "fresh_last_24h_count": 0,
+                            "source_contract": "event_calendar",
+                            "coverage_signal_count": 12,
+                            "coverage_signal_label": "upcoming dated items",
+                            "errors": [],
+                            "warnings": [],
+                        }
+                    ]
+                }
+            }
+        }
+        result = _summarise_source_health(scan)
+        row = result["sources"][0]
+        self.assertEqual(row["status"], "ok")
+        self.assertEqual(row["source_contract"], "event_calendar")
+        self.assertEqual(row["coverage_signal_count"], 12)
+
+    def test_hard_news_still_requires_fresh_publication_signal(self) -> None:
+        scan = _scan_report_with(
+            {
+                "name": "Core News",
+                "fetched": True,
+                "candidate_count": 8,
+                "fresh_last_24h_count": 0,
+                "source_contract": "hard_news_daily",
+                "coverage_signal_count": 0,
+                "coverage_signal_label": "fresh published items",
+                "errors": [],
+                "warnings": [],
+            }
+        )
+        result = _summarise_source_health(scan)
+        row = result["sources"][0]
+        self.assertEqual(row["status"], "stale")
+        self.assertIn("0 fresh", row["detail"])
+
 
 if __name__ == "__main__":
     unittest.main()
