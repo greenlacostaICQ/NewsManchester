@@ -443,15 +443,10 @@ def _render_tram(card: TransportCard) -> str:
             head = f"{card.operator}: работы {location}"
     elif has_loc:
         head = f"{card.operator}: работы {location}"
-    elif has_time and has_meta:
-        # We don't know which line, but we know "two weeks of works" — surface that.
-        head = f"{card.operator}: {time_phrase} работы на сети"
-    elif has_time:
-        head = f"{card.operator}: {time_phrase} работы на сети"
-    elif has_meta:
-        head = f"{card.operator}: работы на сети"
     else:
-        return f"• {card.operator}: см. источник."
+        # No line/segment locator → "работы на сети" reads as a generic
+        # filler ("на какой сети и где?" — 2026-05-25 complaint). Suppress.
+        return ""
 
     tail_bits: list[str] = []
     if card.reason and card.cost_phrase:
@@ -551,8 +546,8 @@ def render_reminder(card: TransportCard, today_iso: str | None = None) -> str:
     elif card.segment:
         body = f"нет трамваев между {card.segment}"
     else:
-        # No locator — surface as a network-level reminder.
-        body = "работы на сети"
+        # No locator → "работы на сети" reads as a generic filler. Skip.
+        return ""
 
     tail_bits: list[str] = []
     if card.reason:
