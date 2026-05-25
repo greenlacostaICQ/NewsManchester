@@ -71,6 +71,31 @@ def _fetch_with_retries(url: str, *, attempts: int = _SYNTHETIC_FETCH_ATTEMPTS) 
     raise last_exc
 
 
+def _weather_draft_line(
+    min_temp: int,
+    max_temp: int,
+    rain_probability: int,
+    practical: str,
+    source_label: str,
+) -> str:
+    temp = f"{min_temp}-{max_temp}°C"
+    if rain_probability <= 0:
+        rain_part = "без существенных осадков"
+    elif rain_probability < 30:
+        rain_part = f"низкий риск осадков, до {rain_probability}%"
+    else:
+        rain_part = f"вероятность осадков до {rain_probability}%"
+    practical = str(practical or "").strip()
+    if not practical:
+        if rain_probability >= 60:
+            practical = "Перед выходом проверьте локальный радар."
+        elif rain_probability >= 30:
+            practical = "Во второй половине дня возможны локальные осадки."
+        else:
+            practical = "Погодных ограничений на день не видно."
+    return f"• Погода: {temp}; {rain_part}. {practical} {source_label}"
+
+
 def _weather_candidate() -> dict:
     current = now_london()
     weather_url = "https://weather.metoffice.gov.uk/forecast/gcw2hzs1u?new-design=false"
@@ -94,10 +119,7 @@ def _weather_candidate() -> dict:
         body, attempts = _fetch_with_retries(weather_url)
         total_attempts += attempts
         min_temp, max_temp, rain_probability, practical = _extract_met_office_weather(body)
-        draft_line = (
-            f"• Погода: {min_temp}-{max_temp}°C, вероятность осадков до {rain_probability}%. "
-            f"{practical} Met Office"
-        )
+        draft_line = _weather_draft_line(min_temp, max_temp, rain_probability, practical, "Met Office")
         data_fetched_at = now_london().isoformat()
     except Exception as exc:  # noqa: BLE001 — fall through to fallback.
         total_attempts += _SYNTHETIC_FETCH_ATTEMPTS
@@ -113,10 +135,7 @@ def _weather_candidate() -> dict:
             min_temp = round(float(daily.get("temperature_2m_min", [0])[0]))
             max_temp = round(float(daily.get("temperature_2m_max", [0])[0]))
             rain_probability = round(float(daily.get("precipitation_probability_max", [0])[0]))
-            draft_line = (
-                f"• Погода: {min_temp}-{max_temp}°C, вероятность осадков до {rain_probability}%. "
-                "Open-Meteo"
-            )
+            draft_line = _weather_draft_line(min_temp, max_temp, rain_probability, "", "Open-Meteo")
             source_url = fallback_url
             source_label = "Open-Meteo"
             data_fetched_at = now_london().isoformat()

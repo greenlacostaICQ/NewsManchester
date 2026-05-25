@@ -405,6 +405,8 @@ _SPECIFIC_TOPIC_PREFIXES = (
     "event:",
     "research:",
     "planning:",
+    "civic:",
+    "local_cost:",
     "property:",
     "ticket:",
 )
@@ -449,11 +451,18 @@ _LOCAL_COST_RE = re.compile(
     r"price(?:s)?|cost(?:s)?|expensive|charges?|tariff)\b",
     re.IGNORECASE,
 )
+_PUBLIC_REALM_RE = re.compile(
+    r"\b(?:bridge|lights?|lanterns?|restoration|restored|reopened|public\s+realm|"
+    r"junction|crossing|streets?\s+for\s+all|road\s+scheme|cycle\s+lane|"
+    r"мост|фонар|реставрац|перекр[её]ст|переход|улиц)\b",
+    re.IGNORECASE,
+)
 _LOCAL_ACTION_RE = re.compile(
     r"\b(?:"
     r"opens?|opening|opened|launch(?:es|ed|ing)?|starts?|started|plans?|planned|"
     r"announc(?:es|ed|ing)|confirm(?:s|ed|ing)|approv(?:es|ed)|reject(?:s|ed)|"
     r"consultation|deadline|trial|pilot|funding|seed|investment|jobs?|"
+    r"restor(?:e|es|ed|ation)|reopen(?:s|ed|ing)?|"
     r"charged|arrested|sentenced|jailed|convicted|verdict|inquest|appeal|"
     r"closed|reopened|fire|crash|collision|killed|died|death|strike|"
     r"открыв|запуска|объяв|подтверд|одобр|отклони|консультац|срок|"
@@ -610,6 +619,17 @@ def _topic_key(candidate: dict, story_type: str = "", event_shape: str = "") -> 
         title = str(event.get("event_name") or candidate.get("title") or "")
         venue = str(event.get("venue") or ticket_venue(candidate) or candidate.get("source_label") or "")
         return "event:" + normalize_title(f"{title} {venue}")[:120]
+    if story_type in {"planning", "civic", "incident", "opening", "memorial", "local_cost"}:
+        title = normalize_title(str(candidate.get("title") or ""))
+        entities = candidate.get("entities") if isinstance(candidate.get("entities"), dict) else {}
+        entity_bits: list[str] = []
+        for key in ("venues", "councils", "boroughs", "districts", "stations"):
+            values = entities.get(key)
+            if isinstance(values, list):
+                entity_bits.extend(str(value) for value in values[:2] if str(value).strip())
+        entity_text = normalize_title(" ".join(entity_bits))
+        joined = normalize_title(f"{entity_text} {title}") if entity_text else title
+        return f"{story_type}:{joined[:140]}"
     if story_type in {"research", "human_interest", "soft_news"}:
         return f"{story_type}:" + normalize_title(str(candidate.get("title") or ""))[:120]
     source = normalize_title(str(candidate.get("source_label") or ""))
@@ -675,6 +695,8 @@ def _story_type(candidate: dict, event_shape: str) -> str:
         if _OLD_EXISTING_FOOD_RE.search(blob) and not _REAL_OPENING_ACTION_RE.search(blob):
             return "old_existing_food"
         return "opening"
+    if _PUBLIC_REALM_RE.search(blob) and re.search(r"\b(?:council|gmca|rochdale|bury|stockport|trafford|oldham|wigan|bolton|tameside|manchester)\b", lowered):
+        return "planning"
     if re.search(r"\b(?:planning|development|application|developer|housing|hotel|tower|skyscraper|pub|building|site|junction|road\s+scheme)\b", lowered):
         return "planning"
     if _LOCAL_COST_RE.search(blob) and _LOCATION_SIGNAL.search(blob):

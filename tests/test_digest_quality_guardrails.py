@@ -8,6 +8,7 @@ from pathlib import Path
 
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector.routing import _adjust_ticket_radar_block
+from news_digest.pipeline.collector.fallbacks import _weather_draft_line
 from news_digest.pipeline.collector.sources import SOURCES
 from news_digest.pipeline.common import (
     fingerprint_for_candidate,
@@ -28,6 +29,7 @@ from news_digest.pipeline.writer import (
     _contract_public_drop_reason,
     _line_claims_future_ticket_sale,
     _repair_editorial_contract_line,
+    _reserved_later_budget,
     _section_priority_score,
 )
 
@@ -1309,6 +1311,49 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertIn("без существенных осадков", repaired)
         self.assertNotIn("Днём заметно теплее утра", repaired)
 
+    def test_weather_draft_line_handles_zero_rain_as_weather_not_math(self) -> None:
+        line = _weather_draft_line(15, 24, 0, "Днём сухо с прояснениями.", "Met Office")
+
+        self.assertIn("15-24°C", line)
+        self.assertIn("без существенных осадков", line)
+        self.assertNotIn("до 0%", line)
+        self.assertNotIn("почти не ждут", line)
+
+    def test_global_budget_reserves_slots_for_events_tickets_and_football(self) -> None:
+        sections = {
+            "Что произошло за 24 часа": ["x"] * 9,
+            "Что важно в ближайшие 7 дней": ["x"] * 5,
+            "Билеты / Ticket Radar": ["x"] * 4,
+            "Футбол": ["x"] * 3,
+        }
+        ordered = [
+            "Что произошло за 24 часа",
+            "Что важно в ближайшие 7 дней",
+            "Билеты / Ticket Radar",
+            "Футбол",
+        ]
+
+        self.assertEqual(_reserved_later_budget(ordered, 0, sections), 7)
+        self.assertEqual(_reserved_later_budget(ordered, 1, sections), 4)
+
+    def test_optional_news_cannot_stay_in_top_public_sections(self) -> None:
+        candidate = {
+            "include": True,
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "General Manchester profile with weak public value",
+            "summary": "A general local profile with no decision, date or public action.",
+            "source_label": "MEN",
+            "source_url": "https://example.test/profile",
+            "editorial_contract": {
+                "publish_tier": "optional",
+                "event_shape": "none",
+                "reject_reason": "",
+            },
+        }
+
+        self.assertEqual(_contract_public_drop_reason(candidate), "optional_news_in_top_section")
+
     def test_bookable_activity_scores_below_real_weekend_event(self) -> None:
         car_boot = {
             "include": True,
@@ -1352,6 +1397,24 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertEqual(by_name["MEN Latest News"].url, "https://www.manchestereveningnews.co.uk/news/")
         self.assertEqual(by_name["MEN News Sitemap"].source_type, "xml_sitemap")
         self.assertEqual(by_name["About Manchester News"].url, "https://aboutmanchester.co.uk/latest/")
+
+    def test_public_realm_story_gets_specific_repeat_key(self) -> None:
+        bridge = {
+            "include": True,
+            "category": "council",
+            "primary_block": "city_watch",
+            "title": "Historic lights on Queen's Park Bridge restored",
+            "summary": "Rochdale Council restored the bridge lights after a multi-million-pound restoration.",
+            "source_label": "Rochdale Council",
+            "source_url": "https://example.test/bridge",
+            "entities": {"boroughs": ["Rochdale"], "venues": ["Queen's Park Bridge"]},
+        }
+
+        contract = build_editorial_contract(bridge)
+
+        self.assertEqual(contract["story_type"], "planning")
+        self.assertTrue(contract["topic_key"].startswith("planning:"))
+        self.assertNotIn("rochdale council historic", contract["topic_key"])
 
     def test_barton_recurring_car_boot_is_not_bookable_or_bowlee(self) -> None:
         candidate = {

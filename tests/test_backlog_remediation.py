@@ -344,6 +344,8 @@ class EventQualityPipelineTest(unittest.TestCase):
             self.assertEqual(updated["event_quality"]["severity"], "hard")
 
     def test_deep_date_extraction_uses_evidence_before_event_gate(self) -> None:
+        event_day = now_london().date() + timedelta(days=1)
+        event_text = f"{event_day.day} {event_day.strftime('%B')} {event_day.year}"
         updated = self._validate_one(
             {
                 "include": True,
@@ -353,7 +355,7 @@ class EventQualityPipelineTest(unittest.TestCase):
                 "title": "The Coronation Street Experience",
                 "summary": "Tickets for a visitor experience.",
                 "lead": "",
-                "evidence_text": "The visitor experience runs at Visit Salford on 24 May 2026 with timed tickets.",
+                "evidence_text": f"The visitor experience runs at Visit Salford on {event_text} with timed tickets.",
                 "source_label": "Visit Salford",
                 "source_url": "https://example.test/corrie",
                 "dedupe_decision": "new",
@@ -362,7 +364,7 @@ class EventQualityPipelineTest(unittest.TestCase):
         )
 
         self.assertTrue(updated["include"])
-        self.assertEqual(updated["event"]["date_start"], "2026-05-24")
+        self.assertEqual(updated["event"]["date_start"], event_day.isoformat())
         self.assertTrue(updated["event_schema_completeness"]["applies"])
 
     def test_validator_soft_warns_under_specified_dated_event(self) -> None:

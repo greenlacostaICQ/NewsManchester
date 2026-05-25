@@ -145,7 +145,7 @@ class WeatherCandidateFreshnessTest(unittest.TestCase):
             min_temp, max_temp, rain_probability, practical = weather._extract_met_office_weather(html)
 
         self.assertEqual((min_temp, max_temp, rain_probability), (17, 25, 0))
-        self.assertEqual(practical, "Днём заметно теплее утра.")
+        self.assertEqual(practical, "Днём сухо с прояснениями.")
 
     def test_met_office_failure_falls_back_to_open_meteo(self) -> None:
         open_meteo_body = (

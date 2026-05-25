@@ -598,6 +598,28 @@ def _exclude_by_editorial_contract(candidate: dict) -> bool:
     return True
 
 
+def _demote_optional_top_news_by_contract(candidate: dict) -> bool:
+    if not candidate.get("include"):
+        return False
+    attach_editorial_contract(candidate)
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    if str(contract.get("publish_tier") or "") != "optional":
+        return False
+    if str(candidate.get("primary_block") or "") not in {"last_24h", "today_focus"}:
+        return False
+    if str(candidate.get("category") or "") not in {"media_layer", "gmp", "city_news"}:
+        return False
+    candidate["primary_block"] = "city_watch"
+    candidate["quality_warnings"] = sorted(set(
+        [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]
+        + ["optional_top_news_demoted_to_city_watch"]
+    ))
+    existing = str(candidate.get("reason") or "").strip()
+    note = "Validator: optional editorial_contract item demoted out of top news sections."
+    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    return True
+
+
 def _exclude_road_only_transport(candidate: dict) -> bool:
     if not candidate.get("include"):
         return False
@@ -1389,6 +1411,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _exclude_book_author_in_tech_business(candidate)
         if candidate.get("include"):
             _exclude_stale_undated_news_from_text(candidate)
+        if candidate.get("include") and manual != "force_include":
+            _demote_optional_top_news_by_contract(candidate)
         if candidate.get("include") and manual != "force_include":
             _exclude_by_editorial_contract(candidate)
         if candidate.get("include"):

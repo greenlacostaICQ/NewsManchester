@@ -126,5 +126,5 @@ def _met_office_practical_angle(headline: str, today_text: str, precip_max: int)
     if "showers" in blob:
         return "Днём возможны кратковременные дожди."
     if "sunny" in blob or "bright" in blob:
-        return "Днём заметно теплее утра."
+        return "Днём сухо с прояснениями."
     return "Без резких перемен погоды."

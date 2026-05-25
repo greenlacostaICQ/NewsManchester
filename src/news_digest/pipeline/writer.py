@@ -109,6 +109,16 @@ DEGRADED_LLM_SECTION_MAX_ITEMS = {
 }
 
 PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 22
+PUBLIC_SECTION_RESERVED_MIN = {
+    # These sections answer "what can I do / see / book now"; they must not
+    # disappear just because early news sections are noisy on a given morning.
+    "Выходные в GM": 3,
+    "Что важно в ближайшие 7 дней": 3,
+    "Билеты / Ticket Radar": 2,
+    "Крупные концерты вне GM": 1,
+    "Русскоязычные концерты и стендап UK": 1,
+    "Футбол": 2,
+}
 _BAD_EDITORIAL_PROSE_MARKERS = (
     "ticket office",
     "слот входа",
@@ -274,6 +284,12 @@ def _contract_public_drop_reason(candidate: dict) -> str:
         and category in {"media_layer", "council", "public_services", "gmp", "city_news"}
     ):
         return "editorial_filler"
+    if (
+        tier == "optional"
+        and block in {"last_24h", "today_focus"}
+        and category in {"media_layer", "gmp", "city_news"}
+    ):
+        return "optional_news_in_top_section"
     if event_shape == "bookable_activity" and (
         block == "weekend_activities"
         or (
@@ -283,6 +299,22 @@ def _contract_public_drop_reason(candidate: dict) -> str:
     ):
         return "bookable_activity_filler"
     return ""
+
+
+def _reserved_later_budget(
+    ordered_sections: list[str],
+    current_index: int,
+    sections: dict[str, list[str]],
+) -> int:
+    reserved = 0
+    for later_section in ordered_sections[current_index + 1:]:
+        minimum = PUBLIC_SECTION_RESERVED_MIN.get(later_section, 0)
+        if minimum <= 0:
+            continue
+        available = len(sections.get(later_section) or [])
+        if available:
+            reserved += min(minimum, available)
+    return reserved
 
 
 def _contains_cyrillic(value: str) -> bool:
@@ -772,11 +804,12 @@ def _build_bookable_activity_fallback_line(candidate: dict) -> str:
 def _repair_weather_line(line: str) -> str:
     text = str(line or "")
     text = re.sub(
-        r"вероятность\s+осадков\s+до\s+0\s*%",
-        "без существенных осадков",
+        r",?\s*вероятность\s+осадков\s+до\s+0\s*%",
+        "; без существенных осадков",
         text,
         flags=re.IGNORECASE,
     )
+    text = re.sub(r"\bосадков\s+почти\s+не\s+ждут\b", "без существенных осадков", text, flags=re.IGNORECASE)
     text = re.sub(r"\s*Дн[её]м заметно теплее утра\.\s*", " ", text, flags=re.IGNORECASE)
     text = re.sub(r"\s+", " ", text).strip()
     return text
@@ -1672,7 +1705,7 @@ def write_digest(project_root: Path) -> StageResult:
     section_counts: dict[str, int] = {}
     rendered_candidate_fingerprints: list[str] = []
     visible_item_count = 0
-    for section_name in ordered_sections:
+    for section_index, section_name in enumerate(ordered_sections):
         lines = sections.get(section_name, [])
         if not lines:
             continue
@@ -1744,7 +1777,13 @@ def write_digest(project_root: Path) -> StageResult:
             fps = fps[:cap]
             scores = scores[:cap]
             titles = titles[:cap]
-        remaining_budget = PUBLIC_DIGEST_MAX_VISIBLE_ITEMS - visible_item_count
+        reserved_later_budget = _reserved_later_budget(ordered_sections, section_index, sections)
+        remaining_budget = PUBLIC_DIGEST_MAX_VISIBLE_ITEMS - visible_item_count - reserved_later_budget
+        if section_name in PUBLIC_SECTION_RESERVED_MIN:
+            remaining_budget += min(
+                PUBLIC_SECTION_RESERVED_MIN[section_name],
+                len(lines),
+            )
         if remaining_budget <= 0:
             for idx, ln in enumerate(lines):
                 global_budget_dropped.append(
@@ -1754,7 +1793,10 @@ def write_digest(project_root: Path) -> StageResult:
                         "title": titles[idx] if idx < len(titles) else re.sub(r"<[^>]+>", "", ln)[:120],
                         "source_label": srcs[idx] if idx < len(srcs) else "",
                         "reader_value_score": scores[idx] if idx < len(scores) else 0.0,
-                        "reason": f"Public digest budget cap {PUBLIC_DIGEST_MAX_VISIBLE_ITEMS} reached.",
+                            "reason": (
+                                f"Public digest budget cap {PUBLIC_DIGEST_MAX_VISIBLE_ITEMS} reached "
+                                f"(reserved later event/ticket budget: {reserved_later_budget})."
+                            ),
                     }
                 )
             section_counts[section_name] = 0
@@ -1768,7 +1810,10 @@ def write_digest(project_root: Path) -> StageResult:
                         "title": titles[idx] if idx < len(titles) else re.sub(r"<[^>]+>", "", lines[idx])[:120],
                         "source_label": srcs[idx] if idx < len(srcs) else "",
                         "reader_value_score": scores[idx] if idx < len(scores) else 0.0,
-                        "reason": f"Public digest budget cap {PUBLIC_DIGEST_MAX_VISIBLE_ITEMS} reached.",
+                        "reason": (
+                            f"Public digest budget cap {PUBLIC_DIGEST_MAX_VISIBLE_ITEMS} reached "
+                            f"(reserved later event/ticket budget: {reserved_later_budget})."
+                        ),
                     }
                 )
             lines = lines[:remaining_budget]
