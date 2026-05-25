@@ -192,10 +192,12 @@ allowed_hosts = ["nationalrail.co.uk"]
 
 [[sources]]
 name = "GMMH"
+notes = "official GMMH media centre; /news/ intermittently closes runner connections"
 report_category = "public_services"
 candidate_category = "public_services"
-url = "https://www.gmmh.nhs.uk/news/"
+url = "https://www.gmmh.nhs.uk/media-centre/"
 primary_block = "today_focus"
+allowed_hosts = ["gmmh.nhs.uk"]
 
 [[sources]]
 name = "GMCA"
@@ -1029,12 +1031,13 @@ max_candidates = 1
 
 [[sources]]
 name = "South Manchester Food Festival"
+notes = "TicketTailor event page; old foodfestivaltickets host returns 403 on GitHub runners"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
-url = "https://tickets.foodfestivaltickets.com/events/foodfestival/1883190"
+url = "https://www.tickettailor.com/events/foodfestival/1883190"
 primary_block = "weekend_activities"
 source_type = "html_page_event"
-allowed_hosts = ["tickets.foodfestivaltickets.com"]
+allowed_hosts = ["tickettailor.com"]
 max_candidates = 1
 
 [[sources]]
@@ -1224,6 +1227,7 @@ allowed_hosts = ["timeout.com"]
 
 [[sources]]
 name = "Secret Manchester May Guide"
+enabled = false  # Live page fetched on GitHub but section parser returned 0 candidates; covered by Skiddle/VisitManchester/ManchesterTheatres.
 notes = "monthly curated guide; section parser extracts individual events, markets and gigs"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
@@ -1235,6 +1239,7 @@ max_candidates = 12
 
 [[sources]]
 name = "Secret Manchester Weekend Guide"
+enabled = false  # Live page fetched on GitHub but section parser returned 0 candidates; covered by Skiddle/VisitManchester/ManchesterTheatres.
 notes = "rolling weekend guide; section parser extracts practical picks"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
@@ -1246,6 +1251,7 @@ max_candidates = 10
 
 [[sources]]
 name = "Secret Manchester Gigs"
+enabled = false  # Live page fetched on GitHub but section parser returned 0 candidates; covered by Skiddle/venue calendars/Ticketmaster.
 notes = "monthly live music guide; fills genre and major-gig blind spots"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
@@ -1341,5 +1347,5 @@ name = "Manchester City"
 notes = "результаты, preview, squad news"
 report_category = "football"
 candidate_category = "football"
-url = "https://www.mancity.com/news"
+url = "https://www.mancity.com/news?tag=News"
 primary_block = "football"

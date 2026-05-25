@@ -372,10 +372,10 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         # One old broad guide (Creative Tourist Bank Holiday) is intentionally
         # disabled when its live page is stale; keep the guardrail broad
         # without requiring stale sources to stay enabled.
-        self.assertGreaterEqual(len(guide_sources), 7)
+        self.assertGreaterEqual(len(guide_sources), 4)
         self.assertIn("Visit Manchester Weekend", guide_sources)
-        self.assertIn("Secret Manchester May Guide", guide_sources)
         self.assertIn("Manchester Theatres Weekend", [source.name for source in SOURCES])
+        self.assertNotIn("Secret Manchester May Guide", [source.name for source in SOURCES])
 
     # ---------------------------------------------------------------
     # S1 — date-aware guardrails
@@ -1411,6 +1411,17 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
     def test_soft_sources_are_not_in_hard_news_layer(self) -> None:
         by_name = {source.name: source for source in SOURCES}
         for source_name in ("The Manc", "I Love Manchester", "Secret Manchester", "University of Manchester", "University of Salford"):
+            self.assertNotIn(source_name, by_name)
+
+    def test_known_empty_sources_have_working_replacements_or_are_disabled(self) -> None:
+        by_name = {source.name: source for source in SOURCES}
+        self.assertEqual(by_name["GMMH"].url, "https://www.gmmh.nhs.uk/media-centre/")
+        self.assertEqual(
+            by_name["South Manchester Food Festival"].url,
+            "https://www.tickettailor.com/events/foodfestival/1883190",
+        )
+        self.assertEqual(by_name["Manchester City"].url, "https://www.mancity.com/news?tag=News")
+        for source_name in ("Secret Manchester May Guide", "Secret Manchester Weekend Guide", "Secret Manchester Gigs"):
             self.assertNotIn(source_name, by_name)
 
     def test_men_soft_fluff_is_not_publishable_news(self) -> None:
