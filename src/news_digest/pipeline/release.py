@@ -1028,6 +1028,18 @@ def _summarise_transport_coverage(
         if isinstance(c, dict) and str(c.get("primary_block") or "") == "transport"
     ]
     found = [c for c in transport_candidates if c.get("include")]
+    if any(
+        re.search(
+            r"\b(metrolink|tram|trams|rochdale line|airport line|bury line|"
+            r"ashton line|eccles line|east didsbury line|piccadilly tram stop)\b",
+            " ".join(
+                str(c.get(field) or "")
+                for field in ("title", "summary", "lead", "draft_line", "source_label")
+            ).lower(),
+        )
+        for c in found
+    ):
+        source_flags["metrolink_checked"] = True
     rendered = [c for c in found if str(c.get("fingerprint") or "") in rendered_set]
     if rendered:
         verdict = "disruptions_rendered"

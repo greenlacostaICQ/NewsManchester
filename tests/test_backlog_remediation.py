@@ -695,6 +695,34 @@ class SourceFunnelDiagnosticsTest(unittest.TestCase):
         self.assertEqual(checked["verdict"], "checked_no_disruptions")
         self.assertEqual(missing["verdict"], "not_checked")
 
+    def test_transport_coverage_counts_tfgm_tram_alerts_as_metrolink_checked(self) -> None:
+        coverage = _summarise_transport_coverage(
+            {
+                "categories": {
+                    "transport": {
+                        "checked": True,
+                        "source_health": [{"name": "TfGM", "candidate_count": 2}],
+                    }
+                }
+            },
+            {
+                "candidates": [
+                    {
+                        "include": True,
+                        "fingerprint": "rochdale-line",
+                        "primary_block": "transport",
+                        "source_label": "TfGM",
+                        "title": "Rochdale Line - Tram Improvement Works",
+                    }
+                ]
+            },
+            {"rochdale-line"},
+        )
+
+        self.assertTrue(coverage["tfgm_checked"])
+        self.assertTrue(coverage["metrolink_checked"])
+        self.assertEqual(coverage["verdict"], "disruptions_rendered")
+
     def test_diaspora_diagnostics_explains_empty_block(self) -> None:
         source_status = {
             "sources": [
