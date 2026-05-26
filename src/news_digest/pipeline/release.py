@@ -237,8 +237,15 @@ def _validate_scan_report(scan_report: dict | None, current_day_london: str, err
     # Categories that must be both checked AND usable for release.
     # transport: excluded — clean-network day is valid.
     # gmp: excluded — BBC Manchester public-safety fallback covers it when GMP server is down.
+    # public_services: excluded — it is an official-background layer; a single
+    # NHS trust media-centre outage must warn, not block, unless a rendered
+    # active disruption is actually required elsewhere.
     # venues_tickets, football: low-signal; source timeouts must not block the whole digest.
-    REQUIRED_USABLE_CATEGORIES = {k for k in REQUIRED_SCAN_CATEGORIES if k not in {"transport", "gmp", "venues_tickets", "football"}}
+    REQUIRED_USABLE_CATEGORIES = {
+        k
+        for k in REQUIRED_SCAN_CATEGORIES
+        if k not in {"transport", "gmp", "public_services", "venues_tickets", "football"}
+    }
 
     for key, label in REQUIRED_SCAN_CATEGORIES.items():
         category = categories.get(key)

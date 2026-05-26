@@ -1314,6 +1314,117 @@ class PublishedReviewTest(unittest.TestCase):
             self.assertEqual(report["event_miss_review"]["counts"]["critical_misses"], 1)
             self.assertTrue(any("Event miss review" in warning for warning in report["warnings"]))
 
+    def test_public_services_source_failure_does_not_block_release(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            run_date = now_london().strftime("%Y-%m-%d")
+            run_id = "public-services-warning-test"
+            categories = {
+                key: {
+                    "checked": True,
+                    "usable_for_release": True,
+                    "candidate_count": 1,
+                    "publishable_count": 1,
+                    "sources": [],
+                    "source_health": [],
+                }
+                for key in REQUIRED_SCAN_CATEGORIES
+            }
+            categories["public_services"].update({
+                "usable_for_release": False,
+                "candidate_count": 0,
+                "publishable_count": 0,
+                "active_disruption_today": False,
+                "errors": ["GMMH: Remote end closed connection without response"],
+                "source_health": [
+                    {
+                        "name": "GMMH",
+                        "status": "failed",
+                        "candidate_count": 0,
+                        "publishable_count": 0,
+                    }
+                ],
+            })
+            (state_dir / "collector_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "categories": categories,
+            }), encoding="utf-8")
+            candidates = [
+                {
+                    "fingerprint": "city-1",
+                    "title": "Manchester council confirms service change",
+                    "source_label": "Manchester Council",
+                    "source_url": "https://example.test/city-1",
+                    "category": "council",
+                    "primary_block": "today_focus",
+                    "include": True,
+                    "dedupe_decision": "new",
+                    "summary": "Manchester council confirmed a service change today.",
+                },
+                {
+                    "fingerprint": "city-2",
+                    "title": "Stockport transport works confirmed",
+                    "source_label": "BBC Manchester",
+                    "source_url": "https://example.test/city-2",
+                    "category": "media_layer",
+                    "primary_block": "last_24h",
+                    "include": True,
+                    "dedupe_decision": "new",
+                    "freshness_status": "fresh_24h",
+                    "summary": "A local transport update was confirmed today.",
+                },
+            ]
+            (state_dir / "candidates.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "candidates": candidates,
+            }), encoding="utf-8")
+            (state_dir / "curator_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "status": "complete",
+                "reviewed": 2,
+            }), encoding="utf-8")
+            (state_dir / "llm_rewrite_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "stage_status": "complete",
+            }), encoding="utf-8")
+            (state_dir / "writer_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "stage_status": "complete",
+                "rendered_candidate_fingerprints": ["city-1", "city-2"],
+                "quality_counts": {"included_candidates": 2, "rendered_candidates": 2},
+                "section_counts": {"Погода": 1, "Что важно сегодня": 1, "Что произошло за 24 часа": 1},
+                "dropped_candidates": [],
+            }), encoding="utf-8")
+            (state_dir / "editor_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "stage_status": "complete",
+            }), encoding="utf-8")
+            (state_dir / "draft_digest.html").write_text(
+                f"<b>Greater Manchester Brief — {run_date}, 08:00</b>\n\n"
+                "<b>Погода</b>\n"
+                "• Погода: 12-16°C. <a href=\"https://example.test/weather\">Met Office</a>\n\n"
+                "<b>Что важно сегодня</b>\n"
+                "• Manchester council confirms service change. <a href=\"https://example.test/city-1\">Manchester Council</a>\n\n"
+                "<b>Что произошло за 24 часа</b>\n"
+                "• Stockport transport works confirmed. <a href=\"https://example.test/city-2\">BBC Manchester</a>\n",
+                encoding="utf-8",
+            )
+
+            result = build_release(root)
+            report = json.loads((state_dir / "release_report.json").read_text(encoding="utf-8"))
+
+            self.assertTrue(result.ok)
+            self.assertEqual(report["release_decision"], "pass")
+            self.assertFalse(any("public services" in error for error in report["errors"]))
+
     def test_release_review_flags_bad_visible_items(self) -> None:
         today = now_london().date()
         old_news_day = today - timedelta(days=25)
