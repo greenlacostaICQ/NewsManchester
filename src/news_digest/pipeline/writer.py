@@ -29,6 +29,7 @@ from news_digest.pipeline.editorial_contracts import (
     scrub_vague_ending,
 )
 from news_digest.pipeline.reader_value import reader_value_score
+from news_digest.pipeline.story_intelligence import section_board_score
 from news_digest.pipeline.toponyms import restore_english_toponyms
 from news_digest.pipeline.place_names import preserve_place_names
 
@@ -1286,26 +1287,7 @@ def _city_watch_score(candidate: dict) -> float:
 def _section_priority_score(candidate: dict, section_name: str, line: str) -> float:
     """Shared reader-value score used when capped sections choose survivors."""
     attach_editorial_contract(candidate)
-    value_item = dict(candidate)
-    value_item["included"] = True
-    score = float(reader_value_score(value_item))
-    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
-    tier = str(contract.get("publish_tier") or candidate.get("publish_tier") or "")
-    score += {
-        "must_include": 80.0,
-        "strong": 35.0,
-        "optional": 5.0,
-        "filler": -45.0,
-        "reject": -200.0,
-    }.get(tier, 0.0)
-    event_shape = str(contract.get("event_shape") or candidate.get("event_shape") or "")
-    if event_shape == "bookable_activity":
-        score -= 45.0
-    elif event_shape in {"festival", "recurring"}:
-        score += 22.0
-    story_type = str(contract.get("story_type") or "")
-    if story_type in {"human_interest", "soft_news", "research"}:
-        score -= 35.0
+    score = float(section_board_score(candidate, section_name))
     completeness = candidate.get("event_schema_completeness")
     if isinstance(completeness, dict) and completeness.get("applies"):
         score += (float(completeness.get("score") or 0) - 50.0) / 5.0

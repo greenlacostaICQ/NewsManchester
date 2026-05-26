@@ -5,16 +5,80 @@ from datetime import datetime
 import re
 
 from news_digest.pipeline.common import (
+    PRIMARY_BLOCKS,
     canonical_url_identity,
     fingerprint_for_candidate,
     normalize_title,
+    now_london,
 )
 from news_digest.pipeline.editorial_contracts import attach_editorial_contract, is_specific_topic_key
-from news_digest.pipeline.source_selection import pick_winner
+from news_digest.pipeline.reader_value import reader_value_score
+from news_digest.pipeline.source_selection import pick_winner, source_score
 
 
 EVIDENCE_PACKET_VERSION = 1
 STORY_CLUSTER_VERSION = 1
+ENGLISH_JUDGE_SCHEMA_VERSION = 1
+
+REASON_CODE_ENUM: tuple[str, ...] = (
+    "duplicate_exact",
+    "same_story_rehash",
+    "new_facts",
+    "no_news_anchor",
+    "non_gm",
+    "expired_event",
+    "missing_event_date",
+    "missing_venue",
+    "property_listing",
+    "old_existing_food",
+    "human_interest_no_public_anchor",
+    "bookable_activity",
+    "public_safety",
+    "transport_disruption",
+    "planning_or_civic",
+    "ticket_opportunity",
+    "market_or_fair",
+    "russian_event",
+    "source_authority",
+    "enrichment_warning",
+    "other",
+)
+
+_STAGE_MARKERS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("charged", re.compile(r"\bcharged|обвин", re.IGNORECASE)),
+    ("sentenced", re.compile(r"\bsentenced|jailed|приговор|осужд", re.IGNORECASE)),
+    ("verdict", re.compile(r"\bverdict|convicted|guilty|вердикт|винов", re.IGNORECASE)),
+    ("appeal", re.compile(r"\bappeal|апелляц", re.IGNORECASE)),
+    ("approved", re.compile(r"\bapproved|одобр", re.IGNORECASE)),
+    ("rejected", re.compile(r"\brejected|отклони", re.IGNORECASE)),
+    ("submitted", re.compile(r"\bsubmitted|application|подан", re.IGNORECASE)),
+    ("opened", re.compile(r"\bopened|reopened|launch(?:ed|es)?|открыл", re.IGNORECASE)),
+    ("closed", re.compile(r"\bclosed|closure|закры", re.IGNORECASE)),
+    ("named", re.compile(r"\bnamed|identified|назван", re.IGNORECASE)),
+)
+_IMPACT_VERB_RE = re.compile(
+    r"\b(?:announc(?:e|es|ed|ing)|confirm(?:s|ed|ing)|approve(?:s|d)|reject(?:s|ed)|"
+    r"submit(?:s|ted)|vote(?:s|d)|charge(?:s|d)|sentence(?:s|d)|jail(?:s|ed)|"
+    r"convict(?:s|ed)|name(?:s|d)|close(?:s|d)|open(?:s|ed|ing)|reopen(?:s|ed|ing)|"
+    r"launch(?:es|ed)|cancel(?:s|led)|delay(?:s|ed)|disrupt(?:s|ed)|strike(?:s)?|"
+    r"fire|crash|collision|death|died|killed|"
+    r"объяв|подтверд|одобр|отклони|голос|обвин|приговор|осужд|назван|"
+    r"закры|откры|запуск|отмен|задерж|сбой|забастов|пожар|авар|погиб)\b",
+    re.IGNORECASE,
+)
+_DATE_RE = re.compile(
+    r"\b(?:20\d{2}-\d{2}-\d{2}|\d{1,2}(?:st|nd|rd|th)?\s+"
+    r"(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*|"
+    r"\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|"
+    r"сентября|октября|ноября|декабря)|today|tomorrow|yesterday|сегодня|завтра)\b",
+    re.IGNORECASE,
+)
+_AMOUNT_RE = re.compile(r"\b(?:£\s*\d[\d,.]*(?:m|bn|k)?|\d[\d,.]*\s*(?:million|billion|млн|млрд|%))\b", re.IGNORECASE)
+_MARKET_RE = re.compile(r"\b(?:market|makers?\s+market|car\s+boot|fair|flea|ярмарк|рынок)\b", re.IGNORECASE)
+_PUBLIC_SAFETY_RE = re.compile(r"\b(?:death|died|killed|fire|crash|collision|court|charged|sentenced|stab|murder|пожар|авар|суд|обвин|погиб)\b", re.IGNORECASE)
+_TRANSPORT_RE = re.compile(r"\b(?:tfgm|metrolink|rail|train|bus|tram|station|line|route|national\s+rail|трамва|автобус|поезд)\b", re.IGNORECASE)
+_PLANNING_CIVIC_RE = re.compile(r"\b(?:council|planning|application|development|vote|consultation|mayor|gmca|совет|планиров|заявк|консультац)\b", re.IGNORECASE)
+_TICKET_RE = re.compile(r"\b(?:ticket|tickets|on\s+sale|presale|venue|co-op live|ao arena|ticketmaster|билет)\b", re.IGNORECASE)
 
 
 def _blob(candidate: dict) -> str:
@@ -44,6 +108,283 @@ def _unique(values: list[object], *, limit: int = 12) -> list[str]:
 def _compact_text(value: object, *, limit: int = 1200) -> str:
     text = re.sub(r"\s+", " ", str(value or "")).strip()
     return text[:limit]
+
+
+def _entity_values(candidate: dict) -> list[str]:
+    entities = candidate.get("entities") if isinstance(candidate.get("entities"), dict) else {}
+    out: list[str] = []
+    for key in ("people", "venues", "councils", "companies", "stations", "districts", "boroughs"):
+        raw = entities.get(key)
+        if isinstance(raw, list):
+            out.extend(str(value) for value in raw if str(value).strip())
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    for key in ("event_name", "venue", "borough"):
+        if str(event.get(key) or "").strip():
+            out.append(str(event.get(key)))
+    return _unique(out, limit=30)
+
+
+def _stage_set(text: str) -> set[str]:
+    return {name for name, pattern in _STAGE_MARKERS if pattern.search(text)}
+
+
+def _fact_signature(candidate: dict) -> dict[str, set[str]]:
+    text = _blob(candidate)
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    dates = set(_DATE_RE.findall(text))
+    for key in ("date_start", "date", "date_end", "date_text"):
+        value = str(event.get(key) or "").strip()
+        if value:
+            dates.add(value.lower())
+    return {
+        "entities": {normalize_title(value) for value in _entity_values(candidate) if normalize_title(value)},
+        "dates": {normalize_title(value) for value in dates if normalize_title(value)},
+        "amounts": {normalize_title(value) for value in _AMOUNT_RE.findall(text) if normalize_title(value)},
+        "stages": _stage_set(text),
+    }
+
+
+def new_facts_diff(candidate: dict, previous: dict | None) -> dict[str, object]:
+    if not isinstance(candidate, dict) or not isinstance(previous, dict):
+        return {"has_new_facts": False, "new_fact_types": [], "new_values": {}}
+    current = _fact_signature(candidate)
+    old = _fact_signature(previous)
+    new_values: dict[str, list[str]] = {}
+    for key in ("entities", "dates", "amounts", "stages"):
+        diff = sorted(current.get(key, set()) - old.get(key, set()))
+        if diff:
+            new_values[key] = diff[:8]
+    # Entity-only diffs are too noisy across transliteration / inflection
+    # ("Erica de Souza Correa" vs "Эрики де Соуза Корреа"). Treat a new
+    # entity as a publishable new fact only when the text also carries a
+    # new stage/date/number, e.g. named suspect + charged/court date.
+    substantive = {key: value for key, value in new_values.items() if key != "entities"}
+    has_new_facts = bool(substantive)
+    return {
+        "has_new_facts": has_new_facts,
+        "new_fact_types": sorted(new_values.keys()),
+        "new_values": new_values,
+    }
+
+
+def formal_news_anchor(candidate: dict) -> dict[str, object]:
+    if not isinstance(candidate, dict):
+        return {"has_news_anchor": False, "components": []}
+    text = _blob(candidate)
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    entities = _entity_values(candidate)
+    has_date_or_stage = bool(
+        _DATE_RE.search(text)
+        or str(candidate.get("published_at") or "").strip()
+        or str(event.get("date_start") or event.get("date") or "").strip()
+        or _stage_set(text)
+    )
+    has_named_entity = bool(entities)
+    has_impact_verb = bool(_IMPACT_VERB_RE.search(text))
+    components = []
+    if has_date_or_stage:
+        components.append("datable_event_or_stage")
+    if has_named_entity:
+        components.append("named_entity_or_place")
+    if has_impact_verb:
+        components.append("impact_verb")
+    return {
+        "has_news_anchor": has_date_or_stage and has_named_entity and has_impact_verb,
+        "components": components,
+        "missing": [
+            name for name, present in (
+                ("datable_event_or_stage", has_date_or_stage),
+                ("named_entity_or_place", has_named_entity),
+                ("impact_verb", has_impact_verb),
+            )
+            if not present
+        ],
+    }
+
+
+def rubric_contract(candidate: dict) -> dict[str, object]:
+    attach_editorial_contract(candidate)
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    story_type = str(contract.get("story_type") or "")
+    event_shape = str(contract.get("event_shape") or "")
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    rubric = story_type or category or block or "generic"
+    required = ["news_anchor"] if block in {"last_24h", "today_focus", "city_watch"} else []
+    if block == "transport" or story_type == "transport":
+        required = ["mode_or_operator", "route_line_station_or_stop", "effect"]
+    elif event_shape == "recurring" or _MARKET_RE.search(_blob(candidate)):
+        rubric = "weekend_market"
+        required = ["next_occurrence", "venue_or_place", "time_or_price_if_available"]
+    elif event_shape in {"one_off", "festival"}:
+        rubric = "event"
+        required = ["event_date", "venue_or_place", "event_name"]
+    elif story_type == "ticket" or category == "venues_tickets":
+        rubric = "ticket"
+        required = ["artist_or_event", "venue", "event_date", "ticket_state"]
+    elif block == "russian_events" or category in {"russian_speaking_events", "diaspora_events"}:
+        rubric = "russian_event"
+        required = ["artist_or_show", "venue_or_city", "date", "booking_source"]
+    elif story_type in {"planning", "civic", "local_cost"}:
+        required = ["decision_or_action", "place_or_authority", "why_now"]
+    elif story_type == "incident":
+        required = ["what_happened", "who_affected_or_stage", "where", "why_now"]
+    elif story_type == "opening":
+        required = ["opening_or_change", "place", "why_new"]
+    return {
+        "schema_version": 1,
+        "rubric": rubric,
+        "required_fields": required,
+        "story_type": story_type,
+        "event_shape": event_shape,
+    }
+
+
+def protected_lane(candidate: dict) -> dict[str, object]:
+    if not isinstance(candidate, dict):
+        return {"protected": False, "lanes": [], "reason_codes": []}
+    text = _blob(candidate)
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    contract = attach_editorial_contract(candidate).get("editorial_contract") or {}
+    story_type = str(contract.get("story_type") or "")
+    event_shape = str(contract.get("event_shape") or "")
+    lanes: list[str] = []
+    codes: list[str] = []
+    if block == "transport" or _TRANSPORT_RE.search(text):
+        lanes.append("transport")
+        codes.append("transport_disruption")
+    if story_type == "incident" or _PUBLIC_SAFETY_RE.search(text):
+        lanes.append("public_safety")
+        codes.append("public_safety")
+    if story_type in {"planning", "civic", "local_cost"} or _PLANNING_CIVIC_RE.search(text):
+        lanes.append("planning_civic")
+        codes.append("planning_or_civic")
+    if event_shape == "recurring" or _MARKET_RE.search(text):
+        lanes.append("weekend_market")
+        codes.append("market_or_fair")
+    if block == "russian_events" or category in {"russian_speaking_events", "diaspora_events"}:
+        lanes.append("russian_event")
+        codes.append("russian_event")
+    if story_type == "ticket" or category == "venues_tickets" or _TICKET_RE.search(text):
+        lanes.append("ticket")
+        codes.append("ticket_opportunity")
+    return {
+        "protected": bool(lanes),
+        "lanes": _unique(lanes, limit=8),
+        "reason_codes": _unique(codes, limit=8),
+    }
+
+
+def english_judge_stub(candidate: dict) -> dict[str, object]:
+    """Deterministic JSON-shaped contract for the future English judge.
+
+    This is deliberately not an LLM call; it gives downstream stages a stable
+    schema and lets us audit rejects before we turn on a model bake-off.
+    """
+    anchor = formal_news_anchor(candidate)
+    lane = protected_lane(candidate)
+    contract = attach_editorial_contract(candidate).get("editorial_contract") or {}
+    tier = str(contract.get("publish_tier") or "")
+    reject_reason = str(contract.get("reject_reason") or "")
+    value = reader_value_score({**candidate, "included": bool(candidate.get("include", True))})
+    reason_codes: list[str] = []
+    if reject_reason:
+        reason_codes.append(reject_reason if reject_reason in REASON_CODE_ENUM else "other")
+    reason_codes.extend(lane.get("reason_codes") or [])
+    if not anchor.get("has_news_anchor") and str(candidate.get("primary_block") or "") in {"last_24h", "today_focus", "city_watch"}:
+        reason_codes.append("no_news_anchor")
+    if tier == "reject" and not lane.get("protected"):
+        decision = "reject"
+    elif lane.get("protected") or value >= 60 or anchor.get("has_news_anchor"):
+        decision = "publish_candidate"
+    else:
+        decision = "backup_candidate"
+    false_negative_risk = "high" if lane.get("protected") else ("medium" if anchor.get("has_news_anchor") else "low")
+    return {
+        "schema_version": ENGLISH_JUDGE_SCHEMA_VERSION,
+        "decision": decision,
+        "section_fit": _section_fit(candidate),
+        "editorial_score": section_board_score(candidate),
+        "false_negative_risk": false_negative_risk,
+        "reason_codes": _unique(reason_codes, limit=12),
+    }
+
+
+def _section_fit(candidate: dict) -> list[str]:
+    block = str(candidate.get("primary_block") or "")
+    label = PRIMARY_BLOCKS.get(block, block)
+    fits = [label] if label else []
+    lane = protected_lane(candidate)
+    if "ticket" in lane.get("lanes", []):
+        fits.append(PRIMARY_BLOCKS["ticket_radar"])
+    if "transport" in lane.get("lanes", []):
+        fits.append(PRIMARY_BLOCKS["transport"])
+    if "weekend_market" in lane.get("lanes", []):
+        fits.append(PRIMARY_BLOCKS["weekend_activities"])
+    if "russian_event" in lane.get("lanes", []):
+        fits.append(PRIMARY_BLOCKS["russian_events"])
+    return _unique(fits, limit=6)
+
+
+def section_board_score(candidate: dict, section_name: str = "") -> float:
+    if not isinstance(candidate, dict):
+        return 0.0
+    contract = attach_editorial_contract(candidate).get("editorial_contract") or {}
+    value = float(reader_value_score({**candidate, "included": True}))
+    tier = str(contract.get("publish_tier") or "")
+    tier_bonus = {
+        "must_include": 80.0,
+        "strong": 35.0,
+        "optional": 5.0,
+        "filler": -45.0,
+        "reject": -200.0,
+    }.get(tier, 0.0)
+    source_bonus = source_score(str(candidate.get("source_label") or ""), str(candidate.get("category") or "")) / 4.0
+    anchor_bonus = 18.0 if formal_news_anchor(candidate).get("has_news_anchor") else -8.0
+    protected_bonus = 24.0 if protected_lane(candidate).get("protected") else 0.0
+    evidence_len = len(str(candidate.get("evidence_text") or ""))
+    evidence_bonus = 8.0 if evidence_len >= 700 else (-6.0 if evidence_len < 160 else 0.0)
+    recency_bonus = 0.0
+    raw_date = str(candidate.get("published_at") or "")
+    if raw_date:
+        try:
+            pub_day = datetime.fromisoformat(raw_date.replace("Z", "+00:00")).astimezone(now_london().tzinfo).date()
+            age = (now_london().date() - pub_day).days
+            recency_bonus = max(-12.0, 14.0 - age * 4.0)
+        except ValueError:
+            pass
+    return value + tier_bonus + source_bonus + anchor_bonus + protected_bonus + evidence_bonus + recency_bonus
+
+
+def apply_story_intelligence(candidate: dict) -> dict:
+    if not isinstance(candidate, dict):
+        return candidate
+    attach_editorial_contract(candidate)
+    candidate["rubric_contract"] = rubric_contract(candidate)
+    candidate["news_anchor"] = formal_news_anchor(candidate)
+    candidate["protected_lane"] = protected_lane(candidate)
+    candidate["english_judge"] = english_judge_stub(candidate)
+    candidate["section_board_score"] = section_board_score(candidate)
+    attach_evidence_packet(candidate)
+    return candidate
+
+
+def mark_reject_second_opinion(candidate: dict, code: str) -> None:
+    if not isinstance(candidate, dict):
+        return
+    apply_story_intelligence(candidate)
+    lane = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
+    anchor = candidate.get("news_anchor") if isinstance(candidate.get("news_anchor"), dict) else {}
+    if not (lane.get("protected") or anchor.get("has_news_anchor")):
+        return
+    candidate["backup_candidate"] = True
+    candidate["second_opinion_required"] = True
+    candidate["second_opinion_reason"] = {
+        "reject_code": code,
+        "protected_lanes": lane.get("lanes") or [],
+        "news_anchor": anchor,
+    }
 
 
 def build_evidence_packet(
@@ -352,3 +693,9 @@ def history_match_records(matches: list[dict]) -> list[dict]:
             }
         )
     return out
+
+
+def attach_story_intelligence(candidates: list[dict]) -> None:
+    for candidate in candidates:
+        if isinstance(candidate, dict):
+            apply_story_intelligence(candidate)

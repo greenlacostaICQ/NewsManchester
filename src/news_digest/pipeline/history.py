@@ -16,7 +16,7 @@ from news_digest.pipeline.semantic_dedupe import (
     semantic_embedding,
     semantic_text,
 )
-from news_digest.pipeline.story_intelligence import attach_evidence_packet
+from news_digest.pipeline.story_intelligence import apply_story_intelligence, attach_evidence_packet
 
 # Facts older than this are pruned from published_facts.json.
 # Must be >= the dedupe look-back window (7 days) with margin.
@@ -74,6 +74,7 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
         # snapshot the candidate into published_facts.json.
         enrich_candidate_event(candidate)
         attach_editorial_contract(candidate)
+        apply_story_intelligence(candidate)
         attach_evidence_packet(candidate)
         fingerprint = str(candidate.get("fingerprint") or "").strip()
         if not fingerprint:
@@ -96,6 +97,10 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
                 "event": candidate.get("event") or extract_event(candidate),
                 "editorial_contract": candidate.get("editorial_contract") or {},
                 "evidence_packet": candidate.get("evidence_packet") or {},
+                "rubric_contract": candidate.get("rubric_contract") or {},
+                "news_anchor": candidate.get("news_anchor") or {},
+                "protected_lane": candidate.get("protected_lane") or {},
+                "english_judge": candidate.get("english_judge") or {},
                 "story_cluster": candidate.get("story_cluster") or {},
                 "scoring_trace": candidate.get("scoring_trace") or {},
                 # A0 enrichment: borough + change_type so dedupe and "what
@@ -220,6 +225,7 @@ def write_daily_index_snapshot(project_root: Path) -> Path | None:
             continue
         enrich_candidate_entities(c)
         enrich_candidate_event(c)
+        apply_story_intelligence(c)
         fp = str(c.get("fingerprint") or "")
         included = bool(c.get("include"))
         reject_reason = ""
@@ -248,6 +254,11 @@ def write_daily_index_snapshot(project_root: Path) -> Path | None:
             "entities": c.get("entities") or extract_entities(c),
             "event": c.get("event") or extract_event(c),
             "evidence_packet": c.get("evidence_packet") or {},
+            "rubric_contract": c.get("rubric_contract") or {},
+            "news_anchor": c.get("news_anchor") or {},
+            "protected_lane": c.get("protected_lane") or {},
+            "english_judge": c.get("english_judge") or {},
+            "section_board_score": c.get("section_board_score"),
             "story_cluster": c.get("story_cluster") or {},
             "included": included,
             "change_type": c.get("change_type") or "",

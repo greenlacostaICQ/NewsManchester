@@ -26,8 +26,10 @@ from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.history import ensure_history_files
 from news_digest.pipeline.story_intelligence import (
     attach_evidence_packet,
+    attach_story_intelligence,
     attach_story_clusters,
     history_match_records,
+    new_facts_diff,
 )
 from news_digest.pipeline.semantic_dedupe import (
     EMBEDDING_VERSION,
@@ -331,6 +333,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             decision["llm_reviewed"] = True
 
     story_cluster_summary = attach_story_clusters(candidates)
+    attach_story_intelligence(candidates)
     intra_batch_drops = _apply_intra_batch_dedup(candidates)
 
     # I1: embeddings-based semantic dedup pass. Runs AFTER the
@@ -774,6 +777,15 @@ def _classify_change_type(
 
     if previous_ref is not None and has_new_fact_signal(candidate, previous_ref):
         return "same_story_new_facts"
+
+    if previous_ref is not None:
+        diff = new_facts_diff(candidate, previous_ref)
+        candidate["new_facts_diff"] = diff
+        if diff.get("has_new_facts"):
+            types = set(diff.get("new_fact_types") or [])
+            if "stages" in types:
+                return "follow_up"
+            return "same_story_new_facts"
 
     # Exact fingerprint hit and the candidate text shows no follow-up
     # signal → republished without new substance.

@@ -22,6 +22,7 @@ from news_digest.pipeline.entity_extraction import enrich_candidate_entities
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.event_quality import event_quality_reject_reasons, event_quality_report
 from news_digest.pipeline.reader_value import attach_reader_value
+from news_digest.pipeline.story_intelligence import apply_story_intelligence, mark_reject_second_opinion
 from news_digest.pipeline.transport_classifier import classify_transport_candidate
 
 
@@ -283,6 +284,7 @@ def _append_reject(candidate: dict, code: str, note: str) -> None:
     ))
     existing = str(candidate.get("reason") or "").strip()
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    mark_reject_second_opinion(candidate, code)
 
 
 def _explicit_dates_from_blob(candidate: dict) -> list[date]:
@@ -1491,6 +1493,7 @@ def validate_candidates(project_root: Path) -> StageResult:
         # TfGM roadworks bulletin. Idempotent and safe for non-transport.
         classify_transport_candidate(candidate)
         attach_editorial_contract(candidate)
+        apply_story_intelligence(candidate)
         manual = _manual_override(candidate, state_dir)
         if candidate.get("include") and manual != "force_include":
             _exclude_cross_day_rehash(candidate, state_dir)
@@ -1549,6 +1552,7 @@ def validate_candidates(project_root: Path) -> StageResult:
         attach_editorial_contract(candidate)
         _apply_why_now_gate(candidate, manual_override=manual)
         attach_editorial_contract(candidate)
+        apply_story_intelligence(candidate)
         if candidate.get("event_page_type") in {"homepage", "aggregator"}:
             validation_errors.append("Event candidate must use an official event page.")
 
@@ -1568,6 +1572,11 @@ def validate_candidates(project_root: Path) -> StageResult:
                 "event_schema_completeness": candidate.get("event_schema_completeness"),
                 "why_now": candidate.get("why_now") or "",
                 "editorial_contract": candidate.get("editorial_contract") or {},
+                "rubric_contract": candidate.get("rubric_contract") or {},
+                "news_anchor": candidate.get("news_anchor") or {},
+                "protected_lane": candidate.get("protected_lane") or {},
+                "english_judge": candidate.get("english_judge") or {},
+                "second_opinion_required": bool(candidate.get("second_opinion_required")),
                 "reject_reasons": candidate.get("reject_reasons") or [],
                 "quality_warnings": candidate.get("quality_warnings") or [],
                 "editorial_status": candidate.get("editorial_status") or "",

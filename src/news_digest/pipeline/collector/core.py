@@ -32,6 +32,7 @@ from news_digest.pipeline.history import ensure_history_files
 from news_digest.pipeline.story_intelligence import (
     apply_cheap_dedup_before_enrich,
     attach_story_clusters,
+    attach_story_intelligence,
 )
 
 from .extract import _extract_source_candidates
@@ -394,6 +395,7 @@ def collect_digest(project_root: Path) -> StageResult:
     # extract_event() can reuse entities.venues / entities.boroughs.
     enrich_candidates_events(candidates)
     story_cluster_summary = attach_story_clusters(candidates)
+    attach_story_intelligence(candidates)
     report["story_intelligence"] = {
         "cheap_dedup_before_enrich": cheap_dedup_summary,
         "story_clusters": story_cluster_summary,

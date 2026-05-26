@@ -16,7 +16,11 @@ from news_digest.pipeline.dedupe import _apply_semantic_drop_guard
 from news_digest.pipeline.history import write_daily_index_snapshot
 from news_digest.pipeline.story_intelligence import (
     apply_cheap_dedup_before_enrich,
+    apply_story_intelligence,
     attach_story_clusters,
+    mark_reject_second_opinion,
+    new_facts_diff,
+    section_board_score,
 )
 from news_digest.pipeline.release import (
     build_release,
@@ -1674,6 +1678,96 @@ class StoryIntelligenceTest(unittest.TestCase):
 
         self.assertEqual(recurring_policy["history_window_days"], 2)
         self.assertEqual(incident_policy["history_window_days"], 14)
+
+    def test_story_intelligence_adds_anchor_protection_judge_and_section_score(self) -> None:
+        candidate = {
+            "title": "Manchester Council approves CIS Tower hotel plan",
+            "summary": "Manchester Council approved the CIS Tower hotel plan today after a planning vote.",
+            "evidence_text": "The council approved the plan today. The scheme affects the CIS Tower in Manchester.",
+            "source_label": "Manchester Council",
+            "source_url": "https://example.test/cis",
+            "category": "council",
+            "primary_block": "last_24h",
+            "include": True,
+            "published_at": now_london().isoformat(),
+            "entities": {
+                "boroughs": ["Manchester"],
+                "councils": ["Manchester City Council"],
+                "venues": ["CIS Tower"],
+            },
+        }
+
+        apply_story_intelligence(candidate)
+
+        self.assertTrue(candidate["news_anchor"]["has_news_anchor"])
+        self.assertTrue(candidate["protected_lane"]["protected"])
+        self.assertIn("planning_civic", candidate["protected_lane"]["lanes"])
+        self.assertEqual(candidate["english_judge"]["decision"], "publish_candidate")
+        self.assertGreater(candidate["section_board_score"], 100)
+
+    def test_new_facts_diff_detects_stage_and_entity_changes(self) -> None:
+        previous = {
+            "title": "Police arrest man after Manchester crash",
+            "summary": "Police arrested a man after a crash on Oxford Road.",
+            "entities": {"people": [], "districts": ["Oxford Road"], "boroughs": ["Manchester"]},
+        }
+        candidate = {
+            "title": "John Smith charged after Manchester crash",
+            "summary": "John Smith was charged after the Oxford Road crash and will appear in court on 30 May.",
+            "entities": {"people": ["John Smith"], "districts": ["Oxford Road"], "boroughs": ["Manchester"]},
+        }
+
+        diff = new_facts_diff(candidate, previous)
+
+        self.assertTrue(diff["has_new_facts"])
+        self.assertIn("stages", diff["new_fact_types"])
+        self.assertIn("entities", diff["new_fact_types"])
+
+    def test_protected_reject_requires_second_opinion_and_backup(self) -> None:
+        candidate = {
+            "title": "Russian stand-up show in Manchester",
+            "summary": "Russian-language stand-up show in Manchester on 30 May.",
+            "source_label": "Kontramarka UK",
+            "category": "russian_speaking_events",
+            "primary_block": "russian_events",
+            "include": False,
+            "entities": {"boroughs": ["Manchester"]},
+            "event": {
+                "is_event": True,
+                "event_name": "Russian stand-up show",
+                "date_start": "2026-05-30",
+                "venue": "Manchester Academy",
+                "borough": "Manchester",
+            },
+        }
+
+        mark_reject_second_opinion(candidate, "missing_venue")
+
+        self.assertTrue(candidate["backup_candidate"])
+        self.assertTrue(candidate["second_opinion_required"])
+        self.assertIn("russian_event", candidate["second_opinion_reason"]["protected_lanes"])
+
+    def test_section_score_prefers_protected_specific_item_over_filler(self) -> None:
+        protected = {
+            "title": "Metrolink disruption on Airport Line today",
+            "summary": "TfGM says Metrolink disruption affects the Airport Line today.",
+            "source_label": "TfGM",
+            "category": "transport",
+            "primary_block": "transport",
+            "include": True,
+            "evidence_text": "Metrolink disruption affects the Airport Line today.",
+        }
+        filler = {
+            "title": "Local woman shares inspiring career journey",
+            "summary": "A local woman shares how she overcame school struggles.",
+            "source_label": "MEN",
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "include": True,
+            "evidence_text": "A profile about a career journey.",
+        }
+
+        self.assertGreater(section_board_score(protected), section_board_score(filler))
 
 
 class SemanticGuardTest(unittest.TestCase):
