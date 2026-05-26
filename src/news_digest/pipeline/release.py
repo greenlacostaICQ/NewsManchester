@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+import json
 import logging
 from pathlib import Path
 import re
@@ -27,6 +28,14 @@ from news_digest.pipeline.city_intelligence import summarise_city_intelligence
 from news_digest.pipeline.city_trends import (
     append_city_intelligence_history,
     build_trend_detection,
+)
+from news_digest.pipeline.reader_value import validate_reader_value_labels
+from news_digest.pipeline.story_intelligence import (
+    AUDIT_TRAIL_SCHEMA_VERSION,
+    COST_LATENCY_BUDGETS,
+    MODEL_BAKEOFF_SPEC,
+    apply_story_intelligence,
+    backup_pool_record,
 )
 
 
@@ -1597,6 +1606,286 @@ def _event_miss_review(
     }
 
 
+def _disposition_for_candidate(
+    candidate: dict,
+    *,
+    rendered_set: set[str],
+    writer_drops: dict[str, dict],
+    dedupe_drops: dict[str, dict],
+) -> tuple[str, str]:
+    fp = str(candidate.get("fingerprint") or "")
+    if fp in rendered_set:
+        return "rendered", ""
+    if fp in writer_drops:
+        drop = writer_drops[fp]
+        return "writer_dropped", "; ".join(str(r) for r in (drop.get("reasons") or []))
+    if fp in dedupe_drops:
+        drop = dedupe_drops[fp]
+        return "dedupe_dropped", str(drop.get("reason") or "dedupe drop")
+    if candidate.get("include"):
+        return "selected_not_published", ""
+    return "rejected", str(candidate.get("reason") or "; ".join(str(r) for r in (candidate.get("reject_reasons") or [])))
+
+
+def _is_independent_high_value_signal(candidate: dict) -> bool:
+    if not isinstance(candidate, dict):
+        return False
+    apply_story_intelligence(candidate)
+    lane = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
+    anchor = candidate.get("news_anchor") if isinstance(candidate.get("news_anchor"), dict) else {}
+    judge = candidate.get("english_judge") if isinstance(candidate.get("english_judge"), dict) else {}
+    score = float(candidate.get("section_board_score") or 0.0)
+    if candidate.get("second_opinion_required") or candidate.get("backup_candidate"):
+        return True
+    if lane.get("protected"):
+        return True
+    if anchor.get("has_news_anchor") and score >= 80:
+        return True
+    return judge.get("decision") == "publish_candidate" and score >= 90
+
+
+def _final_loss_check(
+    *,
+    candidates_report: dict | None,
+    writer_report: dict | None,
+    rendered_fingerprints: set[str],
+    dedupe_memory: dict | None,
+) -> dict[str, object]:
+    """Warning-only check for valuable candidates that disappeared late.
+
+    Event miss review is event-specific; this covers transport, public
+    safety, civic/planning, Russian events, tickets and any anchored story
+    with a strong independent score.
+    """
+    rendered_set = {str(fp) for fp in rendered_fingerprints if fp}
+    writer_drops = {
+        str(item.get("fingerprint") or ""): item
+        for item in ((writer_report or {}).get("dropped_candidates") or [])
+        if isinstance(item, dict)
+    }
+    dedupe_drops = _dedupe_drop_map(dedupe_memory)
+    items: list[dict[str, object]] = []
+    counts = Counter()
+    for candidate in (candidates_report or {}).get("candidates") or []:
+        if not isinstance(candidate, dict):
+            continue
+        fp = str(candidate.get("fingerprint") or "")
+        if not fp or fp in rendered_set:
+            continue
+        if not _is_independent_high_value_signal(candidate):
+            continue
+        disposition, reason = _disposition_for_candidate(
+            candidate,
+            rendered_set=rendered_set,
+            writer_drops=writer_drops,
+            dedupe_drops=dedupe_drops,
+        )
+        lane = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
+        enrichment = candidate.get("enrichment_health") if isinstance(candidate.get("enrichment_health"), dict) else {}
+        record = {
+            "fingerprint": fp,
+            "title": candidate.get("title") or "",
+            "source_label": candidate.get("source_label") or "",
+            "category": candidate.get("category") or "",
+            "primary_block": candidate.get("primary_block") or "",
+            "disposition": disposition,
+            "reason": reason,
+            "protected_lanes": lane.get("lanes") or [],
+            "section_board_score": candidate.get("section_board_score"),
+            "false_negative_risk": (candidate.get("english_judge") or {}).get("false_negative_risk") if isinstance(candidate.get("english_judge"), dict) else "",
+            "enrichment_warning": bool(enrichment.get("warning")),
+            "manual_include_hint": f'Add "{fp}" to data/state/manual_candidate_overrides.json force_include[]',
+        }
+        items.append(record)
+        counts[disposition] += 1
+
+    items = sorted(
+        items,
+        key=lambda item: (
+            0 if item.get("enrichment_warning") else 1,
+            -float(item.get("section_board_score") or 0.0),
+            str(item.get("title") or ""),
+        ),
+    )
+    critical = [
+        item for item in items
+        if item.get("disposition") in {"writer_dropped", "selected_not_published", "dedupe_dropped"}
+    ]
+    return {
+        "schema_version": 1,
+        "counts": {
+            "high_value_not_rendered": len(items),
+            "critical_losses": len(critical),
+            **dict(counts),
+        },
+        "critical_losses": critical[:30],
+        "items": items[:80],
+    }
+
+
+def _write_backup_pool(
+    *,
+    state_dir: Path,
+    current_day_london: str,
+    candidates_report: dict | None,
+    writer_report: dict | None,
+    rendered_fingerprints: set[str],
+    final_loss_check: dict,
+) -> dict[str, object]:
+    path = state_dir / "backup_pool.json"
+    existing_items: list[dict] = []
+    if path.exists():
+        try:
+            existing = read_json(path, {"items": []})
+            existing_items = [item for item in existing.get("items") or [] if isinstance(item, dict)]
+        except Exception:  # noqa: BLE001
+            existing_items = []
+
+    today = datetime.strptime(current_day_london, "%Y-%m-%d").date()
+    by_fp: dict[str, dict] = {}
+    for item in existing_items:
+        expires = str(item.get("expires_on_london") or "")
+        try:
+            if datetime.strptime(expires, "%Y-%m-%d").date() < today:
+                continue
+        except ValueError:
+            continue
+        fp = str(item.get("fingerprint") or "")
+        if fp:
+            by_fp[fp] = item
+
+    loss_by_fp = {
+        str(item.get("fingerprint") or ""): item
+        for item in (final_loss_check.get("items") or [])
+        if isinstance(item, dict)
+    }
+    rendered_set = {str(fp) for fp in rendered_fingerprints if fp}
+    writer_drop_fps = {
+        str(item.get("fingerprint") or "")
+        for item in ((writer_report or {}).get("dropped_candidates") or [])
+        if isinstance(item, dict)
+    }
+    for candidate in (candidates_report or {}).get("candidates") or []:
+        if not isinstance(candidate, dict):
+            continue
+        fp = str(candidate.get("fingerprint") or "")
+        if not fp or fp in rendered_set:
+            continue
+        apply_story_intelligence(candidate)
+        loss = loss_by_fp.get(fp)
+        include_in_backup = bool(
+            loss
+            or candidate.get("backup_candidate")
+            or candidate.get("second_opinion_required")
+            or fp in writer_drop_fps
+            or ((candidate.get("english_judge") or {}).get("decision") == "backup_candidate")
+        )
+        if not include_in_backup:
+            continue
+        reason = str((loss or {}).get("reason") or candidate.get("reason") or "")
+        record = backup_pool_record(candidate, reason=reason, current_day_london=current_day_london)
+        record["latest_disposition"] = (loss or {}).get("disposition") or ("writer_dropped" if fp in writer_drop_fps else "not_rendered")
+        by_fp[fp] = record
+
+    items = sorted(
+        by_fp.values(),
+        key=lambda item: (
+            str(item.get("expires_on_london") or ""),
+            -float(item.get("section_board_score") or 0.0),
+            str(item.get("title") or ""),
+        ),
+    )
+    payload = {
+        "schema_version": 1,
+        "updated_on_london": current_day_london,
+        "counts": {
+            "active": len(items),
+            "expires_today": sum(1 for item in items if item.get("expires_on_london") == current_day_london),
+        },
+        "items": items[:250],
+    }
+    write_json(path, payload)
+    return {**payload, "path": str(path.resolve())}
+
+
+def _write_audit_trail(
+    *,
+    state_dir: Path,
+    current_day_london: str,
+    candidates_report: dict | None,
+    writer_report: dict | None,
+    rendered_fingerprints: set[str],
+    dedupe_memory: dict | None,
+    release_decision: str,
+) -> str | None:
+    candidates = [c for c in (candidates_report or {}).get("candidates") or [] if isinstance(c, dict)]
+    if not candidates:
+        return None
+    audit_dir = state_dir / "audit_trail"
+    audit_dir.mkdir(parents=True, exist_ok=True)
+    path = audit_dir / f"{current_day_london}.jsonl"
+    rendered_set = {str(fp) for fp in rendered_fingerprints if fp}
+    writer_drops = {
+        str(item.get("fingerprint") or ""): item
+        for item in ((writer_report or {}).get("dropped_candidates") or [])
+        if isinstance(item, dict)
+    }
+    dedupe_drops = _dedupe_drop_map(dedupe_memory)
+    lines: list[str] = []
+    for candidate in candidates:
+        apply_story_intelligence(candidate)
+        fp = str(candidate.get("fingerprint") or "")
+        disposition, reason = _disposition_for_candidate(
+            candidate,
+            rendered_set=rendered_set,
+            writer_drops=writer_drops,
+            dedupe_drops=dedupe_drops,
+        )
+        record = {
+            "schema_version": AUDIT_TRAIL_SCHEMA_VERSION,
+            "run_date_london": current_day_london,
+            "release_decision": release_decision,
+            "fingerprint": fp,
+            "title": candidate.get("title") or "",
+            "source_label": candidate.get("source_label") or "",
+            "source_url": candidate.get("source_url") or "",
+            "category": candidate.get("category") or "",
+            "primary_block": candidate.get("primary_block") or "",
+            "input": {
+                "published_at": candidate.get("published_at") or "",
+                "lead": candidate.get("lead") or "",
+                "summary": candidate.get("summary") or "",
+                "evidence_text": str(candidate.get("evidence_text") or "")[:1800],
+            },
+            "judge": {
+                "rubric_contract": candidate.get("rubric_contract") or {},
+                "news_anchor": candidate.get("news_anchor") or {},
+                "protected_lane": candidate.get("protected_lane") or {},
+                "english_judge": candidate.get("english_judge") or {},
+                "section_board_score": candidate.get("section_board_score"),
+                "enrichment_health": candidate.get("enrichment_health") or {},
+            },
+            "final_disposition": disposition,
+            "final_reason": reason,
+            "include": bool(candidate.get("include")),
+            "backup_candidate": bool(candidate.get("backup_candidate")),
+            "second_opinion_required": bool(candidate.get("second_opinion_required")),
+            "change_type": candidate.get("change_type") or "",
+        }
+        lines.append(json.dumps(record, ensure_ascii=False))
+    path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+
+    cutoff = datetime.strptime(current_day_london, "%Y-%m-%d").date() - timedelta(days=7)
+    for file in audit_dir.glob("*.jsonl"):
+        try:
+            file_day = datetime.strptime(file.stem, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if file_day < cutoff:
+            file.unlink(missing_ok=True)
+    return str(path.resolve())
+
+
 def _classify_published_candidates(
     candidates_report: dict | None,
     rendered_fingerprints: set[str],
@@ -2200,6 +2489,94 @@ def _check_budget(state_dir: Path, today_cost: float, current_day_london: str) -
     return None
 
 
+def _cost_latency_budget_report(
+    *,
+    cost_summary: dict,
+    scan_report: dict | None,
+    writer_report: dict | None,
+    editor_report: dict | None,
+) -> dict[str, object]:
+    total_calls = int(cost_summary.get("total_calls") or 0)
+    prompt_tokens = int(cost_summary.get("total_prompt_tokens") or cost_summary.get("total_estimated_prompt_tokens") or 0)
+    completion_tokens = int(cost_summary.get("total_completion_tokens") or cost_summary.get("total_estimated_completion_tokens") or 0)
+    estimated_tokens = int(
+        cost_summary.get("total_estimated_tokens")
+        or (
+            int(cost_summary.get("total_estimated_prompt_tokens") or 0)
+            + int(cost_summary.get("total_estimated_completion_tokens") or 0)
+        )
+        or (prompt_tokens + completion_tokens)
+        or 0
+    )
+    total_cost = float(cost_summary.get("total_cost_usd") or 0.0)
+    timings: dict[str, float] = {}
+    for name, report in (
+        ("collect", scan_report),
+        ("write", writer_report),
+        ("edit", editor_report),
+    ):
+        if not isinstance(report, dict):
+            continue
+        seconds = report.get("duration_seconds") or report.get("elapsed_seconds")
+        try:
+            if seconds is not None:
+                timings[name] = float(seconds)
+        except (TypeError, ValueError):
+            continue
+    wall_time = sum(timings.values()) if timings else None
+    budgets = COST_LATENCY_BUDGETS
+    breaches: list[str] = []
+    if total_calls > int(budgets["max_total_calls"]):
+        breaches.append("max_total_calls")
+    if estimated_tokens > int(budgets["max_total_estimated_tokens"]):
+        breaches.append("max_total_estimated_tokens")
+    if total_cost > float(budgets["max_total_cost_usd"]):
+        breaches.append("max_total_cost_usd")
+    if wall_time is not None and wall_time > float(budgets["hard_wall_time_warning_seconds"]):
+        breaches.append("hard_wall_time_warning_seconds")
+    return {
+        "schema_version": 1,
+        "warning_only": True,
+        "budgets": budgets,
+        "actual": {
+            "total_calls": total_calls,
+            "estimated_tokens": estimated_tokens,
+            "total_cost_usd": total_cost,
+            "known_stage_wall_time_seconds": wall_time,
+            "stage_timings": timings,
+        },
+        "breaches": breaches,
+        "status": "warning" if breaches else "ok",
+    }
+
+
+def _model_bakeoff_readiness(project_root: Path) -> dict[str, object]:
+    labels_path = project_root / "data" / "validation" / "reader_value_labels.json"
+    label_count = 0
+    label_errors: list[str] = []
+    if labels_path.exists():
+        try:
+            labels_payload = read_json(labels_path, {"labels": []})
+            labels = labels_payload.get("labels") if isinstance(labels_payload, dict) else []
+            label_count = len(labels) if isinstance(labels, list) else 0
+            label_errors = validate_reader_value_labels(labels_payload)
+        except Exception as exc:  # noqa: BLE001
+            label_errors = [f"reader_value_labels unreadable: {exc}"]
+    else:
+        label_errors = ["reader_value_labels.json missing"]
+    ready = label_count >= 30 and not label_errors
+    return {
+        **MODEL_BAKEOFF_SPEC,
+        "validation_set": {
+            "path": str(labels_path),
+            "label_count": label_count,
+            "ready": ready,
+            "errors": label_errors,
+        },
+        "status": "ready" if ready else "needs_labels",
+    }
+
+
 def _append_cost_history(
     state_dir: Path,
     current_day_london: str,
@@ -2388,6 +2765,23 @@ def build_release(project_root: Path) -> ReleaseResult:
     budget_alert = _check_budget(state_dir, cost_summary["total_cost_usd"], current_day_london)
     if budget_alert:
         warnings.append(budget_alert)
+    cost_latency_budget = _cost_latency_budget_report(
+        cost_summary=cost_summary,
+        scan_report=scan_report,
+        writer_report=writer_report,
+        editor_report=editor_report,
+    )
+    if cost_latency_budget["status"] == "warning":
+        warnings.append(
+            "Cost/latency budget: warning threshold breached — "
+            f"{', '.join(cost_latency_budget.get('breaches') or [])}; see release_report.cost_latency_budget."
+        )
+    model_bakeoff = _model_bakeoff_readiness(project_root)
+    if model_bakeoff["status"] != "ready":
+        warnings.append(
+            "Model bake-off: validation set is not ready for a safe model switch — "
+            "see release_report.model_bakeoff."
+        )
 
     _validate_draft(
         draft_path=draft_path,
@@ -2515,6 +2909,30 @@ def build_release(project_root: Path) -> ReleaseResult:
             f"Event miss review: {critical_event_misses} high-value event/ticket candidate(s) "
             "were collected but not published — see release_report.event_miss_review."
         )
+    final_loss_check = _final_loss_check(
+        candidates_report=candidates_report,
+        writer_report=writer_report,
+        rendered_fingerprints=rendered_fingerprints,
+        dedupe_memory=dedupe_memory,
+    )
+    critical_losses = int((final_loss_check.get("counts") or {}).get("critical_losses") or 0)
+    if critical_losses:
+        warnings.append(
+            f"Final loss check: {critical_losses} protected/high-value candidate(s) were not rendered — "
+            "see release_report.final_loss_check and data/state/backup_pool.json."
+        )
+    backup_pool = _write_backup_pool(
+        state_dir=state_dir,
+        current_day_london=current_day_london,
+        candidates_report=candidates_report,
+        writer_report=writer_report,
+        rendered_fingerprints=rendered_fingerprints,
+        final_loss_check=final_loss_check,
+    )
+    if int((backup_pool.get("counts") or {}).get("active") or 0):
+        warnings.append(
+            f"Backup pool: {backup_pool['counts']['active']} candidate(s) retained with TTL for recovery."
+        )
     borderline_queue = _borderline_queue(candidates_report, writer_report)
     if borderline_queue["counts"].get("borderline", 0):
         warnings.append(
@@ -2580,6 +2998,21 @@ def build_release(project_root: Path) -> ReleaseResult:
     else:
         message = FAIL_CLOSED_SUMMARY
 
+    audit_trail_path: str | None = None
+    try:
+        audit_trail_path = _write_audit_trail(
+            state_dir=state_dir,
+            current_day_london=current_day_london,
+            candidates_report=candidates_report,
+            writer_report=writer_report,
+            rendered_fingerprints=rendered_fingerprints,
+            dedupe_memory=dedupe_memory,
+            release_decision="pass" if ok else "fail",
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("audit trail snapshot failed: %s", exc)
+        warnings.append("Audit trail: snapshot failed; check release logs.")
+
     report_payload = {
         "release_gate_version": RELEASE_GATE_VERSION,
         "pipeline_run_id": pipeline_run_id,
@@ -2592,6 +3025,8 @@ def build_release(project_root: Path) -> ReleaseResult:
         "lost_leads": lost_leads,
         "section_underflow": section_underflow,
         "cost_summary": cost_summary,
+        "cost_latency_budget": cost_latency_budget,
+        "model_bakeoff": model_bakeoff,
         "change_type_summary": change_type_summary,
         "cross_day_recurrence": cross_day_recurrence,
         "event_completeness": event_completeness,
@@ -2604,6 +3039,8 @@ def build_release(project_root: Path) -> ReleaseResult:
         "published_review": published_review,
         "rendered_html_review": rendered_html_review,
         "event_miss_review": event_miss_review,
+        "final_loss_check": final_loss_check,
+        "backup_pool": backup_pool,
         "borderline_queue": borderline_queue,
         "quality_scorecard": quality_scorecard,
         "feedback_capture": feedback_capture,
@@ -2614,6 +3051,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "prompt_versions": _prompts_snapshot(),
         "prompt_drift": prompt_drift,
         "published_facts_updated": published_facts_updated,
+        "audit_trail_path": audit_trail_path,
         "inputs": {
             "collector_report": str((state_dir / "collector_report.json").resolve()),
             "candidates": str((state_dir / "candidates.json").resolve()),

@@ -101,6 +101,7 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
                 "news_anchor": candidate.get("news_anchor") or {},
                 "protected_lane": candidate.get("protected_lane") or {},
                 "english_judge": candidate.get("english_judge") or {},
+                "enrichment_health": candidate.get("enrichment_health") or {},
                 "story_cluster": candidate.get("story_cluster") or {},
                 "scoring_trace": candidate.get("scoring_trace") or {},
                 # A0 enrichment: borough + change_type so dedupe and "what
@@ -259,6 +260,9 @@ def write_daily_index_snapshot(project_root: Path) -> Path | None:
             "protected_lane": c.get("protected_lane") or {},
             "english_judge": c.get("english_judge") or {},
             "section_board_score": c.get("section_board_score"),
+            "enrichment_health": c.get("enrichment_health") or {},
+            "backup_candidate": bool(c.get("backup_candidate")),
+            "second_opinion_required": bool(c.get("second_opinion_required")),
             "story_cluster": c.get("story_cluster") or {},
             "included": included,
             "change_type": c.get("change_type") or "",

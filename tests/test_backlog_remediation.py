@@ -18,6 +18,7 @@ from news_digest.pipeline.story_intelligence import (
     apply_cheap_dedup_before_enrich,
     apply_story_intelligence,
     attach_story_clusters,
+    backup_pool_record,
     mark_reject_second_opinion,
     new_facts_diff,
     section_board_score,
@@ -27,6 +28,7 @@ from news_digest.pipeline.release import (
     _classify_published_candidates,
     _classify_rendered_html_quality,
     _event_miss_review,
+    _final_loss_check,
     _quality_scorecard,
     _borderline_queue,
     _summarise_diaspora_diagnostics,
@@ -1768,6 +1770,59 @@ class StoryIntelligenceTest(unittest.TestCase):
         }
 
         self.assertGreater(section_board_score(protected), section_board_score(filler))
+
+    def test_enrich_failure_on_protected_item_goes_to_backup_not_silent_reject(self) -> None:
+        candidate = {
+            "title": "TfGM confirms Metrolink disruption on Airport Line today",
+            "summary": "TfGM confirms disruption on the Airport Line today.",
+            "source_label": "TfGM",
+            "source_url": "https://example.test/tfgm",
+            "category": "transport",
+            "primary_block": "transport",
+            "include": True,
+            "enrichment_status": "failed: 403 Forbidden",
+            "evidence_text": "",
+        }
+
+        apply_story_intelligence(candidate)
+        backup = backup_pool_record(candidate, reason="enrichment failed", current_day_london="2026-05-26")
+
+        self.assertTrue(candidate["enrichment_health"]["warning"])
+        self.assertTrue(candidate["backup_candidate"])
+        self.assertTrue(candidate["second_opinion_required"])
+        self.assertEqual(backup["expires_on_london"], "2026-05-27")
+        self.assertEqual(backup["ttl_reason"], "transport_weather_short_ttl")
+
+    def test_final_loss_check_flags_unrendered_protected_candidate(self) -> None:
+        candidate = {
+            "fingerprint": "fp-ticket",
+            "title": "Tickets announced for Russian stand-up show in Manchester on 30 May",
+            "summary": "Russian-language stand-up show in Manchester on 30 May.",
+            "source_label": "Kontramarka UK",
+            "category": "russian_speaking_events",
+            "primary_block": "russian_events",
+            "include": True,
+            "entities": {"boroughs": ["Manchester"]},
+            "event": {
+                "is_event": True,
+                "event_name": "Russian stand-up show",
+                "date_start": "2026-05-30",
+                "venue": "Manchester Academy",
+                "borough": "Manchester",
+            },
+        }
+        apply_story_intelligence(candidate)
+
+        review = _final_loss_check(
+            candidates_report={"candidates": [candidate]},
+            writer_report={"dropped_candidates": [{"fingerprint": "fp-ticket", "reasons": ["cap"]}]},
+            rendered_fingerprints=set(),
+            dedupe_memory={},
+        )
+
+        self.assertEqual(review["counts"]["critical_losses"], 1)
+        self.assertEqual(review["critical_losses"][0]["disposition"], "writer_dropped")
+        self.assertIn("russian_event", review["critical_losses"][0]["protected_lanes"])
 
 
 class SemanticGuardTest(unittest.TestCase):

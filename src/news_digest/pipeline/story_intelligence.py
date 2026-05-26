@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from datetime import datetime
+from datetime import date, datetime, timedelta
 import re
 
 from news_digest.pipeline.common import (
@@ -19,6 +19,39 @@ from news_digest.pipeline.source_selection import pick_winner, source_score
 EVIDENCE_PACKET_VERSION = 1
 STORY_CLUSTER_VERSION = 1
 ENGLISH_JUDGE_SCHEMA_VERSION = 1
+BACKUP_POOL_SCHEMA_VERSION = 1
+AUDIT_TRAIL_SCHEMA_VERSION = 1
+
+MODEL_BAKEOFF_SPEC: dict[str, object] = {
+    "schema_version": 1,
+    "mode": "offline_contract",
+    "daily_run_policy": "no extra model calls in the morning pipeline",
+    "candidate_models": [
+        {"provider": "deepseek", "model": "deepseek-chat", "role": "cheap_prefilter_or_baseline"},
+        {"provider": "openai", "model": "gpt-4o-mini", "role": "quality_judge_candidate"},
+    ],
+    "required_metrics": [
+        "false_negative_rate_on_useful",
+        "false_positive_rate_on_should_not_include",
+        "json_validity",
+        "p95_latency_seconds",
+        "estimated_cost_usd_per_run",
+    ],
+    "promotion_rule": (
+        "A model can become judge-primary only if it improves useful false negatives "
+        "without increasing should_not_include false positives or breaking the run budget."
+    ),
+}
+
+COST_LATENCY_BUDGETS: dict[str, object] = {
+    "schema_version": 1,
+    "warning_only": True,
+    "max_total_calls": 70,
+    "max_total_estimated_tokens": 220_000,
+    "max_total_cost_usd": 0.20,
+    "target_wall_time_seconds": 480,
+    "hard_wall_time_warning_seconds": 600,
+}
 
 REASON_CODE_ENUM: tuple[str, ...] = (
     "duplicate_exact",
@@ -79,6 +112,7 @@ _PUBLIC_SAFETY_RE = re.compile(r"\b(?:death|died|killed|fire|crash|collision|cou
 _TRANSPORT_RE = re.compile(r"\b(?:tfgm|metrolink|rail|train|bus|tram|station|line|route|national\s+rail|трамва|автобус|поезд)\b", re.IGNORECASE)
 _PLANNING_CIVIC_RE = re.compile(r"\b(?:council|planning|application|development|vote|consultation|mayor|gmca|совет|планиров|заявк|консультац)\b", re.IGNORECASE)
 _TICKET_RE = re.compile(r"\b(?:ticket|tickets|on\s+sale|presale|venue|co-op live|ao arena|ticketmaster|билет)\b", re.IGNORECASE)
+_ENRICHMENT_FAILURE_RE = re.compile(r"\b(?:failed|timeout|timed\s*out|403|405|429|503|cloudflare|waf|forbidden)\b", re.IGNORECASE)
 
 
 def _blob(candidate: dict) -> str:
@@ -108,6 +142,20 @@ def _unique(values: list[object], *, limit: int = 12) -> list[str]:
 def _compact_text(value: object, *, limit: int = 1200) -> str:
     text = re.sub(r"\s+", " ", str(value or "")).strip()
     return text[:limit]
+
+
+def _parse_date_value(value: object) -> date | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00")).astimezone(now_london().tzinfo).date()
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime(text[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return None
 
 
 def _entity_values(candidate: dict) -> list[str]:
@@ -311,6 +359,106 @@ def english_judge_stub(candidate: dict) -> dict[str, object]:
     }
 
 
+def enrichment_health(candidate: dict) -> dict[str, object]:
+    if not isinstance(candidate, dict):
+        return {"schema_version": 1, "status": "", "warning": False}
+    status = str(candidate.get("enrichment_status") or "").strip()
+    evidence = str(candidate.get("evidence_text") or "")
+    summary = str(candidate.get("summary") or "")
+    lead = str(candidate.get("lead") or "")
+    text_chars = len(evidence.strip())
+    fallback_chars = len((summary + " " + lead).strip())
+    failed = bool(status and _ENRICHMENT_FAILURE_RE.search(status))
+    thin = text_chars < 220 and fallback_chars < 220
+    lane = protected_lane(candidate)
+    anchor = formal_news_anchor(candidate)
+    warning = bool((failed or thin) and (lane.get("protected") or anchor.get("has_news_anchor")))
+    policy = "backup_not_reject" if warning else "normal"
+    return {
+        "schema_version": 1,
+        "status": status,
+        "evidence_chars": text_chars,
+        "fallback_chars": fallback_chars,
+        "failed": failed,
+        "thin": thin,
+        "warning": warning,
+        "policy": policy,
+    }
+
+
+def backup_ttl_policy(candidate: dict, *, today: date | None = None) -> dict[str, object]:
+    today = today or now_london().date()
+    contract = attach_editorial_contract(candidate).get("editorial_contract") or {}
+    rubric = str((candidate.get("rubric_contract") or {}).get("rubric") or contract.get("story_type") or candidate.get("category") or "")
+    block = str(candidate.get("primary_block") or "")
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    event_day = _parse_date_value(event.get("date_start") or event.get("date") or event.get("date_end"))
+
+    if block in {"weather", "transport"} or rubric == "transport":
+        ttl_days = 1
+        reason = "transport_weather_short_ttl"
+    elif rubric in {"weekend_market"} or _MARKET_RE.search(_blob(candidate)):
+        ttl_days = max(1, min(4, ((event_day - today).days + 1) if event_day else 3))
+        reason = "recurring_market_short_window"
+    elif rubric in {"event", "ticket", "russian_event"} or block in {"weekend_activities", "next_7_days", "ticket_radar", "russian_events"}:
+        ttl_days = max(1, min(45, ((event_day - today).days + 1) if event_day else 10))
+        reason = "event_until_occurrence"
+    elif rubric in {"incident", "planning", "civic", "local_cost"}:
+        ttl_days = 14
+        reason = "hard_news_followup_window"
+    elif rubric in {"opening"} or block == "openings":
+        ttl_days = 7
+        reason = "opening_short_memory"
+    else:
+        ttl_days = 2
+        reason = "generic_short_ttl"
+    expires = today + timedelta(days=ttl_days)
+    return {
+        "schema_version": 1,
+        "ttl_days": ttl_days,
+        "expires_on_london": expires.isoformat(),
+        "reason": reason,
+    }
+
+
+def backup_pool_record(
+    candidate: dict,
+    *,
+    reason: str = "",
+    current_day_london: str | None = None,
+) -> dict[str, object]:
+    if not isinstance(candidate, dict):
+        return {}
+    run_day = current_day_london or today_london()
+    try:
+        today = datetime.strptime(run_day, "%Y-%m-%d").date()
+    except ValueError:
+        today = now_london().date()
+    fp = str(candidate.get("fingerprint") or "").strip() or fingerprint_for_candidate(candidate)
+    ttl = backup_ttl_policy(candidate, today=today)
+    judge = candidate.get("english_judge") if isinstance(candidate.get("english_judge"), dict) else english_judge_stub(candidate)
+    lane = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else protected_lane(candidate)
+    return {
+        "schema_version": BACKUP_POOL_SCHEMA_VERSION,
+        "created_on_london": run_day,
+        "expires_on_london": ttl["expires_on_london"],
+        "ttl_days": ttl["ttl_days"],
+        "ttl_reason": ttl["reason"],
+        "fingerprint": fp,
+        "title": candidate.get("title") or "",
+        "source_label": candidate.get("source_label") or "",
+        "source_url": candidate.get("source_url") or "",
+        "category": candidate.get("category") or "",
+        "primary_block": candidate.get("primary_block") or "",
+        "rubric": (candidate.get("rubric_contract") or {}).get("rubric") if isinstance(candidate.get("rubric_contract"), dict) else "",
+        "protected_lanes": lane.get("lanes") or [],
+        "english_judge": judge,
+        "section_board_score": candidate.get("section_board_score"),
+        "enrichment_health": candidate.get("enrichment_health") or enrichment_health(candidate),
+        "reason": reason or str(candidate.get("reason") or ""),
+    }
+
+
 def _section_fit(candidate: dict) -> list[str]:
     block = str(candidate.get("primary_block") or "")
     label = PRIMARY_BLOCKS.get(block, block)
@@ -364,6 +512,16 @@ def apply_story_intelligence(candidate: dict) -> dict:
     candidate["rubric_contract"] = rubric_contract(candidate)
     candidate["news_anchor"] = formal_news_anchor(candidate)
     candidate["protected_lane"] = protected_lane(candidate)
+    candidate["enrichment_health"] = enrichment_health(candidate)
+    if (candidate.get("enrichment_health") or {}).get("warning"):
+        candidate["backup_candidate"] = True
+        candidate["second_opinion_required"] = True
+        candidate["enrichment_warning"] = {
+            "policy": "backup_not_reject",
+            "status": candidate["enrichment_health"].get("status") or "",
+            "evidence_chars": candidate["enrichment_health"].get("evidence_chars") or 0,
+            "reason": "protected_or_anchored_item_has_failed_or_thin_enrichment",
+        }
     candidate["english_judge"] = english_judge_stub(candidate)
     candidate["section_board_score"] = section_board_score(candidate)
     attach_evidence_packet(candidate)
