@@ -10,10 +10,14 @@ from pathlib import Path
 
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.common import REQUIRED_SCAN_CATEGORIES, now_london
-from news_digest.pipeline.editorial_contracts import scrub_vague_ending
+from news_digest.pipeline.editorial_contracts import build_editorial_contract, scrub_vague_ending
 from news_digest.pipeline.collector.routing import _TICKET_HORIZON_DAYS
 from news_digest.pipeline.dedupe import _apply_semantic_drop_guard
 from news_digest.pipeline.history import write_daily_index_snapshot
+from news_digest.pipeline.story_intelligence import (
+    apply_cheap_dedup_before_enrich,
+    attach_story_clusters,
+)
 from news_digest.pipeline.release import (
     build_release,
     _classify_published_candidates,
@@ -540,7 +544,7 @@ class EventQualityPipelineTest(unittest.TestCase):
                     "The council shared a general community statement with broad comments "
                     "about local priorities and partnership work."
                 ),
-                "published_at": "2026-05-18T09:00:00+01:00",
+                "published_at": (now_london() - timedelta(days=2)).replace(hour=9, minute=0, second=0, microsecond=0).isoformat(),
                 "source_label": "Council Source",
                 "source_url": "https://example.test/unclear",
                 "dedupe_decision": "new",
@@ -1571,6 +1575,105 @@ class DailyIndexSnapshotTest(unittest.TestCase):
             self.assertIn("reader_value_label", record)
             self.assertEqual(record["why_now"], "ongoing_disruption")
             self.assertEqual(record["reader_value_label"], "useful")
+
+
+class StoryIntelligenceTest(unittest.TestCase):
+    def test_story_intelligence_builds_evidence_cluster_and_cheap_dedup(self) -> None:
+        duplicate_candidates = [
+            {
+                "title": "Council approves Manchester tower plan",
+                "source_label": "BBC Manchester",
+                "source_url": "https://example.test/story",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "include": True,
+            },
+            {
+                "title": "Council approves Manchester tower plan",
+                "source_label": "MEN",
+                "source_url": "https://example.test/story?utm=1",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "include": True,
+            },
+        ]
+
+        cheap = apply_cheap_dedup_before_enrich(duplicate_candidates)
+
+        self.assertEqual(cheap["dropped_count"], 1)
+        self.assertTrue(duplicate_candidates[1]["cheap_dedup_drop"])
+        self.assertTrue(duplicate_candidates[0]["include"])
+
+        cluster_candidates = [
+            {
+                "title": "Manchester Flower Festival",
+                "source_label": "Manchester Flower Festival CityCo News",
+                "source_url": "https://example.test/flower-official",
+                "category": "culture_weekly",
+                "primary_block": "weekend_activities",
+                "include": True,
+                "summary": "Free floral trail across St Ann's Square and King Street.",
+                "evidence_text": "Manchester Flower Festival runs this weekend with installations and workshops.",
+                "event": {
+                    "is_event": True,
+                    "event_name": "Manchester Flower Festival",
+                    "venue": "St Ann's Square",
+                    "date_start": "2026-05-23",
+                    "date": "2026-05-23",
+                    "borough": "Manchester",
+                    "price": "free",
+                },
+            },
+            {
+                "title": "Floral trail returns to Manchester city centre",
+                "source_label": "I Love Manchester Flower Festival",
+                "source_url": "https://example.test/flower-guide",
+                "category": "culture_weekly",
+                "primary_block": "weekend_activities",
+                "include": True,
+                "summary": "Guide mentions St Ann's Square, Exchange Street and family activities.",
+                "event": {
+                    "is_event": True,
+                    "event_name": "Manchester Flower Festival",
+                    "venue": "St Ann's Square",
+                    "date_start": "2026-05-23",
+                    "date": "2026-05-23",
+                    "borough": "Manchester",
+                },
+            },
+        ]
+
+        clusters = attach_story_clusters(cluster_candidates)
+
+        self.assertEqual(clusters["cluster_count"], 1)
+        packet = cluster_candidates[0]["evidence_packet"]
+        self.assertEqual(packet["story_cluster"]["source_count"], 2)
+        self.assertEqual(packet["story_cluster"]["canonical_source_label"], "Manchester Flower Festival CityCo News")
+        union = packet["story_cluster"]["union_facts"]
+        self.assertIn("Guide mentions St Ann's Square", " ".join(union["summaries"]))
+
+    def test_rubric_history_windows_are_not_global(self) -> None:
+        recurring = {
+            "title": "Bowlee Car Boot Sale every Sunday",
+            "summary": "Every Sunday at Bowlee Community Park.",
+            "source_label": "Bowlee Car Boot Sale",
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "event": {"is_event": True, "is_recurring": True, "event_name": "Bowlee Car Boot Sale"},
+        }
+        incident = {
+            "title": "Man charged after Manchester crash",
+            "summary": "Police said a man has been charged after a crash in Manchester.",
+            "source_label": "BBC Manchester",
+            "category": "media_layer",
+            "primary_block": "last_24h",
+        }
+
+        recurring_policy = build_editorial_contract(recurring)["section_policy"]
+        incident_policy = build_editorial_contract(incident)["section_policy"]
+
+        self.assertEqual(recurring_policy["history_window_days"], 2)
+        self.assertEqual(incident_policy["history_window_days"], 14)
 
 
 class SemanticGuardTest(unittest.TestCase):

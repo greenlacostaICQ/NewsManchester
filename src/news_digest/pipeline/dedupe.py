@@ -16,6 +16,7 @@ from news_digest.pipeline.common import (
 )
 from news_digest.pipeline.editorial_contracts import (
     attach_editorial_contract,
+    history_window_days_for_contract,
     is_specific_topic_key,
     lifecycle_repeat_review,
     topic_key_for_candidate,
@@ -23,6 +24,11 @@ from news_digest.pipeline.editorial_contracts import (
 from news_digest.pipeline.entity_extraction import enrich_candidate_entities
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.history import ensure_history_files
+from news_digest.pipeline.story_intelligence import (
+    attach_evidence_packet,
+    attach_story_clusters,
+    history_match_records,
+)
 from news_digest.pipeline.semantic_dedupe import (
     EMBEDDING_VERSION,
     anchor_tokens,
@@ -113,13 +119,16 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         previous = published_by_fp.get(fingerprint)
         normalized_title = normalize_title(str(candidate.get("title") or ""))
         original_title = str(candidate.get("title") or "")
-        title_similar_previous = _similar_published_titles(normalized_title, original_title, published_titles)
+        title_similar_previous = _similar_published_titles(candidate, normalized_title, original_title, published_titles)
         semantic_previous = _semantic_published_matches(candidate, published_titles)
         people_previous = _people_published_matches(candidate, published_titles)
         topic_previous = _topic_published_matches(candidate, published_by_topic)
         similar_previous = _merge_previous_matches(
             title_similar_previous, semantic_previous, people_previous, topic_previous,
         )
+        candidate["history_window_days"] = _history_window_days(candidate)
+        candidate["history_matches"] = history_match_records(similar_previous)
+        attach_evidence_packet(candidate, history_matches=candidate["history_matches"])
         if topic_previous:
             candidate["topic_lifecycle_match"] = {
                 "topic_key": topic_key_for_candidate(candidate),
@@ -321,6 +330,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             decision["reason"] = rev["reason"]
             decision["llm_reviewed"] = True
 
+    story_cluster_summary = attach_story_clusters(candidates)
     intra_batch_drops = _apply_intra_batch_dedup(candidates)
 
     # I1: embeddings-based semantic dedup pass. Runs AFTER the
@@ -377,6 +387,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 if isinstance(c, dict) and str(c.get("semantic_dedupe_match") or "").startswith("embedding")
             ),
             "semantic_guard": semantic_guard,
+            "story_clusters": story_cluster_summary,
             "intra_batch_dedup_drops": intra_batch_drops,
             "semantic_dedup_summary": semantic_result,
         },
@@ -497,6 +508,40 @@ def _published_day_from_history(item: dict, key: str) -> date | None:
         return None
 
 
+def _history_window_days(candidate: dict) -> int:
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    if not contract:
+        attach_editorial_contract(candidate)
+        contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    section_policy = contract.get("section_policy") if isinstance(contract.get("section_policy"), dict) else {}
+    raw = section_policy.get("history_window_days")
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        value = history_window_days_for_contract(
+            str(contract.get("story_type") or ""),
+            str(contract.get("event_shape") or ""),
+            str(contract.get("anchor_type") or ""),
+        )
+    return max(1, min(45, value))
+
+
+def _published_item_day(item: dict) -> date | None:
+    for key in ("last_published_day_london", "first_published_day_london", "published_day_london"):
+        parsed = _published_day_from_history(item, key)
+        if parsed:
+            return parsed
+    return _parse_day(item.get("published_at"))
+
+
+def _within_history_window(candidate: dict, item: dict) -> bool:
+    published_day = _published_item_day(item)
+    if published_day is None:
+        return True
+    age_days = (now_london().date() - published_day).days
+    return age_days <= _history_window_days(candidate)
+
+
 def _candidate_text(candidate: dict) -> str:
     return " ".join(
         str(candidate.get(field) or "")
@@ -584,7 +629,10 @@ def _topic_published_matches(candidate: dict, published_by_topic: dict[str, list
     topic_key = topic_key_for_candidate(candidate)
     if not is_specific_topic_key(topic_key):
         return []
-    matches = list(published_by_topic.get(topic_key) or [])
+    matches = [
+        item for item in (published_by_topic.get(topic_key) or [])
+        if isinstance(item, dict) and _within_history_window(candidate, item)
+    ]
     if not matches:
         return []
 
@@ -1178,6 +1226,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
         group_i = _dedup_block_group(block_i)
         is_event_ticket_group = group_i == _dedup_block_group("ticket_radar")
         topic_i = topic_key_for_candidate(ci)
+        cluster_i = str(ci.get("story_cluster_key") or "")
         rank_i = _source_rank(
             str(ci.get("source_label") or ""),
             str(ci.get("category") or ""),
@@ -1188,6 +1237,27 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                 continue
             cj = included[j]
             if _dedup_block_group(str(cj.get("primary_block") or "")) != group_i:
+                continue
+
+            cluster_j = str(cj.get("story_cluster_key") or "")
+            if cluster_i and cluster_i == cluster_j:
+                rank_j = _source_rank(
+                    str(cj.get("source_label") or ""),
+                    str(cj.get("category") or ""),
+                )
+                if _prefer_dedupe_candidate(ci, cj, rank_i, rank_j):
+                    to_drop[j] = {
+                        "kept_index": i,
+                        "overlap": 1.0,
+                        "story_cluster_key": cluster_i,
+                    }
+                else:
+                    to_drop[i] = {
+                        "kept_index": j,
+                        "overlap": 1.0,
+                        "story_cluster_key": cluster_i,
+                    }
+                    break
                 continue
 
             topic_j = topic_key_for_candidate(cj)
@@ -1295,6 +1365,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                 "kept_primary_block": kept.get("primary_block"),
                 "overlap": drop_context["overlap"],
                 "topic_key": drop_context.get("topic_key") or "",
+                "story_cluster_key": drop_context.get("story_cluster_key") or "",
                 "reason": c["reason"],
             }
         )
@@ -1366,10 +1437,18 @@ def _entity_tokens(title: str) -> set[str]:
 
 
 def _similar_published_titles(
-    normalized_title: str,
-    original_title: str,
-    published_titles: list[dict],
+    candidate: dict | str | None = None,
+    normalized_title: str = "",
+    original_title: str | list[dict] = "",
+    published_titles: list[dict] | None = None,
 ) -> list[dict]:
+    # Backward-compatible private helper signature used by older tests:
+    # _similar_published_titles(normalized_title, original_title, published_titles)
+    if published_titles is None:
+        published_titles = original_title if isinstance(original_title, list) else []
+        original_title = str(normalized_title or "")
+        normalized_title = str(candidate or "")
+        candidate = {}
     title_tokens = set(_title_tokens(original_title)) or set(normalized_title.split())
     entity_tokens = _entity_tokens(original_title)
     if len(title_tokens) < 2:
@@ -1379,6 +1458,8 @@ def _similar_published_titles(
         previous_tokens = set(_title_tokens(str(item.get("title") or ""))) or set(
             str(item.get("normalized_title") or "").split()
         )
+        if isinstance(candidate, dict) and candidate and not _within_history_window(candidate, item):
+            continue
         if len(previous_tokens) < 2:
             continue
         union = title_tokens | previous_tokens
@@ -1434,6 +1515,8 @@ def _semantic_published_matches(candidate: dict, published_items: list[dict]) ->
     matches: list[dict] = []
     for item in published_items:
         if not isinstance(item, dict):
+            continue
+        if not _within_history_window(candidate, item):
             continue
         previous_block = str(item.get("primary_block") or "")
         previous_category = str(item.get("category") or "")
@@ -1581,6 +1664,8 @@ def _people_published_matches(
     matches: list[dict] = []
     for item in published_items:
         if not isinstance(item, dict):
+            continue
+        if not _within_history_window(candidate, item):
             continue
         previous_entities = item.get("entities")
         if not isinstance(previous_entities, dict):

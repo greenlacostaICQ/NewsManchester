@@ -788,6 +788,31 @@ def _publish_tier(candidate: dict, story_type: str, event_shape: str, anchor_typ
     return "filler"
 
 
+def history_window_days_for_contract(story_type: str, event_shape: str, anchor_type: str = "") -> int:
+    """How far back cross-day repeat checks should look for this rubric.
+
+    A single global window is unsafe: court/planning stories need a longer
+    memory, while recurring markets must remain eligible for their next
+    occurrence instead of being collapsed forever.
+    """
+    story_type = str(story_type or "")
+    event_shape = str(event_shape or "")
+    anchor_type = str(anchor_type or "")
+    if event_shape == "recurring":
+        return 2
+    if event_shape in {"ticket", "one_off", "festival"} or story_type == "ticket":
+        return 30
+    if story_type in {"incident", "planning", "civic", "memorial", "local_cost"}:
+        return 14
+    if story_type in {"opening", "research"}:
+        return 7
+    if story_type in {"human_interest", "soft_news", "property_listing", "day_out_guide", "old_existing_food"}:
+        return 2
+    if anchor_type in {"new_phase", "local_action"}:
+        return 7
+    return 7
+
+
 def _weekday_from_text(text: str) -> int | None:
     lowered = text.lower()
     if re.search(r"\b(?:saturdays?|суббот)", lowered):
@@ -888,6 +913,7 @@ def build_editorial_contract(candidate: dict) -> dict[str, object]:
             "allow_public": tier != "reject",
             "global_budget_class": "public_utility" if tier in {"must_include", "strong"} else tier,
             "repeat_ttl_days": 3 if story_type in {"incident", "memorial", "opening", "research"} else 1,
+            "history_window_days": history_window_days_for_contract(story_type, event_shape, anchor_type),
         },
     }
 

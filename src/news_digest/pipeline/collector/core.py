@@ -29,6 +29,10 @@ from news_digest.pipeline.common import (
 from news_digest.pipeline.entity_extraction import enrich_candidates_entities
 from news_digest.pipeline.event_extraction import enrich_candidates_events
 from news_digest.pipeline.history import ensure_history_files
+from news_digest.pipeline.story_intelligence import (
+    apply_cheap_dedup_before_enrich,
+    attach_story_clusters,
+)
 
 from .extract import _extract_source_candidates
 from .fallbacks import (
@@ -384,10 +388,16 @@ def collect_digest(project_root: Path) -> StageResult:
     _reroute_media_transit_to_transport(candidates)
     _promote_to_today_focus(candidates)
     candidates.extend(_last_24h_fallback_candidates(candidates))
+    cheap_dedup_summary = apply_cheap_dedup_before_enrich(candidates)
     enrich_candidates_entities(candidates)
     # I3: structured event facts. Must run AFTER entity enrichment so
     # extract_event() can reuse entities.venues / entities.boroughs.
     enrich_candidates_events(candidates)
+    story_cluster_summary = attach_story_clusters(candidates)
+    report["story_intelligence"] = {
+        "cheap_dedup_before_enrich": cheap_dedup_summary,
+        "story_clusters": story_cluster_summary,
+    }
 
     checked_all = all(
         bool(report["categories"][key]["checked"])

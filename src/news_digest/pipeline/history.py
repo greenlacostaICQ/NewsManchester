@@ -9,16 +9,18 @@ import shutil
 from news_digest.pipeline.common import normalize_title, read_json, today_london, write_json
 from news_digest.pipeline.entity_extraction import enrich_candidate_entities, extract_entities
 from news_digest.pipeline.event_extraction import enrich_candidate_event, extract_event
+from news_digest.pipeline.editorial_contracts import attach_editorial_contract
 from news_digest.pipeline.reader_value import predicted_label, reader_value_score
 from news_digest.pipeline.semantic_dedupe import (
     EMBEDDING_VERSION,
     semantic_embedding,
     semantic_text,
 )
+from news_digest.pipeline.story_intelligence import attach_evidence_packet
 
 # Facts older than this are pruned from published_facts.json.
 # Must be >= the dedupe look-back window (7 days) with margin.
-_PUBLISHED_FACTS_RETENTION_DAYS = 14
+_PUBLISHED_FACTS_RETENTION_DAYS = 30
 
 
 def ensure_history_files(state_dir: Path) -> dict[str, Path]:
@@ -71,6 +73,8 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
         # I3: ensure structured event facts are present BEFORE we
         # snapshot the candidate into published_facts.json.
         enrich_candidate_event(candidate)
+        attach_editorial_contract(candidate)
+        attach_evidence_packet(candidate)
         fingerprint = str(candidate.get("fingerprint") or "").strip()
         if not fingerprint:
             continue
@@ -90,6 +94,9 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
                 "semantic_text": semantic_text(candidate)[:1200],
                 "entities": candidate.get("entities") or extract_entities(candidate),
                 "event": candidate.get("event") or extract_event(candidate),
+                "editorial_contract": candidate.get("editorial_contract") or {},
+                "evidence_packet": candidate.get("evidence_packet") or {},
+                "story_cluster": candidate.get("story_cluster") or {},
                 "scoring_trace": candidate.get("scoring_trace") or {},
                 # A0 enrichment: borough + change_type so dedupe and "what
                 # was previously published" queries can filter by them.
@@ -240,6 +247,8 @@ def write_daily_index_snapshot(project_root: Path) -> Path | None:
             "borough": _extract_borough_from_blob(c),
             "entities": c.get("entities") or extract_entities(c),
             "event": c.get("event") or extract_event(c),
+            "evidence_packet": c.get("evidence_packet") or {},
+            "story_cluster": c.get("story_cluster") or {},
             "included": included,
             "change_type": c.get("change_type") or "",
             "why_now": c.get("why_now") or "",
