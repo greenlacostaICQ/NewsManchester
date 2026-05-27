@@ -1347,6 +1347,27 @@ def _apply_specificity_review(candidate: dict) -> None:
         return
 
     if borderline_reasons:
+        # Protected hard news with a formal news_anchor must NOT be sent
+        # to the borderline pool. On 2026-05-27 we held "Man arrested
+        # over Manchester synagogue attack" and "Guns, samurai sword
+        # and cocaine seized in Wigan raids" — both had
+        # protected_lane=public_safety and news_anchor=True but a
+        # specificity-borderline tag still demoted them to city_watch
+        # and into the quarantine queue.
+        lane = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
+        anchor = candidate.get("news_anchor") if isinstance(candidate.get("news_anchor"), dict) else {}
+        if lane.get("protected") and anchor.get("has_news_anchor"):
+            # Record the soft warnings for the audit trail but do not
+            # flip editorial_status and do not demote out of the top
+            # blocks. Specificity gaps here are an enrichment problem,
+            # not a publishability problem.
+            candidate["quality_warnings"] = sorted(set(
+                [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]
+                + [f"{r}__protected_override" for r in borderline_reasons]
+            ))
+            candidate["specificity_review_protected_override"] = True
+            return
+
         candidate["editorial_status"] = "borderline"
         candidate["quality_warnings"] = sorted(set(
             [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]

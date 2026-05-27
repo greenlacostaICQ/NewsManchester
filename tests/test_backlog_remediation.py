@@ -1936,6 +1936,26 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         _apply_intra_batch_dedup(items)
         self.assertTrue(items[0]["include"] and items[1]["include"])
 
+    def test_protected_hard_news_with_anchor_is_not_held_for_specificity(self) -> None:
+        # "Man arrested over Manchester synagogue attack" carried
+        # protected_lane=public_safety and has_news_anchor=True yet
+        # still landed in the borderline pool on 2026-05-27. After the
+        # fix: protected + anchor short-circuits the demotion.
+        from news_digest.pipeline.candidate_validator import _apply_specificity_review
+        candidate = {
+            "include": True,
+            "title": "Man arrested over Manchester synagogue attack",
+            "summary": "Police arrested a man following the attack on a Manchester synagogue.",
+            "lead": "Police arrested a man following the attack on a Manchester synagogue.",
+            "evidence_text": "Greater Manchester Police said a man was arrested in connection with the synagogue attack.",
+            "category": "media_layer",
+            "primary_block": "today_focus",
+            "protected_lane": {"protected": True, "lanes": ["public_safety"]},
+            "news_anchor": {"has_news_anchor": True, "missing": []},
+        }
+        _apply_specificity_review(candidate)
+        self.assertNotEqual(candidate.get("editorial_status"), "borderline")
+
     def test_writer_does_not_degrade_on_soft_quality_warnings_only(self) -> None:
         # 94% yield + weak/repair messages must NOT trigger degraded_shrink.
         # Previously any warning with the word "degraded" flipped the
