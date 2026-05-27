@@ -1461,6 +1461,28 @@ def _exclude_cross_day_rehash(candidate: dict, state_dir: Path) -> bool:
         ttl_days = max(1, int(policy.get("repeat_ttl_days") or 1))
     except (TypeError, ValueError):
         ttl_days = 1
+    # bookable_listing / future event TTL override: a concert on Saturday
+    # mentioned in Monday's digest is STILL the same valid concert on
+    # Tuesday — the default ttl=1d would reject it as a rehash. While
+    # the event itself is still in the future (and within 14 days), the
+    # cross-day rehash window must follow the event, not the original
+    # post date. Closes the 2026-05-27 Lowry Boys / Cherryholt loss.
+    if anchor == "bookable_listing":
+        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        event_day_str = str(event.get("date_start") or event.get("date") or "").strip()
+        if event_day_str:
+            try:
+                event_day = datetime.strptime(event_day_str[:10], "%Y-%m-%d").date()
+            except ValueError:
+                event_day = None
+            if event_day is not None:
+                today_date = now_london().date()
+                if today_date <= event_day <= today_date + timedelta(days=14):
+                    # Event is still upcoming within 14 days — do not
+                    # block as a cross-day rehash, the concert/market
+                    # itself is still happening.
+                    return False
+        # Older/undated bookable_listings fall through to the default ttl.
     # Look back ttl_days + 1 to catch the day before yesterday for
     # short-TTL items (default 1d means "yesterday").
     lookback = ttl_days + 1

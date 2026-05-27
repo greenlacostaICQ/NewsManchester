@@ -94,9 +94,19 @@ _IMPACT_VERB_RE = re.compile(
     r"submit(?:s|ted)|vote(?:s|d)|charge(?:s|d)|sentence(?:s|d)|jail(?:s|ed)|"
     r"convict(?:s|ed)|name(?:s|d)|close(?:s|d)|open(?:s|ed|ing)|reopen(?:s|ed|ing)|"
     r"launch(?:es|ed)|cancel(?:s|led)|delay(?:s|ed)|disrupt(?:s|ed)|strike(?:s)?|"
+    # 2026-05-27 audit gap: regulatory / judicial / enforcement verbs were
+    # missing, so "Inappropriate Instagram advert featuring Haaland banned"
+    # came back with has_news_anchor=False. Added: banned, fined, evicted,
+    # deported, ruled, struck, suspended, dismissed, acquitted, recalled,
+    # halted, seized, raided, arrested, found guilty, pleaded.
+    r"ban(?:s|ned|ning)|fin(?:e|es|ed)|evict(?:s|ed)|deport(?:s|ed)|"
+    r"rule(?:s|d)|struck|suspend(?:s|ed)|dismiss(?:es|ed)|acquit(?:s|ted)|"
+    r"recall(?:s|ed)|halt(?:s|ed)|seiz(?:e|es|ed)|raid(?:s|ed)|arrest(?:s|ed)|"
+    r"plead(?:s|ed)|"
     r"fire|crash|collision|death|died|killed|"
     r"объяв|подтверд|одобр|отклони|голос|обвин|приговор|осужд|назван|"
-    r"закры|откры|запуск|отмен|задерж|сбой|забастов|пожар|авар|погиб)\b",
+    r"закры|откры|запуск|отмен|задерж|сбой|забастов|пожар|авар|погиб|"
+    r"запрещ|оштрафова|выселе|депортирова|постанови|приостанов)\b",
     re.IGNORECASE,
 )
 _DATE_RE = re.compile(

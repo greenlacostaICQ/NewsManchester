@@ -893,6 +893,123 @@ def _service_fallback_subject(title: str) -> str:
     return re.sub(r"\s+", " ", cleaned).strip(" .") or "опубликовано обновление"
 
 
+_FALLBACK_BUILDER_BY_CATEGORY: dict[str, str] = {
+    "venues_tickets": "ticket",
+    "culture_weekly": "event",
+    "russian_speaking_events": "event",
+    "diaspora_events": "event",
+    "public_services": "public_services",
+}
+
+
+def _apply_section_min_floor_pull_back(
+    section_name: str,
+    lines: list[str],
+    fps: list[str],
+    scores: list[float],
+    titles: list[str],
+    srcs: list[str],
+    candidates: list[dict],
+    rendered_fps_so_far: set[str],
+    min_floor: int,
+    warnings: list[str],
+) -> tuple[list[str], list[str], list[float], list[str], list[str]]:
+    """Top up a thin section up to SECTION_MIN_ITEMS by promoting any
+    included candidate whose primary_block maps to this section, sorted
+    by reader_value_score, using the LLM draft_line if present or a
+    deterministic fallback otherwise. Never reaches into other sections,
+    never bypasses include=False, never adds the same fingerprint twice."""
+    target_blocks = [
+        block for block, name in PRIMARY_BLOCKS.items() if name == section_name
+    ]
+    if not target_blocks:
+        return lines, fps, scores, titles, srcs
+
+    promoted = 0
+    pool = [
+        c for c in candidates
+        if isinstance(c, dict)
+        and c.get("include")
+        and str(c.get("primary_block") or "") in target_blocks
+        and str(c.get("fingerprint") or "") not in rendered_fps_so_far
+    ]
+    pool.sort(key=lambda c: float(c.get("reader_value_score") or 0), reverse=True)
+
+    for c in pool:
+        if len(lines) >= min_floor:
+            break
+        line = str(c.get("draft_line") or "").strip()
+        category = str(c.get("category") or "")
+        if not line:
+            builder = _FALLBACK_BUILDER_BY_CATEGORY.get(category)
+            if builder == "ticket":
+                line = _build_ticket_fallback_line(c)
+            elif builder == "event":
+                event = c.get("event") if isinstance(c.get("event"), dict) else {}
+                if event.get("is_event") and str(event.get("event_name") or c.get("title") or "").strip():
+                    line = _build_event_fallback_line(c)
+            elif builder == "public_services":
+                line = _build_public_service_fallback_line(c)
+        if not line:
+            continue
+        if not line.startswith("• "):
+            line = f"• {line}"
+        line = preserve_place_names(line)
+        source_url = str(c.get("source_url") or "")
+        source_label = str(c.get("source_label") or "")
+        line = _attach_source_anchor(line, source_url, source_label)
+        lines.append(line)
+        fps.append(str(c.get("fingerprint") or ""))
+        scores.append(float(c.get("reader_value_score") or 0))
+        titles.append(str(c.get("title") or ""))
+        srcs.append(source_label)
+        promoted += 1
+
+    if promoted:
+        warnings.append(
+            f"Section «{section_name}» topped up with {promoted} item(s) "
+            f"to meet floor of {min_floor}."
+        )
+    return lines, fps, scores, titles, srcs
+
+
+def _build_event_fallback_line(candidate: dict) -> str:
+    """Deterministic carbon card for culture_weekly / events when the LLM
+    failed to write a draft_line. Used to recover protected weekend
+    markets, gallery shows, theatre dates: on 2026-05-27 four of five
+    missing_after items were protected markets (Palace Theatre Tour,
+    Look For A Book PHM, Makers Market double header, South Manchester
+    Food Festival, Spinningfields Makers Market) and all disappeared
+    from the digest. The fallback uses only structured event-fields,
+    so it is safe to ship without LLM verification."""
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    title = str(event.get("event_name") or candidate.get("title") or "").strip()
+    title = re.sub(r"\s+[—–-]\s+(?:event|public\s+sale).*$", "", title, flags=re.IGNORECASE).strip()
+    title = title[:120].rstrip(" .-–—")
+    venue = _event_venue(candidate)
+    event_dt = _parse_ticket_datetime(candidate)
+    day_month = _format_ru_day_month(event_dt) if event_dt else ""
+    time_part = ""
+    if event_dt and event_dt.strftime("%H:%M") not in {"00:00", "12:00"}:
+        time_part = f" в {event_dt.strftime('%H:%M')}"
+    booking = str(event.get("booking_url") or candidate.get("source_url") or "").strip()
+    practical = str(candidate.get("practical_angle") or "").strip()
+    if not practical:
+        practical = "Уточните время, вход и наличие мест на официальной странице."
+    parts: list[str] = ["•"]
+    if day_month:
+        parts.append(f"{day_month}{time_part}")
+        if venue:
+            parts.append(f"в {venue}")
+        parts.append(f"— {title}.")
+    elif venue:
+        parts.append(f"в {venue}: {title}.")
+    else:
+        parts.append(f"{title}.")
+    line = " ".join(parts)
+    return f"{line} {practical}".strip()
+
+
 def _build_public_service_fallback_line(candidate: dict) -> str:
     source_label = str(candidate.get("source_label") or "Public services").strip()
     title = _service_fallback_subject(str(candidate.get("title") or ""))
@@ -1551,6 +1668,22 @@ def write_digest(project_root: Path) -> StageResult:
             warnings.append(f"Candidate #{index}: public-services fallback stub used (no LLM draft_line).")
             logger.info("TIER4 public_services stub | %s | %s", block_key, title[:80])
 
+        # Protected weekend events / culture_weekly fallback: when the
+        # LLM did not write a draft_line and the item is in a protected
+        # lane (weekend_market / russian_event) with structured event
+        # fields, do not drop — assemble a deterministic card.
+        if not line and category in {"culture_weekly", "russian_speaking_events", "diaspora_events"}:
+            protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
+            event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+            if (
+                (protected.get("protected") or block_key in {"weekend_activities", "next_7_days", "russian_events"})
+                and event.get("is_event")
+                and str(event.get("event_name") or candidate.get("title") or "").strip()
+            ):
+                line = _build_event_fallback_line(candidate)
+                warnings.append(f"Candidate #{index}: event fallback stub used (no LLM draft_line).")
+                logger.info("TIER4 event stub | %s | %s", block_key, title[:80])
+
         if not line:
             if category in REQUIRE_DRAFT_LINE_CATEGORIES:
                 warnings.append(f"Candidate #{index} dropped: no model draft_line for {category!r}.")
@@ -1787,6 +1920,24 @@ def write_digest(project_root: Path) -> StageResult:
             fps = fps[:cap]
             scores = scores[:cap]
             titles = titles[:cap]
+            srcs = srcs[:cap]
+        # Section min-floor pull-back. On 2026-05-27 «Главная история
+        # дня»=1 and «Что важно сегодня»=2 while score-10 candidates
+        # sat with include=True but never made it through the writer
+        # (no draft_line, dropped by section cap elsewhere, etc.).
+        # Closes A2 + C3: if we're still below the editorial floor for
+        # this section, top up from not-yet-rendered included
+        # candidates that targeted this block, sorted by reader_value.
+        min_floor = SECTION_MIN_ITEMS.get(section_name, 0)
+        if min_floor and len(lines) < min_floor:
+            rendered_fps_so_far = (
+                {fp for slist in section_fingerprints.values() for fp in slist if fp}
+                | {fp for fp in fps if fp}
+            )
+            lines, fps, scores, titles, srcs = _apply_section_min_floor_pull_back(
+                section_name, lines, fps, scores, titles, srcs,
+                candidates, rendered_fps_so_far, min_floor, warnings,
+            )
         reserved_later_budget = _reserved_later_budget(ordered_sections, section_index, sections)
         remaining_budget = PUBLIC_DIGEST_MAX_VISIBLE_ITEMS - visible_item_count - reserved_later_budget
         if section_name in PUBLIC_SECTION_RESERVED_MIN:

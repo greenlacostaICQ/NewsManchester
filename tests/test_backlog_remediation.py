@@ -1956,6 +1956,89 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         _apply_specificity_review(candidate)
         self.assertNotEqual(candidate.get("editorial_status"), "borderline")
 
+    def test_impact_verb_regex_covers_regulatory_and_judicial_verbs(self) -> None:
+        # 2026-05-27 Haaland Instagram ad came back with has_news_anchor=
+        # False because "banned" was not in the impact_verb regex.
+        from news_digest.pipeline.story_intelligence import formal_news_anchor
+        candidate = {
+            "title": "'Inappropriate' Instagram advert featuring Erling Haaland banned today",
+            "summary": "ASA banned the advert after a ruling on 2026-05-27.",
+            "entities": {"people": ["Erling Haaland"], "venues": [], "companies": ["ASA"]},
+        }
+        self.assertTrue(formal_news_anchor(candidate)["has_news_anchor"])
+
+    def test_property_specificity_does_not_apply_to_crime_stories(self) -> None:
+        # Synagogue attack carried property_borderline:decision_or_action
+        # because _PROPERTY_MARKERS matched "attack". After the fix the
+        # property review backs off when crime markers are present.
+        from news_digest.pipeline.editorial_contracts import property_specificity_review
+        review = property_specificity_review({
+            "title": "Man arrested over Manchester synagogue attack",
+            "summary": "Police charged the suspect following the attack.",
+            "lead": "Police charged a man over the attack.",
+            "evidence_text": "Greater Manchester Police said the man was arrested in connection with the synagogue attack.",
+        })
+        self.assertFalse(review["applies"])
+
+    def test_bookable_listing_with_upcoming_event_not_blocked_as_rehash(self) -> None:
+        # Concert / market on Saturday must not be rejected on Tuesday
+        # just because Monday's digest already mentioned it. Closes the
+        # 2026-05-27 Lowry Boys / Cherryholt loss.
+        from news_digest.pipeline.candidate_validator import _exclude_cross_day_rehash
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+            daily_dir = state_dir / "daily_index"
+            daily_dir.mkdir(parents=True)
+            yesterday = (now_london().date() - timedelta(days=1)).isoformat()
+            (daily_dir / f"{yesterday}.jsonl").write_text(
+                json.dumps({"fingerprint": "fp-concert-future", "included": True}) + "\n",
+                encoding="utf-8",
+            )
+            event_day = (now_london().date() + timedelta(days=5)).isoformat()
+            candidate = {
+                "include": True,
+                "fingerprint": "fp-concert-future",
+                "title": "Lowry Boys",
+                "editorial_contract": {
+                    "anchor_type": "bookable_listing",
+                    "section_policy": {"repeat_ttl_days": 1},
+                },
+                "event": {"date_start": event_day, "is_event": True},
+            }
+            _exclude_cross_day_rehash(candidate, state_dir)
+            self.assertTrue(candidate["include"])
+
+    def test_section_min_floor_pulls_back_unrendered_included_candidates(self) -> None:
+        # «Главная история дня» was 1 item on 2026-05-27 while score-10
+        # candidates sat with include=True and no draft_line. The pull-
+        # back must promote them up to SECTION_MIN_ITEMS using the
+        # event fallback builder when LLM did not write a draft_line.
+        from news_digest.pipeline.writer import _apply_section_min_floor_pull_back
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "fp-event-a",
+                "title": "Makers Market double header this May!",
+                "category": "culture_weekly",
+                "primary_block": "weekend_activities",
+                "reader_value_score": 130.0,
+                "source_label": "First Street",
+                "source_url": "https://firststreetmanchester.com/news/makers-market",
+                "event": {
+                    "is_event": True,
+                    "event_name": "Makers Market double header",
+                    "venue": "First Street",
+                    "date_start": (now_london().date() + timedelta(days=2)).isoformat(),
+                },
+            },
+        ]
+        lines, fps, scores, titles, srcs = _apply_section_min_floor_pull_back(
+            "Выходные в GM", [], [], [], [], [],
+            candidates, set(), 1, [],
+        )
+        # The market with a deterministic event fallback must surface.
+        self.assertEqual(len(lines), 1)
+
     def test_writer_does_not_degrade_on_soft_quality_warnings_only(self) -> None:
         # 94% yield + weak/repair messages must NOT trigger degraded_shrink.
         # Previously any warning with the word "degraded" flipped the

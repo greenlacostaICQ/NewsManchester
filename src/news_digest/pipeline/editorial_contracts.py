@@ -262,6 +262,14 @@ def property_specificity_review(candidate: dict) -> dict[str, object]:
     blob = _blob(candidate)
     if not _PROPERTY_MARKERS.search(blob):
         return {"applies": False, "missing": [], "severity": "none"}
+    # Cross-domain bug seen on 2026-05-27: "Man arrested over Manchester
+    # synagogue attack" came back with property_borderline:
+    # decision_or_action because _PROPERTY_MARKERS matched 'attack'. If
+    # the story is clearly a crime / incident / court matter, property
+    # review must back off — it has nothing useful to say about an arrest
+    # write-up.
+    if _CRIME_MARKERS.search(blob) or _CRIME_EVENT.search(blob) or _CRIME_ACTION.search(blob):
+        return {"applies": False, "missing": [], "severity": "none"}
     has_location = bool(
         has_known_place_name(blob)
         or _STREET_OR_ADDRESS.search(blob)
