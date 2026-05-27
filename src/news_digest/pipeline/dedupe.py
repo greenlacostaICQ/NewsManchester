@@ -1298,6 +1298,14 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                 continue  # different boroughs = different stories
             if _distinct_market_listing_pair(ci, cj):
                 continue  # same generic listing wording, different market/venue
+            # Transport: different stops / lines / operators are different
+            # incidents — never let title-token Jaccard or "shared entity"
+            # (e.g. "Tram", "Stop", "Disruption") collapse Piccadilly tram
+            # works with Prestwich tram works, or a Northern route with a
+            # TransPennine route. dedupe.py:1213 docstring already says
+            # transport has its own dedup; this is the gate.
+            if block_i == "transport" and str(cj.get("primary_block") or "") == "transport":
+                continue
 
             tokens_j = _title_tokens(str(cj.get("title") or ""))
             entities_j = _title_entities(str(cj.get("title") or ""))

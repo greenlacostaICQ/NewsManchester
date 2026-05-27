@@ -1883,6 +1883,59 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         _reclassify_outside_gm_when_local_venue(candidate)
         self.assertEqual(candidate["primary_block"], "ticket_radar")
 
+    def test_ticket_topic_key_includes_event_date_to_separate_tour_legs(self) -> None:
+        # Calum Scott on 2026-05-27 vs Calum Scott on 2026-05-28 are two
+        # concerts, not one cluster. Without the date suffix the second
+        # night was lost as dedupe_lost_event.
+        c1 = {
+            "category": "venues_tickets",
+            "title": "Calum Scott — event 2026-05-27 — public sale 2025-04-11 09:00",
+            "summary": "AO Arena | Manchester",
+            "event": {"venue": "AO Arena", "date_start": "2026-05-27", "is_event": True},
+        }
+        c2 = dict(c1, title="Calum Scott — event 2026-05-28 — public sale 2025-04-11 09:00",
+                  event={"venue": "AO Arena", "date_start": "2026-05-28", "is_event": True})
+        k1 = build_editorial_contract(c1)["topic_key"]
+        k2 = build_editorial_contract(c2)["topic_key"]
+        self.assertNotEqual(k1, k2)
+
+    def test_ticket_topic_key_strips_venue_premium_prefix_to_share_cluster(self) -> None:
+        # "Calum Scott" and "Venue Premium Tickets - Calum Scott" are the
+        # same concert; the premium variant must share the cluster key
+        # so we keep one row, not reject two as duplicates.
+        base = {
+            "category": "venues_tickets",
+            "title": "Calum Scott — event 2026-05-27 — public sale 2025-04-11 09:00",
+            "summary": "AO Arena | Manchester",
+            "event": {"venue": "AO Arena", "date_start": "2026-05-27", "is_event": True},
+        }
+        premium = dict(base, title="Venue Premium Tickets - Calum Scott — event 2026-05-27 — public sale 2025-08-13 11:00")
+        self.assertEqual(
+            build_editorial_contract(base)["topic_key"],
+            build_editorial_contract(premium)["topic_key"],
+        )
+
+    def test_transport_intra_batch_dedup_keeps_distinct_stops(self) -> None:
+        # Piccadilly tram escalator and Prestwich tram improvement works
+        # are two different incidents — they must both stay published.
+        from news_digest.pipeline.dedupe import _apply_intra_batch_dedup
+        items = [
+            {
+                "include": True, "fingerprint": "tfgm-piccadilly-escalator",
+                "title": "Piccadilly Tram Stop - Escalator out of service",
+                "primary_block": "transport", "source_label": "TfGM",
+                "category": "transport",
+            },
+            {
+                "include": True, "fingerprint": "tfgm-prestwich-improvement",
+                "title": "Prestwich Tram Stop - Improvement Works",
+                "primary_block": "transport", "source_label": "TfGM",
+                "category": "transport",
+            },
+        ]
+        _apply_intra_batch_dedup(items)
+        self.assertTrue(items[0]["include"] and items[1]["include"])
+
     def test_writer_does_not_degrade_on_soft_quality_warnings_only(self) -> None:
         # 94% yield + weak/repair messages must NOT trigger degraded_shrink.
         # Previously any warning with the word "degraded" flipped the

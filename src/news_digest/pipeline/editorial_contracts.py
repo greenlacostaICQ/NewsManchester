@@ -627,8 +627,27 @@ def _topic_key(candidate: dict, story_type: str = "", event_shape: str = "") -> 
     # made unrelated stories inherit a specific event topic.
     if str(candidate.get("category") or "") == "venues_tickets":
         title = re.sub(r"\s+[—–-]\s+(?:event|public\s+sale).*$", "", str(candidate.get("title") or ""), flags=re.IGNORECASE)
+        # Strip Ticketmaster premium/resale prefixes so the same concert
+        # served as "Calum Scott", "Venue Premium Tickets - Calum Scott"
+        # and "VIP Package - Calum Scott" collapses to one cluster
+        # instead of three rejected duplicates.
+        title = re.sub(
+            r"^(?:venue\s+premium\s+tickets|premium\s+tickets|vip\s+package|"
+            r"resale\s+tickets|official\s+platinum|platinum\s+tickets|"
+            r"hospitality\s+packages?)\s*[-–—:]\s*",
+            "",
+            title,
+            flags=re.IGNORECASE,
+        ).strip()
         venue = ticket_venue(candidate)
-        return "ticket:" + normalize_title(f"{title} {venue}")[:120]
+        # Include the event date so Calum Scott on 2026-05-27 and Calum
+        # Scott on 2026-05-28 do NOT collapse into one cluster — that
+        # cost us a second day-of concert in the 2026-05-27 report
+        # under verdict=dedupe_lost_event.
+        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        date_token = str(event.get("date_start") or event.get("date") or "").strip()
+        suffix = f"|{date_token}" if date_token else ""
+        return "ticket:" + normalize_title(f"{title} {venue}")[:120] + suffix
     if event_shape and event_shape != "none":
         event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
         title = str(event.get("event_name") or candidate.get("title") or "")
