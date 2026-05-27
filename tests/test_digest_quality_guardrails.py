@@ -10,6 +10,7 @@ from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector.routing import _adjust_ticket_radar_block
 from news_digest.pipeline.collector.fallbacks import _weather_draft_line
 from news_digest.pipeline.collector.sources import SOURCES
+from news_digest.pipeline.transport_card import extract_transport_card, render_card
 from news_digest.pipeline.common import (
     fingerprint_for_candidate,
     now_london,
@@ -1319,14 +1320,46 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         line = _weather_draft_line(15, 24, 0, "Днём сухо с прояснениями.", "Met Office")
 
         self.assertIn("15-24°C", line)
-        self.assertIn("без существенных осадков", line)
+        self.assertIn("дождя не ждём", line)
         self.assertNotIn("до 0%", line)
         self.assertNotIn("почти не ждут", line)
+        self.assertNotIn("низкий риск", line)
 
     def test_weather_draft_line_32c_says_heat_not_dry(self) -> None:
         line = _weather_draft_line(19, 32, 0, "", "Met Office")
         self.assertIn("жарк", line.lower())
         self.assertNotIn("без существенных осадков", line)
+
+    def test_weather_draft_line_low_rain_uses_human_phrase(self) -> None:
+        line = _weather_draft_line(16, 24, 10, "Днём сухо с прояснениями.", "Met Office")
+        self.assertIn("дождь маловероятен, риск до 10%", line)
+        self.assertIn("Для поездок и прогулок погода спокойная", line)
+        self.assertNotIn("низкий риск осадков", line)
+
+    def test_local_retail_takeover_is_news_anchor_not_filler(self) -> None:
+        candidate = {
+            "title": "Asda closing as Waitrose set to take over Greater Manchester supermarket",
+            "summary": "The Asda store in Hale Barns Square will close before being replaced by a Waitrose in autumn 2026.",
+            "lead": "The immaculate Asda store in Hale Barns Square will close its doors before being replaced by a Waitrose in autumn 2026.",
+            "source_label": "MEN",
+            "primary_block": "last_24h",
+            "category": "media_layer",
+        }
+        contract = build_editorial_contract(candidate)
+        self.assertEqual(contract["anchor_type"], "new_phase")
+        self.assertEqual(contract["publish_tier"], "strong")
+
+    def test_metrolink_minor_delay_keeps_line_and_does_not_say_works(self) -> None:
+        card = extract_transport_card({
+            "title": "Eccles Line - Minor Delay.",
+            "summary": "Eccles Line - Minor Delay.",
+            "source_label": "TfGM",
+            "source_url": "https://tfgm.com/travel-updates/travel-alerts/eccles-line-minor-delay",
+        })
+        self.assertIsNotNone(card)
+        line = render_card(card)
+        self.assertIn("небольшие задержки на Eccles line", line)
+        self.assertNotIn("работы на Eccles line", line)
 
     def test_global_budget_reserves_slots_for_events_tickets_and_football(self) -> None:
         sections = {

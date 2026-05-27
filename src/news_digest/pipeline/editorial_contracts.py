@@ -473,6 +473,8 @@ _LOCAL_ACTION_RE = re.compile(
     r"\b(?:"
     r"opens?|opening|opened|launch(?:es|ed|ing)?|starts?|started|plans?|planned|"
     r"announc(?:es|ed|ing)|confirm(?:s|ed|ing)|approv(?:es|ed)|reject(?:s|ed)|"
+    r"clos(?:e|es|ed|ing)|take(?:s|n)?\s+over|set\s+to\s+take\s+over|"
+    r"replac(?:e|es|ed|ing)|switch(?:es|ed|ing)|"
     r"consultation|deadline|trial|pilot|funding|seed|investment|jobs?|"
     r"restor(?:e|es|ed|ation)|reopen(?:s|ed|ing)?|"
     r"charged|arrested|sentenced|jailed|convicted|verdict|inquest|appeal|"
@@ -547,6 +549,7 @@ _NEW_PHASE_RE = re.compile(
     r"\b(?:"
     r"charged|arrested|sentenced|jailed|convicted|verdict|trial|hearing|inquest|appeal|cps|"
     r"approved|rejected|submitted|consultation|deadline|opens?|opened|reopens?|launched|"
+    r"clos(?:e|es|ed|ing)|take(?:s|n)?\s+over|set\s+to\s+take\s+over|replac(?:e|es|ed|ing)|"
     r"confirmed|announced|updated|plans?|planned|new\s+date|sale\s+(?:starts|opens)|on\s+sale|"
     r"обвин|арест|приговор|вердикт|слушан|расследован|одобр|отклон|подан|консультац|"
     r"откры|запуск|подтверд|обнов|новая\s+дат|продаж"
@@ -631,7 +634,7 @@ def _topic_key(candidate: dict, story_type: str = "", event_shape: str = "") -> 
         title = str(event.get("event_name") or candidate.get("title") or "")
         venue = str(event.get("venue") or ticket_venue(candidate) or candidate.get("source_label") or "")
         return "event:" + normalize_title(f"{title} {venue}")[:120]
-    if story_type in {"planning", "civic", "incident", "opening", "memorial", "local_cost"}:
+    if story_type in {"planning", "civic", "incident", "opening", "memorial", "local_cost", "local_service_change"}:
         title = normalize_title(str(candidate.get("title") or ""))
         entities = candidate.get("entities") if isinstance(candidate.get("entities"), dict) else {}
         entity_bits: list[str] = []
@@ -715,6 +718,11 @@ def _story_type(candidate: dict, event_shape: str) -> str:
         return "planning"
     if _LOCAL_COST_RE.search(blob) and _LOCATION_SIGNAL.search(blob):
         return "local_cost"
+    if re.search(
+        r"\b(?:supermarket|store|shop|retail|asda|waitrose|tesco|sainsbury|aldi|lidl|morrisons|co-op)\b",
+        lowered,
+    ) and re.search(r"\b(?:clos(?:e|es|ed|ing)|take(?:s|n)?\s+over|set\s+to\s+take\s+over|replac(?:e|es|ed|ing))\b", lowered):
+        return "local_service_change"
     if re.search(r"\b(?:police|gmp|court|charged|arrested|sentenced|crash|collision|fire|death|killed|died)\b", lowered):
         return "incident"
     if re.search(r"\b(?:council|mayor|election|by-?election|candidate|consultation)\b", lowered):
@@ -776,7 +784,7 @@ def _publish_tier(candidate: dict, story_type: str, event_shape: str, anchor_typ
         return "filler"
     if event_shape in {"festival", "recurring"}:
         return "strong"
-    if story_type in {"incident", "planning", "civic", "opening", "memorial", "local_cost"} and anchor_type != "none":
+    if story_type in {"incident", "planning", "civic", "opening", "memorial", "local_cost", "local_service_change"} and anchor_type != "none":
         return "strong"
     if story_type == "ticket":
         ticket_type = classify_ticket_type(candidate)

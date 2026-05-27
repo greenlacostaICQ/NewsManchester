@@ -140,6 +140,12 @@ PROMPT_CITY_NEWS = (
     "    Пример лида: «🔥 Heywood: пожарные тушили историческую мельницу 6 часов. На месте 8 расчётов, никто не пострадал.»\n"
     "  • Планирование/совет: что решено + кто против/за + что дальше.\n"
     "    Пример лида: «🏗️ Trafford: советники отклонили склад Wain Estates в Carrington — план требовал вырубки 10 000+ деревьев.»\n"
+    "  • Политический тупик/совет без руководства: объясни проблему простыми словами: кто не может договориться, какое решение заблокировано, сколько это может стоить или чем грозит, следующая дата.\n"
+    "    Пример: «Oldham: совет снова не смог выбрать руководство после выборов; без мэра нельзя назначить лидера и комитеты. Если тупик не снимут, вмешательство комиссара может стоить до £1,200 в день; следующий раунд назначен на 15 июня.»\n"
+    "  • Retail / локальная услуга: не пиши как property/listing. Объясни изменение для района: что закрывается, кто приходит вместо, где, когда, почему это заметно жителям.\n"
+    "    Пример: «Hale Barns: Asda на Hale Barns Square закроется, а Waitrose планирует открыть магазин на этом месте осенью 2026 года. Для жителей это смена основного супермаркета в центре района; точная дата закрытия зависит от перехода аренды.»\n"
+    "  • Change-of-use / бывшее здание: первым предложением пиши текущее решение, а старые даты только как фон.\n"
+    "    Пример: «Standish: бывший Windsor House на Wigan Road переоборудуют в детский дом на 6 мест. Здание закрылось как care home в конце 2024 года; теперь Millennium Care использует его для размещения детей под опекой.»\n"
     "  • Наука/исследование: вывод исследования простыми словами одной фразой.\n"
     "    Пример лида: «🧠 Manchester: учёные UoM показали, что алкогольная зависимость нарушает способность мозга формировать новые ассоциации.»\n"
     "    Если в evidence нет конкретного вывода — лучше вернуть пустую draft_line, чем «исследование показало что-то про алкоголь».\n"
@@ -310,6 +316,12 @@ REPAIR_DRAFT_SYSTEM = """Ты senior editor городского morning brief.
 1) Главный факт: кто, что, где конкретно.
 2) Ключевая деталь из evidence: сумма/имя/причина/дата.
 3) (опционально) что это значит для жителя GM.
+
+ПО ТИПАМ:
+- council deadlock / council vote: объясни, что заблокировано, кто/какой орган не договорился, стоимость/последствие и следующую дату.
+- retail closure / takeover: что закрывается, кто заменяет, где, когда, что меняется для жителей района.
+- change-of-use / former building: текущее решение первым; старую дату закрытия давай только как фон, не как новость.
+- transport: не оставляй «небольшие задержки» без линии/участка, если они есть в title/summary; если участок не указан источником, прямо скажи «TfGM не уточнил участок».
 
 ЕСЛИ данных мало — пиши 250–300 символов с реальной фактурой. Лучше точный короткий пункт, чем раздутый пустой.
 
@@ -992,6 +1004,11 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     base_url_override = os.environ.get("LLM_BASE_URL", "").strip()
     errors: list[str] = []
     warnings: list[str] = []
+    # Editorial soft warnings (weak draft_line, repair rejected, small
+    # yield gap) — recorded for the audit trail but MUST NOT push
+    # stage_status to "degraded" because the writer interprets that as
+    # a structural failure and starts degraded_shrink.
+    soft_warnings: list[str] = []
     provider_batch_diagnostics: list[dict] = []
     repair_rejections: list[dict] = []
     rewrite_shortlist: dict[str, object] = {
@@ -1186,14 +1203,21 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         if str(c.get("draft_line") or "").strip() and _needs_quality_repair(c)
     ]
     successful = len(to_rewrite) - len(missing_after)
+    # Only treat yield as structurally bad if we are below 90% — anything
+    # above is a normal-day result and must NOT trigger writer
+    # degraded_shrink (the trigger that held Manchester Academy tickets
+    # at reader_value 800+ on 2026-05-27).
+    yield_low = bool(to_rewrite) and successful < max(1, int(len(to_rewrite) * 0.9))
     if to_rewrite and successful < len(to_rewrite):
-        warnings.append(
-            f"LLM rewrite yield low after provider fallback: {successful}/{len(to_rewrite)} draft_lines written."
-        )
+        msg = f"LLM rewrite yield low after provider fallback: {successful}/{len(to_rewrite)} draft_lines written."
+        if yield_low:
+            warnings.append(msg)
+        else:
+            soft_warnings.append(msg)
     if weak_after:
-        warnings.append(f"{len(weak_after)} draft_line(s) still look weak after repair.")
+        soft_warnings.append(f"{len(weak_after)} draft_line(s) still look weak after repair.")
     if repair_rejections:
-        warnings.append(
+        soft_warnings.append(
             f"Repair pass rejected {len(repair_rejections)} replacement(s) that still failed writer quality gate."
         )
 
@@ -1210,6 +1234,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "stage_status": "complete" if not warnings else "degraded",
             "errors": errors,
             "warnings": warnings,
+            "soft_warnings": soft_warnings,
             "included_for_rewrite": len(to_rewrite),
             "rewrite_shortlist": rewrite_shortlist,
             "skipped_manual_review": skipped_manual_review,
@@ -1243,6 +1268,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     )
     return StageResult(
         True,
-        "LLM rewrite completed." if not warnings else "LLM rewrite completed with degraded yield/quality.",
+        "LLM rewrite completed."
+        if not warnings
+        else "LLM rewrite completed with degraded yield/quality.",
         report_path,
     )

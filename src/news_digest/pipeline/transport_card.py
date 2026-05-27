@@ -435,18 +435,20 @@ def _render_tram(card: TransportCard) -> str:
     has_time = bool(time_phrase)
     has_meta = bool(card.reason or card.cost_phrase or card.alternative)
 
+    is_minor_delay = card.reason == "небольшие задержки"
+
     # Tier 1: full sentence "Metrolink: с DATE по DATE нет трамваев на LINE между SEG — REASON; ALT."
     if has_loc and (has_time or has_meta):
-        if has_time:
+        if is_minor_delay:
+            head = f"{card.operator}: небольшие задержки {location}"
+        elif has_time:
             head = f"{card.operator}: {time_phrase} нет трамваев {location}"
         else:
             head = f"{card.operator}: работы {location}"
     elif has_loc:
-        head = f"{card.operator}: работы {location}"
+        head = f"{card.operator}: небольшие задержки {location}" if is_minor_delay else f"{card.operator}: работы {location}"
     else:
-        # No line/segment locator → "работы на сети" reads as a generic
-        # filler ("на какой сети и где?" — 2026-05-25 complaint). Suppress.
-        return ""
+        head = f"{card.operator}: предупреждение TfGM по трамваям"
 
     tail_bits: list[str] = []
     if card.reason and card.cost_phrase:
@@ -459,11 +461,11 @@ def _render_tram(card: TransportCard) -> str:
         alt = f"TfGM запускает {card.alternative}" if "автобус" in card.alternative else card.alternative
         tail_bits.append(alt)
 
-    if tail_bits:
+    if tail_bits and not (is_minor_delay and tail_bits == [card.reason]):
         return f"• {head} — {'; '.join(tail_bits)}."
     if has_loc:
-        return f"• {head} — подробности в источнике."
-    return f"• {head} — подробности в источнике."
+        return f"• {head}; TfGM не уточнил отдельный участок."
+    return f"• {head}; TfGM не указал линию или участок."
 
 
 def _render_bus(card: TransportCard) -> str:
