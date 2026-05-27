@@ -79,6 +79,18 @@ def _exclude_stale_ticket_onsale(candidate: dict) -> bool:
     onsale_at = _summary_field_datetime(summary, "public_onsale")
     if onsale_at is None or onsale_at >= now_london():
         return False
+    # Day-of / week-of event override: if the concert itself is happening in
+    # the next 7 days, the public_onsale date is irrelevant — this is a hot
+    # ticket, not stale coverage. Without this, today's Manchester concerts
+    # were being demoted out of ticket_radar because tickets went on sale a
+    # year ago (e.g. Calum Scott, Ray LaMontagne, My Leonard Cohen on
+    # 2026-05-27).
+    event_at = _summary_field_datetime(summary, "event_date")
+    if event_at is not None:
+        days_to_event = (event_at.date() - now_london().date()).days
+        if 0 <= days_to_event <= 7:
+            candidate["ticket_type"] = "event_this_week"
+            return False
     age_days = (now_london() - onsale_at).days
     if age_days <= 3:
         candidate["ticket_type"] = "on_sale_now"
@@ -114,6 +126,48 @@ _EVENT_BLOCKS = {
     "russian_events",
     "future_announcements",
 }
+# Tokens that prove a Ticketmaster row is actually a Manchester / Greater
+# Manchester concert. Used to recover items that the collector defaulted to
+# outside_gm_tickets purely because the source label contains "UK Major".
+_LOCAL_GM_VENUE_TOKENS = (
+    "manchester", "salford", "bury", "rochdale", "oldham",
+    "stockport", "tameside", "trafford", "wigan",
+    "co-op live", "co op live", "ao arena", "manchester academy",
+    "manchester arena", "etihad", "old trafford", "the lowry",
+    " home mcr", "royal northern college", "rncm", "albert hall",
+    "victoria warehouse", "manchester apollo", "o2 apollo manchester",
+    "bridgewater hall", "band on the wall", "deaf institute",
+    "gorilla manchester", "yes manchester", "new century manchester",
+)
+
+
+def _looks_like_local_gm_venue(candidate: dict) -> bool:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    venue = str(event.get("venue") or "").lower()
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "source_url")
+    ).lower()
+    haystack = f"{venue} {blob}"
+    return any(token in haystack for token in _LOCAL_GM_VENUE_TOKENS)
+
+
+def _reclassify_outside_gm_when_local_venue(candidate: dict) -> bool:
+    """Recover Manchester concerts that the collector dumped into
+    outside_gm_tickets because the Ticketmaster source label contained
+    'UK Major'. Without this, today's Calum Scott / Ray LaMontagne were
+    leaving the digest as 'outside GM'."""
+    if str(candidate.get("primary_block") or "") != "outside_gm_tickets":
+        return False
+    if str(candidate.get("category") or "") != "venues_tickets":
+        return False
+    if not _looks_like_local_gm_venue(candidate):
+        return False
+    candidate["primary_block"] = "ticket_radar"
+    existing = str(candidate.get("reason") or "").strip()
+    note = "Validator: reclassified outside_gm_tickets → ticket_radar (local GM venue detected)."
+    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    return True
 _EVENT_LIKE_TERMS = (
     "festival",
     "concert",
@@ -1499,6 +1553,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _exclude_cross_day_rehash(candidate, state_dir)
         if candidate.get("include") and manual != "force_include":
             _exclude_road_only_transport(candidate)
+        if candidate.get("include"):
+            _reclassify_outside_gm_when_local_venue(candidate)
         if candidate.get("include"):
             _exclude_stale_ticket_onsale(candidate)
         if candidate.get("include"):

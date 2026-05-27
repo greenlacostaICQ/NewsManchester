@@ -1841,6 +1841,66 @@ class StoryIntelligenceTest(unittest.TestCase):
             self.assertTrue((root / "data" / "state" / "model_bakeoff_report.json").exists())
 
 
+class TelegramBacklog20260527Test(unittest.TestCase):
+    """Behaviour pinned for the 2026-05-27 release-report findings: public
+    digest cap was 22 (cut 113.75-score business items), today-of-event
+    Ticketmaster concerts were tagged `old_onsale`, Manchester concerts
+    were dumped in outside_gm_tickets purely by source label, and the
+    borderline_queue stored every hold as `no_reason`. One assertion per
+    behaviour."""
+
+    def test_public_digest_max_visible_items_is_45(self) -> None:
+        from news_digest.pipeline.writer import PUBLIC_DIGEST_MAX_VISIBLE_ITEMS
+        self.assertEqual(PUBLIC_DIGEST_MAX_VISIBLE_ITEMS, 45)
+
+    def test_ticket_within_7_days_kept_in_ticket_radar_despite_old_onsale(self) -> None:
+        from news_digest.pipeline.candidate_validator import _exclude_stale_ticket_onsale
+        # Concert tonight; tickets went on sale a year ago. Should NOT be
+        # demoted to future_announcements — it's a hot day-of ticket.
+        today = now_london().date()
+        last_year = (now_london() - timedelta(days=365)).strftime("%Y-%m-%d %H:%M")
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "summary": (
+                f"ticket_signal=onsale public_onsale={last_year} "
+                f"event_date={today.strftime('%Y-%m-%d')} 19:00"
+            ),
+        }
+        _exclude_stale_ticket_onsale(candidate)
+        self.assertEqual(candidate["ticket_type"], "event_this_week")
+
+    def test_outside_gm_ticket_reclassified_when_local_venue_present(self) -> None:
+        from news_digest.pipeline.candidate_validator import _reclassify_outside_gm_when_local_venue
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "outside_gm_tickets",
+            "title": "Calum Scott — event 2026-05-27 — public sale 2025-04-11 09:00",
+            "summary": "event=2026-05-27 19:00",
+            "event": {"venue": "Manchester Apollo"},
+            "source_label": "Ticketmaster UK Major Onsale",
+        }
+        _reclassify_outside_gm_when_local_venue(candidate)
+        self.assertEqual(candidate["primary_block"], "ticket_radar")
+
+    def test_borderline_queue_records_reason_code_per_item(self) -> None:
+        candidates_report = {
+            "candidates": [
+                {
+                    "fingerprint": "fp-1",
+                    "title": "Held item",
+                    "editorial_status": "borderline",
+                    "quality_warnings": ["property_borderline:no_clear_action"],
+                    "english_judge": {"reason_codes": ["property_listing"]},
+                }
+            ]
+        }
+        queue = _borderline_queue(candidates_report, {})
+        # The hold MUST carry a reason_code so we never see another
+        # 30-of-77 dump labelled "no_reason" in production reports.
+        self.assertEqual(queue["items"][0]["reason_code"], "property_borderline")
+
+
 class SemanticGuardTest(unittest.TestCase):
     def test_embedding_only_guard_restores_excessive_drops_with_review_payload(self) -> None:
         candidates = []

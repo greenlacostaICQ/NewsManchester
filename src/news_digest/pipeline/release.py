@@ -664,13 +664,13 @@ def _evaluate_digest_health(
         signals.append({
             "name": "few_items",
             "severity": 1,
-            "detail": f"Only {rendered} item(s) rendered (target day 14–22).",
+            "detail": f"Only {rendered} item(s) rendered (target day 14–45).",
         })
-    elif rendered > 22:
+    elif rendered > 45:
         signals.append({
             "name": "too_many_items",
             "severity": 2,
-            "detail": f"{rendered} item(s) rendered — above the 22-item editorial cap target.",
+            "detail": f"{rendered} item(s) rendered — above the 45-item editorial cap target.",
         })
 
     if sc.get("Погода", 0) == 0:
@@ -1185,6 +1185,16 @@ def _borderline_queue(candidates_report: dict | None, writer_report: dict | None
             continue
         if candidate.get("manual_override") == "force_include":
             continue
+        # Derive a reason_code so the audit-trail / Telegram report can group
+        # the borderline pool. Without this the queue previously stored
+        # everything as "no_reason" which violated E16 (audit per story).
+        warnings = [str(w) for w in (candidate.get("quality_warnings") or []) if str(w).strip()]
+        ej = candidate.get("english_judge") if isinstance(candidate.get("english_judge"), dict) else {}
+        ej_codes = [str(c) for c in (ej.get("reason_codes") or []) if str(c).strip()]
+        reason_code = next(
+            (w.split(":")[0] for w in warnings if w),
+            next(iter(ej_codes), None) or "borderline_unspecified",
+        )
         items.append(
             {
                 "fingerprint": fp,
@@ -1192,13 +1202,23 @@ def _borderline_queue(candidates_report: dict | None, writer_report: dict | None
                 "source_label": candidate.get("source_label"),
                 "primary_block": candidate.get("primary_block"),
                 "category": candidate.get("category"),
-                "quality_warnings": candidate.get("quality_warnings") or [],
+                "reason_code": reason_code,
+                "reason": candidate.get("reason") or "",
+                "quality_warnings": warnings,
+                "english_judge_reason_codes": ej_codes,
                 "specificity_review": candidate.get("specificity_review") or {},
                 "event_schema_completeness": candidate.get("event_schema_completeness") or {},
                 "manual_include_hint": f'Add "{fp}" to data/state/manual_candidate_overrides.json force_include[]',
             }
         )
-    return {"counts": {"borderline": len(items)}, "items": items[:30]}
+    by_reason: dict[str, int] = {}
+    for it in items:
+        rc = str(it.get("reason_code") or "borderline_unspecified")
+        by_reason[rc] = by_reason.get(rc, 0) + 1
+    return {
+        "counts": {"borderline": len(items), "by_reason": by_reason},
+        "items": items[:30],
+    }
 
 
 def _quality_scorecard(

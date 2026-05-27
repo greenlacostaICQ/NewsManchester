@@ -109,7 +109,7 @@ DEGRADED_LLM_SECTION_MAX_ITEMS = {
     "Русскоязычные концерты и стендап UK": 3,
 }
 
-PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 22
+PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 45
 PUBLIC_SECTION_RESERVED_MIN = {
     # These sections answer "what can I do / see / book now"; they must not
     # disappear just because early news sections are noisy on a given morning.
