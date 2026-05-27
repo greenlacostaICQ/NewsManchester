@@ -440,6 +440,26 @@ class StaleEventAndSyntheticTest(unittest.TestCase):
         self.assertFalse(_exclude_stale_event(candidate))
         self.assertTrue(candidate["include"])
 
+    def test_stale_structured_event_date_dropped(self) -> None:
+        past = now_london().date() - timedelta(days=30)
+        candidate = {
+            "include": True,
+            "category": "venues_tickets",
+            "primary_block": "next_7_days",
+            "title": "Music of the Mystics - Royal Northern College of Music",
+            "summary": "RNCM tickets",
+            "event": {
+                "is_event": True,
+                "event_name": "Music of the Mystics",
+                "venue": "Royal Northern College of Music",
+                "date_start": past.isoformat(),
+            },
+            "source_url": "https://example.com/music-of-the-mystics",
+        }
+        self.assertTrue(_exclude_stale_event(candidate))
+        self.assertFalse(candidate["include"])
+        self.assertIn("structured event date", candidate["reason"])
+
     def test_transport_disruption_old_published_at_is_stale(self) -> None:
         old = (now_london() - timedelta(days=4)).isoformat()
         self.assertTrue(_is_stale_transport(old, "Bus 86 diverted in Stretford"))

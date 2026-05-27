@@ -947,7 +947,28 @@ def _exclude_stale_event(candidate: dict) -> bool:
 
     today = now_london().date()
 
-    # 1) authoritative structured date
+    # 1) authoritative structured event object from event_extraction.
+    # RNCM and several venue parsers put the date into candidate["event"],
+    # not into summary's event_date=... field; missing this let a 3 Jan
+    # 2026 event ship in a 27 May 2026 "next 7 days" section.
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    raw_event_date = str(event.get("date_start") or event.get("date") or "").strip()
+    if raw_event_date:
+        try:
+            parsed_event_date = datetime.fromisoformat(raw_event_date.replace("Z", "+00:00")).date()
+        except ValueError:
+            parsed_event_date = None
+        if parsed_event_date is not None and parsed_event_date < today:
+            if _has_recurrence_pattern(candidate):
+                event["is_recurring"] = True
+                return False
+            candidate["include"] = False
+            existing = str(candidate.get("reason") or "").strip()
+            note = f"Validator: structured event date {parsed_event_date.isoformat()} is in the past."
+            candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+            return True
+
+    # 2) authoritative structured summary field
     summary = str(candidate.get("summary") or "")
     event_dt = _summary_field_datetime(summary, "event_date")
     if event_dt is not None and event_dt.date() < today:
@@ -966,7 +987,7 @@ def _exclude_stale_event(candidate: dict) -> bool:
         candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
         return True
 
-    # 2) heuristic "<day> <month>" date in any blob field
+    # 3) heuristic "<day> <month>" date in any blob field
     blob = _candidate_blob(candidate)
     candidates_dates: list = []
     for m in _PAST_DATE_MONTH_RE.finditer(blob):
