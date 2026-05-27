@@ -2368,6 +2368,34 @@ def cmd_reader_value_validation() -> int:
     return 0 if not payload["errors"] else 1
 
 
+def cmd_model_bakeoff(dry_run: bool, limit: int | None) -> int:
+    from news_digest.pipeline.model_bakeoff import run_model_bakeoff  # noqa: PLC0415
+
+    report = run_model_bakeoff(PROJECT_ROOT, dry_run=dry_run, limit=limit)
+    payload = {
+        "report_path": report.get("report_path"),
+        "dry_run": report.get("dry_run"),
+        "validation_errors": report.get("validation_errors") or [],
+        "validation_set": report.get("validation_set") or {},
+        "models": [
+            {
+                "provider": model.get("provider"),
+                "model": model.get("model"),
+                "status": model.get("status"),
+                "metrics": model.get("metrics") or {},
+                "diagnostic": model.get("diagnostic") or {},
+            }
+            for model in report.get("models") or []
+        ],
+        "promotion_recommendation": report.get("promotion_recommendation") or {},
+    }
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    failed = bool(payload["validation_errors"]) or any(
+        str(model.get("status") or "") == "failed" for model in payload["models"]
+    )
+    return 1 if failed else 0
+
+
 def cmd_write_digest() -> int:
     result = write_digest(PROJECT_ROOT)
     print(json.dumps(_stage_payload(result), ensure_ascii=False, indent=2))
@@ -2457,6 +2485,25 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "reader-value-validation",
         help="Validate reader-value scoring against the manual historical label set.",
+    )
+    bakeoff_parser = subparsers.add_parser(
+        "model-bakeoff",
+        help=(
+            "Offline English judge bake-off on manual labels. Not part of "
+            "the morning pipeline; compares deterministic stub plus configured "
+            "DeepSeek/OpenAI routes when API keys are present."
+        ),
+    )
+    bakeoff_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Do not call model APIs; validate labels and print configured routes.",
+    )
+    bakeoff_parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Optional number of validation labels to evaluate.",
     )
     subparsers.add_parser(
         "write-digest",
@@ -2577,6 +2624,8 @@ def main() -> int:
         return cmd_cost_summary()
     if args.command == "reader-value-validation":
         return cmd_reader_value_validation()
+    if args.command == "model-bakeoff":
+        return cmd_model_bakeoff(args.dry_run, args.limit)
     if args.command == "write-digest":
         return cmd_write_digest()
     if args.command == "edit-digest":

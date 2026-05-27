@@ -14,6 +14,7 @@ from news_digest.pipeline.editorial_contracts import build_editorial_contract, s
 from news_digest.pipeline.collector.routing import _TICKET_HORIZON_DAYS
 from news_digest.pipeline.dedupe import _apply_semantic_drop_guard
 from news_digest.pipeline.history import write_daily_index_snapshot
+from news_digest.pipeline.model_bakeoff import run_model_bakeoff
 from news_digest.pipeline.story_intelligence import (
     apply_cheap_dedup_before_enrich,
     apply_story_intelligence,
@@ -1823,6 +1824,21 @@ class StoryIntelligenceTest(unittest.TestCase):
         self.assertEqual(review["counts"]["critical_losses"], 1)
         self.assertEqual(review["critical_losses"][0]["disposition"], "writer_dropped")
         self.assertIn("russian_event", review["critical_losses"][0]["protected_lanes"])
+
+    def test_model_bakeoff_dry_run_uses_validation_set_without_model_calls(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            validation_dir = root / "data" / "validation"
+            validation_dir.mkdir(parents=True)
+            source = Path("data/validation/reader_value_labels.json")
+            (validation_dir / "reader_value_labels.json").write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+
+            report = run_model_bakeoff(root, dry_run=True, limit=6)
+
+            self.assertEqual(report["validation_set"]["label_count"], 6)
+            self.assertEqual(report["models"][0]["model"], "deterministic_stub")
+            self.assertEqual(report["models"][1]["status"], "dry_run_not_called")
+            self.assertTrue((root / "data" / "state" / "model_bakeoff_report.json").exists())
 
 
 class SemanticGuardTest(unittest.TestCase):
