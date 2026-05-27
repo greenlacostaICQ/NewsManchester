@@ -1883,6 +1883,27 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         _reclassify_outside_gm_when_local_venue(candidate)
         self.assertEqual(candidate["primary_block"], "ticket_radar")
 
+    def test_writer_does_not_degrade_on_soft_quality_warnings_only(self) -> None:
+        # 94% yield + weak/repair messages must NOT trigger degraded_shrink.
+        # Previously any warning with the word "degraded" flipped the
+        # writer and chopped reader_value 800+ Manchester Academy cards.
+        from news_digest.pipeline.writer import _llm_rewrite_is_degraded
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+            (state_dir / "llm_rewrite_report.json").write_text(
+                json.dumps({
+                    "stage_status": "complete",
+                    "warnings": [],
+                    "soft_warnings": [
+                        "37 draft_line(s) still look weak after repair.",
+                        "Repair pass rejected 19 replacement(s) that still failed writer quality gate.",
+                    ],
+                }),
+                encoding="utf-8",
+            )
+            degraded, _ = _llm_rewrite_is_degraded(state_dir)
+            self.assertFalse(degraded)
+
     def test_borderline_queue_records_reason_code_per_item(self) -> None:
         candidates_report = {
             "candidates": [

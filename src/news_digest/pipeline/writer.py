@@ -342,9 +342,13 @@ def _llm_rewrite_is_degraded(state_dir: Path) -> tuple[bool, dict]:
     report = read_json(state_dir / "llm_rewrite_report.json", {})
     if not isinstance(report, dict):
         return False, {}
+    # Trust llm_rewrite stage_status: it is set to "degraded" only when
+    # yield falls below 90%. Editorial soft warnings (weak draft_line,
+    # repair-pass rejections) are reported via soft_warnings and MUST
+    # NOT trigger degraded_shrink — that was the 2026-05-27 dropper for
+    # Manchester Academy ticket cards at reader_value 800+.
     status = str(report.get("stage_status") or "").strip().lower()
-    warnings = [str(w) for w in (report.get("warnings") or [])]
-    degraded = status == "degraded" or any("degraded" in w.lower() for w in warnings)
+    degraded = status == "degraded"
     return degraded, report
 
 
