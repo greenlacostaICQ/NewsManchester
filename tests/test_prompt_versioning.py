@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from news_digest.pipeline import cost_tracker
 from news_digest.pipeline import llm_rewrite
+from news_digest.pipeline.llm_rewrite import _apply_rewrite_shortlist
 from news_digest.pipeline import release
 from news_digest.pipeline.model_routing import resolve_model_route, route_snapshot
 from news_digest.pipeline.prompts_meta import prompt_name_for, snapshot, validate_registry
@@ -72,8 +73,12 @@ class PromptVersioningTest(unittest.TestCase):
 
         self.assertEqual(routes["curator"][0]["role"], "cheap_scoring")
         self.assertEqual(routes["dedupe_review"][0]["role"], "cheap_scoring")
-        self.assertEqual(routes["rewrite"][0]["role"], "fast_rewrite")
-        self.assertEqual(routes["rewrite"][0]["provider_label"], "DeepSeek")
+        self.assertEqual(routes["rewrite"][0]["role"], "quality_rewrite_primary")
+        self.assertEqual(routes["rewrite"][0]["provider_label"], "OpenAI")
+        self.assertEqual(routes["rewrite"][1]["role"], "fast_rewrite_fallback")
+        self.assertEqual(routes["rewrite"][1]["provider_label"], "DeepSeek")
+        self.assertEqual(routes["events_rewrite"][0]["provider_label"], "OpenAI")
+        self.assertEqual(routes["events_rewrite"][0]["batch_size"], 8)
         self.assertEqual(routes["repair"][0]["role"], "quality_repair")
         self.assertEqual(routes["repair"][0]["provider_label"], "OpenAI")
         self.assertEqual(routes["rewrite"][-1]["role"], "resilient_fallback")
@@ -89,6 +94,33 @@ class PromptVersioningTest(unittest.TestCase):
         self.assertEqual(len(route), 1)
         self.assertEqual(route[0].role, "manual_override")
         self.assertEqual(route[0].model, "gpt-test")
+
+    def test_rewrite_shortlist_holds_low_ranked_ticket_candidates_in_backup(self) -> None:
+        candidates = [
+            {
+                "fingerprint": f"ticket-{idx}",
+                "title": f"Ticket item {idx}",
+                "summary": "Concert in Manchester with tickets on sale.",
+                "source_label": "Ticketmaster Manchester Upcoming",
+                "category": "venues_tickets",
+                "primary_block": "ticket_radar",
+                "include": True,
+                "reader_value_score": 100 - idx,
+                "section_board_score": 100 - idx,
+            }
+            for idx in range(12)
+        ]
+
+        selected, report = _apply_rewrite_shortlist(candidates, candidates)
+
+        self.assertEqual(report["selected_for_rewrite"], 8)
+        self.assertEqual(report["held_for_backup"], 4)
+        self.assertEqual(len(selected), 8)
+        self.assertTrue(all(c["include"] for c in selected))
+        held = [c for c in candidates if c.get("rewrite_shortlist_status") == "backup_before_rewrite"]
+        self.assertEqual(len(held), 4)
+        self.assertTrue(all(c["backup_candidate"] for c in held))
+        self.assertTrue(all(not c["include"] for c in held))
 
     def test_prompt_lookup_ignores_runtime_date_header(self) -> None:
         prompt = "TODAY_DATE=2026-05-18\n\n" + llm_rewrite.PROMPT_EVENTS

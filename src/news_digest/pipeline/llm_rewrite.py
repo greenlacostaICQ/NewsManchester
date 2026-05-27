@@ -1,8 +1,8 @@
 """LLM rewrite stage — writes Russian draft_lines to candidates.json.
 
 Default model route:
-  1. DeepSeek deepseek-chat — fast rewrite primary
-  2. OpenAI gpt-4o-mini    — quality fallback / repair
+  1. OpenAI gpt-4o-mini    — quality rewrite primary
+  2. DeepSeek deepseek-chat — fast fallback if GPT is unavailable
   3. Groq Llama-3.3-70B    — emergency fallback, free tier
   4. Rule-based in writer.py — final safety net, always fires if LLM unavailable
 
@@ -40,6 +40,8 @@ from news_digest.pipeline.model_routing import (
     resolve_model_route,
     route_snapshot,
 )
+from news_digest.pipeline.reader_value import reader_value_score
+from news_digest.pipeline.story_intelligence import apply_story_intelligence, section_board_score
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +56,25 @@ class StageResult:
 OPENAI_MODEL = OPENAI_REWRITE_MODEL
 
 ProviderMapping = dict[str, tuple[str, str, str]]
+
+REWRITE_SHORTLIST_VERSION = 1
+REWRITE_SHORTLIST_CAPS_BY_BLOCK: dict[str, int] = {
+    "transport": 99,
+    "lead_story": 4,
+    "today_focus": 6,
+    "last_24h": 10,
+    "city_watch": 8,
+    "weekend_activities": 10,
+    "next_7_days": 8,
+    "ticket_radar": 8,
+    "future_announcements": 4,
+    "outside_gm_tickets": 4,
+    "russian_events": 6,
+    "openings": 6,
+    "tech_business": 5,
+    "football": 3,
+}
+REWRITE_SHORTLIST_DEFAULT_CAP = 6
 
 _PROMPT_FOOTER = (
     '\nВерни ТОЛЬКО JSON-массив: [{"fingerprint": "...", "draft_line": "• ..."}]\n'
@@ -337,6 +358,78 @@ def _skip_llm_for_manual_review(candidate: dict) -> bool:
     )
 
 
+def _append_reason(candidate: dict, note: str) -> None:
+    existing = str(candidate.get("reason") or "").strip()
+    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+
+
+def _rewrite_shortlist_priority(candidate: dict) -> tuple[float, float, float, str]:
+    apply_story_intelligence(candidate)
+    lead_bonus = 1000.0 if candidate.get("is_lead") else 0.0
+    protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
+    protected_bonus = 250.0 if protected.get("protected") else 0.0
+    return (
+        lead_bonus + protected_bonus,
+        float(section_board_score(candidate)),
+        float(reader_value_score({**candidate, "included": True})),
+        str(candidate.get("title") or ""),
+    )
+
+
+def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> tuple[list[dict], dict[str, object]]:
+    """Select the English-scored candidates worth paying to translate.
+
+    This is the cutover from "translate the broad included pool" to
+    "judge/score first, translate only the publishable shortlist". Items
+    held back are not deleted: they are marked as backup candidates so the
+    release report and backup_pool can explain what was not translated.
+    """
+    groups: dict[str, list[dict]] = {}
+    for candidate in to_rewrite:
+        block = str(candidate.get("primary_block") or "")
+        groups.setdefault(block, []).append(candidate)
+
+    selected_ids: set[int] = set()
+    held: list[dict[str, object]] = []
+    caps: dict[str, int] = {}
+    for block, group in groups.items():
+        cap = REWRITE_SHORTLIST_CAPS_BY_BLOCK.get(block, REWRITE_SHORTLIST_DEFAULT_CAP)
+        caps[block] = cap
+        ranked = sorted(group, key=_rewrite_shortlist_priority, reverse=True)
+        for candidate in ranked[:cap]:
+            selected_ids.add(id(candidate))
+            candidate["rewrite_shortlist_status"] = "selected"
+        for candidate in ranked[cap:]:
+            candidate["include"] = False
+            candidate["backup_candidate"] = True
+            candidate["rewrite_shortlist_status"] = "backup_before_rewrite"
+            candidate["rewrite_shortlist_reason"] = f"Outside pre-rewrite shortlist for {block or 'unknown'}."
+            _append_reason(candidate, candidate["rewrite_shortlist_reason"])
+            held.append(
+                {
+                    "fingerprint": candidate.get("fingerprint") or "",
+                    "title": candidate.get("title") or "",
+                    "source_label": candidate.get("source_label") or "",
+                    "category": candidate.get("category") or "",
+                    "primary_block": block,
+                    "section_board_score": candidate.get("section_board_score"),
+                    "reader_value_score": reader_value_score({**candidate, "included": True}),
+                    "reason": candidate["rewrite_shortlist_reason"],
+                }
+            )
+
+    selected = [candidate for candidate in to_rewrite if id(candidate) in selected_ids]
+    return selected, {
+        "schema_version": REWRITE_SHORTLIST_VERSION,
+        "enabled": True,
+        "input_candidates": len(to_rewrite),
+        "selected_for_rewrite": len(selected),
+        "held_for_backup": len(held),
+        "caps_by_block": caps,
+        "held_examples": held[:40],
+    }
+
+
 def _cyrillic_ratio(text: str) -> float:
     non_space = re.sub(r"\s", "", text)
     if not non_space:
@@ -576,7 +669,10 @@ def _call_provider_batch(
         logger.error("openai package not installed. Run: pip install openai")
         return {}
 
-    client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
+    # max_retries=0 keeps one bad provider call from silently turning a
+    # 20-30s timeout into 60-90s of SDK retries. Fallback routing handles
+    # resilience explicitly at the pipeline level.
+    client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout, max_retries=0)
     mapping: ProviderMapping = {}
 
     batches = [candidates[i: i + batch_size] for i in range(0, len(candidates), batch_size)]
@@ -898,6 +994,13 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     warnings: list[str] = []
     provider_batch_diagnostics: list[dict] = []
     repair_rejections: list[dict] = []
+    rewrite_shortlist: dict[str, object] = {
+        "schema_version": REWRITE_SHORTLIST_VERSION,
+        "enabled": False,
+        "input_candidates": len(to_rewrite),
+        "selected_for_rewrite": len(to_rewrite),
+        "held_for_backup": 0,
+    }
     applied = 0
     fixed = 0
     repaired = 0
@@ -915,6 +1018,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "errors": errors,
                 "warnings": warnings,
                 "included_for_rewrite": len(to_rewrite),
+                "rewrite_shortlist": rewrite_shortlist,
                 "skipped_manual_review": skipped_manual_review,
                 "applied": 0,
                 "fixed": 0,
@@ -928,7 +1032,19 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     if not to_rewrite:
         logger.info("LLM rewrite: all included candidates already have draft_lines.")
     else:
-        logger.info("LLM rewrite: %d candidates need draft_lines.", len(to_rewrite))
+        original_rewrite_count = len(to_rewrite)
+        to_rewrite, rewrite_shortlist = _apply_rewrite_shortlist(candidates, to_rewrite)
+        if rewrite_shortlist["held_for_backup"]:
+            warnings.append(
+                "Rewrite shortlist: "
+                f"{rewrite_shortlist['held_for_backup']} candidate(s) held in backup before translation."
+            )
+        logger.info(
+            "LLM rewrite: %d/%d candidates selected for GPT rewrite; %d held in backup.",
+            len(to_rewrite),
+            original_rewrite_count,
+            rewrite_shortlist["held_for_backup"],
+        )
 
         # Group by prompt type and call each group separately.
         # TODAY_DATE is passed via the user payload (not the system prompt)
@@ -1095,6 +1211,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "errors": errors,
             "warnings": warnings,
             "included_for_rewrite": len(to_rewrite),
+            "rewrite_shortlist": rewrite_shortlist,
             "skipped_manual_review": skipped_manual_review,
             "applied": applied,
             "fixed": fixed,
