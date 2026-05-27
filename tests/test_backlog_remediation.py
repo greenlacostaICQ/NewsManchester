@@ -943,7 +943,7 @@ class AdminAlertCopyTest(unittest.TestCase):
         )
 
         self.assertIn("74 опубликованных пунктов", text)
-        self.assertIn("14–22", text)
+        self.assertIn("14–45", text)
 
     def test_pipeline_config_includes_transport_fill_between_curator_and_rewrite(self) -> None:
         buf = StringIO()
@@ -2038,6 +2038,48 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         )
         # The market with a deterministic event fallback must surface.
         self.assertEqual(len(lines), 1)
+
+    def test_ticket_type_default_set_for_venues_tickets_without_signal(self) -> None:
+        # 110 venues_tickets items shipped with ticket_type=NONE on
+        # 2026-05-27, which made them appear in the 'unknown' bucket
+        # of the ticket funnel. After C1: validator pass ensures a
+        # default ticket_type, and events within 14 days become
+        # event_this_week (the protected bucket).
+        from news_digest.pipeline.candidate_validator import _ensure_default_ticket_type
+        event_day = (now_london().date() + timedelta(days=3)).strftime("%Y-%m-%d")
+        candidate = {
+            "category": "venues_tickets",
+            "summary": f"AO Arena | Manchester | event_date={event_day} 19:00",
+        }
+        _ensure_default_ticket_type(candidate)
+        self.assertEqual(candidate["ticket_type"], "event_this_week")
+
+    def test_validator_stage_rejects_appear_in_reject_review(self) -> None:
+        # 91 rejects were missing from reject_review on 2026-05-27
+        # because the classifier only walked writer and curator stages.
+        # After C4: candidates with include=False and a reject_reason
+        # are classified too.
+        from news_digest.pipeline.release import _classify_rejected_candidates
+        candidates_report = {
+            "candidates": [
+                {
+                    "fingerprint": "fp-validator-drop",
+                    "title": "Old listing rejected by validator",
+                    "include": False,
+                    "reject_reasons": ["property_listing"],
+                    "reason": "Validator: property listing without civic angle.",
+                    "reader_value_score": 30,
+                },
+            ]
+        }
+        report = _classify_rejected_candidates({"dropped_candidates": []}, {"decisions": []}, candidates_report)
+        self.assertGreaterEqual(report["counts"]["correctly_rejected"], 1)
+
+    def test_telegram_thresholds_aligned_with_45_cap(self) -> None:
+        # Telegram report previously said "норма 14–22" and triggered
+        # 'too long' at 23. Now matches the writer cap of 45.
+        text = Path("scripts/run_local_digest.py").read_text(encoding="utf-8")
+        self.assertNotIn("14–22", text)
 
     def test_writer_does_not_degrade_on_soft_quality_warnings_only(self) -> None:
         # 94% yield + weak/repair messages must NOT trigger degraded_shrink.

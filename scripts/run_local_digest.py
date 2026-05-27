@@ -364,15 +364,15 @@ def _translate_health_signal(sig: dict) -> str:
         # "Only N item(s) rendered — below the 12-item hard floor."
         m = re.search(r"\d+", detail)
         n = m.group(0) if m else "?"
-        return f"Вышло мало опубликованных пунктов: {n} (жёсткий минимум 12, цель 14–22)."
+        return f"Вышло мало опубликованных пунктов: {n} (жёсткий минимум 12, цель 14–45)."
     if name == "few_items":
         m = re.search(r"\d+", detail)
         n = m.group(0) if m else "?"
-        return f"Пунктов меньше нормы: {n} (цель — 14–22 опубликованных пункта)."
+        return f"Пунктов меньше нормы: {n} (цель — 14–45 опубликованных пункта)."
     if name == "too_many_items":
         m = re.search(r"\d+", detail)
         n = m.group(0) if m else "?"
-        return f"Выпуск раздут: {n} опубликованных пунктов (цель — 14–22). Нужно ужесточить отбор."
+        return f"Выпуск раздут: {n} опубликованных пунктов (цель — 14–45). Нужно ужесточить отбор."
     if name == "weather_empty":
         return "Раздел погоды пустой — Met Office не отвечает."
     if name == "transport_empty":
@@ -584,10 +584,10 @@ def _support_top_issues(
             f"Событийный pipeline подозрителен: {critical_event_misses} возможных пропусков.",
             "Это не значит, что все они точно потеряны; главный риск — ложные дубли и события без нормального финального текста.",
         ))
-    if rendered > 22:
+    if rendered > 45:
         issues.append((
             100,
-            f"Выпуск раздут: {rendered} пунктов при норме 14–22.",
+            f"Выпуск раздут: {rendered} пунктов при норме 14–45.",
             "Смотри «Что раздуло выпуск»: проблема в сумме секций, а не в одном отдельном пункте.",
         ))
     if any(str(w).lower().startswith("llm rewrite was degraded") for w in warnings):
@@ -835,7 +835,7 @@ def _support_actions(
             actions.append("Авторазбор: генерация была нестабильной, но осторожный режим ничего не снял.")
     if borderline_count >= 20:
         actions.append("Авторазбор: сгруппировать удержанные материалы по причинам и найти слишком широкие правила.")
-    if rendered > 22:
+    if rendered > 45:
         actions.append("Отдельно принять global budget для выпуска: сейчас секции по отдельности могут быть нормальными, а выпуск раздут.")
     return actions[:5]
 
@@ -868,8 +868,8 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
     shrink = writer_report.get("degraded_shrink") or {}
 
     if report.get("release_decision") == "pass":
-        if rendered > 22:
-            header = f"{icon} Выпуск {run_date}: отправлен с риском — опубликовано {rendered} пунктов (цель 14–22)"
+        if rendered > 45:
+            header = f"{icon} Выпуск {run_date}: отправлен с риском — опубликовано {rendered} пунктов (цель 14–45)"
         else:
             header = f"{icon} Выпуск {run_date}: отправлен — опубликовано {rendered} пунктов"
     else:
@@ -877,7 +877,7 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
 
     lines: list[str] = [header, ""]
     lines.append("📌 Вердикт")
-    if rendered > 22:
+    if rendered > 45:
         lines.append("Выпуск слишком длинный: читателю трудно отделить важное от второстепенного.")
     elif degraded:
         lines.append("Объём выпуска нормальный, но есть риск качества: генерация текста работала нестабильно.")
@@ -887,6 +887,32 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
         lines.append("Критичных продуктовых проблем не найдено.")
     lines.append(f"Опубликовано: {rendered}; прошло первичный редакционный отбор: {included}; снято перед отправкой: {dropped}.")
     lines.append("")
+
+    # 📊 Funnel of the day — explicit breakdown of "where did 140 lost
+    # candidates go?". Without this the previous Telegram report
+    # collapsed everything into "снято 14" which masked dedupe drops,
+    # curator rejects and writer misses. Reads final_loss_check counters
+    # written by release.py.
+    flc_counts = ((report.get("final_loss_check") or {}).get("counts") or {})
+    backup_counts = ((report.get("backup_pool") or {}).get("counts") or {})
+    if flc_counts or backup_counts:
+        funnel_lost = max(0, included - rendered)
+        lines.append("📊 Воронка дня")
+        lines.append(f"• Включено редакцией: {included}.")
+        lines.append(f"• Дошло до выпуска: {rendered}.")
+        if funnel_lost:
+            lines.append(f"• Потеряно по дороге: {funnel_lost}, из них:")
+            if int(flc_counts.get("dedupe_dropped") or 0):
+                lines.append(f"   – дубликаты/кластер: {flc_counts['dedupe_dropped']};")
+            if int(flc_counts.get("writer_dropped") or 0):
+                lines.append(f"   – писатель не сгенерил текст: {flc_counts['writer_dropped']};")
+            if int(flc_counts.get("selected_not_published") or 0):
+                lines.append(f"   – отобрали, но не дошли в render: {flc_counts['selected_not_published']};")
+            if int(flc_counts.get("rejected") or 0):
+                lines.append(f"   – отклонены жёсткими правилами: {flc_counts['rejected']}.")
+        if int(backup_counts.get("active") or 0):
+            lines.append(f"• В backup на завтра: {backup_counts['active']} (TTL по типу новости).")
+        lines.append("")
 
     issues = _support_top_issues(
         rendered=rendered,
@@ -914,13 +940,13 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
 
     pressure = _compact_section_pressure(writer_report)
     if pressure:
-        if rendered > 22:
+        if rendered > 45:
             lines.append("📐 Что раздуло выпуск")
         else:
             lines.append("📐 Состав выпуска")
         for item in pressure:
             lines.append(f"• {item}.")
-        if rendered > 22:
+        if rendered > 45:
             lines.append("Проблема: сумма секций делает выпуск слишком длинным. Полная разбивка сохранена в JSON.")
         else:
             lines.append("Объём в норме; проблема сегодня не длина выпуска, а пропуски событий и нестабильная генерация.")
@@ -972,11 +998,21 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
     if borderline_count:
         lines.append("🟨 Удержано для проверки")
         lines.append(f"Удержано {_russian_counted_phrase(borderline_count, 'материал', 'материала', 'материалов')}; полный список скрыт из Telegram и сохранён в JSON.")
+        # Prefer the per-reason histogram computed by release.py
+        # _borderline_queue (E16 audit fix). Falls back to scanning
+        # quality_warnings if older release_report shape is read.
+        by_reason = ((borderline_queue.get("counts") or {}).get("by_reason") or {}) if isinstance(borderline_queue, dict) else {}
         reason_counter: dict[str, int] = {}
-        for item in (borderline_queue.get("items") or []):
-            for warning in item.get("quality_warnings") or []:
-                reason = _humanize_quality_warning(str(warning))
-                reason_counter[reason] = reason_counter.get(reason, 0) + 1
+        if isinstance(by_reason, dict) and by_reason:
+            for raw_reason, count in by_reason.items():
+                reason_counter[_humanize_quality_warning(str(raw_reason))] = (
+                    reason_counter.get(_humanize_quality_warning(str(raw_reason)), 0) + int(count or 0)
+                )
+        else:
+            for item in (borderline_queue.get("items") or []):
+                for warning in item.get("quality_warnings") or []:
+                    reason = _humanize_quality_warning(str(warning))
+                    reason_counter[reason] = reason_counter.get(reason, 0) + 1
         for reason, count in sorted(reason_counter.items(), key=lambda kv: -kv[1])[:3]:
             lines.append(f"• {reason}: {count}.")
         lines.append("Смысл: это карантин, а не список «проёбанных новостей»; надо чинить слишком широкие правила, если сюда попадает важное.")
@@ -1378,8 +1414,8 @@ def cmd_send_warnings() -> int:
 
     # ── Заголовок ─────────────────────────────────────────────────
     if release_decision == "pass":
-        if health_level == "at_risk" and rendered > 22:
-            header = f"{icon} Выпуск {run_date}: отправлен, но слишком длинный — {rendered} пунктов (норма 14–22)"
+        if health_level == "at_risk" and rendered > 45:
+            header = f"{icon} Выпуск {run_date}: отправлен, но слишком длинный — {rendered} пунктов (норма 14–45)"
         else:
             header = f"{icon} Выпуск {run_date}: отправлен — {useful} пунктов"
     else:
@@ -1392,7 +1428,7 @@ def cmd_send_warnings() -> int:
         lines.append(f"  • Читатель увидел: {rendered} пунктов.")
         lines.append(f"  • После редакционного отбора осталось: {included} материалов.")
         lines.append(f"  • На финальной проверке снято: {dropped} материалов с плохим/пустым текстом.")
-        lines.append("  • Норма для утреннего выпуска: 14–22 пункта.")
+        lines.append("  • Норма для утреннего выпуска: 14–45 пункта.")
         lines.append("")
 
     top_issues = _support_top_issues(

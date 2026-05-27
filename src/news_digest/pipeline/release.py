@@ -2037,6 +2037,59 @@ def _classify_rejected_candidates(
         else:
             counts["correctly_rejected"] += 1
 
+    # ── validator drops ───────────────────────────────────────────────────
+    # On 2026-05-27 the reject_review showed 119+2+2 = 123 classified
+    # rejects but the digest had 214 rejected items total. The 91 gap
+    # was candidates dropped by validator stage (cross_day_rehash,
+    # non_gm, property_listing, old_existing_food, expired_event, etc.)
+    # which never made it into writer.dropped_candidates or
+    # curator.decisions. C4 fix: classify them here too so every drop
+    # is auditable.
+    fp_seen: set[str] = set()
+    for drop in (writer_report or {}).get("dropped_candidates") or []:
+        if isinstance(drop, dict):
+            fp_seen.add(str(drop.get("fingerprint") or ""))
+    for dec in (curator_report or {}).get("decisions") or []:
+        if isinstance(dec, dict) and not dec.get("include"):
+            fp_seen.add(str(dec.get("fingerprint") or ""))
+
+    for cand in candidates:
+        if not isinstance(cand, dict):
+            continue
+        if cand.get("include"):
+            continue
+        fp = str(cand.get("fingerprint") or "")
+        if not fp or fp in fp_seen:
+            continue
+        reject_reasons = [str(r) for r in (cand.get("reject_reasons") or []) if str(r).strip()]
+        reason = str(cand.get("reason") or "")
+        score, label = _score_for(fp)
+        score_suspicious = score is not None and (score >= 75 or label == "useful")
+        score_borderline = score is not None and score >= 60 and not score_suspicious
+        record = {
+            "stage": "validator",
+            "title": cand.get("title"),
+            "source_label": cand.get("source_label"),
+            "primary_block": cand.get("primary_block"),
+            "category": cand.get("category"),
+            "reject_reasons": reject_reasons[:6],
+            "reason": reason[:240],
+            "reader_value_score": score,
+            "reader_value_label": label,
+        }
+        if score_suspicious:
+            record["why_flagged"] = f"Reader-value score={score} ({label}) — validator drop worth review."
+            counts["suspiciously_rejected"] += 1
+            if len(suspicious) < 15:
+                suspicious.append(record)
+        elif score_borderline:
+            record["why_flagged"] = f"Reader-value score={score} ({label}) — validator drop worth review."
+            counts["borderline"] += 1
+            if len(borderline) < 10:
+                borderline.append(record)
+        else:
+            counts["correctly_rejected"] += 1
+
     # ── curator drops ─────────────────────────────────────────────────────
     # Pull candidates with their evidence_text so we can re-check curator
     # drops for date hints (the "evergreen" justification is wrong if a

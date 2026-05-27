@@ -12,6 +12,7 @@ from news_digest.pipeline.common import clean_url, now_london, pipeline_run_id_f
 from news_digest.pipeline.editorial_contracts import (
     attach_editorial_contract,
     attach_scoring_trace,
+    classify_ticket_type,
     crime_specificity_review,
     event_schema_completeness,
     infer_why_now,
@@ -116,6 +117,29 @@ def _exclude_stale_ticket_onsale(candidate: dict) -> bool:
     note = f"Validator: public_onsale opened {age_days} day(s) ago; moved out of ticket_radar."
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
     return False
+
+
+def _ensure_default_ticket_type(candidate: dict) -> None:
+    """Make sure every venues_tickets candidate carries a ticket_type so
+    the release_report ticket funnel does not drop 110 items into
+    bucket `unknown`. Closes C1 from the 2026-05-27 audit
+    ('Тип билета не распознан: 43, опубликовано 4').
+
+    Items whose event_date is within 14 days and that already passed
+    the GM-venue filter are promoted to `event_this_week` so they sit
+    in the same protected bucket as today's day-of concerts."""
+    if str(candidate.get("category") or "") != "venues_tickets":
+        return
+    if str(candidate.get("ticket_type") or "").strip():
+        return
+    summary = str(candidate.get("summary") or "")
+    event_at = _summary_field_datetime(summary, "event_date")
+    if event_at is not None:
+        days_to_event = (event_at.date() - now_london().date()).days
+        if 0 <= days_to_event <= 14:
+            candidate["ticket_type"] = "event_this_week"
+            return
+    candidate["ticket_type"] = classify_ticket_type(candidate)
 
 
 _EVENT_BLOCKS = {
@@ -1621,6 +1645,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _reclassify_outside_gm_when_local_venue(candidate)
         if candidate.get("include"):
             _exclude_stale_ticket_onsale(candidate)
+        if candidate.get("include"):
+            _ensure_default_ticket_type(candidate)
         if candidate.get("include"):
             _exclude_non_gm_news(candidate)
         if candidate.get("include"):
