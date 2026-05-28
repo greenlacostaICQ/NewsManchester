@@ -8,9 +8,10 @@ from pathlib import Path
 
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector.routing import _adjust_ticket_radar_block
+from news_digest.pipeline.collector.extract import _extract_source_candidates
 from news_digest.pipeline.collector.fallbacks import _weather_draft_line
 from news_digest.pipeline.collector.filters import _is_allowed_source_link
-from news_digest.pipeline.collector.sources import SOURCES
+from news_digest.pipeline.collector.sources import SOURCES, SourceDef
 from news_digest.pipeline.transport_card import extract_transport_card, render_card
 from news_digest.pipeline.common import (
     fingerprint_for_candidate,
@@ -1471,9 +1472,36 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertIn("Secret Manchester Gigs", by_name)
         self.assertNotIn("Secret Manchester Weekend Guide", by_name)
         self.assertNotIn("Manchester Flower Festival CityCo News", by_name)
-        self.assertNotIn("Manchester United", by_name)
+        self.assertEqual(by_name["Manchester United"].url, "https://www.manutd.com/en/news")
         self.assertNotIn("Prolific North", by_name)
         self.assertNotIn("Sofar Manchester Bank Holiday", by_name)
+
+    def test_manchester_united_article_cards_are_extracted(self) -> None:
+        source = SourceDef(
+            name="Manchester United",
+            report_category="football",
+            candidate_category="football",
+            url="https://www.manutd.com/en/news",
+            primary_block="football",
+            allowed_hosts=("manutd.com",),
+        )
+        html = """
+        <article class="articleCard" data-testid="article-card">
+          <a data-testid="article-card__floating-link"
+             href="/en/news/vote-for-man-united-may-player-of-the-month-2026">
+            <span>Vote for May's Player of the Month</span>
+          </a>
+          <div data-testid="publish-date"><span>2 days ago</span></div>
+          <h5 data-testid="heading">Vote for May's Player of the Month</h5>
+        </article>
+        """
+        candidates = _extract_source_candidates(source, html)
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0]["title"], "Vote for May's Player of the Month")
+        self.assertEqual(
+            candidates[0]["source_url"],
+            "https://manutd.com/en/news/vote-for-man-united-may-player-of-the-month-2026",
+        )
 
     def test_men_soft_fluff_is_not_publishable_news(self) -> None:
         examples = [

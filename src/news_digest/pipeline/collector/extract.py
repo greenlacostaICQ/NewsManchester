@@ -11,7 +11,7 @@ HTML enrichment helpers used after re-fetching an article.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from html import unescape
 from html.parser import HTMLParser
 from urllib import parse
@@ -1044,6 +1044,68 @@ def _extract_gmmh_press_releases(source: SourceDef, body: str) -> list[Extracted
     return items
 
 
+def _published_at_from_relative_text(text: str) -> str | None:
+    lowered = _clean_long_text(text).lower()
+    now = now_london()
+    if re.search(r"\b(?:just now|today|minutes? ago|hours? ago)\b", lowered):
+        return now.isoformat()
+    match = re.search(r"\b(\d+)\s+days?\s+ago\b", lowered)
+    if match:
+        return (now - timedelta(days=int(match.group(1)))).isoformat()
+    return None
+
+
+def _extract_manutd_items(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Manchester United renders article cards server-side inside a Next page.
+
+    The generic HTMLParser often sees only nav/sponsor anchors on this page
+    because the card tree is embedded in a large React payload. Anchor+span
+    extraction from article-card blocks keeps the official club source usable
+    without crawling the whole site.
+    """
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    article_blocks = re.findall(
+        r'<article\b[^>]*data-testid="article-card"[^>]*>(.*?)</article>',
+        body,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    for block in article_blocks:
+        href_match = re.search(
+            r'<a\b[^>]*data-testid="article-card__floating-link"[^>]*href="([^"]+)"[^>]*>\s*<span>(.*?)</span>',
+            block,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        if not href_match:
+            continue
+        url = parse.urljoin(source.url, unescape(href_match.group(1).strip()))
+        title = _clean_title_text(_clean_long_text(href_match.group(2)))
+        if not title or url in seen:
+            continue
+        seen.add(url)
+        publish_match = re.search(
+            r'data-testid="publish-date"[^>]*>.*?<span[^>]*>(.*?)</span>',
+            block,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        published_text = _clean_long_text(publish_match.group(1)) if publish_match else ""
+        evidence = _clean_long_text(block)
+        items.append(
+            ExtractedItem(
+                title=title,
+                url=url,
+                published_at=_published_at_from_relative_text(published_text),
+                summary=title,
+                lead=_derive_lead(source, title, title),
+                evidence_text=evidence[:3000],
+                enrichment_status="ok_manutd_article_card",
+            )
+        )
+        if len(items) >= source.max_candidates:
+            break
+    return items
+
+
 def _extract_rncm_items(source: SourceDef, body: str) -> list[ExtractedItem]:
     """RNCM event cards use image/aria labels, not useful anchor text."""
     month_map = {
@@ -1664,6 +1726,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_skiddle_items(source, body)
     elif source.name == "GMMH":
         links = _extract_gmmh_press_releases(source, body)
+    elif source.name == "Manchester United":
+        links = _extract_manutd_items(source, body)
     elif source.name == "RNCM":
         links = _extract_rncm_items(source, body)
     elif "<rss" in body[:500].lower() or "<feed" in body[:500].lower():
