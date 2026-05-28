@@ -9,6 +9,7 @@ from pathlib import Path
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector.routing import _adjust_ticket_radar_block
 from news_digest.pipeline.collector.fallbacks import _weather_draft_line
+from news_digest.pipeline.collector.filters import _is_allowed_source_link
 from news_digest.pipeline.collector.sources import SOURCES
 from news_digest.pipeline.transport_card import extract_transport_card, render_card
 from news_digest.pipeline.common import (
@@ -1455,6 +1456,12 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
     def test_known_empty_sources_have_working_replacements_or_are_disabled(self) -> None:
         by_name = {source.name: source for source in SOURCES}
         self.assertEqual(by_name["GMMH"].url, "https://www.gmmh.nhs.uk/media-centre/")
+        self.assertTrue(_is_allowed_source_link(
+            by_name["GMMH"],
+            "https://www.gmmh.nhs.uk/media-centre/press-releases/greater-manchester-mental-health-nhs-foundation-trust-appoints-new-chief-executive-8025",
+            "Greater Manchester Mental Health NHS Foundation Trust appoints new Chief Executive",
+            "",
+        ))
         self.assertEqual(
             by_name["South Manchester Food Festival"].url,
             "https://www.tickettailor.com/events/foodfestival/1883190",
@@ -1463,6 +1470,10 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertIn("Secret Manchester May Guide", by_name)
         self.assertIn("Secret Manchester Gigs", by_name)
         self.assertNotIn("Secret Manchester Weekend Guide", by_name)
+        self.assertNotIn("Manchester Flower Festival CityCo News", by_name)
+        self.assertNotIn("Manchester United", by_name)
+        self.assertNotIn("Prolific North", by_name)
+        self.assertNotIn("Sofar Manchester Bank Holiday", by_name)
 
     def test_men_soft_fluff_is_not_publishable_news(self) -> None:
         examples = [

@@ -994,6 +994,42 @@ def _extract_sectioned_event_guide(source: SourceDef, body: str) -> list[Extract
     return items
 
 
+def _extract_gmmh_press_releases(source: SourceDef, body: str) -> list[ExtractedItem]:
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    link_iter = re.finditer(
+        r'<a\b[^>]*href="([^"]*press-releases[^"]+)"[^>]*>\s*(.*?)\s*</a>',
+        body,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    for link_match in link_iter:
+        url = parse.urljoin(source.url, unescape(link_match.group(1).strip()))
+        title = _clean_title_text(_clean_long_text(link_match.group(2)))
+        if not title or len(title) < 25 or title.lower().endswith((".jpg", ".png", ".webp")):
+            continue
+        if url in seen:
+            continue
+        seen.add(url)
+        block = body[link_match.end(): link_match.end() + 1200]
+        summary_match = re.search(r'<p\b[^>]*class="[^"]*blog-post-summary[^"]*"[^>]*>(.*?)</p>', block, flags=re.IGNORECASE | re.DOTALL)
+        date_match = re.search(r'<time\b[^>]*datetime="([^"]+)"', block, flags=re.IGNORECASE)
+        summary = _clean_long_text(summary_match.group(1)) if summary_match else ""
+        items.append(
+            ExtractedItem(
+                title=title,
+                url=url,
+                published_at=date_match.group(1) if date_match else None,
+                summary=summary or title,
+                lead=_derive_lead(source, title, summary or title),
+                evidence_text=_clean_long_text(block)[:3000],
+                enrichment_status="ok_gmmh_press_release",
+            )
+        )
+        if len(items) >= source.max_candidates:
+            break
+    return items
+
+
 def _extract_rncm_items(source: SourceDef, body: str) -> list[ExtractedItem]:
     """RNCM event cards use image/aria labels, not useful anchor text."""
     month_map = {
@@ -1612,6 +1648,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_designmynight_cards(source, body)
     elif source.name in {"Skiddle Manchester", "Skiddle Manchester Bank Holiday"}:
         links = _extract_skiddle_items(source, body)
+    elif source.name == "GMMH":
+        links = _extract_gmmh_press_releases(source, body)
     elif source.name == "RNCM":
         links = _extract_rncm_items(source, body)
     elif "<rss" in body[:500].lower() or "<feed" in body[:500].lower():
@@ -1667,14 +1705,10 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         if source.report_category == "public_services" and _is_stale_public_service(published_at, item.title):
             # GMMH and similar public-services sources publish soft PR
             # news (awards, surveys, new term launches) alongside real
-            # disruptions (strikes, closures). Items older than 7 days
-            # that look like active disruptions are demoted to city_watch;
-            # everything else older than 7 days is dropped entirely so
-            # today_focus is not flooded with stale NHS press releases.
-            if _looks_like_active_disruption(item.title):
-                primary_block = "city_watch"
-            else:
-                continue
+            # disruptions (strikes, closures). Keep stale items visible to
+            # validation/source-health so the source is not misreported as
+            # empty, but demote them out of today_focus.
+            primary_block = "city_watch"
         candidate = {
             "title": item.title,
             "category": source.candidate_category,

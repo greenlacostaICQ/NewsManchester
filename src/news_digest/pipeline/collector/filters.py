@@ -688,7 +688,7 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     "Tameside Council": _SourcePolicy(path_must_start="/newsroom/articles/", min_path_depth=3),
     "Bury Council": _SourcePolicy(path_all_must_contain=("/pressreleases/", "/bury-council/")),
     "Wigan Council": _SourcePolicy(path_must_start="/news/articles/20", min_path_depth=5),
-    "GMMH": _SourcePolicy(path_must_contain=("/news", "/2026/", "/whats-on", "/events")),
+    "GMMH": _SourcePolicy(path_must_contain=("/media-centre/press-releases/", "/news", "/2026/", "/whats-on", "/events")),
     # ── Transport ─────────────────────────────────────────────────────────────
     "TfGM": _SourcePolicy(path_must_contain=("/travel-updates", "/planned-works")),
     # National Rail: override below (GM token OR named station)
