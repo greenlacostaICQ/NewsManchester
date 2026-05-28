@@ -487,6 +487,21 @@ _LONG_FORMAT_CATEGORIES_FOR_REPAIR = {
 }
 
 
+def _has_nothing_to_write_from(candidate: dict) -> bool:
+    """True when the source gave only a headline (empty/near-empty
+    evidence_text + summary + lead) and there is no structured event to
+    render deterministically. Such items cannot be written by any model
+    and must be treated as an enrichment gap, not a generation failure."""
+    text = " ".join(
+        str(candidate.get(f) or "") for f in ("evidence_text", "summary", "lead")
+    ).strip()
+    ev = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    structured_event = bool(
+        ev.get("is_event") and (ev.get("date_start") or ev.get("date")) and ev.get("venue")
+    )
+    return len(text) < 40 and not structured_event
+
+
 def _needs_quality_repair(candidate: dict) -> bool:
     line = str(candidate.get("draft_line") or "").strip()
     if not line:
@@ -1199,26 +1214,43 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
             logger.info("LLM repair pass: repaired %d weak draft_lines.", repaired)
 
-    missing_after = [
+    all_missing = [
         c for c in to_rewrite
         if not str(c.get("draft_line") or "").strip()
     ]
+    # Separate "the model failed" from "there was nothing to write from".
+    # On 2026-05-28 all 4 missing draft_lines had evidence_text="" — the
+    # source (The Mill paywall column, a bare film/tour listing) gave
+    # only a headline, so every provider returned empty. That is an
+    # ENRICHMENT gap, not unstable generation, and must not drag the
+    # yield metric or flip stage_status to degraded.
+    no_source_text = [c for c in all_missing if _has_nothing_to_write_from(c)]
+    no_source_fps = {id(c) for c in no_source_text}
+    missing_after = [c for c in all_missing if id(c) not in no_source_fps]
     weak_after = [
         c for c in to_rewrite
         if str(c.get("draft_line") or "").strip() and _needs_quality_repair(c)
     ]
-    successful = len(to_rewrite) - len(missing_after)
+    # Yield is measured only over items that actually had source text to
+    # work with; no-source-text items are reported separately.
+    rewriteable = len(to_rewrite) - len(no_source_text)
+    successful = rewriteable - len(missing_after)
     # Only treat yield as structurally bad if we are below 90% — anything
     # above is a normal-day result and must NOT trigger writer
     # degraded_shrink (the trigger that held Manchester Academy tickets
     # at reader_value 800+ on 2026-05-27).
-    yield_low = bool(to_rewrite) and successful < max(1, int(len(to_rewrite) * 0.9))
-    if to_rewrite and successful < len(to_rewrite):
-        msg = f"LLM rewrite yield low after provider fallback: {successful}/{len(to_rewrite)} draft_lines written."
+    yield_low = bool(rewriteable) and successful < max(1, int(rewriteable * 0.9))
+    if rewriteable and successful < rewriteable:
+        msg = f"LLM rewrite yield low after provider fallback: {successful}/{rewriteable} draft_lines written."
         if yield_low:
             warnings.append(msg)
         else:
             soft_warnings.append(msg)
+    if no_source_text:
+        soft_warnings.append(
+            f"{len(no_source_text)} item(s) had no source text to write from "
+            "(headline-only / paywalled source) — enrichment gap, not a generation failure."
+        )
     if weak_after:
         soft_warnings.append(f"{len(weak_after)} draft_line(s) still look weak after repair.")
     if repair_rejections:
@@ -1259,6 +1291,15 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                     "primary_block": c.get("primary_block"),
                 }
                 for c in missing_after[:30]
+            ],
+            "no_source_text": [
+                {
+                    "fingerprint": c.get("fingerprint"),
+                    "title": c.get("title"),
+                    "category": c.get("category"),
+                    "primary_block": c.get("primary_block"),
+                }
+                for c in no_source_text[:30]
             ],
             "weak_after": [
                 {

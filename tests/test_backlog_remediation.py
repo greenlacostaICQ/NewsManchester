@@ -2084,6 +2084,38 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         text = Path("scripts/run_local_digest.py").read_text(encoding="utf-8")
         self.assertNotIn("14–22", text)
 
+    def test_same_venue_different_events_not_merged_by_token_overlap(self) -> None:
+        # Strike Den! and The Fabric of Protest are two different shows at
+        # People's History Museum — shared venue + date tokens must not
+        # collapse them in intra-batch dedup.
+        from news_digest.pipeline.dedupe import _apply_intra_batch_dedup
+        items = [
+            {
+                "include": True, "fingerprint": "phm-strike-den",
+                "title": "Strike Den!, Wed 27 - Sat 31 May 2026, 10.00am - 4.00pm - People's History Museum",
+                "primary_block": "next_7_days", "category": "culture_weekly", "source_label": "PHM",
+                "event": {"is_event": True, "event_name": "Strike Den", "venue": "People's History Museum"},
+            },
+            {
+                "include": True, "fingerprint": "phm-fabric-protest",
+                "title": "The Fabric of Protest, Sat 30 May 2026, 1.00pm - 3.00pm - People's History Museum",
+                "primary_block": "next_7_days", "category": "culture_weekly", "source_label": "PHM",
+                "event": {"is_event": True, "event_name": "The Fabric of Protest", "venue": "People's History Museum"},
+            },
+        ]
+        _apply_intra_batch_dedup(items)
+        self.assertTrue(items[0]["include"] and items[1]["include"])
+
+    def test_no_source_text_item_separated_from_generation_failures(self) -> None:
+        # Headline-only / paywalled items (evidence_text empty) must be
+        # classified as an enrichment gap, not counted against LLM yield.
+        from news_digest.pipeline.llm_rewrite import _has_nothing_to_write_from
+        paywalled = {
+            "title": "'Independent and clearly very troublesome'",
+            "evidence_text": "", "summary": "", "lead": "",
+        }
+        self.assertTrue(_has_nothing_to_write_from(paywalled))
+
     def test_upcoming_dated_event_carries_over_despite_no_food_signal_terms(self) -> None:
         # Cherryholt / Skipinnish / Calum Scott are concerts with a real
         # future date but no 'festival/market/fair' wording, so the

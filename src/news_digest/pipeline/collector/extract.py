@@ -416,7 +416,21 @@ def _should_enrich_source(source: SourceDef) -> bool:
     )
 
 
+_TRUSTED_CARD_ENRICHMENT = {
+    "ok_rncm_card", "ok_dmn_card", "ok_skiddle_card", "ok_page_event",
+    "ok_weekly_section", "ok_sectioned_guide", "ok_gmmh_press_release",
+}
+
+
 def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
+    # Dedicated card extractors (RNCM, Skiddle, DesignMyNight, …) already
+    # produce a trustworthy clean title from the listing card. Re-enriching
+    # would fetch the event page and overwrite it with the page <title>,
+    # which for venues carries a venue suffix — e.g. "Rickie Lee Jones"
+    # became "Rickie Lee Jones - Royal Northern College of Music". Keep
+    # the card title.
+    if str(item.enrichment_status or "") in _TRUSTED_CARD_ENRICHMENT:
+        return item
     if not _should_enrich_source(source):
         return item
     summary_thin = _is_thin_summary(item.summary, item.title)

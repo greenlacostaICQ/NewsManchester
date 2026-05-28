@@ -1370,6 +1370,21 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                         break
                     continue
 
+            # Events at the same venue are distinct events. On 2026-05-28
+            # "Strike Den! … People's History Museum" was merged with
+            # "The Fabric of Protest … People's History Museum" because
+            # the shared venue + date + time tokens dominated the Jaccard
+            # overlap, even though the event names differ. For the events
+            # group, if both carry an event name and the names differ,
+            # never merge on raw token overlap.
+            if is_event_ticket_group:
+                ev_i = ci.get("event") if isinstance(ci.get("event"), dict) else {}
+                ev_j = cj.get("event") if isinstance(cj.get("event"), dict) else {}
+                name_i = normalize_title(str(ev_i.get("event_name") or ""))
+                name_j = normalize_title(str(ev_j.get("event_name") or ""))
+                if name_i and name_j and name_i != name_j:
+                    continue
+
             union = tokens_i | tokens_j
             if not union or len(tokens_i) < 3 or len(tokens_j) < 3:
                 continue
