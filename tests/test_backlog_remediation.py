@@ -2084,6 +2084,38 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         text = Path("scripts/run_local_digest.py").read_text(encoding="utf-8")
         self.assertNotIn("14–22", text)
 
+    def test_upcoming_dated_event_carries_over_despite_no_food_signal_terms(self) -> None:
+        # Cherryholt / Skipinnish / Calum Scott are concerts with a real
+        # future date but no 'festival/market/fair' wording, so the
+        # calendar-carry signal-term gate rejected them as 'no new facts'
+        # on 2026-05-28 even though the gig is today/this week.
+        from news_digest.pipeline.dedupe import _calendar_item_should_carry_over
+        event_day = (now_london().date() + timedelta(days=1)).strftime("%Y-%m-%d")
+        candidate = {
+            "primary_block": "ticket_radar",
+            "category": "venues_tickets",
+            "title": f"Cherryholt — event {event_day}",
+            "event": {"is_event": True, "date_start": event_day, "venue": "Manchester Academy"},
+        }
+        previous = {"first_published_day_london": (now_london().date() - timedelta(days=3)).isoformat(),
+                    "last_published_day_london": (now_london().date() - timedelta(days=3)).isoformat()}
+        self.assertTrue(_calendar_item_should_carry_over(candidate, previous))
+
+    def test_structured_event_card_allowed_to_be_concise(self) -> None:
+        # Bluey's Big Play (The Lowry) was dropped twice for a 120-char
+        # draft_line under the ≥150-char long-format gate. A complete
+        # dated+venue event card must be allowed to be short.
+        from news_digest.pipeline.writer import _draft_line_quality_errors
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "next_7_days",
+            "evidence_text": "x" * 2000,  # rich evidence — would normally force the 150-char gate
+            "event": {"is_event": True, "date_start": "2026-05-29", "venue": "The Lowry"},
+        }
+        line = "• 29 мая в The Lowry — Bluey's Big Play, шоу для детей. Билеты на сайте."
+        errors = _draft_line_quality_errors(candidate, line)
+        self.assertFalse(any("long-format category needs ≥150" in e for e in errors))
+
     def test_event_this_week_ticket_is_strong_tier_not_optional(self) -> None:
         # The event_this_week ticket_type I introduced must be a strong
         # tier and a ticket_opportunity why_now, otherwise day-of

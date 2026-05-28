@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 import re
 
@@ -593,6 +593,27 @@ def _calendar_item_should_carry_over(candidate: dict, previous: dict) -> bool:
     category = str(candidate.get("category") or "")
     if primary_block not in _CALENDAR_CARRY_BLOCKS and category not in _CALENDAR_CARRY_CATEGORIES:
         return False
+
+    today = now_london().date()
+    # Dated upcoming event short-circuit. A ticketed concert/show
+    # ("Cherryholt", "Skipinnish", "Calum Scott") has a concrete future
+    # event date but NONE of the food/market signal terms below, so the
+    # signal-term gate used to drop it as a "no new facts" repeat even
+    # though the gig is still ahead of us. If the event itself is today
+    # or in the next 14 days, it is by definition still relevant — carry
+    # it over regardless of wording. (2026-05-28 Cherryholt loss.)
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    if event.get("is_event"):
+        ev_raw = str(event.get("date_start") or event.get("date") or "").strip()[:10]
+        if ev_raw:
+            try:
+                ev_day = datetime.strptime(ev_raw, "%Y-%m-%d").date()
+            except ValueError:
+                ev_day = None
+            if ev_day is not None and today <= ev_day <= today + timedelta(days=14):
+                last_published = _published_day_from_history(previous, "last_published_day_london")
+                if not (last_published and last_published == today):
+                    return True
 
     text = _candidate_text(candidate)
     lowered = text.lower()

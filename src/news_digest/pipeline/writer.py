@@ -1454,6 +1454,19 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
         evidence_len = len(str(candidate.get("evidence_text") or "").strip())
         evidence_rich = evidence_len >= EVENT_RELAX_EVIDENCE_THRESHOLD
         skip_min = (block_key in EVENT_BLOCKS_RELAXABLE) and not evidence_rich
+        # A fully structured event card (real event + date + venue) is
+        # allowed to be concise even when the source page evidence is
+        # rich. 'Bluey's Big Play' (The Lowry) was dropped on both
+        # 2026-05-27 and 2026-05-28 for a 120-char draft_line because
+        # the long-format gate demanded ≥150 chars of prose for a kids'
+        # show listing. A complete dated card does not need padding.
+        _ev = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        if (
+            _ev.get("is_event")
+            and str(_ev.get("date_start") or _ev.get("date") or "").strip()
+            and str(_ev.get("venue") or "").strip()
+        ):
+            skip_min = True
         if not skip_min:
             if len(normalized) < LONG_FORMAT_MIN_CHARS:
                 errors.append(
