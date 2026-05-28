@@ -40,34 +40,6 @@ optional `notes = "..."` field with editorial rationale (why it's in
 the registry, what role it plays). Surfaced on `SourceDef.notes`;
 used by I4 Best Source Selection and Q1/Q8 decisions.
 
-## Agent efficiency protocol
-
-Use this for every task unless the user explicitly asks for broader work.
-
-- If the user asks "why", "check", "explain", or "give reasons", stay in
-  diagnosis mode: inspect state and report causes. Do not edit code until
-  the user asks to implement.
-- Inspect narrowly. Prefer small Python summaries over `rg` on broad
-  `data/state/*.json` globs. Never print whole state files, audit files,
-  published history, or embedding vectors.
-- For digest diagnosis, read only the necessary files first:
-  `candidates.json`, `writer_report.json`, `release_report.json`,
-  `collector_report.json`, and print only fields needed for the funnel
-  (`title`, `source`, `include`, `primary_block`, `reject_reason`,
-  `draft_line`, `reader_value_score`, `section_board_score`).
-- Use recovery-first thinking: enrich, explain, reroute, then hold only if
-  facts cannot be recovered. Do not default to new reject gates when a
-  better extractor, clearer template, or section routing fix would preserve
-  a useful item.
-- Test narrowly while developing: run only the regression tests that cover
-  the changed predicate/template. Run the full suite once before push only
-  when shared pipeline logic changed.
-- Keep git/runtime checks compact: `git diff --check` before commit; after
-  `bash scripts/sync_runtime_bundle.sh`, parity-check only files changed in
-  `src/` that the automation will execute.
-- Avoid repeated status/diff/test loops. One targeted inspect, one scoped
-  edit, one targeted verification, one final deploy check.
-
 ## Operational notes
 
 Do not add model API calls, new pipeline stages, or shell-script changes
