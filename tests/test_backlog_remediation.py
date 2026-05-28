@@ -688,7 +688,10 @@ class EventQualityPipelineTest(unittest.TestCase):
                 "enrichment_status": "article_html",
                 "source_label": "Local Source",
                 "source_url": "https://example.test/property",
-                "published_at": "2026-05-20T08:00:00+01:00",
+                # Relative recent date: a hardcoded 2026-05-20 turned this
+                # into a "stale, 8 days old" reject once the clock moved
+                # past 2026-05-27, masking the property-borderline path.
+                "published_at": (now_london() - timedelta(days=1)).isoformat(),
                 "dedupe_decision": "new",
             }
         )
@@ -710,7 +713,7 @@ class EventQualityPipelineTest(unittest.TestCase):
                 "evidence_text": "Manchester Arndale shopping centre owner confirmed a property sale plan.",
                 "source_label": "Local Source",
                 "source_url": "https://example.test/arndale",
-                "published_at": "2026-05-20T08:00:00+01:00",
+                "published_at": (now_london() - timedelta(days=1)).isoformat(),
                 "dedupe_decision": "new",
             }
         )
@@ -2080,6 +2083,21 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         # 'too long' at 23. Now matches the writer cap of 45.
         text = Path("scripts/run_local_digest.py").read_text(encoding="utf-8")
         self.assertNotIn("14–22", text)
+
+    def test_event_this_week_ticket_is_strong_tier_not_optional(self) -> None:
+        # The event_this_week ticket_type I introduced must be a strong
+        # tier and a ticket_opportunity why_now, otherwise day-of
+        # concerts sink and the funnel shows them as 'unknown'.
+        from news_digest.pipeline.editorial_contracts import build_editorial_contract, infer_why_now
+        candidate = {
+            "category": "venues_tickets",
+            "title": "Dead Pony — event 2026-05-29",
+            "summary": "Manchester Academy | event_date=2026-05-29 19:00",
+            "ticket_type": "event_this_week",
+            "event": {"is_event": True, "event_name": "Dead Pony", "venue": "Manchester Academy",
+                      "date_start": "2026-05-29"},
+        }
+        self.assertEqual(infer_why_now(candidate), "ticket_opportunity")
 
     def test_writer_does_not_degrade_on_soft_quality_warnings_only(self) -> None:
         # 94% yield + weak/repair messages must NOT trigger degraded_shrink.

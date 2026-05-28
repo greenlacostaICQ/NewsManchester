@@ -365,9 +365,12 @@ def infer_why_now(candidate: dict) -> str:
         return "happening_today"
     if re.search(r"\b(deadline|closes?|last chance|final day|until \d{1,2}|до \d{1,2})\b", blob, re.IGNORECASE):
         return "deadline_soon"
-    if category == "venues_tickets" and classify_ticket_type(candidate) in {
-        "on_sale_now", "presale_soon", "newly_listed", "major_upcoming",
-    }:
+    if category == "venues_tickets" and (
+        str(candidate.get("ticket_type") or "") == "event_this_week"
+        or classify_ticket_type(candidate) in {
+            "on_sale_now", "presale_soon", "newly_listed", "major_upcoming", "event_this_week",
+        }
+    ):
         return "ticket_opportunity"
     if candidate.get("published_at"):
         try:
@@ -814,8 +817,8 @@ def _publish_tier(candidate: dict, story_type: str, event_shape: str, anchor_typ
     if story_type in {"incident", "planning", "civic", "opening", "memorial", "local_cost", "local_service_change"} and anchor_type != "none":
         return "strong"
     if story_type == "ticket":
-        ticket_type = classify_ticket_type(candidate)
-        if ticket_type in {"on_sale_now", "presale_soon", "newly_listed", "major_upcoming"}:
+        ticket_type = str(candidate.get("ticket_type") or "") or classify_ticket_type(candidate)
+        if ticket_type in {"on_sale_now", "presale_soon", "newly_listed", "major_upcoming", "event_this_week"}:
             return "strong"
         return "optional"
     if anchor_type in {"new_phase", "local_action", "dated_event", "recurring_occurrence"}:

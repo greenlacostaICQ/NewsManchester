@@ -539,6 +539,7 @@ def _humanize_borough_flag(flag: str) -> str:
 
 def _ticket_type_human(ticket_type: str) -> str:
     return {
+        "event_this_week": "событие на этой неделе",
         "on_sale_now": "сейчас в продаже",
         "presale_soon": "скоро пресейл/старт продаж",
         "newly_listed": "новые листинги",
@@ -885,34 +886,35 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
         lines.append("Выпуск отправлен, но есть возможные пропуски событий или билетов.")
     else:
         lines.append("Критичных продуктовых проблем не найдено.")
-    lines.append(f"Опубликовано: {rendered}; прошло первичный редакционный отбор: {included}; снято перед отправкой: {dropped}.")
+    lines.append(f"Опубликовано: {rendered}; прошло первичный редакционный отбор: {included}.")
     lines.append("")
 
-    # 📊 Funnel of the day — explicit breakdown of "where did 140 lost
-    # candidates go?". Without this the previous Telegram report
-    # collapsed everything into "снято 14" which masked dedupe drops,
-    # curator rejects and writer misses. Reads final_loss_check counters
-    # written by release.py.
-    flc_counts = ((report.get("final_loss_check") or {}).get("counts") or {})
+    # 📊 Honest end-to-end funnel from ONE cohort. The earlier version
+    # mixed two populations: it showed included→rendered (a small set)
+    # but pulled the breakdown from final_loss_check, which counts the
+    # full collected pool (~600). That made the numbers (dedupe 140,
+    # rejected 274) dwarf the stated "lost 75". Now every number is the
+    # real cohort: collected → included → sent to text → published, and
+    # the "no text" line is the real LLM miss count, not writer drops.
+    llm_rewrite = llm_report if isinstance(llm_report, dict) else {}
+    sent_to_text = int(llm_rewrite.get("included_for_rewrite") or 0)
+    no_text = len(llm_rewrite.get("missing_after") or [])
+    weak_text = len(llm_rewrite.get("weak_after") or [])
+    held_backup = int(((llm_rewrite.get("rewrite_shortlist") or {}).get("held_for_backup")) or 0)
     backup_counts = ((report.get("backup_pool") or {}).get("counts") or {})
-    if flc_counts or backup_counts:
-        funnel_lost = max(0, included - rendered)
-        lines.append("📊 Воронка дня")
-        lines.append(f"• Включено редакцией: {included}.")
-        lines.append(f"• Дошло до выпуска: {rendered}.")
-        if funnel_lost:
-            lines.append(f"• Потеряно по дороге: {funnel_lost}, из них:")
-            if int(flc_counts.get("dedupe_dropped") or 0):
-                lines.append(f"   – дубликаты/кластер: {flc_counts['dedupe_dropped']};")
-            if int(flc_counts.get("writer_dropped") or 0):
-                lines.append(f"   – писатель не сгенерил текст: {flc_counts['writer_dropped']};")
-            if int(flc_counts.get("selected_not_published") or 0):
-                lines.append(f"   – отобрали, но не дошли в render: {flc_counts['selected_not_published']};")
-            if int(flc_counts.get("rejected") or 0):
-                lines.append(f"   – отклонены жёсткими правилами: {flc_counts['rejected']}.")
-        if int(backup_counts.get("active") or 0):
-            lines.append(f"• В backup на завтра: {backup_counts['active']} (TTL по типу новости).")
-        lines.append("")
+    lines.append("📊 Воронка дня (по одному и тому же набору)")
+    lines.append(f"• Прошло редакционный отбор: {included}.")
+    if sent_to_text:
+        lines.append(f"• Отправлено на генерацию текста: {sent_to_text} (остальные — готовый текст или придержаны в резерве: {held_backup}).")
+    lines.append(f"• Опубликовано: {rendered}.")
+    if dropped:
+        lines.append(f"• Снято на этапе писателя (нет текста / англ. / низкое качество): {dropped}.")
+    if no_text:
+        lines.append(f"• Модель реально не написала текст: {no_text} из {sent_to_text} (это и есть «нестабильная генерация»).")
+    if weak_text:
+        lines.append(f"• Текст написан, но слабый после ремонта: {weak_text}.")
+    lines.append("Примечание: разбор «дубли / отклонено правилами» считается по всему собранному пулу (~сотни), а не по этому набору — детали в JSON (final_loss_check).")
+    lines.append("")
 
     issues = _support_top_issues(
         rendered=rendered,
@@ -957,7 +959,7 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
         total_ticket_found = 0
         total_ticket_published = 0
         if ticket_types:
-            for ticket_type in ("on_sale_now", "presale_soon", "newly_listed", "major_upcoming", "old_public_sale", "old_onsale", "unknown"):
+            for ticket_type in ("event_this_week", "on_sale_now", "presale_soon", "newly_listed", "major_upcoming", "regular_upcoming", "old_public_sale", "old_onsale", "unknown"):
                 counts = ticket_types.get(ticket_type)
                 if not counts:
                     continue
@@ -993,6 +995,27 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
             lines.append(f"• {str(item.get('title') or '')[:80]} ({when})")
             lines.append(f"  Вердикт: {_event_miss_bucket(item)} — {_event_miss_plain_reason(item)}.")
         lines.append("Вывод: это автозадача для event-dedupe/writer, а не список для ручного чтения утром.")
+        lines.append("")
+
+    backup_pool = report.get("backup_pool") or {}
+    backup_active = int((backup_pool.get("counts") or {}).get("active") or 0)
+    if backup_active:
+        backup_items = backup_pool.get("items") or []
+        future_blocks = {"weekend_activities", "next_7_days", "future_announcements",
+                         "ticket_radar", "outside_gm_tickets", "russian_events"}
+        future_count = sum(1 for it in backup_items if str(it.get("primary_block") or "") in future_blocks)
+        news_count = len(backup_items) - future_count
+        lines.append("🗂 В резерве (не «за 24 часа»)")
+        lines.append(
+            f"Всего {backup_active}: это в основном будущие события/билеты "
+            f"(~{future_count} — концерты, ярмарки, выставки на ближайшие недели), "
+            f"а не сегодняшние новости."
+        )
+        if news_count:
+            lines.append(
+                f"Из них ~{news_count} — новости в коротком резерве на добор, если завтра секция окажется тонкой; "
+                "у каждой свой TTL, устаревшие удаляются автоматически."
+            )
         lines.append("")
 
     if borderline_count:

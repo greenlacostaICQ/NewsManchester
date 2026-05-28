@@ -1052,7 +1052,12 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         original_rewrite_count = len(to_rewrite)
         to_rewrite, rewrite_shortlist = _apply_rewrite_shortlist(candidates, to_rewrite)
         if rewrite_shortlist["held_for_backup"]:
-            warnings.append(
+            # Holding lower-priority candidates in backup before
+            # translation is NORMAL cost control, not a failure. It must
+            # NOT push stage_status to "degraded" — that flipped the
+            # writer into degraded_shrink on 2026-05-28 and made the
+            # report say "генерация работала нестабильно" at 92% yield.
+            soft_warnings.append(
                 "Rewrite shortlist: "
                 f"{rewrite_shortlist['held_for_backup']} candidate(s) held in backup before translation."
             )
