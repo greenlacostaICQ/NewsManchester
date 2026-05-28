@@ -2084,6 +2084,24 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         text = Path("scripts/run_local_digest.py").read_text(encoding="utf-8")
         self.assertNotIn("14–22", text)
 
+    def test_tram_card_keeps_stop_location_and_distinguishes_stops(self) -> None:
+        # 2026-05-28: 'Piccadilly Gardens - Tram Improvement Works' and
+        # 'Prestwich Tram Stop - Improvement Works' both rendered as the
+        # locationless, identical 'предупреждение TfGM по трамваям —
+        # ремонтные работы'. The stop must survive and the two must differ.
+        from news_digest.pipeline.transport_card import extract_transport_card, render_card
+        def render(title):
+            return render_card(extract_transport_card({
+                "title": title, "summary": "", "evidence_text": "",
+                "source_url": "https://tfgm.com", "source_label": "TfGM",
+            }))
+        a = render("Piccadilly Gardens - Tram Improvement Works")
+        b = render("Prestwich Tram Stop - Improvement Works")
+        c = render("Manchester Airport Tram Stop - Escalator out of service")
+        self.assertIn("Piccadilly Gardens", a)
+        self.assertNotEqual(a, b)
+        self.assertIn("эскалатор не работает", c)  # not mistranslated to 'ремонтные работы'
+
     def test_same_venue_different_events_not_merged_by_token_overlap(self) -> None:
         # Strike Den! and The Fabric of Protest are two different shows at
         # People's History Museum — shared venue + date tokens must not

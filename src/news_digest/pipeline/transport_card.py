@@ -455,8 +455,16 @@ def _render_tram(card: TransportCard) -> str:
 
     is_minor_delay = card.reason == "небольшие задержки"
 
+    # When the only locator is a stop name (no line/segment, no time),
+    # lead with the actual reason so we don't print the redundant
+    # "работы … — ремонтные работы" and so non-works issues read right:
+    # "Metrolink: эскалатор не работает на остановке Manchester Airport".
+    stop_only = bool(card.stop_name) and not card.line and not card.segment
     # Tier 1: full sentence "Metrolink: с DATE по DATE нет трамваев на LINE между SEG — REASON; ALT."
-    if has_loc and (has_time or has_meta):
+    if stop_only and not has_time and card.reason and not is_minor_delay:
+        head = f"{card.operator}: {card.reason} {location}"
+        card.reason = ""  # consumed into the head; don't repeat in tail
+    elif has_loc and (has_time or has_meta):
         if is_minor_delay:
             head = f"{card.operator}: небольшие задержки {location}"
         elif has_time:
@@ -481,6 +489,10 @@ def _render_tram(card: TransportCard) -> str:
 
     if tail_bits and not (is_minor_delay and tail_bits == [card.reason]):
         return f"• {head} — {'; '.join(tail_bits)}."
+    # Stop is known (and the reason was folded into the head): the card is
+    # already complete, do not append the "не уточнил участок" noise.
+    if stop_only:
+        return f"• {head}."
     if has_loc:
         return f"• {head}; TfGM не уточнил отдельный участок."
     return f"• {head}; TfGM не указал линию или участок."
