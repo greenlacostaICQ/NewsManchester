@@ -63,25 +63,22 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
         ModelRouteStep("groq", "Groq", GROQ_BASE_URL, GROQ_FALLBACK_MODEL, "GROQ_API_KEY", "resilient_fallback", 3, batch_size=6, timeout_seconds=30),
     ),
     "rewrite": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_rewrite_primary", 1, batch_size=12, timeout_seconds=20),
-        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "fast_rewrite_fallback", 2, batch_size=12, timeout_seconds=20),
-        # Groq batch_size dropped 3 -> 2 to stay under the 12k TPM
-        # limit; a 3-batch rewrite payload was hitting 12048 on 2026-05-24.
-        ModelRouteStep("groq", "Groq", GROQ_BASE_URL, GROQ_FALLBACK_MODEL, "GROQ_API_KEY", "resilient_fallback", 3, batch_size=2, timeout_seconds=30),
+        # Visible Russian copy must come from the quality route only.
+        # Earlier fallback to DeepSeek/Groq kept the issue alive but also
+        # shipped weaker phrasing after OpenAI timeouts. If OpenAI misses an
+        # item now, writer.py either uses a deterministic domain template
+        # (tickets/events/transport) or leaves an explicit warning.
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_rewrite_primary", 1, batch_size=6, timeout_seconds=30),
     ),
     # Events have structured datetime/venue fields where DeepSeek
     # historically degrades into the fallback chain; putting OpenAI
     # first short-circuits the 90s primary timeout we used to eat.
     # Explicit per-step timeouts cap wall-time per item even on bad days.
     "events_rewrite": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "events_primary", 1, batch_size=8, timeout_seconds=20),
-        ModelRouteStep("groq", "Groq", GROQ_BASE_URL, GROQ_FALLBACK_MODEL, "GROQ_API_KEY", "events_resilient_fallback", 2, batch_size=3, timeout_seconds=20),
-        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "events_last_resort", 3, batch_size=8, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "events_primary", 1, batch_size=5, timeout_seconds=30),
     ),
     "repair": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_repair", 1, batch_size=7, timeout_seconds=30),
-        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "repair_fallback", 2, batch_size=7, timeout_seconds=20),
-        ModelRouteStep("groq", "Groq", GROQ_BASE_URL, GROQ_FALLBACK_MODEL, "GROQ_API_KEY", "resilient_fallback", 3, batch_size=2, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_repair", 1, batch_size=5, timeout_seconds=30),
     ),
 }
 

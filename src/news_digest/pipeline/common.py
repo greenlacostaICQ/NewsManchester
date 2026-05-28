@@ -50,8 +50,12 @@ SECTION_MAX_ITEMS = {
     "Выходные в GM": 8,
     "Что важно в ближайшие 7 дней": 6,
     "Еда, открытия и рынки": 6,
-    "Билеты / Ticket Radar": 6,
-    "Русскоязычные концерты и стендап UK": 6,
+    # Ticket/russian-event blocks are reader-choice rails: they are not
+    # globally capped like news because the system cannot know which gig the
+    # reader personally cares about. Writer still applies freshness/expiry and
+    # formatting gates before these reach Telegram.
+    "Билеты / Ticket Radar": 99,
+    "Русскоязычные концерты и стендап UK": 99,
     "Что важно сегодня": 5,
 }
 

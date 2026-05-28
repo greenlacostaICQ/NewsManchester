@@ -302,6 +302,78 @@ def _contract_public_drop_reason(candidate: dict) -> str:
     return ""
 
 
+_PUBLIC_BUDGET_EXEMPT_SECTIONS = {
+    "Билеты / Ticket Radar",
+    "Крупные концерты вне GM",
+    "Русскоязычные концерты и стендап UK",
+}
+
+_MARKET_EVENT_RE = re.compile(
+    r"\b(?:car\s*boot|market|markets|makers\s+market|farmer'?s\s+market|"
+    r"farmers\s+market|flea\s+market|vintage\s+market|food\s+market|flower\s+festival)\b",
+    re.IGNORECASE,
+)
+
+
+def _is_market_or_recurring_event(candidate: dict) -> bool:
+    protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    text = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "source_label")
+    )
+    if str(protected.get("lane") or "") in {"weekend_market", "recurring_market"}:
+        return True
+    if str(contract.get("event_shape") or candidate.get("event_shape") or "") == "recurring" and _MARKET_EVENT_RE.search(text):
+        return True
+    return bool(event.get("is_recurring") and _MARKET_EVENT_RE.search(text))
+
+
+def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
+    if section_name in _PUBLIC_BUDGET_EXEMPT_SECTIONS:
+        return True
+    if not isinstance(candidate, dict):
+        return False
+    if str(candidate.get("category") or "") == "venues_tickets":
+        return True
+    return _is_market_or_recurring_event(candidate)
+
+
+def _slice_counting_only_non_exempt(
+    *,
+    lines: list[str],
+    srcs: list[str],
+    fps: list[str],
+    scores: list[float],
+    titles: list[str],
+    candidate_by_fp: dict[str, dict],
+    section_name: str,
+    counted_limit: int,
+) -> tuple[list[str], list[str], list[str], list[float], list[str], list[int], int]:
+    kept_idx: list[int] = []
+    dropped_idx: list[int] = []
+    counted_kept = 0
+    for idx, fp in enumerate(fps):
+        candidate = candidate_by_fp.get(str(fp or ""))
+        exempt = _is_public_budget_exempt(section_name, candidate)
+        if exempt or counted_kept < counted_limit:
+            kept_idx.append(idx)
+            if not exempt:
+                counted_kept += 1
+        else:
+            dropped_idx.append(idx)
+    return (
+        [lines[i] for i in kept_idx],
+        [srcs[i] if i < len(srcs) else "" for i in kept_idx],
+        [fps[i] if i < len(fps) else "" for i in kept_idx],
+        [scores[i] if i < len(scores) else 0.0 for i in kept_idx],
+        [titles[i] if i < len(titles) else "" for i in kept_idx],
+        dropped_idx,
+        counted_kept,
+    )
+
+
 def _reserved_later_budget(
     ordered_sections: list[str],
     current_index: int,
@@ -1518,6 +1590,11 @@ def write_digest(project_root: Path) -> StageResult:
     payload = read_json(candidates_path, {"candidates": []})
     pipeline_run_id = pipeline_run_id_from(payload)
     candidates = payload.get("candidates", [])
+    candidate_by_fp = {
+        str(candidate.get("fingerprint") or ""): candidate
+        for candidate in candidates
+        if isinstance(candidate, dict)
+    }
     llm_degraded, llm_rewrite_report = _llm_rewrite_is_degraded(state_dir)
     sections = {heading: [] for heading in PRIMARY_BLOCKS.values()}
     # Parallel list of source_labels per section (same indices as sections[*]).
@@ -1895,7 +1972,11 @@ def write_digest(project_root: Path) -> StageResult:
             filtered_titles: list[str] = []
             for idx, ln in enumerate(lines):
                 src = srcs[idx] if idx < len(srcs) else ""
-                if src_counts.get(src, 0) >= per_source_cap:
+                fp = fps[idx] if idx < len(fps) else ""
+                if (
+                    src_counts.get(src, 0) >= per_source_cap
+                    and not _is_public_budget_exempt(section_name, candidate_by_fp.get(str(fp or "")))
+                ):
                     continue
                 src_counts[src] = src_counts.get(src, 0) + 1
                 filtered.append(ln)
@@ -1919,6 +2000,8 @@ def write_digest(project_root: Path) -> StageResult:
             if llm_degraded and degraded_cap is not None and len(lines) > cap:
                 normal_cutoff = normal_cap if normal_cap is not None else len(lines)
                 for idx in range(cap, min(len(lines), normal_cutoff)):
+                    if _is_public_budget_exempt(section_name, candidate_by_fp.get(str(fps[idx] if idx < len(fps) else ""))):
+                        continue
                     degraded_shrink_dropped.append(
                         {
                             "section": section_name,
@@ -1929,11 +2012,16 @@ def write_digest(project_root: Path) -> StageResult:
                             "reason": "LLM rewrite was degraded; held lower-priority item for review.",
                         }
                     )
-            lines = lines[:cap]
-            fps = fps[:cap]
-            scores = scores[:cap]
-            titles = titles[:cap]
-            srcs = srcs[:cap]
+            lines, srcs, fps, scores, titles, _cap_dropped_idx, _ = _slice_counting_only_non_exempt(
+                lines=lines,
+                srcs=srcs,
+                fps=fps,
+                scores=scores,
+                titles=titles,
+                candidate_by_fp=candidate_by_fp,
+                section_name=section_name,
+                counted_limit=cap,
+            )
         # Section min-floor pull-back. On 2026-05-27 «Главная история
         # дня»=1 and «Что важно сегодня»=2 while score-10 candidates
         # sat with include=True but never made it through the writer
@@ -1959,7 +2047,18 @@ def write_digest(project_root: Path) -> StageResult:
                 len(lines),
             )
         if remaining_budget <= 0:
-            for idx, ln in enumerate(lines):
+            next_lines, next_srcs, next_fps, next_scores, next_titles, dropped_idx, counted_kept = _slice_counting_only_non_exempt(
+                lines=lines,
+                srcs=srcs,
+                fps=fps,
+                scores=scores,
+                titles=titles,
+                candidate_by_fp=candidate_by_fp,
+                section_name=section_name,
+                counted_limit=0,
+            )
+            for idx in dropped_idx:
+                ln = lines[idx]
                 global_budget_dropped.append(
                     {
                         "section": section_name,
@@ -1973,10 +2072,22 @@ def write_digest(project_root: Path) -> StageResult:
                             ),
                     }
                 )
-            section_counts[section_name] = 0
-            continue
-        if len(lines) > remaining_budget:
-            for idx in range(remaining_budget, len(lines)):
+            lines, srcs, fps, scores, titles = next_lines, next_srcs, next_fps, next_scores, next_titles
+            if not lines:
+                section_counts[section_name] = 0
+                continue
+        if remaining_budget > 0:
+            next_lines, next_srcs, next_fps, next_scores, next_titles, dropped_idx, counted_kept = _slice_counting_only_non_exempt(
+                lines=lines,
+                srcs=srcs,
+                fps=fps,
+                scores=scores,
+                titles=titles,
+                candidate_by_fp=candidate_by_fp,
+                section_name=section_name,
+                counted_limit=remaining_budget,
+            )
+            for idx in dropped_idx:
                 global_budget_dropped.append(
                     {
                         "section": section_name,
@@ -1990,10 +2101,7 @@ def write_digest(project_root: Path) -> StageResult:
                         ),
                     }
                 )
-            lines = lines[:remaining_budget]
-            fps = fps[:remaining_budget]
-            scores = scores[:remaining_budget]
-            titles = titles[:remaining_budget]
+            lines, srcs, fps, scores, titles = next_lines, next_srcs, next_fps, next_scores, next_titles
         # Per-source / per-section caps can filter every remaining line —
         # don't emit a bare section header in that case, the release gate
         # rejects empty low-signal blocks.
@@ -2001,7 +2109,10 @@ def write_digest(project_root: Path) -> StageResult:
             section_counts[section_name] = 0
             continue
         section_counts[section_name] = len(lines)
-        visible_item_count += len(lines)
+        visible_item_count += sum(
+            0 if _is_public_budget_exempt(section_name, candidate_by_fp.get(str(fp or ""))) else 1
+            for fp in fps
+        )
         rendered_candidate_fingerprints.extend(fp for fp in fps if fp)
         rendered.append(f"<b>{section_name}</b>")
         rendered.extend(lines)

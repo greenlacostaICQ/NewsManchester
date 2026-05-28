@@ -2,14 +2,10 @@
 
 Default model route:
   1. OpenAI gpt-4o-mini    — quality rewrite primary
-  2. DeepSeek deepseek-chat — fast fallback if GPT is unavailable
-  3. Groq Llama-3.3-70B    — emergency fallback, free tier
-  4. Rule-based in writer.py — final safety net, always fires if LLM unavailable
+  2. Rule-based in writer.py — final safety net for structured tickets/events/transport
 
 Required env vars (set in GitHub Actions Secrets or .env.local):
-  DEEPSEEK_API_KEY  — platform.deepseek.com (paid, deepseek-chat)
   OPENAI_API_KEY    — platform.openai.com (paid, gpt-4o-mini)
-  GROQ_API_KEY      — console.groq.com (free)
 
 Optional overrides:
   LLM_PROVIDER      — force "deepseek" | "openai" | "groq" | "none"
@@ -57,7 +53,7 @@ OPENAI_MODEL = OPENAI_REWRITE_MODEL
 
 ProviderMapping = dict[str, tuple[str, str, str]]
 
-REWRITE_SHORTLIST_VERSION = 1
+REWRITE_SHORTLIST_VERSION = 2
 REWRITE_SHORTLIST_CAPS_BY_BLOCK: dict[str, int] = {
     "transport": 99,
     "lead_story": 4,
@@ -370,6 +366,45 @@ def _skip_llm_for_manual_review(candidate: dict) -> bool:
     )
 
 
+_MARKET_EVENT_RE = re.compile(
+    r"\b(?:car\s*boot|market|markets|makers\s+market|farmer'?s\s+market|"
+    r"farmers\s+market|flea\s+market|vintage\s+market|food\s+market|flower\s+festival)\b",
+    re.IGNORECASE,
+)
+
+
+def _is_market_or_recurring_event(candidate: dict) -> bool:
+    protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    text = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "source_label")
+    )
+    if str(protected.get("lane") or "") in {"weekend_market", "recurring_market"}:
+        return True
+    if str(contract.get("event_shape") or candidate.get("event_shape") or "") == "recurring" and _MARKET_EVENT_RE.search(text):
+        return True
+    return bool(event.get("is_recurring") and _MARKET_EVENT_RE.search(text))
+
+
+def _uses_deterministic_writer(candidate: dict) -> bool:
+    """Skip LLM where writer has a safer structured template.
+
+    Ticket cards are high-volume and already carry venue/date/genre fields
+    from source APIs. Sending all of them through rewrite caused the 20-minute
+    failure mode: OpenAI timed out, then weaker fallback models wrote visible
+    copy. Markets/recurring protected events use occurrence-first templates,
+    which are safer than free-form prose for "this weekend" planning.
+    """
+    category = str(candidate.get("category") or "")
+    if category == "venues_tickets":
+        return True
+    if category in {"culture_weekly", "food_openings", "russian_speaking_events", "diaspora_events"} and _is_market_or_recurring_event(candidate):
+        return True
+    return False
+
+
 def _append_reason(candidate: dict, note: str) -> None:
     existing = str(candidate.get("reason") or "").strip()
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
@@ -388,6 +423,24 @@ def _rewrite_shortlist_priority(candidate: dict) -> tuple[float, float, float, s
     )
 
 
+def _must_translate_before_cap(candidate: dict) -> bool:
+    apply_story_intelligence(candidate)
+    if candidate.get("is_lead"):
+        return True
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    tier = str(contract.get("publish_tier") or candidate.get("publish_tier") or "")
+    protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
+    if block in {"transport", "today_focus"}:
+        return True
+    if category in {"media_layer", "council", "gmp", "public_services", "city_news"} and tier in {"must_include", "strong"}:
+        return True
+    if protected.get("protected") and category != "venues_tickets":
+        return True
+    return False
+
+
 def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> tuple[list[dict], dict[str, object]]:
     """Select the English-scored candidates worth paying to translate.
 
@@ -403,15 +456,32 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
 
     selected_ids: set[int] = set()
     held: list[dict[str, object]] = []
+    uncapped_selected: list[dict[str, object]] = []
     caps: dict[str, int] = {}
     for block, group in groups.items():
         cap = REWRITE_SHORTLIST_CAPS_BY_BLOCK.get(block, REWRITE_SHORTLIST_DEFAULT_CAP)
         caps[block] = cap
         ranked = sorted(group, key=_rewrite_shortlist_priority, reverse=True)
-        for candidate in ranked[:cap]:
+        protected_group = [candidate for candidate in ranked if _must_translate_before_cap(candidate)]
+        protected_ids = {id(item) for item in protected_group}
+        normal_group = [candidate for candidate in ranked if id(candidate) not in protected_ids]
+        for candidate in protected_group:
+            selected_ids.add(id(candidate))
+            candidate["rewrite_shortlist_status"] = "selected_uncapped"
+            uncapped_selected.append(
+                {
+                    "fingerprint": candidate.get("fingerprint") or "",
+                    "title": candidate.get("title") or "",
+                    "source_label": candidate.get("source_label") or "",
+                    "category": candidate.get("category") or "",
+                    "primary_block": block,
+                    "reason": "Protected hard news / transport / today-focus item; not capped before rewrite.",
+                }
+            )
+        for candidate in normal_group[:cap]:
             selected_ids.add(id(candidate))
             candidate["rewrite_shortlist_status"] = "selected"
-        for candidate in ranked[cap:]:
+        for candidate in normal_group[cap:]:
             candidate["include"] = False
             candidate["backup_candidate"] = True
             candidate["rewrite_shortlist_status"] = "backup_before_rewrite"
@@ -438,6 +508,8 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
         "selected_for_rewrite": len(selected),
         "held_for_backup": len(held),
         "caps_by_block": caps,
+        "uncapped_selected": len(uncapped_selected),
+        "uncapped_examples": uncapped_selected[:20],
         "held_examples": held[:40],
     }
 
@@ -1003,12 +1075,38 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         prov = str(c.get("draft_line_provider") or "")
         return bool(line and prov == "transport_fill")
 
+    deterministic_writer_items: list[dict[str, object]] = []
+    for c in candidates:
+        if (
+            isinstance(c, dict)
+            and c.get("include")
+            and str(c.get("category") or "") != "weather"
+            and not _already_deterministic(c)
+            and not _skip_llm_for_manual_review(c)
+            and _uses_deterministic_writer(c)
+        ):
+            c["draft_line"] = ""
+            c["draft_line_provider"] = "writer_deterministic_pending"
+            c["draft_line_model"] = ""
+            c["rewrite_shortlist_status"] = "writer_deterministic"
+            deterministic_writer_items.append(
+                {
+                    "fingerprint": c.get("fingerprint") or "",
+                    "title": c.get("title") or "",
+                    "source_label": c.get("source_label") or "",
+                    "category": c.get("category") or "",
+                    "primary_block": c.get("primary_block") or "",
+                    "reason": "Structured ticket/market/event template; skipped LLM rewrite for speed and consistency.",
+                }
+            )
+
     to_rewrite = [
         c for c in candidates
         if isinstance(c, dict) and c.get("include")
         and str(c.get("category") or "") != "weather"  # handcrafted line, no LLM needed
         and not _already_deterministic(c)
         and not _skip_llm_for_manual_review(c)
+        and not _uses_deterministic_writer(c)
     ]
     skipped_manual_review = sum(
         1 for c in candidates
@@ -1033,6 +1131,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         "selected_for_rewrite": len(to_rewrite),
         "held_for_backup": 0,
     }
+    if deterministic_writer_items:
+        candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     applied = 0
     fixed = 0
     repaired = 0
@@ -1040,6 +1140,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     if provider_override == "none":
         logger.info("LLM_PROVIDER=none — skipping rewrite.")
         warnings.append("LLM_PROVIDER=none — rewrite stage skipped; writer/release gates will decide publishability.")
+        if deterministic_writer_items:
+            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         write_json(
             report_path,
             {
@@ -1051,6 +1153,10 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "warnings": warnings,
                 "included_for_rewrite": len(to_rewrite),
                 "rewrite_shortlist": rewrite_shortlist,
+                "deterministic_writer_items": {
+                    "count": len(deterministic_writer_items),
+                    "examples": deterministic_writer_items[:40],
+                },
                 "skipped_manual_review": skipped_manual_review,
                 "applied": 0,
                 "fixed": 0,
@@ -1274,6 +1380,10 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "soft_warnings": soft_warnings,
             "included_for_rewrite": len(to_rewrite),
             "rewrite_shortlist": rewrite_shortlist,
+            "deterministic_writer_items": {
+                "count": len(deterministic_writer_items),
+                "examples": deterministic_writer_items[:40],
+            },
             "skipped_manual_review": skipped_manual_review,
             "applied": applied,
             "fixed": fixed,

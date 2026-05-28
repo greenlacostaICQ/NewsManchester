@@ -45,9 +45,10 @@ _PROMPT_VERSION_RE = re.compile(r"^v\d+(?:\.\d+){0,2}$")
 # and the release gate will surface them as a silent-drift signal.
 PROMPTS: tuple[PromptMeta, ...] = (
     PromptMeta(name="curator",         version="v3", hash=_h(_cur.CURATOR_PROMPT)),
-    # v5: lead-first structure (S5) — first sentence must be a news
-    # fact (subject + action + outcome), not a quote or description.
-    PromptMeta(name="city_news",       version="v5", hash=_h(_lr.PROMPT_CITY_NEWS)),
+    # v6: tightened examples/repair guidance for council deadlocks,
+    # retail closures and property/planning stories after the 2026-05-27
+    # live issue review.
+    PromptMeta(name="city_news",       version="v6", hash=_h(_lr.PROMPT_CITY_NEWS)),
     PromptMeta(name="transport",       version="v4", hash=_h(_lr.PROMPT_TRANSPORT)),
     # v4: three explicit templates (one-off / festival / recurring) +
     # event.is_recurring guidance, S3 sprint.
@@ -56,7 +57,7 @@ PROMPTS: tuple[PromptMeta, ...] = (
     PromptMeta(name="business",        version="v3", hash=_h(_lr.PROMPT_BUSINESS)),
     PromptMeta(name="football",        version="v4", hash=_h(_lr.PROMPT_FOOTBALL)),
     PromptMeta(name="fix_translate",   version="v1", hash=_h(_lr.FIX_TRANSLATE_SYSTEM)),
-    PromptMeta(name="repair_draft",    version="v1", hash=_h(_lr.REPAIR_DRAFT_SYSTEM)),
+    PromptMeta(name="repair_draft",    version="v2", hash=_h(_lr.REPAIR_DRAFT_SYSTEM)),
     PromptMeta(name="dedupe_review",   version="v1", hash=_h(_dd._DEDUPE_REVIEW_PROMPT)),
     PromptMeta(name="post_publish_judge", version=_ppj.JUDGE_PROMPT_VERSION,
                hash=_h(_ppj.JUDGE_PROMPT)),

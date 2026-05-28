@@ -137,6 +137,8 @@ _TFGM_TITLE_RE = re.compile(
 # through to the generic "works → ремонтные работы".
 _REASON_MAP = (
     # 1) Highly specific technical work types.
+    (re.compile(r"escalator\s+out\s+of\s+service|escalator\s+(?:closed|unavailable|fault)", re.IGNORECASE), "эскалатор не работает"),
+    (re.compile(r"lift\s+out\s+of\s+service|lift\s+(?:closed|unavailable|fault)", re.IGNORECASE), "лифт не работает"),
     (re.compile(r"track\s+replacement|replacement\s+work|replac(?:e|ing)\s+track", re.IGNORECASE), "замена путей"),
     (re.compile(r"signal\s+failure|signalling\s+(?:failure|issue|problem)|signalling\s+work", re.IGNORECASE), "сигнальная неисправность"),
     # 2) Generic work phrases.
@@ -359,11 +361,25 @@ def extract_transport_card(candidate: dict) -> TransportCard | None:
         if m_seg:
             card.segment = f"{m_seg.group('a').strip()} – {m_seg.group('b').strip()}"
 
+        # Capture the tram STOP from the TfGM title so a card without a
+        # known line/segment still tells the reader WHERE. Titles look
+        # like "Piccadilly Gardens - Tram Improvement Works",
+        # "Prestwich Tram Stop - Improvement Works",
+        # "Manchester Airport Tram Stop - Escalator out of service".
+        # Without this the card collapsed to a locationless "предупреждение
+        # TfGM по трамваям" and two different stops rendered identically.
+        if not card.line and not card.segment:
+            head_part = title.split(" - ")[0].strip()
+            head_part = re.sub(r"\s+Tram\s+Stop$", "", head_part, flags=re.IGNORECASE).strip()
+            head_part = re.sub(r"\s+Tram$", "", head_part, flags=re.IGNORECASE).strip()
+            if head_part and not re.search(r"\bline\b", head_part, re.IGNORECASE) and 2 < len(head_part) <= 50:
+                card.stop_name = head_part
+
         card.start_date, card.end_date, card.duration_phrase = _extract_duration_or_dates(blob)
         card.reason = _translate_reason(blob)
         card.alternative = _extract_alternative(blob)
         card.cost_phrase = _extract_cost_phrase(blob)
-        card.has_line_or_segment = bool(card.line or card.segment)
+        card.has_line_or_segment = bool(card.line or card.segment or card.stop_name)
         card.has_dates = bool(card.start_date or card.end_date or card.duration_phrase)
         card.has_reason = bool(card.reason)
         card.has_alternative = bool(card.alternative)
@@ -421,7 +437,7 @@ def _render_tram(card: TransportCard) -> str:
     elif card.duration_phrase:
         time_phrase = card.duration_phrase
 
-    # Where (line / segment)
+    # Where (line / segment / stop)
     location = ""
     if card.line and card.segment:
         location = f"на {card.line} между {card.segment}"
@@ -429,6 +445,8 @@ def _render_tram(card: TransportCard) -> str:
         location = f"на {card.line}"
     elif card.segment:
         location = f"между {card.segment}"
+    elif card.stop_name:
+        location = f"на остановке {card.stop_name}"
 
     # Decide template tier based on signal density.
     has_loc = bool(location)

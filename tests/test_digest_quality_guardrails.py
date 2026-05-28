@@ -1685,8 +1685,8 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
     #   «Univ алкоголь мог бы сказать плохо хорошо или как»
     # ---------------------------------------------------------------
 
-    def test_city_news_prompt_is_v5_with_lead_first_structure(self) -> None:
-        """The city-news prompt v5 must explicitly require lead-first
+    def test_city_news_prompt_is_v6_with_lead_first_structure(self) -> None:
+        """The city-news prompt v6 must explicitly require lead-first
         structure (fact first, details next, what-next last) and ban
         quote/narrative leads.
         """
@@ -1694,7 +1694,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         from news_digest.pipeline.prompts_meta import by_name
         meta = by_name().get("city_news")
         self.assertIsNotNone(meta)
-        self.assertEqual(meta.version, "v5", f"city_news not bumped to v5: {meta}")
+        self.assertEqual(meta.version, "v6", f"city_news not bumped to v6: {meta}")
         prompt = _lr.PROMPT_CITY_NEWS
         self.assertIn("ОБЯЗАТЕЛЬНАЯ СТРУКТУРА", prompt)
         self.assertIn("ЛИД-ФАКТ", prompt)

@@ -866,8 +866,30 @@ def _count_per_source_yield(
         source_label = str(candidate.get("source_label") or "").strip()
         if not source_label:
             continue
-        record = yields.setdefault(source_label, {"curated": 0, "rendered": 0, "reject_reasons": {}})
+        record = yields.setdefault(
+            source_label,
+            {
+                "curated": 0,
+                "rendered": 0,
+                "reject_reasons": {},
+                "loss_funnel": {
+                    "candidate_pool": 0,
+                    "rejected_before_writer": 0,
+                    "backup_before_rewrite": 0,
+                    "included_after_curation": 0,
+                    "included_missing_draft_line": 0,
+                    "writer_dropped": 0,
+                    "rendered": 0,
+                },
+            },
+        )
+        funnel = record.get("loss_funnel")
+        if isinstance(funnel, dict):
+            funnel["candidate_pool"] = int(funnel.get("candidate_pool") or 0) + 1
         if not candidate.get("include"):
+            if isinstance(funnel, dict):
+                key = "backup_before_rewrite" if str(candidate.get("rewrite_shortlist_status") or "") == "backup_before_rewrite" else "rejected_before_writer"
+                funnel[key] = int(funnel.get(key) or 0) + 1
             reasons = [str(r) for r in (candidate.get("reject_reasons") or []) if str(r).strip()]
             if not reasons:
                 reason = str(candidate.get("reason") or "").strip()
@@ -878,9 +900,15 @@ def _count_per_source_yield(
                     reason_counts[reason] = int(reason_counts.get(reason) or 0) + 1
             continue
         record["curated"] = int(record["curated"]) + 1
+        if isinstance(funnel, dict):
+            funnel["included_after_curation"] = int(funnel.get("included_after_curation") or 0) + 1
+            if not str(candidate.get("draft_line") or "").strip():
+                funnel["included_missing_draft_line"] = int(funnel.get("included_missing_draft_line") or 0) + 1
         fp = str(candidate.get("fingerprint") or "")
         if fp and fp in rendered_set:
             record["rendered"] = int(record["rendered"]) + 1
+            if isinstance(funnel, dict):
+                funnel["rendered"] = int(funnel.get("rendered") or 0) + 1
     cand_by_fp = {
         str(c.get("fingerprint") or ""): c
         for c in (candidates_report or {}).get("candidates") or []
@@ -894,7 +922,26 @@ def _count_per_source_yield(
         source_label = str(cand.get("source_label") or drop.get("source_label") or "").strip()
         if not source_label:
             continue
-        record = yields.setdefault(source_label, {"curated": 0, "rendered": 0, "reject_reasons": {}})
+        record = yields.setdefault(
+            source_label,
+            {
+                "curated": 0,
+                "rendered": 0,
+                "reject_reasons": {},
+                "loss_funnel": {
+                    "candidate_pool": 0,
+                    "rejected_before_writer": 0,
+                    "backup_before_rewrite": 0,
+                    "included_after_curation": 0,
+                    "included_missing_draft_line": 0,
+                    "writer_dropped": 0,
+                    "rendered": 0,
+                },
+            },
+        )
+        funnel = record.get("loss_funnel")
+        if isinstance(funnel, dict):
+            funnel["writer_dropped"] = int(funnel.get("writer_dropped") or 0) + 1
         reason_counts = record["reject_reasons"]
         if not isinstance(reason_counts, dict):
             continue
@@ -936,9 +983,11 @@ def _summarise_source_health(
                 counts[status] = counts.get(status, 0) + 1
                 name = str(entry.get("name") or "")
                 seen_names.add(name)
-                row_yield = yields.get(name) or {"curated": 0, "rendered": 0, "reject_reasons": {}}
+                row_yield = yields.get(name) or {"curated": 0, "rendered": 0, "reject_reasons": {}, "loss_funnel": {}}
                 raw_count = int(entry.get("candidate_count") or 0)
                 accepted_count = int(row_yield["curated"])
+                loss_funnel = dict(row_yield.get("loss_funnel") or {})
+                loss_funnel["source_raw_count"] = raw_count
                 sources.append(
                     {
                         "name": name,
@@ -950,6 +999,7 @@ def _summarise_source_health(
                         "rejected_count": max(raw_count - accepted_count, 0),
                         "rendered_count": int(row_yield["rendered"]),
                         "reject_reasons": row_yield.get("reject_reasons") or {},
+                        "loss_funnel": loss_funnel,
                         "failure_count": len(list(entry.get("errors") or [])),
                         "candidate_count": raw_count,
                         "fresh_last_24h_count": int(entry.get("fresh_last_24h_count") or 0),
@@ -986,8 +1036,9 @@ def _summarise_source_health(
                 "raw_count": int(row["curated"]),
                 "accepted_count": int(row["curated"]),
                 "rejected_count": 0,
-                    "rendered_count": int(row["rendered"]),
-                    "reject_reasons": row.get("reject_reasons") or {},
+                "rendered_count": int(row["rendered"]),
+                "reject_reasons": row.get("reject_reasons") or {},
+                "loss_funnel": row.get("loss_funnel") or {},
                 "failure_count": 0,
                 "candidate_count": int(row["curated"]),
                 "fresh_last_24h_count": 0,
