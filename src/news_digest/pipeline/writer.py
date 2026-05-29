@@ -106,7 +106,7 @@ DEGRADED_LLM_SECTION_MAX_ITEMS = {
     "Русскоязычные концерты и стендап UK": 3,
 }
 
-PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 25
+PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 45
 PUBLIC_SECTION_RESERVED_MIN = {
     # These sections answer "what can I do / see / book now"; they must not
     # disappear just because early news sections are noisy on a given morning.
@@ -602,7 +602,13 @@ def _parse_ticket_datetime(candidate: dict) -> datetime | None:
         except ValueError:
             return None
     title = str(candidate.get("title") or "")
-    title_match = re.search(r"\b(?:mon|tue|wed|thu|fri|sat|sun)\s+(\d{1,2})\s+([A-Za-z]{3,9})\s+(20\d{2})\b", title, re.IGNORECASE)
+    # Accept both "Wed 28 November 2026" and Manchester Academy's
+    # "28th November 2026" (ordinal day, no weekday).
+    title_match = re.search(
+        r"\b(?:(?:mon|tue|wed|thu|fri|sat|sun)\w*\s+)?(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3,9})\s+(20\d{2})\b",
+        title,
+        re.IGNORECASE,
+    )
     if title_match:
         day_raw, month_raw, year_raw = title_match.groups()
         month = _MONTHS.get(month_raw.lower())
@@ -617,6 +623,14 @@ def _parse_ticket_datetime(candidate: dict) -> datetime | None:
 def _ticket_headliner(title: str) -> str:
     cleaned = re.sub(r"\s+", " ", str(title or "")).strip()
     cleaned = re.split(r"\s+[—-]\s+event\b", cleaned, maxsplit=1, flags=re.IGNORECASE)[0]
+    # Strip a trailing date the venue appended: "… - 28th November 2026" or
+    # "… - Wed 28 November 2026" — the parsed date is rendered separately.
+    cleaned = re.sub(
+        r"\s*[-–]\s*(?:(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\w*\s+)?\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]{3,9}\s+20\d{2}\s*$",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    ).strip(" -–,")
     cleaned = re.sub(r"\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b.*$", "", cleaned, flags=re.IGNORECASE).strip(" -–,")
     return cleaned or "событие"
 
@@ -666,12 +680,12 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
     title = _ticket_headliner(str(candidate.get("title") or ""))
     venue = _ticket_venue(candidate)
     genre = _ticket_genre(candidate)
-    if not title or not venue or _looks_like_source_chrome(" ".join([
-        title,
-        venue,
-        str(candidate.get("summary") or ""),
-        str(candidate.get("lead") or ""),
-    ])):
+    # Build the card from the CLEAN structured fields (event name + venue +
+    # date + genre). We do NOT gate on summary/lead here: those often hold
+    # page boilerplate, but the structured fields are clean, so holding the
+    # whole card over a dirty summary just loses a real show. Only bail if
+    # the structured parts we actually render are themselves chrome.
+    if not title or _looks_like_source_chrome(" ".join([title, venue, genre])):
         return ""
     practical = "Билеты и детали берите на официальной странице площадки."
     ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
@@ -706,10 +720,34 @@ def _looks_like_source_chrome(value: str) -> bool:
             "this website makes extensive use of javascript",
             "browser settings",
             "once selected, tickets will be reserved",
-            "all ages welcome",
-            "under 16s must be accompanied",
             "enable javascript",
         )
+    )
+
+
+def _build_transport_fallback_line(candidate: dict) -> str:
+    """Recover a location-bearing transport line when the rewrite produced
+    nothing. We do NOT hold the alert silently: the stop/area is almost
+    always recoverable from the TfGM alert URL slug (…/piccadilly-gardens-…)
+    or the title head, and the reason from the title text. Telling the
+    reader WHERE is the hard editorial rule — a held card breaks it."""
+    from news_digest.pipeline.transport_fill import _location_from_tfgm_slug  # noqa: PLC0415
+    from news_digest.pipeline.transport_card import _translate_reason  # noqa: PLC0415
+
+    title = re.sub(r"\s+", " ", str(candidate.get("title") or "")).strip()
+    url = str(candidate.get("source_url") or "")
+    location = _location_from_tfgm_slug(url)
+    if not location:
+        head = re.split(r"\s+[-–|]\s+", title, maxsplit=1)[0].strip()
+        if head and len(head) <= 60 and not _looks_like_source_chrome(head):
+            location = head
+    if not location:
+        return ""
+    reason = _translate_reason(title) or "ограничения движения"
+    operator = str(candidate.get("source_label") or "").strip() or "TfGM"
+    return (
+        f"• {operator}: {reason} — {location}. "
+        "Сроки и объёмы работ уточняйте на странице перевозчика."
     )
 
 
@@ -1796,8 +1834,13 @@ def write_digest(project_root: Path) -> StageResult:
                 english_detected = True
 
         if not line and category == "transport":
-            warnings.append(f"Candidate #{index}: transport item held because no line/stop/route could be extracted.")
-            logger.info("HOLD transport_no_usable_card | %s | %s", block_key, title[:80])
+            line = _build_transport_fallback_line(candidate)
+            if line:
+                warnings.append(f"Candidate #{index}: transport location recovered from URL/title (no LLM draft_line).")
+                logger.info("TRANSPORT location recovery | %s | %s", block_key, title[:80])
+            else:
+                warnings.append(f"Candidate #{index}: transport item held — no location recoverable from URL/title.")
+                logger.info("HOLD transport_no_usable_card | %s | %s", block_key, title[:80])
 
         if not line and category == "venues_tickets":
             line = _build_ticket_fallback_line(candidate)

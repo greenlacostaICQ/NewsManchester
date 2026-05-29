@@ -972,7 +972,9 @@ class AdminAlertCopyTest(unittest.TestCase):
         rows = _section_shape_rows({"section_counts": {"Билеты / Ticket Radar": 6, "Что важно сегодня": 2}})
         by_name = {row["section"]: row for row in rows}
         # 2026-05-29: an uncapped ticket rail buried football and hard news.
-        self.assertEqual(by_name["Билеты / Ticket Radar"]["max"], 6)
+        # Tickets are not artificially capped (owner: "билетов может быть
+        # дохрена"). Football is ordered above the block; budget bounds total.
+        self.assertEqual(by_name["Билеты / Ticket Radar"]["max"], 99)
         self.assertEqual(by_name["Что важно сегодня"]["status"], "ниже минимума")
         self.assertEqual(_section_name_human("Билеты / Ticket Radar"), "Билеты и концерты")
         self.assertIn(
@@ -1853,9 +1855,11 @@ class TelegramBacklog20260527Test(unittest.TestCase):
     borderline_queue stored every hold as `no_reason`. One assertion per
     behaviour."""
 
-    def test_public_digest_max_visible_items_is_25(self) -> None:
+    def test_public_digest_max_visible_items_is_45(self) -> None:
+        # Owner-set ceiling: 45 is the MAXIMUM (not a fill quota). Lowering it
+        # to 25 silently dropped real items, which the owner explicitly rejected.
         from news_digest.pipeline.writer import PUBLIC_DIGEST_MAX_VISIBLE_ITEMS
-        self.assertEqual(PUBLIC_DIGEST_MAX_VISIBLE_ITEMS, 25)
+        self.assertEqual(PUBLIC_DIGEST_MAX_VISIBLE_ITEMS, 45)
 
     def test_ticket_within_7_days_kept_in_ticket_radar_despite_old_onsale(self) -> None:
         from news_digest.pipeline.candidate_validator import _exclude_stale_ticket_onsale
@@ -2151,7 +2155,10 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         line = render_card(TransportCard(mode="tram", operator="Metrolink", reason="ремонтные работы"))
         self.assertEqual(line, "")
 
-    def test_ticket_fallback_rejects_js_chrome_summary(self) -> None:
+    def test_ticket_fallback_builds_clean_card_despite_dirty_summary(self) -> None:
+        # Owner rule: enrich, don't ban. A dirty JS-chrome summary must NOT
+        # make us hold the show — the structured fields (name/venue/date) are
+        # clean, so render from them and drop the chrome.
         from news_digest.pipeline.writer import _build_ticket_fallback_line
         candidate = {
             "category": "venues_tickets",
@@ -2165,7 +2172,12 @@ class TelegramBacklog20260527Test(unittest.TestCase):
             ),
             "event": {"is_event": True, "event_name": "6LACK", "venue": "Manchester Academy", "date_start": "2026-09-27"},
         }
-        self.assertEqual(_build_ticket_fallback_line(candidate), "")
+        line = _build_ticket_fallback_line(candidate)
+        self.assertIn("6LACK", line)
+        self.assertIn("Manchester Academy", line)
+        self.assertIn("27 сентября", line)
+        self.assertNotIn("JavaScript", line)
+        self.assertNotIn("browser settings", line)
 
     def test_hard_news_missing_draft_line_gets_recovery_line(self) -> None:
         from news_digest.pipeline.writer import _hard_news_recovery_line

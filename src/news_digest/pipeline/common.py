@@ -50,9 +50,10 @@ SECTION_MAX_ITEMS = {
     "Выходные в GM": 8,
     "Что важно в ближайшие 7 дней": 6,
     "Еда, открытия и рынки": 6,
-    # Ticket/russian-event blocks are useful only when short and actionable.
-    # Long ticket rails buried football/news on 2026-05-29.
-    "Билеты / Ticket Radar": 6,
+    # Tickets are NOT artificially capped — there can legitimately be many
+    # live shows. Football is ordered above the ticket block so a long rail
+    # never buries it, and the global digest budget bounds the total.
+    "Билеты / Ticket Radar": 99,
     "Русскоязычные концерты и стендап UK": 6,
     "Что важно сегодня": 5,
 }
