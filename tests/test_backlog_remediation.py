@@ -2147,6 +2147,15 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         self.assertIn("Piccadilly Gardens", line)
         self.assertNotIn("подробности в источнике", line)
 
+    def test_breadcrumb_page_title_collapsed(self) -> None:
+        # 2026-05-29: New Smithfield rendered as "Casual trading | Casual
+        # trading | Manchester City Council" — a duplicated breadcrumb title.
+        from news_digest.pipeline.collector.summary import _clean_title_text
+        self.assertEqual(
+            _clean_title_text("Casual trading | Casual trading | Manchester City Council"),
+            "Casual trading",
+        )
+
     def test_same_venue_different_events_not_merged_by_token_overlap(self) -> None:
         # Strike Den! and The Fabric of Protest are two different shows at
         # People's History Museum — shared venue + date tokens must not

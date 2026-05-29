@@ -80,6 +80,20 @@ def _clean_title_text(title: str) -> str:
         flags=re.IGNORECASE,
     )
     cleaned = re.sub(r"^\|\s*", "", cleaned).strip(" |-")
+    # Collapse breadcrumb-style page titles: "Casual trading | Casual trading
+    # | Manchester City Council" → "Casual trading". Dedupe pipe segments and
+    # drop a trailing site-name segment (council/gov breadcrumb).
+    if "|" in cleaned:
+        seen: set[str] = set()
+        segments: list[str] = []
+        for segment in cleaned.split("|"):
+            seg = segment.strip()
+            if seg and seg.lower() not in seen:
+                seen.add(seg.lower())
+                segments.append(seg)
+        if len(segments) > 1 and re.search(r"\bcouncil$", segments[-1], flags=re.IGNORECASE):
+            segments = segments[:-1]
+        cleaned = " | ".join(segments)
     return re.sub(r"\s+", " ", cleaned).strip()
 
 
