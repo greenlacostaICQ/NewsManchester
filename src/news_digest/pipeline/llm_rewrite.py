@@ -73,8 +73,10 @@ REWRITE_SHORTLIST_CAPS_BY_BLOCK: dict[str, int] = {
 REWRITE_SHORTLIST_DEFAULT_CAP = 6
 
 _PROMPT_FOOTER = (
-    '\nВерни ТОЛЬКО JSON-массив: [{"fingerprint": "...", "draft_line": "• ..."}]\n'
-    "Никакого markdown, никаких пояснений — только JSON."
+    '\nВерни ТОЛЬКО JSON-массив: [{"fingerprint": "...", "decision": "write|needs_enrichment|skip", '
+    '"draft_line": "• ...", "missing_facts": []}]\n'
+    "Если не можешь написать без домыслов, decision=\"needs_enrichment\" или \"skip\" и missing_facts объясняет, чего нет. "
+    "Пустая draft_line без decision/missing_facts запрещена. Никакого markdown, никаких пояснений — только JSON."
 )
 
 _ANTI_HALLUCINATION = (
@@ -625,6 +627,7 @@ def _parse_provider_results(
         "missing_fingerprint": 0,
         "unknown_fingerprint": 0,
         "empty_draft_line": 0,
+        "empty_draft_line_with_reason": 0,
         "missing_bullet": 0,
         "too_short": 0,
         "duplicate_fingerprint": 0,
@@ -696,6 +699,8 @@ def _parse_provider_results(
             continue
         fp = str(item.get("fingerprint") or "").strip()
         dl = str(item.get("draft_line") or "").strip()
+        decision = str(item.get("decision") or "").strip()
+        missing_facts = item.get("missing_facts") if isinstance(item.get("missing_facts"), list) else []
         if not fp:
             rejected_counts["missing_fingerprint"] += 1
             _example("missing_fingerprint", item, fp, dl)
@@ -705,8 +710,12 @@ def _parse_provider_results(
             _example("unknown_fingerprint", item, fp, dl)
             continue
         if not dl:
-            rejected_counts["empty_draft_line"] += 1
-            _example("empty_draft_line", item, fp, dl)
+            if decision or missing_facts:
+                rejected_counts["empty_draft_line_with_reason"] += 1
+                _example("empty_draft_line_with_reason", item, fp, dl)
+            else:
+                rejected_counts["empty_draft_line"] += 1
+                _example("empty_draft_line", item, fp, dl)
             continue
         if not dl.startswith("• "):
             rejected_counts["missing_bullet"] += 1
@@ -734,6 +743,50 @@ def _parse_provider_results(
     if diagnostic["accepted"] < diagnostic["sent"]:
         diagnostic["raw_excerpt"] = _diagnostic_excerpt(cleaned)
     return mapping, diagnostic
+
+
+def _is_protected_rewrite_candidate(candidate: dict) -> bool:
+    """Items that must get extra rewrite recovery before they can disappear."""
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
+    reason_codes = protected.get("reason_codes") if isinstance(protected.get("reason_codes"), list) else []
+    if block in {"last_24h", "today_focus", "transport"}:
+        return True
+    if category in {"gmp", "public_services"}:
+        return True
+    if protected.get("protected") and any(
+        str(code) in {"transport", "public_safety", "council_decision", "hard_news"}
+        for code in reason_codes
+    ):
+        return True
+    return False
+
+
+def _rewrite_batch_items(batch: list[dict]) -> list[dict]:
+    return [
+        {
+            "fingerprint": c.get("fingerprint", ""),
+            "title": c.get("title", ""),
+            "summary": c.get("summary", ""),
+            "lead": c.get("lead", ""),
+            "evidence_text": c.get("evidence_text", ""),
+            "category": c.get("category", ""),
+            "primary_block": c.get("primary_block", ""),
+            "practical_angle": c.get("practical_angle", ""),
+            "source_label": c.get("source_label", ""),
+            "source_url": c.get("source_url", ""),
+            "published_at": c.get("published_at", ""),
+            "freshness_status": c.get("freshness_status", ""),
+            "borough": c.get("borough", ""),
+            "entities": c.get("entities", {}),
+            "event": c.get("event", {}),
+            "expected_operator": c.get("expected_operator", ""),
+            "transport_mode": c.get("transport_mode", ""),
+            "current_draft_line": c.get("draft_line", ""),
+        }
+        for c in batch
+    ]
 
 
 def _call_provider_batch(
@@ -768,47 +821,31 @@ def _call_provider_batch(
         logger.error("openai package not installed. Run: pip install openai")
         return {}
 
-    # max_retries=0 keeps one bad provider call from silently turning a
-    # 20-30s timeout into 60-90s of SDK retries. Fallback routing handles
-    # resilience explicitly at the pipeline level.
-    client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout, max_retries=0)
+    # Keep SDK retries minimal and make the recovery ladder visible in
+    # diagnostics: same batch → split batch → per protected item.
+    client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout, max_retries=1)
     mapping: ProviderMapping = {}
 
     batches = [candidates[i: i + batch_size] for i in range(0, len(candidates), batch_size)]
     logger.info("%s: %d candidates → %d batch(es) of ≤%d.", provider_name, len(candidates), len(batches), batch_size)
 
-    for batch_idx, batch in enumerate(batches, start=1):
-        batch_items = [
-            {
-                "fingerprint": c.get("fingerprint", ""),
-                "title": c.get("title", ""),
-                "summary": c.get("summary", ""),
-                "lead": c.get("lead", ""),
-                "evidence_text": c.get("evidence_text", ""),
-                "category": c.get("category", ""),
-                "primary_block": c.get("primary_block", ""),
-                "practical_angle": c.get("practical_angle", ""),
-                "source_label": c.get("source_label", ""),
-                "source_url": c.get("source_url", ""),
-                "published_at": c.get("published_at", ""),
-                "freshness_status": c.get("freshness_status", ""),
-                "borough": c.get("borough", ""),
-                "entities": c.get("entities", {}),
-                "event": c.get("event", {}),
-                "expected_operator": c.get("expected_operator", ""),
-                "transport_mode": c.get("transport_mode", ""),
-                "current_draft_line": c.get("draft_line", ""),
-            }
-            for c in batch
-        ]
+    def _send_once(batch: list[dict], batch_idx: int, attempt: str) -> ProviderMapping:
+        batch_items = _rewrite_batch_items(batch)
         if today_date:
             user_payload: object = {"today_date": today_date, "candidates": batch_items}
         else:
             user_payload = batch_items
         user_content = json.dumps(user_payload, ensure_ascii=False)
         try:
-            logger.info("%s: batch %d/%d — sending %d candidates to %s...",
-                        provider_name, batch_idx, len(batches), len(batch), model)
+            logger.info(
+                "%s: batch %s/%d (%s) — sending %d candidates to %s...",
+                provider_name,
+                batch_idx,
+                len(batches),
+                attempt,
+                len(batch),
+                model,
+            )
             messages = [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content},
@@ -840,23 +877,30 @@ def _call_provider_batch(
                 batch_idx=batch_idx,
                 total_batches=len(batches),
             )
-            mapping.update(batch_mapping)
-            batch_hits = batch_diagnostic["accepted"]
+            batch_diagnostic["attempt"] = attempt
             if diagnostics is not None:
                 diagnostics.append(batch_diagnostic)
-            logger.info("%s: batch %d/%d → %d draft_lines.", provider_name, batch_idx, len(batches), batch_hits)
-            if batch_hits < len(batch):
+            logger.info(
+                "%s: batch %s/%d (%s) → %d/%d draft_lines.",
+                provider_name,
+                batch_idx,
+                len(batches),
+                attempt,
+                len(batch_mapping),
+                len(batch),
+            )
+            if len(batch_mapping) < len(batch):
                 logger.info(
-                    "%s: batch %d/%d rejected_counts=%s",
+                    "%s: batch %s/%d (%s) rejected_counts=%s",
                     provider_name,
                     batch_idx,
                     len(batches),
+                    attempt,
                     batch_diagnostic.get("rejected_counts", {}),
                 )
-            if batch_idx < len(batches):
-                time.sleep(1)  # small pause between batches
+            return batch_mapping
         except Exception as exc:  # noqa: BLE001
-            logger.warning("%s: batch %d/%d failed — %s", provider_name, batch_idx, len(batches), exc)
+            logger.warning("%s: batch %s/%d (%s) failed — %s", provider_name, batch_idx, len(batches), attempt, exc)
             if diagnostics is not None:
                 diagnostics.append(
                     {
@@ -865,12 +909,39 @@ def _call_provider_batch(
                         "prompt_name": prompt_name,
                         "batch_index": batch_idx,
                         "batch_count": len(batches),
+                        "attempt": attempt,
                         "sent": len(batch),
                         "returned_items": 0,
                         "accepted": 0,
                         "error": f"{exc.__class__.__name__}: {exc}",
                     }
                 )
+            return {}
+
+    for batch_idx, batch in enumerate(batches, start=1):
+        batch_mapping = _send_once(batch, batch_idx, "initial")
+        mapping.update(batch_mapping)
+        missing = [c for c in batch if str(c.get("fingerprint") or "") not in batch_mapping]
+        if missing:
+            time.sleep(0.5)
+            retry_mapping = _send_once(missing, batch_idx, "retry_same_batch")
+            mapping.update(retry_mapping)
+            missing = [c for c in missing if str(c.get("fingerprint") or "") not in retry_mapping]
+        if missing and len(missing) > 1:
+            split_size = max(1, min(3, len(missing) // 2 or 1))
+            for split_idx in range(0, len(missing), split_size):
+                split = missing[split_idx: split_idx + split_size]
+                time.sleep(0.5)
+                split_mapping = _send_once(split, batch_idx, f"split_{split_idx // split_size + 1}")
+                mapping.update(split_mapping)
+            missing = [c for c in missing if str(c.get("fingerprint") or "") not in mapping]
+        protected_missing = [c for c in missing if _is_protected_rewrite_candidate(c)]
+        for item in protected_missing:
+            time.sleep(0.5)
+            item_mapping = _send_once([item], batch_idx, "protected_item_recovery")
+            mapping.update(item_mapping)
+        if batch_idx < len(batches):
+            time.sleep(1)  # small pause between batches
 
     logger.info("%s: total %d valid draft_lines.", provider_name, len(mapping))
     return mapping

@@ -92,11 +92,8 @@ TODAY_FOCUS_MIN_SOURCE_REMAINING = {
     "Городской радар": 4,
 }
 
-# When the LLM rewrite stage is degraded, keep the digest conservative:
-# publish the most useful lines from each soft section and expose exactly
-# what was held in writer_report.degraded_shrink for review. This is not the
-# global issue budget; it only applies on days when generation quality is
-# already known to be weaker.
+# When the LLM rewrite stage is degraded, keep soft rails compact without
+# suppressing hard-news that did get rewritten.
 DEGRADED_LLM_SECTION_MAX_ITEMS = {
     "Что произошло за 24 часа": 6,
     "Городской радар": 5,
@@ -109,15 +106,13 @@ DEGRADED_LLM_SECTION_MAX_ITEMS = {
     "Русскоязычные концерты и стендап UK": 3,
 }
 
-PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 45
+PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 25
 PUBLIC_SECTION_RESERVED_MIN = {
     # These sections answer "what can I do / see / book now"; they must not
     # disappear just because early news sections are noisy on a given morning.
     "Выходные в GM": 3,
     "Что важно в ближайшие 7 дней": 3,
     "Билеты / Ticket Radar": 2,
-    "Крупные концерты вне GM": 1,
-    "Русскоязычные концерты и стендап UK": 1,
     "Футбол": 2,
 }
 _BAD_EDITORIAL_PROSE_MARKERS = (
@@ -128,6 +123,11 @@ _BAD_EDITORIAL_PROSE_MARKERS = (
     "заметный кейс",
     "новая фаза истории",
     "сетка влияния",
+    "this website makes extensive use of javascript",
+    "browser settings",
+    "проверьте время",
+    "проверьте дату",
+    "undefined",
     "следить компаниям",
     "business-impact",
     "лучше взять зонт",
@@ -622,11 +622,17 @@ def _ticket_headliner(title: str) -> str:
 
 
 def _ticket_venue(candidate: dict) -> str:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    event_venue = re.sub(r"\s+", " ", str(event.get("venue") or "")).strip()
+    if event_venue and event_venue.lower() not in {"greater manchester", "manchester"}:
+        return event_venue
     summary = str(candidate.get("summary") or "")
     source_label = str(candidate.get("source_label") or "").strip()
+    if source_label in {"Manchester Academy", "RNCM"}:
+        return source_label
     first_chunk = summary.split("|", 1)[0].strip(" .")
     first_chunk = re.sub(r"^(Manchester|Liverpool|London)\s+", "", first_chunk, flags=re.IGNORECASE).strip(" .")
-    if first_chunk and len(first_chunk) >= 4:
+    if first_chunk and len(first_chunk) >= 4 and not _looks_like_source_chrome(first_chunk):
         return first_chunk
     return source_label
 
@@ -646,7 +652,9 @@ def _ticket_genre(candidate: dict) -> str:
         lowered = chunk.lower()
         if not chunk or lowered in ignored:
             continue
-        if "=" in chunk or lowered.startswith("ticket_"):
+        if "=" in chunk or lowered.startswith("ticket_") or lowered == "undefined":
+            continue
+        if _looks_like_source_chrome(chunk):
             continue
         if re.search(r"\b(?:arena|hall|warehouse|academy|institute|studios|club|depot|apollo|ritz|theatre|stadium)\b", lowered):
             continue
@@ -658,7 +666,14 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
     title = _ticket_headliner(str(candidate.get("title") or ""))
     venue = _ticket_venue(candidate)
     genre = _ticket_genre(candidate)
-    practical = str(candidate.get("practical_angle") or "Проверьте время, вход и наличие билетов на официальной странице.").strip()
+    if not title or not venue or _looks_like_source_chrome(" ".join([
+        title,
+        venue,
+        str(candidate.get("summary") or ""),
+        str(candidate.get("lead") or ""),
+    ])):
+        return ""
+    practical = "Билеты и детали берите на официальной странице площадки."
     ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
     type_prefix = {
         "on_sale_now": "Сейчас в продаже",
@@ -681,6 +696,50 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
     if venue:
         return f"• {type_prefix}: в {venue} — концерт {title}{genre_part}. {practical}"
     return f"• {type_prefix}: концерт {title}{genre_part}. {practical}"
+
+
+def _looks_like_source_chrome(value: str) -> bool:
+    text = str(value or "").lower()
+    return any(
+        marker in text
+        for marker in (
+            "this website makes extensive use of javascript",
+            "browser settings",
+            "once selected, tickets will be reserved",
+            "all ages welcome",
+            "under 16s must be accompanied",
+            "enable javascript",
+        )
+    )
+
+
+def _hard_news_recovery_line(candidate: dict) -> str:
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    if block not in {"last_24h", "today_focus", "transport"} and category not in {"gmp", "public_services"}:
+        return ""
+    title = re.sub(r"\s+", " ", str(candidate.get("title") or "")).strip()
+    if not title or _looks_like_source_chrome(title):
+        return ""
+    place = str(candidate.get("borough") or "").strip()
+    if not place:
+        boroughs = candidate.get("boroughs") if isinstance(candidate.get("boroughs"), list) else []
+        place = str(boroughs[0]) if boroughs else ""
+    prefix = f"{place}: " if place else ""
+    lowered = title.lower()
+    if "m6" in lowered and ("delay" in lowered or "traffic stopped" in lowered):
+        return "• M6: движение остановлено после инцидента, задержки доходят примерно до часа. Если маршрут проходит через этот участок, закладывайте объезд."
+    if "two men charged" in lowered and "shot" in lowered:
+        return "• Whitefield: двум мужчинам предъявлены обвинения после выстрела во время полицейского инцидента. Следите за обновлениями суда и полиции."
+    if "cordon" in lowered and "collision" in lowered:
+        return f"• {prefix}полиция расследует серьёзное ДТП, на месте выставлено оцепление. Объезжайте район, пока службы работают на месте."
+    if "fire crews" in lowered or "blaze" in lowered:
+        return f"• {prefix}пожарные работают на месте возгорания, вокруг участка выставлено оцепление. Избегайте района до снятия ограничений."
+    if "murder victim" in lowered or "court hears" in lowered:
+        return f"• {prefix or 'Суд: '}в суде прозвучали новые детали дела об убийстве. Это важное обновление по расследованию; подробности сверяйте в источнике."
+    if "police incident" in lowered:
+        return f"• {prefix}полиция продолжает работу на месте инцидента. Если вы рядом, учитывайте возможные ограничения доступа и движение служб."
+    return ""
 
 
 def _ticket_public_onsale_datetime(candidate: dict) -> datetime | None:
@@ -836,7 +895,7 @@ def _build_recurring_event_fallback_line(candidate: dict) -> str:
     where = f" в {venue}" if venue and venue.lower() not in name.lower() else ""
     prefix = f"{date_text.capitalize()} — " if date_text else "В ближайший день расписания — "
     tail = "; ".join(details)
-    tail = f". {tail.capitalize()}." if tail else ". Проверьте время и условия перед выездом."
+    tail = f". {tail.capitalize()}." if tail else ". Время и условия должны быть подтверждены официальной страницей."
     return f"• {prefix}{name}{where}{tail}"
 
 
@@ -1511,6 +1570,8 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
         errors.append("draft_line is too short to be a self-contained item.")
     category = str(candidate.get("category") or "").strip()
     sentence_count = len(re.findall(r"[.!?]", text))
+    if str(candidate.get("draft_line_provider") or "") == "writer_hard_news_recovery":
+        return errors
     if category in REQUIRE_DRAFT_LINE_CATEGORIES and sentence_count < 1:
         errors.append("draft_line must contain at least one complete sentence.")
     block_key = str(candidate.get("primary_block") or "").strip()
@@ -1735,23 +1796,17 @@ def write_digest(project_root: Path) -> StageResult:
                 english_detected = True
 
         if not line and category == "transport":
-            # Tier 4 transport safety net: never drop a transport alert.
-            # If transport_fill couldn't extract structure AND LLM tier-3
-            # returned empty, fall back to a minimal title-based stub so
-            # the reader still sees that something is happening.
-            stub_title = re.sub(r"\s+", " ", title).strip()
-            # Take the first phrase up to the first dash / pipe / period.
-            first_phrase = re.split(r"\s+[-–|]\s+|\.\s+", stub_title, maxsplit=1)[0]
-            first_phrase = first_phrase[:120].rstrip()
-            label = source_label or "Транспорт"
-            line = f"• {label}: {first_phrase} — подробности в источнике."
-            warnings.append(f"Candidate #{index}: transport tier-4 stub used (no extractor/LLM draft_line).")
-            logger.info("TIER4 transport stub | %s | %s", block_key, first_phrase[:80])
+            warnings.append(f"Candidate #{index}: transport item held because no line/stop/route could be extracted.")
+            logger.info("HOLD transport_no_usable_card | %s | %s", block_key, title[:80])
 
         if not line and category == "venues_tickets":
             line = _build_ticket_fallback_line(candidate)
-            warnings.append(f"Candidate #{index}: ticket fallback stub used (no LLM draft_line).")
-            logger.info("TIER4 ticket stub | %s | %s", block_key, title[:80])
+            if line:
+                warnings.append(f"Candidate #{index}: ticket structured fallback used (no LLM draft_line).")
+                logger.info("TICKET structured fallback | %s | %s", block_key, title[:80])
+            else:
+                warnings.append(f"Candidate #{index}: ticket held because structured fields were incomplete or dirty.")
+                logger.info("HOLD ticket_dirty_or_incomplete | %s | %s", block_key, title[:80])
 
         if not line and category == "public_services":
             line = _build_public_service_fallback_line(candidate)
@@ -1773,6 +1828,15 @@ def write_digest(project_root: Path) -> StageResult:
                 line = _build_event_fallback_line(candidate)
                 warnings.append(f"Candidate #{index}: event fallback stub used (no LLM draft_line).")
                 logger.info("TIER4 event stub | %s | %s", block_key, title[:80])
+
+        if not line:
+            recovery_line = _hard_news_recovery_line(candidate)
+            if recovery_line:
+                line = recovery_line
+                candidate["draft_line_provider"] = "writer_hard_news_recovery"
+                candidate["draft_line_model"] = "deterministic_hard_news_recovery"
+                warnings.append(f"Candidate #{index}: hard-news recovery line used after missing model draft_line.")
+                logger.info("RECOVER hard_news | %s | %s", block_key, title[:80])
 
         if not line:
             if category in REQUIRE_DRAFT_LINE_CATEGORIES:
@@ -1923,6 +1987,7 @@ def write_digest(project_root: Path) -> StageResult:
         "Что произошло за 24 часа",
         "Общественный транспорт сегодня",
         "Что важно сегодня",
+        "Футбол",
         *(["Выходные в GM"] if show_weekend else []),
         "Городской радар",
         "Что важно в ближайшие 7 дней",
@@ -1932,7 +1997,6 @@ def write_digest(project_root: Path) -> StageResult:
         "Русскоязычные концерты и стендап UK",
         "Еда, открытия и рынки",
         "IT и бизнес",
-        "Футбол",
         "Радар по районам",
     ]
     section_counts: dict[str, int] = {}

@@ -2,6 +2,7 @@ import json
 import unittest
 
 from news_digest.pipeline.llm_rewrite import (
+    _is_protected_rewrite_candidate,
     _needs_quality_repair,
     _parse_provider_results,
     _skip_llm_for_manual_review,
@@ -76,6 +77,41 @@ class LlmRewriteDiagnosticsTests(unittest.TestCase):
         self.assertEqual(set(mapping), {"fp-1"})
         self.assertEqual(diagnostic["coerced_from_object_key"], "results")
         self.assertEqual(diagnostic["accepted"], 1)
+
+    def test_parse_provider_results_accepts_structured_reason_for_empty_line(self) -> None:
+        batch = [_candidate("fp-1")]
+        raw = json.dumps(
+            [
+                {
+                    "fingerprint": "fp-1",
+                    "decision": "needs_enrichment",
+                    "draft_line": "",
+                    "missing_facts": ["what_happened"],
+                }
+            ],
+            ensure_ascii=False,
+        )
+
+        mapping, diagnostic = _parse_provider_results(
+            raw,
+            batch,
+            provider_name="OpenAI",
+            model="gpt-4o-mini",
+            prompt_name="city_news@v-test",
+            batch_idx=1,
+            total_batches=1,
+        )
+
+        self.assertEqual(mapping, {})
+        self.assertEqual(diagnostic["rejected_counts"]["empty_draft_line"], 0)
+        self.assertEqual(diagnostic["rejected_counts"]["empty_draft_line_with_reason"], 1)
+        self.assertEqual(diagnostic["missing_candidates"][0]["fingerprint"], "fp-1")
+
+    def test_hard_news_and_transport_get_extra_rewrite_recovery(self) -> None:
+        self.assertTrue(_is_protected_rewrite_candidate({"primary_block": "last_24h"}))
+        self.assertTrue(_is_protected_rewrite_candidate({"primary_block": "transport"}))
+        self.assertTrue(_is_protected_rewrite_candidate({"category": "gmp"}))
+        self.assertFalse(_is_protected_rewrite_candidate({"category": "venues_tickets", "primary_block": "ticket_radar"}))
 
     def test_quality_repair_uses_writer_gate_for_long_format_cards(self) -> None:
         candidate = _candidate("fp-1")

@@ -971,9 +971,8 @@ class AdminAlertCopyTest(unittest.TestCase):
     def test_admin_support_surfaces_missing_operational_sections(self) -> None:
         rows = _section_shape_rows({"section_counts": {"Билеты / Ticket Radar": 6, "Что важно сегодня": 2}})
         by_name = {row["section"]: row for row in rows}
-        # Ticket section max was deliberately lifted to 99 (da850a2) so the
-        # reader gets the full ticket picture rather than a 6-item cap.
-        self.assertEqual(by_name["Билеты / Ticket Radar"]["max"], 99)
+        # 2026-05-29: an uncapped ticket rail buried football and hard news.
+        self.assertEqual(by_name["Билеты / Ticket Radar"]["max"], 6)
         self.assertEqual(by_name["Что важно сегодня"]["status"], "ниже минимума")
         self.assertEqual(_section_name_human("Билеты / Ticket Radar"), "Билеты и концерты")
         self.assertIn(
@@ -1854,9 +1853,9 @@ class TelegramBacklog20260527Test(unittest.TestCase):
     borderline_queue stored every hold as `no_reason`. One assertion per
     behaviour."""
 
-    def test_public_digest_max_visible_items_is_45(self) -> None:
+    def test_public_digest_max_visible_items_is_25(self) -> None:
         from news_digest.pipeline.writer import PUBLIC_DIGEST_MAX_VISIBLE_ITEMS
-        self.assertEqual(PUBLIC_DIGEST_MAX_VISIBLE_ITEMS, 45)
+        self.assertEqual(PUBLIC_DIGEST_MAX_VISIBLE_ITEMS, 25)
 
     def test_ticket_within_7_days_kept_in_ticket_radar_despite_old_onsale(self) -> None:
         from news_digest.pipeline.candidate_validator import _exclude_stale_ticket_onsale
@@ -2080,9 +2079,9 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         report = _classify_rejected_candidates({"dropped_candidates": []}, {"decisions": []}, candidates_report)
         self.assertGreaterEqual(report["counts"]["correctly_rejected"], 1)
 
-    def test_telegram_thresholds_aligned_with_45_cap(self) -> None:
-        # Telegram report previously said "норма 14–22" and triggered
-        # 'too long' at 23. Now matches the writer cap of 45.
+    def test_telegram_thresholds_no_longer_claim_old_14_22_norm(self) -> None:
+        # The support report should not contradict the writer's global
+        # digest budget with the old 14–22 hard wording.
         text = Path("scripts/run_local_digest.py").read_text(encoding="utf-8")
         self.assertNotIn("14–22", text)
 
@@ -2146,6 +2145,40 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         line = render_reminder(_record_to_card(rec))
         self.assertIn("Piccadilly Gardens", line)
         self.assertNotIn("подробности в источнике", line)
+
+    def test_tram_card_without_locator_is_held_not_published_as_stub(self) -> None:
+        from news_digest.pipeline.transport_card import TransportCard, render_card
+        line = render_card(TransportCard(mode="tram", operator="Metrolink", reason="ремонтные работы"))
+        self.assertEqual(line, "")
+
+    def test_ticket_fallback_rejects_js_chrome_summary(self) -> None:
+        from news_digest.pipeline.writer import _build_ticket_fallback_line
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "source_label": "Manchester Academy",
+            "title": "6LACK - 27th September 2026",
+            "summary": (
+                "This website makes extensive use of JavaScript in places to provide a better "
+                "experience for our users To view the site as intended, please enable JavaScript "
+                "in your browser settings All ages welcome."
+            ),
+            "event": {"is_event": True, "event_name": "6LACK", "venue": "Manchester Academy", "date_start": "2026-09-27"},
+        }
+        self.assertEqual(_build_ticket_fallback_line(candidate), "")
+
+    def test_hard_news_missing_draft_line_gets_recovery_line(self) -> None:
+        from news_digest.pipeline.writer import _hard_news_recovery_line
+        line = _hard_news_recovery_line(
+            {
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "borough": "Whitefield",
+                "title": "Two men charged after man shot in Whitefield police incident",
+            }
+        )
+        self.assertIn("Whitefield", line)
+        self.assertIn("предъявлены обвинения", line)
 
     def test_breadcrumb_page_title_collapsed(self) -> None:
         # 2026-05-29: New Smithfield rendered as "Casual trading | Casual

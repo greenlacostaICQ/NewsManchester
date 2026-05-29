@@ -172,12 +172,12 @@ def _default_practical_angle(source: SourceDef, title: str = "", summary: str = 
         return "Есть возможное влияние на поездки сегодня."
     if source.report_category == "venues_tickets":
         if "onsale" in source.name.lower():
-            return "Проверьте старт продаж и наличие билетов на официальной странице."
-        return "Проверьте время, вход и наличие билетов на официальной странице."
+            return "Официальная страница должна подтверждать старт продаж и наличие билетов."
+        return "Официальная страница должна подтверждать время, вход и наличие билетов."
     if source.report_category == "diaspora_events":
-        return "Проверьте дату, город, площадку и старт продаж на официальной странице."
+        return "Официальная страница должна подтверждать дату, город, площадку и старт продаж."
     if source.report_category == "football":
-        return "Проверьте время матча и официальные обновления клуба."
+        return "Официальный клубный источник должен подтверждать время матча и обновления."
     if source.report_category == "public_services":
         if _looks_like_active_disruption(title):
             return "Если это касается вашего сервиса сегодня, уточнить статус у провайдера заранее."

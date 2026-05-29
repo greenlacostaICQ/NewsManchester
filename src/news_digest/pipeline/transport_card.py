@@ -411,10 +411,10 @@ def extract_transport_card(candidate: dict) -> TransportCard | None:
 def render_card(card: TransportCard) -> str:
     """Format a TransportCard into a Telegram bullet.
 
-    The renderer picks tier 1 (full template) when enough fields are
-    present and falls back to tier 2 (minimal template) otherwise.
-    Never returns an empty string — caller has already gated on
-    "no locator" via extract_transport_card returning None.
+    The renderer picks a full/minimal template when enough fields are
+    present. It may return an empty string for a source stub without a
+    usable locator; writer should hold that card rather than publish
+    "подробности в источнике" noise.
     """
     if card.mode == "tram":
         return _render_tram(card)
@@ -474,7 +474,7 @@ def _render_tram(card: TransportCard) -> str:
     elif has_loc:
         head = f"{card.operator}: небольшие задержки {location}" if is_minor_delay else f"{card.operator}: работы {location}"
     else:
-        head = f"{card.operator}: предупреждение TfGM по трамваям"
+        return ""
 
     tail_bits: list[str] = []
     if card.reason and card.cost_phrase:
@@ -495,7 +495,7 @@ def _render_tram(card: TransportCard) -> str:
         return f"• {head}."
     if has_loc:
         return f"• {head}; TfGM не уточнил отдельный участок."
-    return f"• {head}; TfGM не указал линию или участок."
+    return ""
 
 
 def _render_bus(card: TransportCard) -> str:

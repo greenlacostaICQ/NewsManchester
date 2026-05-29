@@ -493,7 +493,7 @@ def _should_enrich_source(source: SourceDef) -> bool:
 
 
 _TRUSTED_CARD_ENRICHMENT = {
-    "ok_rncm_card", "ok_dmn_card", "ok_skiddle_card", "ok_page_event",
+    "ok_dmn_card", "ok_skiddle_card", "ok_page_event",
     "ok_weekly_section", "ok_sectioned_guide", "ok_gmmh_press_release",
 }
 
@@ -516,25 +516,27 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         or source.name == "Albert Hall Manchester"
     )
     if item.published_at and not summary_thin and not force_fetch:
+        summary = _strip_evidence_chrome(_source_specific_summary(source, item.title, item.summary))
         return ExtractedItem(
             title=_clean_title_text(item.title),
             url=item.url,
             published_at=item.published_at,
-            summary=_source_specific_summary(source, item.title, item.summary),
-            lead=item.lead or _derive_lead(source, item.title, item.summary),
-            evidence_text=item.summary,
+            summary=summary,
+            lead=_strip_evidence_chrome(item.lead or _derive_lead(source, item.title, summary)),
+            evidence_text=_strip_evidence_chrome(item.summary),
             enrichment_status="skipped_existing_summary",
         )
     try:
         article_html = _fetch_text(item.url)
     except Exception as exc:  # noqa: BLE001 - enrichment is best-effort.
+        summary = _strip_evidence_chrome(_source_specific_summary(source, item.title, item.summary))
         return ExtractedItem(
             title=_clean_title_text(item.title),
             url=item.url,
             published_at=item.published_at,
-            summary=item.summary,
-            lead=item.lead,
-            evidence_text=item.summary,
+            summary=summary,
+            lead=_strip_evidence_chrome(item.lead or _derive_lead(source, item.title, summary)),
+            evidence_text=_strip_evidence_chrome(item.summary),
             enrichment_status=f"failed: {exc}",
         )
 
@@ -558,7 +560,7 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         or _published_at_from_title_or_url(item.title, item.url)
     )
     return ExtractedItem(
-        title=_clean_title_text(unescape(enriched_title or item.title)),
+        title=item.title if source.name == "RNCM" else _clean_title_text(unescape(enriched_title or item.title)),
         url=item.url,
         published_at=published_at,
         summary=summary,
@@ -1513,7 +1515,7 @@ def _extract_kontramarka_items(body: str) -> list[ExtractedItem]:
 
 
 def _clean_event_card_field(value: str) -> str:
-    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", unescape(str(value or "")))).strip()
+    return _strip_evidence_chrome(re.sub(r"<[^>]+>", " ", unescape(str(value or ""))))
 
 
 def _extract_eventfirst_items(body: str) -> list[ExtractedItem]:
