@@ -259,6 +259,71 @@ def _extract_page_title(html_text: str) -> str:
     return ""
 
 
+# Page-chrome that pollutes scraped article bodies and then poisons the
+# Russian rewrite. Breadcrumb runs ("News Greater Manchester News Salford"),
+# share/byline boilerplate ("Share Save Add as preferred on Google",
+# "Jonny Humphries North West PA Media") and engagement prompts gave us
+# garbled cards on 2026-05-28 (e.g. Whitefield "застрелили … перелом локтя").
+_EVIDENCE_CHROME_TOKENS = (
+    "subscribe", "newsletter", "advertisement", "cookies", "privacy policy",
+    "sign up to", "sign up for", "add as preferred on google", "share save",
+    "follow us", "read more", "most read", "most recent", "trending",
+    "pa media", "getty images", "image source", "image caption",
+    "skip to content", "back to top", "more on this story",
+    "we use cookies", "accept all", "manage consent",
+)
+# Leading navigation/engagement chrome (case-insensitive), peeled
+# repeatedly from the front: "Share Save Add as preferred on Google",
+# "News Greater Manchester News Salford", "Comments", etc.
+_LEAD_CHROME_RE = re.compile(
+    r"^(?:\s*(?:share|save|comments?|add as preferred on google|"
+    r"home|news|sport|sports|in your area|breaking news|local news|"
+    r"greater manchester(?:\s+news)?|manchester(?:\s+news)?|uk(?:\s+news)?|"
+    r"what'?s on)\b[\s\W]*)+",
+    re.IGNORECASE,
+)
+# Leading byline: 1-4 capitalised name words followed by an agency/desk
+# marker — "Jonny Humphries North West PA Media", "… BBC News".
+_BYLINE_PREFIX_RE = re.compile(
+    r"^(?:[A-Z][a-z]+\s+){1,4}(?:North West|BBC News|PA Media|"
+    r"Local Democracy Reporting Service|Reporter|Correspondent)\b[\s\W]*",
+)
+# Inline chrome phrases removed anywhere in the body.
+_INLINE_CHROME_RE = re.compile(
+    r"\b(?:add as preferred on google|pa media|getty images|image source|"
+    r"image caption|sign up to[^.]*newsletter|follow us[^.]*|"
+    r"read more[^.]*|most read|skip to content|back to top|"
+    r"we use cookies[^.]*|accept all cookies)\b",
+    re.IGNORECASE,
+)
+
+
+def _strip_evidence_chrome(text: str) -> str:
+    """Remove navigation breadcrumbs, share/byline boilerplate and
+    engagement prompts from scraped article text so the rewrite works
+    from clean facts. Site-agnostic; applied to every enriched body."""
+    cleaned = str(text or "")
+    # 1) Peel leading nav/engagement chrome, then a byline, repeatedly.
+    for _ in range(4):
+        before = cleaned
+        cleaned = _LEAD_CHROME_RE.sub("", cleaned).strip()
+        cleaned = _BYLINE_PREFIX_RE.sub("", cleaned).strip()
+        if cleaned == before:
+            break
+    # 2) Remove inline chrome phrases (keeps the surrounding sentence).
+    cleaned = _INLINE_CHROME_RE.sub(" ", cleaned)
+    # 3) Drop only SHORT sentences that are pure chrome; never drop a
+    #    long sentence just because a chrome token survived inside it.
+    sentences = re.split(r"(?<=[.!?])\s+", cleaned)
+    kept = [
+        s for s in sentences
+        if s.strip()
+        and (len(s) > 120 or not any(tok in s.lower() for tok in _EVIDENCE_CHROME_TOKENS))
+    ]
+    result = re.sub(r"\s+", " ", " ".join(kept)).strip()
+    return result or re.sub(r"\s+", " ", cleaned).strip()
+
+
 def _extract_paragraph_evidence(html_text: str, title: str = "") -> str:
     article_match = re.search(
         r"<(?:article|main)[^>]*>(.*?)</(?:article|main)>",
@@ -274,7 +339,7 @@ def _extract_paragraph_evidence(html_text: str, title: str = "") -> str:
         if len(snippet) < 45:
             continue
         lowered = snippet.lower()
-        if any(token in lowered for token in ("subscribe", "newsletter", "advertisement", "cookies", "privacy policy")):
+        if any(token in lowered for token in _EVIDENCE_CHROME_TOKENS):
             continue
         key = re.sub(r"[^a-z0-9а-яё]+", " ", lowered).strip()
         if not key or key in seen or (title_key and key == title_key):
@@ -283,7 +348,7 @@ def _extract_paragraph_evidence(html_text: str, title: str = "") -> str:
         paragraphs.append(snippet)
         if len(paragraphs) >= 6:
             break
-    return " ".join(paragraphs)
+    return _strip_evidence_chrome(" ".join(paragraphs))
 
 
 def _clean_long_text(value: str) -> str:
@@ -465,7 +530,7 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
     paragraph_evidence = _extract_paragraph_evidence(article_html, item.title)
     enriched_summary = _extract_jsonld_description(article_html) or _extract_meta_description(article_html)
     enriched_title = _extract_jsonld_title(article_html) or _extract_page_title(article_html)
-    evidence_text = paragraph_evidence or enriched_summary or item.summary
+    evidence_text = _strip_evidence_chrome(paragraph_evidence or enriched_summary or item.summary)
     if summary_thin and paragraph_evidence:
         enriched_summary = _summary_from_evidence(paragraph_evidence)
     summary = item.summary

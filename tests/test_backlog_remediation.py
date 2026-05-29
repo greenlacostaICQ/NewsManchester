@@ -2084,6 +2084,20 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         text = Path("scripts/run_local_digest.py").read_text(encoding="utf-8")
         self.assertNotIn("14–22", text)
 
+    def test_evidence_chrome_stripped_but_facts_preserved(self) -> None:
+        # Police cards came out terrible on 2026-05-28 because the
+        # enriched evidence was raw page chrome (breadcrumbs + byline)
+        # not clean article text. The cleaner must remove the chrome and
+        # KEEP the facts.
+        from news_digest.pipeline.collector.extract import _strip_evidence_chrome
+        out = _strip_evidence_chrome(
+            "Share Save Add as preferred on Google Jonny Humphries North West PA Media "
+            "Eight people have been arrested in connection with the attack. Police continue to investigate."
+        )
+        self.assertIn("Eight people have been arrested", out)
+        self.assertNotIn("PA Media", out)
+        self.assertNotIn("Add as preferred", out)
+
     def test_tram_card_keeps_stop_location_and_distinguishes_stops(self) -> None:
         # 2026-05-28: 'Piccadilly Gardens - Tram Improvement Works' and
         # 'Prestwich Tram Stop - Improvement Works' both rendered as the
