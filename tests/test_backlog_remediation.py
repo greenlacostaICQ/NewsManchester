@@ -2130,6 +2130,23 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         self.assertNotEqual(a, b)
         self.assertIn("эскалатор не работает", c)  # not mistranslated to 'ремонтные работы'
 
+    def test_transport_reminder_states_location_from_url_slug(self) -> None:
+        # 2026-05-29: an active Metrolink record with empty line/segment
+        # rendered the contentless tier-4 stub "Metrolink: [reminder]
+        # Metrolink — подробности в источнике", breaking the hard "always
+        # say WHERE" rule. The location lives in the TfGM alert URL slug.
+        from news_digest.pipeline.transport_fill import _record_to_card
+        from news_digest.pipeline.transport_card import render_reminder
+        rec = {
+            "mode": "tram", "operator": "Metrolink", "line": "", "segment": "",
+            "end_date_ru": "29 мая", "reason": "ремонтные работы",
+            "source_url": "https://tfgm.com/travel-updates/travel-alerts/"
+            "piccadilly-gardens-tram-improvement-works",
+        }
+        line = render_reminder(_record_to_card(rec))
+        self.assertIn("Piccadilly Gardens", line)
+        self.assertNotIn("подробности в источнике", line)
+
     def test_same_venue_different_events_not_merged_by_token_overlap(self) -> None:
         # Strike Den! and The Fabric of Protest are two different shows at
         # People's History Museum — shared venue + date tokens must not

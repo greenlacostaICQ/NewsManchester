@@ -214,16 +214,47 @@ def _iso_to_ru_date(iso: str) -> str:
     return f"{d.day} {_ISO_MONTH_RU[d.month]}"
 
 
+# TfGM travel-alert slug tokens that are NOT part of the location name.
+_TFGM_SLUG_DROP = {
+    "tram", "trams", "line", "lines", "metrolink", "bus", "buses", "road",
+    "rail", "improvement", "improvements", "works", "work", "closure",
+    "closures", "travel", "alert", "alerts", "update", "updates",
+    "disruption", "disruptions", "service", "services", "and",
+}
+
+
+def _location_from_tfgm_slug(url: str) -> str:
+    """Recover the stop/location from a TfGM travel-alert URL slug.
+
+    ``…/piccadilly-gardens-tram-improvement-works`` → ``Piccadilly Gardens``.
+    Used only when the persisted record has no line/segment, so a reminder
+    can still tell the reader WHERE the works are.
+    """
+    slug = (url or "").split("?", 1)[0].rstrip("/").rsplit("/", 1)[-1]
+    words: list[str] = []
+    for token in slug.split("-"):
+        if not token:
+            continue
+        if token.lower() in _TFGM_SLUG_DROP:
+            break  # location is the leading run before the first generic token
+        words.append(token)
+    return " ".join(w.capitalize() for w in words)
+
+
 def _record_to_card(rec: dict) -> TransportCard:
     # Prefer the original Russian phrasing if persisted; otherwise rebuild
     # from the ISO date so reminders always show a concrete "до X" tail.
     end_ru = rec.get("end_date_ru") or _iso_to_ru_date(rec.get("end_date") or "")
     start_ru = rec.get("start_date_ru") or _iso_to_ru_date(rec.get("start_date") or "")
+    stop_name = ""
+    if not (rec.get("line") or rec.get("segment")):
+        stop_name = _location_from_tfgm_slug(rec.get("source_url") or "")
     return TransportCard(
         mode=rec.get("mode") or "tram",
         operator=rec.get("operator") or "Metrolink",
         line=rec.get("line") or "",
         segment=rec.get("segment") or "",
+        stop_name=stop_name,
         start_date=start_ru,
         end_date=end_ru,
         duration_phrase=rec.get("duration_phrase") or "",

@@ -577,6 +577,10 @@ def render_reminder(card: TransportCard, today_iso: str | None = None) -> str:
         body = f"нет трамваев на {card.line}"
     elif card.segment:
         body = f"нет трамваев между {card.segment}"
+    elif card.stop_name:
+        # Stop-only reminder (line/segment never captured, but the TfGM
+        # alert slug names the stop) — still tell the reader WHERE.
+        body = f"работы на остановке {card.stop_name}"
     else:
         # No locator → "работы на сети" reads as a generic filler. Skip.
         return ""
