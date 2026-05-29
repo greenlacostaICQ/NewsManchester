@@ -1348,10 +1348,14 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     yield_low = bool(rewriteable) and successful < max(1, int(rewriteable * 0.9))
     if rewriteable and successful < rewriteable:
         msg = f"LLM rewrite yield low after provider fallback: {successful}/{rewriteable} draft_lines written."
-        if yield_low:
-            warnings.append(msg)
-        else:
-            soft_warnings.append(msg)
+        # Low yield is DIAGNOSTIC only. It must stay in soft_warnings so it never
+        # flips stage_status to "degraded": on 2026-05-29 a 20% miss (16/79) set
+        # degraded → writer degraded_shrink HELD 13 + dropped 16 good items and the
+        # digest collapsed to 34 visible. Items without a draft_line simply can't
+        # render; the ones that DID rewrite must all ship (owner rule: never
+        # withhold, give the full picture). yield_low is kept for the audit trail.
+        soft_warnings.append(msg)
+        _ = yield_low
     if no_source_text:
         soft_warnings.append(
             f"{len(no_source_text)} item(s) had no source text to write from "

@@ -10,12 +10,70 @@ from urllib import error, parse, request
 class TelegramTransportError(RuntimeError):
     """Telegram API transport failed before we got an HTTP response."""
 
+    def __init__(self, message: str, *, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
 
 def _normalize_html_parse_mode_text(text: str) -> str:
     normalized = str(text or "")
     normalized = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", normalized, flags=re.DOTALL)
     normalized = re.sub(r"(?<!\*)\*(?!\s)(.+?)(?<!\s)\*(?!\*)", r"<i>\1</i>", normalized, flags=re.DOTALL)
     return normalized
+
+
+# Tags Telegram accepts in parse_mode=HTML. Everything else (and every stray
+# "&", "<", ">") MUST be escaped or the API rejects the whole message with
+# HTTP 400 and the send loop aborts mid-digest. On 2026-05-29 a single raw "&"
+# inside "Currents & Erra" / "Brighton & Hove Albion" 400'd the send and the
+# football card (rendered, but later in the message) never reached the reader.
+_TELEGRAM_TAG_RE = re.compile(
+    r"</?(?:b|strong|i|em|u|ins|s|strike|del|code|pre|tg-spoiler|blockquote)>"
+    r"|<a\s+href=\"[^\"]*\"\s*>"
+    r"|</a>",
+    re.IGNORECASE,
+)
+_ENTITY_OK_RE = re.compile(r"&(?:amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);")
+
+
+def _escape_telegram_text(segment: str) -> str:
+    """Escape &, <, > in a plain-text segment, leaving valid entities intact."""
+    parked: list[str] = []
+
+    def _park(match: "re.Match[str]") -> str:
+        parked.append(match.group(0))
+        return f"\x00{len(parked) - 1}\x01"
+
+    segment = _ENTITY_OK_RE.sub(_park, segment)  # protect already-valid entities
+    segment = segment.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    return re.sub(r"\x00(\d+)\x01", lambda m: parked[int(m.group(1))], segment)
+
+
+def sanitize_telegram_html(text: str) -> str:
+    """Make text safe for parse_mode=HTML: keep valid tags, escape the rest.
+
+    Splits on the small whitelist of Telegram-supported tags and escapes every
+    in-between text segment, so a stray ``&`` / ``<`` in source-derived event
+    names can never 400 the send again.
+    """
+    raw = str(text or "")
+    out: list[str] = []
+    last = 0
+    for match in _TELEGRAM_TAG_RE.finditer(raw):
+        out.append(_escape_telegram_text(raw[last:match.start()]))
+        out.append(match.group(0))
+        last = match.end()
+    out.append(_escape_telegram_text(raw[last:]))
+    return "".join(out)
+
+
+def html_to_plain_text(text: str) -> str:
+    """Strip Telegram tags and unescape entities for a plain-text fallback send."""
+    stripped = _TELEGRAM_TAG_RE.sub("", str(text or ""))
+    stripped = re.sub(r"</?[a-zA-Z][^>]*>", "", stripped)  # drop any other stray tags
+    for entity, char in (("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"), ("&quot;", '"'), ("&#39;", "'")):
+        stripped = stripped.replace(entity, char)
+    return stripped
 
 
 @dataclass(slots=True)
@@ -48,6 +106,10 @@ class TelegramClient:
         try:
             with request.urlopen(req, timeout=30) as response:
                 return json.loads(response.read().decode("utf-8"))
+        except error.HTTPError as exc:
+            raise TelegramTransportError(
+                f"Telegram POST {method} failed: {exc.reason}", status_code=exc.code
+            ) from exc
         except error.URLError as exc:
             raise TelegramTransportError(f"Telegram POST {method} failed: {exc.reason}") from exc
 
@@ -58,19 +120,31 @@ class TelegramClient:
         parse_mode: str | None = None,
         reply_to_message_id: int | None = None,
     ) -> dict[str, Any]:
+        is_html = bool(parse_mode and parse_mode.upper() == "HTML")
         payload_text = text
-        if parse_mode and parse_mode.upper() == "HTML":
-            payload_text = _normalize_html_parse_mode_text(text)
-        payload: dict[str, Any] = {
-            "chat_id": chat_id,
-            "text": payload_text,
-            "disable_web_page_preview": True,
-        }
-        if parse_mode:
-            payload["parse_mode"] = parse_mode
-        if reply_to_message_id is not None:
-            payload["reply_to_message_id"] = reply_to_message_id
-        return self._post("sendMessage", payload)
+        if is_html:
+            payload_text = sanitize_telegram_html(_normalize_html_parse_mode_text(text))
+
+        def _build_payload(body: str, mode: str | None) -> dict[str, Any]:
+            data: dict[str, Any] = {
+                "chat_id": chat_id,
+                "text": body,
+                "disable_web_page_preview": True,
+            }
+            if mode:
+                data["parse_mode"] = mode
+            if reply_to_message_id is not None:
+                data["reply_to_message_id"] = reply_to_message_id
+            return data
+
+        try:
+            return self._post("sendMessage", _build_payload(payload_text, parse_mode))
+        except TelegramTransportError as exc:
+            # NEVER let a malformed-HTML 400 silently drop part of the digest.
+            # Re-send the same content as plain text so the reader still gets it.
+            if is_html and exc.status_code == 400:
+                return self._post("sendMessage", _build_payload(html_to_plain_text(payload_text), None))
+            raise
 
     def send_text_in_chunks(
         self,

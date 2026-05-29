@@ -971,7 +971,9 @@ class AdminAlertCopyTest(unittest.TestCase):
     def test_admin_support_surfaces_missing_operational_sections(self) -> None:
         rows = _section_shape_rows({"section_counts": {"Билеты / Ticket Radar": 6, "Что важно сегодня": 2}})
         by_name = {row["section"]: row for row in rows}
-        self.assertEqual(by_name["Билеты / Ticket Radar"]["max"], 6)
+        # Ticket section max was deliberately lifted to 99 (da850a2) so the
+        # reader gets the full ticket picture rather than a 6-item cap.
+        self.assertEqual(by_name["Билеты / Ticket Radar"]["max"], 99)
         self.assertEqual(by_name["Что важно сегодня"]["status"], "ниже минимума")
         self.assertEqual(_section_name_human("Билеты / Ticket Radar"), "Билеты и концерты")
         self.assertIn(
