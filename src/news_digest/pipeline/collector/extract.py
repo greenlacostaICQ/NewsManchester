@@ -296,6 +296,15 @@ _INLINE_CHROME_RE = re.compile(
     r"we use cookies[^.]*|accept all cookies)\b",
     re.IGNORECASE,
 )
+# "JavaScript-disabled" warning that venue ticket pages (Manchester Academy
+# and the same CMS family) put at the top of the body. On 2026-05-29 it was
+# scraped as the event summary/lead and shown as the concert description
+# ("This website makes extensive use of JavaScript…"). Spans without sentence
+# punctuation, so the sentence filter can't catch it — strip the whole phrase.
+_JS_DISABLED_RE = re.compile(
+    r"this website makes extensive use of javascript.*?browser settings\.?",
+    re.IGNORECASE | re.DOTALL,
+)
 
 
 def _strip_evidence_chrome(text: str) -> str:
@@ -303,6 +312,8 @@ def _strip_evidence_chrome(text: str) -> str:
     engagement prompts from scraped article text so the rewrite works
     from clean facts. Site-agnostic; applied to every enriched body."""
     cleaned = str(text or "")
+    # 0) Drop the JavaScript-disabled warning ticket pages prepend.
+    cleaned = _JS_DISABLED_RE.sub(" ", cleaned).strip()
     # 1) Peel leading nav/engagement chrome, then a byline, repeatedly.
     for _ in range(4):
         before = cleaned
@@ -538,8 +549,8 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         summary = enriched_summary
     elif not summary:
         summary = enriched_summary
-    summary = _source_specific_summary(source, item.title, summary)
-    lead = item.lead or _derive_lead(source, item.title, summary)
+    summary = _strip_evidence_chrome(_source_specific_summary(source, item.title, summary))
+    lead = _strip_evidence_chrome(item.lead or _derive_lead(source, item.title, summary))
     published_at = (
         item.published_at
         or _extract_jsonld_start_date(article_html)

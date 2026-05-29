@@ -2099,6 +2099,18 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         self.assertIn("Eight people have been arrested", out)
         self.assertNotIn("PA Media", out)
         self.assertNotIn("Add as preferred", out)
+        # 2026-05-29: Manchester Academy ticket pages prepend a JS-disabled
+        # warning that was scraped as the concert description. Strip it, keep
+        # the real event facts (date/venue/billing).
+        ticket = _strip_evidence_chrome(
+            "This website makes extensive use of JavaScript in places to provide a "
+            "better experience for our users To view the site as intended, please enable "
+            "JavaScript in your browser settings Live Nation Presents 6LACK on Saturday "
+            "27 September 2026 at Manchester Academy. Doors 7pm."
+        )
+        self.assertNotIn("JavaScript", ticket)
+        self.assertIn("6LACK", ticket)
+        self.assertIn("Manchester Academy", ticket)
 
     def test_tram_card_keeps_stop_location_and_distinguishes_stops(self) -> None:
         # 2026-05-28: 'Piccadilly Gardens - Tram Improvement Works' and
