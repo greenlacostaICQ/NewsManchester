@@ -81,21 +81,21 @@ TODAY_FOCUS_SECTION = "Что важно сегодня"
 # transport is the last-resort fallback only when there's literally nothing
 # else to put up top.
 TODAY_FOCUS_BACKFILL_SECTIONS = (
-    "Что произошло за 24 часа",
+    "Свежие новости",
     "Городской радар",
 )
 TODAY_FOCUS_BACKFILL_TARGET = 2
 TODAY_FOCUS_BACKFILL_MIN_SCORE = 67.5
 TODAY_FOCUS_MIN_SOURCE_REMAINING = {
     # Don't gut source blocks just to fill today_focus.
-    "Что произошло за 24 часа": 3,
+    "Свежие новости": 3,
     "Городской радар": 4,
 }
 
 # When the LLM rewrite stage is degraded, keep soft rails compact without
 # suppressing hard-news that did get rewritten.
 DEGRADED_LLM_SECTION_MAX_ITEMS = {
-    "Что произошло за 24 часа": 6,
+    "Свежие новости": 6,
     "Городской радар": 5,
     "Выходные в GM": 5,
     "Что важно в ближайшие 7 дней": 4,
@@ -127,6 +127,7 @@ _BAD_EDITORIAL_PROSE_MARKERS = (
     "browser settings",
     "проверьте время",
     "проверьте дату",
+    "билеты и детали берите",
     "undefined",
     "следить компаниям",
     "business-impact",
@@ -704,6 +705,116 @@ def _ticket_genre(candidate: dict) -> str:
     return ""
 
 
+_TICKET_MAJOR_VENUE_RE = re.compile(
+    r"\b(?:ao arena|co-?op live|etihad stadium|old trafford|wembley|the o2|o2 arena|"
+    r"ovo arena wembley|royal albert hall|manchester apollo|o2 apollo|bridgewater hall|"
+    r"aviva studios|factory international|castlefield bowl|albert hall|new century hall|"
+    r"palace theatre|the lowry|rncm|royal northern college|manchester academy|"
+    r"victoria warehouse|o2 victoria warehouse)\b",
+    re.IGNORECASE,
+)
+_TICKET_PREFERRED_GENRE_RE = re.compile(
+    r"\b(?:jazz|blues|soul|r&b|rnb|reggae|funk|folk|world|classical|hip-hop|rap)\b",
+    re.IGNORECASE,
+)
+_TICKET_WORLD_UK_ARTIST_RE = re.compile(
+    r"\b(?:the weeknd|madison beer|ub40|lola young|macy gray|jeff goldblum|"
+    r"jason isbell|peter hook|rickie lee jones|ray lamontagne|calum scott|"
+    r"super furry animals|6lack|puscifer|lany|blue october|ibrahim maalouf|"
+    r"goran bregovic|kraftwerk|dermot kennedy|sasha|john digweed|paul weller|"
+    r"sam fender|dua lipa|coldplay|oasis|blur|the cure|depeche mode|muse|"
+    r"arctic monkeys|robbie williams|elton john|adele|ed sheeran|taylor swift)\b",
+    re.IGNORECASE,
+)
+_TICKET_NEGATIVE_RE = re.compile(
+    r"\b(?:venue premium tickets|tribute act|tribute show|stunt show|games in concert|"
+    r"film with live orchestra|bottomless|party|unknown|undefined)\b",
+    re.IGNORECASE,
+)
+
+
+def _ticket_price(candidate: dict) -> str:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    price = re.sub(r"\s+", " ", str(event.get("price") or "")).strip()
+    if price:
+        return price
+    blob = " ".join(str(candidate.get(field) or "") for field in ("summary", "lead", "evidence_text"))
+    prices = re.findall(r"£\s?\d+(?:\.\d{1,2})?(?:\s?[–-]\s?£?\d+(?:\.\d{1,2})?)?", blob)
+    return prices[0].replace(" ", "") if prices else ""
+
+
+def _is_diaspora_ticket(candidate: dict) -> bool:
+    return (
+        str(candidate.get("category") or "") in {"russian_speaking_events", "diaspora_events"}
+        or str(candidate.get("primary_block") or "") == "russian_events"
+        or str(candidate.get("source_label") or "") in {"Kontramarka UK", "EventFirst Diaspora", "UK Stand-Up Club", "UK Stand-Up Club Eventbrite"}
+    )
+
+
+def _ticket_watch_score(candidate: dict) -> float:
+    title = _ticket_headliner(str(candidate.get("title") or ""))
+    venue = _ticket_venue(candidate)
+    genre = _ticket_genre(candidate)
+    source = str(candidate.get("source_label") or "")
+    summary = str(candidate.get("summary") or "")
+    ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
+    blob = " ".join([title, venue, genre, source, summary]).lower()
+    score = 0.0
+    if _is_diaspora_ticket(candidate):
+        score += 100
+    if _TICKET_WORLD_UK_ARTIST_RE.search(blob):
+        score += 45
+    if _TICKET_MAJOR_VENUE_RE.search(venue) or _TICKET_MAJOR_VENUE_RE.search(summary):
+        score += 25
+    if _TICKET_PREFERRED_GENRE_RE.search(genre) or _TICKET_PREFERRED_GENRE_RE.search(summary):
+        score += 18
+    if ticket_type in {"on_sale_now", "presale_soon", "newly_listed"}:
+        score += 28
+    elif ticket_type in {"major_upcoming", "event_this_week"}:
+        score += 16
+    elif ticket_type in {"old_onsale", "old_public_sale"}:
+        score -= 10
+    event_dt = _parse_ticket_datetime(candidate)
+    if event_dt is not None:
+        days = (event_dt.date() - now_london().date()).days
+        if 0 <= days <= 14:
+            score += 12
+        elif days > 180 and not (_TICKET_WORLD_UK_ARTIST_RE.search(blob) or _is_diaspora_ticket(candidate)):
+            score -= 12
+    if _TICKET_NEGATIVE_RE.search(blob):
+        score -= 35
+    if not genre:
+        score -= 8
+    if not venue:
+        score -= 12
+    return score
+
+
+def _ticket_watch_reason(candidate: dict) -> str:
+    title = _ticket_headliner(str(candidate.get("title") or ""))
+    venue = _ticket_venue(candidate)
+    genre = _ticket_genre(candidate)
+    summary = str(candidate.get("summary") or "")
+    blob = " ".join([title, venue, genre, str(candidate.get("source_label") or ""), summary])
+    reasons: list[str] = []
+    if _is_diaspora_ticket(candidate):
+        reasons.append("русскоязычный/диаспора UK")
+    if _TICKET_WORLD_UK_ARTIST_RE.search(blob):
+        reasons.append("известный артист")
+    if _TICKET_MAJOR_VENUE_RE.search(venue) or _TICKET_MAJOR_VENUE_RE.search(summary):
+        reasons.append("крупная площадка")
+    if _TICKET_PREFERRED_GENRE_RE.search(genre) or _TICKET_PREFERRED_GENRE_RE.search(summary):
+        reasons.append(f"жанр: {genre}" if genre else "интересный жанр")
+    ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
+    if ticket_type in {"on_sale_now", "presale_soon", "newly_listed"}:
+        reasons.append("новый билетный повод")
+    elif ticket_type == "event_this_week":
+        reasons.append("на этой неделе")
+    elif ticket_type == "major_upcoming":
+        reasons.append("крупный анонс")
+    return "; ".join(dict.fromkeys(reasons[:3])) or "прошёл билетный watchlist"
+
+
 def _build_ticket_fallback_line(candidate: dict) -> str:
     title = _ticket_headliner(str(candidate.get("title") or ""))
     venue = _ticket_venue(candidate)
@@ -715,7 +826,11 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
     # the structured parts we actually render are themselves chrome.
     if not title or _looks_like_source_chrome(" ".join([title, venue, genre])):
         return ""
-    practical = "Билеты и детали берите на официальной странице площадки."
+    if str(candidate.get("primary_block") or "") == "ticket_radar" and _ticket_watch_score(candidate) < 35:
+        return ""
+    reason = _ticket_watch_reason(candidate)
+    price = _ticket_price(candidate)
+    price_part = f"; цена {price}" if price else ""
     ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
     type_prefix = {
         "on_sale_now": "Сейчас в продаже",
@@ -732,12 +847,12 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
         time_part = f" в {event_dt.strftime('%H:%M')}"
     genre_part = f" ({genre})" if genre else ""
     if day_month and venue:
-        return f"• {type_prefix}: в {venue} {day_month}{time_part} — концерт {title}{genre_part}. {practical}"
+        return f"• {title} — {day_month}{time_part}, {venue}{genre_part}{price_part}. Почему в радаре: {reason}."
     if day_month:
-        return f"• {type_prefix}: {day_month}{time_part} — концерт {title}{genre_part}. {practical}"
+        return f"• {title} — {day_month}{time_part}{genre_part}{price_part}. Почему в радаре: {reason}."
     if venue:
-        return f"• {type_prefix}: в {venue} — концерт {title}{genre_part}. {practical}"
-    return f"• {type_prefix}: концерт {title}{genre_part}. {practical}"
+        return f"• {title} — {venue}{genre_part}{price_part}. Почему в радаре: {reason}."
+    return f"• {title}{genre_part}{price_part}. Почему в радаре: {reason}."
 
 
 def _looks_like_source_chrome(value: str) -> bool:
@@ -1615,6 +1730,8 @@ def _section_priority_score(candidate: dict, section_name: str, line: str) -> fl
         score += _weekend_activity_score(candidate, line) / 4.0
     elif section_name == "Что важно в ближайшие 7 дней":
         score += _event_planning_score(candidate, line) / 4.0
+    elif section_name == "Билеты / Ticket Radar":
+        score += _ticket_watch_score(candidate)
     return score
 
 
@@ -2055,7 +2172,7 @@ def write_digest(project_root: Path) -> StageResult:
     ordered_sections = [
         "Погода",
         "Главная история дня",
-        "Что произошло за 24 часа",
+        "Свежие новости",
         "Общественный транспорт сегодня",
         "Что важно сегодня",
         "Футбол",

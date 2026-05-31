@@ -70,8 +70,8 @@ _GM_BOROUGHS: tuple[str, ...] = (
     "Manchester", "Salford", "Trafford", "Stockport", "Tameside",
     "Oldham", "Rochdale", "Bury", "Bolton", "Wigan",
 )
-_CURATOR_PROTECTED_CATEGORIES = {"weather"}
-_CURATOR_PROTECTED_BLOCKS = {"weather"}
+_CURATOR_PROTECTED_CATEGORIES = {"weather", "russian_speaking_events", "diaspora_events"}
+_CURATOR_PROTECTED_BLOCKS = {"weather", "russian_events"}
 
 
 def _is_curator_protected(candidate: dict) -> bool:
@@ -389,7 +389,11 @@ def run_curator_pass(project_root: Path) -> None:
 
     for candidate in candidates:
         if _is_curator_protected(candidate):
-            candidate["include"] = True
+            # Protected means "do not let the GM-only LLM curator remove it".
+            # It must not resurrect items already rejected by deterministic
+            # validation for expiry, duplicate, or source-quality reasons.
+            if candidate.get("include"):
+                candidate["include"] = True
             candidate["is_lead"] = False
             continue
         fp = str(candidate.get("fingerprint") or "")

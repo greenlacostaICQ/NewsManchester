@@ -1287,7 +1287,7 @@ def _section_drops(section_name: str) -> list[tuple[str, str]]:
         "weather": "Погода",
         "transport": "Общественный транспорт сегодня",
         "today_focus": "Что важно сегодня",
-        "last_24h": "Что произошло за 24 часа",
+        "last_24h": "Свежие новости",
         "lead_story": "Главная история дня",
         "city_watch": "Городской радар",
         "weekend_activities": "Выходные в GM",

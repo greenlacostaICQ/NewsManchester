@@ -8,6 +8,7 @@ from news_digest.pipeline.llm_rewrite import (
     _skip_llm_for_manual_review,
 )
 from news_digest.pipeline.curator import _skip_curator_for_manual_review
+from news_digest.pipeline.curator import _is_curator_protected
 
 
 def _candidate(fingerprint: str, title: str = "Test story") -> dict:
@@ -112,6 +113,10 @@ class LlmRewriteDiagnosticsTests(unittest.TestCase):
         self.assertTrue(_is_protected_rewrite_candidate({"primary_block": "transport"}))
         self.assertTrue(_is_protected_rewrite_candidate({"category": "gmp"}))
         self.assertFalse(_is_protected_rewrite_candidate({"category": "venues_tickets", "primary_block": "ticket_radar"}))
+
+    def test_diaspora_events_skip_gm_only_curator(self) -> None:
+        self.assertTrue(_is_curator_protected({"category": "russian_speaking_events", "primary_block": "russian_events"}))
+        self.assertTrue(_is_curator_protected({"category": "diaspora_events"}))
 
     def test_quality_repair_uses_writer_gate_for_long_format_cards(self) -> None:
         candidate = _candidate("fp-1")

@@ -275,10 +275,15 @@ _EVIDENCE_CHROME_TOKENS = (
 # Leading navigation/engagement chrome (case-insensitive), peeled
 # repeatedly from the front: "Share Save Add as preferred on Google",
 # "News Greater Manchester News Salford", "Comments", etc.
+# Geo words (manchester / greater manchester / uk) are only treated as nav
+# chrome when paired with "news" — the breadcrumb runs always are ("News
+# Greater Manchester News Salford"). A bare leading city word that starts a
+# real title ("Manchester Forever at Bowlers…", "UK Garage Night") must NOT
+# be peeled, otherwise the event card loses its first word.
 _LEAD_CHROME_RE = re.compile(
     r"^(?:\s*(?:share|save|comments?|add as preferred on google|"
     r"home|news|sport|sports|in your area|breaking news|local news|"
-    r"greater manchester(?:\s+news)?|manchester(?:\s+news)?|uk(?:\s+news)?|"
+    r"greater manchester\s+news|manchester\s+news|uk\s+news|"
     r"what'?s on)\b[\s\W]*)+",
     re.IGNORECASE,
 )

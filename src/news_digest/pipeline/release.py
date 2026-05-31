@@ -206,7 +206,7 @@ def initialize_release_inputs(project_root: Path, *, overwrite: bool = False) ->
             "• \n\n"
             "<b>Что важно сегодня</b>\n"
             "• \n\n"
-            "<b>Что произошло за 24 часа</b>\n"
+            "<b>Свежие новости</b>\n"
             "• \n\n"
             "<b>Что важно в ближайшие 7 дней</b>\n"
             "• \n\n"
@@ -547,7 +547,7 @@ def _validate_draft(
         if lines and any(_has_refusal_marker(line) for line in lines):
             errors.append(f"Low-signal block should be hidden instead of printed empty: {block}.")
 
-    last_24h_lines = sections.get("Что произошло за 24 часа", [])
+    last_24h_lines = sections.get("Свежие новости", [])
     fresh_last_24h_candidates = [
         candidate
         for candidate in included_candidates
@@ -687,7 +687,7 @@ def _evaluate_digest_health(
             "detail": "Transport section empty — no TfGM/Metrolink alerts surfaced.",
         })
 
-    n_24h = int(sc.get("Что произошло за 24 часа", 0) or 0)
+    n_24h = int(sc.get("Свежие новости", 0) or 0)
     n_today = int(sc.get("Что важно сегодня", 0) or 0)
     n_radar = int(sc.get("Городской радар", 0) or 0)
     if n_24h < 5 and n_today < 3 and n_radar < 5:

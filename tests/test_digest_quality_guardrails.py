@@ -185,24 +185,25 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertEqual(candidate["primary_block"], "ticket_radar")
         self.assertEqual(candidate["ticket_type"], "old_public_sale")
 
-    def test_old_public_sale_fallback_says_already_on_sale_and_keeps_genre(self) -> None:
+    def test_ticket_watchlist_line_keeps_genre_without_generic_cta(self) -> None:
         line = _build_ticket_fallback_line(
             {
                 "category": "venues_tickets",
                 "primary_block": "ticket_radar",
-                "title": "Example",
+                "title": "Lola Young",
                 "ticket_type": "old_public_sale",
                 "summary": (
-                    "O2 Victoria Warehouse Manchester | Manchester | Electronic | "
-                    "event_date=2026-05-24 19:00 | public_onsale=2025-11-14 10:00 | "
-                    "ticket_signal=upcoming_event | ticket_type=regular_upcoming | major_venue=false"
+                    "O2 Apollo Manchester | Manchester | R&B | "
+                    "event_date=2026-06-10 19:00 | public_onsale=2025-11-14 10:00 | "
+                    "ticket_signal=upcoming_event | ticket_type=major_upcoming | major_venue=true"
                 ),
-                "practical_angle": "Проверьте наличие билетов на официальной странице.",
             }
         )
 
-        self.assertIn("Билеты уже в продаже", line)
-        self.assertIn("(Electronic)", line)
+        self.assertIn("Lola Young", line)
+        self.assertIn("(R&B)", line)
+        self.assertIn("Почему в радаре", line)
+        self.assertNotIn("Билеты и детали берите", line)
         self.assertNotIn("поступят в продажу", line.lower())
 
     def test_distinct_car_boot_and_market_sources_do_not_collapse(self) -> None:
@@ -1365,13 +1366,13 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
     def test_global_budget_reserves_slots_for_events_tickets_and_football(self) -> None:
         sections = {
-            "Что произошло за 24 часа": ["x"] * 9,
+            "Свежие новости": ["x"] * 9,
             "Что важно в ближайшие 7 дней": ["x"] * 5,
             "Билеты / Ticket Radar": ["x"] * 4,
             "Футбол": ["x"] * 3,
         }
         ordered = [
-            "Что произошло за 24 часа",
+            "Свежие новости",
             "Что важно в ближайшие 7 дней",
             "Билеты / Ticket Radar",
             "Футбол",

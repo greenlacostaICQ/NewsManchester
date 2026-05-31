@@ -1294,7 +1294,7 @@ class PublishedReviewTest(unittest.TestCase):
                 "stage_status": "complete",
                 "rendered_candidate_fingerprints": ["city-1", "city-2"],
                 "quality_counts": {"included_candidates": 2, "rendered_candidates": 2},
-                "section_counts": {"Погода": 1, "Что важно сегодня": 1, "Что произошло за 24 часа": 1},
+                "section_counts": {"Погода": 1, "Что важно сегодня": 1, "Свежие новости": 1},
                 "dropped_candidates": [],
             }), encoding="utf-8")
             (state_dir / "editor_report.json").write_text(json.dumps({
@@ -1317,7 +1317,7 @@ class PublishedReviewTest(unittest.TestCase):
                 "• Погода: 12-16°C. <a href=\"https://example.test/weather\">Met Office</a>\n\n"
                 "<b>Что важно сегодня</b>\n"
                 "• Manchester council confirms service change. <a href=\"https://example.test/city-1\">Manchester Council</a>\n\n"
-                "<b>Что произошло за 24 часа</b>\n"
+                "<b>Свежие новости</b>\n"
                 "• Stockport transport works confirmed. <a href=\"https://example.test/city-2\">BBC Manchester</a>\n",
                 encoding="utf-8",
             )
@@ -1416,7 +1416,7 @@ class PublishedReviewTest(unittest.TestCase):
                 "stage_status": "complete",
                 "rendered_candidate_fingerprints": ["city-1", "city-2"],
                 "quality_counts": {"included_candidates": 2, "rendered_candidates": 2},
-                "section_counts": {"Погода": 1, "Что важно сегодня": 1, "Что произошло за 24 часа": 1},
+                "section_counts": {"Погода": 1, "Что важно сегодня": 1, "Свежие новости": 1},
                 "dropped_candidates": [],
             }), encoding="utf-8")
             (state_dir / "editor_report.json").write_text(json.dumps({
@@ -1430,7 +1430,7 @@ class PublishedReviewTest(unittest.TestCase):
                 "• Погода: 12-16°C. <a href=\"https://example.test/weather\">Met Office</a>\n\n"
                 "<b>Что важно сегодня</b>\n"
                 "• Manchester council confirms service change. <a href=\"https://example.test/city-1\">Manchester Council</a>\n\n"
-                "<b>Что произошло за 24 часа</b>\n"
+                "<b>Свежие новости</b>\n"
                 "• Stockport transport works confirmed. <a href=\"https://example.test/city-2\">BBC Manchester</a>\n",
                 encoding="utf-8",
             )
@@ -2176,8 +2176,37 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         self.assertIn("6LACK", line)
         self.assertIn("Manchester Academy", line)
         self.assertIn("27 сентября", line)
+        self.assertIn("Почему в радаре", line)
         self.assertNotIn("JavaScript", line)
         self.assertNotIn("browser settings", line)
+        self.assertNotIn("Билеты и детали берите", line)
+
+    def test_ticket_radar_hides_low_signal_ticketmaster_rows(self) -> None:
+        from news_digest.pipeline.writer import _build_ticket_fallback_line
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "source_label": "Ticketmaster Manchester Upcoming",
+            "title": "Unknown Local Support Act — event 2026-11-28",
+            "summary": "Small Room | Manchester | Other | event_date=2026-11-28 19:00 | ticket_type=regular_upcoming",
+            "event": {"is_event": True, "event_name": "Unknown Local Support Act", "venue": "Small Room", "date_start": "2026-11-28"},
+        }
+        self.assertEqual(_build_ticket_fallback_line(candidate), "")
+
+    def test_diaspora_ticket_always_gets_watchlist_priority(self) -> None:
+        from news_digest.pipeline.writer import _build_ticket_fallback_line, _ticket_watch_score
+        candidate = {
+            "category": "russian_speaking_events",
+            "primary_block": "russian_events",
+            "source_label": "Kontramarka UK",
+            "title": "Goran Bregovic (London)",
+            "summary": "London | 20:30, Sunday | 54-84 GBP | tickets",
+            "event": {"is_event": True, "event_name": "Goran Bregovic", "venue": "London", "date_start": "2026-11-08", "price": "54-84 GBP"},
+        }
+        self.assertGreaterEqual(_ticket_watch_score(candidate), 100)
+        line = _build_ticket_fallback_line(candidate)
+        self.assertIn("Goran Bregovic", line)
+        self.assertIn("русскоязычный", line)
 
     def test_hard_news_missing_draft_line_gets_recovery_line(self) -> None:
         from news_digest.pipeline.writer import _hard_news_recovery_line

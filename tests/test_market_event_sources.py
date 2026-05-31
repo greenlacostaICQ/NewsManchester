@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from datetime import datetime
 import unittest
+from unittest import mock
+from zoneinfo import ZoneInfo
 
 from news_digest.pipeline.collector.extract import _extract_source_candidates
 from news_digest.pipeline.collector.sources import SourceDef
@@ -164,7 +167,15 @@ class MarketEventSourcesTest(unittest.TestCase):
         </div>
         """
 
-        [candidate] = _extract_source_candidates(source, html)
+        # RNCM cards carry a bare "May 30" with no year; the extractor rolls a
+        # past date forward to next year. Freeze "today" so the bare month-day
+        # resolves deterministically (otherwise the test flakes after May 30).
+        frozen = datetime(2026, 5, 15, 12, 0, tzinfo=ZoneInfo("Europe/London"))
+        with mock.patch(
+            "news_digest.pipeline.collector.extract.now_london",
+            return_value=frozen,
+        ):
+            [candidate] = _extract_source_candidates(source, html)
 
         self.assertEqual(candidate["title"], "Rickie Lee Jones")
         self.assertEqual(candidate["published_date_london"], "2026-05-30")

@@ -26,7 +26,7 @@ REQUIRED_SCAN_CATEGORIES = {
 REQUIRED_BLOCKS = [
     "Погода",
     "Что важно сегодня",
-    "Что произошло за 24 часа",
+    "Свежие новости",
 ]
 
 LOW_SIGNAL_BLOCKS = [
@@ -43,7 +43,7 @@ LOW_SIGNAL_BLOCKS = [
 SECTION_MAX_ITEMS = {
     # Length 350–450 char cards are 3× longer than old headlines, so caps
     # are pulled down to keep the digest readable in Telegram.
-    "Что произошло за 24 часа": 9,
+    "Свежие новости": 9,
     "Городской радар": 12,
     "Футбол": 3,
     "IT и бизнес": 5,
@@ -65,7 +65,7 @@ SECTION_MAX_ITEMS = {
 # or similar — so the underflow is visible in release_report instead of
 # silently shipping a thin section.
 SECTION_MIN_ITEMS = {
-    "Что произошло за 24 часа": 5,
+    "Свежие новости": 5,
     "Что важно сегодня": 3,
     "Городской радар": 5,
     "Что важно в ближайшие 7 дней": 3,
@@ -79,7 +79,7 @@ SECTION_MIN_ITEMS = {
 # capped so they don't crowd out actual city news.
 SECTION_MAX_PER_SOURCE = {
     "Городской радар": 2,
-    "Что произошло за 24 часа": 3,
+    "Свежие новости": 3,
     # Whitworth/venue sources publish many recurring events — cap at 2 per
     # venue so a single gallery doesn't dominate the 7-day calendar.
     "Что важно в ближайшие 7 дней": 2,
@@ -94,7 +94,7 @@ PRIMARY_BLOCKS = {
     "weather": "Погода",
     "transport": "Общественный транспорт сегодня",
     "today_focus": "Что важно сегодня",
-    "last_24h": "Что произошло за 24 часа",
+    "last_24h": "Свежие новости",
     "lead_story": "Главная история дня",
     "city_watch": "Городской радар",
     "weekend_activities": "Выходные в GM",
