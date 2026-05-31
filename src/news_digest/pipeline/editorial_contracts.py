@@ -211,23 +211,42 @@ _LOCATION_SIGNAL = re.compile(
     re.IGNORECASE,
 )
 _PERSON_SIGNAL = re.compile(r"\b(?:\d{1,3}-year-old|man|woman|boy|girl|child|teenager|victim|suspect|officer)\b", re.IGNORECASE)
+# Appeals / missing-person / witness calls. The affected person is by
+# definition not yet identified ("police appeal to find missing girl",
+# "have you seen this man", "witnesses urged to come forward"), so a missing
+# `who_affected` is expected, not a quality gap. On 2026-05-29 this held
+# "Police make appeal to help find missing teenage girl" — a clearly
+# publishable public-interest story — in the borderline queue.
+_APPEAL_MARKERS = re.compile(
+    r"\b(?:appeal|missing|have you seen|can you help|help (?:find|trace|identify)|"
+    r"witness(?:es)?(?: are| have| should)?(?: urged| asked| sought)?|"
+    r"come forward|urged to (?:come|contact|get in touch)|wanted in connection)\b",
+    re.IGNORECASE,
+)
 
 
 def crime_specificity_review(candidate: dict) -> dict[str, object]:
     blob = _blob(candidate)
     if not _CRIME_MARKERS.search(blob):
         return {"applies": False, "missing": [], "severity": "none"}
+    is_appeal = bool(_APPEAL_MARKERS.search(blob))
     missing: list[str] = []
     if not _CRIME_EVENT.search(blob):
         missing.append("what_happened")
-    if not (_PERSON_SIGNAL.search(blob) or "victim" in blob.lower()):
+    if not is_appeal and not (_PERSON_SIGNAL.search(blob) or "victim" in blob.lower()):
         missing.append("who_affected")
     if not _LOCATION_SIGNAL.search(blob):
         missing.append("where")
     if not (_DATE_OR_STAGE.search(blob) or _CRIME_ACTION.search(blob)):
         missing.append("why_now")
     evidence_len = len(re.sub(r"\s+", " ", str(candidate.get("evidence_text") or "")).strip())
-    if len(missing) >= 3 and evidence_len < 120:
+    # Appeals are exempt from who_affected (the subject is implied), which
+    # structurally drops their missing-count by one. Lower the hard floor to
+    # 2 so a contentless "Police appeal for help" stub (no what, no where)
+    # is still held, while a real appeal ("find missing teenage girl in
+    # Bolton") with a subject + location stays publishable.
+    hard_floor = 2 if is_appeal else 3
+    if len(missing) >= hard_floor and evidence_len < 120:
         severity = "hard"
     elif missing:
         severity = "borderline"
@@ -237,6 +256,7 @@ def crime_specificity_review(candidate: dict) -> dict[str, object]:
         "applies": True,
         "missing": missing,
         "severity": severity,
+        "is_appeal": is_appeal,
         "enrichment_attempted": bool(candidate.get("enrichment_status")),
     }
 
@@ -298,24 +318,37 @@ def property_specificity_review(candidate: dict) -> dict[str, object]:
 
 
 _EVENT_COMPLETENESS_FIELDS = ("date_start", "venue", "price", "booking_url", "borough")
+# Only these block an event from publishing. Price/booking_url/borough are
+# enrichment that the source often does not expose on the page — requiring
+# them held ~2/3 of the borderline queue (50 items on 2026-05-29) for nothing
+# the reader actually needed. A reader can act on "date + venue"; price can be
+# checked at the door. So those stay in `missing` for reporting but never gate.
+_EVENT_REQUIRED_FIELDS = ("date_start", "venue")
 
 
 def event_schema_completeness(candidate: dict) -> dict[str, object]:
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     if not event or not event.get("is_event"):
-        return {"applies": False, "score": 0, "missing": list(_EVENT_COMPLETENESS_FIELDS)}
+        return {
+            "applies": False,
+            "score": 0,
+            "missing": list(_EVENT_COMPLETENESS_FIELDS),
+            "required_missing": list(_EVENT_REQUIRED_FIELDS),
+        }
     present = []
     for field in _EVENT_COMPLETENESS_FIELDS:
         value = event.get("date") if field == "date_start" and not event.get("date_start") else event.get(field)
         if str(value or "").strip():
             present.append(field)
     missing = [field for field in _EVENT_COMPLETENESS_FIELDS if field not in present]
+    required_missing = [field for field in _EVENT_REQUIRED_FIELDS if field not in present]
     score = int(round(len(present) / len(_EVENT_COMPLETENESS_FIELDS) * 100))
     return {
         "applies": True,
         "score": score,
         "present": present,
         "missing": missing,
+        "required_missing": required_missing,
     }
 
 

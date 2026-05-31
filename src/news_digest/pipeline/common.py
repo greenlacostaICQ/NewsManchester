@@ -50,10 +50,11 @@ SECTION_MAX_ITEMS = {
     "Выходные в GM": 8,
     "Что важно в ближайшие 7 дней": 6,
     "Еда, открытия и рынки": 6,
-    # Tickets are NOT artificially capped — there can legitimately be many
-    # live shows. Football is ordered above the ticket block so a long rail
-    # never buries it, and the global digest budget bounds the total.
-    "Билеты / Ticket Radar": 99,
+    # Tickets are capped like every other section: a quiet news day must not
+    # turn the issue into a ticket catalogue. On 2026-05-31 an uncapped rail
+    # (40 items) pushed the issue to 69 against a 45 target. 15 is plenty of
+    # live shows; the rest stay in the reserve pool and rotate in over days.
+    "Билеты / Ticket Radar": 15,
     "Русскоязычные концерты и стендап UK": 6,
     "Что важно сегодня": 5,
 }

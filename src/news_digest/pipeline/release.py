@@ -1058,6 +1058,24 @@ def _summarise_source_health(
         and int(row.get("rendered_count") or 0) == 0
     )
     counts["zero_yield"] = zero_yield
+
+    # "No contribution" sources read as panic when lumped into one number.
+    # Split them so the summary distinguishes a real fault (fetch_failed)
+    # from a quiet feed (idle_no_items) from material the editor cut
+    # (all_rejected). idle_no_items is normal and expected on most days.
+    no_contribution = {"fetch_failed": 0, "all_rejected": 0, "idle_no_items": 0}
+    for row in sources:
+        if row.get("category") == "synthetic":
+            continue
+        if int(row.get("rendered_count") or 0) > 0:
+            continue
+        if int(row.get("failure_count") or 0) > 0:
+            no_contribution["fetch_failed"] += 1
+        elif int(row.get("candidate_count") or 0) > 0:
+            no_contribution["all_rejected"] += 1
+        else:
+            no_contribution["idle_no_items"] += 1
+    counts["no_contribution_breakdown"] = no_contribution
     return {"counts": counts, "sources": sources}
 
 

@@ -348,6 +348,28 @@ _REMINDER_STALE_DAYS = 14
 # ── Main stage ────────────────────────────────────────────────────────────
 
 
+def _minimal_transport_line(candidate: dict) -> str:
+    """Last-resort stub when the extractor/renderer give us nothing usable.
+
+    A transport disruption that we *found* but could not parse into a card
+    must still publish — the rule is "найдено = опубликовано". We recover a
+    WHERE from the TfGM URL slug, else from the title head, and emit a short
+    honest bullet that points the reader at the source instead of dropping
+    the disruption to a tier-3 LLM that may never run.
+    """
+    url = str(candidate.get("source_url") or "")
+    where = _location_from_tfgm_slug(url)
+    if not where:
+        title = str(candidate.get("title") or "").strip()
+        head = re.split(r"\s+[—–-]\s+", title)[0].strip() if title else ""
+        # Drop a trailing generic "Tram Stop" / "Tram" so the WHERE reads clean.
+        head = re.sub(r"\s+Tram(\s+Stop)?$", "", head, flags=re.IGNORECASE).strip()
+        where = head
+    if not where:
+        return ""
+    return f"• Транспорт: работы в районе {where} — подробности в источнике TfGM."
+
+
 def run_transport_fill(project_root: Path) -> StageResult:
     state_dir = project_root / "data" / "state"
     candidates_path = state_dir / "candidates.json"
@@ -364,7 +386,8 @@ def run_transport_fill(project_root: Path) -> StageResult:
     pruned = _prune_expired(active, today)
 
     filled = 0
-    skipped = 0  # extractor returned None — leave for LLM tier 3
+    filled_minimal = 0  # found-but-unparseable, published as a minimal stub
+    skipped = 0  # not even a title/slug to anchor a stub
     persisted = 0
     seen_keys_today: set[str] = set()
     fill_details: list[dict] = []
@@ -389,16 +412,38 @@ def run_transport_fill(project_root: Path) -> StageResult:
             continue
 
         card = extract_transport_card(c)
-        if card is None:
-            skipped += 1
+        rendered = render_card(card) if card is not None else ""
+
+        # "найдено = опубликовано": a disruption we found but could not parse
+        # (no operator, or a card with no usable locator → empty render) still
+        # publishes as a minimal stub instead of being dropped to tier 3.
+        if not rendered:
+            stub = _minimal_transport_line(c)
+            if not stub:
+                skipped += 1
+                fill_details.append({
+                    "fingerprint": c.get("fingerprint"),
+                    "title": c.get("title"),
+                    "status": "skipped_no_card",
+                })
+                continue
+            c["draft_line"] = stub
+            c["draft_line_provider"] = "transport_fill"
+            c["draft_line_model"] = "minimal_stub"
+            c["draft_line_written_at"] = now_london().isoformat()
+            if card is not None:
+                c["transport_mode"] = card.mode
+                c["expected_operator"] = card.operator
+            filled += 1
+            filled_minimal += 1
             fill_details.append({
                 "fingerprint": c.get("fingerprint"),
                 "title": c.get("title"),
-                "status": "skipped_no_card",
+                "status": "filled_minimal",
+                "tier": "3",
             })
             continue
 
-        rendered = render_card(card)
         c["draft_line"] = rendered
         c["draft_line_provider"] = "transport_fill"
         c["draft_line_model"] = "deterministic_template"
@@ -471,6 +516,7 @@ def run_transport_fill(project_root: Path) -> StageResult:
             "run_date_london": today_iso,
             "stage_status": "complete",
             "filled": filled,
+            "filled_minimal": filled_minimal,
             "skipped_no_card": skipped,
             "persisted_tram_disruptions": persisted,
             "injected_reminders": injected,

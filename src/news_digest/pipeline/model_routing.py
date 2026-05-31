@@ -63,22 +63,25 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
         ModelRouteStep("groq", "Groq", GROQ_BASE_URL, GROQ_FALLBACK_MODEL, "GROQ_API_KEY", "resilient_fallback", 3, batch_size=6, timeout_seconds=30),
     ),
     "rewrite": (
-        # Visible Russian copy must come from the quality route only.
-        # Earlier fallback to DeepSeek/Groq kept the issue alive but also
-        # shipped weaker phrasing after OpenAI timeouts. If OpenAI misses an
-        # item now, writer.py either uses a deterministic domain template
-        # (tickets/events/transport) or leaves an explicit warning.
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_rewrite_primary", 1, batch_size=6, timeout_seconds=30),
+        # Visible Russian copy comes from OpenAI as the quality primary. We
+        # make OpenAI itself robust first (small batches + generous timeout +
+        # SDK backoff via max_retries in llm_rewrite), so it rarely misses.
+        # DeepSeek sits at priority 2 as a LAST RESORT only: a slightly
+        # weaker Russian sentence on a hard-news item (police appeal, cordon)
+        # is better than the item vanishing. Fallback-written items keep
+        # draft_line_provider="DeepSeek" so the degraded phrasing is auditable.
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_rewrite_primary", 1, batch_size=3, timeout_seconds=60),
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "rewrite_last_resort", 2, batch_size=3, timeout_seconds=60),
     ),
-    # Events have structured datetime/venue fields where DeepSeek
-    # historically degrades into the fallback chain; putting OpenAI
-    # first short-circuits the 90s primary timeout we used to eat.
-    # Explicit per-step timeouts cap wall-time per item even on bad days.
+    # Events carry structured datetime/venue fields. OpenAI stays primary;
+    # DeepSeek is the same last-resort net so a non-deterministic culture
+    # event (film, talk) never disappears just because OpenAI timed out.
     "events_rewrite": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "events_primary", 1, batch_size=5, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "events_primary", 1, batch_size=5, timeout_seconds=60),
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "events_last_resort", 2, batch_size=5, timeout_seconds=60),
     ),
     "repair": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_repair", 1, batch_size=5, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_repair", 1, batch_size=5, timeout_seconds=60),
     ),
 }
 

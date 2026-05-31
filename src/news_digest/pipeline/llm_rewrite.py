@@ -321,7 +321,9 @@ REPAIR_DRAFT_SYSTEM = """Ты senior editor городского morning brief.
 - change-of-use / former building: текущее решение первым; старую дату закрытия давай только как фон, не как новость.
 - transport: не оставляй «небольшие задержки» без линии/участка, если они есть в title/summary; если участок не указан источником, прямо скажи «TfGM не уточнил участок».
 
-ЕСЛИ данных мало — пиши 250–300 символов с реальной фактурой. Лучше точный короткий пункт, чем раздутый пустой.
+ЖЁСТКОЕ ПРАВИЛО ДЛИНЫ (long-format категории): минимум ДВА самостоятельных предложения и ≥150 символов. Первое — главный факт; второе — конкретная деталь из evidence_text (имя/сумма/дата суда/адрес/последствие). НЕ упаковывай всё в одно длинное предложение — раздели на два. Бери вторую деталь из evidence_text, она почти всегда там есть.
+ЕСЛИ в evidence_text реально только заголовок без второй фактуры — НЕ выдумывай и НЕ добавляй заглушку; верни draft_line пустой строкой "", такой пункт честно не пойдёт в выпуск (это пробел обогащения, а не слабый текст).
+ЕСЛИ данных мало, но они есть — пиши 250–300 символов с реальной фактурой. Лучше точный короткий пункт, чем раздутый пустой.
 
 ЗАПРЕЩЕНЫ окончания-заглушки: «обогатит», «центр притяжения», «новая достопримечательность», «другие детали не сообщаются», «подробности не раскрываются», «решение вступило в силу», «остаётся нерешённой», «уточняйте», «привлечёт внимание».
 
@@ -821,9 +823,14 @@ def _call_provider_batch(
         logger.error("openai package not installed. Run: pip install openai")
         return {}
 
-    # Keep SDK retries minimal and make the recovery ladder visible in
-    # diagnostics: same batch → split batch → per protected item.
-    client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout, max_retries=1)
+    # Let the SDK absorb transient slowness with exponential backoff — this
+    # is what high-volume OpenAI users rely on. max_retries=1 (the old value)
+    # meant a single slow response killed a whole batch of news; on
+    # 2026-05-29 two city_news batches vanished to APITimeoutError that way.
+    # 4 retries with backoff makes OpenAI itself resilient before we ever
+    # need the visible recovery ladder (same batch → split → per item) or the
+    # DeepSeek last-resort step.
+    client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout, max_retries=4)
     mapping: ProviderMapping = {}
 
     batches = [candidates[i: i + batch_size] for i in range(0, len(candidates), batch_size)]
@@ -1434,6 +1441,25 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         )
     if weak_after:
         soft_warnings.append(f"{len(weak_after)} draft_line(s) still look weak after repair.")
+    # Last-resort provider visibility: items OpenAI could not write and that
+    # the DeepSeek fallback caught. These ship (better than vanishing) but the
+    # phrasing is weaker, so they must be auditable rather than silent.
+    last_resort_writes = [
+        {
+            "fingerprint": c.get("fingerprint"),
+            "title": c.get("title"),
+            "category": c.get("category"),
+            "primary_block": c.get("primary_block"),
+            "provider": c.get("draft_line_provider"),
+        }
+        for c in to_rewrite
+        if str(c.get("draft_line_provider") or "").lower().startswith("deepseek")
+    ]
+    if last_resort_writes:
+        soft_warnings.append(
+            f"{len(last_resort_writes)} draft_line(s) written by DeepSeek last-resort fallback "
+            "(OpenAI missed them) — shipped to avoid vanishing, phrasing may be weaker."
+        )
     if repair_rejections:
         soft_warnings.append(
             f"Repair pass rejected {len(repair_rejections)} replacement(s) that still failed writer quality gate."
@@ -1468,6 +1494,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "model_route": route_snapshot().get("rewrite", []),
             "provider_batch_diagnostics": provider_batch_diagnostics,
             "repair_rejections": repair_rejections[:30],
+            "last_resort_writes": last_resort_writes,
             "missing_after": [
                 {
                     "fingerprint": c.get("fingerprint"),

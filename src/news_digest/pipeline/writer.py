@@ -302,8 +302,34 @@ def _contract_public_drop_reason(candidate: dict) -> str:
     return ""
 
 
+def _classify_drop_bucket(item: dict) -> str:
+    """Sort a dropped candidate into failure / quarantine / reserve.
+
+    The release report previously lumped every non-rendered candidate into a
+    single "dropped N" number that read as panic. The three buckets carry very
+    different meaning: a *failure* is a production fault we must fix; a
+    *quarantine* is a deliberate editorial hold; a *reserve* item is good and
+    simply over budget / out of window, and rotates in on a later day.
+    """
+    reasons = " ".join(str(r).lower() for r in (item.get("reasons") or []))
+    category = str(item.get("category") or "")
+    if "weekend window" in reasons or "expired event" in reasons:
+        return "reserve"
+    if "missing draft_line" in reasons or "untranslated" in reasons or "passthrough" in reasons:
+        # Structured categories hold an incomplete card for review; news
+        # categories losing their draft_line is a genuine writer failure.
+        return "quarantine" if category in {"venues_tickets", "transport"} else "failure"
+    # Everything else (borderline holds, editorial-contract drops) is an
+    # intentional editorial quarantine, not a fault.
+    return "quarantine"
+
+
+# The main Ticket Radar now counts toward the 45-item issue budget so a quiet
+# news day can't bloat the issue (2026-05-31 shipped 69 because tickets were
+# exempt). It is ordered last and has a reserved minimum (2), so it is trimmed
+# last by reader-value rather than dropped entirely. The small diaspora rails
+# stay exempt — they serve a distinct audience and are short by nature.
 _PUBLIC_BUDGET_EXEMPT_SECTIONS = {
-    "Билеты / Ticket Radar",
     "Крупные концерты вне GM",
     "Русскоязычные концерты и стендап UK",
 }
@@ -335,8 +361,10 @@ def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
         return True
     if not isinstance(candidate, dict):
         return False
-    if str(candidate.get("category") or "") == "venues_tickets":
-        return True
+    # venues_tickets no longer gets a blanket budget pass: the main Ticket
+    # Radar must count toward the 45-item issue budget. Evergreen markets /
+    # recurring drop-ins stay exempt (they answer "what can I do this weekend"
+    # and should survive a noisy news morning).
     return _is_market_or_recurring_event(candidate)
 
 
@@ -2237,6 +2265,13 @@ def write_digest(project_root: Path) -> StageResult:
             f"{len(global_budget_dropped)} lower-priority item(s) out of the digest."
         )
 
+    drop_breakdown = {"failure": 0, "quarantine": 0, "reserve": 0}
+    for _item in dropped_candidates:
+        drop_breakdown[_classify_drop_bucket(_item)] += 1
+    # Degrade-shrink and global-budget trims are good items held back for
+    # capacity, not faults — they belong in the reserve pool.
+    drop_breakdown["reserve"] += len(degraded_shrink_dropped) + len(global_budget_dropped)
+
     draft_path.write_text("\n".join(rendered).strip() + "\n", encoding="utf-8")
     write_json(
         report_path,
@@ -2263,6 +2298,7 @@ def write_digest(project_root: Path) -> StageResult:
                 "dropped_count": len(degraded_shrink_dropped),
                 "dropped_items": degraded_shrink_dropped[:50],
             },
+            "drop_breakdown": drop_breakdown,
             "rendered_candidate_fingerprints": rendered_candidate_fingerprints,
             "dropped_candidates": dropped_candidates,
             "draft_path": str(draft_path.resolve()),

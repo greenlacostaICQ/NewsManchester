@@ -1230,6 +1230,66 @@ def _prefer_dedupe_candidate(first: dict, second: dict, first_rank: int, second_
     return True
 
 
+def _ticket_event_identity(candidate: dict) -> tuple[str, str]:
+    """Return (event/artist name, event date) for a ticket/event candidate.
+
+    Different artists in the same venue are different events; the same artist
+    on different nights are different occurrences. Embedding/topic-key dedupe
+    used to collapse them (Kraftwerk, Doja Cat, PinkPantheress all dropped on
+    2026-05-29 as "intra-batch topic duplicate"). Identity is taken from the
+    structured event first, then parsed from the title/summary as a fallback.
+    """
+    ev = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    name = normalize_title(str(ev.get("event_name") or ""))
+    if not name:
+        title = str(candidate.get("title") or "")
+        head = re.split(r"\s+[—–-]\s+", title)[0]
+        name = normalize_title(head)
+    date = str(ev.get("date_start") or ev.get("event_date") or "").strip()[:10]
+    if not date:
+        haystack = f"{candidate.get('title') or ''} {candidate.get('summary') or ''}".lower()
+        m = re.search(r"event(?:_date)?[=\s]+(\d{4}-\d{2}-\d{2})", haystack)
+        date = m.group(1) if m else ""
+    return name, date
+
+
+_TICKET_NAME_STOPWORDS = {
+    "the", "a", "an", "and", "at", "in", "on", "of", "to", "for",
+    "returns", "return", "live", "tour", "show", "presents", "with",
+    "2024", "2025", "2026", "2027",
+}
+
+
+def _ticket_name_tokens(name: str) -> set[str]:
+    return {t for t in name.split() if t and t not in _TICKET_NAME_STOPWORDS}
+
+
+def _is_distinct_ticket_event(ci: dict, cj: dict) -> bool:
+    """True only when two ticket/event candidates are *provably* different.
+
+    Conservative on purpose: a messy extraction ("The" vs the full festival
+    title) must still dedupe, so we require a real, substantial name on BOTH
+    sides and only declare distinctness when the names don't overlap. Same
+    name on different nights is also distinct (separate occurrences).
+    """
+    name_i, date_i = _ticket_event_identity(ci)
+    name_j, date_j = _ticket_event_identity(cj)
+    toks_i = _ticket_name_tokens(name_i)
+    toks_j = _ticket_name_tokens(name_j)
+    if not toks_i or not toks_j:
+        return False  # at least one name is junk/stopword-only — let dedupe run
+    if toks_i <= toks_j or toks_j <= toks_i:
+        same_name = True  # one title contained in the other → same event
+    else:
+        overlap = len(toks_i & toks_j) / len(toks_i | toks_j)
+        same_name = overlap >= 0.5
+    if not same_name:
+        return True  # different artist / show
+    if date_i and date_j and date_i != date_j:
+        return True  # same show, different night
+    return False
+
+
 def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
     """Drop topic-duplicates within the batch, keeping the strongest source.
 
@@ -1270,6 +1330,13 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                 continue
             cj = included[j]
             if _dedup_block_group(str(cj.get("primary_block") or "")) != group_i:
+                continue
+
+            # Tickets/events: provably different shows (different artist, or
+            # same artist on a different night) are never duplicates. This
+            # guard runs BEFORE the cluster/topic/token paths so a shared venue
+            # or generic topic-key can no longer collapse distinct concerts.
+            if is_event_ticket_group and _is_distinct_ticket_event(ci, cj):
                 continue
 
             cluster_j = str(cj.get("story_cluster_key") or "")

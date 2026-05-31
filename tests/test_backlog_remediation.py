@@ -971,10 +971,10 @@ class AdminAlertCopyTest(unittest.TestCase):
     def test_admin_support_surfaces_missing_operational_sections(self) -> None:
         rows = _section_shape_rows({"section_counts": {"Билеты / Ticket Radar": 6, "Что важно сегодня": 2}})
         by_name = {row["section"]: row for row in rows}
-        # 2026-05-29: an uncapped ticket rail buried football and hard news.
-        # Tickets are not artificially capped (owner: "билетов может быть
-        # дохрена"). Football is ordered above the block; budget bounds total.
-        self.assertEqual(by_name["Билеты / Ticket Radar"]["max"], 99)
+        # 2026-05-31: an uncapped ticket rail (40 items) pushed the issue to
+        # 69 against a 45 target, so Ticket Radar is capped at 15 — plenty of
+        # live shows; the rest stay in the reserve pool and rotate in (T6).
+        self.assertEqual(by_name["Билеты / Ticket Radar"]["max"], 15)
         self.assertEqual(by_name["Что важно сегодня"]["status"], "ниже минимума")
         self.assertEqual(_section_name_human("Билеты / Ticket Radar"), "Билеты и концерты")
         self.assertIn(

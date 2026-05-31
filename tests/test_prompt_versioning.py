@@ -75,10 +75,16 @@ class PromptVersioningTest(unittest.TestCase):
         self.assertEqual(routes["dedupe_review"][0]["role"], "cheap_scoring")
         self.assertEqual(routes["rewrite"][0]["role"], "quality_rewrite_primary")
         self.assertEqual(routes["rewrite"][0]["provider_label"], "OpenAI")
-        self.assertEqual(len(routes["rewrite"]), 1)
+        # DeepSeek is a last-resort priority-2 step: OpenAI writes, and only if
+        # it fails outright does DeepSeek catch the item (it writes worse, so it
+        # never leads). See T2 / 2026-05-29 APITimeoutError loss.
+        self.assertEqual(len(routes["rewrite"]), 2)
+        self.assertEqual(routes["rewrite"][1]["provider_label"], "DeepSeek")
+        self.assertEqual(routes["rewrite"][1]["role"], "rewrite_last_resort")
         self.assertEqual(routes["events_rewrite"][0]["provider_label"], "OpenAI")
         self.assertEqual(routes["events_rewrite"][0]["batch_size"], 5)
-        self.assertEqual(len(routes["events_rewrite"]), 1)
+        self.assertEqual(len(routes["events_rewrite"]), 2)
+        self.assertEqual(routes["events_rewrite"][1]["provider_label"], "DeepSeek")
         self.assertEqual(routes["repair"][0]["role"], "quality_repair")
         self.assertEqual(routes["repair"][0]["provider_label"], "OpenAI")
         self.assertEqual(len(routes["repair"]), 1)

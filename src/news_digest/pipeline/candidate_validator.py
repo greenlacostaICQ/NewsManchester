@@ -1686,11 +1686,14 @@ def validate_candidates(project_root: Path) -> StageResult:
         completeness = event_schema_completeness(candidate)
         if completeness.get("applies"):
             candidate["event_schema_completeness"] = completeness
-            missing = completeness.get("missing") or []
-            if missing and candidate.get("include"):
+            # Only required fields (date_start, venue) hold an event. Missing
+            # price/booking_url/borough are still recorded in completeness for
+            # reporting but no longer route the item to the borderline queue.
+            required_missing = completeness.get("required_missing") or []
+            if required_missing and candidate.get("include"):
                 candidate["quality_warnings"] = sorted(set(
                     [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]
-                    + [f"event_schema_missing:{','.join(str(m) for m in missing)}"]
+                    + [f"event_schema_missing:{','.join(str(m) for m in required_missing)}"]
                 ))
         if manual == "force_include":
             candidate["include"] = True
