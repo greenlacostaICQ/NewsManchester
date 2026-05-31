@@ -2155,7 +2155,7 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         line = render_card(TransportCard(mode="tram", operator="Metrolink", reason="ремонтные работы"))
         self.assertEqual(line, "")
 
-    def test_ticket_fallback_builds_clean_card_despite_dirty_summary(self) -> None:
+    def test_major_venue_ticket_builds_clean_card_despite_dirty_summary(self) -> None:
         # Owner rule: enrich, don't ban. A dirty JS-chrome summary must NOT
         # make us hold the show — the structured fields (name/venue/date) are
         # clean, so render from them and drop the chrome.
@@ -2164,16 +2164,16 @@ class TelegramBacklog20260527Test(unittest.TestCase):
             "category": "venues_tickets",
             "primary_block": "ticket_radar",
             "source_label": "Manchester Academy",
-            "title": "6LACK - 27th September 2026",
+            "title": "New UK Tour - 27th September 2026",
             "summary": (
                 "This website makes extensive use of JavaScript in places to provide a better "
                 "experience for our users To view the site as intended, please enable JavaScript "
-                "in your browser settings All ages welcome."
+                "in your browser settings All ages welcome. Manchester Academy | Manchester | R&B | ticket_type=major_upcoming"
             ),
-            "event": {"is_event": True, "event_name": "6LACK", "venue": "Manchester Academy", "date_start": "2026-09-27"},
+            "event": {"is_event": True, "event_name": "New UK Tour", "venue": "Manchester Academy", "date_start": "2026-09-27"},
         }
         line = _build_ticket_fallback_line(candidate)
-        self.assertIn("6LACK", line)
+        self.assertIn("New UK Tour", line)
         self.assertIn("Manchester Academy", line)
         self.assertIn("27 сентября", line)
         self.assertIn("Почему в радаре", line)

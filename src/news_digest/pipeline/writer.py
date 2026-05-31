@@ -717,15 +717,6 @@ _TICKET_PREFERRED_GENRE_RE = re.compile(
     r"\b(?:jazz|blues|soul|r&b|rnb|reggae|funk|folk|world|classical|hip-hop|rap)\b",
     re.IGNORECASE,
 )
-_TICKET_WORLD_UK_ARTIST_RE = re.compile(
-    r"\b(?:the weeknd|madison beer|ub40|lola young|macy gray|jeff goldblum|"
-    r"jason isbell|peter hook|rickie lee jones|ray lamontagne|calum scott|"
-    r"super furry animals|6lack|puscifer|lany|blue october|ibrahim maalouf|"
-    r"goran bregovic|kraftwerk|dermot kennedy|sasha|john digweed|paul weller|"
-    r"sam fender|dua lipa|coldplay|oasis|blur|the cure|depeche mode|muse|"
-    r"arctic monkeys|robbie williams|elton john|adele|ed sheeran|taylor swift)\b",
-    re.IGNORECASE,
-)
 _TICKET_NEGATIVE_RE = re.compile(
     r"\b(?:venue premium tickets|tribute act|tribute show|stunt show|games in concert|"
     r"film with live orchestra|bottomless|party|unknown|undefined)\b",
@@ -762,8 +753,6 @@ def _ticket_watch_score(candidate: dict) -> float:
     score = 0.0
     if _is_diaspora_ticket(candidate):
         score += 100
-    if _TICKET_WORLD_UK_ARTIST_RE.search(blob):
-        score += 45
     if _TICKET_MAJOR_VENUE_RE.search(venue) or _TICKET_MAJOR_VENUE_RE.search(summary):
         score += 25
     if _TICKET_PREFERRED_GENRE_RE.search(genre) or _TICKET_PREFERRED_GENRE_RE.search(summary):
@@ -779,7 +768,7 @@ def _ticket_watch_score(candidate: dict) -> float:
         days = (event_dt.date() - now_london().date()).days
         if 0 <= days <= 14:
             score += 12
-        elif days > 180 and not (_TICKET_WORLD_UK_ARTIST_RE.search(blob) or _is_diaspora_ticket(candidate)):
+        elif days > 180 and not _is_diaspora_ticket(candidate):
             score -= 12
     if _TICKET_NEGATIVE_RE.search(blob):
         score -= 35
@@ -799,8 +788,6 @@ def _ticket_watch_reason(candidate: dict) -> str:
     reasons: list[str] = []
     if _is_diaspora_ticket(candidate):
         reasons.append("русскоязычный/диаспора UK")
-    if _TICKET_WORLD_UK_ARTIST_RE.search(blob):
-        reasons.append("известный артист")
     if _TICKET_MAJOR_VENUE_RE.search(venue) or _TICKET_MAJOR_VENUE_RE.search(summary):
         reasons.append("крупная площадка")
     if _TICKET_PREFERRED_GENRE_RE.search(genre) or _TICKET_PREFERRED_GENRE_RE.search(summary):
