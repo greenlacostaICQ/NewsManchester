@@ -71,7 +71,7 @@ _GM_BOROUGHS: tuple[str, ...] = (
     "Oldham", "Rochdale", "Bury", "Bolton", "Wigan",
 )
 _CURATOR_PROTECTED_CATEGORIES = {"weather", "russian_speaking_events", "diaspora_events"}
-_CURATOR_PROTECTED_BLOCKS = {"weather", "russian_events"}
+_CURATOR_PROTECTED_BLOCKS = {"weather", "ticket_radar", "outside_gm_tickets", "russian_events"}
 
 
 def _is_curator_protected(candidate: dict) -> bool:

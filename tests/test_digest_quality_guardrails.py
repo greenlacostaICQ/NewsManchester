@@ -197,12 +197,13 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
                     "event_date=2026-06-10 19:00 | public_onsale=2025-11-14 10:00 | "
                     "ticket_signal=upcoming_event | ticket_type=major_upcoming | major_venue=true"
                 ),
+                "ticket_notability": {"artist": "Lola Young", "kind": "artist", "tier": "B"},
             }
         )
 
         self.assertIn("Lola Young", line)
         self.assertIn("(R&B)", line)
-        self.assertIn("Почему в радаре", line)
+        self.assertNotIn("Почему в радаре", line)
         self.assertNotIn("Билеты и детали берите", line)
         self.assertNotIn("поступят в продажу", line.lower())
 

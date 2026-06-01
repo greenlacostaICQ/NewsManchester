@@ -2171,12 +2171,13 @@ class TelegramBacklog20260527Test(unittest.TestCase):
                 "in your browser settings All ages welcome. Manchester Academy | Manchester | R&B | ticket_type=major_upcoming"
             ),
             "event": {"is_event": True, "event_name": "New UK Tour", "venue": "Manchester Academy", "date_start": "2026-09-27"},
+            "ticket_notability": {"artist": "New UK Tour", "kind": "artist", "tier": "B"},
         }
         line = _build_ticket_fallback_line(candidate)
         self.assertIn("New UK Tour", line)
         self.assertIn("Manchester Academy", line)
         self.assertIn("27 сентября", line)
-        self.assertIn("Почему в радаре", line)
+        self.assertNotIn("Почему в радаре", line)
         self.assertNotIn("JavaScript", line)
         self.assertNotIn("browser settings", line)
         self.assertNotIn("Билеты и детали берите", line)
@@ -2206,7 +2207,7 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         self.assertGreaterEqual(_ticket_watch_score(candidate), 100)
         line = _build_ticket_fallback_line(candidate)
         self.assertIn("Goran Bregovic", line)
-        self.assertIn("русскоязычный", line)
+        self.assertIn("русскоязычный", line.lower())
 
     def test_hard_news_missing_draft_line_gets_recovery_line(self) -> None:
         from news_digest.pipeline.writer import _hard_news_recovery_line

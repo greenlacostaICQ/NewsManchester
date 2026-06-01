@@ -55,6 +55,7 @@ SECTION_MAX_ITEMS = {
     # (40 items) pushed the issue to 69 against a 45 target. 15 is plenty of
     # live shows; the rest stay in the reserve pool and rotate in over days.
     "Билеты / Ticket Radar": 15,
+    "Крупные концерты вне GM": 6,
     "Русскоязычные концерты и стендап UK": 6,
     "Что важно сегодня": 5,
 }

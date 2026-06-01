@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 import html
 import logging
+import os
 from pathlib import Path
 import re
 
@@ -30,6 +31,7 @@ from news_digest.pipeline.editorial_contracts import (
 )
 from news_digest.pipeline.reader_value import reader_value_score
 from news_digest.pipeline.story_intelligence import section_board_score
+from news_digest.pipeline.ticket_notability import enrich_ticket_notability, ticket_artist_name
 from news_digest.pipeline.toponyms import restore_english_toponyms
 from news_digest.pipeline.place_names import preserve_place_names
 
@@ -106,7 +108,7 @@ DEGRADED_LLM_SECTION_MAX_ITEMS = {
     "Русскоязычные концерты и стендап UK": 3,
 }
 
-PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 45
+PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 35
 PUBLIC_SECTION_RESERVED_MIN = {
     # These sections answer "what can I do / see / book now"; they must not
     # disappear just because early news sections are noisy on a given morning.
@@ -753,27 +755,42 @@ def _ticket_watch_score(candidate: dict) -> float:
     score = 0.0
     if _is_diaspora_ticket(candidate):
         score += 100
+    notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+    tier = str(notability.get("tier") or "").upper()
+    kind = str(notability.get("kind") or "")
+    if tier == "A":
+        score += 115
+    elif tier == "B":
+        score += 82
+    elif tier == "C":
+        score += 34
+    elif tier == "PROTECTED":
+        score += 100
+    # Venue and genre are supporting signals only. They must not promote an
+    # unknown artist into the public radar by themselves.
     if _TICKET_MAJOR_VENUE_RE.search(venue) or _TICKET_MAJOR_VENUE_RE.search(summary):
-        score += 25
-    if _TICKET_PREFERRED_GENRE_RE.search(genre) or _TICKET_PREFERRED_GENRE_RE.search(summary):
-        score += 18
+        score += 10
     if ticket_type in {"on_sale_now", "presale_soon", "newly_listed"}:
-        score += 28
-    elif ticket_type in {"major_upcoming", "event_this_week"}:
         score += 16
+    elif ticket_type in {"major_upcoming", "event_this_week"}:
+        score += 8
     elif ticket_type in {"old_onsale", "old_public_sale"}:
         score -= 10
     event_dt = _parse_ticket_datetime(candidate)
     if event_dt is not None:
         days = (event_dt.date() - now_london().date()).days
         if 0 <= days <= 14:
-            score += 12
+            score += 8
         elif days > 180 and not _is_diaspora_ticket(candidate):
             score -= 12
     if _TICKET_NEGATIVE_RE.search(blob):
         score -= 35
+    if kind == "non_artist_show":
+        score -= 60
+    if kind == "lineup_or_show" and tier not in {"A", "B", "PROTECTED"}:
+        score -= 20
     if not genre:
-        score -= 8
+        score -= 4
     if not venue:
         score -= 12
     return score
@@ -788,10 +805,16 @@ def _ticket_watch_reason(candidate: dict) -> str:
     reasons: list[str] = []
     if _is_diaspora_ticket(candidate):
         reasons.append("русскоязычный/диаспора UK")
+    notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+    tier = str(notability.get("tier") or "").upper()
+    if tier == "A":
+        reasons.append("глобальный артист")
+    elif tier == "B":
+        reasons.append("известный артист")
+    elif tier == "C":
+        reasons.append("нишевый артист с публичным сигналом")
     if _TICKET_MAJOR_VENUE_RE.search(venue) or _TICKET_MAJOR_VENUE_RE.search(summary):
         reasons.append("крупная площадка")
-    if _TICKET_PREFERRED_GENRE_RE.search(genre) or _TICKET_PREFERRED_GENRE_RE.search(summary):
-        reasons.append(f"жанр: {genre}" if genre else "интересный жанр")
     ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
     if ticket_type in {"on_sale_now", "presale_soon", "newly_listed"}:
         reasons.append("новый билетный повод")
@@ -799,11 +822,11 @@ def _ticket_watch_reason(candidate: dict) -> str:
         reasons.append("на этой неделе")
     elif ticket_type == "major_upcoming":
         reasons.append("крупный анонс")
-    return "; ".join(dict.fromkeys(reasons[:3])) or "прошёл билетный watchlist"
+    return "; ".join(dict.fromkeys(reasons[:3])) or "watchlist-сигнал"
 
 
 def _build_ticket_fallback_line(candidate: dict) -> str:
-    title = _ticket_headliner(str(candidate.get("title") or ""))
+    title = ticket_artist_name(candidate) or _ticket_headliner(str(candidate.get("title") or ""))
     venue = _ticket_venue(candidate)
     genre = _ticket_genre(candidate)
     # Build the card from the CLEAN structured fields (event name + venue +
@@ -813,33 +836,25 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
     # the structured parts we actually render are themselves chrome.
     if not title or _looks_like_source_chrome(" ".join([title, venue, genre])):
         return ""
-    if str(candidate.get("primary_block") or "") == "ticket_radar" and _ticket_watch_score(candidate) < 35:
+    if str(candidate.get("primary_block") or "") in {"ticket_radar", "outside_gm_tickets"} and _ticket_watch_score(candidate) < 50:
         return ""
     reason = _ticket_watch_reason(candidate)
     price = _ticket_price(candidate)
     price_part = f"; цена {price}" if price else ""
-    ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
-    type_prefix = {
-        "on_sale_now": "Сейчас в продаже",
-        "presale_soon": "Скоро откроется продажа",
-        "newly_listed": "Новый анонс",
-        "major_upcoming": "Крупный анонс",
-        "old_onsale": "Продажа уже открыта",
-        "old_public_sale": "Билеты уже в продаже",
-    }.get(ticket_type, "Анонс")
     event_dt = _parse_ticket_datetime(candidate)
     day_month = _format_ru_day_month(event_dt)
     time_part = ""
     if event_dt and event_dt.strftime("%H:%M") != "12:00":
         time_part = f" в {event_dt.strftime('%H:%M')}"
     genre_part = f" ({genre})" if genre else ""
+    reason_part = f" {reason[:1].upper()}{reason[1:]}." if reason else ""
     if day_month and venue:
-        return f"• {title} — {day_month}{time_part}, {venue}{genre_part}{price_part}. Почему в радаре: {reason}."
+        return f"• {title} — {day_month}{time_part}, {venue}{genre_part}{price_part}.{reason_part}"
     if day_month:
-        return f"• {title} — {day_month}{time_part}{genre_part}{price_part}. Почему в радаре: {reason}."
+        return f"• {title} — {day_month}{time_part}{genre_part}{price_part}.{reason_part}"
     if venue:
-        return f"• {title} — {venue}{genre_part}{price_part}. Почему в радаре: {reason}."
-    return f"• {title}{genre_part}{price_part}. Почему в радаре: {reason}."
+        return f"• {title} — {venue}{genre_part}{price_part}.{reason_part}"
+    return f"• {title}{genre_part}{price_part}.{reason_part}"
 
 
 def _looks_like_source_chrome(value: str) -> bool:
@@ -1063,7 +1078,7 @@ def _build_recurring_event_fallback_line(candidate: dict) -> str:
     where = f" в {venue}" if venue and venue.lower() not in name.lower() else ""
     prefix = f"{date_text.capitalize()} — " if date_text else "В ближайший день расписания — "
     tail = "; ".join(details)
-    tail = f". {tail.capitalize()}." if tail else ". Время и условия должны быть подтверждены официальной страницей."
+    tail = f". {tail.capitalize()}." if tail else ". Дата ближайшего проведения указана; дополнительные условия не извлечены."
     return f"• {prefix}{name}{where}{tail}"
 
 
@@ -1107,6 +1122,13 @@ def _build_bookable_activity_fallback_line(candidate: dict) -> str:
 
 def _repair_weather_line(line: str) -> str:
     text = str(line or "")
+    text = re.sub(
+        r"(?:—\s*)?(?:перед\s+выходом\s+)?(?:проверьте|посмотрите)\s+"
+        r"(?:локальный\s+)?радар(?:\s+по\s+своему\s+району)?\.?",
+        "зонт лучше взять с утра.",
+        text,
+        flags=re.IGNORECASE,
+    )
     # 2026-05-25 complaint: when the max temperature is 25°C+, the phrase
     # "без существенных осадков" reads tone-deaf — pull max_temp out of the
     # line and tone the rewrite to match. Otherwise keep the previous
@@ -1139,6 +1161,7 @@ def _repair_weather_line(line: str) -> str:
     # Clean up doubled punctuation from removed fragments.
     text = re.sub(r"\s*;\s*;\s*", "; ", text)
     text = re.sub(r"\s*;\s*\.", ".", text)
+    text = re.sub(r"\.\s*\.", ".", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
@@ -1154,7 +1177,19 @@ def _repair_editorial_contract_line(candidate: dict, line: str) -> tuple[str, li
         if updated != repaired:
             repaired = updated
             reasons.append("weather_wording")
-    if event_shape == "recurring" and str(candidate.get("primary_block") or "") == "weekend_activities":
+    if str(candidate.get("primary_block") or "") == "transport":
+        if re.search(r"\bметро\b", repaired, flags=re.IGNORECASE) and re.search(
+            r"\b(?:metrolink|shudehill|market street|tram|трамва)", repaired, flags=re.IGNORECASE
+        ):
+            repaired = re.sub(r"\bметро\b", "Metrolink", repaired, flags=re.IGNORECASE)
+            reasons.append("metrolink_not_metro")
+        repaired = re.sub(
+            r"\bзакрыты\s+две\s+станции\s+Metrolink\b",
+            "закрыты две остановки Metrolink",
+            repaired,
+            flags=re.IGNORECASE,
+        )
+    if event_shape == "recurring" and str(candidate.get("primary_block") or "") in {"weekend_activities", "next_7_days"}:
         # Recurring items must lead with the next occurrence. The season
         # start/end can be supporting detail, never the lead.
         if re.search(r"\b(?:до|until)\s+\d{1,2}\s+[A-Za-zА-Яа-яЁё]+|opens?\s+\d{1,2}\s+[A-Za-zА-Яа-яЁё]+|с\s+\d{1,2}\s+[а-яё]+|\b(?:every|each)\s+(?:saturday|sunday)|\bкажд(?:ую|ое|ый|ые)\s+(?:суббот|воскрес)", repaired, flags=re.IGNORECASE):
@@ -1294,7 +1329,7 @@ def _build_event_fallback_line(candidate: dict) -> str:
     booking = str(event.get("booking_url") or candidate.get("source_url") or "").strip()
     practical = str(candidate.get("practical_angle") or "").strip()
     if not practical:
-        practical = "Уточните время, вход и наличие мест на официальной странице."
+        practical = "Источник не дал цену или дополнительные условия."
     parts: list[str] = ["•"]
     if day_month:
         parts.append(f"{day_month}{time_part}")
@@ -1731,6 +1766,8 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
         errors.append("draft_line must start with bullet marker.")
     if "<a " in text.lower():
         errors.append("draft_line must not include source anchor HTML.")
+    if "Почему в радаре" in text:
+        errors.append("ticket radar line must not use machine explanation label.")
     if re.search(r"\*\*.+?\*\*", text) or re.search(r"(?<!\*)\*(?!\s).+?(?<!\s)\*(?!\*)", text):
         errors.append("draft_line must not use Markdown emphasis markers.")
     if not _contains_cyrillic(text):
@@ -1753,6 +1790,10 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     #     280-char teaser, accept whatever LLM produced rather than
     #     dropping a real event for being a sentence too short.
     is_transport_block = block_key == "transport"
+    if block_key == "weather" and re.search(r"\b(?:локальн\w+\s+)?радар\b", text, re.IGNORECASE):
+        errors.append("weather line must not tell the reader to check a radar.")
+    if is_transport_block and re.search(r"\bметро\b", text, re.IGNORECASE):
+        errors.append("Metrolink/tram transport must not be called metro.")
     if category in LONG_FORMAT_CATEGORIES and block_key not in SHORT_EVENT_BLOCKS and not is_transport_block:
         evidence_len = len(str(candidate.get("evidence_text") or "").strip())
         evidence_rich = evidence_len >= EVENT_RELAX_EVIDENCE_THRESHOLD
@@ -1812,6 +1853,70 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     return errors
 
 
+_FOOTBALL_SPORT_RE = re.compile(
+    r"\b(?:match|fixture|result|score|goal|injur|fitness|transfer|sign(?:s|ed|ing)?|"
+    r"contract|loan|squad|line[- ]?up|team news|manager|coach|tournament|cup|"
+    r"league|champions league|world cup|europa|premier league|wsl|fa cup|"
+    r"call[- ]?up|debut|suspension|ban|training return|ruled out|available)\b",
+    re.IGNORECASE,
+)
+_FOOTBALL_SOFT_RE = re.compile(
+    r"\b(?:birthday|break[- ]?up|girlfriend|boyfriend|maya jama|personal life|"
+    r"fan reaction|fans react|social media|instagram|party|gossip|rumour|"
+    r"speculation|shirt launch|kit launch|award|charity|community)\b",
+    re.IGNORECASE,
+)
+
+
+def _football_should_route_to_soft(candidate: dict) -> bool:
+    if str(candidate.get("primary_block") or "") != "football":
+        return False
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "source_url")
+    )
+    if _FOOTBALL_SOFT_RE.search(blob) and not _FOOTBALL_SPORT_RE.search(blob):
+        return True
+    return False
+
+
+_NON_GM_REGIONAL_RE = re.compile(
+    r"\b(?:southport|liverpool|lancashire|cheshire|yorkshire|cumbria|london|devon|north-west|north west)\b",
+    re.IGNORECASE,
+)
+_GM_TEXT_RE = re.compile(
+    r"\b(?:greater manchester|manchester|salford|trafford|stockport|tameside|oldham|"
+    r"rochdale|bury|bolton|wigan|denton|burnage|radcliffe|fallowfield|prestwich|"
+    r"altrincham|stretford|withington|levenshulme|rochdale|middleton|old trafford)\b",
+    re.IGNORECASE,
+)
+_SOFT_TOP_NEWS_RE = re.compile(
+    r"\b(?:guinness world record|marathon costume|charity challenge|laughing stock|"
+    r"most-viewed home|rightmove|best places|pretty villages|mum earning|benefits.*struggling)\b",
+    re.IGNORECASE,
+)
+
+
+def _top_news_route_or_drop(candidate: dict) -> str:
+    block = str(candidate.get("primary_block") or "")
+    if block not in {"last_24h", "today_focus"}:
+        return ""
+    category = str(candidate.get("category") or "")
+    if category not in {"media_layer", "gmp", "public_services", "city_news", "council"}:
+        return ""
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    story_type = str(contract.get("story_type") or "")
+    text = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text")
+    )
+    if story_type in {"human_interest", "soft_news", "day_out_guide", "property_listing"} or _SOFT_TOP_NEWS_RE.search(text):
+        return "city_watch"
+    if _NON_GM_REGIONAL_RE.search(text) and not _GM_TEXT_RE.search(text):
+        return "drop_non_gm_regional"
+    return ""
+
+
 def write_digest(project_root: Path) -> StageResult:
     state_dir = project_root / "data" / "state"
     candidates_path = state_dir / "candidates.json"
@@ -1826,6 +1931,41 @@ def write_digest(project_root: Path) -> StageResult:
         for candidate in candidates
         if isinstance(candidate, dict)
     }
+    ticket_notability_report: list[dict[str, object]] = []
+    ticket_notability_cache = state_dir / "ticket_notability_cache.json"
+    for candidate in candidates:
+        if not isinstance(candidate, dict) or not candidate.get("include"):
+            continue
+        if str(candidate.get("category") or "") != "venues_tickets" and str(candidate.get("primary_block") or "") not in {
+            "ticket_radar",
+            "outside_gm_tickets",
+            "russian_events",
+        }:
+            continue
+        notability = enrich_ticket_notability(candidate, ticket_notability_cache)
+        candidate["ticket_notability"] = {
+            "artist": notability.artist,
+            "kind": notability.kind,
+            "tier": notability.tier,
+            "confidence": notability.confidence,
+            "signal": notability.signal,
+            "wikidata_id": notability.wikidata_id,
+            "sitelinks": notability.sitelinks,
+        }
+        ticket_notability_report.append(
+            {
+                "fingerprint": candidate.get("fingerprint"),
+                "title": candidate.get("title"),
+                "source_label": candidate.get("source_label"),
+                "primary_block": candidate.get("primary_block"),
+                "artist": notability.artist,
+                "kind": notability.kind,
+                "tier": notability.tier,
+                "confidence": notability.confidence,
+                "signal": notability.signal,
+                "score": round(_ticket_watch_score(candidate), 2),
+            }
+        )
     llm_degraded, llm_rewrite_report = _llm_rewrite_is_degraded(state_dir)
     sections = {heading: [] for heading in PRIMARY_BLOCKS.values()}
     # Parallel list of source_labels per section (same indices as sections[*]).
@@ -1937,6 +2077,33 @@ def write_digest(project_root: Path) -> StageResult:
                     "primary_block": str(candidate.get("primary_block") or ""),
                     "is_lead": bool(candidate.get("is_lead")),
                     "reasons": ["Expired event date."],
+                }
+            )
+            continue
+
+        if _football_should_route_to_soft(candidate):
+            candidate["primary_block"] = "city_watch"
+            candidate["football_soft_routed"] = True
+            warnings.append(
+                f"Candidate #{index}: football soft item routed to «Городской радар»; it does not count toward football minimum."
+            )
+        top_news_route = _top_news_route_or_drop(candidate)
+        if top_news_route == "city_watch":
+            candidate["primary_block"] = "city_watch"
+            warnings.append(
+                f"Candidate #{index}: soft/top-news item routed to «Городской радар» instead of top news."
+            )
+        elif top_news_route == "drop_non_gm_regional" and candidate.get("manual_override") != "force_include":
+            warnings.append(f"Candidate #{index} dropped: regional story is outside Greater Manchester.")
+            quality_counts["dropped_low_quality"] += 1
+            dropped_candidates.append(
+                {
+                    "fingerprint": candidate.get("fingerprint"),
+                    "title": str(candidate.get("title") or ""),
+                    "category": str(candidate.get("category") or ""),
+                    "primary_block": str(candidate.get("primary_block") or ""),
+                    "is_lead": bool(candidate.get("is_lead")),
+                    "reasons": ["regional story outside Greater Manchester."],
                 }
             )
             continue
@@ -2401,6 +2568,10 @@ def write_digest(project_root: Path) -> StageResult:
                 "caps": DEGRADED_LLM_SECTION_MAX_ITEMS if llm_degraded else {},
                 "dropped_count": len(degraded_shrink_dropped),
                 "dropped_items": degraded_shrink_dropped[:50],
+            },
+            "ticket_notability": {
+                "lookup_enabled": bool(os.environ.get("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "").strip() == "1"),
+                "items": ticket_notability_report[:120],
             },
             "drop_breakdown": drop_breakdown,
             "rendered_candidate_fingerprints": rendered_candidate_fingerprints,

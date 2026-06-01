@@ -1038,7 +1038,7 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
                     reason_counter[reason] = reason_counter.get(reason, 0) + 1
         for reason, count in sorted(reason_counter.items(), key=lambda kv: -kv[1])[:3]:
             lines.append(f"• {reason}: {count}.")
-        lines.append("Смысл: это карантин, а не список «проёбанных новостей»; надо чинить слишком широкие правила, если сюда попадает важное.")
+        lines.append("Смысл: это карантин на ручную проверку, а не выброшенные новости; если сюда попадает важный материал — значит правило отбора слишком широкое и его надо сузить.")
         for item in (borderline_queue.get("items") or [])[:3]:
             title = str(item.get("title") or "").strip()
             lines.append(f"• Пример: {title[:85]}")
@@ -2456,6 +2456,7 @@ def cmd_model_bakeoff(dry_run: bool, limit: int | None) -> int:
 
 
 def cmd_write_digest() -> int:
+    os.environ.setdefault("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "1")
     result = write_digest(PROJECT_ROOT)
     print(json.dumps(_stage_payload(result), ensure_ascii=False, indent=2))
     return 0 if result.ok else 1

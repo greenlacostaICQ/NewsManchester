@@ -78,7 +78,7 @@ class WeatherCandidateFreshnessTest(unittest.TestCase):
             70,
         )
 
-        self.assertIn("высокий риск локальных осадков", practical)
+        self.assertIn("высокий риск дождя", practical.lower())
         self.assertNotIn("сильные осадки", practical)
         self.assertNotIn("зонт обязателен", practical)
 
@@ -90,7 +90,8 @@ class WeatherCandidateFreshnessTest(unittest.TestCase):
         )
 
         self.assertIn("сильные осадки", practical)
-        self.assertIn("проверьте локальный радар", practical)
+        self.assertNotIn("радар", practical.lower())
+        self.assertIn("зонт", practical.lower())
 
     def test_live_met_office_fetch_marks_candidate_fresh(self) -> None:
         with mock.patch.object(

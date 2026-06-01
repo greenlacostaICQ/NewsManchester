@@ -114,7 +114,7 @@ def _weather_draft_line(
         elif heat_severity in {"moderate", "mild"}:
             practical = "Для прогулок и поездок день спокойный; воду держите под рукой."
         elif rain_probability >= 60:
-            practical = "Перед выходом посмотрите радар по своему району."
+            practical = "Зонт лучше взять с утра."
         elif rain_probability >= 30:
             practical = "Зонт лучше держать под рукой во второй половине дня."
         else:

@@ -118,9 +118,9 @@ def _met_office_practical_angle(headline: str, today_text: str, precip_max: int)
     # reader's exact location, so avoid categorical "heavy rain" wording
     # unless the Met Office prose itself says heavy/persistent rain.
     if precip_max >= 60 and any(token in blob for token in ("heavy rain", "persistent rain", "prolonged rain")):
-        return "Возможны продолжительные или сильные осадки — проверьте локальный радар."
+        return "Возможны продолжительные или сильные осадки — зонт лучше взять с утра."
     if precip_max >= 60:
-        return "Есть высокий риск локальных осадков — перед выходом проверьте радар."
+        return "Высокий риск дождя — зонт лучше взять с утра."
     if precip_max >= 30:
         return "Во второй половине дня возможны локальные осадки."
     if "showers" in blob:
