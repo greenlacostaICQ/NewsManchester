@@ -4,9 +4,10 @@ import json
 import tempfile
 import unittest
 from contextlib import redirect_stdout
-from datetime import timedelta
+from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
+from unittest import mock
 
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.common import REQUIRED_SCAN_CATEGORIES, now_london
@@ -565,38 +566,43 @@ class EventQualityPipelineTest(unittest.TestCase):
         self.assertEqual(updated["primary_block"], "city_watch")
 
     def test_validator_drops_stale_and_far_future_food_openings(self) -> None:
-        stale = self._validate_one(
-            {
-                "include": True,
-                "fingerprint": "trof",
-                "category": "food_openings",
-                "primary_block": "openings",
-                "title": "Trof reopens in Northern Quarter on 1 May",
-                "summary": "The pub reopens on 1 May in Manchester.",
-                "lead": "",
-                "evidence_text": "The pub reopens on 1 May in Manchester.",
-                "published_at": "2026-05-01T09:00:00+01:00",
-                "source_label": "Food Source",
-                "source_url": "https://example.test/trof",
-                "dedupe_decision": "new",
-            }
-        )
-        future = self._validate_one(
-            {
-                "include": True,
-                "fingerprint": "counter",
-                "category": "food_openings",
-                "primary_block": "openings",
-                "title": "The Counter opens on September 10 on John Dalton Street",
-                "summary": "A restaurant is due to open on September 10 in Manchester.",
-                "lead": "",
-                "evidence_text": "A restaurant is due to open on September 10 in Manchester.",
-                "published_at": "2026-05-20T09:00:00+01:00",
-                "source_label": "Food Source",
-                "source_url": "https://example.test/counter",
-                "dedupe_decision": "new",
-            }
-        )
+        # Freeze "today" so "1 May" reads as past (stale) and "September 10" as
+        # far future, instead of both rolling to next year once the calendar
+        # passes May.
+        frozen = datetime(2026, 5, 20, 12, 0, tzinfo=now_london().tzinfo)
+        with mock.patch("news_digest.pipeline.candidate_validator.now_london", return_value=frozen):
+            stale = self._validate_one(
+                {
+                    "include": True,
+                    "fingerprint": "trof",
+                    "category": "food_openings",
+                    "primary_block": "openings",
+                    "title": "Trof reopens in Northern Quarter on 1 May",
+                    "summary": "The pub reopens on 1 May in Manchester.",
+                    "lead": "",
+                    "evidence_text": "The pub reopens on 1 May in Manchester.",
+                    "published_at": "2026-05-01T09:00:00+01:00",
+                    "source_label": "Food Source",
+                    "source_url": "https://example.test/trof",
+                    "dedupe_decision": "new",
+                }
+            )
+            future = self._validate_one(
+                {
+                    "include": True,
+                    "fingerprint": "counter",
+                    "category": "food_openings",
+                    "primary_block": "openings",
+                    "title": "The Counter opens on September 10 on John Dalton Street",
+                    "summary": "A restaurant is due to open on September 10 in Manchester.",
+                    "lead": "",
+                    "evidence_text": "A restaurant is due to open on September 10 in Manchester.",
+                    "published_at": "2026-05-20T09:00:00+01:00",
+                    "source_label": "Food Source",
+                    "source_url": "https://example.test/counter",
+                    "dedupe_decision": "new",
+                }
+            )
 
         self.assertIn("stale_opening", stale["reject_reasons"])
         self.assertIn("future_opening_too_early", future["reject_reasons"])
@@ -1855,11 +1861,11 @@ class TelegramBacklog20260527Test(unittest.TestCase):
     borderline_queue stored every hold as `no_reason`. One assertion per
     behaviour."""
 
-    def test_public_digest_max_visible_items_is_45(self) -> None:
-        # Owner-set ceiling: 45 is the MAXIMUM (not a fill quota). Lowering it
+    def test_public_digest_max_visible_items_is_35(self) -> None:
+        # Owner-set ceiling: 35 is the MAXIMUM (not a fill quota). Lowering it
         # to 25 silently dropped real items, which the owner explicitly rejected.
         from news_digest.pipeline.writer import PUBLIC_DIGEST_MAX_VISIBLE_ITEMS
-        self.assertEqual(PUBLIC_DIGEST_MAX_VISIBLE_ITEMS, 45)
+        self.assertEqual(PUBLIC_DIGEST_MAX_VISIBLE_ITEMS, 35)
 
     def test_ticket_within_7_days_kept_in_ticket_radar_despite_old_onsale(self) -> None:
         from news_digest.pipeline.candidate_validator import _exclude_stale_ticket_onsale

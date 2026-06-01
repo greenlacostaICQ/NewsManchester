@@ -26,13 +26,13 @@ collect-digest
   → llm-rewrite           # 5 category-specific prompts (transport/city/events/business/football)
   → write-digest
   → edit-digest
-  → build-digest          # release gate → promotes draft to outgoing + writes published_facts
+  → build-digest          # release gate → promotes draft to outgoing
 ```
 
 Each stage reads/writes its own `data/state/*.json` file.
 `build-digest` is the only stage that promotes
-`data/state/draft_digest.html` to `data/outgoing/current_digest.html`
-and updates `published_facts.json` for next-day dedupe.
+`data/state/draft_digest.html` to `data/outgoing/current_digest.html`.
+`published_facts.json` is updated later, on Telegram send (see below).
 
 Sources are declared in `data/sources.toml` — set `enabled = false` to
 disable a source without touching Python. Each source can carry an
@@ -371,9 +371,9 @@ blockers.
 - Required output blocks live in `common.REQUIRED_BLOCKS`. Gate
   fails if any is missing or empty. `common.LOW_SIGNAL_BLOCKS`
   hide when empty.
-- `published_facts.json` is updated on gate-pass (in `release.py`
-  via `update_published_facts`), not on Telegram send. Idempotent
-  by fingerprint.
+- `published_facts.json` is updated on Telegram send (the send path
+  calls `record_delivery_artifacts` → `update_published_facts`), not
+  at the release gate. Idempotent by fingerprint.
 
 ## State files (in `data/state/`)
 
@@ -389,7 +389,7 @@ blockers.
 - `candidate_validation_report.json` — validator output
 - `writer_report.json` — includes `rendered_candidate_fingerprints[]`
 - `editor_report.json` — line dedup + balance counts
-- `release_report.json` — gate verdict + `published_facts_updated`.
+- `release_report.json` — gate verdict.
   `source_status.sources[]` carries per-source `candidate_count` (raw),
   `curated_count` (include=True after curator), `rendered_count`
   (curated AND in writer's `rendered_candidate_fingerprints`).

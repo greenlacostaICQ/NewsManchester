@@ -409,16 +409,6 @@ _GM_BOROUGHS: frozenset[str] = frozenset({
 # tie-breaker when neither candidate's source label is in the
 # category-aware registry maintained by source_selection.py (I4).
 # Source labels that ARE in source_selection.SOURCE_TIER win first.
-_SOURCE_PRIORITY: dict[str, int] = {
-    "bbc": 0,
-    "manchester evening news": 1, "men": 1,
-    "the mill": 2,
-    "greater manchester police": 2, "gmp": 2,
-    "the manc": 3, "altrincham today": 3,
-    "i love manchester": 4, "secret manchester": 4,
-    "manchester's finest": 5,
-}
-
 _TITLE_STOPWORDS: frozenset[str] = frozenset({
     "a", "an", "the", "and", "or", "but", "in", "on", "at", "to",
     "of", "for", "with", "from", "is", "are", "was", "were", "be",
@@ -687,26 +677,12 @@ def _extract_borough(title: str) -> str | None:
 
 
 def _source_rank(source_label: str, category: str = "") -> int:
-    """Lower rank = better source. I4-aware.
+    """Lower rank = better source. Thin delegate to the single shared
+    implementation in ``source_selection`` (imported inline to keep the
+    dedupe ↔ source_selection edge lazy)."""
+    from news_digest.pipeline.source_selection import source_rank_with_fallback
 
-    Delegates to ``source_selection.source_rank`` (category + tier
-    aware) for any source label that appears in that registry. Falls
-    back to the legacy substring map only for the small set of media
-    sources whose labels are exact substrings of the source_label —
-    this keeps regressions impossible for ranges already covered by
-    the test suite while the I4 registry catches everything else.
-    """
-    from news_digest.pipeline.source_selection import SOURCE_TIER, source_rank
-
-    label = str(source_label or "")
-    if label in SOURCE_TIER or category:
-        # Registered in I4 OR we have a category to drive scoring.
-        return source_rank(label, category)
-    lowered = label.lower()
-    for key, rank in _SOURCE_PRIORITY.items():
-        if key in lowered:
-            return rank
-    return 99
+    return source_rank_with_fallback(source_label, category)
 
 
 _TICKETMASTER_SUFFIX_RE = re.compile(

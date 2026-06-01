@@ -102,6 +102,9 @@ class DedupeTransportTest(unittest.TestCase):
             "draft_line": "",
             "practical_angle": "Проверьте время, вход и наличие билетов на официальной странице.",
             "source_label": "Co-op Live",
+            # Radar items reach the fallback builder already enriched with a
+            # notability tier; without it the score gate (>=50) holds the card.
+            "ticket_notability": {"tier": "B", "kind": "artist"},
         }
 
         line = _build_ticket_fallback_line(candidate)

@@ -380,32 +380,12 @@ class SemanticPassResult:
 
 
 def _source_rank(label: str, category: str = "") -> int:
-    """Lower rank = better source. I4-aware.
+    """Lower rank = better source. Thin delegate to the single shared
+    implementation in ``source_selection`` (imported inline to keep this
+    module free of a module-load edge into the dedupe graph)."""
+    from news_digest.pipeline.source_selection import source_rank_with_fallback
 
-    Delegates to ``source_selection.source_rank`` (category + tier
-    aware). Legacy substring fallback covers media labels not yet in
-    the I4 registry. Kept inline (vs imported at module load) to
-    avoid a circular import via ``dedupe.py``.
-    """
-    from news_digest.pipeline.source_selection import SOURCE_TIER, source_rank
-
-    name = str(label or "")
-    if name in SOURCE_TIER or category:
-        return source_rank(name, category)
-    lower = name.lower()
-    table = {
-        "bbc": 0,
-        "manchester evening news": 1, "men": 1,
-        "the mill": 2,
-        "greater manchester police": 2, "gmp": 2,
-        "the manc": 3, "altrincham today": 3,
-        "i love manchester": 4, "secret manchester": 4,
-        "manchester's finest": 5,
-    }
-    for key, rank in table.items():
-        if key in lower:
-            return rank
-    return 99
+    return source_rank_with_fallback(label, category)
 
 
 def run_semantic_pass(

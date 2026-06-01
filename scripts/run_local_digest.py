@@ -2238,7 +2238,6 @@ def cmd_mark_pipeline_failed(stage: str) -> int:
         "message": "Digest pipeline stopped before release gate.",
         "errors": [f"Pipeline stage failed before build-digest: {stage}."],
         "failed_stage": stage,
-        "published_facts_updated": False,
         "inputs": {
             "collector_report": str((state_dir / "collector_report.json").resolve()),
             "candidates": str((state_dir / "candidates.json").resolve()),

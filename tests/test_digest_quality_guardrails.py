@@ -3,8 +3,9 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
+from unittest import mock
 
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector.routing import _adjust_ticket_radar_block
@@ -147,22 +148,26 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertIn("wrong_openings_category", updated["reject_reasons"])
 
     def test_drops_old_undated_election_results_page(self) -> None:
-        updated = self._validate_one(
-            {
-                "include": True,
-                "fingerprint": "stockport-election-results",
-                "category": "council",
-                "primary_block": "city_watch",
-                "title": "Stockport local election 2026 results",
-                "summary": "The results of voting in the Stockport local elections 7 May 2026 are as follows.",
-                "lead": "",
-                "evidence_text": "The results of voting in the Stockport local elections 7 May 2026 are as follows.",
-                "source_label": "Stockport Council",
-                "source_url": "https://example.test/stockport-local-election-2026-results",
-                "dedupe_decision": "new",
-                "change_type": "new_story",
-            }
-        )
+        # Freeze "today" so the bare day-month dates resolve to 2026 (not a
+        # year-rollover) and the staleness window stays deterministic.
+        frozen = datetime(2026, 5, 20, 12, 0, tzinfo=now_london().tzinfo)
+        with mock.patch("news_digest.pipeline.candidate_validator.now_london", return_value=frozen):
+            updated = self._validate_one(
+                {
+                    "include": True,
+                    "fingerprint": "stockport-election-results",
+                    "category": "council",
+                    "primary_block": "city_watch",
+                    "title": "Stockport local election 2026 results",
+                    "summary": "The results of voting in the Stockport local elections 7 May 2026 are as follows.",
+                    "lead": "",
+                    "evidence_text": "The results of voting in the Stockport local elections 7 May 2026 are as follows.",
+                    "source_label": "Stockport Council",
+                    "source_url": "https://example.test/stockport-local-election-2026-results",
+                    "dedupe_decision": "new",
+                    "change_type": "new_story",
+                }
+            )
 
         self.assertFalse(updated["include"])
         self.assertIn("stale_undated_news", updated["reject_reasons"])

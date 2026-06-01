@@ -384,6 +384,39 @@ def source_rank(source_label: str, category: str = "") -> int:
     return max(0, 200 - score)
 
 
+# Legacy substring net for media labels not yet in the I4 registry. Pinned
+# by the dedupe test suite; kept here so dedupe and semantic_dedupe share one
+# implementation instead of each carrying a private copy.
+_LEGACY_SOURCE_RANK: dict[str, int] = {
+    "bbc": 0,
+    "manchester evening news": 1, "men": 1,
+    "the mill": 2,
+    "greater manchester police": 2, "gmp": 2,
+    "the manc": 3, "altrincham today": 3,
+    "i love manchester": 4, "secret manchester": 4,
+    "manchester's finest": 5,
+}
+
+
+def source_rank_with_fallback(source_label: str, category: str = "") -> int:
+    """Lower rank = better source. I4-aware with a legacy substring net.
+
+    Registered labels (or any call carrying a category) go through the
+    tier+category-aware ``source_rank``. Labels absent from the registry
+    fall back to the small substring map above. Unknowns return the
+    historical sentinel 99 so legacy ``rank <= rank`` comparisons keep
+    treating them as the worst option.
+    """
+    label = str(source_label or "")
+    if label in SOURCE_TIER or category:
+        return source_rank(label, category)
+    lowered = label.lower()
+    for key, rank in _LEGACY_SOURCE_RANK.items():
+        if key in lowered:
+            return rank
+    return 99
+
+
 def pick_winner(candidates: list[dict]) -> dict | None:
     """Return the best candidate of a cluster covering the same story.
 

@@ -15,7 +15,9 @@ from __future__ import annotations
 
 import unittest
 from datetime import date
+from unittest import mock
 
+from news_digest.pipeline import event_extraction
 from news_digest.pipeline.event_extraction import (
     EVENT_SCHEMA_VERSION,
     enrich_candidate_event,
@@ -268,7 +270,10 @@ class ExtractEventTest(unittest.TestCase):
             "source_url": "https://firststreetmanchester.com/news/makers-market",
             "entities": {"boroughs": ["Manchester"], "districts": ["First Street"]},
         }
-        result = extract_event(c)
+        # Freeze "today" so the bare "16-17 мая" (no year) resolves to 2026 and
+        # the assertion is not brittle to the calendar moving past May.
+        with mock.patch.object(event_extraction, "_today_london", return_value=date(2026, 5, 10)):
+            result = extract_event(c)
         self.assertEqual(result["price"], "free")
         self.assertTrue(result["date"].startswith("2026-05-1"))
         self.assertIn("17", result["date_text"])

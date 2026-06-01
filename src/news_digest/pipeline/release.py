@@ -3141,7 +3141,6 @@ def build_release(project_root: Path) -> ReleaseResult:
     )
 
     ok = not errors
-    published_facts_updated = False
     if ok:
         shutil.copyfile(draft_path, output_path)
         message = f"Release passed. Promoted {draft_path} to {output_path}."
@@ -3200,7 +3199,6 @@ def build_release(project_root: Path) -> ReleaseResult:
         "after_run_summary": after_run_summary,
         "prompt_versions": _prompts_snapshot(),
         "prompt_drift": prompt_drift,
-        "published_facts_updated": published_facts_updated,
         "audit_trail_path": audit_trail_path,
         "inputs": {
             "collector_report": str((state_dir / "collector_report.json").resolve()),
