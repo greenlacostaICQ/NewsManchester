@@ -1065,6 +1065,20 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
 
     if degraded or shrink:
         lines.append("🤖 Генерация текста")
+        # Which model(s) actually ran, and did the DeepSeek last-resort kick in.
+        routes = llm_report.get("model_route") or []
+        if isinstance(routes, list) and routes:
+            primary = next((r for r in routes if int(r.get("priority") or 9) == 1), routes[0])
+            primary_name = f"{primary.get('provider_label') or primary.get('provider')} {primary.get('model')}".strip()
+            lines.append(f"Основная модель: {primary_name}.")
+            last_resort = [r for r in routes if str(r.get("role") or "").endswith("last_resort")]
+            lr_writes = llm_report.get("last_resort_writes") or []
+            if last_resort:
+                lr_name = f"{last_resort[0].get('provider_label') or last_resort[0].get('provider')} {last_resort[0].get('model')}".strip()
+                if lr_writes:
+                    lines.append(f"Резерв {lr_name}: включался, дописал {len(lr_writes)} материалов, где основная модель вернула пустоту.")
+                else:
+                    lines.append(f"Резерв {lr_name}: подключён, но не понадобился (основная модель справилась).")
         applied = llm_report.get("applied")
         total = llm_report.get("included_for_rewrite")
         if applied is not None and total is not None:

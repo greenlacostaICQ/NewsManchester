@@ -1319,9 +1319,17 @@ def _quality_scorecard(
     repeat_visible = sum(1 for c in rendered if str(c.get("change_type") or "") in {"no_change", "same_story_rehash"})
     tickets = [c for c in candidates if str(c.get("primary_block") or "") in {"ticket_radar", "future_announcements", "next_7_days"} and str(c.get("category") or "") == "venues_tickets"]
     rendered_ticket_fps = {str(c.get("fingerprint") or "") for c in rendered if str(c.get("category") or "") == "venues_tickets"}
+    from news_digest.pipeline.editorial_contracts import classify_ticket_type  # noqa: PLC0415
+
     ticket_types: dict[str, dict[str, int]] = {}
     for c in tickets:
-        t = str(c.get("ticket_type") or "unknown")
+        # ticket_type is only stamped on include=True candidates (the validator
+        # runs _ensure_default_ticket_type behind the include gate). Deduped /
+        # rejected repeats (e.g. "6LACK", "Jamie Webster" already seen) reach
+        # the funnel with no ticket_type and used to pile into a misleading
+        # "unknown" bucket (11 on 2026-06-01 — all just dedup losers, not a
+        # classifier failure). Classify them on the fly so the funnel reads true.
+        t = str(c.get("ticket_type") or "").strip() or classify_ticket_type(c)
         row = ticket_types.setdefault(t, {"fetched": 0, "published": 0})
         row["fetched"] += 1
         if str(c.get("fingerprint") or "") in rendered_ticket_fps:

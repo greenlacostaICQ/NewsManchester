@@ -227,11 +227,24 @@ _APPEAL_MARKERS = re.compile(
 
 def crime_specificity_review(candidate: dict) -> dict[str, object]:
     blob = _blob(candidate)
+    # Byline noise: MEN/BBC blobs carry the reporter's job title ("Andrew
+    # Bardsley, Court reporter", "Crime reporter"). On 2026-06-01 this made
+    # the crime gate fire on "Andy Burnham and Nigel Farage in social media
+    # clash" — a political story with zero crime content — purely because
+    # "Court reporter" matched _CRIME_MARKERS on "court". Strip those byline
+    # phrases before detection so a journalist's beat can't crime-flag a story.
+    blob = re.sub(r"\b(?:court|crime|courts)\s+(?:reporter|correspondent|editor)\b", " ", blob, flags=re.IGNORECASE)
     if not _CRIME_MARKERS.search(blob):
         return {"applies": False, "missing": [], "severity": "none"}
     is_appeal = bool(_APPEAL_MARKERS.search(blob))
     missing: list[str] = []
-    if not _CRIME_EVENT.search(blob):
+    # For an appeal / missing-person / search story the "what happened" IS the
+    # appeal itself ("police appeal to find missing girl", "national search
+    # launched"). _CRIME_EVENT only knows violent verbs (murder/stab/assault),
+    # so it always reported what_happened missing and pushed every appeal to
+    # borderline — where the writer then silently held it without a draft_line.
+    # The appeal marker already proves there is a concrete event to report.
+    if not is_appeal and not _CRIME_EVENT.search(blob):
         missing.append("what_happened")
     if not is_appeal and not (_PERSON_SIGNAL.search(blob) or "victim" in blob.lower()):
         missing.append("who_affected")
@@ -240,12 +253,13 @@ def crime_specificity_review(candidate: dict) -> dict[str, object]:
     if not (_DATE_OR_STAGE.search(blob) or _CRIME_ACTION.search(blob)):
         missing.append("why_now")
     evidence_len = len(re.sub(r"\s+", " ", str(candidate.get("evidence_text") or "")).strip())
-    # Appeals are exempt from who_affected (the subject is implied), which
-    # structurally drops their missing-count by one. Lower the hard floor to
-    # 2 so a contentless "Police appeal for help" stub (no what, no where)
-    # is still held, while a real appeal ("find missing teenage girl in
-    # Bolton") with a subject + location stays publishable.
-    hard_floor = 2 if is_appeal else 3
+    # Appeals are exempt from BOTH who_affected and what_happened (the appeal
+    # itself is the event, the subject is implied). That leaves only `where`
+    # and `why_now` checkable, so the hard floor drops to 1: a contentless
+    # "Police appeal for help" stub (no location, <120 chars evidence) is still
+    # hard-rejected, while a real appeal ("find missing teenage girl in
+    # Bolton") carries a location → missing=[] → stays publishable.
+    hard_floor = 1 if is_appeal else 3
     if len(missing) >= hard_floor and evidence_len < 120:
         severity = "hard"
     elif missing:

@@ -63,6 +63,13 @@ LONG_FORMAT_CATEGORIES = {
     "football",
 }
 LONG_FORMAT_MIN_CHARS = 150
+# A fully dated event card (real event + concrete date) that the source
+# kept short does not need 150 chars of prose. The extractor often fails to
+# populate event.venue even when the venue is right there in the draft ("В
+# HOME 1 июня…"), so requiring date+venue in the struct dropped complete
+# listings like The Misfits (PG) at 126 chars on 2026-06-01. A dated card
+# only needs to clear this lower floor + the 2-sentence rule.
+DATED_EVENT_MIN_CHARS = 110
 LONG_FORMAT_MIN_SENTENCES = 2
 SHORT_TICKET_BLOCKS = {"ticket_radar", "outside_gm_tickets"}
 # Original short blocks: weekend events naturally fit in 100 chars,
@@ -1452,6 +1459,14 @@ def _is_outside_current_weekend_candidate(candidate: dict, line: str = "") -> bo
     return bool(dates)
 
 
+_RECURRING_EVENT_MARKERS = re.compile(
+    r"\b(?:every\s+(?:day|week|month|monday|tuesday|wednesday|thursday|friday|saturday|sunday)|"
+    r"weekly|monthly|each\s+(?:week|month)|каждую|каждый|каждое|еженедельн|ежемесячн|"
+    r"по\s+(?:выходным|субботам|воскресеньям|будням))\b",
+    re.IGNORECASE,
+)
+
+
 def _is_expired_event_candidate(candidate: dict, line: str = "") -> bool:
     if str(candidate.get("primary_block") or "") not in _EVENT_BLOCKS:
         return False
@@ -1469,6 +1484,13 @@ def _is_expired_event_candidate(candidate: dict, line: str = "") -> bool:
             line,
         )
     )
+    # Recurring events ("каждую третью субботу месяца", "every third Saturday",
+    # "weekly car boot") have no single future date to detect, so the stale
+    # `published_at` (often the scrape date, e.g. 2024 for an evergreen market
+    # listing) wrongly marked them expired. A recurring marker means the event
+    # is ongoing, not over. Fixed THE SPINNINGFIELDS MAKERS MARKET (2026-06-01).
+    if _RECURRING_EVENT_MARKERS.search(text):
+        return False
     return not _future_date_signal(text)
 
 
@@ -1805,16 +1827,16 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
         # the long-format gate demanded ≥150 chars of prose for a kids'
         # show listing. A complete dated card does not need padding.
         _ev = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-        if (
-            _ev.get("is_event")
-            and str(_ev.get("date_start") or _ev.get("date") or "").strip()
-            and str(_ev.get("venue") or "").strip()
-        ):
+        _has_event_date = bool(_ev.get("is_event") and str(_ev.get("date_start") or _ev.get("date") or "").strip())
+        if _has_event_date and str(_ev.get("venue") or "").strip():
             skip_min = True
+        # Dated event with no struct venue (extractor gap) still gets a lower
+        # floor instead of the full 150 — a complete short listing is not weak.
+        min_chars = DATED_EVENT_MIN_CHARS if _has_event_date else LONG_FORMAT_MIN_CHARS
         if not skip_min:
-            if len(normalized) < LONG_FORMAT_MIN_CHARS:
+            if len(normalized) < min_chars:
                 errors.append(
-                    f"draft_line for long-format category needs ≥{LONG_FORMAT_MIN_CHARS} chars (got {len(normalized)})."
+                    f"draft_line for long-format category needs ≥{min_chars} chars (got {len(normalized)})."
                 )
         if sentence_count < LONG_FORMAT_MIN_SENTENCES and block_key != "city_watch":
             errors.append(
@@ -2066,7 +2088,7 @@ def write_digest(project_root: Path) -> StageResult:
                 }
             )
             continue
-        if _is_expired_event_candidate(candidate):
+        if _is_expired_event_candidate(candidate, str(candidate.get("draft_line") or "")):
             warnings.append(f"Candidate #{index} dropped: expired event date.")
             quality_counts["dropped_low_quality"] += 1
             dropped_candidates.append(
