@@ -583,6 +583,7 @@ def _support_top_issues(
     borderline_queue: dict,
     event_miss_review: dict | None = None,
     source_anomalies: list | None = None,
+    dead_parsers: list | None = None,
 ) -> list[tuple[str, str]]:
     issues: list[tuple[int, str, str]] = []
     event_miss_counts = ((event_miss_review or {}).get("counts") or {})
@@ -633,6 +634,15 @@ def _support_top_issues(
             78,
             f"Источники резко просели против своей нормы: {names}{more}.",
             "Источник раньше стабильно давал материалы, а сегодня почти ничего — обычно это сломавшийся парсер или смена вёрстки сайта.",
+        ))
+    dead = dead_parsers or []
+    if dead:
+        names = ", ".join(str(d.get("name") or "") for d in dead[:3])
+        more = f" и ещё {len(dead) - 3}" if len(dead) > 3 else ""
+        issues.append((
+            77,
+            f"Источники качаются, но парсер не достаёт ничего всю неделю: {names}{more}.",
+            "Сайт отвечает (200), но из него не вытаскивается ни одного пункта — нужен отдельный парсер под этот источник.",
         ))
     if prompt_drift:
         issues.append((
@@ -949,6 +959,7 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
         suspicious_published=(report.get("published_review") or {}).get("suspiciously_published") or [],
         borderline_queue=borderline_queue,
         source_anomalies=report.get("source_anomalies") or [],
+        dead_parsers=report.get("dead_parsers") or [],
         event_miss_review=report.get("event_miss_review") or {},
     )
     if issues:
@@ -1501,6 +1512,8 @@ def cmd_send_warnings() -> int:
         suspicious_rejects=suspicious_rejects,
         suspicious_published=suspicious_published,
         borderline_queue=borderline_queue,
+        source_anomalies=report.get("source_anomalies") or [],
+        dead_parsers=report.get("dead_parsers") or [],
         event_miss_review=event_miss_review,
     )
     if top_issues:
