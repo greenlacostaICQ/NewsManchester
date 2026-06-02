@@ -49,6 +49,35 @@ class TelegramDeliveryHardeningTest(unittest.TestCase):
         self.assertNotIn("parse_mode", calls[1])
         self.assertEqual(calls[1]["text"], html_to_plain_text("<b>Brighton &amp; Hove</b>"))
 
+    def test_post_retries_transient_5xx_then_succeeds(self):
+        from unittest import mock
+        from urllib import error
+
+        client = TelegramClient(bot_token="x", retry_backoff_seconds=0.0)
+        attempts = {"n": 0}
+
+        class _Resp:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+            def read(self):
+                return b'{"ok": true, "result": {"message_id": 7}}'
+
+        def _fake_urlopen(req, timeout=0):
+            attempts["n"] += 1
+            if attempts["n"] < 3:
+                raise error.HTTPError(req.full_url, 503, "Service Unavailable", {}, None)
+            return _Resp()
+
+        with mock.patch("news_digest.delivery.telegram.request.urlopen", _fake_urlopen):
+            result = client._post("sendMessage", {"chat_id": "c", "text": "hi"})
+
+        self.assertEqual(attempts["n"], 3)  # 503, 503, then 200
+        self.assertEqual(result["result"]["message_id"], 7)
+
 
 if __name__ == "__main__":
     unittest.main()

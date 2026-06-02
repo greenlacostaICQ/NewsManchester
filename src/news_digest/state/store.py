@@ -125,13 +125,23 @@ class StateStore:
             {"last_delivery_at": None, "last_delivery_day_london": None, "targets": [], "source_path": None},
         )
 
-    def mark_delivery(self, targets: list[str], source_path: str) -> None:
+    def mark_delivery(
+        self,
+        targets: list[str],
+        source_path: str,
+        *,
+        message_ids: list[int] | None = None,
+        status: str = "delivered",
+    ) -> None:
         now = datetime.now(LONDON_TZ)
         payload = {
             "last_delivery_at": now.isoformat(),
             "last_delivery_day_london": now.strftime("%Y-%m-%d"),
             "targets": sorted({str(target) for target in targets}),
             "source_path": source_path,
+            "status": status,
+            "message_ids": [int(m) for m in (message_ids or [])],
+            "chunk_count": len(message_ids or []),
         }
         _write_json(self.delivery_state_path, payload)
 

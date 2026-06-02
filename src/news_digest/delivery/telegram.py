@@ -3,8 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 import re
+import time
 from typing import Any
 from urllib import error, parse, request
+
+
+# HTTP statuses worth a retry: Telegram rate-limit and transient server-side
+# faults. A 400 (bad payload/HTML) is NOT here — retrying it just repeats the
+# same rejection; the HTML→plain fallback in send_message handles that case.
+_RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 
 
 class TelegramTransportError(RuntimeError):
@@ -80,6 +87,11 @@ def html_to_plain_text(text: str) -> str:
 class TelegramClient:
     bot_token: str
     message_limit: int = 3800
+    # Transient-failure handling for the send path. The morning digest is the
+    # last metre where a one-off network blip silently loses the whole outgoing
+    # message, so retry rate-limit/5xx with linear backoff before giving up.
+    max_retries: int = 3
+    retry_backoff_seconds: float = 1.0
 
     @property
     def api_base(self) -> str:
@@ -97,21 +109,31 @@ class TelegramClient:
 
     def _post(self, method: str, payload: dict[str, Any]) -> dict[str, Any]:
         body = json.dumps(payload).encode("utf-8")
-        req = request.Request(
-            f"{self.api_base}/{method}",
-            data=body,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        try:
-            with request.urlopen(req, timeout=30) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except error.HTTPError as exc:
-            raise TelegramTransportError(
-                f"Telegram POST {method} failed: {exc.reason}", status_code=exc.code
-            ) from exc
-        except error.URLError as exc:
-            raise TelegramTransportError(f"Telegram POST {method} failed: {exc.reason}") from exc
+        attempts = max(1, self.max_retries)
+        last_exc: TelegramTransportError | None = None
+        for attempt in range(1, attempts + 1):
+            req = request.Request(
+                f"{self.api_base}/{method}",
+                data=body,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            try:
+                with request.urlopen(req, timeout=30) as response:
+                    return json.loads(response.read().decode("utf-8"))
+            except error.HTTPError as exc:
+                last_exc = TelegramTransportError(
+                    f"Telegram POST {method} failed: {exc.reason}", status_code=exc.code
+                )
+                if exc.code not in _RETRYABLE_STATUS:
+                    raise last_exc from exc
+            except error.URLError as exc:
+                # Network-level failure (timeout, DNS, connection refused) — transient.
+                last_exc = TelegramTransportError(f"Telegram POST {method} failed: {exc.reason}")
+            if attempt < attempts:
+                time.sleep(self.retry_backoff_seconds * attempt)
+        assert last_exc is not None
+        raise last_exc
 
     def send_message(
         self,

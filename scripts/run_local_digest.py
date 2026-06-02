@@ -294,12 +294,19 @@ def cmd_send_file(file_path: str, parse_mode: str | None, force: bool) -> int:
             "Нет ни одного получателя. Укажите TELEGRAM_TARGET или подпишите хотя бы один чат через /subscribe."
         )
 
+    message_ids: list[int] = []
     for target in targets:
-        client.send_text_in_chunks(target, text, parse_mode=effective_parse_mode)
-    store.mark_delivery(targets, str(resolved_path))
+        results = client.send_text_in_chunks(target, text, parse_mode=effective_parse_mode)
+        for result in results:
+            mid = (result.get("result") or {}).get("message_id") if isinstance(result, dict) else None
+            if isinstance(mid, int):
+                message_ids.append(mid)
+    store.mark_delivery(targets, str(resolved_path), message_ids=message_ids)
     runtime_state_dir = _runtime_state_dir()
     if runtime_state_dir != settings.state_dir and runtime_state_dir.exists():
-        StateStore(runtime_state_dir, settings.archive_dir).mark_delivery(targets, str(resolved_path))
+        StateStore(runtime_state_dir, settings.archive_dir).mark_delivery(
+            targets, str(resolved_path), message_ids=message_ids
+        )
     record_delivery_artifacts(PROJECT_ROOT, resolved_path, _rendered_candidates_for_delivery())
     print(f"Sent file {file_path} to {len(targets)} target(s): {', '.join(targets)}.")
     return 0
