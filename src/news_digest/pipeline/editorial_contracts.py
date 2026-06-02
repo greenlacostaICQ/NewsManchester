@@ -931,7 +931,20 @@ def event_occurrence(candidate: dict) -> dict[str, object]:
     if shape == "recurring":
         weekday = _weekday_from_text(blob)
         if weekday is None:
-            return {"shape": shape, "date": "", "date_text": "повторяющееся событие"}
+            event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+            raw = str(event.get("date_start") or event.get("date") or event.get("date_end") or "").strip()
+            if raw:
+                try:
+                    parsed = datetime.fromisoformat(raw.replace("Z", "+00:00")).date()
+                    if parsed >= today:
+                        return {
+                            "shape": shape,
+                            "date": parsed.isoformat(),
+                            "date_text": f"{parsed.day} {_RU_MONTHS_GENITIVE[parsed.month]}",
+                        }
+                except ValueError:
+                    pass
+            return {"shape": shape, "date": "", "date_text": ""}
         occurrence = _next_weekday(weekday, today=today)
         return {
             "shape": shape,

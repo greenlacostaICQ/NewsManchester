@@ -803,6 +803,36 @@ def _ticket_watch_score(candidate: dict) -> float:
     return score
 
 
+_TICKET_PUBLIC_THRESHOLD = 50
+
+
+def _ticket_watch_decision(candidate: dict) -> dict[str, object]:
+    notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+    score = round(_ticket_watch_score(candidate), 2)
+    ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
+    tier = str(notability.get("tier") or "unknown")
+    kind = str(notability.get("kind") or "unknown")
+    decision = "show" if score >= _TICKET_PUBLIC_THRESHOLD else "hide"
+    if _is_diaspora_ticket(candidate):
+        decision = "show"
+    reasons = [part.strip() for part in _ticket_watch_reason(candidate).split(";") if part.strip()]
+    if not reasons and decision == "hide":
+        reasons = ["недостаточный notability-сигнал"]
+    return {
+        "decision": decision,
+        "score": score,
+        "threshold": _TICKET_PUBLIC_THRESHOLD,
+        "tier": tier,
+        "kind": kind,
+        "signal": notability.get("signal") or "",
+        "artist": notability.get("artist") or ticket_artist_name(candidate),
+        "ticket_type": ticket_type,
+        "source_label": candidate.get("source_label") or "",
+        "primary_block": candidate.get("primary_block") or "",
+        "reasons": reasons,
+    }
+
+
 def _ticket_watch_reason(candidate: dict) -> str:
     title = _ticket_headliner(str(candidate.get("title") or ""))
     venue = _ticket_venue(candidate)
@@ -843,7 +873,7 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
     # the structured parts we actually render are themselves chrome.
     if not title or _looks_like_source_chrome(" ".join([title, venue, genre])):
         return ""
-    if str(candidate.get("primary_block") or "") in {"ticket_radar", "outside_gm_tickets"} and _ticket_watch_score(candidate) < 50:
+    if str(candidate.get("primary_block") or "") in {"ticket_radar", "outside_gm_tickets"} and _ticket_watch_decision(candidate)["decision"] != "show":
         return ""
     reason = _ticket_watch_reason(candidate)
     price = _ticket_price(candidate)
@@ -1079,11 +1109,13 @@ def _build_recurring_event_fallback_line(candidate: dict) -> str:
     contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
     occurrence = contract.get("occurrence") if isinstance(contract.get("occurrence"), dict) else {}
     date_text = str(occurrence.get("date_text") or "").strip()
+    if not date_text:
+        return ""
     name = _sourceish_event_name(candidate)
     venue = _event_venue(candidate)
     details = _extract_event_practical_details(candidate)
     where = f" в {venue}" if venue and venue.lower() not in name.lower() else ""
-    prefix = f"{date_text.capitalize()} — " if date_text else "В ближайший день расписания — "
+    prefix = f"{date_text.capitalize()} — "
     tail = "; ".join(details)
     tail = f". {tail.capitalize()}." if tail else ". Дата ближайшего проведения указана; дополнительные условия не извлечены."
     return f"• {prefix}{name}{where}{tail}"
@@ -1890,16 +1922,26 @@ _FOOTBALL_SOFT_RE = re.compile(
 )
 
 
-def _football_should_route_to_soft(candidate: dict) -> bool:
+def _football_is_sport_news(candidate: dict) -> bool:
     if str(candidate.get("primary_block") or "") != "football":
         return False
     blob = " ".join(
         str(candidate.get(field) or "")
         for field in ("title", "summary", "lead", "evidence_text", "source_url")
     )
-    if _FOOTBALL_SOFT_RE.search(blob) and not _FOOTBALL_SPORT_RE.search(blob):
+    return bool(_FOOTBALL_SPORT_RE.search(blob))
+
+
+def _football_should_route_to_soft(candidate: dict) -> bool:
+    if str(candidate.get("primary_block") or "") != "football":
+        return False
+    if not _football_is_sport_news(candidate):
         return True
-    return False
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "source_url")
+    )
+    return bool(_FOOTBALL_SOFT_RE.search(blob) and not _FOOTBALL_SPORT_RE.search(blob))
 
 
 _NON_GM_REGIONAL_RE = re.compile(
@@ -1974,6 +2016,7 @@ def write_digest(project_root: Path) -> StageResult:
             "wikidata_id": notability.wikidata_id,
             "sitelinks": notability.sitelinks,
         }
+        decision = _ticket_watch_decision(candidate)
         ticket_notability_report.append(
             {
                 "fingerprint": candidate.get("fingerprint"),
@@ -1985,7 +2028,11 @@ def write_digest(project_root: Path) -> StageResult:
                 "tier": notability.tier,
                 "confidence": notability.confidence,
                 "signal": notability.signal,
-                "score": round(_ticket_watch_score(candidate), 2),
+                "score": decision["score"],
+                "decision": decision["decision"],
+                "threshold": decision["threshold"],
+                "ticket_type": decision["ticket_type"],
+                "reasons": decision["reasons"],
             }
         )
     llm_degraded, llm_rewrite_report = _llm_rewrite_is_degraded(state_dir)

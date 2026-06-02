@@ -9,10 +9,13 @@ from news_digest.pipeline.collector.weather import _met_office_practical_angle
 from news_digest.pipeline.curator import _is_curator_protected
 from news_digest.pipeline.ticket_notability import enrich_ticket_notability
 from news_digest.pipeline.writer import (
+    _build_recurring_event_fallback_line,
     _build_ticket_fallback_line,
     _draft_line_quality_errors,
+    _football_is_sport_news,
     _football_should_route_to_soft,
     _repair_editorial_contract_line,
+    _ticket_watch_decision,
 )
 
 
@@ -79,7 +82,63 @@ class PublicOutputContractTests(unittest.TestCase):
             "title": "Ruben Dias says he draws line over Maya Jama break-up speculation",
             "summary": "Manchester City defender responds to personal life gossip.",
         }
+        self.assertFalse(_football_is_sport_news(candidate))
         self.assertTrue(_football_should_route_to_soft(candidate))
+
+    def test_football_sport_item_counts_toward_football_minimum(self) -> None:
+        candidate = {
+            "primary_block": "football",
+            "title": "Manchester United sign new striker before Premier League fixture",
+            "summary": "The transfer is complete and the player could be available for Saturday's match.",
+        }
+        self.assertTrue(_football_is_sport_news(candidate))
+        self.assertFalse(_football_should_route_to_soft(candidate))
+
+    def test_recurring_event_without_concrete_occurrence_is_not_rendered_as_generic_day(self) -> None:
+        candidate = {
+            "primary_block": "next_7_days",
+            "category": "culture_weekly",
+            "title": "Stockport Makers Market",
+            "summary": "A recurring local market with traders and food.",
+            "event": {"is_recurring": True},
+        }
+        self.assertEqual(_build_recurring_event_fallback_line(candidate), "")
+
+    def test_recurring_event_uses_future_event_date_when_weekday_missing(self) -> None:
+        candidate = {
+            "primary_block": "next_7_days",
+            "category": "culture_weekly",
+            "title": "Stockport Makers Market",
+            "summary": "A recurring local market with traders and food.",
+            "event": {"is_recurring": True, "date_start": "2026-06-13"},
+        }
+        with patch("news_digest.pipeline.editorial_contracts.now_london") as fake_now:
+            fake_now.return_value.date.return_value = __import__("datetime").date(2026, 6, 2)
+            line = _build_recurring_event_fallback_line(candidate)
+        self.assertIn("13 июня", line)
+        self.assertNotIn("ближайший день расписания", line.lower())
+
+    def test_ticket_decision_explains_show_and_hide(self) -> None:
+        show = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "Example Global Artist: World Tour — event 2026-07-10",
+            "summary": "Smalltown Bowl | UK | Pop | event_date=2026-07-10 19:00 | ticket_type=major_upcoming",
+            "event": {"venue": "Smalltown Bowl", "date_start": "2026-07-10"},
+            "ticket_notability": {"artist": "Example Global Artist", "kind": "artist", "tier": "A", "signal": "wikidata_sitelinks"},
+        }
+        hide = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "Unknown Arena Act — event 2026-06-10",
+            "summary": "AO Arena | Manchester | Pop | event_date=2026-06-10 19:00 | ticket_type=on_sale_now",
+            "event": {"venue": "AO Arena", "date_start": "2026-06-10"},
+            "ticket_notability": {"artist": "Unknown Arena Act", "kind": "artist", "tier": "unknown", "signal": "not_found"},
+        }
+        self.assertEqual(_ticket_watch_decision(show)["decision"], "show")
+        hidden = _ticket_watch_decision(hide)
+        self.assertEqual(hidden["decision"], "hide")
+        self.assertIn("threshold", hidden)
 
     def test_quality_gate_rejects_old_ticket_machine_phrase(self) -> None:
         errors = _draft_line_quality_errors(
