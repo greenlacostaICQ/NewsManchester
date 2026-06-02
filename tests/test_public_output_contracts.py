@@ -11,7 +11,7 @@ from news_digest.pipeline.collector.fallbacks import _weather_draft_line
 from news_digest.pipeline.collector.weather import _met_office_practical_angle
 from news_digest.pipeline.curator import _is_curator_protected
 from news_digest.pipeline.editorial_contracts import attach_editorial_contract
-from news_digest.pipeline.release import _final_loss_check
+from news_digest.pipeline.release import _final_loss_check, public_html_contract_errors
 from news_digest.pipeline.ticket_notability import (
     enrich_ticket_notability,
     ticket_event_kind,
@@ -26,6 +26,7 @@ from news_digest.pipeline.writer import (
     _final_replacement_line,
     _football_is_sport_news,
     _football_should_route_to_soft,
+    _append_recovery_step,
     _repair_editorial_contract_line,
     _ticket_watch_decision,
 )
@@ -283,6 +284,34 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertEqual(notability.signal, "musicbrainz_ticketmaster")
         self.assertTrue((notability.signals or {}).get("ticketmaster_attraction"))
 
+    def test_spotify_lastfm_signals_can_promote_without_manual_artist_list(self) -> None:
+        cache_path = self._ticket_notability_cache(
+            {
+                "streaming star": {
+                    "artist": "Streaming Star",
+                    "confidence": 0.9,
+                    "signals": {
+                        "sitelinks": 0,
+                        "spotify_popularity": 82,
+                        "spotify_followers": 2_500_000,
+                        "lastfm_listeners": 1_800_000,
+                    },
+                }
+            }
+        )
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "outside_gm_tickets",
+            "title": "Streaming Star — event 2026-10-01",
+            "summary": "UK | Pop | event_date=2026-10-01 19:00 | ticket_type=newly_listed",
+            "event": {"venue": "Small UK venue", "date_start": "2026-10-01"},
+        }
+        with patch.dict(os.environ, {"NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP": "0"}):
+            notability = enrich_ticket_notability(candidate, cache_path)
+        self.assertEqual(notability.tier, "A")
+        self.assertEqual(notability.signal, "streaming_popularity")
+        self.assertGreaterEqual(int((notability.signals or {}).get("spotify_popularity") or 0), 80)
+
     def test_ticket_golden_names_are_a_tier_when_external_signal_exists(self) -> None:
         cache_path = self._ticket_notability_cache(
             {
@@ -312,6 +341,41 @@ class PublicOutputContractTests(unittest.TestCase):
             "• The Weeknd — 11 июня, Etihad Stadium. Почему в радаре: крупная площадка.",
         )
         self.assertTrue(any("machine explanation" in error for error in errors))
+
+    def test_rendered_html_replay_pack_catches_historical_public_failures(self) -> None:
+        bad_html = (
+            "<b>Greater Manchester Brief — 2026-06-01, 08:10</b>\n"
+            "<b>Погода</b>\n"
+            "• Погода: дождь вероятен — проверьте локальный радар.\n"
+            "<b>Общественный транспорт сегодня</b>\n"
+            "• В Манчестере закрыты две станции метро — Shudehill и Market Street.\n"
+            "<b>Билеты / Ticket Radar</b>\n"
+            "• The Weeknd — 11 июня, Etihad Stadium. Почему в радаре: крупная площадка.\n"
+            "• Manchester Academy — This website makes extensive use of JavaScript.\n"
+            "• Artist — 12 июня. Билеты и детали берите на официальной странице.\n"
+        )
+        errors = public_html_contract_errors(bad_html)
+        self.assertTrue(any("weather_local_radar" in error for error in errors))
+        self.assertTrue(any("metrolink_written_as_metro" in error for error in errors))
+        self.assertTrue(any("ticket_machine_explanation" in error for error in errors))
+        self.assertTrue(any("source_chrome_passthrough" in error for error in errors))
+        self.assertTrue(any("ticket_generic_cta" in error for error in errors))
+
+    def test_recovery_plan_records_ordered_repair_attempts(self) -> None:
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "Unknown artist",
+            "story_frame": {"missing_facts": ["venue"]},
+        }
+        _append_recovery_step(candidate, "ticket_structured_recovery", "attempted", missing=["venue"])
+        _append_recovery_step(candidate, "ticket_structured_recovery", "held", missing=["venue"])
+        plan = candidate["recovery_plan"]
+        self.assertEqual(plan["sequence"][0], "best_available_source")
+        self.assertIn("ticket_structured_card", plan["sequence"])
+        self.assertEqual(plan["outcome"], "held")
+        self.assertEqual(plan["missing_facts"], ["venue"])
+        self.assertEqual(plan["attempts"][0]["stage"], "structured_repair")
 
     def test_story_frame_is_attached_with_missing_facts(self) -> None:
         candidate = {

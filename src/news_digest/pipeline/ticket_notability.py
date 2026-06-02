@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
@@ -274,6 +275,103 @@ def _lookup_musicbrainz(artist: str) -> dict:
     return best
 
 
+def _spotify_json(url: str, token: str) -> dict:
+    req = request.Request(
+        url,
+        headers={
+            "User-Agent": "NewsManchester/1.0 (personal city intelligence; ticket notability)",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {token}",
+        },
+    )
+    with request.urlopen(req, timeout=4) as response:  # noqa: S310 - public Spotify API.
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _spotify_access_token() -> str:
+    client_id = os.environ.get("SPOTIFY_CLIENT_ID", "").strip()
+    client_secret = os.environ.get("SPOTIFY_CLIENT_SECRET", "").strip()
+    if not client_id or not client_secret:
+        return ""
+    body = parse.urlencode({"grant_type": "client_credentials"}).encode("utf-8")
+    basic = base64.b64encode(f"{client_id}:{client_secret}".encode("utf-8")).decode("ascii")
+    req = request.Request(
+        "https://accounts.spotify.com/api/token",
+        data=body,
+        headers={
+            "User-Agent": "NewsManchester/1.0 (personal city intelligence; ticket notability)",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Authorization": f"Basic {basic}",
+        },
+    )
+    with request.urlopen(req, timeout=4) as response:  # noqa: S310 - public Spotify API.
+        payload = json.loads(response.read().decode("utf-8"))
+    return str(payload.get("access_token") or "")
+
+
+def _lookup_spotify(artist: str) -> dict:
+    token = _spotify_access_token()
+    if not token:
+        return {}
+    query = parse.urlencode({"q": artist, "type": "artist", "limit": "3"})
+    payload = _spotify_json(f"https://api.spotify.com/v1/search?{query}", token)
+    best: dict = {}
+    best_rank = (-1, -1)
+    for item in (((payload.get("artists") or {}).get("items")) or []):
+        name = str(item.get("name") or "")
+        if not name:
+            continue
+        exactish = _cache_key(name) == _cache_key(artist)
+        popularity = int(item.get("popularity") or 0)
+        followers = int(((item.get("followers") or {}).get("total")) or 0)
+        if not exactish and popularity < 55:
+            continue
+        rank = (popularity, followers)
+        if rank <= best_rank:
+            continue
+        best = {
+            "spotify_id": str(item.get("id") or ""),
+            "spotify_name": name,
+            "spotify_popularity": popularity,
+            "spotify_followers": followers,
+        }
+        best_rank = rank
+    return best
+
+
+def _lookup_lastfm(artist: str) -> dict:
+    api_key = os.environ.get("LASTFM_API_KEY", "").strip()
+    if not api_key:
+        return {}
+    query = parse.urlencode(
+        {
+            "method": "artist.getinfo",
+            "artist": artist,
+            "api_key": api_key,
+            "format": "json",
+        }
+    )
+    req = request.Request(
+        f"https://ws.audioscrobbler.com/2.0/?{query}",
+        headers={
+            "User-Agent": "NewsManchester/1.0 (personal city intelligence; ticket notability)",
+            "Accept": "application/json",
+        },
+    )
+    with request.urlopen(req, timeout=4) as response:  # noqa: S310 - public Last.fm API.
+        payload = json.loads(response.read().decode("utf-8"))
+    artist_payload = payload.get("artist") if isinstance(payload.get("artist"), dict) else {}
+    stats = artist_payload.get("stats") if isinstance(artist_payload.get("stats"), dict) else {}
+    name = str(artist_payload.get("name") or "")
+    if name and _cache_key(name) != _cache_key(artist):
+        return {}
+    return {
+        "lastfm_name": name,
+        "lastfm_listeners": int(stats.get("listeners") or 0),
+        "lastfm_playcount": int(stats.get("playcount") or 0),
+    }
+
+
 def _ticketmaster_signal(candidate: dict, artist: str) -> dict:
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     attractions = event.get("attractions") or event.get("attraction") or candidate.get("attractions") or candidate.get("attraction")
@@ -321,6 +419,18 @@ def _tier_from_signals(signals: dict) -> tuple[str, float, str]:
     source = "wikidata_sitelinks" if tier != "unknown" else ""
     mb_score = int(signals.get("musicbrainz_score") or 0)
     tm = bool(signals.get("ticketmaster_attraction"))
+    spotify_popularity = int(signals.get("spotify_popularity") or 0)
+    spotify_followers = int(signals.get("spotify_followers") or 0)
+    lastfm_listeners = int(signals.get("lastfm_listeners") or 0)
+    if spotify_popularity >= 78 or spotify_followers >= 2_000_000 or lastfm_listeners >= 1_500_000:
+        if tier in {"unknown", "D", "C"}:
+            return "A", 0.9, "streaming_popularity"
+    if spotify_popularity >= 58 or spotify_followers >= 250_000 or lastfm_listeners >= 250_000:
+        if tier in {"unknown", "D"}:
+            return "B", 0.78, "streaming_popularity"
+    if spotify_popularity >= 42 or spotify_followers >= 50_000 or lastfm_listeners >= 50_000:
+        if tier == "unknown":
+            return "C", 0.62, "streaming_popularity"
     if tier == "unknown":
         if mb_score >= 95 and tm:
             return "C", 0.68, "musicbrainz_ticketmaster"
@@ -328,7 +438,7 @@ def _tier_from_signals(signals: dict) -> tuple[str, float, str]:
             return "D", 0.5, "musicbrainz_artist"
         if tm:
             return "D", 0.45, "ticketmaster_attraction"
-    elif mb_score >= 90 or tm:
+    elif mb_score >= 90 or tm or spotify_popularity or lastfm_listeners:
         source = f"{source}+multi_source"
         confidence = min(0.99, confidence + 0.04)
     return tier, confidence, source or "not_found"
@@ -387,6 +497,14 @@ def _artist_notability(
         mb = _lookup_musicbrainz(artist)
     except Exception as exc:  # pragma: no cover - network failure is fail-open.
         mb = {"musicbrainz_error": type(exc).__name__}
+    try:
+        sp = _lookup_spotify(artist)
+    except Exception as exc:  # pragma: no cover - network failure is fail-open.
+        sp = {"spotify_error": type(exc).__name__}
+    try:
+        lf = _lookup_lastfm(artist)
+    except Exception as exc:  # pragma: no cover - network failure is fail-open.
+        lf = {"lastfm_error": type(exc).__name__}
 
     signals = {
         "sitelinks": int(wd.get("sitelinks") or 0),
@@ -394,6 +512,11 @@ def _artist_notability(
         "musicbrainz_id": str(mb.get("musicbrainz_id") or ""),
         "musicbrainz_score": int(mb.get("musicbrainz_score") or 0),
         "musicbrainz_type": str(mb.get("musicbrainz_type") or ""),
+        "spotify_id": str(sp.get("spotify_id") or ""),
+        "spotify_popularity": int(sp.get("spotify_popularity") or 0),
+        "spotify_followers": int(sp.get("spotify_followers") or 0),
+        "lastfm_listeners": int(lf.get("lastfm_listeners") or 0),
+        "lastfm_playcount": int(lf.get("lastfm_playcount") or 0),
         **tm_signal,
     }
     tier, confidence, signal = _tier_from_signals(signals)

@@ -458,6 +458,7 @@ def _validate_draft(
         errors.append("Draft digest contains no HTML source links.")
 
     sections = extract_sections(html_text)
+    errors.extend(public_html_contract_errors(html_text))
     for block in REQUIRED_BLOCKS:
         has_candidates_for_block = any(
             PRIMARY_BLOCKS.get(str(candidate.get("primary_block") or "")) == block
@@ -591,6 +592,36 @@ def _validate_draft(
             errors.append(
                 "Active public-services disruption is marked for today but not visible in the digest."
             )
+
+
+def public_html_contract_errors(html_text: str) -> list[str]:
+    """Rendered-HTML replay guard for historical public-output failures."""
+    visible_text = _visible_text_from_html(html_text)
+    lowered = visible_text.lower()
+    errors: list[str] = []
+    forbidden_markers = {
+        "локальный радар": "weather_local_radar",
+        "почему в радаре": "ticket_machine_explanation",
+        "билеты и детали берите": "ticket_generic_cta",
+        "проверьте время": "missing_event_time_cta",
+        "проверьте дату": "missing_event_date_cta",
+        "this website makes extensive use of javascript": "source_chrome_passthrough",
+    }
+    for marker, code in forbidden_markers.items():
+        if marker in lowered:
+            errors.append(f"Rendered HTML violates public contract: {code}.")
+    sections = extract_sections(html_text)
+    for line in sections.get("Общественный транспорт сегодня", []):
+        if "метро" in line.lower():
+            errors.append("Rendered HTML violates public contract: metrolink_written_as_metro.")
+            break
+    ticket_lines = [
+        line for line in sections.get("Билеты / Ticket Radar", [])
+        if line.strip() and line.strip() != "•"
+    ]
+    if len(ticket_lines) > 15:
+        errors.append(f"Rendered HTML violates public contract: ticket_radar_over_cap ({len(ticket_lines)} > 15).")
+    return errors
 
 
 # Sections that announce things-to-attend. A bullet here without a date
@@ -1781,6 +1812,7 @@ def _final_loss_check(
         enrichment = candidate.get("enrichment_health") if isinstance(candidate.get("enrichment_health"), dict) else {}
         frame = candidate.get("story_frame") if isinstance(candidate.get("story_frame"), dict) else {}
         recovery_trace = candidate.get("recovery_trace") if isinstance(candidate.get("recovery_trace"), list) else []
+        recovery_plan = candidate.get("recovery_plan") if isinstance(candidate.get("recovery_plan"), dict) else {}
         record = {
             "fingerprint": fp,
             "title": candidate.get("title") or "",
@@ -1796,6 +1828,7 @@ def _final_loss_check(
             "story_frame": frame,
             "missing_facts": frame.get("missing_facts") or [],
             "recovery_trace": recovery_trace,
+            "recovery_plan": recovery_plan,
             "protected_lanes": lane.get("lanes") or [],
             "section_board_score": candidate.get("section_board_score"),
             "false_negative_risk": (candidate.get("english_judge") or {}).get("false_negative_risk") if isinstance(candidate.get("english_judge"), dict) else "",

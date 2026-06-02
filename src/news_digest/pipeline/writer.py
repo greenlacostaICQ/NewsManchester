@@ -982,14 +982,80 @@ def _hard_news_recovery_line(candidate: dict) -> str:
     return ""
 
 
+_RECOVERY_STEP_STAGE = {
+    "transport_card_recovery": "structured_repair",
+    "ticket_structured_recovery": "structured_repair",
+    "public_service_recovery": "structured_repair",
+    "event_structured_recovery": "structured_repair",
+    "official_football_recovery": "structured_repair",
+    "hard_news_recovery": "protected_rewrite",
+    "final_replacement": "final_repair",
+    "draft_line_quality_repair": "final_repair",
+    "final_hold": "hold",
+}
+
+
+def _recovery_plan_sequence(candidate: dict) -> list[str]:
+    category = str(candidate.get("category") or "")
+    block = str(candidate.get("primary_block") or "")
+    sequence = ["best_available_source", "enriched_facts"]
+    if category == "transport":
+        sequence.append("transport_impact_card")
+    elif category == "venues_tickets":
+        sequence.append("ticket_structured_card")
+    elif category in {"culture_weekly", "russian_speaking_events", "diaspora_events"} or block in {"weekend_activities", "next_7_days", "russian_events"}:
+        sequence.append("event_structured_card")
+    elif category == "football":
+        sequence.append("official_football_card")
+    elif block in {"last_24h", "today_focus", "transport"} or category in {"gmp", "public_services"}:
+        sequence.append("hard_news_card")
+    else:
+        sequence.append("draft_line_rewrite")
+    sequence.extend(["final_quality_repair", "hold_with_missing_facts"])
+    return sequence
+
+
+def _ensure_recovery_plan(candidate: dict) -> dict:
+    plan = candidate.get("recovery_plan") if isinstance(candidate.get("recovery_plan"), dict) else {}
+    if not plan:
+        plan = {
+            "version": "v1",
+            "sequence": _recovery_plan_sequence(candidate),
+            "attempts": [],
+            "outcome": "not_started",
+            "missing_facts": [],
+        }
+        candidate["recovery_plan"] = plan
+    return plan
+
+
 def _append_recovery_step(candidate: dict, step: str, outcome: str, *, missing: list[str] | None = None) -> None:
+    missing_facts = list(missing or [])
     trace = candidate.get("recovery_trace") if isinstance(candidate.get("recovery_trace"), list) else []
     trace.append({
         "step": step,
         "outcome": outcome,
-        "missing_facts": list(missing or []),
+        "missing_facts": missing_facts,
     })
     candidate["recovery_trace"] = trace
+    plan = _ensure_recovery_plan(candidate)
+    attempts = plan.get("attempts") if isinstance(plan.get("attempts"), list) else []
+    attempts.append({
+        "step": step,
+        "stage": _RECOVERY_STEP_STAGE.get(step, "repair"),
+        "outcome": outcome,
+        "missing_facts": missing_facts,
+    })
+    plan["attempts"] = attempts
+    if missing_facts:
+        existing = [str(item) for item in plan.get("missing_facts") or []]
+        plan["missing_facts"] = list(dict.fromkeys(existing + missing_facts))
+    if outcome == "recovered":
+        plan["outcome"] = "recovered"
+    elif outcome == "held" and plan.get("outcome") != "recovered":
+        plan["outcome"] = "held"
+    elif plan.get("outcome") == "not_started":
+        plan["outcome"] = "attempted"
 
 
 def _ticket_public_onsale_datetime(candidate: dict) -> datetime | None:
@@ -2431,6 +2497,7 @@ def write_digest(project_root: Path) -> StageResult:
                         "reasons": ["Missing draft_line."],
                         "story_frame": candidate.get("story_frame") or {},
                         "recovery_trace": candidate.get("recovery_trace") or [],
+                        "recovery_plan": candidate.get("recovery_plan") or {},
                     }
                 )
                 continue
@@ -2448,6 +2515,7 @@ def write_digest(project_root: Path) -> StageResult:
                         "reasons": ["Untranslated English."],
                         "story_frame": candidate.get("story_frame") or {},
                         "recovery_trace": candidate.get("recovery_trace") or [],
+                        "recovery_plan": candidate.get("recovery_plan") or {},
                     }
                 )
                 continue
@@ -2509,6 +2577,7 @@ def write_digest(project_root: Path) -> StageResult:
                     "reasons": draft_line_errors,
                     "story_frame": candidate.get("story_frame") or {},
                     "recovery_trace": candidate.get("recovery_trace") or [],
+                    "recovery_plan": candidate.get("recovery_plan") or {},
                 }
             )
             continue
