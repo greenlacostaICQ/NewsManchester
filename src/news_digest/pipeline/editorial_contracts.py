@@ -975,6 +975,100 @@ def event_occurrence(candidate: dict) -> dict[str, object]:
     return {"shape": shape, "date": "", "date_text": ""}
 
 
+def _first_location(candidate: dict) -> str:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    for value in (
+        event.get("venue"),
+        candidate.get("borough"),
+        candidate.get("district"),
+        candidate.get("area"),
+    ):
+        text = str(value or "").strip()
+        if text:
+            return text
+    entities = candidate.get("entities") if isinstance(candidate.get("entities"), dict) else {}
+    for key in ("venues", "boroughs", "districts", "stations", "places"):
+        values = entities.get(key)
+        if isinstance(values, list):
+            for value in values:
+                text = str(value or "").strip()
+                if text:
+                    return text
+    blob = _contract_blob(candidate)
+    match = re.search(
+        r"\b(?:in|at|on)\s+([A-Z][A-Za-z'’-]+(?:\s+[A-Z][A-Za-z'’-]+){0,3})\b",
+        blob,
+    )
+    return match.group(1).strip() if match else ""
+
+
+def _first_when(candidate: dict, occurrence: dict[str, object]) -> str:
+    text = str((occurrence or {}).get("date_text") or "").strip()
+    if text:
+        return text
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    raw = str(event.get("date_start") or event.get("date") or candidate.get("published_at") or "").strip()
+    if raw:
+        return raw[:16].replace("T", " ")
+    return ""
+
+
+def story_frame_for_candidate(
+    candidate: dict,
+    *,
+    story_type: str = "",
+    event_shape: str = "",
+    anchor_type: str = "",
+    occurrence: dict[str, object] | None = None,
+) -> dict[str, object]:
+    """Single public-output frame: what/where/when/who/why now/missing facts."""
+    title = re.sub(r"\s+", " ", str(candidate.get("title") or "")).strip()
+    summary = re.sub(r"\s+", " ", str(candidate.get("summary") or candidate.get("lead") or "")).strip()
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    event_type = story_type or str(candidate.get("category") or "")
+    what = str(event.get("event_name") or "").strip() if event_shape and event_shape != "none" else ""
+    if not what:
+        what = title or summary[:160]
+    where = _first_location(candidate)
+    when = _first_when(candidate, occurrence or {})
+    who = ""
+    blob = _contract_blob(candidate)
+    person = re.search(r"\b(?:\d{1,3}-year-old\s+)?(?:man|woman|boy|girl|child|teenager|victim|suspect|driver|teacher|council|police|residents?)\b", blob, re.IGNORECASE)
+    if person:
+        who = person.group(0)
+    elif event_shape and event_shape != "none":
+        who = "посетители события"
+    why_now = infer_why_now(candidate)
+    missing: list[str] = []
+    if not what:
+        missing.append("what_happened")
+    if not where and event_type not in {"weather"}:
+        missing.append("where_exact")
+    if not when and event_type not in {"transport", "weather"}:
+        missing.append("when")
+    if event_type in {"incident", "civic", "planning", "local_service_change"} and not who:
+        missing.append("who_affected")
+    if not why_now_is_publishable(why_now):
+        missing.append("why_now")
+    if event_shape in {"ticket", "one_off", "festival", "recurring"}:
+        if not where:
+            missing.append("venue")
+        if not when:
+            missing.append("event_date")
+    return {
+        "version": "2026-06-02.1",
+        "event_type": event_type,
+        "what_happened": what,
+        "where_exact": where,
+        "when": when,
+        "who_affected": who,
+        "why_now": why_now,
+        "reader_value": candidate.get("reader_value_score") or candidate.get("reader_value_label") or "",
+        "missing_facts": list(dict.fromkeys(missing)),
+        "repair_policy": "repair_first_then_hold",
+    }
+
+
 def build_editorial_contract(candidate: dict) -> dict[str, object]:
     if not isinstance(candidate, dict):
         return {}
@@ -984,6 +1078,13 @@ def build_editorial_contract(candidate: dict) -> dict[str, object]:
     tier = _publish_tier(candidate, story_type, event_shape, anchor_type)
     occurrence = event_occurrence(candidate) if event_shape != "none" else {}
     topic_key = _topic_key(candidate, story_type, event_shape)
+    story_frame = story_frame_for_candidate(
+        candidate,
+        story_type=story_type,
+        event_shape=event_shape,
+        anchor_type=anchor_type,
+        occurrence=occurrence,
+    )
     reject_reason = ""
     if tier == "reject":
         if story_type == "human_interest":
@@ -1005,6 +1106,7 @@ def build_editorial_contract(candidate: dict) -> dict[str, object]:
         "anchor_type": anchor_type,
         "event_shape": event_shape,
         "occurrence": occurrence,
+        "story_frame": story_frame,
         "publish_tier": tier,
         "reject_reason": reject_reason,
         "section_policy": {
@@ -1023,6 +1125,7 @@ def attach_editorial_contract(candidate: dict) -> dict:
     candidate["editorial_contract"] = contract
     candidate["topic_key"] = contract.get("topic_key", "")
     candidate["publish_tier"] = contract.get("publish_tier", "")
+    candidate["story_frame"] = contract.get("story_frame") or {}
     if contract.get("event_shape") and contract.get("event_shape") != "none":
         candidate["event_shape"] = contract.get("event_shape")
     if contract.get("occurrence"):

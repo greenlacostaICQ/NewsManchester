@@ -28,6 +28,7 @@ from news_digest.pipeline.editorial_contracts import (
     classify_ticket_type,
     copy_invariant_errors,
     scrub_vague_ending,
+    why_now_is_publishable,
 )
 from news_digest.pipeline.reader_value import reader_value_score
 from news_digest.pipeline.story_intelligence import section_board_score
@@ -933,6 +934,22 @@ def _build_transport_fallback_line(candidate: dict) -> str:
     )
 
 
+def _build_football_fallback_line(candidate: dict) -> str:
+    source = str(candidate.get("source_label") or "")
+    if source not in {"Manchester United", "Manchester City"}:
+        return ""
+    if not _football_is_sport_news(candidate):
+        return ""
+    title = re.sub(r"\s+", " ", str(candidate.get("title") or "")).strip()
+    summary = re.sub(r"\s+", " ", str(candidate.get("summary") or candidate.get("lead") or "")).strip()
+    if not title or _looks_like_source_chrome(title):
+        return ""
+    club = "Manchester United" if "united" in source.lower() else "Manchester City"
+    if summary and len(summary) >= 40 and not _looks_like_source_chrome(summary):
+        return f"• {club}: {title}. {summary.rstrip('.')[:220]}."
+    return f"• {club}: {title}."
+
+
 def _hard_news_recovery_line(candidate: dict) -> str:
     block = str(candidate.get("primary_block") or "")
     category = str(candidate.get("category") or "")
@@ -960,6 +977,16 @@ def _hard_news_recovery_line(candidate: dict) -> str:
     if "police incident" in lowered:
         return f"• {prefix}полиция продолжает работу на месте инцидента. Если вы рядом, учитывайте возможные ограничения доступа и движение служб."
     return ""
+
+
+def _append_recovery_step(candidate: dict, step: str, outcome: str, *, missing: list[str] | None = None) -> None:
+    trace = candidate.get("recovery_trace") if isinstance(candidate.get("recovery_trace"), list) else []
+    trace.append({
+        "step": step,
+        "outcome": outcome,
+        "missing_facts": list(missing or []),
+    })
+    candidate["recovery_trace"] = trace
 
 
 def _ticket_public_onsale_datetime(candidate: dict) -> datetime | None:
@@ -1251,6 +1278,27 @@ def _repair_editorial_contract_line(candidate: dict, line: str) -> tuple[str, li
     return repaired, reasons
 
 
+def _story_frame_quality_errors(candidate: dict, line: str) -> list[str]:
+    frame = candidate.get("story_frame") if isinstance(candidate.get("story_frame"), dict) else {}
+    missing = set(str(x) for x in (frame.get("missing_facts") or []))
+    text = re.sub(r"<[^>]+>", " ", str(line or "")).lower()
+    errors: list[str] = []
+    generic_markers = (
+        "инцидент",
+        "угрожающий предмет",
+        "важный момент",
+        "значимое событие",
+        "подчеркивает",
+    )
+    if any(marker in text for marker in generic_markers) and {"what_happened", "why_now"} & missing:
+        errors.append("story_frame missing concrete what/why_now for generic public line.")
+    if str(candidate.get("primary_block") or "") in {"last_24h", "today_focus"}:
+        contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+        if str(contract.get("story_type") or "") in {"human_interest", "soft_news", "day_out_guide", "property_listing"}:
+            errors.append("fresh-news contract: soft story cannot stay in top news.")
+    return errors
+
+
 def _service_fallback_subject(title: str) -> str:
     cleaned = re.sub(r"\s*\|\s*News and Events\s*$", "", str(title or ""), flags=re.IGNORECASE)
     replacements = (
@@ -1399,6 +1447,22 @@ def _build_public_service_fallback_line(candidate: dict) -> str:
         f"• {source_label}: {title}; {detail}. "
         "Если вы пользуетесь этим сервисом, уточните актуальные изменения на странице организации."
     )
+
+
+def _final_replacement_line(candidate: dict) -> str:
+    category = str(candidate.get("category") or "")
+    block = str(candidate.get("primary_block") or "")
+    if category == "transport":
+        return _build_transport_fallback_line(candidate)
+    if category == "venues_tickets":
+        return _build_ticket_fallback_line(candidate)
+    if category == "football":
+        return _build_football_fallback_line(candidate)
+    if category in {"culture_weekly", "russian_speaking_events", "diaspora_events"} or block in {"weekend_activities", "next_7_days", "russian_events"}:
+        return _build_event_fallback_line(candidate)
+    if category == "public_services":
+        return _build_public_service_fallback_line(candidate)
+    return _hard_news_recovery_line(candidate)
 
 
 def _transport_empty_line(project_root: Path) -> str:
@@ -1880,6 +1944,7 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
             errors.append(f"draft_line contains bad editorial prose marker: {marker}.")
             break
     errors.extend(_sanity_flags(candidate, text))
+    errors.extend(_story_frame_quality_errors(candidate, text))
     for invariant in copy_invariant_errors(candidate, text):
         errors.append(f"copy invariant failed: {invariant}.")
     errors.extend(_hallucination_flags(candidate, text))
@@ -1970,15 +2035,65 @@ def _top_news_route_or_drop(candidate: dict) -> str:
         return ""
     contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
     story_type = str(contract.get("story_type") or "")
+    frame = contract.get("story_frame") if isinstance(contract.get("story_frame"), dict) else {}
+    why_now = str(frame.get("why_now") or candidate.get("why_now") or "")
     text = " ".join(
         str(candidate.get(field) or "")
         for field in ("title", "summary", "lead", "evidence_text")
     )
+    if not why_now_is_publishable(why_now):
+        return "city_watch"
     if story_type in {"human_interest", "soft_news", "day_out_guide", "property_listing"} or _SOFT_TOP_NEWS_RE.search(text):
         return "city_watch"
     if _NON_GM_REGIONAL_RE.search(text) and not _GM_TEXT_RE.search(text):
         return "drop_non_gm_regional"
     return ""
+
+
+def _should_defer_next_7_market(candidate: dict) -> bool:
+    if str(candidate.get("primary_block") or "") != "next_7_days":
+        return False
+    if now_london().weekday() >= 3:
+        return False
+    attach_editorial_contract(candidate)
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    if str(contract.get("event_shape") or "") != "recurring":
+        return False
+    blob = " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead", "source_label"))
+    return bool(_MARKET_EVENT_RE.search(blob))
+
+
+_MINOR_BUS_STOP_RE = re.compile(r"\bАвтобусы:\s+закрыта остановка\b", re.IGNORECASE)
+
+
+def _is_minor_bus_stop_line(line: str) -> bool:
+    text = re.sub(r"<[^>]+>", " ", str(line or ""))
+    if not _MINOR_BUS_STOP_RE.search(text):
+        return False
+    return not re.search(r"\b(?:объезд|закрыты дороги|нет автобусов|маршрут[ыа]?|замещающ)\b", text, re.IGNORECASE)
+
+
+def _cap_minor_bus_stop_lines(lines: list[str], srcs: list[str], fps: list[str], scores: list[float], titles: list[str]) -> tuple[list[str], list[str], list[str], list[float], list[str], list[int]]:
+    kept: list[int] = []
+    dropped: list[int] = []
+    minor_count = 0
+    for idx, line in enumerate(lines):
+        if _is_minor_bus_stop_line(line):
+            minor_count += 1
+            if minor_count > 3:
+                dropped.append(idx)
+                continue
+        kept.append(idx)
+    if not dropped:
+        return lines, srcs, fps, scores, titles, []
+    return (
+        [lines[i] for i in kept],
+        [srcs[i] if i < len(srcs) else "" for i in kept],
+        [fps[i] if i < len(fps) else "" for i in kept],
+        [scores[i] if i < len(scores) else 0.0 for i in kept],
+        [titles[i] if i < len(titles) else "" for i in kept],
+        dropped,
+    )
 
 
 def write_digest(project_root: Path) -> StageResult:
@@ -2016,6 +2131,7 @@ def write_digest(project_root: Path) -> StageResult:
             "wikidata_id": notability.wikidata_id,
             "sitelinks": notability.sitelinks,
         }
+        _append_recovery_step(candidate, "ticket_notability", "scored")
         decision = _ticket_watch_decision(candidate)
         ticket_notability_report.append(
             {
@@ -2068,6 +2184,12 @@ def write_digest(project_root: Path) -> StageResult:
         if not isinstance(candidate, dict) or not candidate.get("include"):
             continue
         attach_editorial_contract(candidate)
+        _append_recovery_step(
+            candidate,
+            "story_frame",
+            "attached",
+            missing=(candidate.get("story_frame") or {}).get("missing_facts") or [],
+        )
         quality_counts["included_candidates"] += 1
         contract_drop_reason = _contract_public_drop_reason(candidate)
         if contract_drop_reason and candidate.get("manual_override") != "force_include":
@@ -2081,6 +2203,8 @@ def write_digest(project_root: Path) -> StageResult:
                     "primary_block": str(candidate.get("primary_block") or ""),
                     "is_lead": bool(candidate.get("is_lead")),
                     "reasons": [contract_drop_reason],
+                    "story_frame": candidate.get("story_frame") or {},
+                    "recovery_trace": candidate.get("recovery_trace") or [],
                 }
             )
             continue
@@ -2098,6 +2222,8 @@ def write_digest(project_root: Path) -> StageResult:
                     "primary_block": str(candidate.get("primary_block") or ""),
                     "is_lead": bool(candidate.get("is_lead")),
                     "reasons": ["Held for manual review: borderline editorial status."],
+                    "story_frame": candidate.get("story_frame") or {},
+                    "recovery_trace": candidate.get("recovery_trace") or [],
                 }
             )
             continue
@@ -2132,6 +2258,8 @@ def write_digest(project_root: Path) -> StageResult:
                     "primary_block": str(candidate.get("primary_block") or ""),
                     "is_lead": bool(candidate.get("is_lead")),
                     "reasons": ["Outside current weekend window."],
+                    "story_frame": candidate.get("story_frame") or {},
+                    "recovery_trace": candidate.get("recovery_trace") or [],
                 }
             )
             continue
@@ -2146,6 +2274,8 @@ def write_digest(project_root: Path) -> StageResult:
                     "primary_block": str(candidate.get("primary_block") or ""),
                     "is_lead": bool(candidate.get("is_lead")),
                     "reasons": ["Expired event date."],
+                    "story_frame": candidate.get("story_frame") or {},
+                    "recovery_trace": candidate.get("recovery_trace") or [],
                 }
             )
             continue
@@ -2162,6 +2292,11 @@ def write_digest(project_root: Path) -> StageResult:
             warnings.append(
                 f"Candidate #{index}: soft/top-news item routed to «Городской радар» instead of top news."
             )
+        if _should_defer_next_7_market(candidate):
+            candidate["primary_block"] = "future_announcements"
+            warnings.append(
+                f"Candidate #{index}: recurring market deferred from «Что важно в ближайшие 7 дней» early in the week."
+            )
         elif top_news_route == "drop_non_gm_regional" and candidate.get("manual_override") != "force_include":
             warnings.append(f"Candidate #{index} dropped: regional story is outside Greater Manchester.")
             quality_counts["dropped_low_quality"] += 1
@@ -2173,6 +2308,8 @@ def write_digest(project_root: Path) -> StageResult:
                     "primary_block": str(candidate.get("primary_block") or ""),
                     "is_lead": bool(candidate.get("is_lead")),
                     "reasons": ["regional story outside Greater Manchester."],
+                    "story_frame": candidate.get("story_frame") or {},
+                    "recovery_trace": candidate.get("recovery_trace") or [],
                 }
             )
             continue
@@ -2202,25 +2339,33 @@ def write_digest(project_root: Path) -> StageResult:
                 english_detected = True
 
         if not line and category == "transport":
+            _append_recovery_step(candidate, "transport_card_recovery", "attempted", missing=(candidate.get("story_frame") or {}).get("missing_facts") or [])
             line = _build_transport_fallback_line(candidate)
             if line:
+                _append_recovery_step(candidate, "transport_card_recovery", "recovered")
                 warnings.append(f"Candidate #{index}: transport location recovered from URL/title (no LLM draft_line).")
                 logger.info("TRANSPORT location recovery | %s | %s", block_key, title[:80])
             else:
+                _append_recovery_step(candidate, "transport_card_recovery", "held", missing=["transport_impact"])
                 warnings.append(f"Candidate #{index}: transport item held — no location recoverable from URL/title.")
                 logger.info("HOLD transport_no_usable_card | %s | %s", block_key, title[:80])
 
         if not line and category == "venues_tickets":
+            _append_recovery_step(candidate, "ticket_structured_recovery", "attempted", missing=(candidate.get("story_frame") or {}).get("missing_facts") or [])
             line = _build_ticket_fallback_line(candidate)
             if line:
+                _append_recovery_step(candidate, "ticket_structured_recovery", "recovered")
                 warnings.append(f"Candidate #{index}: ticket structured fallback used (no LLM draft_line).")
                 logger.info("TICKET structured fallback | %s | %s", block_key, title[:80])
             else:
+                _append_recovery_step(candidate, "ticket_structured_recovery", "held", missing=["artist_or_date_or_venue_or_notability"])
                 warnings.append(f"Candidate #{index}: ticket held because structured fields were incomplete or dirty.")
                 logger.info("HOLD ticket_dirty_or_incomplete | %s | %s", block_key, title[:80])
 
         if not line and category == "public_services":
+            _append_recovery_step(candidate, "public_service_recovery", "attempted")
             line = _build_public_service_fallback_line(candidate)
+            _append_recovery_step(candidate, "public_service_recovery", "recovered")
             warnings.append(f"Candidate #{index}: public-services fallback stub used (no LLM draft_line).")
             logger.info("TIER4 public_services stub | %s | %s", block_key, title[:80])
 
@@ -2236,21 +2381,36 @@ def write_digest(project_root: Path) -> StageResult:
                 and event.get("is_event")
                 and str(event.get("event_name") or candidate.get("title") or "").strip()
             ):
+                _append_recovery_step(candidate, "event_structured_recovery", "attempted", missing=(candidate.get("story_frame") or {}).get("missing_facts") or [])
                 line = _build_event_fallback_line(candidate)
-                warnings.append(f"Candidate #{index}: event fallback stub used (no LLM draft_line).")
-                logger.info("TIER4 event stub | %s | %s", block_key, title[:80])
+                if line:
+                    _append_recovery_step(candidate, "event_structured_recovery", "recovered")
+                    warnings.append(f"Candidate #{index}: event fallback stub used (no LLM draft_line).")
+                    logger.info("TIER4 event stub | %s | %s", block_key, title[:80])
+                else:
+                    _append_recovery_step(candidate, "event_structured_recovery", "held", missing=(candidate.get("story_frame") or {}).get("missing_facts") or [])
 
         if not line:
+            _append_recovery_step(candidate, "official_football_recovery", "attempted")
+            line = _build_football_fallback_line(candidate)
+            if line:
+                _append_recovery_step(candidate, "official_football_recovery", "recovered")
+                warnings.append(f"Candidate #{index}: official football fallback used after missing model draft_line.")
+
+        if not line:
+            _append_recovery_step(candidate, "hard_news_recovery", "attempted")
             recovery_line = _hard_news_recovery_line(candidate)
             if recovery_line:
                 line = recovery_line
                 candidate["draft_line_provider"] = "writer_hard_news_recovery"
                 candidate["draft_line_model"] = "deterministic_hard_news_recovery"
+                _append_recovery_step(candidate, "hard_news_recovery", "recovered")
                 warnings.append(f"Candidate #{index}: hard-news recovery line used after missing model draft_line.")
                 logger.info("RECOVER hard_news | %s | %s", block_key, title[:80])
 
         if not line:
             if category in REQUIRE_DRAFT_LINE_CATEGORIES:
+                _append_recovery_step(candidate, "final_hold", "held", missing=(candidate.get("story_frame") or {}).get("missing_facts") or ["draft_line"])
                 warnings.append(f"Candidate #{index} dropped: no model draft_line for {category!r}.")
                 logger.info("DROP no_draft_line | %s | %s | %s", category, block_key, title[:80])
                 quality_counts["dropped_missing_draft_line"] += 1
@@ -2262,6 +2422,8 @@ def write_digest(project_root: Path) -> StageResult:
                         "primary_block": block_key,
                         "is_lead": bool(candidate.get("is_lead")),
                         "reasons": ["Missing draft_line."],
+                        "story_frame": candidate.get("story_frame") or {},
+                        "recovery_trace": candidate.get("recovery_trace") or [],
                     }
                 )
                 continue
@@ -2277,6 +2439,8 @@ def write_digest(project_root: Path) -> StageResult:
                         "primary_block": block_key,
                         "is_lead": bool(candidate.get("is_lead")),
                         "reasons": ["Untranslated English."],
+                        "story_frame": candidate.get("story_frame") or {},
+                        "recovery_trace": candidate.get("recovery_trace") or [],
                     }
                 )
                 continue
@@ -2307,6 +2471,22 @@ def write_digest(project_root: Path) -> StageResult:
 
         draft_line_errors = _draft_line_quality_errors(candidate, line)
         if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
+            _append_recovery_step(candidate, "final_replacement", "attempted", missing=(candidate.get("story_frame") or {}).get("missing_facts") or draft_line_errors)
+            replacement = _final_replacement_line(candidate)
+            if replacement and replacement != line:
+                replacement, replacement_repairs = _repair_editorial_contract_line(candidate, replacement)
+                replacement_errors = _draft_line_quality_errors(candidate, replacement)
+                if not replacement_errors:
+                    line = replacement
+                    draft_line_errors = []
+                    _append_recovery_step(candidate, "final_replacement", "recovered")
+                    warnings.append(
+                        f"Candidate #{index}: final quality check replaced bad public line ({', '.join(replacement_repairs) or 'deterministic fallback'})."
+                    )
+                else:
+                    _append_recovery_step(candidate, "final_replacement", "held", missing=replacement_errors)
+        if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
+            _append_recovery_step(candidate, "draft_line_quality_repair", "held", missing=(candidate.get("story_frame") or {}).get("missing_facts") or draft_line_errors)
             warnings.append(
                 f"Candidate #{index} dropped: draft_line quality issues ({'; '.join(draft_line_errors)})."
             )
@@ -2320,6 +2500,8 @@ def write_digest(project_root: Path) -> StageResult:
                     "primary_block": block_key,
                     "is_lead": bool(candidate.get("is_lead")),
                     "reasons": draft_line_errors,
+                    "story_frame": candidate.get("story_frame") or {},
+                    "recovery_trace": candidate.get("recovery_trace") or [],
                 }
             )
             continue
@@ -2466,6 +2648,12 @@ def write_digest(project_root: Path) -> StageResult:
                 fps = filtered_fps
                 scores = filtered_scores
                 titles = filtered_titles
+        if section_name == "Общественный транспорт сегодня":
+            lines, srcs, fps, scores, titles, minor_bus_dropped = _cap_minor_bus_stop_lines(lines, srcs, fps, scores, titles)
+            if minor_bus_dropped:
+                warnings.append(
+                    f"Transport impact contract: held {len(minor_bus_dropped)} minor bus-stop closure(s) after top 3."
+                )
         normal_cap = SECTION_MAX_ITEMS.get(section_name)
         degraded_cap = DEGRADED_LLM_SECTION_MAX_ITEMS.get(section_name) if llm_degraded else None
         cap = normal_cap

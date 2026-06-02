@@ -7,11 +7,16 @@ from unittest.mock import patch
 from news_digest.pipeline.collector.fallbacks import _weather_draft_line
 from news_digest.pipeline.collector.weather import _met_office_practical_angle
 from news_digest.pipeline.curator import _is_curator_protected
+from news_digest.pipeline.editorial_contracts import attach_editorial_contract
+from news_digest.pipeline.release import _final_loss_check
 from news_digest.pipeline.ticket_notability import enrich_ticket_notability
 from news_digest.pipeline.writer import (
     _build_recurring_event_fallback_line,
+    _build_football_fallback_line,
     _build_ticket_fallback_line,
+    _cap_minor_bus_stop_lines,
     _draft_line_quality_errors,
+    _final_replacement_line,
     _football_is_sport_news,
     _football_should_route_to_soft,
     _repair_editorial_contract_line,
@@ -146,6 +151,80 @@ class PublicOutputContractTests(unittest.TestCase):
             "• The Weeknd — 11 июня, Etihad Stadium. Почему в радаре: крупная площадка.",
         )
         self.assertTrue(any("machine explanation" in error for error in errors))
+
+    def test_story_frame_is_attached_with_missing_facts(self) -> None:
+        candidate = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "Police incident in Manchester",
+            "summary": "Police remain at the scene.",
+            "source_label": "MEN",
+        }
+        attach_editorial_contract(candidate)
+        frame = candidate["story_frame"]
+        self.assertIn("what_happened", frame)
+        self.assertIn("missing_facts", frame)
+        self.assertIn("why_now", frame["missing_facts"])
+
+    def test_generic_incident_line_fails_without_story_frame_facts(self) -> None:
+        candidate = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "Police incident in Manchester",
+            "summary": "Police remain at the scene.",
+            "source_label": "MEN",
+        }
+        attach_editorial_contract(candidate)
+        errors = _draft_line_quality_errors(
+            candidate,
+            "• Manchester: полиция продолжает работу на месте инцидента. Это важный момент для района.",
+        )
+        self.assertTrue(any("story_frame" in error for error in errors))
+
+    def test_final_replacement_repairs_bad_official_football_line(self) -> None:
+        candidate = {
+            "category": "football",
+            "primary_block": "football",
+            "source_label": "Manchester United",
+            "title": "Manchester United sign new striker before Premier League fixture",
+            "summary": "The transfer is complete and the player could be available for Saturday's match.",
+        }
+        line = _build_football_fallback_line(candidate)
+        self.assertIn("Manchester United", line)
+        self.assertEqual(_final_replacement_line(candidate), line)
+
+    def test_minor_bus_stop_closures_are_capped_at_three(self) -> None:
+        lines = [
+            f"• Автобусы: закрыта остановка Stop {idx} на Street в Area — ремонтные работы."
+            for idx in range(5)
+        ]
+        capped, *_rest, dropped = _cap_minor_bus_stop_lines(lines, ["TfGM"] * 5, [str(i) for i in range(5)], [0.0] * 5, lines)
+        self.assertEqual(len(capped), 3)
+        self.assertEqual(len(dropped), 2)
+
+    def test_final_loss_check_explains_missing_facts(self) -> None:
+        candidate = {
+            "fingerprint": "critical-1",
+            "include": True,
+            "category": "gmp",
+            "primary_block": "today_focus",
+            "title": "Police appeal after stabbing in Wigan",
+            "source_label": "BBC Manchester",
+            "protected_lane": {"protected": True, "lanes": ["public_safety"]},
+            "story_frame": {"missing_facts": ["who_affected"], "what_happened": "stabbing"},
+            "recovery_trace": [{"step": "hard_news_recovery", "outcome": "held"}],
+        }
+        report = _final_loss_check(
+            candidates_report={"candidates": [candidate]},
+            writer_report={"dropped_candidates": [{"fingerprint": "critical-1", "reasons": ["Missing draft_line."]}]},
+            rendered_fingerprints=set(),
+            dedupe_memory={},
+        )
+        item = report["items"][0]
+        self.assertIn("human_reason", item)
+        self.assertTrue(item["missing_facts"])
+        self.assertIn("Не хватило:", item["human_reason"])
+        self.assertEqual(item["recovery_trace"][0]["step"], "hard_news_recovery")
 
 
 if __name__ == "__main__":

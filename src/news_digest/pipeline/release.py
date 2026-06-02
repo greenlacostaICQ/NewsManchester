@@ -1779,6 +1779,8 @@ def _final_loss_check(
         )
         lane = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
         enrichment = candidate.get("enrichment_health") if isinstance(candidate.get("enrichment_health"), dict) else {}
+        frame = candidate.get("story_frame") if isinstance(candidate.get("story_frame"), dict) else {}
+        recovery_trace = candidate.get("recovery_trace") if isinstance(candidate.get("recovery_trace"), list) else []
         record = {
             "fingerprint": fp,
             "title": candidate.get("title") or "",
@@ -1787,6 +1789,13 @@ def _final_loss_check(
             "primary_block": candidate.get("primary_block") or "",
             "disposition": disposition,
             "reason": reason,
+            "human_reason": (
+                f"Не дошло до выпуска: {reason}. "
+                f"Не хватило: {', '.join(frame.get('missing_facts') or []) or 'явных недостающих фактов нет'}."
+            ),
+            "story_frame": frame,
+            "missing_facts": frame.get("missing_facts") or [],
+            "recovery_trace": recovery_trace,
             "protected_lanes": lane.get("lanes") or [],
             "section_board_score": candidate.get("section_board_score"),
             "false_negative_risk": (candidate.get("english_judge") or {}).get("false_negative_risk") if isinstance(candidate.get("english_judge"), dict) else "",
