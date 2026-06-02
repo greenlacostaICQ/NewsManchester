@@ -31,6 +31,7 @@ from news_digest.pipeline.editorial_contracts import (
     why_now_is_publishable,
 )
 from news_digest.pipeline.reader_value import reader_value_score
+from news_digest.pipeline.reader_actions import classify_reader_action
 from news_digest.pipeline.story_intelligence import section_board_score
 from news_digest.pipeline.ticket_notability import enrich_ticket_notability, ticket_artist_name
 from news_digest.pipeline.toponyms import restore_english_toponyms
@@ -1930,6 +1931,19 @@ def _section_priority_score(candidate: dict, section_name: str, line: str) -> fl
     """Shared reader-value score used when capped sections choose survivors."""
     attach_editorial_contract(candidate)
     score = float(section_board_score(candidate, section_name))
+    action = str(candidate.get("reader_action_type") or classify_reader_action(candidate))
+    action_bonus = {
+        "check_route": 14,
+        "note_deadline": 12,
+        "plan_today": 10,
+        "avoid_or_check": 9,
+        "book_or_buy": 7,
+        "plan_weekend": 7,
+        "plan_ahead": 4,
+        "follow_update": 3,
+        "just_know": 0,
+    }.get(action, 0)
+    score += action_bonus
     completeness = candidate.get("event_schema_completeness")
     if isinstance(completeness, dict) and completeness.get("applies"):
         score += (float(completeness.get("score") or 0) - 50.0) / 5.0

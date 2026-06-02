@@ -58,6 +58,7 @@ def build_row(
                 "name": str(entry.get("name") or ""),
                 "category": str(entry.get("category") or ""),
                 "status": str(entry.get("status") or ""),
+                "trial": bool(entry.get("trial")),
                 "raw": int(entry.get("raw_count") or 0),
                 "curated": int(entry.get("curated_count") or entry.get("accepted_count") or 0),
                 "rendered": int(entry.get("rendered_count") or 0),

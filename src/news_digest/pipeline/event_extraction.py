@@ -433,14 +433,21 @@ def extract_event(candidate: dict, entities: dict | None = None) -> dict:
     if not isinstance(entities, dict):
         entities = {}
 
+    hint = candidate.get("structured_event_hint") if isinstance(candidate.get("structured_event_hint"), dict) else {}
     blob = _candidate_blob(candidate)
-    venue = _extract_venue(candidate, entities)
+    venue = str(hint.get("venue") or "").strip() or _extract_venue(candidate, entities)
     iso_date, date_text = _parse_date_from_blob(blob)
+    hint_date = str(hint.get("date_start") or hint.get("date") or "").strip()
+    if hint_date:
+        parsed_hint = _parse_date_from_blob(hint_date)[0] or hint_date[:10]
+        if parsed_hint:
+            iso_date = parsed_hint
+            date_text = str(hint.get("date_text") or "").strip() or date_text or parsed_hint
     boroughs = entities.get("boroughs") if isinstance(entities.get("boroughs"), list) else []
     borough = str(boroughs[0]) if boroughs else ""
-    price = _extract_price(blob)
-    booking_url = _extract_booking_url(candidate)
-    event_name = _extract_event_name(candidate, entities, venue)
+    price = str(hint.get("price") or "").strip() or _extract_price(blob)
+    booking_url = str(hint.get("booking_url") or "").strip() or _extract_booking_url(candidate)
+    event_name = str(hint.get("event_name") or "").strip() or _extract_event_name(candidate, entities, venue)
 
     # An item only counts as a structured event when we know what it IS
     # (a name) AND at least one of (when, where). Without that the
@@ -459,6 +466,8 @@ def extract_event(candidate: dict, entities: dict | None = None) -> dict:
         "borough": borough,
         "price": price,
         "booking_url": booking_url,
+        "schema_source": str(hint.get("schema_source") or ""),
+        "event_status": str(hint.get("event_status") or ""),
         "is_event": has_event,
     }
 

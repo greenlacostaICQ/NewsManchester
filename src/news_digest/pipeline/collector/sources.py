@@ -8,7 +8,7 @@ else in the collector iterates over it.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import tomllib
 
@@ -42,6 +42,10 @@ class SourceDef:
     # judged by publication freshness; an event calendar by upcoming
     # event coverage; a ticket source by API/window coverage.
     source_contract: str = ""
+    # Trial sources are collected and validated but never published. This
+    # lets new feeds prove they are fresh, GM-specific and useful before
+    # they can affect the morning digest.
+    trial: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,6 +57,7 @@ class ExtractedItem:
     lead: str = ""
     evidence_text: str = ""
     enrichment_status: str = "not_attempted"
+    structured_event_hint: dict = field(default_factory=dict)
 
 
 _SOURCES_TOML = Path(__file__).parents[4] / "data" / "sources.toml"
@@ -74,6 +79,7 @@ def _load_sources() -> tuple[SourceDef, ...]:
             max_candidates=int(s.get("max_candidates", 5)),
             notes=str(s.get("notes", "")),
             source_contract=str(s.get("source_contract", "")),
+            trial=bool(s.get("trial", False)),
         )
         for s in _data["sources"]
         if s.get("enabled", True)

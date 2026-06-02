@@ -1035,6 +1035,7 @@ def _summarise_source_health(
                         "candidate_count": raw_count,
                         "fresh_last_24h_count": int(entry.get("fresh_last_24h_count") or 0),
                         "source_contract": str(entry.get("source_contract") or ""),
+                        "trial": bool(entry.get("trial")),
                         "coverage_signal_count": int(entry.get("coverage_signal_count") or 0),
                         "coverage_signal_label": str(entry.get("coverage_signal_label") or ""),
                         "curated_count": int(row_yield["curated"]),
@@ -1085,6 +1086,7 @@ def _summarise_source_health(
         1
         for row in sources
         if row.get("category") != "synthetic"
+        and not row.get("trial")
         and int(row.get("candidate_count") or 0) > 0
         and int(row.get("rendered_count") or 0) == 0
     )
@@ -1097,6 +1099,8 @@ def _summarise_source_health(
     no_contribution = {"fetch_failed": 0, "all_rejected": 0, "idle_no_items": 0}
     for row in sources:
         if row.get("category") == "synthetic":
+            continue
+        if row.get("trial"):
             continue
         if int(row.get("rendered_count") or 0) > 0:
             continue

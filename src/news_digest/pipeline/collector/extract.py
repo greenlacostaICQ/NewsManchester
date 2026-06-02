@@ -236,6 +236,97 @@ def _extract_jsonld_start_date(html_text: str) -> str | None:
     return None
 
 
+def _jsonld_type_matches(node: dict, expected: str) -> bool:
+    raw = node.get("@type")
+    values = raw if isinstance(raw, list) else [raw]
+    return any(str(value or "").lower() == expected.lower() for value in values)
+
+
+def _jsonld_text(value: object) -> str:
+    if isinstance(value, dict):
+        for key in ("name", "text", "streetAddress", "addressLocality"):
+            text = _clean_long_text(str(value.get(key) or ""))
+            if text:
+                return text
+        return ""
+    if isinstance(value, list):
+        parts = [_jsonld_text(item) for item in value]
+        return _clean_long_text(", ".join(part for part in parts if part))
+    return _clean_long_text(str(value or ""))
+
+
+def _jsonld_location_name(value: object) -> str:
+    if isinstance(value, dict):
+        name = _jsonld_text(value.get("name"))
+        if name:
+            return name
+        address = value.get("address")
+        if isinstance(address, dict):
+            parts = [
+                _jsonld_text(address.get("streetAddress")),
+                _jsonld_text(address.get("addressLocality")),
+            ]
+            return _clean_long_text(", ".join(part for part in parts if part))
+        return _jsonld_text(address)
+    if isinstance(value, list):
+        for item in value:
+            name = _jsonld_location_name(item)
+            if name:
+                return name
+    return _jsonld_text(value)
+
+
+def _jsonld_offer_fields(value: object) -> tuple[str, str]:
+    offers = value if isinstance(value, list) else [value]
+    prices: list[str] = []
+    booking_url = ""
+    for offer in offers:
+        if not isinstance(offer, dict):
+            continue
+        raw_price = _clean_long_text(str(offer.get("price") or ""))
+        currency = _clean_long_text(str(offer.get("priceCurrency") or ""))
+        if raw_price:
+            if currency.upper() == "GBP" and not raw_price.startswith("£"):
+                prices.append(f"£{raw_price}")
+            else:
+                prices.append(raw_price)
+        if not booking_url:
+            booking_url = _clean_long_text(str(offer.get("url") or ""))
+    return ("–".join(prices[:2]), booking_url)
+
+
+def _extract_jsonld_event_hint(html_text: str) -> dict:
+    """Pull schema.org/Event fields from JSON-LD when a venue exposes them.
+
+    This is deliberately small and deterministic: the normal event_extraction
+    module still owns final normalisation, but JSON-LD gives it clean dates,
+    venue and booking facts instead of forcing regex recovery from prose.
+    """
+    for node in _extract_jsonld_nodes(html_text):
+        if not isinstance(node, dict) or not _jsonld_type_matches(node, "Event"):
+            continue
+        name = _jsonld_text(node.get("name"))
+        start = _parse_datetime_value(str(node.get("startDate") or ""))
+        end = _parse_datetime_value(str(node.get("endDate") or ""))
+        venue = _jsonld_location_name(node.get("location"))
+        price, booking_url = _jsonld_offer_fields(node.get("offers"))
+        status = _jsonld_text(node.get("eventStatus"))
+        out = {
+            "schema_source": "jsonld_event",
+            "event_name": name,
+            "venue": venue,
+            "date": start.isoformat() if start else "",
+            "date_start": start.isoformat() if start else "",
+            "date_end": end.isoformat() if end else "",
+            "date_text": start.date().isoformat() if start else "",
+            "price": price,
+            "booking_url": booking_url,
+            "event_status": status,
+        }
+        return {key: value for key, value in out.items() if str(value or "").strip()}
+    return {}
+
+
 def _strip_page_title_suffix(title: str) -> str:
     cleaned = str(title or "").strip()
     cleaned = re.sub(r"\s*[|–-]\s*Albert Hall Manchester\s*$", "", cleaned, flags=re.IGNORECASE).strip()
@@ -425,6 +516,7 @@ def _extract_html_page_event(source: SourceDef, body: str) -> list[ExtractedItem
     visible_text = _html_to_visible_text(body)
     paragraph_evidence = _extract_paragraph_evidence(body, title)
     enriched_summary = _extract_jsonld_description(body) or _extract_meta_description(body)
+    structured_event_hint = _extract_jsonld_event_hint(body)
     evidence = _clean_long_text(" ".join(part for part in (enriched_summary, paragraph_evidence, visible_text) if part))
     summary = _summary_from_evidence(evidence) or enriched_summary or _default_summary(source, title)
     published_at = (
@@ -442,6 +534,7 @@ def _extract_html_page_event(source: SourceDef, body: str) -> list[ExtractedItem
             lead=_derive_lead(source, title, summary),
             evidence_text=evidence[:6000],
             enrichment_status="ok_page_event",
+            structured_event_hint=structured_event_hint,
         )
     ]
 
@@ -530,6 +623,7 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
             lead=_strip_evidence_chrome(item.lead or _derive_lead(source, item.title, summary)),
             evidence_text=_strip_evidence_chrome(item.summary),
             enrichment_status="skipped_existing_summary",
+            structured_event_hint=dict(item.structured_event_hint or {}),
         )
     try:
         article_html = _fetch_text(item.url)
@@ -543,11 +637,13 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
             lead=_strip_evidence_chrome(item.lead or _derive_lead(source, item.title, summary)),
             evidence_text=_strip_evidence_chrome(item.summary),
             enrichment_status=f"failed: {exc}",
+            structured_event_hint=dict(item.structured_event_hint or {}),
         )
 
     paragraph_evidence = _extract_paragraph_evidence(article_html, item.title)
     enriched_summary = _extract_jsonld_description(article_html) or _extract_meta_description(article_html)
     enriched_title = _extract_jsonld_title(article_html) or _extract_page_title(article_html)
+    structured_event_hint = _extract_jsonld_event_hint(article_html) or dict(item.structured_event_hint or {})
     evidence_text = _strip_evidence_chrome(paragraph_evidence or enriched_summary or item.summary)
     if summary_thin and paragraph_evidence:
         enriched_summary = _summary_from_evidence(paragraph_evidence)
@@ -576,6 +672,7 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         # default _clean_snippet cap is 280 — too tight; pass 2500 here.
         evidence_text=_clean_snippet(evidence_text, max_chars=2500),
         enrichment_status="ok" if evidence_text else "ok_no_evidence",
+        structured_event_hint=structured_event_hint,
     )
 
 
@@ -1891,6 +1988,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
             "source_health": "dated" if published_at else "undated",
             "evidence_text": item.evidence_text,
             "enrichment_status": item.enrichment_status,
+            "source_trial": bool(getattr(source, "trial", False)),
+            "structured_event_hint": dict(item.structured_event_hint or {}),
         }
         if source.primary_block == "last_24h" and primary_block not in {"last_24h", "city_watch"}:
             candidate["reason"] = (

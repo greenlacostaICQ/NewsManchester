@@ -2516,6 +2516,24 @@ def cmd_edit_digest() -> int:
     return 0 if result.ok else 1
 
 
+def cmd_discover_sources(seeds: list[str] | None = None) -> int:
+    from news_digest.pipeline.source_discovery import write_discovery_report
+
+    path = write_discovery_report(PROJECT_ROOT, seeds=seeds or None)
+    payload = read_json(path, {})
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_repair_dead_parsers() -> int:
+    from news_digest.pipeline.dead_parser_repair import write_dead_parser_repair_report
+
+    path = write_dead_parser_repair_report(PROJECT_ROOT)
+    payload = read_json(path, {})
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Local runner for the Manchester digest MVP.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -2616,6 +2634,19 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "edit-digest",
         help="Run editor/balancer checks on draft_digest.html.",
+    )
+    discover_parser = subparsers.add_parser(
+        "discover-sources",
+        help="Probe seed sites for RSS/sitemap/news/event/consultation source candidates.",
+    )
+    discover_parser.add_argument(
+        "seeds",
+        nargs="*",
+        help="Optional seed URLs. Defaults to the built-in GM council/transport/event seeds.",
+    )
+    subparsers.add_parser(
+        "repair-dead-parsers",
+        help="Probe release_report.dead_parsers and suggest concrete extractor repairs.",
     )
     mark_failed_parser = subparsers.add_parser(
         "mark-pipeline-failed",
@@ -2734,6 +2765,10 @@ def main() -> int:
         return cmd_write_digest()
     if args.command == "edit-digest":
         return cmd_edit_digest()
+    if args.command == "discover-sources":
+        return cmd_discover_sources(args.seeds)
+    if args.command == "repair-dead-parsers":
+        return cmd_repair_dead_parsers()
     if args.command == "mark-pipeline-failed":
         return cmd_mark_pipeline_failed(args.stage)
     if args.command == "init-build-state":

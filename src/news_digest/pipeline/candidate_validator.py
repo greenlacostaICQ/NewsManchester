@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 from urllib import parse
 
+from news_digest.pipeline.change_classifier import attach_change_phase, classify_change_phase
 from news_digest.pipeline.city_intelligence import annotate_city_intelligence
 from news_digest.pipeline.common import clean_url, now_london, pipeline_run_id_from, read_json, today_london, write_json
 from news_digest.pipeline.editorial_contracts import (
@@ -22,6 +23,8 @@ from news_digest.pipeline.editorial_contracts import (
 from news_digest.pipeline.entity_extraction import enrich_candidate_entities
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.event_quality import event_quality_reject_reasons, event_quality_report
+from news_digest.pipeline.practical_backfill import apply_practical_backfill
+from news_digest.pipeline.reader_actions import attach_reader_action
 from news_digest.pipeline.reader_value import attach_reader_value
 from news_digest.pipeline.story_intelligence import apply_story_intelligence, mark_reject_second_opinion
 from news_digest.pipeline.transport_classifier import classify_transport_candidate
@@ -1537,6 +1540,22 @@ def _exclude_cross_day_rehash(candidate: dict, state_dir: Path) -> bool:
                 continue
             if not rec.get("included"):
                 continue
+            phase = classify_change_phase(candidate)
+            previous_phase = classify_change_phase(rec)
+            if phase and phase != previous_phase:
+                candidate["change_phase"] = phase
+                candidate["change_type"] = "new_phase"
+                existing = str(candidate.get("reason") or "").strip()
+                note = (
+                    f"Validator: same fingerprint was published on {check_day}, "
+                    f"but today has a new phase ({phase})."
+                )
+                candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+                candidate["quality_warnings"] = sorted(set(
+                    [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]
+                    + ["cross_day_same_url_new_phase"]
+                ))
+                return False
             # Hit — same fingerprint already shipped on a previous day.
             candidate["include"] = False
             candidate["change_type"] = "same_story_rehash"
@@ -1634,6 +1653,7 @@ def validate_candidates(project_root: Path) -> StageResult:
         # rewriter never has to infer "Автобус:" vs "Metrolink:" from a
         # TfGM roadworks bulletin. Idempotent and safe for non-transport.
         classify_transport_candidate(candidate)
+        attach_change_phase(candidate)
         attach_editorial_contract(candidate)
         apply_story_intelligence(candidate)
         manual = _manual_override(candidate, state_dir)
@@ -1700,10 +1720,19 @@ def validate_candidates(project_root: Path) -> StageResult:
             candidate["editorial_status"] = "approved"
         attach_editorial_contract(candidate)
         _apply_why_now_gate(candidate, manual_override=manual)
+        attach_reader_action(candidate)
         attach_editorial_contract(candidate)
         apply_story_intelligence(candidate)
         if candidate.get("event_page_type") in {"homepage", "aggregator"}:
             validation_errors.append("Event candidate must use an official event page.")
+
+        if candidate.get("source_trial") and candidate.get("include") and manual != "force_include":
+            candidate["include"] = False
+            candidate["trial_status"] = "validated_not_publishable"
+            candidate["editorial_status"] = "trial"
+            existing = str(candidate.get("reason") or "").strip()
+            note = "Validator: source is in trial mode, so candidate is measured but not published."
+            candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
 
         attach_reader_value(candidate)
         attach_scoring_trace(candidate)
@@ -1720,6 +1749,10 @@ def validate_candidates(project_root: Path) -> StageResult:
                 "specificity_review": candidate.get("specificity_review"),
                 "event_schema_completeness": candidate.get("event_schema_completeness"),
                 "why_now": candidate.get("why_now") or "",
+                "change_phase": candidate.get("change_phase") or "",
+                "reader_action_type": candidate.get("reader_action_type") or "",
+                "source_trial": bool(candidate.get("source_trial")),
+                "trial_status": candidate.get("trial_status") or "",
                 "editorial_contract": candidate.get("editorial_contract") or {},
                 "rubric_contract": candidate.get("rubric_contract") or {},
                 "news_anchor": candidate.get("news_anchor") or {},
@@ -1735,6 +1768,12 @@ def validate_candidates(project_root: Path) -> StageResult:
         if candidate.get("include") and validation_errors:
             errors.append(f"Candidate #{index} failed validation.")
 
+    practical_backfill = apply_practical_backfill(candidates)
+    if practical_backfill:
+        for candidate in candidates:
+            if isinstance(candidate, dict):
+                attach_reader_action(candidate)
+                attach_editorial_contract(candidate)
     city_intelligence = annotate_city_intelligence(candidates)
     payload["run_at_london"] = now_london().isoformat()
     payload["run_date_london"] = today_london()
@@ -1749,6 +1788,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             "stage_status": "complete" if not errors else "failed",
             "errors": errors,
             "city_intelligence": city_intelligence,
+            "practical_backfill": practical_backfill,
+            "trial_candidates": sum(1 for c in candidates if isinstance(c, dict) and c.get("source_trial")),
             "items": items,
         },
     )

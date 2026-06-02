@@ -45,6 +45,8 @@ def detect_source_anomalies(history: list[dict]) -> list[dict]:
         for src in row.get("sources") or []:
             if not isinstance(src, dict):
                 continue
+            if src.get("trial"):
+                continue
             name = str(src.get("name") or "")
             if not name:
                 continue
@@ -53,6 +55,8 @@ def detect_source_anomalies(history: list[dict]) -> list[dict]:
     today_raw: dict[str, int] = {}
     for src in today.get("sources") or []:
         if isinstance(src, dict) and src.get("name"):
+            if src.get("trial"):
+                continue
             name = str(src["name"])
             today_raw[name] = int(src.get("raw") or 0)
             category_of[name] = str(src.get("category") or "")
@@ -111,6 +115,8 @@ def detect_dead_parsers(history: list[dict]) -> list[dict]:
     for row in window:
         for src in row.get("sources") or []:
             if not isinstance(src, dict):
+                continue
+            if src.get("trial"):
                 continue
             name = str(src.get("name") or "")
             if not name:

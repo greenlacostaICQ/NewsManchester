@@ -412,6 +412,13 @@ def infer_why_now(candidate: dict) -> str:
         return "happening_today"
     if re.search(r"\b(deadline|closes?|last chance|final day|until \d{1,2}|до \d{1,2})\b", blob, re.IGNORECASE):
         return "deadline_soon"
+    if re.search(
+        r"\b(?:watch|monitor|follow|check)\s+(?:for\s+)?(?:local\s+)?updates?\b|"
+        r"\bbefore\s+travelling\b|\bпроверьте\s+маршрут\b",
+        blob,
+        re.IGNORECASE,
+    ) and re.search(r"\b(?:police|gmp|fire|crash|collision|stabbing|murder|incident)\b", blob, re.IGNORECASE):
+        return "update_today"
     if category == "venues_tickets" and (
         str(candidate.get("ticket_type") or "") == "event_this_week"
         or classify_ticket_type(candidate) in {
