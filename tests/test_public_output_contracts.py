@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
 import os
+from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -9,7 +12,11 @@ from news_digest.pipeline.collector.weather import _met_office_practical_angle
 from news_digest.pipeline.curator import _is_curator_protected
 from news_digest.pipeline.editorial_contracts import attach_editorial_contract
 from news_digest.pipeline.release import _final_loss_check
-from news_digest.pipeline.ticket_notability import enrich_ticket_notability
+from news_digest.pipeline.ticket_notability import (
+    enrich_ticket_notability,
+    ticket_event_kind,
+    ticket_headliner_candidates,
+)
 from news_digest.pipeline.writer import (
     _build_recurring_event_fallback_line,
     _build_football_fallback_line,
@@ -25,6 +32,28 @@ from news_digest.pipeline.writer import (
 
 
 class PublicOutputContractTests(unittest.TestCase):
+    def _ticket_notability_cache(self, records: dict[str, dict]) -> Path:
+        tempdir = tempfile.TemporaryDirectory()
+        self.addCleanup(tempdir.cleanup)
+        path = Path(tempdir.name) / "ticket_notability_cache.json"
+        checked_at = "2026-06-02T12:00:00+01:00"
+        artists = {}
+        for key, record in records.items():
+            payload = {
+                "artist": record.get("artist", key),
+                "kind": record.get("kind", "artist"),
+                "tier": record.get("tier", "unknown"),
+                "confidence": record.get("confidence", 0.0),
+                "signal": record.get("signal", "test_cache"),
+                "wikidata_id": record.get("wikidata_id", ""),
+                "sitelinks": record.get("sitelinks", 0),
+                "signals": record.get("signals", {"sitelinks": record.get("sitelinks", 0)}),
+                "checked_at": checked_at,
+            }
+            artists[key] = payload
+        path.write_text(json.dumps({"version": 1, "artists": artists}), encoding="utf-8")
+        return path
+
     def test_weather_contract_never_mentions_radar(self) -> None:
         practical = _met_office_practical_angle("", "heavy rain", 95)
         line = _weather_draft_line(13, 18, 95, practical, "Met Office")
@@ -144,6 +173,138 @@ class PublicOutputContractTests(unittest.TestCase):
         hidden = _ticket_watch_decision(hide)
         self.assertEqual(hidden["decision"], "hide")
         self.assertIn("threshold", hidden)
+
+    def test_major_artist_anywhere_uses_notability_cache_not_manual_list(self) -> None:
+        cache_path = self._ticket_notability_cache(
+            {
+                "ricky martin": {
+                    "artist": "Ricky Martin",
+                    "tier": "A",
+                    "confidence": 0.95,
+                    "signal": "wikidata_sitelinks",
+                    "sitelinks": 68,
+                }
+            }
+        )
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "outside_gm_tickets",
+            "title": "Ricky Martin: UK show — event 2026-09-12",
+            "summary": "Small UK town | Pop | event_date=2026-09-12 19:00 | ticket_type=newly_listed",
+            "event": {"venue": "Scarborough Open Air Theatre", "date_start": "2026-09-12"},
+        }
+        with patch.dict(os.environ, {"NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP": "0"}):
+            notability = enrich_ticket_notability(candidate, cache_path)
+        candidate["ticket_notability"] = {
+            "artist": notability.artist,
+            "kind": notability.kind,
+            "tier": notability.tier,
+            "signal": notability.signal,
+            "headliners": list(notability.headliners),
+            "signals": notability.signals or {},
+        }
+        line = _build_ticket_fallback_line(candidate)
+        self.assertEqual(notability.tier, "A")
+        self.assertIn("Ricky Martin", line)
+        self.assertEqual(_ticket_watch_decision(candidate)["decision"], "show")
+
+    def test_live_film_event_without_real_headliner_is_hidden(self) -> None:
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "Dirty Dancing Live in Concert - with band and singers — event 2026-06-03",
+            "summary": "Bridgewater Hall | Manchester | Other | event_date=2026-06-03 18:00 | ticket_type=event_this_week",
+            "event": {"venue": "Bridgewater Hall", "date_start": "2026-06-03"},
+        }
+        with patch.dict(os.environ, {"NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP": "0"}):
+            notability = enrich_ticket_notability(candidate, self._ticket_notability_cache({}))
+        candidate["ticket_notability"] = {"artist": notability.artist, "kind": notability.kind, "tier": notability.tier}
+        self.assertEqual(ticket_event_kind(candidate), "non_artist_show")
+        self.assertEqual(_build_ticket_fallback_line(candidate), "")
+
+    def test_festival_lineup_promotes_strong_headliner_inside_card(self) -> None:
+        cache_path = self._ticket_notability_cache(
+            {
+                "metallica": {
+                    "artist": "Metallica",
+                    "tier": "A",
+                    "confidence": 0.95,
+                    "signal": "wikidata_sitelinks",
+                    "sitelinks": 91,
+                },
+                "local dj": {"artist": "Local DJ", "tier": "D", "confidence": 0.3, "sitelinks": 1},
+            }
+        )
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "outside_gm_tickets",
+            "title": "North Coast Open Air Festival — event 2026-08-01",
+            "summary": "Scarborough | Rock | event_date=2026-08-01 16:00 | ticket_type=newly_listed | lineup=Local DJ, Metallica",
+            "event": {"venue": "Scarborough Open Air Theatre", "date_start": "2026-08-01"},
+        }
+        with patch.dict(os.environ, {"NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP": "0"}):
+            notability = enrich_ticket_notability(candidate, cache_path)
+        candidate["ticket_notability"] = {
+            "artist": notability.artist,
+            "kind": notability.kind,
+            "tier": notability.tier,
+            "signal": notability.signal,
+            "headliners": list(notability.headliners),
+            "signals": notability.signals or {},
+        }
+        self.assertIn("Metallica", ticket_headliner_candidates(candidate))
+        self.assertEqual(notability.artist, "Metallica")
+        self.assertEqual(notability.kind, "lineup_or_show")
+        self.assertEqual(_ticket_watch_decision(candidate)["decision"], "show")
+        self.assertIn("Metallica", _build_ticket_fallback_line(candidate))
+
+    def test_musicbrainz_ticketmaster_signal_is_reported_as_c_tier(self) -> None:
+        cache_path = self._ticket_notability_cache(
+            {
+                "known touring band": {
+                    "artist": "Known Touring Band",
+                    "tier": "C",
+                    "confidence": 0.68,
+                    "signal": "musicbrainz_ticketmaster",
+                    "signals": {"sitelinks": 0, "musicbrainz_score": 96},
+                }
+            }
+        )
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "Known Touring Band — event 2026-07-01",
+            "summary": "The Ritz | Manchester | Rock | event_date=2026-07-01 19:00 | ticket_type=newly_listed",
+            "event": {"venue": "The Ritz", "date_start": "2026-07-01", "attractions": [{"name": "Known Touring Band", "id": "abc123"}]},
+        }
+        with patch.dict(os.environ, {"NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP": "0"}):
+            notability = enrich_ticket_notability(candidate, cache_path)
+        self.assertEqual(notability.tier, "C")
+        self.assertEqual(notability.signal, "musicbrainz_ticketmaster")
+        self.assertTrue((notability.signals or {}).get("ticketmaster_attraction"))
+
+    def test_ticket_golden_names_are_a_tier_when_external_signal_exists(self) -> None:
+        cache_path = self._ticket_notability_cache(
+            {
+                "the weeknd": {"artist": "The Weeknd", "tier": "A", "confidence": 0.95, "sitelinks": 104},
+                "imagine dragons": {"artist": "Imagine Dragons", "tier": "A", "confidence": 0.95, "sitelinks": 75},
+            }
+        )
+        for title, expected in (
+            ("The Weeknd: After Hours Til Dawn Tour — event 2026-06-11", "The Weeknd"),
+            ("Imagine Dragons: Loom World Tour — event 2026-07-20", "Imagine Dragons"),
+        ):
+            candidate = {
+                "category": "venues_tickets",
+                "primary_block": "outside_gm_tickets",
+                "title": title,
+                "summary": "UK | Rock | event_date=2026-07-20 19:00 | ticket_type=major_upcoming",
+                "event": {"venue": "UK arena", "date_start": "2026-07-20"},
+            }
+            with patch.dict(os.environ, {"NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP": "0"}):
+                notability = enrich_ticket_notability(candidate, cache_path)
+            self.assertEqual(notability.artist, expected)
+            self.assertEqual(notability.tier, "A")
 
     def test_quality_gate_rejects_old_ticket_machine_phrase(self) -> None:
         errors = _draft_line_quality_errors(

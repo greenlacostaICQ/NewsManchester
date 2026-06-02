@@ -19,7 +19,7 @@ MUSIC_ENTITY_RE = re.compile(
 
 NON_ARTIST_EVENT_RE = re.compile(
     r"\b(?:venue premium tickets|premium tickets|tribute|film with live orchestra|"
-    r"games in concert|stunt show|bottomless|club night|after party|day party)\b",
+    r"games in concert|with band and singers|stunt show|bottomless|club night|after party|day party)\b",
     re.IGNORECASE,
 )
 
@@ -41,6 +41,8 @@ class TicketNotability:
     signal: str
     wikidata_id: str = ""
     sitelinks: int = 0
+    headliners: tuple[str, ...] = ()
+    signals: dict[str, object] | None = None
 
 
 def _clean_artist_name(title: str) -> str:
@@ -49,6 +51,13 @@ def _clean_artist_name(title: str) -> str:
     cleaned = re.sub(r"\s+[—-]\s+public\s+sale\b.*$", "", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"\b(?:venue premium tickets|premium tickets)\b", "", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"^\s*buy\s+tickets?\s+(?:for\s+)?", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(
+        r"^(?:vip\s+package|resale\s+tickets|official\s+platinum|platinum\s+tickets|"
+        r"hospitality\s+packages?)\s*[-–—:]\s*",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
     cleaned = re.sub(
         r"\s*[-–]\s*(?:(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\w*\s+)?\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]{3,9}\s+20\d{2}\s*$",
         "",
@@ -69,6 +78,67 @@ def _clean_artist_name(title: str) -> str:
     return cleaned.strip(" .,-–—")[:90]
 
 
+_LINEUP_FIELD_RE = re.compile(
+    r"\b(?:line[- ]?up|headliners?|featuring|feat\.?|with special guests?|with guests?)\s*[:=]\s*([^|.;]+)",
+    re.IGNORECASE,
+)
+_LINEUP_SPLIT_RE = re.compile(r"\s*(?:,|;|\+|/|\band\b|\bwith\b|&)\s*", re.IGNORECASE)
+_LINEUP_STOP_RE = re.compile(
+    r"\b(?:live|tour|festival|open air|open-air|tickets?|premium|venue|doors|show|"
+    r"all ages|under 16|orchestra|film|concert|experience|party|band|singers?|cast)\b",
+    re.IGNORECASE,
+)
+
+
+def _split_lineup(value: str) -> list[str]:
+    names: list[str] = []
+    for part in _LINEUP_SPLIT_RE.split(str(value or "")):
+        name = _clean_artist_name(part)
+        if len(name) < 3:
+            continue
+        if _LINEUP_STOP_RE.fullmatch(name) or _LINEUP_STOP_RE.search(name) and len(name.split()) <= 2:
+            continue
+        names.append(name)
+    return list(dict.fromkeys(names))
+
+
+def ticket_headliner_candidates(candidate: dict) -> list[str]:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    names: list[str] = []
+    for key in ("headliner", "artist", "performer"):
+        text = str(event.get(key) or "").strip()
+        if text:
+            names.extend(_split_lineup(text))
+    for key in ("headliners", "artists", "lineup", "performers"):
+        values = event.get(key)
+        if isinstance(values, list):
+            names.extend(_split_lineup(", ".join(str(value) for value in values)))
+        elif isinstance(values, str):
+            names.extend(_split_lineup(values))
+    for key in ("attraction", "attractions"):
+        values = event.get(key) or candidate.get(key)
+        if isinstance(values, list):
+            for value in values:
+                if isinstance(value, dict):
+                    names.extend(_split_lineup(str(value.get("name") or value.get("artist") or "")))
+                else:
+                    names.extend(_split_lineup(str(value)))
+        elif isinstance(values, dict):
+            names.extend(_split_lineup(str(values.get("name") or values.get("artist") or "")))
+        elif isinstance(values, str):
+            names.extend(_split_lineup(values))
+    blob = " | ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text")
+    )
+    for match in _LINEUP_FIELD_RE.finditer(blob):
+        names.extend(_split_lineup(match.group(1)))
+    primary = ticket_artist_name(candidate)
+    if primary:
+        names.insert(0, primary)
+    return list(dict.fromkeys(names))[:8]
+
+
 def ticket_artist_name(candidate: dict) -> str:
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     raw = str(event.get("event_name") or candidate.get("title") or "").strip()
@@ -80,7 +150,7 @@ def ticket_event_kind(candidate: dict) -> str:
         str(candidate.get(field) or "")
         for field in ("title", "summary", "lead", "evidence_text", "source_label")
     )
-    if NON_ARTIST_EVENT_RE.search(blob):
+    if NON_ARTIST_EVENT_RE.search(blob) and len(ticket_headliner_candidates(candidate)) <= 1:
         return "non_artist_show"
     if LINEUP_EVENT_RE.search(blob):
         return "lineup_or_show"
@@ -169,6 +239,71 @@ def _lookup_wikidata(artist: str) -> dict:
     return {}
 
 
+def _musicbrainz_json(url: str) -> dict:
+    req = request.Request(
+        url,
+        headers={
+            "User-Agent": "NewsManchester/1.0 (personal city intelligence; ticket notability)",
+            "Accept": "application/json",
+        },
+    )
+    with request.urlopen(req, timeout=4) as response:  # noqa: S310 - public MusicBrainz API.
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _lookup_musicbrainz(artist: str) -> dict:
+    query = parse.urlencode({"query": f'artist:"{artist}"', "fmt": "json", "limit": "3"})
+    payload = _musicbrainz_json(f"https://musicbrainz.org/ws/2/artist/?{query}")
+    best: dict = {}
+    best_score = 0
+    for item in payload.get("artists") or []:
+        name = str(item.get("name") or "")
+        score = int(item.get("score") or 0)
+        if not name or score < best_score:
+            continue
+        exactish = _cache_key(name) == _cache_key(artist)
+        if not exactish and score < 92:
+            continue
+        best = {
+            "musicbrainz_id": str(item.get("id") or ""),
+            "musicbrainz_name": name,
+            "musicbrainz_score": score,
+            "musicbrainz_type": str(item.get("type") or ""),
+        }
+        best_score = score
+    return best
+
+
+def _ticketmaster_signal(candidate: dict, artist: str) -> dict:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    attractions = event.get("attractions") or event.get("attraction") or candidate.get("attractions") or candidate.get("attraction")
+    attraction_blob = ""
+    if isinstance(attractions, list):
+        attraction_blob = " ".join(str(item) for item in attractions)
+    elif isinstance(attractions, (str, dict)):
+        attraction_blob = str(attractions)
+    has_attraction_data = bool(attractions)
+    blob = " ".join(
+        str(value or "")
+        for value in (
+            event.get("attraction_id"),
+            event.get("attractionId"),
+            event.get("attraction_url"),
+            event.get("ticketmaster_attraction_id"),
+            candidate.get("ticketmaster_attraction_id"),
+            candidate.get("ticketmaster_attraction"),
+            attraction_blob,
+            candidate.get("summary"),
+        )
+    )
+    if artist and (
+        has_attraction_data
+        or re.search(r"\battraction(?:_?id)?\b\s*[=:]|/attraction/|ticketmaster_attraction", blob, re.IGNORECASE)
+    ):
+        return {"ticketmaster_attraction": True}
+    return {"ticketmaster_attraction": False}
+
+
 def _tier_from_sitelinks(sitelinks: int) -> tuple[str, float]:
     if sitelinks >= 45:
         return "A", 0.95
@@ -181,27 +316,43 @@ def _tier_from_sitelinks(sitelinks: int) -> tuple[str, float]:
     return "unknown", 0.0
 
 
-def enrich_ticket_notability(candidate: dict, cache_path: Path | None = None) -> TicketNotability:
-    artist = ticket_artist_name(candidate)
-    kind = ticket_event_kind(candidate)
-    if not artist:
-        return TicketNotability("", kind, "unknown", 0.0, "no_artist")
+def _tier_from_signals(signals: dict) -> tuple[str, float, str]:
+    tier, confidence = _tier_from_sitelinks(int(signals.get("sitelinks") or 0))
+    source = "wikidata_sitelinks" if tier != "unknown" else ""
+    mb_score = int(signals.get("musicbrainz_score") or 0)
+    tm = bool(signals.get("ticketmaster_attraction"))
+    if tier == "unknown":
+        if mb_score >= 95 and tm:
+            return "C", 0.68, "musicbrainz_ticketmaster"
+        if mb_score >= 95:
+            return "D", 0.5, "musicbrainz_artist"
+        if tm:
+            return "D", 0.45, "ticketmaster_attraction"
+    elif mb_score >= 90 or tm:
+        source = f"{source}+multi_source"
+        confidence = min(0.99, confidence + 0.04)
+    return tier, confidence, source or "not_found"
 
-    if str(candidate.get("primary_block") or "") == "russian_events" or str(candidate.get("category") or "") in {
-        "russian_speaking_events",
-        "diaspora_events",
-    }:
-        return TicketNotability(artist, kind, "protected", 1.0, "diaspora_protected")
 
-    if kind == "non_artist_show":
-        return TicketNotability(artist, kind, "D", 0.7, "non_artist_show")
+def _rank_tuple(notability: TicketNotability) -> tuple[int, float, int]:
+    tier_rank = {"A": 5, "B": 4, "C": 3, "D": 2, "protected": 6, "unknown": 0}
+    return (
+        tier_rank.get(notability.tier, tier_rank.get(notability.tier.upper(), 0)),
+        notability.confidence,
+        notability.sitelinks,
+    )
 
-    cache_path = cache_path or Path("data/state/ticket_notability_cache.json")
-    cache = _load_cache(cache_path)
-    artists = cache.setdefault("artists", {})
+
+def _artist_notability(
+    artist: str,
+    kind: str,
+    candidate: dict,
+    artists_cache: dict,
+    now: datetime,
+) -> TicketNotability:
     key = _cache_key(artist)
-    cached = artists.get(key)
-    now = now_london()
+    cached = artists_cache.get(key)
+    tm_signal = _ticketmaster_signal(candidate, artist)
     if isinstance(cached, dict):
         checked_at = str(cached.get("checked_at") or "")
         try:
@@ -209,46 +360,101 @@ def enrich_ticket_notability(candidate: dict, cache_path: Path | None = None) ->
         except ValueError:
             checked = None
         if checked and now - checked <= timedelta(days=30):
+            signals = dict(cached.get("signals") or {})
+            signals.setdefault("sitelinks", int(cached.get("sitelinks") or 0))
+            signals.setdefault("wikidata_id", str(cached.get("wikidata_id") or ""))
+            signals.update(tm_signal)
+            tier, confidence, signal = _tier_from_signals(signals)
             return TicketNotability(
                 artist=artist,
                 kind=kind,
-                tier=str(cached.get("tier") or "unknown"),
-                confidence=float(cached.get("confidence") or 0.0),
-                signal=str(cached.get("signal") or "cache"),
+                tier=tier,
+                confidence=confidence,
+                signal=signal,
                 wikidata_id=str(cached.get("wikidata_id") or ""),
-                sitelinks=int(cached.get("sitelinks") or 0),
+                sitelinks=int(signals.get("sitelinks") or 0),
+                signals=signals,
             )
 
     if os.environ.get("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "").strip() != "1":
-        return TicketNotability(artist, kind, "unknown", 0.0, "lookup_disabled")
+        return TicketNotability(artist, kind, "unknown", 0.0, "lookup_disabled", signals=tm_signal)
 
     try:
         wd = _lookup_wikidata(artist)
     except Exception as exc:  # pragma: no cover - network failure is fail-open.
         wd = {"error": type(exc).__name__}
+    try:
+        mb = _lookup_musicbrainz(artist)
+    except Exception as exc:  # pragma: no cover - network failure is fail-open.
+        mb = {"musicbrainz_error": type(exc).__name__}
 
-    sitelinks = int(wd.get("sitelinks") or 0)
-    tier, confidence = _tier_from_sitelinks(sitelinks)
-    signal = "wikidata_sitelinks" if wd and "error" not in wd else str(wd.get("error") or "not_found")
+    signals = {
+        "sitelinks": int(wd.get("sitelinks") or 0),
+        "wikidata_id": str(wd.get("wikidata_id") or ""),
+        "musicbrainz_id": str(mb.get("musicbrainz_id") or ""),
+        "musicbrainz_score": int(mb.get("musicbrainz_score") or 0),
+        "musicbrainz_type": str(mb.get("musicbrainz_type") or ""),
+        **tm_signal,
+    }
+    tier, confidence, signal = _tier_from_signals(signals)
     record = {
         "artist": artist,
         "kind": kind,
         "tier": tier,
         "confidence": confidence,
         "signal": signal,
-        "wikidata_id": str(wd.get("wikidata_id") or ""),
-        "sitelinks": sitelinks,
+        "wikidata_id": signals["wikidata_id"],
+        "sitelinks": signals["sitelinks"],
         "description": str(wd.get("description") or ""),
+        "signals": signals,
         "checked_at": now.isoformat(),
     }
-    artists[key] = record
-    write_json(cache_path, cache)
+    artists_cache[key] = record
     return TicketNotability(
         artist=artist,
         kind=kind,
         tier=tier,
         confidence=confidence,
         signal=signal,
-        wikidata_id=record["wikidata_id"],
-        sitelinks=sitelinks,
+        wikidata_id=signals["wikidata_id"],
+        sitelinks=signals["sitelinks"],
+        signals=signals,
+    )
+
+
+def enrich_ticket_notability(candidate: dict, cache_path: Path | None = None) -> TicketNotability:
+    kind = ticket_event_kind(candidate)
+    headliners = ticket_headliner_candidates(candidate)
+    artist = headliners[0] if headliners else ticket_artist_name(candidate)
+    if not artist:
+        return TicketNotability("", kind, "unknown", 0.0, "no_artist")
+
+    if str(candidate.get("primary_block") or "") == "russian_events" or str(candidate.get("category") or "") in {
+        "russian_speaking_events",
+        "diaspora_events",
+    }:
+        return TicketNotability(artist, kind, "protected", 1.0, "diaspora_protected", headliners=tuple(headliners))
+
+    if kind == "non_artist_show" and len(headliners) <= 1:
+        return TicketNotability(artist, kind, "D", 0.7, "non_artist_show", headliners=tuple(headliners))
+
+    cache_path = cache_path or Path("data/state/ticket_notability_cache.json")
+    cache = _load_cache(cache_path)
+    artists = cache.setdefault("artists", {})
+    now = now_london()
+    candidate_names = headliners or [artist]
+    ranked = [_artist_notability(name, kind, candidate, artists, now) for name in candidate_names]
+    best = max(ranked, key=_rank_tuple)
+    if os.environ.get("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "").strip() == "1":
+        write_json(cache_path, cache)
+    return TicketNotability(
+        artist=best.artist,
+        kind=kind if kind != "non_artist_show" or len(headliners) <= 1 else "lineup_or_show",
+        tier=best.tier,
+        confidence=best.confidence,
+        signal=best.signal,
+        wikidata_id=best.wikidata_id,
+        sitelinks=best.sitelinks,
+        headliners=tuple(candidate_names),
+        signals=best.signals,
     )

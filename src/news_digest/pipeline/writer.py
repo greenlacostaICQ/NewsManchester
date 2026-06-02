@@ -827,6 +827,8 @@ def _ticket_watch_decision(candidate: dict) -> dict[str, object]:
         "kind": kind,
         "signal": notability.get("signal") or "",
         "artist": notability.get("artist") or ticket_artist_name(candidate),
+        "headliners": notability.get("headliners") or [],
+        "signals": notability.get("signals") or {},
         "ticket_type": ticket_type,
         "source_label": candidate.get("source_label") or "",
         "primary_block": candidate.get("primary_block") or "",
@@ -864,7 +866,8 @@ def _ticket_watch_reason(candidate: dict) -> str:
 
 
 def _build_ticket_fallback_line(candidate: dict) -> str:
-    title = ticket_artist_name(candidate) or _ticket_headliner(str(candidate.get("title") or ""))
+    notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+    title = str(notability.get("artist") or "").strip() or ticket_artist_name(candidate) or _ticket_headliner(str(candidate.get("title") or ""))
     venue = _ticket_venue(candidate)
     genre = _ticket_genre(candidate)
     # Build the card from the CLEAN structured fields (event name + venue +
@@ -2130,6 +2133,8 @@ def write_digest(project_root: Path) -> StageResult:
             "signal": notability.signal,
             "wikidata_id": notability.wikidata_id,
             "sitelinks": notability.sitelinks,
+            "headliners": list(notability.headliners),
+            "signals": notability.signals or {},
         }
         _append_recovery_step(candidate, "ticket_notability", "scored")
         decision = _ticket_watch_decision(candidate)
@@ -2144,6 +2149,8 @@ def write_digest(project_root: Path) -> StageResult:
                 "tier": notability.tier,
                 "confidence": notability.confidence,
                 "signal": notability.signal,
+                "headliners": list(notability.headliners),
+                "signals": notability.signals or {},
                 "score": decision["score"],
                 "decision": decision["decision"],
                 "threshold": decision["threshold"],
