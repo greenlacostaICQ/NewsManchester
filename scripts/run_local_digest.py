@@ -582,6 +582,7 @@ def _support_top_issues(
     suspicious_published: list,
     borderline_queue: dict,
     event_miss_review: dict | None = None,
+    source_anomalies: list | None = None,
 ) -> list[tuple[str, str]]:
     issues: list[tuple[int, str, str]] = []
     event_miss_counts = ((event_miss_review or {}).get("counts") or {})
@@ -623,6 +624,15 @@ def _support_top_issues(
             80,
             f"Есть устаревшие служебные карточки: {synthetic_freshness.get('stale_count')}.",
             "Не доверять погоде или транспортной заглушке без проверки времени обновления.",
+        ))
+    anomalies = source_anomalies or []
+    if anomalies:
+        names = ", ".join(str(a.get("name") or "") for a in anomalies[:3])
+        more = f" и ещё {len(anomalies) - 3}" if len(anomalies) > 3 else ""
+        issues.append((
+            78,
+            f"Источники резко просели против своей нормы: {names}{more}.",
+            "Источник раньше стабильно давал материалы, а сегодня почти ничего — обычно это сломавшийся парсер или смена вёрстки сайта.",
         ))
     if prompt_drift:
         issues.append((
@@ -938,6 +948,7 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
         suspicious_rejects=(report.get("reject_review") or {}).get("suspiciously_rejected") or [],
         suspicious_published=(report.get("published_review") or {}).get("suspiciously_published") or [],
         borderline_queue=borderline_queue,
+        source_anomalies=report.get("source_anomalies") or [],
         event_miss_review=report.get("event_miss_review") or {},
     )
     if issues:

@@ -2967,6 +2967,30 @@ def build_release(project_root: Path) -> ReleaseResult:
         rendered_fingerprints=rendered_fingerprints,
         writer_report=writer_report,
     )
+    # Phase 2 #2: append today's source health to the rolling jsonl log so the
+    # anomaly check can compare against the trailing window. Never blocks.
+    source_anomalies: list[dict] = []
+    try:
+        from news_digest.pipeline import source_health_history as _shh
+        from news_digest.pipeline import source_anomaly as _sa
+
+        _shh.append_row(
+            state_dir,
+            _shh.build_row(
+                run_date_london=current_day_london,
+                pipeline_run_id=pipeline_run_id,
+                run_at_london=now_london().isoformat(),
+                source_status=source_status,
+            ),
+        )
+        source_anomalies = _sa.detect_source_anomalies(_shh.load_history(state_dir))
+        if source_anomalies:
+            warnings.append(
+                f"Source anomaly: {len(source_anomalies)} source(s) dropped sharply vs their "
+                "7-day median — see release_report.source_anomalies."
+            )
+    except Exception as exc:  # noqa: BLE001 - logging must never block the release
+        logger.warning("source health history/anomaly step failed: %s", exc)
     if source_status["counts"].get("failed", 0) >= 3:
         warnings.append(
             f"Source health: {source_status['counts']['failed']} source(s) failed today — "
@@ -3182,6 +3206,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "news_lead_quality": news_lead_quality,
         "digest_health": digest_health,
         "source_status": source_status,
+        "source_anomalies": source_anomalies,
         "transport_coverage": transport_coverage,
         "diaspora_diagnostics": diaspora_diagnostics,
         "reject_review": reject_review,

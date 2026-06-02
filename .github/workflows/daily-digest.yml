@@ -204,6 +204,9 @@ jobs:
           # S6: post-publish judge eval history. Persistent across days
           # so drift detection has a 30-day baseline to compare against.
           git add -f data/state/digest_evals.jsonl || true
+          # Phase 2 #2/#4: per-run source health log. Persistent across days
+          # so the anomaly check has a trailing window to compare against.
+          git add -f data/state/source_health_history.jsonl || true
           git add -f data/outgoing/current_digest.html || true
           if git diff --staged --quiet; then
             echo "No state changes to commit."
