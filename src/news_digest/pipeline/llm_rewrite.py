@@ -21,7 +21,9 @@ import json
 import logging
 import os
 import re
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -294,6 +296,20 @@ _CATEGORY_TO_PROMPT: dict[str, str] = {
 
 BATCH_SIZE = 20      # default — used for OpenAI/DeepSeek
 GROQ_BATCH_SIZE = 3  # Groq free tier TPM is tight once long prompts are included.
+
+# Speed: batches and prompt-groups run concurrently (canonical "fan out the
+# API calls" pattern) instead of one-after-another, so the rewrite stage's
+# wall-clock is the SLOWEST single batch, not the sum of all of them. This
+# does NOT change per-batch behaviour — timeout, max_retries, batch_size and
+# the DeepSeek last-resort step are all untouched. A single global semaphore
+# caps how many requests hit the API at once across every group/batch/thread,
+# so we get the speed-up without tripping OpenAI rate limits (429). 8 is safe
+# for Tier 1/2; override with LLM_REWRITE_MAX_CONCURRENCY if the tier allows.
+try:
+    _REWRITE_API_CONCURRENCY = max(1, int(os.environ.get("LLM_REWRITE_MAX_CONCURRENCY", "8") or "8"))
+except ValueError:
+    _REWRITE_API_CONCURRENCY = 8
+_API_SEMAPHORE = threading.Semaphore(_REWRITE_API_CONCURRENCY)
 
 FIX_TRANSLATE_SYSTEM = """Переведи строку новостного дайджеста на русский язык.
 Названия людей, мест, брендов, компаний, IT-терминов оставляй по-английски.
@@ -861,12 +877,15 @@ def _call_provider_batch(
                 {"role": "user", "content": user_content},
             ]
             max_tokens = 8192
-            response = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=0.3,
-                max_tokens=max_tokens,
-            )
+            # Global limiter: caps concurrent API calls across all parallel
+            # groups/batches so the fan-out never exceeds the rate limit.
+            with _API_SEMAPHORE:
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=0.3,
+                    max_tokens=max_tokens,
+                )
             from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
             record_call_from_response(
                 response=response,
@@ -928,14 +947,18 @@ def _call_provider_batch(
                 )
             return {}
 
-    for batch_idx, batch in enumerate(batches, start=1):
-        batch_mapping = _send_once(batch, batch_idx, "initial")
-        mapping.update(batch_mapping)
-        missing = [c for c in batch if str(c.get("fingerprint") or "") not in batch_mapping]
+    def _process_batch(batch_idx: int, batch: list[dict]) -> ProviderMapping:
+        """Full recovery ladder for ONE batch (unchanged behaviour):
+        initial → retry_same_batch → split → protected per-item recovery.
+        Runs in its own thread; the global semaphore bounds API concurrency.
+        """
+        batch_result: ProviderMapping = {}
+        batch_result.update(_send_once(batch, batch_idx, "initial"))
+        missing = [c for c in batch if str(c.get("fingerprint") or "") not in batch_result]
         if missing:
             time.sleep(0.5)
             retry_mapping = _send_once(missing, batch_idx, "retry_same_batch")
-            mapping.update(retry_mapping)
+            batch_result.update(retry_mapping)
             missing = [c for c in missing if str(c.get("fingerprint") or "") not in retry_mapping]
         if missing and len(missing) > 1:
             split_size = max(1, min(3, len(missing) // 2 or 1))
@@ -943,15 +966,30 @@ def _call_provider_batch(
                 split = missing[split_idx: split_idx + split_size]
                 time.sleep(0.5)
                 split_mapping = _send_once(split, batch_idx, f"split_{split_idx // split_size + 1}")
-                mapping.update(split_mapping)
-            missing = [c for c in missing if str(c.get("fingerprint") or "") not in mapping]
+                batch_result.update(split_mapping)
+            missing = [c for c in missing if str(c.get("fingerprint") or "") not in batch_result]
         protected_missing = [c for c in missing if _is_protected_rewrite_candidate(c)]
         for item in protected_missing:
             time.sleep(0.5)
             item_mapping = _send_once([item], batch_idx, "protected_item_recovery")
-            mapping.update(item_mapping)
-        if batch_idx < len(batches):
-            time.sleep(1)  # small pause between batches
+            batch_result.update(item_mapping)
+        return batch_result
+
+    # Fan the batches out concurrently instead of one-after-another. The
+    # global _API_SEMAPHORE caps how many actually hit the API at once, so
+    # wall-clock ≈ slowest batch rather than the sum of all batches.
+    if len(batches) <= 1:
+        for batch_idx, batch in enumerate(batches, start=1):
+            mapping.update(_process_batch(batch_idx, batch))
+    else:
+        max_workers = min(len(batches), _REWRITE_API_CONCURRENCY)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [
+                executor.submit(_process_batch, batch_idx, batch)
+                for batch_idx, batch in enumerate(batches, start=1)
+            ]
+            for future in futures:
+                mapping.update(future.result())
 
     logger.info("%s: total %d valid draft_lines.", provider_name, len(mapping))
     return mapping
@@ -1287,17 +1325,32 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
 
         from news_digest.pipeline.prompts_meta import prompt_name_for  # noqa: PLC0415
         mapping: ProviderMapping = {}
-        for prompt, group in groups.items():
+
+        def _rewrite_group(prompt: str, group: list[dict]) -> ProviderMapping:
             logger.info("LLM rewrite: calling group of %d candidates.", len(group))
             today_for_group = _today if prompt in _DATE_AWARE_PROMPTS else ""
             route_for_group = "events_rewrite" if prompt in _EVENTS_PROMPTS else "rewrite"
-            mapping.update(_call_with_fallback(
+            return _call_with_fallback(
                 group, prompt, provider_override, base_url_override, model_override,
                 prompt_name=prompt_name_for(prompt),
                 route_name=route_for_group,
                 today_date=today_for_group,
                 diagnostics=provider_batch_diagnostics,
-            ))
+            )
+
+        # Run the independent prompt-groups (city / events / business /
+        # football) concurrently. The global _API_SEMAPHORE still bounds total
+        # API concurrency across all groups, so this only removes the dead
+        # wait between groups — it does not increase the request rate.
+        group_items = list(groups.items())
+        if len(group_items) <= 1:
+            for prompt, group in group_items:
+                mapping.update(_rewrite_group(prompt, group))
+        else:
+            with ThreadPoolExecutor(max_workers=len(group_items)) as executor:
+                futures = [executor.submit(_rewrite_group, prompt, group) for prompt, group in group_items]
+                for future in futures:
+                    mapping.update(future.result())
 
         run_iso = now_london().isoformat()
         for candidate in candidates:
