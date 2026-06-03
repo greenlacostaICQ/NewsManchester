@@ -360,7 +360,7 @@ def _lookup_spotify(artist: str) -> dict:
 
 
 def _lookup_lastfm(artist: str) -> dict:
-    api_key = os.environ.get("LASTFM_API_KEY", "").strip()
+    api_key = os.environ.get("LASTFM_API", "").strip() or os.environ.get("LASTFM_API_KEY", "").strip()
     if not api_key:
         return {}
     query = parse.urlencode(
