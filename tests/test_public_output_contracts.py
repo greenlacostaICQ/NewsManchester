@@ -28,6 +28,7 @@ from news_digest.pipeline.writer import (
     _football_is_sport_news,
     _football_should_route_to_soft,
     _append_recovery_step,
+    _apply_section_min_floor_pull_back,
     _repair_editorial_contract_line,
     _ticket_watch_decision,
 )
@@ -130,6 +131,38 @@ class PublicOutputContractTests(unittest.TestCase):
         line = _build_event_fallback_line(candidate)
         self.assertIn("6 июля", line)
         self.assertNotIn("2 июля", line)
+
+    def test_section_topup_repairs_backup_line_before_rendering(self) -> None:
+        candidate = {
+            "include": True,
+            "fingerprint": "backup-incident",
+            "category": "gmp",
+            "primary_block": "last_24h",
+            "title": "Police investigate triple stabbing in Manchester",
+            "summary": "Police said three men were injured in a knife attack.",
+            "source_label": "MEN",
+            "source_url": "https://example.test/incident",
+            "draft_line": (
+                "• Manchester: полиция расследует тройное ножевое ранение; трое мужчин пострадали "
+                "и были доставлены в больницу. Если вы были рядом с местом происшествия, проверьте обращение полиции."
+            ),
+        }
+        warnings: list[str] = []
+        lines, *_ = _apply_section_min_floor_pull_back(
+            "Свежие новости",
+            [],
+            [],
+            [],
+            [],
+            [],
+            [candidate],
+            set(),
+            1,
+            warnings,
+        )
+        self.assertEqual(len(lines), 1)
+        self.assertIn("нападение с ножом, в котором пострадали трое", lines[0])
+        self.assertIn("top-up repaired", " ".join(warnings))
 
     def test_unknown_artist_does_not_pass_only_for_major_venue(self) -> None:
         candidate = {

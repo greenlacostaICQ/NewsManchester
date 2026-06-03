@@ -1627,6 +1627,21 @@ def _apply_section_min_floor_pull_back(
             continue
         if not line.startswith("• "):
             line = f"• {line}"
+        line, repair_reasons = _repair_editorial_contract_line(c, line)
+        errors = _draft_line_quality_errors(c, line)
+        if errors:
+            warnings.append(
+                f"Section «{section_name}» top-up skipped candidate "
+                f"{c.get('fingerprint') or c.get('title') or '?'}: "
+                f"draft_line quality issues ({'; '.join(errors)})."
+            )
+            continue
+        if repair_reasons:
+            warnings.append(
+                f"Section «{section_name}» top-up repaired candidate "
+                f"{c.get('fingerprint') or c.get('title') or '?'} "
+                f"({', '.join(repair_reasons)})."
+            )
         line = preserve_place_names(line)
         source_url = str(c.get("source_url") or "")
         source_label = str(c.get("source_label") or "")
