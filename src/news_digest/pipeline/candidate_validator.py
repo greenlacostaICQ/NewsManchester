@@ -832,6 +832,42 @@ def _exclude_wrong_food_opening_category(candidate: dict) -> bool:
 # while killing recycled press releases (GMMH 15 May appointment).
 _HARD_STALE_AGE_DAYS = 14
 
+# The age cutoff is about NEWS, which decays with publication age. Tickets,
+# weekend/upcoming events and Russian-speaking gigs live by their EVENT date,
+# not when the listing was published — an announcement weeks ahead is the whole
+# point. These are never aged out (belt-and-suspenders on top of the category
+# gate, plus a future-event-date check for anything event-like that slipped
+# into a news category).
+_AGE_EXEMPT_CATEGORIES = {
+    "venues_tickets", "culture_weekly", "russian_speaking_events", "diaspora_events",
+}
+_AGE_EXEMPT_BLOCKS = {
+    "ticket_radar", "outside_gm_tickets", "weekend_activities", "next_7_days",
+    "future_announcements", "russian_events",
+}
+
+
+def _is_forward_looking_event(candidate: dict) -> bool:
+    """True for tickets/events/Russian gigs (by category or block), or an item
+    carrying a STRUCTURED future event date.
+
+    Deliberately does NOT trust free-text dates parsed from the body — those
+    pick up year-rollover artifacts ("15 May" → 2027) and incidental future
+    mentions in old news, which would let stale press releases escape #5.
+    """
+    if str(candidate.get("category") or "") in _AGE_EXEMPT_CATEGORIES:
+        return True
+    if str(candidate.get("primary_block") or "") in _AGE_EXEMPT_BLOCKS:
+        return True
+    ev = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    raw = str(ev.get("date_start") or ev.get("date") or "").strip()
+    if raw:
+        try:
+            return datetime.fromisoformat(raw.replace("Z", "+00:00")).date() >= now_london().date()
+        except ValueError:
+            return False
+    return False
+
 
 def _exclude_stale_news_without_new_phase(candidate: dict) -> bool:
     """Drop old city/news items unless the text carries a clear new phase."""
@@ -840,6 +876,10 @@ def _exclude_stale_news_without_new_phase(candidate: dict) -> bool:
     if str(candidate.get("primary_block") or "") in {"weather", "transport"}:
         return False
     if str(candidate.get("category") or "") not in {"media_layer", "gmp", "council", "public_services", "city_news", "tech_business", "football"}:
+        return False
+    # Never age out tickets/events/Russian-speaking gigs or anything with an
+    # upcoming event date — they have their own date logic.
+    if _is_forward_looking_event(candidate):
         return False
     pub_day = _published_day(candidate)
     if pub_day is None:
