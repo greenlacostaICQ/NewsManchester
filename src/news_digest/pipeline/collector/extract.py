@@ -596,6 +596,13 @@ _TRUSTED_CARD_ENRICHMENT = {
 }
 
 
+# #1 A summary can clear the 60-char "thin" bar yet still be too short to
+# enrich from (BBC Sport's "Milner has broken the appearance record" = 110
+# chars, no match count). Below this floor we fetch the article body so the
+# rewrite has real facts instead of just the RSS one-liner.
+_MIN_BODY_EVIDENCE_CHARS = 240
+
+
 def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
     # Dedicated card extractors (RNCM, Skiddle, DesignMyNight, …) already
     # produce a trustworthy clean title from the listing card. Re-enriching
@@ -608,12 +615,15 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
     if not _should_enrich_source(source):
         return item
     summary_thin = _is_thin_summary(item.summary, item.title)
+    # #1 Treat a short-but-not-"thin" summary as needing the article body too,
+    # so sources like BBC Sport stop shipping a one-line RSS teaser as evidence.
+    evidence_too_short = len(str(item.summary or "").strip()) < _MIN_BODY_EVIDENCE_CHARS
     force_fetch = (
         source.report_category in {"media_layer", "gmp", "food_openings"}
         or source.candidate_category == "council"
         or source.name == "Albert Hall Manchester"
     )
-    if item.published_at and not summary_thin and not force_fetch:
+    if item.published_at and not summary_thin and not force_fetch and not evidence_too_short:
         summary = _strip_evidence_chrome(_source_specific_summary(source, item.title, item.summary))
         return ExtractedItem(
             title=_clean_title_text(item.title),

@@ -308,6 +308,32 @@ def _extract_cost_phrase(text: str) -> str:
 # ── Main extractor ────────────────────────────────────────────────────────
 
 
+def _maybe_fetch_alert_text(url: str, existing: str) -> str:
+    """#8 Try to enrich a date/reason-less TfGM alert from its own page.
+
+    Prestwich shipped as a bare "ремонтные работы на остановке Prestwich"
+    because the listing carried no dates/reason. When we have almost nothing
+    AND a real alert URL, fetch the page so date/reason parsing has material.
+    Best-effort: any failure or empty result leaves the existing text as-is
+    (so the bare line still publishes — "обогатить, если нет — то так").
+    """
+    if len(existing.strip()) >= 120:
+        return existing
+    if not url.lower().startswith("http"):
+        return existing
+    try:
+        from news_digest.pipeline.collector.fetch import _fetch_text  # noqa: PLC0415
+        from news_digest.pipeline.collector.extract import _html_to_visible_text  # noqa: PLC0415
+
+        html = _fetch_text(url)
+        text = _html_to_visible_text(html) if html else ""
+    except Exception:  # noqa: BLE001 - enrichment must never break the stage
+        return existing
+    if not text:
+        return existing
+    return f"{existing} {text}".strip()
+
+
 def extract_transport_card(candidate: dict) -> TransportCard | None:
     """Build a TransportCard from a candidate dict.
 
@@ -319,6 +345,7 @@ def extract_transport_card(candidate: dict) -> TransportCard | None:
     summary = str(candidate.get("summary") or "")
     evidence = str(candidate.get("evidence_text") or candidate.get("lead") or "")
     url = str(candidate.get("source_url") or "")
+    evidence = _maybe_fetch_alert_text(url, evidence)
     blob = f"{title} {summary} {evidence}"
 
     mode, operator = _detect_mode_operator(title, summary, url)
