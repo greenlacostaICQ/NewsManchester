@@ -888,6 +888,26 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
     time_part = ""
     if event_dt and event_dt.strftime("%H:%M") != "12:00":
         time_part = f" в {event_dt.strftime('%H:%M')}"
+    # #7 Same artist+venue on several nights was merged in dedupe — render the
+    # whole run on one line ("10 и 11 июня") instead of repeating the card.
+    merged_dates = candidate.get("merged_event_dates")
+    if isinstance(merged_dates, list) and len(merged_dates) >= 2:
+        parts: list[str] = []
+        for iso in merged_dates:
+            try:
+                formatted = _format_ru_day_month(datetime.fromisoformat(str(iso)))
+            except ValueError:
+                formatted = ""
+            if formatted and formatted not in parts:
+                parts.append(formatted)
+        if len(parts) >= 2:
+            months = {p.split()[-1] for p in parts}
+            if len(months) == 1:
+                days = [p.split()[0] for p in parts]
+                day_month = f"{', '.join(days[:-1])} и {days[-1]} {next(iter(months))}"
+            else:
+                day_month = f"{', '.join(parts[:-1])} и {parts[-1]}"
+            time_part = ""  # multiple nights — a single start time would mislead
     genre_part = f" ({genre})" if genre else ""
     reason_part = f" {reason[:1].upper()}{reason[1:]}." if reason else ""
     if day_month and venue:

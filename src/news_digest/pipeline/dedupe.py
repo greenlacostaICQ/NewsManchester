@@ -335,6 +335,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
     story_cluster_summary = attach_story_clusters(candidates)
     attach_story_intelligence(candidates)
     intra_batch_drops = _apply_intra_batch_dedup(candidates)
+    intra_batch_drops.extend(_merge_multinight_ticket_runs(candidates))  # #7
 
     # I1: embeddings-based semantic dedup pass. Runs AFTER the
     # deterministic Jaccard/entity pass so it only sees survivors,
@@ -1294,6 +1295,62 @@ def _development_site_signature(candidate: dict) -> tuple[frozenset, bool]:
     low = blob.lower()
     has_dev = any(marker in low for marker in _DEV_MARKERS)
     return addresses, has_dev
+
+
+def _merge_multinight_ticket_runs(candidates: list[dict]) -> list[dict]:
+    """#7 Collapse the same artist at the same venue across multiple nights
+    into ONE ticket line. The occurrence dedup deliberately keeps different
+    nights distinct (correct for the events sections), but in the ticket radar
+    the reader wants "Lola Young — 10 и 11 июня", not two near-identical
+    bullets. Keep the earliest occurrence, stamp the full date list on it for
+    the renderer, drop the rest.
+    """
+    from news_digest.pipeline.ticket_notability import ticket_artist_name  # noqa: PLC0415
+
+    groups: dict[tuple, list[tuple[str, dict]]] = {}
+    for c in candidates:
+        if not isinstance(c, dict) or not c.get("include"):
+            continue
+        if str(c.get("primary_block") or "") not in {"ticket_radar", "outside_gm_tickets"}:
+            continue
+        ev = c.get("event") if isinstance(c.get("event"), dict) else {}
+        # Use the CLEAN artist name (ticket_artist_name), not the noisy event
+        # title — the raw event_name is "Lola Young — event 2026-06-10 — public
+        # sale …", which differs night to night and would never group.
+        name = ticket_artist_name(c) or _ticket_event_identity(c)[0]
+        date = str(ev.get("date_start") or ev.get("event_date") or _ticket_event_identity(c)[1] or "")[:10]
+        venue = normalize_title(str(ev.get("venue") or ""))
+        toks = frozenset(_ticket_name_tokens(normalize_title(name)))
+        if not toks or not venue or not date:
+            continue
+        groups.setdefault((toks, venue), []).append((date, c))
+
+    drops: list[dict] = []
+    for items in groups.values():
+        dates = sorted({d for d, _ in items})
+        if len(items) < 2 or len(dates) < 2:
+            continue
+        items.sort(key=lambda t: t[0])
+        survivor = items[0][1]
+        survivor["merged_event_dates"] = dates
+        for _date, c in items[1:]:
+            if c is survivor:
+                continue
+            c["include"] = False
+            c["dedupe_decision"] = "drop"
+            c["reason"] = "Multi-night run merged into one ticket line (#7)."
+            drops.append(
+                {
+                    "fingerprint": c.get("fingerprint"),
+                    "title": c.get("title"),
+                    "source_label": c.get("source_label"),
+                    "primary_block": c.get("primary_block"),
+                    "kept_fingerprint": survivor.get("fingerprint"),
+                    "kept_title": survivor.get("title"),
+                    "reason": c["reason"],
+                }
+            )
+    return drops
 
 
 def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
