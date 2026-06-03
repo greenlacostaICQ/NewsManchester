@@ -1755,8 +1755,44 @@ def _extract_ticketmaster_items(source: SourceDef, body: str) -> list[ExtractedI
             major_venue = True
         classifications = event.get("classifications") or []
         genre = ""
+        subgenre = ""
+        classification_payload: dict[str, str] = {}
         if classifications:
-            genre = str((classifications[0].get("genre") or {}).get("name") or "").strip()
+            first_classification = classifications[0]
+            genre = str((first_classification.get("genre") or {}).get("name") or "").strip()
+            subgenre = str((first_classification.get("subGenre") or {}).get("name") or "").strip()
+            classification_payload = {
+                "segment": str((first_classification.get("segment") or {}).get("name") or "").strip(),
+                "genre": genre,
+                "subGenre": subgenre,
+                "type": str((first_classification.get("type") or {}).get("name") or "").strip(),
+                "subType": str((first_classification.get("subType") or {}).get("name") or "").strip(),
+            }
+        attractions_payload: list[dict[str, str]] = []
+        for attraction in ((event.get("_embedded") or {}).get("attractions") or []):
+            if not isinstance(attraction, dict):
+                continue
+            attraction_name = str(attraction.get("name") or "").strip()
+            attraction_id = str(attraction.get("id") or "").strip()
+            attraction_url = str(attraction.get("url") or "").strip()
+            attraction_classifications = attraction.get("classifications") or []
+            attraction_genre = ""
+            attraction_subgenre = ""
+            if attraction_classifications and isinstance(attraction_classifications[0], dict):
+                first_attraction_class = attraction_classifications[0]
+                attraction_genre = str((first_attraction_class.get("genre") or {}).get("name") or "").strip()
+                attraction_subgenre = str((first_attraction_class.get("subGenre") or {}).get("name") or "").strip()
+            if attraction_name:
+                attractions_payload.append(
+                    {
+                        "name": attraction_name,
+                        "id": attraction_id,
+                        "url": attraction_url,
+                        "genre": attraction_genre,
+                        "subGenre": attraction_subgenre,
+                    }
+                )
+        promoter = event.get("promoter") if isinstance(event.get("promoter"), dict) else {}
         title_parts = [title]
         if event_start:
             title_parts.append(f"event {event_start[:10]}")
@@ -1794,6 +1830,21 @@ def _extract_ticketmaster_items(source: SourceDef, body: str) -> list[ExtractedI
                     url=url,
                     published_at=onsale_start if onsale_scan and onsale_start else event_start,
                     summary=summary,
+                    structured_event_hint={
+                        "schema_source": "ticketmaster_api",
+                        "event_name": title,
+                        "venue": venue,
+                        "date_start": _format_ticketmaster_date(event_start_raw)[:10] if event_start_raw else "",
+                        "date_text": _format_ticketmaster_date(event_start_raw) if event_start_raw else "",
+                        "booking_url": url,
+                        "genre": genre,
+                        "subGenre": subgenre,
+                        "classifications": classification_payload,
+                        "attractions": attractions_payload,
+                        "ticketmaster_attraction_id": attractions_payload[0]["id"] if attractions_payload else "",
+                        "promoter": str(promoter.get("name") or "").strip(),
+                        "ticket_type": ticket_type,
+                    },
                 )
             )
     return items

@@ -65,17 +65,36 @@ def _clean_artist_name(title: str) -> str:
         cleaned,
         flags=re.IGNORECASE,
     )
+    # Promoter / presenter prefix: "On the Waterfront presents Snow Patrol",
+    # "Sounds of the City Present The K's" → keep the act after "present(s)".
+    presenter = re.search(r"\bpresents?\b\s+(.+)$", cleaned, flags=re.IGNORECASE)
+    if presenter and len(presenter.group(1).strip()) >= 3:
+        cleaned = presenter.group(1).strip()
+    # Support / guest act: "Kings Of Leon Special Guest Snuts Sat 4 Jul 2026
+    # Multiple times" → drop from the support act on (it also drags the date
+    # noise with it, which is why the Wikidata/Spotify lookup returned
+    # not_found for real headliners on 2026-06-03).
+    cleaned = re.split(r"\s+(?:with\s+|plus\s+|\+\s*)?special\s+guests?\b", cleaned, maxsplit=1, flags=re.IGNORECASE)[0]
+    cleaned = re.split(r"\s+(?:\+|plus|with)\s+support\b", cleaned, maxsplit=1, flags=re.IGNORECASE)[0]
+    # Date / time noise anywhere in the string: "Sat 4 Jul 2026", "4 Jul 2026",
+    # "Multiple times" (Co-op Live / Ticketmaster titles carry these inline).
+    cleaned = re.sub(
+        r"\b(?:mon|tue|wed|thu|fri|sat|sun)\w*\s+\d{1,2}(?:st|nd|rd|th)?\s+[a-z]{3,9}\s+20\d{2}\b",
+        " ", cleaned, flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(r"\b\d{1,2}(?:st|nd|rd|th)?\s+[a-z]{3,9}\s+20\d{2}\b", " ", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\bmultiple\s+times\b", " ", cleaned, flags=re.IGNORECASE)
     # "The Weeknd: After Hours ..." is an artist plus tour name; keep artist.
     if ":" in cleaned and not re.search(r"\b(?:festival|live in concert|experience)\b", cleaned, flags=re.IGNORECASE):
         cleaned = cleaned.split(":", 1)[0]
-    # Tour suffixes are not part of artist identity.
-    cleaned = re.sub(
-        r"\s+[-–]\s+(?:the\s+)?(?:tour|world\s+tour|uk\s+tour|arena\s+tour|"
-        r"anniversary\s+tour|live\s+tour|multimedia\s+tour)\b.*$",
-        "",
-        cleaned,
-        flags=re.IGNORECASE,
-    )
+    # "ARTIST - Tour / Subtitle / Date" → keep the artist. Ticket titles append
+    # tour names ("- 50th Anniversary Tour"), subtitles and dates after a
+    # spaced dash; these are not part of the artist identity used for lookup.
+    if re.search(r"\s[-–]\s", cleaned):
+        head = re.split(r"\s[-–]\s", cleaned, maxsplit=1)[0].strip()
+        if len(head) >= 3 and not re.search(r"\b(?:festival|live in concert|experience)\b", head, flags=re.IGNORECASE):
+            cleaned = head
+    cleaned = re.sub(r"\s{2,}", " ", cleaned).strip()
     return cleaned.strip(" .,-–—")[:90]
 
 
@@ -105,19 +124,20 @@ def _split_lineup(value: str) -> list[str]:
 
 def ticket_headliner_candidates(candidate: dict) -> list[str]:
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    hint = candidate.get("structured_event_hint") if isinstance(candidate.get("structured_event_hint"), dict) else {}
     names: list[str] = []
     for key in ("headliner", "artist", "performer"):
-        text = str(event.get(key) or "").strip()
+        text = str(event.get(key) or hint.get(key) or "").strip()
         if text:
             names.extend(_split_lineup(text))
     for key in ("headliners", "artists", "lineup", "performers"):
-        values = event.get(key)
+        values = event.get(key) or hint.get(key)
         if isinstance(values, list):
             names.extend(_split_lineup(", ".join(str(value) for value in values)))
         elif isinstance(values, str):
             names.extend(_split_lineup(values))
     for key in ("attraction", "attractions"):
-        values = event.get(key) or candidate.get(key)
+        values = event.get(key) or hint.get(key) or candidate.get(key)
         if isinstance(values, list):
             for value in values:
                 if isinstance(value, dict):
@@ -374,7 +394,8 @@ def _lookup_lastfm(artist: str) -> dict:
 
 def _ticketmaster_signal(candidate: dict, artist: str) -> dict:
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    attractions = event.get("attractions") or event.get("attraction") or candidate.get("attractions") or candidate.get("attraction")
+    hint = candidate.get("structured_event_hint") if isinstance(candidate.get("structured_event_hint"), dict) else {}
+    attractions = event.get("attractions") or hint.get("attractions") or event.get("attraction") or hint.get("attraction") or candidate.get("attractions") or candidate.get("attraction")
     attraction_blob = ""
     if isinstance(attractions, list):
         attraction_blob = " ".join(str(item) for item in attractions)
@@ -388,6 +409,7 @@ def _ticketmaster_signal(candidate: dict, artist: str) -> dict:
             event.get("attractionId"),
             event.get("attraction_url"),
             event.get("ticketmaster_attraction_id"),
+            hint.get("ticketmaster_attraction_id"),
             candidate.get("ticketmaster_attraction_id"),
             candidate.get("ticketmaster_attraction"),
             attraction_blob,
@@ -433,11 +455,13 @@ def _tier_from_signals(signals: dict) -> tuple[str, float, str]:
             return "C", 0.62, "streaming_popularity"
     if tier == "unknown":
         if mb_score >= 95 and tm:
-            return "C", 0.68, "musicbrainz_ticketmaster"
+            return "B", 0.78, "musicbrainz_ticketmaster"
         if mb_score >= 95:
             return "D", 0.5, "musicbrainz_artist"
         if tm:
-            return "D", 0.45, "ticketmaster_attraction"
+            return "C", 0.62, "ticketmaster_attraction"
+    elif tier == "D" and mb_score >= 95 and tm:
+        return "B", 0.8, "musicbrainz_ticketmaster"
     elif mb_score >= 90 or tm or spotify_popularity or lastfm_listeners:
         source = f"{source}+multi_source"
         confidence = min(0.99, confidence + 0.04)

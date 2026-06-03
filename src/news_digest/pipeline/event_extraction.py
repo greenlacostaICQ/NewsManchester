@@ -468,6 +468,13 @@ def extract_event(candidate: dict, entities: dict | None = None) -> dict:
         "booking_url": booking_url,
         "schema_source": str(hint.get("schema_source") or ""),
         "event_status": str(hint.get("event_status") or ""),
+        "genre": str(hint.get("genre") or "").strip(),
+        "subGenre": str(hint.get("subGenre") or "").strip(),
+        "classifications": hint.get("classifications") if isinstance(hint.get("classifications"), dict) else {},
+        "attractions": hint.get("attractions") if isinstance(hint.get("attractions"), list) else [],
+        "ticketmaster_attraction_id": str(hint.get("ticketmaster_attraction_id") or "").strip(),
+        "promoter": str(hint.get("promoter") or "").strip(),
+        "ticket_type": str(hint.get("ticket_type") or "").strip(),
         "is_event": has_event,
     }
 

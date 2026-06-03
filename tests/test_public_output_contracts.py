@@ -223,6 +223,20 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertEqual(ticket_event_kind(candidate), "non_artist_show")
         self.assertEqual(_build_ticket_fallback_line(candidate), "")
 
+    def test_ticketmaster_title_noise_is_removed_before_artist_lookup(self) -> None:
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "Kings Of Leon Special Guest Snuts Sat 4 Jul 2026 Multiple times — event 2026-07-04",
+            "summary": "Co-op Live | Manchester | Rock | event_date=2026-07-04 19:00 | ticket_type=newly_listed",
+            "event": {
+                "venue": "Co-op Live",
+                "date_start": "2026-07-04",
+                "attractions": [{"name": "Kings Of Leon", "id": "tm-kol"}],
+            },
+        }
+        self.assertEqual(ticket_headliner_candidates(candidate)[0], "Kings Of Leon")
+
     def test_festival_lineup_promotes_strong_headliner_inside_card(self) -> None:
         cache_path = self._ticket_notability_cache(
             {
@@ -259,12 +273,12 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertEqual(_ticket_watch_decision(candidate)["decision"], "show")
         self.assertIn("Metallica", _build_ticket_fallback_line(candidate))
 
-    def test_musicbrainz_ticketmaster_signal_is_reported_as_c_tier(self) -> None:
+    def test_musicbrainz_ticketmaster_signal_promotes_to_b_tier(self) -> None:
         cache_path = self._ticket_notability_cache(
             {
                 "known touring band": {
                     "artist": "Known Touring Band",
-                    "tier": "C",
+                    "tier": "B",
                     "confidence": 0.68,
                     "signal": "musicbrainz_ticketmaster",
                     "signals": {"sitelinks": 0, "musicbrainz_score": 96},
@@ -280,7 +294,7 @@ class PublicOutputContractTests(unittest.TestCase):
         }
         with patch.dict(os.environ, {"NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP": "0"}):
             notability = enrich_ticket_notability(candidate, cache_path)
-        self.assertEqual(notability.tier, "C")
+        self.assertEqual(notability.tier, "B")
         self.assertEqual(notability.signal, "musicbrainz_ticketmaster")
         self.assertTrue((notability.signals or {}).get("ticketmaster_attraction"))
 

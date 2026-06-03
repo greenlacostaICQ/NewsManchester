@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
+import json
 import unittest
 from unittest import mock
 from zoneinfo import ZoneInfo
 
 from news_digest.pipeline.collector.extract import _extract_source_candidates
 from news_digest.pipeline.collector.sources import SourceDef
+from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.event_quality import event_quality_report
 from news_digest.pipeline.place_names import preserve_place_names
 
@@ -180,6 +182,64 @@ class MarketEventSourcesTest(unittest.TestCase):
         self.assertEqual(candidate["title"], "Rickie Lee Jones")
         self.assertEqual(candidate["published_date_london"], "2026-05-30")
         self.assertEqual(candidate["source_url"], "https://rncm.ac.uk/performance/rickie-lee-jones")
+
+    def test_ticketmaster_json_preserves_attraction_metadata(self) -> None:
+        source = SourceDef(
+            name="Ticketmaster Manchester Upcoming",
+            report_category="venues_tickets",
+            candidate_category="venues_tickets",
+            url="https://app.ticketmaster.com/discovery/v2/events.json",
+            primary_block="ticket_radar",
+            source_type="json_ticketmaster",
+            allowed_hosts=("ticketmaster.co.uk",),
+            max_candidates=5,
+        )
+        body = json.dumps(
+            {
+                "_embedded": {
+                    "events": [
+                        {
+                            "name": "Def Leppard - UK Tour",
+                            "url": "https://www.ticketmaster.co.uk/def-leppard-manchester-2026/event/1",
+                            "dates": {"start": {"dateTime": "2026-07-01T19:00:00Z"}},
+                            "sales": {"public": {"startDateTime": "2026-06-01T09:00:00Z"}},
+                            "classifications": [
+                                {
+                                    "segment": {"name": "Music"},
+                                    "genre": {"name": "Rock"},
+                                    "subGenre": {"name": "Hard Rock"},
+                                }
+                            ],
+                            "promoter": {"name": "Live Nation"},
+                            "_embedded": {
+                                "venues": [{"name": "AO Arena", "city": {"name": "Manchester"}}],
+                                "attractions": [
+                                    {
+                                        "name": "Def Leppard",
+                                        "id": "K8vZ9171o0V",
+                                        "url": "https://www.ticketmaster.co.uk/def-leppard-tickets/artist/734933",
+                                        "classifications": [
+                                            {"genre": {"name": "Rock"}, "subGenre": {"name": "Hard Rock"}}
+                                        ],
+                                    }
+                                ],
+                            },
+                        }
+                    ]
+                }
+            }
+        )
+
+        [candidate] = _extract_source_candidates(source, body)
+        hint = candidate["structured_event_hint"]
+        event = enrich_candidate_event(candidate)["event"]
+
+        self.assertEqual(hint["attractions"][0]["name"], "Def Leppard")
+        self.assertEqual(hint["ticketmaster_attraction_id"], "K8vZ9171o0V")
+        self.assertEqual(hint["genre"], "Rock")
+        self.assertEqual(hint["subGenre"], "Hard Rock")
+        self.assertEqual(event["attractions"][0]["name"], "Def Leppard")
+        self.assertEqual(event["ticketmaster_attraction_id"], "K8vZ9171o0V")
 
     def test_skiddle_cards_extract_event_link_and_date(self) -> None:
         source = SourceDef(
