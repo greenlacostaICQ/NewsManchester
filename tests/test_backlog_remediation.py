@@ -440,7 +440,12 @@ class EventQualityPipelineTest(unittest.TestCase):
         )
 
         self.assertFalse(updated["include"])
-        self.assertIn("stale_no_new_phase", updated["reject_reasons"])
+        # 35 days old → now caught by the hard age cutoff (#5); a 8–14 day item
+        # without a new phase still gets stale_no_new_phase. Either way it's stale.
+        self.assertTrue(
+            any(str(r).startswith("stale") for r in updated["reject_reasons"]),
+            updated["reject_reasons"],
+        )
 
     def test_validator_blocks_cross_day_rehash_of_food_opening(self) -> None:
         """2026-05-25 complaint: GRUB Stretford shipped 4 days in a row.

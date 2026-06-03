@@ -827,6 +827,12 @@ def _exclude_wrong_food_opening_category(candidate: dict) -> bool:
     return True
 
 
+# #5 Beyond this age, a news item is dropped no matter what — no "new phase"
+# wording, no source exemption. 14d keeps genuinely-developing week-old stories
+# while killing recycled press releases (GMMH 15 May appointment).
+_HARD_STALE_AGE_DAYS = 14
+
+
 def _exclude_stale_news_without_new_phase(candidate: dict) -> bool:
     """Drop old city/news items unless the text carries a clear new phase."""
     if not candidate.get("include"):
@@ -841,6 +847,17 @@ def _exclude_stale_news_without_new_phase(candidate: dict) -> bool:
     age_days = (now_london().date() - pub_day).days
     if age_days <= 7:
         return False
+    # #5 Hard age cutoff — independent of source AND of any "new phase" marker.
+    # A press release written 19 days ago still says "today/announced", which
+    # used to let it escape via _NEWS_UPDATE_MARKERS (GMMH CEO appointment from
+    # 15 May shipped on 3 June). Past this cutoff the date wins, no exceptions.
+    if age_days > _HARD_STALE_AGE_DAYS:
+        _append_reject(
+            candidate,
+            "stale_hard_age",
+            f"Validator: news item is {age_days} days old (hard cutoff {_HARD_STALE_AGE_DAYS}d), dropped regardless of update wording.",
+        )
+        return True
     if _NEWS_UPDATE_MARKERS.search(_candidate_blob(candidate)):
         return False
     _append_reject(

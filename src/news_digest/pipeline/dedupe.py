@@ -1266,6 +1266,36 @@ def _is_distinct_ticket_event(ci: dict, cj: dict) -> bool:
     return False
 
 
+# #6 Entity/address dedup — two planning/development stories about the SAME
+# named street or building are the same story even when headlines and numbers
+# differ (MEN "A new tower could change Manchester's skyline" vs Place North
+# West "RG Real Estate … 1,041 places" — both the Charles Street scheme). The
+# address lives in the body, not just the title, so we read title+summary+
+# evidence. General by design: any shared specific street/building + a
+# development marker on both sides, not a Charles-Street special case.
+_ADDRESS_RE = re.compile(
+    r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\s+"
+    r"(?:Street|Road|Avenue|Lane|Square|Way|Gardens|Drive|Place|Walk|Wharf|Quay|Mill|House|Works))\b"
+)
+_DEV_MARKERS = (
+    "tower", "skyscraper", "storey", "high-rise", "high rise", "flats",
+    "apartment", "student accommodation", "student housing", "student tower",
+    "development", "scheme", "regeneration", "build-to-rent", "homes",
+    "housing", "campus", "block of",
+)
+
+
+def _development_site_signature(candidate: dict) -> tuple[frozenset, bool]:
+    """(set of named addresses, has-development-marker) from title+body."""
+    blob = " ".join(
+        str(candidate.get(k) or "") for k in ("title", "summary", "evidence_text")
+    )
+    addresses = frozenset(m.group(1).lower() for m in _ADDRESS_RE.finditer(blob))
+    low = blob.lower()
+    has_dev = any(marker in low for marker in _DEV_MARKERS)
+    return addresses, has_dev
+
+
 def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
     """Drop topic-duplicates within the batch, keeping the strongest source.
 
@@ -1283,6 +1313,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
     n = len(included)
 
     to_drop: dict[int, dict] = {}
+    site_sigs = [_development_site_signature(c) for c in included]  # #6
 
     for i in range(n):
         if i in to_drop:
@@ -1356,6 +1387,26 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                     }
                     break
                 continue
+
+            # #6 Same development site (runs BEFORE the borough gate because
+            # the address itself pins the location — one headline often omits
+            # the borough). Shared specific street/building + a development
+            # marker on both sides → same scheme, keep the stronger source.
+            if not is_event_ticket_group:
+                addr_i, dev_i = site_sigs[i]
+                addr_j, dev_j = site_sigs[j]
+                shared_site = addr_i & addr_j
+                if shared_site and dev_i and dev_j:
+                    rank_j = _source_rank(
+                        str(cj.get("source_label") or ""),
+                        str(cj.get("category") or ""),
+                    )
+                    if _prefer_dedupe_candidate(ci, cj, rank_i, rank_j):
+                        to_drop[j] = {"kept_index": i, "overlap": 0.0, "shared_site": ",".join(sorted(shared_site))[:60]}
+                    else:
+                        to_drop[i] = {"kept_index": j, "overlap": 0.0, "shared_site": ",".join(sorted(shared_site))[:60]}
+                        break
+                    continue
 
             borough_j = _extract_borough(str(cj.get("title") or ""))
             if borough_i != borough_j:
