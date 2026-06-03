@@ -816,6 +816,17 @@ def _source_health_compact(source_status: dict) -> list[str]:
             f"Отдельная метрика: {counts.get('zero_yield')} источника сработали, "
             "но ничего не дали в финальный выпуск; это пересекается со статусами выше."
         )
+        rows = [
+            row for row in (source_status.get("sources") or [])
+            if isinstance(row, dict)
+            and int(row.get("raw_count") or row.get("candidate_count") or 0) > 0
+            and int(row.get("rendered_count") or 0) == 0
+        ]
+        for row in rows[:3]:
+            human = row.get("human_funnel") if isinstance(row.get("human_funnel"), dict) else {}
+            one_line = str(human.get("one_line") or "").strip()
+            if one_line:
+                lines.append(f"Воронка: {one_line}")
     return lines
 
 
@@ -1982,6 +1993,14 @@ def cmd_send_warnings() -> int:
             lines.append("🧪 ИСТОЧНИКИ БЕЗ ВКЛАДА В ВЫПУСК")
             lines.append("Эти источники дали материалы, но в финальный выпуск ничего не попало:")
             for row in rows[:8]:
+                human = row.get("human_funnel") if isinstance(row.get("human_funnel"), dict) else {}
+                if human:
+                    lines.append(f"  • {_source_name_human(str(row.get('name') or ''))}:")
+                    for part in (human.get("template") or [])[:7]:
+                        lines.append(f"    {part}.")
+                    lines.append(f"    Вывод: {human.get('conclusion')}.")
+                    lines.append(f"    Что делать: {human.get('action')}.")
+                    continue
                 reasons = row.get("reject_reasons") or {}
                 reason_txt = ""
                 if reasons:
@@ -2521,7 +2540,41 @@ def cmd_discover_sources(seeds: list[str] | None = None) -> int:
 
     path = write_discovery_report(PROJECT_ROOT, seeds=seeds or None)
     payload = read_json(path, {})
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    recommendations = payload.get("recommendations") if isinstance(payload.get("recommendations"), list) else []
+    print(f"Source discovery report: {path.relative_to(PROJECT_ROOT)}")
+    print(f"Кандидатов: {len(recommendations)}")
+    print("Как проверять: открыть example_urls, добавить SourceDef с trial = true, смотреть trial funnel 3-7 дней.")
+    for item in recommendations[:12]:
+        if not isinstance(item, dict):
+            continue
+        print("")
+        print(str(item.get("recommended_name") or item.get("url") or "Candidate"))
+        print(f"URL: {item.get('url') or ''}")
+        print(f"Тип: {item.get('report_category_guess') or ''} / {item.get('primary_block_guess') or ''}")
+        print(f"Как найдено: {item.get('reason') or item.get('kind') or ''}")
+        examples = item.get("example_urls") if isinstance(item.get("example_urls"), list) else []
+        if examples:
+            print("Примеры:")
+            for example in examples[:3]:
+                print(f"  - {example}")
+        source_def = item.get("recommended_source_def") if isinstance(item.get("recommended_source_def"), dict) else {}
+        if source_def:
+            print("Trial SourceDef:")
+            print(
+                "  "
+                + ", ".join(
+                    f"{key}={source_def.get(key)!r}"
+                    for key in ("name", "url", "source_type", "report_category", "primary_block", "trial", "max_candidates")
+                    if key in source_def
+                )
+            )
+        checks = item.get("how_to_check") if isinstance(item.get("how_to_check"), list) else []
+        if checks:
+            print("Проверка:")
+            for step in checks[:4]:
+                print(f"  - {step}")
+    if len(recommendations) > 12:
+        print(f"\nЕщё кандидатов: {len(recommendations) - 12}. Полный список в {path.relative_to(PROJECT_ROOT)}")
     return 0
 
 

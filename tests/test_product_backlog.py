@@ -13,6 +13,7 @@ from news_digest.pipeline.collector.sources import SourceDef
 from news_digest.pipeline.dead_parser_repair import build_dead_parser_repair_report
 from news_digest.pipeline.practical_backfill import apply_practical_backfill
 from news_digest.pipeline.reader_actions import classify_reader_action
+from news_digest.pipeline.release import _source_funnel_human
 from news_digest.pipeline.source_anomaly import detect_dead_parsers, detect_source_anomalies
 from news_digest.pipeline.source_discovery import discover_sources
 
@@ -118,6 +119,35 @@ class ProductBacklogTest(unittest.TestCase):
         self.assertTrue(any(item["kind"] == "rss" for item in found))
         self.assertTrue(any(item["primary_block_guess"] == "city_watch" for item in found))
         self.assertTrue(all(item["trial"] for item in found))
+        first = found[0]
+        self.assertIn("recommended_source_def", first)
+        self.assertIn("how_to_check", first)
+        self.assertTrue(first["recommended_source_def"]["trial"])
+        self.assertIn("можно включать", " ".join(first["trial_verdict_rules"]))
+
+    def test_source_loss_funnel_has_human_template_and_action(self) -> None:
+        human = _source_funnel_human(
+            "MEN News Sitemap",
+            {
+                "raw_count": 40,
+                "curated_count": 4,
+                "rendered_count": 0,
+                "reject_reasons": {"duplicate_same_story": 22},
+                "loss_funnel": {
+                    "rejected_before_writer": 8,
+                    "backup_before_rewrite": 6,
+                    "included_missing_draft_line": 1,
+                    "writer_dropped": 0,
+                },
+            },
+        )
+        text = "\n".join(human["template"])
+        self.assertIn("Собрали: 40", text)
+        self.assertIn("Повторы / уже было: 22", text)
+        self.assertIn("Ушло в резерв до перевода: 6", text)
+        self.assertIn("Попало в выпуск: 0", text)
+        self.assertIn("дубли", human["conclusion"])
+        self.assertIn("Что делать", f"Что делать: {human['action']}")
 
     def test_dead_parser_repair_suggests_html_extractor(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -952,6 +952,17 @@ def _build_transport_fallback_line(candidate: dict) -> str:
         return ""
     reason = _translate_reason(title) or "ограничения движения"
     operator = str(candidate.get("source_label") or "").strip() or "TfGM"
+    lowered = title.lower()
+    if "lift out of service" in lowered:
+        return (
+            f"• {operator}: лифт не работает на остановке {location}. "
+            "Если вам нужен безбарьерный доступ, проверьте альтернативную остановку или маршрут перед выходом."
+        )
+    if "improvement works" in lowered or "tram stop" in lowered:
+        return (
+            f"• {operator}: на остановке {location} идут работы. "
+            "Если едете через неё сегодня, проверьте страницу TfGM перед выходом."
+        )
     return (
         f"• {operator}: {reason} — {location}. "
         "Сроки и объёмы работ уточняйте на странице перевозчика."
@@ -972,6 +983,149 @@ def _build_football_fallback_line(candidate: dict) -> str:
     if summary and len(summary) >= 40 and not _looks_like_source_chrome(summary):
         return f"• {club}: {title}. {summary.rstrip('.')[:220]}."
     return f"• {club}: {title}."
+
+
+_EVENT_DATE_BLOCKS = {
+    "next_7_days",
+    "weekend_activities",
+    "future_announcements",
+    "ticket_radar",
+    "outside_gm_tickets",
+    "russian_events",
+}
+
+_PHASE_LABELS_RU = {
+    "charged": "предъявлено обвинение",
+    "sentenced": "вынесен приговор",
+    "approved": "решение одобрено",
+    "reopened": "объект снова открыт",
+    "cancelled": "мероприятие отменено",
+    "delayed": "сроки перенесены",
+    "appeal_updated": "появилось обновление по обращению",
+    "tickets_on_sale": "появился билетный повод",
+    "consultation_opened": "открыта консультация",
+    "consultation_closing": "подходит срок консультации",
+}
+
+_EXPLAINABLE_TERMS = {
+    "ANOTR": "электронного дуэта ANOTR",
+    "DJI": "бренда дронов и камер DJI",
+    "PBSA": "студенческого жилья PBSA",
+    "AGM": "годового собрания совета AGM",
+}
+
+
+def _blob_for_repair(candidate: dict) -> str:
+    return " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "source_label")
+    )
+
+
+def _strip_empty_emotive_quote(line: str) -> str:
+    # These family/tribute phrases can be useful in a full article, but in a
+    # daily intelligence bullet they often replace the actual update.
+    return re.sub(
+        r"\s*;?\s*(?:родственники|семья|близкие)\s+заявил[аи]?,?\s+что\s+[^.]{0,120}«(?:ушла слишком рано|уш[её]л слишком рано)»\.?",
+        "",
+        line,
+        flags=re.IGNORECASE,
+    ).strip()
+
+
+def _repair_incident_and_legal_russian(line: str) -> tuple[str, list[str]]:
+    repaired = str(line or "")
+    reasons: list[str] = []
+    replacements = (
+        (r"отдельн\w*\s+ножев\w*\s+атак\w*", "двух разных нападений с ножом", "separate_stabbings_ru"),
+        (r"тройн\w*\s+ножев\w*\s+ранени\w*", "нападение с ножом, в котором пострадали трое", "triple_stabbing_ru"),
+        (r"следствие\s+пришло\s+к\s+открыт\w*\s+вывод\w*", "коронер не смог установить точную причину смерти", "open_conclusion_ru"),
+        (r"открыт\w*\s+вывод\w*", "открытое заключение коронера: точную причину не установили", "open_conclusion_ru"),
+        (r"\bmanslaughter\b", "неумышленное убийство", "manslaughter_ru"),
+        (r"\bPBSA\b", "студенческое жильё PBSA", "pbsa_ru"),
+    )
+    for pattern, repl, reason in replacements:
+        updated = re.sub(pattern, repl, repaired, flags=re.IGNORECASE)
+        if updated != repaired:
+            repaired = updated
+            reasons.append(reason)
+    repaired = re.sub(r"\s+", " ", repaired).strip()
+    return repaired, reasons
+
+
+def _repair_follow_up_line(candidate: dict, line: str) -> tuple[str, list[str]]:
+    change_type = str(candidate.get("change_type") or "")
+    why_now = str(candidate.get("why_now") or "")
+    phase = str(candidate.get("change_phase") or "")
+    if change_type not in {"follow_up", "same_story_new_facts", "new_phase"} and why_now != "update_today":
+        return line, []
+    if not phase or re.search(r"^\s*•\s*(?:обновление|update)\b", line, re.IGNORECASE):
+        return line, []
+
+    label = _PHASE_LABELS_RU.get(phase, "появилось обновление")
+    repaired = _strip_empty_emotive_quote(line)
+    # Keep the original place prefix if it exists: "• Rochdale: ..."
+    match = re.match(r"^(•\s*[^:]{2,45}:\s*)(.+)$", repaired)
+    if match:
+        return f"{match.group(1)}обновление: {label}; {match.group(2)[:1].lower()}{match.group(2)[1:]}", ["follow_up_leads_with_change"]
+    return f"• Обновление: {label}; {repaired.removeprefix('• ').strip()}", ["follow_up_leads_with_change"]
+
+
+def _repair_explainable_terms(candidate: dict, line: str) -> tuple[str, list[str]]:
+    repaired = str(line or "")
+    reasons: list[str] = []
+    blob = _blob_for_repair(candidate)
+    for term, explanation in _EXPLAINABLE_TERMS.items():
+        if term not in repaired:
+            continue
+        if explanation in repaired:
+            continue
+        # Prefer explaining terms that appear in the source material. This
+        # avoids inventing meaning for random acronyms while still fixing the
+        # common local-product failures the owner flagged.
+        if term not in blob:
+            continue
+        repaired = re.sub(rf"\b{re.escape(term)}\b", explanation, repaired, count=1)
+        reasons.append(f"explained_{term.lower()}")
+    return repaired, reasons
+
+
+def _event_structured_datetime(candidate: dict) -> datetime | None:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    raw = str(event.get("date_start") or event.get("date") or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _line_has_conflicting_event_date(candidate: dict, line: str) -> bool:
+    event_dt = _event_structured_datetime(candidate)
+    if event_dt is None:
+        return False
+    expected = _format_ru_day_month(event_dt)
+    if expected and expected in line:
+        return False
+    months = "|".join(_RU_MONTHS_GENITIVE.values())
+    found = re.findall(rf"\b(\d{{1,2}})\s+({months})\b", line, flags=re.IGNORECASE)
+    if not found:
+        return False
+    return all(f"{day} {month}".lower() != expected.lower() for day, month in found)
+
+
+def _repair_event_date_from_struct(candidate: dict, line: str) -> tuple[str, list[str]]:
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    if block not in _EVENT_DATE_BLOCKS and category not in {"culture_weekly", "venues_tickets", "russian_speaking_events", "diaspora_events"}:
+        return line, []
+    if not _line_has_conflicting_event_date(candidate, line):
+        return line, []
+    replacement = _build_ticket_fallback_line(candidate) if category == "venues_tickets" else _build_event_fallback_line(candidate)
+    if replacement:
+        return replacement, ["event_date_from_structured_fields"]
+    return line, []
 
 
 def _hard_news_recovery_line(candidate: dict) -> str:
@@ -1365,6 +1519,14 @@ def _repair_editorial_contract_line(candidate: dict, line: str) -> tuple[str, li
     if re.search(r"заброшенн\w*\s+(?:паб|здани|мотел|объект).{0,80}\bзакры", repaired, re.IGNORECASE | re.DOTALL):
         repaired = re.sub(r"\bбыли\s+закрыты\b|\bбыл\s+закрыт\b|\bзакрыли\b", "обезопасят", repaired, flags=re.IGNORECASE)
         reasons.append("abandoned_building_contradiction")
+    repaired, legal_reasons = _repair_incident_and_legal_russian(repaired)
+    reasons.extend(legal_reasons)
+    repaired, follow_up_reasons = _repair_follow_up_line(candidate, repaired)
+    reasons.extend(follow_up_reasons)
+    repaired, explanation_reasons = _repair_explainable_terms(candidate, repaired)
+    reasons.extend(explanation_reasons)
+    repaired, date_reasons = _repair_event_date_from_struct(candidate, repaired)
+    reasons.extend(date_reasons)
     return repaired, reasons
 
 
@@ -1498,7 +1660,7 @@ def _build_event_fallback_line(candidate: dict) -> str:
     title = re.sub(r"\s+[—–-]\s+(?:event|public\s+sale).*$", "", title, flags=re.IGNORECASE).strip()
     title = title[:120].rstrip(" .-–—")
     venue = _event_venue(candidate)
-    event_dt = _parse_ticket_datetime(candidate)
+    event_dt = _event_structured_datetime(candidate) or _parse_ticket_datetime(candidate)
     day_month = _format_ru_day_month(event_dt) if event_dt else ""
     time_part = ""
     if event_dt and event_dt.strftime("%H:%M") not in {"00:00", "12:00"}:
@@ -2015,6 +2177,15 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
         errors.append("weather line must not tell the reader to check a radar.")
     if is_transport_block and re.search(r"\bметро\b", text, re.IGNORECASE):
         errors.append("Metrolink/tram transport must not be called metro.")
+    if is_transport_block and re.search(r"ремонтные работы на остановке [^.]{2,60}\.$", text, re.IGNORECASE):
+        errors.append("transport stop works line must explain reader impact/action.")
+    if _line_has_conflicting_event_date(candidate, text):
+        errors.append("event date in draft_line conflicts with structured event date.")
+    if re.search(r"\b(?:тройн\w*\s+ножев\w*\s+ранени|отдельн\w*\s+ножев\w*\s+атак|открыт\w*\s+вывод)", text, re.IGNORECASE):
+        errors.append("incident/legal line contains literal translated legal/crime phrasing.")
+    for term in _EXPLAINABLE_TERMS:
+        if term in text and _EXPLAINABLE_TERMS[term] not in text:
+            errors.append(f"unexplained local/entity term: {term}.")
     if category in LONG_FORMAT_CATEGORIES and block_key not in SHORT_EVENT_BLOCKS and not is_transport_block:
         evidence_len = len(str(candidate.get("evidence_text") or "").strip())
         evidence_rich = evidence_len >= EVENT_RELAX_EVIDENCE_THRESHOLD
@@ -2051,6 +2222,27 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     for invariant in copy_invariant_errors(candidate, text):
         errors.append(f"copy invariant failed: {invariant}.")
     errors.extend(_hallucination_flags(candidate, text))
+    if category == "football":
+        blob = _blob_for_repair(candidate)
+        if (
+            re.search(r"\brecord\b|рекорд", blob, re.IGNORECASE)
+            and re.search(r"\b\d{2,4}\b", blob)
+            and not re.search(r"\b\d{2,4}\b", text)
+        ):
+            errors.append("football record item needs the key number when source carries one.")
+    if category in {"public_services", "council"} or str(candidate.get("source_label") or "") in {"GMMH", "Manchester Council"}:
+        published_raw = str(candidate.get("published_date_london") or "")[:10]
+        try:
+            published_day = date.fromisoformat(published_raw)
+            if (now_london().date() - published_day).days > 7 and str(candidate.get("why_now") or "") != "new_today":
+                phase = str(candidate.get("change_phase") or "")
+                if phase not in {"approved", "reopened", "consultation_opened", "consultation_closing", "sentenced", "charged"}:
+                    errors.append("old official/public-service item needs a concrete new public reason.")
+        except ValueError:
+            pass
+    if re.search(r"\b(?:lease|retail mix|experiential retail|10-year lease|аренд)", _blob_for_repair(candidate), re.IGNORECASE):
+        if not re.search(r"\b(?:откро|opening|opens?|доступн|store|магазин|дата|from\s+\d|с\s+\d)", _blob_for_repair(candidate), re.IGNORECASE):
+            errors.append("commercial/retail item needs opening/access/useful local impact.")
     # Thin-evidence + long-draft = LLM padded a teaser into a vague card.
     # We only check long-format categories (city news / events / business etc.) —
     # transport / weather are intentionally short. Football already has its own

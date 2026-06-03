@@ -43,6 +43,10 @@ class DiscoveredSource:
     recommended_name: str
     report_category_guess: str
     primary_block_guess: str
+    example_urls: tuple[str, ...] = ()
+    recommended_source_def: dict[str, object] | None = None
+    how_to_check: tuple[str, ...] = ()
+    trial_verdict_rules: tuple[str, ...] = ()
     trial: bool = True
 
 
@@ -116,6 +120,34 @@ def _name_from_url(url: str, text: str) -> str:
     return f"{host.removeprefix('www.')} {suffix}".strip()
 
 
+def _example_urls(url: str, body: str, *, limit: int = 3) -> tuple[str, ...]:
+    parser = _DiscoveryParser(url)
+    parser.feed(body)
+    out: list[str] = []
+    for href, text in parser.links:
+        cleaned = parse.urldefrag(href)[0]
+        if not cleaned or cleaned in out:
+            continue
+        if _SOURCE_HINT_RE.search(f"{cleaned} {text}"):
+            out.append(cleaned)
+        if len(out) >= limit:
+            break
+    return tuple(out)
+
+
+def _recommended_source_def(name: str, url: str, source_type: str, report_category: str, primary_block: str) -> dict[str, object]:
+    return {
+        "name": name,
+        "url": url,
+        "source_type": source_type,
+        "report_category": report_category,
+        "primary_block": primary_block,
+        "enabled": True,
+        "trial": True,
+        "max_candidates": 3,
+    }
+
+
 def discover_sources(
     seeds: list[str] | None = None,
     *,
@@ -150,6 +182,13 @@ def discover_sources(
             if host in known and kind != "xml_sitemap":
                 continue
             report_category, primary_block, source_type = _guess(cleaned, reason)
+            examples: tuple[str, ...] = ()
+            try:
+                candidate_body = fetcher(cleaned)
+                examples = _example_urls(cleaned, candidate_body)
+            except Exception:
+                examples = ()
+            recommended_name = _name_from_url(cleaned, reason)
             out.append(
                 DiscoveredSource(
                     seed_url=seed,
@@ -157,9 +196,29 @@ def discover_sources(
                     kind=kind,
                     source_type_guess=source_type if kind != "rss" else "rss",
                     reason=reason,
-                    recommended_name=_name_from_url(cleaned, reason),
+                    recommended_name=recommended_name,
                     report_category_guess=report_category,
                     primary_block_guess=primary_block,
+                    example_urls=examples,
+                    recommended_source_def=_recommended_source_def(
+                        recommended_name,
+                        cleaned,
+                        source_type if kind != "rss" else "rss",
+                        report_category,
+                        primary_block,
+                    ),
+                    how_to_check=(
+                        "открыть 3 example_urls и убедиться, что это Greater Manchester",
+                        "добавить SourceDef в data/sources.toml с trial = true",
+                        "прогнать trial 3-7 дней без публикации",
+                        "смотреть funnel: собрано → прошло GM-фильтр → могло бы попасть в выпуск",
+                    ),
+                    trial_verdict_rules=(
+                        "можно включать: есть свежие GM-материалы и хотя бы часть проходит отбор",
+                        "отключить: материалы старые, не GM или в основном мусор",
+                        "нужен parser: источник полезный, но html_links теряет реальные карточки",
+                        "дублирует существующий: полезные материалы уже покрыты более сильным источником",
+                    ),
                 )
             )
     return [asdict(item) for item in out]
@@ -174,6 +233,13 @@ def write_discovery_report(project_root: Path, *, seeds: list[str] | None = None
         "schema_version": SOURCE_DISCOVERY_VERSION,
         "run_at_london": now_london().isoformat(),
         "run_date_london": today_london(),
+        "where_to_see": "data/state/source_discovery_report.json",
+        "how_to_use": [
+            "после ручного запуска открыть recommendations[] и проверить 3 example_urls у кандидата",
+            "добавить понравившийся recommended_source_def в data/sources.toml с trial = true",
+            "держать trial 3-7 дней без публикации в выпуск",
+            "решение принимать по trial funnel: собрано → прошло GM-фильтр → могло бы попасть в выпуск",
+        ],
         "recommendations": discover_sources(seeds),
     }
     path = state_dir / "source_discovery_report.json"

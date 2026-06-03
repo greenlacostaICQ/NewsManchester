@@ -19,6 +19,7 @@ from news_digest.pipeline.ticket_notability import (
 )
 from news_digest.pipeline.writer import (
     _build_recurring_event_fallback_line,
+    _build_event_fallback_line,
     _build_football_fallback_line,
     _build_ticket_fallback_line,
     _cap_minor_bus_stop_lines,
@@ -70,6 +71,65 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertIn("Metrolink", line)
         self.assertNotIn("метро", line.lower())
         self.assertIn("metrolink_not_metro", reasons)
+
+    def test_follow_up_line_leads_with_new_phase(self) -> None:
+        candidate = {
+            "change_type": "follow_up",
+            "change_phase": "charged",
+            "why_now": "update_today",
+            "title": "Kyle Howard charged with murder of Keeley Aspinoll",
+            "summary": "A man has been charged after Keeley Aspinoll was found dead in Rochdale.",
+        }
+        repaired, reasons = _repair_editorial_contract_line(
+            candidate,
+            "• Rochdale: 25-летний Кайл Ховард обвинён в убийстве Кили Аспинолл; родственники заявили, что она «ушла слишком рано».",
+        )
+        self.assertIn("follow_up_leads_with_change", reasons)
+        self.assertIn("обновление: предъявлено обвинение", repaired)
+        self.assertNotIn("ушла слишком рано", repaired)
+
+    def test_incident_and_court_russian_calques_are_repaired(self) -> None:
+        candidate = {"category": "gmp", "primary_block": "last_24h"}
+        repaired, reasons = _repair_editorial_contract_line(
+            candidate,
+            "• Manchester: полиция расследует тройное ножевое ранение после отдельных ножевых атак; следствие пришло к открытым выводам.",
+        )
+        self.assertIn("triple_stabbing_ru", reasons)
+        self.assertIn("separate_stabbings_ru", reasons)
+        self.assertIn("open_conclusion_ru", reasons)
+        self.assertIn("нападение с ножом, в котором пострадали трое", repaired)
+        self.assertIn("двух разных нападений с ножом", repaired)
+        self.assertIn("точную причину смерти", repaired)
+
+    def test_unclear_entity_is_explained_inside_line(self) -> None:
+        candidate = {
+            "title": "ANOTR concert cancelled after crowd trouble",
+            "summary": "Police said the ANOTR event in Manchester was cancelled.",
+        }
+        repaired, reasons = _repair_editorial_contract_line(
+            candidate,
+            "• Manchester City Centre: полиция подтвердила, что организаторы ANOTR отменили концерт после беспорядков.",
+        )
+        self.assertIn("explained_anotr", reasons)
+        self.assertIn("электронного дуэта ANOTR", repaired)
+
+    def test_event_fallback_prefers_structured_date_over_summary_noise(self) -> None:
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "future_announcements",
+            "title": "David Gray at Barton Aerodrome",
+            "summary": "Past & Present Tour | Thursday 2nd July | 18:00-22:30",
+            "practical_angle": "Билеты доступны на сайте организатора.",
+            "event": {
+                "is_event": True,
+                "event_name": "David Gray",
+                "venue": "Barton Aerodrome",
+                "date_start": "2026-07-06T18:00:00+01:00",
+            },
+        }
+        line = _build_event_fallback_line(candidate)
+        self.assertIn("6 июля", line)
+        self.assertNotIn("2 июля", line)
 
     def test_unknown_artist_does_not_pass_only_for_major_venue(self) -> None:
         candidate = {

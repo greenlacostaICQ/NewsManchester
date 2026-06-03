@@ -5,6 +5,7 @@ from news_digest.pipeline.llm_rewrite import (
     _is_protected_rewrite_candidate,
     _needs_quality_repair,
     _parse_provider_results,
+    _rewrite_batch_items,
     _skip_llm_for_manual_review,
 )
 from news_digest.pipeline.curator import _skip_curator_for_manual_review
@@ -141,6 +142,25 @@ class LlmRewriteDiagnosticsTests(unittest.TestCase):
         candidate["editorial_status"] = "borderline"
 
         self.assertTrue(_skip_curator_for_manual_review(candidate))
+
+    def test_rewrite_packet_is_support_not_replacement_for_evidence(self) -> None:
+        candidate = _candidate("fp-1", "James Milner reaches Premier League appearance record")
+        candidate.update(
+            {
+                "summary": "James Milner made his 654th Premier League appearance.",
+                "evidence_text": "BBC Sport says James Milner made his 654th Premier League appearance.",
+                "practical_angle": "Use the record number if writing the football card.",
+                "change_phase": "new_record",
+                "reader_action_type": "just_know",
+            }
+        )
+
+        item = _rewrite_batch_items([candidate])[0]
+
+        self.assertIn("rewrite_packet", item)
+        self.assertEqual(item["rewrite_packet"]["what"], candidate["title"])
+        self.assertIn("654th Premier League appearance", item["evidence_text"])
+        self.assertIn("Use the record number", item["practical_angle"])
 
 
 if __name__ == "__main__":

@@ -95,6 +95,10 @@ _ANTI_HALLUCINATION = (
     "АНТИ-ВЫМЫСЕЛ: каждое имя, должность, число, сумма £, дата, адрес в твоём тексте ДОЛЖНЫ буквально присутствовать "
     "в title/summary/lead/evidence_text. Нет в evidence — нет в draft_line. Запрещены конструкции «по словам экспертов», "
     "«как ожидается», «вероятно», «по предварительным данным» — если этого нет в evidence.\n\n"
+    "ОПОРА ДЛЯ ТЕКСТА: если в item есть rewrite_packet, сначала используй его как карту фактов: кто, что, где, когда, "
+    "что изменилось, почему сейчас, действие читателя. Но rewrite_packet НЕ заменяет источник: если для нормальной строки "
+    "нужна деталь, бери её из title/summary/lead/evidence_text. Нельзя выбрасывать хороший факт только потому, что он не попал "
+    "в rewrite_packet; нельзя добавлять факт, которого нет ни в packet, ни в evidence.\n\n"
     "ПРАВИЛО ПУСТОТЫ: если evidence_text короче ~120 символов осмысленного текста, ИЛИ содержит только тизер/анонс без сути "
     "(«One of Manchester's most iconic…», «Details to follow», paywall-stub, «приобретено северное мероприятие» без названия "
     "сделки/сумм/имён), ИЛИ ты понимаешь, что для самодостаточного пункта нужно бы что-то домыслить — верни draft_line=\"\". "
@@ -888,6 +892,48 @@ def _is_protected_rewrite_candidate(candidate: dict) -> bool:
     return False
 
 
+def _rewrite_packet(candidate: dict) -> dict[str, object]:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    frame = candidate.get("story_frame") if isinstance(candidate.get("story_frame"), dict) else {}
+    entities = candidate.get("entities") if isinstance(candidate.get("entities"), dict) else {}
+    boroughs = candidate.get("boroughs") if isinstance(candidate.get("boroughs"), list) else []
+    where = (
+        frame.get("where_exact")
+        or event.get("venue")
+        or (boroughs[0] if boroughs else "")
+        or candidate.get("borough")
+        or ""
+    )
+    when = (
+        frame.get("when")
+        or event.get("date_text")
+        or event.get("date_start")
+        or event.get("date")
+        or candidate.get("published_at")
+        or ""
+    )
+    people = entities.get("people") if isinstance(entities.get("people"), list) else []
+    venues = entities.get("venues") if isinstance(entities.get("venues"), list) else []
+    return {
+        "what": frame.get("what_happened") or candidate.get("title") or "",
+        "where": where,
+        "when": when,
+        "who": frame.get("who_affected") or (people[0] if people else ""),
+        "venue": event.get("venue") or (venues[0] if venues else ""),
+        "event_date": event.get("date_start") or event.get("date") or "",
+        "change_type": candidate.get("change_type") or "",
+        "change_phase": candidate.get("change_phase") or "",
+        "why_now": candidate.get("why_now") or "",
+        "reader_action_type": candidate.get("reader_action_type") or "",
+        "practical_angle": candidate.get("practical_angle") or "",
+        "do_not_use_literal_phrases": [
+            "тройное ножевое ранение",
+            "отдельные ножевые атаки",
+            "открытые выводы",
+        ],
+    }
+
+
 def _rewrite_batch_items(batch: list[dict]) -> list[dict]:
     return [
         {
@@ -906,6 +952,7 @@ def _rewrite_batch_items(batch: list[dict]) -> list[dict]:
             "borough": c.get("borough", ""),
             "entities": c.get("entities", {}),
             "event": c.get("event", {}),
+            "rewrite_packet": _rewrite_packet(c),
             "expected_operator": c.get("expected_operator", ""),
             "transport_mode": c.get("transport_mode", ""),
             "current_draft_line": c.get("draft_line", ""),

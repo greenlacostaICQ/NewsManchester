@@ -1168,13 +1168,26 @@ def _demote_distant_weekend_event(candidate: dict) -> bool:
     event_dt = _summary_field_datetime(summary, "event_date")
     if event_dt is not None:
         dates.append(event_dt.date())
-    iso_field = str(event.get("date_iso") or "").strip()
-    if iso_field:
+    for iso_field in (
+        str(event.get("date_start") or "").strip(),
+        str(event.get("date") or "").strip(),
+        str(event.get("date_iso") or "").strip(),
+    ):
+        if not iso_field:
+            continue
         try:
-            dates.append(date.fromisoformat(iso_field))
+            dates.append(datetime.fromisoformat(iso_field.replace("Z", "+00:00")).date())
         except (TypeError, ValueError):
-            pass
-    dates.extend(_explicit_dates_from_blob(candidate))
+            try:
+                dates.append(date.fromisoformat(iso_field))
+            except (TypeError, ValueError):
+                pass
+    # Structured dates are the source of truth. Only use loose title/body
+    # date mentions when the collector did not give us event_date/date_iso;
+    # otherwise a stale or decorative title date can wrongly keep a far-out
+    # event in the weekend section.
+    if not dates:
+        dates.extend(_explicit_dates_from_blob(candidate))
 
     future_dates = [d for d in dates if d >= today]
     if future_dates:

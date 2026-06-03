@@ -982,6 +982,56 @@ def _count_per_source_yield(
     return yields
 
 
+def _source_funnel_human(name: str, row: dict[str, object]) -> dict[str, object]:
+    funnel = row.get("loss_funnel") if isinstance(row.get("loss_funnel"), dict) else {}
+    raw = int(row.get("raw_count") or row.get("candidate_count") or funnel.get("source_raw_count") or funnel.get("candidate_pool") or 0)
+    rejected = int(funnel.get("rejected_before_writer") or 0)
+    backup = int(funnel.get("backup_before_rewrite") or 0)
+    curated = int(row.get("curated_count") or row.get("accepted_count") or funnel.get("included_after_curation") or 0)
+    missing = int(funnel.get("included_missing_draft_line") or 0)
+    writer_dropped = int(funnel.get("writer_dropped") or 0)
+    rendered = int(row.get("rendered_count") or funnel.get("rendered") or 0)
+    duplicate_like = 0
+    for reason, count in (row.get("reject_reasons") or {}).items():
+        if "duplicate" in str(reason).lower() or "same story" in str(reason).lower() or "повтор" in str(reason).lower():
+            duplicate_like += int(count or 0)
+
+    lines = [
+        f"Собрали: {raw}",
+        f"Повторы / уже было: {duplicate_like}",
+        f"Отклонено до редактора: {rejected}",
+        f"Ушло в резерв до перевода: {backup}",
+        f"Выбрано редактором: {curated}",
+        f"Не получилось написать нормальную строку: {missing + writer_dropped}",
+        f"Попало в выпуск: {rendered}",
+    ]
+
+    if raw == 0:
+        conclusion = "источник сегодня не дал материалов"
+        action = "проверить, это нормальная тишина источника или проблема парсера"
+    elif rendered > 0 and rendered >= max(1, curated // 2):
+        conclusion = "источник даёт полезный вклад в выпуск"
+        action = "оставить как есть; смотреть только на качество отдельных строк"
+    elif duplicate_like >= max(2, raw // 2):
+        conclusion = "источник живой, но в основном даёт дубли"
+        action = "не отключать; усилить dedupe и не давать дублю вытеснять лучший источник"
+    elif curated > 0 and rendered == 0 and (missing + writer_dropped) > 0:
+        conclusion = "источник даёт кандидатов, но они теряются на написании строки"
+        action = "проверить draft_line/rewrite для этого типа материалов"
+    elif curated == 0 and raw > 0:
+        conclusion = "источник живой, но материалы не проходят редакционный отбор"
+        action = "проверить, это шумный источник или фильтр слишком строгий"
+    else:
+        conclusion = "источник требует ручной проверки по воронке"
+        action = "смотреть примеры rejected/backup кандидатов"
+    return {
+        "template": lines,
+        "conclusion": conclusion,
+        "action": action,
+        "one_line": f"{name}: {conclusion}; {action}.",
+    }
+
+
 def _summarise_source_health(
     scan_report: dict | None,
     candidates_report: dict | None = None,
@@ -1019,28 +1069,28 @@ def _summarise_source_health(
                 accepted_count = int(row_yield["curated"])
                 loss_funnel = dict(row_yield.get("loss_funnel") or {})
                 loss_funnel["source_raw_count"] = raw_count
-                sources.append(
-                    {
-                        "name": name,
-                        "category": str(cat_name),
-                        "status": status,
-                        "detail": detail,
-                        "raw_count": raw_count,
-                        "accepted_count": accepted_count,
-                        "rejected_count": max(raw_count - accepted_count, 0),
-                        "rendered_count": int(row_yield["rendered"]),
-                        "reject_reasons": row_yield.get("reject_reasons") or {},
-                        "loss_funnel": loss_funnel,
-                        "failure_count": len(list(entry.get("errors") or [])),
-                        "candidate_count": raw_count,
-                        "fresh_last_24h_count": int(entry.get("fresh_last_24h_count") or 0),
-                        "source_contract": str(entry.get("source_contract") or ""),
-                        "trial": bool(entry.get("trial")),
-                        "coverage_signal_count": int(entry.get("coverage_signal_count") or 0),
-                        "coverage_signal_label": str(entry.get("coverage_signal_label") or ""),
-                        "curated_count": int(row_yield["curated"]),
-                    }
-                )
+                row = {
+                    "name": name,
+                    "category": str(cat_name),
+                    "status": status,
+                    "detail": detail,
+                    "raw_count": raw_count,
+                    "accepted_count": accepted_count,
+                    "rejected_count": max(raw_count - accepted_count, 0),
+                    "rendered_count": int(row_yield["rendered"]),
+                    "reject_reasons": row_yield.get("reject_reasons") or {},
+                    "loss_funnel": loss_funnel,
+                    "failure_count": len(list(entry.get("errors") or [])),
+                    "candidate_count": raw_count,
+                    "fresh_last_24h_count": int(entry.get("fresh_last_24h_count") or 0),
+                    "source_contract": str(entry.get("source_contract") or ""),
+                    "trial": bool(entry.get("trial")),
+                    "coverage_signal_count": int(entry.get("coverage_signal_count") or 0),
+                    "coverage_signal_label": str(entry.get("coverage_signal_label") or ""),
+                    "curated_count": int(row_yield["curated"]),
+                }
+                row["human_funnel"] = _source_funnel_human(name, row)
+                sources.append(row)
 
     # Append synthetic sources (Met Office weather, transport_fill
     # reminders) that bypass the core collector. Status is derived from
@@ -1059,24 +1109,24 @@ def _summarise_source_health(
             status = "empty"
             detail = "synthetic: no candidates survived"
         counts[status] = counts.get(status, 0) + 1
-        sources.append(
-            {
-                "name": name,
-                "category": "synthetic",
-                "status": status,
-                "detail": detail,
-                "raw_count": int(row["curated"]),
-                "accepted_count": int(row["curated"]),
-                "rejected_count": 0,
-                "rendered_count": int(row["rendered"]),
-                "reject_reasons": row.get("reject_reasons") or {},
-                "loss_funnel": row.get("loss_funnel") or {},
-                "failure_count": 0,
-                "candidate_count": int(row["curated"]),
-                "fresh_last_24h_count": 0,
-                "curated_count": int(row["curated"]),
-            }
-        )
+        source_row = {
+            "name": name,
+            "category": "synthetic",
+            "status": status,
+            "detail": detail,
+            "raw_count": int(row["curated"]),
+            "accepted_count": int(row["curated"]),
+            "rejected_count": 0,
+            "rendered_count": int(row["rendered"]),
+            "reject_reasons": row.get("reject_reasons") or {},
+            "loss_funnel": row.get("loss_funnel") or {},
+            "failure_count": 0,
+            "candidate_count": int(row["curated"]),
+            "fresh_last_24h_count": 0,
+            "curated_count": int(row["curated"]),
+        }
+        source_row["human_funnel"] = _source_funnel_human(name, source_row)
+        sources.append(source_row)
 
     # Zero-yield sources: fetched OK but contributed nothing past the
     # curator. Surface as a top-level counter so the after-run summary
