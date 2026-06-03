@@ -74,6 +74,16 @@ REWRITE_SHORTLIST_CAPS_BY_BLOCK: dict[str, int] = {
 }
 REWRITE_SHORTLIST_DEFAULT_CAP = 6
 
+# #9 Soft global ceiling on how many candidates we translate per run. Even
+# with per-block caps, the protected/uncapped lane could push the board to 76+
+# (2026-06-03), which bloated the digest with thin cards AND slowed rewrite.
+# This is a SOFT cap, not a hard one: we keep a per-block floor so no section
+# is starved (the failure mode the owner flagged — "новости отсеялись, доп не
+# перевёл, провал"), and the lead / transport / today_focus core is never cut.
+# Items above the ceiling are not deleted — they stay as backup reserve.
+REWRITE_TRANSLATION_BOARD_MAX = 45
+_REWRITE_BLOCK_FLOOR = 3
+
 _PROMPT_FOOTER = (
     '\nВерни ТОЛЬКО JSON-массив: [{"fingerprint": "...", "decision": "write|needs_enrichment|skip", '
     '"draft_line": "• ...", "missing_facts": []}]\n'
@@ -92,6 +102,13 @@ _ANTI_HALLUCINATION = (
     "НО НЕ НАОБОРОТ: если evidence_text длинный (≥400 символов) и в нём есть конкретные факты (имена, цифры, район, дата, причина, "
     "решение) — ПУСТАЯ СТРОКА ЗАПРЕЩЕНА, decision=\"skip\" запрещён. Материала достаточно, твоя работа — извлечь главный факт и одну "
     "деталь и написать пункт. Skip оправдан только когда evidence реально пустой/тизерный, а не когда тебе лень разбирать длинный текст.\n\n"
+    "ПОЯСНЯЙ НЕЗНАКОМОЕ: если в evidence есть короткое пояснение, кто или что это (напр. «popular Dutch DJ», должность, расшифровка "
+    "аббревиатуры) — добавь его при ПЕРВОМ упоминании незнакомого имени/аббревиатуры (ANOTR — голландский диджей; UMIST — бывший "
+    "технический университет). Бери пояснение ТОЛЬКО из evidence, не выдумывай. Читатель не должен гуглить, кто это.\n\n"
+    "СОЧУВСТВЕННЫЕ ШТАМПЫ: не вставляй пустые соболезнования без новостной нагрузки («ушла слишком рано», «мысли с семьёй», "
+    "«любили все, кто знал») — они не несут факта. НО если цитата принадлежит ключевой фигуре события ИЛИ сама по себе является "
+    "новостью (официальное заявление, слова центрального участника) — оставь её. Режется пустая эмоция от периферийных людей, "
+    "а не значимая цитата.\n\n"
 )
 
 _LONG_FORMAT_RULES = (
@@ -524,12 +541,66 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
             )
 
     selected = [candidate for candidate in to_rewrite if id(candidate) in selected_ids]
+
+    # #9 Soft global ceiling. Trim the board to REWRITE_TRANSLATION_BOARD_MAX
+    # by priority, but guarantee: (a) the never-drop core (lead / transport /
+    # today_focus) always stays, and (b) every block that had material keeps
+    # at least _REWRITE_BLOCK_FLOOR items — so a section is never starved.
+    # Overflow is demoted to backup reserve (not deleted), exactly like held.
+    board_overflow = 0
+    if len(selected) > REWRITE_TRANSLATION_BOARD_MAX:
+        def _never_drop(c: dict) -> bool:
+            return bool(c.get("is_lead")) or str(c.get("primary_block") or "") in {"transport", "today_focus"}
+
+        keep_ids: set[int] = {id(c) for c in selected if _never_drop(c)}
+        # Per-block floor: keep the top _REWRITE_BLOCK_FLOOR of each block.
+        by_block: dict[str, list[dict]] = {}
+        for c in selected:
+            by_block.setdefault(str(c.get("primary_block") or ""), []).append(c)
+        for _block, items in by_block.items():
+            for c in sorted(items, key=_rewrite_shortlist_priority, reverse=True)[:_REWRITE_BLOCK_FLOOR]:
+                keep_ids.add(id(c))
+        # Fill the rest of the budget by global priority.
+        room = REWRITE_TRANSLATION_BOARD_MAX - len(keep_ids)
+        if room > 0:
+            rest = sorted(
+                (c for c in selected if id(c) not in keep_ids),
+                key=_rewrite_shortlist_priority,
+                reverse=True,
+            )
+            keep_ids.update(id(c) for c in rest[:room])
+        for candidate in selected:
+            if id(candidate) in keep_ids:
+                continue
+            candidate["include"] = False
+            candidate["backup_candidate"] = True
+            candidate["rewrite_shortlist_status"] = "backup_board_cap"
+            candidate["rewrite_shortlist_reason"] = (
+                f"Outside global translation board (soft max {REWRITE_TRANSLATION_BOARD_MAX})."
+            )
+            _append_reason(candidate, candidate["rewrite_shortlist_reason"])
+            selected_ids.discard(id(candidate))
+            board_overflow += 1
+            held.append(
+                {
+                    "fingerprint": candidate.get("fingerprint") or "",
+                    "title": candidate.get("title") or "",
+                    "source_label": candidate.get("source_label") or "",
+                    "category": candidate.get("category") or "",
+                    "primary_block": str(candidate.get("primary_block") or ""),
+                    "reason": candidate["rewrite_shortlist_reason"],
+                }
+            )
+        selected = [candidate for candidate in to_rewrite if id(candidate) in selected_ids]
+
     return selected, {
         "schema_version": REWRITE_SHORTLIST_VERSION,
         "enabled": True,
         "input_candidates": len(to_rewrite),
         "selected_for_rewrite": len(selected),
         "held_for_backup": len(held),
+        "board_overflow": board_overflow,
+        "board_max": REWRITE_TRANSLATION_BOARD_MAX,
         "caps_by_block": caps,
         "uncapped_selected": len(uncapped_selected),
         "uncapped_examples": uncapped_selected[:20],
@@ -581,6 +652,32 @@ _LONG_FORMAT_CATEGORIES_FOR_REPAIR = {
     "venues_tickets", "russian_speaking_events", "football",
 }
 
+# Hard-news categories where a skip on a story that carries full facts is
+# never acceptable. On 2026-06-03 8 of 12 missing draft_lines were these,
+# with 1100–1500 chars of evidence — the model just chose decision=skip in a
+# batch. The forcing pass re-runs them one at a time.
+_FORCE_WRITE_CATEGORIES = {
+    "media_layer", "gmp", "council", "public_services", "tech_business", "city_news",
+}
+
+# Single-item forcing prompt: skip is removed as an option. The batch prompt
+# lets the model lazily return decision=skip; a one-item call with this prompt
+# cannot. Used only for rich-evidence (≥400 chars) hard-news misses.
+FORCE_WRITE_SYSTEM = """Ты редактор Greater Manchester AM Brief. Тебе дают ОДНУ новость с полным текстом фактов (evidence_text). Твоя ЕДИНСТВЕННАЯ задача — написать русский пункт draft_line по этим фактам.
+
+ВАЖНО: в evidence_text фактов ДОСТАТОЧНО — это не тизер. «skip», «needs_enrichment» и пустая строка ЗАПРЕЩЕНЫ. Ты обязан написать пункт.
+
+ФОРМАТ: строка начинается с «• », 150–400 символов, 2–3 коротких предложения, без ссылок и markdown.
+СТРУКТУРА:
+1) Главный факт: кто/что/где конкретно (район/улица GM), глагол действия.
+2) Ключевая деталь из evidence_text: имя, сумма £, число, причина, дата суда, последствие.
+3) (если есть) что это значит для жителя GM.
+
+АНТИ-ВЫМЫСЕЛ: каждое имя, число, сумма, дата, адрес должны буквально быть в evidence_text/title. Ничего не выдумывай — но из длинного evidence всегда можно взять минимум два реальных факта.
+
+Верни ТОЛЬКО JSON-массив: [{"fingerprint": "...", "draft_line": "• ..."}]
+"""
+
 
 def _has_nothing_to_write_from(candidate: dict) -> bool:
     """True when the source gave only a headline (empty/near-empty
@@ -611,9 +708,16 @@ def _needs_quality_repair(candidate: dict) -> bool:
     normalized = re.sub(r"\s+", " ", line)
     lowered = normalized.lower()
     sentence_count = len(re.findall(r"[.!?]", normalized))
+    # A complete dated event card (real event + date) is allowed to be concise:
+    # the writer accepts it at the lower DATED_EVENT floor, so re-flagging it
+    # "weak" here only churns repairs and inflates weak_after for cards that
+    # will publish fine (David Gray, Grand Soul Day Party on 2026-06-03). The
+    # writer_errors check above is already authoritative for these.
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    has_event_date = bool(event.get("is_event") and str(event.get("date_start") or event.get("date") or "").strip())
     # Long-format card: must hit ≥150 chars AND ≥2 sentences. Anything
     # shorter is still a headline and will be blocked by the writer.
-    if category in _LONG_FORMAT_CATEGORIES_FOR_REPAIR:
+    if category in _LONG_FORMAT_CATEGORIES_FOR_REPAIR and not has_event_date:
         if len(normalized) < 150 or sentence_count < 2:
             return True
     if len(normalized) < 90 and (category == "food_openings" or primary_block in {"weekend_activities", "next_7_days", "ticket_radar"}):
@@ -862,6 +966,10 @@ def _call_provider_batch(
         else:
             user_payload = batch_items
         user_content = json.dumps(user_payload, ensure_ascii=False)
+        # #10: record every action's timing (start/end/duration), not just
+        # stage boundaries — so we can see where the rewrite minutes actually go.
+        _started_at = now_london().isoformat()
+        _t0 = time.monotonic()
         try:
             logger.info(
                 "%s: batch %s/%d (%s) — sending %d candidates to %s...",
@@ -907,6 +1015,9 @@ def _call_provider_batch(
                 total_batches=len(batches),
             )
             batch_diagnostic["attempt"] = attempt
+            batch_diagnostic["started_at"] = _started_at
+            batch_diagnostic["finished_at"] = now_london().isoformat()
+            batch_diagnostic["duration_seconds"] = round(time.monotonic() - _t0, 3)
             if diagnostics is not None:
                 diagnostics.append(batch_diagnostic)
             logger.info(
@@ -943,6 +1054,9 @@ def _call_provider_batch(
                         "returned_items": 0,
                         "accepted": 0,
                         "error": f"{exc.__class__.__name__}: {exc}",
+                        "started_at": _started_at,
+                        "finished_at": now_london().isoformat(),
+                        "duration_seconds": round(time.monotonic() - _t0, 3),
                     }
                 )
             return {}
@@ -1010,6 +1124,7 @@ def _call_with_fallback(
     route_name: str = "rewrite",
     today_date: str = "",
     diagnostics: list[dict] | None = None,
+    batch_size_override: int | None = None,
 ) -> ProviderMapping:
     """Call provider chain with a specific prompt, return fingerprint→draft_line."""
     if not candidates:
@@ -1045,7 +1160,7 @@ def _call_with_fallback(
                 missing,
                 f"{step.provider_label}{label_suffix}",
                 timeout=step.timeout_seconds or 90,
-                batch_size=step.batch_size or BATCH_SIZE,
+                batch_size=batch_size_override or step.batch_size or BATCH_SIZE,
                 system_prompt=prompt,
                 prompt_name=prompt_name,
                 today_date=today_date,
@@ -1149,6 +1264,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     """Read candidates.json, fill Russian draft_lines for included candidates."""
     report_path = project_root / "data" / "state" / "llm_rewrite_report.json"
     candidates_path = project_root / "data" / "state" / "candidates.json"
+    _stage_t0 = time.monotonic()  # #10: total wall-clock of the rewrite stage
 
     def _prompt_versions() -> list[dict[str, str]]:
         from news_digest.pipeline.prompts_meta import snapshot as prompts_snapshot  # noqa: PLC0415
@@ -1454,6 +1570,50 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
             logger.info("LLM repair pass: repaired %d weak draft_lines.", repaired)
 
+    # Forcing pass: rich-evidence hard news that the batch passes skipped. The
+    # batch prompt lets the model return decision=skip on a story it could
+    # easily write (8 of 12 misses on 2026-06-03 carried 1100–1500 chars of
+    # evidence). Re-run those ONE AT A TIME with a prompt that forbids skip —
+    # a single-item call cannot hide a lazy skip inside a batch of three.
+    force_targets = [
+        c for c in to_rewrite
+        if isinstance(c, dict)
+        and not str(c.get("draft_line") or "").strip()
+        and not _has_nothing_to_write_from(c)
+        and str(c.get("category") or "") in _FORCE_WRITE_CATEGORIES
+        and len(re.sub(r"\s+", " ", str(c.get("evidence_text") or "")).strip()) >= 400
+    ]
+    forced = 0
+    if force_targets:
+        logger.info("LLM forcing pass: %d rich-evidence misses, single-item forced write.", len(force_targets))
+        force_mapping = _call_with_fallback(
+            force_targets,
+            FORCE_WRITE_SYSTEM,
+            provider_override,
+            base_url_override,
+            model_override,
+            label_suffix="-force",
+            prompt_name="force_write",
+            route_name="rewrite",
+            diagnostics=provider_batch_diagnostics,
+            batch_size_override=1,
+        )
+        run_iso = now_london().isoformat()
+        for candidate in candidates:
+            fp = str(candidate.get("fingerprint") or "").strip()
+            if fp not in force_mapping or str(candidate.get("draft_line") or "").strip():
+                continue
+            replacement, prov, model_name = force_mapping[fp]
+            if replacement and not _writer_quality_errors(candidate, replacement):
+                candidate["draft_line"] = replacement
+                candidate["draft_line_provider"] = prov
+                candidate["draft_line_model"] = model_name
+                candidate["draft_line_written_at"] = run_iso
+                forced += 1
+        if forced:
+            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            logger.info("LLM forcing pass: recovered %d draft_lines.", forced)
+
     all_missing = [
         c for c in to_rewrite
         if not str(c.get("draft_line") or "").strip()
@@ -1545,6 +1705,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "applied": applied,
             "fixed": fixed,
             "repaired": repaired,
+            "rewrite_seconds": round(time.monotonic() - _stage_t0, 2),
             "cost_summary": cost_summary,
             "prompt_versions": _prompt_versions(),
             "model_route": route_snapshot().get("rewrite", []),
