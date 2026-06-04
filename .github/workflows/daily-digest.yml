@@ -206,6 +206,10 @@ jobs:
           # new API call, so the daily semantic-dedup cost stays at the
           # marginal "today's new candidates" only.
           git add -f data/state/embedding_cache.json || true
+          # Ticket fame (Wikidata/MusicBrainz/Last.fm/Spotify) cache. Persisting
+          # it means a known artist is graded once, not re-looked-up every day —
+          # faster and stable when an upstream API is briefly down.
+          git add -f data/state/ticket_notability_cache.json || true
           # S6: post-publish judge eval history. Persistent across days
           # so drift detection has a 30-day baseline to compare against.
           git add -f data/state/digest_evals.jsonl || true

@@ -591,8 +591,8 @@ def _support_top_issues(
     if critical_event_misses:
         issues.append((
             110,
-            f"Событийный pipeline подозрителен: {critical_event_misses} возможных пропусков.",
-            "Это не значит, что все они точно потеряны; главный риск — ложные дубли и события без нормального финального текста.",
+            f"Под подозрением на потерю при отборе/сборке: {critical_event_misses} событий (метрика для авторазбора, не для ручного чтения утром).",
+            "Это НЕ опубликованные пункты и не подтверждённые потери — это кандидаты в дедупе/писателе, которые стоит перепроверить автоматически.",
         ))
     if rendered > 45:
         issues.append((
@@ -948,7 +948,7 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
     if dropped:
         lines.append(f"• Снято на этапе писателя (нет текста / англ. / низкое качество): {dropped}.")
     if no_text:
-        lines.append(f"• Модель реально не написала текст: {no_text} из {sent_to_text} (это и есть «нестабильная генерация»).")
+        lines.append(f"• Модель решила пропустить (нет/мало фактуры в источнике): {no_text} из {sent_to_text}.")
     if weak_text:
         lines.append(f"• Текст написан, но слабый после ремонта: {weak_text}.")
     lines.append("Примечание: разбор «дубли / отклонено правилами» считается по всему собранному пулу (~сотни), а не по этому набору — детали в JSON (final_loss_check).")
@@ -1123,7 +1123,7 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
         total = llm_report.get("included_for_rewrite")
         if applied is not None and total is not None:
             missing = max(0, int(total or 0) - int(applied or 0))
-            lines.append(f"Модель написала финальный текст для {applied} из {total} материалов; без нормального текста осталось {missing}.")
+            lines.append(f"Материалов без финального текста: {missing} (из {total} отправленных на генерацию; счётчик дописанных включает recovery-проходы).")
         weak_after = llm_report.get("weak_after") or []
         if weak_after:
             lines.append(f"После ремонта текста всё ещё слабых карточек: {len(weak_after)}.")
