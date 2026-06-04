@@ -390,13 +390,22 @@ def _slice_counting_only_non_exempt(
     candidate_by_fp: dict[str, dict],
     section_name: str,
     counted_limit: int,
+    ignore_section_exemption: bool = False,
 ) -> tuple[list[str], list[str], list[str], list[float], list[str], list[int], int]:
     kept_idx: list[int] = []
     dropped_idx: list[int] = []
     counted_kept = 0
     for idx, fp in enumerate(fps):
         candidate = candidate_by_fp.get(str(fp or ""))
-        exempt = _is_public_budget_exempt(section_name, candidate)
+        # The blanket section exemption (e.g. "Крупные концерты вне GM") means
+        # "do not eat the global 45-item budget" — it must NOT also disable the
+        # section's own SECTION_MAX_ITEMS cap, or the section grows without
+        # bound (25 out-of-GM concerts on 2026-06-04). For the per-section cap
+        # only the per-candidate market/recurring pass applies.
+        if ignore_section_exemption:
+            exempt = _is_market_or_recurring_event(candidate) if isinstance(candidate, dict) else False
+        else:
+            exempt = _is_public_budget_exempt(section_name, candidate)
         if exempt or counted_kept < counted_limit:
             kept_idx.append(idx)
             if not exempt:
@@ -1059,13 +1068,31 @@ def _repair_follow_up_line(candidate: dict, line: str) -> tuple[str, list[str]]:
     phase = str(candidate.get("change_phase") or "")
     if change_type not in {"follow_up", "same_story_new_facts", "new_phase"} and why_now != "update_today":
         return line, []
+    # Ticket / event lines already carry their own occasion ("на этой неделе",
+    # "появился билетный повод") and a clock time like "18:30". The follow-up
+    # lead is a NEWS device; on a ticket line it is redundant AND its place-
+    # prefix regex matched the colon inside the time, injecting the label
+    # mid-time ("18:обновление: появился билетный повод; 00") on 2026-06-04.
+    if (
+        phase == "tickets_on_sale"
+        or str(candidate.get("category") or "") == "venues_tickets"
+        or str(candidate.get("primary_block") or "") in {"ticket_radar", "outside_gm_tickets", "next_7_days", "future_announcements"}
+    ):
+        return line, []
     if not phase or re.search(r"^\s*•\s*(?:обновление|update)\b", line, re.IGNORECASE):
         return line, []
 
-    label = _PHASE_LABELS_RU.get(phase, "появилось обновление")
+    label = _PHASE_LABELS_RU.get(phase)
+    if not label:
+        # Unknown phase → the generic "появилось обновление" only produced the
+        # tautological "обновление: появилось обновление;" lead (Stockport /
+        # Oldham on 2026-06-04). Skip the lead unless the phase says something.
+        return line, []
     repaired = _strip_empty_emotive_quote(line)
-    # Keep the original place prefix if it exists: "• Rochdale: ..."
-    match = re.match(r"^(•\s*[^:]{2,45}:\s*)(.+)$", repaired)
+    # Keep the original place prefix if it exists: "• Rochdale: ...". The colon
+    # must be a place-label colon, never a clock-time colon ("18:00"), so forbid
+    # a digit immediately before it.
+    match = re.match(r"^(•\s*[^:]{2,45}(?<!\d):\s*)(.+)$", repaired)
     if match:
         return f"{match.group(1)}обновление: {label}; {match.group(2)[:1].lower()}{match.group(2)[1:]}", ["follow_up_leads_with_change"]
     return f"• Обновление: {label}; {repaired.removeprefix('• ').strip()}", ["follow_up_leads_with_change"]
@@ -3001,6 +3028,7 @@ def write_digest(project_root: Path) -> StageResult:
                 candidate_by_fp=candidate_by_fp,
                 section_name=section_name,
                 counted_limit=cap,
+                ignore_section_exemption=True,
             )
         # Section min-floor pull-back. On 2026-05-27 «Главная история
         # дня»=1 and «Что важно сегодня»=2 while score-10 candidates
