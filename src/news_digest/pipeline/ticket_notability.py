@@ -48,6 +48,10 @@ class TicketNotability:
 
 def _clean_artist_name(title: str) -> str:
     cleaned = re.sub(r"\s+", " ", str(title or "")).strip()
+    # Pipe-delimited source titles ("Jason Isbell and the 400 Unit | The
+    # Bridgewater Hall") leave a dangling "| The —" in the card; keep only the
+    # part before the first pipe.
+    cleaned = re.split(r"\s*\|\s*", cleaned, maxsplit=1)[0].strip()
     cleaned = re.split(r"\s+[—-]\s+event\b", cleaned, maxsplit=1, flags=re.IGNORECASE)[0]
     cleaned = re.sub(r"\s+[—-]\s+public\s+sale\b.*$", "", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"\b(?:venue premium tickets|premium tickets)\b", "", cleaned, flags=re.IGNORECASE)

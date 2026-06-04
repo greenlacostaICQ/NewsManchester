@@ -746,11 +746,20 @@ _TICKET_NEGATIVE_RE = re.compile(
 def _ticket_price(candidate: dict) -> str:
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     price = re.sub(r"\s+", " ", str(event.get("price") or "")).strip()
-    if price:
-        return price
-    blob = " ".join(str(candidate.get(field) or "") for field in ("summary", "lead", "evidence_text"))
-    prices = re.findall(r"£\s?\d+(?:\.\d{1,2})?(?:\s?[–-]\s?£?\d+(?:\.\d{1,2})?)?", blob)
-    return prices[0].replace(" ", "") if prices else ""
+    if not price:
+        blob = " ".join(str(candidate.get(field) or "") for field in ("summary", "lead", "evidence_text"))
+        prices = re.findall(r"£\s?\d+(?:\.\d{1,2})?(?:\s?[–-]\s?£?\d+(?:\.\d{1,2})?)?", blob)
+        price = prices[0].replace(" ", "") if prices else ""
+    if not price:
+        return ""
+    # Fee-not-price guard: a lone amount under ~£8 (e.g. "£4.75") is almost
+    # always a per-ticket booking/transaction fee, not the ticket price. Showing
+    # "цена £4.75" is worse than no price (Jason Isbell on 2026-06-04), so drop
+    # it. A range ("£15–£40") keeps its top value and is left alone.
+    amounts = [float(x) for x in re.findall(r"\d+(?:\.\d{1,2})?", price)]
+    if amounts and max(amounts) < 8:
+        return ""
+    return price
 
 
 def _is_diaspora_ticket(candidate: dict) -> bool:
@@ -825,6 +834,13 @@ def _ticket_watch_decision(candidate: dict) -> dict[str, object]:
     decision = "show" if score >= _TICKET_PUBLIC_THRESHOLD else "hide"
     if _is_diaspora_ticket(candidate):
         decision = "show"
+    # #1 Out-of-GM concerts must earn their place by FAME, not venue size.
+    # An unknown act at a big arena (Anfield, M&S Bank Arena) was crossing the
+    # score threshold on the "крупная площадка" bonus alone. In this block only
+    # genuinely notable acts qualify (Wikidata/streaming tier A or B); everyone
+    # else is hidden regardless of venue.
+    if str(candidate.get("primary_block") or "") == "outside_gm_tickets" and tier.upper() not in {"A", "B", "PROTECTED"}:
+        decision = "hide"
     reasons = [part.strip() for part in _ticket_watch_reason(candidate).split(";") if part.strip()]
     if not reasons and decision == "hide":
         reasons = ["недостаточный notability-сигнал"]

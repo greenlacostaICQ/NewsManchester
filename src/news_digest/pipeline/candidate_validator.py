@@ -445,6 +445,11 @@ _LOW_VALUE_FOOTBALL_RE = re.compile(
 _STRONG_NON_GM_RE = re.compile(
     r"\b("
     r"warrington|cheshire|liverpool|london|leeds|sheffield|birmingham|"
+    r"blackpool|blackburn|burnley|lancaster|chester|crewe|bradford|"
+    r"wakefield|nottingham|leicester|newcastle|"
+    # "Preston Crown Court" is a court name, not a GM location; only treat
+    # Preston as non-GM when it reads as the city, not a person/court.
+    r"preston\s+(?:city|town|north|new\s+road)|"
     r"texas|america|usa|united\s+states"
     r")\b",
     re.IGNORECASE,
@@ -470,6 +475,33 @@ def _news_text_without_publisher_chrome(candidate: dict) -> str:
     text = re.sub(r"\bnews\s+greater\s+manchester\s+news\b", " ", text, flags=re.IGNORECASE)
     text = re.sub(r"\bgreater\s+manchester\s+news\b", " ", text, flags=re.IGNORECASE)
     return text
+
+
+_TOUR_ANNOUNCE_RE = re.compile(
+    r"\b(?:announce[sd]?|unveil(?:s|ed)?|reveal(?:s|ed)?)\b[^.]{0,40}\b(?:uk\s+)?tour\b|"
+    r"\b(?:uk|headline|world|arena)\s+tour\b|\btour\s+dates?\b|\btickets?\s+(?:on\s+sale|go\s+on\s+sale)\b",
+    re.IGNORECASE,
+)
+
+
+def _reroute_tour_announcement(candidate: dict) -> bool:
+    """A tour / on-sale announcement is a ticket lead, not fresh city news. On
+    2026-06-04 "Amble Announce UK Tour 2026 Including Manchester Apollo" sat in
+    «Свежие новости» (media_layer/last_24h). Move such items into the
+    forward-looking announcements lane so news stays news and tickets sit with
+    tickets. Only fires for news-lane culture items, never touches hard news."""
+    if str(candidate.get("category") or "") not in {"media_layer", "culture_weekly"}:
+        return False
+    if str(candidate.get("primary_block") or "") not in {"last_24h", "city_watch"}:
+        return False
+    blob = " ".join(str(candidate.get(f) or "") for f in ("title", "summary", "lead"))
+    if not _TOUR_ANNOUNCE_RE.search(blob):
+        return False
+    candidate["primary_block"] = "future_announcements"
+    existing = str(candidate.get("reason") or "").strip()
+    note = "Validator: tour/on-sale announcement rerouted from news to announcements lane."
+    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    return True
 
 
 def _exclude_non_gm_news(candidate: dict) -> bool:
@@ -1746,6 +1778,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _exclude_stale_ticket_onsale(candidate)
         if candidate.get("include"):
             _ensure_default_ticket_type(candidate)
+        if candidate.get("include"):
+            _reroute_tour_announcement(candidate)
         if candidate.get("include"):
             _exclude_non_gm_news(candidate)
         if candidate.get("include"):
