@@ -72,8 +72,10 @@ def is_event_candidate(candidate: dict) -> bool:
     category = str(candidate.get("category") or "")
     if category in _EVENT_CATEGORIES:
         return True
+    block = str(candidate.get("primary_block") or "")
+    if block in _OPTIONAL_EVENT_BLOCKS:
+        return True
     if category in _OPTIONAL_EVENT_CATEGORIES:
-        block = str(candidate.get("primary_block") or "")
         return block in _OPTIONAL_EVENT_BLOCKS
     return False
 
@@ -124,6 +126,7 @@ _EN_MONTHS: dict[str, int] = {
 
 # ISO date: 2026-05-16
 _ISO_DATE_RE = re.compile(r"\b(20\d{2})-(\d{2})-(\d{2})\b")
+_UK_SLASH_DATE_RE = re.compile(r"\b(?P<day>\d{1,2})/(?P<month>\d{1,2})/(?P<year>20\d{2})\b")
 
 # English: "16 May 2026", "May 16, 2026", "16 May", "May 16"
 _EN_DAY_MONTH_YEAR_RE = re.compile(
@@ -198,9 +201,10 @@ def _parse_date_from_blob(blob: str, *, today: date_cls | None = None) -> tuple[
       1. Day-range English ("16-17 May")            — most informative
       2. Day-range Russian ("16-17 мая")
       3. ISO ("2026-05-16")
-      4. English "16 May [2026]"
-      5. English "May 16[, 2026]"
-      6. Russian "16 мая [2026]"
+      4. UK slash date ("12/06/2026")
+      5. English "16 May [2026]"
+      6. English "May 16[, 2026]"
+      7. Russian "16 мая [2026]"
 
     For ranges, returns the START date as ``iso_date`` so other code
     (deduplication, "is in the future?" gates) has a single sortable
@@ -228,6 +232,11 @@ def _parse_date_from_blob(blob: str, *, today: date_cls | None = None) -> tuple[
 
     if m := _ISO_DATE_RE.search(blob):
         iso = _safe_date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        if iso:
+            return iso, iso
+
+    if m := _UK_SLASH_DATE_RE.search(blob):
+        iso = _safe_date(int(m.group("year")), int(m.group("month")), int(m.group("day")))
         if iso:
             return iso, iso
 
@@ -362,6 +371,10 @@ def _extract_booking_url(candidate: dict) -> str:
 _AT_VENUE_RE = re.compile(
     r"\b(?:at|in)\s+(?P<name>[A-Z][A-Za-z'\-]+(?:\s+[A-Z][A-Za-z'\-]+){0,3})\b"
 )
+_LABELLED_LOCATION_RE = re.compile(
+    r"\b(?:Location|Venue)\s*:\s*(?P<name>[^.;\n\r]+)",
+    re.IGNORECASE,
+)
 
 
 def _extract_venue(candidate: dict, entities: dict) -> str:
@@ -372,6 +385,11 @@ def _extract_venue(candidate: dict, entities: dict) -> str:
     # capital-cased multiword name. Keeps Title-Case-only matches to
     # avoid false-positives on common nouns like "at home".
     blob = " ".join(str(candidate.get(f) or "") for f in ("title", "summary", "lead"))
+    if m := _LABELLED_LOCATION_RE.search(blob):
+        name = m.group("name").strip()
+        parts = [part.strip() for part in name.split(",") if part.strip()]
+        if parts:
+            return ", ".join(parts[:2])
     if m := _AT_VENUE_RE.search(blob):
         name = m.group("name").strip()
         if name.lower() not in {"home", "manchester", "london", "the uk", "the future"}:

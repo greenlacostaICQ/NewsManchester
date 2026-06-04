@@ -1552,6 +1552,15 @@ def _exclude_cross_day_rehash(candidate: dict, state_dir: Path) -> bool:
     block = str(candidate.get("primary_block") or "")
     if block in {"transport", "weather"}:
         return False
+    if block == "weekend_activities" and _has_recurrence_pattern(candidate):
+        today_date = now_london().date()
+        days_to_sat = (5 - today_date.weekday()) % 7
+        days_to_sun = (6 - today_date.weekday()) % 7
+        if min(days_to_sat, days_to_sun) <= 3:
+            # A recurring market/fair is not a stale repeat just because
+            # yesterday's digest also mentioned the same page. The actionable
+            # occurrence is the next weekend instance.
+            return False
 
     policy = contract.get("section_policy") if isinstance(contract.get("section_policy"), dict) else {}
     try:

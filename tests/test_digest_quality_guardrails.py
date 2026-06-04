@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from unittest import mock
 
@@ -234,6 +234,30 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertEqual(_apply_intra_batch_dedup(candidates), [])
 
+    def test_distinct_markets_do_not_collapse_before_topic_cluster(self) -> None:
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "nq-market",
+                "title": "Makers Market",
+                "summary": "Every Sunday at Northern Quarter with traders and food.",
+                "primary_block": "weekend_activities",
+                "source_label": "Northern Quarter Makers Market",
+                "story_cluster_key": "generic-makers-market",
+            },
+            {
+                "include": True,
+                "fingerprint": "wythenshawe-market",
+                "title": "Makers Market",
+                "summary": "Every Sunday at Wythenshawe with traders and food.",
+                "primary_block": "weekend_activities",
+                "source_label": "Wythenshawe Makers Market",
+                "story_cluster_key": "generic-makers-market",
+            },
+        ]
+
+        self.assertEqual(_apply_intra_batch_dedup(candidates), [])
+
     def test_recurring_market_open_on_weekend_passes_date_validator(self) -> None:
         updated = self._validate_one(
             {
@@ -253,6 +277,32 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         )
 
         self.assertTrue(updated["include"])
+
+    def test_weekend_backfill_targets_real_section_depth(self) -> None:
+        from news_digest.pipeline import practical_backfill
+
+        candidates = [{"include": True, "primary_block": "weekend_activities", "fingerprint": "seed"}]
+        for idx in range(10):
+            candidates.append(
+                {
+                    "include": True,
+                    "primary_block": "next_7_days",
+                    "category": "culture_weekly",
+                    "fingerprint": f"weekend-{idx}",
+                    "title": f"Weekend event {idx}",
+                    "event": {"date_start": "2026-06-06", "is_event": True},
+                }
+            )
+
+        with mock.patch.object(practical_backfill, "now_london") as fake_now:
+            fake_now.return_value.date.return_value = date(2026, 6, 4)
+            summary = practical_backfill.apply_practical_backfill(candidates)
+
+        self.assertEqual(summary["weekend_activities"], 7)
+        self.assertEqual(
+            sum(1 for c in candidates if c.get("include") and c.get("primary_block") == "weekend_activities"),
+            8,
+        )
 
     def test_flower_festival_has_redundant_weekend_sources(self) -> None:
         sources = [

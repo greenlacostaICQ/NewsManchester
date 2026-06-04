@@ -278,6 +278,24 @@ class ExtractEventTest(unittest.TestCase):
         self.assertTrue(result["date"].startswith("2026-05-1"))
         self.assertIn("17", result["date_text"])
 
+    def test_stockport_events_uk_slash_date_and_location(self):
+        c = {
+            "title": "Author talk with Antonia Grave - Stockport Council",
+            "summary": (
+                "Local author, Antonia Grave will be talking about her crime thriller book, Six Strikes. "
+                "Location: Great Moor Library, 12 Gladstone Street, Stockport, SK2 7QF "
+                "Fee: Free Event Date and Time: 12/06/2026 18:00 - 19:00"
+            ),
+            "category": "council",
+            "primary_block": "weekend_activities",
+            "source_url": "https://www.stockport.gov.uk/events/author-talk-antonia-grave",
+        }
+        result = extract_event(c)
+        self.assertEqual(result["date_start"], "2026-06-12")
+        self.assertEqual(result["venue"], "Great Moor Library, 12 Gladstone Street")
+        self.assertEqual(result["price"], "free")
+        self.assertTrue(result["is_event"])
+
 
 class EnrichCandidateEventTest(unittest.TestCase):
     def test_enrich_idempotent(self):

@@ -294,6 +294,7 @@ _DEDUP_BLOCK_GROUPS: tuple[frozenset[str], ...] = (
     frozenset({"openings", "tech_business"}),
 )
 _TRANSPORT_TICKET_BLOCKS = frozenset({"transport", "weather", "ticket_radar", "outside_gm_tickets"})
+_MARKET_LISTING_RE = re.compile(r"\b(?:market|car boot|makers market|artisan market|flea market)\b", re.IGNORECASE)
 
 
 def _block_group(primary_block: str) -> str:
@@ -301,6 +302,30 @@ def _block_group(primary_block: str) -> str:
         if primary_block in group:
             return f"group:{i}"
     return primary_block
+
+
+def _market_identity_tokens(candidate: dict) -> set[str]:
+    text = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("source_label", "title", "summary", "evidence_text")
+    ).lower()
+    if not _MARKET_LISTING_RE.search(text):
+        return set()
+    return {
+        re.sub(r"\s+", " ", token).strip()
+        for token in re.findall(
+            r"\b(?:new smithfield|bowlee|barton|burnage|altrincham|northern quarter|"
+            r"stockport|urmston|chorlton|levenshulme|wythenshawe|ancoats|cheadle|"
+            r"stretford|first street|aerodrome|community park|market house)\b",
+            text,
+        )
+    }
+
+
+def _distinct_market_pair(a: dict, b: dict) -> bool:
+    a_ids = _market_identity_tokens(a)
+    b_ids = _market_identity_tokens(b)
+    return bool(a_ids and b_ids and a_ids.isdisjoint(b_ids))
 
 
 def _comparable(a: dict, b: dict) -> bool:
@@ -315,6 +340,8 @@ def _comparable(a: dict, b: dict) -> bool:
     block_b = str(b.get("primary_block") or "")
     if block_a in _TRANSPORT_TICKET_BLOCKS or block_b in _TRANSPORT_TICKET_BLOCKS:
         return False  # boilerplate-heavy — embeddings give false positives
+    if _distinct_market_pair(a, b):
+        return False
     return _block_group(block_a) == _block_group(block_b)
 
 

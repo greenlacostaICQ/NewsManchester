@@ -1100,7 +1100,8 @@ def _market_identity_tokens(candidate: dict) -> set[str]:
     tokens: set[str] = set()
     for phrase in re.findall(
         r"\b(?:new smithfield|bowlee|barton|burnage|altrincham|northern quarter|"
-        r"stockport|urmston|chorlton|levenshulme|first street|makers?|artisan|"
+        r"stockport|urmston|chorlton|levenshulme|wythenshawe|ancoats|cheadle|"
+        r"stretford|first street|"
         r"aerodrome|community park|market house)\b",
         text,
     ):
@@ -1402,6 +1403,8 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
             # or generic topic-key can no longer collapse distinct concerts.
             if is_event_ticket_group and _is_distinct_ticket_event(ci, cj):
                 continue
+            if _distinct_market_listing_pair(ci, cj):
+                continue  # distinct weekend markets survive generic cluster/topic keys
 
             cluster_j = str(cj.get("story_cluster_key") or "")
             if cluster_i and cluster_i == cluster_j:
@@ -1468,8 +1471,6 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
             borough_j = _extract_borough(str(cj.get("title") or ""))
             if borough_i != borough_j:
                 continue  # different boroughs = different stories
-            if _distinct_market_listing_pair(ci, cj):
-                continue  # same generic listing wording, different market/venue
             # Transport: different stops / lines / operators are different
             # incidents — never let title-token Jaccard or "shared entity"
             # (e.g. "Tram", "Stop", "Disruption") collapse Piccadilly tram

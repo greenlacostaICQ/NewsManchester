@@ -83,6 +83,9 @@ REWRITE_SHORTLIST_DEFAULT_CAP = 6
 # Items above the ceiling are not deleted — they stay as backup reserve.
 REWRITE_TRANSLATION_BOARD_MAX = 45
 _REWRITE_BLOCK_FLOOR = 3
+_REWRITE_BLOCK_FLOORS: dict[str, int] = {
+    "weekend_activities": 8,
+}
 
 _PROMPT_FOOTER = (
     '\nВерни ТОЛЬКО JSON-массив: [{"fingerprint": "...", "decision": "write|needs_enrichment|skip", '
@@ -478,11 +481,38 @@ def _must_translate_before_cap(candidate: dict) -> bool:
     protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
     if block in {"transport", "today_focus"}:
         return True
+    if block == "weekend_activities" and _is_actionable_weekend_candidate(candidate):
+        return True
     if category in {"media_layer", "council", "gmp", "public_services", "city_news"} and tier in {"must_include", "strong"}:
         return True
     if protected.get("protected") and category != "venues_tickets":
         return True
     return False
+
+
+def _candidate_event_day(candidate: dict) -> date | None:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    for value in (event.get("date_start"), event.get("date")):
+        text = str(value or "").strip()
+        if not text:
+            continue
+        try:
+            return date.fromisoformat(text[:10])
+        except ValueError:
+            continue
+    return None
+
+
+def _is_actionable_weekend_candidate(candidate: dict) -> bool:
+    today = today_london()
+    days_to_sat = (5 - today.weekday()) % 7
+    start = today + timedelta(days=days_to_sat)
+    end = start + timedelta(days=1)
+    event_day = _candidate_event_day(candidate)
+    if event_day and start <= event_day <= end:
+        return True
+    blob = " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead", "evidence_text")).lower()
+    return bool(re.search(r"\b(?:every|weekly|saturdays?|sundays?|weekend|каждую\s+субботу|каждое\s+воскресенье)\b", blob))
 
 
 def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> tuple[list[dict], dict[str, object]]:
@@ -562,7 +592,8 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
         for c in selected:
             by_block.setdefault(str(c.get("primary_block") or ""), []).append(c)
         for _block, items in by_block.items():
-            for c in sorted(items, key=_rewrite_shortlist_priority, reverse=True)[:_REWRITE_BLOCK_FLOOR]:
+            floor = _REWRITE_BLOCK_FLOORS.get(_block, _REWRITE_BLOCK_FLOOR)
+            for c in sorted(items, key=_rewrite_shortlist_priority, reverse=True)[:floor]:
                 keep_ids.add(id(c))
         # Fill the rest of the budget by global priority.
         room = REWRITE_TRANSLATION_BOARD_MAX - len(keep_ids)

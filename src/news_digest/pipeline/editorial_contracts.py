@@ -717,6 +717,8 @@ def _topic_key(candidate: dict, story_type: str = "", event_shape: str = "") -> 
         event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
         title = str(event.get("event_name") or candidate.get("title") or "")
         venue = str(event.get("venue") or ticket_venue(candidate) or candidate.get("source_label") or "")
+        if event_shape == "recurring" and re.search(r"\b(?:market|car boot|makers market|artisan market|flea market)\b", _contract_blob(candidate), re.IGNORECASE):
+            venue = str(event.get("venue") or candidate.get("source_label") or ticket_venue(candidate) or "")
         return "event:" + normalize_title(f"{title} {venue}")[:120]
     if story_type in {"planning", "civic", "incident", "opening", "memorial", "local_cost", "local_service_change"}:
         title = normalize_title(str(candidate.get("title") or ""))

@@ -108,7 +108,6 @@ TODAY_FOCUS_MIN_SOURCE_REMAINING = {
 DEGRADED_LLM_SECTION_MAX_ITEMS = {
     "Свежие новости": 6,
     "Городской радар": 5,
-    "Выходные в GM": 5,
     "Что важно в ближайшие 7 дней": 4,
     "Билеты / Ticket Radar": 3,
     "Еда, открытия и рынки": 2,
@@ -121,7 +120,7 @@ PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 35
 PUBLIC_SECTION_RESERVED_MIN = {
     # These sections answer "what can I do / see / book now"; they must not
     # disappear just because early news sections are noisy on a given morning.
-    "Выходные в GM": 3,
+    "Выходные в GM": 8,
     "Что важно в ближайшие 7 дней": 3,
     "Билеты / Ticket Radar": 2,
     "Футбол": 2,
@@ -2949,7 +2948,7 @@ def write_digest(project_root: Path) -> StageResult:
         titles = section_titles.get(section_name, [])
         # Re-rank capped sections so the cap keeps practical local value,
         # rather than whichever source happened to run first.
-        if section_name in SECTION_MAX_ITEMS and scores:
+        if (section_name in SECTION_MAX_ITEMS or section_name == "Выходные в GM") and scores:
             triples = sorted(
                 zip(lines, srcs + [""] * (len(lines) - len(srcs)),
                     scores + [0.0] * (len(lines) - len(scores)),

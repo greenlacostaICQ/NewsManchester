@@ -7,6 +7,8 @@ from news_digest.pipeline.common import now_london
 
 
 PRACTICAL_BACKFILL_VERSION = 1
+WEEKEND_TARGET_MIN = 8
+WEEKEND_BACKFILL_LIMIT = 12
 
 
 def _parse_day(value: object) -> date | None:
@@ -68,12 +70,14 @@ def _mark_backfilled(candidate: dict, *, from_block: str, to_block: str, reason:
 
 
 def _backfill_weekend(candidates: list[dict], today: date) -> int:
-    if today.weekday() < 3 or _count_included(candidates, "weekend_activities") >= 2:
+    if today.weekday() < 3 or _count_included(candidates, "weekend_activities") >= WEEKEND_TARGET_MIN:
         return 0
     start, end = _weekend_window(today)
     promoted = 0
+    target = max(0, WEEKEND_TARGET_MIN - _count_included(candidates, "weekend_activities"))
+    limit = min(WEEKEND_BACKFILL_LIMIT, target)
     for candidate in candidates:
-        if promoted >= 4:
+        if promoted >= limit:
             break
         if not isinstance(candidate, dict) or not candidate.get("include") or not _is_eventish(candidate):
             continue

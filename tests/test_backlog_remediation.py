@@ -2027,6 +2027,33 @@ class TelegramBacklog20260527Test(unittest.TestCase):
             _exclude_cross_day_rehash(candidate, state_dir)
             self.assertTrue(candidate["include"])
 
+    def test_recurring_weekend_market_not_blocked_as_rehash(self) -> None:
+        from news_digest.pipeline.candidate_validator import _exclude_cross_day_rehash
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+            daily_dir = state_dir / "daily_index"
+            daily_dir.mkdir(parents=True)
+            yesterday = (now_london().date() - timedelta(days=1)).isoformat()
+            (daily_dir / f"{yesterday}.jsonl").write_text(
+                json.dumps({"fingerprint": "fp-recurring-market", "included": True}) + "\n",
+                encoding="utf-8",
+            )
+            candidate = {
+                "include": True,
+                "fingerprint": "fp-recurring-market",
+                "title": "Northern Quarter Makers Market",
+                "summary": "Every Sunday in Northern Quarter with traders, food and crafts.",
+                "primary_block": "weekend_activities",
+                "editorial_contract": {
+                    "event_shape": "recurring",
+                    "anchor_type": "recurring_occurrence",
+                    "section_policy": {"repeat_ttl_days": 2},
+                },
+                "event": {"is_recurring": True, "event_name": "Northern Quarter Makers Market"},
+            }
+            _exclude_cross_day_rehash(candidate, state_dir)
+            self.assertTrue(candidate["include"])
+
     def test_section_min_floor_pulls_back_unrendered_included_candidates(self) -> None:
         # «Главная история дня» was 1 item on 2026-05-27 while score-10
         # candidates sat with include=True and no draft_line. The pull-

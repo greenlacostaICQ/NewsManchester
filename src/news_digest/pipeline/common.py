@@ -47,7 +47,6 @@ SECTION_MAX_ITEMS = {
     "Городской радар": 12,
     "Футбол": 3,
     "IT и бизнес": 5,
-    "Выходные в GM": 8,
     "Что важно в ближайшие 7 дней": 6,
     "Еда, открытия и рынки": 6,
     # Tickets are capped like every other section: a quiet news day must not
