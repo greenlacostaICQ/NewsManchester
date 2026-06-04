@@ -149,6 +149,25 @@ class ProductBacklogTest(unittest.TestCase):
         self.assertIn("дубли", human["conclusion"])
         self.assertIn("Что делать", f"Что делать: {human['action']}")
 
+    def test_ticketmaster_funnel_calls_out_catalog_flood(self) -> None:
+        human = _source_funnel_human(
+            "Ticketmaster Liverpool Upcoming",
+            {
+                "raw_count": 30,
+                "curated_count": 18,
+                "rendered_count": 15,
+                "reject_reasons": {},
+                "loss_funnel": {
+                    "rejected_before_writer": 4,
+                    "backup_before_rewrite": 0,
+                    "included_missing_draft_line": 0,
+                    "writer_dropped": 0,
+                },
+            },
+        )
+        self.assertIn("билетная политика", human["conclusion"])
+        self.assertIn("старые B-tier продажи", human["action"])
+
     def test_dead_parser_repair_suggests_html_extractor(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

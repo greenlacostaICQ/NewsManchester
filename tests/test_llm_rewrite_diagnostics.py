@@ -2,6 +2,7 @@ import json
 import unittest
 
 from news_digest.pipeline.llm_rewrite import (
+    _force_write_evidence_floor,
     _is_protected_rewrite_candidate,
     _needs_quality_repair,
     _parse_provider_results,
@@ -161,6 +162,15 @@ class LlmRewriteDiagnosticsTests(unittest.TestCase):
         self.assertEqual(item["rewrite_packet"]["what"], candidate["title"])
         self.assertIn("654th Premier League appearance", item["evidence_text"])
         self.assertIn("Use the record number", item["practical_angle"])
+
+    def test_official_football_thin_evidence_still_gets_force_write_floor(self) -> None:
+        self.assertEqual(
+            _force_write_evidence_floor(
+                {"category": "football", "source_label": "Manchester United"}
+            ),
+            40,
+        )
+        self.assertEqual(_force_write_evidence_floor({"category": "media_layer"}), 400)
 
 
 if __name__ == "__main__":

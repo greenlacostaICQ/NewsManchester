@@ -159,6 +159,9 @@ class PriceParsingTest(unittest.TestCase):
     def test_no_price(self):
         self.assertEqual(_extract_price("Concert at the venue"), "")
 
+    def test_booking_fee_is_not_event_price(self):
+        self.assertEqual(_extract_price("Tickets sold by venue. Booking fee £4.75 applies per order."), "")
+
 
 class ExtractEventTest(unittest.TestCase):
     def test_returns_empty_for_non_event_category(self):

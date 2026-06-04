@@ -30,6 +30,8 @@ def _event_day(candidate: dict) -> date | None:
     for value in (
         event.get("date_start"),
         event.get("date"),
+        event.get("date_iso"),
+        event.get("event_date"),
         candidate.get("published_at"),
     ):
         day = _parse_day(value)
@@ -87,7 +89,7 @@ def _backfill_weekend(candidates: list[dict], today: date) -> int:
         day = _event_day(candidate)
         blob = " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead", "evidence_text"))
         recurring_weekend = bool(re.search(r"\b(?:every|weekly|saturdays?|sundays?|weekend)\b", blob, re.IGNORECASE))
-        if (day and start <= day <= end) or recurring_weekend:
+        if (day and start <= day <= end) or (day is None and recurring_weekend):
             _mark_backfilled(candidate, from_block=block, to_block="weekend_activities", reason="weekend practical layer was thin")
             promoted += 1
     return promoted

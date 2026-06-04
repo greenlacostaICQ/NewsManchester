@@ -701,7 +701,7 @@ _LONG_FORMAT_CATEGORIES_FOR_REPAIR = {
 # with 1100–1500 chars of evidence — the model just chose decision=skip in a
 # batch. The forcing pass re-runs them one at a time.
 _FORCE_WRITE_CATEGORIES = {
-    "media_layer", "gmp", "council", "public_services", "tech_business", "city_news",
+    "media_layer", "gmp", "council", "public_services", "tech_business", "city_news", "football",
 }
 
 # Single-item forcing prompt: skip is removed as an option. The batch prompt
@@ -736,6 +736,14 @@ def _has_nothing_to_write_from(candidate: dict) -> bool:
         ev.get("is_event") and (ev.get("date_start") or ev.get("date")) and ev.get("venue")
     )
     return len(text) < 40 and not structured_event
+
+
+def _force_write_evidence_floor(candidate: dict) -> int:
+    category = str(candidate.get("category") or "")
+    source = str(candidate.get("source_label") or "")
+    if category == "football" and source in {"Manchester United", "Manchester City"}:
+        return 40
+    return 400
 
 
 def _needs_quality_repair(candidate: dict) -> bool:
@@ -1230,6 +1238,17 @@ def _call_with_fallback(
     for step in route:
         if not missing:
             break
+        if (
+            route_name == "rewrite"
+            and prompt_name not in {"force_write", "repair_draft"}
+            and step.priority > 1
+        ):
+            logger.info(
+                "Holding %d rewrite miss(es) after %s for force-write/writer repair instead of last-resort visible copy.",
+                len(missing),
+                route[0].provider_label if route else "primary",
+            )
+            break
         if provider_health.is_dead(step.provider):
             logger.info(
                 "Skipping %s — circuit breaker tripped earlier this run.",
@@ -1668,7 +1687,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         and not str(c.get("draft_line") or "").strip()
         and not _has_nothing_to_write_from(c)
         and str(c.get("category") or "") in _FORCE_WRITE_CATEGORIES
-        and len(re.sub(r"\s+", " ", str(c.get("evidence_text") or "")).strip()) >= 400
+        and len(re.sub(r"\s+", " ", str(c.get("evidence_text") or c.get("summary") or c.get("lead") or "")).strip()) >= _force_write_evidence_floor(c)
     ]
     forced = 0
     if force_targets:
@@ -1681,7 +1700,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             model_override,
             label_suffix="-force",
             prompt_name="force_write",
-            route_name="rewrite",
+            route_name="repair",
             diagnostics=provider_batch_diagnostics,
             batch_size_override=1,
         )

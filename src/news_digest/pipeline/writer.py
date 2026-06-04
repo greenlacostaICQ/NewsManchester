@@ -770,6 +770,43 @@ def _is_diaspora_ticket(candidate: dict) -> bool:
     )
 
 
+def _ticket_days_to_event(candidate: dict) -> int | None:
+    event_dt = _parse_ticket_datetime(candidate)
+    if event_dt is None:
+        return None
+    return (event_dt.date() - now_london().date()).days
+
+
+def _ticket_has_active_public_reason(candidate: dict) -> bool:
+    ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
+    if ticket_type in {"on_sale_now", "presale_soon", "newly_listed", "major_upcoming"}:
+        return True
+    days = _ticket_days_to_event(candidate)
+    return days is not None and 0 <= days <= 7
+
+
+def _ticket_public_priority_score(candidate: dict) -> float:
+    """Product ordering for ticket sections: reason first, fame second."""
+    notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+    tier = str(notability.get("tier") or "").upper()
+    ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
+    days = _ticket_days_to_event(candidate)
+    tier_score = {"PROTECTED": 500, "A": 420, "B": 260, "C": 90, "D": 0, "UNKNOWN": 0}.get(tier, 0)
+    reason_score = 0
+    if ticket_type in {"on_sale_now", "presale_soon", "newly_listed"}:
+        reason_score = 600
+    elif ticket_type == "major_upcoming":
+        reason_score = 460
+    elif days is not None and 0 <= days <= 7:
+        reason_score = 420
+    elif days is not None and 8 <= days <= 14:
+        reason_score = 160
+    elif ticket_type in {"old_onsale", "old_public_sale"}:
+        reason_score = -80
+    freshness = 0 if days is None else max(0, 21 - max(days, 0))
+    return float(reason_score + tier_score + freshness)
+
+
 def _ticket_watch_score(candidate: dict) -> float:
     title = _ticket_headliner(str(candidate.get("title") or ""))
     venue = _ticket_venue(candidate)
@@ -834,13 +871,18 @@ def _ticket_watch_decision(candidate: dict) -> dict[str, object]:
     decision = "show" if score >= _TICKET_PUBLIC_THRESHOLD else "hide"
     if _is_diaspora_ticket(candidate):
         decision = "show"
-    # #1 Out-of-GM concerts must earn their place by FAME, not venue size.
-    # An unknown act at a big arena (Anfield, M&S Bank Arena) was crossing the
-    # score threshold on the "крупная площадка" bonus alone. In this block only
-    # genuinely notable acts qualify (Wikidata/streaming tier A or B); everyone
-    # else is hidden regardless of venue.
-    if str(candidate.get("primary_block") or "") == "outside_gm_tickets" and tier.upper() not in {"A", "B", "PROTECTED"}:
-        decision = "hide"
+    block = str(candidate.get("primary_block") or "")
+    tier_upper = tier.upper()
+    active_reason = _ticket_has_active_public_reason(candidate)
+    if block == "outside_gm_tickets":
+        if tier_upper not in {"A", "PROTECTED"}:
+            if not (tier_upper == "B" and ticket_type in {"on_sale_now", "presale_soon", "newly_listed"}):
+                decision = "hide"
+        if not active_reason:
+            decision = "hide"
+    elif block == "ticket_radar":
+        if not active_reason and ticket_type in {"old_onsale", "old_public_sale"} and tier_upper not in {"A", "PROTECTED"}:
+            decision = "hide"
     reasons = [part.strip() for part in _ticket_watch_reason(candidate).split(";") if part.strip()]
     if not reasons and decision == "hide":
         reasons = ["недостаточный notability-сигнал"]
@@ -869,25 +911,21 @@ def _ticket_watch_reason(candidate: dict) -> str:
     blob = " ".join([title, venue, genre, str(candidate.get("source_label") or ""), summary])
     reasons: list[str] = []
     if _is_diaspora_ticket(candidate):
-        reasons.append("русскоязычный/диаспора UK")
+        return "русскоязычное событие"
     notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
     tier = str(notability.get("tier") or "").upper()
-    if tier == "A":
-        reasons.append("глобальный артист")
-    elif tier == "B":
-        reasons.append("известный артист")
-    elif tier == "C":
-        reasons.append("нишевый артист с публичным сигналом")
-    if _TICKET_MAJOR_VENUE_RE.search(venue) or _TICKET_MAJOR_VENUE_RE.search(summary):
-        reasons.append("крупная площадка")
     ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
     if ticket_type in {"on_sale_now", "presale_soon", "newly_listed"}:
-        reasons.append("новый билетный повод")
+        return "продажа открылась сейчас"
     elif ticket_type == "event_this_week":
-        reasons.append("на этой неделе")
+        return "концерт на этой неделе"
     elif ticket_type == "major_upcoming":
-        reasons.append("крупный анонс")
-    return "; ".join(dict.fromkeys(reasons[:3])) or "watchlist-сигнал"
+        return "крупный новый анонс" if tier == "A" else "новый анонс"
+    if tier == "A":
+        return "артист высокого уровня"
+    if _TICKET_MAJOR_VENUE_RE.search(venue) or _TICKET_MAJOR_VENUE_RE.search(summary):
+        return "крупная площадка"
+    return "билетный повод"
 
 
 def _build_ticket_fallback_line(candidate: dict) -> str:
@@ -1097,6 +1135,17 @@ def _repair_follow_up_line(candidate: dict, line: str) -> tuple[str, list[str]]:
     if not phase or re.search(r"^\s*•\s*(?:обновление|update)\b", line, re.IGNORECASE):
         return line, []
 
+    blob = _blob_for_repair(candidate).lower()
+    event_type = str((candidate.get("story_frame") or {}).get("event_type") or "")
+    planningish = event_type in {"planning", "civic"} or re.search(r"\b(?:planning|housing|development|council|consultation|approved|homes?)\b", blob)
+    courtish = event_type in {"incident", "crime", "court"} or re.search(r"\b(?:court|charged|sentenced|murder|police|trial|jury|коронер|суд)\b", blob)
+    if phase in {"charged", "sentenced"} and not courtish:
+        return line, []
+    if phase == "charged" and re.search(r"\b(?:no criminal charges|not enough evidence to charge|will not face criminal charges)\b", blob):
+        return line, []
+    if phase in {"approved", "consultation_opened", "consultation_closing"} and courtish and not planningish:
+        return line, []
+
     label = _PHASE_LABELS_RU.get(phase)
     if not label:
         # Unknown phase → the generic "появилось обновление" only produced the
@@ -1129,6 +1178,25 @@ def _repair_explainable_terms(candidate: dict, line: str) -> tuple[str, list[str
             continue
         repaired = re.sub(rf"\b{re.escape(term)}\b", explanation, repaired, count=1)
         reasons.append(f"explained_{term.lower()}")
+    return repaired, reasons
+
+
+def _repair_common_russian_line(line: str) -> tuple[str, list[str]]:
+    repaired = str(line or "")
+    reasons: list[str] = []
+    replacements = (
+        (r"\bКлр\.\s*", "депутат совета ", "councillor_ru"),
+        (r"Greater Manchesterе\b", "Greater Manchester", "gm_case_ru"),
+        (r"\bфуд-дестинаци[яюи]\b", "место с барами и едой", "food_destination_ru"),
+        (r"\bкиберфлешинг[аеуом]*\b", "отправка непрошеных интимных изображений", "cyberflashing_ru"),
+        (r"\bс связями\b", "со связями", "ru_preposition"),
+    )
+    for pattern, repl, reason in replacements:
+        updated = re.sub(pattern, repl, repaired, flags=re.IGNORECASE)
+        if updated != repaired:
+            repaired = updated
+            reasons.append(reason)
+    repaired = re.sub(r"\s+", " ", repaired).strip()
     return repaired, reasons
 
 
@@ -1569,6 +1637,8 @@ def _repair_editorial_contract_line(candidate: dict, line: str) -> tuple[str, li
     reasons.extend(explanation_reasons)
     repaired, date_reasons = _repair_event_date_from_struct(candidate, repaired)
     reasons.extend(date_reasons)
+    repaired, ru_reasons = _repair_common_russian_line(repaired)
+    reasons.extend(ru_reasons)
     return repaired, reasons
 
 
@@ -2193,8 +2263,51 @@ def _section_priority_score(candidate: dict, section_name: str, line: str) -> fl
     elif section_name == "Что важно в ближайшие 7 дней":
         score += _event_planning_score(candidate, line) / 4.0
     elif section_name == "Билеты / Ticket Radar":
-        score += _ticket_watch_score(candidate)
+        return _ticket_public_priority_score(candidate)
+    elif section_name == "Крупные концерты вне GM":
+        return _ticket_public_priority_score(candidate)
     return score
+
+
+_NUMBER_TOKEN_RE = re.compile(r"\b\d{1,4}(?:[,.]\d{3})*(?:\.\d+)?\b")
+
+
+def _number_tokens(value: str) -> set[str]:
+    tokens: set[str] = set()
+    for match in _NUMBER_TOKEN_RE.finditer(str(value or "")):
+        normalised = match.group(0).replace(",", "")
+        if normalised in {"0", "00"}:
+            continue
+        tokens.add(normalised)
+        if normalised.startswith("0"):
+            stripped = normalised.lstrip("0")
+            if stripped:
+                tokens.add(stripped)
+    return tokens
+
+
+def _number_evidence_tokens(candidate: dict) -> set[str]:
+    fields = [
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "practical_angle")
+    ]
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    fields.extend(str(event.get(key) or "") for key in ("date", "date_start", "date_end", "date_text", "price"))
+    return _number_tokens(" ".join(fields))
+
+
+def _numeric_evidence_errors(candidate: dict, line: str) -> list[str]:
+    category = str(candidate.get("category") or "")
+    if category not in {"media_layer", "gmp", "council", "public_services", "city_news", "football", "tech_business", "food_openings"}:
+        return []
+    line_tokens = _number_tokens(line)
+    if not line_tokens:
+        return []
+    evidence_tokens = _number_evidence_tokens(candidate)
+    missing = sorted(token for token in line_tokens if token not in evidence_tokens)
+    if not missing:
+        return []
+    return [f"draft_line contains number(s) not present in candidate evidence: {', '.join(missing[:5])}."]
 
 
 def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
@@ -2279,6 +2392,7 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     for invariant in copy_invariant_errors(candidate, text):
         errors.append(f"copy invariant failed: {invariant}.")
     errors.extend(_hallucination_flags(candidate, text))
+    errors.extend(_numeric_evidence_errors(candidate, text))
     if category == "football":
         blob = _blob_for_repair(candidate)
         if (

@@ -21,6 +21,7 @@ from news_digest.pipeline.common import (
 )
 from news_digest.pipeline.dedupe import (
     _apply_intra_batch_dedup,
+    _merge_multinight_ticket_runs,
     _normalise_person_tokens,
     _people_published_matches,
     dedupe_candidates,
@@ -233,6 +234,33 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         ]
 
         self.assertEqual(_apply_intra_batch_dedup(candidates), [])
+
+    def test_ticket_premium_variant_collapses_into_main_ticket(self) -> None:
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "ub40-main",
+                "title": "UB40 — event 2026-06-06",
+                "primary_block": "ticket_radar",
+                "category": "venues_tickets",
+                "event": {"event_name": "UB40", "venue": "O2 Apollo Manchester", "date_start": "2026-06-06T18:30:00+01:00"},
+            },
+            {
+                "include": True,
+                "fingerprint": "ub40-premium",
+                "title": "UB40 - Venue Premium Tickets — event 2026-06-06",
+                "primary_block": "ticket_radar",
+                "category": "venues_tickets",
+                "event": {"event_name": "UB40 - Venue Premium Tickets", "venue": "O2 Apollo Manchester", "date_start": "2026-06-06T18:30:00+01:00"},
+            },
+        ]
+
+        drops = _merge_multinight_ticket_runs(candidates)
+
+        self.assertEqual(len(drops), 1)
+        self.assertTrue(candidates[0]["include"])
+        self.assertFalse(candidates[1]["include"])
+        self.assertIn("Premium/package", candidates[1]["reason"])
 
     def test_distinct_markets_do_not_collapse_before_topic_cluster(self) -> None:
         candidates = [

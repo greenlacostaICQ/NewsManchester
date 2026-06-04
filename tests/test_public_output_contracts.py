@@ -30,6 +30,7 @@ from news_digest.pipeline.writer import (
     _append_recovery_step,
     _apply_section_min_floor_pull_back,
     _repair_editorial_contract_line,
+    _section_priority_score,
     _ticket_watch_decision,
 )
 
@@ -89,6 +90,37 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertIn("обновление: предъявлено обвинение", repaired)
         self.assertNotIn("ушла слишком рано", repaired)
 
+    def test_follow_up_phase_must_match_story_type(self) -> None:
+        planning = {
+            "change_type": "new_phase",
+            "change_phase": "sentenced",
+            "title": "Council approves 189 homes at Dutton Street",
+            "summary": "Manchester Council approved a housing development.",
+            "category": "media_layer",
+            "primary_block": "today_focus",
+        }
+        repaired, reasons = _repair_editorial_contract_line(
+            planning,
+            "• Strangeways: совет одобрил 189 квартир на Dutton Street.",
+        )
+        self.assertNotIn("follow_up_leads_with_change", reasons)
+        self.assertNotIn("вынесен приговор", repaired)
+
+        no_charge = {
+            "change_type": "new_phase",
+            "change_phase": "charged",
+            "title": "GMP staff member sacked but will not face criminal charges",
+            "summary": "There was not enough evidence to charge him with a criminal offence.",
+            "category": "media_layer",
+            "primary_block": "last_24h",
+        }
+        repaired, reasons = _repair_editorial_contract_line(
+            no_charge,
+            "• Manchester: сотрудник GMP уволен после жалобы.",
+        )
+        self.assertNotIn("follow_up_leads_with_change", reasons)
+        self.assertNotIn("предъявлено обвинение", repaired)
+
     def test_incident_and_court_russian_calques_are_repaired(self) -> None:
         candidate = {"category": "gmp", "primary_block": "last_24h"}
         repaired, reasons = _repair_editorial_contract_line(
@@ -113,6 +145,18 @@ class PublicOutputContractTests(unittest.TestCase):
         )
         self.assertIn("explained_anotr", reasons)
         self.assertIn("электронного дуэта ANOTR", repaired)
+
+    def test_common_russian_lint_repairs_visible_prose(self) -> None:
+        repaired, reasons = _repair_editorial_contract_line(
+            {"category": "media_layer", "primary_block": "city_watch"},
+            "• В Greater Manchesterе Клр. сообщил о фуд-дестинации и деле о киберфлешинге.",
+        )
+        self.assertIn("gm_case_ru", reasons)
+        self.assertIn("councillor_ru", reasons)
+        self.assertIn("food_destination_ru", reasons)
+        self.assertIn("cyberflashing_ru", reasons)
+        self.assertNotIn("Greater Manchesterе", repaired)
+        self.assertNotIn("Клр.", repaired)
 
     def test_event_fallback_prefers_structured_date_over_summary_noise(self) -> None:
         candidate = {
@@ -188,6 +232,57 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertIn("Example Global Artist", line)
         self.assertNotIn("Почему в радаре", line)
 
+    def test_outside_gm_b_tier_old_sale_is_not_public(self) -> None:
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "outside_gm_tickets",
+            "title": "Known B Artist — event 2026-06-20 — public sale 2025-11-14 10:00",
+            "summary": "M&S Bank Arena Liverpool | Liverpool | Rock | event_date=2026-06-20 19:00 | public_onsale=2025-11-14 10:00",
+            "event": {"venue": "M&S Bank Arena Liverpool", "date_start": "2026-06-20T19:00:00+01:00"},
+            "ticket_type": "old_public_sale",
+            "ticket_notability": {"artist": "Known B Artist", "kind": "artist", "tier": "B"},
+        }
+        self.assertEqual(_ticket_watch_decision(candidate)["decision"], "hide")
+        self.assertEqual(_build_ticket_fallback_line(candidate), "")
+
+    def test_ticket_sorting_keeps_global_this_week_above_b_tier(self) -> None:
+        global_item = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-06-11",
+            "summary": "Etihad Stadium | Manchester | Hip-Hop/Rap | event_date=2026-06-11 17:00",
+            "event": {"venue": "Etihad Stadium", "date_start": "2026-06-11T17:00:00+01:00"},
+            "ticket_type": "event_this_week",
+            "ticket_notability": {"artist": "The Weeknd", "kind": "artist", "tier": "A"},
+        }
+        b_item = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "Keli Holiday — event 2026-06-11",
+            "summary": "YES | Manchester | Pop | event_date=2026-06-11 19:00",
+            "event": {"venue": "YES", "date_start": "2026-06-11T19:00:00+01:00"},
+            "ticket_type": "event_this_week",
+            "ticket_notability": {"artist": "Keli Holiday", "kind": "artist", "tier": "B"},
+        }
+        self.assertGreater(
+            _section_priority_score(global_item, "Билеты / Ticket Radar", _build_ticket_fallback_line(global_item)),
+            _section_priority_score(b_item, "Билеты / Ticket Radar", _build_ticket_fallback_line(b_item)),
+        )
+
+    def test_ticket_reason_is_single_human_occasion_not_repeated_labels(self) -> None:
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-06-11",
+            "summary": "Etihad Stadium | Manchester | Hip-Hop/Rap | event_date=2026-06-11 17:00",
+            "event": {"venue": "Etihad Stadium", "date_start": "2026-06-11T17:00:00+01:00"},
+            "ticket_type": "event_this_week",
+            "ticket_notability": {"artist": "The Weeknd", "kind": "artist", "tier": "A"},
+        }
+        line = _build_ticket_fallback_line(candidate)
+        self.assertIn("концерт на этой неделе", line.lower())
+        self.assertNotIn("Глобальный артист; крупная площадка", line)
+
     def test_diaspora_ticket_is_protected_from_popularity_filter(self) -> None:
         with patch.dict(os.environ, {"NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP": "0"}):
             candidate = {
@@ -221,6 +316,22 @@ class PublicOutputContractTests(unittest.TestCase):
         }
         self.assertTrue(_football_is_sport_news(candidate))
         self.assertFalse(_football_should_route_to_soft(candidate))
+
+    def test_football_numeric_hallucination_is_replaced_by_official_fallback(self) -> None:
+        candidate = {
+            "category": "football",
+            "primary_block": "football",
+            "source_label": "Manchester United",
+            "title": "Transfer news: Hojlund joins Napoli",
+            "summary": "Transfer news: Hojlund joins Napoli",
+            "lead": "Transfer news: Hojlund joins Napoli",
+            "evidence_text": "Rasmus Hojlund has joined Napoli on a permanent transfer",
+        }
+        bad = "• Расмус Хёйлунд перешёл в Napoli. Он провёл за клуб 72 матча и забил 16 голов."
+        self.assertTrue(any("number(s) not present" in err for err in _draft_line_quality_errors(candidate, bad)))
+        fallback = _build_football_fallback_line(candidate)
+        self.assertIn("Hojlund joins Napoli", fallback)
+        self.assertNotIn("72", fallback)
 
     def test_recurring_event_without_concrete_occurrence_is_not_rendered_as_generic_day(self) -> None:
         candidate = {

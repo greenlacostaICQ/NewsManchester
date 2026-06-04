@@ -1006,9 +1006,13 @@ def _source_funnel_human(name: str, row: dict[str, object]) -> dict[str, object]
         f"Попало в выпуск: {rendered}",
     ]
 
+    name_l = str(name or "").lower()
     if raw == 0:
         conclusion = "источник сегодня не дал материалов"
         action = "проверить, это нормальная тишина источника или проблема парсера"
+    elif "ticketmaster" in name_l and rendered >= 8:
+        conclusion = "источник живой, но билетная политика пропустила слишком много видимых строк"
+        action = "не отключать источник; отбирать по реальному поводу и notability, а старые B-tier продажи держать в резерве"
     elif rendered > 0 and rendered >= max(1, curated // 2):
         conclusion = "источник даёт полезный вклад в выпуск"
         action = "оставить как есть; смотреть только на качество отдельных строк"
@@ -3173,9 +3177,10 @@ def build_release(project_root: Path) -> ReleaseResult:
             candidates_report,
         )
     if rendered_html_review["counts"].get("bad_visible_items", 0) > 0:
-        warnings.append(
-            "Rendered HTML review found bad visible item(s): "
-            "shipped with warning; see release_report.rendered_html_review."
+        errors.append(
+            "Rendered HTML review still found bad visible item(s) after writer repair; "
+            "rerun write-digest or replace from backup before Telegram send. "
+            "See release_report.rendered_html_review."
         )
     dedupe_memory = read_json(state_dir / "dedupe_memory.json", {}) if (state_dir / "dedupe_memory.json").exists() else {}
     event_miss_review = _event_miss_review(

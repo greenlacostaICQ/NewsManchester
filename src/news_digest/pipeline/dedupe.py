@@ -1327,11 +1327,37 @@ def _merge_multinight_ticket_runs(candidates: list[dict]) -> list[dict]:
         groups.setdefault((toks, venue), []).append((date, c))
 
     drops: list[dict] = []
+    premium_re = re.compile(r"\b(?:venue premium tickets|premium tickets|premium packages?|vip packages?)\b", re.IGNORECASE)
     for items in groups.values():
         dates = sorted({d for d, _ in items})
-        if len(items) < 2 or len(dates) < 2:
+        if len(items) < 2:
             continue
         items.sort(key=lambda t: t[0])
+        if len(dates) < 2:
+            if not any(premium_re.search(str(c.get("title") or "")) for _date, c in items):
+                continue
+            survivor = sorted(
+                (c for _date, c in items),
+                key=lambda c: bool(premium_re.search(str(c.get("title") or ""))),
+            )[0]
+            for _date, c in items:
+                if c is survivor:
+                    continue
+                c["include"] = False
+                c["dedupe_decision"] = "drop"
+                c["reason"] = "Premium/package ticket variant merged into main ticket line."
+                drops.append(
+                    {
+                        "fingerprint": c.get("fingerprint"),
+                        "title": c.get("title"),
+                        "source_label": c.get("source_label"),
+                        "primary_block": c.get("primary_block"),
+                        "kept_fingerprint": survivor.get("fingerprint"),
+                        "kept_title": survivor.get("title"),
+                        "reason": c["reason"],
+                    }
+                )
+            continue
         survivor = items[0][1]
         survivor["merged_event_dates"] = dates
         for _date, c in items[1:]:

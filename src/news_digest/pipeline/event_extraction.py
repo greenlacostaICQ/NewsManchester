@@ -302,6 +302,9 @@ def _extract_price(blob: str) -> str:
         prefix = "от " if "от" in m.group(0).lower() else "from "
         return f"{prefix}{_format_price_number(m.group('amount'))}"
     if m := _PRICE_SINGLE_RE.search(blob):
+        context = str(blob or "")[max(0, m.start() - 40): m.end() + 40].lower()
+        if re.search(r"\b(?:booking|transaction|admin|handling|service)\s+fee\b", context):
+            return ""
         return _format_price_number(m.group("amount"))
     if _FREE_RE.search(blob):
         return "free"
