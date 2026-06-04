@@ -1,8 +1,10 @@
 """LLM rewrite stage — writes Russian draft_lines to candidates.json.
 
 Default model route:
-  1. OpenAI gpt-4o-mini    — quality rewrite primary
-  2. Rule-based in writer.py — final safety net for structured tickets/events/transport
+  1. OpenAI gpt-4o-mini batch     — quality rewrite primary
+  2. OpenAI gpt-4o-mini one-by-one — retry misses before fallback
+  3. DeepSeek                     — last resort for remaining misses
+  4. Rule-based in writer.py      — final safety net for structured tickets/events/transport
 
 Required env vars (set in GitHub Actions Secrets or .env.local):
   OPENAI_API_KEY    — platform.openai.com (paid, gpt-4o-mini)
@@ -1238,17 +1240,6 @@ def _call_with_fallback(
     for step in route:
         if not missing:
             break
-        if (
-            route_name == "rewrite"
-            and prompt_name not in {"force_write", "repair_draft"}
-            and step.priority > 1
-        ):
-            logger.info(
-                "Holding %d rewrite miss(es) after %s for force-write/writer repair instead of last-resort visible copy.",
-                len(missing),
-                route[0].provider_label if route else "primary",
-            )
-            break
         if provider_health.is_dead(step.provider):
             logger.info(
                 "Skipping %s — circuit breaker tripped earlier this run.",
@@ -1278,6 +1269,38 @@ def _call_with_fallback(
         else:
             provider_health.record_failure(step.provider)
         missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
+        if (
+            missing
+            and step.provider == "openai"
+            and step.priority == 1
+            and route_name in {"rewrite", "events_rewrite"}
+            and prompt_name not in {"force_write", "repair_draft"}
+        ):
+            retry_before = len(mapping)
+            logger.info(
+                "OpenAI rewrite retry: %d miss(es) after primary batch; retrying one-by-one before fallback.",
+                len(missing),
+            )
+            mapping.update(
+                _call_provider_batch(
+                    step.base_url,
+                    step.api_key,
+                    step.model,
+                    missing,
+                    f"{step.provider_label}{label_suffix}-retry",
+                    timeout=step.timeout_seconds or 90,
+                    batch_size=1,
+                    system_prompt=prompt,
+                    prompt_name=f"{prompt_name}_retry",
+                    today_date=today_date,
+                    diagnostics=diagnostics,
+                )
+            )
+            if len(mapping) > retry_before:
+                provider_health.record_success(step.provider)
+            else:
+                provider_health.record_failure(step.provider)
+            missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
     return mapping
 
 

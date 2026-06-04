@@ -1,7 +1,9 @@
 import json
 import unittest
+from unittest import mock
 
 from news_digest.pipeline.llm_rewrite import (
+    _call_with_fallback,
     _force_write_evidence_floor,
     _is_protected_rewrite_candidate,
     _needs_quality_repair,
@@ -9,6 +11,8 @@ from news_digest.pipeline.llm_rewrite import (
     _rewrite_batch_items,
     _skip_llm_for_manual_review,
 )
+from news_digest.pipeline.model_routing import ResolvedModelRouteStep
+from news_digest.pipeline import provider_health
 from news_digest.pipeline.curator import _skip_curator_for_manual_review
 from news_digest.pipeline.curator import _is_curator_protected
 
@@ -171,6 +175,73 @@ class LlmRewriteDiagnosticsTests(unittest.TestCase):
             40,
         )
         self.assertEqual(_force_write_evidence_floor({"category": "media_layer"}), 400)
+
+    def test_rewrite_misses_retry_openai_before_deepseek(self) -> None:
+        provider_health.reset()
+        candidates = [_candidate("fp-1"), _candidate("fp-2"), _candidate("fp-3")]
+        route = [
+            ResolvedModelRouteStep(
+                provider="openai",
+                provider_label="OpenAI",
+                base_url="https://openai.test/v1",
+                model="gpt-4o-mini",
+                api_key="openai-key",
+                api_key_env="OPENAI_API_KEY",
+                role="quality_rewrite_primary",
+                priority=1,
+                batch_size=3,
+                timeout_seconds=60,
+            ),
+            ResolvedModelRouteStep(
+                provider="deepseek",
+                provider_label="DeepSeek",
+                base_url="https://deepseek.test/v1",
+                model="deepseek-chat",
+                api_key="deepseek-key",
+                api_key_env="DEEPSEEK_API_KEY",
+                role="rewrite_last_resort",
+                priority=2,
+                batch_size=3,
+                timeout_seconds=60,
+            ),
+        ]
+        calls: list[tuple[str, list[str], int | None]] = []
+
+        def fake_provider(*args, **kwargs):
+            batch = args[3]
+            provider_name = args[4]
+            calls.append((provider_name, [item["fingerprint"] for item in batch], kwargs.get("batch_size")))
+            if provider_name == "OpenAI":
+                return {"fp-1": ("• OpenAI wrote first.", "OpenAI", "gpt-4o-mini")}
+            if provider_name == "OpenAI-retry":
+                return {"fp-2": ("• OpenAI retry wrote second.", "OpenAI-retry", "gpt-4o-mini")}
+            if provider_name == "DeepSeek":
+                return {"fp-3": ("• DeepSeek wrote third.", "DeepSeek", "deepseek-chat")}
+            return {}
+
+        with (
+            mock.patch("news_digest.pipeline.llm_rewrite.resolve_model_route", return_value=route),
+            mock.patch("news_digest.pipeline.llm_rewrite._call_provider_batch", side_effect=fake_provider),
+        ):
+            mapping = _call_with_fallback(
+                candidates,
+                "prompt",
+                provider_override="",
+                base_url_override="",
+                model_override="",
+                prompt_name="city_news@v-test",
+                route_name="rewrite",
+            )
+
+        self.assertEqual(set(mapping), {"fp-1", "fp-2", "fp-3"})
+        self.assertEqual(
+            calls,
+            [
+                ("OpenAI", ["fp-1", "fp-2", "fp-3"], 3),
+                ("OpenAI-retry", ["fp-2", "fp-3"], 1),
+                ("DeepSeek", ["fp-3"], 3),
+            ],
+        )
 
 
 if __name__ == "__main__":
