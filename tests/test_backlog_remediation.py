@@ -906,6 +906,56 @@ class SourceFunnelDiagnosticsTest(unittest.TestCase):
         self.assertEqual(review["counts"]["visible_lines"], 1)
         self.assertEqual(review["counts"]["bad_visible_items"], 0)
 
+    def test_rendered_html_review_does_not_block_clear_repaired_borderline_warning(self) -> None:
+        html = (
+            '<b>Свежие новости</b>\n'
+            '• Trafford: 67-летний депутат совета предстанет перед судом по обвинению '
+            'в хранении запрещённого оружия; заседание назначено на август. '
+            '<a href="https://example.test/a">MEN</a>\n'
+        )
+        review = _classify_rendered_html_quality(
+            html,
+            {
+                "candidates": [
+                    {
+                        "fingerprint": "a",
+                        "source_url": "https://example.test/a",
+                        "title": "Councillor to appear in court",
+                        "source_label": "MEN",
+                        "include": True,
+                        "quality_warnings": ["crime_borderline:what_happened__protected_override"],
+                    }
+                ]
+            },
+        )
+
+        self.assertEqual(review["counts"]["visible_lines"], 1)
+        self.assertEqual(review["counts"]["bad_visible_items"], 0)
+
+    def test_rendered_html_review_still_blocks_vague_repaired_borderline_warning(self) -> None:
+        html = (
+            '<b>Свежие новости</b>\n'
+            '• Trafford: появилось обновление по заметному кейсу. '
+            '<a href="https://example.test/a">MEN</a>\n'
+        )
+        review = _classify_rendered_html_quality(
+            html,
+            {
+                "candidates": [
+                    {
+                        "fingerprint": "a",
+                        "source_url": "https://example.test/a",
+                        "title": "Councillor to appear in court",
+                        "source_label": "MEN",
+                        "include": True,
+                        "quality_warnings": ["crime_borderline:what_happened__protected_override"],
+                    }
+                ]
+            },
+        )
+
+        self.assertEqual(review["counts"]["bad_visible_items"], 1)
+
     def test_borderline_queue_includes_manual_include_hint(self) -> None:
         queue = _borderline_queue(
             {

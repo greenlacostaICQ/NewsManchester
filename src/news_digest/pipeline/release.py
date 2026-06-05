@@ -1307,7 +1307,9 @@ def _classify_rendered_html_quality(html_text: str, candidates_report: dict | No
                 str(w).startswith(("crime_borderline", "property_borderline"))
                 for w in candidate.get("quality_warnings") or []
             ):
-                reasons.append("unclear_candidate_visible")
+                visible_text = str(row["visible_text"] or "")
+                if _visible_line_still_unclear_after_repair(visible_text):
+                    reasons.append("unclear_candidate_visible")
             if reasons:
                 bad.append(
                     {
@@ -1325,6 +1327,24 @@ def _classify_rendered_html_quality(html_text: str, candidates_report: dict | No
         },
         "bad_visible_items": bad[:20],
     }
+
+
+def _visible_line_still_unclear_after_repair(visible_text: str) -> bool:
+    text = re.sub(r"\s+", " ", str(visible_text or "")).strip()
+    if len(text) < 95:
+        return True
+    lowered = text.lower()
+    vague_markers = (
+        "появилось обновление",
+        "есть новый городской контекст",
+        "это важный сигнал",
+        "это заметный кейс",
+        "подробнее пока неясно",
+        "данные уточняются",
+    )
+    if any(marker in lowered for marker in vague_markers):
+        return True
+    return False
 
 
 def _borderline_queue(candidates_report: dict | None, writer_report: dict | None) -> dict[str, object]:
