@@ -260,6 +260,21 @@ def crime_specificity_review(candidate: dict) -> dict[str, object]:
     if not (_DATE_OR_STAGE.search(blob) or _CRIME_ACTION.search(blob)):
         missing.append("why_now")
     evidence_len = len(re.sub(r"\s+", " ", str(candidate.get("evidence_text") or "")).strip())
+    # #2 Rich-article guard. The field-detectors above are narrow (no abuse
+    # imagery, cyberflashing, drugs-raid arrestees, knife-safety schemes), so on
+    # a full article they report false "missing" and quarantine REAL crime news:
+    # on 2026-06-05 a 1584-char drugs-raid story, a 1418-char child-abuse
+    # sentencing, an 881-char cyberflashing case and a 1025-char knife scheme were
+    # all held as borderline. A 600+ char article from a news source HAS the
+    # facts — trust it and let it publish; never hold it on missing-field guesses.
+    if evidence_len >= 600:
+        return {
+            "applies": True,
+            "missing": [],
+            "severity": "ok",
+            "is_appeal": is_appeal,
+            "enrichment_attempted": bool(candidate.get("enrichment_status")),
+        }
     # Appeals are exempt from BOTH who_affected and what_happened (the appeal
     # itself is the event, the subject is implied). That leaves only `where`
     # and `why_now` checkable, so the hard floor drops to 1: a contentless
