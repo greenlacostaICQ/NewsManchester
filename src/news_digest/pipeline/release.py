@@ -1301,7 +1301,7 @@ def _classify_rendered_html_quality(html_text: str, candidates_report: dict | No
             reasons: list[str] = []
             if candidate.get("editorial_status") == "borderline" and candidate.get("manual_override") != "force_include":
                 reasons.append("borderline_visible")
-            if candidate.get("reject_reasons"):
+            if candidate.get("reject_reasons") and not candidate.get("include"):
                 reasons.append("rejected_candidate_visible")
             if candidate.get("quality_warnings") and any(
                 str(w).startswith(("crime_borderline", "property_borderline"))

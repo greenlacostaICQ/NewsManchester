@@ -885,6 +885,27 @@ class SourceFunnelDiagnosticsTest(unittest.TestCase):
         self.assertEqual(review["counts"]["visible_lines"], 1)
         self.assertEqual(review["counts"]["bad_visible_items"], 1)
 
+    def test_rendered_html_review_does_not_block_recovered_included_candidate(self) -> None:
+        html = '<b>Городской радар</b>\n• Нормальная восстановленная строка. <a href="https://example.test/a">Source</a>\n'
+        review = _classify_rendered_html_quality(
+            html,
+            {
+                "candidates": [
+                    {
+                        "fingerprint": "a",
+                        "source_url": "https://example.test/a",
+                        "title": "Recovered item",
+                        "source_label": "Source",
+                        "include": True,
+                        "reject_reasons": ["older validator reason kept for audit"],
+                    }
+                ]
+            },
+        )
+
+        self.assertEqual(review["counts"]["visible_lines"], 1)
+        self.assertEqual(review["counts"]["bad_visible_items"], 0)
+
     def test_borderline_queue_includes_manual_include_hint(self) -> None:
         queue = _borderline_queue(
             {
