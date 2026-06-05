@@ -13,7 +13,13 @@ import os
 DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
 DEEPSEEK_MODEL = "deepseek-chat"
 OPENAI_BASE_URL = "https://api.openai.com/v1"
-OPENAI_REWRITE_MODEL = "gpt-4o-mini"
+# Prose rewrite (the editorial Russian cards) runs on gpt-4o: gpt-4o-mini was
+# unreliable on rich evidence — on 2026-06-05 it returned empty on 919/915-char
+# stories plus 14 malformed outputs, forcing the DeepSeek fallback daily. gpt-4o
+# is the right-sized model for quality-critical generation (~$13.5/mo on this
+# volume). Classification/dedupe scoring stays on mini — it doesn't need 4o and
+# that's where cost would balloon.
+OPENAI_REWRITE_MODEL = "gpt-4o"
 OPENAI_SCORING_MODEL = "gpt-4o-mini"
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile"
