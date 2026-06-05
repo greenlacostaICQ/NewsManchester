@@ -37,7 +37,7 @@ from news_digest.delivery.telegram import TelegramTransportError
 from news_digest.jobs.send_demo_digest import send_demo_digest
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector import collect_digest, initialize_collector_state
-from news_digest.pipeline.common import SECTION_MAX_ITEMS, SECTION_MIN_ITEMS, read_json, write_json
+from news_digest.pipeline.common import SECTION_MAX_ITEMS, SECTION_MIN_ITEMS, read_json, today_london, write_json
 from news_digest.pipeline.city_trends import (
     build_weekly_city_rollup,
     weekly_city_rollup_text,
@@ -1393,6 +1393,18 @@ def cmd_send_warnings() -> int:
         print(f"Could not read release_report.json: {exc}. Skipping.")
         return 0
 
+    run_date = str(report.get("run_date_london") or "").strip()
+    delivery_state = read_json(PROJECT_ROOT / "data" / "state" / "delivery_state.json", {})
+    delivered_day = str(delivery_state.get("last_delivery_day_london") or "").strip() if isinstance(delivery_state, dict) else ""
+    delivery_status = str(delivery_state.get("status") or "").strip() if isinstance(delivery_state, dict) else ""
+    today = today_london()
+    if run_date != today or delivered_day != today or delivery_status != "delivered":
+        print(
+            "Skipping admin warnings: today's digest was not delivered "
+            f"(report_date={run_date or 'missing'}, delivered_day={delivered_day or 'missing'}, status={delivery_status or 'missing'})."
+        )
+        return 0
+
     lost_leads = report.get("lost_leads") or []
     section_underflow = report.get("section_underflow") or []
     health = report.get("digest_health") or {}
@@ -1473,7 +1485,6 @@ def cmd_send_warnings() -> int:
         print(f"Sent warnings to {len(targets)} target(s).")
         return 0
 
-    run_date = report.get("run_date_london") or ""
     release_decision = str(report.get("release_decision") or "").strip()
     release_errors = [str(e) for e in (report.get("errors") or []) if str(e).strip()]
     icon = {"healthy": "✅", "at_risk": "🟡", "unhealthy": "🔴"}.get(health_level, "⚠️")

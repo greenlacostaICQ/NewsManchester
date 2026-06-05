@@ -1,11 +1,13 @@
 import json
 import unittest
+from datetime import date, timedelta
 from unittest import mock
 
 from news_digest.pipeline.llm_rewrite import (
     _call_with_fallback,
     _force_write_evidence_floor,
     _is_protected_rewrite_candidate,
+    _is_actionable_weekend_candidate,
     _needs_quality_repair,
     _parse_provider_results,
     _rewrite_batch_items,
@@ -13,6 +15,7 @@ from news_digest.pipeline.llm_rewrite import (
 )
 from news_digest.pipeline.model_routing import ResolvedModelRouteStep
 from news_digest.pipeline import provider_health
+from news_digest.pipeline.common import today_london
 from news_digest.pipeline.curator import _skip_curator_for_manual_review
 from news_digest.pipeline.curator import _is_curator_protected
 
@@ -241,6 +244,17 @@ class LlmRewriteDiagnosticsTests(unittest.TestCase):
                 ("OpenAI-retry", ["fp-2", "fp-3"], 1),
                 ("DeepSeek", ["fp-3"], 3),
             ],
+        )
+
+    def test_weekend_candidate_uses_london_date_object(self) -> None:
+        today = date.fromisoformat(today_london())
+        days_to_sat = (5 - today.weekday()) % 7
+        saturday = today + timedelta(days=days_to_sat)
+
+        self.assertTrue(
+            _is_actionable_weekend_candidate(
+                {"event": {"date": saturday.isoformat()}, "title": "Saturday family event"}
+            )
         )
 
 

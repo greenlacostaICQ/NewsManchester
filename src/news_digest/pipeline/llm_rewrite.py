@@ -515,7 +515,7 @@ def _candidate_event_day(candidate: dict) -> date | None:
 
 
 def _is_actionable_weekend_candidate(candidate: dict) -> bool:
-    today = today_london()
+    today = date.fromisoformat(today_london())
     days_to_sat = (5 - today.weekday()) % 7
     start = today + timedelta(days=days_to_sat)
     end = start + timedelta(days=1)
