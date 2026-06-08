@@ -82,7 +82,16 @@ def _weather_draft_line(
     temp = f"{min_temp}-{max_temp}°C"
 
     weather_bits: list[str] = [f"сегодня {temp}"]
-    if max_temp >= 30:
+    if max_temp <= 5:
+        weather_bits.append("холодно")
+        heat_severity = "none"
+    elif max_temp <= 12:
+        weather_bits.append("прохладно")
+        heat_severity = "none"
+    elif max_temp <= 17:
+        weather_bits.append("свежо")
+        heat_severity = "none"
+    elif max_temp >= 30:
         weather_bits.append("жарко")
         heat_severity = "high"
     elif max_temp >= 27:
@@ -94,10 +103,14 @@ def _weather_draft_line(
     else:
         heat_severity = "none"
 
-    if rain_probability >= 60:
+    if rain_probability >= 90:
+        rain_text = f"очень вероятен дождь, риск до {rain_probability}%"
+    elif rain_probability >= 70:
+        rain_text = f"дождливый день, риск до {rain_probability}%"
+    elif rain_probability >= 50:
         rain_text = f"дождь вероятен, риск до {rain_probability}%"
     elif rain_probability >= 30:
-        rain_text = f"возможны краткие дожди, риск до {rain_probability}%"
+        rain_text = f"местами возможен дождь, риск до {rain_probability}%"
     elif rain_probability > 0:
         rain_text = f"дождь маловероятен, риск до {rain_probability}%"
     else:
@@ -113,10 +126,14 @@ def _weather_draft_line(
             practical = "Воду и головной убор лучше взять сразу; в середине дня держитесь тени."
         elif heat_severity in {"moderate", "mild"}:
             practical = "Для прогулок и поездок день спокойный; воду держите под рукой."
-        elif rain_probability >= 60:
-            practical = "Зонт лучше взять с утра."
+        elif rain_probability >= 90:
+            practical = "Сухие окна могут быть короткими; для пеших пересадок лучше иметь зонт или капюшон."
+        elif rain_probability >= 70:
+            practical = "Уличные планы лучше держать гибкими; для дороги пригодится защита от дождя."
+        elif rain_probability >= 50:
+            practical = "Для прогулок и пересадок лучше иметь защиту от дождя под рукой."
         elif rain_probability >= 30:
-            practical = "Зонт лучше держать под рукой во второй половине дня."
+            practical = "Если планируете быть на улице дольше обычного, держите лёгкую защиту от дождя под рукой."
         else:
             practical = "Для поездок и прогулок погода спокойная."
 

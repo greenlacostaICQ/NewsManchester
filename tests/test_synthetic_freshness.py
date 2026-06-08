@@ -78,7 +78,8 @@ class WeatherCandidateFreshnessTest(unittest.TestCase):
             70,
         )
 
-        self.assertIn("высокий риск дождя", practical.lower())
+        self.assertIn("дожд", practical.lower())
+        self.assertIn("защиту от дождя", practical.lower())
         self.assertNotIn("сильные осадки", practical)
         self.assertNotIn("зонт обязателен", practical)
 
