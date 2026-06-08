@@ -1137,7 +1137,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(updated["include"], updated)
         self.assertNotEqual(updated["dedupe_decision"], "drop")
 
-    def test_recurring_market_repeat_waits_until_useful_moment(self) -> None:
+    def test_recurring_market_repeat_allowed_once_per_week(self) -> None:
         from news_digest.pipeline.dedupe import _calendar_item_should_carry_over
         candidate = {
             "primary_block": "next_7_days",
@@ -1156,6 +1156,32 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             "category": candidate["category"],
             "primary_block": candidate["primary_block"],
             "last_published_day_london": (now_london().date() - timedelta(days=7)).isoformat(),
+            "first_published_day_london": (now_london().date() - timedelta(days=7)).isoformat(),
+            "event": dict(candidate["event"]),
+        }
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        self.assertTrue(_calendar_item_should_carry_over(candidate, previous))
+
+    def test_recurring_market_repeat_not_allowed_again_next_day(self) -> None:
+        from news_digest.pipeline.dedupe import _calendar_item_should_carry_over
+        candidate = {
+            "primary_block": "next_7_days",
+            "category": "culture_weekly",
+            "title": "Northern Quarter Makers Market",
+            "summary": "A makers market in Manchester every Sunday from 11:00 to 17:00.",
+            "event": {
+                "event_name": "Northern Quarter Makers Market",
+                "venue": "Oak Street, Manchester",
+                "is_recurring": True,
+            },
+        }
+        previous = {
+            "title": candidate["title"],
+            "summary": candidate["summary"],
+            "category": candidate["category"],
+            "primary_block": candidate["primary_block"],
+            "last_published_day_london": (now_london().date() - timedelta(days=1)).isoformat(),
             "first_published_day_london": (now_london().date() - timedelta(days=7)).isoformat(),
             "event": dict(candidate["event"]),
         }

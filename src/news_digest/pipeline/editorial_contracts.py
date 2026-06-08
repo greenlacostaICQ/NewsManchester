@@ -1217,6 +1217,16 @@ def is_specific_topic_key(topic_key: str) -> bool:
 _CALENDAR_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 14, 30})
 
 
+def _history_day(value: object) -> date | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).date()
+    except ValueError:
+        return None
+
+
 def _occurrence_date_from_contract(contract: dict) -> date | None:
     occurrence = contract.get("occurrence") if isinstance(contract.get("occurrence"), dict) else {}
     raw = str(occurrence.get("date") or "").strip()
@@ -1274,6 +1284,18 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
         days_until = (current_date - today).days
         if days_until < 0:
             return {"applies": True, "allow": False, "reason": "event_already_passed"}
+        last_published_day = _history_day(last_published)
+        if (
+            event_shape == "recurring"
+            and 0 <= days_until <= 7
+            and (last_published_day is None or (today - last_published_day).days >= 6)
+        ):
+            return {
+                "applies": True,
+                "allow": True,
+                "reason": "new_weekly_recurring_occurrence",
+                "days_until_event": days_until,
+            }
         if days_until in _CALENDAR_REPEAT_MILESTONE_DAYS:
             return {
                 "applies": True,
