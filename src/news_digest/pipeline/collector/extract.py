@@ -735,37 +735,128 @@ _TFGM_PUBLIC_TRANSPORT_RE = re.compile(
 )
 
 
-def _extract_tfgm_alerts(source: SourceDef, body: str) -> list[ExtractedItem]:
-    """Extract TfGM travel alerts from Next.js inline JSON.
+_TFGM_MONTHS_EN = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+]
 
-    The /travel-updates/travel-alerts page server-renders alert data inside
-    `self.__next_f.push([1, "...escaped JSON..."])` strings. Each alert has
-    a title (location + cause) and description. Bee Network bus disruptions
-    are surfaced on the same page.
 
-    Alerts don't have per-item permalinks — all items point at the source
-    listing URL. Curator + LLM rewrite turn them into single-line entries.
+def _tfgm_alert_objects(body: str) -> list[dict]:
+    """Parse FULL TfGM alert objects from the page's embedded JSON.
+
+    The page ships each alert as escaped JSON with title/description/effect/
+    advice/validityPeriods/impactedServices. We pull all of it (not just the
+    title) so the transport card can state dates, the alternative and the
+    affected routes. Returns [] if the shape is unrecognised — the caller then
+    falls back to the legacy title+description regex so a TfGM redesign never
+    blanks the whole transport section.
     """
+    out: list[dict] = []
+    starts = [m.start() for m in re.finditer(r'\\"title\\":\\"', body)]
+    for i, pos in enumerate(starts):
+        chunk = body[pos: starts[i + 1] if i + 1 < len(starts) else pos + 1600]
 
+        def f(name: str) -> str:
+            m = re.search(r'\\"' + name + r'\\":\\"((?:[^\\]|\\.)*?)\\"', chunk)
+            return m.group(1).replace('\\u0026', '&') if m else ""
+
+        title = f("title")
+        if not title:
+            continue
+        dd = re.findall(
+            r'\\"start\\":\\"\$D([0-9T:.\-]+Z)\\",\\"end\\":\\"\$D([0-9T:.\-]+Z)\\"',
+            chunk,
+        )
+        seg = re.search(r'\\"impactedServices\\":\[(.*?)\]', chunk)
+        svc = re.findall(r'\\"name\\":\\"([^\\"]+)\\"', seg.group(1)) if seg else []
+        out.append({
+            "title": title.strip(),
+            "desc": f("description").strip(),
+            "effect": f("effect").strip(),
+            "advice": f("advice").strip(),
+            "dates": dd,
+            "services": [s for s in svc if s and s.lower() != "$undefined"],
+        })
+    return out
+
+
+def _tfgm_validity_text(dates: list) -> str:
+    """End-date as English 'Until 10 June' so the card date parser catches it."""
+    if not dates:
+        return ""
+    try:
+        import datetime as _dt  # noqa: PLC0415
+        end = _dt.datetime.fromisoformat(dates[0][1].replace("Z", "+00:00")) + _dt.timedelta(hours=1)
+        return f"Until {end.day} {_TFGM_MONTHS_EN[end.month - 1]}."
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _tfgm_real_advice(advice: str) -> str:
+    """Drop 'advice' that is just 'check our page' — that's not an alternative."""
+    low = advice.lower().strip()
+    if not low:
+        return ""
+    if "tfgm.com" in low or "more information" in low or low.startswith(("see ", "please check", "check ")):
+        return ""
+    return advice
+
+
+def _extract_tfgm_alerts(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Extract TfGM travel alerts from the page's embedded JSON.
+
+    Primary path parses the full alert object (dates + advice + routes into
+    evidence_text). If that yields nothing (TfGM changed the shape) we fall
+    back to the legacy title+description regex, so the section degrades to the
+    old bare line instead of vanishing.
+    """
+    fetched_at = now_london().isoformat()
     items: list[ExtractedItem] = []
     seen: set[str] = set()
-    # Alerts are live — stamp them with current time so the transport
-    # staleness check (which drops items without a published_at) keeps them.
-    fetched_at = now_london().isoformat()
+
+    objects = _tfgm_alert_objects(body)
+    for obj in objects:
+        title = obj["title"]
+        desc = obj["desc"]
+        if not title or title in seen:
+            continue
+        if not _TFGM_PUBLIC_TRANSPORT_RE.search(f"{title} {desc}"):
+            continue
+        seen.add(title)
+        validity = _tfgm_validity_text(obj["dates"])
+        advice = _tfgm_real_advice(obj["advice"])
+        routes = ", ".join(obj["services"][:6])
+        # Rich evidence_text: description + dates + alternative + routes, so the
+        # transport card states WHAT, WHEN, the OBJEZD and affected services —
+        # instead of "подробности в источнике".
+        detail = " ".join(p for p in (
+            desc,
+            validity,
+            advice,
+            (f"Affected services: {routes}." if routes else ""),
+        ) if p)
+        slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:80]
+        items.append(
+            ExtractedItem(
+                title=_clean_title_text(title),
+                url=f"{source.url}/{slug}",
+                published_at=fetched_at,
+                summary=_clean_snippet(desc or title)[:500],
+                evidence_text=_clean_snippet(detail, max_chars=900),
+            )
+        )
+    if items:
+        return items
+
+    # Fallback: legacy title+description regex (TfGM shape changed).
     for match in _TFGM_ALERT_PATTERN.finditer(body):
         title = match.group(1).strip().replace('\\u0026', '&')
         description = match.group(2).strip().replace('\\u0026', '&')
         if not title or title in seen:
             continue
-        # Only include alerts relevant to public transport users. Road/motorway/
-        # active-travel works without a transit component are dropped here — they
-        # belong in a separate "driving" section, not the transit brief.
         if not _TFGM_PUBLIC_TRANSPORT_RE.search(title + " " + description):
             continue
         seen.add(title)
-        # Alerts have no per-item permalink. Synthesize a unique path so
-        # fingerprint_for_candidate sees distinct items (clean_url drops
-        # query/fragment, so we put the slug in the path itself).
         slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:80]
         items.append(
             ExtractedItem(
