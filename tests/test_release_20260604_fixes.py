@@ -33,6 +33,22 @@ class Release20260604FixesTest(unittest.TestCase):
         c = {"title": "Man jailed for 16 years over Manchester drug plot", "lead": "", "summary": "He was sentenced at court."}
         self.assertEqual(classify_change_phase(c), "sentenced")
 
+    def test_set_to_be_approved_is_not_approved_phase(self) -> None:
+        c = {
+            "title": "ABBA themed venue next to Manchester City set to be approved",
+            "lead": "The plans are recommended for approval at committee.",
+            "summary": "A final decision has not yet been made.",
+        }
+        self.assertNotEqual(classify_change_phase(c), "approved")
+
+    def test_actual_approved_still_detected(self) -> None:
+        c = {
+            "title": "Council approved ABBA themed venue next to Manchester City",
+            "lead": "The planning committee approved the proposal.",
+            "summary": "",
+        }
+        self.assertEqual(classify_change_phase(c), "approved")
+
     # 4. Abbreviation glossary.
     def test_cllr_abbreviation_expanded(self) -> None:
         self.assertEqual(expand_uk_abbreviations("Клр. Марк Робертс"), "советник Марк Робертс")

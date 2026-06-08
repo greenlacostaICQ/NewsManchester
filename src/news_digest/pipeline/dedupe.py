@@ -173,7 +173,11 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             previous is not None
             and str(previous.get("last_published_day_london") or "").strip() == today_london()
         )
-        calendar_carry_ok = previous is not None and _calendar_item_should_carry_over(candidate, previous)
+        calendar_previous_ref = previous or (similar_previous[0] if similar_previous else None)
+        calendar_carry_ok = (
+            calendar_previous_ref is not None
+            and _calendar_item_should_carry_over(candidate, calendar_previous_ref)
+        )
         if previous is not None and (operational_repeat_ok or same_day_repeat_ok):
             candidate["dedupe_decision"] = "new"
             candidate["include"] = True
@@ -188,7 +192,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             candidate["carry_over_label"] = candidate.get("carry_over_label") or "актуально к дате"
             candidate["reason"] = (
                 candidate.get("reason")
-                or "Calendar/lifestyle item is still active and was not shown in the previous issue."
+                or "Calendar item reached a reader-useful repeat moment."
             )
         elif previous is not None:
             candidate["matched_previous_fingerprint"] = fingerprint
@@ -598,16 +602,19 @@ def _calendar_item_should_carry_over(candidate: dict, previous: dict) -> bool:
     # or in the next 14 days, it is by definition still relevant — carry
     # it over regardless of wording. (2026-05-28 Cherryholt loss.)
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    if event.get("is_event"):
-        ev_raw = str(event.get("date_start") or event.get("date") or "").strip()[:10]
-        if ev_raw:
-            try:
-                ev_day = datetime.strptime(ev_raw, "%Y-%m-%d").date()
-            except ValueError:
-                ev_day = None
-            if ev_day is not None and today <= ev_day <= today + timedelta(days=14):
-                review = calendar_repeat_review(candidate, previous)
-                return bool(review.get("allow"))
+    ev_raw = str(event.get("date_start") or event.get("date") or "").strip()[:10]
+    if ev_raw:
+        try:
+            ev_day = datetime.strptime(ev_raw, "%Y-%m-%d").date()
+        except ValueError:
+            ev_day = None
+        if ev_day is not None and today <= ev_day <= today + timedelta(days=14):
+            review = calendar_repeat_review(candidate, previous)
+            return bool(review.get("allow"))
+
+    contract_review = calendar_repeat_review(candidate, previous)
+    if contract_review.get("applies"):
+        return bool(contract_review.get("allow"))
 
     text = _candidate_text(candidate)
     lowered = text.lower()
@@ -795,6 +802,12 @@ def _classify_change_type(
         return "follow_up"
     if any(marker in blob for marker in _FOLLOW_UP_MARKERS):
         return "follow_up"
+
+    if previous_ref is not None and not phase:
+        current_title = normalize_title(str(candidate.get("title") or ""))
+        previous_title = normalize_title(str(previous_ref.get("title") or ""))
+        if current_title and current_title == previous_title:
+            return "no_change" if previous is not None else "same_story_rehash"
 
     if previous_ref is not None and has_new_fact_signal(candidate, previous_ref):
         return "same_story_new_facts"

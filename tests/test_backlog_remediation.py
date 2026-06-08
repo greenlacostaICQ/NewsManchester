@@ -2005,6 +2005,31 @@ class TelegramBacklog20260527Test(unittest.TestCase):
             build_editorial_contract(premium)["topic_key"],
         )
 
+    def test_ticket_topic_key_aligns_direct_venue_and_ticketmaster_date_formats(self) -> None:
+        ticketmaster = {
+            "category": "venues_tickets",
+            "title": "The All-American Rejects — event 2026-06-14 — public sale 2026-02-13 10:00",
+            "summary": "Manchester Academy | event_date=2026-06-14 19:00",
+            "event": {"venue": "Manchester Academy", "date_start": "2026-06-14", "is_event": True, "event_name": "The All-American Rejects"},
+        }
+        direct = {
+            "category": "venues_tickets",
+            "title": "The All-American Rejects - 14th June 2026",
+            "summary": "",
+            "source_label": "Manchester Academy",
+            "event": {"venue": "Manchester Academy", "is_event": True, "event_name": "The All-American Rejects - 14th June 2026"},
+        }
+
+        self.assertEqual(
+            build_editorial_contract(ticketmaster)["topic_key"],
+            build_editorial_contract(direct)["topic_key"],
+        )
+        ticketmaster_history_shape = dict(ticketmaster, summary="")
+        self.assertEqual(
+            build_editorial_contract(ticketmaster_history_shape)["topic_key"],
+            build_editorial_contract(direct)["topic_key"],
+        )
+
     def test_transport_intra_batch_dedup_keeps_distinct_stops(self) -> None:
         # Piccadilly tram escalator and Prestwich tram improvement works
         # are two different incidents — they must both stay published.

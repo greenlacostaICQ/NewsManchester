@@ -44,6 +44,10 @@ _NEGATION_RE = re.compile(
     r"fail(?:s|ed)?|unable|dropped|acquitted|не|без|недостаточно|нет)\b",
     re.IGNORECASE,
 )
+_SPECULATIVE_APPROVAL_RE = re.compile(
+    r"\b(?:set|expected|recommended|due|poised|likely)\s+to\s+be\s+approved\b",
+    re.IGNORECASE,
+)
 
 
 def _has_unnegated_match(blob: str, pattern: re.Pattern[str]) -> bool:
@@ -59,6 +63,8 @@ def classify_change_phase(candidate: dict) -> str:
         return ""
     blob = _blob(candidate)
     for phase, pattern in _PHASE_PATTERNS:
+        if phase == "approved" and _SPECULATIVE_APPROVAL_RE.search(blob):
+            continue
         if _has_unnegated_match(blob, pattern):
             return phase
     return ""

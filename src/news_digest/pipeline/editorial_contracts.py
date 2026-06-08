@@ -124,6 +124,10 @@ def summary_field_datetime(summary: str, field: str) -> datetime | None:
 
 
 def ticket_venue(candidate: dict) -> str:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    event_venue = str(event.get("venue") or "").strip()
+    if event_venue:
+        return event_venue
     summary = str(candidate.get("summary") or "")
     chunks = [part.strip(" .") for part in summary.split("|")]
     for chunk in chunks:
@@ -135,6 +139,36 @@ def ticket_venue(candidate: dict) -> str:
             continue
         return chunk
     return str(candidate.get("source_label") or "").strip()
+
+
+_TEXT_DATE_RE = re.compile(
+    r"\b(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3,9})\s+(20\d{2})\b",
+    re.IGNORECASE,
+)
+
+
+def _ticket_date_token(candidate: dict) -> str:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    raw = str(event.get("date_start") or event.get("date") or "").strip()
+    if raw:
+        return raw[:10]
+    event_dt = summary_field_datetime(str(candidate.get("summary") or ""), "event_date")
+    if event_dt:
+        return event_dt.date().isoformat()
+    blob = " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead"))
+    iso = re.search(r"\b(20\d{2}-\d{2}-\d{2})\b", blob)
+    if iso:
+        return iso.group(1)
+    match = _TEXT_DATE_RE.search(blob)
+    if not match:
+        return ""
+    day, month, year = match.groups()
+    for fmt in ("%d %B %Y", "%d %b %Y"):
+        try:
+            return datetime.strptime(f"{int(day)} {month} {year}", fmt).date().isoformat()
+        except ValueError:
+            continue
+    return ""
 
 
 def classify_ticket_type(candidate: dict) -> str:
@@ -726,13 +760,17 @@ def _topic_key(candidate: dict, story_type: str = "", event_shape: str = "") -> 
             title,
             flags=re.IGNORECASE,
         ).strip()
+        try:
+            from news_digest.pipeline.ticket_notability import ticket_artist_name  # noqa: PLC0415
+            title = ticket_artist_name(candidate) or title
+        except Exception:  # noqa: BLE001
+            pass
         venue = ticket_venue(candidate)
         # Include the event date so Calum Scott on 2026-05-27 and Calum
         # Scott on 2026-05-28 do NOT collapse into one cluster — that
         # cost us a second day-of concert in the 2026-05-27 report
         # under verdict=dedupe_lost_event.
-        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-        date_token = str(event.get("date_start") or event.get("date") or "").strip()
+        date_token = _ticket_date_token(candidate)
         suffix = f"|{date_token}" if date_token else ""
         return "ticket:" + normalize_title(f"{title} {venue}")[:120] + suffix
     if event_shape and event_shape != "none":
@@ -1219,7 +1257,7 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
     )
     event_shape = str(current_contract.get("event_shape") or "")
     story_type = str(current_contract.get("story_type") or "")
-    if event_shape not in {"ticket", "recurring", "festival", "one_off"} and story_type != "ticket":
+    if event_shape not in {"ticket", "recurring", "festival", "one_off", "event_like"} and story_type != "ticket":
         return {"applies": False, "allow": True, "reason": "not_calendar_item"}
 
     current_date = _occurrence_date_from_contract(current_contract)
@@ -1286,7 +1324,7 @@ def lifecycle_repeat_review(candidate: dict, previous: dict) -> dict[str, object
     anchor = str(current_contract.get("anchor_type") or "")
     story_type = str(current_contract.get("story_type") or "")
     event_shape = str(current_contract.get("event_shape") or "")
-    if event_shape in {"ticket", "recurring", "festival", "one_off"}:
+    if event_shape in {"ticket", "recurring", "festival", "one_off", "event_like"}:
         calendar_review = calendar_repeat_review(candidate, previous)
         if calendar_review.get("allow"):
             return {"repeat": False, "reason": str(calendar_review.get("reason") or "calendar_repeat_allowed")}

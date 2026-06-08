@@ -1057,6 +1057,138 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertFalse(lifecycle["repeat"], lifecycle)
         self.assertEqual(review["reason"], "event_milestone_d1")
 
+    def test_day_of_ticket_repeat_allowed_even_without_is_event_flag(self) -> None:
+        from news_digest.pipeline.dedupe import _calendar_item_should_carry_over
+        event_day = now_london().date().isoformat()
+        candidate = {
+            "primary_block": "ticket_radar",
+            "category": "venues_tickets",
+            "title": f"Cammy Barnes — event {event_day} — public sale 2026-04-02 10:00",
+            "summary": f"Manchester The Deaf Institute | event_date={event_day} 19:30 | public_onsale=2026-04-02 10:00",
+            "event": {
+                "event_name": "Cammy Barnes",
+                "venue": "Manchester The Deaf Institute",
+                "date_start": event_day,
+            },
+        }
+        previous = {
+            "title": candidate["title"],
+            "summary": candidate["summary"],
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "last_published_day_london": (now_london().date() - timedelta(days=7)).isoformat(),
+            "first_published_day_london": (now_london().date() - timedelta(days=7)).isoformat(),
+            "event": dict(candidate["event"]),
+        }
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        self.assertTrue(_calendar_item_should_carry_over(candidate, previous))
+
+    def test_day_of_ticket_repeat_allowed_across_sources(self) -> None:
+        event_day = now_london().date().isoformat()
+        previous = {
+            "fingerprint": "cammy-ticketmaster",
+            "title": f"Cammy Barnes — event {event_day} — public sale 2026-04-02 10:00",
+            "summary": f"Manchester The Deaf Institute | event_date={event_day} 19:30 | public_onsale=2026-04-02 10:00",
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "source_label": "Ticketmaster Manchester Upcoming",
+            "event": {
+                "event_name": "Cammy Barnes",
+                "venue": "Manchester The Deaf Institute",
+                "date_start": event_day,
+            },
+            "last_published_day_london": (now_london().date() - timedelta(days=7)).isoformat(),
+            "first_published_day_london": (now_london().date() - timedelta(days=7)).isoformat(),
+        }
+        previous["editorial_contract"] = build_editorial_contract(previous)
+        previous["repeat_story_key"] = previous["editorial_contract"]["topic_key"]
+        candidate = {
+            "include": True,
+            "dedupe_decision": "new",
+            "reason": "Candidate selected.",
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": previous["title"],
+            "summary": previous["summary"],
+            "event": previous["event"],
+            "source_label": "Venue Direct",
+            "source_url": "https://example.test/venue-direct/cammy-barnes",
+            "published_at": now_london().isoformat(),
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            (state_dir / "published_facts.json").write_text(
+                json.dumps({"last_updated_london": today_london(), "facts": [previous]}, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            (state_dir / "candidates.json").write_text(
+                json.dumps({"pipeline_run_id": "t", "run_date_london": today_london(), "candidates": [candidate]}, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+            dedupe_candidates(root)
+            out = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))
+
+        updated = out["candidates"][0]
+        self.assertTrue(updated["include"], updated)
+        self.assertNotEqual(updated["dedupe_decision"], "drop")
+
+    def test_recurring_market_repeat_waits_until_useful_moment(self) -> None:
+        from news_digest.pipeline.dedupe import _calendar_item_should_carry_over
+        candidate = {
+            "primary_block": "next_7_days",
+            "category": "culture_weekly",
+            "title": "Northern Quarter Makers Market",
+            "summary": "A makers market in Manchester every Sunday from 11:00 to 17:00.",
+            "event": {
+                "event_name": "Northern Quarter Makers Market",
+                "venue": "Oak Street, Manchester",
+                "is_recurring": True,
+            },
+        }
+        previous = {
+            "title": candidate["title"],
+            "summary": candidate["summary"],
+            "category": candidate["category"],
+            "primary_block": candidate["primary_block"],
+            "last_published_day_london": (now_london().date() - timedelta(days=7)).isoformat(),
+            "first_published_day_london": (now_london().date() - timedelta(days=7)).isoformat(),
+            "event": dict(candidate["event"]),
+        }
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        self.assertFalse(_calendar_item_should_carry_over(candidate, previous))
+
+    def test_undated_event_like_market_repeat_is_not_carried_daily(self) -> None:
+        from news_digest.pipeline.dedupe import _calendar_item_should_carry_over
+        candidate = {
+            "primary_block": "next_7_days",
+            "category": "culture_weekly",
+            "title": "Northern Quarter Makers Market, Manchester - Pedddle",
+            "summary": "",
+            "event": {
+                "event_name": "Northern Quarter Makers Market, Manchester - Pedddle",
+                "borough": "Manchester",
+                "is_event": False,
+            },
+        }
+        previous = {
+            "title": candidate["title"],
+            "summary": candidate["summary"],
+            "category": candidate["category"],
+            "primary_block": candidate["primary_block"],
+            "last_published_day_london": (now_london().date() - timedelta(days=7)).isoformat(),
+            "first_published_day_london": (now_london().date() - timedelta(days=7)).isoformat(),
+            "event": dict(candidate["event"]),
+        }
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        self.assertFalse(_calendar_item_should_carry_over(candidate, previous))
+
     def test_generic_update_marker_does_not_create_follow_up(self) -> None:
         from news_digest.pipeline.dedupe import _classify_change_type
         previous = {
@@ -1071,6 +1203,26 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             "summary": "Mark Roberts remains council leader and Gillian Julian remains deputy.",
             "lead": "",
             "evidence_text": "The council confirmed the same cabinet line-up.",
+        }
+
+        change_type = _classify_change_type(candidate, None, [previous], previous)
+
+        self.assertEqual(change_type, "same_story_rehash")
+
+    def test_same_title_without_phase_is_not_new_facts(self) -> None:
+        from news_digest.pipeline.dedupe import _classify_change_type
+        previous = {
+            "fingerprint": "abba-old",
+            "title": "ABBA themed venue next to Manchester City set to be approved",
+            "summary": "The venue is set to be approved near the stadium.",
+        }
+        candidate = {
+            "dedupe_decision": "drop",
+            "primary_block": "city_watch",
+            "title": previous["title"],
+            "summary": "The venue could host 600 guests and is recommended for approval.",
+            "lead": "",
+            "evidence_text": "The same proposal has more detail but no final approval.",
         }
 
         change_type = _classify_change_type(candidate, None, [previous], previous)
