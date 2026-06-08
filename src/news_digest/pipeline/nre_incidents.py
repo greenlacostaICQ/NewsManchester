@@ -104,6 +104,26 @@ def parse_incidents(xml: str) -> list[dict]:
     return out
 
 
+def relevant_today(start: str, end: str, planned: bool, today: datetime.date) -> bool:
+    """Anti-flood: a multi-day PLANNED work is news only NEAR its start or end,
+    not on every single day of a weeks-long window (that's what buried the
+    reader in repeated 'buses replace trains until 28 June' / 'Prestwich until
+    19 Aug' lines). Unplanned disruptions always show.
+    """
+    if not planned:
+        return True
+    if not start and not end:
+        return True  # no dates — can't tell, show it
+
+    def _near(value: str) -> bool:
+        try:
+            return abs((datetime.date.fromisoformat(value[:10]) - today).days) <= 1
+        except (ValueError, TypeError):
+            return False
+
+    return bool((start and _near(start)) or (end and _near(end)))
+
+
 def gm_incidents(today: datetime.date | None = None) -> list[dict]:
     """Return GM-relevant, currently-active rail incidents (best-effort, [] on any failure)."""
     token = _token()
@@ -138,6 +158,9 @@ def gm_incidents(today: datetime.date | None = None) -> list[dict]:
             s = inc["summary"]
             if _OVERNIGHT_RE.search(s) and "early morning" not in s.lower():
                 continue
+        # Anti-flood: long multi-day planned works only near start/end.
+        if not relevant_today(inc.get("start", ""), inc.get("end", ""), inc["planned"], today):
+            continue
         result.append(inc)
     # Unplanned (real disruptions) first, then by soonest end date; capped so a
     # quiet day shows a handful, not a wall of engineering notices.

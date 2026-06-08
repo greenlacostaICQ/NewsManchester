@@ -727,6 +727,10 @@ _TFGM_ALERT_PATTERN = re.compile(
 # road/motorway/active-travel works. We only want items relevant to public
 # transport users. An item is kept only if its title or description mentions a
 # recognisable public-transport keyword.
+# Trams (Metrolink) are shown EVERY day even for long works — a commuter whose
+# stop is closed for weeks needs the daily reminder. Buses/road works use the
+# anti-flood rule (only near start/end). Detected by 'tram'/'metrolink'.
+_TFGM_TRAM_RE = re.compile(r"\b(metrolink|trams?)\b", re.IGNORECASE)
 _TFGM_PUBLIC_TRANSPORT_RE = re.compile(
     r'\b(metrolink|trams?|bus\b|buses|coach|bee\s+network|rail|train|northern|transpennine|'
     r'piccadilly|victoria|altrincham\s+line|bury\s+line|eccles\s+line|ashton\s+line|'
@@ -822,6 +826,14 @@ def _extract_tfgm_alerts(source: SourceDef, body: str) -> list[ExtractedItem]:
             continue
         if not _TFGM_PUBLIC_TRANSPORT_RE.search(f"{title} {desc}"):
             continue
+        # Trams: keep daily (commuter reminder). Buses/road: anti-flood — a long
+        # multi-day planned closure only shows near its start or end.
+        is_tram = bool(_TFGM_TRAM_RE.search(f"{title} {desc}"))
+        if not is_tram and obj["dates"]:
+            from news_digest.pipeline.nre_incidents import relevant_today  # noqa: PLC0415
+            s, e = obj["dates"][0]
+            if not relevant_today(s, e, True, now_london().date()):
+                continue
         seen.add(title)
         validity = _tfgm_validity_text(obj["dates"])
         advice = _tfgm_real_advice(obj["advice"])
