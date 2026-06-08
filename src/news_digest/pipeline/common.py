@@ -155,12 +155,22 @@ def clean_url(url: str) -> str:
     return parse.urlunsplit((scheme, netloc, path, "", ""))
 
 
+# BBC publishes the same article under both bbc.com and bbc.co.uk. Our two
+# BBC Manchester feeds (RSS → bbc.com links, web backup → bbc.co.uk links) thus
+# produced two different URL identities for one story, so the twin slipped past
+# exact-URL dedup into the noisier topic dedup. Fold the domains together.
+_BBC_HOST_ALIASES = ("bbc.co.uk", "bbc.com")
+
+
 def canonical_url_identity(url: str) -> str:
     cleaned = clean_url(url)
     if not cleaned:
         return ""
     parsed = parse.urlsplit(cleaned)
-    return f"{parsed.netloc}{parsed.path}"
+    netloc = parsed.netloc
+    if any(netloc == h or netloc.endswith("." + h) for h in _BBC_HOST_ALIASES):
+        netloc = "bbc.com"
+    return f"{netloc}{parsed.path}"
 
 
 def normalize_title(value: str) -> str:
@@ -169,9 +179,16 @@ def normalize_title(value: str) -> str:
     return re.sub(r"\s+", " ", lowered).strip()
 
 
+# Twin feeds of one outlet: same content, kept only for resilience (the web
+# backup catches stories on quiet RSS days). Fingerprint them under one label
+# so the duplicate collapses as a clean exact-dup, not topic-dedup churn.
+_TWIN_SOURCE_LABELS = {"bbc manchester web": "bbc manchester"}
+
+
 def fingerprint_for_candidate(candidate: dict) -> str:
     source_url = canonical_url_identity(str(candidate.get("source_url") or ""))
     source_label = str(candidate.get("source_label") or "").strip().lower()
+    source_label = _TWIN_SOURCE_LABELS.get(source_label, source_label)
     title = str(candidate.get("title") or "").strip().lower()
     category = str(candidate.get("category") or "").strip().lower()
     base = f"{category}-{source_label}-{source_url}" if source_url else f"{category}-{source_label}-{title}"
