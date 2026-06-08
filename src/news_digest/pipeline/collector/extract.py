@@ -1928,6 +1928,41 @@ def _extract_sitemap_items(base_url: str, body: str) -> list[ExtractedItem]:
     return items
 
 
+# #2 Soft-reroute: an evaluative question headline ("How good a mayor is Andy
+# Burnham?"), a profile/retrospective or an explainer is analysis, not a fresh
+# event — it belongs in Городской радар, not «Свежие новости». We reroute it
+# out of last_24h UNLESS it carries a real hard-news signal (then a question
+# headline is just framing on real news and stays in Fresh).
+_ANALYSIS_OPINION_RE = re.compile(
+    r"\b(?:how good|the rise of|looks? back|everything we know|what we know|"
+    r"explained|opinion|analysis|profile of|a profile|review of|"
+    r"completes? (?:his|her|their|a)?\s*(?:nine|eight|seven|six|five|four|\d+)[- ]year|"
+    r"end of an era|legacy of|nine years as)\b",
+    re.IGNORECASE,
+)
+_ANALYSIS_QUESTION_RE = re.compile(
+    r"^\s*(?:how|is|are|should|why|what|who|will|can|does|did|has|was|were)\b.*\?\s*$",
+    re.IGNORECASE,
+)
+_FRESH_HARD_NEWS_RE = re.compile(
+    r"\b(?:police|arrest|charged?|sentenced?|jailed|court|murder|stab|knife|"
+    r"crash|collision|fire|death|died|killed|evacuat|cordon|closed|closure|"
+    r"cqc|ofsted|inquest|raid|appeal|missing|attack|assault|disruption|strike|"
+    r"rescue|injured|hospital)\b",
+    re.IGNORECASE,
+)
+
+
+def _looks_like_analysis_opinion(title: str, summary: str) -> bool:
+    blob = f"{title or ''} {summary or ''}"
+    if _FRESH_HARD_NEWS_RE.search(blob):
+        return False
+    return bool(
+        _ANALYSIS_OPINION_RE.search(blob)
+        or _ANALYSIS_QUESTION_RE.search(str(title or "").strip())
+    )
+
+
 def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
     if source.source_type == "json_funnelback":
         links = _extract_funnelback_items(body)
@@ -2027,6 +2062,9 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
             # disruptions (strikes, closures). Keep stale items visible to
             # validation/source-health so the source is not misreported as
             # empty, but demote them out of today_focus.
+            primary_block = "city_watch"
+        if primary_block == "last_24h" and _looks_like_analysis_opinion(item.title, item.summary):
+            # #2 analysis/opinion/profile → Городской радар, not «Свежие новости».
             primary_block = "city_watch"
         candidate = {
             "title": item.title,
