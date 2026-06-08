@@ -45,7 +45,7 @@ class SourceScoreBacklogCriteriaTest(unittest.TestCase):
 
     def test_transport_national_rail_above_aggregators(self):
         self.assertGreater(
-            source_score("National Rail", "transport"),
+            source_score("National Rail Enquiries", "transport"),
             source_score("The Manc", "transport"),
         )
 

@@ -2054,6 +2054,50 @@ def _looks_like_analysis_opinion(title: str, summary: str) -> bool:
     )
 
 
+def _extract_nre_incidents(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """GM rail disruptions from the National Rail Enquiries Incidents API.
+
+    Ignores ``body`` (the standard pre-fetch of the status page, kept only so
+    the collector marks the source reachable) — the real data comes from the
+    token-authenticated NRE feed via the nre_incidents adapter. Best-effort:
+    returns [] on any failure so the transport stage never blocks.
+    """
+    from news_digest.pipeline import nre_incidents as _nre  # noqa: PLC0415
+
+    fetched_at = now_london().isoformat()
+    items: list[ExtractedItem] = []
+    try:
+        incidents = _nre.gm_incidents()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("NRE incidents extractor failed: %s", exc)
+        return []
+    for inc in incidents:
+        summ = (inc.get("summary") or "").strip()
+        if not summ:
+            continue
+        routes = (inc.get("routes") or "").strip()
+        end = inc.get("end") or ""
+        until = ""
+        if end:
+            try:
+                d = datetime.fromisoformat(end).date()
+                until = f"Until {d.day} {_TFGM_MONTHS_EN[d.month - 1]}."
+            except ValueError:
+                until = ""
+        detail = " ".join(p for p in (summ, routes, until) if p)
+        slug = re.sub(r"[^a-z0-9]+", "-", summ.lower()).strip("-")[:80]
+        items.append(
+            ExtractedItem(
+                title=_clean_title_text(summ),
+                url=f"{source.url.rstrip('/')}/{slug}",
+                published_at=fetched_at,
+                summary=_clean_snippet(summ)[:500],
+                evidence_text=_clean_snippet(detail, max_chars=600),
+            )
+        )
+    return items
+
+
 def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
     if source.source_type == "json_funnelback":
         links = _extract_funnelback_items(body)
@@ -2067,6 +2111,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_markdown_link_items(body)
     elif source.source_type == "html_tfgm_alerts":
         links = _extract_tfgm_alerts(source, body)
+    elif source.source_type == "json_nre_incidents":
+        links = _extract_nre_incidents(source, body)
     elif source.source_type == "json_national_rail":
         links = _extract_national_rail(source, body)
     elif source.source_type == "html_eventbrite":

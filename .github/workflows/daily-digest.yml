@@ -39,6 +39,9 @@ jobs:
           # embeddings. Falls back to deterministic-only when the key is
           # missing — never blocks the release.
           OPENAI_API_KEY: ${{ secrets.OPENAI }}
+          # National Rail Enquiries Incidents API (GM rail disruptions, transport block).
+          NRE_USERNAME: ${{ secrets.NRE_USERNAME }}
+          NRE_PASSWORD: ${{ secrets.NRE_PASSWORD }}
           FORCE_COLLECT: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
         run: |
           set -euo pipefail

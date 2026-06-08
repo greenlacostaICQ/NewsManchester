@@ -1041,7 +1041,7 @@ def _source_override(
         # Downstream validators still reject genuinely non-GM material.
         return any(term in f"{lowered_title} {lowered_summary}" for term in public_safety_terms)
 
-    if source.name == "National Rail":
+    if source.name in {"National Rail", "National Rail Enquiries"}:
         if not ("/status-and-disruptions" in lowered_path or "/engineering-works/" in lowered_path):
             return False
         if _has_gm_token(lowered_title):

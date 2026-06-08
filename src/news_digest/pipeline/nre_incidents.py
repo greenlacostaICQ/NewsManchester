@@ -36,13 +36,18 @@ _INCIDENTS_URL = "https://opendata.nationalrail.co.uk/api/staticfeeds/5.0/incide
 # The GM versions are always written in full ("Manchester Piccadilly"), so the
 # "Manchester" stem covers them; the rest are unambiguous GM towns/stations.
 _GM_TERMS = re.compile(
-    r"\b(Manchester|Salford|Bolton|Stockport|Wigan|Rochdale|Oldham|Bury|Deansgate|"
+    r"\b(Manchester|Salford|Bolton|Stockport|Wigan|Rochdale|Oldham|Deansgate|"
+    r"Bury(?!\s+St)|"  # 'Bury' the GM town, NOT 'Bury St Edmunds' (Suffolk)
     r"Altrincham|Ashton-under-Lyne|Eccles|Hazel Grove|Gatley|Marple|Hindley|"
     r"Patricroft|Newton-le-Willows|Hattersley|Levenshulme|Heaton Chapel|Reddish|"
     r"Bredbury|Romiley|Swinton|Walkden|Irlam|Denton|Guide Bridge|Mills Hill|"
     r"Moston|Littleborough|Smithy Bridge|Castlefield)\b",
     re.IGNORECASE,
 )
+# A morning brief cares about real disruptions + daytime works, not overnight
+# tweaks. This flags purely late-night/early-hours planned amendments to drop.
+_OVERNIGHT_RE = re.compile(r"\b(late night|overnight|2[0-3]:\d\d|0[0-5]:\d\d)\b", re.IGNORECASE)
+_MAX_RAIL_ITEMS = 8
 
 
 def _token() -> str:
@@ -115,7 +120,10 @@ def gm_incidents(today: datetime.date | None = None) -> list[dict]:
         logger.warning("NRE incidents parse failed: %s", exc)
         return []
     for inc in incidents:
-        if not _GM_TERMS.search(f"{inc['summary']} {inc['routes']}"):
+        # GM match on the SUMMARY (the headline names the actual affected
+        # service). Matching the route list over-includes national incidents
+        # that list a Manchester leg among many regions.
+        if not _GM_TERMS.search(inc["summary"]):
             continue
         end = inc.get("end") or ""
         try:
@@ -123,14 +131,15 @@ def gm_incidents(today: datetime.date | None = None) -> list[dict]:
                 continue  # already over
         except ValueError:
             pass
-        # Editorial cut: a morning brief cares about unplanned disruptions and
-        # daytime works. A purely late-night planned amendment ("Amended 23:28
-        # … late night service") is noise for a commuter — drop it unless it
-        # also touches the early-morning peak.
-        summ = inc["summary"].lower()
-        if inc["planned"] and "late night" in summ and "early morning" not in summ:
-            continue
+        # Editorial cut: drop purely overnight/late-night PLANNED amendments
+        # (23:28, 22:14, "late night") unless they also hit the early-morning
+        # peak. Unplanned disruptions are always kept.
+        if inc["planned"]:
+            s = inc["summary"]
+            if _OVERNIGHT_RE.search(s) and "early morning" not in s.lower():
+                continue
         result.append(inc)
-    # Unplanned (real disruptions) first, then by soonest end date.
+    # Unplanned (real disruptions) first, then by soonest end date; capped so a
+    # quiet day shows a handful, not a wall of engineering notices.
     result.sort(key=lambda x: (x.get("planned", True), x.get("end") or "9999"))
-    return result
+    return result[:_MAX_RAIL_ITEMS]

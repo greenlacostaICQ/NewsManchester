@@ -42,7 +42,7 @@ SOURCE_AUTHORITY_VERSION = 1
 CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
     "transport": (
         "TfGM",
-        "National Rail",
+        "National Rail Enquiries",
     ),
     "gmp": (
         # GMP RSS is disabled (Cloudflare blocks the runner — see
@@ -211,7 +211,7 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
 SOURCE_TIER: dict[str, int] = {
     # ── Tier 1: official primary source (owns its topic) ────────────────
     "TfGM": 1,
-    "National Rail": 1,
+    "National Rail Enquiries": 1,
     "Manchester United": 1,
     "Manchester City": 1,
     "Manchester Council": 1,
