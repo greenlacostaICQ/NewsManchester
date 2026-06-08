@@ -27,7 +27,12 @@ from news_digest.pipeline.dedupe import (
     dedupe_candidates,
 )
 from news_digest.pipeline.entity_extraction import extract_entities
-from news_digest.pipeline.editorial_contracts import build_editorial_contract, copy_invariant_errors
+from news_digest.pipeline.editorial_contracts import (
+    build_editorial_contract,
+    calendar_repeat_review,
+    copy_invariant_errors,
+    lifecycle_repeat_review,
+)
 from news_digest.pipeline.writer import (
     _build_recurring_event_fallback_line,
     _build_ticket_fallback_line,
@@ -935,6 +940,162 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
                 include_or_upgrade_ok,
                 f"News with a new fact was silently blocked: {updated}",
             )
+
+    def test_far_future_ticket_repeat_waits_for_reader_moment(self) -> None:
+        """A ticket/event card should not reappear every morning just because
+        the event is still in the future. It may return on useful milestones.
+        """
+        event_day = (now_london().date() + timedelta(days=21)).isoformat()
+        candidate = {
+            "include": True,
+            "dedupe_decision": "new",
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": f"Jason Isbell and the 400 Unit — event {event_day} — public sale 2026-03-01 10:00",
+            "summary": f"Bridgewater Hall | event_date={event_day} 19:30 | public_onsale=2026-03-01 10:00",
+            "event": {
+                "is_event": True,
+                "event_name": "Jason Isbell and the 400 Unit",
+                "venue": "Bridgewater Hall",
+                "date_start": event_day,
+            },
+            "source_label": "Ticketmaster Manchester Upcoming",
+        }
+        previous = dict(candidate)
+        previous["last_published_day_london"] = (now_london().date() - timedelta(days=1)).isoformat()
+        previous["first_published_day_london"] = previous["last_published_day_london"]
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        review = calendar_repeat_review(candidate, previous)
+        lifecycle = lifecycle_repeat_review(candidate, previous)
+
+        self.assertFalse(review["allow"], review)
+        self.assertTrue(lifecycle["repeat"], lifecycle)
+        self.assertEqual(review["reason"], "same_calendar_item_without_new_reader_moment")
+
+    def test_far_future_ticket_repeat_dropped_across_sources(self) -> None:
+        event_day = (now_london().date() + timedelta(days=21)).isoformat()
+        previous = {
+            "fingerprint": "bridgewater-jason-old",
+            "title": f"Jason Isbell and the 400 Unit — event {event_day} — public sale 2026-03-01 10:00",
+            "summary": f"Bridgewater Hall | event_date={event_day} 19:30 | public_onsale=2026-03-01 10:00",
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "source_label": "Ticketmaster Manchester Upcoming",
+            "event": {
+                "is_event": True,
+                "event_name": "Jason Isbell and the 400 Unit",
+                "venue": "Bridgewater Hall",
+                "date_start": event_day,
+            },
+            "last_published_day_london": (now_london().date() - timedelta(days=1)).isoformat(),
+            "first_published_day_london": (now_london().date() - timedelta(days=1)).isoformat(),
+        }
+        previous["editorial_contract"] = build_editorial_contract(previous)
+        previous["repeat_story_key"] = previous["editorial_contract"]["topic_key"]
+        candidate = {
+            "include": True,
+            "dedupe_decision": "new",
+            "reason": "Candidate selected.",
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": previous["title"],
+            "summary": previous["summary"],
+            "event": previous["event"],
+            "source_label": "Bridgewater Hall",
+            "source_url": "https://example.test/bridgewater/jason-isbell",
+            "published_at": now_london().isoformat(),
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            (state_dir / "published_facts.json").write_text(
+                json.dumps({"last_updated_london": today_london(), "facts": [previous]}, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            (state_dir / "candidates.json").write_text(
+                json.dumps({"pipeline_run_id": "t", "run_date_london": today_london(), "candidates": [candidate]}, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+            dedupe_candidates(root)
+            out = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))
+
+        updated = out["candidates"][0]
+        self.assertFalse(updated["include"], updated)
+        self.assertEqual(updated["dedupe_decision"], "drop")
+        self.assertEqual(updated["change_type"], "same_story_rehash")
+
+    def test_tomorrow_ticket_repeat_is_allowed_as_reminder(self) -> None:
+        event_day = (now_london().date() + timedelta(days=1)).isoformat()
+        candidate = {
+            "include": True,
+            "dedupe_decision": "new",
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": f"Jason Isbell and the 400 Unit — event {event_day} — public sale 2026-03-01 10:00",
+            "summary": f"Bridgewater Hall | event_date={event_day} 19:30 | public_onsale=2026-03-01 10:00",
+            "event": {
+                "is_event": True,
+                "event_name": "Jason Isbell and the 400 Unit",
+                "venue": "Bridgewater Hall",
+                "date_start": event_day,
+            },
+            "source_label": "Ticketmaster Manchester Upcoming",
+        }
+        previous = dict(candidate)
+        previous["last_published_day_london"] = (now_london().date() - timedelta(days=2)).isoformat()
+        previous["first_published_day_london"] = previous["last_published_day_london"]
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        review = calendar_repeat_review(candidate, previous)
+        lifecycle = lifecycle_repeat_review(candidate, previous)
+
+        self.assertTrue(review["allow"], review)
+        self.assertFalse(lifecycle["repeat"], lifecycle)
+        self.assertEqual(review["reason"], "event_milestone_d1")
+
+    def test_generic_update_marker_does_not_create_follow_up(self) -> None:
+        from news_digest.pipeline.dedupe import _classify_change_type
+        previous = {
+            "fingerprint": "stockport-cabinet-old",
+            "title": "Stockport council confirms cabinet appointments",
+            "summary": "Mark Roberts remains council leader.",
+        }
+        candidate = {
+            "dedupe_decision": "drop",
+            "primary_block": "city_watch",
+            "title": "Обновление: появилось обновление по кабинету Stockport Council",
+            "summary": "Mark Roberts remains council leader and Gillian Julian remains deputy.",
+            "lead": "",
+            "evidence_text": "The council confirmed the same cabinet line-up.",
+        }
+
+        change_type = _classify_change_type(candidate, None, [previous], previous)
+
+        self.assertEqual(change_type, "same_story_rehash")
+
+    def test_concrete_sentencing_phase_still_creates_follow_up(self) -> None:
+        from news_digest.pipeline.dedupe import _classify_change_type
+        previous = {
+            "fingerprint": "case-old",
+            "title": "Man charged after Little Hulton assault",
+            "summary": "A man was charged after a 2003 assault.",
+        }
+        candidate = {
+            "dedupe_decision": "drop",
+            "primary_block": "last_24h",
+            "title": "Man sentenced to 24 years after Little Hulton assault",
+            "summary": "Paul Quinn has been sentenced to 24 years.",
+            "lead": "",
+            "evidence_text": "Paul Quinn was sentenced at court.",
+        }
+
+        change_type = _classify_change_type(candidate, None, [previous], previous)
+
+        self.assertEqual(change_type, "follow_up")
 
     # ---------------------------------------------------------------
     # S3 — three event templates + post-rewrite completeness review

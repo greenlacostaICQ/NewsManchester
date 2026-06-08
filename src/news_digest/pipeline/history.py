@@ -9,7 +9,7 @@ import shutil
 from news_digest.pipeline.common import normalize_title, read_json, today_london, write_json
 from news_digest.pipeline.entity_extraction import enrich_candidate_entities, extract_entities
 from news_digest.pipeline.event_extraction import enrich_candidate_event, extract_event
-from news_digest.pipeline.editorial_contracts import attach_editorial_contract
+from news_digest.pipeline.editorial_contracts import attach_editorial_contract, topic_key_for_candidate
 from news_digest.pipeline.reader_value import predicted_label, reader_value_score
 from news_digest.pipeline.semantic_dedupe import (
     EMBEDDING_VERSION,
@@ -96,6 +96,7 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
                 "entities": candidate.get("entities") or extract_entities(candidate),
                 "event": candidate.get("event") or extract_event(candidate),
                 "editorial_contract": candidate.get("editorial_contract") or {},
+                "repeat_story_key": topic_key_for_candidate(candidate),
                 "evidence_packet": candidate.get("evidence_packet") or {},
                 "rubric_contract": candidate.get("rubric_contract") or {},
                 "news_anchor": candidate.get("news_anchor") or {},

@@ -1176,6 +1176,92 @@ def is_specific_topic_key(topic_key: str) -> bool:
     return any(key.startswith(prefix) for prefix in _SPECIFIC_TOPIC_PREFIXES)
 
 
+_CALENDAR_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 14, 30})
+
+
+def _occurrence_date_from_contract(contract: dict) -> date | None:
+    occurrence = contract.get("occurrence") if isinstance(contract.get("occurrence"), dict) else {}
+    raw = str(occurrence.get("date") or "").strip()
+    if raw:
+        try:
+            return datetime.fromisoformat(raw.replace("Z", "+00:00")).date()
+        except ValueError:
+            pass
+    return None
+
+
+def _ticket_sale_date(candidate: dict) -> date | None:
+    onsale_at = summary_field_datetime(str(candidate.get("summary") or ""), "public_onsale")
+    if onsale_at:
+        return onsale_at.date()
+    blob = " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead"))
+    match = re.search(r"\bpublic\s+sale\s+(\d{4}-\d{2}-\d{2})\b", blob, re.IGNORECASE)
+    if not match:
+        return None
+    try:
+        return datetime.strptime(match.group(1), "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]:
+    """Decide whether a previously published event/ticket deserves a repeat.
+
+    This is the product rule behind "do not show Jason Isbell / diaspora /
+    market cards every morning": first discovery is publishable; later repeats
+    need a real reader moment (today/tomorrow, a milestone, or a fresh sale).
+    """
+    current_contract = build_editorial_contract(candidate)
+    previous_contract = (
+        previous.get("editorial_contract")
+        if isinstance(previous.get("editorial_contract"), dict)
+        else build_editorial_contract(previous)
+    )
+    event_shape = str(current_contract.get("event_shape") or "")
+    story_type = str(current_contract.get("story_type") or "")
+    if event_shape not in {"ticket", "recurring", "festival", "one_off"} and story_type != "ticket":
+        return {"applies": False, "allow": True, "reason": "not_calendar_item"}
+
+    current_date = _occurrence_date_from_contract(current_contract)
+    previous_date = _occurrence_date_from_contract(previous_contract)
+    if current_date and previous_date and current_date != previous_date:
+        return {"applies": True, "allow": True, "reason": "new_event_occurrence"}
+
+    last_published = str(previous.get("last_published_day_london") or "").strip()
+    today = now_london().date()
+    if last_published == today.isoformat():
+        return {"applies": True, "allow": False, "reason": "already_shown_today"}
+
+    if current_date:
+        days_until = (current_date - today).days
+        if days_until < 0:
+            return {"applies": True, "allow": False, "reason": "event_already_passed"}
+        if days_until in _CALENDAR_REPEAT_MILESTONE_DAYS:
+            return {
+                "applies": True,
+                "allow": True,
+                "reason": f"event_milestone_d{days_until}",
+                "days_until_event": days_until,
+            }
+
+    sale_date = _ticket_sale_date(candidate)
+    if sale_date:
+        sale_age = (today - sale_date).days
+        if -3 <= sale_age <= 7:
+            return {
+                "applies": True,
+                "allow": True,
+                "reason": "fresh_ticket_sale",
+                "sale_age_days": sale_age,
+            }
+
+    return {
+        "applies": True,
+        "allow": False,
+        "reason": "same_calendar_item_without_new_reader_moment",
+    }
+
+
 def lifecycle_repeat_review(candidate: dict, previous: dict) -> dict[str, object]:
     """Cross-day repeat policy for named topics.
 
@@ -1201,12 +1287,17 @@ def lifecycle_repeat_review(candidate: dict, previous: dict) -> dict[str, object
     story_type = str(current_contract.get("story_type") or "")
     event_shape = str(current_contract.get("event_shape") or "")
     if event_shape in {"ticket", "recurring", "festival", "one_off"}:
-        current_occurrence = ((current_contract.get("occurrence") or {}) if isinstance(current_contract.get("occurrence"), dict) else {})
-        previous_occurrence = ((previous_contract.get("occurrence") or {}) if isinstance(previous_contract.get("occurrence"), dict) else {})
-        if current_occurrence.get("date") and current_occurrence.get("date") != previous_occurrence.get("date"):
-            return {"repeat": False, "reason": "new_event_occurrence"}
+        calendar_review = calendar_repeat_review(candidate, previous)
+        if calendar_review.get("allow"):
+            return {"repeat": False, "reason": str(calendar_review.get("reason") or "calendar_repeat_allowed")}
+        return {
+            "repeat": True,
+            "topic_key": topic,
+            "reason": str(calendar_review.get("reason") or "same_calendar_item_without_new_reader_moment"),
+            "calendar_repeat_review": calendar_review,
+        }
 
-    if anchor in {"new_phase", "dated_event", "ticket_opportunity", "service_status", "today_weather"}:
+    if anchor in {"new_phase", "service_status", "today_weather"}:
         return {"repeat": False, "reason": f"publishable_anchor:{anchor}"}
     if story_type in {"incident", "memorial", "opening", "research", "human_interest", "soft_news"}:
         return {

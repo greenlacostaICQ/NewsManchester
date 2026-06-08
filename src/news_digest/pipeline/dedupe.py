@@ -16,11 +16,13 @@ from news_digest.pipeline.common import (
 )
 from news_digest.pipeline.editorial_contracts import (
     attach_editorial_contract,
+    calendar_repeat_review,
     history_window_days_for_contract,
     is_specific_topic_key,
     lifecycle_repeat_review,
     topic_key_for_candidate,
 )
+from news_digest.pipeline.change_classifier import classify_change_phase
 from news_digest.pipeline.entity_extraction import enrich_candidate_entities
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.history import ensure_history_files
@@ -100,7 +102,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
     for item in published:
         if not isinstance(item, dict):
             continue
-        topic_key = topic_key_for_candidate(item)
+        topic_key = str(item.get("repeat_story_key") or "") or topic_key_for_candidate(item)
         if is_specific_topic_key(topic_key):
             published_by_topic.setdefault(topic_key, []).append(item)
 
@@ -115,6 +117,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         # I3: event facts depend on entities — must run AFTER entity pass.
         enrich_candidate_event(candidate)
         attach_editorial_contract(candidate)
+        candidate["repeat_story_key"] = topic_key_for_candidate(candidate)
 
         fingerprint = fingerprint_for_candidate(candidate)
         candidate["fingerprint"] = fingerprint
@@ -313,6 +316,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 "previous_published_day": prev_date,
                 "previous_title": prev_title,
                 "topic_key": topic_key_for_candidate(candidate),
+                "repeat_story_key": candidate.get("repeat_story_key") or "",
                 "topic_lifecycle_repeat": candidate.get("topic_lifecycle_repeat") or {},
                 "carry_over_label": candidate.get("carry_over_label"),
                 "similar_previous": similar_previous,
@@ -602,9 +606,8 @@ def _calendar_item_should_carry_over(candidate: dict, previous: dict) -> bool:
             except ValueError:
                 ev_day = None
             if ev_day is not None and today <= ev_day <= today + timedelta(days=14):
-                last_published = _published_day_from_history(previous, "last_published_day_london")
-                if not (last_published and last_published == today):
-                    return True
+                review = calendar_repeat_review(candidate, previous)
+                return bool(review.get("allow"))
 
     text = _candidate_text(candidate)
     lowered = text.lower()
@@ -641,7 +644,7 @@ def _calendar_item_should_carry_over(candidate: dict, previous: dict) -> bool:
 
 
 def _topic_published_matches(candidate: dict, published_by_topic: dict[str, list[dict]]) -> list[dict]:
-    topic_key = topic_key_for_candidate(candidate)
+    topic_key = str(candidate.get("repeat_story_key") or "") or topic_key_for_candidate(candidate)
     if not is_specific_topic_key(topic_key):
         return []
     matches = [
@@ -702,13 +705,26 @@ _FEAT_SUFFIX_RE = re.compile(
 # of an earlier published item rather than a fresh rehash. When any of
 # these appear AND there is a previous match, classify as `follow_up`
 # (not blocked) rather than `same_story_rehash` (auto-rejected).
+_CONCRETE_FOLLOW_UP_PHASES: frozenset[str] = frozenset({
+    "approved",
+    "rejected",
+    "delayed",
+    "cancelled",
+    "reopened",
+    "charged",
+    "sentenced",
+    "appeal_updated",
+    "consultation_opened",
+    "consultation_closing",
+    "starts_today",
+})
+
 _FOLLOW_UP_MARKERS: tuple[str, ...] = (
     # Russian — court / police progression
     "приговор", "осужд", "виновн", "приговорил",
     "следствие продолжа", "расследование продолжа",
     "задержан", "арестован", "обвинен",
     "годовщин", "к годовщине",
-    "обновление", "обновлён", "новые подробности", "уточн",
     # English court / police
     "sentenced", "verdict", "convicted", "guilty",
     "investigation continues", "court update",
@@ -770,6 +786,13 @@ def _classify_change_type(
         str(candidate.get(f) or "")
         for f in ("title", "lead", "summary", "evidence_text", "practical_angle")
     ).lower()
+    phase = str(candidate.get("change_phase") or "").strip()
+    if not phase:
+        phase = classify_change_phase(candidate)
+        if phase:
+            candidate["change_phase"] = phase
+    if phase in _CONCRETE_FOLLOW_UP_PHASES:
+        return "follow_up"
     if any(marker in blob for marker in _FOLLOW_UP_MARKERS):
         return "follow_up"
 
