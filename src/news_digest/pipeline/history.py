@@ -95,6 +95,8 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
                 "semantic_text": semantic_text(candidate)[:1200],
                 "entities": candidate.get("entities") or extract_entities(candidate),
                 "event": candidate.get("event") or extract_event(candidate),
+                "ticket_type": candidate.get("ticket_type") or "",
+                "ticket_notability": candidate.get("ticket_notability") or {},
                 "editorial_contract": candidate.get("editorial_contract") or {},
                 "repeat_story_key": topic_key_for_candidate(candidate),
                 "evidence_packet": candidate.get("evidence_packet") or {},

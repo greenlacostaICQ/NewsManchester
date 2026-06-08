@@ -865,6 +865,19 @@ def _story_type(candidate: dict, event_shape: str) -> str:
     if _LOCAL_COST_RE.search(blob) and _LOCATION_SIGNAL.search(blob):
         return "local_cost"
     if re.search(
+        r"\b(?:cqc|ofsted|care\s+home|homecare|home\s+care|nursery|safeguarding|inspection|"
+        r"inadequate|requires\s+improvement|special\s+measures|patient\s+safety|children'?s\s+safety)\b",
+        lowered,
+    ):
+        return "service_accountability"
+    if re.search(
+        r"\b(?:suspicious\s+item|cordon|evacuat(?:e|ed|ion)|knife\s+robbery|stabbing|"
+        r"serious\s+assault|life-?threatening|air\s+ambulance|road\s+closed|"
+        r"lane\s+closed|motorway|m60|m62|m56)\b",
+        lowered,
+    ):
+        return "public_safety_after_incident"
+    if re.search(
         r"\b(?:supermarket|store|shop|retail|asda|waitrose|tesco|sainsbury|aldi|lidl|morrisons|co-op)\b",
         lowered,
     ) and re.search(r"\b(?:clos(?:e|es|ed|ing)|take(?:s|n)?\s+over|set\s+to\s+take\s+over|replac(?:e|es|ed|ing))\b", lowered):
@@ -903,6 +916,12 @@ def _anchor_type(candidate: dict, story_type: str, event_shape: str) -> str:
         return "new_phase"
     if _LOCAL_ACTION_RE.search(blob):
         return "local_action"
+    if block in {"last_24h", "today_focus"} and story_type in {
+        "incident",
+        "public_safety_after_incident",
+        "service_accountability",
+    }:
+        return "fresh_report"
     if story_type == "research":
         return "research_publication"
     if story_type == "human_interest":
@@ -930,7 +949,17 @@ def _publish_tier(candidate: dict, story_type: str, event_shape: str, anchor_typ
         return "filler"
     if event_shape in {"festival", "recurring"}:
         return "strong"
-    if story_type in {"incident", "planning", "civic", "opening", "memorial", "local_cost", "local_service_change"} and anchor_type != "none":
+    if story_type in {
+        "incident",
+        "public_safety_after_incident",
+        "service_accountability",
+        "planning",
+        "civic",
+        "opening",
+        "memorial",
+        "local_cost",
+        "local_service_change",
+    } and anchor_type != "none":
         return "strong"
     if story_type == "ticket":
         ticket_type = str(candidate.get("ticket_type") or "") or classify_ticket_type(candidate)
@@ -1215,6 +1244,10 @@ def is_specific_topic_key(topic_key: str) -> bool:
 
 
 _CALENDAR_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 14, 30})
+_A_TIER_TICKET_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 14, 30, 90, 180, 365})
+_B_TIER_TICKET_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 30})
+_LOW_TIER_TICKET_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7})
+_MAJOR_UPCOMING_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 14, 30, 365})
 
 
 def _history_day(value: object) -> date | None:
@@ -1250,6 +1283,31 @@ def _ticket_sale_date(candidate: dict) -> date | None:
         return datetime.strptime(match.group(1), "%Y-%m-%d").date()
     except ValueError:
         return None
+
+
+def _ticket_notability_tier(*items: dict) -> str:
+    for item in items:
+        notability = item.get("ticket_notability") if isinstance(item, dict) else None
+        if not isinstance(notability, dict):
+            continue
+        tier = str(notability.get("tier") or "").strip().upper()
+        if tier:
+            return tier
+    return ""
+
+
+def _ticket_repeat_milestone_days(candidate: dict, previous: dict) -> frozenset[int]:
+    tier = _ticket_notability_tier(candidate, previous)
+    if tier in {"A", "PROTECTED"}:
+        return _A_TIER_TICKET_REPEAT_MILESTONE_DAYS
+    if tier == "B":
+        return _B_TIER_TICKET_REPEAT_MILESTONE_DAYS
+    ticket_type = str(candidate.get("ticket_type") or previous.get("ticket_type") or "") or classify_ticket_type(candidate)
+    if ticket_type == "major_upcoming":
+        # Older published_facts rows may not carry notability yet. Keep the
+        # historic major-concert annual reminder, but only on milestone days.
+        return _MAJOR_UPCOMING_REPEAT_MILESTONE_DAYS
+    return _LOW_TIER_TICKET_REPEAT_MILESTONE_DAYS
 
 
 def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]:
@@ -1296,7 +1354,12 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
                 "reason": "new_weekly_recurring_occurrence",
                 "days_until_event": days_until,
             }
-        if days_until in _CALENDAR_REPEAT_MILESTONE_DAYS:
+        milestone_days = (
+            _ticket_repeat_milestone_days(candidate, previous)
+            if event_shape == "ticket" or story_type == "ticket"
+            else _CALENDAR_REPEAT_MILESTONE_DAYS
+        )
+        if days_until in milestone_days:
             return {
                 "applies": True,
                 "allow": True,

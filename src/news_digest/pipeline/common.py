@@ -65,7 +65,10 @@ SECTION_MAX_ITEMS = {
 # or similar — so the underflow is visible in release_report instead of
 # silently shipping a thin section.
 SECTION_MIN_ITEMS = {
-    "Свежие новости": 5,
+    # Hard floor. The product target for Fresh is higher (handled in writer),
+    # but fewer than 6 means the newsroom board failed to recover enough
+    # hard-news / public-affairs items from the collected pool.
+    "Свежие новости": 6,
     "Что важно сегодня": 3,
     "Городской радар": 5,
     "Что важно в ближайшие 7 дней": 3,

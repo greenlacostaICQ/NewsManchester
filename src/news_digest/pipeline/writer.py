@@ -102,6 +102,7 @@ TODAY_FOCUS_MIN_SOURCE_REMAINING = {
     "Свежие новости": 3,
     "Городской радар": 4,
 }
+FRESH_NEWS_TARGET_ITEMS = 7
 
 # When the LLM rewrite stage is degraded, keep soft rails compact without
 # suppressing hard-news that did get rewritten.
@@ -1698,6 +1699,7 @@ def _apply_section_min_floor_pull_back(
     rendered_fps_so_far: set[str],
     min_floor: int,
     warnings: list[str],
+    include_backup: bool = False,
 ) -> tuple[list[str], list[str], list[float], list[str], list[str]]:
     """Top up a thin section up to SECTION_MIN_ITEMS by promoting any
     included candidate whose primary_block maps to this section, sorted
@@ -1714,7 +1716,7 @@ def _apply_section_min_floor_pull_back(
     pool = [
         c for c in candidates
         if isinstance(c, dict)
-        and c.get("include")
+        and (c.get("include") or (include_backup and c.get("backup_candidate")))
         and str(c.get("primary_block") or "") in target_blocks
         and str(c.get("fingerprint") or "") not in rendered_fps_so_far
     ]
@@ -1735,6 +1737,8 @@ def _apply_section_min_floor_pull_back(
                     line = _build_event_fallback_line(c)
             elif builder == "public_services":
                 line = _build_public_service_fallback_line(c)
+            elif section_name == "Свежие новости":
+                line = _final_replacement_line(c)
         if not line:
             continue
         if not line.startswith("• "):
@@ -3167,14 +3171,16 @@ def write_digest(project_root: Path) -> StageResult:
         # this section, top up from not-yet-rendered included
         # candidates that targeted this block, sorted by reader_value.
         min_floor = SECTION_MIN_ITEMS.get(section_name, 0)
-        if min_floor and len(lines) < min_floor:
+        target_floor = FRESH_NEWS_TARGET_ITEMS if section_name == "Свежие новости" else min_floor
+        if target_floor and len(lines) < target_floor:
             rendered_fps_so_far = (
                 {fp for slist in section_fingerprints.values() for fp in slist if fp}
                 | {fp for fp in fps if fp}
             )
             lines, fps, scores, titles, srcs = _apply_section_min_floor_pull_back(
                 section_name, lines, fps, scores, titles, srcs,
-                candidates, rendered_fps_so_far, min_floor, warnings,
+                candidates, rendered_fps_so_far, target_floor, warnings,
+                include_backup=section_name == "Свежие новости",
             )
         reserved_later_budget = _reserved_later_budget(ordered_sections, section_index, sections)
         remaining_budget = PUBLIC_DIGEST_MAX_VISIBLE_ITEMS - visible_item_count - reserved_later_budget
@@ -3256,6 +3262,20 @@ def write_digest(project_root: Path) -> StageResult:
         rendered.append("")
 
     quality_counts["rendered_candidates"] = len(rendered_candidate_fingerprints)
+    rendered_fp_set = set(rendered_candidate_fingerprints)
+    fresh_candidates = [
+        c for c in candidates
+        if isinstance(c, dict) and str(c.get("primary_block") or "") == "last_24h"
+    ]
+    fresh_report = {
+        "target_items": FRESH_NEWS_TARGET_ITEMS,
+        "hard_floor": SECTION_MIN_ITEMS.get("Свежие новости", 0),
+        "input_candidates": len(fresh_candidates),
+        "included_candidates": sum(1 for c in fresh_candidates if c.get("include")),
+        "backup_candidates": sum(1 for c in fresh_candidates if c.get("backup_candidate")),
+        "rendered_candidates": sum(1 for c in fresh_candidates if str(c.get("fingerprint") or "") in rendered_fp_set),
+        "dropped_in_writer": sum(1 for c in dropped_candidates if str(c.get("primary_block") or "") == "last_24h"),
+    }
     if degraded_shrink_dropped:
         warnings.append(
             "LLM degraded shrink held "
@@ -3304,6 +3324,7 @@ def write_digest(project_root: Path) -> StageResult:
                 "lookup_enabled": bool(os.environ.get("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "").strip() == "1"),
                 "items": ticket_notability_report[:120],
             },
+            "fresh_news_board": fresh_report,
             "drop_breakdown": drop_breakdown,
             "rendered_candidate_fingerprints": rendered_candidate_fingerprints,
             "dropped_candidates": dropped_candidates,

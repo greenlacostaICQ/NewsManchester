@@ -415,6 +415,51 @@ def _source_rank(label: str, category: str = "") -> int:
     return source_rank_with_fallback(label, category)
 
 
+def _fresh_fact_quality(candidate: dict) -> int:
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    if block not in {"last_24h", "today_focus", "city_watch"} and category not in {"media_layer", "gmp", "public_services", "city_news", "council"}:
+        return 0
+    frame = candidate.get("story_frame") if isinstance(candidate.get("story_frame"), dict) else {}
+    score = 0
+    for key, weight in (
+        ("what_happened", 4),
+        ("where_exact", 2),
+        ("when", 2),
+        ("who_affected", 2),
+        ("why_now", 2),
+    ):
+        if str(frame.get(key) or "").strip():
+            score += weight
+    blob = " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead", "evidence_text"))
+    if len(blob) >= 250:
+        score += 1
+    if len(blob) >= 700:
+        score += 1
+    if re.search(r"\b(?:charged|sentenced|arrested|closed|reopened|approved|rejected|rated|inspected)\b", blob, re.IGNORECASE):
+        score += 2
+    if re.search(r"\b(?:incident|situation|issue)\b", blob, re.IGNORECASE) and not re.search(
+        r"\b(?:stabbing|crash|collision|fire|assault|robbery|cordon|evacuat|charged|sentenced)\b",
+        blob,
+        re.IGNORECASE,
+    ):
+        score -= 2
+    return score
+
+
+def _prefer_semantic_candidate(first: dict, second: dict, first_rank: int, second_rank: int) -> tuple[dict, dict, str]:
+    if first_rank != second_rank:
+        kept, loser = (first, second) if first_rank < second_rank else (second, first)
+        return kept, loser, "stronger source"
+    first_quality = _fresh_fact_quality(first)
+    second_quality = _fresh_fact_quality(second)
+    if first_quality or second_quality:
+        if first_quality != second_quality:
+            kept, loser = (first, second) if first_quality > second_quality else (second, first)
+            return kept, loser, "more complete fresh-news facts"
+    return first, second, "stronger source"
+
+
 def run_semantic_pass(
     *,
     candidates: list[dict],
@@ -499,8 +544,9 @@ def run_semantic_pass(
                     str(cj.get("source_label") or ""),
                     str(cj.get("category") or ""),
                 )
-                # Lower rank number = stronger source. Drop the weaker.
-                loser, kept = (cj, ci) if rank_i <= rank_j else (ci, cj)
+                # Lower rank number = stronger source; if sources tie, keep
+                # the version with a fuller fresh-news fact frame.
+                kept, loser, kept_reason = _prefer_semantic_candidate(ci, cj, rank_i, rank_j)
                 loser_fp = str(loser.get("fingerprint") or "")
                 kept_fp = str(kept.get("fingerprint") or "")
                 if loser.get("include"):
@@ -508,7 +554,7 @@ def run_semantic_pass(
                     loser["dedupe_decision"] = "drop"
                     loser["reason"] = (
                         f"Semantic intra-batch duplicate (cos={sim:.3f}); "
-                        f"kept stronger source «{kept.get('source_label', '')}»."
+                        f"kept {kept_reason} «{kept.get('source_label', '')}»."
                     )
                     loser["semantic_match_sim"] = round(sim, 4)
                     loser["semantic_match_fingerprint"] = kept_fp

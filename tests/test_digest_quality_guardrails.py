@@ -24,6 +24,7 @@ from news_digest.pipeline.dedupe import (
     _merge_multinight_ticket_runs,
     _normalise_person_tokens,
     _people_published_matches,
+    _prefer_dedupe_candidate,
     dedupe_candidates,
 )
 from news_digest.pipeline.entity_extraction import extract_entities
@@ -33,7 +34,9 @@ from news_digest.pipeline.editorial_contracts import (
     copy_invariant_errors,
     lifecycle_repeat_review,
 )
+from news_digest.pipeline.llm_rewrite import _apply_rewrite_shortlist
 from news_digest.pipeline.writer import (
+    _apply_section_min_floor_pull_back,
     _build_recurring_event_fallback_line,
     _build_ticket_fallback_line,
     _contract_public_drop_reason,
@@ -1028,6 +1031,126 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertEqual(updated["dedupe_decision"], "drop")
         self.assertEqual(updated["change_type"], "same_story_rehash")
 
+    def test_a_tier_major_ticket_repeat_allowed_at_annual_milestone_from_history(self) -> None:
+        event_day = (now_london().date() + timedelta(days=365)).isoformat()
+        candidate = {
+            "include": True,
+            "dedupe_decision": "new",
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": f"Example Global Artist — event {event_day} — public sale 2026-01-01 10:00",
+            "summary": f"Co-op Live | event_date={event_day} 19:30 | public_onsale=2026-01-01 10:00",
+            "ticket_type": "major_upcoming",
+            "event": {
+                "is_event": True,
+                "event_name": "Example Global Artist",
+                "venue": "Co-op Live",
+                "date_start": event_day,
+            },
+            "source_label": "Ticketmaster Manchester Upcoming",
+        }
+        previous = dict(candidate)
+        previous["last_published_day_london"] = (now_london().date() - timedelta(days=10)).isoformat()
+        previous["first_published_day_london"] = previous["last_published_day_london"]
+        previous["ticket_notability"] = {"artist": "Example Global Artist", "tier": "A"}
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        review = calendar_repeat_review(candidate, previous)
+        lifecycle = lifecycle_repeat_review(candidate, previous)
+
+        self.assertTrue(review["allow"], review)
+        self.assertEqual(review["reason"], "event_milestone_d365")
+        self.assertFalse(lifecycle["repeat"], lifecycle)
+
+    def test_b_tier_ticket_repeat_does_not_get_a_tier_long_milestones(self) -> None:
+        event_day = (now_london().date() + timedelta(days=90)).isoformat()
+        candidate = {
+            "include": True,
+            "dedupe_decision": "new",
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": f"Example B Artist — event {event_day} — public sale 2026-01-01 10:00",
+            "summary": f"Manchester Academy | event_date={event_day} 19:30 | public_onsale=2026-01-01 10:00",
+            "ticket_type": "major_upcoming",
+            "event": {
+                "is_event": True,
+                "event_name": "Example B Artist",
+                "venue": "Manchester Academy",
+                "date_start": event_day,
+            },
+            "source_label": "Manchester Academy",
+            "ticket_notability": {"artist": "Example B Artist", "tier": "B"},
+        }
+        previous = dict(candidate)
+        previous["last_published_day_london"] = (now_london().date() - timedelta(days=10)).isoformat()
+        previous["first_published_day_london"] = previous["last_published_day_london"]
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        review = calendar_repeat_review(candidate, previous)
+
+        self.assertFalse(review["allow"], review)
+        self.assertEqual(review["reason"], "same_calendar_item_without_new_reader_moment")
+
+    def test_unknown_ticket_repeat_does_not_use_generic_thirty_day_event_milestone(self) -> None:
+        event_day = (now_london().date() + timedelta(days=30)).isoformat()
+        candidate = {
+            "include": True,
+            "dedupe_decision": "new",
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": f"Example Small Artist — event {event_day} — public sale 2026-01-01 10:00",
+            "summary": f"Small Room | event_date={event_day} 19:30 | public_onsale=2026-01-01 10:00",
+            "ticket_type": "regular_upcoming",
+            "event": {
+                "is_event": True,
+                "event_name": "Example Small Artist",
+                "venue": "Small Room",
+                "date_start": event_day,
+            },
+            "source_label": "Small Room",
+        }
+        previous = dict(candidate)
+        previous["last_published_day_london"] = (now_london().date() - timedelta(days=10)).isoformat()
+        previous["first_published_day_london"] = previous["last_published_day_london"]
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        review = calendar_repeat_review(candidate, previous)
+
+        self.assertFalse(review["allow"], review)
+        self.assertEqual(review["reason"], "same_calendar_item_without_new_reader_moment")
+
+    def test_published_facts_preserve_ticket_notability_for_repeat_rules(self) -> None:
+        from news_digest.pipeline.history import update_published_facts
+
+        event_day = (now_london().date() + timedelta(days=365)).isoformat()
+        candidate = {
+            "include": True,
+            "fingerprint": "global-artist-ticket",
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": f"Example Global Artist — event {event_day} — public sale 2026-01-01 10:00",
+            "summary": f"Co-op Live | event_date={event_day} 19:30 | public_onsale=2026-01-01 10:00",
+            "source_label": "Ticketmaster Manchester Upcoming",
+            "source_url": "https://example.test/global-artist",
+            "ticket_type": "major_upcoming",
+            "ticket_notability": {"artist": "Example Global Artist", "tier": "A", "signal": "test"},
+            "event": {
+                "is_event": True,
+                "event_name": "Example Global Artist",
+                "venue": "Co-op Live",
+                "date_start": event_day,
+            },
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            update_published_facts(root, [candidate])
+            payload = json.loads((root / "data" / "state" / "published_facts.json").read_text(encoding="utf-8"))
+
+        saved = payload["facts"][0]
+        self.assertEqual(saved["ticket_type"], "major_upcoming")
+        self.assertEqual(saved["ticket_notability"]["tier"], "A")
+
     def test_tomorrow_ticket_repeat_is_allowed_as_reminder(self) -> None:
         event_day = (now_london().date() + timedelta(days=1)).isoformat()
         candidate = {
@@ -1804,6 +1927,103 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertEqual(_reserved_later_budget(ordered, 0, sections), 7)
         self.assertEqual(_reserved_later_budget(ordered, 1, sections), 4)
 
+    def test_strong_fresh_news_survives_global_rewrite_board_cap(self) -> None:
+        fresh = [
+            {
+                "include": True,
+                "fingerprint": f"fresh-{idx}",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": f"Fresh court update {idx}",
+                "summary": "Police charged a man after a crash in Manchester.",
+                "source_label": "MEN",
+                "editorial_contract": {"publish_tier": "strong"},
+                "publish_tier": "strong",
+                "reader_value_score": 80,
+            }
+            for idx in range(12)
+        ]
+        crowded = [
+            {
+                "include": True,
+                "fingerprint": f"city-{idx}",
+                "category": "media_layer",
+                "primary_block": "city_watch",
+                "title": f"City watch item {idx}",
+                "summary": "Council update in Manchester.",
+                "source_label": "MEN",
+                "reader_value_score": 50,
+            }
+            for idx in range(80)
+        ]
+
+        selected, report = _apply_rewrite_shortlist(fresh + crowded, fresh + crowded)
+        selected_fresh = [c for c in selected if str(c.get("primary_block")) == "last_24h"]
+
+        self.assertEqual(len(selected_fresh), 12)
+        self.assertGreater(report["board_overflow"], 0)
+        self.assertFalse(any(c.get("rewrite_shortlist_status") == "backup_board_cap" for c in fresh))
+
+    def test_fresh_topup_can_promote_current_backup_candidate(self) -> None:
+        candidate = {
+            "include": False,
+            "backup_candidate": True,
+            "fingerprint": "fallowfield-cordon",
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "Fallowfield street evacuated after suspicious item found",
+            "summary": "Police set up a cordon on Abram Close and evacuated 20 homes.",
+            "source_label": "MEN",
+            "source_url": "https://example.test/fallowfield-cordon",
+            "draft_line": (
+                "• Fallowfield: полиция оцепила Abram Close после обнаружения "
+                "подозрительного предмета; жители 20 домов были эвакуированы. "
+                "На месте работали полиция и специалисты по обезвреживанию, "
+                "поэтому район нужно было обходить до снятия оцепления."
+            ),
+        }
+        lines, fps, _scores, _titles, _srcs = _apply_section_min_floor_pull_back(
+            "Свежие новости",
+            [],
+            [],
+            [],
+            [],
+            [],
+            [candidate],
+            set(),
+            1,
+            [],
+            include_backup=True,
+        )
+
+        self.assertEqual(len(lines), 1)
+        self.assertEqual(fps, ["fallowfield-cordon"])
+
+    def test_fresh_duplicate_prefers_more_complete_fact_frame_on_same_source_rank(self) -> None:
+        vague = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "Police incident in Wigan",
+            "summary": "Police are investigating an incident.",
+            "story_frame": {"what_happened": "", "where_exact": "Wigan"},
+        }
+        complete = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "Man stabbed in Wigan",
+            "summary": "A man was stabbed on Avon Road at 20:30 and police appealed for witnesses.",
+            "story_frame": {
+                "what_happened": "A man was stabbed",
+                "where_exact": "Avon Road, Wigan",
+                "when": "20:30",
+                "who_affected": "a man with serious injuries",
+                "why_now": "police appealed for witnesses",
+            },
+        }
+
+        self.assertFalse(_prefer_dedupe_candidate(vague, complete, 50, 50))
+        self.assertTrue(_prefer_dedupe_candidate(complete, vague, 50, 50))
+
     def test_optional_news_cannot_stay_in_top_public_sections(self) -> None:
         candidate = {
             "include": True,
@@ -1948,6 +2168,44 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
                 )
                 self.assertIn(contract["story_type"], {"soft_news", "day_out_guide"})
                 self.assertIn(contract["publish_tier"], {"filler", "reject"})
+
+    def test_fresh_service_accountability_is_strong_news(self) -> None:
+        contract = build_editorial_contract(
+            {
+                "include": True,
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "Hazel Grove homecare service rated inadequate by CQC",
+                "summary": (
+                    "CQC inspectors found problems with medication management "
+                    "and staff training at Elite Homecare in Stockport."
+                ),
+                "source_label": "MEN",
+                "source_url": "https://example.test/cqc-homecare",
+                "published_at": now_london().isoformat(),
+            }
+        )
+        self.assertEqual(contract["story_type"], "service_accountability")
+        self.assertEqual(contract["publish_tier"], "strong")
+
+    def test_fresh_public_safety_after_incident_is_strong_news(self) -> None:
+        contract = build_editorial_contract(
+            {
+                "include": True,
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "Fallowfield street evacuated after suspicious item found",
+                "summary": (
+                    "Police set up a cordon on Abram Close and evacuated 20 homes "
+                    "while bomb disposal officers examined a suspicious item."
+                ),
+                "source_label": "MEN",
+                "source_url": "https://example.test/fallowfield-cordon",
+                "published_at": now_london().isoformat(),
+            }
+        )
+        self.assertEqual(contract["story_type"], "public_safety_after_incident")
+        self.assertEqual(contract["publish_tier"], "strong")
 
     def test_public_realm_story_gets_specific_repeat_key(self) -> None:
         bridge = {

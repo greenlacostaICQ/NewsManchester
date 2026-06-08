@@ -1237,11 +1237,55 @@ def _prefer_dedupe_candidate(first: dict, second: dict, first_rank: int, second_
     """Return True when the first candidate should survive a duplicate pair."""
     if first_rank != second_rank:
         return first_rank < second_rank
+    first_fresh_quality = _fresh_fact_quality(first)
+    second_fresh_quality = _fresh_fact_quality(second)
+    if first_fresh_quality or second_fresh_quality:
+        if first_fresh_quality != second_fresh_quality:
+            return first_fresh_quality > second_fresh_quality
     first_quality = _event_candidate_quality(first)
     second_quality = _event_candidate_quality(second)
     if first_quality != second_quality:
         return first_quality > second_quality
     return True
+
+
+def _fresh_fact_quality(candidate: dict) -> int:
+    """Score how self-contained a fresh-news duplicate is.
+
+    Source rank answers "who is authoritative"; this answers "which copy
+    gives the reader enough facts". It only affects fresh/news/public-service
+    duplicates and breaks ties after source rank, so official/source-tier
+    preferences still lead.
+    """
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    if block not in {"last_24h", "today_focus", "city_watch"} and category not in {"media_layer", "gmp", "public_services", "city_news", "council"}:
+        return 0
+    frame = candidate.get("story_frame") if isinstance(candidate.get("story_frame"), dict) else {}
+    score = 0
+    for key, weight in (
+        ("what_happened", 4),
+        ("where_exact", 2),
+        ("when", 2),
+        ("who_affected", 2),
+        ("why_now", 2),
+    ):
+        if str(frame.get(key) or "").strip():
+            score += weight
+    blob = " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead", "evidence_text"))
+    if len(blob) >= 250:
+        score += 1
+    if len(blob) >= 700:
+        score += 1
+    if re.search(r"\b(?:charged|sentenced|arrested|closed|reopened|approved|rejected|rated|inspected)\b", blob, re.IGNORECASE):
+        score += 2
+    if re.search(r"\b(?:incident|situation|issue)\b", blob, re.IGNORECASE) and not re.search(
+        r"\b(?:stabbing|crash|collision|fire|assault|robbery|cordon|evacuat|charged|sentenced)\b",
+        blob,
+        re.IGNORECASE,
+    ):
+        score -= 2
+    return score
 
 
 def _ticket_event_identity(candidate: dict) -> tuple[str, str]:

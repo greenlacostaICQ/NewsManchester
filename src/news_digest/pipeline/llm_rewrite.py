@@ -62,7 +62,7 @@ REWRITE_SHORTLIST_CAPS_BY_BLOCK: dict[str, int] = {
     "transport": 99,
     "lead_story": 4,
     "today_focus": 6,
-    "last_24h": 10,
+    "last_24h": 12,
     "city_watch": 8,
     "weekend_activities": 10,
     "next_7_days": 8,
@@ -86,8 +86,10 @@ REWRITE_SHORTLIST_DEFAULT_CAP = 6
 REWRITE_TRANSLATION_BOARD_MAX = 45
 _REWRITE_BLOCK_FLOOR = 3
 _REWRITE_BLOCK_FLOORS: dict[str, int] = {
+    "last_24h": 7,
     "weekend_activities": 8,
 }
+_FRESH_GLOBAL_PROTECTED_TARGET = 12
 
 _PROMPT_FOOTER = (
     '\nВерни ТОЛЬКО JSON-массив: [{"fingerprint": "...", "decision": "write|needs_enrichment|skip", '
@@ -103,7 +105,8 @@ _ANTI_HALLUCINATION = (
     "ОПОРА ДЛЯ ТЕКСТА: если в item есть rewrite_packet, сначала используй его как карту фактов: кто, что, где, когда, "
     "что изменилось, почему сейчас, действие читателя. Но rewrite_packet НЕ заменяет источник: если для нормальной строки "
     "нужна деталь, бери её из title/summary/lead/evidence_text. Нельзя выбрасывать хороший факт только потому, что он не попал "
-    "в rewrite_packet; нельзя добавлять факт, которого нет ни в packet, ни в evidence.\n\n"
+    "в rewrite_packet; нельзя добавлять факт, которого нет ни в packet, ни в evidence. Если rewrite_packet.allowed_numbers "
+    "передан, используй только числа из этого списка или буквально видимые в evidence.\n\n"
     "ПО УМОЛЧАНИЮ — ПИШИ. Пустая draft_line — это КРАЙНЯЯ мера, а НЕ безопасный выбор. "
     "Если в evidence_text есть хотя бы один конкретный факт (имя, число, сумма £, дата, район/адрес, решение, исход) "
     "ИЛИ осмысленного текста ≥150 символов — ПУСТАЯ СТРОКА ЗАПРЕЩЕНА и decision=\"skip\" запрещён. Материала достаточно: "
@@ -598,6 +601,17 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
             return bool(c.get("is_lead")) or str(c.get("primary_block") or "") in {"transport", "today_focus"}
 
         keep_ids: set[int] = {id(c) for c in selected if _never_drop(c)}
+        # Fresh hard-news was still allowed to fall out of the global board
+        # after the per-block cap. Keep the strongest Fresh items above the
+        # generic 45-item ceiling so a crowded event/ticket morning cannot
+        # starve actual city news.
+        fresh_protected = [
+            c for c in selected
+            if str(c.get("primary_block") or "") == "last_24h"
+            and _must_translate_before_cap(c)
+        ]
+        for c in sorted(fresh_protected, key=_rewrite_shortlist_priority, reverse=True)[:_FRESH_GLOBAL_PROTECTED_TARGET]:
+            keep_ids.add(id(c))
         # Per-block floor: keep the top _REWRITE_BLOCK_FLOOR of each block.
         by_block: dict[str, list[dict]] = {}
         for c in selected:
@@ -964,6 +978,19 @@ def _rewrite_packet(candidate: dict) -> dict[str, object]:
     )
     people = entities.get("people") if isinstance(entities.get("people"), list) else []
     venues = entities.get("venues") if isinstance(entities.get("venues"), list) else []
+    evidence_blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "practical_angle")
+    )
+    allowed_numbers = sorted(set(
+        token.strip()
+        for token in re.findall(
+            r"(?:£\s?\d[\d,]*(?:\.\d+)?|\d[\d,]*(?:\.\d+)?\s?(?:%|miles?|mph|years?|months?|days?|hours?|минут|час(?:а|ов)?|лет|дн(?:я|ей)?)|\d{1,2}:\d{2}|\d{4})",
+            evidence_blob,
+            flags=re.IGNORECASE,
+        )
+        if token.strip()
+    ))
     return {
         "what": frame.get("what_happened") or candidate.get("title") or "",
         "where": where,
@@ -976,6 +1003,7 @@ def _rewrite_packet(candidate: dict) -> dict[str, object]:
         "why_now": candidate.get("why_now") or "",
         "reader_action_type": candidate.get("reader_action_type") or "",
         "practical_angle": candidate.get("practical_angle") or "",
+        "allowed_numbers": allowed_numbers[:30],
         "do_not_use_literal_phrases": [
             "тройное ножевое ранение",
             "отдельные ножевые атаки",
