@@ -21,6 +21,10 @@ OPENAI_BASE_URL = "https://api.openai.com/v1"
 # that's where cost would balloon.
 OPENAI_REWRITE_MODEL = "gpt-4o"
 OPENAI_SCORING_MODEL = "gpt-4o-mini"
+# Transport is a short structured translation (≤180 chars from clean evidence),
+# not rich editorial prose — mini handles it fine and far cheaper. gpt-4o stays
+# for news/events where mini was unreliable.
+OPENAI_TRANSPORT_MODEL = "gpt-4o-mini"
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile"
 
@@ -78,6 +82,12 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
         # draft_line_provider="DeepSeek" so the degraded phrasing is auditable.
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_rewrite_primary", 1, batch_size=3, timeout_seconds=60),
         ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "rewrite_last_resort", 2, batch_size=3, timeout_seconds=60),
+    ),
+    # Transport: short structured translation → cheap mini is enough. Bigger
+    # batches (short lines) + tight timeout; DeepSeek last-resort net.
+    "transport_rewrite": (
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_TRANSPORT_MODEL, "OPENAI_API_KEY", "transport_primary", 1, batch_size=6, timeout_seconds=30),
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "transport_last_resort", 2, batch_size=6, timeout_seconds=30),
     ),
     # Events carry structured datetime/venue fields. OpenAI stays primary;
     # DeepSeek is the same last-resort net so a non-deterministic culture
