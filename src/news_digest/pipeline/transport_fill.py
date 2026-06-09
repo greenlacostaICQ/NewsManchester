@@ -399,12 +399,14 @@ def run_transport_fill(project_root: Path) -> StageResult:
             continue
         if not c.get("include"):
             continue
-        # National Rail Enquiries items are a complete prose headline, not a
-        # TfGM structured alert. Deterministic carding renders them weakly
-        # ("Northern: до 12 июня", no substance) or mangles them via the
-        # minimal stub. Skip transport_fill entirely → the LLM transport
-        # rewrite translates the full summary (operator + route + dates).
-        if str(c.get("source_label") or "") == "National Rail Enquiries":
+        # Rich-evidence alerts carry the real detail (TfGM JSON description +
+        # step-free advice; NRE rail prose). The deterministic template renders
+        # from the TITLE and IGNORES that evidence — it dropped the Derker
+        # step-free alternative and even printed "Prestwich: нет трамваев" when
+        # the description said trams are NOT affected. Send these to the LLM
+        # transport rewrite (PROMPT_TRANSPORT) which writes FROM the evidence.
+        # Only thin/no-evidence alerts keep the deterministic stub below.
+        if len(str(c.get("evidence_text") or "").strip()) >= 120:
             continue
 
         # If a deterministic draft_line is already present (e.g. from a
