@@ -2087,6 +2087,12 @@ def _extract_nre_incidents(source: SourceDef, body: str) -> list[ExtractedItem]:
         summ = (inc.get("summary") or "").strip()
         if not summ:
             continue
+        # Prefix the operator so the card/LLM can lead with it ("Transport for
+        # Wales: …") — the operator name is often absent from the summary text.
+        ops = inc.get("operators") or []
+        op = str(ops[0]).strip() if ops else ""
+        if op and op.lower() not in summ.lower():
+            summ = f"{op}: {summ}"
         routes = (inc.get("routes") or "").strip()
         end = inc.get("end") or ""
         until = ""

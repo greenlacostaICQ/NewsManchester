@@ -399,6 +399,13 @@ def run_transport_fill(project_root: Path) -> StageResult:
             continue
         if not c.get("include"):
             continue
+        # National Rail Enquiries items are a complete prose headline, not a
+        # TfGM structured alert. Deterministic carding renders them weakly
+        # ("Northern: до 12 июня", no substance) or mangles them via the
+        # minimal stub. Skip transport_fill entirely → the LLM transport
+        # rewrite translates the full summary (operator + route + dates).
+        if str(c.get("source_label") or "") == "National Rail Enquiries":
+            continue
 
         # If a deterministic draft_line is already present (e.g. from a
         # previous run during the same day), don't overwrite.
