@@ -858,12 +858,7 @@ def _story_type(candidate: dict, event_shape: str) -> str:
         if _OLD_EXISTING_FOOD_RE.search(blob) and not _REAL_OPENING_ACTION_RE.search(blob):
             return "old_existing_food"
         return "opening"
-    if _PUBLIC_REALM_RE.search(blob) and re.search(r"\b(?:council|gmca|rochdale|bury|stockport|trafford|oldham|wigan|bolton|tameside|manchester)\b", lowered):
-        return "planning"
-    if re.search(r"\b(?:planning|development|application|developer|housing|hotel|tower|skyscraper|pub|building|site|junction|road\s+scheme)\b", lowered):
-        return "planning"
-    if _LOCAL_COST_RE.search(blob) and _LOCATION_SIGNAL.search(blob):
-        return "local_cost"
+    crime_blob = re.sub(r"\b(?:court|crime|courts)\s+(?:reporter|correspondent|editor)\b", " ", blob, flags=re.IGNORECASE)
     if re.search(
         r"\b(?:cqc|ofsted|care\s+home|homecare|home\s+care|nursery|safeguarding|inspection|"
         r"inadequate|requires\s+improvement|special\s+measures|patient\s+safety|children'?s\s+safety)\b",
@@ -877,6 +872,21 @@ def _story_type(candidate: dict, event_shape: str) -> str:
         lowered,
     ):
         return "public_safety_after_incident"
+    if (
+        _CRIME_MARKERS.search(crime_blob)
+        or re.search(
+            r"\b(?:indecent\s+images?|child\s+abuse|coercive\s+behaviour|controlling\s+behaviour|"
+            r"sexual\s+images?|weapons?\s+offence|biological\s+weapons?)\b",
+            lowered,
+        )
+    ):
+        return "incident"
+    if _PUBLIC_REALM_RE.search(blob) and re.search(r"\b(?:council|gmca|rochdale|bury|stockport|trafford|oldham|wigan|bolton|tameside|manchester)\b", lowered):
+        return "planning"
+    if re.search(r"\b(?:planning|development|application|developer|housing|hotel|tower|skyscraper|pub|building|site|junction|road\s+scheme)\b", lowered):
+        return "planning"
+    if _LOCAL_COST_RE.search(blob) and _LOCATION_SIGNAL.search(blob):
+        return "local_cost"
     if re.search(
         r"\b(?:supermarket|store|shop|retail|asda|waitrose|tesco|sainsbury|aldi|lidl|morrisons|co-op)\b",
         lowered,

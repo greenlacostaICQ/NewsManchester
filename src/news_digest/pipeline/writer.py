@@ -2260,6 +2260,18 @@ def _section_priority_score(candidate: dict, section_name: str, line: str) -> fl
     completeness = candidate.get("event_schema_completeness")
     if isinstance(completeness, dict) and completeness.get("applies"):
         score += (float(completeness.get("score") or 0) - 50.0) / 5.0
+    if section_name == "Свежие новости":
+        contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+        story_type = str(contract.get("story_type") or "")
+        blob = " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead", "evidence_text")).lower()
+        if story_type == "public_safety_after_incident" or re.search(r"\b(?:road closed|lane closed|cordon|evacuat|knife|stabbing|collision|crash|m6|m60|m62|m56)\b", blob):
+            score += 28
+        elif story_type in {"incident", "service_accountability"}:
+            score += 18
+        elif story_type in {"planning", "civic", "local_service_change"}:
+            score += 8
+        if re.search(r"\b(?:charity|fundrais|challenge|ultramarathon|innovation programme|funding programme|backing secures)\b", blob):
+            score -= 14
     if section_name == "Городской радар":
         score += _city_watch_score(candidate) / 4.0
     elif section_name == "Выходные в GM":
@@ -2274,15 +2286,38 @@ def _section_priority_score(candidate: dict, section_name: str, line: str) -> fl
 
 
 _NUMBER_TOKEN_RE = re.compile(r"\b\d{1,4}(?:[,.]\d{3})*(?:\.\d+)?\b")
+_TIME_TOKEN_RE = re.compile(r"\b(\d{1,2})[:.](\d{2})\s*(?:am|pm|a\.m\.|p\.m\.)?\b", re.IGNORECASE)
+_MONEY_MAGNITUDE_RE = re.compile(r"\b£?\s*(\d+(?:\.\d+)?)\s*(m|million|bn|billion)\b", re.IGNORECASE)
 
 
 def _number_tokens(value: str) -> set[str]:
     tokens: set[str] = set()
-    for match in _NUMBER_TOKEN_RE.finditer(str(value or "")):
+    text = str(value or "")
+    for hour, minute in _TIME_TOKEN_RE.findall(text):
+        tokens.add(str(int(hour)))
+        tokens.add(str(int(minute)))
+        tokens.add(minute)
+    for amount, magnitude in _MONEY_MAGNITUDE_RE.findall(text):
+        whole = amount.split(".", 1)[0]
+        if whole:
+            tokens.add(whole)
+        try:
+            multiplier = 1_000_000_000 if magnitude.lower().startswith("b") else 1_000_000
+            expanded = int(float(amount) * multiplier)
+            tokens.add(str(expanded))
+        except ValueError:
+            pass
+    for match in _NUMBER_TOKEN_RE.finditer(text):
         normalised = match.group(0).replace(",", "")
         if normalised in {"0", "00"}:
             continue
         tokens.add(normalised)
+        if "." in normalised:
+            head, tail = normalised.split(".", 1)
+            if head:
+                tokens.add(head)
+            if tail:
+                tokens.add(tail)
         if normalised.startswith("0"):
             stripped = normalised.lstrip("0")
             if stripped:
@@ -2297,21 +2332,75 @@ def _number_evidence_tokens(candidate: dict) -> set[str]:
     ]
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     fields.extend(str(event.get(key) or "") for key in ("date", "date_start", "date_end", "date_text", "price"))
+    rewrite_packet = candidate.get("rewrite_packet") if isinstance(candidate.get("rewrite_packet"), dict) else {}
+    fields.extend(str(value) for value in (rewrite_packet.get("allowed_numbers") or []) if str(value).strip())
+    fields.extend(str(value) for value in (candidate.get("evidence_numbers") or []) if str(value).strip())
     return _number_tokens(" ".join(fields))
+
+
+def _numeric_missing_tokens(candidate: dict, line: str) -> list[str]:
+    line_tokens = _number_tokens(line)
+    if not line_tokens:
+        return []
+    evidence_tokens = _number_evidence_tokens(candidate)
+    return sorted(token for token in line_tokens if token not in evidence_tokens)
 
 
 def _numeric_evidence_errors(candidate: dict, line: str) -> list[str]:
     category = str(candidate.get("category") or "")
     if category not in {"media_layer", "gmp", "council", "public_services", "city_news", "football", "tech_business", "food_openings"}:
         return []
-    line_tokens = _number_tokens(line)
-    if not line_tokens:
-        return []
-    evidence_tokens = _number_evidence_tokens(candidate)
-    missing = sorted(token for token in line_tokens if token not in evidence_tokens)
+    missing = _numeric_missing_tokens(candidate, line)
     if not missing:
         return []
     return [f"draft_line contains number(s) not present in candidate evidence: {', '.join(missing[:5])}."]
+
+
+def _strip_unsupported_number_phrases(candidate: dict, line: str) -> tuple[str, list[str]]:
+    """Remove unsupported numeric claims without dropping protected Fresh.
+
+    This is deliberately deterministic: once the QA guard finds a number that
+    is not in the saved evidence, do not ask a model to invent a "repair".
+    Remove the smallest useful phrase around the number, then re-run normal
+    quality checks. If the line remains readable, it ships.
+    """
+    missing = _numeric_missing_tokens(candidate, line)
+    if not missing:
+        return line, []
+    repaired = str(line or "")
+    reasons: list[str] = []
+    for token in missing:
+        escaped = re.escape(token)
+        before = repaired
+        # Age phrases: "50-летняя", "в возрасте 50 лет".
+        repaired = re.sub(rf"\b{escaped}\s*[-‑–—]?\s*летн\w*\s*", "", repaired, flags=re.IGNORECASE)
+        repaired = re.sub(rf"\s*в\s+возрасте\s+{escaped}\s+лет\b", "", repaired, flags=re.IGNORECASE)
+        # Time windows and exact times: remove the unsupported time phrase,
+        # not the whole news sentence.
+        repaired = re.sub(
+            rf"\s*(?:около|примерно|с|со|до|после|перед|к)\s+{escaped}(?::\d{{2}})?\s*(?:утра|вечера|дня|ночи|am|pm|a\.m\.|p\.m\.)?",
+            "",
+            repaired,
+            flags=re.IGNORECASE,
+        )
+        repaired = re.sub(
+            rf"\s*{escaped}(?::\d{{2}})?\s*(?:утра|вечера|дня|ночи|am|pm|a\.m\.|p\.m\.)",
+            "",
+            repaired,
+            flags=re.IGNORECASE,
+        )
+        # If the unsupported token still survives, drop only the sentence
+        # containing it. This is the final stop-loss before replacement.
+        if re.search(rf"(?<!\d){escaped}(?!\d)", repaired):
+            sentences = re.split(r"(?<=[.!?])\s+", repaired)
+            kept = [s for s in sentences if not re.search(rf"(?<!\d){escaped}(?!\d)", s)]
+            if kept:
+                repaired = " ".join(kept)
+        if repaired != before:
+            reasons.append(f"removed_unsupported_number:{token}")
+    repaired = re.sub(r"\s+", " ", repaired).strip()
+    repaired = re.sub(r"\s+([,.!?])", r"\1", repaired)
+    return repaired, reasons
 
 
 def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
@@ -2946,6 +3035,22 @@ def write_digest(project_root: Path) -> StageResult:
             )
 
         draft_line_errors = _draft_line_quality_errors(candidate, line)
+        if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
+            numeric_errors = [err for err in draft_line_errors if err.startswith("draft_line contains number(s) not present")]
+            if numeric_errors:
+                stripped_line, strip_repairs = _strip_unsupported_number_phrases(candidate, line)
+                if strip_repairs and stripped_line != line:
+                    stripped_errors = _draft_line_quality_errors(candidate, stripped_line)
+                    if not stripped_errors:
+                        line = stripped_line
+                        draft_line_errors = []
+                        _append_recovery_step(candidate, "draft_line_quality_repair", "recovered", missing=strip_repairs)
+                        warnings.append(
+                            f"Candidate #{index}: removed unsupported numeric claim(s) instead of dropping ({', '.join(strip_repairs)})."
+                        )
+                    else:
+                        _append_recovery_step(candidate, "draft_line_quality_repair", "attempted", missing=strip_repairs + stripped_errors)
+                        draft_line_errors = stripped_errors
         if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
             _append_recovery_step(candidate, "final_replacement", "attempted", missing=(candidate.get("story_frame") or {}).get("missing_facts") or draft_line_errors)
             replacement = _final_replacement_line(candidate)

@@ -40,10 +40,13 @@ from news_digest.pipeline.writer import (
     _build_recurring_event_fallback_line,
     _build_ticket_fallback_line,
     _contract_public_drop_reason,
+    _draft_line_quality_errors,
     _line_claims_future_ticket_sale,
+    _number_tokens,
     _repair_editorial_contract_line,
     _reserved_later_budget,
     _section_priority_score,
+    _strip_unsupported_number_phrases,
 )
 
 
@@ -1885,6 +1888,52 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertIn("Для поездок и прогулок погода спокойная", line)
         self.assertNotIn("низкий риск осадков", line)
 
+    def test_weather_high_rain_uses_plain_umbrella_wording(self) -> None:
+        line = _weather_draft_line(11, 15, 90, "", "Met Office")
+
+        self.assertIn("очень вероятен дождь, риск до 90%", line)
+        self.assertIn("зонт или капюшон", line)
+        self.assertNotIn("защит", line.lower())
+
+    def test_number_tokens_normalise_time_and_money_formats(self) -> None:
+        tokens = _number_tokens("from 9.55am, £50m, 2,200 miles and 07:45")
+
+        self.assertIn("9", tokens)
+        self.assertIn("55", tokens)
+        self.assertIn("50", tokens)
+        self.assertIn("50000000", tokens)
+        self.assertIn("2200", tokens)
+        self.assertIn("7", tokens)
+        self.assertIn("45", tokens)
+
+    def test_fresh_numeric_guard_strips_unsupported_phrase_not_drop(self) -> None:
+        candidate = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "Woman dies in hospital after medical episode at wheel before Wythenshawe crash",
+            "summary": (
+                "Wythenshawe: a woman died in hospital after a suspected medical episode "
+                "at the wheel before a crash on Southmoor Road. Police continue to investigate."
+            ),
+            "evidence_text": (
+                "A woman suffered a suspected medical episode at the wheel before a crash "
+                "on Southmoor Road in Wythenshawe. She later died in hospital. Police continue to investigate."
+            ),
+            "source_label": "MEN",
+        }
+        bad_line = (
+            "• Wythenshawe: женщина в возрасте 50 лет скончалась в больнице после медицинского "
+            "инцидента за рулём, приведшего к аварии на Southmoor Road. Инцидент произошёл "
+            "около 9:55 утра, полиция продолжает расследование."
+        )
+
+        repaired, reasons = _strip_unsupported_number_phrases(candidate, bad_line)
+
+        self.assertTrue(reasons)
+        self.assertNotIn("50", repaired)
+        self.assertNotIn("9:55", repaired)
+        self.assertFalse(_draft_line_quality_errors(candidate, repaired))
+
     def test_local_retail_takeover_is_news_anchor_not_filler(self) -> None:
         candidate = {
             "title": "Asda closing as Waitrose set to take over Greater Manchester supermarket",
@@ -2206,6 +2255,56 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         )
         self.assertEqual(contract["story_type"], "public_safety_after_incident")
         self.assertEqual(contract["publish_tier"], "strong")
+
+    def test_court_crime_story_does_not_get_planning_repeat_key(self) -> None:
+        contract = build_editorial_contract(
+            {
+                "include": True,
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "She reported him - the police found more than they bargained for",
+                "summary": (
+                    "Ryan Morgan was caught with hundreds of indecent images of children "
+                    "and was sentenced at Minshull Street Crown Court."
+                ),
+                "source_label": "MEN News Sitemap",
+                "source_url": "https://example.test/reported-ex-police-over-photos-34077770",
+                "published_at": now_london().isoformat(),
+            }
+        )
+
+        self.assertEqual(contract["story_type"], "incident")
+        self.assertTrue(contract["topic_key"].startswith("incident:"), contract["topic_key"])
+        self.assertNotIn("planning:", contract["topic_key"])
+
+    def test_fresh_priority_prefers_public_safety_over_charity_soft_item(self) -> None:
+        safety = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "Timperley knife attack sees two injured and cordon put in place outside Iceland",
+            "summary": "Two people were injured after a knife attack and police set up a cordon.",
+            "source_label": "MEN",
+            "editorial_contract": {
+                "story_type": "public_safety_after_incident",
+                "publish_tier": "strong",
+            },
+        }
+        charity = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "Kevin Sinfield reveals final MND ultramarathon challenge",
+            "summary": "Kevin Sinfield announced a final charity ultramarathon fundraising challenge.",
+            "source_label": "BBC Manchester",
+            "editorial_contract": {
+                "story_type": "incident",
+                "publish_tier": "strong",
+            },
+        }
+
+        self.assertGreater(
+            _section_priority_score(safety, "Свежие новости", "• test."),
+            _section_priority_score(charity, "Свежие новости", "• test."),
+        )
 
     def test_public_realm_story_gets_specific_repeat_key(self) -> None:
         bridge = {
