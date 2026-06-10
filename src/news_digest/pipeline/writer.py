@@ -1553,9 +1553,13 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
     price = _ticket_price(candidate)
     price_part = f"; цена {price}" if price else ""
     event_dt = _parse_ticket_datetime(candidate)
+    if str(candidate.get("primary_block") or "") == "next_7_days" and event_dt:
+        days_out = (event_dt.date() - now_london().date()).days
+        if 0 <= days_out <= 7:
+            reason = "событие на этой неделе"
     day_month = _format_ru_day_month(event_dt)
     time_part = ""
-    if event_dt and event_dt.strftime("%H:%M") != "12:00":
+    if event_dt and event_dt.strftime("%H:%M") not in {"00:00", "12:00"}:
         time_part = f" в {event_dt.strftime('%H:%M')}"
     # #7 Same artist+venue on several nights was merged in dedupe — render the
     # whole run on one line ("10 и 11 июня") instead of repeating the card.
@@ -2398,7 +2402,11 @@ def _apply_section_min_floor_pull_back(
     pool = [
         c for c in candidates
         if isinstance(c, dict)
-        and (c.get("include") or (include_backup and c.get("backup_candidate")))
+        and (
+            c.get("include")
+            or (include_backup and c.get("backup_candidate"))
+            or _complete_next_7_rescue_candidate(c, section_name)
+        )
         and str(c.get("primary_block") or "") in target_blocks
         and str(c.get("fingerprint") or "") not in rendered_fps_so_far
         and not c.get("writer_suppressed_from_top_news")
@@ -2496,6 +2504,9 @@ def _build_event_fallback_line(candidate: dict) -> str:
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     title = str(event.get("event_name") or candidate.get("title") or "").strip()
     title = re.sub(r"\s+[—–-]\s+(?:event|public\s+sale).*$", "", title, flags=re.IGNORECASE).strip()
+    if "—" in title and len(title) > 70:
+        title = title.split("—", 1)[0].strip()
+    title = re.sub(r"\s*\|\s*The(?:\s+Bridgewater\s+Hall)?\s*$", "", title, flags=re.IGNORECASE).strip()
     title = title[:120].rstrip(" .-–—")
     venue = _event_venue(candidate)
     event_dt = _event_structured_datetime(candidate) or _parse_ticket_datetime(candidate)
@@ -2505,8 +2516,8 @@ def _build_event_fallback_line(candidate: dict) -> str:
         time_part = f" в {event_dt.strftime('%H:%M')}"
     booking = str(event.get("booking_url") or candidate.get("source_url") or "").strip()
     practical = str(candidate.get("practical_angle") or "").strip()
-    if not practical:
-        practical = "Источник не дал цену или дополнительные условия."
+    if not practical or re.search(r"\bпроверьте\s+дат[уы]", practical, re.IGNORECASE):
+        practical = "Проверьте наличие мест перед посещением."
     parts: list[str] = ["•"]
     if day_month:
         parts.append(f"{day_month}{time_part}")
@@ -2553,6 +2564,130 @@ def _final_replacement_line(candidate: dict) -> str:
     if category == "public_services":
         return _build_public_service_fallback_line(candidate)
     return _hard_news_recovery_line(candidate)
+
+
+def _event_candidate_dates(candidate: dict) -> list[date]:
+    dates: set[date] = set()
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    event_dt = _event_structured_datetime(candidate)
+    if event_dt:
+        dates.add(event_dt.date())
+    for key in ("date_end", "end_date"):
+        day = _parse_day(event.get(key)) if isinstance(event, dict) else None
+        if day:
+            dates.add(day)
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "source_url")
+    )
+    dates.update(_date_signals(blob))
+    return sorted(dates)
+
+
+def _event_card_blob(candidate: dict) -> str:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    return " ".join(
+        str(value or "")
+        for value in (
+            candidate.get("source_label"),
+            candidate.get("title"),
+            candidate.get("summary"),
+            candidate.get("lead"),
+            candidate.get("evidence_text"),
+            event.get("event_name") if isinstance(event, dict) else "",
+            event.get("date_text") if isinstance(event, dict) else "",
+        )
+    ).lower()
+
+
+def _is_long_running_exhibition_without_week_hook(candidate: dict) -> bool:
+    blob = _event_card_blob(candidate)
+    if not re.search(r"\b(?:exhibition|выставк|on show|runs until|open until|ид[её]т до)\b", blob, re.IGNORECASE):
+        return False
+    if re.search(r"\b(?:opens?|opening|starts?|last chance|closing|ends?|final week|сегодня|завтра|открыва|закрыва|последн)\b", blob, re.IGNORECASE):
+        return False
+    return bool(re.search(r"\b(?:until|до)\b", blob, re.IGNORECASE))
+
+
+def _is_routine_market_future_fill(candidate: dict) -> bool:
+    blob = _event_card_blob(candidate)
+    return bool(
+        _MARKET_EVENT_RE.search(blob)
+        and re.search(r"\b(?:every|weekly|monthly|кажд|еженедельн|ежемесячн|artisan market|makers market|car boot)\b", blob, re.IGNORECASE)
+        and not re.search(r"\b(?:festival|special|launch|opening|anniversary|christmas|night market|food festival)\b", blob, re.IGNORECASE)
+    )
+
+
+def _next_7_event_decision(candidate: dict) -> tuple[str, str]:
+    today = now_london().date()
+    if not _event_venue(candidate):
+        return "hold", "event has no usable venue"
+    dates = _event_candidate_dates(candidate)
+    future_dates = [day for day in dates if day >= today]
+    if any(today <= day <= today + timedelta(days=7) for day in future_dates):
+        return "keep", ""
+    if not future_dates:
+        return "hold", "no dated occurrence in the next 7 days"
+    nearest = future_dates[0]
+    days_out = (nearest - today).days
+    if _is_long_running_exhibition_without_week_hook(candidate):
+        return "hold", "long-running exhibition without opening/closing hook this week"
+    if days_out <= 45 and not _is_routine_market_future_fill(candidate):
+        return "move_future", f"nearest dated occurrence is {days_out} day(s) away"
+    return "hold", f"nearest dated occurrence is {days_out} day(s) away"
+
+
+def _future_announcement_decision(candidate: dict) -> tuple[str, str]:
+    today = now_london().date()
+    if not _event_venue(candidate):
+        return "hold", "event has no usable venue"
+    dates = _event_candidate_dates(candidate)
+    future_dates = [day for day in dates if day >= today]
+    if not future_dates:
+        return "hold", "no dated future occurrence"
+    nearest = future_dates[0]
+    days_out = (nearest - today).days
+    if days_out <= 7:
+        return "move_next_7", f"nearest dated occurrence is {days_out} day(s) away"
+    if _is_long_running_exhibition_without_week_hook(candidate):
+        return "hold", "long-running exhibition without a near-term hook"
+    if _is_routine_market_future_fill(candidate):
+        return "hold", "routine recurring market should wait for the next occurrence window"
+    if days_out > 45:
+        return "hold", f"nearest dated occurrence is {days_out} day(s) away"
+    return "keep", ""
+
+
+def _section_event_timing_decision(candidate: dict) -> tuple[str, str]:
+    block = str(candidate.get("primary_block") or "")
+    if block == "next_7_days":
+        return _next_7_event_decision(candidate)
+    if block == "future_announcements":
+        return _future_announcement_decision(candidate)
+    return "keep", ""
+
+
+def _complete_next_7_rescue_candidate(candidate: dict, section_name: str) -> bool:
+    if section_name != "Что важно в ближайшие 7 дней":
+        return False
+    if str(candidate.get("primary_block") or "") != "next_7_days":
+        return False
+    if candidate.get("include"):
+        return False
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    if not event.get("is_event"):
+        return False
+    if _next_7_event_decision(candidate)[0] != "keep":
+        return False
+    if not str(event.get("event_name") or candidate.get("title") or "").strip():
+        return False
+    source = str(candidate.get("source_label") or "")
+    if not re.search(r"\b(?:HOME|Lowry|People's History Museum|Manchester's Finest|Stockport Events|Whitworth|Band on the Wall|Bridgewater|Manchester Wire|Makers Market)\b", source, re.IGNORECASE):
+        return False
+    reason = str(candidate.get("reason") or "")
+    if re.search(r"\b(?:non-GM|not GM|expired|past|duplicate|paywall|full text not accessible|stub)\b", reason, re.IGNORECASE):
+        return False
+    return True
 
 
 def _transport_empty_line(project_root: Path) -> str:
@@ -3640,6 +3775,43 @@ def write_digest(project_root: Path) -> StageResult:
         source_label = str(candidate.get("source_label") or "").strip()
         source_url = str(candidate.get("source_url") or "").strip()
         category = str(candidate.get("category") or "").strip()
+
+        timing_decision, timing_reason = _section_event_timing_decision(candidate)
+        if timing_decision == "move_future":
+            candidate["primary_block"] = "future_announcements"
+            block_key = "future_announcements"
+            section_name = PRIMARY_BLOCKS.get(block_key) or section_name
+            warnings.append(
+                f"Candidate #{index}: moved from «Что важно в ближайшие 7 дней» "
+                f"to «Дальние анонсы» ({timing_reason})."
+            )
+        elif timing_decision == "move_next_7":
+            candidate["primary_block"] = "next_7_days"
+            block_key = "next_7_days"
+            section_name = PRIMARY_BLOCKS.get(block_key) or section_name
+            warnings.append(
+                f"Candidate #{index}: moved from «Дальние анонсы» "
+                f"to «Что важно в ближайшие 7 дней» ({timing_reason})."
+            )
+        elif timing_decision == "hold":
+            warnings.append(
+                f"Candidate #{index} held: event timing is not suitable for «{section_name}» ({timing_reason})."
+            )
+            quality_counts["dropped_low_quality"] += 1
+            dropped_candidates.append(
+                {
+                    "fingerprint": candidate.get("fingerprint"),
+                    "title": title,
+                    "category": category,
+                    "primary_block": block_key,
+                    "is_lead": bool(candidate.get("is_lead")),
+                    "reasons": [f"Event timing unsuitable for section: {timing_reason}."],
+                    "story_frame": candidate.get("story_frame") or {},
+                    "recovery_trace": candidate.get("recovery_trace") or [],
+                    "recovery_plan": candidate.get("recovery_plan") or {},
+                }
+            )
+            continue
 
         if _normalize_text_key(lead) and _normalize_text_key(lead) == _normalize_text_key(summary):
             summary = ""

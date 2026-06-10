@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 import tempfile
 import unittest
@@ -28,6 +29,7 @@ from news_digest.pipeline.writer import (
     _final_replacement_line,
     _football_is_sport_news,
     _football_should_route_to_soft,
+    _next_7_event_decision,
     _append_recovery_step,
     _apply_section_min_floor_pull_back,
     _repair_editorial_contract_line,
@@ -426,6 +428,60 @@ class PublicOutputContractTests(unittest.TestCase):
             line = _build_recurring_event_fallback_line(candidate)
         self.assertIn("13 июня", line)
         self.assertNotIn("ближайший день расписания", line.lower())
+
+    def test_next_7_event_board_uses_real_week_occurrence_not_filler(self) -> None:
+        with patch("news_digest.pipeline.writer.now_london") as fake_now:
+            fake_now.return_value = datetime(2026, 6, 10)
+            bridgewater = {
+                "category": "venues_tickets",
+                "primary_block": "next_7_days",
+                "source_label": "Bridgewater Hall",
+                "source_url": "https://bridgewater-hall.co.uk/whats-on/rob-lamberti-120626",
+                "title": "Rob Lamberti presents Perfectly George | The Bridgewater Hall",
+                "summary": "Event Timings Auditorium Doors: 7.00pm Concert Start: 7.30pm",
+                "event": {
+                    "is_event": True,
+                    "event_name": "Rob Lamberti presents Perfectly George | The",
+                    "venue": "Bridgewater Hall",
+                    "date_start": "2026-12-18",
+                    "date_text": "18 December",
+                },
+            }
+            self.assertEqual(_next_7_event_decision(bridgewater)[0], "keep")
+            line = _build_ticket_fallback_line(bridgewater)
+            self.assertIn("12 июня", line)
+            self.assertNotIn("00:00", line)
+            self.assertNotIn("18 декабря", line)
+
+            exhibition = {
+                "category": "culture_weekly",
+                "primary_block": "next_7_days",
+                "source_label": "People's History Museum",
+                "title": "100 years of strikes & solidarity",
+                "summary": "Headline exhibition on show until 2 November 2026.",
+                "event": {
+                    "is_event": True,
+                    "event_name": "100 years of strikes & solidarity",
+                    "venue": "People's History Museum",
+                    "date_start": "2026-11-02",
+                    "date_text": "2 November 2026",
+                },
+            }
+            self.assertEqual(_next_7_event_decision(exhibition)[0], "hold")
+
+            no_venue = {
+                "category": "venues_tickets",
+                "primary_block": "next_7_days",
+                "source_label": "Band on the Wall",
+                "title": "The Bad Plus Farewell Tour - Manchester",
+                "summary": "After a quarter of a century, Reid Anderson and Dave King feel like their statement.",
+                "event": {
+                    "is_event": True,
+                    "event_name": "The Bad Plus Farewell Tour - Manchester",
+                    "date_start": "2026-07-02",
+                },
+            }
+            self.assertEqual(_next_7_event_decision(no_venue), ("hold", "event has no usable venue"))
 
     def test_ticket_decision_explains_show_and_hide(self) -> None:
         show = {
