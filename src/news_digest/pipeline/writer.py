@@ -762,6 +762,13 @@ def _allocate_fresh_and_today_focus(
         row.score = _today_focus_candidate_score(row)
     _set_section_rows("Свежие новости", fresh_board_rows, sections, section_sources, section_scores, section_fingerprints, section_titles)
     _set_section_rows(TODAY_FOCUS_SECTION, selected_today, sections, section_sources, section_scores, section_fingerprints, section_titles)
+    # Rank the radar by news value (like «Свежие новости»), not arrival order,
+    # so the strongest local story leads instead of whatever scored high on the
+    # generic board (a charity ultramarathon led the radar on 2026-06-10).
+    city_out.sort(
+        key=lambda row: _section_priority_score(row.candidate or {}, "Городской радар", row.line),
+        reverse=True,
+    )
     _set_section_rows("Городской радар", city_out, sections, section_sources, section_scores, section_fingerprints, section_titles)
 
     return {
@@ -2340,7 +2347,21 @@ def _apply_section_min_floor_pull_back(
         and str(c.get("fingerprint") or "") not in rendered_fps_so_far
         and not c.get("writer_suppressed_from_top_news")
     ]
-    pool.sort(key=lambda c: float(c.get("reader_value_score") or 0), reverse=True)
+    # Promote by section news-value (same ranking the section itself uses),
+    # not raw reader_value: hard local news scores low on reader_value, so the
+    # old sort buried courts/crime/development under soft items in the backfill.
+    pool.sort(
+        key=lambda c: _section_priority_score(c, section_name, str(c.get("draft_line") or "")),
+        reverse=True,
+    )
+    # Per-source cap so one high-volume source (e.g. ITV Granada has ~26 reserve
+    # items/day for the radar) can't fill the whole backfill. Hard news may
+    # bypass, mirroring «Свежие новости».
+    per_source_cap = SECTION_MAX_PER_SOURCE.get(section_name)
+    source_counts: dict[str, int] = {}
+    if per_source_cap is not None:
+        for s in srcs:
+            source_counts[s] = source_counts.get(s, 0) + 1
 
     for c in pool:
         if len(lines) >= min_floor:
@@ -2383,12 +2404,20 @@ def _apply_section_min_floor_pull_back(
         line = preserve_place_names(line)
         source_url = str(c.get("source_url") or "")
         source_label = str(c.get("source_label") or "")
+        if (
+            per_source_cap is not None
+            and source_counts.get(source_label, 0) >= per_source_cap
+            and not _fresh_hard_news_can_bypass_source_cap(c, line)
+        ):
+            continue
         line = _attach_source_anchor(line, source_url, source_label)
         lines.append(line)
         fps.append(str(c.get("fingerprint") or ""))
         scores.append(float(c.get("reader_value_score") or 0))
         titles.append(str(c.get("title") or ""))
         srcs.append(source_label)
+        if per_source_cap is not None:
+            source_counts[source_label] = source_counts.get(source_label, 0) + 1
         promoted += 1
 
     if promoted:
@@ -2858,6 +2887,40 @@ def _city_watch_score(candidate: dict) -> float:
         score += 10
     elif evidence_len < 200:
         score -= 8
+
+    # Hard local-news value — mirror «Свежие новости» so courts, crime,
+    # incidents, development and council decisions outrank PR and charity-
+    # sport. Before this the radar had no news-type signal, so an ultramarathon
+    # fundraiser (£11m + Manchester + dates) outscored a real council
+    # funding-inequality story and led the section (2026-06-10).
+    story_type = _candidate_story_type(candidate)
+    score += {
+        "public_safety_after_incident": 40,
+        "service_accountability": 32,
+        "incident": 28,
+        "local_service_change": 18,
+        "planning": 14,
+        "civic": 12,
+        "local_cost": 10,
+    }.get(story_type, 0)
+    if re.search(
+        r"\b(?:stab|knife|killed|death|died|court|sentenced|charged|jailed|"
+        r"guilty|arrested|inquest|fraud|collision|crash|fire|robbery|assault|"
+        r"gmp|police|evacuat|cordon|planning approv|development|levelling up)\b",
+        blob,
+    ):
+        score += 18
+    # Charity-sport / fundraising is profile coverage, not city governance.
+    # Penalise so it neither leads nor crowds out civic news. No dedicated
+    # block exists to reroute it to, so we demote within the radar instead.
+    if re.search(
+        r"\b(?:charity|charit\w*|fundrais\w*|sponsored\s+(?:walk|run|swim|cycle)|"
+        r"ultramarathon|marathon|in aid of|raise[sd]?\s+(?:money|funds|£))\b",
+        blob,
+    ):
+        score -= 22
+    if story_type in {"human_interest", "soft_news", "research", "opening"}:
+        score -= 40
 
     return score
 
@@ -3919,7 +3982,7 @@ def write_digest(project_root: Path) -> StageResult:
             lines, fps, scores, titles, srcs = _apply_section_min_floor_pull_back(
                 section_name, lines, fps, scores, titles, srcs,
                 candidates, rendered_fps_so_far, target_floor, warnings,
-                include_backup=section_name in {"Свежие новости", "Футбол"},
+                include_backup=section_name in {"Свежие новости", "Футбол", "Городской радар"},
             )
         reserved_later_budget = _reserved_later_budget(ordered_sections, section_index, sections)
         remaining_budget = PUBLIC_DIGEST_MAX_VISIBLE_ITEMS - visible_item_count - reserved_later_budget

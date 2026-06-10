@@ -178,6 +178,42 @@ class PressReleaseTest(unittest.TestCase):
         score = _city_watch_score(candidate)
         self.assertGreater(score, 130, f"real GMCA money story should rank high, got {score}")
 
+    def test_charity_sport_ranks_below_hard_local_news(self) -> None:
+        from news_digest.pipeline.writer import _city_watch_score
+
+        # 2026-06-10: a charity ultramarathon (£11m raised, Manchester, dates)
+        # led the radar over real local news, because the radar score had no
+        # news-type signal. Charity-sport must now rank below hard local news.
+        charity_sport = {
+            "source_label": "BBC Manchester Web",
+            "title": "Kevin Sinfield reveals final MND ultramarathon challenge",
+            "summary": "Kevin Sinfield will run an ultramarathon from Hull to Manchester to raise money for motor neurone disease charity.",
+            "lead": "",
+            "evidence_text": (
+                "Kevin Sinfield announced his final ultramarathon challenge, running from "
+                "Hull to Manchester to raise money for MND charity. He has raised more than "
+                "£11m since 2020 in memory of Rob Burrow."
+            ),
+        }
+        hard_news = {
+            "source_label": "The Mill",
+            "title": "Five arrested following Manchester fraud investigation",
+            "summary": "Greater Manchester Police arrested five people after a fraud investigation in Manchester.",
+            "lead": "",
+            "evidence_text": (
+                "Five people were arrested in Manchester after a Greater Manchester Police "
+                "investigation into fraud. Officers said the suspects were charged and will "
+                "appear in court next month. The case involves several Salford addresses."
+            ),
+        }
+        charity_score = _city_watch_score(charity_sport)
+        hard_score = _city_watch_score(hard_news)
+        self.assertLess(
+            charity_score,
+            hard_score,
+            f"charity-sport ({charity_score}) must rank below hard local news ({hard_score})",
+        )
+
 
 # --------------------------------------------------------------------------
 # 3. Not-GM item (5 cases)
