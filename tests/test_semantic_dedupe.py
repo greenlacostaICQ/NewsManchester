@@ -101,6 +101,23 @@ class CosineTest(unittest.TestCase):
         self.assertIsNone(sd._cosine(None, [1.0, 2.0]))
         self.assertIsNone(sd._cosine([0.0, 0.0], [1.0, 2.0]))
 
+    def test_dot_unit_matches_cosine(self) -> None:
+        # The hot loops pre-normalise vectors once and use _dot_unit instead
+        # of _cosine for speed. Lock that the two stay numerically identical,
+        # so the optimisation never silently changes a dedup decision.
+        import random
+        random.seed(0)
+        for _ in range(200):
+            a = [random.gauss(0, 1) for _ in range(64)]
+            b = [random.gauss(0, 1) for _ in range(64)]
+            self.assertAlmostEqual(
+                sd._dot_unit(sd._normalise(a), sd._normalise(b)),
+                sd._cosine(a, b),
+                places=9,
+            )
+        # None / zero vectors degrade to None just like _cosine.
+        self.assertIsNone(sd._dot_unit(sd._normalise([0.0, 0.0]), sd._normalise([1.0, 2.0])))
+
 
 # --------------------------------------------------------------------------
 # Cache behaviour

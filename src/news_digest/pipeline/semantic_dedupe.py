@@ -231,6 +231,21 @@ def _cosine(a: list[float] | None, b: list[float] | None) -> float | None:
     return dot / (na * nb)
 
 
+def _dot_unit(a: list[float] | None, b: list[float] | None) -> float | None:
+    """Cosine for PRE-NORMALISED (unit) vectors — just the dot product.
+
+    Mathematically identical to ``_cosine(orig_a, orig_b)`` when ``a, b`` are
+    ``_normalise()`` of the originals, but skips the two per-call ``_l2_norm``
+    recomputes. The hot dedup loops compare each vector against many others;
+    recomputing its norm every time was ~2/3 of the per-comparison cost (the
+    pure-Python 1536-dim cosine dominated the ~2min dedupe stage). Normalise
+    once, dot-product many times. Returns None if either vector is missing.
+    """
+    if a is None or b is None:
+        return None
+    return sum(x * y for x, y in zip(a, b))
+
+
 # ── Cache-aware batch embedding ───────────────────────────────────────────
 
 
@@ -507,6 +522,14 @@ def run_semantic_pass(
         if isinstance(c, dict) and c.get("include") and c.get("fingerprint")
     ]
     vectors = embed_with_cache(client, included, cache)
+    # Normalise once up front so the O(n²) intra-batch + cross-day loops below
+    # use a plain dot product instead of recomputing each vector's norm on
+    # every comparison (see _dot_unit). Zero / missing vectors drop out here,
+    # mirroring _cosine returning None for them.
+    unit_vectors = {
+        fp: u for fp, v in vectors.items()
+        if (u := _normalise(v)) is not None
+    }
 
     cache_hits = sum(1 for c in included if str(c.get("fingerprint")) in pre_entries)
     cache_misses = len(included) - cache_hits
@@ -522,7 +545,7 @@ def run_semantic_pass(
         fp_i = str(ci.get("fingerprint") or "")
         if fp_i in dropped_fps:
             continue
-        vi = vectors.get(fp_i)
+        vi = unit_vectors.get(fp_i)
         if vi is None:
             continue
         rank_i = _source_rank(
@@ -535,8 +558,8 @@ def run_semantic_pass(
                 continue
             if not _comparable(ci, cj):
                 continue
-            vj = vectors.get(fp_j)
-            sim = _cosine(vi, vj)
+            vj = unit_vectors.get(fp_j)
+            sim = _dot_unit(vi, vj)
             if sim is None:
                 continue
             if sim >= _HIGH_SIM_THRESHOLD:
@@ -611,22 +634,29 @@ def run_semantic_pass(
         ]
 
         published_vectors = embed_with_cache(client, published_shaped, cache)
+        # Same one-shot normalisation as the intra-batch pass: each survivor is
+        # compared against every published vector below, so pre-normalising the
+        # published side too keeps the inner loop a bare dot product.
+        published_units = {
+            fp: u for fp, v in published_vectors.items()
+            if (u := _normalise(v)) is not None
+        }
         fact_by_fp = {str(f.get("fingerprint") or ""): f for f in published_facts if isinstance(f, dict)}
 
         for c in survivors:
             fp = str(c.get("fingerprint") or "")
-            vc = vectors.get(fp)
+            vc = unit_vectors.get(fp)
             if vc is None:
                 continue
             best_sim = 0.0
             best_fact_fp = ""
-            for pfp, pv in published_vectors.items():
+            for pfp, pv in published_units.items():
                 if pv is None:
                     continue
                 pf = fact_by_fp.get(pfp)
                 if not pf or not _comparable(c, pf):
                     continue
-                sim = _cosine(vc, pv)
+                sim = _dot_unit(vc, pv)
                 if sim is None:
                     continue
                 if sim > best_sim:
