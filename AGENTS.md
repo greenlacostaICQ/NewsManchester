@@ -162,6 +162,12 @@ diff ~/.mnewsdigest/src/news_digest/pipeline/collector/sources.py \
 Do not claim the automation is ready, fixed, or deployed until this
 runtime parity check is clean.
 
+Local-only changes are not product changes. A digest-quality fix counts as
+done only after it is committed to `main`, pushed to GitHub, and the
+runtime copy is synced when local automation uses it. If code only exists in
+the working tree, an unpushed branch, or `~/.mnewsdigest`, describe it as a
+local experiment, not as a completed improvement.
+
 ## Where to look first
 
 The collector was split into a package on 2026-04-27. Open the narrow

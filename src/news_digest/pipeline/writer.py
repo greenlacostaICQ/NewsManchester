@@ -103,6 +103,7 @@ TODAY_FOCUS_MIN_SOURCE_REMAINING = {
     "Городской радар": 4,
 }
 FRESH_NEWS_TARGET_ITEMS = 7
+TODAY_FOCUS_TARGET_ITEMS = 4
 
 # When the LLM rewrite stage is degraded, keep soft rails compact without
 # suppressing hard-news that did get rewritten.
@@ -119,6 +120,11 @@ DEGRADED_LLM_SECTION_MAX_ITEMS = {
 
 PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 35
 PUBLIC_SECTION_RESERVED_MIN = {
+    # Fresh/Today are the product spine of the morning issue. They must not be
+    # squeezed by later ticket/event rails when strong written news already
+    # exists.
+    "Свежие новости": FRESH_NEWS_TARGET_ITEMS,
+    TODAY_FOCUS_SECTION: SECTION_MIN_ITEMS.get(TODAY_FOCUS_SECTION, 3),
     # These sections answer "what can I do / see / book now"; they must not
     # disappear just because early news sections are noisy on a given morning.
     "Выходные в GM": 8,
@@ -190,6 +196,17 @@ class StageResult:
     draft_path: Path
 
 
+@dataclass(slots=True)
+class _SectionRow:
+    section: str
+    line: str
+    source: str
+    score: float
+    fingerprint: str
+    title: str
+    candidate: dict | None
+
+
 def _title_line() -> str:
     now = now_london()
     return f"<b>Greater Manchester Brief — {now.strftime('%Y-%m-%d, %H:%M')}</b>"
@@ -210,6 +227,577 @@ def _summary_is_useful(summary: str, headline: str) -> bool:
     if len(cleaned) < 28:
         return False
     return True
+
+
+_TODAY_FOCUS_BOARD_SOURCE_SECTIONS = (
+    "Свежие новости",
+    TODAY_FOCUS_SECTION,
+    "Городской радар",
+)
+_TODAY_FOCUS_ALLOWED_STORY_TYPES = {
+    "public_safety_after_incident",
+    "service_accountability",
+    "planning",
+    "civic",
+    "local_cost",
+    "local_service_change",
+    "incident",
+}
+_TODAY_FOCUS_BLOCKED_STORY_TYPES = {
+    "event",
+    "ticket",
+    "human_interest",
+    "soft_news",
+    "research",
+    "memorial",
+    "opening",
+    "old_existing_food",
+    "property_listing",
+    "day_out_guide",
+}
+_TODAY_FOCUS_BLOCKED_CATEGORIES = {
+    "venues_tickets",
+    "culture_weekly",
+    "russian_speaking_events",
+    "diaspora_events",
+    "football",
+    "food_openings",
+    "tech_business",
+}
+_TODAY_FOCUS_SOFT_RE = re.compile(
+    r"\b(?:charity|fundrais|tribute|award|celebrat|anniversary|ultramarathon|"
+    r"personal story|speaks out|silently screaming|dream|proud|inspiring)\b",
+    re.IGNORECASE,
+)
+_TODAY_FOCUS_ROAD_RE = re.compile(
+    r"\b(?:traffic|roadworks?|diversion|m6|m60|m62|m56|a580|east\s+lancs|"
+    r"lane|closed|closure|crash|collision|queues?|delays?)\b",
+    re.IGNORECASE,
+)
+_FRESH_COMMERCIAL_PR_RE = re.compile(
+    r"\b(?:fulfilment|fulfillment|warehouse|retailer|online\s+retailer|"
+    r"workforce|orders?|sq\s*ft|square\s+feet|centre\s+opens?|site\s+opens?|"
+    r"jobs?|growth|fastest-growing|investment)\b",
+    re.IGNORECASE,
+)
+_FRESH_SIDEBAR_RE = re.compile(
+    r"\b(?:mum|mother|family|parent|reacts?|horrified|calls?\s+for|"
+    r"speaks?\s+out|tribute)\b",
+    re.IGNORECASE,
+)
+_HARD_SERVICE_ACCOUNTABILITY_RE = re.compile(
+    r"\b(?:cqc|ofsted|inspection|inadequate|requires\s+improvement|safety|"
+    r"safeguarding|council|licen[cs]e|closure|closed|funding|waiting\s+list|"
+    r"patients?|children'?s\s+safety|police|court)\b",
+    re.IGNORECASE,
+)
+
+
+def _candidate_contract(candidate: dict | None) -> dict:
+    if not isinstance(candidate, dict):
+        return {}
+    attach_editorial_contract(candidate)
+    return candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+
+
+def _candidate_story_type(candidate: dict | None) -> str:
+    contract = _candidate_contract(candidate)
+    return str(contract.get("story_type") or "")
+
+
+def _candidate_publish_tier(candidate: dict | None) -> str:
+    contract = _candidate_contract(candidate)
+    return str(contract.get("publish_tier") or "")
+
+
+def _row_blob(row: _SectionRow) -> str:
+    c = row.candidate or {}
+    return " ".join(
+        str(value or "")
+        for value in (
+            row.title,
+            row.line,
+            c.get("title"),
+            c.get("summary"),
+            c.get("lead"),
+            c.get("evidence_text"),
+            c.get("source_label"),
+        )
+    )
+
+
+def _today_focus_bucket(row: _SectionRow) -> str:
+    story_type = _candidate_story_type(row.candidate)
+    blob = _row_blob(row)
+    if story_type in {"service_accountability", "local_service_change"}:
+        return "service"
+    if story_type in {"planning", "civic", "local_cost"}:
+        return "civic"
+    if (
+        story_type == "public_safety_after_incident"
+        or _TODAY_FOCUS_ROAD_RE.search(blob)
+        or re.search(r"\b(?:warning|warned|parents?|abandoned|unsafe|danger|safety)\b", blob, re.IGNORECASE)
+    ):
+        return "safety"
+    if story_type == "incident":
+        return "incident"
+    return "other"
+
+
+def _today_focus_candidate_is_eligible(candidate: dict | None, line: str = "") -> bool:
+    if not isinstance(candidate, dict):
+        return False
+    category = str(candidate.get("category") or "")
+    block = str(candidate.get("primary_block") or "")
+    if category in _TODAY_FOCUS_BLOCKED_CATEGORIES:
+        return False
+    if block in {"weather", "transport", "football", "ticket_radar", "outside_gm_tickets"}:
+        return False
+    contract = _candidate_contract(candidate)
+    story_type = str(contract.get("story_type") or "")
+    event_shape = str(contract.get("event_shape") or "")
+    tier = str(contract.get("publish_tier") or "")
+    if event_shape not in {"", "none"}:
+        return False
+    if story_type in _TODAY_FOCUS_BLOCKED_STORY_TYPES:
+        return False
+    if story_type not in _TODAY_FOCUS_ALLOWED_STORY_TYPES:
+        return False
+    text = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "practical_angle")
+    )
+    if line:
+        text = f"{text} {line}"
+    if tier == "reject":
+        return False
+    if tier == "filler" and not (
+        story_type == "local_cost"
+        and re.search(r"\b(?:flood|water|electric|power|damage|closed|closure|reopen|cost|thousands?)\b", text, re.IGNORECASE)
+    ):
+        return False
+    if story_type in {"incident", "public_safety_after_incident"} and not re.search(
+        r"\b(?:warning|warned|parents?|abandoned|licen[cs]e|council|flood|water|electric|"
+        r"power|road|m6|m60|m62|m56|a580|closed|closure|delays?|diversion|appeal|cctv|"
+        r"tram\s+stop|school\s+closed|unsafe|danger)\b",
+        text,
+        re.IGNORECASE,
+    ):
+        return False
+    if story_type == "service_accountability" and _TODAY_FOCUS_SOFT_RE.search(text) and not _HARD_SERVICE_ACCOUNTABILITY_RE.search(text):
+        return False
+    if _FRESH_COMMERCIAL_PR_RE.search(text) and not re.search(
+        r"\b(?:council|licen[cs]e|safety|warning|flood|water|electric|power|closed|closure|ofsted|cqc)\b",
+        text,
+        re.IGNORECASE,
+    ):
+        return False
+    # Personal awareness pieces can live in City Radar, but they should not
+    # fill the morning practical block unless a service/accountability anchor
+    # is explicit.
+    if story_type not in {"service_accountability", "local_service_change"} and _TODAY_FOCUS_SOFT_RE.search(text):
+        return False
+    return True
+
+
+def _today_focus_candidate_score(row: _SectionRow) -> float:
+    c = row.candidate or {}
+    story_type = _candidate_story_type(c)
+    tier = _candidate_publish_tier(c)
+    blob = _row_blob(row)
+    score = _section_priority_score(c, TODAY_FOCUS_SECTION, row.line) if c else row.score
+    if tier == "must_include":
+        score += 25
+    elif tier == "strong":
+        score += 14
+    score += {
+        "public_safety_after_incident": 40,
+        "service_accountability": 34,
+        "local_service_change": 28,
+        "planning": 24,
+        "civic": 20,
+        "local_cost": 24,
+        "incident": 10,
+    }.get(story_type, 0)
+    if _TODAY_FOCUS_ROAD_RE.search(blob):
+        score += 16
+    if re.search(r"\b(?:flood|water|electric|power|damage|thousands?|compensation|reopen)\b", blob, re.IGNORECASE):
+        score += 55
+    if re.search(r"\b(?:licen[cs]e|council|ofsted|cqc|safety|warning|flood|power|water|closed|closure)\b", blob, re.IGNORECASE):
+        score += 14
+    if _TODAY_FOCUS_SOFT_RE.search(blob):
+        score -= 45
+    if _FRESH_COMMERCIAL_PR_RE.search(blob):
+        score -= 28
+    return score
+
+
+def _fresh_related_story_key(row: _SectionRow) -> str:
+    blob = _row_blob(row).lower()
+    if "co-op academy" in blob and re.search(r"\b(?:stab|knife|attack)\b", blob):
+        return "incident:co_op_academy_stabbing"
+    if "market street" in blob and "droylsden" in blob and "licen" in blob:
+        return "civic:droylsden_market_street_licence"
+    return ""
+
+
+def _fresh_news_score(row: _SectionRow) -> float:
+    c = row.candidate or {}
+    story_type = _candidate_story_type(c)
+    tier = _candidate_publish_tier(c)
+    blob = _row_blob(row)
+    score = _section_priority_score(c, "Свежие новости", row.line) if c else row.score
+    if tier == "must_include":
+        score += 16
+    elif tier == "strong":
+        score += 9
+    score += {
+        "public_safety_after_incident": 46,
+        "service_accountability": 32,
+        "incident": 28,
+        "local_service_change": 18,
+        "planning": 14,
+        "civic": 12,
+        "local_cost": 10,
+    }.get(story_type, 0)
+    if re.search(r"\b(?:stab|knife|killed|death|died|serious|child|school|court|sentenced|charged|arrested|collision|crash|fire|robbery|assault|gmp|police)\b", blob, re.IGNORECASE):
+        score += 18
+    if _FRESH_SIDEBAR_RE.search(blob):
+        score -= 24
+    if story_type in {"human_interest", "soft_news", "research", "opening"}:
+        score -= 55
+    if _FRESH_COMMERCIAL_PR_RE.search(blob):
+        score -= 42
+    if _TODAY_FOCUS_SOFT_RE.search(blob):
+        score -= 14
+    return score
+
+
+def _related_story_preference_score(row: _SectionRow) -> float:
+    score = _fresh_news_score(row)
+    if row.section == "Главная история дня":
+        score += 1000
+    if _FRESH_SIDEBAR_RE.search(_row_blob(row)):
+        score -= 100
+    return score
+
+
+def _fresh_hard_news_can_bypass_source_cap(candidate: dict | None, line: str) -> bool:
+    if not isinstance(candidate, dict):
+        return False
+    story_type = _candidate_story_type(candidate)
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text")
+    )
+    blob = f"{blob} {line}"
+    if _FRESH_COMMERCIAL_PR_RE.search(blob):
+        return False
+    if story_type in {"incident", "public_safety_after_incident", "service_accountability", "local_service_change"}:
+        return True
+    return bool(re.search(r"\b(?:stab|knife|killed|death|died|court|sentenced|charged|arrested|collision|crash|robbery|assault|gmp|police)\b", blob, re.IGNORECASE))
+
+
+def _section_rows(
+    section_name: str,
+    sections: dict[str, list[str]],
+    section_sources: dict[str, list[str]],
+    section_scores: dict[str, list[float]],
+    section_fingerprints: dict[str, list[str]],
+    section_titles: dict[str, list[str]],
+    candidate_by_fp: dict[str, dict],
+) -> list[_SectionRow]:
+    rows: list[_SectionRow] = []
+    lines = sections.get(section_name) or []
+    srcs = section_sources.get(section_name) or []
+    scores = section_scores.get(section_name) or []
+    fps = section_fingerprints.get(section_name) or []
+    titles = section_titles.get(section_name) or []
+    for idx, line in enumerate(lines):
+        fp = fps[idx] if idx < len(fps) else ""
+        rows.append(
+            _SectionRow(
+                section=section_name,
+                line=line,
+                source=srcs[idx] if idx < len(srcs) else "",
+                score=float(scores[idx] if idx < len(scores) else 0.0),
+                fingerprint=fp,
+                title=titles[idx] if idx < len(titles) else "",
+                candidate=candidate_by_fp.get(str(fp or "")),
+            )
+        )
+    return rows
+
+
+def _set_section_rows(
+    section_name: str,
+    rows: list[_SectionRow],
+    sections: dict[str, list[str]],
+    section_sources: dict[str, list[str]],
+    section_scores: dict[str, list[float]],
+    section_fingerprints: dict[str, list[str]],
+    section_titles: dict[str, list[str]],
+) -> None:
+    sections[section_name] = [row.line for row in rows]
+    section_sources[section_name] = [row.source for row in rows]
+    section_scores[section_name] = [row.score for row in rows]
+    section_fingerprints[section_name] = [row.fingerprint for row in rows]
+    section_titles[section_name] = [row.title for row in rows]
+
+
+def _reroute_today_focus_row(row: _SectionRow) -> str:
+    c = row.candidate or {}
+    category = str(c.get("category") or "")
+    if category == "football":
+        return "Футбол"
+    if category in {"venues_tickets", "culture_weekly", "russian_speaking_events", "diaspora_events"}:
+        return "Что важно в ближайшие 7 дней"
+    return "Городской радар"
+
+
+def _append_section_row(
+    section_name: str,
+    row: _SectionRow,
+    sections: dict[str, list[str]],
+    section_sources: dict[str, list[str]],
+    section_scores: dict[str, list[float]],
+    section_fingerprints: dict[str, list[str]],
+    section_titles: dict[str, list[str]],
+) -> None:
+    sections.setdefault(section_name, []).append(row.line)
+    section_sources.setdefault(section_name, []).append(row.source)
+    section_scores.setdefault(section_name, []).append(row.score)
+    section_fingerprints.setdefault(section_name, []).append(row.fingerprint)
+    section_titles.setdefault(section_name, []).append(row.title)
+
+
+def _allocate_fresh_and_today_focus(
+    sections: dict[str, list[str]],
+    section_sources: dict[str, list[str]],
+    section_scores: dict[str, list[float]],
+    section_fingerprints: dict[str, list[str]],
+    section_titles: dict[str, list[str]],
+    candidate_by_fp: dict[str, dict],
+) -> dict[str, object]:
+    """Editor board for the two top news blocks.
+
+    Fresh answers "what new happened". Today Focus answers "what should a
+    resident account for today". This runs after lines are written but before
+    caps/budget, so it can move a good already-written story instead of
+    asking a model to rewrite anything.
+    """
+    fresh_rows = _section_rows("Свежие новости", sections, section_sources, section_scores, section_fingerprints, section_titles, candidate_by_fp)
+    today_rows = _section_rows(TODAY_FOCUS_SECTION, sections, section_sources, section_scores, section_fingerprints, section_titles, candidate_by_fp)
+    city_rows = _section_rows("Городской радар", sections, section_sources, section_scores, section_fingerprints, section_titles, candidate_by_fp)
+    lead_rows = _section_rows("Главная история дня", sections, section_sources, section_scores, section_fingerprints, section_titles, candidate_by_fp)
+
+    all_rows = fresh_rows + today_rows + city_rows
+    seen_fps = {row.fingerprint for row in all_rows if row.fingerprint}
+    # Some useful rows can exist as included+draft_line but only be pulled by a
+    # later floor. Put them on the board now, while section assignment is still
+    # editable.
+    for candidate in candidate_by_fp.values():
+        if not isinstance(candidate, dict) or not candidate.get("include"):
+            continue
+        fp = str(candidate.get("fingerprint") or "")
+        if not fp or fp in seen_fps:
+            continue
+        block = str(candidate.get("primary_block") or "")
+        section_name = PRIMARY_BLOCKS.get(block)
+        if section_name not in _TODAY_FOCUS_BOARD_SOURCE_SECTIONS:
+            continue
+        line = str(candidate.get("draft_line") or "").strip()
+        if not line:
+            continue
+        if not line.startswith("• "):
+            line = f"• {line}"
+        row = _SectionRow(
+            section=section_name,
+            line=line,
+            source=str(candidate.get("source_label") or ""),
+            score=_section_priority_score(candidate, section_name, line),
+            fingerprint=fp,
+            title=str(candidate.get("title") or ""),
+            candidate=candidate,
+        )
+        all_rows.append(row)
+        seen_fps.add(fp)
+
+    for row in all_rows + lead_rows:
+        if row.candidate:
+            attach_editorial_contract(row.candidate)
+
+    suppressed_sidebars: list[dict[str, str]] = []
+    related_best: dict[str, _SectionRow] = {}
+    related_members: dict[str, list[_SectionRow]] = {}
+    for row in all_rows + lead_rows:
+        key = _fresh_related_story_key(row)
+        if not key:
+            continue
+        related_members.setdefault(key, []).append(row)
+        current = related_best.get(key)
+        if current is None or _related_story_preference_score(row) > _related_story_preference_score(current):
+            related_best[key] = row
+    suppressed_fps: set[str] = set()
+    for key, members in related_members.items():
+        keeper = related_best.get(key)
+        for row in members:
+            if keeper and row.fingerprint != keeper.fingerprint:
+                if row in all_rows:
+                    suppressed_fps.add(row.fingerprint)
+                    if row.candidate is not None:
+                        row.candidate["writer_suppressed_from_top_news"] = "related_story_sidebar"
+                    suppressed_sidebars.append(
+                        {
+                            "title": row.title,
+                            "kept_title": keeper.title,
+                            "reason": "related_story_sidebar",
+                        }
+                    )
+    if suppressed_fps:
+        all_rows = [row for row in all_rows if row.fingerprint not in suppressed_fps]
+
+    original_section_by_fp = {
+        row.fingerprint: row.section
+        for row in all_rows
+        if row.fingerprint
+    }
+
+    today_candidates = [
+        row for row in all_rows
+        if _today_focus_candidate_is_eligible(row.candidate, row.line)
+    ]
+    for row in today_candidates:
+        row.score = _today_focus_candidate_score(row)
+    today_candidates.sort(key=lambda row: row.score, reverse=True)
+
+    selected_today: list[_SectionRow] = []
+    selected_fps: set[str] = set()
+    bucket_counts: dict[str, int] = {}
+
+    def take_today(row: _SectionRow) -> bool:
+        if row.fingerprint in selected_fps:
+            return False
+        bucket = _today_focus_bucket(row)
+        if bucket == "incident" and bucket_counts.get(bucket, 0) >= 1:
+            return False
+        if bucket == "safety" and _TODAY_FOCUS_ROAD_RE.search(_row_blob(row)) and bucket_counts.get("road", 0) >= 1:
+            return False
+        selected_today.append(row)
+        selected_fps.add(row.fingerprint)
+        bucket_counts[bucket] = bucket_counts.get(bucket, 0) + 1
+        if bucket == "safety" and _TODAY_FOCUS_ROAD_RE.search(_row_blob(row)):
+            bucket_counts["road"] = bucket_counts.get("road", 0) + 1
+        return True
+
+    # Protect at least one service/civic and one safety/disruption item when
+    # available. Then fill by score.
+    for wanted in ({"service", "civic"}, {"safety"}):
+        if len(selected_today) >= TODAY_FOCUS_TARGET_ITEMS:
+            break
+        for row in today_candidates:
+            if _today_focus_bucket(row) in wanted and take_today(row):
+                break
+    for row in today_candidates:
+        if len(selected_today) >= TODAY_FOCUS_TARGET_ITEMS:
+            break
+        take_today(row)
+
+    today_fps = {row.fingerprint for row in selected_today if row.fingerprint}
+    remaining_rows = [row for row in all_rows if row.fingerprint not in today_fps]
+
+    # If multiple Fresh rows are the same underlying incident, keep the direct
+    # fact over reaction/sidebar coverage.
+    best_by_key: dict[str, _SectionRow] = {}
+    non_fresh_board: list[_SectionRow] = []
+    for row in remaining_rows:
+        if row.section != "Свежие новости":
+            non_fresh_board.append(row)
+            continue
+        row.score = _fresh_news_score(row)
+        key = _fresh_related_story_key(row)
+        if not key:
+            best_by_key[row.fingerprint or f"row:{len(best_by_key)}"] = row
+            continue
+        current = best_by_key.get(key)
+        if current is None or _fresh_news_score(row) > _fresh_news_score(current):
+            best_by_key[key] = row
+    fresh_board_rows = sorted(best_by_key.values(), key=lambda row: row.score, reverse=True)
+    suppressed_fresh_commercial: list[dict[str, str]] = []
+    fresh_hard_floor = SECTION_MIN_ITEMS.get("Свежие новости", 6)
+    noncommercial_fresh = [
+        row for row in fresh_board_rows
+        if not _FRESH_COMMERCIAL_PR_RE.search(_row_blob(row))
+    ]
+    if len(noncommercial_fresh) >= fresh_hard_floor:
+        suppressed_fresh_commercial = [
+            {
+                "title": row.title,
+                "source_label": row.source,
+                "reason": "commercial_pr_below_fresh_hard_floor",
+            }
+            for row in fresh_board_rows
+            if row not in noncommercial_fresh
+        ]
+        for row in fresh_board_rows:
+            if row not in noncommercial_fresh and row.candidate is not None:
+                row.candidate["writer_suppressed_from_top_news"] = "commercial_pr_below_fresh_hard_floor"
+        fresh_board_rows = noncommercial_fresh
+
+    city_out: list[_SectionRow] = []
+    rerouted_from_today: list[dict[str, str]] = []
+    for row in non_fresh_board:
+        if row.section == TODAY_FOCUS_SECTION:
+            dest = _reroute_today_focus_row(row)
+            if dest != row.section:
+                rerouted_from_today.append({"title": row.title, "to_section": dest})
+            row.section = dest
+        if row.section == "Городской радар":
+            city_out.append(row)
+        elif row.section not in {"Свежие новости", TODAY_FOCUS_SECTION}:
+            _append_section_row(row.section, row, sections, section_sources, section_scores, section_fingerprints, section_titles)
+
+    for row in selected_today:
+        row.section = TODAY_FOCUS_SECTION
+        row.score = _today_focus_candidate_score(row)
+    _set_section_rows("Свежие новости", fresh_board_rows, sections, section_sources, section_scores, section_fingerprints, section_titles)
+    _set_section_rows(TODAY_FOCUS_SECTION, selected_today, sections, section_sources, section_scores, section_fingerprints, section_titles)
+    _set_section_rows("Городской радар", city_out, sections, section_sources, section_scores, section_fingerprints, section_titles)
+
+    return {
+        "target_items": TODAY_FOCUS_TARGET_ITEMS,
+        "hard_floor": SECTION_MIN_ITEMS.get(TODAY_FOCUS_SECTION, 3),
+        "input_candidates": len(all_rows),
+        "eligible_candidates": len(today_candidates),
+        "rendered_candidates": len(selected_today),
+        "moved_from_fresh": sum(1 for row in selected_today if row.section == TODAY_FOCUS_SECTION and row.fingerprint in {r.fingerprint for r in fresh_rows}),
+        "moved_from_city_watch": sum(1 for row in selected_today if row.fingerprint in {r.fingerprint for r in city_rows}),
+        "kept_existing_today_focus": sum(1 for row in selected_today if row.fingerprint in {r.fingerprint for r in today_rows}),
+        "rerouted_from_today_focus": rerouted_from_today,
+        "suppressed_related_sidebars": suppressed_sidebars,
+        "suppressed_fresh_commercial": suppressed_fresh_commercial,
+        "underflow_reason": "" if len(selected_today) >= SECTION_MIN_ITEMS.get(TODAY_FOCUS_SECTION, 3) else "not_enough_eligible_practical_items",
+        "selected": [
+            {
+                "title": row.title,
+                "from_section": original_section_by_fp.get(row.fingerprint, row.section),
+                "source_label": row.source,
+                "score": row.score,
+                "story_type": _candidate_story_type(row.candidate),
+                "bucket": _today_focus_bucket(row),
+            }
+            for row in selected_today
+        ],
+        "fresh_selected_preview": [
+            {
+                "title": row.title,
+                "source_label": row.source,
+                "score": row.score,
+                "story_type": _candidate_story_type(row.candidate),
+            }
+            for row in fresh_board_rows[:SECTION_MAX_ITEMS.get("Свежие новости", 9)]
+        ],
+    }
 
 
 def _backfill_today_focus(
@@ -1750,6 +2338,7 @@ def _apply_section_min_floor_pull_back(
         and (c.get("include") or (include_backup and c.get("backup_candidate")))
         and str(c.get("primary_block") or "") in target_blocks
         and str(c.get("fingerprint") or "") not in rendered_fps_so_far
+        and not c.get("writer_suppressed_from_top_news")
     ]
     pool.sort(key=lambda c: float(c.get("reader_value_score") or 0), reverse=True)
 
@@ -3167,21 +3756,21 @@ def write_digest(project_root: Path) -> StageResult:
             f"Writer dropped {missing_draft_count} included candidate(s) with missing draft_line — digest continues."
         )
 
-    backfilled_today_focus = _backfill_today_focus(
+    today_focus_board = _allocate_fresh_and_today_focus(
         sections,
         section_sources,
         section_scores,
         section_fingerprints,
         section_titles,
-        tuple(
-            section
-            for section in TODAY_FOCUS_BACKFILL_SECTIONS
-            if not (llm_degraded and section == "Городской радар")
-        ),
+        candidate_by_fp,
     )
-    if backfilled_today_focus:
+    backfilled_today_focus = 0
+    if int(today_focus_board.get("moved_from_fresh") or 0) or int(today_focus_board.get("moved_from_city_watch") or 0):
         warnings.append(
-            f"Writer backfilled «{TODAY_FOCUS_SECTION}» with {backfilled_today_focus} item(s) from other practical sections."
+            f"Writer board filled «{TODAY_FOCUS_SECTION}» with "
+            f"{today_focus_board.get('rendered_candidates')} practical item(s) "
+            f"(moved from Fresh: {today_focus_board.get('moved_from_fresh')}, "
+            f"from City Radar: {today_focus_board.get('moved_from_city_watch')})."
         )
     if not sections.get("Общественный транспорт сегодня"):
         sections["Общественный транспорт сегодня"] = [_transport_empty_line(project_root)]
@@ -3256,6 +3845,10 @@ def write_digest(project_root: Path) -> StageResult:
                 if (
                     src_counts.get(src, 0) >= per_source_cap
                     and not _is_public_budget_exempt(section_name, candidate_by_fp.get(str(fp or "")))
+                    and not (
+                        section_name == "Свежие новости"
+                        and _fresh_hard_news_can_bypass_source_cap(candidate_by_fp.get(str(fp or "")), ln)
+                    )
                 ):
                     continue
                 src_counts[src] = src_counts.get(src, 0) + 1
@@ -3459,6 +4052,7 @@ def write_digest(project_root: Path) -> StageResult:
                 "dropped_items": global_budget_dropped[:80],
             },
             "backfilled_today_focus": backfilled_today_focus,
+            "today_focus_board": today_focus_board,
             "degraded_shrink": {
                 "enabled": bool(llm_degraded),
                 "llm_stage_status": str(llm_rewrite_report.get("stage_status") or "") if llm_rewrite_report else "",

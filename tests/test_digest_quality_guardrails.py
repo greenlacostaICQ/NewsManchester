@@ -36,6 +36,7 @@ from news_digest.pipeline.editorial_contracts import (
 )
 from news_digest.pipeline.llm_rewrite import _apply_rewrite_shortlist
 from news_digest.pipeline.writer import (
+    _allocate_fresh_and_today_focus,
     _apply_section_min_floor_pull_back,
     _build_football_fallback_line,
     _build_recurring_event_fallback_line,
@@ -2525,6 +2526,162 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertEqual(len(drops), 1)
         self.assertEqual(drops[0]["topic_key"], "politics:makerfield_by_election_2026")
         self.assertEqual(sum(1 for item in candidates if item["include"]), 1)
+
+    def test_today_focus_board_moves_practical_items_and_rejects_soft_fill(self) -> None:
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "roachdale-flood",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "Rochdale shop owner says flood has cost him thousands",
+                "summary": "Businesses at Fieldhouse Industrial Estate were left without water and electricity after flooding.",
+                "lead": "Flooding has left Rochdale businesses without water and electricity.",
+                "evidence_text": "Businesses expect to reopen on Thursday after flooding damaged stock and power supplies.",
+                "source_label": "BBC Manchester",
+                "source_url": "https://example.test/rochdale-flood",
+                "draft_line": "• Rochdale: flooding left Fieldhouse Industrial Estate businesses without water and electricity.",
+            },
+            {
+                "include": True,
+                "fingerprint": "droylsden-licence",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "Droylsden shop rejected new licence by council over suspected criminal links",
+                "summary": "Police and Tameside Council objected to the Market Street alcohol licence application.",
+                "lead": "A Droylsden shop was refused an alcohol licence over suspected criminal links.",
+                "evidence_text": "The shop previously lost its licence in 2023 after illegal tobacco sales.",
+                "source_label": "MEN",
+                "source_url": "https://example.test/droylsden",
+                "draft_line": "• Tameside: a Market Street shop in Droylsden was refused an alcohol licence over suspected criminal links.",
+            },
+            {
+                "include": True,
+                "fingerprint": "abandoned-pub-warning",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "Child seriously injured in abandoned pub near Carrington as police issue warning",
+                "summary": "Police warned parents after a child fell inside the abandoned Saracens Head pub.",
+                "lead": "A child was seriously injured after entering an abandoned pub in Trafford.",
+                "evidence_text": "Police urged parents to talk to children about the danger of abandoned buildings.",
+                "source_label": "MEN",
+                "source_url": "https://example.test/abandoned-pub",
+                "draft_line": "• Trafford: a child was seriously injured after falling inside the abandoned Saracens Head pub.",
+            },
+            {
+                "include": True,
+                "fingerprint": "stockport-funding",
+                "category": "media_layer",
+                "primary_block": "city_watch",
+                "title": "Fears parts of Stockport are turning on each other over council funding",
+                "summary": "Councillors raised concerns about unequal town-centre funding across Stockport.",
+                "lead": "Stockport councillors raised concerns about unequal funding between districts.",
+                "evidence_text": "A £20m Marple centre prompted criticism from other Stockport areas.",
+                "source_label": "MEN",
+                "source_url": "https://example.test/stockport-funding",
+                "draft_line": "• Stockport: councillors warned that districts are clashing over unequal funding.",
+            },
+            {
+                "include": True,
+                "fingerprint": "gmmh-personal-story",
+                "category": "public_services",
+                "primary_block": "today_focus",
+                "title": "Inside I was silently screaming - Wigan mum speaks out about common yet isolating experience",
+                "summary": "A Wigan mum shared her personal story after traumatic losses.",
+                "lead": "A Wigan mum spoke about bonding with her son after traumatic losses.",
+                "evidence_text": "The story raises awareness of maternal mental health support.",
+                "source_label": "GMMH",
+                "source_url": "https://example.test/gmmh-story",
+                "draft_line": "• Жительница Wiganа делится личной историей восстановления после травматических потерь.",
+            },
+        ]
+        candidate_by_fp = {c["fingerprint"]: c for c in candidates}
+        sections = {
+            "Свежие новости": [c["draft_line"] for c in candidates[:3]],
+            "Что важно сегодня": [candidates[4]["draft_line"]],
+            "Городской радар": [candidates[3]["draft_line"]],
+        }
+        section_sources = {
+            "Свежие новости": [c["source_label"] for c in candidates[:3]],
+            "Что важно сегодня": [candidates[4]["source_label"]],
+            "Городской радар": [candidates[3]["source_label"]],
+        }
+        section_scores = {name: [0.0] * len(lines) for name, lines in sections.items()}
+        section_fps = {
+            "Свежие новости": [c["fingerprint"] for c in candidates[:3]],
+            "Что важно сегодня": [candidates[4]["fingerprint"]],
+            "Городской радар": [candidates[3]["fingerprint"]],
+        }
+        section_titles = {
+            "Свежие новости": [c["title"] for c in candidates[:3]],
+            "Что важно сегодня": [candidates[4]["title"]],
+            "Городской радар": [candidates[3]["title"]],
+        }
+
+        report = _allocate_fresh_and_today_focus(
+            sections,
+            section_sources,
+            section_scores,
+            section_fps,
+            section_titles,
+            candidate_by_fp,
+        )
+
+        self.assertEqual(report["rendered_candidates"], 4)
+        self.assertIn("droylsden-licence", section_fps["Что важно сегодня"])
+        self.assertIn("abandoned-pub-warning", section_fps["Что важно сегодня"])
+        self.assertIn("stockport-funding", section_fps["Что важно сегодня"])
+        self.assertNotIn("gmmh-personal-story", section_fps["Что важно сегодня"])
+
+    def test_fresh_board_suppresses_reaction_sidebar_when_main_incident_exists(self) -> None:
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "coop-main",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "Teacher and two pupils stabbed in Manchester school attack",
+                "summary": "Two pupils and a teacher were injured in a knife attack at Co-op Academy.",
+                "lead": "A 14-year-old girl was arrested after a knife attack at Co-op Academy.",
+                "evidence_text": "The school was closed after the attack on Plant Hill Road.",
+                "source_label": "BBC Manchester",
+                "source_url": "https://example.test/coop-main",
+                "draft_line": "• Blackley: a 14-year-old girl was arrested after a knife attack at Co-op Academy.",
+            },
+            {
+                "include": True,
+                "fingerprint": "coop-reaction",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "Mum of teen killed in school stabbing horrified by Manchester school attack",
+                "summary": "The mother of a teenager killed in 2025 called for metal detectors after the Co-op Academy attack.",
+                "lead": "A mother reacted to the Co-op Academy stabbing.",
+                "evidence_text": "She said she was horrified by the attack.",
+                "source_label": "MEN",
+                "source_url": "https://example.test/coop-reaction",
+                "draft_line": "• Blackley: the mother of a killed teenager said she was horrified by the Co-op Academy attack.",
+            },
+        ]
+        candidate_by_fp = {c["fingerprint"]: c for c in candidates}
+        sections = {"Свежие новости": [c["draft_line"] for c in candidates], "Что важно сегодня": [], "Городской радар": []}
+        section_sources = {"Свежие новости": [c["source_label"] for c in candidates], "Что важно сегодня": [], "Городской радар": []}
+        section_scores = {"Свежие новости": [0.0, 0.0], "Что важно сегодня": [], "Городской радар": []}
+        section_fps = {"Свежие новости": [c["fingerprint"] for c in candidates], "Что важно сегодня": [], "Городской радар": []}
+        section_titles = {"Свежие новости": [c["title"] for c in candidates], "Что важно сегодня": [], "Городской радар": []}
+
+        report = _allocate_fresh_and_today_focus(
+            sections,
+            section_sources,
+            section_scores,
+            section_fps,
+            section_titles,
+            candidate_by_fp,
+        )
+
+        all_visible = set(section_fps["Свежие новости"]) | set(section_fps["Что важно сегодня"]) | set(section_fps["Городской радар"])
+        self.assertIn("coop-main", all_visible)
+        self.assertNotIn("coop-reaction", all_visible)
+        self.assertEqual(report["suppressed_related_sidebars"][0]["title"], candidates[1]["title"])
 
     def test_historical_archive_without_news_hook_is_rejected(self) -> None:
         """User feedback: «Salford Винни Клей 90-х годов — уже было и

@@ -2994,6 +2994,25 @@ def build_release(project_root: Path) -> ReleaseResult:
         for section_name, minimum in SECTION_MIN_ITEMS.items():
             actual = int(sec_counts.get(section_name) or 0)
             dropped_here = dropped_per_section.get(section_name, 0)
+            if section_name == "Что важно сегодня" and actual < minimum:
+                board = writer_report.get("today_focus_board") if isinstance(writer_report.get("today_focus_board"), dict) else {}
+                if board:
+                    section_underflow.append(
+                        {
+                            "section": section_name,
+                            "actual": actual,
+                            "minimum": minimum,
+                            "dropped_by_writer": dropped_here,
+                            "eligible_candidates": board.get("eligible_candidates"),
+                            "underflow_reason": board.get("underflow_reason") or "",
+                        }
+                    )
+                    warnings.append(
+                        f"Section underflow: «{section_name}» shipped {actual} items "
+                        f"(min={minimum}); board saw {board.get('eligible_candidates', 0)} "
+                        f"eligible practical candidate(s), reason={board.get('underflow_reason') or 'unknown'}."
+                    )
+                    continue
             if actual < minimum and dropped_here > 0:
                 section_underflow.append(
                     {
