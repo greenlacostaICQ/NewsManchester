@@ -87,6 +87,14 @@ class SourceScoreBacklogCriteriaTest(unittest.TestCase):
             source_score("Manchester City", "football"),
             source_score("MEN", "football"),
         )
+        self.assertGreater(
+            source_score("Manchester City Men", "football"),
+            source_score("MEN", "football"),
+        )
+        self.assertGreater(
+            source_score("BBC Sport Manchester United", "football"),
+            source_score("MEN", "football"),
+        )
 
 
 class SourceScoreCompositionTest(unittest.TestCase):

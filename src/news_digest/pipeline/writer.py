@@ -1034,7 +1034,13 @@ def _build_transport_fallback_line(candidate: dict) -> str:
 
 def _build_football_fallback_line(candidate: dict) -> str:
     source = str(candidate.get("source_label") or "")
-    if source not in {"Manchester United", "Manchester City"}:
+    if source not in {
+        "Manchester United",
+        "Manchester City",
+        "Manchester City Men",
+        "BBC Sport Manchester United",
+        "BBC Sport Manchester City",
+    }:
         return ""
     if not _football_is_sport_news(candidate):
         return ""
@@ -1042,7 +1048,32 @@ def _build_football_fallback_line(candidate: dict) -> str:
     summary = re.sub(r"\s+", " ", str(candidate.get("summary") or candidate.get("lead") or "")).strip()
     if not title or _looks_like_source_chrome(title):
         return ""
-    club = "Manchester United" if "united" in source.lower() else "Manchester City"
+    blob = f"{source} {title} {summary}".lower()
+    club = "Manchester United" if "united" in blob or "man utd" in blob else "Manchester City"
+    if re.search(r"\bfixture|fixtures|calendar|schedule\b", blob):
+        return (
+            f"• {club}: скоро объявят календарь Премьер-лиги на новый сезон. "
+            "Это задаст первые матчи, даты и ранние выезды, за которыми стоит следить болельщикам."
+        )
+    if re.search(r"\binjur|fitness|ruled out|available\b", blob):
+        subject = re.split(r"\b(?:picks up|injur|fitness|ruled out|available)\b", title, maxsplit=1, flags=re.IGNORECASE)[0]
+        subject = re.sub(r"[:\-–]\s*$", "", subject).strip() or "игроку"
+        return (
+            f"• {club}: обновление по травме или готовности — {subject}. "
+            "Это важно для состава на ближайшие матчи."
+        )
+    if re.search(r"\btransfer|sign(?:s|ed|ing)?|loan|bid|fee|deal\b", blob):
+        subject = re.split(r"[:\-–]", title, maxsplit=1)[0].strip() or "игроку"
+        return (
+            f"• {club}: трансферное обновление по {subject}. "
+            "Ситуация влияет на состав и планы клуба на сезон."
+        )
+    if re.search(r"\bappoint|appointment|manager|coach|negotiat", blob):
+        subject = re.split(r"[:\-–]", title, maxsplit=1)[0].strip() or "кандидату"
+        return (
+            f"• {club}: обновление по тренерскому вопросу — {subject}. "
+            "Это влияет на подготовку команды к сезону."
+        )
     if summary and len(summary) >= 40 and not _looks_like_source_chrome(summary):
         return f"• {club}: {title}. {summary.rstrip('.')[:220]}."
     return f"• {club}: {title}."
@@ -1737,6 +1768,8 @@ def _apply_section_min_floor_pull_back(
                     line = _build_event_fallback_line(c)
             elif builder == "public_services":
                 line = _build_public_service_fallback_line(c)
+            elif section_name == "Футбол" or category == "football":
+                line = _build_football_fallback_line(c)
             elif section_name == "Свежие новости":
                 line = _final_replacement_line(c)
         if not line:
@@ -2541,7 +2574,15 @@ _FOOTBALL_SPORT_RE = re.compile(
 _FOOTBALL_SOFT_RE = re.compile(
     r"\b(?:birthday|break[- ]?up|girlfriend|boyfriend|maya jama|personal life|"
     r"fan reaction|fans react|social media|instagram|party|gossip|rumour|"
-    r"speculation|shirt launch|kit launch|award|charity|community)\b",
+    r"speculation|shirt launch|kit launch|award|charity|community|documentary|"
+    r"amazon|prime video|behind[- ]the[- ]scenes|poll|vote|supporters?|fans?)\b",
+    re.IGNORECASE,
+)
+_FOOTBALL_HARD_NEWS_RE = re.compile(
+    r"\b(?:match|fixture|result|score|goal|injur|fitness|transfer|sign(?:s|ed|ing)?|"
+    r"contract|loan|squad|line[- ]?up|team news|appoint(?:s|ed|ment)?|"
+    r"negotiat(?:e|es|ed|ions?)|bid|rejected|accepted|available|ruled out|"
+    r"debut|call[- ]?up|suspension|ban|training return)\b",
     re.IGNORECASE,
 )
 
@@ -2565,7 +2606,7 @@ def _football_should_route_to_soft(candidate: dict) -> bool:
         str(candidate.get(field) or "")
         for field in ("title", "summary", "lead", "evidence_text", "source_url")
     )
-    return bool(_FOOTBALL_SOFT_RE.search(blob) and not _FOOTBALL_SPORT_RE.search(blob))
+    return bool(_FOOTBALL_SOFT_RE.search(blob) and not _FOOTBALL_HARD_NEWS_RE.search(blob))
 
 
 _NON_GM_REGIONAL_RE = re.compile(
@@ -3285,7 +3326,7 @@ def write_digest(project_root: Path) -> StageResult:
             lines, fps, scores, titles, srcs = _apply_section_min_floor_pull_back(
                 section_name, lines, fps, scores, titles, srcs,
                 candidates, rendered_fps_so_far, target_floor, warnings,
-                include_backup=section_name == "Свежие новости",
+                include_backup=section_name in {"Свежие новости", "Футбол"},
             )
         reserved_later_budget = _reserved_later_budget(ordered_sections, section_index, sections)
         remaining_budget = PUBLIC_DIGEST_MAX_VISIBLE_ITEMS - visible_item_count - reserved_later_budget

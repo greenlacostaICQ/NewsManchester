@@ -37,6 +37,7 @@ from news_digest.pipeline.editorial_contracts import (
 from news_digest.pipeline.llm_rewrite import _apply_rewrite_shortlist
 from news_digest.pipeline.writer import (
     _apply_section_min_floor_pull_back,
+    _build_football_fallback_line,
     _build_recurring_event_fallback_line,
     _build_ticket_fallback_line,
     _contract_public_drop_reason,
@@ -137,6 +138,98 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertFalse(updated["include"])
         self.assertIn("weak_value_football_pr", updated["reject_reasons"])
+
+    def test_football_dedupe_does_not_merge_distinct_city_stories(self) -> None:
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "city-maresca",
+                "category": "football",
+                "primary_block": "football",
+                "source_label": "BBC Sport Manchester City",
+                "source_url": "https://bbc.example/maresca",
+                "title": "Enzo Maresca: Man City still in negotiations to appoint new manager",
+                "summary": "Manchester City are continuing negotiations with Chelsea to appoint Enzo Maresca.",
+            },
+            {
+                "include": True,
+                "fingerprint": "city-guardiola-doc",
+                "category": "football",
+                "primary_block": "football",
+                "source_label": "BBC Sport Manchester City",
+                "source_url": "https://bbc.example/guardiola-doc",
+                "title": "Pep Guardiola: Former Man City manager's final seasons to air in Amazon documentary",
+                "summary": "Pep Guardiola's final two seasons in charge of Manchester City will air on Amazon.",
+            },
+        ]
+
+        drops = _apply_intra_batch_dedup(candidates)
+
+        self.assertEqual(drops, [])
+        self.assertTrue(all(candidate["include"] for candidate in candidates))
+
+    def test_football_dedupe_still_merges_same_player_same_claim(self) -> None:
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "haaland-article",
+                "category": "football",
+                "primary_block": "football",
+                "source_label": "BBC Sport Manchester City",
+                "source_url": "https://bbc.example/haaland-article",
+                "title": "Erling Haaland: Man City threaten legal action over Real Madrid candidate's transfer claim",
+                "summary": "Manchester City dismiss a Real Madrid candidate's transfer claim about Erling Haaland.",
+            },
+            {
+                "include": True,
+                "fingerprint": "haaland-video",
+                "category": "football",
+                "primary_block": "football",
+                "source_label": "BBC Sport Manchester City",
+                "source_url": "https://bbc.example/haaland-video",
+                "title": "Erling Haaland: Man City threaten legal action over Real Madrid candidate's transfer claim",
+                "summary": "A video item repeats the same Erling Haaland transfer claim.",
+            },
+        ]
+
+        drops = _apply_intra_batch_dedup(candidates)
+
+        self.assertEqual(len(drops), 1)
+        self.assertEqual(sum(1 for candidate in candidates if candidate["include"]), 1)
+
+    def test_football_min_floor_can_recover_official_backup_candidate(self) -> None:
+        candidate = {
+            "include": False,
+            "backup_candidate": True,
+            "fingerprint": "united-fixtures",
+            "category": "football",
+            "primary_block": "football",
+            "source_label": "Manchester United",
+            "source_url": "https://www.manutd.com/en/news/premier-league-fixtures-day-fast-approaching",
+            "title": "Premier League fixtures day fast approaching",
+            "summary": "The new Premier League fixture list will be released soon, setting Manchester United's first run of matches.",
+            "reader_value_score": 90,
+        }
+
+        line = _build_football_fallback_line(candidate)
+        self.assertIn("календарь Премьер-лиги", line)
+
+        lines, fps, _scores, _titles, _srcs = _apply_section_min_floor_pull_back(
+            "Футбол",
+            [],
+            [],
+            [],
+            [],
+            [],
+            [candidate],
+            set(),
+            1,
+            [],
+            include_backup=True,
+        )
+
+        self.assertEqual(fps, ["united-fixtures"])
+        self.assertEqual(len(lines), 1)
 
     def test_drops_visitor_attraction_from_food_openings(self) -> None:
         updated = self._validate_one(
@@ -2161,6 +2254,17 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             "https://www.tickettailor.com/events/foodfestival/1883190",
         )
         self.assertEqual(by_name["Manchester City"].url, "https://www.mancity.com/news?tag=News")
+        self.assertEqual(by_name["Manchester City Men"].url, "https://www.mancity.com/news/mens")
+        self.assertTrue(_is_allowed_source_link(
+            by_name["Manchester City Men"],
+            "https://www.mancity.com/news/mens/reijnders-khusanov-cherki-world-cup-warm-ups",
+            "Reijnders, Khusanov and Cherki all feature in latest World Cup warm-ups",
+            "",
+        ))
+        self.assertEqual(
+            by_name["BBC Sport Manchester United"].url,
+            "https://feeds.bbci.co.uk/sport/football/teams/manchester-united/rss.xml",
+        )
         self.assertIn("Secret Manchester May Guide", by_name)
         self.assertIn("Secret Manchester Gigs", by_name)
         self.assertNotIn("Secret Manchester Weekend Guide", by_name)

@@ -727,6 +727,10 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
         path_must_contain=("/news/",),
         blocked_title_tokens=("eds", "academy", "women", "ticket information", "ticketing", "pl2", "u18"),
     ),
+    "Manchester City Men": _SourcePolicy(
+        path_must_contain=("/news/",),
+        blocked_title_tokens=("eds", "academy", "women", "ticket information", "ticketing", "pl2", "u18"),
+    ),
     # ── Food / Openings ───────────────────────────────────────────────────────
     # Manchester's Finest: override below (food_opening alone is sufficient)
     "Confidentials": _SourcePolicy(
@@ -1065,7 +1069,7 @@ def _source_override(
             return False
         return True
 
-    if source.name == "Manchester City":
+    if source.name in {"Manchester City", "Manchester City Men"}:
         if "/news/" not in lowered_path:
             return False
         if _is_football_fluff(lowered_title, lowered_path):

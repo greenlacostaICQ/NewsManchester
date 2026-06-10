@@ -317,6 +317,15 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertTrue(_football_is_sport_news(candidate))
         self.assertFalse(_football_should_route_to_soft(candidate))
 
+    def test_football_documentary_item_does_not_count_as_sport_minimum(self) -> None:
+        candidate = {
+            "primary_block": "football",
+            "title": "Pep Guardiola: Former Man City manager's final seasons to air in Amazon documentary",
+            "summary": "The behind-the-scenes series will air on Prime Video this summer.",
+        }
+        self.assertTrue(_football_is_sport_news(candidate))
+        self.assertTrue(_football_should_route_to_soft(candidate))
+
     def test_football_numeric_hallucination_is_replaced_by_official_fallback(self) -> None:
         candidate = {
             "category": "football",

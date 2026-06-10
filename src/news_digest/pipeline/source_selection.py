@@ -85,6 +85,9 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
     "football": (
         "Manchester United",
         "Manchester City",
+        "Manchester City Men",
+        "BBC Sport Manchester United",
+        "BBC Sport Manchester City",
         "BBC Manchester",
         "BBC Manchester Web",
         "MEN",
@@ -214,6 +217,7 @@ SOURCE_TIER: dict[str, int] = {
     "National Rail Enquiries": 1,
     "Manchester United": 1,
     "Manchester City": 1,
+    "Manchester City Men": 1,
     "Manchester Council": 1,
     "GMCA": 1,
     "Salford Council": 1,

@@ -1118,6 +1118,38 @@ def _dedup_block_group(primary_block: str) -> str:
 
 _MARKET_LISTING_RE = re.compile(r"\b(?:market|car boot|makers market|artisan market|flea market)\b", re.IGNORECASE)
 _GENERIC_MARKET_TITLE_RE = re.compile(r"\b(?:casual trading|market|markets|what'?s on|events?)\b", re.IGNORECASE)
+_FOOTBALL_GENERIC_ENTITIES = frozenset({
+    "city",
+    "united",
+    "man",
+    "man city",
+    "man utd",
+    "manchester city",
+    "manchester united",
+    "premier",
+    "premier league",
+    "league",
+    "world cup",
+    "cup",
+    "club",
+    "clubs",
+    "men",
+    "team",
+})
+
+
+def _is_football_pair(first: dict, second: dict) -> bool:
+    return (
+        str(first.get("primary_block") or "") == "football"
+        and str(second.get("primary_block") or "") == "football"
+    )
+
+
+def _football_distinctive_shared_entities(
+    first_entities: frozenset[str],
+    second_entities: frozenset[str],
+) -> frozenset[str]:
+    return frozenset((first_entities & second_entities) - _FOOTBALL_GENERIC_ENTITIES)
 
 
 def _is_market_listing(candidate: dict) -> bool:
@@ -1596,6 +1628,8 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
             # story case where each headline picks different verbs around
             # the same subject.
             shared_entities = entities_i & entities_j
+            if _is_football_pair(ci, cj):
+                shared_entities = _football_distinctive_shared_entities(entities_i, entities_j)
             if shared_entities and not is_event_ticket_group:
                 # "Strong" signal — any of:
                 #  - multi-word entity ("Andy Burnham", "Trafford Centre")
