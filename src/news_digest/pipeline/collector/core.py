@@ -13,6 +13,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import timedelta
+import json
 from pathlib import Path
 import os
 import re
@@ -41,7 +42,7 @@ from .fallbacks import (
     _transport_fallback_candidates,
     _weather_candidate,
 )
-from .fetch import NotModified, _fetch_source_body, load_fetch_cache, save_fetch_cache
+from .fetch import NotModified, _fetch_source_body, _fetch_text, load_fetch_cache, save_fetch_cache
 from .dates import _parse_datetime_value
 from .routing import _promote_to_today_focus, _reroute_media_transit_to_transport
 from .sources import SOURCES
@@ -149,6 +150,86 @@ def _source_contract(source) -> str:
     if source.report_category == "public_services":
         return "official_background"
     return "generic"
+
+
+def _ticketmaster_page_url(url: str, page: int) -> str:
+    parsed = parse.urlsplit(url)
+    query = parse.parse_qsl(parsed.query, keep_blank_values=True)
+    updated: list[tuple[str, str]] = []
+    replaced = False
+    for key, value in query:
+        if key == "page":
+            updated.append((key, str(page)))
+            replaced = True
+        else:
+            updated.append((key, value))
+    if not replaced:
+        updated.append(("page", str(page)))
+    return parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, parse.urlencode(updated), parsed.fragment))
+
+
+def _ticketmaster_pagination_limit(source) -> int:
+    name = str(getattr(source, "name", "") or "").lower()
+    if "ticketmaster uk major upcoming" in name:
+        return 5
+    if "ticketmaster uk major onsale" in name:
+        return 3
+    return 1
+
+
+def _fetch_ticketmaster_paginated_body(source, body: str, fetched_url: str) -> tuple[str, list[str]]:
+    """Merge extra Ticketmaster pages for UK-wide artist-watch sources.
+
+    A single countrywide Ticketmaster request sorted by date only returns the
+    first page, not "all UK". Stars at open-air/heritage venues can sit on a
+    later page and never reach notability scoring.
+    """
+    limit = _ticketmaster_pagination_limit(source)
+    if limit <= 1:
+        return body, []
+    try:
+        payload = json.loads(body)
+    except json.JSONDecodeError:
+        return body, ["Ticketmaster pagination skipped: first page was not JSON."]
+    page_info = payload.get("page") if isinstance(payload.get("page"), dict) else {}
+    try:
+        total_pages = int(page_info.get("totalPages") or 1)
+        current_page = int(page_info.get("number") or 0)
+    except (TypeError, ValueError):
+        total_pages = 1
+        current_page = 0
+    max_page_exclusive = min(total_pages, current_page + limit)
+    if max_page_exclusive <= current_page + 1:
+        return body, []
+    embedded = payload.setdefault("_embedded", {})
+    events = embedded.setdefault("events", [])
+    if not isinstance(events, list):
+        return body, ["Ticketmaster pagination skipped: first page events payload was not a list."]
+    warnings: list[str] = []
+    seen_ids = {str(event.get("id") or event.get("url") or "") for event in events if isinstance(event, dict)}
+    for page_num in range(current_page + 1, max_page_exclusive):
+        page_url = _ticketmaster_page_url(fetched_url, page_num)
+        try:
+            page_payload = json.loads(_fetch_text(page_url))
+        except Exception as exc:  # noqa: BLE001 - keep the source usable if one page fails.
+            warnings.append(f"Ticketmaster pagination page {page_num} failed: {_redact_sensitive_text(str(exc))}")
+            continue
+        page_events = ((page_payload.get("_embedded") or {}).get("events") or [])
+        if not isinstance(page_events, list):
+            continue
+        added = 0
+        for event in page_events:
+            if not isinstance(event, dict):
+                continue
+            event_id = str(event.get("id") or event.get("url") or "")
+            if event_id and event_id in seen_ids:
+                continue
+            if event_id:
+                seen_ids.add(event_id)
+            events.append(event)
+            added += 1
+        warnings.append(f"Ticketmaster pagination page {page_num}: added {added} event(s).")
+    return json.dumps(payload), warnings
 
 
 def _candidate_has_upcoming_date(candidate: dict) -> bool:
@@ -262,6 +343,9 @@ def _collect_single_source(source) -> tuple[dict, list[dict]]:
         source_health["fetched_url"] = _redact_sensitive_url(fetched_url)
         for attempt_note in attempt_log:
             source_health["warnings"].append(f"attempt failed: {_redact_sensitive_text(attempt_note)}")
+        if source.source_type == "json_ticketmaster":
+            body, pagination_warnings = _fetch_ticketmaster_paginated_body(source, body, fetched_url)
+            source_health["warnings"].extend(pagination_warnings)
 
         extract_started_at = time.perf_counter()
         source_candidates = _extract_source_candidates(source, body)

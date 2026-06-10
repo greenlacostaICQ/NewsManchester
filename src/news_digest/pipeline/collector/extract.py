@@ -1842,7 +1842,6 @@ def _extract_ticketmaster_items(source: SourceDef, body: str) -> list[ExtractedI
     events = (payload.get("_embedded") or {}).get("events") or []
     items: list[ExtractedItem] = []
     major_london_only = "london major" in source.name.lower()
-    major_uk_only = "uk major" in source.name.lower()
     onsale_scan = "onsale" in source.name.lower()
     for event in events:
         title = str(event.get("name") or "").strip()
@@ -1862,9 +1861,7 @@ def _extract_ticketmaster_items(source: SourceDef, body: str) -> list[ExtractedI
         if major_london_only and not _is_major_london_venue(venue):
             continue
         major_venue = is_major_ticket_venue(venue)
-        if major_uk_only and not (major_venue or _is_major_london_venue(venue)):
-            continue
-        if major_uk_only and _is_major_london_venue(venue):
+        if "uk major" in source.name.lower() and _is_major_london_venue(venue):
             major_venue = True
         classifications = event.get("classifications") or []
         genre = ""

@@ -6,6 +6,7 @@ import unittest
 from unittest import mock
 from zoneinfo import ZoneInfo
 
+from news_digest.pipeline.collector.core import _fetch_ticketmaster_paginated_body
 from news_digest.pipeline.collector.extract import _extract_source_candidates
 from news_digest.pipeline.collector.sources import SourceDef
 from news_digest.pipeline.event_extraction import enrich_candidate_event
@@ -240,6 +241,96 @@ class MarketEventSourcesTest(unittest.TestCase):
         self.assertEqual(hint["subGenre"], "Hard Rock")
         self.assertEqual(event["attractions"][0]["name"], "Def Leppard")
         self.assertEqual(event["ticketmaster_attraction_id"], "K8vZ9171o0V")
+
+    def test_ticketmaster_uk_artist_watch_keeps_star_at_non_arena_venue(self) -> None:
+        source = SourceDef(
+            name="Ticketmaster UK Major Upcoming",
+            report_category="venues_tickets",
+            candidate_category="venues_tickets",
+            url="https://app.ticketmaster.com/discovery/v2/events.json",
+            primary_block="outside_gm_tickets",
+            source_type="json_ticketmaster",
+            allowed_hosts=("ticketmaster.co.uk",),
+            max_candidates=5,
+        )
+        body = json.dumps(
+            {
+                "_embedded": {
+                    "events": [
+                        {
+                            "name": "Ricky Martin Live",
+                            "url": "https://www.ticketmaster.co.uk/ricky-martin-tickets/artist/755069",
+                            "dates": {"start": {"dateTime": "2026-07-17T18:00:00Z"}},
+                            "sales": {"public": {"startDateTime": "2026-06-01T09:00:00Z"}},
+                            "classifications": [
+                                {
+                                    "segment": {"name": "Music"},
+                                    "genre": {"name": "Latin"},
+                                    "subGenre": {"name": "Latin Pop"},
+                                }
+                            ],
+                            "_embedded": {
+                                "venues": [{"name": "Englefield Estate", "city": {"name": "Reading"}}],
+                                "attractions": [
+                                    {
+                                        "name": "Ricky Martin",
+                                        "id": "755069",
+                                        "url": "https://www.ticketmaster.co.uk/ricky-martin-tickets/artist/755069",
+                                        "classifications": [
+                                            {"genre": {"name": "Latin"}, "subGenre": {"name": "Latin Pop"}}
+                                        ],
+                                    }
+                                ],
+                            },
+                        }
+                    ]
+                }
+            }
+        )
+
+        [candidate] = _extract_source_candidates(source, body)
+
+        self.assertEqual(candidate["primary_block"], "outside_gm_tickets")
+        self.assertIn("Ricky Martin", candidate["title"])
+        self.assertIn("Englefield Estate", candidate["summary"])
+        self.assertIn("Latin", candidate["summary"])
+
+    def test_ticketmaster_uk_artist_watch_merges_extra_pages(self) -> None:
+        source = SourceDef(
+            name="Ticketmaster UK Major Upcoming",
+            report_category="venues_tickets",
+            candidate_category="venues_tickets",
+            url="https://app.ticketmaster.com/discovery/v2/events.json",
+            primary_block="outside_gm_tickets",
+            source_type="json_ticketmaster",
+            allowed_hosts=("ticketmaster.co.uk",),
+            max_candidates=20,
+        )
+        first = json.dumps(
+            {
+                "page": {"number": 0, "totalPages": 2},
+                "_embedded": {"events": [{"id": "first", "name": "First Event"}]},
+            }
+        )
+        second = json.dumps(
+            {
+                "page": {"number": 1, "totalPages": 2},
+                "_embedded": {"events": [{"id": "ricky", "name": "Ricky Martin Live"}]},
+            }
+        )
+
+        with mock.patch("news_digest.pipeline.collector.core._fetch_text", return_value=second) as fetch:
+            merged, warnings = _fetch_ticketmaster_paginated_body(
+                source,
+                first,
+                "https://app.ticketmaster.com/discovery/v2/events.json?countryCode=GB&size=200&apikey=test",
+            )
+
+        names = [event["name"] for event in json.loads(merged)["_embedded"]["events"]]
+        self.assertIn("First Event", names)
+        self.assertIn("Ricky Martin Live", names)
+        self.assertTrue(any("page 1" in warning for warning in warnings))
+        self.assertIn("page=1", fetch.call_args.args[0])
 
     def test_skiddle_cards_extract_event_link_and_date(self) -> None:
         source = SourceDef(
