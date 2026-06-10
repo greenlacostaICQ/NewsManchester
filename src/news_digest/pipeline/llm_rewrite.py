@@ -22,6 +22,7 @@ from dataclasses import dataclass
 import json
 import logging
 import os
+import random
 import re
 import threading
 import time
@@ -342,19 +343,70 @@ _CATEGORY_TO_PROMPT: dict[str, str] = {
 BATCH_SIZE = 20      # default — used for OpenAI/DeepSeek
 GROQ_BATCH_SIZE = 3  # Groq free tier TPM is tight once long prompts are included.
 
-# Speed: batches and prompt-groups run concurrently (canonical "fan out the
-# API calls" pattern) instead of one-after-another, so the rewrite stage's
-# wall-clock is the SLOWEST single batch, not the sum of all of them. This
-# does NOT change per-batch behaviour — timeout, max_retries, batch_size and
-# the DeepSeek last-resort step are all untouched. A single global semaphore
-# caps how many requests hit the API at once across every group/batch/thread,
-# so we get the speed-up without tripping OpenAI rate limits (429). 8 is safe
-# for Tier 1/2; override with LLM_REWRITE_MAX_CONCURRENCY if the tier allows.
+# Speed: batches and prompt-groups run concurrently ("fan out the API calls")
+# so the stage's wall-clock is ~the slowest batch, not the sum. Two global
+# throttles tame that fan-out:
+#   • _API_SEMAPHORE   — caps *concurrent* in-flight calls (socket pressure).
+#   • _API_RATE_LIMITER — caps the *rate* of new calls per minute.
+# The semaphore alone is NOT enough: OpenAI throttles on requests/tokens-per-
+# MINUTE, not on concurrency, so 8 batches firing in the same instant still
+# tripped a 429 storm (2026-06-10: 131×429, ~820s of advertised backoff to
+# rewrite just 47 items). The rate limiter spreads request *starts* so the
+# burst stays under the tier ceiling. Tune via LLM_REWRITE_MAX_CONCURRENCY /
+# LLM_REWRITE_MAX_RPM after watching a run.
 try:
     _REWRITE_API_CONCURRENCY = max(1, int(os.environ.get("LLM_REWRITE_MAX_CONCURRENCY", "8") or "8"))
 except ValueError:
     _REWRITE_API_CONCURRENCY = 8
 _API_SEMAPHORE = threading.Semaphore(_REWRITE_API_CONCURRENCY)
+
+try:
+    _REWRITE_MAX_RPM = max(1.0, float(os.environ.get("LLM_REWRITE_MAX_RPM", "60") or "60"))
+except ValueError:
+    _REWRITE_MAX_RPM = 60.0
+
+
+class _RateLimiter:
+    """Token bucket that paces API request *starts* to <= max_rpm per minute.
+
+    Shared across every category group/batch thread in the single
+    llm-rewrite process, so the concurrent fan-out can no longer hit OpenAI
+    in one synchronized burst. ``burst`` lets a few calls start warm before
+    pacing kicks in. Thread-safe.
+    """
+
+    def __init__(self, max_rpm: float, burst: int) -> None:
+        self._rate_per_sec = max_rpm / 60.0
+        self._capacity = float(max(1, burst))
+        self._tokens = self._capacity
+        self._updated = time.monotonic()
+        self._lock = threading.Lock()
+
+    def acquire(self) -> None:
+        while True:
+            with self._lock:
+                now = time.monotonic()
+                self._tokens = min(
+                    self._capacity,
+                    self._tokens + (now - self._updated) * self._rate_per_sec,
+                )
+                self._updated = now
+                if self._tokens >= 1.0:
+                    self._tokens -= 1.0
+                    return
+                wait = (1.0 - self._tokens) / self._rate_per_sec
+            time.sleep(wait)
+
+
+# Burst < concurrency on purpose: a few calls start warm, the rest are paced
+# so the 8 batches never fire in the same instant.
+_API_RATE_LIMITER = _RateLimiter(_REWRITE_MAX_RPM, burst=min(_REWRITE_API_CONCURRENCY, 4))
+
+
+def _jittered_sleep(base: float) -> None:
+    """Sleep ``base`` + up to ``base`` random jitter so batches that hit a
+    429/timeout in the same instant don't retry in lockstep."""
+    time.sleep(base + random.uniform(0.0, base))
 
 FIX_TRANSLATE_SYSTEM = """Переведи строку новостного дайджеста на русский язык.
 Названия людей, мест, брендов, компаний, IT-терминов оставляй по-английски.
@@ -1078,14 +1130,17 @@ def _call_provider_batch(
         logger.error("openai package not installed. Run: pip install openai")
         return {}
 
-    # Let the SDK absorb transient slowness with exponential backoff — this
-    # is what high-volume OpenAI users rely on. max_retries=1 (the old value)
-    # meant a single slow response killed a whole batch of news; on
-    # 2026-05-29 two city_news batches vanished to APITimeoutError that way.
-    # 4 retries with backoff makes OpenAI itself resilient before we ever
-    # need the visible recovery ladder (same batch → split → per item) or the
-    # DeepSeek last-resort step.
-    client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout, max_retries=4)
+    # SDK retries are a balance between two failure modes we've actually hit:
+    #   • max_retries=1 let a single slow response kill a whole news batch
+    #     (2026-05-29: two city_news batches lost to APITimeoutError).
+    #   • max_retries=4 silently AMPLIFIED the 429 storm — every rate-limited
+    #     batch retried up to 4× with the server's 7-15s backoff, turning a
+    #     burst into minutes of stalling (2026-06-10).
+    # 2 keeps one timeout retry without the 4× 429 amplification. The
+    # _API_RATE_LIMITER now prevents most 429s upfront, and our own recovery
+    # ladder (same batch → split → per item) + the DeepSeek last-resort step
+    # catch any residual misses.
+    client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout, max_retries=2)
     mapping: ProviderMapping = {}
 
     batches = [candidates[i: i + batch_size] for i in range(0, len(candidates), batch_size)]
@@ -1117,9 +1172,11 @@ def _call_provider_batch(
                 {"role": "user", "content": user_content},
             ]
             max_tokens = 8192
-            # Global limiter: caps concurrent API calls across all parallel
-            # groups/batches so the fan-out never exceeds the rate limit.
+            # Two-stage throttle: the semaphore caps concurrency, the rate
+            # limiter paces *when* each call starts, so the parallel fan-out
+            # can't hit OpenAI in one synchronized burst (→ 429 storm).
             with _API_SEMAPHORE:
+                _API_RATE_LIMITER.acquire()
                 response = client.chat.completions.create(
                     model=model,
                     messages=messages,
@@ -1202,7 +1259,7 @@ def _call_provider_batch(
         batch_result.update(_send_once(batch, batch_idx, "initial"))
         missing = [c for c in batch if str(c.get("fingerprint") or "") not in batch_result]
         if missing:
-            time.sleep(0.5)
+            _jittered_sleep(0.5)
             retry_mapping = _send_once(missing, batch_idx, "retry_same_batch")
             batch_result.update(retry_mapping)
             missing = [c for c in missing if str(c.get("fingerprint") or "") not in retry_mapping]
@@ -1210,13 +1267,13 @@ def _call_provider_batch(
             split_size = max(1, min(3, len(missing) // 2 or 1))
             for split_idx in range(0, len(missing), split_size):
                 split = missing[split_idx: split_idx + split_size]
-                time.sleep(0.5)
+                _jittered_sleep(0.5)
                 split_mapping = _send_once(split, batch_idx, f"split_{split_idx // split_size + 1}")
                 batch_result.update(split_mapping)
             missing = [c for c in missing if str(c.get("fingerprint") or "") not in batch_result]
         protected_missing = [c for c in missing if _is_protected_rewrite_candidate(c)]
         for item in protected_missing:
-            time.sleep(0.5)
+            _jittered_sleep(0.5)
             item_mapping = _send_once([item], batch_idx, "protected_item_recovery")
             batch_result.update(item_mapping)
         return batch_result

@@ -80,8 +80,8 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
         # weaker Russian sentence on a hard-news item (police appeal, cordon)
         # is better than the item vanishing. Fallback-written items keep
         # draft_line_provider="DeepSeek" so the degraded phrasing is auditable.
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_rewrite_primary", 1, batch_size=3, timeout_seconds=60),
-        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "rewrite_last_resort", 2, batch_size=3, timeout_seconds=60),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_rewrite_primary", 1, batch_size=6, timeout_seconds=60),
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "rewrite_last_resort", 2, batch_size=6, timeout_seconds=60),
     ),
     # Transport: short structured translation → cheap mini is enough. Bigger
     # batches (short lines) + tight timeout; DeepSeek last-resort net.
