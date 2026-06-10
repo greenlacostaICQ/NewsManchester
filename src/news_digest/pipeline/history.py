@@ -80,6 +80,12 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
         if not fingerprint:
             continue
         entry = by_fingerprint.get(fingerprint, {})
+        previous_last_published = str(entry.get("last_published_day_london") or "").strip()
+        try:
+            previous_count = int(entry.get("published_count") or 0)
+        except (TypeError, ValueError):
+            previous_count = 0
+        published_count = previous_count if previous_last_published == run_day else previous_count + 1
         entry.update(
             {
                 "fingerprint": fingerprint,
@@ -113,6 +119,7 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
                 "change_type": candidate.get("change_type") or "",
                 "first_published_day_london": entry.get("first_published_day_london") or run_day,
                 "last_published_day_london": run_day,
+                "published_count": max(1, published_count),
             }
         )
         by_fingerprint[fingerprint] = entry

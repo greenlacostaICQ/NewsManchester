@@ -1258,6 +1258,7 @@ _A_TIER_TICKET_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 14, 30, 90, 180, 365}
 _B_TIER_TICKET_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 30})
 _LOW_TIER_TICKET_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7})
 _MAJOR_UPCOMING_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 14, 30, 365})
+_MAX_PUBLIC_TICKET_REPEATS = 3
 
 
 def _history_day(value: object) -> date | None:
@@ -1320,6 +1321,33 @@ def _ticket_repeat_milestone_days(candidate: dict, previous: dict) -> frozenset[
     return _LOW_TIER_TICKET_REPEAT_MILESTONE_DAYS
 
 
+def _published_count_for_repeat(previous: dict) -> int:
+    try:
+        count = int(previous.get("published_count") or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count > 0:
+        return count
+    first = str(previous.get("first_published_day_london") or "").strip()
+    last = str(previous.get("last_published_day_london") or "").strip()
+    return 2 if first and last and first != last else 1
+
+
+def _event_material_change(candidate: dict, previous: dict) -> str:
+    current_event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    previous_event = previous.get("event") if isinstance(previous.get("event"), dict) else {}
+    for key in ("date", "date_start", "date_end", "date_text", "venue", "price", "event_status"):
+        current = str(current_event.get(key) or "").strip().lower()
+        old = str(previous_event.get(key) or "").strip().lower()
+        if current and old and current != old:
+            return f"event_{key}_changed"
+    current_ticket_type = str(candidate.get("ticket_type") or "").strip().lower()
+    previous_ticket_type = str(previous.get("ticket_type") or "").strip().lower()
+    if current_ticket_type and previous_ticket_type and current_ticket_type != previous_ticket_type:
+        return "ticket_type_changed"
+    return ""
+
+
 def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]:
     """Decide whether a previously published event/ticket deserves a repeat.
 
@@ -1337,6 +1365,21 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
     story_type = str(current_contract.get("story_type") or "")
     if event_shape not in {"ticket", "recurring", "festival", "one_off", "event_like"} and story_type != "ticket":
         return {"applies": False, "allow": True, "reason": "not_calendar_item"}
+    is_ticket_item = event_shape == "ticket" or story_type == "ticket"
+
+    material_change = _event_material_change(candidate, previous)
+    if material_change:
+        return {"applies": True, "allow": True, "reason": material_change}
+
+    if is_ticket_item:
+        published_count = _published_count_for_repeat(previous)
+        if published_count >= _MAX_PUBLIC_TICKET_REPEATS:
+            return {
+                "applies": True,
+                "allow": False,
+                "reason": "ticket_repeat_limit_reached",
+                "published_count": published_count,
+            }
 
     current_date = _occurrence_date_from_contract(current_contract)
     previous_date = _occurrence_date_from_contract(previous_contract)
@@ -1366,7 +1409,7 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
             }
         milestone_days = (
             _ticket_repeat_milestone_days(candidate, previous)
-            if event_shape == "ticket" or story_type == "ticket"
+            if is_ticket_item
             else _CALENDAR_REPEAT_MILESTONE_DAYS
         )
         if days_until in milestone_days:

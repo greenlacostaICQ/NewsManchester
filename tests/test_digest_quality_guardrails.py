@@ -22,6 +22,7 @@ from news_digest.pipeline.common import (
 from news_digest.pipeline.dedupe import (
     _apply_intra_batch_dedup,
     _merge_multinight_ticket_runs,
+    _borderline_pairs,
     _normalise_person_tokens,
     _people_published_matches,
     _prefer_dedupe_candidate,
@@ -1073,6 +1074,75 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(lifecycle["repeat"], lifecycle)
         self.assertEqual(review["reason"], "same_calendar_item_without_new_reader_moment")
 
+    def test_calendar_repeat_rehash_is_not_sent_to_llm_review(self) -> None:
+        event_day = (now_london().date() + timedelta(days=170)).isoformat()
+        previous = {
+            "fingerprint": "eventfirst-skameika",
+            "title": 'Спектакль "Скамейка"',
+            "summary": "29 ноября в Logan Hall — спектакль с Алексеем Паниным.",
+            "category": "russian_speaking_events",
+            "primary_block": "russian_events",
+            "source_label": "EventFirst Diaspora",
+            "event": {
+                "is_event": True,
+                "event_name": 'Спектакль "Скамейка"',
+                "date_start": event_day,
+            },
+            "last_published_day_london": (now_london().date() - timedelta(days=1)).isoformat(),
+            "first_published_day_london": (now_london().date() - timedelta(days=6)).isoformat(),
+        }
+        previous["editorial_contract"] = build_editorial_contract(previous)
+        candidate = {
+            "fingerprint": "eventfirst-skameika",
+            "title": 'Спектакль "Скамейка"',
+            "summary": "29 ноября в Logan Hall — спектакль с Алексеем Паниным.",
+            "lead": "Театральное событие в Лондоне.",
+            "evidence_text": "29 ноября в Logan Hall — спектакль «Скамейка» с Алексеем Паниным. Начало в 19:00.",
+            "category": "russian_speaking_events",
+            "primary_block": "russian_events",
+            "source_label": "EventFirst Diaspora",
+            "event": dict(previous["event"]),
+            "change_type": "same_story_rehash",
+        }
+        lifecycle = lifecycle_repeat_review(candidate, previous)
+        self.assertTrue(lifecycle["repeat"], lifecycle)
+        candidate["topic_lifecycle_repeat"] = lifecycle
+
+        pairs = _borderline_pairs([candidate], {"eventfirst-skameika": previous})
+
+        self.assertEqual(pairs, [])
+
+    def test_ticket_repeat_allows_third_public_show_but_not_fourth(self) -> None:
+        event_day = (now_london().date() + timedelta(days=1)).isoformat()
+        candidate = {
+            "include": True,
+            "dedupe_decision": "new",
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": f"Jason Isbell and the 400 Unit — event {event_day} — public sale 2026-03-01 10:00",
+            "summary": f"Bridgewater Hall | event_date={event_day} 19:30 | public_onsale=2026-03-01 10:00",
+            "event": {
+                "is_event": True,
+                "event_name": "Jason Isbell and the 400 Unit",
+                "venue": "Bridgewater Hall",
+                "date_start": event_day,
+            },
+            "source_label": "Ticketmaster Manchester Upcoming",
+        }
+        previous = dict(candidate)
+        previous["last_published_day_london"] = (now_london().date() - timedelta(days=2)).isoformat()
+        previous["first_published_day_london"] = (now_london().date() - timedelta(days=9)).isoformat()
+        previous["published_count"] = 2
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        third_show = calendar_repeat_review(candidate, previous)
+        self.assertTrue(third_show["allow"], third_show)
+
+        previous["published_count"] = 3
+        fourth_show = calendar_repeat_review(candidate, previous)
+        self.assertFalse(fourth_show["allow"], fourth_show)
+        self.assertEqual(fourth_show["reason"], "ticket_repeat_limit_reached")
+
     def test_far_future_ticket_repeat_dropped_across_sources(self) -> None:
         event_day = (now_london().date() + timedelta(days=21)).isoformat()
         previous = {
@@ -1247,6 +1317,58 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         saved = payload["facts"][0]
         self.assertEqual(saved["ticket_type"], "major_upcoming")
         self.assertEqual(saved["ticket_notability"]["tier"], "A")
+
+    def test_published_facts_increment_ticket_publication_count_across_days(self) -> None:
+        from news_digest.pipeline.history import update_published_facts
+
+        event_day = (now_london().date() + timedelta(days=1)).isoformat()
+        candidate = {
+            "include": True,
+            "fingerprint": "jason-ticket",
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": f"Jason Isbell and the 400 Unit — event {event_day}",
+            "summary": f"Bridgewater Hall | event_date={event_day} 19:30",
+            "source_label": "Ticketmaster Manchester Upcoming",
+            "source_url": "https://example.test/jason",
+            "event": {
+                "is_event": True,
+                "event_name": "Jason Isbell and the 400 Unit",
+                "venue": "Bridgewater Hall",
+                "date_start": event_day,
+            },
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            yesterday = (now_london().date() - timedelta(days=1)).isoformat()
+            (state_dir / "published_facts.json").write_text(
+                json.dumps(
+                    {
+                        "last_updated_london": yesterday,
+                        "facts": [
+                            {
+                                "fingerprint": "jason-ticket",
+                                "title": candidate["title"],
+                                "category": "venues_tickets",
+                                "primary_block": "ticket_radar",
+                                "last_published_day_london": yesterday,
+                                "first_published_day_london": yesterday,
+                                "published_count": 2,
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            update_published_facts(root, [candidate])
+            payload = json.loads((state_dir / "published_facts.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(payload["facts"][0]["published_count"], 3)
 
     def test_tomorrow_ticket_repeat_is_allowed_as_reminder(self) -> None:
         event_day = (now_london().date() + timedelta(days=1)).isoformat()

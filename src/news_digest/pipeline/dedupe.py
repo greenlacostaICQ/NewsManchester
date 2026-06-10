@@ -865,6 +865,11 @@ def _borderline_pairs(
             continue
         if str(c.get("change_type") or "") not in {"no_change", "same_story_rehash"}:
             continue
+        lifecycle_repeat = c.get("topic_lifecycle_repeat")
+        if isinstance(lifecycle_repeat, dict) and lifecycle_repeat.get("repeat"):
+            calendar_review = lifecycle_repeat.get("calendar_repeat_review")
+            if isinstance(calendar_review, dict) and calendar_review.get("applies") and not calendar_review.get("allow"):
+                continue
         evidence = str(c.get("evidence_text") or "")
         if len(evidence) < _BORDERLINE_MIN_EVIDENCE_CHARS:
             continue
