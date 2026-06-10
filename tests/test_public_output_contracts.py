@@ -13,6 +13,7 @@ from news_digest.pipeline.curator import _is_curator_protected
 from news_digest.pipeline.editorial_contracts import attach_editorial_contract
 from news_digest.pipeline.release import _final_loss_check, public_html_contract_errors
 from news_digest.pipeline.ticket_notability import (
+    _tier_from_signals,
     enrich_ticket_notability,
     ticket_event_kind,
     ticket_headliner_candidates,
@@ -280,8 +281,68 @@ class PublicOutputContractTests(unittest.TestCase):
             "ticket_notability": {"artist": "The Weeknd", "kind": "artist", "tier": "A"},
         }
         line = _build_ticket_fallback_line(candidate)
-        self.assertIn("концерт на этой неделе", line.lower())
+        self.assertIn("крупный артист", line.lower())
+        self.assertNotIn("A-tier", line)
+        self.assertNotIn("A-класс", line)
         self.assertNotIn("Глобальный артист; крупная площадка", line)
+
+    def test_ticket_line_uses_event_date_not_published_at_for_major_artist(self) -> None:
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-06-11",
+            "published_at": "2026-06-10T08:00:00+01:00",
+            "summary": "Etihad Stadium | Manchester | Hip-Hop/Rap | event_date=2026-06-11 17:00",
+            "event": {"venue": "Etihad Stadium", "date_start": "2026-06-11T17:00:00+01:00"},
+            "ticket_type": "event_this_week",
+            "ticket_notability": {"artist": "The Weeknd", "kind": "artist", "tier": "A"},
+        }
+
+        line = _build_ticket_fallback_line(candidate)
+
+        self.assertIn("11 июня", line)
+        self.assertIn("(Hip-Hop/Rap)", line)
+        self.assertNotIn("10 июня", line)
+        self.assertNotIn("event date in draft_line conflicts", " ".join(_draft_line_quality_errors(candidate, line)))
+
+    def test_multinight_ticket_line_does_not_conflict_with_structured_start_date(self) -> None:
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-06-11",
+            "summary": "Etihad Stadium | Manchester | Hip-Hop/Rap | event_date=2026-06-11 17:00",
+            "event": {"venue": "Etihad Stadium", "date_start": "2026-06-11T17:00:00+01:00"},
+            "merged_event_dates": ["2026-06-11", "2026-06-12"],
+            "ticket_type": "event_this_week",
+            "ticket_notability": {"artist": "The Weeknd", "kind": "artist", "tier": "A"},
+        }
+
+        line = _build_ticket_fallback_line(candidate)
+
+        self.assertIn("11 и 12 июня", line)
+        self.assertNotIn("event date in draft_line conflicts", " ".join(_draft_line_quality_errors(candidate, line)))
+
+    def test_musicbrainz_ticketmaster_identity_does_not_promote_to_public_watch(self) -> None:
+        tier, _confidence, signal = _tier_from_signals(
+            {
+                "sitelinks": 0,
+                "musicbrainz_score": 100,
+                "ticketmaster_attraction": True,
+            }
+        )
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "Riff Wood — event 2026-06-10",
+            "summary": "The Lodge, Manchester | Rock | event_date=2026-06-10 19:00",
+            "event": {"venue": "The Lodge, Manchester", "date_start": "2026-06-10T19:00:00+01:00"},
+            "ticket_type": "event_this_week",
+            "ticket_notability": {"artist": "Riff Wood", "kind": "artist", "tier": tier, "signal": signal},
+        }
+
+        self.assertEqual(tier, "C")
+        self.assertEqual(_ticket_watch_decision(candidate)["decision"], "hide")
+        self.assertEqual(_build_ticket_fallback_line(candidate), "")
 
     def test_diaspora_ticket_is_protected_from_popularity_filter(self) -> None:
         with patch.dict(os.environ, {"NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP": "0"}):
@@ -339,7 +400,7 @@ class PublicOutputContractTests(unittest.TestCase):
         bad = "• Расмус Хёйлунд перешёл в Napoli. Он провёл за клуб 72 матча и забил 16 голов."
         self.assertTrue(any("number(s) not present" in err for err in _draft_line_quality_errors(candidate, bad)))
         fallback = _build_football_fallback_line(candidate)
-        self.assertIn("Hojlund joins Napoli", fallback)
+        self.assertIn("трансферное обновление", fallback)
         self.assertNotIn("72", fallback)
 
     def test_recurring_event_without_concrete_occurrence_is_not_rendered_as_generic_day(self) -> None:
@@ -486,7 +547,7 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertEqual(_ticket_watch_decision(candidate)["decision"], "show")
         self.assertIn("Metallica", _build_ticket_fallback_line(candidate))
 
-    def test_musicbrainz_ticketmaster_signal_promotes_to_b_tier(self) -> None:
+    def test_musicbrainz_ticketmaster_signal_stays_identity_not_popularity(self) -> None:
         cache_path = self._ticket_notability_cache(
             {
                 "known touring band": {
@@ -507,8 +568,8 @@ class PublicOutputContractTests(unittest.TestCase):
         }
         with patch.dict(os.environ, {"NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP": "0"}):
             notability = enrich_ticket_notability(candidate, cache_path)
-        self.assertEqual(notability.tier, "B")
-        self.assertEqual(notability.signal, "musicbrainz_ticketmaster")
+        self.assertEqual(notability.tier, "C")
+        self.assertEqual(notability.signal, "musicbrainz_ticketmaster_identity")
         self.assertTrue((notability.signals or {}).get("ticketmaster_attraction"))
 
     def test_spotify_lastfm_signals_can_promote_without_manual_artist_list(self) -> None:

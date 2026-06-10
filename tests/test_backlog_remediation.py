@@ -2341,7 +2341,7 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         self.assertGreaterEqual(_ticket_watch_score(candidate), 100)
         line = _build_ticket_fallback_line(candidate)
         self.assertIn("Goran Bregovic", line)
-        self.assertIn("русскоязычный", line.lower())
+        self.assertIn("русскоязычн", line.lower())
 
     def test_hard_news_missing_draft_line_gets_recovery_line(self) -> None:
         from news_digest.pipeline.writer import _hard_news_recovery_line

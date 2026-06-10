@@ -1222,9 +1222,18 @@ def _format_ru_day_month(value: datetime | None) -> str:
 
 def _parse_ticket_datetime(candidate: dict) -> datetime | None:
     summary = str(candidate.get("summary") or "")
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    structured = _event_structured_datetime(candidate)
+    if structured:
+        return structured
+    # Ticket cards must use the occurrence date, not the article/collection
+    # timestamp. Using published_at here made major upcoming shows render as
+    # "today", then fail the structured-date QA and disappear.
     for raw in (
-        candidate.get("published_at"),
+        event.get("date_start"),
+        event.get("date"),
         candidate.get("event_date"),
+        event.get("date_end"),
         candidate.get("event_end_date"),
     ):
         parsed = str(raw or "").strip()
@@ -1382,21 +1391,21 @@ def _ticket_has_active_public_reason(candidate: dict) -> bool:
 
 
 def _ticket_public_priority_score(candidate: dict) -> float:
-    """Product ordering for ticket sections: reason first, fame second."""
+    """Product ordering for ticket sections: fame first, ticket occasion second."""
     notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
     tier = str(notability.get("tier") or "").upper()
     ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
     days = _ticket_days_to_event(candidate)
-    tier_score = {"PROTECTED": 500, "A": 420, "B": 260, "C": 90, "D": 0, "UNKNOWN": 0}.get(tier, 0)
+    tier_score = {"PROTECTED": 900, "A": 820, "B": 260, "C": 50, "D": -200, "UNKNOWN": -200}.get(tier, -200)
     reason_score = 0
     if ticket_type in {"on_sale_now", "presale_soon", "newly_listed"}:
-        reason_score = 600
+        reason_score = 260
     elif ticket_type == "major_upcoming":
-        reason_score = 460
+        reason_score = 220
     elif days is not None and 0 <= days <= 7:
-        reason_score = 420
+        reason_score = 120
     elif days is not None and 8 <= days <= 14:
-        reason_score = 160
+        reason_score = 80
     elif ticket_type in {"old_onsale", "old_public_sale"}:
         reason_score = -80
     freshness = 0 if days is None else max(0, 21 - max(days, 0))
@@ -1422,7 +1431,7 @@ def _ticket_watch_score(candidate: dict) -> float:
     elif tier == "B":
         score += 82
     elif tier == "C":
-        score += 34
+        score += 18
     elif tier == "PROTECTED":
         score += 100
     # Venue and genre are supporting signals only. They must not promote an
@@ -1511,14 +1520,16 @@ def _ticket_watch_reason(candidate: dict) -> str:
     notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
     tier = str(notability.get("tier") or "").upper()
     ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
+    if tier == "A":
+        if ticket_type in {"on_sale_now", "presale_soon", "newly_listed", "major_upcoming"}:
+            return "крупный билетный повод"
+        return "крупный артист"
     if ticket_type in {"on_sale_now", "presale_soon", "newly_listed"}:
         return "продажа открылась сейчас"
     elif ticket_type == "event_this_week":
         return "концерт на этой неделе"
     elif ticket_type == "major_upcoming":
-        return "крупный новый анонс" if tier == "A" else "новый анонс"
-    if tier == "A":
-        return "артист высокого уровня"
+        return "новый анонс"
     if _TICKET_MAJOR_VENUE_RE.search(venue) or _TICKET_MAJOR_VENUE_RE.search(summary):
         return "крупная площадка"
     return "билетный повод"
@@ -1829,11 +1840,41 @@ def _repair_common_russian_line(line: str) -> tuple[str, list[str]]:
 
 def _event_structured_datetime(candidate: dict) -> datetime | None:
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    url_dt = _bridgewater_slug_datetime(candidate)
     raw = str(event.get("date_start") or event.get("date") or "").strip()
     if not raw:
-        return None
+        return url_dt
     try:
-        return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return url_dt
+    if url_dt:
+        today = now_london().date()
+        parsed_days = (parsed.date() - today).days
+        url_days = (url_dt.date() - today).days
+        if 0 <= url_days <= 45 and (parsed_days < 0 or parsed_days > 45):
+            return url_dt
+    return parsed
+
+
+def _bridgewater_slug_datetime(candidate: dict) -> datetime | None:
+    source = str(candidate.get("source_label") or "")
+    if "bridgewater" not in source.lower():
+        return None
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    urls = " ".join(
+        str(value or "")
+        for value in (
+            candidate.get("source_url"),
+            event.get("booking_url") if isinstance(event, dict) else "",
+        )
+    )
+    match = re.search(r"-(\d{2})(\d{2})(\d{2})(?:\D|$)", urls)
+    if not match:
+        return None
+    day, month, year = (int(part) for part in match.groups())
+    try:
+        return datetime(year + 2000, month, day)
     except ValueError:
         return None
 
@@ -1845,6 +1886,21 @@ def _line_has_conflicting_event_date(candidate: dict, line: str) -> bool:
     expected = _format_ru_day_month(event_dt)
     if expected and expected in line:
         return False
+    if expected:
+        expected_day = str(event_dt.day)
+        expected_month = _RU_MONTHS_GENITIVE.get(event_dt.month, "")
+        if expected_month:
+            month_re = re.escape(expected_month)
+            # Multi-night ticket lines render as "11 и 12 июня" or
+            # "10, 11 и 12 июня". That still includes the structured date.
+            compact_run = re.search(
+                rf"\b(?:\d{{1,2}}\s*(?:,|и)\s*)*{re.escape(expected_day)}\s*(?:,|и)\s*\d{{1,2}}\s+{month_re}\b|"
+                rf"\b\d{{1,2}}\s*(?:,|и)\s*(?:\d{{1,2}}\s*(?:,|и)\s*)*{re.escape(expected_day)}\s+{month_re}\b",
+                line,
+                flags=re.IGNORECASE,
+            )
+            if compact_run:
+                return False
     months = "|".join(_RU_MONTHS_GENITIVE.values())
     found = re.findall(rf"\b(\d{{1,2}})\s+({months})\b", line, flags=re.IGNORECASE)
     if not found:

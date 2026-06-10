@@ -458,14 +458,17 @@ def _tier_from_signals(signals: dict) -> tuple[str, float, str]:
         if tier == "unknown":
             return "C", 0.62, "streaming_popularity"
     if tier == "unknown":
+        # MusicBrainz + Ticketmaster proves identity/live-market presence; it
+        # is not enough to call the act notable for a personal UK-wide watch.
+        # Last.fm/Wiki/Spotify-scale signals must do that promotion.
         if mb_score >= 95 and tm:
-            return "B", 0.78, "musicbrainz_ticketmaster"
+            return "C", 0.62, "musicbrainz_ticketmaster_identity"
         if mb_score >= 95:
             return "D", 0.5, "musicbrainz_artist"
         if tm:
             return "C", 0.62, "ticketmaster_attraction"
     elif tier == "D" and mb_score >= 95 and tm:
-        return "B", 0.8, "musicbrainz_ticketmaster"
+        return "C", 0.62, "musicbrainz_ticketmaster_identity"
     elif mb_score >= 90 or tm or spotify_popularity or lastfm_listeners:
         source = f"{source}+multi_source"
         confidence = min(0.99, confidence + 0.04)
