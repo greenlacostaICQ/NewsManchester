@@ -29,6 +29,8 @@ from news_digest.pipeline.writer import (
     _final_replacement_line,
     _football_is_sport_news,
     _football_should_route_to_soft,
+    _is_outside_current_weekend_candidate,
+    _weekend_activity_score,
     _next_7_event_decision,
     _append_recovery_step,
     _apply_section_min_floor_pull_back,
@@ -178,6 +180,110 @@ class PublicOutputContractTests(unittest.TestCase):
         line = _build_event_fallback_line(candidate)
         self.assertIn("6 июля", line)
         self.assertNotIn("2 июля", line)
+
+    def test_weekend_car_boot_fallback_uses_source_facts_not_title_stub(self) -> None:
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "source_label": "Bolton Car Boot Sale",
+            "title": "The Carboot Directory",
+            "summary": "Huge Sunday car boot at Bolton's Macron Stadium (BL6 6JW), Feb-Dec.",
+            "lead": "300+ stalls, £1 per car entry, catering, toilets and dog-friendly.",
+            "evidence_text": "The site is open to buyers from 7:00 AM, with entry from £1.",
+            "event": {
+                "is_event": True,
+                "event_name": "Bolton Car Boot Sale",
+                "venue": "Bolton Car Boot Sale",
+                "date_start": "2026-06-14T00:00:00+01:00",
+                "is_recurring": True,
+            },
+        }
+        line = _build_event_fallback_line(candidate)
+        self.assertIn("14 июня", line)
+        self.assertIn("Macron Stadium", line)
+        self.assertIn("для покупателей с 7:00", line)
+        self.assertIn("вход £1", line)
+        self.assertIn("более 300 продавцов", line)
+        self.assertNotIn("Bolton Car Boot Sale — Bolton Car Boot Sale", line)
+        self.assertNotIn("Проверьте наличие мест", line)
+
+    def test_weekend_seller_market_page_is_not_rendered_as_visitor_activity(self) -> None:
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "source_label": "New Smithfield Sunday Market",
+            "title": "Casual trading",
+            "summary": "You can sell things at New Smithfield Market every Sunday without needing to become a regular trader.",
+            "lead": "Apply for a stall before trading at New Smithfield.",
+            "event": {
+                "is_event": True,
+                "event_name": "Markets Sunday trading at New Smithfield Market",
+                "venue": "New Smithfield Market You",
+                "is_recurring": True,
+            },
+        }
+        self.assertEqual(_build_event_fallback_line(candidate), "")
+
+    def test_weekend_score_puts_clean_market_above_dirty_seller_page(self) -> None:
+        clean = {
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "source_label": "Bolton Car Boot Sale",
+            "title": "Bolton Car Boot Sale",
+            "summary": "Huge Sunday car boot at Macron Stadium with 300+ stalls and entry from £1.",
+            "event": {"is_event": True, "date_start": "2026-06-14", "event_name": "Bolton Car Boot Sale"},
+        }
+        dirty = {
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "source_label": "New Smithfield Sunday Market",
+            "title": "Casual trading",
+            "summary": "You can sell things at New Smithfield Market every Sunday without needing to become a regular trader.",
+            "event": {"is_event": True, "event_name": "Markets Sunday trading at New Smithfield Market"},
+        }
+        self.assertGreater(
+            _weekend_activity_score(clean, _build_event_fallback_line(clean)),
+            _weekend_activity_score(dirty, _build_event_fallback_line(dirty)),
+        )
+
+    def test_weekend_window_uses_structured_event_date(self) -> None:
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": "Autisk Family Fun Day",
+            "summary": "Family activity with food and crafts.",
+            "event": {"is_event": True, "date_start": "2026-08-29", "event_name": "Autisk Family Fun Day"},
+        }
+        with patch("news_digest.pipeline.writer.now_london") as fake_now:
+            fake_now.return_value = datetime(2026, 6, 11)
+            self.assertTrue(_is_outside_current_weekend_candidate(candidate))
+            self.assertLess(_weekend_activity_score(candidate, _build_event_fallback_line(candidate)), 0)
+
+    def test_weekend_non_gm_market_does_not_win_expanded_block(self) -> None:
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "source_label": "Warrington Car Boot Sale",
+            "title": "Warrington Car Boot Sale",
+            "summary": "Family car boot with toilets and refreshments.",
+            "event": {"is_event": True, "event_name": "Warrington Car Boot Sale", "is_recurring": True},
+        }
+        self.assertLess(_weekend_activity_score(candidate, _build_event_fallback_line(candidate)), 0)
+
+    def test_weekend_market_fallback_removes_pedddle_seo_tail(self) -> None:
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "source_label": "Pedddle Makers Market",
+            "title": "Chorlton Makers Market | Markets in Manchester - Pedddle",
+            "summary": "Makers market with craft stalls, food and free entry.",
+            "event": {"is_event": True, "event_name": "Chorlton Makers Market | Markets in Manchester - Pedddle", "is_recurring": True},
+        }
+        line = _build_event_fallback_line(candidate)
+        self.assertIn("Chorlton Makers Market", line)
+        self.assertNotIn("Pedddle", line)
+        self.assertNotIn("Markets in Manchester", line)
+        self.assertNotIn("Markets in", line)
 
     def test_section_topup_repairs_backup_line_before_rendering(self) -> None:
         candidate = {

@@ -389,6 +389,7 @@ _WEEKEND_NON_GM_TOKENS: tuple[str, ...] = (
     "edinburgh",
     "liverpool",
     "london",
+    "warrington",
     "windermere",
     "yorkshire",
 )

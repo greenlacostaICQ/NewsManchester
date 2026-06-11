@@ -74,15 +74,16 @@ LONG_FORMAT_MIN_CHARS = 150
 DATED_EVENT_MIN_CHARS = 110
 LONG_FORMAT_MIN_SENTENCES = 2
 SHORT_TICKET_BLOCKS = {"ticket_radar", "outside_gm_tickets"}
-# Original short blocks: weekend events naturally fit in 100 chars,
-# tickets are intentionally short.
-SHORT_EVENT_BLOCKS = SHORT_TICKET_BLOCKS | {"weekend_activities"}
+# Tickets are intentionally short. Weekend cards are planning cards, not
+# ticket rows: they need enough room for "what / where / when / useful
+# detail" so the reader can choose between markets, fairs and activities.
+SHORT_EVENT_BLOCKS = SHORT_TICKET_BLOCKS
 # Sequential fallback: event blocks where we PREFER 150+ char cards
 # (more detail = better) but ACCEPT shorter ones when the source RSS
 # only gave us a thin evidence_text. Logic in _draft_line_quality_errors
 # checks evidence size before applying the LONG_FORMAT_MIN_CHARS gate.
 # We only relax when evidence was genuinely tiny (< 500 chars).
-EVENT_BLOCKS_RELAXABLE = {"next_7_days", "future_announcements", "russian_events"}
+EVENT_BLOCKS_RELAXABLE = {"weekend_activities", "next_7_days", "future_announcements", "russian_events"}
 EVENT_RELAX_EVIDENCE_THRESHOLD = 500
 TODAY_FOCUS_SECTION = "Что важно сегодня"
 # Order matters: backfill takes the first non-empty section. We previously
@@ -111,6 +112,7 @@ DEGRADED_LLM_SECTION_MAX_ITEMS = {
     "Свежие новости": 6,
     "Городской радар": 5,
     "Что важно в ближайшие 7 дней": 4,
+    "Выходные в GM": 6,
     "Билеты / Ticket Radar": 3,
     "Еда, открытия и рынки": 2,
     "IT и бизнес": 2,
@@ -998,7 +1000,13 @@ def _slice_counting_only_non_exempt(
         # bound (25 out-of-GM concerts on 2026-06-04). For the per-section cap
         # only the per-candidate market/recurring pass applies.
         if ignore_section_exemption:
-            exempt = _is_market_or_recurring_event(candidate) if isinstance(candidate, dict) else False
+            # Weekend markets/fairs should rank first, but still count toward
+            # the weekend section cap. Otherwise a market-heavy Saturday can
+            # grow without bound and crowd out the rest of the issue.
+            if section_name == "Выходные в GM":
+                exempt = False
+            else:
+                exempt = _is_market_or_recurring_event(candidate) if isinstance(candidate, dict) else False
         else:
             exempt = _is_public_budget_exempt(section_name, candidate)
         if exempt or counted_kept < counted_limit:
@@ -2078,26 +2086,91 @@ def _sourceish_event_name(candidate: dict) -> str:
     return title[:90].strip(" .-–") or source or "событие"
 
 
+_WEEKEND_SELLER_ADMIN_RE = re.compile(
+    r"\b(?:you\s+can\s+sell\s+things|need(?:ing)?\s+to\s+become\s+a\s+regular\s+trader|"
+    r"casual\s+trading|apply\s+for\s+a\s+stall|trader\s+permit|trading\s+at\s+new\s+smithfield)\b",
+    re.IGNORECASE,
+)
+_WEEKEND_VISITOR_RE = re.compile(
+    r"\b(?:buyers?\s+from|open\s+to\s+buyers|stalls?|food|drink|music|family|"
+    r"free\s+entry|entry\s+from|admission|market\s+stalls?|craft|vintage|produce)\b",
+    re.IGNORECASE,
+)
+
+
+def _event_source_blob(candidate: dict) -> str:
+    return " ".join(
+        str(candidate.get(field) or "")
+        for field in ("summary", "lead", "evidence_text", "practical_angle")
+    )
+
+
+def _clean_event_venue_name(value: str) -> str:
+    venue = re.sub(r"\s+", " ", str(value or "")).strip(" .,-–—|")
+    venue = re.sub(
+        r"\s+\b(?:You|Share|Book\s+now|Tickets?|What's\s+on|Visit|More\s+info)\b\s*$",
+        "",
+        venue,
+        flags=re.IGNORECASE,
+    ).strip(" .,-–—|")
+    return venue[:90]
+
+
+def _event_venue_is_sourceish(candidate: dict, venue: str) -> bool:
+    normalized = re.sub(r"\W+", "", venue.lower())
+    if not normalized:
+        return True
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    for field_value in (
+        event.get("event_name"),
+        candidate.get("title"),
+        candidate.get("source_label"),
+    ):
+        other = re.sub(r"\W+", "", str(field_value or "").lower())
+        if other and normalized == other:
+            return True
+    return False
+
+
+def _is_weekend_seller_admin_page(candidate: dict) -> bool:
+    if str(candidate.get("primary_block") or "") != "weekend_activities":
+        return False
+    blob = _event_source_blob(candidate)
+    return bool(_WEEKEND_SELLER_ADMIN_RE.search(blob) and not _WEEKEND_VISITOR_RE.search(blob))
+
+
 def _event_venue(candidate: dict) -> str:
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    venue = str(event.get("venue") or "").strip()
-    if venue and venue.lower() not in {"greater manchester", "manchester", "bury", "rochdale", "salford"}:
-        return venue
+    venue = _clean_event_venue_name(str(event.get("venue") or ""))
     blob = " ".join(
         str(candidate.get(field) or "")
         for field in ("summary", "lead", "evidence_text", "title")
     )
     for pattern in (
+        r"\b(Macron Stadium)\b",
+        r"\b(Golden Hill Car Park)\b",
+        r"\b(New Smithfield Market)\b",
+        r"\b(Altrincham Market)\b",
         r"\b(Bowlee Community Park)\b",
         r"\b(Barton Aerodrome)\b",
         r"\b(Waterside Farm)\b",
         r"\b(St Ann'?s Square)\b",
         r"\b(First Street)\b",
         r"\b(Salford Quays)\b",
+        r"\b(The White Hotel)\b",
+        r"\b(Albert Hall)\b",
+        r"\b(Aviva Studios)\b",
+        r"\b(Manchester Art Gallery)\b",
     ):
         match = re.search(pattern, blob, flags=re.IGNORECASE)
         if match:
             return match.group(1)
+    source_label = str(candidate.get("source_label") or "")
+    generic_venue = {"greater manchester", "manchester", "bury", "rochdale", "salford"}
+    if "home" not in source_label.lower():
+        generic_venue.add("home")
+    if venue and venue.lower() not in generic_venue:
+        return venue
     return ""
 
 
@@ -2225,6 +2298,132 @@ def _build_bookable_activity_fallback_line(candidate: dict) -> str:
     tail = "; ".join(details)
     tail = f". {tail.capitalize()}." if tail else ". Проверьте свободные слоты перед оплатой."
     return f"• На эти выходные можно забронировать {name}{where}{tail}"
+
+
+def _weekend_activity_kind(candidate: dict) -> str:
+    blob = " ".join(
+        str(value or "")
+        for value in (
+            candidate.get("source_label"),
+            candidate.get("title"),
+            candidate.get("summary"),
+            candidate.get("lead"),
+            candidate.get("evidence_text"),
+        )
+    ).lower()
+    if re.search(r"\bcar\s*boot\b", blob):
+        return "автомобильная барахолка"
+    if re.search(r"\b(?:makers?\s+market|artisan\s+market|farmers?\s+market|market)\b", blob):
+        return "рынок"
+    if "festival" in blob:
+        return "фестиваль"
+    if re.search(r"\b(?:walking\s+tour|guided\s+walk|tour)\b", blob):
+        return "экскурсия"
+    if re.search(r"\b(?:concert|gig|live\s+music|orchestra)\b", blob):
+        return "концерт"
+    if re.search(r"\b(?:workshop|session|activity)\b", blob):
+        return "активность"
+    return "событие"
+
+
+def _clean_weekend_event_title(title: str) -> str:
+    clean = re.sub(r"\s+", " ", str(title or "")).strip(" .-–—")
+    clean = re.sub(r",?\s*Greater Manchester\s*-\s*Pedddle\b.*$", "", clean, flags=re.IGNORECASE)
+    clean = re.sub(r",?\s*Manchester\s*-\s*Pedddle\b.*$", "", clean, flags=re.IGNORECASE)
+    clean = re.sub(r"\s*-\s*Markets in Manchester\s*\|\s*Pedddle\b.*$", "", clean, flags=re.IGNORECASE)
+    clean = re.sub(r"\s*\|\s*Markets in Manchester\s*-\s*Pedddle\b.*$", "", clean, flags=re.IGNORECASE)
+    clean = re.sub(r"\s*\|\s*Markets in\b.*$", "", clean, flags=re.IGNORECASE)
+    clean = re.sub(r"\s*-\s*The Makers Market\s*\|\s*Pedddle\b.*$", "", clean, flags=re.IGNORECASE)
+    clean = re.sub(r"\s*\|\s*Visit\s+[A-Za-z ]+\s*$", "", clean, flags=re.IGNORECASE)
+    clean = re.sub(r"\s*-\s*Warrington Car Boot Sale\s*$", "", clean, flags=re.IGNORECASE)
+    return clean[:120].strip(" .-–—")
+
+
+def _weekend_source_details(candidate: dict) -> list[str]:
+    blob = _event_source_blob(candidate)
+    details: list[str] = []
+    buyer = re.search(
+        r"(?:buyers?|покупател[ьи])\s*(?:from|с)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?",
+        blob,
+        flags=re.IGNORECASE,
+    )
+    if buyer:
+        details.append(f"для покупателей с {_format_event_time(buyer.group(1), buyer.group(2) or '', buyer.group(3) or '')}")
+    stalls = re.search(r"\b(\d{2,4})\+?\s+stalls?\b", blob, flags=re.IGNORECASE)
+    if stalls:
+        number = stalls.group(1)
+        prefix = "более " if "+" in stalls.group(0) else ""
+        details.append(f"{prefix}{number} продавцов")
+    price = re.search(r"(?:entry|admission|вход)[^£]{0,40}(£\s*\d+(?:\.\d{1,2})?)", blob, flags=re.IGNORECASE)
+    if not price:
+        price = re.search(r"(£\s*\d+(?:\.\d{1,2})?)\s*(?:per\s+car\s+entry|entry|admission)", blob, flags=re.IGNORECASE)
+    if price:
+        details.append(f"вход {price.group(1).replace(' ', '')}")
+    elif re.search(r"\b(?:free\s+(?:entry|admission)|entry\s+free|admission\s+free)\b", blob, flags=re.IGNORECASE):
+        details.append("вход свободный")
+    else:
+        ticket_price = re.search(
+            r"(?:tickets?|билеты?)\s*(?:cost|from|от|стоят|по)?\s*(£\s*\d+(?:\.\d{1,2})?)",
+            blob,
+            flags=re.IGNORECASE,
+        )
+        if ticket_price:
+            details.append(f"билеты {ticket_price.group(1).replace(' ', '')}")
+    free_events = re.search(r"\b(?:more\s+than|over)\s+(\d{2,4})\s+free\s+(?:events?|activities)\b", blob, flags=re.IGNORECASE)
+    if free_events:
+        details.append(f"более {free_events.group(1)} бесплатных активностей")
+    if re.search(r"\bregional\s+produce\b", blob, flags=re.IGNORECASE):
+        details.append("региональные продукты")
+    if re.search(r"\bvintage\s+fashion\b", blob, flags=re.IGNORECASE):
+        details.append("винтажная мода")
+    if re.search(r"\b(?:craft|contemporary\s+craft|makers?)\b", blob, flags=re.IGNORECASE):
+        details.append("ремесленные товары")
+    if re.search(r"\bfood\b", blob, flags=re.IGNORECASE) and "еда" not in " ".join(details):
+        details.append("еда")
+    if re.search(r"\b(?:dog[- ]friendly|dogs?\s+welcome)\b", blob, flags=re.IGNORECASE):
+        details.append("можно с собакой")
+    if re.search(r"\btoilets?\b", blob, flags=re.IGNORECASE):
+        details.append("есть туалеты")
+    if re.search(r"\bfamily\b", blob, flags=re.IGNORECASE):
+        details.append("подходит для семьи")
+    if re.search(r"\blive\s+music\b", blob, flags=re.IGNORECASE):
+        details.append("живая музыка")
+    return list(dict.fromkeys(details))[:4]
+
+
+def _build_weekend_event_fallback_line(candidate: dict) -> str:
+    if _is_weekend_seller_admin_page(candidate):
+        return ""
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    title = str(event.get("event_name") or candidate.get("title") or "").strip()
+    title = re.sub(r"\s+[—–-]\s+(?:event|public\s+sale).*$", "", title, flags=re.IGNORECASE).strip()
+    title = re.sub(r"\s*\|\s*The(?:\s+Bridgewater\s+Hall)?\s*$", "", title, flags=re.IGNORECASE).strip()
+    title = _clean_weekend_event_title(title)
+    if not title or _looks_like_source_chrome(title):
+        return ""
+    venue = _event_venue(candidate)
+    event_dt = _event_structured_datetime(candidate) or _parse_ticket_datetime(candidate)
+    day_month = _format_ru_day_month(event_dt) if event_dt else ""
+    time_part = ""
+    if event_dt and event_dt.strftime("%H:%M") not in {"00:00", "12:00"}:
+        time_part = f" в {event_dt.strftime('%H:%M')}"
+    kind = _weekend_activity_kind(candidate)
+    details = _weekend_source_details(candidate)
+    if not day_month and not details and not _future_date_signal(_event_source_blob(candidate)):
+        return ""
+    lead_bits: list[str] = []
+    if day_month:
+        lead_bits.append(f"{day_month}{time_part}")
+    if venue and venue.lower() not in title.lower():
+        lead_bits.append(f"в {venue}")
+    prefix = " ".join(lead_bits)
+    detail_text = ", ".join(details)
+    if not detail_text:
+        return ""
+    sentence = f"{kind}: {detail_text}"
+    if prefix:
+        return f"• {prefix} — {title}: {sentence}. Сверьте часы и условия перед поездкой."
+    return f"• {title}: {sentence}. Сверьте часы и условия перед поездкой."
 
 
 def _repair_weather_line(line: str) -> str:
@@ -2501,6 +2700,8 @@ def _build_event_fallback_line(candidate: dict) -> str:
     Food Festival, Spinningfields Makers Market) and all disappeared
     from the digest. The fallback uses only structured event-fields,
     so it is safe to ship without LLM verification."""
+    if str(candidate.get("primary_block") or "") == "weekend_activities":
+        return _build_weekend_event_fallback_line(candidate)
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     title = str(event.get("event_name") or candidate.get("title") or "").strip()
     title = re.sub(r"\s+[—–-]\s+(?:event|public\s+sale).*$", "", title, flags=re.IGNORECASE).strip()
@@ -2753,12 +2954,20 @@ def _has_current_weekend_recurring_signal(text: str) -> bool:
         return True
     if 6 in weekdays and re.search(r"\b(?:(?:every|weekly)\s+sundays?|sundays)\b|кажд[а-яё]*\s+воскрес", lowered):
         return True
+    if weekdays & {4, 5, 6} and re.search(
+        r"\b(?:friday\s*(?:to|[-–])\s*sunday|fri\s*(?:to|[-–])\s*sun|"
+        r"friday\s+and\s+saturday|saturday\s+and\s+sunday)\b|"
+        r"\b(?:пятниц[а-яё]*\s*(?:по|[-–])\s*воскресень[а-яё]*|суббот[а-яё]*\s+и\s+воскресень[а-яё]*)\b",
+        lowered,
+    ):
+        return True
     return False
 
 
 def _is_outside_current_weekend_candidate(candidate: dict, line: str = "") -> bool:
     if str(candidate.get("primary_block") or "") != _WEEKEND_BLOCK:
         return False
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     text = " ".join(
         str(value or "")
         for value in (
@@ -2767,6 +2976,10 @@ def _is_outside_current_weekend_candidate(candidate: dict, line: str = "") -> bo
             candidate.get("lead"),
             candidate.get("evidence_text"),
             candidate.get("source_url"),
+            event.get("date_start"),
+            event.get("date_end"),
+            event.get("date"),
+            event.get("date_text"),
             line,
         )
     )
@@ -2816,6 +3029,10 @@ def _is_expired_event_candidate(candidate: dict, line: str = "") -> bool:
 
 
 def _weekend_activity_score(candidate: dict, line: str) -> float:
+    if _is_weekend_seller_admin_page(candidate):
+        return -100.0
+    if _is_outside_current_weekend_candidate(candidate, line):
+        return -90.0
     blob = " ".join(
         str(value or "")
         for value in (
@@ -2827,19 +3044,40 @@ def _weekend_activity_score(candidate: dict, line: str) -> float:
             line,
         )
     ).lower()
+    if re.search(r"\b(?:warrington|liverpool|london|yorkshire|cumbria|edinburgh)\b", blob):
+        return -95.0
     score = 0.0
     if _future_date_signal(blob):
         score += 40
     if re.search(r"\b(?:market|makers?|car boot|food festival|festival|fair|flea)\b", blob):
-        score += 35
+        score += 55
     if re.search(r"\b(?:flower festival|jazz festival|car boot|makers market|food festival)\b", blob):
         score += 25
+    if re.search(r"\b(?:visit manchester|manchester theatres|manchester's finest|creative tourist)\b", blob):
+        score += 12
+    if _weekend_source_details(candidate):
+        score += 18
+    if line and not re.search(r"проверьте\s+наличие\s+мест|крупная\s+площадка|новый\s+анонс", line, re.IGNORECASE):
+        score += 8
     if re.search(r"\b(?:designmynight|alcotraz|treasure hunt|escape room|cocktail bar|big manchester bake|kitty yoga|bottomless)\b", blob):
         score -= 55
     if re.search(r"\b(?:today|tomorrow|saturday|sunday|сегодня|завтра|суббот|воскрес|16\s*(?:мая|may)|17\s*(?:мая|may))\b", blob):
         score += 25
     if re.search(r"\b(?:free|ticket|tickets|booking|book|билет|бесплат|вход)\b|£\s*\d", blob):
         score += 10
+    if not line and not _weekend_source_details(candidate):
+        score -= 35
+    if line and re.search(r"проверьте\s+наличие\s+мест|^\s*•\s*(?:\d{1,2}\s+\S+\s+)?[—-]", line, re.IGNORECASE):
+        score -= 25
+    if _MARKET_EVENT_RE.search(blob):
+        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        has_structured_day = bool(_event_structured_datetime(candidate) or str(event.get("date_start") or event.get("date") or "").strip())
+        if not has_structured_day and not _has_current_weekend_recurring_signal(blob):
+            score -= 55
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    venue = _clean_event_venue_name(str(event.get("venue") or ""))
+    if venue and _event_venue_is_sourceish(candidate, venue) and not _event_venue(candidate):
+        score -= 20
     if re.search(r"\b(?:until|до)\s+(?:20\d{2}|december|декабр)", blob):
         score -= 25
     return score

@@ -48,6 +48,7 @@ SECTION_MAX_ITEMS = {
     "Футбол": 3,
     "IT и бизнес": 5,
     "Что важно в ближайшие 7 дней": 6,
+    "Выходные в GM": 10,
     "Еда, открытия и рынки": 6,
     # Tickets are capped like every other section: a quiet news day must not
     # turn the issue into a ticket catalogue. On 2026-05-31 an uncapped rail
@@ -72,6 +73,7 @@ SECTION_MIN_ITEMS = {
     "Что важно сегодня": 3,
     "Городской радар": 5,
     "Что важно в ближайшие 7 дней": 3,
+    "Выходные в GM": 6,
     "Билеты / Ticket Radar": 2,
     "Еда, открытия и рынки": 3,
     "Футбол": 2,
