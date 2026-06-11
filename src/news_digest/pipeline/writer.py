@@ -33,7 +33,7 @@ from news_digest.pipeline.editorial_contracts import (
 from news_digest.pipeline.reader_value import reader_value_score
 from news_digest.pipeline.reader_actions import classify_reader_action
 from news_digest.pipeline.story_intelligence import section_board_score
-from news_digest.pipeline.ticket_notability import enrich_ticket_notability, ticket_artist_name
+from news_digest.pipeline.ticket_notability import enrich_ticket_notability, prefetch_notability, ticket_artist_name
 from news_digest.pipeline.toponyms import restore_english_toponyms
 from news_digest.pipeline.place_names import preserve_place_names
 
@@ -4028,6 +4028,10 @@ def write_digest(project_root: Path) -> StageResult:
     }
     ticket_notability_report: list[dict[str, object]] = []
     ticket_notability_cache = state_dir / "ticket_notability_cache.json"
+    # Warm the notability cache in parallel BEFORE the render loop so the loop
+    # only reads it (no per-ticket network on the critical render path). This is
+    # what kept the writer at ~6min on 2026-06-11: ~100 serial artist lookups.
+    notability_prefetch = prefetch_notability(candidates, ticket_notability_cache)
     for candidate in candidates:
         if not isinstance(candidate, dict) or not candidate.get("include"):
             continue
@@ -4863,6 +4867,7 @@ def write_digest(project_root: Path) -> StageResult:
             },
             "ticket_notability": {
                 "lookup_enabled": bool(os.environ.get("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "").strip() == "1"),
+                "prefetch": notability_prefetch,
                 "items": ticket_notability_report[:120],
             },
             "fresh_news_board": fresh_report,

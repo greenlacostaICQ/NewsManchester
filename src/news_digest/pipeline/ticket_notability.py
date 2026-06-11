@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import base64
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
 import os
 from pathlib import Path
 import re
+import threading
+import time
 from urllib import parse, request
 
 from news_digest.pipeline.common import now_london, read_json, write_json
@@ -25,6 +28,40 @@ NON_ARTIST_EVENT_RE = re.compile(
 )
 
 _CACHE_MEM: dict[str, dict] = {}
+
+# Minimum seconds between calls to each external API, enforced across all
+# worker threads. MusicBrainz documents ~1 request/second per IP — the others
+# are lenient. This is a technical anti-ban/throttle gate, NOT a coverage cap:
+# no artist is dropped, the queue just drains at a sustainable rate.
+_API_MIN_INTERVAL = {
+    "musicbrainz": 1.1,
+    "wikidata": 0.15,
+    "spotify": 0.1,
+    "lastfm": 0.1,
+}
+
+
+class _ApiThrottle:
+    """Per-host minimum-interval gate, thread-safe."""
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._next: dict[str, float] = {}
+
+    def wait(self, host: str) -> None:
+        interval = _API_MIN_INTERVAL.get(host, 0.0)
+        if interval <= 0:
+            return
+        with self._lock:
+            now = time.monotonic()
+            earliest = self._next.get(host, 0.0)
+            sleep_for = earliest - now
+            self._next[host] = max(now, earliest) + interval
+        if sleep_for > 0:
+            time.sleep(sleep_for)
+
+
+_THROTTLE = _ApiThrottle()
 
 LINEUP_EVENT_RE = re.compile(
     r"\b(?:festival|open air|open-air|presents|with special guest|with guests|"
@@ -504,6 +541,8 @@ def _artist_notability(
     candidate: dict,
     artists_cache: dict,
     now: datetime,
+    *,
+    allow_network: bool = False,
 ) -> TicketNotability:
     key = _cache_key(artist)
     cached = artists_cache.get(key)
@@ -514,7 +553,11 @@ def _artist_notability(
             checked = datetime.fromisoformat(checked_at)
         except ValueError:
             checked = None
-        if checked and now - checked <= timedelta(days=30):
+        # Outcome-based recheck window: a confirmed result holds for 30d, a
+        # clean "not found" is retried in a week, a transient API failure next
+        # run — so a blip never poisons the cache for a month.
+        recheck_days = int(cached.get("recheck_days") or 30)
+        if checked and now - checked <= timedelta(days=recheck_days):
             signals = dict(cached.get("signals") or {})
             signals.setdefault("sitelinks", int(cached.get("sitelinks") or 0))
             signals.setdefault("wikidata_id", str(cached.get("wikidata_id") or ""))
@@ -531,51 +574,80 @@ def _artist_notability(
                 signals=signals,
             )
 
-    if os.environ.get("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "").strip() != "1":
+    # Read-only callers (the writer's render loop) never touch the network: the
+    # cache is pre-populated by prefetch_notability before the writer runs, so
+    # an un-warmed artist just ships without a notability label this issue and
+    # is looked up for the next one. Network happens only via prefetch.
+    if not allow_network or os.environ.get("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "").strip() != "1":
         return TicketNotability(artist, kind, "unknown", 0.0, "lookup_disabled", signals=tm_signal)
 
-    try:
-        wd = _lookup_wikidata(artist)
-    except Exception as exc:  # pragma: no cover - network failure is fail-open.
-        wd = {"error": type(exc).__name__}
-    try:
-        mb = _lookup_musicbrainz(artist)
-    except Exception as exc:  # pragma: no cover - network failure is fail-open.
-        mb = {"musicbrainz_error": type(exc).__name__}
-    try:
-        sp = _lookup_spotify(artist)
-    except Exception as exc:  # pragma: no cover - network failure is fail-open.
-        sp = {"spotify_error": type(exc).__name__}
-    try:
-        lf = _lookup_lastfm(artist)
-    except Exception as exc:  # pragma: no cover - network failure is fail-open.
-        lf = {"lastfm_error": type(exc).__name__}
+    errors = 0
 
-    signals = {
+    def _lookup(host: str, fn) -> dict:
+        nonlocal errors
+        _THROTTLE.wait(host)
+        try:
+            return fn(artist)
+        except Exception as exc:  # pragma: no cover - network failure is fail-open.
+            errors += 1
+            return {"error": type(exc).__name__}
+
+    # Short-circuit ladder. Wikidata first: a well-linked entity is already
+    # clearly notable (A/B), so the other three APIs are skipped entirely. Only
+    # a thin Wikidata result spends Spotify/Last.fm (modern acts). MusicBrainz —
+    # the strict ~1 req/sec service — runs LAST and only if still unknown, so it
+    # only ever sees the residual tail, not the whole pool.
+    wd = _lookup("wikidata", _lookup_wikidata)
+    signals: dict = {
         "sitelinks": int(wd.get("sitelinks") or 0),
         "wikidata_id": str(wd.get("wikidata_id") or ""),
-        "musicbrainz_id": str(mb.get("musicbrainz_id") or ""),
-        "musicbrainz_score": int(mb.get("musicbrainz_score") or 0),
-        "musicbrainz_type": str(mb.get("musicbrainz_type") or ""),
-        "spotify_id": str(sp.get("spotify_id") or ""),
-        "spotify_popularity": int(sp.get("spotify_popularity") or 0),
-        "spotify_followers": int(sp.get("spotify_followers") or 0),
-        "lastfm_listeners": int(lf.get("lastfm_listeners") or 0),
-        "lastfm_playcount": int(lf.get("lastfm_playcount") or 0),
         **tm_signal,
     }
+    tier, _conf, _sig = _tier_from_signals(signals)
+    if tier not in {"A", "B"}:
+        sp = _lookup("spotify", _lookup_spotify)
+        lf = _lookup("lastfm", _lookup_lastfm)
+        signals.update(
+            {
+                "spotify_id": str(sp.get("spotify_id") or ""),
+                "spotify_popularity": int(sp.get("spotify_popularity") or 0),
+                "spotify_followers": int(sp.get("spotify_followers") or 0),
+                "lastfm_listeners": int(lf.get("lastfm_listeners") or 0),
+                "lastfm_playcount": int(lf.get("lastfm_playcount") or 0),
+            }
+        )
+        tier, _conf, _sig = _tier_from_signals(signals)
+        if tier == "unknown":
+            mb = _lookup("musicbrainz", _lookup_musicbrainz)
+            signals.update(
+                {
+                    "musicbrainz_id": str(mb.get("musicbrainz_id") or ""),
+                    "musicbrainz_score": int(mb.get("musicbrainz_score") or 0),
+                    "musicbrainz_type": str(mb.get("musicbrainz_type") or ""),
+                }
+            )
+
     tier, confidence, signal = _tier_from_signals(signals)
+    # Error taxonomy → recheck window. found=30d; clean not_found=7d; transient
+    # api_failed=1d (retry next run, don't cache a failure for a month).
+    if tier != "unknown":
+        recheck_days = 30
+    elif errors:
+        recheck_days = 1
+    else:
+        recheck_days = 7
     record = {
         "artist": artist,
         "kind": kind,
         "tier": tier,
         "confidence": confidence,
         "signal": signal,
-        "wikidata_id": signals["wikidata_id"],
-        "sitelinks": signals["sitelinks"],
+        "wikidata_id": signals.get("wikidata_id", ""),
+        "sitelinks": signals.get("sitelinks", 0),
         "description": str(wd.get("description") or ""),
         "signals": signals,
         "checked_at": now.isoformat(),
+        "recheck_days": recheck_days,
     }
     artists_cache[key] = record
     return TicketNotability(
@@ -584,10 +656,108 @@ def _artist_notability(
         tier=tier,
         confidence=confidence,
         signal=signal,
-        wikidata_id=signals["wikidata_id"],
-        sitelinks=signals["sitelinks"],
+        wikidata_id=signals.get("wikidata_id", ""),
+        sitelinks=int(signals.get("sitelinks") or 0),
         signals=signals,
     )
+
+
+def prefetch_notability(
+    candidates: list,
+    cache_path: Path | None = None,
+    *,
+    budget_seconds: float = 75.0,
+    max_workers: int = 8,
+) -> dict:
+    """Populate the notability cache for ticket artists in parallel, BEFORE the
+    writer runs, so the render loop only ever reads a warm cache.
+
+    Reuses the same per-artist logic and 30-day cache as the writer, but:
+      • runs artists concurrently (thread pool) with per-API rate limits,
+      • orders near-term events first, far-future to the tail,
+      • skips artists already fresh in cache,
+      • stops starting new lookups past a wall-clock budget — un-done artists
+        simply stay queued for the next run (no coverage cap, nothing lost).
+    Returns a small report for the writer report / logs.
+    """
+    if os.environ.get("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "").strip() != "1":
+        return {"enabled": False, "looked_up": 0, "skipped_fresh": 0, "queued": 0, "deferred_budget": 0}
+
+    cache_path = cache_path or Path("data/state/ticket_notability_cache.json")
+    cache = _load_cache(cache_path)
+    artists = cache.setdefault("artists", {})
+    now = now_london()
+
+    def _days_out(c: dict) -> int:
+        event = c.get("event") if isinstance(c.get("event"), dict) else {}
+        raw = str(event.get("date") or event.get("date_start") or "")
+        try:
+            return (datetime.fromisoformat(raw).date() - now.date()).days
+        except (ValueError, TypeError):
+            return 9999  # undated → tail of the queue
+
+    def _is_fresh(name: str) -> bool:
+        rec = artists.get(_cache_key(name))
+        if not isinstance(rec, dict):
+            return False
+        try:
+            checked = datetime.fromisoformat(str(rec.get("checked_at") or ""))
+        except ValueError:
+            return False
+        return now - checked <= timedelta(days=int(rec.get("recheck_days") or 30))
+
+    work: list[tuple[int, str, dict]] = []
+    seen: set[str] = set()
+    for c in candidates:
+        if not isinstance(c, dict):
+            continue
+        if str(c.get("category") or "") != "venues_tickets" and str(c.get("primary_block") or "") not in {
+            "ticket_radar",
+            "outside_gm_tickets",
+        }:
+            continue
+        names = ticket_headliner_candidates(c) or [ticket_artist_name(c)]
+        proximity = _days_out(c)
+        for name in names:
+            key = _cache_key(name)
+            if not name or key in seen:
+                continue
+            seen.add(key)
+            if _is_fresh(name):
+                continue
+            work.append((proximity, name, c))
+
+    work.sort(key=lambda item: item[0])  # near-term first, far-future last
+    skipped_fresh = len(seen) - len(work)
+    deadline = time.monotonic() + max(1.0, budget_seconds)
+    looked = 0
+    deferred = 0
+    counter_lock = threading.Lock()
+
+    def _task(name: str, c: dict) -> None:
+        nonlocal looked, deferred
+        if time.monotonic() >= deadline:
+            with counter_lock:
+                deferred += 1
+            return
+        _artist_notability(name, ticket_event_kind(c), c, artists, now, allow_network=True)
+        with counter_lock:
+            looked += 1
+
+    if work:
+        with ThreadPoolExecutor(max_workers=max(1, max_workers)) as executor:
+            futures = [executor.submit(_task, name, c) for _, name, c in work]
+            for future in futures:
+                future.result()
+        write_json(cache_path, cache)
+
+    return {
+        "enabled": True,
+        "looked_up": looked,
+        "skipped_fresh": skipped_fresh,
+        "queued": len(work),
+        "deferred_budget": deferred,
+    }
 
 
 def enrich_ticket_notability(candidate: dict, cache_path: Path | None = None) -> TicketNotability:
@@ -630,8 +800,9 @@ def enrich_ticket_notability(candidate: dict, cache_path: Path | None = None) ->
     best = max(ranked, key=_rank_tuple)
     if not lineup_mode and best.artist != artist:
         best = ranked[0]
-    if os.environ.get("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "").strip() == "1":
-        write_json(cache_path, cache)
+    # Read-only path: the cache is owned and written by prefetch_notability,
+    # which runs before the writer. The render loop never writes it, and
+    # _artist_notability above is called read-only (allow_network defaults off).
     signals = dict(best.signals or {})
     signals["headliner_resolution"] = "lineup_ranked" if lineup_mode else "primary_headliner_locked"
     if len(headliners) > 1 and not lineup_mode:
