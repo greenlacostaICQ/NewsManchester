@@ -1960,12 +1960,177 @@ def _extract_ticketmaster_items(source: SourceDef, body: str) -> list[ExtractedI
     return items
 
 
+_HERITAGE_DATE_RE = re.compile(
+    r"\b(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3,9})\s+(20\d{2})\b",
+    re.IGNORECASE,
+)
+_HERITAGE_LINEUP_RE = re.compile(r"\s+\+\s+")
+_HERITAGE_SKIP_RE = re.compile(
+    r"\b(?:what'?s on|artists? & events|more info|buy tickets|mailing list|"
+    r"glamping|coach travel|past events|good times|privacy|terms|venues|"
+    r"there were no results|discounted multiday|book glamping|book coach)\b",
+    re.IGNORECASE,
+)
+
+
+def _html_text_lines(body: str) -> list[str]:
+    scrubbed = re.sub(r"(?is)<(script|style)\b.*?</\1>", " ", body)
+    scrubbed = re.sub(r"(?i)<br\s*/?>", "\n", scrubbed)
+    scrubbed = re.sub(r"(?i)</(?:p|div|li|h[1-6]|a|section|article|span)>", "\n", scrubbed)
+    scrubbed = re.sub(r"(?s)<[^>]+>", " ", scrubbed)
+    scrubbed = re.sub(r"\^\{(?:st|nd|rd|th)\}", "", scrubbed, flags=re.IGNORECASE)
+    scrubbed = unescape(scrubbed)
+    lines: list[str] = []
+    for line in scrubbed.splitlines():
+        text = re.sub(r"\s+", " ", line).strip(" -–—\t")
+        if text:
+            lines.append(text)
+    return lines
+
+
+def _heritage_date_iso(text: str) -> str:
+    match = _HERITAGE_DATE_RE.search(text)
+    if not match:
+        return ""
+    day_raw, month_raw, year_raw = match.groups()
+    month = {
+        "jan": 1,
+        "january": 1,
+        "feb": 2,
+        "february": 2,
+        "mar": 3,
+        "march": 3,
+        "apr": 4,
+        "april": 4,
+        "may": 5,
+        "jun": 6,
+        "june": 6,
+        "jul": 7,
+        "july": 7,
+        "aug": 8,
+        "august": 8,
+        "sep": 9,
+        "sept": 9,
+        "september": 9,
+        "oct": 10,
+        "october": 10,
+        "nov": 11,
+        "november": 11,
+        "dec": 12,
+        "december": 12,
+    }.get(month_raw.lower())
+    if not month:
+        return ""
+    try:
+        return datetime(int(year_raw), month, int(day_raw), 18, 0, tzinfo=now_london().tzinfo).isoformat()
+    except ValueError:
+        return ""
+
+
+def _heritage_slug(*parts: str) -> str:
+    slug = "-".join(parts)
+    slug = re.sub(r"[^A-Za-z0-9]+", "-", slug).strip("-").lower()
+    return slug[:96] or "event"
+
+
+def _heritage_lineup_names(lineup: str) -> list[str]:
+    names: list[str] = []
+    for part in _HERITAGE_LINEUP_RE.split(lineup):
+        name = re.sub(r"\s+", " ", part).strip(" .,-–—")
+        if len(name) >= 3:
+            names.append(name)
+    return list(dict.fromkeys(names))
+
+
+def _looks_like_heritage_lineup(line: str) -> bool:
+    if _HERITAGE_SKIP_RE.search(line):
+        return False
+    if _HERITAGE_DATE_RE.search(line):
+        return False
+    letters = re.sub(r"[^A-Za-z&+.'’ ]+", "", line).strip()
+    if len(letters) < 4 or len(letters) > 140:
+        return False
+    has_artist_case = bool(re.search(r"[A-Z]{2,}", line))
+    return has_artist_case or "+" in line
+
+
+def _extract_heritage_live_items(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Extract Heritage Live cards from heading/date/venue text.
+
+    The homepage renders useful event data as card text while its links often
+    read only "More Info". Generic anchor extraction therefore reports raw=0
+    even when the page clearly lists major UK shows and lineups.
+    """
+
+    lines = _html_text_lines(body)
+    items: list[ExtractedItem] = []
+    seen: set[tuple[str, str, str]] = set()
+    for idx, line in enumerate(lines):
+        if not _looks_like_heritage_lineup(line):
+            continue
+        date_line = ""
+        venue = ""
+        for lookahead in lines[idx + 1 : idx + 5]:
+            if not date_line and _HERITAGE_DATE_RE.search(lookahead):
+                date_line = lookahead
+                after_date = _HERITAGE_DATE_RE.sub("", lookahead, count=1).strip(" ,;-")
+                if after_date:
+                    venue = after_date
+                continue
+            if date_line and not venue and not _HERITAGE_SKIP_RE.search(lookahead):
+                venue = lookahead
+                break
+        date_iso = _heritage_date_iso(date_line)
+        if not date_iso or not venue:
+            continue
+        names = _heritage_lineup_names(line)
+        if not names:
+            continue
+        key = (line.lower(), date_iso[:10], venue.lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        url = f"{source.url.rstrip('/')}#{_heritage_slug(line, date_iso[:10], venue)}"
+        summary_parts = [
+            venue,
+            "Music",
+            f"event_date={date_iso[:16].replace('T', ' ')}",
+            "ticket_signal=upcoming_event",
+            "ticket_type=major_upcoming",
+            "major_venue=true",
+            f"lineup={', '.join(names)}",
+        ]
+        title = f"{line} — event {date_iso[:10]}"
+        items.append(
+            ExtractedItem(
+                title=_clean_title_text(title),
+                url=url,
+                published_at=date_iso,
+                summary=" | ".join(summary_parts),
+                structured_event_hint={
+                    "schema_source": "heritage_live",
+                    "event_name": line,
+                    "venue": venue,
+                    "date_start": date_iso[:10],
+                    "date_text": date_iso[:16].replace("T", " "),
+                    "booking_url": source.url,
+                    "genre": "Music",
+                    "lineup": names,
+                    "headliners": names,
+                    "ticket_type": "major_upcoming",
+                },
+            )
+        )
+    return items
+
+
 def _is_outside_gm_ticket_source(source: SourceDef) -> bool:
     lowered = source.name.lower()
     return (
         "ticketmaster liverpool" in lowered
         or "ticketmaster london major" in lowered
         or "ticketmaster uk major" in lowered
+        or source.name == "Heritage Live"
     )
 
 
@@ -2150,6 +2315,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_sectioned_event_guide(source, body)
     elif source.source_type == "html_designmynight":
         links = _extract_designmynight_cards(source, body)
+    elif source.source_type == "html_heritage_live":
+        links = _extract_heritage_live_items(source, body)
     elif source.name in {"Skiddle Manchester", "Skiddle Manchester Bank Holiday"}:
         links = _extract_skiddle_items(source, body)
     elif source.name == "GMMH":
@@ -2176,8 +2343,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
     for item in links:
         base_url = clean_url(item.url)
         fragment = parse.urlsplit(item.url).fragment
-        normalized_url = f"{base_url}#{fragment}" if source.source_type in {"html_the_manc_weekly_events", "html_sectioned_event_guide"} and fragment else base_url
-        same_source_page = source.source_type in {"html_page_event", "html_the_manc_weekly_events", "html_sectioned_event_guide"} and base_url == clean_url(source.url)
+        normalized_url = f"{base_url}#{fragment}" if source.source_type in {"html_the_manc_weekly_events", "html_sectioned_event_guide", "html_heritage_live"} and fragment else base_url
+        same_source_page = source.source_type in {"html_page_event", "html_the_manc_weekly_events", "html_sectioned_event_guide", "html_heritage_live"} and base_url == clean_url(source.url)
         if not same_source_page and not _is_allowed_source_link(source, base_url, item.title, item.summary):
             continue
         if normalized_url in seen:

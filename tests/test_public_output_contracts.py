@@ -31,6 +31,8 @@ from news_digest.pipeline.writer import (
     _football_should_route_to_soft,
     _is_outside_current_weekend_candidate,
     _weekend_activity_score,
+    _today_focus_candidate_is_eligible,
+    _transport_line_priority,
     _next_7_event_decision,
     _append_recovery_step,
     _apply_section_min_floor_pull_back,
@@ -78,6 +80,24 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertIn("Metrolink", line)
         self.assertNotIn("метро", line.lower())
         self.assertIn("metrolink_not_metro", reasons)
+
+    def test_transport_groups_minor_bus_stops_and_keeps_metrolink_priority(self) -> None:
+        lines = [
+            "• Автобусы: остановка на Whitworth Street напротив Palace Theatre закрыта из-за строительных работ; используйте остановки до или после. <a href=\"https://tfgm.com\">TfGM</a>",
+            "• Автобусы: остановки у St John's Primary School на Atherton Road закрыты из-за работ; используйте остановки до или после. <a href=\"https://tfgm.com\">TfGM</a>",
+            "• Metrolink: до 14 июня нет трамваев между Victoria и Rochdale. <a href=\"https://tfgm.com\">TfGM</a>",
+            "• Автобусы: остановка Failsworth Pole на Oldham Road закрыта из-за работ; используйте остановки до или после. <a href=\"https://tfgm.com\">TfGM</a>",
+        ]
+        srcs = ["TfGM"] * len(lines)
+        fps = [f"fp-{idx}" for idx in range(len(lines))]
+        scores = [0.0] * len(lines)
+        titles = [""] * len(lines)
+        out_lines, *_rest, dropped = _cap_minor_bus_stop_lines(lines, srcs, fps, scores, titles)
+        self.assertGreater(_transport_line_priority(lines[2]), _transport_line_priority(lines[0]))
+        self.assertEqual(len(out_lines), 2)
+        self.assertIn("Metrolink", out_lines[0])
+        self.assertIn("3 мелких закрытий остановок", " ".join(out_lines))
+        self.assertEqual(len(dropped), 2)
 
     def test_follow_up_line_leads_with_new_phase(self) -> None:
         candidate = {
@@ -180,6 +200,74 @@ class PublicOutputContractTests(unittest.TestCase):
         line = _build_event_fallback_line(candidate)
         self.assertIn("6 июля", line)
         self.assertNotIn("2 июля", line)
+
+    def test_event_fallback_repairs_generic_availability_cta(self) -> None:
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "next_7_days",
+            "title": "The Ballad of Johnny & June",
+            "summary": "The Ballad of Johnny & June is a theatre show at The Lowry.",
+            "practical_angle": "Проверьте наличие мест перед посещением.",
+            "event": {
+                "is_event": True,
+                "event_name": "The Ballad of Johnny & June",
+                "venue": "The Lowry",
+                "date_start": "2026-06-11T19:30:00+01:00",
+            },
+        }
+        with patch("news_digest.pipeline.writer.now_london") as fake_now:
+            fake_now.return_value = datetime(2026, 6, 11)
+            line = _build_event_fallback_line(candidate)
+        self.assertIn("11 июня", line)
+        self.assertIn("The Lowry", line)
+        self.assertNotIn("Проверьте наличие мест", line)
+
+    def test_today_focus_future_only_item_is_not_eligible(self) -> None:
+        candidate = {
+            "category": "public_services",
+            "primary_block": "today_focus",
+            "title": "Prestwich library to close on 14 June for carnival",
+            "summary": "Prestwich Library will close on 14 June from 09:30 because of the carnival.",
+            "editorial_contract": {
+                "story_type": "local_service_change",
+                "publish_tier": "strong",
+                "event_shape": "none",
+            },
+        }
+        with patch("news_digest.pipeline.writer.now_london") as fake_now:
+            fake_now.return_value = datetime(2026, 6, 11)
+            self.assertFalse(_today_focus_candidate_is_eligible(candidate, "• Prestwich: библиотека закроется 14 июня."))
+
+    def test_next_7_final_date_gate_moves_far_event(self) -> None:
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "next_7_days",
+            "title": "Robyn at Co-op Live",
+            "summary": "Robyn performs at Co-op Live on 27 June.",
+            "event": {
+                "is_event": True,
+                "event_name": "Robyn",
+                "venue": "Co-op Live",
+                "date_start": "2026-06-27T19:00:00+01:00",
+            },
+        }
+        with patch("news_digest.pipeline.writer.now_london") as fake_now:
+            fake_now.return_value = datetime(2026, 6, 11)
+            decision, reason = _next_7_event_decision(candidate)
+        self.assertEqual(decision, "move_future")
+        self.assertIn("16 day", reason)
+
+    def test_city_watch_clear_short_story_does_not_fail_length_only(self) -> None:
+        candidate = {
+            "category": "media_layer",
+            "primary_block": "city_watch",
+            "title": "Timperley supermarket incident",
+            "summary": "Police attended a supermarket in Timperley after a local incident.",
+            "story_frame": {"missing_facts": []},
+        }
+        line = "• Timperley: полиция выезжала к супермаркету после сообщения о нарушении порядка; район проверили, угрозы для жителей не подтвердили."
+        errors = _draft_line_quality_errors(candidate, line)
+        self.assertFalse([err for err in errors if "long-format category needs" in err])
 
     def test_weekend_car_boot_fallback_uses_source_facts_not_title_stub(self) -> None:
         candidate = {
@@ -868,14 +956,15 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertIn("Manchester United", line)
         self.assertEqual(_final_replacement_line(candidate), line)
 
-    def test_minor_bus_stop_closures_are_capped_at_three(self) -> None:
+    def test_minor_bus_stop_closures_are_grouped_not_repeated(self) -> None:
         lines = [
             f"• Автобусы: закрыта остановка Stop {idx} на Street в Area — ремонтные работы."
             for idx in range(5)
         ]
         capped, *_rest, dropped = _cap_minor_bus_stop_lines(lines, ["TfGM"] * 5, [str(i) for i in range(5)], [0.0] * 5, lines)
-        self.assertEqual(len(capped), 3)
-        self.assertEqual(len(dropped), 2)
+        self.assertEqual(len(capped), 1)
+        self.assertIn("5 мелких закрытий остановок", capped[0])
+        self.assertEqual(len(dropped), 4)
 
     def test_final_loss_check_explains_missing_facts(self) -> None:
         candidate = {

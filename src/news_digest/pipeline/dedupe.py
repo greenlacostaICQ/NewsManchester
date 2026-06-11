@@ -1348,6 +1348,51 @@ def _ticket_event_identity(candidate: dict) -> tuple[str, str]:
     return name, date
 
 
+def _ticket_exact_dedupe_key(candidate: dict) -> tuple[str, str, str, str]:
+    from news_digest.pipeline.ticket_notability import ticket_artist_name  # noqa: PLC0415
+
+    ev = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    artist = normalize_title(ticket_artist_name(candidate) or _ticket_event_identity(candidate)[0])
+    date = str(ev.get("date_start") or ev.get("event_date") or _ticket_event_identity(candidate)[1] or "").strip()[:10]
+    venue = normalize_title(str(ev.get("venue") or ""))
+    if not venue:
+        summary_chunks = [chunk.strip() for chunk in str(candidate.get("summary") or "").split("|")]
+        if summary_chunks:
+            venue = normalize_title(summary_chunks[0])
+    source_url = str(candidate.get("source_url") or "")
+    event_id = ""
+    match = re.search(r"/event/([A-Za-z0-9]+)", source_url)
+    if match:
+        event_id = match.group(1).lower()
+    if not event_id:
+        event_id = normalize_title(source_url.rsplit("#", 1)[-1])[:80]
+    if not artist or not date:
+        return ("", "", "", "")
+    return (artist, date, venue, event_id)
+
+
+def _prefer_ticket_duplicate_candidate(first: dict, second: dict) -> bool:
+    """True when first should survive an exact ticket duplicate."""
+
+    first_block = str(first.get("primary_block") or "")
+    second_block = str(second.get("primary_block") or "")
+    if first_block == "ticket_radar" and second_block == "outside_gm_tickets":
+        return True
+    if first_block == "outside_gm_tickets" and second_block == "ticket_radar":
+        return False
+    first_source = str(first.get("source_label") or "").lower()
+    second_source = str(second.get("source_label") or "").lower()
+    if "ticketmaster manchester" in first_source and "ticketmaster uk" in second_source:
+        return True
+    if "ticketmaster uk" in first_source and "ticketmaster manchester" in second_source:
+        return False
+    first_score = _event_candidate_quality(first)
+    second_score = _event_candidate_quality(second)
+    if first_score != second_score:
+        return first_score >= second_score
+    return len(str(first.get("summary") or "")) >= len(str(second.get("summary") or ""))
+
+
 _TICKET_NAME_STOPWORDS = {
     "the", "a", "an", "and", "at", "in", "on", "of", "to", "for",
     "returns", "return", "live", "tour", "show", "presents", "with",
@@ -1544,8 +1589,19 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
             # same artist on a different night) are never duplicates. This
             # guard runs BEFORE the cluster/topic/token paths so a shared venue
             # or generic topic-key can no longer collapse distinct concerts.
-            if is_event_ticket_group and _is_distinct_ticket_event(ci, cj):
-                continue
+            if is_event_ticket_group:
+                exact_i = _ticket_exact_dedupe_key(ci)
+                exact_j = _ticket_exact_dedupe_key(cj)
+                exact_match = exact_i[:3] == exact_j[:3] and all(exact_i[:3])
+                if exact_match or (exact_i[3] and exact_i[3] == exact_j[3]):
+                    if _prefer_ticket_duplicate_candidate(ci, cj):
+                        to_drop[j] = {"kept_index": i, "overlap": 1.0, "ticket_exact_key": "|".join(exact_i[:3])}
+                    else:
+                        to_drop[i] = {"kept_index": j, "overlap": 1.0, "ticket_exact_key": "|".join(exact_j[:3])}
+                        break
+                    continue
+                if _is_distinct_ticket_event(ci, cj):
+                    continue
             if _distinct_market_listing_pair(ci, cj):
                 continue  # distinct weekend markets survive generic cluster/topic keys
 

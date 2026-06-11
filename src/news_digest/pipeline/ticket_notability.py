@@ -182,6 +182,20 @@ def ticket_event_kind(candidate: dict) -> str:
     return "artist"
 
 
+def _is_lineup_mode(candidate: dict, kind: str) -> bool:
+    if kind == "lineup_or_show":
+        return True
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "source_label")
+    )
+    if re.search(r"\bline[- ]?up\s*=", blob, re.IGNORECASE):
+        return True
+    if str(candidate.get("source_label") or "") == "Heritage Live":
+        return True
+    return False
+
+
 def _cache_key(artist: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", artist.lower()).strip()
 
@@ -596,11 +610,25 @@ def enrich_ticket_notability(candidate: dict, cache_path: Path | None = None) ->
     cache = _load_cache(cache_path)
     artists = cache.setdefault("artists", {})
     now = now_london()
+    # For a normal named-artist show, the first source/title headliner is the
+    # truth. Do not let a support act with a stronger cache record become the
+    # public artist ("Take That" title rendered as "The Script"). For festival
+    # / open-air / explicit lineup cards, ranking across the lineup is correct:
+    # it lets a major supporting artist surface the event.
     candidate_names = headliners or [artist]
+    lineup_mode = _is_lineup_mode(candidate, kind)
+    if not lineup_mode and artist:
+        candidate_names = [artist]
     ranked = [_artist_notability(name, kind, candidate, artists, now) for name in candidate_names]
     best = max(ranked, key=_rank_tuple)
+    if not lineup_mode and best.artist != artist:
+        best = ranked[0]
     if os.environ.get("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "").strip() == "1":
         write_json(cache_path, cache)
+    signals = dict(best.signals or {})
+    signals["headliner_resolution"] = "lineup_ranked" if lineup_mode else "primary_headliner_locked"
+    if len(headliners) > 1 and not lineup_mode:
+        signals["ignored_support_candidates"] = [name for name in headliners[1:] if name]
     return TicketNotability(
         artist=best.artist,
         kind=kind if kind != "non_artist_show" or len(headliners) <= 1 else "lineup_or_show",
@@ -610,5 +638,5 @@ def enrich_ticket_notability(candidate: dict, cache_path: Path | None = None) ->
         wikidata_id=best.wikidata_id,
         sitelinks=best.sitelinks,
         headliners=tuple(candidate_names),
-        signals=best.signals,
+        signals=signals,
     )

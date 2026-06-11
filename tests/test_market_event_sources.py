@@ -332,6 +332,38 @@ class MarketEventSourcesTest(unittest.TestCase):
         self.assertTrue(any("page 1" in warning for warning in warnings))
         self.assertIn("page=1", fetch.call_args.args[0])
 
+    def test_heritage_live_extracts_lineup_cards_without_anchor_titles(self) -> None:
+        source = SourceDef(
+            name="Heritage Live",
+            report_category="venues_tickets",
+            candidate_category="venues_tickets",
+            url="https://www.heritagelive.net/",
+            primary_block="outside_gm_tickets",
+            source_type="html_heritage_live",
+            allowed_hosts=("heritagelive.net", "heritagelive.seetickets.com"),
+            max_candidates=10,
+        )
+        html = """
+        <html><body>
+          <h3>RICKY MARTIN + SUGABABES + OLLY ALEXANDER</h3>
+          <p>22 Aug 2026 Royal Sandringham Estate Norfolk</p>
+          <a href="https://www.heritagelive.net/">More Info</a>
+          <h3>CHRISTINA AGUILERA + CRAIG DAVID + BLUE</h3>
+          <p>21 Aug 2026 Royal Sandringham Estate Norfolk</p>
+          <a href="https://www.heritagelive.net/">More Info</a>
+        </body></html>
+        """
+
+        candidates = _extract_source_candidates(source, html)
+        titles = [candidate["title"] for candidate in candidates]
+
+        self.assertTrue(any("RICKY MARTIN" in title for title in titles))
+        ricky = next(candidate for candidate in candidates if "RICKY MARTIN" in candidate["title"])
+        self.assertEqual(ricky["primary_block"], "outside_gm_tickets")
+        self.assertIn("Royal Sandringham Estate Norfolk", ricky["summary"])
+        self.assertIn("lineup=RICKY MARTIN, SUGABABES, OLLY ALEXANDER", ricky["summary"])
+        self.assertIn("#ricky-martin", ricky["source_url"])
+
     def test_skiddle_cards_extract_event_link_and_date(self) -> None:
         source = SourceDef(
             name="Skiddle Manchester Bank Holiday",

@@ -346,6 +346,24 @@ def _today_focus_bucket(row: _SectionRow) -> str:
     return "other"
 
 
+def _candidate_future_only_dates(candidate: dict, line: str = "") -> list[date]:
+    text = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "practical_angle", "source_url")
+    )
+    if line:
+        text = f"{text} {line}"
+    dates = _date_signals(text)
+    if not dates:
+        return []
+    today = now_london().date()
+    if any(day <= today for day in dates):
+        return []
+    if re.search(r"\b(?:today|сегодня|this morning|tonight|now|ongoing|continues|active|сейчас|продолжа)\b", text, re.IGNORECASE):
+        return []
+    return sorted(day for day in dates if day > today)
+
+
 def _today_focus_candidate_is_eligible(candidate: dict | None, line: str = "") -> bool:
     if not isinstance(candidate, dict):
         return False
@@ -364,6 +382,8 @@ def _today_focus_candidate_is_eligible(candidate: dict | None, line: str = "") -
     if story_type in _TODAY_FOCUS_BLOCKED_STORY_TYPES:
         return False
     if story_type not in _TODAY_FOCUS_ALLOWED_STORY_TYPES:
+        return False
+    if _candidate_future_only_dates(candidate, line):
         return False
     text = " ".join(
         str(candidate.get(field) or "")
@@ -1084,7 +1104,7 @@ def _attach_source_anchor(line: str, source_url: str, source_label: str) -> str:
     text = str(line or "").strip()
     if "<a " in text.lower():
         return text
-    label = str(source_label or "").strip()
+    label = _public_source_label(source_label)
     label_lower = label.lower()
     # Normalise by stripping trailing punctuation before checking — handles both
     # "...Met Office" and "...Met Office." (period added by LLM or practical angle).
@@ -1093,7 +1113,14 @@ def _attach_source_anchor(line: str, source_url: str, source_label: str) -> str:
         # Only strip trailing spaces (not periods) so the sentence period before
         # the label is preserved: "...зонт обязателен. Met Office" → "...зонт обязателен."
         text = base[: len(base) - len(label)].rstrip(" ")
-    return f"{text} {_source_anchor(source_url, source_label)}".strip()
+    return f"{text} {_source_anchor(source_url, label)}".strip()
+
+
+def _public_source_label(source_label: str) -> str:
+    label = re.sub(r"\s+", " ", str(source_label or "")).strip()
+    label = re.sub(r"\s+public\s+safety\s+fallback\b", "", label, flags=re.IGNORECASE)
+    label = re.sub(r"\s+fallback\b", "", label, flags=re.IGNORECASE)
+    return label.strip() or str(source_label or "").strip()
 
 
 _SUMMER_MONTHS = frozenset({6, 7, 8})
@@ -1398,6 +1425,26 @@ def _ticket_has_active_public_reason(candidate: dict) -> bool:
     return days is not None and 0 <= days <= 7
 
 
+def _ticket_public_mode(candidate: dict) -> str:
+    ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
+    notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+    kind = str(notability.get("kind") or "")
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "source_label")
+    )
+    if ticket_type in {"on_sale_now", "presale_soon", "newly_listed"}:
+        return "sale_radar"
+    if kind == "lineup_or_show" or re.search(r"\bline[- ]?up\s*=", blob, re.IGNORECASE):
+        return "lineup_radar"
+    days = _ticket_days_to_event(candidate)
+    if days is not None and 0 <= days <= 14:
+        return "upcoming_major_show"
+    if ticket_type == "major_upcoming":
+        return "upcoming_major_show"
+    return "ticket_watch"
+
+
 def _ticket_public_priority_score(candidate: dict) -> float:
     """Product ordering for ticket sections: fame first, ticket occasion second."""
     notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
@@ -1510,6 +1557,7 @@ def _ticket_watch_decision(candidate: dict) -> dict[str, object]:
         "headliners": notability.get("headliners") or [],
         "signals": notability.get("signals") or {},
         "ticket_type": ticket_type,
+        "ticket_mode": _ticket_public_mode(candidate),
         "source_label": candidate.get("source_label") or "",
         "primary_block": candidate.get("primary_block") or "",
         "reasons": reasons,
@@ -1528,18 +1576,32 @@ def _ticket_watch_reason(candidate: dict) -> str:
     notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
     tier = str(notability.get("tier") or "").upper()
     ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
+    days = _ticket_days_to_event(candidate)
+    lineup = re.search(r"\bline[- ]?up\s*=", blob, re.IGNORECASE) or str(notability.get("kind") or "") == "lineup_or_show"
+    estate_show = re.search(r"\b(?:estate|open air|open-air|castle|palace|park)\b", blob, re.IGNORECASE)
+    arena_show = _TICKET_MAJOR_VENUE_RE.search(venue) or _TICKET_MAJOR_VENUE_RE.search(summary)
     if tier == "A":
         if ticket_type in {"on_sale_now", "presale_soon", "newly_listed", "major_upcoming"}:
             return "крупный билетный повод"
         return "крупный артист"
-    if ticket_type in {"on_sale_now", "presale_soon", "newly_listed"}:
+    if ticket_type == "presale_soon":
+        return "presale скоро"
+    if ticket_type in {"on_sale_now", "newly_listed"}:
         return "продажа открылась сейчас"
-    elif ticket_type == "event_this_week":
+    if days is not None and 0 <= days <= 7:
+        return "концерт на ближайшей неделе"
+    if days is not None and 8 <= days <= 14:
+        return "ближайшая дата крупного тура"
+    if lineup:
+        return "сильный фестивальный lineup"
+    if estate_show:
+        return "open-air концерт на estate-площадке"
+    if arena_show:
+        return "крупная arena/stadium дата"
+    if ticket_type == "event_this_week":
         return "концерт на этой неделе"
-    elif ticket_type == "major_upcoming":
-        return "новый анонс"
-    if _TICKET_MAJOR_VENUE_RE.search(venue) or _TICKET_MAJOR_VENUE_RE.search(summary):
-        return "крупная площадка"
+    if ticket_type == "major_upcoming":
+        return "заметная UK-дата"
     return "билетный повод"
 
 
@@ -2509,6 +2571,12 @@ def _repair_editorial_contract_line(candidate: dict, line: str) -> tuple[str, li
         if re.search(r"\b(?:доступно\s+с|available\s+from|с\s+2[23]\s+мая)\b", repaired, flags=re.IGNORECASE):
             repaired = _build_bookable_activity_fallback_line(candidate)
             reasons.append("bookable_weekend_language")
+    if str(candidate.get("primary_block") or "") in {"next_7_days", "weekend_activities", "future_announcements"}:
+        if re.search(r"\b(?:проверьте\s+(?:наличие\s+мест|доступность|дат[уы]|время|бронирование)|билеты\s+доступны\s+на\s+сайте)\b", repaired, flags=re.IGNORECASE):
+            fallback = _build_event_fallback_line(candidate)
+            if fallback and not re.search(r"\bпроверьте\s+(?:наличие\s+мест|доступность|дат[уы]|время|бронирование)\b", fallback, flags=re.IGNORECASE):
+                repaired = fallback
+                reasons.append("event_generic_cta_repaired")
     if re.search(r"\bГМ\b", repaired):
         repaired = re.sub(r"\bГМ\b", "Greater Manchester", repaired)
         reasons.append("gm_abbreviation")
@@ -2547,6 +2615,19 @@ def _story_frame_quality_errors(candidate: dict, line: str) -> list[str]:
         if str(contract.get("story_type") or "") in {"human_interest", "soft_news", "day_out_guide", "property_listing"}:
             errors.append("fresh-news contract: soft story cannot stay in top news.")
     return errors
+
+
+def _has_clear_section_story(candidate: dict, line: str) -> bool:
+    frame = candidate.get("story_frame") if isinstance(candidate.get("story_frame"), dict) else {}
+    missing = {str(x) for x in (frame.get("missing_facts") or [])}
+    if {"what_happened", "why_now"} & missing:
+        return False
+    text = re.sub(r"<[^>]+>", " ", str(line or ""))
+    if not re.search(r"[.!?]", text):
+        return False
+    if not re.search(r":|—|\b(?:совет|полиция|суд|служба|жител|бизнес|школ|больниц|council|police|court)\b", text, re.IGNORECASE):
+        return False
+    return len(re.sub(r"\s+", " ", text).strip()) >= 90
 
 
 def _service_fallback_subject(title: str) -> str:
@@ -2629,6 +2710,10 @@ def _apply_section_min_floor_pull_back(
     for c in pool:
         if len(lines) >= min_floor:
             break
+        if section_name == TODAY_FOCUS_SECTION and not _today_focus_candidate_is_eligible(c, str(c.get("draft_line") or "")):
+            continue
+        if section_name == "Что важно в ближайшие 7 дней" and _next_7_event_decision(c)[0] != "keep":
+            continue
         line = str(c.get("draft_line") or "").strip()
         category = str(c.get("category") or "")
         if not line:
@@ -2717,8 +2802,12 @@ def _build_event_fallback_line(candidate: dict) -> str:
         time_part = f" в {event_dt.strftime('%H:%M')}"
     booking = str(event.get("booking_url") or candidate.get("source_url") or "").strip()
     practical = str(candidate.get("practical_angle") or "").strip()
-    if not practical or re.search(r"\bпроверьте\s+дат[уы]", practical, re.IGNORECASE):
-        practical = "Проверьте наличие мест перед посещением."
+    if (
+        not practical
+        or re.search(r"\bпроверьте\s+(?:наличие\s+мест|доступность|дат[уы]|время|бронирование)\b", practical, re.IGNORECASE)
+        or re.search(r"\bбилеты\s+доступны\s+на\s+сайте\b", practical, re.IGNORECASE)
+    ):
+        practical = _event_supporting_detail(candidate)
     parts: list[str] = ["•"]
     if day_month:
         parts.append(f"{day_month}{time_part}")
@@ -2731,6 +2820,26 @@ def _build_event_fallback_line(candidate: dict) -> str:
         parts.append(f"{title}.")
     line = " ".join(parts)
     return f"{line} {practical}".strip()
+
+
+def _event_supporting_detail(candidate: dict) -> str:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("summary", "lead", "evidence_text")
+    )
+    price = str(event.get("price") or "").strip()
+    if not price:
+        match = re.search(r"£\s?\d+(?:\.\d{1,2})?(?:\s?[–-]\s?£?\d+(?:\.\d{1,2})?)?", blob)
+        price = match.group(0).replace(" ", "") if match else ""
+    if price:
+        return f"Билеты {price}."
+    if re.search(r"\bfree\s+(?:entry|admission|event)|вход\s+свободн|бесплат", blob, re.IGNORECASE):
+        return "Вход свободный."
+    kind = _weekend_activity_kind(candidate)
+    if kind != "событие":
+        return f"Формат: {kind}."
+    return ""
 
 
 def _build_public_service_fallback_line(candidate: dict) -> str:
@@ -2889,6 +2998,74 @@ def _complete_next_7_rescue_candidate(candidate: dict, section_name: str) -> boo
     if re.search(r"\b(?:non-GM|not GM|expired|past|duplicate|paywall|full text not accessible|stub)\b", reason, re.IGNORECASE):
         return False
     return True
+
+
+def _move_row_to_section(
+    row: _SectionRow,
+    dest_section: str,
+    sections: dict[str, list[str]],
+    section_sources: dict[str, list[str]],
+    section_scores: dict[str, list[float]],
+    section_fingerprints: dict[str, list[str]],
+    section_titles: dict[str, list[str]],
+) -> None:
+    row.section = dest_section
+    _append_section_row(dest_section, row, sections, section_sources, section_scores, section_fingerprints, section_titles)
+
+
+def _apply_final_section_role_routing(
+    sections: dict[str, list[str]],
+    section_sources: dict[str, list[str]],
+    section_scores: dict[str, list[float]],
+    section_fingerprints: dict[str, list[str]],
+    section_titles: dict[str, list[str]],
+    candidate_by_fp: dict[str, dict],
+    warnings: list[str],
+) -> dict[str, int]:
+    """Last editorial pass before caps/rendering.
+
+    Earlier stages enrich and score candidates, but section floors/backfill can
+    still put a good item into the wrong public block. This pass repairs that by
+    rerouting, not by dropping, whenever the target section's public promise is
+    not met.
+    """
+    moved = {"today_to_other": 0, "next7_to_future": 0, "next7_held": 0}
+
+    today_rows = _section_rows(TODAY_FOCUS_SECTION, sections, section_sources, section_scores, section_fingerprints, section_titles, candidate_by_fp)
+    kept_today: list[_SectionRow] = []
+    for row in today_rows:
+        if _today_focus_candidate_is_eligible(row.candidate, row.line):
+            kept_today.append(row)
+            continue
+        dest = _reroute_today_focus_row(row)
+        _move_row_to_section(row, dest, sections, section_sources, section_scores, section_fingerprints, section_titles)
+        moved["today_to_other"] += 1
+        warnings.append(f"Final section gate: moved «{row.title or row.line[:80]}» from Today to «{dest}».")
+    if len(kept_today) != len(today_rows):
+        _set_section_rows(TODAY_FOCUS_SECTION, kept_today, sections, section_sources, section_scores, section_fingerprints, section_titles)
+
+    next_rows = _section_rows("Что важно в ближайшие 7 дней", sections, section_sources, section_scores, section_fingerprints, section_titles, candidate_by_fp)
+    kept_next: list[_SectionRow] = []
+    for row in next_rows:
+        candidate = row.candidate
+        if not isinstance(candidate, dict):
+            kept_next.append(row)
+            continue
+        decision, reason = _next_7_event_decision(candidate)
+        if decision == "keep":
+            kept_next.append(row)
+            continue
+        if decision == "move_future":
+            _move_row_to_section(row, "Дальние анонсы", sections, section_sources, section_scores, section_fingerprints, section_titles)
+            moved["next7_to_future"] += 1
+            warnings.append(f"Final section gate: moved «{row.title or row.line[:80]}» from Next 7 to future announcements ({reason}).")
+            continue
+        moved["next7_held"] += 1
+        warnings.append(f"Final section gate: held Next 7 item «{row.title or row.line[:80]}» ({reason}).")
+    if len(kept_next) != len(next_rows):
+        _set_section_rows("Что важно в ближайшие 7 дней", kept_next, sections, section_sources, section_scores, section_fingerprints, section_titles)
+
+    return moved
 
 
 def _transport_empty_line(project_root: Path) -> str:
@@ -3577,6 +3754,8 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
         _has_event_date = bool(_ev.get("is_event") and str(_ev.get("date_start") or _ev.get("date") or "").strip())
         if _has_event_date and str(_ev.get("venue") or "").strip():
             skip_min = True
+        if block_key == "city_watch" and _has_clear_section_story(candidate, text):
+            skip_min = True
         # Dated event with no struct venue (extractor gap) still gets a lower
         # floor instead of the full 150 — a complete short listing is not weak.
         min_chars = DATED_EVENT_MIN_CHARS if _has_event_date else LONG_FORMAT_MIN_CHARS
@@ -3585,7 +3764,7 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
                 errors.append(
                     f"draft_line for long-format category needs ≥{min_chars} chars (got {len(normalized)})."
                 )
-        if sentence_count < LONG_FORMAT_MIN_SENTENCES and block_key != "city_watch":
+        if sentence_count < LONG_FORMAT_MIN_SENTENCES and block_key != "city_watch" and not (_has_event_date and _event_venue(candidate)):
             errors.append(
                 f"draft_line for long-format category needs ≥{LONG_FORMAT_MIN_SENTENCES} sentences (got {sentence_count})."
             )
@@ -3744,7 +3923,10 @@ def _should_defer_next_7_market(candidate: dict) -> bool:
     return bool(_MARKET_EVENT_RE.search(blob))
 
 
-_MINOR_BUS_STOP_RE = re.compile(r"\bАвтобусы:\s+закрыта остановка\b", re.IGNORECASE)
+_MINOR_BUS_STOP_RE = re.compile(
+    r"\bАвтобусы:\s+(?:закрыт[аы]\s+остановк[аи]|остановк[аи][^.]{0,80}\s+закрыт[аы])\b",
+    re.IGNORECASE,
+)
 
 
 def _is_minor_bus_stop_line(line: str) -> bool:
@@ -3754,19 +3936,74 @@ def _is_minor_bus_stop_line(line: str) -> bool:
     return not re.search(r"\b(?:объезд|закрыты дороги|нет автобусов|маршрут[ыа]?|замещающ)\b", text, re.IGNORECASE)
 
 
+def _transport_line_priority(line: str, score: float = 0.0) -> float:
+    text = re.sub(r"<[^>]+>", " ", str(line or "")).lower()
+    priority = float(score)
+    if re.search(r"\b(?:metrolink|трамва|tram|shudehill|market street|bury line|rochdale line|ashton line|eccles line)\b", text):
+        priority += 1000
+    elif re.search(r"\b(?:national rail|northern|transpennine|transport for wales|поезд|piccadilly|victoria|salford crescent|airport)\b", text):
+        priority += 700
+    elif re.search(r"\b(?:m6|m60|m62|m56|road closed|закрыты дороги|объезд|diversion|route)\b", text):
+        priority += 420
+    elif _is_minor_bus_stop_line(line):
+        priority -= 100
+    elif "автобус" in text:
+        priority += 120
+    return priority
+
+
+def _extract_bus_stop_label(line: str) -> str:
+    text = re.sub(r"<[^>]+>", " ", str(line or ""))
+    text = re.sub(r"\s+", " ", text).strip(" .")
+    patterns = (
+        r"остановка\s+на\s+([^.;—]+?)(?:\s+закрыта|\s+закрыт|\s+из-за|;|\.|$)",
+        r"остановки\s+у\s+([^.;—]+?)(?:\s+закрыты|\s+из-за|;|\.|$)",
+        r"закрыта\s+остановка\s+на\s+([^.;—]+?)(?:\s+из-за|;|\.|$)",
+        r"закрыты\s+остановки\s+у\s+([^.;—]+?)(?:\s+из-за|;|\.|$)",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if match:
+            label = match.group(1).strip(" ,")
+            label = re.sub(r"\s*\(пересечение с [^)]+\)", "", label, flags=re.IGNORECASE)
+            return label[:50]
+    return text.replace("• Автобусы:", "").strip()[:50]
+
+
 def _cap_minor_bus_stop_lines(lines: list[str], srcs: list[str], fps: list[str], scores: list[float], titles: list[str]) -> tuple[list[str], list[str], list[str], list[float], list[str], list[int]]:
-    kept: list[int] = []
-    dropped: list[int] = []
-    minor_count = 0
-    for idx, line in enumerate(lines):
-        if _is_minor_bus_stop_line(line):
-            minor_count += 1
-            if minor_count > 3:
-                dropped.append(idx)
-                continue
-        kept.append(idx)
-    if not dropped:
+    ranked_idx = sorted(
+        range(len(lines)),
+        key=lambda idx: _transport_line_priority(lines[idx], scores[idx] if idx < len(scores) else 0.0),
+        reverse=True,
+    )
+    lines = [lines[i] for i in ranked_idx]
+    srcs = [srcs[i] if i < len(srcs) else "" for i in ranked_idx]
+    fps = [fps[i] if i < len(fps) else "" for i in ranked_idx]
+    scores = [scores[i] if i < len(scores) else 0.0 for i in ranked_idx]
+    titles = [titles[i] if i < len(titles) else "" for i in ranked_idx]
+    minor_indices = [idx for idx, line in enumerate(lines) if _is_minor_bus_stop_line(line)]
+    if len(minor_indices) < 3:
         return lines, srcs, fps, scores, titles, []
+    first_minor = minor_indices[0]
+    labels = [_extract_bus_stop_label(lines[idx]) for idx in minor_indices]
+    labels = [label for label in dict.fromkeys(labels) if label]
+    anchor = ""
+    anchor_match = re.search(r'\s*(<a\s+href="[^"]+">[^<]+</a>)\s*$', lines[first_minor])
+    if anchor_match:
+        anchor = f" {anchor_match.group(1)}"
+    label_text = ", ".join(labels[:5])
+    if len(labels) > 5:
+        label_text += f" и ещё {len(labels) - 5}"
+    grouped_line = (
+        f"• Автобусы: {len(minor_indices)} мелких закрытий остановок из-за работ: "
+        f"{label_text}. Используйте соседние остановки.{anchor}"
+    )
+    kept: list[int] = [idx for idx in range(len(lines)) if idx not in minor_indices]
+    kept.insert(first_minor, first_minor)
+    dropped = [idx for idx in minor_indices if idx != first_minor]
+    lines[first_minor] = grouped_line
+    scores[first_minor] = max([scores[idx] if idx < len(scores) else 0.0 for idx in minor_indices] + [0.0]) - 25
+    titles[first_minor] = f"{len(minor_indices)} bus stop closures"
     return (
         [lines[i] for i in kept],
         [srcs[i] if i < len(srcs) else "" for i in kept],
@@ -3858,6 +4095,7 @@ def write_digest(project_root: Path) -> StageResult:
         "blocked_for_quality": 0,
         "held_for_editorial_quality": 0,
         "dropped_missing_draft_line": 0,
+        "dropped_ticket_not_selected": 0,
         "dropped_english_passthrough": 0,
         "dropped_low_quality": 0,
     }
@@ -4131,6 +4369,32 @@ def write_digest(project_root: Path) -> StageResult:
                 logger.info("RECOVER hard_news | %s | %s", block_key, title[:80])
 
         if not line:
+            if category == "venues_tickets":
+                decision = _ticket_watch_decision(candidate)
+                reasons = [str(reason) for reason in decision.get("reasons") or [] if str(reason).strip()]
+                if not reasons:
+                    reasons = ["ticket did not meet public radar criteria"]
+                _append_recovery_step(candidate, "ticket_public_selection", "held", missing=reasons)
+                warnings.append(
+                    f"Candidate #{index}: ticket not selected for public radar ({'; '.join(reasons)})."
+                )
+                logger.info("HOLD ticket_not_selected | %s | %s | %s", block_key, title[:80], "; ".join(reasons))
+                quality_counts["dropped_ticket_not_selected"] += 1
+                dropped_candidates.append(
+                    {
+                        "fingerprint": candidate.get("fingerprint"),
+                        "title": title,
+                        "category": category,
+                        "primary_block": block_key,
+                        "is_lead": bool(candidate.get("is_lead")),
+                        "reasons": [f"Ticket not selected: {reason}" for reason in reasons],
+                        "ticket_watch": decision,
+                        "story_frame": candidate.get("story_frame") or {},
+                        "recovery_trace": candidate.get("recovery_trace") or [],
+                        "recovery_plan": candidate.get("recovery_plan") or {},
+                    }
+                )
+                continue
             if category in REQUIRE_DRAFT_LINE_CATEGORIES:
                 _append_recovery_step(candidate, "final_hold", "held", missing=(candidate.get("story_frame") or {}).get("missing_facts") or ["draft_line"])
                 warnings.append(f"Candidate #{index} dropped: no model draft_line for {category!r}.")
@@ -4308,6 +4572,15 @@ def write_digest(project_root: Path) -> StageResult:
         section_fingerprints["Общественный транспорт сегодня"] = [""]
         section_titles["Общественный транспорт сегодня"] = ["Транспорт проверен"]
         warnings.append("Writer added honest empty-transport coverage line.")
+    final_section_routing = _apply_final_section_role_routing(
+        sections,
+        section_sources,
+        section_scores,
+        section_fingerprints,
+        section_titles,
+        candidate_by_fp,
+        warnings,
+    )
 
     rendered: list[str] = [_title_line(), ""]
 
@@ -4582,6 +4855,7 @@ def write_digest(project_root: Path) -> StageResult:
             },
             "backfilled_today_focus": backfilled_today_focus,
             "today_focus_board": today_focus_board,
+            "final_section_routing": final_section_routing,
             "degraded_shrink": {
                 "enabled": bool(llm_degraded),
                 "llm_stage_status": str(llm_rewrite_report.get("stage_status") or "") if llm_rewrite_report else "",
