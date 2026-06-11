@@ -255,6 +255,8 @@ SOURCE_TIER: dict[str, int] = {
     "BBC Manchester": 2,
     "BBC Manchester Web": 2,
     "BBC Manchester public safety fallback": 2,
+    "BBC Sport Manchester United": 2,
+    "BBC Sport Manchester City": 2,
     "ITV Granada Greater Manchester": 2,
     "MEN": 2,
     "MEN Latest News": 2,
