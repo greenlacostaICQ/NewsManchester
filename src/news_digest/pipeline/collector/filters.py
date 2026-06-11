@@ -467,11 +467,21 @@ _FOOTBALL_FLUFF_TOKENS: tuple[str, ...] = (
 )
 
 
-def _is_football_fluff(title: str, url: str = "") -> bool:
+def _is_football_fluff(title: str, url: str = "", summary: str = "") -> bool:
     # Normalize URL slugs (hyphens → spaces) so tokens like "press conference"
     # also match "press-conference" in article URL paths.
     normalized = f"{title} {url.replace('-', ' ')}".lower()
     if " on tv" in normalized or "tv listings" in normalized:
+        return True
+    # Women's football: the signal is usually NOT in the headline. mancity.com
+    # files it under /news/womens/, and the body says "Women's football". The
+    # owner wants men's first team + World Cup + light PR, but NOT women's —
+    # so detect it by URL path and body text, not just the title.
+    url_l = url.lower()
+    if "/womens/" in url_l or "/women/" in url_l or "/women-" in url_l:
+        return True
+    blob = f"{normalized} {str(summary or '').lower()}"
+    if "women's football" in blob or "women's super league" in blob or "wsl" in blob:
         return True
     return any(token in normalized for token in _FOOTBALL_FLUFF_TOKENS)
 
@@ -1065,14 +1075,14 @@ def _source_override(
     if source.name == "Manchester United":
         if "/en/news/" not in lowered_path:
             return False
-        if _is_football_fluff(lowered_title, lowered_path):
+        if _is_football_fluff(lowered_title, lowered_path, lowered_summary):
             return False
         return True
 
     if source.name in {"Manchester City", "Manchester City Men"}:
         if "/news/" not in lowered_path:
             return False
-        if _is_football_fluff(lowered_title, lowered_path):
+        if _is_football_fluff(lowered_title, lowered_path, lowered_summary):
             return False
         return True
 
