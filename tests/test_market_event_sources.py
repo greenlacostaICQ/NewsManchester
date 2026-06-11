@@ -345,7 +345,8 @@ class MarketEventSourcesTest(unittest.TestCase):
         )
         html = """
         <html><body>
-          <h3>RICKY MARTIN + SUGABABES + OLLY ALEXANDER</h3>
+          <h3>RICKY MARTIN</h3>
+          <p>+ SUGABABES + OLLY ALEXANDER</p>
           <p>22 Aug 2026 Royal Sandringham Estate Norfolk</p>
           <a href="https://www.heritagelive.net/">More Info</a>
           <h3>CHRISTINA AGUILERA + CRAIG DAVID + BLUE</h3>

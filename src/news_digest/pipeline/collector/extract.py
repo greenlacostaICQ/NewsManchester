@@ -593,6 +593,7 @@ def _should_enrich_source(source: SourceDef) -> bool:
 _TRUSTED_CARD_ENRICHMENT = {
     "ok_dmn_card", "ok_skiddle_card", "ok_page_event",
     "ok_weekly_section", "ok_sectioned_guide", "ok_gmmh_press_release",
+    "ok_heritage_card",
 }
 
 
@@ -2036,7 +2037,7 @@ def _heritage_slug(*parts: str) -> str:
 def _heritage_lineup_names(lineup: str) -> list[str]:
     names: list[str] = []
     for part in _HERITAGE_LINEUP_RE.split(lineup):
-        name = re.sub(r"\s+", " ", part).strip(" .,-–—")
+        name = re.sub(r"\s+", " ", part).strip(" +.,-–—")
         if len(name) >= 3:
             names.append(name)
     return list(dict.fromkeys(names))
@@ -2062,7 +2063,12 @@ def _extract_heritage_live_items(source: SourceDef, body: str) -> list[Extracted
     even when the page clearly lists major UK shows and lineups.
     """
 
-    lines = _html_text_lines(body)
+    lines: list[str] = []
+    for line in _html_text_lines(body):
+        if line.lstrip().startswith("+") and lines:
+            lines[-1] = f"{lines[-1]} {line.strip()}"
+        else:
+            lines.append(line)
     items: list[ExtractedItem] = []
     seen: set[tuple[str, str, str]] = set()
     for idx, line in enumerate(lines):
@@ -2107,6 +2113,7 @@ def _extract_heritage_live_items(source: SourceDef, body: str) -> list[Extracted
                 url=url,
                 published_at=date_iso,
                 summary=" | ".join(summary_parts),
+                enrichment_status="ok_heritage_card",
                 structured_event_hint={
                     "schema_source": "heritage_live",
                     "event_name": line,
