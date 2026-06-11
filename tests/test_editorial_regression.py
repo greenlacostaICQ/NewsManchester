@@ -342,6 +342,39 @@ class DuplicateTest(unittest.TestCase):
         self.assertEqual(drops, [])
         self.assertTrue(all(item["include"] for item in candidates))
 
+    def test_same_ticket_event_dedupes_across_gm_and_uk_sections(self) -> None:
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "gm-take-that",
+                "dedupe_decision": "new",
+                "category": "venues_tickets",
+                "primary_block": "ticket_radar",
+                "title": "TAKE THAT - THE CIRCUS LIVE - Summer 2026 — event 2026-06-19",
+                "summary": "Etihad Stadium | Manchester | Pop | event_date=2026-06-19 17:00 | ticket_type=major_upcoming",
+                "event": {"event_name": "TAKE THAT - THE CIRCUS LIVE - Summer 2026", "venue": "Etihad Stadium", "date_start": "2026-06-19"},
+                "source_label": "Ticketmaster Manchester Upcoming",
+                "source_url": "https://ticketmaster.co.uk/take-that/event/3E006331A86D5743",
+            },
+            {
+                "include": True,
+                "fingerprint": "uk-take-that",
+                "dedupe_decision": "new",
+                "category": "venues_tickets",
+                "primary_block": "outside_gm_tickets",
+                "title": "TAKE THAT - THE CIRCUS LIVE - Summer 2026 — event 2026-06-19",
+                "summary": "Etihad Stadium | Manchester | Pop | event_date=2026-06-19 17:00 | ticket_type=major_upcoming",
+                "event": {"event_name": "TAKE THAT - THE CIRCUS LIVE - Summer 2026", "venue": "Etihad Stadium", "date_start": "2026-06-19"},
+                "source_label": "Ticketmaster UK Major Upcoming",
+                "source_url": "https://ticketmaster.co.uk/take-that/event/3E006331A86D5743",
+            },
+        ]
+        drops = _apply_intra_batch_dedup(candidates)
+        self.assertEqual(len(drops), 1, drops)
+        self.assertEqual(drops[0]["fingerprint"], "uk-take-that")
+        self.assertTrue(candidates[0]["include"])
+        self.assertFalse(candidates[1]["include"])
+
     def test_venue_premium_ticket_events_require_specific_overlap(self) -> None:
         # "Venue Premium Tickets" is Ticketmaster packaging, not the event.
         candidates = [
