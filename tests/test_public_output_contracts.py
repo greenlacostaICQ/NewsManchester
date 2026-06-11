@@ -761,6 +761,54 @@ class PublicOutputContractTests(unittest.TestCase):
         }
         self.assertEqual(ticket_headliner_candidates(candidate)[0], "Kings Of Leon")
 
+    def test_support_act_cannot_replace_primary_ticket_headliner(self) -> None:
+        cache_path = self._ticket_notability_cache(
+            {
+                "take that": {
+                    "artist": "Take That",
+                    "tier": "A",
+                    "confidence": 0.95,
+                    "signal": "wikidata_sitelinks",
+                    "sitelinks": 80,
+                },
+                "the script": {
+                    "artist": "The Script",
+                    "tier": "A",
+                    "confidence": 0.98,
+                    "signal": "wikidata_sitelinks",
+                    "sitelinks": 90,
+                },
+            }
+        )
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "TAKE THAT - THE CIRCUS LIVE - Summer 2026 — event 2026-06-19",
+            "summary": "Etihad Stadium | Manchester | Pop | event_date=2026-06-19 17:00 | ticket_type=major_upcoming",
+            "event": {
+                "event_name": "TAKE THAT - THE CIRCUS LIVE - Summer 2026",
+                "venue": "Etihad Stadium",
+                "date_start": "2026-06-19",
+                "attractions": [{"name": "Take That"}, {"name": "The Script"}],
+            },
+        }
+        with patch.dict(os.environ, {"NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP": "0"}):
+            notability = enrich_ticket_notability(candidate, cache_path)
+        candidate["ticket_notability"] = {
+            "artist": notability.artist,
+            "kind": notability.kind,
+            "tier": notability.tier,
+            "signal": notability.signal,
+            "headliners": list(notability.headliners),
+            "signals": notability.signals or {},
+        }
+
+        self.assertEqual(notability.artist, "TAKE THAT")
+        self.assertEqual((notability.signals or {}).get("headliner_resolution"), "primary_headliner_locked")
+        line = _build_ticket_fallback_line(candidate)
+        self.assertIn("TAKE THAT", line)
+        self.assertNotIn("The Script", line)
+
     def test_festival_lineup_promotes_strong_headliner_inside_card(self) -> None:
         cache_path = self._ticket_notability_cache(
             {
