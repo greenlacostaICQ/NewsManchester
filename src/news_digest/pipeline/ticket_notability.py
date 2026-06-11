@@ -617,7 +617,14 @@ def enrich_ticket_notability(candidate: dict, cache_path: Path | None = None) ->
     # it lets a major supporting artist surface the event.
     candidate_names = headliners or [artist]
     lineup_mode = _is_lineup_mode(candidate, kind)
-    if not lineup_mode and artist:
+    if lineup_mode:
+        individual_names = [
+            name for name in candidate_names
+            if "+" not in name and not re.search(r"\s+\bwith\b\s+", name, re.IGNORECASE)
+        ]
+        if individual_names:
+            candidate_names = individual_names
+    elif artist:
         candidate_names = [artist]
     ranked = [_artist_notability(name, kind, candidate, artists, now) for name in candidate_names]
     best = max(ranked, key=_rank_tuple)

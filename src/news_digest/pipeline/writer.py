@@ -1580,10 +1580,6 @@ def _ticket_watch_reason(candidate: dict) -> str:
     lineup = re.search(r"\bline[- ]?up\s*=", blob, re.IGNORECASE) or str(notability.get("kind") or "") == "lineup_or_show"
     estate_show = re.search(r"\b(?:estate|open air|open-air|castle|palace|park)\b", blob, re.IGNORECASE)
     arena_show = _TICKET_MAJOR_VENUE_RE.search(venue) or _TICKET_MAJOR_VENUE_RE.search(summary)
-    if tier == "A":
-        if ticket_type in {"on_sale_now", "presale_soon", "newly_listed", "major_upcoming"}:
-            return "крупный билетный повод"
-        return "крупный артист"
     if ticket_type == "presale_soon":
         return "presale скоро"
     if ticket_type in {"on_sale_now", "newly_listed"}:
@@ -1598,6 +1594,8 @@ def _ticket_watch_reason(candidate: dict) -> str:
         return "open-air концерт на estate-площадке"
     if arena_show:
         return "крупная arena/stadium дата"
+    if tier == "A":
+        return "крупный артист с UK-датой"
     if ticket_type == "event_this_week":
         return "концерт на этой неделе"
     if ticket_type == "major_upcoming":
