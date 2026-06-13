@@ -402,6 +402,55 @@ class _RateLimiter:
 # so the 8 batches never fire in the same instant.
 _API_RATE_LIMITER = _RateLimiter(_REWRITE_MAX_RPM, burst=min(_REWRITE_API_CONCURRENCY, 4))
 
+# The REAL ceiling on a Tier-1 org is tokens-per-minute (TPM), not requests:
+# e.g. gpt-4o = 30k TPM. Pacing requests isn't enough — one big request can
+# blow it. This limiter paces by estimated tokens (input + reserved output) so
+# we stay just under the ceiling and never trip the 429 storm that killed the
+# 2026-06-11..13 runs. Default leaves headroom under 30k; tune via env.
+try:
+    _REWRITE_MAX_TPM = max(2000.0, float(os.environ.get("LLM_REWRITE_MAX_TPM", "27000") or "27000"))
+except ValueError:
+    _REWRITE_MAX_TPM = 27000.0
+
+
+class _TokenRateLimiter:
+    """Token bucket measured in LLM tokens per minute (not requests).
+
+    Each call acquires its estimated cost; the bucket refills at max_tpm/60 per
+    second. Thread-safe. A request larger than the whole budget is clamped so
+    it can still proceed instead of waiting forever.
+    """
+
+    def __init__(self, max_tpm: float) -> None:
+        self._rate = max_tpm / 60.0
+        self._capacity = float(max_tpm)
+        self._available = self._capacity
+        self._updated = time.monotonic()
+        self._lock = threading.Lock()
+
+    def acquire(self, cost: float) -> None:
+        cost = max(0.0, min(float(cost), self._capacity))
+        while True:
+            with self._lock:
+                now = time.monotonic()
+                self._available = min(self._capacity, self._available + (now - self._updated) * self._rate)
+                self._updated = now
+                if self._available >= cost:
+                    self._available -= cost
+                    return
+                wait = (cost - self._available) / self._rate
+            time.sleep(max(wait, 0.0))
+
+
+_API_TOKEN_LIMITER = _TokenRateLimiter(_REWRITE_MAX_TPM)
+
+
+def _estimate_request_tokens(messages: list, max_tokens: int) -> int:
+    """Rough token cost for the TPM limiter: input chars/4 + reserved output.
+    Deliberately on the high side so we stay under the ceiling."""
+    chars = sum(len(str(m.get("content") or "")) for m in messages)
+    return chars // 4 + int(max_tokens)
+
 
 def _jittered_sleep(base: float) -> None:
     """Sleep ``base`` + up to ``base`` random jitter so batches that hit a
@@ -1171,12 +1220,18 @@ def _call_provider_batch(
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content},
             ]
-            max_tokens = 8192
-            # Two-stage throttle: the semaphore caps concurrency, the rate
-            # limiter paces *when* each call starts, so the parallel fan-out
-            # can't hit OpenAI in one synchronized burst (→ 429 storm).
+            # Right-size the output reservation to the batch: OpenAI counts
+            # max_tokens against the per-minute ceiling, so reserving a flat
+            # 8192 for a handful of short cards wasted ~3/4 of the budget and
+            # tripped the TPM 429 storm. ~512 tokens/card + buffer is ample for
+            # 350-450 char Russian cards without risking truncation.
+            max_tokens = min(8192, 512 * len(batch) + 1024)
+            # Three-stage throttle: semaphore caps concurrency, the rate limiter
+            # paces *when* calls start, and the token limiter keeps tokens-per-
+            # minute under OpenAI's real ceiling (the actual cause of the 429s).
             with _API_SEMAPHORE:
                 _API_RATE_LIMITER.acquire()
+                _API_TOKEN_LIMITER.acquire(_estimate_request_tokens(messages, max_tokens))
                 response = client.chat.completions.create(
                     model=model,
                     messages=messages,
