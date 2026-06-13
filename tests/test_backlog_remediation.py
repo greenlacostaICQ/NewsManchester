@@ -1937,11 +1937,12 @@ class TelegramBacklog20260527Test(unittest.TestCase):
     borderline_queue stored every hold as `no_reason`. One assertion per
     behaviour."""
 
-    def test_public_digest_max_visible_items_is_35(self) -> None:
-        # Owner-set ceiling: 35 is the MAXIMUM (not a fill quota). Lowering it
-        # to 25 silently dropped real items, which the owner explicitly rejected.
+    def test_public_digest_max_visible_items_ceiling(self) -> None:
+        # Owner-set ceiling: a MAXIMUM (not a fill quota). Raised 35→37 to make
+        # room for the 2 reserved IT/business slots without squeezing other
+        # sections. Lowering it silently dropped real items (owner rejected that).
         from news_digest.pipeline.writer import PUBLIC_DIGEST_MAX_VISIBLE_ITEMS
-        self.assertEqual(PUBLIC_DIGEST_MAX_VISIBLE_ITEMS, 35)
+        self.assertEqual(PUBLIC_DIGEST_MAX_VISIBLE_ITEMS, 37)
 
     def test_ticket_within_7_days_kept_in_ticket_radar_despite_old_onsale(self) -> None:
         from news_digest.pipeline.candidate_validator import _exclude_stale_ticket_onsale

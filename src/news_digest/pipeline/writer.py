@@ -121,7 +121,7 @@ DEGRADED_LLM_SECTION_MAX_ITEMS = {
     "Русскоязычные концерты и стендап UK": 3,
 }
 
-PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 35
+PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 37  # +2 to make room for the reserved IT/business slots
 PUBLIC_SECTION_RESERVED_MIN = {
     # Fresh/Today are the product spine of the morning issue. They must not be
     # squeezed by later ticket/event rails when strong written news already
@@ -134,6 +134,11 @@ PUBLIC_SECTION_RESERVED_MIN = {
     "Что важно в ближайшие 7 дней": 3,
     "Билеты / Ticket Radar": 2,
     "Футбол": 2,
+    # IT/business sits near the end of the order, so the visible-item budget was
+    # exhausted before it (valid items like a new HQ/office, startup, conference
+    # or development came back 'selected_not_published'). Reserve 2 slots so up
+    # to 2 real business items always make the issue when they exist.
+    "IT и бизнес": 2,
 }
 _BAD_EDITORIAL_PROSE_MARKERS = (
     "ticket office",
