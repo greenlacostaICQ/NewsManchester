@@ -128,6 +128,10 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         semantic_previous = _semantic_published_matches(candidate, published_titles)
         people_previous = _people_published_matches(candidate, published_titles)
         topic_previous = _topic_published_matches(candidate, published_by_topic)
+        title_similar_previous = _filter_distinct_market_previous_matches(candidate, title_similar_previous, published_by_fp)
+        semantic_previous = _filter_distinct_market_previous_matches(candidate, semantic_previous, published_by_fp)
+        people_previous = _filter_distinct_market_previous_matches(candidate, people_previous, published_by_fp)
+        topic_previous = _filter_distinct_market_previous_matches(candidate, topic_previous, published_by_fp)
         similar_previous = _merge_previous_matches(
             title_similar_previous, semantic_previous, people_previous, topic_previous,
         )
@@ -1174,11 +1178,26 @@ def _market_identity_tokens(candidate: dict) -> set[str]:
     for phrase in re.findall(
         r"\b(?:new smithfield|bowlee|barton|burnage|altrincham|northern quarter|"
         r"stockport|urmston|chorlton|levenshulme|wythenshawe|ancoats|cheadle|"
-        r"stretford|first street|"
+        r"stretford|first street|spinningfields|great northern|bolton|prestwich|"
+        r"oak street|macron stadium|trafford|salford|"
         r"aerodrome|community park|market house)\b",
         text,
     ):
         tokens.add(re.sub(r"\s+", " ", phrase).strip())
+    for phrase in re.findall(
+        r"\b([a-z0-9'& -]{2,60}?\s+(?:makers?\s+market|artisan\s+market|"
+        r"farmers?\s+market|car\s*boot(?:\s+sale)?|market))\b",
+        text,
+    ):
+        clean = re.sub(r"[^a-z0-9'& -]+", " ", phrase).strip()
+        clean = re.sub(r"\s+", " ", clean)
+        clean = re.sub(r"^(?:a|an|the|this|that|every|weekly)\s+", "", clean)
+        if (
+            clean
+            and clean not in {"market", "makers market", "maker market", "artisan market", "farmers market", "car boot", "car boot sale"}
+            and not _GENERIC_MARKET_TITLE_RE.fullmatch(clean)
+        ):
+            tokens.add(clean)
     source_label = str(candidate.get("source_label") or "").strip().lower()
     if source_label and not _GENERIC_MARKET_TITLE_RE.fullmatch(source_label):
         tokens.add(source_label)
@@ -1193,6 +1212,22 @@ def _distinct_market_listing_pair(first: dict, second: dict) -> bool:
     if not first_ids or not second_ids:
         return False
     return first_ids.isdisjoint(second_ids)
+
+
+def _filter_distinct_market_previous_matches(
+    candidate: dict,
+    matches: list[dict],
+    published_by_fp: dict[str, dict],
+) -> list[dict]:
+    if not _is_market_listing(candidate):
+        return matches
+    filtered: list[dict] = []
+    for match in matches:
+        previous = published_by_fp.get(str(match.get("fingerprint") or "")) or match
+        if _distinct_market_listing_pair(candidate, previous):
+            continue
+        filtered.append(match)
+    return filtered
 
 
 _EVENT_DEDUPE_BLOCKS = frozenset({

@@ -148,6 +148,50 @@ class MarketEventSourcesTest(unittest.TestCase):
         self.assertEqual(candidate["title"], "Kraftwerk")
         self.assertIn("O2 Apollo", candidate["evidence_text"])
 
+    def test_manchester_theatres_extracts_cards_not_day_headings(self) -> None:
+        source = SourceDef(
+            name="Manchester Theatres Weekend",
+            report_category="culture_weekly",
+            candidate_category="culture_weekly",
+            url="https://manchestertheatres.com/whatson/this-weekend",
+            primary_block="weekend_activities",
+            source_type="html_sectioned_event_guide",
+            allowed_hosts=("manchestertheatres.com",),
+            max_candidates=6,
+        )
+        html = """
+        <main>
+          <h2>Saturday 13 June 2026</h2>
+          <article>
+            <a href="/event/the-ballad-of-johnny-and-june">The Ballad of Johnny &amp; June</a>
+            <p>The Lowry, Salford. Tickets from £25.</p>
+            <p>A theatre show about Johnny Cash and June Carter.</p>
+          </article>
+          <h2>Sunday 14 June 2026</h2>
+          <article>
+            <a href="/event/amy-and-carlos-reborn">Amy &amp; Carlos - Reborn</a>
+            <p>The Lowry, Salford. Tickets from £39.50.</p>
+          </article>
+          <h3>You may also like</h3>
+          <article>
+            <a href="/sport/tommy-fury-eddie-hall">Tommy Fury vs Eddie Hall</a>
+          </article>
+        </main>
+        """
+
+        candidates = _extract_source_candidates(source, html)
+        titles = [candidate["title"] for candidate in candidates]
+
+        self.assertIn("The Ballad of Johnny & June", titles)
+        self.assertIn("Amy & Carlos - Reborn", titles)
+        self.assertNotIn("Saturday 13 June 2026", titles)
+        self.assertNotIn("Sunday 14 June 2026", titles)
+        self.assertNotIn("You may also like", titles)
+        self.assertTrue(all("/card/" in candidate["source_url"] for candidate in candidates))
+        amy = next(candidate for candidate in candidates if candidate["title"] == "Amy & Carlos - Reborn")
+        self.assertEqual(amy["structured_event_hint"]["date_start"][:10], "2026-06-14")
+        self.assertEqual(amy["structured_event_hint"]["venue"], "The Lowry")
+
     def test_rncm_cards_extract_from_aria_event_markup(self) -> None:
         source = SourceDef(
             name="RNCM",

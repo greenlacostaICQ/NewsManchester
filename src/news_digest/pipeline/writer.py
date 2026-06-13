@@ -2380,6 +2380,10 @@ def _event_source_blob(candidate: dict) -> str:
 
 def _clean_event_venue_name(value: str) -> str:
     venue = re.sub(r"\s+", " ", str(value or "")).strip(" .,-–—|")
+    if re.search(r"\bbarton\s+aerodrome\b", venue, flags=re.IGNORECASE):
+        return "Barton Aerodrome"
+    if re.search(r"\bmacron\s+stadium\b", venue, flags=re.IGNORECASE):
+        return "Macron Stadium"
     venue = re.sub(
         r"\s+\b(?:You|Share|Book\s+now|Tickets?|What's\s+on|Visit|More\s+info)\b\s*$",
         "",
@@ -2415,6 +2419,16 @@ def _is_weekend_seller_admin_page(candidate: dict) -> bool:
 def _event_venue(candidate: dict) -> str:
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     venue = _clean_event_venue_name(str(event.get("venue") or ""))
+    source_label = str(candidate.get("source_label") or "")
+    generic_venue = {"greater manchester", "manchester", "bury", "rochdale", "salford"}
+    if "home" not in source_label.lower():
+        generic_venue.add("home")
+    if (
+        venue
+        and venue.lower() not in generic_venue
+        and not _event_venue_is_sourceish(candidate, venue)
+    ):
+        return venue
     blob = " ".join(
         str(candidate.get(field) or "")
         for field in ("summary", "lead", "evidence_text", "title")
@@ -2438,13 +2452,40 @@ def _event_venue(candidate: dict) -> str:
         match = re.search(pattern, blob, flags=re.IGNORECASE)
         if match:
             return match.group(1)
-    source_label = str(candidate.get("source_label") or "")
-    generic_venue = {"greater manchester", "manchester", "bury", "rochdale", "salford"}
-    if "home" not in source_label.lower():
-        generic_venue.add("home")
     if venue and venue.lower() not in generic_venue:
         return venue
     return ""
+
+
+def _weekend_occurrence_datetime(candidate: dict) -> datetime | None:
+    structured = _event_structured_datetime(candidate) or _parse_ticket_datetime(candidate)
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            candidate.get("title"),
+            candidate.get("summary"),
+            candidate.get("lead"),
+            candidate.get("evidence_text"),
+            event.get("date_text"),
+            event.get("date_start"),
+            event.get("date_end"),
+            candidate.get("source_url"),
+        )
+    )
+    dates = sorted(dict.fromkeys(_date_signals(text)))
+    weekend_start = _current_weekend_start()
+    weekend_end = _current_weekend_end()
+    current_weekend_dates = [day for day in dates if weekend_start <= day <= weekend_end]
+    if current_weekend_dates:
+        chosen = current_weekend_dates[0]
+        return datetime.combine(chosen, (structured or now_london()).timetz()).replace(tzinfo=now_london().tzinfo)
+    today = now_london().date()
+    future_dates = [day for day in dates if day >= today]
+    if future_dates and (event.get("is_recurring") or _RECURRING_EVENT_MARKERS.search(text)):
+        chosen = future_dates[0]
+        return datetime.combine(chosen, (structured or now_london()).timetz()).replace(tzinfo=now_london().tzinfo)
+    return structured
 
 
 def _format_event_time(raw_hour: str, raw_minute: str = "", meridiem: str = "") -> str:
@@ -2675,7 +2716,7 @@ def _build_weekend_event_fallback_line(candidate: dict) -> str:
     if not title or _looks_like_source_chrome(title):
         return ""
     venue = _event_venue(candidate)
-    event_dt = _event_structured_datetime(candidate) or _parse_ticket_datetime(candidate)
+    event_dt = _weekend_occurrence_datetime(candidate)
     day_month = _format_ru_day_month(event_dt) if event_dt else ""
     time_part = ""
     if event_dt and event_dt.strftime("%H:%M") not in {"00:00", "12:00"}:

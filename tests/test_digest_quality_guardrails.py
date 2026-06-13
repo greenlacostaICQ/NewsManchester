@@ -21,6 +21,7 @@ from news_digest.pipeline.common import (
 )
 from news_digest.pipeline.dedupe import (
     _apply_intra_batch_dedup,
+    _filter_distinct_market_previous_matches,
     _merge_multinight_ticket_runs,
     _borderline_pairs,
     _normalise_person_tokens,
@@ -395,6 +396,31 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         ]
 
         self.assertEqual(_apply_intra_batch_dedup(candidates), [])
+
+    def test_distinct_market_previous_match_is_ignored(self) -> None:
+        candidate = {
+            "title": "Prestwich Makers Market",
+            "summary": "A makers market in Prestwich this weekend.",
+            "evidence_text": "Craft, food and local makers at Prestwich.",
+            "source_label": "Prestwich Makers Market",
+            "primary_block": "weekend_activities",
+        }
+        previous = {
+            "fingerprint": "northern-quarter-market",
+            "title": "Northern Quarter Makers Market",
+            "summary": "A makers market at Oak Street in Manchester.",
+            "source_label": "Northern Quarter Makers Market",
+            "primary_block": "weekend_activities",
+        }
+        matches = [{"fingerprint": "northern-quarter-market", "title": previous["title"], "overlap": 0.6}]
+
+        filtered = _filter_distinct_market_previous_matches(
+            candidate,
+            matches,
+            {"northern-quarter-market": previous},
+        )
+
+        self.assertEqual(filtered, [])
 
     def test_recurring_market_open_on_weekend_passes_date_validator(self) -> None:
         updated = self._validate_one(

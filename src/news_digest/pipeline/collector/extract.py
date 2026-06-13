@@ -593,7 +593,7 @@ def _should_enrich_source(source: SourceDef) -> bool:
 _TRUSTED_CARD_ENRICHMENT = {
     "ok_dmn_card", "ok_skiddle_card", "ok_page_event",
     "ok_weekly_section", "ok_sectioned_guide", "ok_gmmh_press_release",
-    "ok_heritage_card",
+    "ok_heritage_card", "ok_manchester_theatres_card",
 }
 
 
@@ -1124,10 +1124,9 @@ def _extract_phm_events(source: SourceDef, body: str) -> list[ExtractedItem]:
 
 
 def _extract_the_manc_weekly_events(source: SourceDef, body: str) -> list[ExtractedItem]:
-    article_match = re.search(
-        r"<(?:article|main)[^>]*>(.*?)</(?:article|main)>",
-        body,
-        flags=re.IGNORECASE | re.DOTALL,
+    article_match = (
+        re.search(r"<main[^>]*>(.*?)</main>", body, flags=re.IGNORECASE | re.DOTALL)
+        or re.search(r"<article[^>]*>(.*?)</article>", body, flags=re.IGNORECASE | re.DOTALL)
     )
     html_text = article_match.group(1) if article_match else body
     starts = list(re.finditer(r"<h3\b[^>]*>(.*?)</h3>", html_text, flags=re.IGNORECASE | re.DOTALL))
@@ -1233,6 +1232,131 @@ def _looks_like_sectioned_event_title(title: str) -> bool:
         "discover our cities", "about secret manchester",
     )
     return not any(term in lowered for term in blocked)
+
+
+_MANCHESTER_THEATRES_CHROME_RE = re.compile(
+    r"\b(?:you may also like|what'?s on|book tickets|buy tickets|more info|"
+    r"manchester theatres|london theatres|restaurants|bars|hotels|"
+    r"follow us|advertisement|privacy|cookie|search)\b",
+    re.IGNORECASE,
+)
+_MANCHESTER_THEATRES_DAY_RE = re.compile(
+    r"\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s+"
+    r"\d{1,2}(?:st|nd|rd|th)?\s+[a-z]+\s+20\d{2}\b",
+    re.IGNORECASE,
+)
+
+
+def _looks_like_manchester_theatres_chrome(title: str) -> bool:
+    clean = _clean_long_text(title)
+    lowered = clean.lower()
+    if not clean:
+        return True
+    if _MANCHESTER_THEATRES_CHROME_RE.search(clean):
+        return True
+    if _MANCHESTER_THEATRES_DAY_RE.fullmatch(lowered):
+        return True
+    return False
+
+
+def _extract_manchester_theatres_events(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Extract event cards from Manchester Theatres weekend pages.
+
+    These pages are grouped by day. The generic section parser treated day
+    headings ("Saturday 13 June 2026") and chrome ("You may also like") as
+    events, then attached a whole day of evidence to one candidate. This parser
+    keeps the day as context and emits the actual linked event cards.
+    """
+
+    article_match = (
+        re.search(r"<main[^>]*>(.*?)</main>", body, flags=re.IGNORECASE | re.DOTALL)
+        or re.search(r"<article[^>]*>(.*?)</article>", body, flags=re.IGNORECASE | re.DOTALL)
+    )
+    html_text = article_match.group(1) if article_match else body
+    headings = list(
+        re.finditer(r"<h[1-4]\b[^>]*>(.*?)</h[1-4]>", html_text, flags=re.IGNORECASE | re.DOTALL)
+    )
+    day_sections: list[tuple[str, int, int]] = []
+    for index, heading in enumerate(headings):
+        heading_text = _clean_long_text(heading.group(1))
+        if not _MANCHESTER_THEATRES_DAY_RE.search(heading_text):
+            continue
+        section_end = headings[index + 1].start() if index + 1 < len(headings) else len(html_text)
+        day_sections.append((heading_text, heading.end(), section_end))
+    if not day_sections:
+        day_sections = [("", 0, len(html_text))]
+
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    for day_heading, section_start, section_end in day_sections:
+        section_html = html_text[section_start:section_end]
+        date_hint = _extract_text_date_hint(day_heading) if day_heading else None
+        for link in re.finditer(
+            r'<a\b[^>]*\bhref=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
+            section_html,
+            flags=re.IGNORECASE | re.DOTALL,
+        ):
+            raw_href, raw_title = link.groups()
+            title = _clean_title_text(_clean_long_text(raw_title))
+            if (
+                not _looks_like_candidate_title(title)
+                or _looks_like_manchester_theatres_chrome(title)
+                or len(title) < 4
+            ):
+                continue
+            local_start = max(0, link.start() - 800)
+            local_end = min(len(section_html), link.end() + 1400)
+            local_html = section_html[local_start:local_end]
+            evidence = _clean_long_text(local_html)
+            if _MANCHESTER_THEATRES_CHROME_RE.fullmatch(evidence.strip()):
+                continue
+            slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:80]
+            booking_url = parse.urljoin(source.url, unescape(raw_href.strip()))
+            normalized_url = f"{clean_url(source.url).rstrip('/')}/card/{slug}"
+            if normalized_url in seen:
+                continue
+            seen.add(normalized_url)
+            venue = ""
+            venue_match = re.search(
+                r"\b(?:at|venue)\s+([A-Z][A-Za-z0-9'& .-]{2,80})\b|"
+                r"\b(The Lowry|Lowry|Bridgewater Hall|Palace Theatre|Opera House|HOME|Aviva Studios)\b",
+                evidence,
+                flags=re.IGNORECASE,
+            )
+            if venue_match:
+                venue = _clean_event_card_field(next(g for g in venue_match.groups() if g) or "")
+                if venue.lower() == "lowry":
+                    venue = "The Lowry"
+            price = ""
+            price_match = re.search(r"£\s*\d+(?:\.\d{1,2})?", evidence)
+            if price_match:
+                price = price_match.group(0).replace(" ", "")
+            summary_bits = [day_heading, venue, price, _summary_from_evidence(evidence)]
+            summary = _clean_snippet(" | ".join(part for part in summary_bits if part), max_chars=700)
+            items.append(
+                ExtractedItem(
+                    title=title,
+                    url=normalized_url,
+                    published_at=date_hint or _extract_text_date_hint(evidence),
+                    summary=summary or title,
+                    lead=_derive_lead(source, title, summary or evidence),
+                    evidence_text=_clean_long_text(" ".join(part for part in (day_heading, evidence) if part))[:3000],
+                    enrichment_status="ok_manchester_theatres_card",
+                    structured_event_hint={
+                        "is_event": True,
+                        "event_name": title,
+                        "date_start": date_hint or "",
+                        "date_text": day_heading,
+                        "venue": venue,
+                        "price": price,
+                        "booking_url": booking_url,
+                        "schema_source": "manchester_theatres_card",
+                    },
+                )
+            )
+            if len(items) >= source.max_candidates:
+                return items
+    return items
 
 
 def _extract_sectioned_event_guide(source: SourceDef, body: str) -> list[ExtractedItem]:
@@ -2318,6 +2442,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_phm_events(source, body)
     elif source.source_type == "html_the_manc_weekly_events":
         links = _extract_the_manc_weekly_events(source, body)
+    elif source.name.startswith("Manchester Theatres"):
+        links = _extract_manchester_theatres_events(source, body)
     elif source.source_type == "html_sectioned_event_guide":
         links = _extract_sectioned_event_guide(source, body)
     elif source.source_type == "html_designmynight":

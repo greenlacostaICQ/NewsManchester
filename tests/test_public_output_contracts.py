@@ -295,6 +295,36 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertNotIn("Bolton Car Boot Sale — Bolton Car Boot Sale", line)
         self.assertNotIn("Проверьте наличие мест", line)
 
+    @patch("news_digest.pipeline.writer.now_london")
+    def test_weekend_car_boot_fallback_uses_nearest_source_date_and_own_venue(self, mock_now) -> None:
+        mock_now.return_value = datetime.fromisoformat("2026-06-12T09:00:00+01:00")
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "source_label": "Barton Aerodrome Car Boot",
+            "title": "Barton Aerodrome Car Boot Sale",
+            "summary": "Barton Aerodrome hosts regular 2026 car boot sales.",
+            "lead": "Next dates: Saturday, 13 June 2026; Saturday, 20 June 2026.",
+            "evidence_text": (
+                "Next dates Saturday, 13 June 2026. Buyers from 9am. "
+                "Dogs welcome. Nearby unrelated listing: Altrincham Market."
+            ),
+            "event": {
+                "is_event": True,
+                "event_name": "Barton Aerodrome Car Boot Sale",
+                "venue": "Barton Aerodrome",
+                "date_start": "2026-06-06T00:00:00+01:00",
+                "is_recurring": True,
+            },
+        }
+
+        line = _build_event_fallback_line(candidate)
+
+        self.assertIn("13 июня", line)
+        self.assertIn("Barton Aerodrome", line)
+        self.assertNotIn("6 июня", line)
+        self.assertNotIn("Altrincham Market", line)
+
     def test_weekend_seller_market_page_is_not_rendered_as_visitor_activity(self) -> None:
         candidate = {
             "category": "culture_weekly",
