@@ -39,16 +39,20 @@ from news_digest.pipeline.llm_rewrite import _apply_rewrite_shortlist
 from news_digest.pipeline.writer import (
     _allocate_fresh_and_today_focus,
     _apply_section_min_floor_pull_back,
+    _apply_fresh_semantic_duplicate_pass,
     _build_football_fallback_line,
     _build_recurring_event_fallback_line,
     _build_ticket_fallback_line,
     _contract_public_drop_reason,
     _draft_line_quality_errors,
+    _ensure_source_anchor_for_rendered_line,
     _line_claims_future_ticket_sale,
     _number_tokens,
     _repair_editorial_contract_line,
+    _reconcile_rendered_dropped_candidates,
     _reserved_later_budget,
     _section_priority_score,
+    _SectionRow,
     _strip_unsupported_number_phrases,
 )
 
@@ -2263,6 +2267,90 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertEqual(len(lines), 1)
         self.assertEqual(fps, ["fallowfield-cordon"])
+
+    def test_fresh_final_board_suppresses_cross_source_same_story(self) -> None:
+        about_candidate = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "fingerprint": "about-ira",
+            "title": "Police investigation into 1996 Manchester bombing is no longer active",
+            "summary": "Police say the IRA bombing investigation is no longer active unless new evidence appears.",
+            "source_label": "About Manchester News",
+            "source_url": "https://aboutmanchester.co.uk/police-investigation-into-1996-manchester-bombing-is-no-longer-active",
+        }
+        bbc_candidate = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "fingerprint": "bbc-ira",
+            "title": "Manchester IRA bomb inquiry no longer active, police say",
+            "summary": "The 1996 IRA bomb investigation has exhausted current lines of inquiry.",
+            "source_label": "BBC Manchester",
+            "source_url": "https://bbc.example/ira-bomb-inquiry",
+        }
+        rows = [
+            _SectionRow(
+                section="Свежие новости",
+                line="• Манчестер: расследование взрыва бомбы IRA 1996 года больше не активно.",
+                source="About Manchester News",
+                score=80,
+                fingerprint="about-ira",
+                title=str(about_candidate["title"]),
+                candidate=about_candidate,
+            ),
+            _SectionRow(
+                section="Свежие новости",
+                line="• Манчестер: полиция завершила расследование взрыва 1996 года, если не появятся новые доказательства.",
+                source="BBC Manchester",
+                score=82,
+                fingerprint="bbc-ira",
+                title=str(bbc_candidate["title"]),
+                candidate=bbc_candidate,
+            ),
+        ]
+
+        kept, suppressed = _apply_fresh_semantic_duplicate_pass(rows)
+
+        self.assertEqual(len(kept), 1)
+        self.assertEqual(len(suppressed), 1)
+        self.assertEqual(suppressed[0]["reason"], "fresh_semantic_duplicate")
+        self.assertEqual(about_candidate.get("writer_suppressed_from_top_news"), "fresh_semantic_duplicate")
+
+    def test_final_rendered_line_gets_missing_source_anchor_from_candidate(self) -> None:
+        candidate_by_fp = {
+            "bury-stop": {
+                "source_url": "https://aboutmanchester.co.uk/police-seize-knife-drugs-and-cash-after-stopping-suspicious-car-in-bury",
+                "source_label": "About Manchester News",
+            }
+        }
+
+        line = _ensure_source_anchor_for_rendered_line(
+            "• Bury: полиция арестовала женщину после остановки подозрительного автомобиля.",
+            "bury-stop",
+            "",
+            candidate_by_fp,
+        )
+
+        self.assertIn('<a href="https://aboutmanchester.co.uk/police-seize-knife-drugs-and-cash-after-stopping-suspicious-car-in-bury">About Manchester News</a>', line)
+
+    def test_rendered_recovered_candidate_is_not_reported_as_dropped(self) -> None:
+        dropped = [
+            {"fingerprint": "bury-stop", "reasons": ["draft_line contains number(s) not present in evidence: 10000."]},
+            {"fingerprint": "other", "reasons": ["Missing draft_line."]},
+        ]
+        counts = {
+            "dropped_low_quality": 1,
+            "dropped_missing_draft_line": 1,
+            "dropped_ticket_not_selected": 0,
+            "dropped_english_passthrough": 0,
+            "held_for_editorial_quality": 0,
+        }
+
+        remaining, reconciled = _reconcile_rendered_dropped_candidates(dropped, counts, {"bury-stop"})
+
+        self.assertEqual([item["fingerprint"] for item in remaining], ["other"])
+        self.assertEqual([item["fingerprint"] for item in reconciled], ["bury-stop"])
+        self.assertEqual(counts["dropped_low_quality"], 0)
+        self.assertEqual(counts["dropped_missing_draft_line"], 1)
 
     def test_fresh_duplicate_prefers_more_complete_fact_frame_on_same_source_rank(self) -> None:
         vague = {

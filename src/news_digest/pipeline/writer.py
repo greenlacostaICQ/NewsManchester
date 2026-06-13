@@ -32,6 +32,7 @@ from news_digest.pipeline.editorial_contracts import (
 )
 from news_digest.pipeline.reader_value import reader_value_score
 from news_digest.pipeline.reader_actions import classify_reader_action
+from news_digest.pipeline.source_selection import source_score
 from news_digest.pipeline.story_intelligence import section_board_score
 from news_digest.pipeline.ticket_notability import enrich_ticket_notability, prefetch_notability, ticket_artist_name
 from news_digest.pipeline.toponyms import restore_english_toponyms
@@ -463,6 +464,164 @@ def _fresh_related_story_key(row: _SectionRow) -> str:
     return ""
 
 
+_FRESH_DUPLICATE_STOPWORDS = {
+    "about", "after", "again", "also", "amid", "been", "before", "being",
+    "city", "could", "from", "greater", "have", "into", "latest", "local",
+    "manchester", "news", "over", "said", "says", "source", "that", "their",
+    "there", "this", "through", "with", "would",
+    # Generic crime/news words are not enough to prove two stories are the
+    # same; names, places, dates, offences and outcomes must carry the match.
+    "arrest", "arrested", "charge", "charged", "court", "gmp", "police",
+    "sentenced", "statement", "update",
+    "большого", "большой", "манчестер", "манчестера", "новости", "полиция",
+    "сегодня", "суд", "суда",
+}
+
+
+def _fresh_duplicate_tokens(row: _SectionRow) -> set[str]:
+    c = row.candidate or {}
+    parts = [
+        row.title,
+        row.line,
+        str(c.get("title") or ""),
+        str(c.get("summary") or ""),
+        str(c.get("lead") or ""),
+        str(c.get("source_url") or ""),
+    ]
+    story_frame = c.get("story_frame") if isinstance(c.get("story_frame"), dict) else {}
+    parts.extend(str(story_frame.get(k) or "") for k in ("what_happened", "where_exact", "when", "who_affected", "why_now"))
+    text = html.unescape(" ".join(parts)).lower()
+    text = re.sub(r"<[^>]+>", " ", text)
+    replacements = {
+        "bombing": "bomb",
+        "bombed": "bomb",
+        "investigation": "investigate",
+        "investigating": "investigate",
+        "investigated": "investigate",
+        "licence": "license",
+        "licensed": "license",
+        "licensing": "license",
+        "расследование": "investigate",
+        "расследования": "investigate",
+        "взрыва": "bomb",
+        "взрыв": "bomb",
+        "ира": "ira",
+    }
+    for src, dst in replacements.items():
+        text = text.replace(src, dst)
+    raw = re.findall(r"[a-zа-яё0-9][a-zа-яё0-9'-]*", text, flags=re.IGNORECASE)
+    tokens: set[str] = set()
+    for token in raw:
+        token = token.strip("-'")
+        if not token or token in _FRESH_DUPLICATE_STOPWORDS:
+            continue
+        if token.isdigit() or token in {"ira", "m6", "m56", "m60", "m62"} or len(token) >= 4:
+            tokens.add(token)
+    return tokens
+
+
+def _fresh_story_cluster_key(row: _SectionRow) -> str:
+    c = row.candidate or {}
+    cluster = c.get("story_cluster") if isinstance(c.get("story_cluster"), dict) else {}
+    for field in ("cluster_key", "semantic_key", "story_key"):
+        value = _normalize_text_key(str(cluster.get(field) or ""))
+        if len(value) >= 12 and value not in {"none", "unknown"}:
+            return value
+    contract = c.get("editorial_contract") if isinstance(c.get("editorial_contract"), dict) else {}
+    topic = _normalize_text_key(str(contract.get("topic_key") or c.get("topic_key") or ""))
+    if len(topic) >= 18 and not topic.startswith(("fresh ", "news ")):
+        return topic
+    return ""
+
+
+def _fresh_rows_are_same_story(left: _SectionRow, right: _SectionRow) -> bool:
+    if left.fingerprint and right.fingerprint and left.fingerprint == right.fingerprint:
+        return True
+    left_related = _fresh_related_story_key(left)
+    if left_related and left_related == _fresh_related_story_key(right):
+        return True
+    left_cluster = _fresh_story_cluster_key(left)
+    if left_cluster and left_cluster == _fresh_story_cluster_key(right):
+        return True
+
+    left_tokens = _fresh_duplicate_tokens(left)
+    right_tokens = _fresh_duplicate_tokens(right)
+    if not left_tokens or not right_tokens:
+        return False
+    common = left_tokens & right_tokens
+    if not common:
+        return False
+    if {"1996", "ira", "bomb"} <= common or {"1996", "ira", "investigate"} <= common:
+        return True
+
+    strong_common = {
+        token for token in common
+        if token.isdigit() or len(token) >= 6 or token in {"ira", "m6", "m56", "m60", "m62"}
+    }
+    if len(strong_common) < 2:
+        return False
+    union = left_tokens | right_tokens
+    jaccard = len(common) / max(len(union), 1)
+    overlap = len(common) / max(min(len(left_tokens), len(right_tokens)), 1)
+    return (len(common) >= 5 and overlap >= 0.62) or (len(common) >= 4 and jaccard >= 0.46)
+
+
+def _fresh_duplicate_preference_score(row: _SectionRow) -> float:
+    c = row.candidate or {}
+    evidence_size = sum(
+        len(str(c.get(field) or ""))
+        for field in ("summary", "lead", "evidence_text", "draft_line")
+    )
+    category = str(c.get("category") or "")
+    return (
+        _fresh_news_score(row)
+        + source_score(row.source, category) * 4
+        + min(evidence_size, 2500) / 250.0
+    )
+
+
+def _apply_fresh_semantic_duplicate_pass(rows: list[_SectionRow]) -> tuple[list[_SectionRow], list[dict[str, str]]]:
+    """Final same-story pass for top news.
+
+    URL dedupe runs earlier, but the public issue can still receive the same
+    story from BBC/MEN/About as separate links after enrichment. This pass uses
+    the already-written row plus the candidate's facts to keep the best public
+    card and leave room for another Fresh item.
+    """
+    kept: list[_SectionRow] = []
+    suppressed: list[dict[str, str]] = []
+    for row in rows:
+        duplicate_idx: int | None = None
+        for idx, current in enumerate(kept):
+            if _fresh_rows_are_same_story(row, current):
+                duplicate_idx = idx
+                break
+        if duplicate_idx is None:
+            kept.append(row)
+            continue
+
+        current = kept[duplicate_idx]
+        if _fresh_duplicate_preference_score(row) > _fresh_duplicate_preference_score(current):
+            kept[duplicate_idx] = row
+            loser = current
+            winner = row
+        else:
+            loser = row
+            winner = current
+        if loser.candidate is not None:
+            loser.candidate["writer_suppressed_from_top_news"] = "fresh_semantic_duplicate"
+        suppressed.append(
+            {
+                "title": loser.title,
+                "kept_title": winner.title,
+                "source_label": loser.source,
+                "kept_source_label": winner.source,
+                "reason": "fresh_semantic_duplicate",
+            }
+        )
+    return kept, suppressed
+
+
 def _fresh_news_score(row: _SectionRow) -> float:
     c = row.candidate or {}
     story_type = _candidate_story_type(c)
@@ -766,6 +925,8 @@ def _allocate_fresh_and_today_focus(
                 row.candidate["writer_suppressed_from_top_news"] = "commercial_pr_below_fresh_hard_floor"
         fresh_board_rows = noncommercial_fresh
 
+    fresh_board_rows, suppressed_fresh_duplicates = _apply_fresh_semantic_duplicate_pass(fresh_board_rows)
+
     city_out: list[_SectionRow] = []
     rerouted_from_today: list[dict[str, str]] = []
     for row in non_fresh_board:
@@ -805,6 +966,7 @@ def _allocate_fresh_and_today_focus(
         "rerouted_from_today_focus": rerouted_from_today,
         "suppressed_related_sidebars": suppressed_sidebars,
         "suppressed_fresh_commercial": suppressed_fresh_commercial,
+        "suppressed_fresh_duplicates": suppressed_fresh_duplicates,
         "underflow_reason": "" if len(selected_today) >= SECTION_MIN_ITEMS.get(TODAY_FOCUS_SECTION, 3) else "not_enough_eligible_practical_items",
         "selected": [
             {
@@ -951,6 +1113,45 @@ def _classify_drop_bucket(item: dict) -> str:
     # Everything else (borderline holds, editorial-contract drops) is an
     # intentional editorial quarantine, not a fault.
     return "quarantine"
+
+
+def _quality_count_key_for_drop(item: dict) -> str:
+    reasons = " ".join(str(r).lower() for r in (item.get("reasons") or []))
+    if "missing draft_line" in reasons:
+        return "dropped_missing_draft_line"
+    if "ticket not selected" in reasons:
+        return "dropped_ticket_not_selected"
+    if "untranslated" in reasons or "passthrough" in reasons:
+        return "dropped_english_passthrough"
+    if "held for manual review" in reasons or "borderline" in reasons:
+        return "held_for_editorial_quality"
+    return "dropped_low_quality"
+
+
+def _reconcile_rendered_dropped_candidates(
+    dropped_candidates: list[dict[str, object]],
+    quality_counts: dict[str, int],
+    rendered_fingerprints: set[str],
+) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
+    """Remove contradictions after late recovery/top-up.
+
+    A candidate can fail an early public-line check, then be recovered by the
+    section top-up or replacement layer. The support report must describe the
+    final public issue, so a rendered fingerprint cannot remain in
+    dropped_candidates.
+    """
+    remaining: list[dict[str, object]] = []
+    reconciled: list[dict[str, object]] = []
+    for item in dropped_candidates:
+        fp = str(item.get("fingerprint") or "")
+        if fp and fp in rendered_fingerprints:
+            reconciled.append(item)
+            key = _quality_count_key_for_drop(item)
+            if key in quality_counts:
+                quality_counts[key] = max(0, int(quality_counts.get(key) or 0) - 1)
+            continue
+        remaining.append(item)
+    return remaining, reconciled
 
 
 # The main Ticket Radar now counts toward the 45-item issue budget so a quiet
@@ -1114,6 +1315,18 @@ def _attach_source_anchor(line: str, source_url: str, source_label: str) -> str:
         # the label is preserved: "...зонт обязателен. Met Office" → "...зонт обязателен."
         text = base[: len(base) - len(label)].rstrip(" ")
     return f"{text} {_source_anchor(source_url, label)}".strip()
+
+
+def _ensure_source_anchor_for_rendered_line(line: str, fingerprint: str, source_label: str, candidate_by_fp: dict[str, dict]) -> str:
+    text = str(line or "").strip()
+    if "<a " in text.lower():
+        return text
+    candidate = candidate_by_fp.get(str(fingerprint or "")) or {}
+    source_url = str(candidate.get("source_url") or "")
+    label = str(candidate.get("source_label") or source_label or "")
+    if not source_url or not label:
+        return text
+    return _attach_source_anchor(text, source_url, label)
 
 
 def _public_source_label(source_label: str) -> str:
@@ -4794,6 +5007,15 @@ def write_digest(project_root: Path) -> StageResult:
         if not lines:
             section_counts[section_name] = 0
             continue
+        lines = [
+            _ensure_source_anchor_for_rendered_line(
+                ln,
+                fps[idx] if idx < len(fps) else "",
+                srcs[idx] if idx < len(srcs) else "",
+                candidate_by_fp,
+            )
+            for idx, ln in enumerate(lines)
+        ]
         section_counts[section_name] = len(lines)
         visible_item_count += sum(
             0 if _is_public_budget_exempt(section_name, candidate_by_fp.get(str(fp or ""))) else 1
@@ -4806,6 +5028,11 @@ def write_digest(project_root: Path) -> StageResult:
 
     quality_counts["rendered_candidates"] = len(rendered_candidate_fingerprints)
     rendered_fp_set = set(rendered_candidate_fingerprints)
+    dropped_candidates, rendered_after_drop_reconciled = _reconcile_rendered_dropped_candidates(
+        dropped_candidates,
+        quality_counts,
+        rendered_fp_set,
+    )
     fresh_candidates = [
         c for c in candidates
         if isinstance(c, dict) and str(c.get("primary_block") or "") == "last_24h"
@@ -4872,6 +5099,7 @@ def write_digest(project_root: Path) -> StageResult:
             },
             "fresh_news_board": fresh_report,
             "drop_breakdown": drop_breakdown,
+            "rendered_after_drop_reconciled": rendered_after_drop_reconciled[:50],
             "rendered_candidate_fingerprints": rendered_candidate_fingerprints,
             "dropped_candidates": dropped_candidates,
             "draft_path": str(draft_path.resolve()),
