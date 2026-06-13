@@ -309,6 +309,14 @@ _DEDUP_BLOCK_GROUPS: tuple[frozenset[str], ...] = (
     frozenset({"openings", "tech_business"}),
 )
 _TRANSPORT_TICKET_BLOCKS = frozenset({"transport", "weather", "ticket_radar", "outside_gm_tickets"})
+
+# Pure ticket listings are structured (artist + venue + date) and are already
+# deduped by identity in the deterministic stage (_ticket_event_identity +
+# multi-night merge), which runs BEFORE this semantic pass. Running them
+# through the prose-embedding O(n²) comparison adds nothing and was the bulk of
+# the cost after UK-wide ticket discovery pushed the pool to ~1343 (~700 of
+# them tickets). Skip them here; they are still deduped deterministically.
+_SEMANTIC_DEDUP_SKIP_BLOCKS = frozenset({"ticket_radar", "outside_gm_tickets"})
 _MARKET_LISTING_RE = re.compile(r"\b(?:market|car boot|makers market|artisan market|flea market)\b", re.IGNORECASE)
 
 
@@ -520,6 +528,7 @@ def run_semantic_pass(
     included = [
         c for c in candidates
         if isinstance(c, dict) and c.get("include") and c.get("fingerprint")
+        and str(c.get("primary_block") or "") not in _SEMANTIC_DEDUP_SKIP_BLOCKS
     ]
     vectors = embed_with_cache(client, included, cache)
     # Normalise once up front so the O(n²) intra-batch + cross-day loops below
