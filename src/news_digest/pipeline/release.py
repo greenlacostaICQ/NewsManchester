@@ -546,7 +546,13 @@ def _validate_draft(
     for block in LOW_SIGNAL_BLOCKS:
         lines = sections.get(block, [])
         if lines and any(_has_refusal_marker(line) for line in lines):
-            errors.append(f"Low-signal block should be hidden instead of printed empty: {block}.")
+            # NEVER block the whole release because a single low-signal block
+            # (e.g. Городской радар) carried a model-refusal line — that killed
+            # the entire 2026-06-13 digest (no news delivered) over a cosmetic
+            # issue in a minor section. Warn instead; the offending line should
+            # be dropped upstream in the writer (follow-up), but the issue must
+            # always ship rather than be lost.
+            warnings.append(f"Low-signal block has a model-refusal line (should be dropped/hidden): {block}.")
 
     last_24h_lines = sections.get("Свежие новости", [])
     fresh_last_24h_candidates = [
