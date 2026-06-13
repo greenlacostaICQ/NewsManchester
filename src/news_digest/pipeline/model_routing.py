@@ -21,10 +21,12 @@ OPENAI_BASE_URL = "https://api.openai.com/v1"
 # that's where cost would balloon.
 OPENAI_REWRITE_MODEL = "gpt-4o"
 OPENAI_SCORING_MODEL = "gpt-4o-mini"
-# Transport is a short structured translation (≤180 chars from clean evidence),
-# not rich editorial prose — mini handles it fine and far cheaper. gpt-4o stays
-# for news/events where mini was unreliable.
-OPENAI_TRANSPORT_MODEL = "gpt-4o-mini"
+# Transport reverted to gpt-4o: on 2026-06-13 mini returned EMPTY on two tram
+# lift alerts that had 330/427 chars of evidence (Dane Road, Queens Road), so
+# they silently dropped — gpt-4o wrote them in earlier runs. Reliability on the
+# Metrolink-critical block beats the few-cents/day saving. (Route kept separate
+# only for its larger batch / tighter timeout — short transport lines.)
+OPENAI_TRANSPORT_MODEL = "gpt-4o"
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile"
 
