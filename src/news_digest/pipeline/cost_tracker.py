@@ -34,6 +34,11 @@ import threading
 PRICING_PER_MTOKEN: dict[str, dict[str, float]] = {
     "deepseek-chat":               {"input": 0.27, "cached_input": 0.07,  "output": 1.10},
     "deepseek-reasoner":           {"input": 0.55, "cached_input": 0.14,  "output": 2.19},
+    # DeepSeek V4 public API pricing, per 1M tokens. deepseek-chat/reasoner
+    # are legacy aliases; keep them for historical reports, but route new
+    # calls to explicit V4 models so cost reports stay truthful.
+    "deepseek-v4-flash":           {"input": 0.14, "cached_input": 0.0028,   "output": 0.28},
+    "deepseek-v4-pro":             {"input": 0.435, "cached_input": 0.003625, "output": 0.87},
     "gpt-4o-mini":                 {"input": 0.15, "cached_input": 0.075, "output": 0.60},
     "gpt-4o":                      {"input": 2.50, "cached_input": 1.25,  "output": 10.00},
     "llama-3.3-70b-versatile":     {"input": 0.0,  "cached_input": 0.0,   "output": 0.0},

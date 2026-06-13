@@ -9,8 +9,10 @@ from news_digest.pipeline.llm_rewrite import (
     _is_protected_rewrite_candidate,
     _is_actionable_weekend_candidate,
     _needs_quality_repair,
+    _parse_english_card_results,
     _parse_provider_results,
     _rewrite_batch_items,
+    _translation_batch_items,
     _skip_llm_for_manual_review,
 )
 from news_digest.pipeline.model_routing import ResolvedModelRouteStep
@@ -87,6 +89,62 @@ class LlmRewriteDiagnosticsTests(unittest.TestCase):
         self.assertEqual(set(mapping), {"fp-1"})
         self.assertEqual(diagnostic["coerced_from_object_key"], "results")
         self.assertEqual(diagnostic["accepted"], 1)
+
+    def test_parse_english_card_results_accepts_rubric_without_reader_action(self) -> None:
+        batch = [_candidate("fp-1", "Prince gives Manchester speech")]
+        raw = json.dumps(
+            [
+                {
+                    "fingerprint": "fp-1",
+                    "rubric": "civic",
+                    "fact_card": {
+                        "what_happened": "Prince William reflected on public service in a Manchester speech.",
+                        "where": "Manchester",
+                        "when": "",
+                        "who_affected": "",
+                        "why_now": "The speech happened at a Manchester event.",
+                        "reader_value": "Local civic context.",
+                        "reader_action": "",
+                        "missing_facts": ["exact venue"],
+                    },
+                    "reader_card": "Manchester: Prince William used a city speech to reflect on public service and the Queen's death, making it a civic local moment rather than a practical alert.",
+                    "editorial_score": 72,
+                    "selection_hint": "publish",
+                    "missing_facts": ["exact venue"],
+                }
+            ],
+            ensure_ascii=False,
+        )
+
+        mapping, diagnostic = _parse_english_card_results(
+            raw,
+            batch,
+            provider_name="DeepSeek",
+            model="deepseek-v4-pro",
+            batch_idx=1,
+            total_batches=1,
+        )
+
+        self.assertEqual(set(mapping), {"fp-1"})
+        card, provider, model = mapping["fp-1"]
+        self.assertEqual(provider, "DeepSeek")
+        self.assertEqual(model, "deepseek-v4-pro")
+        self.assertEqual(card["rubric"], "civic")
+        self.assertEqual(card["editorial_score"], 72)
+        self.assertEqual(diagnostic["accepted"], 1)
+
+    def test_translation_payload_uses_english_card_not_raw_evidence(self) -> None:
+        candidate = _candidate("fp-1")
+        candidate["evidence_text"] = "x" * 5000
+        candidate["english_rubric"] = "transport"
+        candidate["english_reader_card"] = "Metrolink: the Eccles line has minor delays today; TfGM has not named a specific affected section."
+        candidate["english_fact_card"] = {"what_happened": "minor delays", "missing_facts": ["affected section"]}
+
+        item = _translation_batch_items([candidate])[0]
+
+        self.assertIn("english_reader_card", item)
+        self.assertIn("english_fact_card", item)
+        self.assertNotIn("evidence_text", item)
 
     def test_parse_provider_results_accepts_structured_reason_for_empty_line(self) -> None:
         batch = [_candidate("fp-1")]

@@ -1,13 +1,14 @@
 """LLM rewrite stage — writes Russian draft_lines to candidates.json.
 
 Default model route:
-  1. OpenAI gpt-4o-mini batch     — quality rewrite primary
-  2. OpenAI gpt-4o-mini one-by-one — retry misses before fallback
-  3. DeepSeek                     — last resort for remaining misses
-  4. Rule-based in writer.py      — final safety net for structured tickets/events/transport
+  1. DeepSeek v4-pro              — English fact/reader cards from source evidence
+  2. OpenAI gpt-4o                — final Russian translation of compact English cards
+  3. Legacy category rewrite      — full-evidence fallback for any missed item
+  4. DeepSeek / writer fallbacks   — keep the release moving when a provider refuses
 
 Required env vars (set in GitHub Actions Secrets or .env.local):
-  OPENAI_API_KEY    — platform.openai.com (paid, gpt-4o-mini)
+  OPENAI_API_KEY    — platform.openai.com
+  DEEPSEEK_API_KEY  — platform.deepseek.com
 
 Optional overrides:
   LLM_PROVIDER      — force "deepseek" | "openai" | "groq" | "none"
@@ -29,6 +30,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Callable
 
 from news_digest.pipeline.common import now_london, pipeline_run_id_from, today_london, write_json
 from news_digest.pipeline.model_routing import (
@@ -57,6 +59,7 @@ class StageResult:
 OPENAI_MODEL = OPENAI_REWRITE_MODEL
 
 ProviderMapping = dict[str, tuple[str, str, str]]
+EnglishCardMapping = dict[str, tuple[dict[str, object], str, str]]
 
 REWRITE_SHORTLIST_VERSION = 2
 REWRITE_SHORTLIST_CAPS_BY_BLOCK: dict[str, int] = {
@@ -132,6 +135,62 @@ _ANTI_HALLUCINATION = (
     "новостью (официальное заявление, слова центрального участника) — оставь её. Режется пустая эмоция от периферийных людей, "
     "а не значимая цитата.\n\n"
 )
+
+ENGLISH_CARD_SYSTEM = """You are the English-first editor for Greater Manchester AM Brief.
+Your job is NOT to translate. Build a compact English fact card and a readable English reader card from the supplied source evidence.
+
+Use only title, summary, lead, evidence_text, event, entities, story_frame, source_label and dates supplied in the JSON. Do not browse. Do not invent missing facts.
+
+Return ONLY a JSON array. Each object must contain:
+{
+  "fingerprint": "...",
+  "rubric": "transport|event|ticket|market|council_planning|hard_news|civic|business|football|human_interest|other",
+  "fact_card": {
+    "what_happened": "...",
+    "where": "...",
+    "when": "...",
+    "who_affected": "...",
+    "why_now": "...",
+    "reader_value": "...",
+    "reader_action": "...",
+    "missing_facts": []
+  },
+  "reader_card": "One concise English digest bullet without the bullet marker.",
+  "editorial_score": 0-100,
+  "selection_hint": "publish|backup|weak",
+  "missing_facts": []
+}
+
+Rubric-specific requirements:
+- transport: explain what is disrupted, where/which line, when, who is affected, and what the reader should do. If the affected section is not named, say that the operator/source has not named a specific section.
+- event/ticket/market: explain who/what, city/venue, event date or sale date, genre/type if present, and why it is useful to plan.
+- council_planning: explain the decision/proposal/status, location, next step/deadline if present, and local impact.
+- hard_news: explain what happened, where, when if present, current police/court/emergency status, and public impact. Do not require a reader action.
+- civic: explain who spoke/acted, where the Greater Manchester connection is, why it matters now. Do not require a practical action.
+- human_interest: keep only if there is a new local fact beyond motivation/profile.
+
+Important: missing date/place/action does not automatically mean weak. Judge against the rubric. A civic speech, tribute, death, or court update may be useful without a direct reader action.
+Reader card style: factual, concise, source-faithful, 1-2 sentences, no hype, no "source says", no vague "this is important".
+"""
+
+FINAL_TRANSLATE_SYSTEM = """You are the final Russian editor for Greater Manchester AM Brief.
+Translate the supplied English reader_card into a polished Russian Telegram bullet.
+
+You are translating final English digest cards, not raw source material. Preserve every date, place, line, venue, amount, status and uncertainty from the English card. Do not add facts from outside the English card/fact_card.
+
+Return ONLY a JSON array:
+[{"fingerprint": "...", "draft_line": "• ..."}]
+
+Rules:
+- Start every line with "• ".
+- Write natural Russian, not literal machine translation.
+- Keep proper names, venue names, English transport line names and artist names as source names.
+- If the English card says a fact is unspecified, keep that honesty in Russian.
+- Do not add generic filler such as "это важный сигнал", "следите за обновлениями", "может привлечь внимание".
+- Transport must answer: what is disrupted, who is affected, what to do.
+- Events/tickets must answer: who/what, where, when, why it is useful to know.
+- Hard news must start with what happened, not with "police are working at the scene".
+"""
 
 _LONG_FORMAT_RULES = (
     "ФОРМАТ: «• », Telegram HTML, без ссылок, без markdown. 250–450 символов, 2–3 коротких предложения.\n"
@@ -1046,6 +1105,278 @@ def _parse_provider_results(
     return mapping, diagnostic
 
 
+def _parse_english_card_results(
+    raw: str,
+    batch: list[dict],
+    provider_name: str,
+    model: str,
+    batch_idx: int,
+    total_batches: int,
+) -> tuple[EnglishCardMapping, dict]:
+    expected = {str(c.get("fingerprint") or ""): c for c in batch if c.get("fingerprint")}
+    diagnostic = {
+        "provider": provider_name,
+        "model": model,
+        "prompt_name": "english_cards",
+        "batch_index": batch_idx,
+        "batch_count": total_batches,
+        "sent": len(batch),
+        "returned_items": 0,
+        "accepted": 0,
+        "rejected_counts": {
+            "bad_item_shape": 0,
+            "missing_fingerprint": 0,
+            "unknown_fingerprint": 0,
+            "missing_reader_card": 0,
+            "duplicate_fingerprint": 0,
+            "parse_error": 0,
+        },
+        "rejected_examples": [],
+        "missing_candidates": [],
+    }
+    cleaned = str(raw or "").strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("```", 2)[1]
+        if cleaned.startswith("json"):
+            cleaned = cleaned[4:]
+        cleaned = cleaned.rsplit("```", 1)[0]
+    try:
+        results = json.loads(cleaned.strip())
+    except json.JSONDecodeError as exc:
+        diagnostic["rejected_counts"]["parse_error"] += 1
+        diagnostic["parse_error"] = f"{exc.__class__.__name__}: {exc}"
+        diagnostic["raw_excerpt"] = _diagnostic_excerpt(cleaned)
+        return {}, diagnostic
+    if isinstance(results, dict):
+        for key in ("items", "results", "cards"):
+            if isinstance(results.get(key), list):
+                results = results[key]
+                break
+    if not isinstance(results, list):
+        diagnostic["parse_error"] = f"JSON root is {type(results).__name__}, not a list."
+        diagnostic["raw_excerpt"] = _diagnostic_excerpt(cleaned)
+        return {}, diagnostic
+
+    mapping: EnglishCardMapping = {}
+
+    def _example(reason: str, item: object, fp: str = "") -> None:
+        examples = diagnostic["rejected_examples"]
+        if len(examples) >= 5:
+            return
+        examples.append(
+            {
+                "reason": reason,
+                "fingerprint": fp,
+                "item_excerpt": _diagnostic_excerpt(json.dumps(item, ensure_ascii=False), limit=260),
+            }
+        )
+
+    for item in results:
+        diagnostic["returned_items"] += 1
+        if not isinstance(item, dict):
+            diagnostic["rejected_counts"]["bad_item_shape"] += 1
+            _example("bad_item_shape", item)
+            continue
+        fp = str(item.get("fingerprint") or "").strip()
+        if not fp:
+            diagnostic["rejected_counts"]["missing_fingerprint"] += 1
+            _example("missing_fingerprint", item, fp)
+            continue
+        if fp not in expected:
+            diagnostic["rejected_counts"]["unknown_fingerprint"] += 1
+            _example("unknown_fingerprint", item, fp)
+            continue
+        reader_card = re.sub(r"\s+", " ", str(item.get("reader_card") or "")).strip()
+        if len(reader_card) < 20:
+            diagnostic["rejected_counts"]["missing_reader_card"] += 1
+            _example("missing_reader_card", item, fp)
+            continue
+        fact_card = item.get("fact_card") if isinstance(item.get("fact_card"), dict) else {}
+        score_raw = item.get("editorial_score")
+        try:
+            editorial_score = int(float(score_raw))
+        except (TypeError, ValueError):
+            editorial_score = int(min(100, max(0, section_board_score(expected[fp], str(expected[fp].get("primary_block") or "")))))
+        card = {
+            "rubric": str(item.get("rubric") or "other").strip() or "other",
+            "fact_card": fact_card,
+            "reader_card": reader_card,
+            "editorial_score": max(0, min(100, editorial_score)),
+            "selection_hint": str(item.get("selection_hint") or "publish").strip() or "publish",
+            "missing_facts": item.get("missing_facts") if isinstance(item.get("missing_facts"), list) else [],
+        }
+        if fp in mapping:
+            diagnostic["rejected_counts"]["duplicate_fingerprint"] += 1
+        mapping[fp] = (card, provider_name, model)
+
+    diagnostic["accepted"] = len(mapping)
+    missing = [fp for fp in expected if fp not in mapping]
+    diagnostic["missing_candidates"] = [
+        {
+            "fingerprint": fp,
+            "title": expected[fp].get("title"),
+            "category": expected[fp].get("category"),
+            "primary_block": expected[fp].get("primary_block"),
+        }
+        for fp in missing[:8]
+    ]
+    if diagnostic["accepted"] < diagnostic["sent"]:
+        diagnostic["raw_excerpt"] = _diagnostic_excerpt(cleaned)
+    return mapping, diagnostic
+
+
+def _call_english_card_provider_batch(
+    base_url: str,
+    api_key: str,
+    model: str,
+    candidates: list[dict],
+    provider_name: str,
+    timeout: int = 60,
+    batch_size: int = 8,
+    diagnostics: list[dict] | None = None,
+) -> EnglishCardMapping:
+    if not api_key:
+        logger.warning("%s: API key not set, skipping English cards.", provider_name)
+        return {}
+    try:
+        from openai import OpenAI  # noqa: PLC0415
+    except ImportError:
+        logger.error("openai package not installed. Run: pip install openai")
+        return {}
+
+    client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout, max_retries=1)
+    mapping: EnglishCardMapping = {}
+    batches = [candidates[i: i + batch_size] for i in range(0, len(candidates), batch_size)]
+    logger.info("%s English cards: %d candidates → %d batch(es) of ≤%d.", provider_name, len(candidates), len(batches), batch_size)
+
+    def _send_once(batch: list[dict], batch_idx: int, attempt: str) -> EnglishCardMapping:
+        user_payload = {"today_date": today_london(), "candidates": _english_card_batch_items(batch)}
+        messages = [
+            {"role": "system", "content": ENGLISH_CARD_SYSTEM},
+            {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
+        ]
+        started_at = now_london().isoformat()
+        t0 = time.monotonic()
+        try:
+            max_tokens = min(8192, 420 * len(batch) + 1400)
+            with _API_SEMAPHORE:
+                _API_RATE_LIMITER.acquire()
+                _API_TOKEN_LIMITER.acquire(_estimate_request_tokens(messages, max_tokens))
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=0.1,
+                    max_tokens=max_tokens,
+                )
+            from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
+            record_call_from_response(
+                response=response,
+                stage="llm_rewrite",
+                provider=provider_name.split("-", 1)[0],
+                model=model,
+                prompt_name="english_cards",
+                messages=messages,
+                max_tokens=max_tokens,
+            )
+            raw = response.choices[0].message.content.strip()
+            batch_mapping, diagnostic = _parse_english_card_results(raw, batch, provider_name, model, batch_idx, len(batches))
+            diagnostic["attempt"] = attempt
+            diagnostic["started_at"] = started_at
+            diagnostic["finished_at"] = now_london().isoformat()
+            diagnostic["duration_seconds"] = round(time.monotonic() - t0, 3)
+            if diagnostics is not None:
+                diagnostics.append(diagnostic)
+            return batch_mapping
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("%s English cards: batch %s/%d (%s) failed — %s", provider_name, batch_idx, len(batches), attempt, exc)
+            if diagnostics is not None:
+                diagnostics.append(
+                    {
+                        "provider": provider_name,
+                        "model": model,
+                        "prompt_name": "english_cards",
+                        "batch_index": batch_idx,
+                        "batch_count": len(batches),
+                        "attempt": attempt,
+                        "sent": len(batch),
+                        "returned_items": 0,
+                        "accepted": 0,
+                        "error": f"{exc.__class__.__name__}: {exc}",
+                        "started_at": started_at,
+                        "finished_at": now_london().isoformat(),
+                        "duration_seconds": round(time.monotonic() - t0, 3),
+                    }
+                )
+            return {}
+
+    def _process_batch(batch_idx: int, batch: list[dict]) -> EnglishCardMapping:
+        result = _send_once(batch, batch_idx, "initial")
+        missing = [c for c in batch if str(c.get("fingerprint") or "") not in result]
+        if missing:
+            _jittered_sleep(0.4)
+            result.update(_send_once(missing, batch_idx, "retry_missing"))
+        return result
+
+    if len(batches) <= 1:
+        for batch_idx, batch in enumerate(batches, start=1):
+            mapping.update(_process_batch(batch_idx, batch))
+    else:
+        max_workers = min(len(batches), _REWRITE_API_CONCURRENCY)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [
+                executor.submit(_process_batch, batch_idx, batch)
+                for batch_idx, batch in enumerate(batches, start=1)
+            ]
+            for future in futures:
+                mapping.update(future.result())
+    return mapping
+
+
+def _call_english_cards_with_fallback(
+    candidates: list[dict],
+    provider_override: str,
+    base_url_override: str,
+    model_override: str,
+    diagnostics: list[dict] | None = None,
+) -> EnglishCardMapping:
+    if not candidates or provider_override == "none":
+        return {}
+    route = resolve_model_route(
+        "english_cards",
+        provider_override=provider_override,
+        base_url_override=base_url_override,
+        model_override=model_override,
+    )
+    from news_digest.pipeline import provider_health  # noqa: PLC0415
+    mapping: EnglishCardMapping = {}
+    missing = list(candidates)
+    for step in route:
+        if not missing:
+            break
+        if provider_health.is_dead(step.provider):
+            logger.info("Skipping %s English cards — circuit breaker tripped earlier this run.", step.provider_label)
+            continue
+        before = len(mapping)
+        mapping.update(
+            _call_english_card_provider_batch(
+                step.base_url,
+                step.api_key,
+                step.model,
+                missing,
+                step.provider_label,
+                timeout=step.timeout_seconds or 60,
+                batch_size=step.batch_size or 8,
+                diagnostics=diagnostics,
+            )
+        )
+        if len(mapping) > before:
+            provider_health.record_success(step.provider)
+        else:
+            provider_health.record_failure(step.provider)
+        missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
+    return mapping
+
+
 def _is_protected_rewrite_candidate(candidate: dict) -> bool:
     """Items that must get extra rewrite recovery before they can disappear."""
     block = str(candidate.get("primary_block") or "")
@@ -1147,6 +1478,62 @@ def _rewrite_batch_items(batch: list[dict]) -> list[dict]:
     ]
 
 
+def _english_card_batch_items(batch: list[dict]) -> list[dict]:
+    """Compact source-language payload for English fact/reader cards.
+
+    This is the enrichment handoff: the model sees already-fetched source
+    evidence, structured event/entity fields, and story frames. It does not
+    browse and must explicitly mark missing facts instead of inventing them.
+    """
+    items: list[dict] = []
+    for c in batch:
+        event = c.get("event") if isinstance(c.get("event"), dict) else {}
+        frame = c.get("story_frame") if isinstance(c.get("story_frame"), dict) else {}
+        items.append(
+            {
+                "fingerprint": c.get("fingerprint", ""),
+                "title": c.get("title", ""),
+                "summary": c.get("summary", ""),
+                "lead": c.get("lead", ""),
+                "evidence_text": str(c.get("evidence_text") or "")[:2400],
+                "category": c.get("category", ""),
+                "primary_block": c.get("primary_block", ""),
+                "source_label": c.get("source_label", ""),
+                "source_url": c.get("source_url", ""),
+                "published_at": c.get("published_at", ""),
+                "freshness_status": c.get("freshness_status", ""),
+                "borough": c.get("borough", ""),
+                "entities": c.get("entities", {}),
+                "event": event,
+                "story_frame": frame,
+                "rewrite_packet": _rewrite_packet(c),
+                "reader_value_score": reader_value_score(c),
+                "section_board_score": section_board_score(c, str(c.get("primary_block") or "")),
+            }
+        )
+    return items
+
+
+def _translation_batch_items(batch: list[dict]) -> list[dict]:
+    """Final Russian translation payload: short English cards only."""
+    items: list[dict] = []
+    for c in batch:
+        fact_card = c.get("english_fact_card") if isinstance(c.get("english_fact_card"), dict) else {}
+        items.append(
+            {
+                "fingerprint": c.get("fingerprint", ""),
+                "category": c.get("category", ""),
+                "primary_block": c.get("primary_block", ""),
+                "source_label": c.get("source_label", ""),
+                "title": c.get("title", ""),
+                "english_rubric": c.get("english_rubric", ""),
+                "english_reader_card": c.get("english_reader_card", ""),
+                "english_fact_card": fact_card,
+            }
+        )
+    return items
+
+
 def _call_provider_batch(
     base_url: str,
     api_key: str,
@@ -1159,6 +1546,7 @@ def _call_provider_batch(
     prompt_name: str = "unknown",
     today_date: str = "",
     diagnostics: list[dict] | None = None,
+    item_builder: Callable[[list[dict]], list[dict]] | None = None,
 ) -> ProviderMapping:
     """Call one provider in batches. Returns fingerprint→draft_line.
 
@@ -1196,7 +1584,7 @@ def _call_provider_batch(
     logger.info("%s: %d candidates → %d batch(es) of ≤%d.", provider_name, len(candidates), len(batches), batch_size)
 
     def _send_once(batch: list[dict], batch_idx: int, attempt: str) -> ProviderMapping:
-        batch_items = _rewrite_batch_items(batch)
+        batch_items = item_builder(batch) if item_builder is not None else _rewrite_batch_items(batch)
         if today_date:
             user_payload: object = {"today_date": today_date, "candidates": batch_items}
         else:
@@ -1369,6 +1757,7 @@ def _call_with_fallback(
     today_date: str = "",
     diagnostics: list[dict] | None = None,
     batch_size_override: int | None = None,
+    item_builder: Callable[[list[dict]], list[dict]] | None = None,
 ) -> ProviderMapping:
     """Call provider chain with a specific prompt, return fingerprint→draft_line."""
     if not candidates:
@@ -1409,6 +1798,7 @@ def _call_with_fallback(
                 prompt_name=prompt_name,
                 today_date=today_date,
                 diagnostics=diagnostics,
+                item_builder=item_builder,
             )
         )
         if len(mapping) > before:
@@ -1441,6 +1831,7 @@ def _call_with_fallback(
                     prompt_name=f"{prompt_name}_retry",
                     today_date=today_date,
                     diagnostics=diagnostics,
+                    item_builder=item_builder,
                 )
             )
             if len(mapping) > retry_before:
@@ -1647,6 +2038,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     applied = 0
     fixed = 0
     repaired = 0
+    english_cards_applied = 0
 
     if provider_override == "none":
         logger.info("LLM_PROVIDER=none — skipping rewrite.")
@@ -1700,23 +2092,82 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             rewrite_shortlist["held_for_backup"],
         )
 
-        # Group by prompt type and call each group separately.
-        # TODAY_DATE is passed via the user payload (not the system prompt)
-        # so the system prefix is byte-stable across days and DeepSeek /
-        # OpenAI prompt caching can reuse it on day N+1. Only date-aware
-        # prompts get a non-empty today_date — others stay on the legacy
-        # bare-list payload shape.
+        # English-first path:
+        # 1) build compact English fact/reader cards from enriched evidence;
+        # 2) translate those final English cards to Russian;
+        # 3) if either model layer misses an item, fall back to the legacy
+        #    category prompt with full evidence. This preserves "release
+        #    always goes" while moving normal quality work before translation.
         _DATE_AWARE_PROMPTS = {PROMPT_BUSINESS, PROMPT_EVENTS, PROMPT_DIASPORA_EVENTS}
         _EVENTS_PROMPTS = {PROMPT_EVENTS, PROMPT_DIASPORA_EVENTS}
         _today = today_london()
 
-        groups: dict[str, list[dict]] = {}
-        for c in to_rewrite:
-            prompt = _CATEGORY_TO_PROMPT.get(str(c.get("category") or ""), PROMPT_CITY_NEWS)
-            groups.setdefault(prompt, []).append(c)
+        english_card_mapping = _call_english_cards_with_fallback(
+            to_rewrite,
+            provider_override,
+            base_url_override,
+            model_override,
+            diagnostics=provider_batch_diagnostics,
+        )
+        english_cards_applied = 0
+        run_iso = now_london().isoformat()
+        for candidate in candidates:
+            fp = str(candidate.get("fingerprint") or "").strip()
+            if fp not in english_card_mapping:
+                continue
+            card, prov, model_name = english_card_mapping[fp]
+            fact_card = card.get("fact_card") if isinstance(card.get("fact_card"), dict) else {}
+            candidate["english_rubric"] = card.get("rubric") or "other"
+            candidate["english_fact_card"] = fact_card
+            candidate["english_reader_card"] = card.get("reader_card") or ""
+            candidate["english_editorial_score"] = card.get("editorial_score")
+            candidate["english_selection_hint"] = card.get("selection_hint") or "publish"
+            candidate["english_missing_facts"] = card.get("missing_facts") or []
+            candidate["english_card_provider"] = prov
+            candidate["english_card_model"] = model_name
+            candidate["english_card_written_at"] = run_iso
+            english_cards_applied += 1
+        if english_cards_applied:
+            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            logger.info("English-first rewrite: applied %d English reader cards.", english_cards_applied)
+
+        english_ready = [c for c in to_rewrite if str(c.get("english_reader_card") or "").strip()]
+        legacy_rewrite_pool = [c for c in to_rewrite if not str(c.get("english_reader_card") or "").strip()]
 
         from news_digest.pipeline.prompts_meta import prompt_name_for  # noqa: PLC0415
         mapping: ProviderMapping = {}
+
+        if english_ready:
+            logger.info("Final Russian translation: %d English reader cards.", len(english_ready))
+            mapping.update(
+                _call_with_fallback(
+                    english_ready,
+                    FINAL_TRANSLATE_SYSTEM,
+                    provider_override,
+                    base_url_override,
+                    model_override,
+                    prompt_name="final_translate",
+                    route_name="final_translate",
+                    today_date=_today,
+                    diagnostics=provider_batch_diagnostics,
+                    item_builder=_translation_batch_items,
+                )
+            )
+            translated_missing = [
+                c for c in english_ready
+                if str(c.get("fingerprint") or "") not in mapping
+            ]
+            if translated_missing:
+                logger.info(
+                    "Final Russian translation missed %d item(s); falling back to legacy category prompts.",
+                    len(translated_missing),
+                )
+                legacy_rewrite_pool.extend(translated_missing)
+
+        groups: dict[str, list[dict]] = {}
+        for c in legacy_rewrite_pool:
+            prompt = _CATEGORY_TO_PROMPT.get(str(c.get("category") or ""), PROMPT_CITY_NEWS)
+            groups.setdefault(prompt, []).append(c)
 
         def _rewrite_group(prompt: str, group: list[dict]) -> ProviderMapping:
             logger.info("LLM rewrite: calling group of %d candidates.", len(group))
@@ -1740,14 +2191,15 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         # API concurrency across all groups, so this only removes the dead
         # wait between groups — it does not increase the request rate.
         group_items = list(groups.items())
-        if len(group_items) <= 1:
-            for prompt, group in group_items:
-                mapping.update(_rewrite_group(prompt, group))
-        else:
-            with ThreadPoolExecutor(max_workers=len(group_items)) as executor:
-                futures = [executor.submit(_rewrite_group, prompt, group) for prompt, group in group_items]
-                for future in futures:
-                    mapping.update(future.result())
+        if group_items:
+            if len(group_items) <= 1:
+                for prompt, group in group_items:
+                    mapping.update(_rewrite_group(prompt, group))
+            else:
+                with ThreadPoolExecutor(max_workers=len(group_items)) as executor:
+                    futures = [executor.submit(_rewrite_group, prompt, group) for prompt, group in group_items]
+                    for future in futures:
+                        mapping.update(future.result())
 
         run_iso = now_london().isoformat()
         for candidate in candidates:
@@ -1983,6 +2435,12 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "examples": deterministic_writer_items[:40],
             },
             "skipped_manual_review": skipped_manual_review,
+            "english_first": {
+                "enabled": True,
+                "cards_applied": english_cards_applied,
+                "cards_missing": max(0, len(to_rewrite) - english_cards_applied),
+                "policy": "English fact/reader cards first; final Russian translation from compact English cards; legacy full-evidence rewrite fallback on any model miss.",
+            },
             "applied": applied,
             "fixed": fixed,
             "repaired": repaired,
@@ -1990,6 +2448,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "cost_summary": cost_summary,
             "prompt_versions": _prompt_versions(),
             "model_route": route_snapshot().get("rewrite", []),
+            "english_card_route": route_snapshot().get("english_cards", []),
+            "final_translate_route": route_snapshot().get("final_translate", []),
             "provider_batch_diagnostics": provider_batch_diagnostics,
             "repair_rejections": repair_rejections[:30],
             "last_resort_writes": last_resort_writes,

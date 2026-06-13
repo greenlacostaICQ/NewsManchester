@@ -11,7 +11,8 @@ from dataclasses import asdict, dataclass
 import os
 
 DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
-DEEPSEEK_MODEL = "deepseek-chat"
+DEEPSEEK_MODEL = "deepseek-v4-flash"
+DEEPSEEK_PRO_MODEL = "deepseek-v4-pro"
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 # Prose rewrite (the editorial Russian cards) runs on gpt-4o: gpt-4o-mini was
 # unreliable on rich evidence — on 2026-06-05 it returned empty on 919/915-char
@@ -84,6 +85,22 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
         # draft_line_provider="DeepSeek" so the degraded phrasing is auditable.
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_rewrite_primary", 1, batch_size=6, timeout_seconds=60),
         ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "rewrite_last_resort", 2, batch_size=6, timeout_seconds=60),
+    ),
+    # English-first architecture: prepare compact English fact/reader cards
+    # before any Russian copy is written. DeepSeek Pro is cheap enough for
+    # broad source-language work and strong enough for extraction/synthesis;
+    # OpenAI remains a fallback so a DeepSeek outage never blocks the run.
+    "english_cards": (
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_PRO_MODEL, "DEEPSEEK_API_KEY", "english_fact_reader_primary", 1, batch_size=8, timeout_seconds=45),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "english_fact_reader_fallback", 2, batch_size=6, timeout_seconds=60),
+    ),
+    # Translate only the already-formed English reader cards. This keeps the
+    # expensive GPT call on the final short copy, not the raw evidence packet.
+    # DeepSeek Pro is a fallback: weaker Russian is better than a vanished item,
+    # and the line remains auditable via draft_line_provider/model.
+    "final_translate": (
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "final_ru_translation_primary", 1, batch_size=8, timeout_seconds=60),
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_PRO_MODEL, "DEEPSEEK_API_KEY", "final_ru_translation_fallback", 2, batch_size=8, timeout_seconds=60),
     ),
     # Transport: short structured translation → cheap mini is enough. Bigger
     # batches (short lines) + tight timeout; DeepSeek last-resort net.

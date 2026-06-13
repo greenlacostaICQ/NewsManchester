@@ -27,7 +27,8 @@ MODEL_BAKEOFF_SPEC: dict[str, object] = {
     "mode": "offline_contract",
     "daily_run_policy": "no extra model calls in the morning pipeline",
     "candidate_models": [
-        {"provider": "deepseek", "model": "deepseek-chat", "role": "cheap_prefilter_or_baseline"},
+        {"provider": "deepseek", "model": "deepseek-v4-flash", "role": "cheap_prefilter_or_baseline"},
+        {"provider": "deepseek", "model": "deepseek-v4-pro", "role": "english_fact_reader_candidate"},
         {"provider": "openai", "model": "gpt-4o-mini", "role": "quality_judge_candidate"},
     ],
     "required_metrics": [
