@@ -3931,6 +3931,12 @@ def _numeric_missing_tokens(candidate: dict, line: str) -> list[str]:
 
 def _numeric_evidence_errors(candidate: dict, line: str) -> list[str]:
     category = str(candidate.get("category") or "")
+    # Transport lines carry dates/times/route numbers from structured
+    # TfGM/Metrolink extraction, not from the article evidence text, so the
+    # "number not in evidence" hallucination check would false-positive on a
+    # legitimate "до 29 мая" / line number (media item rerouted to transport).
+    if str(candidate.get("primary_block") or "") == "transport":
+        return []
     if category not in {"media_layer", "gmp", "council", "public_services", "city_news", "football", "tech_business", "food_openings"}:
         return []
     missing = _numeric_missing_tokens(candidate, line)
@@ -3947,6 +3953,10 @@ def _strip_unsupported_number_phrases(candidate: dict, line: str) -> tuple[str, 
     Remove the smallest useful phrase around the number, then re-run normal
     quality checks. If the line remains readable, it ships.
     """
+    # Transport dates/times/route numbers come from structured extraction —
+    # never strip them as "unsupported" (see _numeric_evidence_errors).
+    if str(candidate.get("primary_block") or "") == "transport":
+        return line, []
     missing = _numeric_missing_tokens(candidate, line)
     if not missing:
         return line, []
