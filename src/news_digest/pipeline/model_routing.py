@@ -91,16 +91,17 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
     # broad source-language work and strong enough for extraction/synthesis;
     # OpenAI remains a fallback so a DeepSeek outage never blocks the run.
     "english_cards": (
-        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_PRO_MODEL, "DEEPSEEK_API_KEY", "english_fact_reader_primary", 1, batch_size=8, timeout_seconds=45),
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "english_fact_reader_fallback", 2, batch_size=6, timeout_seconds=60),
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "english_fact_reader_fast", 1, batch_size=8, timeout_seconds=25),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "english_fact_reader_mini_fallback", 2, batch_size=6, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "english_fact_reader_quality_fallback", 3, batch_size=6, timeout_seconds=60),
     ),
     # Translate only the already-formed English reader cards. This keeps the
     # expensive GPT call on the final short copy, not the raw evidence packet.
     # DeepSeek Pro is a fallback: weaker Russian is better than a vanished item,
     # and the line remains auditable via draft_line_provider/model.
     "final_translate": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "final_ru_translation_primary", 1, batch_size=8, timeout_seconds=60),
-        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_PRO_MODEL, "DEEPSEEK_API_KEY", "final_ru_translation_fallback", 2, batch_size=8, timeout_seconds=60),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "final_ru_translation_mini_primary", 1, batch_size=8, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "final_ru_translation_quality_fallback", 2, batch_size=6, timeout_seconds=60),
     ),
     # Transport: short structured translation → cheap mini is enough. Bigger
     # batches (short lines) + tight timeout; DeepSeek last-resort net.
@@ -119,6 +120,57 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_repair", 1, batch_size=5, timeout_seconds=60),
     ),
 }
+
+
+def is_deepseek_route(*, provider: str = "", model: str = "", base_url: str = "") -> bool:
+    """Return True for DeepSeek-compatible chat calls.
+
+    DeepSeek V4 has two production-critical quirks for this pipeline:
+    thinking mode defaults on, and JSON mode should be requested explicitly
+    for structured output. Keeping the detection here prevents each caller
+    from re-implementing a slightly different policy.
+    """
+    provider_l = provider.lower()
+    model_l = model.lower()
+    base_l = base_url.lower().rstrip("/")
+    return (
+        provider_l == "deepseek"
+        or model_l.startswith("deepseek")
+        or base_l.startswith(DEEPSEEK_BASE_URL.rstrip("/").lower())
+    )
+
+
+def chat_completion_options_for_route(
+    *,
+    provider: str = "",
+    model: str = "",
+    base_url: str = "",
+    json_mode: bool = True,
+) -> dict[str, object]:
+    """Provider-specific OpenAI-compatible request options.
+
+    The project asks every LLM stage for machine-readable JSON. For DeepSeek
+    we also disable thinking so a bad day fails quickly into the OpenAI mini
+    reserve instead of spending minutes reasoning over a simple digest card.
+    """
+    if not is_deepseek_route(provider=provider, model=model, base_url=base_url):
+        return {}
+    options: dict[str, object] = {"extra_body": {"thinking": {"type": "disabled"}}}
+    if json_mode:
+        options["response_format"] = {"type": "json_object"}
+    return options
+
+
+def sdk_retries_for_route(*, provider: str = "", model: str = "", base_url: str = "") -> int:
+    """SDK retries by provider.
+
+    DeepSeek sits in front of mini/GPT fallback. Retrying the same slow
+    DeepSeek request inside the SDK defeats that ladder, so DeepSeek gets no
+    SDK retry; the pipeline retry only re-sends missing items once.
+    """
+    if is_deepseek_route(provider=provider, model=model, base_url=base_url):
+        return 0
+    return 1
 
 
 def provider_label_for_model(model: str) -> str:

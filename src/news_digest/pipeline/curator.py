@@ -20,9 +20,11 @@ from news_digest.pipeline.model_routing import (
     GROQ_FALLBACK_MODEL,
     OPENAI_BASE_URL,
     OPENAI_SCORING_MODEL,
+    chat_completion_options_for_route,
     provider_label_for_model,
     resolve_model_route,
     route_snapshot,
+    sdk_retries_for_route,
 )
 
 logger = logging.getLogger(__name__)
@@ -66,8 +68,8 @@ CURATOR_PROMPT = """Ты редакторский куратор дайджес�
 Предпочитай: крупное уголовное дело / громкое политическое событие / крупный транспортный коллапс / городская трагедия с масштабом.
 Лидом не может быть футбол, еда, evergreen, событие, концерт.
 
-Верни ТОЛЬКО JSON-массив без пояснений:
-[{"fingerprint": "...", "include": true, "is_lead": false, "reason": "кратко почему"}]"""
+Верни ТОЛЬКО JSON-объект без пояснений:
+{"items": [{"fingerprint": "...", "include": true, "is_lead": false, "reason": "кратко почему"}]}"""
 
 
 _GM_BOROUGHS: tuple[str, ...] = (
@@ -254,6 +256,7 @@ def _call_curator_batch(batch: list[dict], client: object, model: str) -> list[d
         messages=messages,
         temperature=0.1,
         max_tokens=max_tokens,
+        **chat_completion_options_for_route(model=model),
     )
     from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
     record_call_from_response(
@@ -271,7 +274,13 @@ def _call_curator_batch(batch: list[dict], client: object, model: str) -> list[d
         if raw.startswith("json"):
             raw = raw[4:]
         raw = raw.rsplit("```", 1)[0]
-    return json.loads(raw.strip())
+    parsed = json.loads(raw.strip())
+    if isinstance(parsed, dict):
+        for key in ("items", "results", "decisions"):
+            if isinstance(parsed.get(key), list):
+                return parsed[key]
+        return []
+    return parsed if isinstance(parsed, list) else []
 
 
 def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: str, batch_size: int = _CURATOR_BATCH_SIZE) -> list[dict]:
@@ -286,7 +295,12 @@ def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: st
     # max_retries=0: don't burn 3×60s on a dead endpoint — fail fast and let
     # run_curator_pass try the next provider in the chain. 20s cap is well
     # above the typical 3-8s curator response so legitimate calls still pass.
-    client = OpenAI(api_key=api_key, base_url=base_url, timeout=20, max_retries=0)
+    client = OpenAI(
+        api_key=api_key,
+        base_url=base_url,
+        timeout=20,
+        max_retries=sdk_retries_for_route(model=model, base_url=base_url),
+    )
     results: list[dict] = []
     batches = [candidates[i:i + batch_size] for i in range(0, len(candidates), batch_size)]
     for i, batch in enumerate(batches):

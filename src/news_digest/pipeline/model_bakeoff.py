@@ -22,6 +22,8 @@ from news_digest.pipeline.model_routing import (
     OPENAI_BASE_URL,
     OPENAI_SCORING_MODEL,
     ModelRouteStep,
+    chat_completion_options_for_route,
+    sdk_retries_for_route,
 )
 from news_digest.pipeline.reader_value import LABELS_PATH, VALID_LABELS, validate_reader_value_labels
 from news_digest.pipeline.story_intelligence import (
@@ -39,7 +41,7 @@ TEMPERATURE = 0.0
 JUDGE_PROMPT = f"""You are an English-first editorial judge for a Greater Manchester morning digest.
 Evaluate only the English/source evidence in each item. Do not infer from the gold label or from Russian output.
 
-Return a JSON array. Each object must contain:
+Return a JSON object in this shape: {"items": [...]}. Each item must contain:
 - fingerprint: string
 - decision: one of publish_candidate, backup_candidate, reject
 - false_negative_risk: one of low, medium, high
@@ -218,7 +220,12 @@ def _call_model_batches(step: ModelRouteStep, candidates: list[dict]) -> tuple[d
     except ImportError:
         return {}, [], {"status": "skipped_missing_openai_package"}
 
-    client = OpenAI(api_key=api_key, base_url=step.base_url, timeout=step.timeout_seconds or 30, max_retries=0)
+    client = OpenAI(
+        api_key=api_key,
+        base_url=step.base_url,
+        timeout=step.timeout_seconds or 30,
+        max_retries=sdk_retries_for_route(provider=step.provider, model=step.model, base_url=step.base_url),
+    )
     batch_size = int(step.batch_size or DEFAULT_BATCH_SIZE)
     results: dict[str, dict] = {}
     latencies: list[float] = []
@@ -235,6 +242,7 @@ def _call_model_batches(step: ModelRouteStep, candidates: list[dict]) -> tuple[d
             messages=messages,
             temperature=TEMPERATURE,
             max_tokens=MAX_TOKENS,
+            **chat_completion_options_for_route(provider=step.provider, model=step.model, base_url=step.base_url),
         )
         latencies.append(time.perf_counter() - t0)
         record_call_from_response(
@@ -269,8 +277,15 @@ def _call_model_batches(step: ModelRouteStep, candidates: list[dict]) -> tuple[d
         )
         raw = _strip_json_fence(response.choices[0].message.content)
         parsed = json.loads(raw)
+        if isinstance(parsed, dict):
+            for key in ("items", "results", "decisions"):
+                if isinstance(parsed.get(key), list):
+                    parsed = parsed[key]
+                    break
+            else:
+                parsed = []
         if not isinstance(parsed, list):
-            raise ValueError("judge response must be a JSON array")
+            raise ValueError("judge response must be a JSON object with items/results or a JSON array")
         for row in parsed:
             if not isinstance(row, dict):
                 continue

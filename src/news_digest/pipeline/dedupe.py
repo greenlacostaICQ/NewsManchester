@@ -849,8 +849,8 @@ _DEDUPE_REVIEW_PROMPT = """Ты редактор городского дайдж
 - follow_up: явная следующая фаза события (вердикт после ареста, годовщина, итог расследования, запуск после анонса).
 - rehash: тот же сюжет, просто новый URL/перепечатка/другая редакция, без новых конкретных фактов.
 
-Возвращай ТОЛЬКО JSON-массив:
-[{"fingerprint":"...","change_type":"new_facts|follow_up|rehash","reason":"кратко по-русски, ≤120 символов, со ссылкой на конкретный новый факт"}]
+Возвращай ТОЛЬКО JSON-объект:
+{"items": [{"fingerprint":"...","change_type":"new_facts|follow_up|rehash","reason":"кратко по-русски, ≤120 символов, со ссылкой на конкретный новый факт"}]}
 Никакого markdown."""
 
 _BORDERLINE_MIN_EVIDENCE_CHARS = 200
@@ -901,7 +901,13 @@ def _call_dedupe_review_llm(
         from openai import OpenAI  # noqa: PLC0415
     except ImportError:  # pragma: no cover
         return []
-    client = OpenAI(api_key=api_key, base_url=base_url, timeout=20, max_retries=0)
+    from news_digest.pipeline.model_routing import sdk_retries_for_route  # noqa: PLC0415
+    client = OpenAI(
+        api_key=api_key,
+        base_url=base_url,
+        timeout=20,
+        max_retries=sdk_retries_for_route(model=model, base_url=base_url),
+    )
     results: list[dict] = []
     for i in range(0, len(pairs), _BORDERLINE_BATCH_SIZE):
         batch = pairs[i: i + _BORDERLINE_BATCH_SIZE]
@@ -918,27 +924,29 @@ def _call_dedupe_review_llm(
         ]
         try:
             import json as _json  # noqa: PLC0415
+            from news_digest.pipeline.model_routing import (  # noqa: PLC0415
+                chat_completion_options_for_route,
+                provider_label_for_model,
+            )
+            messages = [
+                {"role": "system", "content": _DEDUPE_REVIEW_PROMPT},
+                {"role": "user", "content": _json.dumps(user, ensure_ascii=False)},
+            ]
             response = client.chat.completions.create(
                 model=model,
-                messages=[
-                    {"role": "system", "content": _DEDUPE_REVIEW_PROMPT},
-                    {"role": "user", "content": _json.dumps(user, ensure_ascii=False)},
-                ],
+                messages=messages,
                 temperature=0.1,
                 max_tokens=1500,
+                **chat_completion_options_for_route(model=model, base_url=base_url),
             )
             from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
-            from news_digest.pipeline.model_routing import provider_label_for_model  # noqa: PLC0415
             record_call_from_response(
                 response=response,
                 stage="dedupe_review",
                 provider=provider_label_for_model(model),
                 model=model,
                 prompt_name="dedupe_review",
-                messages=[
-                    {"role": "system", "content": _DEDUPE_REVIEW_PROMPT},
-                    {"role": "user", "content": _json.dumps(user, ensure_ascii=False)},
-                ],
+                messages=messages,
                 max_tokens=1500,
             )
             raw = response.choices[0].message.content.strip()
@@ -947,7 +955,16 @@ def _call_dedupe_review_llm(
                 if raw.startswith("json"):
                     raw = raw[4:]
                 raw = raw.rsplit("```", 1)[0]
-            results.extend(_json.loads(raw.strip()) or [])
+            parsed = _json.loads(raw.strip())
+            if isinstance(parsed, dict):
+                for key in ("items", "results", "decisions"):
+                    if isinstance(parsed.get(key), list):
+                        parsed = parsed[key]
+                        break
+                else:
+                    parsed = []
+            if isinstance(parsed, list):
+                results.extend(parsed)
         except Exception as exc:  # noqa: BLE001
             import logging  # noqa: PLC0415
             logging.getLogger(__name__).warning("Dedupe LLM review failed: %s", exc)
