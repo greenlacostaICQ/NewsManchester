@@ -1564,6 +1564,32 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertFalse(_calendar_item_should_carry_over(candidate, previous))
 
+    def test_historical_ira_bomb_rehash_suppressed_unless_new_phase(self) -> None:
+        # Owner 2026-06-13: the 1996 IRA bomb retrospective resurfaced as new
+        # news. A generic-"news" rehash of a curated historical subject must be
+        # suppressed; only a real new phase (inquest opens) re-publishes.
+        previous = {
+            "title": "Remembering the Manchester IRA bombing",
+            "summary": "The 1996 Arndale bombing by the IRA.",
+            "primary_block": "last_24h",
+            "category": "media_layer",
+        }
+        previous["editorial_contract"] = build_editorial_contract(previous)
+        rehash = {
+            "title": "The Mancunian Way: No longer active",
+            "summary": "Looking back at the 1996 IRA bomb that devastated the Arndale and Corporation Street.",
+            "primary_block": "last_24h",
+            "category": "media_layer",
+        }
+        new_phase = {
+            "title": "Inquest opens into 1996 Manchester IRA bomb",
+            "summary": "A new inquest has been opened into the 1996 Arndale bombing.",
+            "primary_block": "last_24h",
+            "category": "media_layer",
+        }
+        self.assertTrue(lifecycle_repeat_review(rehash, previous)["repeat"])
+        self.assertFalse(lifecycle_repeat_review(new_phase, previous)["repeat"])
+
     def test_undated_event_like_market_repeat_is_not_carried_daily(self) -> None:
         from news_digest.pipeline.dedupe import _calendar_item_should_carry_over
         candidate = {

@@ -699,6 +699,17 @@ _NEW_PHASE_RE = re.compile(
 _TOPIC_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("politics:makerfield_by_election_2026", re.compile(r"\b(?:makerfield|josh\s+simons|andy\s+burnham.*makerfield|by-?election.*makerfield)\b", re.IGNORECASE)),
     ("memorial:manchester_arena_anniversary", _MEMORIAL_RE),
+    # 1996 Manchester (Arndale / Corporation Street) IRA bombing — a recurring
+    # historical/anniversary subject. Stable key so retrospectives are caught
+    # as repeats and only re-publish on a genuine new phase (owner 2026-06-13:
+    # "IRA bomb повторился снова" — different headline, weak topic key let the
+    # rehash through as new news).
+    ("incident:manchester_ira_bomb_1996", re.compile(
+        r"\b(?:ira\s+bomb\w*|bomb\w*\s+(?:by|planted\s+by)\s+the\s+ira|"
+        r"1996\s+(?:manchester\s+|arndale\s+)?bomb\w*|"
+        r"(?:arndale|corporation\s+street)\s+bomb\w*|"
+        r"manchester\s+bombing\s+of\s+1996)\b",
+        re.IGNORECASE)),
     ("incident:bolton_erika_de_souza_correia", re.compile(r"\b(?:erika\s+de\s+souza|de\s+souza\s+correia|walker\s+fold|police\s+pursuit)\b", re.IGNORECASE)),
     ("opening:grub_stretford", re.compile(r"\b(?:grub\b.*stretford|stretford.*\bgrub\b|sir\s+tony\s+lloyd\s+square)\b", re.IGNORECASE)),
     ("opening:old_abbey_taphouse_hulme", re.compile(r"\b(?:old\s+abbey\s+taphouse|the\s+abbey.*hulme|guildhall\s+road)\b", re.IGNORECASE)),
@@ -1498,7 +1509,14 @@ def lifecycle_repeat_review(candidate: dict, previous: dict) -> dict[str, object
 
     if anchor in {"new_phase", "service_status", "today_weather"}:
         return {"repeat": False, "reason": f"publishable_anchor:{anchor}"}
-    if story_type in {"incident", "memorial", "opening", "research", "human_interest", "soft_news"}:
+    # Curated historical/incident subjects (Arena anniversary, 1996 IRA bomb)
+    # often resurface as a generic-"news" retrospective with no new-phase
+    # anchor. Suppress those rehashes too — a known historical subject only
+    # earns a repeat on a real new phase (owner 2026-06-13: IRA rehash).
+    historical_subject = topic.startswith(("memorial:", "incident:"))
+    if story_type in {"incident", "memorial", "opening", "research", "human_interest", "soft_news"} or (
+        historical_subject and story_type == "news"
+    ):
         return {
             "repeat": True,
             "topic_key": topic,
