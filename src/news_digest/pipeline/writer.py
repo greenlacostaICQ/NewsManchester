@@ -2758,9 +2758,13 @@ def _build_weekend_event_fallback_line(candidate: dict) -> str:
         lead_bits.append(f"в {venue}")
     prefix = " ".join(lead_bits)
     detail_text = ", ".join(details)
-    if not detail_text:
+    # Minimum publishable weekend card = date + place + type (owner 2026-06-13:
+    # "если знает дату, место и тип — публикуется нормально"). The "what's
+    # there" detail is a bonus, not a gate. Only hold when we have neither a
+    # concrete date nor any detail — a placeless/dateless thin card.
+    if not detail_text and not day_month:
         return ""
-    sentence = f"{kind}: {detail_text}"
+    sentence = f"{kind}: {detail_text}" if detail_text else kind
     if prefix:
         return f"• {prefix} — {title}: {sentence}. Сверьте часы и условия перед поездкой."
     return f"• {title}: {sentence}. Сверьте часы и условия перед поездкой."
