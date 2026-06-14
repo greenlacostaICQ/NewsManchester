@@ -809,6 +809,49 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         reject_reasons = updated.get("reject_reasons") or []
         self.assertIn("book_author_misrouted", reject_reasons)
 
+    def test_pr_only_tech_business_rejected_real_action_kept(self) -> None:
+        """User feedback 2026-06-13: «Manchester Digital V25.0 — PR/anniversary».
+
+        tech/business publishes only on a concrete action (jobs, investment,
+        opening/closure, contract). Anniversary/campaign PR is rejected; a PR
+        wrapper around a real action is kept.
+        """
+        pr_only = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "mcr-digital-anniversary",
+                "category": "tech_business",
+                "primary_block": "city_watch",
+                "title": "Manchester Digital celebrates V25.0 anniversary",
+                "summary": "Manchester Digital marks 25 years with a celebration campaign.",
+                "lead": "",
+                "evidence_text": "The community network celebrates its anniversary milestone.",
+                "source_label": "Manchester Digital",
+                "source_url": "https://example.test/mcr-digital",
+                "published_at": now_london().isoformat(),
+            }
+        )
+        self.assertFalse(pr_only.get("include"))
+        self.assertIn("tech_business_pr_only", pr_only.get("reject_reasons") or [])
+
+        real_action = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "fintech-office-jobs",
+                "category": "tech_business",
+                "primary_block": "city_watch",
+                "title": "Fintech firm celebrates 10 years and opens second Manchester office",
+                "summary": "The company opens a second office in Manchester, creating 40 new jobs.",
+                "lead": "",
+                "evidence_text": "The expansion adds 40 roles at a new city-centre office.",
+                "source_label": "Bdaily Manchester",
+                "source_url": "https://example.test/fintech-office",
+                "published_at": now_london().isoformat(),
+            }
+        )
+        self.assertTrue(real_action.get("include"))
+        self.assertNotIn("tech_business_pr_only", real_action.get("reject_reasons") or [])
+
     # ---------------------------------------------------------------
     # S2 — cross-day entity dedup (same-victim / same-suspect repeats)
     # User feedback 2026-05-22:

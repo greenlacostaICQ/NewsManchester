@@ -993,6 +993,27 @@ _TECH_MARKERS_RE = re.compile(
     r"разработчик|программист|алгоритм|искусственн(?:ый|ого)\s+интеллект)\b",
     re.IGNORECASE,
 )
+# A concrete business action makes a tech/business card newsworthy.
+_BUSINESS_ACTION_RE = re.compile(
+    r"\b(?:jobs?|hiring|hire[ds]?|recruit\w*|investment|invest(?:s|ed|ing)?|"
+    r"funding|raised|raise[ds]?|seed|series\s+[a-d]|grant|contract|deal|"
+    r"acquisition|acquir(?:e|ed|es)|merger|takeover|"
+    r"open(?:s|ed|ing)?|launch(?:es|ed|ing)?|clos(?:e|es|ed|ing|ure)|"
+    r"relocat\w*|expand\w*|expansion|headquarters|\bhq\b|factory|warehouse|"
+    r"\boffice\b|\bstore\b|plant|turnover|revenue|profit|loss|"
+    r"redundanc\w*|layoffs?|administration|"
+    r"£\d|\$\d|\d+\s*(?:jobs|roles|million|m\b|bn\b))\b",
+    re.IGNORECASE,
+)
+# Pure PR with no business action: anniversary, awards, campaigns, version
+# milestones, founder back-stories.
+_BUSINESS_PR_ONLY_RE = re.compile(
+    r"\b(?:anniversary|years?\s+(?:in\s+business|of\s+(?:business|trading))|"
+    r"celebrat\w*|award[s]?\b|wins?\s+award|shortlist\w*|nominat\w*|campaign|"
+    r"\bv\d{1,2}\.\d|founder'?s?\s+story|community\s+champion|recogni[sz]\w*|"
+    r"proud\s+to|годовщин\w*|юбилей|награ\w*|кампани\w*)\b",
+    re.IGNORECASE,
+)
 
 
 def _exclude_book_author_in_tech_business(candidate: dict) -> bool:
@@ -1030,6 +1051,32 @@ def _exclude_book_author_in_tech_business(candidate: dict) -> bool:
         "book_author_misrouted",
         "Validator: book/author story misrouted to tech_business — "
         "no tech/startup signal, no local-event hook.",
+    )
+    return True
+
+
+def _exclude_pr_only_tech_business(candidate: dict) -> bool:
+    """tech/business needs a concrete business action — jobs, investment,
+    opening/closure, a contract, or local impact. Anniversary/award/campaign/
+    version-milestone PR with none of those is not news (owner 2026-06-13:
+    Manchester Digital V25.0 anniversary was correctly dropped as PR; IT/
+    business publishes only on a concrete action)."""
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("category") or "") != "tech_business":
+        return False
+    blob = _candidate_blob(candidate)
+    if not _BUSINESS_PR_ONLY_RE.search(blob):
+        return False
+    if _BUSINESS_ACTION_RE.search(blob):
+        # PR wrapper around a real action (e.g. "celebrates 25 years and opens
+        # a second office, 40 new jobs") — keep it.
+        return False
+    _append_reject(
+        candidate,
+        "tech_business_pr_only",
+        "Validator: tech/business PR (anniversary/award/campaign) with no "
+        "concrete business action — jobs, investment, opening/closure, or contract.",
     )
     return True
 
@@ -1822,6 +1869,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _exclude_historical_no_news_angle(candidate)
         if candidate.get("include"):
             _exclude_book_author_in_tech_business(candidate)
+        if candidate.get("include"):
+            _exclude_pr_only_tech_business(candidate)
         if candidate.get("include"):
             _exclude_stale_undated_news_from_text(candidate)
         if candidate.get("include") and manual != "force_include":
