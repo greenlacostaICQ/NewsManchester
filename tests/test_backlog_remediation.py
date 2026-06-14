@@ -651,7 +651,9 @@ class EventQualityPipelineTest(unittest.TestCase):
                 "enrichment_status": "article_html",
                 "source_label": "The Manc",
                 "source_url": "https://example.test/crime",
-                "published_at": "2026-05-20T08:00:00+01:00",
+                # Relative recent date — see the police-stub test for why a
+                # hardcoded date rots into a stale reject.
+                "published_at": (now_london() - timedelta(days=1)).isoformat(),
                 "dedupe_decision": "new",
             }
         )
@@ -674,7 +676,10 @@ class EventQualityPipelineTest(unittest.TestCase):
                 "evidence_text": "Police appeal for help.",
                 "source_label": "Source",
                 "source_url": "https://example.test/stub",
-                "published_at": "2026-05-20T08:00:00+01:00",
+                # Relative recent date: a hardcoded 2026-05-20 makes this a
+                # stale reject once the clock moves past, masking the
+                # crime-specificity path (same fix as the property test).
+                "published_at": (now_london() - timedelta(days=1)).isoformat(),
                 "dedupe_decision": "new",
             }
         )

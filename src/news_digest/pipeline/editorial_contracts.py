@@ -264,6 +264,17 @@ _APPEAL_MARKERS = re.compile(
     r"come forward|urged to (?:come|contact|get in touch)|wanted in connection)\b",
     re.IGNORECASE,
 )
+# An actionable alert the reader can act on (missing person, look-out, trace).
+# These belong in Fresh even when short. A generic "witnesses come forward /
+# share footage about a past incident" appeal is NOT actionable for the
+# average reader and should be demoted to the city radar unless the article
+# is rich (owner 2026-06-13: missing-person/alerts in Fresh only when
+# actionable).
+_FIND_APPEAL = re.compile(
+    r"\b(?:missing|find|trace|locate|last seen|whereabouts|have you seen|"
+    r"can you help|sighting|wanted in connection|absconded)\b",
+    re.IGNORECASE,
+)
 
 
 def crime_specificity_review(candidate: dict) -> dict[str, object]:
@@ -316,9 +327,16 @@ def crime_specificity_review(candidate: dict) -> dict[str, object]:
     # hard-rejected, while a real appeal ("find missing teenage girl in
     # Bolton") carries a location → missing=[] → stays publishable.
     hard_floor = 1 if is_appeal else 3
+    info_only_appeal = is_appeal and not _FIND_APPEAL.search(blob)
     if len(missing) >= hard_floor and evidence_len < 120:
         severity = "hard"
     elif missing:
+        severity = "borderline"
+    elif info_only_appeal:
+        # Located but non-actionable witness/information appeal about a past
+        # incident — keep it, but demote from Fresh to the city radar. (The
+        # rich-article guard above already let ≥600-char write-ups through.)
+        missing = ["actionable_detail"]
         severity = "borderline"
     else:
         severity = "ok"
