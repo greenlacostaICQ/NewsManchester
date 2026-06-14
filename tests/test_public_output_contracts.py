@@ -112,7 +112,9 @@ class PublicOutputContractTests(unittest.TestCase):
             "• Rochdale: 25-летний Кайл Ховард обвинён в убийстве Кили Аспинолл; родственники заявили, что она «ушла слишком рано».",
         )
         self.assertIn("follow_up_leads_with_change", reasons)
-        self.assertIn("обновление: предъявлено обвинение", repaired)
+        # Phase leads as natural prose, no machine "обновление:" marker.
+        self.assertIn("Предъявлено обвинение", repaired)
+        self.assertNotIn("обновление:", repaired.lower())
         self.assertNotIn("ушла слишком рано", repaired)
 
     def test_follow_up_phase_must_match_story_type(self) -> None:

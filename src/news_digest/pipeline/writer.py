@@ -2084,10 +2084,14 @@ def _repair_follow_up_line(candidate: dict, line: str) -> tuple[str, list[str]]:
     # Keep the original place prefix if it exists: "• Rochdale: ...". The colon
     # must be a place-label colon, never a clock-time colon ("18:00"), so forbid
     # a digit immediately before it.
+    # Lead with the phase as a natural Russian clause — no machine "Обновление:"
+    # marker (owner 2026-06-13: write "предъявлено обвинение…", not
+    # "Обновление: предъявлено обвинение").
+    label_cap = label[:1].upper() + label[1:]
     match = re.match(r"^(•\s*[^:]{2,45}(?<!\d):\s*)(.+)$", repaired)
     if match:
-        return f"{match.group(1)}обновление: {label}; {match.group(2)[:1].lower()}{match.group(2)[1:]}", ["follow_up_leads_with_change"]
-    return f"• Обновление: {label}; {repaired.removeprefix('• ').strip()}", ["follow_up_leads_with_change"]
+        return f"{match.group(1)}{label_cap} — {match.group(2)}", ["follow_up_leads_with_change"]
+    return f"• {label_cap} — {repaired.removeprefix('• ').strip()}", ["follow_up_leads_with_change"]
 
 
 def _repair_explainable_terms(candidate: dict, line: str) -> tuple[str, list[str]]:
@@ -4219,6 +4223,75 @@ def _transport_line_priority(line: str, score: float = 0.0) -> float:
     return priority
 
 
+# Mode → scannable Russian/operator prefix. The owner wants every transport
+# bullet to lead with the mode so the block scans ("Metrolink: …",
+# "Автобусы: …", "National Rail: …", "Дороги: …"). The structured renderer
+# always emits these, but the LLM rewrite path sometimes drops the prefix and
+# opens with a bare noun ("Остановки …", "Железнодорожные услуги …").
+_TRANSPORT_MODE_LABEL = {
+    "tram": "Metrolink",
+    "bus": "Автобусы",
+    "rail": "National Rail",
+    "coach": "Автобусы",
+    "road": "Дороги",
+}
+
+# Heads that already act as a valid mode prefix — leave such lines untouched.
+_VALID_TRANSPORT_HEAD_PREFIXES = (
+    "metrolink", "автобус", "national rail", "northern", "transpennine",
+    "transport for wales", "avanti", "дороги", "дорога", "tfgm",
+)
+
+
+def _infer_transport_label_from_text(text: str) -> str:
+    low = re.sub(r"<[^>]+>", " ", str(text or "")).lower()
+    if re.search(r"\b(?:metrolink|трамва\w*|tram)\b", low):
+        return "Metrolink"
+    if re.search(
+        r"\b(?:national rail|northern|transpennine|transport for wales|avanti|поезд\w*|железнодорожн\w*|piccadilly|victoria|salford crescent)\b",
+        low,
+    ):
+        return "National Rail"
+    if re.search(r"\b(?:m6|m60|m62|m56|объезд|diversion|закрыт\w* дорог\w*|перекрыт\w*)\b", low):
+        return "Дороги"
+    if re.search(r"\b(?:автобус\w*|остановк\w*|\bbus\b|stagecoach|bee network)\b", low):
+        return "Автобусы"
+    return ""
+
+
+def _ensure_transport_mode_prefix(line: str, candidate: dict | None) -> str:
+    """Guarantee a transport bullet leads with its mode prefix.
+
+    Preserves lines that already start with a recognised operator label;
+    otherwise prepends the mode (from candidate.transport_mode, falling back
+    to text inference). Returns the line unchanged when the mode can't be
+    classified confidently — better a missing prefix than a wrong one.
+    """
+    raw = str(line or "")
+    if not raw.strip():
+        return raw
+    match = re.match(r"^(\s*•\s*)(.*)$", raw, flags=re.DOTALL)
+    bullet, body = (match.group(1), match.group(2)) if match else ("• ", raw)
+    head = body.split(":", 1)[0].strip().lower()
+    if head and any(head == p or head.startswith(p) for p in _VALID_TRANSPORT_HEAD_PREFIXES):
+        return raw
+    label = ""
+    if isinstance(candidate, dict):
+        mode = str(candidate.get("transport_mode") or "").strip().lower()
+        label = _TRANSPORT_MODE_LABEL.get(mode, "")
+    if not label:
+        label = _infer_transport_label_from_text(body)
+    if not label:
+        return raw
+    # Lower-case a leading Cyrillic common noun so it reads as a clause after
+    # the prefix ("Остановки …" → "Автобусы: остановки …"). Latin proper nouns
+    # (Piccadilly, Oxford Road) are left capitalised.
+    first_word = body.split(" ", 1)[0] if body else ""
+    if first_word and re.match(r"[А-ЯЁ][а-яё]", first_word):
+        body = first_word[:1].lower() + body[1:]
+    return f"{bullet}{label}: {body}"
+
+
 def _extract_bus_stop_label(line: str) -> str:
     text = re.sub(r"<[^>]+>", " ", str(line or ""))
     text = re.sub(r"\s+", " ", text).strip(" .")
@@ -4939,6 +5012,12 @@ def write_digest(project_root: Path) -> StageResult:
                 titles = filtered_titles
         if section_name == "Общественный транспорт сегодня":
             lines, srcs, fps, scores, titles, minor_bus_dropped = _cap_minor_bus_stop_lines(lines, srcs, fps, scores, titles)
+            lines = [
+                _ensure_transport_mode_prefix(
+                    ln, candidate_by_fp.get(str(fps[i] or "")) if i < len(fps) else None
+                )
+                for i, ln in enumerate(lines)
+            ]
             if minor_bus_dropped:
                 warnings.append(
                     f"Transport impact contract: held {len(minor_bus_dropped)} minor bus-stop closure(s) after top 3."
