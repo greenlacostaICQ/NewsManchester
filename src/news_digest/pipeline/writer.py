@@ -1795,27 +1795,44 @@ def _ticket_watch_reason(candidate: dict) -> str:
     tier = str(notability.get("tier") or "").upper()
     ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
     days = _ticket_days_to_event(candidate)
+    in_gm = str(candidate.get("primary_block") or "") != "outside_gm_tickets"
     lineup = re.search(r"\bline[- ]?up\s*=", blob, re.IGNORECASE) or str(notability.get("kind") or "") == "lineup_or_show"
     estate_show = re.search(r"\b(?:estate|open air|open-air|castle|palace|park)\b", blob, re.IGNORECASE)
     arena_show = _TICKET_MAJOR_VENUE_RE.search(venue) or _TICKET_MAJOR_VENUE_RE.search(summary)
+    merged = candidate.get("merged_event_dates")
+    multi_night = isinstance(merged, list) and len({str(d) for d in merged}) >= 2
+    this_week = days is not None and 0 <= days <= 7
+    soon = days is not None and 0 <= days <= 14
+    where = "в GM" if in_gm else "вне GM"
+    # Reason explains WHY it matters — one human occasion, never a stack of
+    # machine labels (owner 2026-06-13: not "A-tier", not "Глобальный артист;
+    # крупная площадка", not a bare repeated "концерт на ближайшей неделе").
+    # A fresh sale is the clearest "act now" reason.
     if ticket_type == "presale_soon":
-        return "presale скоро"
+        return "скоро открывается presale"
     if ticket_type in {"on_sale_now", "newly_listed"}:
-        return "продажа открылась сейчас"
-    if days is not None and 0 <= days <= 7:
-        return "концерт на ближайшей неделе"
-    if days is not None and 8 <= days <= 14:
-        return "ближайшая дата крупного тура"
+        return "новая продажа билетов"
+    # A festival lineup is a different product from a single headliner.
     if lineup:
-        return "сильный фестивальный lineup"
+        return "фестивальный lineup, не один артист"
+    # A major artist is the headline reason — pair it with the occasion and
+    # be honest that a near date is a "this week" show, not a fresh sale.
+    if tier == "A":
+        if this_week:
+            return f"крупный артист, выступление {where} на этой неделе"
+        if soon:
+            return "крупный артист, ближайшая дата"
+        return "крупный артист с UK-датой"
+    if arena_show:
+        if multi_night:
+            return "крупная площадка, несколько дат"
+        return "крупная площадка, на этой неделе" if this_week else "крупная площадка"
     if estate_show:
         return "open-air концерт на estate-площадке"
-    if arena_show:
-        return "крупная arena/stadium дата"
-    if tier == "A":
-        return "крупный артист с UK-датой"
-    if ticket_type == "event_this_week":
-        return "концерт на этой неделе"
+    if this_week:
+        return f"концерт {where} на этой неделе"
+    if soon:
+        return "ближайшая дата тура"
     if ticket_type == "major_upcoming":
         return "заметная UK-дата"
     return "билетный повод"
