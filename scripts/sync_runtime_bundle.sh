@@ -63,6 +63,7 @@ rsync -a --delete "$PROJECT_ROOT/src/" "$RUNTIME_ROOT/src/" \
   || die "rsync src/ failed"
 
 copy_required "$PROJECT_ROOT/data/sources.toml" "$RUNTIME_ROOT/data/sources.toml"
+copy_required "$PROJECT_ROOT/data/translation_glossary.json" "$RUNTIME_ROOT/data/translation_glossary.json"
 rsync -a --delete "$PROJECT_ROOT/data/validation/" "$RUNTIME_ROOT/data/validation/" \
   || die "rsync data/validation/ failed"
 
@@ -103,6 +104,9 @@ assert_runtime_match \
 assert_runtime_match \
   "$PROJECT_ROOT/data/sources.toml" \
   "$RUNTIME_ROOT/data/sources.toml"
+assert_runtime_match \
+  "$PROJECT_ROOT/data/translation_glossary.json" \
+  "$RUNTIME_ROOT/data/translation_glossary.json"
 assert_runtime_match \
   "$PROJECT_ROOT/data/validation/reader_value_labels.json" \
   "$RUNTIME_ROOT/data/validation/reader_value_labels.json"

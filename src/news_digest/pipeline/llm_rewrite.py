@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import calendar
 from dataclasses import dataclass
+import hashlib
 import json
 import logging
 import os
@@ -32,7 +33,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Callable
 
-from news_digest.pipeline.common import now_london, pipeline_run_id_from, today_london, write_json
+from news_digest.pipeline.common import PRIMARY_BLOCKS, now_london, pipeline_run_id_from, read_json, today_london, write_json
 from news_digest.pipeline.model_routing import (
     DEEPSEEK_BASE_URL,
     DEEPSEEK_MODEL,
@@ -62,6 +63,7 @@ OPENAI_MODEL = OPENAI_REWRITE_MODEL
 
 ProviderMapping = dict[str, tuple[str, str, str]]
 EnglishCardMapping = dict[str, tuple[dict[str, object], str, str]]
+_ACTIVE_TRANSLATION_GLOSSARY: list[dict[str, str]] = []
 
 REWRITE_SHORTLIST_VERSION = 2
 REWRITE_SHORTLIST_CAPS_BY_BLOCK: dict[str, int] = {
@@ -90,6 +92,9 @@ REWRITE_SHORTLIST_DEFAULT_CAP = 6
 # перевёл, провал"), and the lead / transport / today_focus core is never cut.
 # Items above the ceiling are not deleted — they stay as backup reserve.
 REWRITE_TRANSLATION_BOARD_MAX = 45
+TRANSLATION_MEMORY_VERSION = 1
+TRANSLATION_MEMORY_MAX_ENTRIES = 2500
+TRANSLATION_MEMORY_TTL_DAYS = 45
 _REWRITE_BLOCK_FLOOR = 3
 _REWRITE_BLOCK_FLOORS: dict[str, int] = {
     "last_24h": 7,
@@ -141,7 +146,8 @@ _ANTI_HALLUCINATION = (
 ENGLISH_CARD_SYSTEM = """You are the English-first editor for Greater Manchester AM Brief.
 Your job is NOT to translate. Build a compact English fact card and a readable English reader card from the supplied source evidence.
 
-Use only title, summary, lead, evidence_text, event, entities, story_frame, source_label and dates supplied in the JSON. Do not browse. Do not invent missing facts.
+Use only title, summary, lead, evidence_text, event, entities, story_frame, source_label, dates and glossary_terms supplied in the JSON. Do not browse. Do not invent missing facts.
+If glossary_terms are present, follow them for terminology and naming. Glossary terms do not add facts; they only control wording.
 
 Return ONLY a JSON object in this shape: {"items": [...]}. The items array must contain objects with:
 {
@@ -179,6 +185,7 @@ FINAL_TRANSLATE_SYSTEM = """You are the final Russian editor for Greater Manches
 Translate the supplied English reader_card into a polished Russian Telegram bullet.
 
 You are translating final English digest cards, not raw source material. Preserve every date, place, line, venue, amount, status and uncertainty from the English card. Do not add facts from outside the English card/fact_card.
+If glossary_terms are present, follow them for terminology and naming. Glossary terms do not add facts; they only control wording.
 
 Return ONLY a JSON object:
 {"items": [{"fingerprint": "...", "draft_line": "• ..."}]}
@@ -1517,6 +1524,7 @@ def _english_card_batch_items(batch: list[dict]) -> list[dict]:
                 "rewrite_packet": _rewrite_packet(c),
                 "reader_value_score": reader_value_score(c),
                 "section_board_score": section_board_score(c, str(c.get("primary_block") or "")),
+                "glossary_terms": _glossary_terms_for_candidate(c),
             }
         )
     return items
@@ -1537,9 +1545,322 @@ def _translation_batch_items(batch: list[dict]) -> list[dict]:
                 "english_rubric": c.get("english_rubric", ""),
                 "english_reader_card": c.get("english_reader_card", ""),
                 "english_fact_card": fact_card,
+                "glossary_terms": _glossary_terms_for_candidate(c),
             }
         )
     return items
+
+
+def _translation_memory_path(project_root: Path) -> Path:
+    return project_root / "data" / "state" / "translation_memory.json"
+
+
+def _translation_glossary_path(project_root: Path) -> Path:
+    return project_root / "data" / "translation_glossary.json"
+
+
+def _load_translation_glossary(project_root: Path) -> list[dict[str, str]]:
+    path = _translation_glossary_path(project_root)
+    if not path.exists():
+        return []
+    payload = read_json(path)
+    terms = payload.get("terms") if isinstance(payload, dict) else []
+    if not isinstance(terms, list):
+        return []
+    cleaned: list[dict[str, str]] = []
+    for term in terms:
+        if not isinstance(term, dict):
+            continue
+        match = str(term.get("match") or "").strip()
+        ru = str(term.get("ru") or "").strip()
+        if not match or not ru:
+            continue
+        cleaned.append({"match": match, "ru": ru, "note": str(term.get("note") or "").strip()})
+    return cleaned
+
+
+def _glossary_terms_for_candidate(candidate: dict, *, limit: int = 12) -> list[dict[str, str]]:
+    if not _ACTIVE_TRANSLATION_GLOSSARY:
+        return []
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in (
+            "title",
+            "summary",
+            "lead",
+            "evidence_text",
+            "english_reader_card",
+            "source_label",
+            "primary_block",
+            "category",
+        )
+    ).lower()
+    matched: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for term in _ACTIVE_TRANSLATION_GLOSSARY:
+        key = str(term.get("match") or "").lower()
+        if not key or key in seen:
+            continue
+        if key in blob:
+            matched.append(term)
+            seen.add(key)
+        if len(matched) >= limit:
+            break
+    return matched
+
+
+def _memory_text_digest(value: object, *, limit: int = 1800) -> str:
+    text = re.sub(r"\s+", " ", str(value or "")).strip()
+    return text[:limit]
+
+
+def _translation_memory_signature(candidate: dict) -> str:
+    """Stable signature for "same facts, safe to reuse Russian".
+
+    Fingerprint alone is not enough: recurring events and ticket pages can keep
+    the same URL while the next occurrence/date changes. The signature includes
+    compact source facts plus structured event/rewrite packets, so changed facts
+    force a fresh English/translation pass.
+    """
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    signature_payload = {
+        "fingerprint": str(candidate.get("fingerprint") or ""),
+        "category": str(candidate.get("category") or ""),
+        "primary_block": str(candidate.get("primary_block") or ""),
+        "title": _memory_text_digest(candidate.get("title"), limit=700),
+        "summary": _memory_text_digest(candidate.get("summary"), limit=900),
+        "lead": _memory_text_digest(candidate.get("lead"), limit=900),
+        "evidence_text": _memory_text_digest(candidate.get("evidence_text"), limit=2200),
+        "published_at": str(candidate.get("published_at") or ""),
+        "event_date": str(event.get("date_start") or event.get("date") or ""),
+        "event_venue": str(event.get("venue") or ""),
+        "rewrite_packet": _rewrite_packet(candidate),
+        "english_reader_card": _memory_text_digest(candidate.get("english_reader_card"), limit=900),
+    }
+    raw = json.dumps(signature_payload, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _load_translation_memory(project_root: Path) -> dict:
+    path = _translation_memory_path(project_root)
+    if not path.exists():
+        return {"schema_version": TRANSLATION_MEMORY_VERSION, "entries": {}}
+    payload = read_json(path)
+    if not isinstance(payload, dict):
+        return {"schema_version": TRANSLATION_MEMORY_VERSION, "entries": {}}
+    entries = payload.get("entries")
+    if not isinstance(entries, dict):
+        payload["entries"] = {}
+    payload["schema_version"] = TRANSLATION_MEMORY_VERSION
+    return payload
+
+
+def _prune_translation_memory(memory: dict) -> dict:
+    entries = memory.get("entries")
+    if not isinstance(entries, dict):
+        memory["entries"] = {}
+        return memory
+    today = date.fromisoformat(today_london())
+    kept: dict[str, dict] = {}
+    for key, entry in entries.items():
+        if not isinstance(entry, dict):
+            continue
+        last_seen_raw = str(entry.get("last_seen_london") or entry.get("updated_at_london") or "")[:10]
+        try:
+            age_days = (today - date.fromisoformat(last_seen_raw)).days
+        except ValueError:
+            age_days = TRANSLATION_MEMORY_TTL_DAYS + 1
+        if age_days <= TRANSLATION_MEMORY_TTL_DAYS:
+            kept[str(key)] = entry
+    if len(kept) > TRANSLATION_MEMORY_MAX_ENTRIES:
+        rows = sorted(
+            kept.items(),
+            key=lambda item: str(item[1].get("last_seen_london") or item[1].get("updated_at_london") or ""),
+            reverse=True,
+        )
+        kept = dict(rows[:TRANSLATION_MEMORY_MAX_ENTRIES])
+    memory["entries"] = kept
+    return memory
+
+
+def _apply_translation_memory(candidates: list[dict], memory: dict) -> list[dict]:
+    entries = memory.get("entries") if isinstance(memory.get("entries"), dict) else {}
+    reused: list[dict] = []
+    now_iso = now_london().isoformat()
+    for candidate in candidates:
+        fp = str(candidate.get("fingerprint") or "").strip()
+        if not fp or str(candidate.get("draft_line") or "").strip():
+            continue
+        entry = entries.get(fp)
+        if not isinstance(entry, dict):
+            continue
+        signature = _translation_memory_signature(candidate)
+        if signature != str(entry.get("signature") or ""):
+            continue
+        draft_line = str(entry.get("draft_line") or "").strip()
+        if not draft_line.startswith("• "):
+            continue
+        candidate["draft_line"] = draft_line
+        candidate["draft_line_provider"] = "translation_memory"
+        candidate["draft_line_model"] = str(entry.get("model") or "")
+        candidate["draft_line_written_at"] = now_iso
+        candidate["translation_memory_hit"] = True
+        candidate["english_reader_card"] = candidate.get("english_reader_card") or entry.get("english_reader_card") or ""
+        entry["last_seen_london"] = today_london()
+        entry["reuse_count"] = int(entry.get("reuse_count") or 0) + 1
+        reused.append(
+            {
+                "fingerprint": fp,
+                "title": candidate.get("title"),
+                "primary_block": candidate.get("primary_block"),
+                "category": candidate.get("category"),
+                "model": entry.get("model"),
+            }
+        )
+    return reused
+
+
+def _update_translation_memory(candidates: list[dict], memory: dict) -> int:
+    entries = memory.setdefault("entries", {})
+    if not isinstance(entries, dict):
+        memory["entries"] = {}
+        entries = memory["entries"]
+    updated = 0
+    now_iso = now_london().isoformat()
+    for candidate in candidates:
+        fp = str(candidate.get("fingerprint") or "").strip()
+        draft_line = str(candidate.get("draft_line") or "").strip()
+        if not fp or not draft_line.startswith("• "):
+            continue
+        if str(candidate.get("category") or "") == "weather":
+            continue
+        provider = str(candidate.get("draft_line_provider") or "")
+        if provider in {"writer_deterministic_pending"}:
+            continue
+        entries[fp] = {
+            "signature": _translation_memory_signature(candidate),
+            "draft_line": draft_line,
+            "english_reader_card": str(candidate.get("english_reader_card") or ""),
+            "source_label": str(candidate.get("source_label") or ""),
+            "category": str(candidate.get("category") or ""),
+            "primary_block": str(candidate.get("primary_block") or ""),
+            "provider": provider,
+            "model": str(candidate.get("draft_line_model") or ""),
+            "updated_at_london": now_iso,
+            "last_seen_london": today_london(),
+            "reuse_count": int((entries.get(fp) or {}).get("reuse_count") or 0),
+        }
+        updated += 1
+    _prune_translation_memory(memory)
+    return updated
+
+
+def _rewrite_inventory_path(project_root: Path) -> Path:
+    return project_root / "data" / "state" / "rewrite_inventory.json"
+
+
+def _rewrite_status_for_candidate(candidate: dict) -> str:
+    if not candidate.get("include"):
+        return "not_included"
+    category = str(candidate.get("category") or "")
+    if category == "weather":
+        return "non_llm_weather"
+    if candidate.get("translation_memory_hit"):
+        return "translation_memory"
+    shortlist_status = str(candidate.get("rewrite_shortlist_status") or "")
+    if shortlist_status == "writer_deterministic":
+        return "writer_deterministic"
+    if shortlist_status == "backup_before_translation":
+        return "backup_before_translation"
+    provider = str(candidate.get("draft_line_provider") or "")
+    if provider:
+        if provider == "transport_fill":
+            return "transport_fill"
+        if provider == "writer_deterministic_pending":
+            return "writer_deterministic"
+        if provider.startswith("DeepSeek"):
+            return "llm_deepseek"
+        if provider.startswith("OpenAI"):
+            return "llm_openai"
+        return "draft_line_other"
+    if str(candidate.get("english_reader_card") or "").strip():
+        return "english_card_no_russian"
+    return "missing_draft_line"
+
+
+def _build_rewrite_inventory(candidates: list[dict]) -> dict[str, object]:
+    sections: dict[str, dict[str, object]] = {}
+    for block, heading in PRIMARY_BLOCKS.items():
+        sections[block] = {
+            "heading": heading,
+            "total": 0,
+            "included": 0,
+            "statuses": {},
+            "categories": {},
+            "examples_missing": [],
+        }
+    sections.setdefault("unknown", {"heading": "Unknown", "total": 0, "included": 0, "statuses": {}, "categories": {}, "examples_missing": []})
+    totals = {
+        "candidates": 0,
+        "included": 0,
+        "with_draft_line": 0,
+        "translation_memory": 0,
+        "llm": 0,
+        "writer_deterministic": 0,
+        "backup_before_translation": 0,
+        "missing_draft_line": 0,
+    }
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        totals["candidates"] += 1
+        block = str(candidate.get("primary_block") or "unknown")
+        row = sections.setdefault(
+            block,
+            {"heading": PRIMARY_BLOCKS.get(block, block), "total": 0, "included": 0, "statuses": {}, "categories": {}, "examples_missing": []},
+        )
+        row["total"] = int(row.get("total") or 0) + 1
+        category = str(candidate.get("category") or "unknown")
+        categories = row["categories"]
+        assert isinstance(categories, dict)
+        categories[category] = int(categories.get(category) or 0) + 1
+        if candidate.get("include"):
+            totals["included"] += 1
+            row["included"] = int(row.get("included") or 0) + 1
+        status = _rewrite_status_for_candidate(candidate)
+        statuses = row["statuses"]
+        assert isinstance(statuses, dict)
+        statuses[status] = int(statuses.get(status) or 0) + 1
+        if str(candidate.get("draft_line") or "").strip():
+            totals["with_draft_line"] += 1
+        if status == "translation_memory":
+            totals["translation_memory"] += 1
+        elif status in {"llm_deepseek", "llm_openai"}:
+            totals["llm"] += 1
+        elif status == "writer_deterministic":
+            totals["writer_deterministic"] += 1
+        elif status == "backup_before_translation":
+            totals["backup_before_translation"] += 1
+        elif status in {"missing_draft_line", "english_card_no_russian"}:
+            totals["missing_draft_line"] += 1
+            examples = row["examples_missing"]
+            assert isinstance(examples, list)
+            if len(examples) < 8:
+                examples.append(
+                    {
+                        "fingerprint": candidate.get("fingerprint"),
+                        "title": candidate.get("title"),
+                        "category": candidate.get("category"),
+                        "source_label": candidate.get("source_label"),
+                    }
+                )
+    return {
+        "schema_version": 1,
+        "run_date_london": today_london(),
+        "created_at_london": now_london().isoformat(),
+        "totals": totals,
+        "sections": sections,
+    }
 
 
 def _call_provider_batch(
@@ -1946,6 +2267,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     report_path = project_root / "data" / "state" / "llm_rewrite_report.json"
     candidates_path = project_root / "data" / "state" / "candidates.json"
     _stage_t0 = time.monotonic()  # #10: total wall-clock of the rewrite stage
+    global _ACTIVE_TRANSLATION_GLOSSARY
+    _ACTIVE_TRANSLATION_GLOSSARY = _load_translation_glossary(project_root)
 
     def _prompt_versions() -> list[dict[str, str]]:
         from news_digest.pipeline.prompts_meta import snapshot as prompts_snapshot  # noqa: PLC0415
@@ -1965,6 +2288,10 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "warnings": [],
                 "prompt_versions": _prompt_versions(),
                 "model_route": route_snapshot().get("rewrite", []),
+                "translation_glossary": {
+                    "enabled": bool(_ACTIVE_TRANSLATION_GLOSSARY),
+                    "terms": len(_ACTIVE_TRANSLATION_GLOSSARY),
+                },
             },
         )
         return StageResult(False, "Missing candidates.json.", report_path)
@@ -2053,6 +2380,9 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     fixed = 0
     repaired = 0
     english_cards_applied = 0
+    translation_memory_reused: list[dict] = []
+    translation_memory_updated = 0
+    translation_memory = _load_translation_memory(project_root)
 
     if provider_override == "none":
         logger.info("LLM_PROVIDER=none — skipping rewrite.")
@@ -2105,6 +2435,15 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             original_rewrite_count,
             rewrite_shortlist["held_for_backup"],
         )
+        translation_memory_reused = _apply_translation_memory(to_rewrite, translation_memory)
+        if translation_memory_reused:
+            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            to_rewrite = [c for c in to_rewrite if not str(c.get("draft_line") or "").strip()]
+            logger.info(
+                "Translation memory: reused %d draft_line(s); %d candidate(s) still need LLM.",
+                len(translation_memory_reused),
+                len(to_rewrite),
+            )
 
         # English-first path:
         # 1) build compact English fact/reader cards from enriched evidence;
@@ -2427,6 +2766,10 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         soft_warnings.append(
             f"Repair pass rejected {len(repair_rejections)} replacement(s) that still failed writer quality gate."
         )
+    translation_memory_updated = _update_translation_memory(candidates, translation_memory)
+    write_json(_translation_memory_path(project_root), translation_memory)
+    rewrite_inventory = _build_rewrite_inventory(candidates)
+    write_json(_rewrite_inventory_path(project_root), rewrite_inventory)
 
     from news_digest.pipeline.cost_tracker import dump_stage, snapshot, summarise  # noqa: PLC0415
     state_dir = project_root / "data" / "state"
@@ -2454,6 +2797,24 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "cards_applied": english_cards_applied,
                 "cards_missing": max(0, len(to_rewrite) - english_cards_applied),
                 "policy": "English fact/reader cards first; final Russian translation from compact English cards; legacy full-evidence rewrite fallback on any model miss.",
+            },
+            "translation_memory": {
+                "enabled": True,
+                "schema_version": TRANSLATION_MEMORY_VERSION,
+                "reused": len(translation_memory_reused),
+                "updated": translation_memory_updated,
+                "entries": len(translation_memory.get("entries") or {}),
+                "examples": translation_memory_reused[:20],
+                "policy": "Reuse Russian draft_line only when fingerprint and compact fact signature match; changed facts force fresh LLM rewrite.",
+            },
+            "translation_glossary": {
+                "enabled": bool(_ACTIVE_TRANSLATION_GLOSSARY),
+                "terms": len(_ACTIVE_TRANSLATION_GLOSSARY),
+                "path": str(_translation_glossary_path(project_root).relative_to(project_root)),
+            },
+            "rewrite_inventory": {
+                "path": str(_rewrite_inventory_path(project_root).relative_to(project_root)),
+                "totals": rewrite_inventory.get("totals", {}),
             },
             "applied": applied,
             "fixed": fixed,
