@@ -1430,7 +1430,12 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
             if is_ticket_item
             else _CALENDAR_REPEAT_MILESTONE_DAYS
         )
-        if days_until in milestone_days:
+        # Recurring items (weekly markets) only repeat via the weekly-occurrence
+        # branch above, which enforces a ≥6-day gap. They must NOT fall through
+        # to the generic d0/d1 milestone, or a weekly market shown yesterday
+        # reappears today (owner 2026-06-13: weekly markets are weekly, not
+        # daily).
+        if event_shape != "recurring" and days_until in milestone_days:
             return {
                 "applies": True,
                 "allow": True,

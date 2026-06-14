@@ -1169,13 +1169,43 @@ def _demote_distant_weekend_event(candidate: dict) -> bool:
     today = now_london().date()
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
 
+    # A concrete future STRUCTURED date wins over recurrence detection: a
+    # "one-off … event_date=2026-06-29" card is about that date even when
+    # _exclude_stale_event flipped is_recurring=True on weak "Saturday market"
+    # wording (owner 2026-06-13: a single far-future market must leave the
+    # weekend board, not be kept by a misfired recurrence flag).
+    _structured_dates: list[date] = []
+    _ev_dt = _summary_field_datetime(str(candidate.get("summary") or ""), "event_date")
+    if _ev_dt is not None:
+        _structured_dates.append(_ev_dt.date())
+    for _iso_field in (
+        str(event.get("date_start") or "").strip(),
+        str(event.get("date") or "").strip(),
+        str(event.get("date_iso") or "").strip(),
+    ):
+        if not _iso_field:
+            continue
+        try:
+            _structured_dates.append(datetime.fromisoformat(_iso_field.replace("Z", "+00:00")).date())
+        except (TypeError, ValueError):
+            try:
+                _structured_dates.append(date.fromisoformat(_iso_field))
+            except (TypeError, ValueError):
+                pass
+    # Only a NEAR-TERM structured date (within the 30-day actionable horizon)
+    # overrides recurrence. A far-future structured date is almost always a
+    # rolled-forward recurrence start ("5 April" → 2027-04-05), not a real
+    # one-off, so it must NOT defeat the recurring branch below.
+    _has_near_structured_future = any(today <= d <= today + timedelta(days=30) for d in _structured_dates)
+
     # If _exclude_stale_event has explicitly tagged the card as recurring
     # (past start date + "every Sunday" / "сезон до"), trust that and go
-    # straight to the recurring branch. Without this short-circuit,
+    # straight to the recurring branch — unless there is a concrete near-term
+    # structured date (a genuine one-off). Without this short-circuit,
     # _explicit_dates_from_blob would auto-roll the past start date
     # ("5 April") to next year (2027-04-05) and the concrete-date
     # branch would drop the card as "318 days out".
-    if event.get("is_recurring") is True:
+    if event.get("is_recurring") is True and not _has_near_structured_future:
         days_to_sat = (5 - today.weekday()) % 7
         days_to_sun = (6 - today.weekday()) % 7
         nearest_weekend_day = min(days_to_sat, days_to_sun)

@@ -303,6 +303,9 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertEqual(candidate["ticket_type"], "old_public_sale")
 
     def test_ticket_watchlist_line_keeps_genre_without_generic_cta(self) -> None:
+        # Relative future date: a hardcoded event_date rots into the past and
+        # the watch decision then hides the line entirely.
+        event_day = (now_london().date() + timedelta(days=5)).isoformat()
         line = _build_ticket_fallback_line(
             {
                 "category": "venues_tickets",
@@ -310,8 +313,8 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
                 "title": "Lola Young",
                 "ticket_type": "old_public_sale",
                 "summary": (
-                    "O2 Apollo Manchester | Manchester | R&B | "
-                    "event_date=2026-06-10 19:00 | public_onsale=2025-11-14 10:00 | "
+                    f"O2 Apollo Manchester | Manchester | R&B | "
+                    f"event_date={event_day} 19:00 | public_onsale=2025-11-14 10:00 | "
                     "ticket_signal=upcoming_event | ticket_type=major_upcoming | major_venue=true"
                 ),
                 "ticket_notability": {"artist": "Lola Young", "kind": "artist", "tier": "B"},
