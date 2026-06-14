@@ -41,7 +41,7 @@ TEMPERATURE = 0.0
 JUDGE_PROMPT = f"""You are an English-first editorial judge for a Greater Manchester morning digest.
 Evaluate only the English/source evidence in each item. Do not infer from the gold label or from Russian output.
 
-Return a JSON object in this shape: {"items": [...]}. Each item must contain:
+Return a JSON object in this shape: {{"items": [...]}}. Each item must contain:
 - fingerprint: string
 - decision: one of publish_candidate, backup_candidate, reject
 - false_negative_risk: one of low, medium, high
