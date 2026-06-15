@@ -60,7 +60,7 @@ PROMPTS: tuple[PromptMeta, ...] = (
     PromptMeta(name="fix_translate",   version="v2", hash=_h(_lr.FIX_TRANSLATE_SYSTEM)),
     PromptMeta(name="repair_draft",    version="v3", hash=_h(_lr.REPAIR_DRAFT_SYSTEM)),
     PromptMeta(name="dedupe_review",   version="v2", hash=_h(_dd._DEDUPE_REVIEW_PROMPT)),
-    PromptMeta(name="pre_send_russian_editor", version="v1", hash=_h(_ed.PRE_SEND_RUSSIAN_EDITOR_PROMPT)),
+    PromptMeta(name="pre_send_russian_editor", version="v2", hash=_h(_ed.PRE_SEND_RUSSIAN_EDITOR_PROMPT)),
     PromptMeta(name="post_publish_judge", version=_ppj.JUDGE_PROMPT_VERSION,
                hash=_h(_ppj.JUDGE_PROMPT)),
 )

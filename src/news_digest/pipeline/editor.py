@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import html
 import json
 import os
 from pathlib import Path
@@ -10,6 +11,7 @@ from news_digest.pipeline.common import (
     LOW_SIGNAL_BLOCKS,
     PRIMARY_BLOCKS,
     REQUIRED_BLOCKS,
+    canonical_url_identity,
     extract_sections,
     is_placeholder_practical_angle,
     now_london,
@@ -25,16 +27,20 @@ MAX_WEAK_CITY_CANDIDATE_SHARE = 0.5
 PRE_SEND_RUSSIAN_EDITOR_MODEL = "gpt-4o"
 
 PRE_SEND_RUSSIAN_EDITOR_PROMPT = """Ты выпускающий редактор русского Telegram-дайджеста Greater Manchester.
-Тебе дают уже видимые строки выпуска. Исправь только русский язык и очевидные редакторские дефекты. Не добавляй новых фактов.
+Тебе дают уже видимые строки выпуска и, если удалось сопоставить строку с кандидатом, evidence по исходной новости.
+Исправь русский язык и редакторские дефекты. Если строка непонятная, битая или слишком машинная, пересобери её заново из evidence.
 
 Верни JSON-объект: {"items":[{"index":0,"status":"ok|fixed","line":"...","reason":"..."}]}.
 
 Правила:
 - Сохраняй bullet "• " и HTML-теги/ссылки, если они есть.
 - Не меняй даты, числа, имена, районы, площадки, источники и ссылки.
+- Не добавляй факты вне поля evidence. Если evidence не хватает, убери битую фразу, но не выдумывай возраст/место/причину.
 - Исправляй кальку и плохой русский: "защита от дождя", "возрастелет", "в возрасте лет", "перевернулся на крыше", "спасён с высоты", "инцидент был успешно разрешен".
 - Погода должна звучать по-человечески: "возьмите зонт", "дождевик", "планируйте пересадки с запасом"; не пиши "защита от дождя".
-- Если факта не хватает, не выдумывай возраст/место/причину. Лучше убери битую фразу.
+- Новости должны отвечать: что произошло → кого касается/почему важно сегодня → что читателю делать или понимать.
+- Транспорт должен отвечать: что сломано/изменено → какой участок/маршрут → что делать пассажиру.
+- Событие/билет должен отвечать: кто/что → когда → где → жанр/тип, если есть в evidence → почему это заметно.
 - Футбол и билеты не должны звучать как машинная оценка: убирай "это важная информация" и "интересная информация", заменяй на конкретный смысл из строки.
 - Если строка нормальная, верни её без изменений со status="ok".
 """
@@ -131,14 +137,86 @@ def _line_preserves_links(original: str, fixed: str) -> bool:
     return len(original_links) == len(fixed_links)
 
 
-def _visible_line_items(sections: dict[str, list[str]]) -> list[dict[str, object]]:
+def _line_url_identity(line: str) -> str:
+    match = re.search(r'<a\s+[^>]*href="([^"]+)"', str(line or ""), flags=re.IGNORECASE)
+    if not match:
+        return ""
+    return canonical_url_identity(html.unescape(match.group(1)))
+
+
+def _candidate_index(candidates: list[dict]) -> dict[str, dict]:
+    index: dict[str, dict] = {}
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        url_key = canonical_url_identity(str(candidate.get("source_url") or ""))
+        if url_key:
+            index.setdefault(url_key, candidate)
+        fp = str(candidate.get("fingerprint") or "").strip()
+        if fp:
+            index.setdefault(fp, candidate)
+    return index
+
+
+def _clip_text(value: object, limit: int = 900) -> str:
+    text = re.sub(r"\s+", " ", str(value or "")).strip()
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1].rstrip() + "…"
+
+
+def _compact_candidate_evidence(candidate: dict | None) -> dict[str, object]:
+    if not isinstance(candidate, dict):
+        return {}
+    packet = candidate.get("evidence_packet") if isinstance(candidate.get("evidence_packet"), dict) else {}
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else packet.get("event") if isinstance(packet.get("event"), dict) else {}
+    entities = candidate.get("entities") if isinstance(candidate.get("entities"), dict) else packet.get("entities") if isinstance(packet.get("entities"), dict) else {}
+    story_frame = candidate.get("story_frame") if isinstance(candidate.get("story_frame"), dict) else {}
+    evidence_text = (
+        candidate.get("evidence_text")
+        or packet.get("evidence_text")
+        or candidate.get("lead")
+        or candidate.get("summary")
+        or packet.get("summary")
+        or ""
+    )
+    return {
+        "fingerprint": str(candidate.get("fingerprint") or packet.get("fingerprint") or ""),
+        "category": str(candidate.get("category") or packet.get("category") or ""),
+        "primary_block": str(candidate.get("primary_block") or packet.get("primary_block") or ""),
+        "source_label": str(candidate.get("source_label") or packet.get("source_label") or ""),
+        "source_url": str(candidate.get("source_url") or packet.get("source_url") or ""),
+        "title": _clip_text(candidate.get("title") or packet.get("title"), 260),
+        "lead": _clip_text(candidate.get("lead") or packet.get("lead"), 500),
+        "summary": _clip_text(candidate.get("summary") or packet.get("summary"), 700),
+        "practical_angle": _clip_text(candidate.get("practical_angle"), 360),
+        "evidence_text": _clip_text(evidence_text, 1400),
+        "event": event,
+        "entities": {
+            key: value for key, value in entities.items()
+            if key in {"boroughs", "districts", "stations", "venues", "clubs", "companies", "people"}
+        },
+        "story_frame": {
+            key: value for key, value in story_frame.items()
+            if key in {"news_anchor", "reader_need", "missing_facts", "what_changed"}
+        },
+    }
+
+
+def _visible_line_items(sections: dict[str, list[str]], candidates_by_key: dict[str, dict] | None = None) -> list[dict[str, object]]:
     items: list[dict[str, object]] = []
     index = 0
+    candidates_by_key = candidates_by_key or {}
     for section_name, lines in sections.items():
         for line in lines:
             if not line.strip() or line.strip() == "•":
                 continue
-            items.append({"index": index, "section": section_name, "line": line})
+            candidate = candidates_by_key.get(_line_url_identity(line))
+            evidence = _compact_candidate_evidence(candidate)
+            item: dict[str, object] = {"index": index, "section": section_name, "line": line}
+            if evidence:
+                item["evidence"] = evidence
+            items.append(item)
             index += 1
     return items
 
@@ -199,11 +277,16 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
     return fixes, {"status": "ok", "items_sent": len(items), "items_returned": len(fixes)}
 
 
-def _pre_send_polish_sections(sections: dict[str, list[str]], warnings: list[str]) -> tuple[dict[str, list[str]], dict[str, object]]:
+def _pre_send_polish_sections(
+    sections: dict[str, list[str]],
+    warnings: list[str],
+    candidates: list[dict] | None = None,
+) -> tuple[dict[str, list[str]], dict[str, object]]:
     rule_fixed = 0
     model_fixed = 0
     remaining_bad = 0
     polished: dict[str, list[str]] = {}
+    candidates_by_key = _candidate_index(candidates or [])
     for section_name, lines in sections.items():
         new_lines: list[str] = []
         for line in lines:
@@ -213,7 +296,8 @@ def _pre_send_polish_sections(sections: dict[str, list[str]], warnings: list[str
             new_lines.append(fixed)
         polished[section_name] = new_lines
 
-    items = _visible_line_items(polished)
+    items = _visible_line_items(polished, candidates_by_key)
+    evidence_items = sum(1 for item in items if isinstance(item.get("evidence"), dict) and item.get("evidence"))
     api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     model_fixes, model_report = _call_pre_send_russian_editor(items, api_key)
     if model_report.get("status") not in {"ok", "skipped_no_items"}:
@@ -239,7 +323,7 @@ def _pre_send_polish_sections(sections: dict[str, list[str]], warnings: list[str
         polished = rebuilt
 
     bad_examples: list[str] = []
-    for item in _visible_line_items(polished):
+    for item in _visible_line_items(polished, candidates_by_key):
         line = str(item.get("line") or "")
         if _line_needs_russian_editor(line):
             remaining_bad += 1
@@ -253,6 +337,8 @@ def _pre_send_polish_sections(sections: dict[str, list[str]], warnings: list[str
         "remaining_bad": remaining_bad,
         "bad_examples": bad_examples,
         "model": PRE_SEND_RUSSIAN_EDITOR_MODEL,
+        "visible_items": len(items),
+        "evidence_items": evidence_items,
         "model_report": model_report,
     }
 
@@ -328,7 +414,7 @@ def edit_digest(project_root: Path) -> StageResult:
             f"({len(weak_city_candidates)}/{len(city_candidates)})."
         )
 
-    normalized_sections, russian_editor_report = _pre_send_polish_sections(normalized_sections, warnings)
+    normalized_sections, russian_editor_report = _pre_send_polish_sections(normalized_sections, warnings, included_candidates)
     if int(russian_editor_report.get("remaining_bad") or 0) > 0:
         warnings.append(
             "Pre-send Russian editor still sees "
