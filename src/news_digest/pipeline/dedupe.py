@@ -1613,10 +1613,6 @@ def _consolidate_tickets(candidates: list[dict]) -> list[dict]:
         re.IGNORECASE,
     )
     festival_re = re.compile(r"\bfestival\b", re.IGNORECASE)
-    tickettype_re = re.compile(
-        r"\b(?:weekend|friday|saturday|sunday|thursday|day\s+ticket|vip|tickets?|camping|20\d{2})\b",
-        re.IGNORECASE,
-    )
 
     def _drop(c: dict, reason: str, kept: dict | None = None) -> None:
         c["include"] = False
@@ -1648,20 +1644,38 @@ def _consolidate_tickets(candidates: list[dict]) -> list[dict]:
             _drop(c, "Premium/hospitality upsell removed from ticket radar.")
 
     # (1) Festival → one card per festival per block, carrying its lineup.
-    fest: dict[tuple, list[dict]] = {}
-    for c in _live():
+    def _festival_name(c: dict) -> str:
         ev = c.get("event") if isinstance(c.get("event"), dict) else {}
         name = str(ev.get("event_name") or c.get("title") or "")
-        venue = normalize_title(str(ev.get("venue") or ""))
-        if not (festival_re.search(name) or festival_re.search(venue)):
-            continue
-        base = normalize_title(re.sub(r"\s+", " ", tickettype_re.sub(" ", name)).strip())
-        fest.setdefault((base or venue, str(c.get("primary_block"))), []).append(c)
+        venue = str(ev.get("venue") or "")
+        src = name if festival_re.search(name) else (venue if festival_re.search(venue) else "")
+        if not src:
+            return ""
+        # Festival identity = the festival's own name (text up to "Festival"),
+        # after stripping promoter prefixes — so all day / ticket-type /
+        # per-artist fragments of ONE festival group together (Hampton Court,
+        # Isle of Wight, Radar), not split by artist.
+        m = re.search(r"(.*?\bfestival)\b", src, re.IGNORECASE)
+        fest_name = m.group(1) if m else src
+        fest_name = re.sub(r"^.*?\bpresents\b\s*", "", fest_name, flags=re.IGNORECASE)
+        fest_name = re.sub(r"^(?:the|sky|virgin|barclaycard|aeg)\s+", "", fest_name.strip(), flags=re.IGNORECASE)
+        return normalize_title(fest_name)
+
+    fest: dict[tuple, list[dict]] = {}
+    for c in _live():
+        fname = _festival_name(c)
+        if fname:
+            fest.setdefault((fname, str(c.get("primary_block"))), []).append(c)
     for grp in fest.values():
         if len(grp) < 2:
             continue
+        # Survivor = the generic festival pass (no single-artist suffix) with
+        # the nearest date, so the card title is the festival, not one act.
+        def _is_generic(c: dict) -> bool:
+            n = str((c.get("event") or {}).get("event_name") or c.get("title") or "")
+            return bool(re.search(r"\b(?:weekend|day ticket|festival pass|\d+\s*day)\b", n, re.IGNORECASE))
         grp.sort(key=lambda c: (
-            0 if festival_re.search(str((c.get("event") or {}).get("event_name") or c.get("title") or "")) else 1,
+            0 if _is_generic(c) else 1,
             _ticket_event_identity(c)[1] or "9999",
         ))
         survivor = grp[0]
