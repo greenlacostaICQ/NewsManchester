@@ -25,6 +25,9 @@ from news_digest.pipeline.common import (
 MIN_CITY_PRACTICAL_ANGLE_LENGTH = 40
 MAX_WEAK_CITY_CANDIDATE_SHARE = 0.5
 PRE_SEND_RUSSIAN_EDITOR_MODEL = "gpt-4o"
+PRE_SEND_THIN_EVIDENCE_CHARS = 1200
+PRE_SEND_EVIDENCE_MODEL_MAX_CHARS = 18000
+PRE_SEND_EDITOR_BATCH_CHAR_BUDGET = 90000
 
 PRE_SEND_RUSSIAN_EDITOR_PROMPT = """Ты выпускающий редактор русского Telegram-дайджеста Greater Manchester.
 Тебе дают уже видимые строки выпуска и, если удалось сопоставить строку с кандидатом, evidence по исходной новости.
@@ -165,21 +168,93 @@ def _clip_text(value: object, limit: int = 900) -> str:
     return text[: limit - 1].rstrip() + "…"
 
 
-def _compact_candidate_evidence(candidate: dict | None) -> dict[str, object]:
+def _plain_article_text_from_html(html_text: str, title: str = "") -> str:
+    from news_digest.pipeline.collector.extract import _clean_long_text, _extract_jsonld_nodes, _strip_evidence_chrome  # noqa: PLC0415
+
+    jsonld_parts: list[str] = []
+    for node in _extract_jsonld_nodes(html_text):
+        body = _clean_long_text(str(node.get("articleBody") or ""))
+        if len(body) >= 200:
+            jsonld_parts.append(body)
+    article_match = re.search(
+        r"<(?:article|main)[^>]*>(.*?)</(?:article|main)>",
+        html_text,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    candidate_html = article_match.group(1) if article_match else html_text
+    title_key = re.sub(r"[^a-z0-9а-яё]+", " ", str(title or "").lower()).strip()
+    paragraphs: list[str] = []
+    seen: set[str] = set()
+    for match in re.finditer(r"<p[^>]*>(.*?)</p>", candidate_html, flags=re.IGNORECASE | re.DOTALL):
+        text = _clean_long_text(match.group(1))
+        if len(text) < 35:
+            continue
+        key = re.sub(r"[^a-z0-9а-яё]+", " ", text.lower()).strip()
+        if not key or key in seen or (title_key and key == title_key):
+            continue
+        seen.add(key)
+        paragraphs.append(text)
+    return _strip_evidence_chrome(" ".join(jsonld_parts + paragraphs))
+
+
+def _refetch_candidate_evidence(candidate: dict) -> tuple[str, dict[str, object]]:
+    url = str(candidate.get("source_url") or "").strip()
+    if not url:
+        return "", {"status": "skipped_no_url"}
+    try:
+        from news_digest.pipeline.collector.fetch import _fetch_text  # noqa: PLC0415
+
+        html_text = _fetch_text(url)
+        evidence = _plain_article_text_from_html(html_text, str(candidate.get("title") or ""))
+    except Exception as exc:  # noqa: BLE001
+        return "", {"status": "failed", "url": url, "error": f"{exc.__class__.__name__}: {exc}"}
+    return evidence, {"status": "ok" if evidence else "empty", "url": url, "chars": len(evidence)}
+
+
+def _candidate_full_evidence_text(candidate: dict, refetch_stats: dict[str, object]) -> tuple[str, str]:
+    packet = candidate.get("evidence_packet") if isinstance(candidate.get("evidence_packet"), dict) else {}
+    parts = [
+        candidate.get("evidence_text"),
+        packet.get("evidence_text"),
+        candidate.get("lead"),
+        packet.get("lead"),
+        candidate.get("summary"),
+        packet.get("summary"),
+    ]
+    evidence = re.sub(r"\s+", " ", " ".join(str(part or "") for part in parts if part)).strip()
+    source = "candidate"
+    if len(evidence) < PRE_SEND_THIN_EVIDENCE_CHARS:
+        refetch_stats["attempted"] = int(refetch_stats.get("attempted") or 0) + 1
+        refetched, report = _refetch_candidate_evidence(candidate)
+        reports = refetch_stats.setdefault("reports", [])
+        if isinstance(reports, list) and len(reports) < 30:
+            reports.append({
+                "fingerprint": str(candidate.get("fingerprint") or ""),
+                "title": str(candidate.get("title") or "")[:160],
+                **report,
+            })
+        if refetched and len(refetched) > len(evidence):
+            evidence = refetched
+            source = "refetched_article"
+            refetch_stats["improved"] = int(refetch_stats.get("improved") or 0) + 1
+        elif report.get("status") == "failed":
+            refetch_stats["failed"] = int(refetch_stats.get("failed") or 0) + 1
+        else:
+            refetch_stats["empty_or_not_better"] = int(refetch_stats.get("empty_or_not_better") or 0) + 1
+    return evidence, source
+
+
+def _compact_candidate_evidence(candidate: dict | None, refetch_stats: dict[str, object] | None = None) -> dict[str, object]:
     if not isinstance(candidate, dict):
         return {}
+    refetch_stats = refetch_stats if refetch_stats is not None else {}
     packet = candidate.get("evidence_packet") if isinstance(candidate.get("evidence_packet"), dict) else {}
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else packet.get("event") if isinstance(packet.get("event"), dict) else {}
     entities = candidate.get("entities") if isinstance(candidate.get("entities"), dict) else packet.get("entities") if isinstance(packet.get("entities"), dict) else {}
     story_frame = candidate.get("story_frame") if isinstance(candidate.get("story_frame"), dict) else {}
-    evidence_text = (
-        candidate.get("evidence_text")
-        or packet.get("evidence_text")
-        or candidate.get("lead")
-        or candidate.get("summary")
-        or packet.get("summary")
-        or ""
-    )
+    evidence_text, evidence_source = _candidate_full_evidence_text(candidate, refetch_stats)
+    evidence_full_chars = len(evidence_text)
+    evidence_for_model = _clip_text(evidence_text, PRE_SEND_EVIDENCE_MODEL_MAX_CHARS)
     return {
         "fingerprint": str(candidate.get("fingerprint") or packet.get("fingerprint") or ""),
         "category": str(candidate.get("category") or packet.get("category") or ""),
@@ -190,7 +265,11 @@ def _compact_candidate_evidence(candidate: dict | None) -> dict[str, object]:
         "lead": _clip_text(candidate.get("lead") or packet.get("lead"), 500),
         "summary": _clip_text(candidate.get("summary") or packet.get("summary"), 700),
         "practical_angle": _clip_text(candidate.get("practical_angle"), 360),
-        "evidence_text": _clip_text(evidence_text, 1400),
+        "evidence_text": evidence_for_model,
+        "evidence_source": evidence_source,
+        "evidence_full_chars": evidence_full_chars,
+        "evidence_sent_chars": len(evidence_for_model),
+        "evidence_truncated_for_model": evidence_full_chars > len(evidence_for_model),
         "event": event,
         "entities": {
             key: value for key, value in entities.items()
@@ -203,7 +282,11 @@ def _compact_candidate_evidence(candidate: dict | None) -> dict[str, object]:
     }
 
 
-def _visible_line_items(sections: dict[str, list[str]], candidates_by_key: dict[str, dict] | None = None) -> list[dict[str, object]]:
+def _visible_line_items(
+    sections: dict[str, list[str]],
+    candidates_by_key: dict[str, dict] | None = None,
+    refetch_stats: dict[str, object] | None = None,
+) -> list[dict[str, object]]:
     items: list[dict[str, object]] = []
     index = 0
     candidates_by_key = candidates_by_key or {}
@@ -212,7 +295,7 @@ def _visible_line_items(sections: dict[str, list[str]], candidates_by_key: dict[
             if not line.strip() or line.strip() == "•":
                 continue
             candidate = candidates_by_key.get(_line_url_identity(line))
-            evidence = _compact_candidate_evidence(candidate)
+            evidence = _compact_candidate_evidence(candidate, refetch_stats)
             item: dict[str, object] = {"index": index, "section": section_name, "line": line}
             if evidence:
                 item["evidence"] = evidence
@@ -221,21 +304,33 @@ def _visible_line_items(sections: dict[str, list[str]], candidates_by_key: dict[
     return items
 
 
-def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) -> tuple[dict[int, str], dict[str, object]]:
-    if not items or not api_key:
-        return {}, {"status": "skipped_missing_api_key" if not api_key else "skipped_no_items"}
-    try:
-        from openai import OpenAI  # noqa: PLC0415
-    except ImportError:
-        return {}, {"status": "skipped_missing_openai_package"}
-    from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
+def _batch_editor_items(items: list[dict[str, object]]) -> list[list[dict[str, object]]]:
+    batches: list[list[dict[str, object]]] = []
+    current: list[dict[str, object]] = []
+    current_chars = 0
+    for item in items:
+        item_chars = len(json.dumps(item, ensure_ascii=False))
+        if current and current_chars + item_chars > PRE_SEND_EDITOR_BATCH_CHAR_BUDGET:
+            batches.append(current)
+            current = []
+            current_chars = 0
+        current.append(item)
+        current_chars += item_chars
+    if current:
+        batches.append(current)
+    return batches
 
-    client = OpenAI(api_key=api_key, timeout=60, max_retries=1)
+
+def _call_pre_send_russian_editor_batch(
+    client: object,
+    items: list[dict[str, object]],
+    record_call_from_response: object,
+) -> tuple[dict[int, str], dict[str, object]]:
     messages = [
         {"role": "system", "content": PRE_SEND_RUSSIAN_EDITOR_PROMPT},
         {"role": "user", "content": json.dumps({"items": items}, ensure_ascii=False)},
     ]
-    max_tokens = min(12000, 280 * len(items) + 1200)
+    max_tokens = min(12000, 300 * len(items) + 1200)
     try:
         response = client.chat.completions.create(
             model=PRE_SEND_RUSSIAN_EDITOR_MODEL,
@@ -245,7 +340,7 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
             response_format={"type": "json_object"},
         )
     except Exception as exc:  # noqa: BLE001
-        return {}, {"status": "failed", "error": f"{exc.__class__.__name__}: {exc}"}
+        return {}, {"status": "failed", "error": f"{exc.__class__.__name__}: {exc}", "items_sent": len(items)}
     record_call_from_response(
         response=response,
         stage="editor",
@@ -259,10 +354,10 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError as exc:
-        return {}, {"status": "parse_failed", "error": f"{exc.__class__.__name__}: {exc}", "raw_excerpt": raw[:400]}
+        return {}, {"status": "parse_failed", "error": f"{exc.__class__.__name__}: {exc}", "raw_excerpt": raw[:400], "items_sent": len(items)}
     rows = parsed.get("items") if isinstance(parsed, dict) else parsed
     if not isinstance(rows, list):
-        return {}, {"status": "parse_failed", "error": "JSON root has no items list", "raw_excerpt": raw[:400]}
+        return {}, {"status": "parse_failed", "error": "JSON root has no items list", "raw_excerpt": raw[:400], "items_sent": len(items)}
     fixes: dict[int, str] = {}
     for row in rows:
         if not isinstance(row, dict):
@@ -275,6 +370,33 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
         if line.startswith("• "):
             fixes[index] = line
     return fixes, {"status": "ok", "items_sent": len(items), "items_returned": len(fixes)}
+
+
+def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) -> tuple[dict[int, str], dict[str, object]]:
+    if not items or not api_key:
+        return {}, {"status": "skipped_missing_api_key" if not api_key else "skipped_no_items"}
+    try:
+        from openai import OpenAI  # noqa: PLC0415
+    except ImportError:
+        return {}, {"status": "skipped_missing_openai_package"}
+    from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
+
+    client = OpenAI(api_key=api_key, timeout=60, max_retries=1)
+    fixes: dict[int, str] = {}
+    batch_reports: list[dict[str, object]] = []
+    for batch in _batch_editor_items(items):
+        batch_fixes, batch_report = _call_pre_send_russian_editor_batch(client, batch, record_call_from_response)
+        fixes.update(batch_fixes)
+        batch_reports.append(batch_report)
+    failed = [report for report in batch_reports if report.get("status") != "ok"]
+    return fixes, {
+        "status": "partial_failed" if failed and fixes else "failed" if failed else "ok",
+        "items_sent": len(items),
+        "items_returned": len(fixes),
+        "batch_count": len(batch_reports),
+        "failed_batches": len(failed),
+        "batches": batch_reports[:20],
+    }
 
 
 def _pre_send_polish_sections(
@@ -296,9 +418,14 @@ def _pre_send_polish_sections(
             new_lines.append(fixed)
         polished[section_name] = new_lines
 
-    items = _visible_line_items(polished, candidates_by_key)
-    evidence_items = sum(1 for item in items if isinstance(item.get("evidence"), dict) and item.get("evidence"))
     api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    refetch_stats: dict[str, object] = {"attempted": 0, "improved": 0, "failed": 0, "empty_or_not_better": 0}
+    items = (
+        _visible_line_items(polished, candidates_by_key, refetch_stats)
+        if api_key
+        else _visible_line_items(polished)
+    )
+    evidence_items = sum(1 for item in items if isinstance(item.get("evidence"), dict) and item.get("evidence"))
     model_fixes, model_report = _call_pre_send_russian_editor(items, api_key)
     if model_report.get("status") not in {"ok", "skipped_no_items"}:
         warnings.append(f"Pre-send Russian editor skipped/failed: {model_report.get('status')} {model_report.get('error') or ''}".strip())
@@ -323,7 +450,7 @@ def _pre_send_polish_sections(
         polished = rebuilt
 
     bad_examples: list[str] = []
-    for item in _visible_line_items(polished, candidates_by_key):
+    for item in _visible_line_items(polished):
         line = str(item.get("line") or "")
         if _line_needs_russian_editor(line):
             remaining_bad += 1
@@ -339,6 +466,9 @@ def _pre_send_polish_sections(
         "model": PRE_SEND_RUSSIAN_EDITOR_MODEL,
         "visible_items": len(items),
         "evidence_items": evidence_items,
+        "refetch": refetch_stats,
+        "evidence_model_max_chars": PRE_SEND_EVIDENCE_MODEL_MAX_CHARS,
+        "thin_evidence_threshold_chars": PRE_SEND_THIN_EVIDENCE_CHARS,
         "model_report": model_report,
     }
 
