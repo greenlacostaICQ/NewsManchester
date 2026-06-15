@@ -392,6 +392,21 @@ def _candidate_future_only_dates(candidate: dict, line: str = "") -> list[date]:
     return sorted(day for day in dates if day > today)
 
 
+_TODAY_FOCUS_NATIONAL_RE = re.compile(
+    r"\b(?:poll:|have your say|опрос|prime minister|sir keir|keir starmer|starmer|"
+    r"downing street|nationwide|across the uk|uk[- ]wide|nationally|parliament|"
+    r"westminster|general election|whitehall)\b",
+    re.IGNORECASE,
+)
+_GM_LOCAL_ANCHOR_RE = re.compile(
+    r"\b(?:greater manchester|\bgm\b|manchester (?:city )?council|metrolink|tfgm|"
+    r"stockport|tameside|trafford|salford|bolton|bury|oldham|rochdale|wigan|"
+    r"ashton|wythenshawe|prestwich|altrincham|chorlton|didsbury|hulme|fallowfield|"
+    r"эштон|стокпорт|солфорд|болтон|уиган|рочдейл|траффорд|олдем)\b",
+    re.IGNORECASE,
+)
+
+
 def _today_focus_candidate_is_eligible(candidate: dict | None, line: str = "") -> bool:
     if not isinstance(candidate, dict):
         return False
@@ -456,6 +471,16 @@ def _today_focus_candidate_is_eligible(candidate: dict | None, line: str = "") -
     # fill the morning practical block unless a service/accountability anchor
     # is explicit.
     if story_type not in {"service_accountability", "local_service_change"} and _TODAY_FOCUS_SOFT_RE.search(text):
+        return False
+    # National politics / polls without a GM hook are not "what matters today
+    # in GM" (owner 2026-06-15: the Starmer under-16s social-media ban / a UK
+    # poll). A historical/anniversary retrospective only qualifies on a real
+    # new phase (the 1996 IRA bomb «99 minutes» piece).
+    _contract = _candidate_contract(candidate)
+    _topic = str(_contract.get("topic_key") or candidate.get("topic_key") or "")
+    if _topic.startswith(("memorial:", "incident:manchester_ira")) and str(_contract.get("anchor_type") or "") != "new_phase":
+        return False
+    if _TODAY_FOCUS_NATIONAL_RE.search(text) and not _GM_LOCAL_ANCHOR_RE.search(text):
         return False
     return True
 
@@ -595,6 +620,16 @@ def _fresh_rows_are_same_story(left: _SectionRow, right: _SectionRow) -> bool:
         token for token in common
         if token.isdigit() or len(token) >= 6 or token in {"ira", "m6", "m56", "m60", "m62"}
     }
+    # Many shared substantive tokens (place + incident specifics) are an
+    # unambiguous same-story signal even when one card is much longer and
+    # dilutes the Jaccard/overlap ratio — the Oldham Road/Ashton MEN+BBC pair
+    # shared 16 tokens but scored 0.44 overlap (owner 2026-06-15 dup).
+    substantive_strong = {
+        token for token in strong_common
+        if not re.fullmatch(r"https?|\d{4}-\d{2}-\d{2}", token)
+    }
+    if len(substantive_strong) >= 6:
+        return True
     if len(strong_common) < 2:
         return False
     union = left_tokens | right_tokens
@@ -849,7 +884,10 @@ def _allocate_fresh_and_today_focus(
     related_best: dict[str, _SectionRow] = {}
     related_members: dict[str, list[_SectionRow]] = {}
     for row in all_rows + lead_rows:
-        key = _fresh_related_story_key(row)
+        # Also group by cluster/topic key so the SAME subject in two sections
+        # (e.g. the 1996 IRA bomb in both Fresh and «Что важно сегодня») is
+        # collapsed to one card across the whole board, not just within Fresh.
+        key = _fresh_related_story_key(row) or _fresh_story_cluster_key(row)
         if not key:
             continue
         related_members.setdefault(key, []).append(row)
@@ -1404,6 +1442,13 @@ def _public_source_label(source_label: str) -> str:
     label = re.sub(r"\s+", " ", str(source_label or "")).strip()
     label = re.sub(r"\s+public\s+safety\s+fallback\b", "", label, flags=re.IGNORECASE)
     label = re.sub(r"\s+fallback\b", "", label, flags=re.IGNORECASE)
+    # Strip internal feed-qualifier suffixes that leak as English noise in the
+    # visible attribution (owner 2026-06-15: "Ticketmaster UK Major Upcoming",
+    # "MEN News Sitemap", "BBC Manchester Web").
+    label = re.sub(r"^ticketmaster\b.*$", "Ticketmaster", label, flags=re.IGNORECASE)
+    label = re.sub(r"\s+(?:news\s+)?sitemap$", "", label, flags=re.IGNORECASE)
+    label = re.sub(r"\s+(?:major\s+|manchester\s+|uk\s+)?upcoming$", "", label, flags=re.IGNORECASE)
+    label = re.sub(r"\s+web$", "", label, flags=re.IGNORECASE)
     return label.strip() or str(source_label or "").strip()
 
 

@@ -705,10 +705,12 @@ _TOPIC_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     # "IRA bomb повторился снова" — different headline, weak topic key let the
     # rehash through as new news).
     ("incident:manchester_ira_bomb_1996", re.compile(
-        r"\b(?:ira\s+bomb\w*|bomb\w*\s+(?:by|planted\s+by)\s+the\s+ira|"
+        r"\b(?:ira\b[\s\w]{0,20}\bbomb\w*|bomb\w*\s+(?:by|planted\s+by)\s+the\s+ira|"
         r"1996\s+(?:manchester\s+|arndale\s+)?bomb\w*|"
         r"(?:arndale|corporation\s+street)\s+bomb\w*|"
-        r"manchester\s+bombing\s+of\s+1996)\b",
+        r"manchester\s+bombing(?:\s+of)?\s+1996|"
+        r"99\s+minutes\s+that\s+changed\s+manchester|"
+        r"\d{1,2}\s+years?\s+since\b[\s\w]{0,30}\bbomb\w*)\b",
         re.IGNORECASE)),
     ("incident:bolton_erika_de_souza_correia", re.compile(r"\b(?:erika\s+de\s+souza|de\s+souza\s+correia|walker\s+fold|police\s+pursuit)\b", re.IGNORECASE)),
     ("opening:grub_stretford", re.compile(r"\b(?:grub\b.*stretford|stretford.*\bgrub\b|sir\s+tony\s+lloyd\s+square)\b", re.IGNORECASE)),

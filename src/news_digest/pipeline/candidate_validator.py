@@ -1147,6 +1147,37 @@ def _exclude_pr_only_tech_business(candidate: dict) -> bool:
     return True
 
 
+_SOLD_OUT_RE = re.compile(
+    r"\b(?:sold[\s-]?out|распродан\w*|билеты\s+(?:уже\s+)?распродан\w*)\b", re.IGNORECASE
+)
+_RESALE_RE = re.compile(
+    r"\b(?:resale|re-?sale|waiting\s+list|returns?\b|перепродаж\w*|лист\s+ожидани\w*|"
+    r"возврат\w*|освобод\w*\s+мест)\b",
+    re.IGNORECASE,
+)
+
+
+def _exclude_sold_out_event(candidate: dict) -> bool:
+    """A sold-out event with no resale/returns/waiting-list is not actionable —
+    do not publish it as an upcoming pick (owner 2026-06-15: Lowry «Babies
+    Playtime — билеты сейчас распроданы» in the next-7-days afisha)."""
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("primary_block") or "") not in {
+        "weekend_activities", "next_7_days", "future_announcements", "russian_events"
+    }:
+        return False
+    blob = _candidate_blob(candidate)
+    if _SOLD_OUT_RE.search(blob) and not _RESALE_RE.search(blob):
+        _append_reject(
+            candidate,
+            "event_sold_out",
+            "Validator: event is sold out with no resale/returns — no reader action.",
+        )
+        return True
+    return False
+
+
 def _is_market_fair_weekend_candidate(candidate: dict) -> bool:
     protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
     if str(protected.get("lane") or "") in {"weekend_market", "recurring_market"}:
@@ -2115,6 +2146,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _exclude_undated_event_like_candidate(candidate)
         if candidate.get("include"):
             _exclude_under_specified_event(candidate)
+        if candidate.get("include"):
+            _exclude_sold_out_event(candidate)
         completeness = event_schema_completeness(candidate)
         if completeness.get("applies"):
             candidate["event_schema_completeness"] = completeness

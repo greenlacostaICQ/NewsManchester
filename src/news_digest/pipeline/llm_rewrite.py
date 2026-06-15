@@ -673,6 +673,14 @@ def _must_translate_before_cap(candidate: dict) -> bool:
         return True
     if block == "weekend_activities" and _is_actionable_weekend_candidate(candidate):
         return True
+    # Protected quota for official/community venue events: a dated card with a
+    # venue must not be cut by the soft translation-board cap (owner 2026-06-15:
+    # next_7 afisha недобирается, official venue events терялись из-за soft max).
+    if block in {"next_7_days", "future_announcements"}:
+        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        event_day = _candidate_event_day(candidate)
+        if event_day and event_day >= date.fromisoformat(today_london()) and str(event.get("venue") or "").strip():
+            return True
     if category in {"media_layer", "council", "gmp", "public_services", "city_news"} and tier in {"must_include", "strong"}:
         return True
     if protected.get("protected") and category != "venues_tickets":
