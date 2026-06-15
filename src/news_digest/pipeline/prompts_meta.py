@@ -17,6 +17,7 @@ import re
 from news_digest.pipeline import llm_rewrite as _lr
 from news_digest.pipeline import curator as _cur
 from news_digest.pipeline import dedupe as _dd
+from news_digest.pipeline import editor as _ed
 from news_digest.pipeline import post_publish_judge as _ppj
 
 PROMPT_REGISTRY_VERSION = 1
@@ -44,21 +45,22 @@ _PROMPT_VERSION_RE = re.compile(r"^v\d+(?:\.\d+){0,2}$")
 # for trivial typo fixes — the hash will reflect those automatically,
 # and the release gate will surface them as a silent-drift signal.
 PROMPTS: tuple[PromptMeta, ...] = (
-    PromptMeta(name="curator",         version="v3", hash=_h(_cur.CURATOR_PROMPT)),
+    PromptMeta(name="curator",         version="v4", hash=_h(_cur.CURATOR_PROMPT)),
     # v6: tightened examples/repair guidance for council deadlocks,
     # retail closures and property/planning stories after the 2026-05-27
     # live issue review.
-    PromptMeta(name="city_news",       version="v6", hash=_h(_lr.PROMPT_CITY_NEWS)),
-    PromptMeta(name="transport",       version="v4", hash=_h(_lr.PROMPT_TRANSPORT)),
+    PromptMeta(name="city_news",       version="v7", hash=_h(_lr.PROMPT_CITY_NEWS)),
+    PromptMeta(name="transport",       version="v5", hash=_h(_lr.PROMPT_TRANSPORT)),
     # v4: three explicit templates (one-off / festival / recurring) +
     # event.is_recurring guidance, S3 sprint.
-    PromptMeta(name="events",          version="v4", hash=_h(_lr.PROMPT_EVENTS)),
-    PromptMeta(name="diaspora_events", version="v3", hash=_h(_lr.PROMPT_DIASPORA_EVENTS)),
-    PromptMeta(name="business",        version="v3", hash=_h(_lr.PROMPT_BUSINESS)),
-    PromptMeta(name="football",        version="v4", hash=_h(_lr.PROMPT_FOOTBALL)),
-    PromptMeta(name="fix_translate",   version="v1", hash=_h(_lr.FIX_TRANSLATE_SYSTEM)),
-    PromptMeta(name="repair_draft",    version="v2", hash=_h(_lr.REPAIR_DRAFT_SYSTEM)),
-    PromptMeta(name="dedupe_review",   version="v1", hash=_h(_dd._DEDUPE_REVIEW_PROMPT)),
+    PromptMeta(name="events",          version="v5", hash=_h(_lr.PROMPT_EVENTS)),
+    PromptMeta(name="diaspora_events", version="v4", hash=_h(_lr.PROMPT_DIASPORA_EVENTS)),
+    PromptMeta(name="business",        version="v4", hash=_h(_lr.PROMPT_BUSINESS)),
+    PromptMeta(name="football",        version="v5", hash=_h(_lr.PROMPT_FOOTBALL)),
+    PromptMeta(name="fix_translate",   version="v2", hash=_h(_lr.FIX_TRANSLATE_SYSTEM)),
+    PromptMeta(name="repair_draft",    version="v3", hash=_h(_lr.REPAIR_DRAFT_SYSTEM)),
+    PromptMeta(name="dedupe_review",   version="v2", hash=_h(_dd._DEDUPE_REVIEW_PROMPT)),
+    PromptMeta(name="pre_send_russian_editor", version="v1", hash=_h(_ed.PRE_SEND_RUSSIAN_EDITOR_PROMPT)),
     PromptMeta(name="post_publish_judge", version=_ppj.JUDGE_PROMPT_VERSION,
                hash=_h(_ppj.JUDGE_PROMPT)),
 )

@@ -77,6 +77,7 @@ jobs:
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
           LASTFM_API: ${{ secrets.LASTFM_API }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI }}
         run: |
           set -euo pipefail
           python3 scripts/run_local_digest.py write-digest
@@ -197,7 +198,10 @@ jobs:
           git add -f data/state/audit_trail/*.jsonl || true
           git add -f data/state/cost_curator.json || true
           git add -f data/state/cost_llm_rewrite.json || true
+          git add -f data/state/cost_editor.json || true
           git add -f data/state/llm_rewrite_report.json || true
+          git add -f data/state/translation_memory.json || true
+          git add -f data/state/rewrite_inventory.json || true
           git add -f data/state/bot_state.json || true
           git add -f data/state/delivery_state.json || true
           # Metrolink reminders need cross-day persistence so an active

@@ -769,13 +769,16 @@ def _evaluate_digest_health(
                 ),
             })
 
-    if included >= 20 and rendered < included * 0.4:
+    not_selected_tickets = int(qc.get("dropped_ticket_not_selected") or 0)
+    held_editorial = int(qc.get("held_for_editorial_quality") or 0)
+    selected_for_publication = max(0, included - not_selected_tickets - held_editorial)
+    if selected_for_publication >= 20 and rendered < selected_for_publication * 0.75:
         signals.append({
-            "name": "low_writer_yield",
+            "name": "low_selected_writer_yield",
             "severity": 2,
             "detail": (
-                f"Writer rendered {rendered} of {included} included candidates "
-                f"({rendered / included:.0%}) — quality gates may be too strict."
+                f"Writer rendered {rendered} of {selected_for_publication} selected publishable candidates "
+                f"({rendered / selected_for_publication:.0%}); inventory/backup/manual-review items are excluded."
             ),
         })
 
@@ -1784,6 +1787,22 @@ def _event_miss_review(
             verdict = "selected_but_not_published"
         else:
             verdict = "rejected_high_value_event"
+        reason_text = reason or "; ".join(str(r) for r in (candidate.get("reject_reasons") or []))
+        reason_l = reason_text.lower()
+        if verdict == "covered_by_rendered_duplicate" or (verdict == "dedupe_lost_event" and kept_fp):
+            alert_class = "duplicate_or_covered"
+        elif "ticket not selected" in reason_l or "not selected" in reason_l:
+            alert_class = "not_selected_by_design"
+        elif "outside global translation board" in reason_l:
+            alert_class = "not_selected_capacity"
+        elif "held for manual review" in reason_l or "borderline editorial status" in reason_l:
+            alert_class = "manual_review"
+        elif "past" in reason_l or "expired" in reason_l or "all event dates are in the past" in reason_l:
+            alert_class = "stale_or_expired"
+        elif verdict in {"writer_dropped_event", "selected_but_not_published"}:
+            alert_class = "possible_miss"
+        else:
+            alert_class = "review_only"
 
         record = {
             "fingerprint": fp,
@@ -1794,16 +1813,18 @@ def _event_miss_review(
             "score": score,
             "days_out": days_out,
             "verdict": verdict,
-            "reason": reason or "; ".join(str(r) for r in (candidate.get("reject_reasons") or [])),
+            "alert_class": alert_class,
+            "reason": reason_text,
             "kept_fingerprint": kept_fp,
             "kept_title": kept_title,
             "kept_source_label": dedupe_drop.get("kept_source_label") or "",
         }
         items.append(record)
         counts[verdict] += 1
+        counts[f"alert_{alert_class}"] += 1
         # Conservative fail condition: a high-confidence event in the
         # next week disappeared without a rendered duplicate covering it.
-        if verdict != "covered_by_rendered_duplicate" and days_out is not None and 0 <= days_out <= 7:
+        if alert_class == "possible_miss" and days_out is not None and 0 <= days_out <= 7:
             critical.append(record)
 
     items = sorted(items, key=lambda item: (int(item.get("days_out") if item.get("days_out") is not None else 999), -int(item.get("score") or 0), str(item.get("title") or "")))
@@ -1892,6 +1913,22 @@ def _final_loss_check(
             writer_drops=writer_drops,
             dedupe_drops=dedupe_drops,
         )
+        reason_l = str(reason or "").lower()
+        category = str(candidate.get("category") or "")
+        if disposition == "rendered":
+            alert_class = "rendered"
+        elif "ticket not selected" in reason_l or "not selected" in reason_l:
+            alert_class = "not_selected_by_design"
+        elif disposition == "dedupe_dropped" and any(token in reason_l for token in ("duplicate", "same story", "multi-night", "merged")):
+            alert_class = "duplicate_or_covered"
+        elif "held for manual review" in reason_l or "borderline editorial status" in reason_l:
+            alert_class = "manual_review"
+        elif category == "venues_tickets" and disposition in {"writer_dropped", "selected_not_published"}:
+            alert_class = "ticket_inventory_not_rendered"
+        elif disposition in {"writer_dropped", "selected_not_published", "dedupe_dropped"}:
+            alert_class = "possible_miss"
+        else:
+            alert_class = "review_only"
         lane = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
         enrichment = candidate.get("enrichment_health") if isinstance(candidate.get("enrichment_health"), dict) else {}
         frame = candidate.get("story_frame") if isinstance(candidate.get("story_frame"), dict) else {}
@@ -1904,6 +1941,7 @@ def _final_loss_check(
             "category": candidate.get("category") or "",
             "primary_block": candidate.get("primary_block") or "",
             "disposition": disposition,
+            "alert_class": alert_class,
             "reason": reason,
             "human_reason": (
                 f"Не дошло до выпуска: {reason}. "
@@ -1921,6 +1959,7 @@ def _final_loss_check(
         }
         items.append(record)
         counts[disposition] += 1
+        counts[f"alert_{alert_class}"] += 1
 
     items = sorted(
         items,
@@ -1932,7 +1971,7 @@ def _final_loss_check(
     )
     critical = [
         item for item in items
-        if item.get("disposition") in {"writer_dropped", "selected_not_published", "dedupe_dropped"}
+        if item.get("alert_class") == "possible_miss"
     ]
     return {
         "schema_version": 1,
@@ -2998,6 +3037,16 @@ def build_release(project_root: Path) -> ReleaseResult:
             if section_name:
                 dropped_per_section[section_name] = dropped_per_section.get(section_name, 0) + 1
         for section_name, minimum in SECTION_MIN_ITEMS.items():
+            if section_name == "Выходные в GM":
+                try:
+                    weekday = datetime.strptime(current_day_london, "%Y-%m-%d").weekday()
+                except ValueError:
+                    weekday = now_london().weekday()
+                # Weekend planning is intentionally active only Thu-Sun.
+                # A Monday-Wednesday empty block is normal and should not
+                # produce a false editorial alarm.
+                if weekday not in {3, 4, 5, 6}:
+                    continue
             actual = int(sec_counts.get(section_name) or 0)
             dropped_here = dropped_per_section.get(section_name, 0)
             if section_name == "Что важно сегодня" and actual < minimum:
@@ -3238,8 +3287,8 @@ def build_release(project_root: Path) -> ReleaseResult:
     critical_event_misses = int((event_miss_review.get("counts") or {}).get("critical_misses") or 0)
     if critical_event_misses:
         warnings.append(
-            f"Event miss review: {critical_event_misses} high-value event/ticket candidate(s) "
-            "were collected but not published — see release_report.event_miss_review."
+            f"Event miss review: {critical_event_misses} event/ticket candidate(s) look like possible real misses "
+            "after excluding deliberate skips, duplicates, stale items and manual-review holds — see release_report.event_miss_review."
         )
     final_loss_check = _final_loss_check(
         candidates_report=candidates_report,
@@ -3250,8 +3299,8 @@ def build_release(project_root: Path) -> ReleaseResult:
     critical_losses = int((final_loss_check.get("counts") or {}).get("critical_losses") or 0)
     if critical_losses:
         warnings.append(
-            f"Final loss check: {critical_losses} protected/high-value candidate(s) were not rendered — "
-            "see release_report.final_loss_check and data/state/backup_pool.json."
+            f"Final loss check: {critical_losses} protected/high-value candidate(s) look like possible real misses "
+            "after excluding deliberate ticket skips, duplicates and manual-review holds — see release_report.final_loss_check."
         )
     backup_pool = _write_backup_pool(
         state_dir=state_dir,
