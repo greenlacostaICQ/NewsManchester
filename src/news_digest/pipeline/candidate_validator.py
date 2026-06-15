@@ -210,6 +210,35 @@ _EVENT_LIKE_TERMS = (
     "what's on",
     "whats on",
 )
+_SOLD_OUT_EVENT_RE = re.compile(
+    r"\b(?:sold\s*out|fully\s*booked|no\s+(?:tickets|spaces|places)\s+(?:left|available)|"
+    r"tickets?\s+(?:are\s+)?(?:sold\s*out|unavailable)|распродан[оаы]?|мест\s+нет)\b",
+    re.IGNORECASE,
+)
+_MARKET_FAIR_WEEKEND_RE = re.compile(
+    r"\b(?:car\s*boot|makers?\s+market|artisan\s+market|farmers?\s+market|"
+    r"flea\s+market|vintage\s+market|food\s+market|market|fair|fayre|ярмарк|рынок)\b",
+    re.IGNORECASE,
+)
+_COURT_ROUNDUP_RE = re.compile(
+    r"\b(?:locked\s+up\s+this\s+week|jailed\s+this\s+week|this\s+week\s+in\s+court|"
+    r"among\s+(?:those|the\s+criminals)\s+(?:locked\s+up|jailed)|"
+    r"courts?\s+round-?up|sentenced\s+this\s+week)\b",
+    re.IGNORECASE,
+)
+_COUNCIL_ADMIN_ONLY_RE = re.compile(
+    r"\b(?:appoints?\s+(?:new\s+)?cabinet|cabinet\s+appointments?|"
+    r"confirmed?\s+(?:.*\b)?(?:leader|deputy\s+leader)|"
+    r"remain(?:s|ed)?\s+(?:as\s+)?(?:leader|deputy\s+leader))\b",
+    re.IGNORECASE,
+)
+_COUNCIL_READER_IMPACT_RE = re.compile(
+    r"\b(?:homes?|housing|homeless|rent|council\s+tax|budget|consultation|deadline|"
+    r"school|care|cqc|fire\s+safety|public\s+safety|road|transport|bins?|"
+    r"service|library|market|licen[cs]e|planning|approved|rejected|jobs?|"
+    r"funding|investment|closure|reopen|open(?:ing)?|works?)\b",
+    re.IGNORECASE,
+)
 _RELATIVE_UNDATED_TERMS = (
     "next month",
     "coming soon",
@@ -1105,6 +1134,115 @@ def _exclude_pr_only_tech_business(candidate: dict) -> bool:
     return True
 
 
+def _is_market_fair_weekend_candidate(candidate: dict) -> bool:
+    protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
+    if str(protected.get("lane") or "") in {"weekend_market", "recurring_market"}:
+        return True
+    blob = _candidate_blob(candidate)
+    return bool(_MARKET_FAIR_WEEKEND_RE.search(blob))
+
+
+def _event_future_dates(candidate: dict) -> list[date]:
+    today = now_london().date()
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    dates: list[date] = []
+    event_dt = _summary_field_datetime(str(candidate.get("summary") or ""), "event_date")
+    if event_dt is not None:
+        dates.append(event_dt.date())
+    for iso_field in (
+        str(event.get("date_start") or "").strip(),
+        str(event.get("date") or "").strip(),
+        str(event.get("date_iso") or "").strip(),
+    ):
+        if not iso_field:
+            continue
+        try:
+            dates.append(datetime.fromisoformat(iso_field.replace("Z", "+00:00")).date())
+        except (TypeError, ValueError):
+            try:
+                dates.append(date.fromisoformat(iso_field))
+            except (TypeError, ValueError):
+                pass
+    if not dates:
+        dates.extend(_explicit_dates_from_blob(candidate))
+    return sorted({d for d in dates if d >= today})
+
+
+def _reroute_market_planning_to_weekend(candidate: dict) -> bool:
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("primary_block") or "") != "next_7_days":
+        return False
+    if not _is_market_fair_weekend_candidate(candidate):
+        return False
+    today = now_london().date()
+    future_dates = _event_future_dates(candidate)
+    recurring = _has_recurrence_pattern(candidate)
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    if future_dates:
+        nearest = future_dates[0]
+        if (nearest - today).days > 7:
+            return False
+    elif not (recurring or event.get("is_recurring")):
+        return False
+    candidate["primary_block"] = "weekend_activities"
+    existing = str(candidate.get("reason") or "").strip()
+    note = "Validator: market/car boot/fair belongs in weekend_activities, not next_7_days."
+    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    return True
+
+
+def _exclude_sold_out_event(candidate: dict) -> bool:
+    if not candidate.get("include"):
+        return False
+    category = str(candidate.get("category") or "")
+    block = str(candidate.get("primary_block") or "")
+    if category not in {"culture_weekly", "venues_tickets", "russian_speaking_events"} and block not in _EVENT_BLOCKS:
+        return False
+    if not _SOLD_OUT_EVENT_RE.search(_candidate_blob(candidate)):
+        return False
+    _append_reject(
+        candidate,
+        "event_sold_out",
+        "Validator: sold-out event is not useful in the public digest.",
+    )
+    return True
+
+
+def _exclude_court_roundup_listicle(candidate: dict) -> bool:
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("primary_block") or "") not in {"last_24h", "today_focus", "city_watch"}:
+        return False
+    blob = _candidate_blob(candidate)
+    if not _COURT_ROUNDUP_RE.search(blob):
+        return False
+    _append_reject(
+        candidate,
+        "court_roundup_listicle",
+        "Validator: court roundup listicle mixes several cases; publish a standalone case instead.",
+    )
+    return True
+
+
+def _exclude_council_admin_without_impact(candidate: dict) -> bool:
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("primary_block") or "") not in {"city_watch", "today_focus", "last_24h"}:
+        return False
+    blob = _candidate_blob(candidate)
+    if not _COUNCIL_ADMIN_ONLY_RE.search(blob):
+        return False
+    if _COUNCIL_READER_IMPACT_RE.search(blob):
+        return False
+    _append_reject(
+        candidate,
+        "council_admin_no_reader_impact",
+        "Validator: council leadership/admin item has no concrete reader impact.",
+    )
+    return True
+
+
 def _exclude_stale_event(candidate: dict) -> bool:
     """Drop event candidates whose only date is already in the past.
 
@@ -1282,6 +1420,14 @@ def _demote_distant_weekend_event(candidate: dict) -> bool:
         nearest_weekend_day = min(days_to_sat, days_to_sun)
         if nearest_weekend_day <= 3:
             return False
+        if _is_market_fair_weekend_candidate(candidate) and nearest_weekend_day <= 7:
+            existing = str(candidate.get("reason") or "").strip()
+            note = (
+                "Validator: recurring market/car boot/fair stays in "
+                "weekend_activities for weekend planning."
+            )
+            candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+            return False
         candidate["primary_block"] = "next_7_days"
         existing = str(candidate.get("reason") or "").strip()
         note = (
@@ -1328,6 +1474,14 @@ def _demote_distant_weekend_event(candidate: dict) -> bool:
         days_out = (earliest - today).days
         if days_out <= 3:
             return False
+        if _is_market_fair_weekend_candidate(candidate) and days_out <= 7:
+            existing = str(candidate.get("reason") or "").strip()
+            note = (
+                "Validator: market/car boot/fair stays in weekend_activities "
+                "for weekend planning."
+            )
+            candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+            return False
         if days_out <= 7:
             candidate["primary_block"] = "next_7_days"
             target = "next_7_days"
@@ -1365,6 +1519,14 @@ def _demote_distant_weekend_event(candidate: dict) -> bool:
     days_to_sun = (6 - today.weekday()) % 7
     nearest_weekend_day = min(days_to_sat, days_to_sun)
     if nearest_weekend_day <= 3:
+        return False
+    if _is_market_fair_weekend_candidate(candidate) and nearest_weekend_day <= 7:
+        existing = str(candidate.get("reason") or "").strip()
+        note = (
+            "Validator: recurring market/car boot/fair stays in "
+            "weekend_activities for weekend planning."
+        )
+        candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
         return False
     candidate["primary_block"] = "next_7_days"
     existing = str(candidate.get("reason") or "").strip()
@@ -1896,6 +2058,12 @@ def validate_candidates(project_root: Path) -> StageResult:
         if candidate.get("include"):
             _exclude_pr_only_tech_business(candidate)
         if candidate.get("include"):
+            _exclude_sold_out_event(candidate)
+        if candidate.get("include"):
+            _exclude_court_roundup_listicle(candidate)
+        if candidate.get("include"):
+            _exclude_council_admin_without_impact(candidate)
+        if candidate.get("include"):
             _exclude_stale_undated_news_from_text(candidate)
         if candidate.get("include") and manual != "force_include":
             _demote_optional_top_news_by_contract(candidate)
@@ -1913,6 +2081,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _apply_specificity_review(candidate)
         if candidate.get("include"):
             _exclude_stale_event(candidate)
+        if candidate.get("include"):
+            _reroute_market_planning_to_weekend(candidate)
         if candidate.get("include"):
             _demote_distant_weekend_event(candidate)
         if candidate.get("include"):

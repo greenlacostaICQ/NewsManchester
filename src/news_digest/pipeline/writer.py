@@ -1174,6 +1174,11 @@ _MARKET_EVENT_RE = re.compile(
     r"farmers\s+market|flea\s+market|vintage\s+market|food\s+market|flower\s+festival)\b",
     re.IGNORECASE,
 )
+_SOLD_OUT_EVENT_RE = re.compile(
+    r"\b(?:sold\s*out|fully\s*booked|no\s+(?:tickets|spaces|places)\s+(?:left|available)|"
+    r"tickets?\s+(?:are\s+)?(?:sold\s*out|unavailable)|распродан[оаы]?|мест\s+нет)\b",
+    re.IGNORECASE,
+)
 
 
 def _is_market_or_recurring_event(candidate: dict) -> bool:
@@ -1558,6 +1563,16 @@ def _ticket_venue(candidate: dict) -> str:
 
 
 def _ticket_genre(candidate: dict) -> str:
+    # Prefer the structured Ticketmaster sub-genre, then genre. It is far more
+    # accurate than the coarse summary chunk: Lily Allen is subGenre="Pop"
+    # (genre="Rock"), Fatboy Slim "Electro Pop" (genre="Pop"), Gorillaz
+    # "Alternative Rock". Skip Ticketmaster's no-real-classification placeholders.
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    _skip = {"", "undefined", "other", "unknown", "miscellaneous", "undefined "}
+    for key in ("subGenre", "genre"):
+        val = re.sub(r"\s+", " ", str(event.get(key) or "")).strip()
+        if val.lower() not in _skip:
+            return val
     summary = str(candidate.get("summary") or "")
     chunks = [chunk.strip(" .") for chunk in summary.split("|")]
     ignored = {
@@ -1838,6 +1853,40 @@ def _ticket_watch_reason(candidate: dict) -> str:
     return "билетный повод"
 
 
+_LINEUP_WRAPPER_RE = re.compile(
+    r"\b(?:presents|festival|weekend|day\s+ticket|tickets|vip|hospitality|camping)\b",
+    re.IGNORECASE,
+)
+
+
+def _ticket_lineup(candidate: dict) -> list[str]:
+    """Main artist names for a festival / multi-act ticket, so the card shows
+    the acts that justify it — not just the festival name. Prefers the merged
+    ``festival_lineup`` (set when fragments are consolidated in dedupe), then
+    the Ticketmaster ``attractions``. Drops promoter / festival-wrapper entries
+    ("On the Waterfront presents", "Sky presents", the festival's own name)."""
+    merged = candidate.get("festival_lineup")
+    raw: list[str] = []
+    if isinstance(merged, list) and merged:
+        raw = [str(n) for n in merged]
+    else:
+        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        atts = event.get("attractions") if isinstance(event.get("attractions"), list) else []
+        raw = [str(a.get("name") or "") for a in atts if isinstance(a, dict)]
+    names: list[str] = []
+    seen: set[str] = set()
+    for nm in raw:
+        nm = re.sub(r"\s+", " ", nm).strip()
+        low = nm.lower()
+        if not nm or low in seen or _LINEUP_WRAPPER_RE.search(low):
+            continue
+        seen.add(low)
+        names.append(nm)
+        if len(names) >= 6:
+            break
+    return names
+
+
 def _build_ticket_fallback_line(candidate: dict) -> str:
     notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
     title = str(notability.get("artist") or "").strip() or ticket_artist_name(candidate) or _ticket_headliner(str(candidate.get("title") or ""))
@@ -1886,13 +1935,19 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
             time_part = ""  # multiple nights — a single start time would mislead
     genre_part = f" ({genre})" if genre else ""
     reason_part = f" {reason[:1].upper()}{reason[1:]}." if reason else ""
+    # Artist name in bold; for festivals show the main lineup (also bold) so the
+    # card names the acts that justify it, not just the festival title.
+    head = f"<b>{title}</b>"
+    lineup = _ticket_lineup(candidate)
+    lineup = [n for n in lineup if n.lower() != title.lower()]
+    lineup_part = f" Состав: {', '.join(f'<b>{n}</b>' for n in lineup)}." if lineup else ""
     if day_month and venue:
-        return f"• {title} — {day_month}{time_part}, {venue}{genre_part}{price_part}.{reason_part}"
+        return f"• {head} — {day_month}{time_part}, {venue}{genre_part}{price_part}.{reason_part}{lineup_part}"
     if day_month:
-        return f"• {title} — {day_month}{time_part}{genre_part}{price_part}.{reason_part}"
+        return f"• {head} — {day_month}{time_part}{genre_part}{price_part}.{reason_part}{lineup_part}"
     if venue:
-        return f"• {title} — {venue}{genre_part}{price_part}.{reason_part}"
-    return f"• {title}{genre_part}{price_part}.{reason_part}"
+        return f"• {head} — {venue}{genre_part}{price_part}.{reason_part}{lineup_part}"
+    return f"• {head}{genre_part}{price_part}.{reason_part}{lineup_part}"
 
 
 def _looks_like_source_chrome(value: str) -> bool:
@@ -2535,6 +2590,7 @@ def _extract_event_practical_details(candidate: dict) -> list[str]:
         str(candidate.get(field) or "")
         for field in ("summary", "lead", "evidence_text", "practical_angle", "draft_line")
     )
+    market_like = bool(_MARKET_EVENT_RE.search(blob))
     details: list[str] = []
     seller = re.search(
         r"(?:sellers?|продавц[ыа-я]*)\s*(?:arrive\s*)?(?:from|с)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?",
@@ -2571,7 +2627,11 @@ def _extract_event_practical_details(candidate: dict) -> list[str]:
             details.append("время: " + ", ".join(dict.fromkeys(formatted_times[:3])))
     prices = re.findall(r"£\s*\d+(?:\.\d{1,2})?", blob)
     if prices:
-        details.append("цены: " + ", ".join(dict.fromkeys(prices[:4])))
+        unique_prices = [price.replace(" ", "") for price in dict.fromkeys(prices[:4])]
+        if market_like:
+            details.append("вход " + unique_prices[0])
+        else:
+            details.append("цены: " + ", ".join(unique_prices))
     if re.search(r"\b(?:free\s+(?:entry|admission|event)|entry\s+free|admission\s+free)\b|бесплатн(?:ый|о|ая)\s+вход", blob, re.IGNORECASE):
         details.append("вход бесплатный")
     if re.search(
@@ -4040,6 +4100,19 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     #     280-char teaser, accept whatever LLM produced rather than
     #     dropping a real event for being a sentence too short.
     is_transport_block = block_key == "transport"
+    if block_key in _EVENT_BLOCKS and _SOLD_OUT_EVENT_RE.search(
+        " ".join(
+            str(value or "")
+            for value in (
+                text,
+                candidate.get("title"),
+                candidate.get("summary"),
+                candidate.get("lead"),
+                candidate.get("evidence_text"),
+            )
+        )
+    ):
+        errors.append("sold-out event must not be published.")
     if block_key == "weather" and re.search(r"\b(?:локальн\w+\s+)?радар\b", text, re.IGNORECASE):
         errors.append("weather line must not tell the reader to check a radar.")
     if is_transport_block and re.search(r"\bметро\b", text, re.IGNORECASE):
@@ -4223,10 +4296,8 @@ def _top_news_route_or_drop(candidate: dict) -> str:
     return ""
 
 
-def _should_defer_next_7_market(candidate: dict) -> bool:
+def _next_7_market_belongs_in_weekend(candidate: dict) -> bool:
     if str(candidate.get("primary_block") or "") != "next_7_days":
-        return False
-    if now_london().weekday() >= 3:
         return False
     attach_editorial_contract(candidate)
     contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
@@ -4601,10 +4672,10 @@ def write_digest(project_root: Path) -> StageResult:
             warnings.append(
                 f"Candidate #{index}: soft/top-news item routed to «Городской радар» instead of top news."
             )
-        if _should_defer_next_7_market(candidate):
-            candidate["primary_block"] = "future_announcements"
+        if _next_7_market_belongs_in_weekend(candidate):
+            candidate["primary_block"] = "weekend_activities"
             warnings.append(
-                f"Candidate #{index}: recurring market deferred from «Что важно в ближайшие 7 дней» early in the week."
+                f"Candidate #{index}: recurring market routed from «Что важно в ближайшие 7 дней» to «Выходные в GM»."
             )
         elif top_news_route == "drop_non_gm_regional" and candidate.get("manual_override") != "force_include":
             warnings.append(f"Candidate #{index} dropped: regional story is outside Greater Manchester.")
