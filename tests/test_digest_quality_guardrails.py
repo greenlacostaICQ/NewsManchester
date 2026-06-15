@@ -1006,6 +1006,33 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(updated.get("include"))
         self.assertEqual(updated.get("primary_block"), "next_7_days")
 
+    def test_annual_food_festival_in_current_weekend_stays_weekend(self) -> None:
+        event_day = now_london().date() + timedelta(days=2)
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "annual-food-festival-current-weekend",
+                "category": "culture_weekly",
+                "primary_block": "weekend_activities",
+                "title": "South Manchester Food Festival",
+                "summary": f"event_date={event_day.isoformat()} Annual food festival with BBQ, live music and family activities.",
+                "lead": "",
+                "evidence_text": "A once-a-year food festival in Wythenshawe Park with barbecue traders and live music.",
+                "source_label": "South Manchester Food Festival",
+                "source_url": "https://example.test/south-manchester-food-festival-weekend",
+                "published_at": now_london().isoformat(),
+                "event": {
+                    "is_event": True,
+                    "event_name": "South Manchester Food Festival",
+                    "venue": "Wythenshawe Park",
+                    "date_start": event_day.isoformat(),
+                },
+            }
+        )
+
+        self.assertTrue(updated.get("include"))
+        self.assertEqual(updated.get("primary_block"), "weekend_activities")
+
     def test_car_boot_recurring_fallback_says_entry_not_tickets(self) -> None:
         candidate = {
             "include": True,
@@ -1688,6 +1715,36 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(review["allow"], review)
         self.assertFalse(lifecycle["repeat"], lifecycle)
         self.assertEqual(review["reason"], "event_milestone_d1")
+
+    def test_next_7_event_can_repeat_when_it_becomes_weekend_plan(self) -> None:
+        event_day = (now_london().date() + timedelta(days=2)).isoformat()
+        candidate = {
+            "include": True,
+            "dedupe_decision": "new",
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": "South Manchester Food Festival",
+            "summary": f"event_date={event_day} Annual food festival with BBQ, live music and family activities.",
+            "event": {
+                "is_event": True,
+                "event_name": "South Manchester Food Festival",
+                "venue": "Wythenshawe Park",
+                "date_start": event_day,
+            },
+            "source_label": "South Manchester Food Festival",
+        }
+        previous = dict(candidate)
+        previous["primary_block"] = "next_7_days"
+        previous["last_published_day_london"] = (now_london().date() - timedelta(days=3)).isoformat()
+        previous["first_published_day_london"] = previous["last_published_day_london"]
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        review = calendar_repeat_review(candidate, previous)
+        lifecycle = lifecycle_repeat_review(candidate, previous)
+
+        self.assertTrue(review["allow"], review)
+        self.assertEqual(review["reason"], "planning_item_reached_weekend")
+        self.assertFalse(lifecycle["repeat"], lifecycle)
 
     def test_day_of_ticket_repeat_allowed_even_without_is_event_flag(self) -> None:
         from news_digest.pipeline.dedupe import _calendar_item_should_carry_over

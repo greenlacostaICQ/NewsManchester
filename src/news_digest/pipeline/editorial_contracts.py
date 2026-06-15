@@ -1426,6 +1426,17 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
             return {"applies": True, "allow": False, "reason": "event_already_passed"}
         last_published_day = _history_day(last_published)
         if (
+            str(candidate.get("primary_block") or "") == "weekend_activities"
+            and str(previous.get("primary_block") or "") in {"next_7_days", "future_announcements"}
+            and 0 <= days_until <= 3
+        ):
+            return {
+                "applies": True,
+                "allow": True,
+                "reason": "planning_item_reached_weekend",
+                "days_until_event": days_until,
+            }
+        if (
             event_shape == "recurring"
             and 0 <= days_until <= 7
             and (last_published_day is None or (today - last_published_day).days >= 6)
