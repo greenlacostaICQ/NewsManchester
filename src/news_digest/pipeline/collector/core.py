@@ -139,7 +139,7 @@ def _source_contract(source) -> str:
         return "news_periodic"
     if source.report_category == "venues_tickets":
         return "venue_calendar"
-    if source.report_category in {"culture_weekly", "diaspora_events"} or source.source_type in _EVENT_SOURCE_TYPES:
+    if source.report_category in {"culture_weekly", "diaspora_events", "professional_events"} or source.source_type in _EVENT_SOURCE_TYPES:
         return "event_calendar"
     if source.report_category == "food_openings":
         return "openings_watch"

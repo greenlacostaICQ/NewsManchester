@@ -585,6 +585,7 @@ def _should_enrich_source(source: SourceDef) -> bool:
             "food_openings",
             "football",
             "tech_business",
+            "professional_events",
         }
         or source.candidate_category == "council"
     )

@@ -24,6 +24,7 @@ from news_digest.pipeline.entity_extraction import enrich_candidate_entities
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.event_quality import event_quality_reject_reasons, event_quality_report
 from news_digest.pipeline.practical_backfill import apply_practical_backfill
+from news_digest.pipeline.professional_events import apply_professional_event_match
 from news_digest.pipeline.reader_actions import attach_reader_action
 from news_digest.pipeline.reader_value import attach_reader_value
 from news_digest.pipeline.story_intelligence import apply_story_intelligence, mark_reject_second_opinion
@@ -152,6 +153,7 @@ _EVENT_BLOCKS = {
     "outside_gm_tickets",
     "russian_events",
     "future_announcements",
+    "professional_events",
 }
 # Tokens that prove a Ticketmaster row is actually a Manchester / Greater
 # Manchester concert. Used to recover items that the collector defaulted to
@@ -913,11 +915,11 @@ _HARD_STALE_AGE_DAYS = 14
 # gate, plus a future-event-date check for anything event-like that slipped
 # into a news category).
 _AGE_EXEMPT_CATEGORIES = {
-    "venues_tickets", "culture_weekly", "russian_speaking_events", "diaspora_events",
+    "venues_tickets", "culture_weekly", "russian_speaking_events", "diaspora_events", "professional_events",
 }
 _AGE_EXEMPT_BLOCKS = {
     "ticket_radar", "outside_gm_tickets", "weekend_activities", "next_7_days",
-    "future_announcements", "russian_events",
+    "future_announcements", "russian_events", "professional_events",
 }
 
 
@@ -2083,6 +2085,8 @@ def validate_candidates(project_root: Path) -> StageResult:
         # Tag transport candidates with mode + Russian-facing operator so the
         # rewriter never has to infer "Автобус:" vs "Metrolink:" from a
         # TfGM roadworks bulletin. Idempotent and safe for non-transport.
+        if candidate.get("include"):
+            apply_professional_event_match(candidate, project_root)
         classify_transport_candidate(candidate)
         attach_change_phase(candidate)
         attach_editorial_contract(candidate)

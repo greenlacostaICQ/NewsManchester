@@ -840,6 +840,32 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
         ),
         min_path_depth=2,
     ),
+    # ── Professional events for the owner ────────────────────────────────────
+    "Manchester Digital Events": _SourcePolicy(
+        path_must_contain=("/events", "/event"),
+        path_banned_segments=("/members/", "/jobs/", "/news/", "/insights/", "/page/"),
+        min_title_len=8,
+    ),
+    "GM Business Growth Hub Events": _SourcePolicy(
+        path_must_contain=("/events", "/event"),
+        path_banned_segments=("/blogs/", "/news/", "/case-studies/", "/page/"),
+        min_title_len=8,
+    ),
+    "University of Manchester Events": _SourcePolicy(
+        path_must_contain=("/events", "/event"),
+        path_banned_segments=("/news/", "/study/", "/about/", "/contact/", "/page/"),
+        min_title_len=8,
+    ),
+    "pro-manchester Events": _SourcePolicy(
+        path_must_contain=("/events", "/event"),
+        path_banned_segments=("/news/", "/members/", "/sponsors/", "/page/"),
+        min_title_len=8,
+    ),
+    "GM Chamber Events": _SourcePolicy(
+        path_must_contain=("/events", "/event"),
+        path_banned_segments=("/news/", "/membership/", "/international-trade/", "/page/"),
+        min_title_len=8,
+    ),
     # ── Weekend ───────────────────────────────────────────────────────────────
     "Manchester Wire": _SourcePolicy(
         exact_path_depth=1,
@@ -1118,6 +1144,26 @@ def _source_override(
         return _has_gm_token(lowered_title, lowered_path, lowered_summary) or any(
             term in lowered_title for term in tech_terms
         )
+
+    if source.report_category == "professional_events":
+        if any(
+            token in lowered_path
+            for token in (
+                "/blog", "/blogs", "/news", "/jobs", "/career", "/careers",
+                "/membership", "/members", "/sponsor", "/sponsors", "/about",
+                "/contact", "/privacy", "/terms",
+            )
+        ):
+            return False
+        blob = f"{lowered_title} {lowered_summary} {lowered_path}"
+        professional_terms = (
+            "event", "events", "conference", "expo", "summit", "workshop",
+            "webinar", "roundtable", "networking", "meetup", "seminar",
+            "masterclass", "innovation", "business", "digital", "tech",
+            "technology", "ai", "data", "fintech", "startup", "founder",
+            "funding", "investor", "university", "industry", "partnership",
+        )
+        return any(term in blob for term in professional_terms)
 
     return None
 

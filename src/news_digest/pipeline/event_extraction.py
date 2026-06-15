@@ -48,6 +48,7 @@ _EVENT_CATEGORIES: frozenset[str] = frozenset({
     "venues_tickets",
     "russian_speaking_events",
     "diaspora_events",
+    "professional_events",
 })
 
 # Categories whose main job isn't events but whose weekend / openings
@@ -64,6 +65,7 @@ _OPTIONAL_EVENT_BLOCKS: frozenset[str] = frozenset({
     "ticket_radar",
     "russian_events",
     "openings",
+    "professional_events",
 })
 
 

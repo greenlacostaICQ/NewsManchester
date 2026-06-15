@@ -37,6 +37,7 @@ from news_digest.pipeline.story_intelligence import section_board_score
 from news_digest.pipeline.ticket_notability import enrich_ticket_notability, prefetch_notability, ticket_artist_name
 from news_digest.pipeline.toponyms import restore_english_toponyms
 from news_digest.pipeline.place_names import preserve_place_names
+from news_digest.pipeline.professional_events import score_professional_event
 
 
 MODEL_WRITTEN_CATEGORIES = {"media_layer", "gmp", "council", "public_services", "food_openings"}
@@ -114,6 +115,7 @@ DEGRADED_LLM_SECTION_MAX_ITEMS = {
     "Городской радар": 5,
     "Что важно в ближайшие 7 дней": 4,
     "Выходные в GM": 6,
+    "Бесплатные business/tech события для тебя": 2,
     "Билеты / Ticket Radar": 3,
     "Еда, открытия и рынки": 2,
     "IT и бизнес": 2,
@@ -132,6 +134,7 @@ PUBLIC_SECTION_RESERVED_MIN = {
     # disappear just because early news sections are noisy on a given morning.
     "Выходные в GM": 8,
     "Что важно в ближайшие 7 дней": 3,
+    "Бесплатные business/tech события для тебя": 2,
     "Билеты / Ticket Radar": 2,
     "Футбол": 2,
     # IT/business sits near the end of the order, so the visible-item budget was
@@ -1458,7 +1461,7 @@ _HEAVY_SNOW_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _EXTREME_TEMP_PATTERN = re.compile(r"\b([1-9]\d)\s*°[Cc]\b")
-_EVENT_BLOCKS = {"weekend_activities", "next_7_days", "ticket_radar", "outside_gm_tickets", "russian_events", "future_announcements"}
+_EVENT_BLOCKS = {"weekend_activities", "next_7_days", "ticket_radar", "outside_gm_tickets", "russian_events", "future_announcements", "professional_events"}
 _WEEKEND_BLOCK = "weekend_activities"
 _MONTHS = {
     "jan": 1, "january": 1,
@@ -3298,6 +3301,75 @@ def _event_supporting_detail(candidate: dict) -> str:
     return ""
 
 
+def _professional_event_priority_score(candidate: dict) -> float:
+    match = candidate.get("professional_event_match") if isinstance(candidate.get("professional_event_match"), dict) else {}
+    if not match:
+        match = score_professional_event(candidate)
+    score = float(match.get("fit_score") or 0)
+    level = str(match.get("event_level") or "")
+    if level == "major_conference_or_expo":
+        score += 18
+    elif level == "high_value_professional":
+        score += 12
+    elif level == "english_practice_networking":
+        score += 5
+    if match.get("english_practice_value"):
+        score += 4
+    return score
+
+
+def _professional_event_label(level: str) -> str:
+    return {
+        "major_conference_or_expo": "большая конференция/экспо",
+        "high_value_professional": "высокий уровень",
+        "english_practice_networking": "английский и нетворк",
+    }.get(level, "профессиональное событие")
+
+
+def _build_professional_event_fallback_line(candidate: dict) -> str:
+    match = candidate.get("professional_event_match") if isinstance(candidate.get("professional_event_match"), dict) else {}
+    if not match:
+        match = score_professional_event(candidate)
+        candidate["professional_event_match"] = match
+    if not match.get("publish"):
+        return ""
+
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    title = str(event.get("event_name") or candidate.get("title") or "").strip()
+    title = re.sub(r"\s*\|\s*.*$", "", title).strip()
+    title = re.sub(r"\s+[—–-]\s*(?:event|events?)\s*$", "", title, flags=re.IGNORECASE).strip()
+    title = title[:120].rstrip(" .-–—")
+    venue = _event_venue(candidate) or str(event.get("venue") or "").strip()
+    event_dt = _event_structured_datetime(candidate) or _parse_ticket_datetime(candidate)
+    day_month = _format_ru_day_month(event_dt) if event_dt else ""
+    time_part = ""
+    if event_dt and event_dt.strftime("%H:%M") not in {"00:00", "12:00"}:
+        time_part = f" в {event_dt.strftime('%H:%M')}"
+    if not title or (not day_month and not venue):
+        return ""
+
+    level = _professional_event_label(str(match.get("event_level") or ""))
+    access = str(match.get("free_access_reason") or "бесплатную регистрацию нужно сверить").strip()
+    why = str(match.get("why_this_fits_aleksei") or "").strip()
+    if not why:
+        gets = match.get("what_he_gets_from_it") if isinstance(match.get("what_he_gets_from_it"), list) else []
+        why = "; ".join(str(item) for item in gets[:2] if str(item).strip())
+    action = "зарегистрируйтесь" if str(match.get("recommended_action") or "") == "register" else "рассмотрите регистрацию"
+
+    where_when = ""
+    if day_month and venue:
+        where_when = f"{day_month}{time_part}, {venue}"
+    elif day_month:
+        where_when = f"{day_month}{time_part}"
+    else:
+        where_when = venue
+    line = f"• {title} — {where_when}. Уровень: {level}; {access}."
+    if why:
+        line += f" Почему тебе: {why}."
+    line += f" Действие: {action}."
+    return re.sub(r"\s+", " ", line).strip()
+
+
 def _build_public_service_fallback_line(candidate: dict) -> str:
     source_label = str(candidate.get("source_label") or "Public services").strip()
     title = _service_fallback_subject(str(candidate.get("title") or ""))
@@ -4035,6 +4107,8 @@ def _section_priority_score(candidate: dict, section_name: str, line: str) -> fl
         score += _weekend_activity_score(candidate, line) / 4.0
     elif section_name == "Что важно в ближайшие 7 дней":
         score += _event_planning_score(candidate, line) / 4.0
+    elif section_name == "Бесплатные business/tech события для тебя":
+        return _professional_event_priority_score(candidate)
     elif section_name == "Билеты / Ticket Radar":
         return _ticket_public_priority_score(candidate)
     elif section_name == "Крупные концерты вне GM":
@@ -4860,7 +4934,7 @@ def write_digest(project_root: Path) -> StageResult:
             summary = ""
 
         english_detected = False
-        if category in {"media_layer", "gmp", "public_services", "city_news", "council", "transport", "venues_tickets", "russian_speaking_events", "culture_weekly", "football", "tech_business", "food_openings"}:
+        if category in {"media_layer", "gmp", "public_services", "city_news", "council", "transport", "venues_tickets", "russian_speaking_events", "culture_weekly", "football", "tech_business", "food_openings", "professional_events"}:
             english_fields = [field for field in (lead, summary, title) if _looks_like_untranslated_english(field)]
             if english_fields:
                 english_detected = True
@@ -4895,6 +4969,16 @@ def write_digest(project_root: Path) -> StageResult:
             _append_recovery_step(candidate, "public_service_recovery", "recovered")
             warnings.append(f"Candidate #{index}: public-services fallback stub used (no LLM draft_line).")
             logger.info("TIER4 public_services stub | %s | %s", block_key, title[:80])
+
+        if not line and category == "professional_events":
+            _append_recovery_step(candidate, "professional_event_card", "attempted")
+            line = _build_professional_event_fallback_line(candidate)
+            if line:
+                _append_recovery_step(candidate, "professional_event_card", "recovered")
+                warnings.append(f"Candidate #{index}: professional event card used (profile match).")
+                logger.info("PROFESSIONAL event card | %s | %s", block_key, title[:80])
+            else:
+                _append_recovery_step(candidate, "professional_event_card", "held", missing=["fit_or_free_access_or_date"])
 
         # Protected weekend events / culture_weekly fallback: when the
         # LLM did not write a draft_line and the item is in a protected
@@ -5165,6 +5249,7 @@ def write_digest(project_root: Path) -> StageResult:
         *(["Выходные в GM"] if show_weekend else []),
         "Городской радар",
         "Что важно в ближайшие 7 дней",
+        "Бесплатные business/tech события для тебя",
         "Дальние анонсы",
         "Билеты / Ticket Radar",
         "Крупные концерты вне GM",

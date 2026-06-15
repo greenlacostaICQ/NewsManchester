@@ -50,6 +50,7 @@ mkdir -p \
   "$RUNTIME_ROOT/scripts" \
   "$RUNTIME_ROOT/src" \
   "$RUNTIME_ROOT/data" \
+  "$RUNTIME_ROOT/data/private" \
   "$RUNTIME_ROOT/data/validation" \
   "$RUNTIME_ROOT/data/outgoing" \
   "$RUNTIME_ROOT/data/state" \
@@ -66,6 +67,10 @@ copy_required "$PROJECT_ROOT/data/sources.toml" "$RUNTIME_ROOT/data/sources.toml
 copy_required "$PROJECT_ROOT/data/translation_glossary.json" "$RUNTIME_ROOT/data/translation_glossary.json"
 rsync -a --delete "$PROJECT_ROOT/data/validation/" "$RUNTIME_ROOT/data/validation/" \
   || die "rsync data/validation/ failed"
+if [[ -d "$PROJECT_ROOT/data/private" ]]; then
+  rsync -a --delete "$PROJECT_ROOT/data/private/" "$RUNTIME_ROOT/data/private/" \
+    || die "rsync data/private/ failed"
+fi
 
 copy_required "$PROJECT_ROOT/scripts/run_local_digest.py" "$RUNTIME_ROOT/scripts/run_local_digest.py"
 copy_required "$PROJECT_ROOT/scripts/run_daily_digest.sh" "$RUNTIME_ROOT/scripts/run_daily_digest.sh"

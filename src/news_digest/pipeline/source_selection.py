@@ -194,6 +194,13 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
         "University of Salford",
         "Manchester Metropolitan",
     ),
+    "professional_events": (
+        "Manchester Digital Events",
+        "GM Business Growth Hub Events",
+        "University of Manchester Events",
+        "pro-manchester Events",
+        "GM Chamber Events",
+    ),
     "media_layer": (
         # General-news ladder (no category-specific preference).
         "BBC Manchester",
@@ -278,6 +285,11 @@ SOURCE_TIER: dict[str, int] = {
     "BusinessCloud": 2,
     "Bdaily Manchester": 2,
     "Manchester Digital": 2,
+    "Manchester Digital Events": 2,
+    "GM Business Growth Hub Events": 2,
+    "University of Manchester Events": 2,
+    "pro-manchester Events": 2,
+    "GM Chamber Events": 2,
     # Ticket APIs — high signal but secondary to venue listings.
     "Ticketmaster Manchester Onsale": 2,
     "Ticketmaster Manchester Upcoming": 2,

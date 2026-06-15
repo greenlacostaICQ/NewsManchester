@@ -20,6 +20,7 @@ REQUIRED_SCAN_CATEGORIES = {
     "food_openings": "food / openings",
     "football": "football",
     "tech_business": "tech / business",
+    "professional_events": "professional events",
     "diaspora_events": "Russian-speaking / diaspora events",
 }
 
@@ -37,6 +38,7 @@ LOW_SIGNAL_BLOCKS = [
     "Русскоязычные концерты и стендап UK",
     "Еда, открытия и рынки",
     "IT и бизнес",
+    "Бесплатные business/tech события для тебя",
     "Радар по районам",
 ]
 
@@ -47,6 +49,7 @@ SECTION_MAX_ITEMS = {
     "Городской радар": 12,
     "Футбол": 3,
     "IT и бизнес": 5,
+    "Бесплатные business/tech события для тебя": 4,
     "Что важно в ближайшие 7 дней": 6,
     "Выходные в GM": 10,
     "Еда, открытия и рынки": 6,
@@ -76,6 +79,7 @@ SECTION_MIN_ITEMS = {
     "Выходные в GM": 6,
     "Билеты / Ticket Radar": 2,
     "Еда, открытия и рынки": 3,
+    "Бесплатные business/tech события для тебя": 1,
     "Футбол": 2,
 }
 
@@ -110,6 +114,7 @@ PRIMARY_BLOCKS = {
     "russian_events": "Русскоязычные концерты и стендап UK",
     "openings": "Еда, открытия и рынки",
     "tech_business": "IT и бизнес",
+    "professional_events": "Бесплатные business/tech события для тебя",
     "football": "Футбол",
     "district_radar": "Радар по районам",
 }
