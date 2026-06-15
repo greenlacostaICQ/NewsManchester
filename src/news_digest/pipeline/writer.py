@@ -1174,6 +1174,19 @@ _MARKET_EVENT_RE = re.compile(
     r"farmers\s+market|flea\s+market|vintage\s+market|food\s+market|flower\s+festival)\b",
     re.IGNORECASE,
 )
+_ROUTINE_MARKET_RECURRENCE_RE = re.compile(
+    r"\b(?:every|weekly|monthly|each\s+(?:week|month)|"
+    r"(?:first|second|third|fourth|last)\s+(?:saturdays?|sundays?|weekends?)|"
+    r"кажд(?:ую|ый|ое)|еженедельн|ежемесячн|по\s+(?:субботам|воскресеньям|выходным))\b",
+    re.IGNORECASE,
+)
+_RARE_MARKET_OR_FESTIVAL_RE = re.compile(
+    r"\b(?:annual|yearly|once\s+a\s+year|biannual|twice\s+a\s+year|"
+    r"festival|food\s+festival|bbq|barbecue|beer\s+festival|street\s+food|"
+    r"music|live\s+music|artists?|performance|special|launch|anniversary|"
+    r"ежегодн|раз\s+в\s+год|фестиваль|барбекю|уличн\w+\s+ед|живая\s+музык)\b",
+    re.IGNORECASE,
+)
 _SOLD_OUT_EVENT_RE = re.compile(
     r"\b(?:sold\s*out|fully\s*booked|no\s+(?:tickets|spaces|places)\s+(?:left|available)|"
     r"tickets?\s+(?:are\s+)?(?:sold\s*out|unavailable)|распродан[оаы]?|мест\s+нет)\b",
@@ -4304,7 +4317,11 @@ def _next_7_market_belongs_in_weekend(candidate: dict) -> bool:
     if str(contract.get("event_shape") or "") != "recurring":
         return False
     blob = " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead", "source_label"))
-    return bool(_MARKET_EVENT_RE.search(blob))
+    return bool(
+        _MARKET_EVENT_RE.search(blob)
+        and _ROUTINE_MARKET_RECURRENCE_RE.search(blob)
+        and not _RARE_MARKET_OR_FESTIVAL_RE.search(blob)
+    )
 
 
 _MINOR_BUS_STOP_RE = re.compile(

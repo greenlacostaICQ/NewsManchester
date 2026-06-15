@@ -925,7 +925,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(updated.get("include"))
         self.assertEqual(updated.get("primary_block"), "weekend_activities")
 
-    def test_weekend_market_with_next_weekend_date_stays_weekend(self) -> None:
+    def test_weekly_market_with_next_weekend_date_stays_weekend(self) -> None:
         event_day = now_london().date() + timedelta(days=5)
         updated = self._validate_one(
             {
@@ -934,9 +934,9 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
                 "category": "culture_weekly",
                 "primary_block": "weekend_activities",
                 "title": "First Street Makers Market",
-                "summary": f"event_date={event_day.isoformat()} First Street Makers Market with craft stalls and food.",
+                "summary": f"event_date={event_day.isoformat()} Monthly First Street Makers Market with craft stalls and food.",
                 "lead": "",
-                "evidence_text": "Makers market with food and craft stalls for weekend visitors.",
+                "evidence_text": "Makers market with food and craft stalls for weekend visitors every month.",
                 "source_label": "Pedddle Makers Market",
                 "source_url": "https://example.test/first-street-makers-market",
                 "published_at": now_london().isoformat(),
@@ -951,6 +951,60 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertTrue(updated.get("include"))
         self.assertEqual(updated.get("primary_block"), "weekend_activities")
+
+    def test_annual_food_festival_in_next_7_stays_next_7(self) -> None:
+        event_day = now_london().date() + timedelta(days=5)
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "bbq-food-festival-next7",
+                "category": "culture_weekly",
+                "primary_block": "next_7_days",
+                "title": "Manchester BBQ Food Festival",
+                "summary": f"event_date={event_day.isoformat()} Annual BBQ and street food festival with live music.",
+                "lead": "",
+                "evidence_text": "This annual barbecue food festival has street food, artists and live music.",
+                "source_label": "Manchester Food & Drink Festival",
+                "source_url": "https://example.test/bbq-food-festival",
+                "published_at": now_london().isoformat(),
+                "event": {
+                    "is_event": True,
+                    "event_name": "Manchester BBQ Food Festival",
+                    "venue": "St Ann's Square",
+                    "date_start": event_day.isoformat(),
+                },
+            }
+        )
+
+        self.assertTrue(updated.get("include"))
+        self.assertEqual(updated.get("primary_block"), "next_7_days")
+
+    def test_annual_food_festival_from_weekend_source_can_move_to_next_7(self) -> None:
+        event_day = now_london().date() + timedelta(days=5)
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "annual-food-festival-weekend-source",
+                "category": "culture_weekly",
+                "primary_block": "weekend_activities",
+                "title": "South Manchester Food Festival",
+                "summary": f"event_date={event_day.isoformat()} Annual food festival with BBQ, live music and family activities.",
+                "lead": "",
+                "evidence_text": "A once-a-year food festival in Wythenshawe Park with barbecue traders and live music.",
+                "source_label": "South Manchester Food Festival",
+                "source_url": "https://example.test/south-manchester-food-festival",
+                "published_at": now_london().isoformat(),
+                "event": {
+                    "is_event": True,
+                    "event_name": "South Manchester Food Festival",
+                    "venue": "Wythenshawe Park",
+                    "date_start": event_day.isoformat(),
+                },
+            }
+        )
+
+        self.assertTrue(updated.get("include"))
+        self.assertEqual(updated.get("primary_block"), "next_7_days")
 
     def test_car_boot_recurring_fallback_says_entry_not_tickets(self) -> None:
         candidate = {

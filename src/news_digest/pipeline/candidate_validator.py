@@ -220,6 +220,19 @@ _MARKET_FAIR_WEEKEND_RE = re.compile(
     r"flea\s+market|vintage\s+market|food\s+market|market|fair|fayre|ярмарк|рынок)\b",
     re.IGNORECASE,
 )
+_ROUTINE_MARKET_RECURRENCE_RE = re.compile(
+    r"\b(?:every|weekly|monthly|each\s+(?:week|month)|"
+    r"(?:first|second|third|fourth|last)\s+(?:saturdays?|sundays?|weekends?)|"
+    r"кажд(?:ую|ый|ое)|еженедельн|ежемесячн|по\s+(?:субботам|воскресеньям|выходным))\b",
+    re.IGNORECASE,
+)
+_RARE_MARKET_OR_FESTIVAL_RE = re.compile(
+    r"\b(?:annual|yearly|once\s+a\s+year|biannual|twice\s+a\s+year|"
+    r"festival|food\s+festival|bbq|barbecue|beer\s+festival|street\s+food|"
+    r"music|live\s+music|artists?|performance|special|launch|anniversary|"
+    r"ежегодн|раз\s+в\s+год|фестиваль|барбекю|уличн\w+\s+ед|живая\s+музык)\b",
+    re.IGNORECASE,
+)
 _COURT_ROUNDUP_RE = re.compile(
     r"\b(?:locked\s+up\s+this\s+week|jailed\s+this\s+week|this\s+week\s+in\s+court|"
     r"among\s+(?:those|the\s+criminals)\s+(?:locked\s+up|jailed)|"
@@ -1142,6 +1155,19 @@ def _is_market_fair_weekend_candidate(candidate: dict) -> bool:
     return bool(_MARKET_FAIR_WEEKEND_RE.search(blob))
 
 
+def _is_routine_market_weekend_candidate(candidate: dict) -> bool:
+    if not _is_market_fair_weekend_candidate(candidate):
+        return False
+    blob = _candidate_blob(candidate)
+    if _RARE_MARKET_OR_FESTIVAL_RE.search(blob):
+        return False
+    protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
+    if str(protected.get("lane") or "") in {"weekend_market", "recurring_market"}:
+        return True
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    return bool(event.get("is_recurring") or _ROUTINE_MARKET_RECURRENCE_RE.search(blob))
+
+
 def _event_future_dates(candidate: dict) -> list[date]:
     today = now_london().date()
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
@@ -1173,7 +1199,7 @@ def _reroute_market_planning_to_weekend(candidate: dict) -> bool:
         return False
     if str(candidate.get("primary_block") or "") != "next_7_days":
         return False
-    if not _is_market_fair_weekend_candidate(candidate):
+    if not _is_routine_market_weekend_candidate(candidate):
         return False
     today = now_london().date()
     future_dates = _event_future_dates(candidate)
@@ -1420,7 +1446,7 @@ def _demote_distant_weekend_event(candidate: dict) -> bool:
         nearest_weekend_day = min(days_to_sat, days_to_sun)
         if nearest_weekend_day <= 3:
             return False
-        if _is_market_fair_weekend_candidate(candidate) and nearest_weekend_day <= 7:
+        if _is_routine_market_weekend_candidate(candidate) and nearest_weekend_day <= 7:
             existing = str(candidate.get("reason") or "").strip()
             note = (
                 "Validator: recurring market/car boot/fair stays in "
@@ -1474,7 +1500,7 @@ def _demote_distant_weekend_event(candidate: dict) -> bool:
         days_out = (earliest - today).days
         if days_out <= 3:
             return False
-        if _is_market_fair_weekend_candidate(candidate) and days_out <= 7:
+        if _is_routine_market_weekend_candidate(candidate) and days_out <= 7:
             existing = str(candidate.get("reason") or "").strip()
             note = (
                 "Validator: market/car boot/fair stays in weekend_activities "
@@ -1520,7 +1546,7 @@ def _demote_distant_weekend_event(candidate: dict) -> bool:
     nearest_weekend_day = min(days_to_sat, days_to_sun)
     if nearest_weekend_day <= 3:
         return False
-    if _is_market_fair_weekend_candidate(candidate) and nearest_weekend_day <= 7:
+    if _is_routine_market_weekend_candidate(candidate) and nearest_weekend_day <= 7:
         existing = str(candidate.get("reason") or "").strip()
         note = (
             "Validator: recurring market/car boot/fair stays in "
