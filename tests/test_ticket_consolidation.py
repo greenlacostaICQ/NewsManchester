@@ -72,5 +72,24 @@ class TicketConsolidationTest(unittest.TestCase):
         self.assertTrue(festival.get("festival_lineup"))                    # lineup carried
 
 
+class ATierNeverTrimmedTest(unittest.TestCase):
+    def test_a_tier_tickets_survive_the_section_cap(self) -> None:
+        from news_digest.pipeline.writer import _slice_counting_only_non_exempt
+
+        cand: dict = {}
+        fps: list[str] = []
+        for i in range(8):  # 8 A-tier, more than any cap
+            fp = f"a{i}"
+            fps.append(fp)
+            cand[fp] = {"primary_block": "outside_gm_tickets", "ticket_notability": {"tier": "A"}}
+        lines = ["• x"] * len(fps)
+        kept_fps = _slice_counting_only_non_exempt(
+            lines=lines, srcs=lines, fps=fps, scores=[0.0] * len(fps), titles=lines,
+            candidate_by_fp=cand, section_name="Крупные концерты вне GM",
+            counted_limit=6, ignore_section_exemption=True,
+        )[2]
+        self.assertEqual(sum(1 for f in kept_fps if f.startswith("a")), 8)  # all A-tier kept
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1209,6 +1209,19 @@ def _is_market_or_recurring_event(candidate: dict) -> bool:
     return bool(event.get("is_recurring") and _MARKET_EVENT_RE.search(text))
 
 
+def _is_a_tier_ticket(candidate: dict | None) -> bool:
+    """A top-tier (A) artist in a ticket block must NEVER be trimmed from view
+    (owner rule 2026-06-14: "A-artists must not disappear"). Treated as exempt
+    so neither the per-section cap nor the global issue budget can drop it —
+    even if that means the ticket section grows past its normal cap."""
+    if not isinstance(candidate, dict):
+        return False
+    if str(candidate.get("primary_block") or "") not in {"ticket_radar", "outside_gm_tickets"}:
+        return False
+    notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+    return str(notability.get("tier") or "").upper() == "A"
+
+
 def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
     if section_name in _PUBLIC_BUDGET_EXEMPT_SECTIONS:
         return True
@@ -1217,8 +1230,8 @@ def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
     # venues_tickets no longer gets a blanket budget pass: the main Ticket
     # Radar must count toward the 45-item issue budget. Evergreen markets /
     # recurring drop-ins stay exempt (they answer "what can I do this weekend"
-    # and should survive a noisy news morning).
-    return _is_market_or_recurring_event(candidate)
+    # and should survive a noisy news morning). A-tier artists are always exempt.
+    return _is_market_or_recurring_event(candidate) or _is_a_tier_ticket(candidate)
 
 
 def _slice_counting_only_non_exempt(
@@ -1250,7 +1263,10 @@ def _slice_counting_only_non_exempt(
             if section_name == "Выходные в GM":
                 exempt = False
             else:
-                exempt = _is_market_or_recurring_event(candidate) if isinstance(candidate, dict) else False
+                exempt = bool(
+                    isinstance(candidate, dict)
+                    and (_is_market_or_recurring_event(candidate) or _is_a_tier_ticket(candidate))
+                )
         else:
             exempt = _is_public_budget_exempt(section_name, candidate)
         if exempt or counted_kept < counted_limit:
