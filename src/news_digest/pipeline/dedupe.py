@@ -348,6 +348,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
     attach_story_intelligence(candidates)
     intra_batch_drops = _apply_intra_batch_dedup(candidates)
     intra_batch_drops.extend(_merge_multinight_ticket_runs(candidates))  # #7
+    intra_batch_drops.extend(_consolidate_tickets(candidates))  # festival/tour/premium/non-music
 
     # I1: embeddings-based semantic dedup pass. Runs AFTER the
     # deterministic Jaccard/entity pass so it only sees survivors,
@@ -1591,6 +1592,111 @@ def _merge_multinight_ticket_runs(candidates: list[dict]) -> list[dict]:
                     "reason": c["reason"],
                 }
             )
+    return drops
+
+
+def _consolidate_tickets(candidates: list[dict]) -> list[dict]:
+    """One card per real event in the ticket blocks. Runs after the multi-night
+    merge and:
+      • drops non-music tickets (sports etc.) from the music ticket radar (#6);
+      • drops premium / hospitality upsell variants (#3);
+      • merges a festival's day / ticket-type / per-artist fragments into ONE
+        card and stamps its lineup (#1);
+      • collapses one artist's tour to a single card per block (#2).
+    Nothing is lost from the collected pool — only the visible cards collapse.
+    """
+    from news_digest.pipeline.ticket_notability import ticket_artist_name  # noqa: PLC0415
+
+    drops: list[dict] = []
+    premium_re = re.compile(
+        r"\b(?:venue premium tickets|premium tickets|premium packages?|vip packages?|hospitality|camping)\b",
+        re.IGNORECASE,
+    )
+    festival_re = re.compile(r"\bfestival\b", re.IGNORECASE)
+    tickettype_re = re.compile(
+        r"\b(?:weekend|friday|saturday|sunday|thursday|day\s+ticket|vip|tickets?|camping|20\d{2})\b",
+        re.IGNORECASE,
+    )
+
+    def _drop(c: dict, reason: str, kept: dict | None = None) -> None:
+        c["include"] = False
+        c["dedupe_decision"] = "drop"
+        c["reason"] = reason
+        drops.append({
+            "fingerprint": c.get("fingerprint"), "title": c.get("title"),
+            "source_label": c.get("source_label"), "primary_block": c.get("primary_block"),
+            "kept_fingerprint": (kept or {}).get("fingerprint"), "reason": reason,
+        })
+
+    def _live() -> list[dict]:
+        return [
+            c for c in candidates
+            if isinstance(c, dict) and c.get("include")
+            and str(c.get("primary_block") or "") in {"ticket_radar", "outside_gm_tickets"}
+        ]
+
+    # (6) Non-music: keep the music ticket radar to music (drop sports etc.).
+    for c in _live():
+        ev = c.get("event") if isinstance(c.get("event"), dict) else {}
+        seg = str((ev.get("classifications") or {}).get("segment") or "").strip().lower()
+        if seg and seg != "music":
+            _drop(c, f"Non-music ticket ({seg}) removed from the music ticket radar.")
+
+    # (3) Premium / hospitality upsell is never a card of its own.
+    for c in _live():
+        if premium_re.search(str(c.get("title") or "")):
+            _drop(c, "Premium/hospitality upsell removed from ticket radar.")
+
+    # (1) Festival → one card per festival per block, carrying its lineup.
+    fest: dict[tuple, list[dict]] = {}
+    for c in _live():
+        ev = c.get("event") if isinstance(c.get("event"), dict) else {}
+        name = str(ev.get("event_name") or c.get("title") or "")
+        venue = normalize_title(str(ev.get("venue") or ""))
+        if not (festival_re.search(name) or festival_re.search(venue)):
+            continue
+        base = normalize_title(re.sub(r"\s+", " ", tickettype_re.sub(" ", name)).strip())
+        fest.setdefault((base or venue, str(c.get("primary_block"))), []).append(c)
+    for grp in fest.values():
+        if len(grp) < 2:
+            continue
+        grp.sort(key=lambda c: (
+            0 if festival_re.search(str((c.get("event") or {}).get("event_name") or c.get("title") or "")) else 1,
+            _ticket_event_identity(c)[1] or "9999",
+        ))
+        survivor = grp[0]
+        lineup: list[str] = list(survivor.get("festival_lineup") or [])
+        for c in grp:
+            ev = c.get("event") if isinstance(c.get("event"), dict) else {}
+            for a in (ev.get("attractions") or []):
+                nm = str((a or {}).get("name") or "").strip()
+                if nm:
+                    lineup.append(nm)
+            an = ticket_artist_name(c)
+            if an:
+                lineup.append(an)
+        survivor["festival_lineup"] = lineup
+        for c in grp[1:]:
+            _drop(c, "Festival day/ticket-type/artist fragment merged into one festival card.", survivor)
+
+    # (2) Tour → one card per artist per block (keep the nearest date).
+    by_artist: dict[tuple, list[dict]] = {}
+    for c in _live():
+        if c.get("festival_lineup"):
+            continue  # festival survivor, not a single-artist tour
+        an = ticket_artist_name(c) or _ticket_event_identity(c)[0]
+        toks = frozenset(_ticket_name_tokens(normalize_title(an)))
+        if not toks:
+            continue
+        by_artist.setdefault((toks, str(c.get("primary_block"))), []).append(c)
+    for grp in by_artist.values():
+        if len(grp) < 2:
+            continue
+        grp.sort(key=lambda c: _ticket_event_identity(c)[1] or "9999")
+        survivor = grp[0]
+        for c in grp[1:]:
+            _drop(c, "Same artist — one ticket card per block (tour collapsed).", survivor)
+
     return drops
 
 

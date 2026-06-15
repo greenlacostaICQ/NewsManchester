@@ -270,6 +270,7 @@ def write_daily_index_snapshot(project_root: Path) -> Path | None:
             "protected_lane": c.get("protected_lane") or {},
             "english_judge": c.get("english_judge") or {},
             "section_board_score": c.get("section_board_score"),
+            "ticket_tier": (c.get("ticket_notability") or {}).get("tier") if isinstance(c.get("ticket_notability"), dict) else None,
             "enrichment_health": c.get("enrichment_health") or {},
             "backup_candidate": bool(c.get("backup_candidate")),
             "second_opinion_required": bool(c.get("second_opinion_required")),
