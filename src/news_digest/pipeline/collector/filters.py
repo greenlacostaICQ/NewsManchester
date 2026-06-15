@@ -430,6 +430,11 @@ _FOOTBALL_FLUFF_TOKENS: tuple[str, ...] = (
     "club shop",
     "membership",
     "highlights",
+    "quiz",
+    "debate",
+    "influencers",
+    "legend discusses",
+    "what kaka has noticed",
     "merchandise",
     # Press conferences, podcasts, behind-the-scenes — not news
     "press conference",
@@ -501,6 +506,14 @@ def _is_football_publishable(title: str, url: str = "") -> bool:
         return True
     preview_terms = ("match preview", "preview", "team news", "confirmed line up", "confirmed lineup")
     if any(term in normalized for term in preview_terms):
+        return True
+    competition_terms = (
+        "world cup", "club world cup", "premier league", "champions league",
+        "europa league", "fa cup", "carabao cup", "fixture", "fixtures",
+        "squad", "squad named", "call up", "call-up", "called up", "group stage",
+        "opponent", "opponents", "draw", "training return",
+    )
+    if any(term in normalized for term in competition_terms):
         return True
     fitness_terms = (
         "doubtful", "injury", "injured", "fit for", "ruled out", "returns from",
@@ -1078,14 +1091,14 @@ def _source_override(
             return False
         if _is_football_fluff(lowered_title, lowered_path, lowered_summary):
             return False
-        return True
+        return _is_football_publishable(lowered_title, lowered_path)
 
     if source.name in {"Manchester City", "Manchester City Men"}:
         if "/news/" not in lowered_path:
             return False
         if _is_football_fluff(lowered_title, lowered_path, lowered_summary):
             return False
-        return True
+        return _is_football_publishable(lowered_title, lowered_path)
 
     if source.name == "Manchester's Finest":
         if not any(t in lowered_path for t in ("/eating-and-drinking/", "/food-and-drink/", "/news/")):

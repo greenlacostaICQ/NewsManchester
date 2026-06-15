@@ -282,6 +282,28 @@ _TODAY_FOCUS_ROAD_RE = re.compile(
     r"lane|closed|closure|crash|collision|queues?|delays?)\b",
     re.IGNORECASE,
 )
+_TODAY_FOCUS_READER_ACTION_RE = re.compile(
+    r"\b(?:today|this morning|tonight|tomorrow|this week|deadline|consultation|"
+    r"apply|report|check|avoid|use|book|register|appeal|witness|cctv|"
+    r"closed|closure|reopen|delays?|diversion|warning|unsafe|danger|"
+    r"inspection|cqc|ofsted|requires\s+improvement|inadequate|safeguarding|"
+    r"patients?|residents?|tenants?|parents?|children|school|homes?|housing|"
+    r"council\s+tax|bins?|strike|appointments?|service|online|email)\b",
+    re.IGNORECASE,
+)
+_TODAY_FOCUS_NO_ACTION_RE = re.compile(
+    r"\b(?:poll|have\s+your\s+say|anniversary|changed\s+manchester\s+forever|"
+    r"changed\s+.*\s+forever|remembers?|remembered|tribute|survivor|"
+    r"moments?\s+from\s+death|look\s+back|throwback|what\s+happened\s+on\s+this\s+day)\b",
+    re.IGNORECASE,
+)
+_TODAY_FOCUS_HARD_ACTION_RE = re.compile(
+    r"\b(?:report|apply|deadline|consultation|closed|closure|reopen|delays?|"
+    r"diversion|warning|unsafe|danger|inspection|cqc|ofsted|"
+    r"requires\s+improvement|inadequate|safeguarding|appeal|witness|cctv|"
+    r"service\s+change|strike)\b",
+    re.IGNORECASE,
+)
 _FRESH_COMMERCIAL_PR_RE = re.compile(
     r"\b(?:fulfilment|fulfillment|warehouse|retailer|online\s+retailer|"
     r"workforce|orders?|sq\s*ft|square\s+feet|centre\s+opens?|site\s+opens?|"
@@ -400,9 +422,19 @@ def _today_focus_candidate_is_eligible(candidate: dict | None, line: str = "") -
     if tier == "reject":
         return False
     if tier == "filler" and not (
-        story_type == "local_cost"
-        and re.search(r"\b(?:flood|water|electric|power|damage|closed|closure|reopen|cost|thousands?)\b", text, re.IGNORECASE)
+        (
+            story_type == "local_cost"
+            and re.search(r"\b(?:flood|water|electric|power|damage|closed|closure|reopen|cost|thousands?)\b", text, re.IGNORECASE)
+        )
+        or (
+            story_type in {"civic", "planning", "service_accountability", "local_service_change"}
+            and _TODAY_FOCUS_HARD_ACTION_RE.search(text)
+        )
     ):
+        return False
+    if _TODAY_FOCUS_NO_ACTION_RE.search(text) and not _TODAY_FOCUS_HARD_ACTION_RE.search(text):
+        return False
+    if not _TODAY_FOCUS_READER_ACTION_RE.search(text):
         return False
     if story_type in {"incident", "public_safety_after_incident"} and not re.search(
         r"\b(?:warning|warned|parents?|abandoned|licen[cs]e|council|flood|water|electric|"

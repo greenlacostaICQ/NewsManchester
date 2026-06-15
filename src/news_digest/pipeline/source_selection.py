@@ -7,7 +7,7 @@ rather than the one that happened to be listed first.
 Authority is per-category:
   * transport       → TfGM / National Rail before any media
   * council         → the actual council before BBC / MEN
-  * football        → the club's official site before media
+  * football        → official club source for owned facts; independent team RSS before generic media
   * culture / venues / tickets → venue site before aggregator
   * general media   → BBC > MEN > The Mill > regional aggregator
 
@@ -88,6 +88,10 @@ CATEGORY_AUTHORITY: dict[str, tuple[str, ...]] = {
         "Manchester City Men",
         "BBC Sport Manchester United",
         "BBC Sport Manchester City",
+        "MEN Manchester United",
+        "MEN Manchester City",
+        "Guardian Manchester United",
+        "Guardian Manchester City",
         "BBC Manchester",
         "BBC Manchester Web",
         "MEN",
@@ -257,6 +261,10 @@ SOURCE_TIER: dict[str, int] = {
     "BBC Manchester public safety fallback": 2,
     "BBC Sport Manchester United": 2,
     "BBC Sport Manchester City": 2,
+    "MEN Manchester United": 2,
+    "MEN Manchester City": 2,
+    "Guardian Manchester United": 2,
+    "Guardian Manchester City": 2,
     "ITV Granada Greater Manchester": 2,
     "MEN": 2,
     "MEN Latest News": 2,

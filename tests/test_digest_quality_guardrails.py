@@ -55,6 +55,7 @@ from news_digest.pipeline.writer import (
     _section_priority_score,
     _SectionRow,
     _strip_unsupported_number_phrases,
+    _today_focus_candidate_is_eligible,
 )
 
 
@@ -2845,6 +2846,46 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             by_name["BBC Sport Manchester United"].url,
             "https://feeds.bbci.co.uk/sport/football/teams/manchester-united/rss.xml",
         )
+        self.assertEqual(
+            by_name["MEN Manchester United"].url,
+            "https://www.manchestereveningnews.co.uk/all-about/manchester-united-fc?service=rss",
+        )
+        self.assertEqual(
+            by_name["MEN Manchester City"].url,
+            "https://www.manchestereveningnews.co.uk/all-about/manchester-city-fc?service=rss",
+        )
+        self.assertEqual(
+            by_name["Guardian Manchester United"].url,
+            "https://www.theguardian.com/football/manchesterunited/rss",
+        )
+        self.assertEqual(
+            by_name["Guardian Manchester City"].url,
+            "https://www.theguardian.com/football/manchestercity/rss",
+        )
+        self.assertFalse(_is_allowed_source_link(
+            by_name["Manchester United"],
+            "https://www.manutd.com/en/news/influencers-debate-bruno-fernandes-and-cristiano-ronaldo-in-portugal-world-cup-squad",
+            "How Fernandes is ruling the roost alongside Ronaldo",
+            "",
+        ))
+        self.assertFalse(_is_allowed_source_link(
+            by_name["Manchester City Men"],
+            "https://www.mancity.com/news/mens/city-at-the-2026-world-cup-quiz-63916764",
+            "City at the 2026 FIFA World Cup quiz",
+            "",
+        ))
+        self.assertTrue(_is_allowed_source_link(
+            by_name["Manchester City Men"],
+            "https://www.mancity.com/news/mens/reijnders-khusanov-cherki-world-cup-warm-ups",
+            "Reijnders, Khusanov and Cherki all feature in latest World Cup warm-ups",
+            "",
+        ))
+        self.assertTrue(_is_allowed_source_link(
+            by_name["MEN Manchester United"],
+            "https://www.manchestereveningnews.co.uk/sport/football/transfer-news/manchester-united-transfer-news-live-34125000",
+            "Manchester United transfer news live",
+            "",
+        ))
         self.assertIn("Secret Manchester May Guide", by_name)
         self.assertIn("Secret Manchester Gigs", by_name)
         self.assertNotIn("Secret Manchester Weekend Guide", by_name)
@@ -2865,19 +2906,19 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         html = """
         <article class="articleCard" data-testid="article-card">
           <a data-testid="article-card__floating-link"
-             href="/en/news/vote-for-man-united-may-player-of-the-month-2026">
-            <span>Vote for May's Player of the Month</span>
+             href="/en/news/man-utd-team-news-injury-update-before-world-cup-fixture-2026">
+            <span>Man Utd team news and injury update before World Cup fixture</span>
           </a>
           <div data-testid="publish-date"><span>2 days ago</span></div>
-          <h5 data-testid="heading">Vote for May's Player of the Month</h5>
+          <h5 data-testid="heading">Man Utd team news and injury update before World Cup fixture</h5>
         </article>
         """
         candidates = _extract_source_candidates(source, html)
         self.assertEqual(len(candidates), 1)
-        self.assertEqual(candidates[0]["title"], "Vote for May's Player of the Month")
+        self.assertEqual(candidates[0]["title"], "Man Utd team news and injury update before World Cup fixture")
         self.assertEqual(
             candidates[0]["source_url"],
-            "https://manutd.com/en/news/vote-for-man-united-may-player-of-the-month-2026",
+            "https://manutd.com/en/news/man-utd-team-news-injury-update-before-world-cup-fixture-2026",
         )
 
     def test_men_soft_fluff_is_not_publishable_news(self) -> None:
@@ -3106,6 +3147,57 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertEqual(drops[0]["topic_key"], "politics:makerfield_by_election_2026")
         self.assertEqual(sum(1 for item in candidates if item["include"]), 1)
 
+    def test_today_focus_requires_reader_action_not_just_serious_topic(self) -> None:
+        anniversary = {
+            "include": True,
+            "fingerprint": "ira-anniversary",
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "The 99 minutes that changed Manchester forever",
+            "summary": "A new article remembers the 1996 IRA bomb anniversary and how it changed the city.",
+            "lead": "The anniversary article looks back at the warning before the blast.",
+            "evidence_text": "The story is a retrospective and tribute.",
+            "source_label": "MEN",
+        }
+        poll = {
+            "include": True,
+            "fingerprint": "national-social-poll",
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "POLL: Is a UK social media ban for under-16s a good idea? Have your say",
+            "summary": "The Prime Minister is considering a national social media ban for children.",
+            "lead": "Readers are asked to vote in a poll.",
+            "evidence_text": "The story is a national poll about TikTok and Instagram.",
+            "source_label": "MEN",
+        }
+        cqc = {
+            "include": True,
+            "fingerprint": "cqc-warning",
+            "category": "media_layer",
+            "primary_block": "today_focus",
+            "title": "Greater Manchester's latest CQC reports including warning notice on nursing home",
+            "summary": "A care home requires improvement after CQC inspectors found fire safety and safeguarding problems.",
+            "lead": "CQC inspectors issued a warning notice after a care-home inspection.",
+            "evidence_text": "Residents and families should know about the inspection and warning notice.",
+            "source_label": "MEN",
+        }
+        empty_homes = {
+            "include": True,
+            "fingerprint": "empty-homes-report",
+            "category": "council",
+            "primary_block": "city_watch",
+            "title": "The Council wants to bring hundreds of empty homes back into use",
+            "summary": "Manchester residents can report long-term empty homes online or by email.",
+            "lead": "Manchester City Council is asking residents to report empty homes.",
+            "evidence_text": "The strategy asks residents to spot and report empty homes.",
+            "source_label": "Manchester Council",
+        }
+
+        self.assertFalse(_today_focus_candidate_is_eligible(anniversary))
+        self.assertFalse(_today_focus_candidate_is_eligible(poll))
+        self.assertTrue(_today_focus_candidate_is_eligible(cqc))
+        self.assertTrue(_today_focus_candidate_is_eligible(empty_homes))
+
     def test_today_focus_board_moves_practical_items_and_rejects_soft_fill(self) -> None:
         candidates = [
             {
@@ -3162,6 +3254,32 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             },
             {
                 "include": True,
+                "fingerprint": "empty-homes-report",
+                "category": "council",
+                "primary_block": "city_watch",
+                "title": "The Council wants to bring hundreds of empty homes back into use",
+                "summary": "Manchester residents can report long-term empty homes online or by email.",
+                "lead": "Manchester City Council is asking residents to report empty homes.",
+                "evidence_text": "The strategy asks residents to spot and report empty homes.",
+                "source_label": "Manchester Council",
+                "source_url": "https://example.test/empty-homes",
+                "draft_line": "• Manchester: residents can report long-term empty homes online or by email.",
+            },
+            {
+                "include": True,
+                "fingerprint": "cqc-warning",
+                "category": "media_layer",
+                "primary_block": "today_focus",
+                "title": "Greater Manchester's latest CQC reports including warning notice on nursing home",
+                "summary": "A care home requires improvement after CQC inspectors found fire safety and safeguarding problems.",
+                "lead": "CQC inspectors issued a warning notice after a care-home inspection.",
+                "evidence_text": "Residents and families should know about the inspection and warning notice.",
+                "source_label": "MEN",
+                "source_url": "https://example.test/cqc-warning",
+                "draft_line": "• CQC issued a warning notice after inspectors found fire-safety and safeguarding problems at a care home.",
+            },
+            {
+                "include": True,
                 "fingerprint": "gmmh-personal-story",
                 "category": "public_services",
                 "primary_block": "today_focus",
@@ -3177,24 +3295,24 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         candidate_by_fp = {c["fingerprint"]: c for c in candidates}
         sections = {
             "Свежие новости": [c["draft_line"] for c in candidates[:3]],
-            "Что важно сегодня": [candidates[4]["draft_line"]],
-            "Городской радар": [candidates[3]["draft_line"]],
+            "Что важно сегодня": [candidates[5]["draft_line"], candidates[6]["draft_line"]],
+            "Городской радар": [candidates[3]["draft_line"], candidates[4]["draft_line"]],
         }
         section_sources = {
             "Свежие новости": [c["source_label"] for c in candidates[:3]],
-            "Что важно сегодня": [candidates[4]["source_label"]],
-            "Городской радар": [candidates[3]["source_label"]],
+            "Что важно сегодня": [candidates[5]["source_label"], candidates[6]["source_label"]],
+            "Городской радар": [candidates[3]["source_label"], candidates[4]["source_label"]],
         }
         section_scores = {name: [0.0] * len(lines) for name, lines in sections.items()}
         section_fps = {
             "Свежие новости": [c["fingerprint"] for c in candidates[:3]],
-            "Что важно сегодня": [candidates[4]["fingerprint"]],
-            "Городской радар": [candidates[3]["fingerprint"]],
+            "Что важно сегодня": [candidates[5]["fingerprint"], candidates[6]["fingerprint"]],
+            "Городской радар": [candidates[3]["fingerprint"], candidates[4]["fingerprint"]],
         }
         section_titles = {
             "Свежие новости": [c["title"] for c in candidates[:3]],
-            "Что важно сегодня": [candidates[4]["title"]],
-            "Городской радар": [candidates[3]["title"]],
+            "Что важно сегодня": [candidates[5]["title"], candidates[6]["title"]],
+            "Городской радар": [candidates[3]["title"], candidates[4]["title"]],
         }
 
         report = _allocate_fresh_and_today_focus(
@@ -3206,10 +3324,11 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             candidate_by_fp,
         )
 
-        self.assertEqual(report["rendered_candidates"], 4)
-        self.assertIn("droylsden-licence", section_fps["Что важно сегодня"])
+        self.assertEqual(report["rendered_candidates"], 3)
         self.assertIn("abandoned-pub-warning", section_fps["Что важно сегодня"])
-        self.assertIn("stockport-funding", section_fps["Что важно сегодня"])
+        self.assertIn("empty-homes-report", section_fps["Что важно сегодня"])
+        self.assertIn("cqc-warning", section_fps["Что важно сегодня"])
+        self.assertNotIn("stockport-funding", section_fps["Что важно сегодня"])
         self.assertNotIn("gmmh-personal-story", section_fps["Что важно сегодня"])
 
     def test_fresh_board_suppresses_reaction_sidebar_when_main_incident_exists(self) -> None:
