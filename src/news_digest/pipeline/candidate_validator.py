@@ -1005,6 +1005,22 @@ _BUSINESS_ACTION_RE = re.compile(
     r"£\d|\$\d|\d+\s*(?:jobs|roles|million|m\b|bn\b))\b",
     re.IGNORECASE,
 )
+_BUSINESS_IMPACT_RE = re.compile(
+    r"\b(?:jobs?|roles?|investment|invest(?:s|ed|ing)?|funding|raised|"
+    r"raise[ds]?|seed|series\s+[a-d]|grant|contract|deal|acquisition|"
+    r"acquir(?:e|ed|es)|merger|takeover|open(?:s|ed|ing)?|launch(?:es|ed|ing)?|"
+    r"clos(?:e|es|ed|ing|ure)|relocat\w*|headquarters|"
+    r"\bhq\b|factory|warehouse|\boffice\b|\bstore\b|plant|turnover|"
+    r"revenue|profit|loss|redundanc\w*|layoffs?|administration|"
+    r"£\d|\$\d|\d+\s*(?:jobs|roles|million|m\b|bn\b))\b",
+    re.IGNORECASE,
+)
+_BUSINESS_PERSONNEL_PR_RE = re.compile(
+    r"\b(?:appoint(?:s|ed|ment)?|joins?\s+as|named\s+(?:as\s+)?|promot(?:es|ed|ion)|"
+    r"new\s+(?:partner|director|chief|ceo|cfo|cto|coo|head\s+of|tax\s+partner)|"
+    r"(?:partner|director|chief|ceo|cfo|cto|coo|head\s+of)\s+(?:appointment|hire|joins?))\b",
+    re.IGNORECASE,
+)
 # Pure PR with no business action: anniversary, awards, campaigns, version
 # milestones, founder back-stories.
 _BUSINESS_PR_ONLY_RE = re.compile(
@@ -1066,6 +1082,14 @@ def _exclude_pr_only_tech_business(candidate: dict) -> bool:
     if str(candidate.get("category") or "") != "tech_business":
         return False
     blob = _candidate_blob(candidate)
+    if _BUSINESS_PERSONNEL_PR_RE.search(blob) and not _BUSINESS_IMPACT_RE.search(blob):
+        _append_reject(
+            candidate,
+            "tech_business_personnel_pr",
+            "Validator: personnel/partner appointment without concrete business "
+            "impact — no jobs, investment, office, launch, contract, or financial action.",
+        )
+        return True
     if not _BUSINESS_PR_ONLY_RE.search(blob):
         return False
     if _BUSINESS_ACTION_RE.search(blob):

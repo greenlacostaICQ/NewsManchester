@@ -852,6 +852,32 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(real_action.get("include"))
         self.assertNotIn("tech_business_pr_only", real_action.get("reject_reasons") or [])
 
+    def test_tech_business_partner_appointment_without_impact_is_rejected(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "sw-tax-partner",
+                "category": "tech_business",
+                "primary_block": "tech_business",
+                "title": "S&W appoints Manchester tax partner",
+                "summary": (
+                    "Professional services group S&W has appointed Ed Gibson "
+                    "as a partner in its Manchester tax team."
+                ),
+                "lead": "The appointment expands the firm's North West tax team.",
+                "evidence_text": (
+                    "S&W appoints Manchester tax partner Ed Gibson. The firm said "
+                    "the appointment will support clients and the business community."
+                ),
+                "source_label": "Bdaily Manchester",
+                "source_url": "https://example.test/sw-tax-partner",
+                "published_at": now_london().isoformat(),
+            }
+        )
+
+        self.assertFalse(updated.get("include"))
+        self.assertIn("tech_business_personnel_pr", updated.get("reject_reasons") or [])
+
     # ---------------------------------------------------------------
     # S2 — cross-day entity dedup (same-victim / same-suspect repeats)
     # User feedback 2026-05-22:
