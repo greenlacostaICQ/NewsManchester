@@ -2073,9 +2073,11 @@ def _repair_follow_up_line(candidate: dict, line: str) -> tuple[str, list[str]]:
     # mid-time ("18:обновление: появился билетный повод; 00") on 2026-06-04.
     if (
         phase == "tickets_on_sale"
-        or str(candidate.get("category") or "") == "venues_tickets"
-        or str(candidate.get("primary_block") or "") in {"ticket_radar", "outside_gm_tickets", "next_7_days", "future_announcements"}
+        or str(candidate.get("category") or "") in {"venues_tickets", "football"}
+        or str(candidate.get("primary_block") or "") in {"ticket_radar", "outside_gm_tickets", "next_7_days", "future_announcements", "football"}
     ):
+        # Football has its own preview format — a civic/court phase lead like
+        # "Решение одобрено — Бруно Фернандеш…" is nonsense there.
         return line, []
     if not phase or re.search(r"^\s*•\s*(?:обновление|update)\b", line, re.IGNORECASE):
         return line, []
@@ -3991,6 +3993,9 @@ def _strip_unsupported_number_phrases(candidate: dict, line: str) -> tuple[str, 
                 repaired = " ".join(kept)
         if repaired != before:
             reasons.append(f"removed_unsupported_number:{token}")
+    # Removing an age digit from "в возрасте N лет" can orphan/glue the phrase
+    # into "в возрастелет" / "в возрасте лет" — drop the empty age phrase.
+    repaired = re.sub(r"\bв\s*возрасте\s*лет\b", "", repaired, flags=re.IGNORECASE)
     repaired = re.sub(r"\s+", " ", repaired).strip()
     repaired = re.sub(r"\s+([,.!?])", r"\1", repaired)
     return repaired, reasons
