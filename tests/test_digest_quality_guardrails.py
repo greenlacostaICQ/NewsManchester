@@ -878,6 +878,140 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertFalse(updated.get("include"))
         self.assertIn("tech_business_personnel_pr", updated.get("reject_reasons") or [])
 
+    def test_sold_out_event_is_not_published(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "lowry-babies-sold-out",
+                "category": "culture_weekly",
+                "primary_block": "next_7_days",
+                "title": "Babies Playtime at The Lowry",
+                "summary": "Free baby-and-carer sessions on 18 June. Tickets are sold out.",
+                "lead": "",
+                "evidence_text": "The Lowry page says this event is sold out with no places available.",
+                "source_label": "The Lowry",
+                "source_url": "https://example.test/lowry-babies-playtime",
+                "published_at": now_london().isoformat(),
+                "event": {
+                    "is_event": True,
+                    "event_name": "Babies Playtime",
+                    "venue": "The Lowry",
+                    "date_start": (now_london().date() + timedelta(days=3)).isoformat(),
+                },
+            }
+        )
+
+        self.assertFalse(updated.get("include"))
+        self.assertIn("event_sold_out", updated.get("reject_reasons") or [])
+
+    def test_next_7_market_is_routed_to_weekend_block(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "bolton-car-boot-next7",
+                "category": "culture_weekly",
+                "primary_block": "next_7_days",
+                "title": "Bolton Car Boot Sale",
+                "summary": "Bolton Car Boot Sale runs every Sunday; buyers from 7am, entry £1.",
+                "lead": "",
+                "evidence_text": "Recurring car boot market at Macron Stadium every Sunday.",
+                "source_label": "Bolton Car Boot Sale",
+                "source_url": "https://example.test/bolton-car-boot",
+                "published_at": now_london().isoformat(),
+                "event": {"is_recurring": True, "venue": "Macron Stadium"},
+            }
+        )
+
+        self.assertTrue(updated.get("include"))
+        self.assertEqual(updated.get("primary_block"), "weekend_activities")
+
+    def test_weekend_market_with_next_weekend_date_stays_weekend(self) -> None:
+        event_day = now_london().date() + timedelta(days=5)
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "first-street-makers-market",
+                "category": "culture_weekly",
+                "primary_block": "weekend_activities",
+                "title": "First Street Makers Market",
+                "summary": f"event_date={event_day.isoformat()} First Street Makers Market with craft stalls and food.",
+                "lead": "",
+                "evidence_text": "Makers market with food and craft stalls for weekend visitors.",
+                "source_label": "Pedddle Makers Market",
+                "source_url": "https://example.test/first-street-makers-market",
+                "published_at": now_london().isoformat(),
+                "event": {
+                    "is_event": True,
+                    "event_name": "First Street Makers Market",
+                    "venue": "First Street",
+                    "date_start": event_day.isoformat(),
+                },
+            }
+        )
+
+        self.assertTrue(updated.get("include"))
+        self.assertEqual(updated.get("primary_block"), "weekend_activities")
+
+    def test_car_boot_recurring_fallback_says_entry_not_tickets(self) -> None:
+        candidate = {
+            "include": True,
+            "fingerprint": "car-boot-entry-wording",
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": "Bolton Car Boot Sale",
+            "summary": "Every Sunday at Macron Stadium. Buyers from 7am; entry £1.",
+            "lead": "",
+            "evidence_text": "Car boot sale with more than 300 sellers. Entry £1 for buyers.",
+            "source_label": "Bolton Car Boot Sale",
+            "source_url": "https://example.test/bolton-car-boot-entry",
+            "event": {"is_recurring": True, "venue": "Macron Stadium"},
+        }
+
+        line = _build_recurring_event_fallback_line(candidate)
+
+        self.assertIn("вход £1", line)
+        self.assertNotIn("билеты", line.lower())
+
+    def test_court_roundup_listicle_is_rejected(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "locked-up-this-week-roundup",
+                "category": "media_layer",
+                "primary_block": "city_watch",
+                "title": "The criminals locked up this week in Greater Manchester",
+                "summary": "Among those jailed this week are a teacher, a jilted lover and a drugs courier.",
+                "lead": "",
+                "evidence_text": "A court roundup mixes several unrelated cases.",
+                "source_label": "MEN",
+                "source_url": "https://example.test/locked-up-this-week",
+                "published_at": now_london().isoformat(),
+            }
+        )
+
+        self.assertFalse(updated.get("include"))
+        self.assertIn("court_roundup_listicle", updated.get("reject_reasons") or [])
+
+    def test_council_cabinet_admin_without_reader_impact_is_rejected(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "stockport-cabinet-admin",
+                "category": "council",
+                "primary_block": "city_watch",
+                "title": "Council leader appoints cabinet",
+                "summary": "Mark Roberts remains council leader and Gillian Julian remains deputy leader.",
+                "lead": "The appointments mark the start of the municipal year.",
+                "evidence_text": "The council confirmed cabinet appointments and portfolio names for the year.",
+                "source_label": "Stockport Council",
+                "source_url": "https://example.test/stockport-cabinet",
+                "published_at": now_london().isoformat(),
+            }
+        )
+
+        self.assertFalse(updated.get("include"))
+        self.assertIn("council_admin_no_reader_impact", updated.get("reject_reasons") or [])
+
     # ---------------------------------------------------------------
     # S2 — cross-day entity dedup (same-victim / same-suspect repeats)
     # User feedback 2026-05-22:
@@ -1862,26 +1996,26 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         result = _summarise_event_completeness(candidates_report, rendered, None)
         self.assertEqual(result["counts"]["missing_venue"], 1)
 
-    def test_events_prompt_is_v4_with_three_templates(self) -> None:
-        """The events prompt v4 must mention all three template buckets
+    def test_events_prompt_is_v5_with_three_templates(self) -> None:
+        """The events prompt v5 must mention all three template buckets
         (one-off / festival / recurring) so the LLM picks one explicitly.
         """
         from news_digest.pipeline import llm_rewrite as _lr
         from news_digest.pipeline.prompts_meta import by_name
         events_meta = by_name().get("events")
         self.assertIsNotNone(events_meta)
-        self.assertEqual(events_meta.version, "v4", f"events version not bumped to v4: {events_meta}")
+        self.assertEqual(events_meta.version, "v5", f"events version not bumped to v5: {events_meta}")
         prompt = _lr.PROMPT_EVENTS
         self.assertIn("ТОЧЕЧНОЕ", prompt)
         self.assertIn("ФЕСТИВАЛЬ", prompt)
         self.assertIn("ПОВТОРЯЮЩЕЕСЯ", prompt)
 
-    def test_diaspora_events_prompt_is_v3_with_recurring_template(self) -> None:
+    def test_diaspora_events_prompt_is_v4_with_recurring_template(self) -> None:
         from news_digest.pipeline import llm_rewrite as _lr
         from news_digest.pipeline.prompts_meta import by_name
         meta = by_name().get("diaspora_events")
         self.assertIsNotNone(meta)
-        self.assertEqual(meta.version, "v3", f"diaspora events version not bumped: {meta}")
+        self.assertEqual(meta.version, "v4", f"diaspora events version not bumped: {meta}")
         self.assertIn("каждую субботу", _lr.PROMPT_DIASPORA_EVENTS)
 
     # ---------------------------------------------------------------
@@ -3089,8 +3223,8 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
     #   «Univ алкоголь мог бы сказать плохо хорошо или как»
     # ---------------------------------------------------------------
 
-    def test_city_news_prompt_is_v6_with_lead_first_structure(self) -> None:
-        """The city-news prompt v6 must explicitly require lead-first
+    def test_city_news_prompt_is_v7_with_lead_first_structure(self) -> None:
+        """The city-news prompt v7 must explicitly require lead-first
         structure (fact first, details next, what-next last) and ban
         quote/narrative leads.
         """
@@ -3098,7 +3232,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         from news_digest.pipeline.prompts_meta import by_name
         meta = by_name().get("city_news")
         self.assertIsNotNone(meta)
-        self.assertEqual(meta.version, "v6", f"city_news not bumped to v6: {meta}")
+        self.assertEqual(meta.version, "v7", f"city_news not bumped to v7: {meta}")
         prompt = _lr.PROMPT_CITY_NEWS
         self.assertIn("ОБЯЗАТЕЛЬНАЯ СТРУКТУРА", prompt)
         self.assertIn("ЛИД-ФАКТ", prompt)
