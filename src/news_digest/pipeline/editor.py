@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 import html
 import json
 import os
 from pathlib import Path
 import re
+import time
+from urllib.parse import urlparse
 
 from news_digest.pipeline.common import (
     LOW_SIGNAL_BLOCKS,
@@ -28,6 +31,7 @@ PRE_SEND_RUSSIAN_EDITOR_MODEL = "gpt-4o"
 PRE_SEND_THIN_EVIDENCE_CHARS = 1200
 PRE_SEND_EVIDENCE_MODEL_MAX_CHARS = 18000
 PRE_SEND_EDITOR_BATCH_CHAR_BUDGET = 90000
+PRE_SEND_EDITOR_MAX_WORKERS = 3
 
 PRE_SEND_RUSSIAN_EDITOR_PROMPT = """Ты выпускающий редактор русского Telegram-дайджеста Greater Manchester.
 Тебе дают уже видимые строки выпуска и, если удалось сопоставить строку с кандидатом, evidence по исходной новости.
@@ -211,6 +215,19 @@ def _refetch_candidate_evidence(candidate: dict) -> tuple[str, dict[str, object]
     return evidence, {"status": "ok" if evidence else "empty", "url": url, "chars": len(evidence)}
 
 
+def _editor_refetch_skip_reason(candidate: dict) -> str:
+    url = str(candidate.get("source_url") or "").strip()
+    category = str(candidate.get("category") or "")
+    host = urlparse(url).netloc.lower()
+    if category in {"venues_tickets", "ticket_radar"}:
+        return "structured_ticket_candidate"
+    if "ticketmaster." in host:
+        return "ticketmaster_structured_cache"
+    if "tfgm.com" in host and "/travel-updates/" in url.lower():
+        return "tfgm_ephemeral_alert"
+    return ""
+
+
 def _candidate_full_evidence_text(candidate: dict, refetch_stats: dict[str, object]) -> tuple[str, str]:
     packet = candidate.get("evidence_packet") if isinstance(candidate.get("evidence_packet"), dict) else {}
     parts = [
@@ -224,6 +241,20 @@ def _candidate_full_evidence_text(candidate: dict, refetch_stats: dict[str, obje
     evidence = re.sub(r"\s+", " ", " ".join(str(part or "") for part in parts if part)).strip()
     source = "candidate"
     if len(evidence) < PRE_SEND_THIN_EVIDENCE_CHARS:
+        skip_reason = _editor_refetch_skip_reason(candidate)
+        if skip_reason:
+            refetch_stats["skipped"] = int(refetch_stats.get("skipped") or 0) + 1
+            reports = refetch_stats.setdefault("reports", [])
+            if isinstance(reports, list) and len(reports) < 30:
+                reports.append({
+                    "fingerprint": str(candidate.get("fingerprint") or ""),
+                    "title": str(candidate.get("title") or "")[:160],
+                    "status": "skipped",
+                    "reason": skip_reason,
+                    "url": str(candidate.get("source_url") or ""),
+                    "candidate_evidence_chars": len(evidence),
+                })
+            return evidence, source
         refetch_stats["attempted"] = int(refetch_stats.get("attempted") or 0) + 1
         refetched, report = _refetch_candidate_evidence(candidate)
         reports = refetch_stats.setdefault("reports", [])
@@ -384,16 +415,33 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
     client = OpenAI(api_key=api_key, timeout=60, max_retries=1)
     fixes: dict[int, str] = {}
     batch_reports: list[dict[str, object]] = []
-    for batch in _batch_editor_items(items):
-        batch_fixes, batch_report = _call_pre_send_russian_editor_batch(client, batch, record_call_from_response)
-        fixes.update(batch_fixes)
-        batch_reports.append(batch_report)
+    batches = _batch_editor_items(items)
+    max_workers = max(1, int(os.environ.get("PRE_SEND_EDITOR_MAX_WORKERS", PRE_SEND_EDITOR_MAX_WORKERS)))
+    max_workers = min(len(batches), max_workers)
+    started = time.monotonic()
+    if max_workers <= 1:
+        for batch in batches:
+            batch_fixes, batch_report = _call_pre_send_russian_editor_batch(client, batch, record_call_from_response)
+            fixes.update(batch_fixes)
+            batch_reports.append(batch_report)
+    else:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [
+                executor.submit(_call_pre_send_russian_editor_batch, client, batch, record_call_from_response)
+                for batch in batches
+            ]
+            for future in futures:
+                batch_fixes, batch_report = future.result()
+                fixes.update(batch_fixes)
+                batch_reports.append(batch_report)
     failed = [report for report in batch_reports if report.get("status") != "ok"]
     return fixes, {
         "status": "partial_failed" if failed and fixes else "failed" if failed else "ok",
         "items_sent": len(items),
         "items_returned": len(fixes),
         "batch_count": len(batch_reports),
+        "max_workers": max_workers,
+        "duration_seconds": round(time.monotonic() - started, 3),
         "failed_batches": len(failed),
         "batches": batch_reports[:20],
     }
@@ -419,7 +467,7 @@ def _pre_send_polish_sections(
         polished[section_name] = new_lines
 
     api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-    refetch_stats: dict[str, object] = {"attempted": 0, "improved": 0, "failed": 0, "empty_or_not_better": 0}
+    refetch_stats: dict[str, object] = {"attempted": 0, "improved": 0, "failed": 0, "empty_or_not_better": 0, "skipped": 0}
     items = (
         _visible_line_items(polished, candidates_by_key, refetch_stats)
         if api_key
@@ -474,6 +522,7 @@ def _pre_send_polish_sections(
 
 
 def edit_digest(project_root: Path) -> StageResult:
+    stage_started = time.monotonic()
     state_dir = project_root / "data" / "state"
     candidates_path = state_dir / "candidates.json"
     draft_path = state_dir / "draft_digest.html"
@@ -600,6 +649,7 @@ def edit_digest(project_root: Path) -> StageResult:
             "min_city_practical_angle_length": MIN_CITY_PRACTICAL_ANGLE_LENGTH,
             "max_weak_city_candidate_share": MAX_WEAK_CITY_CANDIDATE_SHARE,
             "duplicate_collisions": duplicate_collisions,
+            "duration_seconds": round(time.monotonic() - stage_started, 3),
             "draft_path": str(draft_path.resolve()),
         },
     )

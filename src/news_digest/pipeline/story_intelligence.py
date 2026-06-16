@@ -526,6 +526,8 @@ def apply_story_intelligence(candidate: dict) -> dict:
     candidate["enrichment_health"] = enrichment_health(candidate)
     if (candidate.get("enrichment_health") or {}).get("warning"):
         candidate["backup_candidate"] = True
+        candidate["backup_pool_only"] = not bool(candidate.get("include"))
+        candidate["public_reserve"] = False
         candidate["second_opinion_required"] = True
         candidate["enrichment_warning"] = {
             "policy": "backup_not_reject",
@@ -548,6 +550,8 @@ def mark_reject_second_opinion(candidate: dict, code: str) -> None:
     if not (lane.get("protected") or anchor.get("has_news_anchor")):
         return
     candidate["backup_candidate"] = True
+    candidate["backup_pool_only"] = True
+    candidate["public_reserve"] = False
     candidate["second_opinion_required"] = True
     candidate["second_opinion_reason"] = {
         "reject_code": code,

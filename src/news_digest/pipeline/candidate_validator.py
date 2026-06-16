@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 import json
 from pathlib import Path
 import re
+import time
 from urllib import parse
 
 from news_digest.pipeline.change_classifier import attach_change_phase, classify_change_phase
@@ -2033,6 +2034,7 @@ def _apply_why_now_gate(candidate: dict, *, manual_override: str = "") -> None:
 
 
 def validate_candidates(project_root: Path) -> StageResult:
+    stage_started = time.monotonic()
     state_dir = project_root / "data" / "state"
     candidates_path = state_dir / "candidates.json"
     report_path = state_dir / "candidate_validation_report.json"
@@ -2240,6 +2242,7 @@ def validate_candidates(project_root: Path) -> StageResult:
             "practical_backfill": practical_backfill,
             "trial_candidates": sum(1 for c in candidates if isinstance(c, dict) and c.get("source_trial")),
             "items": items,
+            "duration_seconds": round(time.monotonic() - stage_started, 3),
         },
     )
 

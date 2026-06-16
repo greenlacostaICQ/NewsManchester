@@ -7,6 +7,7 @@ import logging
 import os
 from pathlib import Path
 import re
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -3137,15 +3138,27 @@ def _apply_section_min_floor_pull_back(
     if not target_blocks:
         return lines, fps, scores, titles, srcs
 
+    def _allowed_public_pullback(candidate: dict) -> bool:
+        if candidate.get("reject_reasons"):
+            return False
+        if (
+            str(candidate.get("editorial_status") or "") == "borderline"
+            and str(candidate.get("manual_override") or "") != "force_include"
+        ):
+            return False
+        if candidate.get("include"):
+            return True
+        if str(candidate.get("manual_override") or "") == "force_include":
+            return True
+        # backup_candidate is an audit/reserve flag. It must not resurrect
+        # include=false items into the public issue.
+        return bool(include_backup and candidate.get("public_reserve") and candidate.get("include"))
+
     promoted = 0
     pool = [
         c for c in candidates
         if isinstance(c, dict)
-        and (
-            c.get("include")
-            or (include_backup and c.get("backup_candidate"))
-            or _complete_next_7_rescue_candidate(c, section_name)
-        )
+        and _allowed_public_pullback(c)
         and str(c.get("primary_block") or "") in target_blocks
         and str(c.get("fingerprint") or "") not in rendered_fps_so_far
         and not c.get("writer_suppressed_from_top_news")
@@ -4652,6 +4665,7 @@ def _cap_minor_bus_stop_lines(lines: list[str], srcs: list[str], fps: list[str],
 
 
 def write_digest(project_root: Path) -> StageResult:
+    stage_started = time.monotonic()
     state_dir = project_root / "data" / "state"
     candidates_path = state_dir / "candidates.json"
     draft_path = state_dir / "draft_digest.html"
@@ -5545,6 +5559,7 @@ def write_digest(project_root: Path) -> StageResult:
             "rendered_after_drop_reconciled": rendered_after_drop_reconciled[:50],
             "rendered_candidate_fingerprints": rendered_candidate_fingerprints,
             "dropped_candidates": dropped_candidates,
+            "duration_seconds": round(time.monotonic() - stage_started, 3),
             "draft_path": str(draft_path.resolve()),
         },
     )

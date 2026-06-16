@@ -71,9 +71,10 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
         ModelRouteStep("groq", "Groq", GROQ_BASE_URL, GROQ_FALLBACK_MODEL, "GROQ_API_KEY", "resilient_fallback", 3, batch_size=6, timeout_seconds=20),
     ),
     "curator": (
-        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "cheap_scoring", 1, timeout_seconds=20),
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "scoring_fallback", 2, timeout_seconds=30),
-        ModelRouteStep("groq", "Groq", GROQ_BASE_URL, GROQ_FALLBACK_MODEL, "GROQ_API_KEY", "resilient_fallback", 3, batch_size=6, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "curator_mini_primary", 1, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "curator_quality_fallback", 2, timeout_seconds=45),
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "curator_last_resort", 3, timeout_seconds=20),
+        ModelRouteStep("groq", "Groq", GROQ_BASE_URL, GROQ_FALLBACK_MODEL, "GROQ_API_KEY", "resilient_fallback", 4, batch_size=6, timeout_seconds=30),
     ),
     "rewrite": (
         # Visible Russian copy comes from OpenAI as the quality primary. We
@@ -86,14 +87,14 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_rewrite_primary", 1, batch_size=6, timeout_seconds=60),
         ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "rewrite_last_resort", 2, batch_size=6, timeout_seconds=60),
     ),
-    # English-first architecture: prepare compact English fact/reader cards
-    # before any Russian copy is written. DeepSeek Pro is cheap enough for
-    # broad source-language work and strong enough for extraction/synthesis;
-    # OpenAI remains a fallback so a DeepSeek outage never blocks the run.
+    # English-first architecture: judge source-language candidates and prepare
+    # compact English fact/reader cards before any Russian copy is written.
+    # OpenAI mini is the primary board judge; DeepSeek is retained as a
+    # resilience/extraction fallback, not as the final arbiter.
     "english_cards": (
-        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "english_fact_reader_fast", 1, batch_size=8, timeout_seconds=25),
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "english_fact_reader_mini_fallback", 2, batch_size=6, timeout_seconds=30),
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "english_fact_reader_quality_fallback", 3, batch_size=6, timeout_seconds=60),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "board_judge_mini_primary", 1, batch_size=8, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "english_fact_reader_quality_fallback", 2, batch_size=6, timeout_seconds=60),
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "english_extraction_last_resort", 3, batch_size=8, timeout_seconds=25),
     ),
     # Translate only the already-formed English reader cards. This keeps the
     # expensive GPT call on the final short copy, not the raw evidence packet.

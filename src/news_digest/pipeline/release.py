@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 import re
 import shutil
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -1336,6 +1337,59 @@ def _classify_rendered_html_quality(html_text: str, candidates_report: dict | No
         },
         "bad_visible_items": bad[:20],
     }
+
+
+def _quarantine_bad_rendered_html_items(
+    html_text: str,
+    candidates_report: dict | None,
+    rendered_html_review: dict[str, object],
+) -> tuple[str, dict[str, object]]:
+    bad_items = rendered_html_review.get("bad_visible_items") if isinstance(rendered_html_review, dict) else []
+    bad_fps = {
+        str(item.get("fingerprint") or "")
+        for item in bad_items or []
+        if isinstance(item, dict) and item.get("fingerprint")
+    }
+    bad_visible_texts = {
+        re.sub(r"\s+", " ", str(item.get("visible_text") or "")).strip()
+        for item in bad_items or []
+        if isinstance(item, dict) and item.get("visible_text")
+    }
+    by_url = _candidate_by_source_url(candidates_report)
+    bad_urls = {
+        url
+        for url, candidate in by_url.items()
+        if str(candidate.get("fingerprint") or "") in bad_fps
+    }
+    kept: list[str] = []
+    removed: list[dict[str, object]] = []
+    for line in html_text.splitlines():
+        raw = line.strip()
+        if not raw.startswith("•"):
+            kept.append(line)
+            continue
+        urls = re.findall(r'<a\b[^>]*href=["\']([^"\']+)["\']', raw, flags=re.IGNORECASE)
+        visible_text = re.sub(r"\s+", " ", _visible_text_from_html(raw)).strip()
+        matched_by_url = any(url in bad_urls for url in urls)
+        matched_by_text = visible_text in bad_visible_texts
+        if matched_by_url or matched_by_text:
+            removed.append(
+                {
+                    "visible_text": visible_text[:240],
+                    "urls": urls,
+                    "matched_by": "url" if matched_by_url else "visible_text",
+                }
+            )
+            continue
+        kept.append(line)
+    report = {
+        "attempted": bool(bad_fps or bad_visible_texts),
+        "bad_fingerprints": sorted(bad_fps),
+        "bad_url_count": len(bad_urls),
+        "removed_count": len(removed),
+        "removed_items": removed[:20],
+    }
+    return "\n".join(kept).strip() + ("\n" if kept else ""), report
 
 
 def _visible_line_still_unclear_after_repair(visible_text: str) -> bool:
@@ -2950,6 +3004,7 @@ def _write_outgoing_metadata(
 
 
 def build_release(project_root: Path) -> ReleaseResult:
+    stage_started = time.monotonic()
     state_dir = project_root / "data" / "state"
     outgoing_dir = project_root / "data" / "outgoing"
     outgoing_dir.mkdir(parents=True, exist_ok=True)
@@ -3265,15 +3320,28 @@ def build_release(project_root: Path) -> ReleaseResult:
             "suspicious visible candidate(s) shipped with warning; see release_report.published_review."
         )
     rendered_html_review = {"counts": {"visible_lines": 0, "bad_visible_items": 0}, "bad_visible_items": []}
+    rendered_html_quarantine: dict[str, object] = {"attempted": False, "removed_count": 0}
     if draft_path.exists():
-        rendered_html_review = _classify_rendered_html_quality(
-            draft_path.read_text(encoding="utf-8"),
-            candidates_report,
-        )
+        draft_html_text = draft_path.read_text(encoding="utf-8")
+        rendered_html_review = _classify_rendered_html_quality(draft_html_text, candidates_report)
+        if rendered_html_review["counts"].get("bad_visible_items", 0) > 0:
+            sanitized_html, rendered_html_quarantine = _quarantine_bad_rendered_html_items(
+                draft_html_text,
+                candidates_report,
+                rendered_html_review,
+            )
+            if int(rendered_html_quarantine.get("removed_count") or 0) > 0:
+                draft_path.write_text(sanitized_html, encoding="utf-8")
+                warnings.append(
+                    "Rendered HTML review quarantined "
+                    f"{rendered_html_quarantine.get('removed_count')} rejected/borderline visible item(s); "
+                    "digest continues."
+                )
+                rendered_html_review = _classify_rendered_html_quality(sanitized_html, candidates_report)
     if rendered_html_review["counts"].get("bad_visible_items", 0) > 0:
         errors.append(
             "Rendered HTML review still found bad visible item(s) after writer repair; "
-            "rerun write-digest or replace from backup before Telegram send. "
+            "automatic quarantine could not remove all of them safely. "
             "See release_report.rendered_html_review."
         )
     dedupe_memory = read_json(state_dir / "dedupe_memory.json", {}) if (state_dir / "dedupe_memory.json").exists() else {}
@@ -3420,6 +3488,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "reject_review": reject_review,
         "published_review": published_review,
         "rendered_html_review": rendered_html_review,
+        "rendered_html_quarantine": rendered_html_quarantine,
         "event_miss_review": event_miss_review,
         "final_loss_check": final_loss_check,
         "backup_pool": backup_pool,
@@ -3443,6 +3512,7 @@ def build_release(project_root: Path) -> ReleaseResult:
             "draft_digest": str(draft_path.resolve()),
         },
         "output_path": str(output_path.resolve()),
+        "duration_seconds": round(time.monotonic() - stage_started, 3),
     }
     write_json(report_path, report_payload)
 

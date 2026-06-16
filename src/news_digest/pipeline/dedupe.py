@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
 import re
+import time
 
 from news_digest.pipeline.common import (
     fingerprint_for_candidate,
@@ -84,6 +85,7 @@ def initialize_candidates_state(project_root: Path, *, overwrite: bool = False) 
 
 
 def dedupe_candidates(project_root: Path) -> StageResult:
+    stage_started = time.monotonic()
     state_dir = project_root / "data" / "state"
     paths = ensure_history_files(state_dir)
     candidates_path = state_dir / "candidates.json"
@@ -407,6 +409,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             "story_clusters": story_cluster_summary,
             "intra_batch_dedup_drops": intra_batch_drops,
             "semantic_dedup_summary": semantic_result,
+            "duration_seconds": round(time.monotonic() - stage_started, 3),
         },
     )
 

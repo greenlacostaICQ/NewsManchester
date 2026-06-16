@@ -1,8 +1,8 @@
 """LLM rewrite stage — writes Russian draft_lines to candidates.json.
 
 Default model route:
-  1. DeepSeek v4-pro              — English fact/reader cards from source evidence
-  2. OpenAI gpt-4o                — final Russian translation of compact English cards
+  1. OpenAI gpt-4o-mini           — English board-judge fact/reader cards
+  2. OpenAI gpt-4o-mini           — final Russian translation of compact English cards
   3. Legacy category rewrite      — full-evidence fallback for any missed item
   4. DeepSeek / writer fallbacks   — keep the release moving when a provider refuses
 
@@ -143,8 +143,8 @@ _ANTI_HALLUCINATION = (
     "а не значимая цитата.\n\n"
 )
 
-ENGLISH_CARD_SYSTEM = """You are the English-first editor for Greater Manchester AM Brief.
-Your job is NOT to translate. Build a compact English fact card and a readable English reader card from the supplied source evidence.
+ENGLISH_CARD_SYSTEM = """You are the English-first board judge for Greater Manchester AM Brief.
+Your job is NOT to translate. Judge publishability, then build a compact English fact card and a readable English reader card from the supplied source evidence.
 
 Use only title, summary, lead, evidence_text, event, entities, story_frame, source_label, dates and glossary_terms supplied in the JSON. Do not browse. Do not invent missing facts.
 If glossary_terms are present, follow them for terminology and naming. Glossary terms do not add facts; they only control wording.
@@ -166,8 +166,19 @@ Return ONLY a JSON object in this shape: {"items": [...]}. The items array must 
   "reader_card": "One concise English digest bullet without the bullet marker.",
   "editorial_score": 0-100,
   "selection_hint": "publish|backup|weak",
+  "board_decision": "publish|backup|reject",
+  "board_confidence": 0.0-1.0,
+  "suggested_block": "transport|today_focus|last_24h|next_7_days|weekend_activities|future_announcements|business|football|short_actions|other",
+  "reason_codes": ["..."],
+  "needs_gpt4o_escalation": false,
   "missing_facts": []
 }
+
+Decision rules:
+- publish: local, fresh/useful, enough facts for a self-contained Telegram line.
+- backup: potentially useful but weaker than the board, repetitive, or missing secondary facts.
+- reject: PR-only, stale, non-Greater-Manchester, duplicate, expired, or too thin to write without inventing facts.
+- Mark needs_gpt4o_escalation=true for borderline civic/legal/safety stories, protected lanes, low confidence, or lead-story contenders.
 
 Rubric-specific requirements:
 - transport: explain what is disrupted, where/which line, when, who is affected, and what the reader should do. If the affected section is not named, say that the operator/source has not named a specific section.
@@ -652,8 +663,20 @@ def _rewrite_shortlist_priority(candidate: dict) -> tuple[float, float, float, s
     lead_bonus = 1000.0 if candidate.get("is_lead") else 0.0
     protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
     protected_bonus = 250.0 if protected.get("protected") else 0.0
+    board_score = candidate.get("english_editorial_score")
+    try:
+        board_score_bonus = float(board_score)
+    except (TypeError, ValueError):
+        board_score_bonus = 0.0
+    decision = str(candidate.get("english_board_decision") or candidate.get("english_selection_hint") or "").lower()
+    if decision == "publish":
+        board_score_bonus += 25.0
+    elif decision == "backup":
+        board_score_bonus -= 40.0
+    elif decision == "reject":
+        board_score_bonus -= 200.0
     return (
-        lead_bonus + protected_bonus,
+        lead_bonus + protected_bonus + board_score_bonus,
         float(section_board_score(candidate)),
         float(reader_value_score({**candidate, "included": True})),
         str(candidate.get("title") or ""),
@@ -756,6 +779,8 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
         for candidate in normal_group[cap:]:
             candidate["include"] = False
             candidate["backup_candidate"] = True
+            candidate["backup_pool_only"] = True
+            candidate["public_reserve"] = False
             candidate["rewrite_shortlist_status"] = "backup_before_rewrite"
             candidate["rewrite_shortlist_reason"] = f"Outside pre-rewrite shortlist for {block or 'unknown'}."
             _append_reason(candidate, candidate["rewrite_shortlist_reason"])
@@ -818,6 +843,8 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
                 continue
             candidate["include"] = False
             candidate["backup_candidate"] = True
+            candidate["backup_pool_only"] = True
+            candidate["public_reserve"] = False
             candidate["rewrite_shortlist_status"] = "backup_board_cap"
             candidate["rewrite_shortlist_reason"] = (
                 f"Outside global translation board (soft max {REWRITE_TRANSLATION_BOARD_MAX})."
@@ -1220,6 +1247,11 @@ def _parse_english_card_results(
             "reader_card": reader_card,
             "editorial_score": max(0, min(100, editorial_score)),
             "selection_hint": str(item.get("selection_hint") or "publish").strip() or "publish",
+            "board_decision": str(item.get("board_decision") or item.get("selection_hint") or "publish").strip() or "publish",
+            "board_confidence": item.get("board_confidence"),
+            "suggested_block": str(item.get("suggested_block") or "").strip(),
+            "reason_codes": item.get("reason_codes") if isinstance(item.get("reason_codes"), list) else [],
+            "needs_gpt4o_escalation": bool(item.get("needs_gpt4o_escalation")),
             "missing_facts": item.get("missing_facts") if isinstance(item.get("missing_facts"), list) else [],
         }
         if fp in mapping:
@@ -1373,31 +1405,81 @@ def _call_english_cards_with_fallback(
     from news_digest.pipeline import provider_health  # noqa: PLC0415
     mapping: EnglishCardMapping = {}
     missing = list(candidates)
+    escalation_pending: list[dict] = []
     for step in route:
-        if not missing:
+        if not missing and not escalation_pending:
             break
         if provider_health.is_dead(step.provider):
             logger.info("Skipping %s English cards — circuit breaker tripped earlier this run.", step.provider_label)
             continue
-        before = len(mapping)
-        mapping.update(
+        if escalation_pending and step.provider != "openai":
+            escalation_pending = []
+        request_candidates = list(missing)
+        if escalation_pending:
+            seen_request = {str(c.get("fingerprint") or "") for c in request_candidates}
+            request_candidates.extend(
+                c for c in escalation_pending
+                if str(c.get("fingerprint") or "") not in seen_request
+            )
+        step_mapping = (
             _call_english_card_provider_batch(
                 step.base_url,
                 step.api_key,
                 step.model,
-                missing,
+                request_candidates,
                 step.provider_label,
                 timeout=step.timeout_seconds or 60,
                 batch_size=step.batch_size or 8,
                 diagnostics=diagnostics,
             )
         )
-        if len(mapping) > before:
+        mapping.update(step_mapping)
+        if step_mapping:
             provider_health.record_success(step.provider)
         else:
             provider_health.record_failure(step.provider)
+        if step.role == "board_judge_mini_primary":
+            escalation_pending = [
+                c for c in candidates
+                if (
+                    str(c.get("fingerprint") or "") in step_mapping
+                    and bool(step_mapping[str(c.get("fingerprint") or "")][0].get("needs_gpt4o_escalation"))
+                )
+            ]
+        else:
+            escalation_pending = []
         missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
     return mapping
+
+
+def _apply_english_cards_to_candidates(
+    candidates: list[dict],
+    english_card_mapping: EnglishCardMapping,
+    run_iso: str,
+) -> int:
+    applied = 0
+    for candidate in candidates:
+        fp = str(candidate.get("fingerprint") or "").strip()
+        if fp not in english_card_mapping:
+            continue
+        card, prov, model_name = english_card_mapping[fp]
+        fact_card = card.get("fact_card") if isinstance(card.get("fact_card"), dict) else {}
+        candidate["english_rubric"] = card.get("rubric") or "other"
+        candidate["english_fact_card"] = fact_card
+        candidate["english_reader_card"] = card.get("reader_card") or ""
+        candidate["english_editorial_score"] = card.get("editorial_score")
+        candidate["english_selection_hint"] = card.get("selection_hint") or "publish"
+        candidate["english_board_decision"] = card.get("board_decision") or candidate["english_selection_hint"]
+        candidate["english_board_confidence"] = card.get("board_confidence")
+        candidate["english_suggested_block"] = card.get("suggested_block") or ""
+        candidate["english_board_reason_codes"] = card.get("reason_codes") or []
+        candidate["english_needs_gpt4o_escalation"] = bool(card.get("needs_gpt4o_escalation"))
+        candidate["english_missing_facts"] = card.get("missing_facts") or []
+        candidate["english_card_provider"] = prov
+        candidate["english_card_model"] = model_name
+        candidate["english_card_written_at"] = run_iso
+        applied += 1
+    return applied
 
 
 def _is_protected_rewrite_candidate(candidate: dict) -> bool:
@@ -2426,6 +2508,19 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         logger.info("LLM rewrite: all included candidates already have draft_lines.")
     else:
         original_rewrite_count = len(to_rewrite)
+        run_iso = now_london().isoformat()
+        english_card_mapping = _call_english_cards_with_fallback(
+            to_rewrite,
+            provider_override,
+            base_url_override,
+            model_override,
+            diagnostics=provider_batch_diagnostics,
+        )
+        english_cards_applied = _apply_english_cards_to_candidates(candidates, english_card_mapping, run_iso)
+        if english_cards_applied:
+            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            logger.info("Board Judge: applied %d English reader cards before shortlist.", english_cards_applied)
+
         to_rewrite, rewrite_shortlist = _apply_rewrite_shortlist(candidates, to_rewrite)
         if rewrite_shortlist["held_for_backup"]:
             # Holding lower-priority candidates in backup before
@@ -2463,34 +2558,20 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         _EVENTS_PROMPTS = {PROMPT_EVENTS, PROMPT_DIASPORA_EVENTS}
         _today = today_london()
 
-        english_card_mapping = _call_english_cards_with_fallback(
-            to_rewrite,
-            provider_override,
-            base_url_override,
-            model_override,
-            diagnostics=provider_batch_diagnostics,
-        )
-        english_cards_applied = 0
-        run_iso = now_london().isoformat()
-        for candidate in candidates:
-            fp = str(candidate.get("fingerprint") or "").strip()
-            if fp not in english_card_mapping:
-                continue
-            card, prov, model_name = english_card_mapping[fp]
-            fact_card = card.get("fact_card") if isinstance(card.get("fact_card"), dict) else {}
-            candidate["english_rubric"] = card.get("rubric") or "other"
-            candidate["english_fact_card"] = fact_card
-            candidate["english_reader_card"] = card.get("reader_card") or ""
-            candidate["english_editorial_score"] = card.get("editorial_score")
-            candidate["english_selection_hint"] = card.get("selection_hint") or "publish"
-            candidate["english_missing_facts"] = card.get("missing_facts") or []
-            candidate["english_card_provider"] = prov
-            candidate["english_card_model"] = model_name
-            candidate["english_card_written_at"] = run_iso
-            english_cards_applied += 1
-        if english_cards_applied:
-            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-            logger.info("English-first rewrite: applied %d English reader cards.", english_cards_applied)
+        missing_card_candidates = [c for c in to_rewrite if not str(c.get("english_reader_card") or "").strip()]
+        if missing_card_candidates:
+            missing_card_mapping = _call_english_cards_with_fallback(
+                missing_card_candidates,
+                provider_override,
+                base_url_override,
+                model_override,
+                diagnostics=provider_batch_diagnostics,
+            )
+            additional_cards = _apply_english_cards_to_candidates(candidates, missing_card_mapping, now_london().isoformat())
+            english_cards_applied += additional_cards
+            if additional_cards:
+                candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+                logger.info("English-first rewrite: applied %d missing English reader cards.", additional_cards)
 
         english_ready = [c for c in to_rewrite if str(c.get("english_reader_card") or "").strip()]
         legacy_rewrite_pool = [c for c in to_rewrite if not str(c.get("english_reader_card") or "").strip()]
@@ -2802,9 +2883,12 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "skipped_manual_review": skipped_manual_review,
             "english_first": {
                 "enabled": True,
+                "board_judge_before_shortlist": True,
+                "board_judge_input": original_rewrite_count if "original_rewrite_count" in locals() else len(to_rewrite),
                 "cards_applied": english_cards_applied,
-                "cards_missing": max(0, len(to_rewrite) - english_cards_applied),
-                "policy": "English fact/reader cards first; final Russian translation from compact English cards; legacy full-evidence rewrite fallback on any model miss.",
+                "selected_for_translation": len(to_rewrite),
+                "cards_missing_on_selected": sum(1 for c in to_rewrite if not str(c.get("english_reader_card") or "").strip()),
+                "policy": "Board Judge writes English fact/reader cards before shortlist; deterministic builder chooses the translation board; final Russian translation uses compact English cards with legacy full-evidence fallback on any model miss.",
             },
             "translation_memory": {
                 "enabled": True,

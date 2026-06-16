@@ -6,11 +6,13 @@ Uses gpt-4o-mini — decisions are binary, no deep reasoning required.
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import json
 import logging
 import os
 from pathlib import Path
 import re
+import time
 
 from news_digest.pipeline.common import now_london, pipeline_run_id_from, read_json, today_london, write_json
 from news_digest.pipeline.model_routing import (
@@ -31,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 OPENAI_MODEL = OPENAI_SCORING_MODEL
 GROQ_MODEL = GROQ_FALLBACK_MODEL
+CURATOR_MAX_WORKERS = 4
 
 
 def _provider_label(model: str) -> str:
@@ -303,18 +306,34 @@ def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: st
     )
     results: list[dict] = []
     batches = [candidates[i:i + batch_size] for i in range(0, len(candidates), batch_size)]
-    for i, batch in enumerate(batches):
-        try:
-            logger.info("Curator: batch %d/%d (%d candidates).", i + 1, len(batches), len(batch))
-            results.extend(_call_curator_batch(batch, client, model))
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("Curator call failed: %s", exc)
-            return []
+    max_workers = max(1, int(os.environ.get("CURATOR_MAX_WORKERS", CURATOR_MAX_WORKERS)))
+    max_workers = min(len(batches), max_workers)
+
+    def _run_batch(index: int, batch: list[dict]) -> list[dict]:
+        logger.info("Curator: batch %d/%d (%d candidates).", index, len(batches), len(batch))
+        return _call_curator_batch(batch, client, model)
+
+    try:
+        if max_workers <= 1:
+            for i, batch in enumerate(batches, start=1):
+                results.extend(_run_batch(i, batch))
+        else:
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = [
+                    executor.submit(_run_batch, i, batch)
+                    for i, batch in enumerate(batches, start=1)
+                ]
+                for future in futures:
+                    results.extend(future.result())
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Curator call failed: %s", exc)
+        return []
     return results
 
 
 def run_curator_pass(project_root: Path) -> None:
     """Drop PR/evergreen candidates and mark lead story before LLM rewrite."""
+    stage_started = time.monotonic()
     candidates_path = project_root / "data" / "state" / "candidates.json"
     report_path = project_root / "data" / "state" / "curator_report.json"
 
@@ -463,5 +482,6 @@ def run_curator_pass(project_root: Path) -> None:
         "lead_set": lead_set,
         "decisions": decisions,
         "cost_summary": cost_summary,
+        "duration_seconds": round(time.monotonic() - stage_started, 3),
         "model_route": route_snapshot().get("curator", []),
     })

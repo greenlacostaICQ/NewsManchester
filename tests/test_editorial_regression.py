@@ -48,6 +48,7 @@ from news_digest.pipeline.event_quality import (
     is_event_candidate,
 )
 from news_digest.pipeline.writer import (
+    _apply_section_min_floor_pull_back,
     _draft_line_quality_errors,
     _looks_like_untranslated_english,
 )
@@ -120,6 +121,38 @@ class NoDateEventTest(unittest.TestCase):
         }
         self.assertTrue(_has_future_or_concrete_date(candidate))
         self.assertFalse(_exclude_undated_event_like_candidate(candidate))
+
+
+class WriterPullbackRegressionTest(unittest.TestCase):
+    """Rejected reserve items must never be resurrected into public sections."""
+
+    def test_rejected_backup_candidate_not_pulled_into_public_section(self) -> None:
+        candidate = {
+            "include": False,
+            "backup_candidate": True,
+            "reject_reasons": ["weak_value_civic_pr"],
+            "primary_block": "city_watch",
+            "fingerprint": "gmmh-rejected",
+            "title": "GMMH appoints new chair",
+            "source_label": "GMMH",
+            "source_url": "https://example.com/gmmh-chair",
+            "draft_line": "• <b>GMMH</b> назначил нового председателя; проверьте.",
+        }
+        lines, fps, _scores, _titles, _srcs = _apply_section_min_floor_pull_back(
+            "Городской радар",
+            [],
+            [],
+            [],
+            [],
+            [],
+            [candidate],
+            set(),
+            1,
+            [],
+            include_backup=True,
+        )
+        self.assertEqual([], lines)
+        self.assertEqual([], fps)
 
 
 # --------------------------------------------------------------------------
