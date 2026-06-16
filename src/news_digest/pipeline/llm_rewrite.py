@@ -1600,7 +1600,7 @@ def _english_card_batch_items(batch: list[dict]) -> list[dict]:
                 "title": c.get("title", ""),
                 "summary": c.get("summary", ""),
                 "lead": c.get("lead", ""),
-                "evidence_text": str(c.get("evidence_text") or "")[:2400],
+                "evidence_text": str(c.get("evidence_text") or "")[:1000],
                 "category": c.get("category", ""),
                 "primary_block": c.get("primary_block", ""),
                 "source_label": c.get("source_label", ""),

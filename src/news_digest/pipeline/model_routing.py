@@ -84,25 +84,25 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
         # weaker Russian sentence on a hard-news item (police appeal, cordon)
         # is better than the item vanishing. Fallback-written items keep
         # draft_line_provider="DeepSeek" so the degraded phrasing is auditable.
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_rewrite_primary", 1, batch_size=6, timeout_seconds=60),
-        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "rewrite_last_resort", 2, batch_size=6, timeout_seconds=60),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_rewrite_primary", 1, batch_size=10, timeout_seconds=60),
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "rewrite_last_resort", 2, batch_size=10, timeout_seconds=60),
     ),
     # English-first architecture: judge source-language candidates and prepare
     # compact English fact/reader cards before any Russian copy is written.
     # OpenAI mini is the primary board judge; DeepSeek is retained as a
     # resilience/extraction fallback, not as the final arbiter.
     "english_cards": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "board_judge_mini_primary", 1, batch_size=8, timeout_seconds=30),
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "english_fact_reader_quality_fallback", 2, batch_size=6, timeout_seconds=60),
-        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "english_extraction_last_resort", 3, batch_size=8, timeout_seconds=25),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "board_judge_mini_primary", 1, batch_size=12, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "english_fact_reader_quality_fallback", 2, batch_size=10, timeout_seconds=60),
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "english_extraction_last_resort", 3, batch_size=12, timeout_seconds=25),
     ),
     # Translate only the already-formed English reader cards. This keeps the
     # expensive GPT call on the final short copy, not the raw evidence packet.
     # DeepSeek Pro is a fallback: weaker Russian is better than a vanished item,
     # and the line remains auditable via draft_line_provider/model.
     "final_translate": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "final_ru_translation_mini_primary", 1, batch_size=8, timeout_seconds=30),
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "final_ru_translation_quality_fallback", 2, batch_size=6, timeout_seconds=60),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "final_ru_translation_mini_primary", 1, batch_size=16, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "final_ru_translation_quality_fallback", 2, batch_size=10, timeout_seconds=60),
     ),
     # Transport: short structured translation → cheap mini is enough. Bigger
     # batches (short lines) + tight timeout; DeepSeek last-resort net.
@@ -118,7 +118,7 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
         ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "events_last_resort", 2, batch_size=5, timeout_seconds=60),
     ),
     "repair": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_repair", 1, batch_size=5, timeout_seconds=60),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_repair", 1, batch_size=10, timeout_seconds=60),
     ),
 }
 
