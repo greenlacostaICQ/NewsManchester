@@ -79,6 +79,21 @@ _BAD_RUSSIAN_DETECTORS: tuple[re.Pattern[str], ...] = (
     re.compile(r"спас[её]н\s+с\s+высоты", re.IGNORECASE),
     re.compile(r"инцидент\s+был\s+успешно\s+разреш[её]н", re.IGNORECASE),
     re.compile(r"это\s+(?:важная|интересная)\s+информация", re.IGNORECASE),
+    # D11 glossary leftovers: English / bad transliteration that must be
+    # translated (mirrors the glossary translate-list).
+    re.compile(r"\bdisruptions?\b", re.IGNORECASE),
+    re.compile(r"\bанниверсар", re.IGNORECASE),
+    re.compile(r"\bсубмашин", re.IGNORECASE),
+    re.compile(r"\bурбанист", re.IGNORECASE),
+    re.compile(r"\bинквест", re.IGNORECASE),
+)
+
+# Crime/court/sensitive lines always go through the targeted model pass even
+# when no language detector fires — a faithfulness slip there is worst.
+_SENSITIVE_LINE_RE = re.compile(
+    r"\b(?:полиц|суд|обвин|пригов|осужд|убийств|нож|ножев|погиб|умер|жертв|"
+    r"нападени|пострадал|изнасил|коронер|расследован|эвакуир|пожар)\w*",
+    re.IGNORECASE,
 )
 
 
@@ -530,7 +545,17 @@ def _pre_send_polish_sections(
         else _visible_line_items(polished)
     )
     evidence_items = sum(1 for item in items if isinstance(item.get("evidence"), dict) and item.get("evidence"))
-    model_fixes, model_report = _call_pre_send_russian_editor(items, api_key)
+    # D12: only the suspicious lines (language detector OR crime/court/sensitive)
+    # go to the gpt-4o pass — clean lines keep the rule polish. The model reads
+    # the few rows that matter instead of skimming the whole issue.
+    suspicious_items = [
+        item
+        for item in items
+        if _line_needs_russian_editor(str(item.get("line") or ""))
+        or _SENSITIVE_LINE_RE.search(str(item.get("line") or ""))
+    ]
+    model_fixes, model_report = _call_pre_send_russian_editor(suspicious_items, api_key)
+    model_report["targeted_items"] = len(suspicious_items)
     if model_report.get("status") not in {"ok", "skipped_no_items"}:
         warnings.append(f"Pre-send Russian editor skipped/failed: {model_report.get('status')} {model_report.get('error') or ''}".strip())
     if model_fixes:

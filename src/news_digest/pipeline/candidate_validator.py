@@ -269,6 +269,23 @@ def _reclassify_gm_when_outside_venue(candidate: dict) -> bool:
     return True
 
 
+# A national / UK-wide story with no Greater Manchester angle must not sit in
+# the top GM news blocks (owner 2026-06-16: national vape/tobacco law shown as
+# local news).
+_NATIONAL_NO_GM_RE = re.compile(
+    r"\b(?:prime minister|sir keir|keir starmer|starmer|downing street|nationwide|"
+    r"across the uk|uk[- ]wide|nationally|parliament|westminster|general election|"
+    r"whitehall|becomes? law|royal assent)\b",
+    re.IGNORECASE,
+)
+_GM_ANCHOR_RE = re.compile(
+    r"\b(?:greater manchester|\bgm\b|manchester|salford|stockport|tameside|trafford|"
+    r"wigan|bolton|bury|oldham|rochdale|wythenshawe|prestwich|altrincham|metrolink|"
+    r"tfgm|gmp|gmca)\b",
+    re.IGNORECASE,
+)
+
+
 def _apply_section_routing_quality(candidate: dict) -> list[str]:
     """Fix obvious English-data routing mistakes before translation.
 
@@ -295,6 +312,13 @@ def _apply_section_routing_quality(candidate: dict) -> list[str]:
     ):
         candidate["primary_block"] = "city_watch"
         reasons.append("section_routing:property_not_it")
+    if (
+        block in {"last_24h", "today_focus"}
+        and _NATIONAL_NO_GM_RE.search(blob)
+        and not _GM_ANCHOR_RE.search(blob)
+    ):
+        candidate["primary_block"] = "city_watch"
+        reasons.append("section_routing:national_without_gm_demoted")
     if reasons:
         candidate["section_routing_quality"] = reasons
         existing = str(candidate.get("reason") or "").strip()
