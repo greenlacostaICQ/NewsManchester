@@ -211,6 +211,39 @@ _OUTSIDE_GM_PLACE_TOKENS = (
     "cardiff castle", "edinburgh playhouse",
 )
 
+_TRANSPORT_SECTION_RE = re.compile(
+    r"\b(?:metrolink|tram|bus(?:es)?|bee\s+network|national\s+rail|"
+    r"northern|transpennine|transport\s+for\s+wales|tfgm|rail\s+replacement|"
+    r"platform|stop|station|route|service)\b",
+    re.IGNORECASE,
+)
+_TRANSPORT_IMPACT_RE = re.compile(
+    r"\b(?:disruption|delay|cancelled|diverted|closure|closed|works?|"
+    r"lift\s+out\s+of\s+service|not\s+running|suspended|replacement\s+bus|"
+    r"сбой|задерж|отмен|объезд|закрыт|работы|лифт)\b",
+    re.IGNORECASE,
+)
+_PROPERTY_HOUSING_RE = re.compile(
+    r"\b(?:homes?|housing|flats?|apartments?|student\s+accommodation|pbsa|"
+    r"planning|developer|development|warehouse|office\s+to\s+residential|"
+    r"build-to-rent|affordable\s+homes|жиль|квартир|домов|застрой|планирован)\b",
+    re.IGNORECASE,
+)
+_TECH_BUSINESS_RE = re.compile(
+    r"\b(?:ai|api|saas|fintech|startup|software|cyber|cloud|data\s+centre|"
+    r"digital|platform|app|semiconductor|robotics|open\s+banking)\b",
+    re.IGNORECASE,
+)
+_SENSITIVE_EVIDENCE_RE = re.compile(
+    r"\b(?:court|trial|charged|sentence(?:d)?|jailed|convicted|guilty|"
+    r"arrest(?:ed)?|murder|killed|death|died|stab(?:bed|bing)?|knife|"
+    r"rape|sexual|abuse|assault|inquest|coroner|child|school|fire|"
+    r"crash|collision|missing|explosive|bomb|terror|domestic\s+abuse|"
+    r"суд|обвин|приговор|осужд|арест|задерж|убий|погиб|нож|изнасил|"
+    r"насили|инквест|коронер|реб[её]нок|школ|пожар|авар|пропал|взрыв)\b",
+    re.IGNORECASE,
+)
+
 
 def _reclassify_gm_when_outside_venue(candidate: dict) -> bool:
     """Inverse of _reclassify_outside_gm_when_local_venue: a ticket routed to
@@ -233,6 +266,68 @@ def _reclassify_gm_when_outside_venue(candidate: dict) -> bool:
     existing = str(candidate.get("reason") or "").strip()
     note = "Validator: reclassified ticket_radar → outside_gm_tickets (non-GM venue detected)."
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    return True
+
+
+def _apply_section_routing_quality(candidate: dict) -> list[str]:
+    """Fix obvious English-data routing mistakes before translation.
+
+    This is intentionally narrow: it handles cases where the collected facts
+    already prove the section, so the Russian repair layer does not have to
+    explain why a Metrolink item appeared in City Radar or housing in IT.
+    """
+    if not candidate.get("include"):
+        return []
+    reasons: list[str] = []
+    blob = _candidate_blob(candidate)
+    source_label = str(candidate.get("source_label") or "")
+    block = str(candidate.get("primary_block") or "")
+    if block != "transport" and (
+        source_label.lower() in {"tfgm", "metrolink", "national rail enquiries"}
+        or (_TRANSPORT_SECTION_RE.search(blob) and _TRANSPORT_IMPACT_RE.search(blob))
+    ):
+        candidate["primary_block"] = "transport"
+        reasons.append("section_routing:transport")
+    if (
+        str(candidate.get("category") or "") == "tech_business"
+        and _PROPERTY_HOUSING_RE.search(blob)
+        and not _TECH_BUSINESS_RE.search(blob)
+    ):
+        candidate["primary_block"] = "city_watch"
+        reasons.append("section_routing:property_not_it")
+    if reasons:
+        candidate["section_routing_quality"] = reasons
+        existing = str(candidate.get("reason") or "").strip()
+        note = "Validator: corrected section routing before translation (" + ", ".join(reasons) + ")."
+        candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    return reasons
+
+
+def _hold_sensitive_thin_or_failed_enrichment(candidate: dict) -> bool:
+    """Sensitive news must not be translated from a teaser.
+
+    If enrichment failed or the evidence packet is too thin, hold the row
+    before translation. This is a row-level hold, not a release block.
+    """
+    if not candidate.get("include"):
+        return False
+    category = str(candidate.get("category") or "")
+    if category not in {"media_layer", "gmp", "council", "public_services", "city_news", "tech_business", "football"}:
+        return False
+    blob = _candidate_blob(candidate)
+    if not _SENSITIVE_EVIDENCE_RE.search(blob):
+        return False
+    health = candidate.get("enrichment_health") if isinstance(candidate.get("enrichment_health"), dict) else {}
+    failed = bool(health.get("failed"))
+    thin = bool(health.get("thin"))
+    if not failed and not thin:
+        return False
+    candidate["editorial_status"] = "held_for_enrichment"
+    _append_reject(
+        candidate,
+        "sensitive_thin_or_failed_enrichment",
+        "Validator: sensitive/crime/court item has failed or thin enrichment; held before translation instead of publishing a teaser.",
+    )
     return True
 
 
@@ -2131,6 +2226,8 @@ def validate_candidates(project_root: Path) -> StageResult:
         attach_change_phase(candidate)
         attach_editorial_contract(candidate)
         apply_story_intelligence(candidate)
+        if candidate.get("include"):
+            _apply_section_routing_quality(candidate)
         manual = _manual_override(candidate, state_dir)
         if candidate.get("include") and manual != "force_include":
             _exclude_cross_day_rehash(candidate, state_dir)
@@ -2174,6 +2271,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _exclude_by_editorial_contract(candidate)
         if candidate.get("include"):
             _exclude_paywall_stub(candidate)
+        if candidate.get("include") and manual != "force_include":
+            _hold_sensitive_thin_or_failed_enrichment(candidate)
         if candidate.get("include"):
             _exclude_stale_news_without_new_phase(candidate)
         if candidate.get("include"):

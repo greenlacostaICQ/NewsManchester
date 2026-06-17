@@ -24,6 +24,7 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.glossary_qa import glossary_line_issues, repair_glossary_terms
 
 
 MIN_CITY_PRACTICAL_ANGLE_LENGTH = 40
@@ -50,6 +51,8 @@ PRE_SEND_RUSSIAN_EDITOR_PROMPT = """Ты выпускающий редактор
 - Транспорт должен отвечать: что сломано/изменено → какой участок/маршрут → что делать пассажиру.
 - Событие/билет должен отвечать: кто/что → когда → где → жанр/тип, если есть в evidence → почему это заметно.
 - Футбол и билеты не должны звучать как машинная оценка: убирай "это важная информация" и "интересная информация", заменяй на конкретный смысл из строки.
+- Не переводить всё подряд: имена, площадки, компании, AI/API/SaaS/open banking/open space и другие glossary keep-термины оставлять как есть.
+- Glossary-нарушения чинить точечно: disruptions/anniversary/inquest/open conclusion переводить, CQC/PBSA/AGM/MDC объяснять внутри строки.
 - Если строка нормальная, верни её без изменений со status="ok".
 """
 
@@ -160,6 +163,8 @@ def _fix_relative_day_label(line: str) -> tuple[str, list[str]]:
 def _polish_russian_line_rules(line: str) -> tuple[str, list[str]]:
     fixed = str(line or "")
     reasons: list[str] = []
+    fixed, glossary_reasons = repair_glossary_terms(fixed)
+    reasons.extend(glossary_reasons)
     for pattern, replacement in _BAD_RUSSIAN_PATTERNS:
         if pattern.search(fixed):
             fixed = pattern.sub(replacement, fixed)
@@ -181,6 +186,8 @@ def _polish_russian_line_rules(line: str) -> tuple[str, list[str]]:
 
 def _line_needs_russian_editor(line: str) -> bool:
     text = str(line or "")
+    if glossary_line_issues(text):
+        return True
     return any(pattern.search(text) for pattern in _BAD_RUSSIAN_DETECTORS)
 
 
@@ -354,7 +361,7 @@ def _compact_candidate_evidence(candidate: dict | None, refetch_stats: dict[str,
         },
         "story_frame": {
             key: value for key, value in story_frame.items()
-            if key in {"news_anchor", "reader_need", "missing_facts", "what_changed"}
+            if key in {"news_anchor", "reader_need", "missing_facts", "what_changed", "case_frame"}
         },
     }
 
@@ -374,6 +381,9 @@ def _visible_line_items(
             candidate = candidates_by_key.get(_line_url_identity(line))
             evidence = _compact_candidate_evidence(candidate, refetch_stats)
             item: dict[str, object] = {"index": index, "section": section_name, "line": line}
+            glossary_issues = glossary_line_issues(line)
+            if glossary_issues:
+                item["glossary_issues"] = glossary_issues
             if evidence:
                 item["evidence"] = evidence
             items.append(item)

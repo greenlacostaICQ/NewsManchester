@@ -1194,7 +1194,7 @@ def story_frame_for_candidate(
             missing.append("venue")
         if not when:
             missing.append("event_date")
-    return {
+    frame: dict[str, object] = {
         "version": "2026-06-02.1",
         "event_type": event_type,
         "what_happened": what,
@@ -1205,6 +1205,55 @@ def story_frame_for_candidate(
         "reader_value": candidate.get("reader_value_score") or candidate.get("reader_value_label") or "",
         "missing_facts": list(dict.fromkeys(missing)),
         "repair_policy": "repair_first_then_hold",
+    }
+    case_frame = _case_frame_for_candidate(candidate, story_type=event_type, blob=blob)
+    if case_frame:
+        frame["case_frame"] = case_frame
+    return frame
+
+
+_CASE_FRAME_RE = re.compile(
+    r"\b(?:court|trial|charged|sentence(?:d)?|jailed|convicted|guilty|"
+    r"arrest(?:ed)?|murder|killed|death|died|stab(?:bed|bing)?|knife|"
+    r"rape|sexual|abuse|assault|inquest|coroner|crash|collision|fire|"
+    r"суд|обвин|приговор|осужд|арест|задерж|убий|погиб|нож|изнасил|"
+    r"насили|коронер|авар|пожар)\b",
+    re.IGNORECASE,
+)
+_CASE_STAGE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("charged", re.compile(r"\bcharged|обвин", re.IGNORECASE)),
+    ("sentenced", re.compile(r"\bsentenced|jailed|приговор|осужд", re.IGNORECASE)),
+    ("convicted", re.compile(r"\bconvicted|guilty|винов", re.IGNORECASE)),
+    ("trial", re.compile(r"\btrial|судебн\w+\s+процесс|суд\s+проход", re.IGNORECASE)),
+    ("arrested", re.compile(r"\barrest(?:ed)?|задерж|арест", re.IGNORECASE)),
+    ("inquest", re.compile(r"\binquest|coroner|коронер", re.IGNORECASE)),
+)
+
+
+def _case_frame_for_candidate(candidate: dict, *, story_type: str, blob: str) -> dict[str, object] | None:
+    if story_type not in {"incident", "public_safety_after_incident", "service_accountability"} and not _CASE_FRAME_RE.search(blob):
+        return None
+    stage = "not_applicable"
+    for name, pattern in _CASE_STAGE_PATTERNS:
+        if pattern.search(blob):
+            stage = name
+            break
+    people = []
+    for match in re.finditer(r"\b(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}|\d{1,3}-year-old\s+(?:man|woman|boy|girl)|(?:man|woman|boy|girl|child|teenager|driver|teacher|officer|victim|suspect))\b", blob):
+        value = match.group(0).strip()
+        if value not in people:
+            people.append(value)
+        if len(people) >= 5:
+            break
+    unknowns: list[str] = []
+    if re.search(r"\b(?:no\s+arrests?|not\s+charged|no\s+charges?|unknown|unclear|not\s+known|не\s+установ|никто\s+не\s+обвин|задержан\w+\s+нет)\b", blob, re.IGNORECASE):
+        unknowns.append("source_states_unknown_or_no_charge")
+    return {
+        "applies": True,
+        "stage": stage,
+        "people_or_roles": people or ["not_applicable"],
+        "what_unknown": unknowns or ["not_applicable"],
+        "policy": "preserve_roles_stage_and_unknowns_in_translation",
     }
 
 

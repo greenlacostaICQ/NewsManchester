@@ -31,6 +31,7 @@ from news_digest.pipeline.editorial_contracts import (
     scrub_vague_ending,
     why_now_is_publishable,
 )
+from news_digest.pipeline.glossary_qa import glossary_line_issues, repair_glossary_terms
 from news_digest.pipeline.reader_value import reader_value_score
 from news_digest.pipeline.reader_actions import classify_reader_action
 from news_digest.pipeline.source_selection import source_score
@@ -3057,6 +3058,8 @@ def _repair_editorial_contract_line(candidate: dict, line: str) -> tuple[str, li
     reasons.extend(follow_up_reasons)
     repaired, explanation_reasons = _repair_explainable_terms(candidate, repaired)
     reasons.extend(explanation_reasons)
+    repaired, glossary_reasons = repair_glossary_terms(repaired)
+    reasons.extend(glossary_reasons)
     repaired, date_reasons = _repair_event_date_from_struct(candidate, repaired)
     reasons.extend(date_reasons)
     repaired, ru_reasons = _repair_common_russian_line(repaired)
@@ -4331,6 +4334,8 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
         errors.append("event date in draft_line conflicts with structured event date.")
     if re.search(r"\b(?:тройн\w*\s+ножев\w*\s+ранени|отдельн\w*\s+ножев\w*\s+атак|открыт\w*\s+вывод)", text, re.IGNORECASE):
         errors.append("incident/legal line contains literal translated legal/crime phrasing.")
+    for issue in glossary_line_issues(text):
+        errors.append(f"glossary contract violation: {issue}.")
     for term in _EXPLAINABLE_TERMS:
         if term in text and _EXPLAINABLE_TERMS[term] not in text:
             errors.append(f"unexplained local/entity term: {term}.")
