@@ -525,9 +525,15 @@ def apply_story_intelligence(candidate: dict) -> dict:
     candidate["protected_lane"] = protected_lane(candidate)
     candidate["enrichment_health"] = enrichment_health(candidate)
     if (candidate.get("enrichment_health") or {}).get("warning"):
+        # Flag split (D13): a protected/anchored or already-included item with
+        # thin enrichment is a PUBLIC reserve — it may be pulled back into a thin
+        # section. Only a non-anchored, non-included item is archive-only.
+        lane = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
+        anchor = candidate.get("news_anchor") if isinstance(candidate.get("news_anchor"), dict) else {}
+        pullable = bool(candidate.get("include") or lane.get("protected") or anchor.get("has_news_anchor"))
         candidate["backup_candidate"] = True
-        candidate["backup_pool_only"] = not bool(candidate.get("include"))
-        candidate["public_reserve"] = False
+        candidate["public_reserve"] = pullable
+        candidate["backup_pool_only"] = not pullable
         candidate["second_opinion_required"] = True
         candidate["enrichment_warning"] = {
             "policy": "backup_not_reject",

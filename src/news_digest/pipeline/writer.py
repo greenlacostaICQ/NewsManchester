@@ -1674,6 +1674,17 @@ def _ticket_venue(candidate: dict) -> str:
     return source_label
 
 
+# A city/place name is never a music genre — never show it in the genre slot
+# (owner 2026-06-16: "Kasabian … Glasgow Green (Glasgow)").
+_GENRE_NOT_CITY = {
+    "manchester", "liverpool", "london", "greater manchester", "united kingdom", "uk",
+    "glasgow", "edinburgh", "newcastle", "cardiff", "newport", "birmingham", "leeds",
+    "sheffield", "bristol", "brighton", "thetford", "scarborough", "halifax",
+    "delamere", "isle of wight", "salisbury", "nottingham", "leicester", "preston",
+    "glasgow green", "delamere forest",
+}
+
+
 def _ticket_genre(candidate: dict) -> str:
     # Prefer the structured Ticketmaster sub-genre, then genre. It is far more
     # accurate than the coarse summary chunk: Lily Allen is subGenre="Pop"
@@ -1683,18 +1694,11 @@ def _ticket_genre(candidate: dict) -> str:
     _skip = {"", "undefined", "other", "unknown", "miscellaneous", "undefined "}
     for key in ("subGenre", "genre"):
         val = re.sub(r"\s+", " ", str(event.get(key) or "")).strip()
-        if val.lower() not in _skip:
+        if val.lower() not in _skip and val.lower() not in _GENRE_NOT_CITY:
             return val
     summary = str(candidate.get("summary") or "")
     chunks = [chunk.strip(" .") for chunk in summary.split("|")]
-    ignored = {
-        "manchester",
-        "liverpool",
-        "london",
-        "greater manchester",
-        "united kingdom",
-        "uk",
-    }
+    ignored = _GENRE_NOT_CITY
     for chunk in chunks[1:4]:
         lowered = chunk.lower()
         if not chunk or lowered in ignored:
@@ -1985,12 +1989,19 @@ def _ticket_lineup(candidate: dict) -> list[str]:
         event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
         atts = event.get("attractions") if isinstance(event.get("attractions"), list) else []
         raw = [str(a.get("name") or "") for a in atts if isinstance(a, dict)]
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    venue_low = re.sub(r"\s+", " ", str(event.get("venue") or "")).strip().lower()
+    event_name_low = re.sub(r"\s+", " ", str(event.get("event_name") or "")).strip().lower()
     names: list[str] = []
     seen: set[str] = set()
     for nm in raw:
         nm = re.sub(r"\s+", " ", nm).strip()
         low = nm.lower()
         if not nm or low in seen or _LINEUP_WRAPPER_RE.search(low):
+            continue
+        # Drop the festival's own name / the venue masquerading as a performer
+        # (owner 2026-06-16: "Состав: Parklife", "Состав: Delamere Forest").
+        if len(low) >= 4 and (low == venue_low or low in venue_low or (event_name_low and low in event_name_low)):
             continue
         seen.add(low)
         names.append(nm)
