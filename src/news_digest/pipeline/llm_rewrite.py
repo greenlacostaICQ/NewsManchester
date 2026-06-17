@@ -3,8 +3,8 @@
 Default model route:
   1. OpenAI gpt-4o-mini           — English board-judge fact/reader cards
   2. OpenAI gpt-4o-mini           — final Russian translation of compact English cards
-  3. Legacy category rewrite      — full-evidence fallback for any missed item
-  4. DeepSeek / writer fallbacks   — keep the release moving when a provider refuses
+  3. Legacy category rewrite      — mini-only full-evidence fallback for selected misses
+  4. Lead-only gpt-4o fallback    — single visible lead item, never the broad pool
 
 Required env vars (set in GitHub Actions Secrets or .env.local):
   OPENAI_API_KEY    — platform.openai.com
@@ -91,7 +91,7 @@ REWRITE_SHORTLIST_DEFAULT_CAP = 6
 # is starved (the failure mode the owner flagged — "новости отсеялись, доп не
 # перевёл, провал"), and the lead / transport / today_focus core is never cut.
 # Items above the ceiling are not deleted — they stay as backup reserve.
-REWRITE_TRANSLATION_BOARD_MAX = 45
+REWRITE_TRANSLATION_BOARD_MAX = 42
 TRANSLATION_MEMORY_VERSION = 1
 TRANSLATION_MEMORY_MAX_ENTRIES = 2500
 TRANSLATION_MEMORY_TTL_DAYS = 45
@@ -973,6 +973,29 @@ def _force_write_evidence_floor(candidate: dict) -> int:
     return 400
 
 
+_SOFT_REPAIR_ERROR_MARKERS = (
+    "draft_line is too short",
+    "draft_line must contain at least one complete sentence",
+    "draft_line for long-format category needs",
+    "commercial/retail item needs opening/access/useful local impact",
+    "old official/public-service item needs a concrete new public reason",
+)
+
+
+def _hard_repair_errors(candidate: dict, line: str) -> list[str]:
+    """Return only defects worth spending an LLM repair call on.
+
+    Shortness, sentence count, and general style are writer/editor concerns.
+    The repair route is reserved for broken structure, English passthrough,
+    unsupported facts, bad markup, or product-critical copy invariants.
+    """
+    errors = _writer_quality_errors(candidate, line)
+    return [
+        error for error in errors
+        if not any(marker in error for marker in _SOFT_REPAIR_ERROR_MARKERS)
+    ]
+
+
 def _needs_quality_repair(candidate: dict) -> bool:
     line = str(candidate.get("draft_line") or "").strip()
     if not line:
@@ -981,12 +1004,11 @@ def _needs_quality_repair(candidate: dict) -> bool:
     primary_block = str(candidate.get("primary_block") or "")
     if category not in _LONG_FORMAT_CATEGORIES_FOR_REPAIR | {"transport"}:
         return False
-    writer_errors = _writer_quality_errors(candidate, line)
+    writer_errors = _hard_repair_errors(candidate, line)
     if writer_errors:
         return True
     normalized = re.sub(r"\s+", " ", line)
     lowered = normalized.lower()
-    sentence_count = len(re.findall(r"[.!?]", normalized))
     # A complete dated event card (real event + date) is allowed to be concise:
     # the writer accepts it at the lower DATED_EVENT floor, so re-flagging it
     # "weak" here only churns repairs and inflates weak_after for cards that
@@ -994,20 +1016,9 @@ def _needs_quality_repair(candidate: dict) -> bool:
     # writer_errors check above is already authoritative for these.
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     has_event_date = bool(event.get("is_event") and str(event.get("date_start") or event.get("date") or "").strip())
-    # Long-format card: must hit ≥150 chars AND ≥2 sentences. Anything
-    # shorter is still a headline and will be blocked by the writer.
-    if category in _LONG_FORMAT_CATEGORIES_FOR_REPAIR and not has_event_date:
-        if len(normalized) < 150 or sentence_count < 2:
-            return True
-    if len(normalized) < 90 and (category == "food_openings" or primary_block in {"weekend_activities", "next_7_days", "ticket_radar"}):
-        return True
     if any(marker in lowered for marker in _REPAIR_BAD_MARKERS):
         return True
     if _needs_translation_fix(line):
-        return True
-    # Bare opening lines like "X opens — date" are exactly what made the
-    # food section feel like translated headlines rather than edited copy.
-    if category == "food_openings" and sentence_count < 1:
         return True
     return False
 
@@ -1297,7 +1308,7 @@ def _call_english_card_provider_batch(
         api_key=api_key,
         base_url=base_url,
         timeout=timeout,
-        max_retries=sdk_retries_for_route(provider=provider_name, model=model, base_url=base_url),
+        max_retries=0 if provider_name.lower().startswith("openai") else sdk_retries_for_route(provider=provider_name, model=model, base_url=base_url),
     )
     mapping: EnglishCardMapping = {}
     batches = [candidates[i: i + batch_size] for i in range(0, len(candidates), batch_size)]
@@ -1311,11 +1322,16 @@ def _call_english_card_provider_batch(
         ]
         started_at = now_london().isoformat()
         t0 = time.monotonic()
+        queue_wait_seconds = 0.0
+        api_seconds = 0.0
         try:
             max_tokens = min(8192, 420 * len(batch) + 1400)
             with _API_SEMAPHORE:
+                queue_t0 = time.monotonic()
                 _API_RATE_LIMITER.acquire()
                 _API_TOKEN_LIMITER.acquire(_estimate_request_tokens(messages, max_tokens))
+                queue_wait_seconds = time.monotonic() - queue_t0
+                api_t0 = time.monotonic()
                 response = client.chat.completions.create(
                     model=model,
                     messages=messages,
@@ -1323,6 +1339,7 @@ def _call_english_card_provider_batch(
                     max_tokens=max_tokens,
                     **chat_completion_options_for_route(provider=provider_name, model=model, base_url=base_url),
                 )
+                api_seconds = time.monotonic() - api_t0
             from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
             record_call_from_response(
                 response=response,
@@ -1339,6 +1356,8 @@ def _call_english_card_provider_batch(
             diagnostic["started_at"] = started_at
             diagnostic["finished_at"] = now_london().isoformat()
             diagnostic["duration_seconds"] = round(time.monotonic() - t0, 3)
+            diagnostic["queue_wait_seconds"] = round(queue_wait_seconds, 3)
+            diagnostic["api_seconds"] = round(api_seconds, 3)
             if diagnostics is not None:
                 diagnostics.append(diagnostic)
             return batch_mapping
@@ -1360,6 +1379,8 @@ def _call_english_card_provider_batch(
                         "started_at": started_at,
                         "finished_at": now_london().isoformat(),
                         "duration_seconds": round(time.monotonic() - t0, 3),
+                        "queue_wait_seconds": round(queue_wait_seconds, 3),
+                        "api_seconds": round(api_seconds, 3),
                     }
                 )
             return {}
@@ -1367,9 +1388,15 @@ def _call_english_card_provider_batch(
     def _process_batch(batch_idx: int, batch: list[dict]) -> EnglishCardMapping:
         result = _send_once(batch, batch_idx, "initial")
         missing = [c for c in batch if str(c.get("fingerprint") or "") not in result]
-        if missing:
+        if missing and len(missing) > 1:
+            split_size = max(1, min(4, len(missing) // 2 or 1))
+            for split_idx in range(0, len(missing), split_size):
+                split = missing[split_idx: split_idx + split_size]
+                _jittered_sleep(0.4)
+                result.update(_send_once(split, batch_idx, f"split_{split_idx // split_size + 1}"))
+        elif missing:
             _jittered_sleep(0.4)
-            result.update(_send_once(missing, batch_idx, "retry_missing"))
+            result.update(_send_once(missing, batch_idx, "single_retry"))
         return result
 
     if len(batches) <= 1:
@@ -1414,13 +1441,29 @@ def _call_english_cards_with_fallback(
             continue
         if escalation_pending and step.provider != "openai":
             escalation_pending = []
-        request_candidates = list(missing)
+        request_candidates = _fallback_request_candidates(
+            list(missing),
+            step_priority=step.priority,
+            provider=step.provider,
+            model=step.model,
+            provider_override=provider_override,
+            base_url_override=base_url_override,
+            model_override=model_override,
+        )
         if escalation_pending:
             seen_request = {str(c.get("fingerprint") or "") for c in request_candidates}
             request_candidates.extend(
                 c for c in escalation_pending
-                if str(c.get("fingerprint") or "") not in seen_request
+                if _is_lead_candidate(c) and str(c.get("fingerprint") or "") not in seen_request
             )
+        if not request_candidates:
+            logger.info(
+                "Skipping %s English cards fallback for %d non-lead miss(es).",
+                step.provider_label,
+                len(missing),
+            )
+            missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
+            continue
         step_mapping = (
             _call_english_card_provider_batch(
                 step.base_url,
@@ -1429,7 +1472,7 @@ def _call_english_cards_with_fallback(
                 request_candidates,
                 step.provider_label,
                 timeout=step.timeout_seconds or 60,
-                batch_size=step.batch_size or 8,
+                batch_size=1 if step.priority > 1 and not (provider_override or base_url_override or model_override) else (step.batch_size or 8),
                 diagnostics=diagnostics,
             )
         )
@@ -1498,6 +1541,50 @@ def _is_protected_rewrite_candidate(candidate: dict) -> bool:
     ):
         return True
     return False
+
+
+def _is_lead_candidate(candidate: dict) -> bool:
+    return bool(candidate.get("is_lead"))
+
+
+def _default_route_allows_step(
+    *,
+    step_priority: int,
+    provider: str,
+    model: str,
+    provider_override: str,
+    base_url_override: str,
+    model_override: str,
+) -> bool:
+    if provider_override or base_url_override or model_override:
+        return True
+    if step_priority <= 1:
+        return True
+    return provider.lower() == "openai" and model == OPENAI_REWRITE_MODEL
+
+
+def _fallback_request_candidates(
+    candidates: list[dict],
+    *,
+    step_priority: int,
+    provider: str,
+    model: str,
+    provider_override: str,
+    base_url_override: str,
+    model_override: str,
+) -> list[dict]:
+    if not _default_route_allows_step(
+        step_priority=step_priority,
+        provider=provider,
+        model=model,
+        provider_override=provider_override,
+        base_url_override=base_url_override,
+        model_override=model_override,
+    ):
+        return []
+    if provider_override or base_url_override or model_override or step_priority <= 1:
+        return list(candidates)
+    return [candidate for candidate in candidates if _is_lead_candidate(candidate)]
 
 
 def _rewrite_packet(candidate: dict) -> dict[str, object]:
@@ -2000,7 +2087,7 @@ def _call_provider_batch(
         api_key=api_key,
         base_url=base_url,
         timeout=timeout,
-        max_retries=sdk_retries_for_route(provider=provider_name, model=model, base_url=base_url),
+        max_retries=0 if provider_name.lower().startswith("openai") else sdk_retries_for_route(provider=provider_name, model=model, base_url=base_url),
     )
     mapping: ProviderMapping = {}
 
@@ -2018,6 +2105,8 @@ def _call_provider_batch(
         # stage boundaries — so we can see where the rewrite minutes actually go.
         _started_at = now_london().isoformat()
         _t0 = time.monotonic()
+        _queue_wait_seconds = 0.0
+        _api_seconds = 0.0
         try:
             logger.info(
                 "%s: batch %s/%d (%s) — sending %d candidates to %s...",
@@ -2042,8 +2131,11 @@ def _call_provider_batch(
             # paces *when* calls start, and the token limiter keeps tokens-per-
             # minute under OpenAI's real ceiling (the actual cause of the 429s).
             with _API_SEMAPHORE:
+                _queue_t0 = time.monotonic()
                 _API_RATE_LIMITER.acquire()
                 _API_TOKEN_LIMITER.acquire(_estimate_request_tokens(messages, max_tokens))
+                _queue_wait_seconds = time.monotonic() - _queue_t0
+                _api_t0 = time.monotonic()
                 response = client.chat.completions.create(
                     model=model,
                     messages=messages,
@@ -2051,6 +2143,7 @@ def _call_provider_batch(
                     max_tokens=max_tokens,
                     **chat_completion_options_for_route(provider=provider_name, model=model, base_url=base_url),
                 )
+                _api_seconds = time.monotonic() - _api_t0
             from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
             record_call_from_response(
                 response=response,
@@ -2075,6 +2168,8 @@ def _call_provider_batch(
             batch_diagnostic["started_at"] = _started_at
             batch_diagnostic["finished_at"] = now_london().isoformat()
             batch_diagnostic["duration_seconds"] = round(time.monotonic() - _t0, 3)
+            batch_diagnostic["queue_wait_seconds"] = round(_queue_wait_seconds, 3)
+            batch_diagnostic["api_seconds"] = round(_api_seconds, 3)
             if diagnostics is not None:
                 diagnostics.append(batch_diagnostic)
             logger.info(
@@ -2114,6 +2209,8 @@ def _call_provider_batch(
                         "started_at": _started_at,
                         "finished_at": now_london().isoformat(),
                         "duration_seconds": round(time.monotonic() - _t0, 3),
+                        "queue_wait_seconds": round(_queue_wait_seconds, 3),
+                        "api_seconds": round(_api_seconds, 3),
                     }
                 )
             return {}
@@ -2126,11 +2223,6 @@ def _call_provider_batch(
         batch_result: ProviderMapping = {}
         batch_result.update(_send_once(batch, batch_idx, "initial"))
         missing = [c for c in batch if str(c.get("fingerprint") or "") not in batch_result]
-        if missing:
-            _jittered_sleep(0.5)
-            retry_mapping = _send_once(missing, batch_idx, "retry_same_batch")
-            batch_result.update(retry_mapping)
-            missing = [c for c in missing if str(c.get("fingerprint") or "") not in retry_mapping]
         if missing and len(missing) > 1:
             split_size = max(1, min(3, len(missing) // 2 or 1))
             for split_idx in range(0, len(missing), split_size):
@@ -2209,16 +2301,37 @@ def _call_with_fallback(
             continue
         if mapping:
             time.sleep(1)
+        request_candidates = _fallback_request_candidates(
+            missing,
+            step_priority=step.priority,
+            provider=step.provider,
+            model=step.model,
+            provider_override=provider_override,
+            base_url_override=base_url_override,
+            model_override=model_override,
+        )
+        if not request_candidates:
+            logger.info(
+                "Skipping %s fallback for %d non-lead miss(es) on route %s.",
+                step.provider_label,
+                len(missing),
+                route_name,
+            )
+            break
         before = len(mapping)
         mapping.update(
             _call_provider_batch(
                 step.base_url,
                 step.api_key,
                 step.model,
-                missing,
+                request_candidates,
                 f"{step.provider_label}{label_suffix}",
                 timeout=step.timeout_seconds or 90,
-                batch_size=batch_size_override or step.batch_size or BATCH_SIZE,
+                batch_size=(
+                    1
+                    if step.priority > 1 and not (provider_override or base_url_override or model_override)
+                    else (batch_size_override or step.batch_size or BATCH_SIZE)
+                ),
                 system_prompt=prompt,
                 prompt_name=prompt_name,
                 today_date=today_date,
@@ -2239,16 +2352,20 @@ def _call_with_fallback(
             and prompt_name not in {"force_write", "repair_draft"}
         ):
             retry_before = len(mapping)
+            retry_candidates = [c for c in missing if _is_lead_candidate(c) or _is_protected_rewrite_candidate(c)]
+            if not retry_candidates:
+                logger.info("OpenAI rewrite retry skipped for %d optional miss(es).", len(missing))
+                continue
             logger.info(
-                "OpenAI rewrite retry: %d miss(es) after primary batch; retrying one-by-one before fallback.",
-                len(missing),
+                "OpenAI rewrite retry: %d protected/lead miss(es) after primary batch; retrying one-by-one before fallback.",
+                len(retry_candidates),
             )
             mapping.update(
                 _call_provider_batch(
                     step.base_url,
                     step.api_key,
                     step.model,
-                    missing,
+                    retry_candidates,
                     f"{step.provider_label}{label_suffix}-retry",
                     timeout=step.timeout_seconds or 90,
                     batch_size=1,
@@ -2509,6 +2626,23 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     else:
         original_rewrite_count = len(to_rewrite)
         run_iso = now_london().isoformat()
+        to_rewrite, rewrite_shortlist = _apply_rewrite_shortlist(candidates, to_rewrite)
+        if rewrite_shortlist["held_for_backup"]:
+            # Pre-board before any model call: mini should judge the real
+            # possible issue, not every low-priority overflow item from the
+            # broad scan. Held items stay recoverable in backup_pool.
+            soft_warnings.append(
+                "Rewrite pre-board: "
+                f"{rewrite_shortlist['held_for_backup']} candidate(s) held in backup before Board Judge."
+            )
+            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        logger.info(
+            "LLM pre-board: %d/%d candidates sent to Board Judge; %d held in backup.",
+            len(to_rewrite),
+            original_rewrite_count,
+            rewrite_shortlist["held_for_backup"],
+        )
+
         english_card_mapping = _call_english_cards_with_fallback(
             to_rewrite,
             provider_override,
@@ -2521,17 +2655,6 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
             logger.info("Board Judge: applied %d English reader cards before shortlist.", english_cards_applied)
 
-        to_rewrite, rewrite_shortlist = _apply_rewrite_shortlist(candidates, to_rewrite)
-        if rewrite_shortlist["held_for_backup"]:
-            # Holding lower-priority candidates in backup before
-            # translation is NORMAL cost control, not a failure. It must
-            # NOT push stage_status to "degraded" — that flipped the
-            # writer into degraded_shrink on 2026-05-28 and made the
-            # report say "генерация работала нестабильно" at 92% yield.
-            soft_warnings.append(
-                "Rewrite shortlist: "
-                f"{rewrite_shortlist['held_for_backup']} candidate(s) held in backup before translation."
-            )
         logger.info(
             "LLM rewrite: %d/%d candidates selected for GPT rewrite; %d held in backup.",
             len(to_rewrite),
@@ -2883,12 +3006,13 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "skipped_manual_review": skipped_manual_review,
             "english_first": {
                 "enabled": True,
-                "board_judge_before_shortlist": True,
-                "board_judge_input": original_rewrite_count if "original_rewrite_count" in locals() else len(to_rewrite),
+                "deterministic_pre_board_before_judge": True,
+                "pre_board_input": original_rewrite_count if "original_rewrite_count" in locals() else len(to_rewrite),
+                "board_judge_input": len(to_rewrite),
                 "cards_applied": english_cards_applied,
                 "selected_for_translation": len(to_rewrite),
                 "cards_missing_on_selected": sum(1 for c in to_rewrite if not str(c.get("english_reader_card") or "").strip()),
-                "policy": "Board Judge writes English fact/reader cards before shortlist; deterministic builder chooses the translation board; final Russian translation uses compact English cards with legacy full-evidence fallback on any model miss.",
+                "policy": "Deterministic pre-board trims the broad scan before mini sees it; Board Judge and final translation are mini-first, with gpt-4o automatic fallback only for the single lead item.",
             },
             "translation_memory": {
                 "enabled": True,

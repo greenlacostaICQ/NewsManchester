@@ -124,7 +124,8 @@ DEGRADED_LLM_SECTION_MAX_ITEMS = {
     "Русскоязычные концерты и стендап UK": 3,
 }
 
-PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 37  # +2 to make room for the reserved IT/business slots
+PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 37  # counted public budget; reserved sections can borrow within the hard cap
+PUBLIC_DIGEST_HARD_RENDERED_ITEMS = 45
 PUBLIC_SECTION_RESERVED_MIN = {
     # Fresh/Today are the product spine of the morning issue. They must not be
     # squeezed by later ticket/event rails when strong written news already
@@ -5458,6 +5459,38 @@ def write_digest(project_root: Path) -> StageResult:
                     }
                 )
             lines, srcs, fps, scores, titles = next_lines, next_srcs, next_fps, next_scores, next_titles
+        hard_remaining = PUBLIC_DIGEST_HARD_RENDERED_ITEMS - len(rendered_candidate_fingerprints)
+        if hard_remaining <= 0:
+            for idx, ln in enumerate(lines):
+                global_budget_dropped.append(
+                    {
+                        "section": section_name,
+                        "fingerprint": fps[idx] if idx < len(fps) else "",
+                        "title": titles[idx] if idx < len(titles) else re.sub(r"<[^>]+>", "", ln)[:120],
+                        "source_label": srcs[idx] if idx < len(srcs) else "",
+                        "reader_value_score": scores[idx] if idx < len(scores) else 0.0,
+                        "reason": f"Hard rendered-item cap {PUBLIC_DIGEST_HARD_RENDERED_ITEMS} reached.",
+                    }
+                )
+            lines, srcs, fps, scores, titles = [], [], [], [], []
+        elif len(lines) > hard_remaining:
+            for idx in range(hard_remaining, len(lines)):
+                ln = lines[idx]
+                global_budget_dropped.append(
+                    {
+                        "section": section_name,
+                        "fingerprint": fps[idx] if idx < len(fps) else "",
+                        "title": titles[idx] if idx < len(titles) else re.sub(r"<[^>]+>", "", ln)[:120],
+                        "source_label": srcs[idx] if idx < len(srcs) else "",
+                        "reader_value_score": scores[idx] if idx < len(scores) else 0.0,
+                        "reason": f"Hard rendered-item cap {PUBLIC_DIGEST_HARD_RENDERED_ITEMS} reached.",
+                    }
+                )
+            lines = lines[:hard_remaining]
+            srcs = srcs[:hard_remaining]
+            fps = fps[:hard_remaining]
+            scores = scores[:hard_remaining]
+            titles = titles[:hard_remaining]
         # Per-source / per-section caps can filter every remaining line —
         # don't emit a bare section header in that case, the release gate
         # rejects empty low-signal blocks.
@@ -5536,6 +5569,7 @@ def write_digest(project_root: Path) -> StageResult:
             "visible_item_count": visible_item_count,
             "public_digest_budget": {
                 "max_visible_items": PUBLIC_DIGEST_MAX_VISIBLE_ITEMS,
+                "hard_rendered_items": PUBLIC_DIGEST_HARD_RENDERED_ITEMS,
                 "dropped_count": len(global_budget_dropped),
                 "dropped_items": global_budget_dropped[:80],
             },

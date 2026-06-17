@@ -14,19 +14,15 @@ DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
 DEEPSEEK_MODEL = "deepseek-v4-flash"
 DEEPSEEK_PRO_MODEL = "deepseek-v4-pro"
 OPENAI_BASE_URL = "https://api.openai.com/v1"
-# Prose rewrite (the editorial Russian cards) runs on gpt-4o: gpt-4o-mini was
-# unreliable on rich evidence — on 2026-06-05 it returned empty on 919/915-char
-# stories plus 14 malformed outputs, forcing the DeepSeek fallback daily. gpt-4o
-# is the right-sized model for quality-critical generation (~$13.5/mo on this
-# volume). Classification/dedupe scoring stays on mini — it doesn't need 4o and
-# that's where cost would balloon.
+# Prose rewrite defaults to mini. gpt-4o is no longer a broad production
+# fallback: one slow morning on 2026-06-17 showed that automatic escalation of
+# wide batches can consume the whole send window. The rewrite code may call
+# gpt-4o surgically for the single lead item only; all normal board/translation
+# work must fit mini or degrade optional items into backup.
 OPENAI_REWRITE_MODEL = "gpt-4o"
 OPENAI_SCORING_MODEL = "gpt-4o-mini"
-# Transport reverted to gpt-4o: on 2026-06-13 mini returned EMPTY on two tram
-# lift alerts that had 330/427 chars of evidence (Dane Road, Queens Road), so
-# they silently dropped — gpt-4o wrote them in earlier runs. Reliability on the
-# Metrolink-critical block beats the few-cents/day saving. (Route kept separate
-# only for its larger batch / tighter timeout — short transport lines.)
+# Kept for explicit manual overrides; the default morning transport route is
+# mini-only and relies on deterministic transport_fill before rewrite.
 OPENAI_TRANSPORT_MODEL = "gpt-4o"
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile"
@@ -72,53 +68,38 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
     ),
     "curator": (
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "curator_mini_primary", 1, timeout_seconds=30),
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "curator_quality_fallback", 2, timeout_seconds=45),
-        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "curator_last_resort", 3, timeout_seconds=20),
-        ModelRouteStep("groq", "Groq", GROQ_BASE_URL, GROQ_FALLBACK_MODEL, "GROQ_API_KEY", "resilient_fallback", 4, batch_size=6, timeout_seconds=30),
     ),
     "rewrite": (
-        # Visible Russian copy comes from OpenAI as the quality primary. We
-        # make OpenAI itself robust first (small batches + generous timeout +
-        # SDK backoff via max_retries in llm_rewrite), so it rarely misses.
-        # DeepSeek sits at priority 2 as a LAST RESORT only: a slightly
-        # weaker Russian sentence on a hard-news item (police appeal, cordon)
-        # is better than the item vanishing. Fallback-written items keep
-        # draft_line_provider="DeepSeek" so the degraded phrasing is auditable.
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_rewrite_primary", 1, batch_size=10, timeout_seconds=60),
-        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "rewrite_last_resort", 2, batch_size=10, timeout_seconds=60),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "mini_rewrite_primary", 1, batch_size=6, timeout_seconds=45),
     ),
     # English-first architecture: judge source-language candidates and prepare
     # compact English fact/reader cards before any Russian copy is written.
-    # OpenAI mini is the primary board judge; DeepSeek is retained as a
-    # resilience/extraction fallback, not as the final arbiter.
+    # OpenAI mini is the primary board judge; gpt-4o is a surgical single-lead
+    # fallback only, never a broad extraction fallback.
     "english_cards": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "board_judge_mini_primary", 1, batch_size=12, timeout_seconds=30),
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "english_fact_reader_quality_fallback", 2, batch_size=10, timeout_seconds=60),
-        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "english_extraction_last_resort", 3, batch_size=12, timeout_seconds=25),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "board_judge_mini_primary", 1, batch_size=8, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "lead_only_board_fallback", 2, batch_size=1, timeout_seconds=45),
     ),
     # Translate only the already-formed English reader cards. This keeps the
     # expensive GPT call on the final short copy, not the raw evidence packet.
-    # DeepSeek Pro is a fallback: weaker Russian is better than a vanished item,
-    # and the line remains auditable via draft_line_provider/model.
+    # gpt-4o is a surgical single-lead fallback only.
     "final_translate": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "final_ru_translation_mini_primary", 1, batch_size=16, timeout_seconds=30),
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "final_ru_translation_quality_fallback", 2, batch_size=10, timeout_seconds=60),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "final_ru_translation_mini_primary", 1, batch_size=8, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "lead_only_translation_fallback", 2, batch_size=1, timeout_seconds=45),
     ),
-    # Transport: short structured translation → cheap mini is enough. Bigger
-    # batches (short lines) + tight timeout; DeepSeek last-resort net.
+    # Transport: short structured translation → cheap mini is enough. Most
+    # transport lines should already be handled by transport_fill.
     "transport_rewrite": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_TRANSPORT_MODEL, "OPENAI_API_KEY", "transport_primary", 1, batch_size=6, timeout_seconds=30),
-        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "transport_last_resort", 2, batch_size=6, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "transport_mini_primary", 1, batch_size=6, timeout_seconds=30),
     ),
-    # Events carry structured datetime/venue fields. OpenAI stays primary;
-    # DeepSeek is the same last-resort net so a non-deterministic culture
-    # event (film, talk) never disappears just because OpenAI timed out.
+    # Events carry structured datetime/venue fields; mini gets the compact
+    # selected board only.
     "events_rewrite": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "events_primary", 1, batch_size=5, timeout_seconds=60),
-        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "events_last_resort", 2, batch_size=5, timeout_seconds=60),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "events_mini_primary", 1, batch_size=5, timeout_seconds=45),
     ),
     "repair": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "quality_repair", 1, batch_size=10, timeout_seconds=60),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "hard_defect_repair_mini", 1, batch_size=5, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "lead_only_repair_fallback", 2, batch_size=1, timeout_seconds=45),
     ),
 }
 
