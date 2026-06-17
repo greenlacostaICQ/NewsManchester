@@ -71,23 +71,25 @@ class PromptVersioningTest(unittest.TestCase):
     def test_model_routing_policy_separates_scoring_and_rewrite(self) -> None:
         routes = route_snapshot()
 
-        self.assertEqual(routes["curator"][0]["role"], "cheap_scoring")
+        self.assertEqual(routes["curator"][0]["role"], "curator_mini_primary")
+        self.assertEqual(routes["curator"][0]["model"], "gpt-4o-mini")
         self.assertEqual(routes["dedupe_review"][0]["role"], "cheap_scoring")
-        self.assertEqual(routes["rewrite"][0]["role"], "quality_rewrite_primary")
+        self.assertEqual(routes["rewrite"][0]["role"], "mini_rewrite_primary")
         self.assertEqual(routes["rewrite"][0]["provider_label"], "OpenAI")
-        # DeepSeek is a last-resort priority-2 step: OpenAI writes, and only if
-        # it fails outright does DeepSeek catch the item (it writes worse, so it
-        # never leads). See T2 / 2026-05-29 APITimeoutError loss.
-        self.assertEqual(len(routes["rewrite"]), 2)
-        self.assertEqual(routes["rewrite"][1]["provider_label"], "DeepSeek")
-        self.assertEqual(routes["rewrite"][1]["role"], "rewrite_last_resort")
+        self.assertEqual(routes["rewrite"][0]["model"], "gpt-4o-mini")
+        self.assertEqual(len(routes["rewrite"]), 1)
+        self.assertEqual(routes["english_cards"][0]["role"], "board_judge_mini_primary")
+        self.assertEqual(routes["english_cards"][0]["batch_size"], 8)
+        self.assertEqual(routes["english_cards"][1]["role"], "lead_only_board_fallback")
+        self.assertEqual(routes["english_cards"][1]["model"], "gpt-4o")
         self.assertEqual(routes["events_rewrite"][0]["provider_label"], "OpenAI")
         self.assertEqual(routes["events_rewrite"][0]["batch_size"], 5)
-        self.assertEqual(len(routes["events_rewrite"]), 2)
-        self.assertEqual(routes["events_rewrite"][1]["provider_label"], "DeepSeek")
-        self.assertEqual(routes["repair"][0]["role"], "quality_repair")
+        self.assertEqual(len(routes["events_rewrite"]), 1)
+        self.assertEqual(routes["repair"][0]["role"], "hard_defect_repair_mini")
         self.assertEqual(routes["repair"][0]["provider_label"], "OpenAI")
-        self.assertEqual(len(routes["repair"]), 1)
+        self.assertEqual(routes["repair"][1]["role"], "lead_only_repair_fallback")
+        self.assertEqual(routes["pre_send_quality"][0]["role"], "whole_digest_strong_editor")
+        self.assertEqual(routes["pre_send_quality"][0]["model"], "gpt-4o")
 
     def test_model_route_override_uses_manual_single_step(self) -> None:
         route = resolve_model_route(

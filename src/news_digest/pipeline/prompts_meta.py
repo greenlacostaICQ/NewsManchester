@@ -19,6 +19,7 @@ from news_digest.pipeline import curator as _cur
 from news_digest.pipeline import dedupe as _dd
 from news_digest.pipeline import editor as _ed
 from news_digest.pipeline import post_publish_judge as _ppj
+from news_digest.pipeline import pre_send_quality_judge as _psq
 
 PROMPT_REGISTRY_VERSION = 1
 
@@ -63,6 +64,8 @@ PROMPTS: tuple[PromptMeta, ...] = (
     PromptMeta(name="pre_send_russian_editor", version="v2", hash=_h(_ed.PRE_SEND_RUSSIAN_EDITOR_PROMPT)),
     PromptMeta(name="post_publish_judge", version=_ppj.JUDGE_PROMPT_VERSION,
                hash=_h(_ppj.JUDGE_PROMPT)),
+    PromptMeta(name="pre_send_quality_judge", version=_psq.PROMPT_VERSION,
+               hash=_h(_psq.SYSTEM_PROMPT)),
 )
 
 

@@ -135,6 +135,14 @@ def _release_gate_error_for_file(path: Path) -> str | None:
     text = resolved_path.read_text(encoding="utf-8")
     if f"Greater Manchester Brief — {today}," not in text:
         return "current_digest.html does not contain today's digest header"
+    try:
+        from news_digest.pipeline.pre_send_quality_judge import quality_gate_error_for_digest  # noqa: PLC0415
+
+        quality_error = quality_gate_error_for_digest(PROJECT_ROOT, resolved_path)
+    except Exception as exc:  # noqa: BLE001
+        return f"pre-send quality judge check failed: {exc}"
+    if quality_error:
+        return quality_error
     return None
 
 
@@ -2198,6 +2206,15 @@ def cmd_post_publish_judge() -> int:
     return 0
 
 
+def cmd_pre_send_quality_judge(dry_run: bool) -> int:
+    """Run the required strong-model quality gate before Telegram send."""
+    from news_digest.pipeline.pre_send_quality_judge import evaluate_pre_send_quality  # noqa: PLC0415
+
+    result = evaluate_pre_send_quality(PROJECT_ROOT, dry_run=dry_run)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0 if result.get("can_send") is True else 1
+
+
 def cmd_delivered_today() -> int:
     settings, _, store = _load_store_and_client()
     payload = _delivered_today_payload(settings) or store.get_last_delivery()
@@ -2458,6 +2475,7 @@ def cmd_pipeline_config() -> int:
                     "write-digest",
                     "edit-digest",
                     "build-digest",
+                    "pre-send-quality-judge",
                 ],
                 "required_release_gate_version": REQUIRED_RELEASE_GATE_VERSION,
                 "prompt_registry_version": PROMPT_REGISTRY_VERSION,
@@ -2699,6 +2717,19 @@ def build_parser() -> argparse.ArgumentParser:
         "edit-digest",
         help="Run editor/balancer checks on draft_digest.html.",
     )
+    pre_send_parser = subparsers.add_parser(
+        "pre-send-quality-judge",
+        help=(
+            "Required strong-model final editor before Telegram send. "
+            "Reads current_digest.html plus compact rendered evidence and "
+            "writes pre_send_quality_report.json."
+        ),
+    )
+    pre_send_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate inputs and write a dry-run report without calling the model.",
+    )
     discover_parser = subparsers.add_parser(
         "discover-sources",
         help="Probe seed sites for RSS/sitemap/news/event/consultation source candidates.",
@@ -2829,6 +2860,8 @@ def main() -> int:
         return cmd_write_digest()
     if args.command == "edit-digest":
         return cmd_edit_digest()
+    if args.command == "pre-send-quality-judge":
+        return cmd_pre_send_quality_judge(args.dry_run)
     if args.command == "discover-sources":
         return cmd_discover_sources(args.seeds)
     if args.command == "repair-dead-parsers":

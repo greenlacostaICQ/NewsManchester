@@ -101,6 +101,12 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "hard_defect_repair_mini", 1, batch_size=5, timeout_seconds=30),
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "lead_only_repair_fallback", 2, batch_size=1, timeout_seconds=45),
     ),
+    # One strong-model pass over the already-built digest before Telegram.
+    # This is not a broad fallback path: it reads only visible output and
+    # decides pass / warn / repair_required / block.
+    "pre_send_quality": (
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "whole_digest_strong_editor", 1, timeout_seconds=75),
+    ),
 }
 
 

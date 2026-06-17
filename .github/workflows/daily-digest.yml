@@ -84,6 +84,11 @@ jobs:
           python3 scripts/run_local_digest.py edit-digest
           python3 scripts/run_local_digest.py build-digest
 
+      - name: Pre-send quality judge — strong final editor
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI }}
+        run: python3 scripts/run_local_digest.py pre-send-quality-judge
+
       - name: Send digest to Telegram
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
@@ -98,7 +103,6 @@ jobs:
         # the LLM call errors, the step prints and exits 0. Drift is
         # written into release_report.json so send-warnings can surface
         # it without rerunning the judge.
-        if: always()
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI }}
         run: |
