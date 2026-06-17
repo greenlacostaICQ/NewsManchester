@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from datetime import date
 import html
 import json
 import os
@@ -113,6 +114,49 @@ def _has_included_candidates_for_section(candidates: list[dict], section_name: s
     )
 
 
+_RU_MONTHS_GENITIVE = {
+    "января": 1, "февраля": 2, "марта": 3, "апреля": 4, "мая": 5, "июня": 6,
+    "июля": 7, "августа": 8, "сентября": 9, "октября": 10, "ноября": 11, "декабря": 12,
+}
+_RELATIVE_DAY_RE = re.compile(
+    r"\b(Сегодня|Завтра|Послезавтра)\b\s*,?\s*(\d{1,2})\s+([А-Яа-яё]+)",
+    re.IGNORECASE,
+)
+
+
+def _fix_relative_day_label(line: str) -> tuple[str, list[str]]:
+    """Recompute «Сегодня/Завтра» against the explicit date in the same line
+    and the run date. If the relative word is >2 days off or in the past, drop
+    it and keep the reliable explicit date (owner 2026-06-16: «Завтра, 18 июня»
+    в выпуске от 16-го)."""
+    text = str(line or "")
+    match = _RELATIVE_DAY_RE.search(text)
+    if not match:
+        return text, []
+    month = _RU_MONTHS_GENITIVE.get(match.group(3).lower())
+    if not month:
+        return text, []
+    today = now_london().date()
+    try:
+        event_day = date(today.year, month, int(match.group(2)))
+    except ValueError:
+        return text, []
+    if (event_day - today).days < -182:  # explicit date already rolled into next year
+        try:
+            event_day = date(today.year + 1, month, int(match.group(2)))
+        except ValueError:
+            return text, []
+    delta = (event_day - today).days
+    correct = {0: "Сегодня", 1: "Завтра", 2: "Послезавтра"}.get(delta)
+    if correct == match.group(1).capitalize():
+        return text, []
+    if correct:
+        fixed = _RELATIVE_DAY_RE.sub(lambda m: f"{correct}, {m.group(2)} {m.group(3)}", text, count=1)
+    else:
+        fixed = _RELATIVE_DAY_RE.sub(lambda m: f"{m.group(2)} {m.group(3)}", text, count=1)
+    return fixed, ["relative_day_label_fixed"]
+
+
 def _polish_russian_line_rules(line: str) -> tuple[str, list[str]]:
     fixed = str(line or "")
     reasons: list[str] = []
@@ -120,6 +164,8 @@ def _polish_russian_line_rules(line: str) -> tuple[str, list[str]]:
         if pattern.search(fixed):
             fixed = pattern.sub(replacement, fixed)
             reasons.append(pattern.pattern)
+    fixed, day_reasons = _fix_relative_day_label(fixed)
+    reasons.extend(day_reasons)
     fixed = re.sub(r"\s{2,}", " ", fixed)
     fixed = re.sub(r"\s+([,.;:])", r"\1", fixed)
     fixed = re.sub(r"•\s*,\s*", "• ", fixed)

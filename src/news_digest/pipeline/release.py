@@ -1392,6 +1392,35 @@ def _quarantine_bad_rendered_html_items(
     return "\n".join(kept).strip() + ("\n" if kept else ""), report
 
 
+def _force_remove_bad_rendered_lines(
+    html_text: str,
+    rendered_html_review: dict[str, object],
+) -> tuple[str, dict[str, object]]:
+    """Last-resort, text-tolerant removal of any visible line still flagged
+    bad after the precise URL/exact-text quarantine. A residual bad row must
+    never block the whole issue — drop it and ship the rest."""
+    bad_items = rendered_html_review.get("bad_visible_items") if isinstance(rendered_html_review, dict) else []
+    keys: list[str] = []
+    for item in bad_items or []:
+        if isinstance(item, dict):
+            text = re.sub(r"\s+", " ", str(item.get("visible_text") or "")).strip().lower()
+            if len(text) >= 20:
+                keys.append(text[:60])
+    if not keys:
+        return html_text, {"removed_count": 0}
+    kept: list[str] = []
+    removed = 0
+    for line in html_text.splitlines():
+        raw = line.strip()
+        if raw.startswith("•"):
+            vis = re.sub(r"\s+", " ", _visible_text_from_html(raw)).strip().lower()
+            if vis and any(key in vis or vis[:60] in key for key in keys):
+                removed += 1
+                continue
+        kept.append(line)
+    return "\n".join(kept).strip() + ("\n" if kept else ""), {"removed_count": removed}
+
+
 def _visible_line_still_unclear_after_repair(visible_text: str) -> bool:
     text = re.sub(r"\s+", " ", str(visible_text or "")).strip()
     if len(text) < 95:
@@ -3339,10 +3368,21 @@ def build_release(project_root: Path) -> ReleaseResult:
                 )
                 rendered_html_review = _classify_rendered_html_quality(sanitized_html, candidates_report)
     if rendered_html_review["counts"].get("bad_visible_items", 0) > 0:
-        errors.append(
-            "Rendered HTML review still found bad visible item(s) after writer repair; "
-            "automatic quarantine could not remove all of them safely. "
-            "See release_report.rendered_html_review."
+        # Degradation, not fail-closed: force-remove any residual flagged row
+        # and ship the issue anyway. One bad content row must never block the
+        # whole digest — only technical inconsistency (missing/unpromoted build,
+        # stale date/marker) may block the send (owner 2026-06-16).
+        if draft_path.exists():
+            forced_html, forced_report = _force_remove_bad_rendered_lines(
+                draft_path.read_text(encoding="utf-8"), rendered_html_review
+            )
+            if int(forced_report.get("removed_count") or 0) > 0:
+                draft_path.write_text(forced_html, encoding="utf-8")
+                rendered_html_review = _classify_rendered_html_quality(forced_html, candidates_report)
+                rendered_html_quarantine["force_removed_count"] = forced_report.get("removed_count")
+        warnings.append(
+            "Rendered HTML review force-removed residual bad visible item(s); "
+            "digest continues (degradation, not block). See release_report.rendered_html_review."
         )
     dedupe_memory = read_json(state_dir / "dedupe_memory.json", {}) if (state_dir / "dedupe_memory.json").exists() else {}
     event_miss_review = _event_miss_review(

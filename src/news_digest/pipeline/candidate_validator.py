@@ -198,6 +198,44 @@ def _reclassify_outside_gm_when_local_venue(candidate: dict) -> bool:
     note = "Validator: reclassified outside_gm_tickets → ticket_radar (local GM venue detected)."
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
     return True
+
+
+# Clearly non-GM UK places. Used to push a ticket that landed in the GM radar
+# back to outside_gm_tickets so it never carries an "в GM" label (owner
+# 2026-06-16: Suzanne Vega at Salisbury City Hall shown as a GM concert).
+_OUTSIDE_GM_PLACE_TOKENS = (
+    "salisbury", "edinburgh", "glasgow", "newcastle", "london", "cardiff",
+    "newport", "birmingham", "leeds", "liverpool", "sheffield", "bristol",
+    "brighton", "thetford", "isle of wight", "kentish town", "anfield",
+    "tottenham", "scarborough", "delamere", "halifax", "glasgow green",
+    "cardiff castle", "edinburgh playhouse",
+)
+
+
+def _reclassify_gm_when_outside_venue(candidate: dict) -> bool:
+    """Inverse of _reclassify_outside_gm_when_local_venue: a ticket routed to
+    the GM radar whose venue is clearly a non-GM city (Salisbury City Hall)
+    must move to outside_gm_tickets. Match on venue + title only — body text
+    can mention other cities — and leave unknown venues untouched."""
+    if str(candidate.get("primary_block") or "") != "ticket_radar":
+        return False
+    if str(candidate.get("category") or "") != "venues_tickets":
+        return False
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    haystack = f"{str(event.get('venue') or '')} {str(candidate.get('title') or '')}".lower()
+    # Word-boundary match: "bury" (GM borough) must NOT match inside
+    # "salisbury", and an outside-GM city must be a whole word.
+    if not any(re.search(rf"\b{re.escape(token)}\b", haystack) for token in _OUTSIDE_GM_PLACE_TOKENS):
+        return False
+    if any(re.search(rf"\b{re.escape(token)}\b", haystack) for token in _LOCAL_GM_VENUE_TOKENS):
+        return False
+    candidate["primary_block"] = "outside_gm_tickets"
+    existing = str(candidate.get("reason") or "").strip()
+    note = "Validator: reclassified ticket_radar → outside_gm_tickets (non-GM venue detected)."
+    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    return True
+
+
 _EVENT_LIKE_TERMS = (
     "festival",
     "concert",
@@ -2100,6 +2138,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _exclude_road_only_transport(candidate)
         if candidate.get("include"):
             _reclassify_outside_gm_when_local_venue(candidate)
+        if candidate.get("include"):
+            _reclassify_gm_when_outside_venue(candidate)
         if candidate.get("include"):
             _exclude_stale_ticket_onsale(candidate)
         if candidate.get("include"):
