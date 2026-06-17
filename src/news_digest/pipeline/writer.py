@@ -2051,6 +2051,13 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
     head = f"<b>{title}</b>"
     lineup = _ticket_lineup(candidate)
     lineup = [n for n in lineup if n.lower() != title.lower()]
+    # Only a genuine festival / multi-act lineup gets a "Состав:". A single
+    # headliner with a support act (Take That + The Script) must NOT list the
+    # support act as if it were a co-headliner.
+    _signals = notability.get("signals") if isinstance(notability.get("signals"), dict) else {}
+    _is_festival = bool(candidate.get("festival_lineup")) or str(notability.get("kind") or "") == "lineup_or_show"
+    if not _is_festival or _signals.get("headliner_resolution") == "primary_headliner_locked":
+        lineup = []
     lineup_part = f" Состав: {', '.join(f'<b>{n}</b>' for n in lineup)}." if lineup else ""
     if day_month and venue:
         return f"• {head} — {day_month}{time_part}, {venue}{genre_part}{price_part}.{reason_part}{lineup_part}"
@@ -3151,9 +3158,16 @@ def _apply_section_min_floor_pull_back(
             return True
         if str(candidate.get("manual_override") or "") == "force_include":
             return True
-        # backup_candidate is an audit/reserve flag. It must not resurrect
-        # include=false items into the public issue.
-        return bool(include_backup and candidate.get("public_reserve") and candidate.get("include"))
+        # A clean backup (reject_reasons / borderline already excluded above)
+        # may be pulled into a thin section. Only backup_pool_only items stay
+        # archived — never published. (The old check required public_reserve AND
+        # include, but it was reached only when include is falsy, so it was dead
+        # code and no official backup could ever be recovered.)
+        return bool(
+            include_backup
+            and candidate.get("backup_candidate")
+            and not candidate.get("backup_pool_only")
+        )
 
     promoted = 0
     pool = [
