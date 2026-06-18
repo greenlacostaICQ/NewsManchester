@@ -230,6 +230,15 @@ _TRANSPORT_SOURCE_LABELS = {
     "national rail",
 }
 _TRANSPORT_CATEGORIES = {"transport"}
+_NEVER_AUTO_TRANSPORT_CATEGORIES = {
+    "professional_events",
+    "tech_business",
+    "food_openings",
+    "venues_tickets",
+    "culture_weekly",
+    "russian_speaking_events",
+    "diaspora_events",
+}
 _PROPERTY_HOUSING_RE = re.compile(
     r"\b(?:homes?|housing|flats?|apartments?|student\s+accommodation|pbsa|"
     r"planning|developer|development|warehouse|office\s+to\s+residential|"
@@ -340,10 +349,13 @@ def _should_route_to_transport(candidate: dict, blob: str, source_label: str) ->
     the transport block caused non-transport lines to leak into the public
     transport section before the pre-send judge caught the issue.
     """
-    if str(candidate.get("category") or "").lower() in _TRANSPORT_CATEGORIES:
+    category = str(candidate.get("category") or "").lower()
+    if category in _TRANSPORT_CATEGORIES:
         return True
     if source_label.strip().lower() in _TRANSPORT_SOURCE_LABELS:
         return True
+    if category in _NEVER_AUTO_TRANSPORT_CATEGORIES:
+        return False
     return bool(_TRANSPORT_SECTION_RE.search(blob) and _TRANSPORT_IMPACT_RE.search(blob))
 
 

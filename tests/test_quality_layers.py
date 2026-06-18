@@ -51,7 +51,10 @@ class EnglishDataQATests(unittest.TestCase):
                 "primary_block": "professional_events",
                 "source_label": "Manchester Digital Events",
                 "title": "A Manifesto for the Northern Tech Economy",
-                "summary": "The event discusses technology policy, investment and public services.",
+                "summary": (
+                    "The manifesto discusses technology policy, public services, "
+                    "the Bee Network and transport investment."
+                ),
             },
             {
                 "include": True,
