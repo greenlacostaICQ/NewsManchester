@@ -43,6 +43,39 @@ class EnglishDataQATests(unittest.TestCase):
         self.assertIn("section_routing:transport", reasons)
         self.assertEqual(candidate["primary_block"], "transport")
 
+    def test_generic_service_or_manifesto_does_not_reroute_to_transport(self) -> None:
+        cases = [
+            {
+                "include": True,
+                "category": "professional_events",
+                "primary_block": "professional_events",
+                "source_label": "Manchester Digital Events",
+                "title": "A Manifesto for the Northern Tech Economy",
+                "summary": "The event discusses technology policy, investment and public services.",
+            },
+            {
+                "include": True,
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "source_label": "Altrincham Today",
+                "title": "Man charged with murder of Stretford Grammar School headteacher appears in court",
+                "summary": "The court case has been listed and the defendant appeared before magistrates.",
+            },
+            {
+                "include": True,
+                "category": "tech_business",
+                "primary_block": "it_business",
+                "source_label": "MIDAS Manchester",
+                "title": "Invest Manchester",
+                "summary": "A refreshed investment identity mentions the city region's transport system.",
+            },
+        ]
+        for candidate in cases:
+            with self.subTest(candidate["title"]):
+                reasons = _apply_section_routing_quality(candidate)
+                self.assertNotIn("section_routing:transport", reasons)
+                self.assertNotEqual(candidate["primary_block"], "transport")
+
     def test_property_item_does_not_stay_in_it_business(self) -> None:
         candidate = {
             "include": True,

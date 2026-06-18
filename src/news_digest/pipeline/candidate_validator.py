@@ -214,7 +214,7 @@ _OUTSIDE_GM_PLACE_TOKENS = (
 _TRANSPORT_SECTION_RE = re.compile(
     r"\b(?:metrolink|tram|bus(?:es)?|bee\s+network|national\s+rail|"
     r"northern|transpennine|transport\s+for\s+wales|tfgm|rail\s+replacement|"
-    r"platform|stop|station|route|service)\b",
+    r"platform|stop)\b",
     re.IGNORECASE,
 )
 _TRANSPORT_IMPACT_RE = re.compile(
@@ -223,6 +223,13 @@ _TRANSPORT_IMPACT_RE = re.compile(
     r"сбой|задерж|отмен|объезд|закрыт|работы|лифт)\b",
     re.IGNORECASE,
 )
+_TRANSPORT_SOURCE_LABELS = {
+    "tfgm",
+    "metrolink",
+    "national rail enquiries",
+    "national rail",
+}
+_TRANSPORT_CATEGORIES = {"transport"}
 _PROPERTY_HOUSING_RE = re.compile(
     r"\b(?:homes?|housing|flats?|apartments?|student\s+accommodation|pbsa|"
     r"planning|developer|development|warehouse|office\s+to\s+residential|"
@@ -299,10 +306,7 @@ def _apply_section_routing_quality(candidate: dict) -> list[str]:
     blob = _candidate_blob(candidate)
     source_label = str(candidate.get("source_label") or "")
     block = str(candidate.get("primary_block") or "")
-    if block != "transport" and (
-        source_label.lower() in {"tfgm", "metrolink", "national rail enquiries"}
-        or (_TRANSPORT_SECTION_RE.search(blob) and _TRANSPORT_IMPACT_RE.search(blob))
-    ):
+    if block != "transport" and _should_route_to_transport(candidate, blob, source_label):
         candidate["primary_block"] = "transport"
         reasons.append("section_routing:transport")
     if (
@@ -325,6 +329,22 @@ def _apply_section_routing_quality(candidate: dict) -> list[str]:
         note = "Validator: corrected section routing before translation (" + ", ".join(reasons) + ")."
         candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
     return reasons
+
+
+def _should_route_to_transport(candidate: dict, blob: str, source_label: str) -> bool:
+    """Return True only for real public-transport/service disruption cards.
+
+    This deliberately avoids generic terms such as "service", "route",
+    "station", "works", or "transport system" on their own. Those words occur
+    in courts, politics, business PR and development stories; routing them to
+    the transport block caused non-transport lines to leak into the public
+    transport section before the pre-send judge caught the issue.
+    """
+    if str(candidate.get("category") or "").lower() in _TRANSPORT_CATEGORIES:
+        return True
+    if source_label.strip().lower() in _TRANSPORT_SOURCE_LABELS:
+        return True
+    return bool(_TRANSPORT_SECTION_RE.search(blob) and _TRANSPORT_IMPACT_RE.search(blob))
 
 
 def _hold_sensitive_thin_or_failed_enrichment(candidate: dict) -> bool:
