@@ -7,6 +7,7 @@ from news_digest.pipeline.candidate_validator import (
     _hold_sensitive_thin_or_failed_enrichment,
 )
 from news_digest.pipeline.glossary_qa import glossary_line_issues, repair_glossary_terms
+from news_digest.pipeline.writer import _draft_line_quality_errors, _today_focus_candidate_is_eligible
 
 
 class GlossaryQATests(unittest.TestCase):
@@ -67,6 +68,34 @@ class EnglishDataQATests(unittest.TestCase):
         self.assertTrue(_hold_sensitive_thin_or_failed_enrichment(candidate))
         self.assertFalse(candidate["include"])
         self.assertIn("sensitive_thin_or_failed_enrichment", candidate["reject_reasons"])
+
+
+class TodayFocusRegressionTests(unittest.TestCase):
+    def test_by_election_is_valid_today_focus(self) -> None:
+        candidate = {
+            "include": True,
+            "category": "media_layer",
+            "primary_block": "today_focus",
+            "title": "Voters head to the polls for Makerfield by-election",
+            "summary": "Voters in Makerfield head to the polls today in a Greater Manchester by-election.",
+            "lead": "Polling stations are open today in Makerfield.",
+            "practical_angle": "Residents voting today need to know polling stations are open.",
+        }
+        self.assertTrue(_today_focus_candidate_is_eligible(candidate, "• Makerfield: voters head to the polls today."))
+
+    def test_concise_today_focus_line_is_not_dropped_for_length_only(self) -> None:
+        candidate = {
+            "include": True,
+            "category": "media_layer",
+            "primary_block": "today_focus",
+            "title": "Voters head to the polls for Makerfield by-election",
+            "summary": "Voters in Makerfield head to the polls today in a Greater Manchester by-election.",
+            "lead": "Polling stations are open today in Makerfield.",
+            "practical_angle": "Residents voting today need to know polling stations are open.",
+        }
+        line = "• Makerfield: voters head to the polls today in a Greater Manchester by-election, with polling stations open for residents."
+        errors = _draft_line_quality_errors(candidate, line)
+        self.assertFalse([error for error in errors if "long-format category" in error])
 
 
 if __name__ == "__main__":

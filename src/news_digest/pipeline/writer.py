@@ -291,6 +291,7 @@ _TODAY_FOCUS_ROAD_RE = re.compile(
 _TODAY_FOCUS_READER_ACTION_RE = re.compile(
     r"\b(?:today|this morning|tonight|tomorrow|this week|deadline|consultation|"
     r"apply|report|check|avoid|use|book|register|appeal|witness|cctv|"
+    r"vote|voters?|polls?\s+open|polling\s+station|by-election|election|"
     r"closed|closure|reopen|delays?|diversion|warning|unsafe|danger|"
     r"inspection|cqc|ofsted|requires\s+improvement|inadequate|safeguarding|"
     r"patients?|residents?|tenants?|parents?|children|school|homes?|housing|"
@@ -298,16 +299,17 @@ _TODAY_FOCUS_READER_ACTION_RE = re.compile(
     re.IGNORECASE,
 )
 _TODAY_FOCUS_NO_ACTION_RE = re.compile(
-    r"\b(?:poll|have\s+your\s+say|anniversary|changed\s+manchester\s+forever|"
+    r"(?:\bpoll:|\bhave\s+your\s+say\b|\banniversary\b|\bchanged\s+manchester\s+forever\b|"
     r"changed\s+.*\s+forever|remembers?|remembered|tribute|survivor|"
-    r"moments?\s+from\s+death|look\s+back|throwback|what\s+happened\s+on\s+this\s+day)\b",
+    r"moments?\s+from\s+death|look\s+back|throwback|what\s+happened\s+on\s+this\s+day)",
     re.IGNORECASE,
 )
 _TODAY_FOCUS_HARD_ACTION_RE = re.compile(
     r"\b(?:report|apply|deadline|consultation|closed|closure|reopen|delays?|"
     r"diversion|warning|unsafe|danger|inspection|cqc|ofsted|"
     r"requires\s+improvement|inadequate|safeguarding|appeal|witness|cctv|"
-    r"service\s+change|strike)\b",
+    r"service\s+change|strike|vote|voters?\s+head\s+to\s+the\s+polls|"
+    r"polls?\s+open|polling\s+station|by-election|election\s+day)\b",
     re.IGNORECASE,
 )
 _FRESH_COMMERCIAL_PR_RE = re.compile(
@@ -442,6 +444,13 @@ def _today_focus_candidate_is_eligible(candidate: dict | None, line: str = "") -
         text = f"{text} {line}"
     if tier == "reject":
         return False
+    story_frame = contract.get("story_frame") if isinstance(contract.get("story_frame"), dict) else {}
+    why_now = str(story_frame.get("why_now") or "")
+    civic_today = (
+        story_type in {"civic", "planning", "service_accountability", "local_service_change", "local_cost"}
+        and why_now_is_publishable(why_now)
+        and _GM_LOCAL_ANCHOR_RE.search(text)
+    )
     if tier == "filler" and not (
         (
             story_type == "local_cost"
@@ -453,9 +462,9 @@ def _today_focus_candidate_is_eligible(candidate: dict | None, line: str = "") -
         )
     ):
         return False
-    if _TODAY_FOCUS_NO_ACTION_RE.search(text) and not _TODAY_FOCUS_HARD_ACTION_RE.search(text):
+    if _TODAY_FOCUS_NO_ACTION_RE.search(text) and not (_TODAY_FOCUS_HARD_ACTION_RE.search(text) or civic_today):
         return False
-    if not _TODAY_FOCUS_READER_ACTION_RE.search(text):
+    if not (_TODAY_FOCUS_READER_ACTION_RE.search(text) or civic_today):
         return False
     if story_type in {"incident", "public_safety_after_incident"} and not re.search(
         r"\b(?:warning|warned|parents?|abandoned|licen[cs]e|council|flood|water|electric|"
@@ -4366,6 +4375,11 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
             skip_min = True
         if block_key == "city_watch" and _has_clear_section_story(candidate, text):
             skip_min = True
+        if block_key == "today_focus" and len(normalized) >= 90:
+            # Today Focus is a practical pointer block. A clear civic/service
+            # update must not be dropped merely because it is one concise
+            # sentence; this was the 2026-06-18 send blocker.
+            skip_min = True
         # Dated event with no struct venue (extractor gap) still gets a lower
         # floor instead of the full 150 — a complete short listing is not weak.
         min_chars = DATED_EVENT_MIN_CHARS if _has_event_date else LONG_FORMAT_MIN_CHARS
@@ -4374,7 +4388,7 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
                 errors.append(
                     f"draft_line for long-format category needs ≥{min_chars} chars (got {len(normalized)})."
                 )
-        if sentence_count < LONG_FORMAT_MIN_SENTENCES and block_key != "city_watch" and not (_has_event_date and _event_venue(candidate)):
+        if sentence_count < LONG_FORMAT_MIN_SENTENCES and block_key not in {"city_watch", "today_focus"} and not (_has_event_date and _event_venue(candidate)):
             errors.append(
                 f"draft_line for long-format category needs ≥{LONG_FORMAT_MIN_SENTENCES} sentences (got {sentence_count})."
             )

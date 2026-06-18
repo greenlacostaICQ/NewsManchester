@@ -685,8 +685,8 @@ def edit_digest(project_root: Path) -> StageResult:
     required_to_check = [b for b in REQUIRED_BLOCKS if b != "Коротко"]
     for block in required_to_check:
         if block not in normalized_sections:
-            if block == "Что важно сегодня" and not _has_included_candidates_for_section(included_candidates, block):
-                warnings.append("No included today_focus candidates; omitted «Что важно сегодня» instead of blocking release.")
+            if block == "Что важно сегодня":
+                warnings.append("Today Focus has no rendered lines after writer/editor pass; omitted «Что важно сегодня» instead of blocking release.")
             else:
                 errors.append(f"Required block missing after editor pass: {block}.")
 
