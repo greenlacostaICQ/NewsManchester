@@ -518,6 +518,37 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
     }
 
 
+def _same_section_reserve_line(section_name: str, candidates: list[dict], rendered_urls: set[str]) -> str:
+    """A clean, ready public-reserve line for this section, used to replace an
+    unrepairable row. Reserve = public_reserve and not backup_pool_only, with a
+    draft_line that passes the language check and isn't already on the board."""
+    for c in candidates:
+        if not isinstance(c, dict):
+            continue
+        if PRIMARY_BLOCKS.get(str(c.get("primary_block") or "")) != section_name:
+            continue
+        if not (c.get("public_reserve") and not c.get("backup_pool_only")):
+            continue
+        line = str(c.get("draft_line") or "").strip()
+        if not line:
+            continue
+        if not line.startswith("• "):
+            line = f"• {line}"
+        if _line_needs_russian_editor(line):
+            continue
+        url = str(c.get("source_url") or "")
+        ident = canonical_url_identity(url) if url else ""
+        if ident and ident in rendered_urls:
+            continue
+        if "<a " not in line.lower() and url:
+            label = str(c.get("source_label") or "источник")
+            line = f'{line} <a href="{url}">{label}</a>'
+        if ident:
+            rendered_urls.add(ident)
+        return line
+    return ""
+
+
 def _pre_send_polish_sections(
     sections: dict[str, list[str]],
     warnings: list[str],
@@ -578,6 +609,32 @@ def _pre_send_polish_sections(
             rebuilt.setdefault(section_name, [])
         polished = rebuilt
 
+    # Universal degradation (owner: for everything, always): a row still bad
+    # after the repair pass is REPLACED from a clean same-section public
+    # reserve, else STRIPPED. The issue always ships; a known-bad row never does.
+    replaced = 0
+    stripped = 0
+    rendered_urls = {
+        _line_url_identity(line)
+        for lines in polished.values()
+        for line in lines
+        if line.strip()
+    }
+    for section_name in list(polished.keys()):
+        out: list[str] = []
+        for line in polished[section_name]:
+            if not line.strip() or not _line_needs_russian_editor(line):
+                out.append(line)
+                continue
+            replacement = _same_section_reserve_line(section_name, candidates or [], rendered_urls)
+            if replacement:
+                out.append(replacement)
+                replaced += 1
+            else:
+                stripped += 1
+                warnings.append(f"Degradation: stripped an unrepairable line in «{section_name}».")
+        polished[section_name] = out
+
     bad_examples: list[str] = []
     for item in _visible_line_items(polished):
         line = str(item.get("line") or "")
@@ -590,6 +647,8 @@ def _pre_send_polish_sections(
         "enabled": True,
         "rules_fixed": rule_fixed,
         "model_fixed": model_fixed,
+        "degraded_replaced": replaced,
+        "degraded_stripped": stripped,
         "remaining_bad": remaining_bad,
         "bad_examples": bad_examples,
         "model": PRE_SEND_RUSSIAN_EDITOR_MODEL,
@@ -618,6 +677,9 @@ def edit_digest(project_root: Path) -> StageResult:
         for candidate in payload.get("candidates", [])
         if isinstance(candidate, dict) and candidate.get("include")
     ]
+    # All candidates (incl. public reserves with include=False) so the polish
+    # pass can replace an unrepairable row from a same-section reserve.
+    all_candidates = [c for c in payload.get("candidates", []) if isinstance(c, dict)]
 
     errors: list[str] = []
     warnings: list[str] = []
@@ -674,7 +736,7 @@ def edit_digest(project_root: Path) -> StageResult:
             f"({len(weak_city_candidates)}/{len(city_candidates)})."
         )
 
-    normalized_sections, russian_editor_report = _pre_send_polish_sections(normalized_sections, warnings, included_candidates)
+    normalized_sections, russian_editor_report = _pre_send_polish_sections(normalized_sections, warnings, all_candidates)
     if int(russian_editor_report.get("remaining_bad") or 0) > 0:
         warnings.append(
             "Pre-send Russian editor still sees "
