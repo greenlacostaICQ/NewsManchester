@@ -1,26 +1,27 @@
 {
   "release_gate_version": 3,
-  "pipeline_run_id": "20260619T080117+0100",
-  "run_at_london": "2026-06-19T08:13:30.226173+01:00",
+  "pipeline_run_id": "20260619T082538+0100",
+  "run_at_london": "2026-06-19T08:37:25.141180+01:00",
   "run_date_london": "2026-06-19",
   "release_decision": "pass",
   "message": "Release passed. Promoted /home/runner/work/NewsManchester/NewsManchester/data/state/draft_digest.html to /home/runner/work/NewsManchester/NewsManchester/data/outgoing/current_digest.html.",
   "errors": [],
   "warnings": [
-    "Lost lead: curator-marked lead dropped by writer (media_layer) — draft_line for long-format category needs ≥150 chars (got 109).; draft_line for long-format category needs ≥2 sentences (got 1).",
-    "Section underflow: «Свежие новости» shipped 4 items (min=6) while writer dropped 7 candidate(s) that targeted this section — quality gates may be too strict.",
-    "Section underflow: «Выходные в GM» shipped 3 items (min=6) while writer dropped 7 candidate(s) that targeted this section — quality gates may be too strict.",
-    "Section underflow: «Еда, открытия и рынки» shipped 0 items (min=3) while writer dropped 1 candidate(s) that targeted this section — quality gates may be too strict.",
+    "Lost lead: curator-marked lead dropped by writer (media_layer) — draft_line for long-format category needs ≥2 sentences (got 1).",
+    "Section underflow: «Свежие новости» shipped 3 items (min=6) while writer dropped 7 candidate(s) that targeted this section — quality gates may be too strict.",
+    "Section underflow: «Городской радар» shipped 1 items (min=5) while writer dropped 1 candidate(s) that targeted this section — quality gates may be too strict.",
+    "Section underflow: «Выходные в GM» shipped 2 items (min=6) while writer dropped 8 candidate(s) that targeted this section — quality gates may be too strict.",
     "Section underflow: «Футбол» shipped 0 items (min=2) while writer dropped 3 candidate(s) that targeted this section — quality gates may be too strict.",
-    "Digest health [Risk] low_selected_writer_yield: Writer rendered 45 of 76 selected publishable candidates (59%); inventory/backup/manual-review items are excluded.",
+    "Digest health [Risk] low_selected_writer_yield: Writer rendered 44 of 71 selected publishable candidates (62%); inventory/backup/manual-review items are excluded.",
+    "Source anomaly: 4 source(s) dropped sharply vs their 7-day median — see release_report.source_anomalies.",
     "Dead parsers: 4 source(s) fetched but parsed 0 items all week — need a per-source extractor (Manchester Theatres Weekend, Manchester Theatres Next Weekend, BBC Sport Manchester United, BBC Sport Manchester City). See release_report.dead_parsers.",
-    "Source yield: 80 source(s) fetched today but contributed nothing to the digest — review release_report.source_status (sort by curated_count=0).",
+    "Source yield: 72 source(s) fetched today but contributed nothing to the digest — review release_report.source_status (sort by curated_count=0).",
     "Rejected review: 1 suspiciously rejected candidate(s) — see release_report.reject_review.",
-    "Event miss review: 5 event/ticket candidate(s) look like possible real misses after excluding deliberate skips, duplicates, stale items and manual-review holds — see release_report.event_miss_review.",
-    "Final loss check: 185 protected/high-value candidate(s) look like possible real misses after excluding deliberate ticket skips, duplicates and manual-review holds — see release_report.final_loss_check.",
-    "Backup pool: 1015 candidate(s) retained with TTL for recovery.",
+    "Event miss review: 3 event/ticket candidate(s) look like possible real misses after excluding deliberate skips, duplicates, stale items and manual-review holds — see release_report.event_miss_review.",
+    "Final loss check: 184 protected/high-value candidate(s) look like possible real misses after excluding deliberate ticket skips, duplicates and manual-review holds — see release_report.final_loss_check.",
+    "Backup pool: 1003 candidate(s) retained with TTL for recovery.",
     "Borderline queue: 86 candidate(s) held for manual review.",
-    "Borough coverage: Manchester забирает 60% видимых borough-specific пунктов (18/30)."
+    "Borough coverage: В 1 GM borough(s) ноль видимых пунктов: Bury."
   ],
   "lost_leads": [
     {
@@ -29,7 +30,6 @@
       "category": "media_layer",
       "primary_block": "last_24h",
       "reasons": [
-        "draft_line for long-format category needs ≥150 chars (got 109).",
         "draft_line for long-format category needs ≥2 sentences (got 1)."
       ]
     }
@@ -37,21 +37,21 @@
   "section_underflow": [
     {
       "section": "Свежие новости",
-      "actual": 4,
-      "minimum": 6,
-      "dropped_by_writer": 7
-    },
-    {
-      "section": "Выходные в GM",
       "actual": 3,
       "minimum": 6,
       "dropped_by_writer": 7
     },
     {
-      "section": "Еда, открытия и рынки",
-      "actual": 0,
-      "minimum": 3,
+      "section": "Городской радар",
+      "actual": 1,
+      "minimum": 5,
       "dropped_by_writer": 1
+    },
+    {
+      "section": "Выходные в GM",
+      "actual": 2,
+      "minimum": 6,
+      "dropped_by_writer": 8
     },
     {
       "section": "Футбол",
@@ -61,154 +61,143 @@
     }
   ],
   "cost_summary": {
-    "total_calls": 27,
-    "total_cost_usd": 0.053405,
-    "total_estimated_cost_usd": 0.059818,
-    "total_prompt_tokens": 128164,
-    "total_completion_tokens": 21471,
-    "total_estimated_prompt_tokens": 139381,
-    "total_estimated_completion_tokens": 21471,
+    "total_calls": 24,
+    "total_cost_usd": 0.051004,
+    "total_estimated_cost_usd": 0.056801,
+    "total_prompt_tokens": 115830,
+    "total_completion_tokens": 19626,
+    "total_estimated_prompt_tokens": 126517,
+    "total_estimated_completion_tokens": 19626,
     "total_cache_hit_tokens": 0,
     "total_cache_miss_tokens": 0,
     "cache_hit_ratio": 0.0,
     "by_stage": {
       "curator": {
-        "calls": 8,
-        "prompt_tokens": 40468,
-        "completion_tokens": 4507,
-        "estimated_prompt_tokens": 44484,
-        "estimated_completion_tokens": 4507,
+        "calls": 7,
+        "prompt_tokens": 36699,
+        "completion_tokens": 4389,
+        "estimated_prompt_tokens": 40323,
+        "estimated_completion_tokens": 4389,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.008304,
-        "estimated_cost_usd": 0.0093768
+        "cost_usd": 0.00790785,
+        "estimated_cost_usd": 0.008681849999999998
       },
       "editor": {
         "calls": 1,
-        "prompt_tokens": 7187,
-        "completion_tokens": 613,
-        "estimated_prompt_tokens": 8624,
-        "estimated_completion_tokens": 613,
+        "prompt_tokens": 7311,
+        "completion_tokens": 587,
+        "estimated_prompt_tokens": 8736,
+        "estimated_completion_tokens": 587,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.0240975,
-        "estimated_cost_usd": 0.02769
+        "cost_usd": 0.0241475,
+        "estimated_cost_usd": 0.02771
       },
       "llm_rewrite": {
-        "calls": 18,
-        "prompt_tokens": 80509,
-        "completion_tokens": 16351,
-        "estimated_prompt_tokens": 86273,
-        "estimated_completion_tokens": 16351,
+        "calls": 16,
+        "prompt_tokens": 71820,
+        "completion_tokens": 14650,
+        "estimated_prompt_tokens": 77458,
+        "estimated_completion_tokens": 14650,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.02100375,
-        "estimated_cost_usd": 0.02275155
+        "cost_usd": 0.018948599999999996,
+        "estimated_cost_usd": 0.0204087
       }
     },
     "by_provider": {
       "OpenAI": {
-        "calls": 27,
-        "prompt_tokens": 128164,
-        "completion_tokens": 21471,
-        "estimated_prompt_tokens": 139381,
-        "estimated_completion_tokens": 21471,
+        "calls": 24,
+        "prompt_tokens": 115830,
+        "completion_tokens": 19626,
+        "estimated_prompt_tokens": 126517,
+        "estimated_completion_tokens": 19626,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.05340525000000001,
-        "estimated_cost_usd": 0.05981835
+        "cost_usd": 0.05100394999999999,
+        "estimated_cost_usd": 0.056800549999999984
       }
     },
     "by_model": {
       "gpt-4o-mini": {
-        "calls": 26,
-        "prompt_tokens": 120977,
-        "completion_tokens": 20858,
-        "estimated_prompt_tokens": 130757,
-        "estimated_completion_tokens": 20858,
+        "calls": 23,
+        "prompt_tokens": 108519,
+        "completion_tokens": 19039,
+        "estimated_prompt_tokens": 117781,
+        "estimated_completion_tokens": 19039,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.02930775,
-        "estimated_cost_usd": 0.03212834999999999
+        "cost_usd": 0.026856449999999997,
+        "estimated_cost_usd": 0.029090550000000003
       },
       "gpt-4o": {
         "calls": 1,
-        "prompt_tokens": 7187,
-        "completion_tokens": 613,
-        "estimated_prompt_tokens": 8624,
-        "estimated_completion_tokens": 613,
+        "prompt_tokens": 7311,
+        "completion_tokens": 587,
+        "estimated_prompt_tokens": 8736,
+        "estimated_completion_tokens": 587,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.0240975,
-        "estimated_cost_usd": 0.02769
+        "cost_usd": 0.0241475,
+        "estimated_cost_usd": 0.02771
       }
     },
     "by_prompt": {
       "curator@v4+ac46588e": {
-        "calls": 8,
-        "prompt_tokens": 40468,
-        "completion_tokens": 4507,
-        "estimated_prompt_tokens": 44484,
-        "estimated_completion_tokens": 4507,
+        "calls": 7,
+        "prompt_tokens": 36699,
+        "completion_tokens": 4389,
+        "estimated_prompt_tokens": 40323,
+        "estimated_completion_tokens": 4389,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.008304,
-        "estimated_cost_usd": 0.0093768
+        "cost_usd": 0.00790785,
+        "estimated_cost_usd": 0.008681849999999998
       },
       "pre_send_russian_editor@v2+35331427": {
         "calls": 1,
-        "prompt_tokens": 7187,
-        "completion_tokens": 613,
-        "estimated_prompt_tokens": 8624,
-        "estimated_completion_tokens": 613,
+        "prompt_tokens": 7311,
+        "completion_tokens": 587,
+        "estimated_prompt_tokens": 8736,
+        "estimated_completion_tokens": 587,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.0240975,
-        "estimated_cost_usd": 0.02769
+        "cost_usd": 0.0241475,
+        "estimated_cost_usd": 0.02771
       },
       "english_cards@unknown": {
-        "calls": 9,
-        "prompt_tokens": 51800,
-        "completion_tokens": 10786,
-        "estimated_prompt_tokens": 55221,
-        "estimated_completion_tokens": 10786,
+        "calls": 10,
+        "prompt_tokens": 49560,
+        "completion_tokens": 10098,
+        "estimated_prompt_tokens": 53197,
+        "estimated_completion_tokens": 10098,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.013358400000000001,
-        "estimated_cost_usd": 0.01475475
+        "cost_usd": 0.0128784,
+        "estimated_cost_usd": 0.01403835
       },
       "final_translate@unknown": {
-        "calls": 6,
-        "prompt_tokens": 21582,
-        "completion_tokens": 4893,
-        "estimated_prompt_tokens": 23336,
-        "estimated_completion_tokens": 4893,
+        "calls": 5,
+        "prompt_tokens": 19022,
+        "completion_tokens": 4227,
+        "estimated_prompt_tokens": 20739,
+        "estimated_completion_tokens": 4227,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.006173100000000001,
-        "estimated_cost_usd": 0.0064361999999999996
-      },
-      "fix_translate@v2+97141411": {
-        "calls": 1,
-        "prompt_tokens": 351,
-        "completion_tokens": 69,
-        "estimated_prompt_tokens": 343,
-        "estimated_completion_tokens": 69,
-        "cache_hit_tokens": 0,
-        "cache_miss_tokens": 0,
-        "cost_usd": 9.405e-05,
-        "estimated_cost_usd": 9.285e-05
+        "cost_usd": 0.0053895,
+        "estimated_cost_usd": 0.005647050000000001
       },
       "repair_draft@v3+67a73f3b": {
-        "calls": 2,
-        "prompt_tokens": 6776,
-        "completion_tokens": 603,
-        "estimated_prompt_tokens": 7373,
-        "estimated_completion_tokens": 603,
+        "calls": 1,
+        "prompt_tokens": 3238,
+        "completion_tokens": 325,
+        "estimated_prompt_tokens": 3522,
+        "estimated_completion_tokens": 325,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.0013782,
-        "estimated_cost_usd": 0.0014677499999999999
+        "cost_usd": 0.0006807,
+        "estimated_cost_usd": 0.0007233
       }
     },
     "unknown_priced_models": []
@@ -226,13 +215,13 @@
       "hard_wall_time_warning_seconds": 600
     },
     "actual": {
-      "total_calls": 27,
-      "estimated_tokens": 160852,
-      "total_cost_usd": 0.053405,
-      "known_stage_wall_time_seconds": 16.274,
+      "total_calls": 24,
+      "estimated_tokens": 146143,
+      "total_cost_usd": 0.051004,
+      "known_stage_wall_time_seconds": 22.916,
       "stage_timings": {
-        "write": 3.762,
-        "edit": 12.512
+        "write": 2.977,
+        "edit": 19.939
       }
     },
     "breaches": [],
@@ -277,19 +266,19 @@
   },
   "change_type_summary": {
     "counts": {
-      "new_story": 825,
-      "same_story_new_facts": 214,
-      "same_story_rehash": 64,
+      "new_story": 809,
+      "same_story_new_facts": 205,
+      "same_story_rehash": 61,
       "follow_up": 10,
-      "reminder": 108,
-      "no_change": 12,
+      "reminder": 106,
+      "no_change": 9,
       "unclassified": 0
     },
     "auto_rejected_examples": [
       {
         "change_type": "no_change",
         "title": "Oldham Council has no leader one month after local elections",
-        "reason": "Без новых фактов: уже был 2026-06-18 как «Oldham Council has no leader one month after local elections». LLM-review: Тот же сюжет о безвластии в совете, просто новая редакция.",
+        "reason": "Без новых фактов: уже был 2026-06-18 как «Oldham Council has no leader one month after local elections». LLM-review: Тот же сюжет, просто новая редакция.",
         "previous_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-ckg8zg3yl8zo",
         "previous_published_day": "2026-06-18",
         "previous_title": "Oldham Council has no leader one month after local elections"
@@ -313,42 +302,26 @@
       {
         "change_type": "no_change",
         "title": "Firefighters spend night tackling huge building blaze in Radcliffe",
-        "reason": "Без новых фактов: уже был 2026-05-28 как «Firefighters spend night tackling huge building blaze in Radcliffe». LLM-review: Тот же сюжет о пожаре, просто новая редакция.",
+        "reason": "Без новых фактов: уже был 2026-05-28 как «Firefighters spend night tackling huge building blaze in Radcliffe». LLM-review: Тот же сюжет, просто новая редакция.",
         "previous_fingerprint": "media-layer-itv-granada-greater-manchester-itv-com-news-granada-2026-04-21-crews-tackle-large-fire-in-greater-manchester",
         "previous_published_day": "2026-05-28",
         "previous_title": "Firefighters spend night tackling huge building blaze in Radcliffe"
       },
       {
         "change_type": "no_change",
-        "title": "Meet Andy Burnham's man ‘in the shadows'",
-        "reason": "Без новых фактов: уже был 2026-06-14 как «Meet Andy Burnham's man ‘in the shadows'». LLM-review: Тот же сюжет о Кевине Ли, просто новая редакция.",
-        "previous_fingerprint": "media-layer-the-mill-manchestermill-co-uk-meet-andy-burnhams-man-in-the-shadows",
-        "previous_published_day": "2026-06-14",
-        "previous_title": "Meet Andy Burnham's man ‘in the shadows'"
-      },
-      {
-        "change_type": "no_change",
-        "title": "Exclusive: Rough sleeping in Greater Manchester has risen for the fourth year in a row",
-        "reason": "Без новых фактов: уже был 2026-06-04 как «Exclusive: Rough sleeping in Greater Manchester has risen for the fourth year in a row». LLM-review: Тот же сюжет о бездомности, просто новая редакция.",
-        "previous_fingerprint": "media-layer-the-mill-manchestermill-co-uk-exclusive-rough-sleeping-in-greater-manchester-has-risen-for-the-fourth-year-in-a-row",
-        "previous_published_day": "2026-06-04",
-        "previous_title": "Exclusive: Rough sleeping in Greater Manchester has risen for the fourth year in a row"
-      },
-      {
-        "change_type": "no_change",
         "title": "“Inside I was silently screaming” - Wigan mum speaks out about common yet often isolating experience",
-        "reason": "Без новых фактов: уже был 2026-06-10 как «“Inside I was silently screaming” - Wigan mum speaks out about common yet often isolating experience». LLM-review: Тот же сюжет о матери из Уигана, просто новая редакция.",
+        "reason": "Без новых фактов: уже был 2026-06-10 как «“Inside I was silently screaming” - Wigan mum speaks out about common yet often isolating experience». LLM-review: Перепечатка истории о матери из Уигана без новых фактов.",
         "previous_fingerprint": "public-services-gmmh-gmmh-nhs-uk-media-centre-press-releases-inside-i-was-silently-screaming-wigan-mum-speaks-out-about-common-yet-often-isolating-experience-8081",
         "previous_published_day": "2026-06-10",
         "previous_title": "“Inside I was silently screaming” - Wigan mum speaks out about common yet often isolating experience"
       },
       {
         "change_type": "no_change",
-        "title": "Plans put forward for major refurbishment of Leigh Market",
-        "reason": "Без новых фактов: уже был 2026-06-14 как «Plans put forward for major refurbishment of Leigh Market». LLM-review: Тот же сюжет, просто новая редакция без новых фактов.",
-        "previous_fingerprint": "council-wigan-council-wigan-gov-uk-ews-rticles-2026-une-lans-put-forward-for-major-refurbishment-of-eigh-arket-aspx",
-        "previous_published_day": "2026-06-14",
-        "previous_title": "Plans put forward for major refurbishment of Leigh Market"
+        "title": "The Council wants to bring hundreds of empty homes back into use - this is how you can spot one and report it",
+        "reason": "Без новых фактов: уже был 2026-06-12 как «The Council wants to bring hundreds of empty homes back into use - this is how you can spot one and report it». LLM-review: Перепечатка информации о стратегии по пустующим домам без новых фактов.",
+        "previous_fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-the-council-wants-to-bring-hundreds-of-empty-homes-back-into-use-this-is-how-you-can-spot-one-and-report-it",
+        "previous_published_day": "2026-06-12",
+        "previous_title": "The Council wants to bring hundreds of empty homes back into use - this is how you can spot one and report it"
       },
       {
         "change_type": "same_story_rehash",
@@ -361,7 +334,23 @@
       {
         "change_type": "same_story_rehash",
         "title": "What's on at Bridgewater Hall",
-        "reason": "Повтор сюжета без новых деталей: уже был 2026-06-14 как «The Musical Box | The Bridgewater Hall». LLM-review: Тот же сюжет, просто новая редакция без новых фактов.",
+        "reason": "Повтор сюжета без новых деталей: уже был 2026-06-14 как «The Musical Box | The Bridgewater Hall». LLM-review: Перепечатка информации о событиях в Бриджвотер Холле без новых фактов.",
+        "previous_fingerprint": "venues-tickets-bridgewater-hall-bridgewater-hall-co-uk-whats-on-the-musical-box-190626",
+        "previous_published_day": "2026-06-14",
+        "previous_title": "The Musical Box | The Bridgewater Hall"
+      },
+      {
+        "change_type": "same_story_rehash",
+        "title": "What's on at The Lowry",
+        "reason": "Повтор сюжета без новых деталей: уже был 2026-06-18 как «Lowry Youth Dance Project | What's On». LLM-review: Перепечатка информации о событиях в Лоури без новых фактов.",
+        "previous_fingerprint": "culture-weekly-the-lowry-thelowry-com-whats-on-lowry-youth-dance-project-yczl",
+        "previous_published_day": "2026-06-18",
+        "previous_title": "Lowry Youth Dance Project | What's On"
+      },
+      {
+        "change_type": "same_story_rehash",
+        "title": "What's on at Bridgewater Hall",
+        "reason": "Повтор сюжета без новых деталей: уже был 2026-06-14 как «The Musical Box | The Bridgewater Hall». LLM-review: Перепечатка информации о событиях в Бриджвотер Холле без новых фактов.",
         "previous_fingerprint": "venues-tickets-bridgewater-hall-bridgewater-hall-co-uk-whats-on-the-musical-box-190626",
         "previous_published_day": "2026-06-14",
         "previous_title": "The Musical Box | The Bridgewater Hall"
@@ -376,9 +365,9 @@
   },
   "event_completeness": {
     "counts": {
-      "checked": 27,
-      "missing_date": 21,
-      "missing_venue": 25
+      "checked": 26,
+      "missing_date": 20,
+      "missing_venue": 24
     },
     "issues": [
       {
@@ -595,7 +584,7 @@
   },
   "news_lead_quality": {
     "counts": {
-      "checked": 16,
+      "checked": 15,
       "quote_lead": 0,
       "narrative_lead": 0
     },
@@ -608,22 +597,22 @@
       {
         "name": "low_selected_writer_yield",
         "severity": 2,
-        "detail": "Writer rendered 45 of 76 selected publishable candidates (59%); inventory/backup/manual-review items are excluded."
+        "detail": "Writer rendered 44 of 71 selected publishable candidates (62%); inventory/backup/manual-review items are excluded."
       }
     ]
   },
   "source_status": {
     "counts": {
-      "ok": 97,
+      "ok": 88,
       "partial": 2,
-      "stale": 11,
-      "empty": 5,
-      "failed": 1,
-      "zero_yield": 80,
+      "stale": 16,
+      "empty": 8,
+      "failed": 2,
+      "zero_yield": 72,
       "no_contribution_breakdown": {
-        "fetch_failed": 1,
-        "all_rejected": 80,
-        "idle_no_items": 14
+        "fetch_failed": 2,
+        "all_rejected": 72,
+        "idle_no_items": 22
       }
     },
     "sources": [
@@ -633,21 +622,20 @@
         "status": "ok",
         "detail": "15 item(s), 14 fresh in last 24h",
         "raw_count": 15,
-        "accepted_count": 5,
-        "rejected_count": 10,
+        "accepted_count": 6,
+        "rejected_count": 9,
         "rendered_count": 0,
         "reject_reasons": {
           "Повтор сюжета без новых деталей: уже был 2026-06-18 как «Voters head to the polls for Make": 1,
           "Intra-batch topic duplicate — same story kept from stronger source.": 6,
           "not_gm": 1,
-          "Collected from live source; pending dedupe review. | Validator: optional editorial_contrac": 1,
           "editorial_filler": 1
         },
         "loss_funnel": {
           "candidate_pool": 15,
-          "rejected_before_writer": 10,
+          "rejected_before_writer": 9,
           "backup_before_rewrite": 0,
-          "included_after_curation": 5,
+          "included_after_curation": 6,
           "included_missing_draft_line": 0,
           "writer_dropped": 0,
           "rendered": 0,
@@ -660,14 +648,14 @@
         "trial": false,
         "coverage_signal_count": 14,
         "coverage_signal_label": "fresh published items",
-        "curated_count": 5,
+        "curated_count": 6,
         "human_funnel": {
           "template": [
             "Собрали: 15",
             "Повторы / уже было: 7",
-            "Отклонено до редактора: 10",
+            "Отклонено до редактора: 9",
             "Ушло в резерв до перевода: 0",
-            "Выбрано редактором: 5",
+            "Выбрано редактором: 6",
             "Не получилось написать нормальную строку: 0",
             "Попало в выпуск: 0"
           ],
@@ -690,11 +678,10 @@
           "Cheap pre-enrich duplicate — same URL/title kept from stronger source.": 12,
           "stale_hard_age": 1,
           "Без новых фактов: уже был 2026-06-18 как «Oldham Council has no leader one month after loc": 1,
-          "draft_line for long-format category needs ≥150 chars (got 109).": 1,
           "draft_line for long-format category needs ≥2 sentences (got 1).": 3,
           "regional story outside Greater Manchester.": 2,
-          "draft_line for long-format category needs ≥150 chars (got 136).": 1,
-          "draft_line for long-format category needs ≥150 chars (got 111).": 1
+          "draft_line for long-format category needs ≥150 chars (got 138).": 1,
+          "draft_line for long-format category needs ≥150 chars (got 102).": 1
         },
         "loss_funnel": {
           "candidate_pool": 20,
@@ -702,7 +689,7 @@
           "backup_before_rewrite": 0,
           "included_after_curation": 1,
           "included_missing_draft_line": 0,
-          "writer_dropped": 5,
+          "writer_dropped": 6,
           "rendered": 1,
           "source_raw_count": 20
         },
@@ -721,7 +708,7 @@
             "Отклонено до редактора: 19",
             "Ушло в резерв до перевода: 0",
             "Выбрано редактором: 1",
-            "Не получилось написать нормальную строку: 5",
+            "Не получилось написать нормальную строку: 6",
             "Попало в выпуск: 1"
           ],
           "conclusion": "источник даёт полезный вклад в выпуск",
@@ -737,11 +724,12 @@
         "raw_count": 23,
         "accepted_count": 3,
         "rejected_count": 20,
-        "rendered_count": 2,
+        "rendered_count": 1,
         "reject_reasons": {
           "Intra-batch topic duplicate — same story kept from stronger source.": 20,
-          "draft_line for long-format category needs ≥150 chars (got 128).": 1,
-          "draft_line for long-format category needs ≥2 sentences (got 1).": 1
+          "draft_line for long-format category needs ≥150 chars (got 109).": 1,
+          "draft_line for long-format category needs ≥2 sentences (got 1).": 2,
+          "draft_line for long-format category needs ≥150 chars (got 119).": 1
         },
         "loss_funnel": {
           "candidate_pool": 23,
@@ -749,8 +737,8 @@
           "backup_before_rewrite": 0,
           "included_after_curation": 3,
           "included_missing_draft_line": 0,
-          "writer_dropped": 1,
-          "rendered": 2,
+          "writer_dropped": 2,
+          "rendered": 1,
           "source_raw_count": 23
         },
         "failure_count": 0,
@@ -768,8 +756,8 @@
             "Отклонено до редактора: 20",
             "Ушло в резерв до перевода: 0",
             "Выбрано редактором: 3",
-            "Не получилось написать нормальную строку: 1",
-            "Попало в выпуск: 2"
+            "Не получилось написать нормальную строку: 2",
+            "Попало в выпуск: 1"
           ],
           "conclusion": "источник даёт полезный вклад в выпуск",
           "action": "оставить как есть; смотреть только на качество отдельных строк",
@@ -780,39 +768,39 @@
         "name": "MEN Latest News",
         "category": "media_layer",
         "status": "ok",
-        "detail": "24 item(s), 24 fresh in last 24h",
-        "raw_count": 24,
+        "detail": "23 item(s), 23 fresh in last 24h",
+        "raw_count": 23,
         "accepted_count": 0,
-        "rejected_count": 24,
+        "rejected_count": 23,
         "rendered_count": 0,
         "reject_reasons": {
-          "Intra-batch topic duplicate — same story kept from stronger source.": 20,
-          "Cheap pre-enrich duplicate — same URL/title kept from stronger source.": 3,
+          "Cheap pre-enrich duplicate — same URL/title kept from stronger source.": 4,
+          "Intra-batch topic duplicate — same story kept from stronger source.": 18,
           "Повтор темы без новой фазы: уже был 2026-06-18 как «Voters head to the polls for Makerfiel": 1
         },
         "loss_funnel": {
-          "candidate_pool": 24,
-          "rejected_before_writer": 24,
+          "candidate_pool": 23,
+          "rejected_before_writer": 23,
           "backup_before_rewrite": 0,
           "included_after_curation": 0,
           "included_missing_draft_line": 0,
           "writer_dropped": 0,
           "rendered": 0,
-          "source_raw_count": 24
+          "source_raw_count": 23
         },
         "failure_count": 0,
-        "candidate_count": 24,
-        "fresh_last_24h_count": 24,
+        "candidate_count": 23,
+        "fresh_last_24h_count": 23,
         "source_contract": "hard_news_daily",
         "trial": false,
-        "coverage_signal_count": 24,
+        "coverage_signal_count": 23,
         "coverage_signal_label": "fresh published items",
         "curated_count": 0,
         "human_funnel": {
           "template": [
-            "Собрали: 24",
-            "Повторы / уже было: 24",
-            "Отклонено до редактора: 24",
+            "Собрали: 23",
+            "Повторы / уже было: 23",
+            "Отклонено до редактора: 23",
             "Ушло в резерв до перевода: 0",
             "Выбрано редактором: 0",
             "Не получилось написать нормальную строку: 0",
@@ -829,26 +817,24 @@
         "status": "ok",
         "detail": "40 item(s), 40 fresh in last 24h",
         "raw_count": 40,
-        "accepted_count": 3,
-        "rejected_count": 37,
+        "accepted_count": 2,
+        "rejected_count": 38,
         "rendered_count": 2,
         "reject_reasons": {
-          "Intra-batch topic duplicate — same story kept from stronger source.": 26,
           "Cheap pre-enrich duplicate — same URL/title kept from stronger source.": 6,
+          "Intra-batch topic duplicate — same story kept from stronger source.": 27,
           "Повтор темы без новой фазы: уже был 2026-06-18 как «Voters head to the polls for Makerfiel": 1,
           "motivational_human_interest": 1,
           "not_gm": 1,
-          "editorial_filler": 2,
-          "draft_line for long-format category needs ≥150 chars (got 104).": 1,
-          "draft_line for long-format category needs ≥2 sentences (got 1).": 1
+          "editorial_filler": 2
         },
         "loss_funnel": {
           "candidate_pool": 40,
-          "rejected_before_writer": 37,
+          "rejected_before_writer": 38,
           "backup_before_rewrite": 0,
-          "included_after_curation": 3,
+          "included_after_curation": 2,
           "included_missing_draft_line": 0,
-          "writer_dropped": 1,
+          "writer_dropped": 0,
           "rendered": 2,
           "source_raw_count": 40
         },
@@ -859,15 +845,15 @@
         "trial": false,
         "coverage_signal_count": 40,
         "coverage_signal_label": "fresh published items",
-        "curated_count": 3,
+        "curated_count": 2,
         "human_funnel": {
           "template": [
             "Собрали: 40",
-            "Повторы / уже было: 33",
-            "Отклонено до редактора: 37",
+            "Повторы / уже было: 34",
+            "Отклонено до редактора: 38",
             "Ушло в резерв до перевода: 0",
-            "Выбрано редактором: 3",
-            "Не получилось написать нормальную строку: 1",
+            "Выбрано редактором: 2",
+            "Не получилось написать нормальную строку: 0",
             "Попало в выпуск: 2"
           ],
           "conclusion": "источник даёт полезный вклад в выпуск",
@@ -1021,50 +1007,37 @@
       {
         "name": "The Mill",
         "category": "media_layer",
-        "status": "ok",
-        "detail": "7 item(s), 1 fresh in last 24h",
-        "raw_count": 7,
-        "accepted_count": 1,
-        "rejected_count": 6,
-        "rendered_count": 1,
-        "reject_reasons": {
-          "Intra-batch topic duplicate — same story kept from stronger source.": 1,
-          "editorial_filler": 2,
-          "Без новых фактов: уже был 2026-06-14 как «Meet Andy Burnham's man ‘in the shadows'». LLM-r": 1,
-          "stale_hard_age": 1,
-          "Без новых фактов: уже был 2026-06-04 как «Exclusive: Rough sleeping in Greater Manchester ": 1
-        },
+        "status": "stale",
+        "detail": "source reachable; no changed content since last run (304 Not Modified)",
+        "raw_count": 0,
+        "accepted_count": 0,
+        "rejected_count": 0,
+        "rendered_count": 0,
+        "reject_reasons": {},
         "loss_funnel": {
-          "candidate_pool": 7,
-          "rejected_before_writer": 6,
-          "backup_before_rewrite": 0,
-          "included_after_curation": 1,
-          "included_missing_draft_line": 0,
-          "writer_dropped": 0,
-          "rendered": 1,
-          "source_raw_count": 7
+          "source_raw_count": 0
         },
         "failure_count": 0,
-        "candidate_count": 7,
-        "fresh_last_24h_count": 1,
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0,
         "source_contract": "news_periodic",
         "trial": false,
-        "coverage_signal_count": 7,
-        "coverage_signal_label": "items",
-        "curated_count": 1,
+        "coverage_signal_count": 0,
+        "coverage_signal_label": "",
+        "curated_count": 0,
         "human_funnel": {
           "template": [
-            "Собрали: 7",
-            "Повторы / уже было: 1",
-            "Отклонено до редактора: 6",
+            "Собрали: 0",
+            "Повторы / уже было: 0",
+            "Отклонено до редактора: 0",
             "Ушло в резерв до перевода: 0",
-            "Выбрано редактором: 1",
+            "Выбрано редактором: 0",
             "Не получилось написать нормальную строку: 0",
-            "Попало в выпуск: 1"
+            "Попало в выпуск: 0"
           ],
-          "conclusion": "источник даёт полезный вклад в выпуск",
-          "action": "оставить как есть; смотреть только на качество отдельных строк",
-          "one_line": "The Mill: источник даёт полезный вклад в выпуск; оставить как есть; смотреть только на качество отдельных строк."
+          "conclusion": "источник сегодня не дал материалов",
+          "action": "проверить, это нормальная тишина источника или проблема парсера",
+          "one_line": "The Mill: источник сегодня не дал материалов; проверить, это нормальная тишина источника или проблема парсера."
         }
       },
       {
@@ -1158,7 +1131,7 @@
         "rejected_count": 4,
         "rendered_count": 1,
         "reject_reasons": {
-          "LLM-review: Указаны детали о 17 квартирах для бездомных в Уитеншоу. | Outside global trans": 1,
+          "Без новых фактов: уже был 2026-06-12 как «The Council wants to bring hundreds of empty hom": 1,
           "LLM-review: Объявлено о смерти Кани Кинг, основательницы MOBO. | Outside global translatio": 1,
           "weak_value_civic_pr": 2
         },
@@ -1247,23 +1220,22 @@
         "status": "ok",
         "detail": "5 item(s), 1 fresh in last 24h",
         "raw_count": 5,
-        "accepted_count": 0,
-        "rejected_count": 5,
-        "rendered_count": 0,
+        "accepted_count": 1,
+        "rejected_count": 4,
+        "rendered_count": 1,
         "reject_reasons": {
           "weak_value_civic_pr": 1,
-          "Collected from live source; pending dedupe review. | Outside global translation board (sof": 1,
           "stale_no_new_phase": 1,
           "Intra-batch topic duplicate — same story kept from stronger source.": 2
         },
         "loss_funnel": {
           "candidate_pool": 5,
-          "rejected_before_writer": 5,
+          "rejected_before_writer": 4,
           "backup_before_rewrite": 0,
-          "included_after_curation": 0,
+          "included_after_curation": 1,
           "included_missing_draft_line": 0,
           "writer_dropped": 0,
-          "rendered": 0,
+          "rendered": 1,
           "source_raw_count": 5
         },
         "failure_count": 0,
@@ -1273,20 +1245,20 @@
         "trial": false,
         "coverage_signal_count": 5,
         "coverage_signal_label": "items",
-        "curated_count": 0,
+        "curated_count": 1,
         "human_funnel": {
           "template": [
             "Собрали: 5",
             "Повторы / уже было: 2",
-            "Отклонено до редактора: 5",
+            "Отклонено до редактора: 4",
             "Ушло в резерв до перевода: 0",
-            "Выбрано редактором: 0",
+            "Выбрано редактором: 1",
             "Не получилось написать нормальную строку: 0",
-            "Попало в выпуск: 0"
+            "Попало в выпуск: 1"
           ],
-          "conclusion": "источник живой, но в основном даёт дубли",
-          "action": "не отключать; усилить dedupe и не давать дублю вытеснять лучший источник",
-          "one_line": "Oldham Council: источник живой, но в основном даёт дубли; не отключать; усилить dedupe и не давать дублю вытеснять лучший источник."
+          "conclusion": "источник даёт полезный вклад в выпуск",
+          "action": "оставить как есть; смотреть только на качество отдельных строк",
+          "one_line": "Oldham Council: источник даёт полезный вклад в выпуск; оставить как есть; смотреть только на качество отдельных строк."
         }
       },
       {
@@ -1382,47 +1354,37 @@
       {
         "name": "Bury Council",
         "category": "media_layer",
-        "status": "ok",
-        "detail": "5 item(s), 1 fresh in last 24h",
-        "raw_count": 5,
-        "accepted_count": 1,
-        "rejected_count": 4,
-        "rendered_count": 1,
-        "reject_reasons": {
-          "Intra-batch topic duplicate — same story kept from stronger source.": 2,
-          "stale_hard_age": 2
-        },
+        "status": "stale",
+        "detail": "source reachable; no changed content since last run (304 Not Modified)",
+        "raw_count": 0,
+        "accepted_count": 0,
+        "rejected_count": 0,
+        "rendered_count": 0,
+        "reject_reasons": {},
         "loss_funnel": {
-          "candidate_pool": 5,
-          "rejected_before_writer": 4,
-          "backup_before_rewrite": 0,
-          "included_after_curation": 1,
-          "included_missing_draft_line": 0,
-          "writer_dropped": 0,
-          "rendered": 1,
-          "source_raw_count": 5
+          "source_raw_count": 0
         },
         "failure_count": 0,
-        "candidate_count": 5,
-        "fresh_last_24h_count": 1,
+        "candidate_count": 0,
+        "fresh_last_24h_count": 0,
         "source_contract": "official_background",
         "trial": false,
-        "coverage_signal_count": 5,
-        "coverage_signal_label": "items",
-        "curated_count": 1,
+        "coverage_signal_count": 0,
+        "coverage_signal_label": "",
+        "curated_count": 0,
         "human_funnel": {
           "template": [
-            "Собрали: 5",
-            "Повторы / уже было: 2",
-            "Отклонено до редактора: 4",
+            "Собрали: 0",
+            "Повторы / уже было: 0",
+            "Отклонено до редактора: 0",
             "Ушло в резерв до перевода: 0",
-            "Выбрано редактором: 1",
+            "Выбрано редактором: 0",
             "Не получилось написать нормальную строку: 0",
-            "Попало в выпуск: 1"
+            "Попало в выпуск: 0"
           ],
-          "conclusion": "источник даёт полезный вклад в выпуск",
-          "action": "оставить как есть; смотреть только на качество отдельных строк",
-          "one_line": "Bury Council: источник даёт полезный вклад в выпуск; оставить как есть; смотреть только на качество отдельных строк."
+          "conclusion": "источник сегодня не дал материалов",
+          "action": "проверить, это нормальная тишина источника или проблема парсера",
+          "one_line": "Bury Council: источник сегодня не дал материалов; проверить, это нормальная тишина источника или проблема парсера."
         }
       },
       {
@@ -1431,21 +1393,20 @@
         "status": "ok",
         "detail": "2 item(s)",
         "raw_count": 2,
-        "accepted_count": 0,
-        "rejected_count": 2,
-        "rendered_count": 0,
+        "accepted_count": 1,
+        "rejected_count": 1,
+        "rendered_count": 1,
         "reject_reasons": {
-          "Без новых фактов: уже был 2026-06-14 как «Plans put forward for major refurbishment of Lei": 1,
           "Intra-batch topic duplicate — same story kept from stronger source.": 1
         },
         "loss_funnel": {
           "candidate_pool": 2,
-          "rejected_before_writer": 2,
+          "rejected_before_writer": 1,
           "backup_before_rewrite": 0,
-          "included_after_curation": 0,
+          "included_after_curation": 1,
           "included_missing_draft_line": 0,
           "writer_dropped": 0,
-          "rendered": 0,
+          "rendered": 1,
           "source_raw_count": 2
         },
         "failure_count": 0,
@@ -1455,20 +1416,20 @@
         "trial": false,
         "coverage_signal_count": 2,
         "coverage_signal_label": "items",
-        "curated_count": 0,
+        "curated_count": 1,
         "human_funnel": {
           "template": [
             "Собрали: 2",
             "Повторы / уже было: 1",
-            "Отклонено до редактора: 2",
+            "Отклонено до редактора: 1",
             "Ушло в резерв до перевода: 0",
-            "Выбрано редактором: 0",
+            "Выбрано редактором: 1",
             "Не получилось написать нормальную строку: 0",
-            "Попало в выпуск: 0"
+            "Попало в выпуск: 1"
           ],
-          "conclusion": "источник живой, но материалы не проходят редакционный отбор",
-          "action": "проверить, это шумный источник или фильтр слишком строгий",
-          "one_line": "Wigan Council: источник живой, но материалы не проходят редакционный отбор; проверить, это шумный источник или фильтр слишком строгий."
+          "conclusion": "источник даёт полезный вклад в выпуск",
+          "action": "оставить как есть; смотреть только на качество отдельных строк",
+          "one_line": "Wigan Council: источник даёт полезный вклад в выпуск; оставить как есть; смотреть только на качество отдельных строк."
         }
       },
       {
@@ -1658,7 +1619,7 @@
         "raw_count": 5,
         "accepted_count": 3,
         "rejected_count": 2,
-        "rendered_count": 2,
+        "rendered_count": 3,
         "reject_reasons": {
           "Collected from live source; pending dedupe review. | Validator: structured event date 2026": 2
         },
@@ -1669,7 +1630,7 @@
           "included_after_curation": 3,
           "included_missing_draft_line": 0,
           "writer_dropped": 0,
-          "rendered": 2,
+          "rendered": 3,
           "source_raw_count": 5
         },
         "failure_count": 0,
@@ -1688,7 +1649,7 @@
             "Ушло в резерв до перевода: 0",
             "Выбрано редактором: 3",
             "Не получилось написать нормальную строку: 0",
-            "Попало в выпуск: 2"
+            "Попало в выпуск: 3"
           ],
           "conclusion": "источник даёт полезный вклад в выпуск",
           "action": "оставить как есть; смотреть только на качество отдельных строк",
@@ -2227,11 +2188,11 @@
           "Без новых фактов: уже был 2026-06-18 как «Your Urmston Matters Food & Drink Festival 2026 ": 1,
           "bookable_activity_filler": 1,
           "Повтор сюжета без новых деталей: уже был 2026-06-14 как «Road to Victory 2026 - Manchester": 1,
-          "draft_line for long-format category needs ≥150 chars (got 55).": 1,
+          "draft_line for long-format category needs ≥150 chars (got 72).": 1,
           "draft_line for long-format category needs ≥2 sentences (got 1).": 4,
-          "draft_line for long-format category needs ≥150 chars (got 62).": 1,
-          "draft_line for long-format category needs ≥150 chars (got 70).": 1,
-          "draft_line for long-format category needs ≥150 chars (got 58).": 1
+          "draft_line for long-format category needs ≥150 chars (got 114).": 1,
+          "draft_line for long-format category needs ≥150 chars (got 90).": 1,
+          "draft_line for long-format category needs ≥150 chars (got 74).": 1
         },
         "loss_funnel": {
           "candidate_pool": 10,
@@ -2322,10 +2283,9 @@
         "rejected_count": 5,
         "rendered_count": 0,
         "reject_reasons": {
-          "no_date": 3,
+          "no_date": 4,
           "bookable_activity_filler": 1,
-          "source_thin": 2,
-          "Collected from live source; pending dedupe review. | Validator: structured event date 2026": 1
+          "source_thin": 2
         },
         "loss_funnel": {
           "candidate_pool": 5,
@@ -2421,7 +2381,7 @@
           "Intra-batch topic duplicate — same story kept from stronger source.": 1,
           "Collected from live source; pending dedupe review. | Validator: structured event date 2026": 1,
           "bookable_activity_filler": 1,
-          "draft_line for long-format category needs ≥110 chars (got 60).": 1,
+          "draft_line for long-format category needs ≥110 chars (got 99).": 1,
           "draft_line for long-format category needs ≥2 sentences (got 1).": 1
         },
         "loss_funnel": {
@@ -2550,50 +2510,37 @@
       {
         "name": "Fairfield Social Club",
         "category": "culture_weekly",
-        "status": "ok",
-        "detail": "4 upcoming dated items",
-        "raw_count": 4,
+        "status": "stale",
+        "detail": "source reachable; no changed content since last run (304 Not Modified)",
+        "raw_count": 0,
         "accepted_count": 0,
-        "rejected_count": 4,
+        "rejected_count": 0,
         "rendered_count": 0,
-        "reject_reasons": {
-          "no_date": 1,
-          "source_thin": 1,
-          "LLM-review: Показ матча Англия против Ганы с гарантированными местами — новая информация о": 1,
-          "Повтор сюжета без новых деталей: уже был 2026-06-09 как «Fairfield Social Club». LLM-revie": 1,
-          "Повтор сюжета без новых деталей: уже был 2026-06-09 как «Fairfield Social Club».": 1
-        },
+        "reject_reasons": {},
         "loss_funnel": {
-          "candidate_pool": 4,
-          "rejected_before_writer": 4,
-          "backup_before_rewrite": 0,
-          "included_after_curation": 0,
-          "included_missing_draft_line": 0,
-          "writer_dropped": 0,
-          "rendered": 0,
-          "source_raw_count": 4
+          "source_raw_count": 0
         },
         "failure_count": 0,
-        "candidate_count": 4,
+        "candidate_count": 0,
         "fresh_last_24h_count": 0,
         "source_contract": "event_calendar",
         "trial": false,
-        "coverage_signal_count": 4,
-        "coverage_signal_label": "upcoming dated items",
+        "coverage_signal_count": 0,
+        "coverage_signal_label": "",
         "curated_count": 0,
         "human_funnel": {
           "template": [
-            "Собрали: 4",
-            "Повторы / уже было: 2",
-            "Отклонено до редактора: 4",
+            "Собрали: 0",
+            "Повторы / уже было: 0",
+            "Отклонено до редактора: 0",
             "Ушло в резерв до перевода: 0",
             "Выбрано редактором: 0",
             "Не получилось написать нормальную строку: 0",
             "Попало в выпуск: 0"
           ],
-          "conclusion": "источник живой, но в основном даёт дубли",
-          "action": "не отключать; усилить dedupe и не давать дублю вытеснять лучший источник",
-          "one_line": "Fairfield Social Club: источник живой, но в основном даёт дубли; не отключать; усилить dedupe и не давать дублю вытеснять лучший источник."
+          "conclusion": "источник сегодня не дал материалов",
+          "action": "проверить, это нормальная тишина источника или проблема парсера",
+          "one_line": "Fairfield Social Club: источник сегодня не дал материалов; проверить, это нормальная тишина источника или проблема парсера."
         }
       },
       {
@@ -3052,46 +2999,37 @@
       {
         "name": "Great Northern Makers Market",
         "category": "culture_weekly",
-        "status": "ok",
-        "detail": "1 items",
-        "raw_count": 1,
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "raw_count": 0,
         "accepted_count": 0,
-        "rejected_count": 1,
+        "rejected_count": 0,
         "rendered_count": 0,
-        "reject_reasons": {
-          "Collected from live source; pending dedupe review. | Validator: weekend_activities item da": 1
-        },
+        "reject_reasons": {},
         "loss_funnel": {
-          "candidate_pool": 1,
-          "rejected_before_writer": 1,
-          "backup_before_rewrite": 0,
-          "included_after_curation": 0,
-          "included_missing_draft_line": 0,
-          "writer_dropped": 0,
-          "rendered": 0,
-          "source_raw_count": 1
+          "source_raw_count": 0
         },
         "failure_count": 0,
-        "candidate_count": 1,
+        "candidate_count": 0,
         "fresh_last_24h_count": 0,
         "source_contract": "event_calendar",
         "trial": false,
-        "coverage_signal_count": 1,
+        "coverage_signal_count": 0,
         "coverage_signal_label": "items",
         "curated_count": 0,
         "human_funnel": {
           "template": [
-            "Собрали: 1",
+            "Собрали: 0",
             "Повторы / уже было: 0",
-            "Отклонено до редактора: 1",
+            "Отклонено до редактора: 0",
             "Ушло в резерв до перевода: 0",
             "Выбрано редактором: 0",
             "Не получилось написать нормальную строку: 0",
             "Попало в выпуск: 0"
           ],
-          "conclusion": "источник живой, но материалы не проходят редакционный отбор",
-          "action": "проверить, это шумный источник или фильтр слишком строгий",
-          "one_line": "Great Northern Makers Market: источник живой, но материалы не проходят редакционный отбор; проверить, это шумный источник или фильтр слишком строгий."
+          "conclusion": "источник сегодня не дал материалов",
+          "action": "проверить, это нормальная тишина источника или проблема парсера",
+          "one_line": "Great Northern Makers Market: источник сегодня не дал материалов; проверить, это нормальная тишина источника или проблема парсера."
         }
       },
       {
@@ -3133,46 +3071,37 @@
       {
         "name": "Levenshulme Artisan Market",
         "category": "culture_weekly",
-        "status": "ok",
-        "detail": "1 upcoming dated items",
-        "raw_count": 1,
-        "accepted_count": 1,
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "raw_count": 0,
+        "accepted_count": 0,
         "rejected_count": 0,
         "rendered_count": 0,
-        "reject_reasons": {
-          "Event timing unsuitable for section: event has no usable venue.": 1
-        },
+        "reject_reasons": {},
         "loss_funnel": {
-          "candidate_pool": 1,
-          "rejected_before_writer": 0,
-          "backup_before_rewrite": 0,
-          "included_after_curation": 1,
-          "included_missing_draft_line": 0,
-          "writer_dropped": 1,
-          "rendered": 0,
-          "source_raw_count": 1
+          "source_raw_count": 0
         },
         "failure_count": 0,
-        "candidate_count": 1,
+        "candidate_count": 0,
         "fresh_last_24h_count": 0,
         "source_contract": "event_calendar",
         "trial": false,
-        "coverage_signal_count": 1,
-        "coverage_signal_label": "upcoming dated items",
-        "curated_count": 1,
+        "coverage_signal_count": 0,
+        "coverage_signal_label": "items",
+        "curated_count": 0,
         "human_funnel": {
           "template": [
-            "Собрали: 1",
+            "Собрали: 0",
             "Повторы / уже было: 0",
             "Отклонено до редактора: 0",
             "Ушло в резерв до перевода: 0",
-            "Выбрано редактором: 1",
-            "Не получилось написать нормальную строку: 1",
+            "Выбрано редактором: 0",
+            "Не получилось написать нормальную строку: 0",
             "Попало в выпуск: 0"
           ],
-          "conclusion": "источник даёт кандидатов, но они теряются на написании строки",
-          "action": "проверить draft_line/rewrite для этого типа материалов",
-          "one_line": "Levenshulme Artisan Market: источник даёт кандидатов, но они теряются на написании строки; проверить draft_line/rewrite для этого типа материалов."
+          "conclusion": "источник сегодня не дал материалов",
+          "action": "проверить, это нормальная тишина источника или проблема парсера",
+          "one_line": "Levenshulme Artisan Market: источник сегодня не дал материалов; проверить, это нормальная тишина источника или проблема парсера."
         }
       },
       {
@@ -3223,46 +3152,37 @@
       {
         "name": "Altrincham Market",
         "category": "culture_weekly",
-        "status": "ok",
-        "detail": "1 items",
-        "raw_count": 1,
+        "status": "empty",
+        "detail": "fetched but no candidate links parsed",
+        "raw_count": 0,
         "accepted_count": 0,
-        "rejected_count": 1,
+        "rejected_count": 0,
         "rendered_count": 0,
-        "reject_reasons": {
-          "Без новых фактов: уже был 2026-06-11 как «Altrincham Market and Market House | Visit Altri": 1
-        },
+        "reject_reasons": {},
         "loss_funnel": {
-          "candidate_pool": 1,
-          "rejected_before_writer": 1,
-          "backup_before_rewrite": 0,
-          "included_after_curation": 0,
-          "included_missing_draft_line": 0,
-          "writer_dropped": 0,
-          "rendered": 0,
-          "source_raw_count": 1
+          "source_raw_count": 0
         },
         "failure_count": 0,
-        "candidate_count": 1,
+        "candidate_count": 0,
         "fresh_last_24h_count": 0,
         "source_contract": "event_calendar",
         "trial": false,
-        "coverage_signal_count": 1,
+        "coverage_signal_count": 0,
         "coverage_signal_label": "items",
         "curated_count": 0,
         "human_funnel": {
           "template": [
-            "Собрали: 1",
+            "Собрали: 0",
             "Повторы / уже было: 0",
-            "Отклонено до редактора: 1",
+            "Отклонено до редактора: 0",
             "Ушло в резерв до перевода: 0",
             "Выбрано редактором: 0",
             "Не получилось написать нормальную строку: 0",
             "Попало в выпуск: 0"
           ],
-          "conclusion": "источник живой, но материалы не проходят редакционный отбор",
-          "action": "проверить, это шумный источник или фильтр слишком строгий",
-          "one_line": "Altrincham Market: источник живой, но материалы не проходят редакционный отбор; проверить, это шумный источник или фильтр слишком строгий."
+          "conclusion": "источник сегодня не дал материалов",
+          "action": "проверить, это нормальная тишина источника или проблема парсера",
+          "one_line": "Altrincham Market: источник сегодня не дал материалов; проверить, это нормальная тишина источника или проблема парсера."
         }
       },
       {
@@ -3358,51 +3278,8 @@
       {
         "name": "Chorlton Makers Market",
         "category": "culture_weekly",
-        "status": "ok",
-        "detail": "1 items",
-        "raw_count": 1,
-        "accepted_count": 1,
-        "rejected_count": 0,
-        "rendered_count": 1,
-        "reject_reasons": {},
-        "loss_funnel": {
-          "candidate_pool": 1,
-          "rejected_before_writer": 0,
-          "backup_before_rewrite": 0,
-          "included_after_curation": 1,
-          "included_missing_draft_line": 1,
-          "writer_dropped": 0,
-          "rendered": 1,
-          "source_raw_count": 1
-        },
-        "failure_count": 0,
-        "candidate_count": 1,
-        "fresh_last_24h_count": 0,
-        "source_contract": "event_calendar",
-        "trial": false,
-        "coverage_signal_count": 1,
-        "coverage_signal_label": "items",
-        "curated_count": 1,
-        "human_funnel": {
-          "template": [
-            "Собрали: 1",
-            "Повторы / уже было: 0",
-            "Отклонено до редактора: 0",
-            "Ушло в резерв до перевода: 0",
-            "Выбрано редактором: 1",
-            "Не получилось написать нормальную строку: 1",
-            "Попало в выпуск: 1"
-          ],
-          "conclusion": "источник даёт полезный вклад в выпуск",
-          "action": "оставить как есть; смотреть только на качество отдельных строк",
-          "one_line": "Chorlton Makers Market: источник даёт полезный вклад в выпуск; оставить как есть; смотреть только на качество отдельных строк."
-        }
-      },
-      {
-        "name": "Barton Aerodrome Car Boot",
-        "category": "culture_weekly",
-        "status": "stale",
-        "detail": "source reachable; no changed content since last run (304 Not Modified)",
+        "status": "failed",
+        "detail": "timed out",
         "raw_count": 0,
         "accepted_count": 0,
         "rejected_count": 0,
@@ -3411,7 +3288,7 @@
         "loss_funnel": {
           "source_raw_count": 0
         },
-        "failure_count": 0,
+        "failure_count": 1,
         "candidate_count": 0,
         "fresh_last_24h_count": 0,
         "source_contract": "event_calendar",
@@ -3431,7 +3308,52 @@
           ],
           "conclusion": "источник сегодня не дал материалов",
           "action": "проверить, это нормальная тишина источника или проблема парсера",
-          "one_line": "Barton Aerodrome Car Boot: источник сегодня не дал материалов; проверить, это нормальная тишина источника или проблема парсера."
+          "one_line": "Chorlton Makers Market: источник сегодня не дал материалов; проверить, это нормальная тишина источника или проблема парсера."
+        }
+      },
+      {
+        "name": "Barton Aerodrome Car Boot",
+        "category": "culture_weekly",
+        "status": "ok",
+        "detail": "1 items",
+        "raw_count": 1,
+        "accepted_count": 1,
+        "rejected_count": 0,
+        "rendered_count": 0,
+        "reject_reasons": {
+          "event date in draft_line conflicts with structured event date.": 1
+        },
+        "loss_funnel": {
+          "candidate_pool": 1,
+          "rejected_before_writer": 0,
+          "backup_before_rewrite": 0,
+          "included_after_curation": 1,
+          "included_missing_draft_line": 1,
+          "writer_dropped": 1,
+          "rendered": 0,
+          "source_raw_count": 1
+        },
+        "failure_count": 0,
+        "candidate_count": 1,
+        "fresh_last_24h_count": 0,
+        "source_contract": "event_calendar",
+        "trial": false,
+        "coverage_signal_count": 1,
+        "coverage_signal_label": "items",
+        "curated_count": 1,
+        "human_funnel": {
+          "template": [
+            "Собрали: 1",
+            "Повторы / уже было: 0",
+            "Отклонено до редактора: 0",
+            "Ушло в резерв до перевода: 0",
+            "Выбрано редактором: 1",
+            "Не получилось написать нормальную строку: 2",
+            "Попало в выпуск: 0"
+          ],
+          "conclusion": "источник даёт кандидатов, но они теряются на написании строки",
+          "action": "проверить draft_line/rewrite для этого типа материалов",
+          "one_line": "Barton Aerodrome Car Boot: источник даёт кандидатов, но они теряются на написании строки; проверить draft_line/rewrite для этого типа материалов."
         }
       },
       {
@@ -3950,10 +3872,11 @@
         "status": "ok",
         "detail": "5 items",
         "raw_count": 5,
-        "accepted_count": 1,
-        "rejected_count": 4,
-        "rendered_count": 1,
+        "accepted_count": 0,
+        "rejected_count": 5,
+        "rendered_count": 0,
         "reject_reasons": {
+          "Curator drop: Чистый PR без новостного повода.": 1,
           "Intra-batch topic duplicate — same story kept from stronger source.": 1,
           "Без новых фактов: уже был 2026-05-30 как «Robyn SEXISTENTIAL TOUR Sat 27 Jun 2026 Multiple": 1,
           "Без новых фактов: уже был 2026-06-04 как «Kings Of Leon Special Guest Snuts Sat 4 Jul 2026": 1,
@@ -3961,12 +3884,12 @@
         },
         "loss_funnel": {
           "candidate_pool": 5,
-          "rejected_before_writer": 4,
+          "rejected_before_writer": 5,
           "backup_before_rewrite": 0,
-          "included_after_curation": 1,
-          "included_missing_draft_line": 1,
+          "included_after_curation": 0,
+          "included_missing_draft_line": 0,
           "writer_dropped": 0,
-          "rendered": 1,
+          "rendered": 0,
           "source_raw_count": 5
         },
         "failure_count": 0,
@@ -3976,20 +3899,20 @@
         "trial": false,
         "coverage_signal_count": 5,
         "coverage_signal_label": "items",
-        "curated_count": 1,
+        "curated_count": 0,
         "human_funnel": {
           "template": [
             "Собрали: 5",
             "Повторы / уже было: 1",
-            "Отклонено до редактора: 4",
+            "Отклонено до редактора: 5",
             "Ушло в резерв до перевода: 0",
-            "Выбрано редактором: 1",
-            "Не получилось написать нормальную строку: 1",
-            "Попало в выпуск: 1"
+            "Выбрано редактором: 0",
+            "Не получилось написать нормальную строку: 0",
+            "Попало в выпуск: 0"
           ],
-          "conclusion": "источник даёт полезный вклад в выпуск",
-          "action": "оставить как есть; смотреть только на качество отдельных строк",
-          "one_line": "Co-op Live: источник даёт полезный вклад в выпуск; оставить как есть; смотреть только на качество отдельных строк."
+          "conclusion": "источник живой, но материалы не проходят редакционный отбор",
+          "action": "проверить, это шумный источник или фильтр слишком строгий",
+          "one_line": "Co-op Live: источник живой, но материалы не проходят редакционный отбор; проверить, это шумный источник или фильтр слишком строгий."
         }
       },
       {
@@ -4093,26 +4016,26 @@
         "status": "ok",
         "detail": "30 upcoming dated items",
         "raw_count": 30,
-        "accepted_count": 19,
-        "rejected_count": 11,
+        "accepted_count": 18,
+        "rejected_count": 12,
         "rendered_count": 8,
         "reject_reasons": {
+          "Curator drop: Чистый PR без новостного повода.": 1,
           "Premium/hospitality upsell removed from ticket radar.": 1,
           "Intra-batch topic duplicate — same story kept from stronger source.": 4,
           "Multi-night run merged into one ticket line (#7).": 5,
           "Cheap pre-enrich duplicate — same URL/title kept from stronger source.": 1,
-          "event date in draft_line conflicts with structured event date.": 1,
           "Ticket not selected: open-air концерт на estate-площадке": 1,
           "Ticket not selected: концерт в GM на этой неделе": 5,
           "Ticket not selected: крупная площадка, на этой неделе": 4
         },
         "loss_funnel": {
           "candidate_pool": 30,
-          "rejected_before_writer": 11,
+          "rejected_before_writer": 12,
           "backup_before_rewrite": 0,
-          "included_after_curation": 19,
-          "included_missing_draft_line": 19,
-          "writer_dropped": 11,
+          "included_after_curation": 18,
+          "included_missing_draft_line": 18,
+          "writer_dropped": 10,
           "rendered": 8,
           "source_raw_count": 30
         },
@@ -4123,15 +4046,15 @@
         "trial": false,
         "coverage_signal_count": 30,
         "coverage_signal_label": "upcoming dated items",
-        "curated_count": 19,
+        "curated_count": 18,
         "human_funnel": {
           "template": [
             "Собрали: 30",
             "Повторы / уже было: 5",
-            "Отклонено до редактора: 11",
+            "Отклонено до редактора: 12",
             "Ушло в резерв до перевода: 0",
-            "Выбрано редактором: 19",
-            "Не получилось написать нормальную строку: 30",
+            "Выбрано редактором: 18",
+            "Не получилось написать нормальную строку: 28",
             "Попало в выпуск: 8"
           ],
           "conclusion": "источник живой, но билетная политика пропустила слишком много видимых строк",
@@ -4722,23 +4645,22 @@
         "status": "ok",
         "detail": "4 item(s)",
         "raw_count": 4,
-        "accepted_count": 2,
-        "rejected_count": 2,
-        "rendered_count": 0,
+        "accepted_count": 1,
+        "rejected_count": 3,
+        "rendered_count": 1,
         "reject_reasons": {
+          "Curator drop: Evergreen-листинг без конкретного события.": 1,
           "day_out_guide": 1,
-          "stale_opening": 1,
-          "draft_line for long-format category needs ≥150 chars (got 76).": 1,
-          "draft_line for long-format category needs ≥2 sentences (got 1).": 1
+          "stale_opening": 1
         },
         "loss_funnel": {
           "candidate_pool": 4,
-          "rejected_before_writer": 2,
+          "rejected_before_writer": 3,
           "backup_before_rewrite": 0,
-          "included_after_curation": 2,
+          "included_after_curation": 1,
           "included_missing_draft_line": 0,
-          "writer_dropped": 1,
-          "rendered": 0,
+          "writer_dropped": 0,
+          "rendered": 1,
           "source_raw_count": 4
         },
         "failure_count": 0,
@@ -4748,20 +4670,20 @@
         "trial": false,
         "coverage_signal_count": 4,
         "coverage_signal_label": "items",
-        "curated_count": 2,
+        "curated_count": 1,
         "human_funnel": {
           "template": [
             "Собрали: 4",
             "Повторы / уже было: 0",
-            "Отклонено до редактора: 2",
+            "Отклонено до редактора: 3",
             "Ушло в резерв до перевода: 0",
-            "Выбрано редактором: 2",
-            "Не получилось написать нормальную строку: 1",
-            "Попало в выпуск: 0"
+            "Выбрано редактором: 1",
+            "Не получилось написать нормальную строку: 0",
+            "Попало в выпуск: 1"
           ],
-          "conclusion": "источник даёт кандидатов, но они теряются на написании строки",
-          "action": "проверить draft_line/rewrite для этого типа материалов",
-          "one_line": "Manchester's Finest: источник даёт кандидатов, но они теряются на написании строки; проверить draft_line/rewrite для этого типа материалов."
+          "conclusion": "источник даёт полезный вклад в выпуск",
+          "action": "оставить как есть; смотреть только на качество отдельных строк",
+          "one_line": "Manchester's Finest: источник даёт полезный вклад в выпуск; оставить как есть; смотреть только на качество отдельных строк."
         }
       },
       {
@@ -4849,92 +4771,73 @@
       {
         "name": "SK Lowdown Markets",
         "category": "food_openings",
-        "status": "ok",
-        "detail": "4 item(s)",
-        "raw_count": 4,
-        "accepted_count": 1,
-        "rejected_count": 3,
+        "status": "stale",
+        "detail": "source reachable; no changed content since last run (304 Not Modified)",
+        "raw_count": 0,
+        "accepted_count": 0,
+        "rejected_count": 0,
         "rendered_count": 0,
-        "reject_reasons": {
-          "Intra-batch topic duplicate — same story kept from stronger source.": 3
-        },
+        "reject_reasons": {},
         "loss_funnel": {
-          "candidate_pool": 4,
-          "rejected_before_writer": 3,
-          "backup_before_rewrite": 0,
-          "included_after_curation": 1,
-          "included_missing_draft_line": 0,
-          "writer_dropped": 0,
-          "rendered": 0,
-          "source_raw_count": 4
+          "source_raw_count": 0
         },
         "failure_count": 0,
-        "candidate_count": 4,
+        "candidate_count": 0,
         "fresh_last_24h_count": 0,
         "source_contract": "openings_watch",
         "trial": false,
-        "coverage_signal_count": 4,
-        "coverage_signal_label": "items",
-        "curated_count": 1,
+        "coverage_signal_count": 0,
+        "coverage_signal_label": "",
+        "curated_count": 0,
         "human_funnel": {
           "template": [
-            "Собрали: 4",
-            "Повторы / уже было: 3",
-            "Отклонено до редактора: 3",
+            "Собрали: 0",
+            "Повторы / уже было: 0",
+            "Отклонено до редактора: 0",
             "Ушло в резерв до перевода: 0",
-            "Выбрано редактором: 1",
+            "Выбрано редактором: 0",
             "Не получилось написать нормальную строку: 0",
             "Попало в выпуск: 0"
           ],
-          "conclusion": "источник живой, но в основном даёт дубли",
-          "action": "не отключать; усилить dedupe и не давать дублю вытеснять лучший источник",
-          "one_line": "SK Lowdown Markets: источник живой, но в основном даёт дубли; не отключать; усилить dedupe и не давать дублю вытеснять лучший источник."
+          "conclusion": "источник сегодня не дал материалов",
+          "action": "проверить, это нормальная тишина источника или проблема парсера",
+          "one_line": "SK Lowdown Markets: источник сегодня не дал материалов; проверить, это нормальная тишина источника или проблема парсера."
         }
       },
       {
         "name": "Manchester United",
         "category": "football",
-        "status": "ok",
-        "detail": "3 item(s)",
-        "raw_count": 3,
+        "status": "stale",
+        "detail": "source reachable; no changed content since last run (304 Not Modified)",
+        "raw_count": 0,
         "accepted_count": 0,
-        "rejected_count": 3,
+        "rejected_count": 0,
         "rendered_count": 0,
-        "reject_reasons": {
-          "Curator drop: Чистый PR без новостного повода.": 2,
-          "Collected from live source; pending dedupe review. | Outside pre-rewrite shortlist for foo": 1
-        },
+        "reject_reasons": {},
         "loss_funnel": {
-          "candidate_pool": 3,
-          "rejected_before_writer": 2,
-          "backup_before_rewrite": 1,
-          "included_after_curation": 0,
-          "included_missing_draft_line": 0,
-          "writer_dropped": 0,
-          "rendered": 0,
-          "source_raw_count": 3
+          "source_raw_count": 0
         },
         "failure_count": 0,
-        "candidate_count": 3,
+        "candidate_count": 0,
         "fresh_last_24h_count": 0,
         "source_contract": "football_official",
         "trial": false,
-        "coverage_signal_count": 3,
-        "coverage_signal_label": "items",
+        "coverage_signal_count": 0,
+        "coverage_signal_label": "",
         "curated_count": 0,
         "human_funnel": {
           "template": [
-            "Собрали: 3",
+            "Собрали: 0",
             "Повторы / уже было: 0",
-            "Отклонено до редактора: 2",
-            "Ушло в резерв до перевода: 1",
+            "Отклонено до редактора: 0",
+            "Ушло в резерв до перевода: 0",
             "Выбрано редактором: 0",
             "Не получилось написать нормальную строку: 0",
             "Попало в выпуск: 0"
           ],
-          "conclusion": "источник живой, но материалы не проходят редакционный отбор",
-          "action": "проверить, это шумный источник или фильтр слишком строгий",
-          "one_line": "Manchester United: источник живой, но материалы не проходят редакционный отбор; проверить, это шумный источник или фильтр слишком строгий."
+          "conclusion": "источник сегодня не дал материалов",
+          "action": "проверить, это нормальная тишина источника или проблема парсера",
+          "one_line": "Manchester United: источник сегодня не дал материалов; проверить, это нормальная тишина источника или проблема парсера."
         }
       },
       {
@@ -4984,8 +4887,8 @@
         "rendered_count": 0,
         "reject_reasons": {
           "Curator drop: Чистый PR без новостного повода.": 1,
-          "draft_line for long-format category needs ≥2 sentences (got 1).": 1,
-          "draft_line contains number(s) not present in candidate evidence: 15.": 1
+          "draft_line for long-format category needs ≥150 chars (got 135).": 1,
+          "draft_line for long-format category needs ≥2 sentences (got 1).": 1
         },
         "loss_funnel": {
           "candidate_pool": 2,
@@ -5104,8 +5007,9 @@
         "reject_reasons": {
           "Collected from live source; pending dedupe review. | Outside global translation board (sof": 1,
           "Intra-batch topic duplicate — same story kept from stronger source.": 5,
-          "draft_line for long-format category needs ≥150 chars (got 105).": 1,
+          "draft_line for long-format category needs ≥150 chars (got 108).": 1,
           "draft_line for long-format category needs ≥2 sentences (got 1).": 2,
+          "draft_line contains number(s) not present in candidate evidence: 0, 00, 10.": 1,
           "draft_line for long-format category needs ≥150 chars (got 109).": 1
         },
         "loss_funnel": {
@@ -5337,12 +5241,11 @@
         "rejected_count": 3,
         "rendered_count": 0,
         "reject_reasons": {
-          "LLM-review: Назначение Мелани Кэри-Ярд в Lesniak Swann — новая деталь о расширении команды": 1,
+          "LLM-review: Новая информация о назначении Мелани Кэри-Ярд в Lesniak Swann. | Validator: co": 1,
           "Intra-batch topic duplicate — same story kept from stronger source.": 2,
-          "draft_line for long-format category needs ≥150 chars (got 148).": 1,
           "draft_line for long-format category needs ≥2 sentences (got 1).": 2,
-          "draft_line contains number(s) not present in candidate evidence: 5.": 1,
-          "draft_line for long-format category needs ≥150 chars (got 99).": 1
+          "draft_line contains number(s) not present in candidate evidence: 2026, 5.": 1,
+          "draft_line for long-format category needs ≥150 chars (got 112).": 1
         },
         "loss_funnel": {
           "candidate_pool": 5,
@@ -5381,40 +5284,39 @@
         "name": "BusinessCloud",
         "category": "tech_business",
         "status": "ok",
-        "detail": "3 item(s)",
-        "raw_count": 3,
+        "detail": "2 item(s)",
+        "raw_count": 2,
         "accepted_count": 1,
-        "rejected_count": 2,
+        "rejected_count": 1,
         "rendered_count": 0,
         "reject_reasons": {
           "Collected from live source; pending dedupe review. | Outside global translation board (sof": 1,
-          "Intra-batch topic duplicate — same story kept from stronger source.": 1,
-          "draft_line for long-format category needs ≥150 chars (got 109).": 1,
+          "draft_line for long-format category needs ≥150 chars (got 132).": 1,
           "draft_line for long-format category needs ≥2 sentences (got 1).": 1
         },
         "loss_funnel": {
-          "candidate_pool": 3,
-          "rejected_before_writer": 2,
+          "candidate_pool": 2,
+          "rejected_before_writer": 1,
           "backup_before_rewrite": 0,
           "included_after_curation": 1,
           "included_missing_draft_line": 0,
           "writer_dropped": 1,
           "rendered": 0,
-          "source_raw_count": 3
+          "source_raw_count": 2
         },
         "failure_count": 0,
-        "candidate_count": 3,
+        "candidate_count": 2,
         "fresh_last_24h_count": 0,
         "source_contract": "business_news",
         "trial": false,
-        "coverage_signal_count": 3,
+        "coverage_signal_count": 2,
         "coverage_signal_label": "items",
         "curated_count": 1,
         "human_funnel": {
           "template": [
-            "Собрали: 3",
-            "Повторы / уже было: 1",
-            "Отклонено до редактора: 2",
+            "Собрали: 2",
+            "Повторы / уже было: 0",
+            "Отклонено до редактора: 1",
             "Ушло в резерв до перевода: 0",
             "Выбрано редактором: 1",
             "Не получилось написать нормальную строку: 1",
@@ -5435,7 +5337,7 @@
         "rejected_count": 1,
         "rendered_count": 0,
         "reject_reasons": {
-          "Collected from live source; pending dedupe review. | Outside global translation board (sof": 1
+          "Curator drop: Чистый PR без новостного повода.": 1
         },
         "loss_funnel": {
           "candidate_pool": 1,
@@ -5473,47 +5375,37 @@
       {
         "name": "MIDAS Manchester",
         "category": "tech_business",
-        "status": "ok",
-        "detail": "5 item(s)",
-        "raw_count": 5,
+        "status": "stale",
+        "detail": "source reachable; no changed content since last run (304 Not Modified)",
+        "raw_count": 0,
         "accepted_count": 0,
-        "rejected_count": 5,
+        "rejected_count": 0,
         "rendered_count": 0,
-        "reject_reasons": {
-          "stale_hard_age": 1,
-          "Intra-batch topic duplicate — same story kept from stronger source.": 4
-        },
+        "reject_reasons": {},
         "loss_funnel": {
-          "candidate_pool": 5,
-          "rejected_before_writer": 5,
-          "backup_before_rewrite": 0,
-          "included_after_curation": 0,
-          "included_missing_draft_line": 0,
-          "writer_dropped": 0,
-          "rendered": 0,
-          "source_raw_count": 5
+          "source_raw_count": 0
         },
         "failure_count": 0,
-        "candidate_count": 5,
+        "candidate_count": 0,
         "fresh_last_24h_count": 0,
         "source_contract": "business_news",
         "trial": false,
-        "coverage_signal_count": 5,
-        "coverage_signal_label": "items",
+        "coverage_signal_count": 0,
+        "coverage_signal_label": "",
         "curated_count": 0,
         "human_funnel": {
           "template": [
-            "Собрали: 5",
-            "Повторы / уже было: 4",
-            "Отклонено до редактора: 5",
+            "Собрали: 0",
+            "Повторы / уже было: 0",
+            "Отклонено до редактора: 0",
             "Ушло в резерв до перевода: 0",
             "Выбрано редактором: 0",
             "Не получилось написать нормальную строку: 0",
             "Попало в выпуск: 0"
           ],
-          "conclusion": "источник живой, но в основном даёт дубли",
-          "action": "не отключать; усилить dedupe и не давать дублю вытеснять лучший источник",
-          "one_line": "MIDAS Manchester: источник живой, но в основном даёт дубли; не отключать; усилить dedupe и не давать дублю вытеснять лучший источник."
+          "conclusion": "источник сегодня не дал материалов",
+          "action": "проверить, это нормальная тишина источника или проблема парсера",
+          "one_line": "MIDAS Manchester: источник сегодня не дал материалов; проверить, это нормальная тишина источника или проблема парсера."
         }
       },
       {
@@ -5527,7 +5419,7 @@
         "rendered_count": 0,
         "reject_reasons": {
           "no_date": 1,
-          "Без новых фактов: уже был 2026-06-16 как «A Manifesto for the Northern Tech Economy». LLM-": 1,
+          "cross_day_rehash": 1,
           "Intra-batch topic duplicate — same story kept from stronger source.": 6
         },
         "loss_funnel": {
@@ -5951,7 +5843,40 @@
       }
     ]
   },
-  "source_anomalies": [],
+  "source_anomalies": [
+    {
+      "name": "The Mill",
+      "category": "media_layer",
+      "today_raw": 0,
+      "median_raw": 7,
+      "baseline_days": 7,
+      "reason": "raw yield 0 today vs 7-day median 7 over 7 day(s)"
+    },
+    {
+      "name": "MIDAS Manchester",
+      "category": "tech_business",
+      "today_raw": 0,
+      "median_raw": 5,
+      "baseline_days": 7,
+      "reason": "raw yield 0 today vs 7-day median 5 over 7 day(s)"
+    },
+    {
+      "name": "SK Lowdown Markets",
+      "category": "food_openings",
+      "today_raw": 0,
+      "median_raw": 4,
+      "baseline_days": 7,
+      "reason": "raw yield 0 today vs 7-day median 4 over 7 day(s)"
+    },
+    {
+      "name": "Manchester United",
+      "category": "football",
+      "today_raw": 0,
+      "median_raw": 4,
+      "baseline_days": 7,
+      "reason": "raw yield 0 today vs 7-day median 4 over 7 day(s)"
+    }
+  ],
   "dead_parsers": [
     {
       "name": "Manchester Theatres Weekend",
@@ -5983,8 +5908,8 @@
     "tfgm_checked": true,
     "metrolink_checked": false,
     "national_rail_checked": true,
-    "disruptions_found": 8,
-    "disruptions_rendered": 8,
+    "disruptions_found": 7,
+    "disruptions_rendered": 7,
     "verdict": "disruptions_rendered",
     "sources": [
       {
@@ -6176,7 +6101,7 @@
   },
   "reject_review": {
     "counts": {
-      "correctly_rejected": 1176,
+      "correctly_rejected": 1146,
       "borderline": 3,
       "suspiciously_rejected": 1
     },
@@ -6187,7 +6112,6 @@
         "category": "media_layer",
         "primary_block": "last_24h",
         "reasons": [
-          "draft_line for long-format category needs ≥150 chars (got 109).",
           "draft_line for long-format category needs ≥2 sentences (got 1)."
         ],
         "is_lead": true,
@@ -6202,7 +6126,7 @@
         "category": "media_layer",
         "primary_block": "last_24h",
         "reasons": [
-          "draft_line for long-format category needs ≥150 chars (got 128).",
+          "draft_line for long-format category needs ≥150 chars (got 109).",
           "draft_line for long-format category needs ≥2 sentences (got 1)."
         ],
         "is_lead": false,
@@ -6246,7 +6170,7 @@
   },
   "rendered_html_review": {
     "counts": {
-      "visible_lines": 45,
+      "visible_lines": 44,
       "bad_visible_items": 0
     },
     "bad_visible_items": []
@@ -6257,52 +6181,21 @@
   },
   "event_miss_review": {
     "counts": {
-      "high_value_not_published": 351,
-      "critical_misses": 5,
-      "selected_but_not_published": 1,
-      "alert_possible_miss": 5,
-      "rejected_high_value_event": 76,
+      "high_value_not_published": 350,
+      "critical_misses": 3,
+      "rejected_high_value_event": 77,
       "alert_stale_or_expired": 2,
-      "alert_review_only": 85,
+      "alert_review_only": 86,
       "alert_not_selected_capacity": 1,
       "dedupe_lost_event": 130,
       "alert_duplicate_or_covered": 133,
-      "writer_dropped_event": 129,
+      "writer_dropped_event": 128,
       "alert_manual_review": 1,
       "covered_by_rendered_duplicate": 15,
-      "alert_not_selected_by_design": 124
+      "alert_not_selected_by_design": 124,
+      "alert_possible_miss": 3
     },
     "critical_misses": [
-      {
-        "fingerprint": "culture-weekly-home-homemcr-org-whats-on-disclosure-day-12a-rs5p",
-        "title": "Disclosure Day (12A) — Emily Blunt and Josh O'Connor star in Spielberg's latest exploration of extraterrestrial life.",
-        "source_label": "HOME",
-        "primary_block": "today_focus",
-        "category": "culture_weekly",
-        "score": 8,
-        "days_out": 0,
-        "verdict": "selected_but_not_published",
-        "alert_class": "possible_miss",
-        "reason": "Collected from live source; pending dedupe review. | Practical backfill: next_7_days → today_focus (today practical layer was thin).",
-        "kept_fingerprint": "",
-        "kept_title": "",
-        "kept_source_label": ""
-      },
-      {
-        "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-take-that-the-circus-live-summer-manchester-19-06-2026-event-3-006331-86-5743",
-        "title": "TAKE THAT - THE CIRCUS LIVE - Summer 2026 — event 2026-06-19 — public sale 2025-09-26 09:30",
-        "source_label": "Ticketmaster Manchester Upcoming",
-        "primary_block": "ticket_radar",
-        "category": "venues_tickets",
-        "score": 9,
-        "days_out": 0,
-        "verdict": "writer_dropped_event",
-        "alert_class": "possible_miss",
-        "reason": "event date in draft_line conflicts with structured event date.",
-        "kept_fingerprint": "",
-        "kept_title": "",
-        "kept_source_label": ""
-      },
       {
         "fingerprint": "venues-tickets-ticketmaster-london-major-upcoming-ticketmaster-co-uk-harry-styles-together-together-london-19-06-2026-event-2300642-9-010-1",
         "title": "Harry Styles: Together, Together — event 2026-06-19 — public sale 2026-01-30 11:00",
@@ -6343,7 +6236,7 @@
         "days_out": 1,
         "verdict": "writer_dropped_event",
         "alert_class": "possible_miss",
-        "reason": "draft_line for long-format category needs ≥110 chars (got 60).; draft_line for long-format category needs ≥2 sentences (got 1).",
+        "reason": "draft_line for long-format category needs ≥110 chars (got 99).; draft_line for long-format category needs ≥2 sentences (got 1).",
         "kept_fingerprint": "",
         "kept_title": "",
         "kept_source_label": ""
@@ -6519,13 +6412,13 @@
         "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-take-that-the-circus-live-summer-manchester-19-06-2026-event-3-006331-86-5743",
         "title": "TAKE THAT - THE CIRCUS LIVE - Summer 2026 — event 2026-06-19 — public sale 2025-09-26 09:30",
         "source_label": "Ticketmaster Manchester Upcoming",
-        "primary_block": "ticket_radar",
+        "primary_block": "today_focus",
         "category": "venues_tickets",
         "score": 9,
         "days_out": 0,
-        "verdict": "writer_dropped_event",
-        "alert_class": "possible_miss",
-        "reason": "event date in draft_line conflicts with structured event date.",
+        "verdict": "rejected_high_value_event",
+        "alert_class": "review_only",
+        "reason": "Curator drop: Чистый PR без новостного повода.",
         "kept_fingerprint": "",
         "kept_title": "",
         "kept_source_label": ""
@@ -6694,21 +6587,6 @@
         "kept_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-david-gray-live-lounge-premium-package-derby-19-06-2026-event-2300631-8-0-81",
         "kept_title": "David Gray - Live Lounge Premium Package — event 2026-06-19 — public sale 2025-09-05 10:00",
         "kept_source_label": "Ticketmaster UK Major Upcoming"
-      },
-      {
-        "fingerprint": "culture-weekly-home-homemcr-org-whats-on-disclosure-day-12a-rs5p",
-        "title": "Disclosure Day (12A) — Emily Blunt and Josh O'Connor star in Spielberg's latest exploration of extraterrestrial life.",
-        "source_label": "HOME",
-        "primary_block": "today_focus",
-        "category": "culture_weekly",
-        "score": 8,
-        "days_out": 0,
-        "verdict": "selected_but_not_published",
-        "alert_class": "possible_miss",
-        "reason": "Collected from live source; pending dedupe review. | Practical backfill: next_7_days → today_focus (today practical layer was thin).",
-        "kept_fingerprint": "",
-        "kept_title": "",
-        "kept_source_label": ""
       },
       {
         "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-discos-for-grown-ups-gary-davies-bournemouth-19-06-2026-event-3-006466-9-48",
@@ -7099,24 +6977,38 @@
         "kept_fingerprint": "",
         "kept_title": "",
         "kept_source_label": ""
+      },
+      {
+        "fingerprint": "venues-tickets-ticketmaster-liverpool-onsale-ticketmaster-co-uk-on-the-waterfront-presents-red-rum-liverpool-19-06-2026-event-1-006350-3-7766",
+        "title": "On the Waterfront presents Red Rum Club — event 2026-06-19 — public sale 2025-10-31 10:00",
+        "source_label": "Ticketmaster Liverpool Onsale",
+        "primary_block": "outside_gm_tickets",
+        "category": "venues_tickets",
+        "score": 8,
+        "days_out": 0,
+        "verdict": "dedupe_lost_event",
+        "alert_class": "duplicate_or_covered",
+        "reason": "Intra-batch topic duplicate — same story kept from stronger source.",
+        "kept_fingerprint": "venues-tickets-ticketmaster-liverpool-upcoming-ticketmaster-co-uk-on-the-waterfront-presents-red-rum-liverpool-19-06-2026-event-1-006350-3-7766",
+        "kept_title": "On the Waterfront presents Red Rum Club — event 2026-06-19 — public sale 2025-10-31 10:00",
+        "kept_source_label": "Ticketmaster Liverpool Upcoming"
       }
     ]
   },
   "final_loss_check": {
     "schema_version": 1,
     "counts": {
-      "high_value_not_rendered": 1066,
-      "critical_losses": 185,
-      "dedupe_dropped": 526,
-      "alert_duplicate_or_covered": 370,
-      "writer_dropped": 268,
-      "alert_possible_miss": 185,
-      "rejected": 269,
-      "alert_review_only": 269,
-      "selected_not_published": 3,
+      "high_value_not_rendered": 1041,
+      "critical_losses": 184,
+      "dedupe_dropped": 519,
+      "alert_duplicate_or_covered": 363,
+      "writer_dropped": 269,
+      "alert_possible_miss": 184,
+      "rejected": 253,
+      "alert_review_only": 253,
       "alert_manual_review": 80,
       "alert_not_selected_by_design": 157,
-      "alert_ticket_inventory_not_rendered": 5
+      "alert_ticket_inventory_not_rendered": 4
     },
     "critical_losses": [
       {
@@ -9424,6 +9316,39 @@
         "manual_include_hint": "Add \"venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-tooth-manchester-19-06-2026-event-1-006491-2056\" to data/state/manual_candidate_overrides.json force_include[]"
       },
       {
+        "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-soft-and-gentle-netball-super-league-1hjr",
+        "title": "Soft & Gentle Netball Super League Grand Final Sat 20 Jun 2026 Multiple times",
+        "source_label": "Co-op Live",
+        "category": "venues_tickets",
+        "primary_block": "today_focus",
+        "disposition": "rejected",
+        "alert_class": "review_only",
+        "reason": "Curator drop: Чистый PR без новостного повода.",
+        "human_reason": "Не дошло до выпуска: Curator drop: Чистый PR без новостного повода.. Не хватило: явных недостающих фактов нет.",
+        "story_frame": {
+          "version": "2026-06-02.1",
+          "event_type": "ticket",
+          "what_happened": "Soft & Gentle Netball Super League Grand Final Sat 20 Jun 2026 Multiple times",
+          "where_exact": "Co-op Live",
+          "when": "20 июня",
+          "who_affected": "посетители события",
+          "why_now": "happening_today",
+          "reader_value": 26,
+          "missing_facts": [],
+          "repair_policy": "repair_first_then_hold"
+        },
+        "missing_facts": [],
+        "recovery_trace": [],
+        "recovery_plan": {},
+        "protected_lanes": [
+          "ticket"
+        ],
+        "section_board_score": 114.0,
+        "false_negative_risk": "high",
+        "enrichment_warning": true,
+        "manual_include_hint": "Add \"venues-tickets-co-op-live-cooplive-com-events-soft-and-gentle-netball-super-league-1hjr\" to data/state/manual_candidate_overrides.json force_include[]"
+      },
+      {
         "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-american-football-leeds-26-06-2026-event-3-00643-80742-6",
         "title": "American Football — event 2026-06-26 — public sale 2026-02-06 10:00",
         "source_label": "Ticketmaster UK Major Upcoming",
@@ -10513,6 +10438,39 @@
         "manual_include_hint": "Add \"venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-pepsi-max-presents-parklife-2026-sunday-manchester-21-06-2026-event-3-006433-0973-9\" to data/state/manual_candidate_overrides.json force_include[]"
       },
       {
+        "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-take-that-the-circus-live-summer-manchester-19-06-2026-event-3-006331-86-5743",
+        "title": "TAKE THAT - THE CIRCUS LIVE - Summer 2026 — event 2026-06-19 — public sale 2025-09-26 09:30",
+        "source_label": "Ticketmaster Manchester Upcoming",
+        "category": "venues_tickets",
+        "primary_block": "today_focus",
+        "disposition": "rejected",
+        "alert_class": "review_only",
+        "reason": "Curator drop: Чистый PR без новостного повода.",
+        "human_reason": "Не дошло до выпуска: Curator drop: Чистый PR без новостного повода.. Не хватило: явных недостающих фактов нет.",
+        "story_frame": {
+          "version": "2026-06-02.1",
+          "event_type": "ticket",
+          "what_happened": "TAKE THAT - THE CIRCUS LIVE - Summer 2026",
+          "where_exact": "Etihad Stadium",
+          "when": "19 июня",
+          "who_affected": "посетители события",
+          "why_now": "happening_today",
+          "reader_value": 26,
+          "missing_facts": [],
+          "repair_policy": "repair_first_then_hold"
+        },
+        "missing_facts": [],
+        "recovery_trace": [],
+        "recovery_plan": {},
+        "protected_lanes": [
+          "ticket"
+        ],
+        "section_board_score": 109.25,
+        "false_negative_risk": "high",
+        "enrichment_warning": true,
+        "manual_include_hint": "Add \"venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-take-that-the-circus-live-summer-manchester-19-06-2026-event-3-006331-86-5743\" to data/state/manual_candidate_overrides.json force_include[]"
+      },
+      {
         "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-take-that-the-circus-live-summer-manchester-21-06-2026-event-3-006338-98-5-9",
         "title": "TAKE THAT - THE CIRCUS LIVE - Summer 2026 — event 2026-06-21 — public sale 2025-09-26 09:30",
         "source_label": "Ticketmaster Manchester Upcoming",
@@ -10709,72 +10667,6 @@
         "false_negative_risk": "high",
         "enrichment_warning": true,
         "manual_include_hint": "Add \"venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-buffalo-traffic-jam-take-me-home-london-24-06-2026-event-1-006385-81-9\" to data/state/manual_candidate_overrides.json force_include[]"
-      },
-      {
-        "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-delta-goodrem-london-24-06-2026-event-350064-8-438",
-        "title": "Delta Goodrem — event 2026-06-24 — public sale 2026-05-15 10:00",
-        "source_label": "Ticketmaster UK Major Upcoming",
-        "category": "venues_tickets",
-        "primary_block": "outside_gm_tickets",
-        "disposition": "writer_dropped",
-        "alert_class": "not_selected_by_design",
-        "reason": "Ticket not selected: концерт вне GM на этой неделе",
-        "human_reason": "Не дошло до выпуска: Ticket not selected: концерт вне GM на этой неделе. Не хватило: явных недостающих фактов нет.",
-        "story_frame": {
-          "version": "2026-06-02.1",
-          "event_type": "ticket",
-          "what_happened": "Delta Goodrem",
-          "where_exact": "EartH Theatre",
-          "when": "24 июня",
-          "who_affected": "посетители события",
-          "why_now": "new_today",
-          "reader_value": 23,
-          "missing_facts": [],
-          "repair_policy": "repair_first_then_hold"
-        },
-        "missing_facts": [],
-        "recovery_trace": [],
-        "recovery_plan": {},
-        "protected_lanes": [
-          "ticket"
-        ],
-        "section_board_score": 105.75,
-        "false_negative_risk": "high",
-        "enrichment_warning": true,
-        "manual_include_hint": "Add \"venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-delta-goodrem-london-24-06-2026-event-350064-8-438\" to data/state/manual_candidate_overrides.json force_include[]"
-      },
-      {
-        "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-jon-batiste-world-festival-batiste-symphonic-london-24-06-2026-event-1-00645-4-7558",
-        "title": "Jon Batiste World Festival - Batiste Symphonic — event 2026-06-24 — public sale 2026-03-06 10:00",
-        "source_label": "Ticketmaster UK Major Upcoming",
-        "category": "venues_tickets",
-        "primary_block": "outside_gm_tickets",
-        "disposition": "writer_dropped",
-        "alert_class": "not_selected_by_design",
-        "reason": "Ticket not selected: фестивальный lineup, не один артист",
-        "human_reason": "Не дошло до выпуска: Ticket not selected: фестивальный lineup, не один артист. Не хватило: явных недостающих фактов нет.",
-        "story_frame": {
-          "version": "2026-06-02.1",
-          "event_type": "ticket",
-          "what_happened": "Jon Batiste World Festival - Batiste Symphonic",
-          "where_exact": "KOKO",
-          "when": "24 июня",
-          "who_affected": "посетители события",
-          "why_now": "new_today",
-          "reader_value": 23,
-          "missing_facts": [],
-          "repair_policy": "repair_first_then_hold"
-        },
-        "missing_facts": [],
-        "recovery_trace": [],
-        "recovery_plan": {},
-        "protected_lanes": [
-          "ticket"
-        ],
-        "section_board_score": 105.75,
-        "false_negative_risk": "high",
-        "enrichment_warning": true,
-        "manual_include_hint": "Add \"venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-jon-batiste-world-festival-batiste-symphonic-london-24-06-2026-event-1-00645-4-7558\" to data/state/manual_candidate_overrides.json force_include[]"
       }
     ]
   },
@@ -10782,7 +10674,7 @@
     "schema_version": 1,
     "updated_on_london": "2026-06-19",
     "counts": {
-      "active": 1015,
+      "active": 1003,
       "expires_today": 68
     },
     "items": [
@@ -13918,6 +13810,48 @@
         "created_on_london": "2026-06-19",
         "expires_on_london": "2026-06-20",
         "ttl_days": 1,
+        "ttl_reason": "recurring_market_short_window",
+        "fingerprint": "culture-weekly-barton-aerodrome-car-boot-manchester-rocks-co-uk-things-to-do-barton-aerodrome-car-boot-sale",
+        "title": "Barton Aerodrome Car Boot Sale",
+        "source_label": "Barton Aerodrome Car Boot",
+        "source_url": "https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+        "category": "culture_weekly",
+        "primary_block": "weekend_activities",
+        "rubric": "weekend_market",
+        "protected_lanes": [
+          "weekend_market"
+        ],
+        "english_judge": {
+          "schema_version": 1,
+          "decision": "publish_candidate",
+          "section_fit": [
+            "Выходные в GM"
+          ],
+          "editorial_score": 129.5,
+          "false_negative_risk": "high",
+          "reason_codes": [
+            "market_or_fair"
+          ]
+        },
+        "section_board_score": 129.5,
+        "enrichment_health": {
+          "schema_version": 1,
+          "status": "ok_page_event",
+          "evidence_chars": 3770,
+          "fallback_chars": 561,
+          "failed": false,
+          "thin": false,
+          "warning": false,
+          "policy": "normal"
+        },
+        "reason": "Collected from live source; pending dedupe review.",
+        "latest_disposition": "writer_dropped"
+      },
+      {
+        "schema_version": 1,
+        "created_on_london": "2026-06-19",
+        "expires_on_london": "2026-06-20",
+        "ttl_days": 1,
         "ttl_reason": "event_until_occurrence",
         "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-nevertel-manchester-19-06-2026-event-1-006445-1957582",
         "title": "Nevertel — event 2026-06-19 — public sale 2026-02-11 10:00",
@@ -13996,6 +13930,50 @@
         },
         "reason": "Ticket not selected: концерт в GM на этой неделе",
         "latest_disposition": "writer_dropped"
+      },
+      {
+        "schema_version": 1,
+        "created_on_london": "2026-06-19",
+        "expires_on_london": "2026-06-20",
+        "ttl_days": 1,
+        "ttl_reason": "event_until_occurrence",
+        "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-take-that-the-circus-live-summer-manchester-19-06-2026-event-3-006331-86-5743",
+        "title": "TAKE THAT - THE CIRCUS LIVE - Summer 2026 — event 2026-06-19 — public sale 2025-09-26 09:30",
+        "source_label": "Ticketmaster Manchester Upcoming",
+        "source_url": "https://ticketmaster.co.uk/take-that-the-circus-live-summer-manchester-19-06-2026/event/3E006331A86D5743",
+        "category": "venues_tickets",
+        "primary_block": "today_focus",
+        "rubric": "ticket",
+        "protected_lanes": [
+          "ticket"
+        ],
+        "english_judge": {
+          "schema_version": 1,
+          "decision": "publish_candidate",
+          "section_fit": [
+            "Что важно сегодня",
+            "Билеты / Ticket Radar"
+          ],
+          "editorial_score": 109.25,
+          "false_negative_risk": "high",
+          "reason_codes": [
+            "ticket_opportunity",
+            "no_news_anchor"
+          ]
+        },
+        "section_board_score": 109.25,
+        "enrichment_health": {
+          "schema_version": 1,
+          "status": "not_attempted",
+          "evidence_chars": 0,
+          "fallback_chars": 179,
+          "failed": false,
+          "thin": true,
+          "warning": true,
+          "policy": "backup_not_reject"
+        },
+        "reason": "Curator drop: Чистый PR без новостного повода.",
+        "latest_disposition": "rejected"
       },
       {
         "schema_version": 1,
@@ -15854,48 +15832,6 @@
         },
         "reason": "Collected from live source; pending dedupe review. | Validator: optional editorial_contract item demoted out of top news sections. | Outside global translation board (soft max 42).",
         "latest_disposition": "not_rendered"
-      },
-      {
-        "schema_version": 1,
-        "created_on_london": "2026-06-19",
-        "expires_on_london": "2026-06-20",
-        "ttl_days": 1,
-        "ttl_reason": "event_until_occurrence",
-        "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-take-that-the-circus-live-summer-manchester-19-06-2026-event-3-006331-86-5743",
-        "title": "TAKE THAT - THE CIRCUS LIVE - Summer 2026 — event 2026-06-19 — public sale 2025-09-26 09:30",
-        "source_label": "Ticketmaster Manchester Upcoming",
-        "source_url": "https://ticketmaster.co.uk/take-that-the-circus-live-summer-manchester-19-06-2026/event/3E006331A86D5743",
-        "category": "venues_tickets",
-        "primary_block": "ticket_radar",
-        "rubric": "ticket",
-        "protected_lanes": [
-          "ticket"
-        ],
-        "english_judge": {
-          "schema_version": 1,
-          "decision": "publish_candidate",
-          "section_fit": [
-            "Билеты / Ticket Radar"
-          ],
-          "editorial_score": 70.25,
-          "false_negative_risk": "high",
-          "reason_codes": [
-            "ticket_opportunity"
-          ]
-        },
-        "section_board_score": 70.25,
-        "enrichment_health": {
-          "schema_version": 1,
-          "status": "not_attempted",
-          "evidence_chars": 0,
-          "fallback_chars": 179,
-          "failed": false,
-          "thin": true,
-          "warning": true,
-          "policy": "backup_not_reject"
-        },
-        "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source.",
-        "latest_disposition": "writer_dropped"
       },
       {
         "schema_version": 1,
@@ -18395,41 +18331,37 @@
         "expires_on_london": "2026-06-21",
         "ttl_days": 2,
         "ttl_reason": "generic_short_ttl",
-        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-cvgmqm0n13vo",
-        "title": "Blue plaque unveiled in Old Trafford for British Sikh trailblazer",
-        "source_label": "BBC Manchester",
-        "source_url": "https://bbc.com/news/articles/cvgmqm0n13vo",
+        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-man-stabbed-dispersal-order-put-34147889",
+        "title": "Man stabbed with dispersal order put in place after 'large disturbance' in Piccadilly Gardens",
+        "source_label": "MEN",
+        "source_url": "https://manchestereveningnews.co.uk/news/greater-manchester-news/man-stabbed-dispersal-order-put-34147889",
         "category": "media_layer",
-        "primary_block": "city_watch",
-        "rubric": "research",
-        "protected_lanes": [
-          "public_safety"
-        ],
+        "primary_block": "last_24h",
+        "rubric": "public_safety_after_incident",
+        "protected_lanes": [],
         "english_judge": {
           "schema_version": 1,
           "decision": "publish_candidate",
           "section_fit": [
-            "Городской радар"
+            "Свежие новости"
           ],
-          "editorial_score": 131.75,
-          "false_negative_risk": "high",
-          "reason_codes": [
-            "public_safety"
-          ]
+          "editorial_score": 152.75,
+          "false_negative_risk": "medium",
+          "reason_codes": []
         },
-        "section_board_score": 131.75,
+        "section_board_score": 152.75,
         "enrichment_health": {
           "schema_version": 1,
           "status": "ok",
-          "evidence_chars": 868,
-          "fallback_chars": 203,
+          "evidence_chars": 749,
+          "fallback_chars": 561,
           "failed": false,
           "thin": false,
           "warning": false,
           "policy": "normal"
         },
-        "reason": "Collected from live source; pending dedupe review. | Validator: optional editorial_contract item demoted out of top news sections. | Outside global translation board (soft max 42).",
-        "latest_disposition": "not_rendered"
+        "reason": "Collected from live source; pending dedupe review.",
+        "latest_disposition": "writer_dropped"
       },
       {
         "schema_version": 1,
@@ -18549,6 +18481,92 @@
         },
         "reason": "Same story, but semantic dedupe found concrete new facts. | Validator: news item is 35 days old (hard cutoff 14d), dropped regardless of update wording.",
         "latest_disposition": "not_rendered"
+      },
+      {
+        "schema_version": 1,
+        "created_on_london": "2026-06-19",
+        "expires_on_london": "2026-06-21",
+        "ttl_days": 2,
+        "ttl_reason": "generic_short_ttl",
+        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-cvgmqm0n13vo",
+        "title": "Blue plaque unveiled in Old Trafford for British Sikh trailblazer",
+        "source_label": "BBC Manchester Web",
+        "source_url": "https://bbc.co.uk/news/articles/cvgmqm0n13vo",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "rubric": "research",
+        "protected_lanes": [
+          "public_safety"
+        ],
+        "english_judge": {
+          "schema_version": 1,
+          "decision": "publish_candidate",
+          "section_fit": [
+            "Свежие новости"
+          ],
+          "editorial_score": 117.25,
+          "false_negative_risk": "high",
+          "reason_codes": [
+            "public_safety"
+          ]
+        },
+        "section_board_score": 117.25,
+        "enrichment_health": {
+          "schema_version": 1,
+          "status": "ok",
+          "evidence_chars": 798,
+          "fallback_chars": 561,
+          "failed": false,
+          "thin": false,
+          "warning": false,
+          "policy": "normal"
+        },
+        "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source.",
+        "latest_disposition": "writer_dropped"
+      },
+      {
+        "schema_version": 1,
+        "created_on_london": "2026-06-19",
+        "expires_on_london": "2026-06-21",
+        "ttl_days": 2,
+        "ttl_reason": "event_until_occurrence",
+        "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-soft-and-gentle-netball-super-league-1hjr",
+        "title": "Soft & Gentle Netball Super League Grand Final Sat 20 Jun 2026 Multiple times",
+        "source_label": "Co-op Live",
+        "source_url": "https://cooplive.com/events/soft-and-gentle-netball-super-league-1hjr",
+        "category": "venues_tickets",
+        "primary_block": "today_focus",
+        "rubric": "ticket",
+        "protected_lanes": [
+          "ticket"
+        ],
+        "english_judge": {
+          "schema_version": 1,
+          "decision": "publish_candidate",
+          "section_fit": [
+            "Что важно сегодня",
+            "Билеты / Ticket Radar"
+          ],
+          "editorial_score": 114.0,
+          "false_negative_risk": "high",
+          "reason_codes": [
+            "ticket_opportunity",
+            "no_news_anchor"
+          ]
+        },
+        "section_board_score": 114.0,
+        "enrichment_health": {
+          "schema_version": 1,
+          "status": "not_attempted",
+          "evidence_chars": 0,
+          "fallback_chars": 0,
+          "failed": false,
+          "thin": true,
+          "warning": true,
+          "policy": "backup_not_reject"
+        },
+        "reason": "Curator drop: Чистый PR без новостного повода.",
+        "latest_disposition": "rejected"
       },
       {
         "schema_version": 1,
@@ -21201,125 +21219,6 @@
         },
         "reason": "Collected from live source; pending dedupe review. | Validator: event-like candidate has no concrete upcoming date.",
         "latest_disposition": "not_rendered"
-      },
-      {
-        "schema_version": 1,
-        "created_on_london": "2026-06-19",
-        "expires_on_london": "2026-06-21",
-        "ttl_days": 2,
-        "ttl_reason": "event_until_occurrence",
-        "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-beverley-knight-venue-premium-tickets-york-20-06-2026-event-36006348-36-515",
-        "title": "Beverley Knight - Venue Premium Tickets — event 2026-06-20 — public sale 2025-10-10 10:00",
-        "source_label": "Ticketmaster UK Major Upcoming",
-        "source_url": "https://ticketmaster.co.uk/beverley-knight-venue-premium-tickets-york-20-06-2026/event/36006348F36AC515",
-        "category": "venues_tickets",
-        "primary_block": "outside_gm_tickets",
-        "rubric": "ticket",
-        "protected_lanes": [
-          "ticket"
-        ],
-        "english_judge": {
-          "schema_version": 1,
-          "decision": "publish_candidate",
-          "section_fit": [
-            "Крупные концерты вне GM",
-            "Билеты / Ticket Radar"
-          ],
-          "editorial_score": 45.75,
-          "false_negative_risk": "high",
-          "reason_codes": [
-            "ticket_opportunity"
-          ]
-        },
-        "section_board_score": 45.75,
-        "enrichment_health": {
-          "schema_version": 1,
-          "status": "not_attempted",
-          "evidence_chars": 0,
-          "fallback_chars": 171,
-          "failed": false,
-          "thin": true,
-          "warning": true,
-          "policy": "backup_not_reject"
-        },
-        "reason": "Premium/hospitality upsell removed from ticket radar.",
-        "latest_disposition": "not_rendered"
-      },
-      {
-        "schema_version": 1,
-        "created_on_london": "2026-06-19",
-        "expires_on_london": "2026-06-21",
-        "ttl_days": 2,
-        "ttl_reason": "generic_short_ttl",
-        "fingerprint": "professional-events-university-of-manchester-events-manchester-ac-uk-study-masters-fees-and-funding",
-        "title": "Master's fees and funding | The University of Manchester",
-        "source_label": "University of Manchester Events",
-        "source_url": "https://manchester.ac.uk/study/masters/fees-and-funding",
-        "category": "professional_events",
-        "primary_block": "professional_events",
-        "rubric": "research",
-        "protected_lanes": [],
-        "english_judge": {
-          "schema_version": 1,
-          "decision": "backup_candidate",
-          "section_fit": [
-            "Бесплатные business/tech события для тебя"
-          ],
-          "editorial_score": 45.75,
-          "false_negative_risk": "low",
-          "reason_codes": []
-        },
-        "section_board_score": 45.75,
-        "enrichment_health": {
-          "schema_version": 1,
-          "status": "ok",
-          "evidence_chars": 950,
-          "fallback_chars": 561,
-          "failed": false,
-          "thin": false,
-          "warning": false,
-          "policy": "normal"
-        },
-        "reason": "Intra-batch topic duplicate — same story kept from stronger source.",
-        "latest_disposition": "not_rendered"
-      },
-      {
-        "schema_version": 1,
-        "created_on_london": "2026-06-19",
-        "expires_on_london": "2026-06-21",
-        "ttl_days": 2,
-        "ttl_reason": "generic_short_ttl",
-        "fingerprint": "tech-business-businesscloud-businesscloud-co-uk-news-nanocos-plan-to-quit-london-stock-exchange-scuppered",
-        "title": "Nanoco's plan to quit London Stock Exchange scuppered",
-        "source_label": "BusinessCloud",
-        "source_url": "https://businesscloud.co.uk/news/nanocos-plan-to-quit-london-stock-exchange-scuppered",
-        "category": "tech_business",
-        "primary_block": "tech_business",
-        "rubric": "news",
-        "protected_lanes": [],
-        "english_judge": {
-          "schema_version": 1,
-          "decision": "backup_candidate",
-          "section_fit": [
-            "IT и бизнес"
-          ],
-          "editorial_score": 45.25,
-          "false_negative_risk": "low",
-          "reason_codes": []
-        },
-        "section_board_score": 45.25,
-        "enrichment_health": {
-          "schema_version": 1,
-          "status": "skipped_existing_summary",
-          "evidence_chars": 280,
-          "fallback_chars": 441,
-          "failed": false,
-          "thin": false,
-          "warning": false,
-          "policy": "normal"
-        },
-        "reason": "Intra-batch topic duplicate — same story kept from stronger source.",
-        "latest_disposition": "not_rendered"
       }
     ],
     "path": "/home/runner/work/NewsManchester/NewsManchester/data/state/backup_pool.json"
@@ -22294,9 +22193,9 @@
       "seven_day_trend"
     ],
     "today": {
-      "visible_count": 45,
-      "full_count": 1233,
-      "top_size_vs_full_feed": 0.036,
+      "visible_count": 44,
+      "full_count": 1200,
+      "top_size_vs_full_feed": 0.037,
       "suspicious_published": 0,
       "unclear_visible": 1,
       "repeat_visible": 0,
@@ -22304,17 +22203,17 @@
         {
           "source_label": "Ticketmaster UK Major Upcoming",
           "count": 10,
-          "share": 0.222
+          "share": 0.227
         },
         {
           "source_label": "Ticketmaster Manchester Upcoming",
           "count": 8,
-          "share": 0.178
+          "share": 0.182
         },
         {
           "source_label": "TfGM",
           "count": 5,
-          "share": 0.111
+          "share": 0.114
         }
       ],
       "ticket_types": {
@@ -22327,7 +22226,7 @@
           "published": 0
         },
         "event_this_week": {
-          "fetched": 20,
+          "fetched": 19,
           "published": 8
         },
         "old_public_sale": {
@@ -22344,8 +22243,8 @@
         "tfgm_checked": true,
         "metrolink_checked": false,
         "national_rail_checked": true,
-        "disruptions_found": 8,
-        "disruptions_rendered": 8,
+        "disruptions_found": 7,
+        "disruptions_rendered": 7,
         "verdict": "disruptions_rendered",
         "sources": [
           {
@@ -22362,7 +22261,7 @@
           }
         ]
       },
-      "source_zero_yield": 80
+      "source_zero_yield": 72
     },
     "seven_day_trend": {
       "days": [
@@ -22416,22 +22315,22 @@
         },
         {
           "date": "2026-06-19",
-          "visible_count": 45,
-          "full_count": 1233,
+          "visible_count": 44,
+          "full_count": 1200,
           "suspicious_published": 0,
           "unclear_visible": 1,
           "repeat_visible": 0
         }
       ],
-      "avg_visible_count": 51.14
+      "avg_visible_count": 51.0
     }
   },
   "feedback_capture": {
     "path": "/home/runner/work/NewsManchester/NewsManchester/data/state/personalization_feedback.json",
-    "rendered_items_recorded_today": 45,
-    "total_items": 1045,
+    "rendered_items_recorded_today": 53,
+    "total_items": 1008,
     "labelled_items": 0,
-    "pending_items": 1045
+    "pending_items": 1008
   },
   "synthetic_freshness": {
     "total": 1,
@@ -22442,7 +22341,7 @@
         "source_label": "Met Office",
         "primary_block": "weather",
         "synthetic_stale": false,
-        "data_fetched_at": "2026-06-19T08:01:19.027608+01:00",
+        "data_fetched_at": "2026-06-19T08:25:40.266720+01:00",
         "fetch_attempts": 1
       }
     ]
@@ -22451,62 +22350,62 @@
     "schema_version": 1,
     "topic_clusters": {
       "schema_version": 1,
-      "eligible_candidate_count": 318,
-      "cluster_count": 13,
-      "clustered_candidate_count": 123,
-      "unclustered_candidate_count": 195,
+      "eligible_candidate_count": 314,
+      "cluster_count": 16,
+      "clustered_candidate_count": 125,
+      "unclustered_candidate_count": 189,
       "topic_counts": [
         {
           "name": "events",
-          "count": 280
+          "count": 277
         },
         {
           "name": "culture",
-          "count": 51
+          "count": 49
         },
         {
           "name": "environment",
-          "count": 27
-        },
-        {
-          "name": "policing",
-          "count": 16
-        },
-        {
-          "name": "transport",
-          "count": 16
-        },
-        {
-          "name": "food",
-          "count": 14
+          "count": 28
         },
         {
           "name": "housing",
+          "count": 15
+        },
+        {
+          "name": "policing",
+          "count": 15
+        },
+        {
+          "name": "food",
           "count": 13
         },
         {
+          "name": "transport",
+          "count": 12
+        },
+        {
           "name": "business",
-          "count": 11
+          "count": 9
         },
         {
           "name": "council",
-          "count": 7
+          "count": 9
+        },
+        {
+          "name": "education",
+          "count": 8
         },
         {
           "name": "football",
           "count": 7
         },
         {
-          "name": "education",
-          "count": 6
-        },
-        {
           "name": "health",
-          "count": 6
+          "count": 5
         },
         {
           "name": "weather",
-          "count": 1
+          "count": 2
         }
       ],
       "clusters": [
@@ -22525,9 +22424,9 @@
             "Trafford"
           ],
           "primary_entity": "Manchester Academy",
-          "candidate_count": 93,
-          "included_count": 93,
-          "rendered_count": 12,
+          "candidate_count": 91,
+          "included_count": 91,
+          "rendered_count": 11,
           "sources": [
             {
               "name": "Ticketmaster UK Major Upcoming",
@@ -22539,7 +22438,7 @@
             },
             {
               "name": "Ticketmaster Manchester Upcoming",
-              "count": 19
+              "count": 18
             },
             {
               "name": "Ticketmaster Manchester Onsale",
@@ -22548,10 +22447,6 @@
             {
               "name": "Ticketmaster Liverpool Onsale",
               "count": 2
-            },
-            {
-              "name": "Co-op Live",
-              "count": 1
             },
             {
               "name": "Ticketmaster Liverpool Upcoming",
@@ -22573,15 +22468,10 @@
             },
             {
               "name": "ticket_radar",
-              "count": 20
-            },
-            {
-              "name": "today_focus",
-              "count": 1
+              "count": 19
             }
           ],
           "fingerprints": [
-            "venues-tickets-co-op-live-cooplive-com-events-soft-and-gentle-netball-super-league-1hjr",
             "venues-tickets-ticketmaster-manchester-onsale-ticketmaster-co-uk-jah-lil-manchester-16-11-2026-event-1-006252-9773-2",
             "venues-tickets-ticketmaster-manchester-onsale-ticketmaster-co-uk-avatar-the-last-airbender-film-with-manchester-05-10-2026-event-1-00628-423-84",
             "venues-tickets-ticketmaster-manchester-onsale-ticketmaster-co-uk-andre-rieu-manchester-11-09-2026-event-370062-7-233-7",
@@ -22601,7 +22491,6 @@
             "venues-tickets-ticketmaster-manchester-onsale-ticketmaster-co-uk-i-prevail-the-violent-nature-tour-manchester-22-09-2026-event-3-00633-8935-97",
             "venues-tickets-ticketmaster-liverpool-onsale-ticketmaster-co-uk-endless-love-the-show-a-tribute-liverpool-19-06-2026-event-370063389-5-93",
             "venues-tickets-ticketmaster-liverpool-onsale-ticketmaster-co-uk-cabaret-voltaires-final-uk-tour-liverpool-11-10-2026-event-1-00635-78373",
-            "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-take-that-the-circus-live-summer-manchester-19-06-2026-event-3-006331-86-5743",
             "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-neil-young-and-the-chrome-hearts-manchester-19-06-2026-event-3-00636-3-0762",
             "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-nevertel-manchester-19-06-2026-event-1-006445-1957582",
             "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-tooth-manchester-19-06-2026-event-1-006491-2056",
@@ -22676,61 +22565,186 @@
             "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-banks-arcade-manchester-27-06-2026-event-1-00649-4462"
           ],
           "titles": [
-            "Soft & Gentle Netball Super League Grand Final Sat 20 Jun 2026 Multiple times",
             "Jah Lil — event 2026-11-16 — public sale 2025-02-28 10:00",
             "Avatar - The Last Airbender - Film With Live Orchestra — event 2026-10-05 — public sale 2025-05-02 15:00",
             "Andre Rieu — event 2026-09-11 — public sale 2025-06-06 12:00",
             "Milos — event 2027-03-22 — public sale 2025-06-13 10:00",
             "The Tumbling Paddies — event 2026-11-14 — public sale 2025-07-04 11:00",
             "Radar Festival 2026 - Weekend — event 2026-07-31 — public sale 2025-07-04 12:00",
-            "Antarctic Monkeys — event 2026-07-04 — public sale 2025-07-25 10:00"
+            "Antarctic Monkeys — event 2026-07-04 — public sale 2025-07-25 10:00",
+            "Boyband in the Buff starring Gareth Gates — event 2026-09-10 — public sale 2025-08-26 10:00"
           ]
         },
         {
           "id": "topic-002",
-          "label": "Transport / Palace Theatre",
+          "label": "Transport / TransPennine Express",
           "primary_topic": "transport",
           "topic_tags": [
-            "transport",
-            "culture"
+            "transport"
           ],
           "boroughs": [
             "Bolton",
-            "Manchester"
+            "Manchester",
+            "Wigan"
           ],
-          "primary_entity": "Palace Theatre",
-          "candidate_count": 5,
-          "included_count": 5,
-          "rendered_count": 5,
+          "primary_entity": "TransPennine Express",
+          "candidate_count": 3,
+          "included_count": 3,
+          "rendered_count": 3,
           "sources": [
             {
               "name": "TfGM",
-              "count": 5
+              "count": 2
+            },
+            {
+              "name": "National Rail Enquiries",
+              "count": 1
             }
           ],
           "primary_blocks": [
             {
               "name": "transport",
-              "count": 5
+              "count": 3
             }
           ],
           "fingerprints": [
-            "transport-tfgm-tfgm-com-travel-updates-travel-alerts-whitworth-street-manchester-bus-stop-closure",
-            "transport-tfgm-tfgm-com-travel-updates-travel-alerts-red-rock-lane-standish-bus-stop-closure",
-            "transport-tfgm-tfgm-com-travel-updates-travel-alerts-cross-lane-radcliffe-bus-stop-closure",
-            "transport-tfgm-tfgm-com-travel-updates-travel-alerts-bolton-road-westhoughton-bus-stop-closure",
-            "transport-tfgm-tfgm-com-travel-updates-travel-alerts-manchester-road-westhoughton-bus-stop-closure"
+            "transport-tfgm-tfgm-com-travel-updates-travel-alerts-amended-late-night-early-morning-northern-service-to-from-barrow-in-furness-from",
+            "transport-tfgm-tfgm-com-travel-updates-travel-alerts-amended-early-morning-transpennine-express-service-via-doncaster-from-tuesday-16",
+            "transport-national-rail-enquiries-nationalrail-co-uk-status-and-disruptions-avanti-west-coast-major-disruption-between-preston-and-bolton-wigan-north-wester"
           ],
           "titles": [
-            "Whitworth Street, Manchester - Bus Stop Closure",
-            "Red Rock Lane, Standish - Bus Stop Closure",
-            "Cross Lane, Radcliffe - Bus Stop Closure",
-            "Bolton Road, Westhoughton - Bus Stop Closure",
-            "Manchester Road, Westhoughton - Bus Stop Closure"
+            "Amended late night / early morning Northern service to / from Barrow-in-Furness from Monday 15 to Friday 19 June",
+            "Amended early morning TransPennine Express service via Doncaster from Tuesday 16 to Friday 19 June",
+            "Avanti West Coast: Major disruption between Preston and Bolton / Wigan North Western expected until 10:00"
           ]
         },
         {
           "id": "topic-003",
+          "label": "Housing / Sintra Property Developments",
+          "primary_topic": "housing",
+          "topic_tags": [
+            "housing",
+            "council",
+            "environment",
+            "food"
+          ],
+          "boroughs": [
+            "Oldham",
+            "Stockport",
+            "Tameside",
+            "Wigan"
+          ],
+          "primary_entity": "Sintra Property Developments",
+          "candidate_count": 3,
+          "included_count": 3,
+          "rendered_count": 3,
+          "sources": [
+            {
+              "name": "Oldham Council",
+              "count": 1
+            },
+            {
+              "name": "Place North West",
+              "count": 1
+            },
+            {
+              "name": "Wigan Council",
+              "count": 1
+            }
+          ],
+          "primary_blocks": [
+            {
+              "name": "city_watch",
+              "count": 3
+            }
+          ],
+          "fingerprints": [
+            "media-layer-place-north-west-placenorthwest-co-uk-tameside-to-debate-440-hyde-homes",
+            "council-oldham-council-oldham-gov-uk-news-article-2923-consultation-open-on-saddleworth-neighbourhood-plan",
+            "council-wigan-council-wigan-gov-uk-ews-rticles-2026-une-lans-put-forward-for-major-refurbishment-of-eigh-arket-aspx"
+          ],
+          "titles": [
+            "Tameside to debate 440 Hyde homes",
+            "Consultation open on Saddleworth Neighbourhood Plan",
+            "Plans put forward for major refurbishment of Leigh Market"
+          ]
+        },
+        {
+          "id": "topic-004",
+          "label": "Transport",
+          "primary_topic": "transport",
+          "topic_tags": [
+            "transport"
+          ],
+          "boroughs": [],
+          "primary_entity": "",
+          "candidate_count": 2,
+          "included_count": 2,
+          "rendered_count": 2,
+          "sources": [
+            {
+              "name": "TfGM",
+              "count": 2
+            }
+          ],
+          "primary_blocks": [
+            {
+              "name": "transport",
+              "count": 2
+            }
+          ],
+          "fingerprints": [
+            "transport-tfgm-tfgm-com-travel-updates-travel-alerts-red-rock-lane-standish-bus-stop-closure",
+            "transport-tfgm-tfgm-com-travel-updates-travel-alerts-cross-lane-radcliffe-bus-stop-closure"
+          ],
+          "titles": [
+            "Red Rock Lane, Standish - Bus Stop Closure",
+            "Cross Lane, Radcliffe - Bus Stop Closure"
+          ]
+        },
+        {
+          "id": "topic-005",
+          "label": "Transport / 2 boroughs",
+          "primary_topic": "transport",
+          "topic_tags": [
+            "transport",
+            "policing"
+          ],
+          "boroughs": [
+            "Manchester",
+            "Oldham"
+          ],
+          "primary_entity": "",
+          "candidate_count": 2,
+          "included_count": 2,
+          "rendered_count": 2,
+          "sources": [
+            {
+              "name": "About Manchester News",
+              "count": 1
+            },
+            {
+              "name": "MEN News Sitemap",
+              "count": 1
+            }
+          ],
+          "primary_blocks": [
+            {
+              "name": "last_24h",
+              "count": 2
+            }
+          ],
+          "fingerprints": [
+            "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-moment-driver-desperately-fleeing-chasing-34147292",
+            "media-layer-about-manchester-news-aboutmanchester-co-uk-man-who-drove-the-wrong-way-down-m60-is-jailed"
+          ],
+          "titles": [
+            "Moment driver desperately fleeing chasing cops drove the wrong way down the M60",
+            "Man who drove the wrong way down M60 is jailed - About Manchester"
+          ]
+        },
+        {
+          "id": "topic-006",
           "label": "Police / courts / 2 boroughs",
           "primary_topic": "policing",
           "topic_tags": [
@@ -22767,48 +22781,7 @@
           ]
         },
         {
-          "id": "topic-004",
-          "label": "Transport / 2 boroughs",
-          "primary_topic": "transport",
-          "topic_tags": [
-            "transport",
-            "policing"
-          ],
-          "boroughs": [
-            "Manchester",
-            "Oldham"
-          ],
-          "primary_entity": "",
-          "candidate_count": 2,
-          "included_count": 2,
-          "rendered_count": 1,
-          "sources": [
-            {
-              "name": "About Manchester News",
-              "count": 1
-            },
-            {
-              "name": "MEN News Sitemap",
-              "count": 1
-            }
-          ],
-          "primary_blocks": [
-            {
-              "name": "last_24h",
-              "count": 2
-            }
-          ],
-          "fingerprints": [
-            "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-moment-driver-desperately-fleeing-chasing-34147292",
-            "media-layer-about-manchester-news-aboutmanchester-co-uk-man-who-drove-the-wrong-way-down-m60-is-jailed"
-          ],
-          "titles": [
-            "Moment driver desperately fleeing chasing cops drove the wrong way down the M60",
-            "Man who drove the wrong way down M60 is jailed - About Manchester"
-          ]
-        },
-        {
-          "id": "topic-005",
+          "id": "topic-007",
           "label": "Events / Manchester Academy",
           "primary_topic": "events",
           "topic_tags": [
@@ -22857,7 +22830,7 @@
           ]
         },
         {
-          "id": "topic-006",
+          "id": "topic-008",
           "label": "Food / Manchester City",
           "primary_topic": "food",
           "topic_tags": [
@@ -22901,7 +22874,7 @@
           ]
         },
         {
-          "id": "topic-007",
+          "id": "topic-009",
           "label": "Transport / AO Arena",
           "primary_topic": "transport",
           "topic_tags": [
@@ -22938,7 +22911,7 @@
           ]
         },
         {
-          "id": "topic-008",
+          "id": "topic-010",
           "label": "Events",
           "primary_topic": "events",
           "topic_tags": [
@@ -22976,7 +22949,7 @@
           ]
         },
         {
-          "id": "topic-009",
+          "id": "topic-011",
           "label": "Police / courts / Wigan",
           "primary_topic": "policing",
           "topic_tags": [
@@ -23016,7 +22989,53 @@
           ]
         },
         {
-          "id": "topic-010",
+          "id": "topic-012",
+          "label": "Housing / Old Trafford",
+          "primary_topic": "housing",
+          "topic_tags": [
+            "housing",
+            "council",
+            "education"
+          ],
+          "boroughs": [
+            "Manchester",
+            "Trafford"
+          ],
+          "primary_entity": "Old Trafford",
+          "candidate_count": 2,
+          "included_count": 1,
+          "rendered_count": 0,
+          "sources": [
+            {
+              "name": "BBC Manchester",
+              "count": 1
+            },
+            {
+              "name": "BBC Manchester Web",
+              "count": 1
+            }
+          ],
+          "primary_blocks": [
+            {
+              "name": "city_watch",
+              "count": 1
+            },
+            {
+              "name": "last_24h",
+              "count": 1
+            }
+          ],
+          "fingerprints": [
+            "media-layer-bbc-manchester-bbc-com-news-articles-cvgmqm0n13vo",
+            "media-layer-bbc-manchester-bbc-com-news-articles-cvgmqm0n13vo"
+          ],
+          "titles": [
+            "Blue plaque unveiled in Old Trafford for British Sikh trailblazer",
+            "Blue plaque unveiled in Old Trafford for British Sikh trailblazer"
+          ]
+        },
+        {
+          "id": "topic-013",
           "label": "Police / courts / Bolton",
           "primary_topic": "policing",
           "topic_tags": [
@@ -23056,7 +23075,7 @@
           ]
         },
         {
-          "id": "topic-011",
+          "id": "topic-014",
           "label": "Police / courts / Manchester",
           "primary_topic": "policing",
           "topic_tags": [
@@ -23095,7 +23114,7 @@
           ]
         },
         {
-          "id": "topic-012",
+          "id": "topic-015",
           "label": "Business / Culina Group",
           "primary_topic": "business",
           "topic_tags": [
@@ -23132,7 +23151,7 @@
           ]
         },
         {
-          "id": "topic-013",
+          "id": "topic-016",
           "label": "Police / courts",
           "primary_topic": "policing",
           "topic_tags": [
@@ -23176,47 +23195,47 @@
       "schema_version": 1,
       "basis": "rendered",
       "counts": {
-        "candidate_count": 1233,
-        "included_count": 313,
-        "rendered_count": 45,
-        "borough_specific_candidate_count": 636,
-        "borough_specific_included_count": 104,
-        "borough_specific_rendered_count": 30,
+        "candidate_count": 1200,
+        "included_count": 308,
+        "rendered_count": 44,
+        "borough_specific_candidate_count": 611,
+        "borough_specific_included_count": 103,
+        "borough_specific_rendered_count": 31,
         "covered_boroughs_candidate": 10,
         "covered_boroughs_included": 10,
-        "covered_boroughs_rendered": 10,
-        "unassigned_candidate_count": 697,
+        "covered_boroughs_rendered": 9,
+        "unassigned_candidate_count": 692,
         "unassigned_included_count": 223,
-        "unassigned_rendered_count": 20,
-        "multi_borough_candidate_count": 67
+        "unassigned_rendered_count": 21,
+        "multi_borough_candidate_count": 66
       },
       "boroughs": [
         {
           "borough": "Bolton",
-          "candidate_count": 20,
-          "included_count": 3,
-          "rendered_count": 2,
-          "source_count": 13
+          "candidate_count": 21,
+          "included_count": 2,
+          "rendered_count": 1,
+          "source_count": 11
         },
         {
           "borough": "Bury",
-          "candidate_count": 15,
+          "candidate_count": 11,
           "included_count": 1,
-          "rendered_count": 1,
+          "rendered_count": 0,
           "source_count": 8
         },
         {
           "borough": "Manchester",
-          "candidate_count": 395,
-          "included_count": 78,
-          "rendered_count": 18,
-          "source_count": 81
+          "candidate_count": 377,
+          "included_count": 75,
+          "rendered_count": 17,
+          "source_count": 75
         },
         {
           "borough": "Oldham",
           "candidate_count": 21,
-          "included_count": 2,
-          "rendered_count": 1,
+          "included_count": 3,
+          "rendered_count": 3,
           "source_count": 12
         },
         {
@@ -23228,17 +23247,17 @@
         },
         {
           "borough": "Salford",
-          "candidate_count": 26,
-          "included_count": 3,
+          "candidate_count": 27,
+          "included_count": 4,
           "rendered_count": 1,
-          "source_count": 16
+          "source_count": 17
         },
         {
           "borough": "Stockport",
-          "candidate_count": 20,
-          "included_count": 5,
+          "candidate_count": 16,
+          "included_count": 3,
           "rendered_count": 3,
-          "source_count": 10
+          "source_count": 8
         },
         {
           "borough": "Tameside",
@@ -23249,29 +23268,25 @@
         },
         {
           "borough": "Trafford",
-          "candidate_count": 40,
-          "included_count": 8,
-          "rendered_count": 1,
-          "source_count": 23
+          "candidate_count": 37,
+          "included_count": 10,
+          "rendered_count": 2,
+          "source_count": 22
         },
         {
           "borough": "Wigan",
-          "candidate_count": 80,
-          "included_count": 2,
-          "rendered_count": 1,
+          "candidate_count": 82,
+          "included_count": 3,
+          "rendered_count": 2,
           "source_count": 12
         }
       ],
-      "dominant_borough": {
-        "borough": "Manchester",
-        "basis": "rendered",
-        "count": 18,
-        "total": 30,
-        "share": 0.6
-      },
-      "undercovered_boroughs": [],
+      "dominant_borough": null,
+      "undercovered_boroughs": [
+        "Bury"
+      ],
       "skew_flags": [
-        "Manchester забирает 60% видимых borough-specific пунктов (18/30)."
+        "В 1 GM borough(s) ноль видимых пунктов: Bury."
       ]
     }
   },
@@ -23284,15 +23299,6 @@
         "previous_days_available": 1,
         "topics": [
           {
-            "key": "events",
-            "current_count": 29,
-            "previous_window_total": 26,
-            "previous_window_avg": 26.0,
-            "delta_vs_avg": 3.0,
-            "ratio_vs_avg": 1.115,
-            "is_new": false
-          },
-          {
             "key": "transport",
             "current_count": 10,
             "previous_window_total": 7,
@@ -23302,25 +23308,25 @@
             "is_new": false
           },
           {
-            "key": "health",
-            "current_count": 2,
-            "previous_window_total": 0,
-            "previous_window_avg": 0.0,
-            "delta_vs_avg": 2.0,
-            "ratio_vs_avg": null,
-            "is_new": true
-          },
-          {
-            "key": "policing",
-            "current_count": 6,
-            "previous_window_total": 5,
-            "previous_window_avg": 5.0,
+            "key": "events",
+            "current_count": 27,
+            "previous_window_total": 26,
+            "previous_window_avg": 26.0,
             "delta_vs_avg": 1.0,
-            "ratio_vs_avg": 1.2,
+            "ratio_vs_avg": 1.038,
             "is_new": false
           },
           {
-            "key": "football",
+            "key": "environment",
+            "current_count": 7,
+            "previous_window_total": 6,
+            "previous_window_avg": 6.0,
+            "delta_vs_avg": 1.0,
+            "ratio_vs_avg": 1.167,
+            "is_new": false
+          },
+          {
+            "key": "health",
             "current_count": 1,
             "previous_window_total": 0,
             "previous_window_avg": 0.0,
@@ -23329,21 +23335,21 @@
             "is_new": true
           },
           {
-            "key": "environment",
-            "current_count": 6,
-            "previous_window_total": 6,
-            "previous_window_avg": 6.0,
+            "key": "housing",
+            "current_count": 7,
+            "previous_window_total": 7,
+            "previous_window_avg": 7.0,
             "delta_vs_avg": 0.0,
             "ratio_vs_avg": 1.0,
             "is_new": false
           },
           {
-            "key": "housing",
-            "current_count": 6,
-            "previous_window_total": 7,
-            "previous_window_avg": 7.0,
-            "delta_vs_avg": -1.0,
-            "ratio_vs_avg": 0.857,
+            "key": "policing",
+            "current_count": 5,
+            "previous_window_total": 5,
+            "previous_window_avg": 5.0,
+            "delta_vs_avg": 0.0,
+            "ratio_vs_avg": 1.0,
             "is_new": false
           },
           {
@@ -23356,15 +23362,6 @@
             "is_new": false
           },
           {
-            "key": "culture",
-            "current_count": 6,
-            "previous_window_total": 8,
-            "previous_window_avg": 8.0,
-            "delta_vs_avg": -2.0,
-            "ratio_vs_avg": 0.75,
-            "is_new": false
-          },
-          {
             "key": "weather",
             "current_count": 1,
             "previous_window_total": 3,
@@ -23374,12 +23371,21 @@
             "is_new": false
           },
           {
+            "key": "culture",
+            "current_count": 5,
+            "previous_window_total": 8,
+            "previous_window_avg": 8.0,
+            "delta_vs_avg": -3.0,
+            "ratio_vs_avg": 0.625,
+            "is_new": false
+          },
+          {
             "key": "food",
-            "current_count": 2,
+            "current_count": 3,
             "previous_window_total": 6,
             "previous_window_avg": 6.0,
-            "delta_vs_avg": -4.0,
-            "ratio_vs_avg": 0.333,
+            "delta_vs_avg": -3.0,
+            "ratio_vs_avg": 0.5,
             "is_new": false
           },
           {
@@ -23416,6 +23422,39 @@
             "name": "Stockport"
           },
           {
+            "key": "borough:Wigan",
+            "current_count": 2,
+            "previous_window_total": 0,
+            "previous_window_avg": 0.0,
+            "delta_vs_avg": 2.0,
+            "ratio_vs_avg": null,
+            "is_new": true,
+            "entity_type": "borough",
+            "name": "Wigan"
+          },
+          {
+            "key": "company:TransPennine Express",
+            "current_count": 2,
+            "previous_window_total": 0,
+            "previous_window_avg": 0.0,
+            "delta_vs_avg": 2.0,
+            "ratio_vs_avg": null,
+            "is_new": true,
+            "entity_type": "company",
+            "name": "TransPennine Express"
+          },
+          {
+            "key": "company:Northern",
+            "current_count": 2,
+            "previous_window_total": 1,
+            "previous_window_avg": 1.0,
+            "delta_vs_avg": 1.0,
+            "ratio_vs_avg": 2.0,
+            "is_new": false,
+            "entity_type": "company",
+            "name": "Northern"
+          },
+          {
             "key": "borough:Rochdale",
             "current_count": 1,
             "previous_window_total": 0,
@@ -23438,17 +23477,6 @@
             "name": "Tameside"
           },
           {
-            "key": "borough:Wigan",
-            "current_count": 1,
-            "previous_window_total": 0,
-            "previous_window_avg": 0.0,
-            "delta_vs_avg": 1.0,
-            "ratio_vs_avg": null,
-            "is_new": true,
-            "entity_type": "borough",
-            "name": "Wigan"
-          },
-          {
             "key": "company:Sintra Property Developments",
             "current_count": 1,
             "previous_window_total": 0,
@@ -23458,17 +23486,6 @@
             "is_new": true,
             "entity_type": "company",
             "name": "Sintra Property Developments"
-          },
-          {
-            "key": "council:Bury Council",
-            "current_count": 1,
-            "previous_window_total": 0,
-            "previous_window_avg": 0.0,
-            "delta_vs_avg": 1.0,
-            "ratio_vs_avg": null,
-            "is_new": true,
-            "entity_type": "council",
-            "name": "Bury Council"
           },
           {
             "key": "council:Tameside Council",
@@ -23482,26 +23499,15 @@
             "name": "Tameside Council"
           },
           {
-            "key": "district:Chorlton",
+            "key": "council:Wigan Council",
             "current_count": 1,
             "previous_window_total": 0,
             "previous_window_avg": 0.0,
             "delta_vs_avg": 1.0,
             "ratio_vs_avg": null,
             "is_new": true,
-            "entity_type": "district",
-            "name": "Chorlton"
-          },
-          {
-            "key": "district:City Centre",
-            "current_count": 1,
-            "previous_window_total": 0,
-            "previous_window_avg": 0.0,
-            "delta_vs_avg": 1.0,
-            "ratio_vs_avg": null,
-            "is_new": true,
-            "entity_type": "district",
-            "name": "City Centre"
+            "entity_type": "council",
+            "name": "Wigan Council"
           },
           {
             "key": "venue:Palace Theatre",
@@ -23537,39 +23543,6 @@
             "name": "Manchester Academy"
           },
           {
-            "key": "company:Co-op",
-            "current_count": 2,
-            "previous_window_total": 2,
-            "previous_window_avg": 2.0,
-            "delta_vs_avg": 0.0,
-            "ratio_vs_avg": 1.0,
-            "is_new": false,
-            "entity_type": "company",
-            "name": "Co-op"
-          },
-          {
-            "key": "venue:Co-op Live",
-            "current_count": 2,
-            "previous_window_total": 2,
-            "previous_window_avg": 2.0,
-            "delta_vs_avg": 0.0,
-            "ratio_vs_avg": 1.0,
-            "is_new": false,
-            "entity_type": "venue",
-            "name": "Co-op Live"
-          },
-          {
-            "key": "borough:Bury",
-            "current_count": 1,
-            "previous_window_total": 1,
-            "previous_window_avg": 1.0,
-            "delta_vs_avg": 0.0,
-            "ratio_vs_avg": 1.0,
-            "is_new": false,
-            "entity_type": "borough",
-            "name": "Bury"
-          },
-          {
             "key": "borough:Salford",
             "current_count": 1,
             "previous_window_total": 1,
@@ -23581,7 +23554,7 @@
             "name": "Salford"
           },
           {
-            "key": "company:Northern",
+            "key": "company:Manchester Airport",
             "current_count": 1,
             "previous_window_total": 1,
             "previous_window_avg": 1.0,
@@ -23589,18 +23562,40 @@
             "ratio_vs_avg": 1.0,
             "is_new": false,
             "entity_type": "company",
-            "name": "Northern"
+            "name": "Manchester Airport"
           },
           {
-            "key": "borough:Bolton",
-            "current_count": 2,
-            "previous_window_total": 3,
-            "previous_window_avg": 3.0,
+            "key": "district:Wythenshawe",
+            "current_count": 1,
+            "previous_window_total": 1,
+            "previous_window_avg": 1.0,
+            "delta_vs_avg": 0.0,
+            "ratio_vs_avg": 1.0,
+            "is_new": false,
+            "entity_type": "district",
+            "name": "Wythenshawe"
+          },
+          {
+            "key": "borough:Oldham",
+            "current_count": 3,
+            "previous_window_total": 4,
+            "previous_window_avg": 4.0,
             "delta_vs_avg": -1.0,
-            "ratio_vs_avg": 0.667,
+            "ratio_vs_avg": 0.75,
             "is_new": false,
             "entity_type": "borough",
-            "name": "Bolton"
+            "name": "Oldham"
+          },
+          {
+            "key": "company:Co-op",
+            "current_count": 1,
+            "previous_window_total": 2,
+            "previous_window_avg": 2.0,
+            "delta_vs_avg": -1.0,
+            "ratio_vs_avg": 0.5,
+            "is_new": false,
+            "entity_type": "company",
+            "name": "Co-op"
           },
           {
             "key": "council:Manchester City Council",
@@ -23612,6 +23607,17 @@
             "is_new": false,
             "entity_type": "council",
             "name": "Manchester City Council"
+          },
+          {
+            "key": "council:Oldham Council",
+            "current_count": 1,
+            "previous_window_total": 2,
+            "previous_window_avg": 2.0,
+            "delta_vs_avg": -1.0,
+            "ratio_vs_avg": 0.5,
+            "is_new": false,
+            "entity_type": "council",
+            "name": "Oldham Council"
           }
         ]
       },
@@ -23620,11 +23626,11 @@
         "topics": [
           {
             "key": "events",
-            "current_count": 29,
+            "current_count": 27,
             "previous_window_total": 50,
             "previous_window_avg": 25.0,
-            "delta_vs_avg": 4.0,
-            "ratio_vs_avg": 1.16,
+            "delta_vs_avg": 2.0,
+            "ratio_vs_avg": 1.08,
             "is_new": false
           },
           {
@@ -23638,29 +23644,29 @@
           },
           {
             "key": "housing",
-            "current_count": 6,
+            "current_count": 7,
             "previous_window_total": 13,
             "previous_window_avg": 6.5,
-            "delta_vs_avg": -0.5,
-            "ratio_vs_avg": 0.923,
+            "delta_vs_avg": 0.5,
+            "ratio_vs_avg": 1.077,
             "is_new": false
           },
           {
-            "key": "policing",
-            "current_count": 6,
-            "previous_window_total": 13,
-            "previous_window_avg": 6.5,
+            "key": "environment",
+            "current_count": 7,
+            "previous_window_total": 15,
+            "previous_window_avg": 7.5,
             "delta_vs_avg": -0.5,
-            "ratio_vs_avg": 0.923,
+            "ratio_vs_avg": 0.933,
             "is_new": false
           },
           {
-            "key": "health",
-            "current_count": 2,
-            "previous_window_total": 5,
-            "previous_window_avg": 2.5,
-            "delta_vs_avg": -0.5,
-            "ratio_vs_avg": 0.8,
+            "key": "food",
+            "current_count": 3,
+            "previous_window_total": 8,
+            "previous_window_avg": 4.0,
+            "delta_vs_avg": -1.0,
+            "ratio_vs_avg": 0.75,
             "is_new": false
           },
           {
@@ -23673,21 +23679,21 @@
             "is_new": false
           },
           {
-            "key": "football",
-            "current_count": 1,
-            "previous_window_total": 4,
-            "previous_window_avg": 2.0,
-            "delta_vs_avg": -1.0,
-            "ratio_vs_avg": 0.5,
+            "key": "policing",
+            "current_count": 5,
+            "previous_window_total": 13,
+            "previous_window_avg": 6.5,
+            "delta_vs_avg": -1.5,
+            "ratio_vs_avg": 0.769,
             "is_new": false
           },
           {
-            "key": "environment",
-            "current_count": 6,
-            "previous_window_total": 15,
-            "previous_window_avg": 7.5,
+            "key": "health",
+            "current_count": 1,
+            "previous_window_total": 5,
+            "previous_window_avg": 2.5,
             "delta_vs_avg": -1.5,
-            "ratio_vs_avg": 0.8,
+            "ratio_vs_avg": 0.4,
             "is_new": false
           },
           {
@@ -23700,21 +23706,21 @@
             "is_new": false
           },
           {
-            "key": "culture",
-            "current_count": 6,
-            "previous_window_total": 16,
-            "previous_window_avg": 8.0,
+            "key": "football",
+            "current_count": 0,
+            "previous_window_total": 4,
+            "previous_window_avg": 2.0,
             "delta_vs_avg": -2.0,
-            "ratio_vs_avg": 0.75,
+            "ratio_vs_avg": 0.0,
             "is_new": false
           },
           {
-            "key": "food",
-            "current_count": 2,
-            "previous_window_total": 8,
-            "previous_window_avg": 4.0,
-            "delta_vs_avg": -2.0,
-            "ratio_vs_avg": 0.5,
+            "key": "culture",
+            "current_count": 5,
+            "previous_window_total": 16,
+            "previous_window_avg": 8.0,
+            "delta_vs_avg": -3.0,
+            "ratio_vs_avg": 0.625,
             "is_new": false
           },
           {
@@ -23728,6 +23734,17 @@
           }
         ],
         "entities": [
+          {
+            "key": "company:TransPennine Express",
+            "current_count": 2,
+            "previous_window_total": 0,
+            "previous_window_avg": 0.0,
+            "delta_vs_avg": 2.0,
+            "ratio_vs_avg": null,
+            "is_new": true,
+            "entity_type": "company",
+            "name": "TransPennine Express"
+          },
           {
             "key": "company:TfGM",
             "current_count": 5,
@@ -23762,6 +23779,17 @@
             "name": "Manchester Academy"
           },
           {
+            "key": "borough:Wigan",
+            "current_count": 2,
+            "previous_window_total": 2,
+            "previous_window_avg": 1.0,
+            "delta_vs_avg": 1.0,
+            "ratio_vs_avg": 2.0,
+            "is_new": false,
+            "entity_type": "borough",
+            "name": "Wigan"
+          },
+          {
             "key": "borough:Rochdale",
             "current_count": 1,
             "previous_window_total": 0,
@@ -23784,17 +23812,6 @@
             "name": "Sintra Property Developments"
           },
           {
-            "key": "council:Bury Council",
-            "current_count": 1,
-            "previous_window_total": 0,
-            "previous_window_avg": 0.0,
-            "delta_vs_avg": 1.0,
-            "ratio_vs_avg": null,
-            "is_new": true,
-            "entity_type": "council",
-            "name": "Bury Council"
-          },
-          {
             "key": "council:Tameside Council",
             "current_count": 1,
             "previous_window_total": 0,
@@ -23804,17 +23821,6 @@
             "is_new": true,
             "entity_type": "council",
             "name": "Tameside Council"
-          },
-          {
-            "key": "district:Chorlton",
-            "current_count": 1,
-            "previous_window_total": 0,
-            "previous_window_avg": 0.0,
-            "delta_vs_avg": 1.0,
-            "ratio_vs_avg": null,
-            "is_new": true,
-            "entity_type": "district",
-            "name": "Chorlton"
           },
           {
             "key": "venue:Victoria Warehouse",
@@ -23828,7 +23834,18 @@
             "name": "Victoria Warehouse"
           },
           {
-            "key": "company:Co-op",
+            "key": "borough:Oldham",
+            "current_count": 3,
+            "previous_window_total": 5,
+            "previous_window_avg": 2.5,
+            "delta_vs_avg": 0.5,
+            "ratio_vs_avg": 1.2,
+            "is_new": false,
+            "entity_type": "borough",
+            "name": "Oldham"
+          },
+          {
+            "key": "company:Northern",
             "current_count": 2,
             "previous_window_total": 3,
             "previous_window_avg": 1.5,
@@ -23836,18 +23853,7 @@
             "ratio_vs_avg": 1.333,
             "is_new": false,
             "entity_type": "company",
-            "name": "Co-op"
-          },
-          {
-            "key": "venue:Co-op Live",
-            "current_count": 2,
-            "previous_window_total": 3,
-            "previous_window_avg": 1.5,
-            "delta_vs_avg": 0.5,
-            "ratio_vs_avg": 1.333,
-            "is_new": false,
-            "entity_type": "venue",
-            "name": "Co-op Live"
+            "name": "Northern"
           },
           {
             "key": "borough:Salford",
@@ -23861,6 +23867,39 @@
             "name": "Salford"
           },
           {
+            "key": "company:Manchester Airport",
+            "current_count": 1,
+            "previous_window_total": 1,
+            "previous_window_avg": 0.5,
+            "delta_vs_avg": 0.5,
+            "ratio_vs_avg": 2.0,
+            "is_new": false,
+            "entity_type": "company",
+            "name": "Manchester Airport"
+          },
+          {
+            "key": "council:Wigan Council",
+            "current_count": 1,
+            "previous_window_total": 1,
+            "previous_window_avg": 0.5,
+            "delta_vs_avg": 0.5,
+            "ratio_vs_avg": 2.0,
+            "is_new": false,
+            "entity_type": "council",
+            "name": "Wigan Council"
+          },
+          {
+            "key": "district:Wythenshawe",
+            "current_count": 1,
+            "previous_window_total": 1,
+            "previous_window_avg": 0.5,
+            "delta_vs_avg": 0.5,
+            "ratio_vs_avg": 2.0,
+            "is_new": false,
+            "entity_type": "district",
+            "name": "Wythenshawe"
+          },
+          {
             "key": "venue:Palace Theatre",
             "current_count": 1,
             "previous_window_total": 1,
@@ -23870,17 +23909,6 @@
             "is_new": false,
             "entity_type": "venue",
             "name": "Palace Theatre"
-          },
-          {
-            "key": "borough:Bury",
-            "current_count": 1,
-            "previous_window_total": 2,
-            "previous_window_avg": 1.0,
-            "delta_vs_avg": 0.0,
-            "ratio_vs_avg": 1.0,
-            "is_new": false,
-            "entity_type": "borough",
-            "name": "Bury"
           },
           {
             "key": "borough:Tameside",
@@ -23894,18 +23922,7 @@
             "name": "Tameside"
           },
           {
-            "key": "borough:Wigan",
-            "current_count": 1,
-            "previous_window_total": 2,
-            "previous_window_avg": 1.0,
-            "delta_vs_avg": 0.0,
-            "ratio_vs_avg": 1.0,
-            "is_new": false,
-            "entity_type": "borough",
-            "name": "Wigan"
-          },
-          {
-            "key": "district:City Centre",
+            "key": "district:Urmston",
             "current_count": 1,
             "previous_window_total": 2,
             "previous_window_avg": 1.0,
@@ -23913,32 +23930,10 @@
             "ratio_vs_avg": 1.0,
             "is_new": false,
             "entity_type": "district",
-            "name": "City Centre"
+            "name": "Urmston"
           },
           {
-            "key": "district:Prestwich",
-            "current_count": 1,
-            "previous_window_total": 2,
-            "previous_window_avg": 1.0,
-            "delta_vs_avg": 0.0,
-            "ratio_vs_avg": 1.0,
-            "is_new": false,
-            "entity_type": "district",
-            "name": "Prestwich"
-          },
-          {
-            "key": "borough:Bolton",
-            "current_count": 2,
-            "previous_window_total": 5,
-            "previous_window_avg": 2.5,
-            "delta_vs_avg": -0.5,
-            "ratio_vs_avg": 0.8,
-            "is_new": false,
-            "entity_type": "borough",
-            "name": "Bolton"
-          },
-          {
-            "key": "company:Northern",
+            "key": "company:Co-op",
             "current_count": 1,
             "previous_window_total": 3,
             "previous_window_avg": 1.5,
@@ -23946,7 +23941,18 @@
             "ratio_vs_avg": 0.667,
             "is_new": false,
             "entity_type": "company",
-            "name": "Northern"
+            "name": "Co-op"
+          },
+          {
+            "key": "council:Manchester City Council",
+            "current_count": 1,
+            "previous_window_total": 3,
+            "previous_window_avg": 1.5,
+            "delta_vs_avg": -0.5,
+            "ratio_vs_avg": 0.667,
+            "is_new": false,
+            "entity_type": "council",
+            "name": "Manchester City Council"
           }
         ]
       },
@@ -23954,12 +23960,21 @@
         "previous_days_available": 6,
         "topics": [
           {
+            "key": "environment",
+            "current_count": 7,
+            "previous_window_total": 30,
+            "previous_window_avg": 5.0,
+            "delta_vs_avg": 2.0,
+            "ratio_vs_avg": 1.4,
+            "is_new": false
+          },
+          {
             "key": "events",
-            "current_count": 29,
+            "current_count": 27,
             "previous_window_total": 154,
             "previous_window_avg": 25.667,
-            "delta_vs_avg": 3.333,
-            "ratio_vs_avg": 1.13,
+            "delta_vs_avg": 1.333,
+            "ratio_vs_avg": 1.052,
             "is_new": false
           },
           {
@@ -23969,15 +23984,6 @@
             "previous_window_avg": 8.833,
             "delta_vs_avg": 1.167,
             "ratio_vs_avg": 1.132,
-            "is_new": false
-          },
-          {
-            "key": "environment",
-            "current_count": 6,
-            "previous_window_total": 30,
-            "previous_window_avg": 5.0,
-            "delta_vs_avg": 1.0,
-            "ratio_vs_avg": 1.2,
             "is_new": false
           },
           {
@@ -23999,30 +24005,12 @@
             "is_new": false
           },
           {
-            "key": "health",
-            "current_count": 2,
-            "previous_window_total": 23,
-            "previous_window_avg": 3.833,
-            "delta_vs_avg": -1.833,
-            "ratio_vs_avg": 0.522,
-            "is_new": false
-          },
-          {
             "key": "education",
             "current_count": 0,
             "previous_window_total": 12,
             "previous_window_avg": 2.0,
             "delta_vs_avg": -2.0,
             "ratio_vs_avg": 0.0,
-            "is_new": false
-          },
-          {
-            "key": "football",
-            "current_count": 1,
-            "previous_window_total": 19,
-            "previous_window_avg": 3.167,
-            "delta_vs_avg": -2.167,
-            "ratio_vs_avg": 0.316,
             "is_new": false
           },
           {
@@ -24044,43 +24032,72 @@
             "is_new": false
           },
           {
+            "key": "health",
+            "current_count": 1,
+            "previous_window_total": 23,
+            "previous_window_avg": 3.833,
+            "delta_vs_avg": -2.833,
+            "ratio_vs_avg": 0.261,
+            "is_new": false
+          },
+          {
             "key": "food",
-            "current_count": 2,
+            "current_count": 3,
             "previous_window_total": 36,
             "previous_window_avg": 6.0,
-            "delta_vs_avg": -4.0,
-            "ratio_vs_avg": 0.333,
+            "delta_vs_avg": -3.0,
+            "ratio_vs_avg": 0.5,
+            "is_new": false
+          },
+          {
+            "key": "football",
+            "current_count": 0,
+            "previous_window_total": 19,
+            "previous_window_avg": 3.167,
+            "delta_vs_avg": -3.167,
+            "ratio_vs_avg": 0.0,
             "is_new": false
           },
           {
             "key": "housing",
-            "current_count": 6,
+            "current_count": 7,
             "previous_window_total": 63,
             "previous_window_avg": 10.5,
-            "delta_vs_avg": -4.5,
-            "ratio_vs_avg": 0.571,
+            "delta_vs_avg": -3.5,
+            "ratio_vs_avg": 0.667,
             "is_new": false
           },
           {
             "key": "policing",
-            "current_count": 6,
+            "current_count": 5,
             "previous_window_total": 69,
             "previous_window_avg": 11.5,
-            "delta_vs_avg": -5.5,
-            "ratio_vs_avg": 0.522,
+            "delta_vs_avg": -6.5,
+            "ratio_vs_avg": 0.435,
             "is_new": false
           },
           {
             "key": "culture",
-            "current_count": 6,
+            "current_count": 5,
             "previous_window_total": 75,
             "previous_window_avg": 12.5,
-            "delta_vs_avg": -6.5,
-            "ratio_vs_avg": 0.48,
+            "delta_vs_avg": -7.5,
+            "ratio_vs_avg": 0.4,
             "is_new": false
           }
         ],
         "entities": [
+          {
+            "key": "company:TransPennine Express",
+            "current_count": 2,
+            "previous_window_total": 1,
+            "previous_window_avg": 0.167,
+            "delta_vs_avg": 1.833,
+            "ratio_vs_avg": 12.0,
+            "is_new": false,
+            "entity_type": "company",
+            "name": "TransPennine Express"
+          },
           {
             "key": "company:TfGM",
             "current_count": 5,
@@ -24104,17 +24121,6 @@
             "name": "Manchester Academy"
           },
           {
-            "key": "venue:Co-op Live",
-            "current_count": 2,
-            "previous_window_total": 4,
-            "previous_window_avg": 0.667,
-            "delta_vs_avg": 1.333,
-            "ratio_vs_avg": 3.0,
-            "is_new": false,
-            "entity_type": "venue",
-            "name": "Co-op Live"
-          },
-          {
             "key": "company:Sintra Property Developments",
             "current_count": 1,
             "previous_window_total": 0,
@@ -24124,17 +24130,6 @@
             "is_new": true,
             "entity_type": "company",
             "name": "Sintra Property Developments"
-          },
-          {
-            "key": "council:Bury Council",
-            "current_count": 1,
-            "previous_window_total": 0,
-            "previous_window_avg": 0.0,
-            "delta_vs_avg": 1.0,
-            "ratio_vs_avg": null,
-            "is_new": true,
-            "entity_type": "council",
-            "name": "Bury Council"
           },
           {
             "key": "council:Tameside Council",
@@ -24159,28 +24154,6 @@
             "name": "Victoria Warehouse"
           },
           {
-            "key": "company:Co-op",
-            "current_count": 2,
-            "previous_window_total": 7,
-            "previous_window_avg": 1.167,
-            "delta_vs_avg": 0.833,
-            "ratio_vs_avg": 1.714,
-            "is_new": false,
-            "entity_type": "company",
-            "name": "Co-op"
-          },
-          {
-            "key": "district:Chorlton",
-            "current_count": 1,
-            "previous_window_total": 1,
-            "previous_window_avg": 0.167,
-            "delta_vs_avg": 0.833,
-            "ratio_vs_avg": 6.0,
-            "is_new": false,
-            "entity_type": "district",
-            "name": "Chorlton"
-          },
-          {
             "key": "borough:Stockport",
             "current_count": 3,
             "previous_window_total": 14,
@@ -24190,6 +24163,39 @@
             "is_new": false,
             "entity_type": "borough",
             "name": "Stockport"
+          },
+          {
+            "key": "borough:Wigan",
+            "current_count": 2,
+            "previous_window_total": 8,
+            "previous_window_avg": 1.333,
+            "delta_vs_avg": 0.667,
+            "ratio_vs_avg": 1.5,
+            "is_new": false,
+            "entity_type": "borough",
+            "name": "Wigan"
+          },
+          {
+            "key": "district:Urmston",
+            "current_count": 1,
+            "previous_window_total": 2,
+            "previous_window_avg": 0.333,
+            "delta_vs_avg": 0.667,
+            "ratio_vs_avg": 3.0,
+            "is_new": false,
+            "entity_type": "district",
+            "name": "Urmston"
+          },
+          {
+            "key": "company:Northern",
+            "current_count": 2,
+            "previous_window_total": 9,
+            "previous_window_avg": 1.5,
+            "delta_vs_avg": 0.5,
+            "ratio_vs_avg": 1.333,
+            "is_new": false,
+            "entity_type": "company",
+            "name": "Northern"
           },
           {
             "key": "borough:Rochdale",
@@ -24203,15 +24209,59 @@
             "name": "Rochdale"
           },
           {
-            "key": "district:Prestwich",
+            "key": "company:Manchester Airport",
             "current_count": 1,
-            "previous_window_total": 5,
-            "previous_window_avg": 0.833,
-            "delta_vs_avg": 0.167,
-            "ratio_vs_avg": 1.2,
+            "previous_window_total": 3,
+            "previous_window_avg": 0.5,
+            "delta_vs_avg": 0.5,
+            "ratio_vs_avg": 2.0,
             "is_new": false,
-            "entity_type": "district",
-            "name": "Prestwich"
+            "entity_type": "company",
+            "name": "Manchester Airport"
+          },
+          {
+            "key": "council:Oldham Council",
+            "current_count": 1,
+            "previous_window_total": 3,
+            "previous_window_avg": 0.5,
+            "delta_vs_avg": 0.5,
+            "ratio_vs_avg": 2.0,
+            "is_new": false,
+            "entity_type": "council",
+            "name": "Oldham Council"
+          },
+          {
+            "key": "council:Wigan Council",
+            "current_count": 1,
+            "previous_window_total": 3,
+            "previous_window_avg": 0.5,
+            "delta_vs_avg": 0.5,
+            "ratio_vs_avg": 2.0,
+            "is_new": false,
+            "entity_type": "council",
+            "name": "Wigan Council"
+          },
+          {
+            "key": "borough:Oldham",
+            "current_count": 3,
+            "previous_window_total": 16,
+            "previous_window_avg": 2.667,
+            "delta_vs_avg": 0.333,
+            "ratio_vs_avg": 1.125,
+            "is_new": false,
+            "entity_type": "borough",
+            "name": "Oldham"
+          },
+          {
+            "key": "venue:Co-op Live",
+            "current_count": 1,
+            "previous_window_total": 4,
+            "previous_window_avg": 0.667,
+            "delta_vs_avg": 0.333,
+            "ratio_vs_avg": 1.5,
+            "is_new": false,
+            "entity_type": "venue",
+            "name": "Co-op Live"
           },
           {
             "key": "borough:Tameside",
@@ -24223,6 +24273,17 @@
             "is_new": false,
             "entity_type": "borough",
             "name": "Tameside"
+          },
+          {
+            "key": "company:Co-op",
+            "current_count": 1,
+            "previous_window_total": 7,
+            "previous_window_avg": 1.167,
+            "delta_vs_avg": -0.167,
+            "ratio_vs_avg": 0.857,
+            "is_new": false,
+            "entity_type": "company",
+            "name": "Co-op"
           },
           {
             "key": "company:MCR Property Group",
@@ -24245,61 +24306,6 @@
             "is_new": false,
             "entity_type": "company",
             "name": "Manche Manchester Airport"
-          },
-          {
-            "key": "company:Mark Waugh Manchester Press Photography Ltd",
-            "current_count": 0,
-            "previous_window_total": 1,
-            "previous_window_avg": 0.167,
-            "delta_vs_avg": -0.167,
-            "ratio_vs_avg": 0.0,
-            "is_new": false,
-            "entity_type": "company",
-            "name": "Mark Waugh Manchester Press Photography Ltd"
-          },
-          {
-            "key": "company:Prolific North",
-            "current_count": 0,
-            "previous_window_total": 1,
-            "previous_window_avg": 0.167,
-            "delta_vs_avg": -0.167,
-            "ratio_vs_avg": 0.0,
-            "is_new": false,
-            "entity_type": "company",
-            "name": "Prolific North"
-          },
-          {
-            "key": "company:Rail Delivery Group",
-            "current_count": 0,
-            "previous_window_total": 1,
-            "previous_window_avg": 0.167,
-            "delta_vs_avg": -0.167,
-            "ratio_vs_avg": 0.0,
-            "is_new": false,
-            "entity_type": "company",
-            "name": "Rail Delivery Group"
-          },
-          {
-            "key": "company:Stockport Homes Group",
-            "current_count": 0,
-            "previous_window_total": 1,
-            "previous_window_avg": 0.167,
-            "delta_vs_avg": -0.167,
-            "ratio_vs_avg": 0.0,
-            "is_new": false,
-            "entity_type": "company",
-            "name": "Stockport Homes Group"
-          },
-          {
-            "key": "company:Tilehouse Studios",
-            "current_count": 0,
-            "previous_window_total": 1,
-            "previous_window_avg": 0.167,
-            "delta_vs_avg": -0.167,
-            "ratio_vs_avg": 0.0,
-            "is_new": false,
-            "entity_type": "company",
-            "name": "Tilehouse Studios"
           }
         ]
       },
@@ -24307,21 +24313,21 @@
         "previous_days_available": 28,
         "topics": [
           {
-            "key": "events",
-            "current_count": 29,
-            "previous_window_total": 668,
-            "previous_window_avg": 23.857,
-            "delta_vs_avg": 5.143,
-            "ratio_vs_avg": 1.216,
+            "key": "environment",
+            "current_count": 7,
+            "previous_window_total": 91,
+            "previous_window_avg": 3.25,
+            "delta_vs_avg": 3.75,
+            "ratio_vs_avg": 2.154,
             "is_new": false
           },
           {
-            "key": "environment",
-            "current_count": 6,
-            "previous_window_total": 91,
-            "previous_window_avg": 3.25,
-            "delta_vs_avg": 2.75,
-            "ratio_vs_avg": 1.846,
+            "key": "events",
+            "current_count": 27,
+            "previous_window_total": 668,
+            "previous_window_avg": 23.857,
+            "delta_vs_avg": 3.143,
+            "ratio_vs_avg": 1.132,
             "is_new": false
           },
           {
@@ -24343,30 +24349,21 @@
             "is_new": false
           },
           {
+            "key": "housing",
+            "current_count": 7,
+            "previous_window_total": 223,
+            "previous_window_avg": 7.964,
+            "delta_vs_avg": -0.964,
+            "ratio_vs_avg": 0.879,
+            "is_new": false
+          },
+          {
             "key": "weather",
             "current_count": 1,
             "previous_window_total": 57,
             "previous_window_avg": 2.036,
             "delta_vs_avg": -1.036,
             "ratio_vs_avg": 0.491,
-            "is_new": false
-          },
-          {
-            "key": "health",
-            "current_count": 2,
-            "previous_window_total": 100,
-            "previous_window_avg": 3.571,
-            "delta_vs_avg": -1.571,
-            "ratio_vs_avg": 0.56,
-            "is_new": false
-          },
-          {
-            "key": "housing",
-            "current_count": 6,
-            "previous_window_total": 223,
-            "previous_window_avg": 7.964,
-            "delta_vs_avg": -1.964,
-            "ratio_vs_avg": 0.753,
             "is_new": false
           },
           {
@@ -24388,12 +24385,12 @@
             "is_new": false
           },
           {
-            "key": "football",
+            "key": "health",
             "current_count": 1,
-            "previous_window_total": 103,
-            "previous_window_avg": 3.679,
-            "delta_vs_avg": -2.679,
-            "ratio_vs_avg": 0.272,
+            "previous_window_total": 100,
+            "previous_window_avg": 3.571,
+            "delta_vs_avg": -2.571,
+            "ratio_vs_avg": 0.28,
             "is_new": false
           },
           {
@@ -24406,34 +24403,65 @@
             "is_new": false
           },
           {
+            "key": "food",
+            "current_count": 3,
+            "previous_window_total": 171,
+            "previous_window_avg": 6.107,
+            "delta_vs_avg": -3.107,
+            "ratio_vs_avg": 0.491,
+            "is_new": false
+          },
+          {
+            "key": "football",
+            "current_count": 0,
+            "previous_window_total": 103,
+            "previous_window_avg": 3.679,
+            "delta_vs_avg": -3.679,
+            "ratio_vs_avg": 0.0,
+            "is_new": false
+          },
+          {
             "key": "policing",
-            "current_count": 6,
+            "current_count": 5,
             "previous_window_total": 262,
             "previous_window_avg": 9.357,
-            "delta_vs_avg": -3.357,
-            "ratio_vs_avg": 0.641,
+            "delta_vs_avg": -4.357,
+            "ratio_vs_avg": 0.534,
             "is_new": false
           },
           {
             "key": "culture",
-            "current_count": 6,
+            "current_count": 5,
             "previous_window_total": 280,
             "previous_window_avg": 10.0,
-            "delta_vs_avg": -4.0,
-            "ratio_vs_avg": 0.6,
-            "is_new": false
-          },
-          {
-            "key": "food",
-            "current_count": 2,
-            "previous_window_total": 171,
-            "previous_window_avg": 6.107,
-            "delta_vs_avg": -4.107,
-            "ratio_vs_avg": 0.327,
+            "delta_vs_avg": -5.0,
+            "ratio_vs_avg": 0.5,
             "is_new": false
           }
         ],
         "entities": [
+          {
+            "key": "company:TransPennine Express",
+            "current_count": 2,
+            "previous_window_total": 7,
+            "previous_window_avg": 0.25,
+            "delta_vs_avg": 1.75,
+            "ratio_vs_avg": 8.0,
+            "is_new": false,
+            "entity_type": "company",
+            "name": "TransPennine Express"
+          },
+          {
+            "key": "borough:Oldham",
+            "current_count": 3,
+            "previous_window_total": 39,
+            "previous_window_avg": 1.393,
+            "delta_vs_avg": 1.607,
+            "ratio_vs_avg": 2.154,
+            "is_new": false,
+            "entity_type": "borough",
+            "name": "Oldham"
+          },
           {
             "key": "company:TfGM",
             "current_count": 5,
@@ -24444,17 +24472,6 @@
             "is_new": false,
             "entity_type": "company",
             "name": "TfGM"
-          },
-          {
-            "key": "venue:Co-op Live",
-            "current_count": 2,
-            "previous_window_total": 25,
-            "previous_window_avg": 0.893,
-            "delta_vs_avg": 1.107,
-            "ratio_vs_avg": 2.24,
-            "is_new": false,
-            "entity_type": "venue",
-            "name": "Co-op Live"
           },
           {
             "key": "company:Sintra Property Developments",
@@ -24479,15 +24496,37 @@
             "name": "Tameside Council"
           },
           {
-            "key": "company:Co-op",
+            "key": "borough:Wigan",
             "current_count": 2,
-            "previous_window_total": 32,
-            "previous_window_avg": 1.143,
-            "delta_vs_avg": 0.857,
-            "ratio_vs_avg": 1.75,
+            "previous_window_total": 35,
+            "previous_window_avg": 1.25,
+            "delta_vs_avg": 0.75,
+            "ratio_vs_avg": 1.6,
             "is_new": false,
-            "entity_type": "company",
-            "name": "Co-op"
+            "entity_type": "borough",
+            "name": "Wigan"
+          },
+          {
+            "key": "council:Oldham Council",
+            "current_count": 1,
+            "previous_window_total": 8,
+            "previous_window_avg": 0.286,
+            "delta_vs_avg": 0.714,
+            "ratio_vs_avg": 3.5,
+            "is_new": false,
+            "entity_type": "council",
+            "name": "Oldham Council"
+          },
+          {
+            "key": "council:Wigan Council",
+            "current_count": 1,
+            "previous_window_total": 8,
+            "previous_window_avg": 0.286,
+            "delta_vs_avg": 0.714,
+            "ratio_vs_avg": 3.5,
+            "is_new": false,
+            "entity_type": "council",
+            "name": "Wigan Council"
           },
           {
             "key": "venue:Manchester Academy",
@@ -24501,15 +24540,15 @@
             "name": "Manchester Academy"
           },
           {
-            "key": "council:Bury Council",
+            "key": "district:Urmston",
             "current_count": 1,
             "previous_window_total": 9,
             "previous_window_avg": 0.321,
             "delta_vs_avg": 0.679,
             "ratio_vs_avg": 3.111,
             "is_new": false,
-            "entity_type": "council",
-            "name": "Bury Council"
+            "entity_type": "district",
+            "name": "Urmston"
           },
           {
             "key": "venue:Victoria Warehouse",
@@ -24523,15 +24562,15 @@
             "name": "Victoria Warehouse"
           },
           {
-            "key": "district:Chorlton",
-            "current_count": 1,
-            "previous_window_total": 14,
-            "previous_window_avg": 0.5,
-            "delta_vs_avg": 0.5,
-            "ratio_vs_avg": 2.0,
+            "key": "company:Northern",
+            "current_count": 2,
+            "previous_window_total": 43,
+            "previous_window_avg": 1.536,
+            "delta_vs_avg": 0.464,
+            "ratio_vs_avg": 1.302,
             "is_new": false,
-            "entity_type": "district",
-            "name": "Chorlton"
+            "entity_type": "company",
+            "name": "Northern"
           },
           {
             "key": "venue:Palace Theatre",
@@ -24556,6 +24595,17 @@
             "name": "Tameside"
           },
           {
+            "key": "district:Wythenshawe",
+            "current_count": 1,
+            "previous_window_total": 18,
+            "previous_window_avg": 0.643,
+            "delta_vs_avg": 0.357,
+            "ratio_vs_avg": 1.556,
+            "is_new": false,
+            "entity_type": "district",
+            "name": "Wythenshawe"
+          },
+          {
             "key": "borough:Stockport",
             "current_count": 3,
             "previous_window_total": 75,
@@ -24567,26 +24617,26 @@
             "name": "Stockport"
           },
           {
-            "key": "district:Prestwich",
+            "key": "company:Manchester Airport",
             "current_count": 1,
-            "previous_window_total": 22,
-            "previous_window_avg": 0.786,
-            "delta_vs_avg": 0.214,
-            "ratio_vs_avg": 1.273,
+            "previous_window_total": 20,
+            "previous_window_avg": 0.714,
+            "delta_vs_avg": 0.286,
+            "ratio_vs_avg": 1.4,
             "is_new": false,
-            "entity_type": "district",
-            "name": "Prestwich"
+            "entity_type": "company",
+            "name": "Manchester Airport"
           },
           {
-            "key": "borough:Bolton",
-            "current_count": 2,
-            "previous_window_total": 54,
-            "previous_window_avg": 1.929,
-            "delta_vs_avg": 0.071,
-            "ratio_vs_avg": 1.037,
+            "key": "venue:Co-op Live",
+            "current_count": 1,
+            "previous_window_total": 25,
+            "previous_window_avg": 0.893,
+            "delta_vs_avg": 0.107,
+            "ratio_vs_avg": 1.12,
             "is_new": false,
-            "entity_type": "borough",
-            "name": "Bolton"
+            "entity_type": "venue",
+            "name": "Co-op Live"
           },
           {
             "key": "company:A Manchester Airport",
@@ -24609,62 +24659,27 @@
             "is_new": false,
             "entity_type": "company",
             "name": "About Manchester Online Home Shop Limited"
-          },
-          {
-            "key": "company:Altrincham-based Lookers Motor Group",
-            "current_count": 0,
-            "previous_window_total": 1,
-            "previous_window_avg": 0.036,
-            "delta_vs_avg": -0.036,
-            "ratio_vs_avg": 0.0,
-            "is_new": false,
-            "entity_type": "company",
-            "name": "Altrincham-based Lookers Motor Group"
-          },
-          {
-            "key": "company:Ch The University",
-            "current_count": 0,
-            "previous_window_total": 1,
-            "previous_window_avg": 0.036,
-            "delta_vs_avg": -0.036,
-            "ratio_vs_avg": 0.0,
-            "is_new": false,
-            "entity_type": "company",
-            "name": "Ch The University"
-          },
-          {
-            "key": "company:Christie NHS Foundation Trust",
-            "current_count": 0,
-            "previous_window_total": 1,
-            "previous_window_avg": 0.036,
-            "delta_vs_avg": -0.036,
-            "ratio_vs_avg": 0.0,
-            "is_new": false,
-            "entity_type": "company",
-            "name": "Christie NHS Foundation Trust"
-          },
-          {
-            "key": "company:City College",
-            "current_count": 0,
-            "previous_window_total": 1,
-            "previous_window_avg": 0.036,
-            "delta_vs_avg": -0.036,
-            "ratio_vs_avg": 0.0,
-            "is_new": false,
-            "entity_type": "company",
-            "name": "City College"
           }
         ]
       }
     },
     "rising_topics": [
       {
+        "key": "environment",
+        "current_count": 7,
+        "previous_window_total": 30,
+        "previous_window_avg": 5.0,
+        "delta_vs_avg": 2.0,
+        "ratio_vs_avg": 1.4,
+        "is_new": false
+      },
+      {
         "key": "events",
-        "current_count": 29,
+        "current_count": 27,
         "previous_window_total": 154,
         "previous_window_avg": 25.667,
-        "delta_vs_avg": 3.333,
-        "ratio_vs_avg": 1.13,
+        "delta_vs_avg": 1.333,
+        "ratio_vs_avg": 1.052,
         "is_new": false
       },
       {
@@ -24674,15 +24689,6 @@
         "previous_window_avg": 8.833,
         "delta_vs_avg": 1.167,
         "ratio_vs_avg": 1.132,
-        "is_new": false
-      },
-      {
-        "key": "environment",
-        "current_count": 6,
-        "previous_window_total": 30,
-        "previous_window_avg": 5.0,
-        "delta_vs_avg": 1.0,
-        "ratio_vs_avg": 1.2,
         "is_new": false
       },
       {
@@ -24704,15 +24710,6 @@
         "is_new": false
       },
       {
-        "key": "health",
-        "current_count": 2,
-        "previous_window_total": 23,
-        "previous_window_avg": 3.833,
-        "delta_vs_avg": -1.833,
-        "ratio_vs_avg": 0.522,
-        "is_new": false
-      },
-      {
         "key": "education",
         "current_count": 0,
         "previous_window_total": 12,
@@ -24722,16 +24719,36 @@
         "is_new": false
       },
       {
-        "key": "football",
-        "current_count": 1,
-        "previous_window_total": 19,
-        "previous_window_avg": 3.167,
-        "delta_vs_avg": -2.167,
-        "ratio_vs_avg": 0.316,
+        "key": "council",
+        "current_count": 4,
+        "previous_window_total": 38,
+        "previous_window_avg": 6.333,
+        "delta_vs_avg": -2.333,
+        "ratio_vs_avg": 0.632,
+        "is_new": false
+      },
+      {
+        "key": "business",
+        "current_count": 2,
+        "previous_window_total": 26,
+        "previous_window_avg": 4.333,
+        "delta_vs_avg": -2.333,
+        "ratio_vs_avg": 0.462,
         "is_new": false
       }
     ],
     "rising_entities": [
+      {
+        "key": "company:TransPennine Express",
+        "current_count": 2,
+        "previous_window_total": 1,
+        "previous_window_avg": 0.167,
+        "delta_vs_avg": 1.833,
+        "ratio_vs_avg": 12.0,
+        "is_new": false,
+        "entity_type": "company",
+        "name": "TransPennine Express"
+      },
       {
         "key": "company:TfGM",
         "current_count": 5,
@@ -24755,17 +24772,6 @@
         "name": "Manchester Academy"
       },
       {
-        "key": "venue:Co-op Live",
-        "current_count": 2,
-        "previous_window_total": 4,
-        "previous_window_avg": 0.667,
-        "delta_vs_avg": 1.333,
-        "ratio_vs_avg": 3.0,
-        "is_new": false,
-        "entity_type": "venue",
-        "name": "Co-op Live"
-      },
-      {
         "key": "company:Sintra Property Developments",
         "current_count": 1,
         "previous_window_total": 0,
@@ -24775,17 +24781,6 @@
         "is_new": true,
         "entity_type": "company",
         "name": "Sintra Property Developments"
-      },
-      {
-        "key": "council:Bury Council",
-        "current_count": 1,
-        "previous_window_total": 0,
-        "previous_window_avg": 0.0,
-        "delta_vs_avg": 1.0,
-        "ratio_vs_avg": null,
-        "is_new": true,
-        "entity_type": "council",
-        "name": "Bury Council"
       },
       {
         "key": "council:Tameside Council",
@@ -24810,25 +24805,36 @@
         "name": "Victoria Warehouse"
       },
       {
-        "key": "company:Co-op",
-        "current_count": 2,
-        "previous_window_total": 7,
-        "previous_window_avg": 1.167,
-        "delta_vs_avg": 0.833,
-        "ratio_vs_avg": 1.714,
+        "key": "borough:Stockport",
+        "current_count": 3,
+        "previous_window_total": 14,
+        "previous_window_avg": 2.333,
+        "delta_vs_avg": 0.667,
+        "ratio_vs_avg": 1.286,
         "is_new": false,
-        "entity_type": "company",
-        "name": "Co-op"
+        "entity_type": "borough",
+        "name": "Stockport"
+      },
+      {
+        "key": "borough:Wigan",
+        "current_count": 2,
+        "previous_window_total": 8,
+        "previous_window_avg": 1.333,
+        "delta_vs_avg": 0.667,
+        "ratio_vs_avg": 1.5,
+        "is_new": false,
+        "entity_type": "borough",
+        "name": "Wigan"
       }
     ]
   },
   "after_run_summary": {
-    "useful_items": 45,
+    "useful_items": 44,
     "digest_risk_level": "at_risk",
     "digest_risk_score": 2,
-    "broken_sources": 6,
-    "stale_sources": 11,
-    "zero_yield_sources": 80,
+    "broken_sources": 10,
+    "stale_sources": 16,
+    "zero_yield_sources": 72,
     "stale_synthetic_items": 0,
     "suspiciously_rejected": 1,
     "borderline_rejected": 3,
@@ -24837,16 +24843,16 @@
     "semantic_cross_day_drops": 0,
     "semantic_borderline": 4,
     "semantic_restored_by_guard": 0,
-    "topic_cluster_count": 13,
-    "clustered_candidates": 123,
+    "topic_cluster_count": 16,
+    "clustered_candidates": 125,
     "included_borough_count": 10,
-    "rendered_borough_count": 10,
-    "dominant_borough": "Manchester",
+    "rendered_borough_count": 9,
+    "dominant_borough": null,
     "borough_skew_flags": 1,
     "rising_topics_7d": 8,
     "rising_entities_7d": 8,
-    "critical_event_misses": 5,
-    "high_value_events_not_published": 351,
+    "critical_event_misses": 3,
+    "high_value_events_not_published": 350,
     "lost_leads": 1,
     "section_underflow": 4
   },
@@ -24942,7 +24948,7 @@
     "draft_digest": "/home/runner/work/NewsManchester/NewsManchester/data/state/draft_digest.html"
   },
   "output_path": "/home/runner/work/NewsManchester/NewsManchester/data/outgoing/current_digest.html",
-  "duration_seconds": 54.194,
+  "duration_seconds": 50.773,
   "pre_send_quality_judge": {
     "status": "ok",
     "decision": "repair_required",
@@ -24952,49 +24958,35 @@
     "provider": "openai",
     "prompt_version": "v1",
     "run_date_london": "2026-06-19",
-    "pipeline_run_id": "20260619T080117+0100",
-    "digest_sha256": "86e6ffa45761f735552ae06b68118100dca5dbb9d1e7ba8775fb890dc45812c5",
-    "duration_seconds": 10.255,
+    "pipeline_run_id": "20260619T082538+0100",
+    "digest_sha256": "5e5d572ea53fe99a709fdd8fdb66353634e7c03c7cffcf4b8b5bff7596f4d2cb",
+    "duration_seconds": 3.63,
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 2,
+        "line_index": 3,
         "section": "Свежие новости",
-        "problem": "Текст утверждает, что Амаар Абид был приговорен за вождение по встречной полосе, но не упоминает, что он также был лишен водительских прав на два года.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 5,
-        "section": "Свежие новости",
-        "problem": "Текст не упоминает, что Дэвид Тейлор также признан виновным в попытке убийства.",
-        "risk": "factual",
+        "problem": "Термин 'stabbing' не переведен на русский язык.",
+        "risk": "translation",
         "suggested_action": "repair"
       }
     ],
     "warnings": [],
-    "notes": "Некоторые детали судебных решений требуют уточнения для точности информации.",
+    "notes": "Требуется исправление перевода в одной строке, остальное безопасно.",
     "raw": {
       "decision": "repair_required",
       "confidence": 0.9,
       "critical_errors": [
         {
-          "line_index": 2,
+          "line_index": 3,
           "section": "Свежие новости",
-          "problem": "Текст утверждает, что Амаар Абид был приговорен за вождение по встречной полосе, но не упоминает, что он также был лишен водительских прав на два года.",
-          "risk": "factual",
-          "suggested_action": "repair"
-        },
-        {
-          "line_index": 5,
-          "section": "Свежие новости",
-          "problem": "Текст не упоминает, что Дэвид Тейлор также признан виновным в попытке убийства.",
-          "risk": "factual",
+          "problem": "Термин 'stabbing' не переведен на русский язык.",
+          "risk": "translation",
           "suggested_action": "repair"
         }
       ],
       "warnings": [],
-      "notes": "Некоторые детали судебных решений требуют уточнения для точности информации."
+      "notes": "Требуется исправление перевода в одной строке, остальное безопасно."
     }
   }
 }
