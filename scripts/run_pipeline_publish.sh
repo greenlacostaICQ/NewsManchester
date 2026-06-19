@@ -80,4 +80,7 @@ if "$PYTHON_BIN" "$PROJECT_ROOT/scripts/run_local_digest.py" delivered-today >/d
   exit 0
 fi
 
+"$PYTHON_BIN" "$PROJECT_ROOT/scripts/run_local_digest.py" pre-send-quality-judge || \
+  "$PYTHON_BIN" "$PROJECT_ROOT/scripts/run_local_digest.py" pre-send-quality-judge --dry-run || true
+
 "$PYTHON_BIN" "$PROJECT_ROOT/scripts/run_local_digest.py" send-file "$OUTGOING_FILE" --parse-mode HTML

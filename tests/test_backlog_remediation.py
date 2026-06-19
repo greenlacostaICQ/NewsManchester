@@ -12,6 +12,7 @@ from unittest import mock
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.common import REQUIRED_SCAN_CATEGORIES, now_london
 from news_digest.pipeline.editorial_contracts import build_editorial_contract, scrub_vague_ending
+from news_digest.pipeline.editor import edit_digest
 from news_digest.pipeline.collector.routing import _TICKET_HORIZON_DAYS
 from news_digest.pipeline.dedupe import _apply_semantic_drop_guard
 from news_digest.pipeline.history import write_daily_index_snapshot
@@ -124,6 +125,92 @@ class WriterRenderedFingerprintTest(unittest.TestCase):
             self.assertEqual(report["quality_counts"]["rendered_candidates"], 14)
             self.assertEqual(len(report["rendered_candidate_fingerprints"]), 14)
             self.assertNotIn("fp-14", report["rendered_candidate_fingerprints"])
+
+    def test_compact_core_news_card_is_recovered_instead_of_dropped(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            candidate = {
+                "include": True,
+                "fingerprint": "short-core",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "Manchester council confirms road service update",
+                "summary": "Manchester council confirmed a road service update for residents today.",
+                "lead": "Manchester council confirmed a road service update for residents today.",
+                "evidence_text": "Manchester council confirmed a road service update for residents today.",
+                "source_label": "Manchester Council",
+                "source_url": "https://example.test/service-update",
+                "published_at": now_london().isoformat(),
+                "draft_line": "• Manchester Council подтвердил обновление городского сервиса.",
+            }
+            (state_dir / "candidates.json").write_text(
+                json.dumps(
+                    {
+                        "pipeline_run_id": "test-run",
+                        "run_date_london": now_london().strftime("%Y-%m-%d"),
+                        "candidates": [candidate],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            result = write_digest(root)
+
+            self.assertTrue(result.ok)
+            report = json.loads((state_dir / "writer_report.json").read_text(encoding="utf-8"))
+            self.assertIn("short-core", report["rendered_candidate_fingerprints"])
+            self.assertEqual(report["quality_counts"]["dropped_low_quality"], 0)
+            html = (state_dir / "draft_digest.html").read_text(encoding="utf-8")
+            self.assertIn("проверьте сроки", html)
+
+    def test_editor_replaces_empty_transport_after_stripping_bad_line(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            run_date = now_london().strftime("%Y-%m-%d")
+            (state_dir / "candidates.json").write_text(
+                json.dumps(
+                    {
+                        "pipeline_run_id": "test-run",
+                        "run_date_london": run_date,
+                        "candidates": [
+                            {
+                                "include": True,
+                                "fingerprint": "city-1",
+                                "category": "media_layer",
+                                "primary_block": "last_24h",
+                                "title": "Manchester council confirms service update",
+                                "summary": "Manchester council confirmed a service update.",
+                                "source_label": "Manchester Council",
+                                "source_url": "https://example.test/city",
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            (state_dir / "draft_digest.html").write_text(
+                f"<b>Greater Manchester Brief — {run_date}, 08:00</b>\n\n"
+                "<b>Погода</b>\n"
+                "• Погода: сухо. <a href=\"https://example.test/weather\">Met Office</a>\n\n"
+                "<b>Свежие новости</b>\n"
+                "• Manchester: сервис обновлён. <a href=\"https://example.test/city\">Manchester Council</a>\n\n"
+                "<b>Общественный транспорт сегодня</b>\n"
+                "• TfGM инквест сегодня. <a href=\"https://example.test/tfgm\">TfGM</a>\n",
+                encoding="utf-8",
+            )
+
+            result = edit_digest(root)
+
+            self.assertTrue(result.ok)
+            html = (state_dir / "draft_digest.html").read_text(encoding="utf-8")
+            self.assertIn("конкретных подтверждённых сбоев", html)
+            self.assertIn("https://tfgm.com/travel-updates", html)
 
     def test_degraded_llm_shrink_holds_lower_priority_soft_section_items(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

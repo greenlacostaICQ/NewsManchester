@@ -81,6 +81,39 @@ class PreSendQualityJudgeTests(unittest.TestCase):
             report = json.loads((root / "data" / "state" / REPORT_NAME).read_text(encoding="utf-8"))
             self.assertEqual(report["digest_sha256"], digest_hash(html))
 
+    def test_dry_run_records_product_completeness_alerts(self) -> None:
+        tmp, root = self._project()
+        with tmp:
+            today = today_london()
+            html = (
+                f"<b>Greater Manchester Brief — {today}, 08:10</b>\n\n"
+                "<b>Свежие новости</b>\n"
+                "• One news line.\n\n"
+                "<b>Билеты / Ticket Radar</b>\n"
+                + "\n".join(f"• Ticket {idx}." for idx in range(8))
+            )
+            (root / "data" / "outgoing" / "current_digest.html").write_text(html, encoding="utf-8")
+            (root / "data" / "state" / "writer_report.json").write_text(
+                json.dumps(
+                    {
+                        "section_counts": {
+                            "Свежие новости": 1,
+                            "Футбол": 0,
+                            "Билеты / Ticket Radar": 8,
+                        },
+                        "quality_counts": {"included_candidates": 20, "rendered_candidates": 9},
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            result = evaluate_pre_send_quality(root, dry_run=True)
+
+            alerts = result["product_completeness"]["alerts"]
+            self.assertTrue(any("Свежие новости" in alert for alert in alerts))
+            self.assertTrue(any("ticket dominance" in alert for alert in alerts))
+
 
 if __name__ == "__main__":
     unittest.main()

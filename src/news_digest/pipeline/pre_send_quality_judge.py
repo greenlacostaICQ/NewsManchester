@@ -24,7 +24,7 @@ from news_digest.pipeline.model_routing import resolve_model_route, sdk_retries_
 logger = logging.getLogger(__name__)
 
 
-PROMPT_VERSION = "v1"
+PROMPT_VERSION = "v2"
 REPORT_NAME = "pre_send_quality_report.json"
 ALLOWED_TO_SEND = {"pass", "warn"}
 BLOCKING_DECISIONS = {"repair_required", "block"}
@@ -41,7 +41,10 @@ SYSTEM_PROMPT = """Ты старший редактор и fact-check судья
 4. география: не выдавать не-GM за Greater Manchester без явного контекста;
 5. русский текст: нет непереведённых бытовых английских слов, машинной кальки, абсурда;
 6. практическая польза: карточка должна быть понятной без открытия ссылки;
-7. не блокируй выпуск за стиль, если смысл безопасен.
+7. продуктовая полнота: проверь product_completeness — не схлопнулись ли «Свежие новости»,
+   «Футбол», «Выходные в GM», не доминируют ли билеты/концерты над core news, не слишком ли
+   много выбранных кандидатов потеряно между rewrite/writer/render;
+8. не блокируй выпуск за стиль, если смысл безопасен.
 
 Decision:
 - "pass": критических проблем нет.
@@ -67,6 +70,7 @@ Decision:
 }
 
 Если сомневаешься, предпочти "repair_required" только для реально опасной смысловой ошибки. Не требуй переписывать выпуск ради вкуса.
+Если проблема продуктовая, но выпуск всё ещё можно отправить как degraded issue, ставь "warn" и явно назови провал блока.
 """
 
 
@@ -86,6 +90,7 @@ class PreSendQualityResult:
     confidence: float | None = None
     critical_errors: list[dict[str, Any]] | None = None
     warnings: list[str] | None = None
+    product_completeness: dict[str, Any] | None = None
     notes: str = ""
     raw: dict[str, Any] | None = None
 
@@ -163,6 +168,55 @@ def _rendered_candidates(project_root: Path) -> list[dict[str, Any]]:
             }
         )
     return summary[:60]
+
+
+def _product_completeness_context(project_root: Path, digest_lines: list[dict[str, Any]]) -> dict[str, Any]:
+    state_dir = project_root / "data" / "state"
+    writer_report = read_json(state_dir / "writer_report.json", {})
+    release_report = read_json(state_dir / "release_report.json", {})
+    section_counts = dict(writer_report.get("section_counts") or {})
+    if not section_counts:
+        for line in digest_lines:
+            section = str(line.get("section") or "")
+            if section:
+                section_counts[section] = section_counts.get(section, 0) + 1
+    ticket_sections = {"Билеты / Ticket Radar", "Крупные концерты вне GM", "Русскоязычные концерты и стендап UK"}
+    ticket_items = sum(int(section_counts.get(section) or 0) for section in ticket_sections)
+    core_sections = {
+        "Свежие новости": 3,
+        "Футбол": 1,
+        "Выходные в GM": 3,
+        "Что важно сегодня": 2,
+        "Общественный транспорт сегодня": 1,
+    }
+    core_counts = {section: int(section_counts.get(section) or 0) for section in core_sections}
+    alerts: list[str] = []
+    for section, floor in core_sections.items():
+        count = core_counts[section]
+        if count < floor:
+            alerts.append(f"{section}: {count} item(s), emergency floor {floor}")
+    core_total = sum(core_counts.values())
+    if ticket_items > max(6, core_total):
+        alerts.append(f"ticket dominance: {ticket_items} ticket/concert item(s) vs {core_total} core item(s)")
+    qc = writer_report.get("quality_counts") or {}
+    included = int(qc.get("included_candidates") or 0)
+    rendered = int(qc.get("rendered_candidates") or 0)
+    if included >= 15 and rendered and rendered / max(1, included) < 0.35:
+        alerts.append(f"low writer yield: {rendered}/{included} included candidates rendered")
+    source_status = release_report.get("source_status") or {}
+    failed_sources = int((source_status.get("counts") or {}).get("failed") or 0)
+    if failed_sources >= 3:
+        alerts.append(f"source failures: {failed_sources}")
+    return {
+        "section_counts": section_counts,
+        "core_counts": core_counts,
+        "ticket_items": ticket_items,
+        "core_items": core_total,
+        "writer_quality_counts": qc,
+        "section_underflow": release_report.get("section_underflow") or [],
+        "source_health_counts": (source_status.get("counts") or {}),
+        "alerts": alerts,
+    }
 
 
 def _parse_reply(raw: str) -> dict[str, Any] | None:
@@ -260,6 +314,7 @@ def evaluate_pre_send_quality(
     sha = digest_hash(digest_html)
     digest_lines = digest_lines_from_html(digest_html)
     rendered_candidates = _rendered_candidates(project_root)
+    product_completeness = _product_completeness_context(project_root, digest_lines)
 
     if dry_run:
         result = PreSendQualityResult(
@@ -273,6 +328,7 @@ def evaluate_pre_send_quality(
             duration_seconds=round(time.monotonic() - start, 3),
             warnings=[],
             critical_errors=[],
+            product_completeness=product_completeness,
         )
         _write_report(project_root, result)
         return asdict(result)
@@ -290,6 +346,7 @@ def evaluate_pre_send_quality(
             duration_seconds=round(time.monotonic() - start, 3),
             critical_errors=[],
             warnings=[],
+            product_completeness=product_completeness,
         )
         _write_report(project_root, result)
         return asdict(result)
@@ -309,6 +366,7 @@ def evaluate_pre_send_quality(
             duration_seconds=round(time.monotonic() - start, 3),
             critical_errors=[],
             warnings=[],
+            product_completeness=product_completeness,
         )
         _write_report(project_root, result)
         return asdict(result)
@@ -329,6 +387,7 @@ def evaluate_pre_send_quality(
             duration_seconds=round(time.monotonic() - start, 3),
             critical_errors=[],
             warnings=[],
+            product_completeness=product_completeness,
         )
         _write_report(project_root, result)
         return asdict(result)
@@ -339,6 +398,7 @@ def evaluate_pre_send_quality(
         "digest_sha256": sha,
         "digest_lines": digest_lines,
         "rendered_candidates": rendered_candidates,
+        "product_completeness": product_completeness,
     }
     user_content = json.dumps(payload, ensure_ascii=False)
     messages = [
@@ -389,6 +449,7 @@ def evaluate_pre_send_quality(
             duration_seconds=round(time.monotonic() - start, 3),
             critical_errors=[],
             warnings=[],
+            product_completeness=product_completeness,
         )
         _write_report(project_root, result)
         return asdict(result)
@@ -408,6 +469,7 @@ def evaluate_pre_send_quality(
             duration_seconds=round(time.monotonic() - start, 3),
             critical_errors=[],
             warnings=[],
+            product_completeness=product_completeness,
         )
         _write_report(project_root, result)
         return asdict(result)
@@ -427,6 +489,7 @@ def evaluate_pre_send_quality(
         confidence=confidence,
         critical_errors=critical_errors,
         warnings=warnings,
+        product_completeness=product_completeness,
         notes=notes,
         raw=parsed,
     )

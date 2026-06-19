@@ -634,6 +634,17 @@ def _pre_send_polish_sections(
                 stripped += 1
                 warnings.append(f"Degradation: stripped an unrepairable line in «{section_name}».")
         polished[section_name] = out
+    transport_lines = [
+        line for line in polished.get("Общественный транспорт сегодня", [])
+        if line.strip() and line.strip() != "•"
+    ]
+    if not transport_lines:
+        polished["Общественный транспорт сегодня"] = [
+            '• Транспорт: конкретных подтверждённых сбоев в выпуск не попало. '
+            'Перед поездкой проверьте страницу статуса TfGM. '
+            '<a href="https://tfgm.com/travel-updates">TfGM</a>'
+        ]
+        warnings.append("Degradation: replaced empty transport block with TfGM status fallback.")
 
     bad_examples: list[str] = []
     for item in _visible_line_items(polished):

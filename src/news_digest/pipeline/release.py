@@ -689,6 +689,16 @@ def _evaluate_digest_health(
     signals: list[dict[str, object]] = []
     qc = (writer_report or {}).get("quality_counts") or {}
     sc = (writer_report or {}).get("section_counts") or {}
+    final_counts = {
+        name: len([line for line in lines if str(line).strip() and str(line).strip() != "•"])
+        for name, lines in (sections or {}).items()
+    }
+
+    def _section_count(section_name: str) -> int:
+        if final_counts:
+            return int(final_counts.get(section_name) or 0)
+        return int(sc.get(section_name) or 0)
+
     rendered = int(qc.get("rendered_candidates") or 0)
     included = int(qc.get("included_candidates") or 0)
 
@@ -711,23 +721,23 @@ def _evaluate_digest_health(
             "detail": f"{rendered} item(s) rendered — above the 45-item editorial cap target.",
         })
 
-    if sc.get("Погода", 0) == 0:
+    if _section_count("Погода") == 0:
         signals.append({
             "name": "weather_empty",
             "severity": 2,
             "detail": "Weather section empty — Met Office collector likely down.",
         })
 
-    if sc.get("Общественный транспорт сегодня", 0) == 0:
+    if _section_count("Общественный транспорт сегодня") == 0:
         signals.append({
             "name": "transport_empty",
             "severity": 1,
             "detail": "Transport section empty — no TfGM/Metrolink alerts surfaced.",
         })
 
-    n_24h = int(sc.get("Свежие новости", 0) or 0)
-    n_today = int(sc.get("Что важно сегодня", 0) or 0)
-    n_radar = int(sc.get("Городской радар", 0) or 0)
+    n_24h = _section_count("Свежие новости")
+    n_today = _section_count("Что важно сегодня")
+    n_radar = _section_count("Городской радар")
     if n_24h < 5 and n_today < 3 and n_radar < 5:
         signals.append({
             "name": "all_news_thin",

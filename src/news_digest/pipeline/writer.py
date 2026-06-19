@@ -109,6 +109,15 @@ TODAY_FOCUS_MIN_SOURCE_REMAINING = {
 }
 FRESH_NEWS_TARGET_ITEMS = 7
 TODAY_FOCUS_TARGET_ITEMS = 4
+CORE_EMERGENCY_FLOORS = {
+    "Свежие новости": 3,
+    "Футбол": 1,
+    "Выходные в GM": 3,
+}
+CORE_UNDERFLOW_TICKET_CAPS = {
+    "Билеты / Ticket Radar": 4,
+    "Крупные концерты вне GM": 2,
+}
 
 # When the LLM rewrite stage is degraded, keep soft rails compact without
 # suppressing hard-news that did get rewritten.
@@ -2457,6 +2466,104 @@ def _hard_news_recovery_line(candidate: dict) -> str:
     return ""
 
 
+_SOFT_DRAFT_LINE_ERROR_MARKERS = (
+    "draft_line is too short",
+    "draft_line must contain at least one complete sentence",
+    "draft_line for long-format category needs",
+)
+
+_CORE_SOFT_RECOVERY_BLOCKS = {
+    "last_24h",
+    "today_focus",
+    "city_watch",
+    "weekend_activities",
+    "next_7_days",
+    "openings",
+    "tech_business",
+    "football",
+}
+
+
+def _only_soft_draft_line_errors(errors: list[str]) -> bool:
+    return bool(errors) and all(
+        any(marker in error for marker in _SOFT_DRAFT_LINE_ERROR_MARKERS)
+        for error in errors
+    )
+
+
+def _core_soft_recovery_allowed(candidate: dict) -> bool:
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    if block in {"ticket_radar", "outside_gm_tickets", "future_announcements"}:
+        return False
+    return block in _CORE_SOFT_RECOVERY_BLOCKS or category in {
+        "media_layer",
+        "gmp",
+        "council",
+        "public_services",
+        "tech_business",
+        "football",
+    }
+
+
+def _soft_recovery_action_sentence(candidate: dict) -> str:
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "draft_line")
+    ).lower()
+    if block == "football" or category == "football":
+        return "Для болельщиков это влияет на ближайшие матчи, состав или планы клуба; следите за обновлениями команды."
+    if block in {"weekend_activities", "next_7_days", "openings"} or category in {"culture_weekly", "food_openings"}:
+        return "Если хотите попасть, уточните дату, время и доступность мест перед выходом."
+    if category == "tech_business" or block == "tech_business":
+        return "Если это касается вашей работы, района или поездки, проверьте сроки и детали перед планами."
+    if re.search(r"\b(?:police|gmp|court|charged|sentenced|jailed|knife|stab|crash|collision|fire|cordon|evacuat)\b", blob):
+        return "Следите за обновлениями полиции или суда и сверяйте ограничения перед поездкой."
+    if re.search(r"\b(?:council|planning|application|consultation|approved|development|homes|roadworks|service)\b", blob):
+        return "Если вы живёте рядом или пользуетесь сервисом, проверьте сроки и условия на странице совета."
+    return "Перед планами на день проверьте детали и дальнейшие обновления в источнике."
+
+
+def _recover_soft_draft_line(candidate: dict, line: str, errors: list[str]) -> tuple[str, list[str]]:
+    """Recover compact but otherwise safe core cards.
+
+    This is deliberately narrower than a quality bypass: it only handles
+    length/sentence-count defects. Factual, numeric, translation, HTML and
+    sensitive-story errors still hold the item.
+    """
+    if not _core_soft_recovery_allowed(candidate) or not _only_soft_draft_line_errors(errors):
+        return "", []
+    text = re.sub(r"\s+", " ", str(line or "")).strip()
+    if not text:
+        replacement = _final_replacement_line(candidate)
+        if replacement:
+            return replacement, ["structured_replacement"]
+        return "", []
+    if not text.startswith("• "):
+        text = f"• {text}"
+    action = _soft_recovery_action_sentence(candidate)
+    if action and action not in text:
+        text = text.rstrip(" .")
+        text = f"{text}. {action}"
+    if len(re.sub(r"\s+", " ", text).strip()) < LONG_FORMAT_MIN_CHARS:
+        extra = "Не откладывайте проверку, если это влияет на маршрут, запись или планы на сегодня."
+        if extra not in text:
+            text = f"{text.rstrip(' .')}. {extra}"
+    return text, ["soft_length_sentence_recovery"]
+
+
+def _core_underflow_sections_for_ticket_throttle(section_counts: dict[str, int], *, show_weekend: bool) -> list[str]:
+    underflow: list[str] = []
+    for section_name, floor in CORE_EMERGENCY_FLOORS.items():
+        if section_name == "Выходные в GM" and not show_weekend:
+            continue
+        if int(section_counts.get(section_name) or 0) < floor:
+            underflow.append(section_name)
+    return underflow
+
+
 _RECOVERY_STEP_STAGE = {
     "transport_card_recovery": "structured_repair",
     "ticket_structured_recovery": "structured_repair",
@@ -3247,12 +3354,23 @@ def _apply_section_min_floor_pull_back(
         line, repair_reasons = _repair_editorial_contract_line(c, line)
         errors = _draft_line_quality_errors(c, line)
         if errors:
-            warnings.append(
-                f"Section «{section_name}» top-up skipped candidate "
-                f"{c.get('fingerprint') or c.get('title') or '?'}: "
-                f"draft_line quality issues ({'; '.join(errors)})."
-            )
-            continue
+            recovered_line, recovered_reasons = _recover_soft_draft_line(c, line, errors)
+            if recovered_line:
+                recovered_line, recovered_repairs = _repair_editorial_contract_line(c, recovered_line)
+                recovered_errors = _draft_line_quality_errors(c, recovered_line)
+                if not recovered_errors:
+                    line = recovered_line
+                    errors = []
+                    repair_reasons.extend(recovered_reasons + recovered_repairs)
+                else:
+                    errors = recovered_errors
+            if errors:
+                warnings.append(
+                    f"Section «{section_name}» top-up skipped candidate "
+                    f"{c.get('fingerprint') or c.get('title') or '?'}: "
+                    f"draft_line quality issues ({'; '.join(errors)})."
+                )
+                continue
         if repair_reasons:
             warnings.append(
                 f"Section «{section_name}» top-up repaired candidate "
@@ -5200,6 +5318,23 @@ def write_digest(project_root: Path) -> StageResult:
                 else:
                     _append_recovery_step(candidate, "final_replacement", "held", missing=replacement_errors)
         if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
+            recovered_line, recovered_reasons = _recover_soft_draft_line(candidate, line, draft_line_errors)
+            if recovered_line:
+                recovered_line, recovered_repairs = _repair_editorial_contract_line(candidate, recovered_line)
+                recovered_errors = _draft_line_quality_errors(candidate, recovered_line)
+                if not recovered_errors:
+                    line = recovered_line
+                    draft_line_errors = []
+                    candidate["draft_line_provider"] = "writer_soft_line_recovery"
+                    candidate["draft_line_model"] = "deterministic_soft_line_recovery"
+                    _append_recovery_step(candidate, "draft_line_quality_repair", "recovered", missing=recovered_reasons)
+                    warnings.append(
+                        f"Candidate #{index}: recovered compact core card instead of dropping "
+                        f"({', '.join(recovered_reasons + recovered_repairs)})."
+                    )
+                else:
+                    _append_recovery_step(candidate, "draft_line_quality_repair", "attempted", missing=recovered_errors)
+        if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
             _append_recovery_step(candidate, "draft_line_quality_repair", "held", missing=(candidate.get("story_frame") or {}).get("missing_facts") or draft_line_errors)
             warnings.append(
                 f"Candidate #{index} dropped: draft_line quality issues ({'; '.join(draft_line_errors)})."
@@ -5308,13 +5443,13 @@ def write_digest(project_root: Path) -> StageResult:
         *(["Выходные в GM"] if show_weekend else []),
         "Городской радар",
         "Что важно в ближайшие 7 дней",
+        "Еда, открытия и рынки",
+        "IT и бизнес",
         "Бесплатные business/tech события для тебя",
         "Дальние анонсы",
         "Билеты / Ticket Radar",
         "Крупные концерты вне GM",
         "Русскоязычные концерты и стендап UK",
-        "Еда, открытия и рынки",
-        "IT и бизнес",
         "Радар по районам",
     ]
     section_counts: dict[str, int] = {}
@@ -5394,6 +5529,19 @@ def write_digest(project_root: Path) -> StageResult:
         cap = normal_cap
         if degraded_cap is not None:
             cap = min(cap, degraded_cap) if cap else degraded_cap
+        ticket_throttle_reasons: list[str] = []
+        if section_name in CORE_UNDERFLOW_TICKET_CAPS:
+            ticket_throttle_reasons = _core_underflow_sections_for_ticket_throttle(
+                section_counts,
+                show_weekend=show_weekend,
+            )
+            if ticket_throttle_reasons:
+                throttle_cap = CORE_UNDERFLOW_TICKET_CAPS[section_name]
+                cap = min(cap, throttle_cap) if cap else throttle_cap
+                warnings.append(
+                    f"Ticket balance guard: capped «{section_name}» at {throttle_cap} "
+                    f"because core section(s) are still thin: {', '.join(ticket_throttle_reasons)}."
+                )
         if cap:
             if llm_degraded and degraded_cap is not None and len(lines) > cap:
                 normal_cutoff = normal_cap if normal_cap is not None else len(lines)

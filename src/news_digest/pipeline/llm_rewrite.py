@@ -982,6 +982,23 @@ _SOFT_REPAIR_ERROR_MARKERS = (
     "old official/public-service item needs a concrete new public reason",
 )
 
+_SOFT_REPAIR_VISIBLE_BLOCKS = {
+    "last_24h",
+    "today_focus",
+    "city_watch",
+    "weekend_activities",
+    "next_7_days",
+    "openings",
+    "tech_business",
+    "football",
+}
+
+_SOFT_REPAIR_EXCLUDED_BLOCKS = {
+    "ticket_radar",
+    "outside_gm_tickets",
+    "future_announcements",
+}
+
 
 def _hard_repair_errors(candidate: dict, line: str) -> list[str]:
     """Return only defects worth spending an LLM repair call on.
@@ -997,6 +1014,33 @@ def _hard_repair_errors(candidate: dict, line: str) -> list[str]:
     ]
 
 
+def _soft_repair_errors(candidate: dict, line: str) -> list[str]:
+    errors = _writer_quality_errors(candidate, line)
+    return [
+        error for error in errors
+        if any(marker in error for marker in _SOFT_REPAIR_ERROR_MARKERS)
+    ]
+
+
+def _should_repair_soft_writer_errors(candidate: dict, errors: list[str]) -> bool:
+    """Repair short/one-sentence cards only after the visible board.
+
+    The broad pool can contain hundreds of ticket/catalog rows; repairing every
+    compact line would reintroduce the latency blow-up. Core digest sections are
+    different: a short mini-written card must be expanded before writer, not
+    silently dropped and replaced by tickets.
+    """
+    if not errors:
+        return False
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    if block in _SOFT_REPAIR_EXCLUDED_BLOCKS:
+        return False
+    if block in _SOFT_REPAIR_VISIBLE_BLOCKS:
+        return True
+    return category in {"media_layer", "gmp", "council", "public_services", "tech_business", "football"}
+
+
 def _needs_quality_repair(candidate: dict) -> bool:
     line = str(candidate.get("draft_line") or "").strip()
     if not line:
@@ -1007,6 +1051,8 @@ def _needs_quality_repair(candidate: dict) -> bool:
         return False
     writer_errors = _hard_repair_errors(candidate, line)
     if writer_errors:
+        return True
+    if _should_repair_soft_writer_errors(candidate, _soft_repair_errors(candidate, line)):
         return True
     normalized = re.sub(r"\s+", " ", line)
     lowered = normalized.lower()
