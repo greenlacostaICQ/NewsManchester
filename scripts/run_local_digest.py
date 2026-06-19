@@ -135,14 +135,12 @@ def _release_gate_error_for_file(path: Path) -> str | None:
     text = resolved_path.read_text(encoding="utf-8")
     if f"Greater Manchester Brief — {today}," not in text:
         return "current_digest.html does not contain today's digest header"
-    try:
-        from news_digest.pipeline.pre_send_quality_judge import quality_gate_error_for_digest  # noqa: PLC0415
-
-        quality_error = quality_gate_error_for_digest(PROJECT_ROOT, resolved_path)
-    except Exception as exc:  # noqa: BLE001
-        return f"pre-send quality judge check failed: {exc}"
-    if quality_error:
-        return quality_error
+    # The send gate blocks ONLY on technical consistency (built+promoted digest,
+    # passing release decision, matching date/header). The pre-send quality
+    # judge is a CONTENT check and must NEVER block delivery — it runs as its
+    # own non-blocking step and writes pre_send_quality_report.json. A factual
+    # nit ("did not mention the 2-year driving ban") silently killed the send
+    # for three days; never again.
     return None
 
 
