@@ -2207,12 +2207,28 @@ def cmd_post_publish_judge() -> int:
 
 
 def cmd_pre_send_quality_judge(dry_run: bool) -> int:
-    """Run the required strong-model quality gate before Telegram send."""
+    """Run the strong-model quality judge before Telegram send.
+
+    The judge is a CONTENT check: it surfaces factual/repair issues into the
+    report so they can be fixed, but it must NEVER block the send. A content
+    nit ("did not mention the 2-year driving ban") is not a reason to skip the
+    daily digest — that contradicts the never-block / degradation principle and
+    silently killed delivery for three days. Only technical send-consistency
+    (built+promoted digest, matching date/marker) may block, and that lives in
+    the send-file gate, not here. So always exit 0; loudly warn on issues.
+    """
     from news_digest.pipeline.pre_send_quality_judge import evaluate_pre_send_quality  # noqa: PLC0415
 
     result = evaluate_pre_send_quality(PROJECT_ROOT, dry_run=dry_run)
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0 if result.get("can_send") is True else 1
+    if result.get("can_send") is not True:
+        print(
+            "WARNING: pre-send quality judge flagged content issues "
+            f"({result.get('decision') or 'repair_required'}); shipping anyway "
+            "(degradation, never block). See pre_send_quality_report.json.",
+            file=sys.stderr,
+        )
+    return 0
 
 
 def cmd_delivered_today() -> int:

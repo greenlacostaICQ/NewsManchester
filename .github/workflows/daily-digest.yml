@@ -85,6 +85,11 @@ jobs:
           python3 scripts/run_local_digest.py build-digest
 
       - name: Pre-send quality judge — strong final editor
+        # CONTENT judge only — must never block the send (a factual nit is not a
+        # reason to skip the daily digest). It surfaces issues into the report;
+        # the send proceeds regardless. continue-on-error guards against a judge
+        # crash blocking delivery, same as the post-publish judge below.
+        continue-on-error: true
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI }}
         run: python3 scripts/run_local_digest.py pre-send-quality-judge
