@@ -260,6 +260,16 @@ _SENSITIVE_EVIDENCE_RE = re.compile(
     r"насили|инквест|коронер|реб[её]нок|школ|пожар|авар|пропал|взрыв)\b",
     re.IGNORECASE,
 )
+_SENSITIVE_INCIDENT_DETAIL_RE = re.compile(
+    r"\b(?:stab(?:bed|bing)?|knife|assault|crash|collision|fire|arrest(?:ed)?|charged|jailed|"
+    r"murder|death|died|missing)\b",
+    re.IGNORECASE,
+)
+_SENSITIVE_FOLLOWUP_ACTION_RE = re.compile(
+    r"\b(?:appeal(?:ing)?|witness(?:es)?|footage|information|charged|arrest(?:ed)?|jailed|sentenced|"
+    r"court|trial)\b",
+    re.IGNORECASE,
+)
 
 
 def _reclassify_gm_when_outside_venue(candidate: dict) -> bool:
@@ -378,6 +388,16 @@ def _hold_sensitive_thin_or_failed_enrichment(candidate: dict) -> bool:
     failed = bool(health.get("failed"))
     thin = bool(health.get("thin"))
     if not failed and not thin:
+        return False
+    entities = candidate.get("entities") if isinstance(candidate.get("entities"), dict) else {}
+    has_place = bool(entities.get("boroughs") or entities.get("districts") or _GM_ANCHOR_RE.search(blob))
+    if (
+        thin
+        and not failed
+        and has_place
+        and _SENSITIVE_INCIDENT_DETAIL_RE.search(blob)
+        and _SENSITIVE_FOLLOWUP_ACTION_RE.search(blob)
+    ):
         return False
     candidate["editorial_status"] = "held_for_enrichment"
     _append_reject(
@@ -2101,10 +2121,11 @@ def _exclude_cross_day_rehash(candidate: dict, state_dir: Path) -> bool:
         today_date = now_london().date()
         days_to_sat = (5 - today_date.weekday()) % 7
         days_to_sun = (6 - today_date.weekday()) % 7
-        if min(days_to_sat, days_to_sun) <= 3:
+        if min(days_to_sat, days_to_sun) <= 7:
             # A recurring market/fair is not a stale repeat just because
             # yesterday's digest also mentioned the same page. The actionable
-            # occurrence is the next weekend instance.
+            # occurrence is the next weekend instance; keep it eligible across
+            # the planning week and let writer caps/budget decide visibility.
             return False
 
     policy = contract.get("section_policy") if isinstance(contract.get("section_policy"), dict) else {}

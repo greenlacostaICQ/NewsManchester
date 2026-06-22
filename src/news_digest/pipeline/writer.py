@@ -127,6 +127,7 @@ CORE_UNDERFLOW_TICKET_CAPS = {
 # suppressing hard-news that did get rewritten.
 DEGRADED_LLM_SECTION_MAX_ITEMS = {
     "Свежие новости": 6,
+    TODAY_FOCUS_SECTION: 3,
     "Городской радар": 5,
     "Что важно в ближайшие 7 дней": 4,
     "Выходные в GM": 6,
@@ -138,8 +139,8 @@ DEGRADED_LLM_SECTION_MAX_ITEMS = {
     "Русскоязычные концерты и стендап UK": 3,
 }
 
-PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 37  # counted public budget; reserved sections can borrow within the hard cap
-PUBLIC_DIGEST_HARD_RENDERED_ITEMS = 45
+PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 40  # counted public budget; reserved sections can borrow within the hard cap
+PUBLIC_DIGEST_HARD_RENDERED_ITEMS = 52
 PUBLIC_SECTION_RESERVED_MIN = {
     # Fresh/Today are the product spine of the morning issue. They must not be
     # squeezed by later ticket/event rails when strong written news already
@@ -153,12 +154,25 @@ PUBLIC_SECTION_RESERVED_MIN = {
     "Бесплатные business/tech события для тебя": 2,
     "Билеты / Ticket Radar": 2,
     "Футбол": 2,
+    "Русскоязычные концерты и стендап UK": 2,
     # IT/business sits near the end of the order, so the visible-item budget was
     # exhausted before it (valid items like a new HQ/office, startup, conference
     # or development came back 'selected_not_published'). Reserve 2 slots so up
     # to 2 real business items always make the issue when they exist.
     "IT и бизнес": 2,
 }
+PROTECTED_RECOVERY_SECTIONS = frozenset({
+    "Свежие новости",
+    TODAY_FOCUS_SECTION,
+    "Городской радар",
+    "Общественный транспорт сегодня",
+    "Выходные в GM",
+    "Что важно в ближайшие 7 дней",
+    "Бесплатные business/tech события для тебя",
+    "Еда, открытия и рынки",
+    "Футбол",
+    "Русскоязычные концерты и стендап UK",
+})
 _BAD_EDITORIAL_PROSE_MARKERS = (
     "ticket office",
     "слот входа",
@@ -894,6 +908,18 @@ def _allocate_fresh_and_today_focus(
     # editable.
     for candidate in candidate_by_fp.values():
         if not isinstance(candidate, dict) or not candidate.get("include"):
+            continue
+        if candidate.get("reject_reasons") or candidate.get("validation_errors"):
+            continue
+        if (
+            str(candidate.get("editorial_status") or "") == "borderline"
+            and str(candidate.get("manual_override") or "") != "force_include"
+        ):
+            continue
+        attach_editorial_contract(candidate)
+        if _contract_public_drop_reason(candidate) and str(candidate.get("manual_override") or "") != "force_include":
+            continue
+        if not candidate.get("source_url") or not candidate.get("source_label"):
             continue
         fp = str(candidate.get("fingerprint") or "")
         if not fp or fp in seen_fps:
@@ -3264,6 +3290,7 @@ _FALLBACK_BUILDER_BY_CATEGORY: dict[str, str] = {
     "culture_weekly": "event",
     "russian_speaking_events": "event",
     "diaspora_events": "event",
+    "professional_events": "event",
     "public_services": "public_services",
 }
 
@@ -3280,6 +3307,7 @@ def _apply_section_min_floor_pull_back(
     min_floor: int,
     warnings: list[str],
     include_backup: bool = False,
+    recovery_metrics: dict | None = None,
 ) -> tuple[list[str], list[str], list[float], list[str], list[str]]:
     """Top up a thin section up to SECTION_MIN_ITEMS by promoting any
     included candidate whose primary_block maps to this section, sorted
@@ -3290,10 +3318,27 @@ def _apply_section_min_floor_pull_back(
         block for block, name in PRIMARY_BLOCKS.items() if name == section_name
     ]
     if not target_blocks:
+        if recovery_metrics is not None:
+            recovery_metrics["still_underflow_reason"] = "no_primary_block_mapping"
         return lines, fps, scores, titles, srcs
+    if recovery_metrics is not None:
+        recovery_metrics.update(
+            {
+                "section_below_floor": True,
+                "floor_target": min_floor,
+                "items_before_recovery": len(lines),
+                "include_backup": bool(include_backup),
+                "reserve_available": 0,
+                "repair_attempts": 0,
+                "replacements_inserted": 0,
+                "still_underflow_reason": "",
+            }
+        )
 
     def _allowed_public_pullback(candidate: dict) -> bool:
         if candidate.get("reject_reasons"):
+            return False
+        if candidate.get("writer_degraded_shrink_held"):
             return False
         if (
             str(candidate.get("editorial_status") or "") == "borderline"
@@ -3324,6 +3369,8 @@ def _apply_section_min_floor_pull_back(
         and str(c.get("fingerprint") or "") not in rendered_fps_so_far
         and not c.get("writer_suppressed_from_top_news")
     ]
+    if recovery_metrics is not None:
+        recovery_metrics["reserve_available"] = len(pool)
     # Promote by section news-value (same ranking the section itself uses),
     # not raw reader_value: hard local news scores low on reader_value, so the
     # old sort buried courts/crime/development under soft items in the backfill.
@@ -3343,6 +3390,8 @@ def _apply_section_min_floor_pull_back(
     for c in pool:
         if len(lines) >= min_floor:
             break
+        if recovery_metrics is not None:
+            recovery_metrics["repair_attempts"] = int(recovery_metrics.get("repair_attempts") or 0) + 1
         if section_name == TODAY_FOCUS_SECTION and not _today_focus_candidate_is_eligible(c, str(c.get("draft_line") or "")):
             continue
         if section_name == "Что важно в ближайшие 7 дней" and _next_7_event_decision(c)[0] != "keep":
@@ -3411,12 +3460,24 @@ def _apply_section_min_floor_pull_back(
         if per_source_cap is not None:
             source_counts[source_label] = source_counts.get(source_label, 0) + 1
         promoted += 1
+        if recovery_metrics is not None:
+            recovery_metrics["replacements_inserted"] = int(recovery_metrics.get("replacements_inserted") or 0) + 1
 
     if promoted:
         warnings.append(
             f"Section «{section_name}» topped up with {promoted} item(s) "
             f"to meet floor of {min_floor}."
         )
+    if recovery_metrics is not None:
+        recovery_metrics["items_after_recovery"] = len(lines)
+        if len(lines) < min_floor:
+            if not pool:
+                reason = "no_reserve_available"
+            elif promoted == 0:
+                reason = "reserve_failed_quality_or_caps"
+            else:
+                reason = "reserve_exhausted_before_floor"
+            recovery_metrics["still_underflow_reason"] = reason
     return lines, fps, scores, titles, srcs
 
 
@@ -4491,6 +4552,12 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     if re.search(r"\b(?:тройн\w*\s+ножев\w*\s+ранени|отдельн\w*\s+ножев\w*\s+атак|открыт\w*\s+вывод)", text, re.IGNORECASE):
         errors.append("incident/legal line contains literal translated legal/crime phrasing.")
     for issue in glossary_line_issues(text):
+        if (
+            is_transport_block
+            and issue.startswith("glossary_translate_required:line->")
+            and re.search(r"\b[A-Z][A-Za-z' -]{2,40}\s+line\b", text)
+        ):
+            continue
         errors.append(f"glossary contract violation: {issue}.")
     for term in _EXPLAINABLE_TERMS:
         if term in text and _EXPLAINABLE_TERMS[term] not in text:
@@ -4843,6 +4910,61 @@ def _cap_minor_bus_stop_lines(lines: list[str], srcs: list[str], fps: list[str],
         [titles[i] if i < len(titles) else "" for i in kept],
         dropped,
     )
+
+
+def _a_tier_ticket_trace(
+    candidates: list[dict],
+    rendered_fingerprints: set[str],
+    dropped_candidates: list[dict],
+) -> dict[str, object]:
+    dropped_by_fp = {
+        str(item.get("fingerprint") or ""): item
+        for item in dropped_candidates
+        if isinstance(item, dict)
+    }
+    items: list[dict[str, object]] = []
+    counts = {"total": 0, "rendered": 0, "not_rendered": 0, "blocked_by_repeat_policy": 0}
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        primary_block = str(candidate.get("primary_block") or "")
+        if primary_block not in {"ticket_radar", "outside_gm_tickets", "russian_events"} and str(candidate.get("category") or "") != "venues_tickets":
+            continue
+        notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+        tier = str(notability.get("tier") or "").strip().upper()
+        if tier not in {"A", "PROTECTED"}:
+            continue
+        fp = str(candidate.get("fingerprint") or "")
+        lifecycle = candidate.get("topic_lifecycle_repeat") if isinstance(candidate.get("topic_lifecycle_repeat"), dict) else {}
+        calendar_review = lifecycle.get("calendar_repeat_review") if isinstance(lifecycle.get("calendar_repeat_review"), dict) else {}
+        dropped = dropped_by_fp.get(fp) or {}
+        status = "rendered" if fp in rendered_fingerprints else "not_rendered"
+        if dropped:
+            status = "writer_dropped"
+        elif not candidate.get("include"):
+            status = "not_included"
+        if calendar_review.get("applies") and not calendar_review.get("allow"):
+            counts["blocked_by_repeat_policy"] += 1
+        counts["total"] += 1
+        if status == "rendered":
+            counts["rendered"] += 1
+        else:
+            counts["not_rendered"] += 1
+        items.append(
+            {
+                "fingerprint": fp,
+                "title": str(candidate.get("title") or "")[:180],
+                "source_label": str(candidate.get("source_label") or ""),
+                "primary_block": primary_block,
+                "tier": tier,
+                "notability_signal": notability.get("signal"),
+                "include": bool(candidate.get("include")),
+                "status": status,
+                "drop_reasons": dropped.get("reasons") or candidate.get("reject_reasons") or [],
+                "calendar_repeat_review": calendar_review,
+            }
+        )
+    return {"counts": counts, "items": items[:80]}
 
 
 def write_digest(project_root: Path) -> StageResult:
@@ -5473,10 +5595,12 @@ def write_digest(project_root: Path) -> StageResult:
     section_counts: dict[str, int] = {}
     rendered_candidate_fingerprints: list[str] = []
     visible_item_count = 0
+    recovery_controller: dict[str, object] = {"sections": {}, "totals": {}}
     for section_index, section_name in enumerate(ordered_sections):
         lines = sections.get(section_name, [])
         if not lines:
-            continue
+            if section_name not in PROTECTED_RECOVERY_SECTIONS or not SECTION_MIN_ITEMS.get(section_name, 0):
+                continue
         srcs = section_sources.get(section_name, [])
         scores = section_scores.get(section_name, [])
         fps = section_fingerprints.get(section_name, [])
@@ -5564,12 +5688,16 @@ def write_digest(project_root: Path) -> StageResult:
             if llm_degraded and degraded_cap is not None and len(lines) > cap:
                 normal_cutoff = normal_cap if normal_cap is not None else len(lines)
                 for idx in range(cap, min(len(lines), normal_cutoff)):
-                    if _is_public_budget_exempt(section_name, candidate_by_fp.get(str(fps[idx] if idx < len(fps) else ""))):
+                    held_fp = str(fps[idx] if idx < len(fps) else "")
+                    held_candidate = candidate_by_fp.get(held_fp)
+                    if _is_public_budget_exempt(section_name, held_candidate):
                         continue
+                    if isinstance(held_candidate, dict):
+                        held_candidate["writer_degraded_shrink_held"] = True
                     degraded_shrink_dropped.append(
                         {
                             "section": section_name,
-                            "fingerprint": fps[idx] if idx < len(fps) else "",
+                            "fingerprint": held_fp,
                             "title": titles[idx] if idx < len(titles) else re.sub(r"<[^>]+>", "", lines[idx])[:120],
                             "source_label": srcs[idx] if idx < len(srcs) else "",
                             "reader_value_score": scores[idx] if idx < len(scores) else 0.0,
@@ -5597,15 +5725,18 @@ def write_digest(project_root: Path) -> StageResult:
         min_floor = SECTION_MIN_ITEMS.get(section_name, 0)
         target_floor = FRESH_NEWS_TARGET_ITEMS if section_name == "Свежие новости" else min_floor
         if target_floor and len(lines) < target_floor:
-            rendered_fps_so_far = (
-                {fp for slist in section_fingerprints.values() for fp in slist if fp}
-                | {fp for fp in fps if fp}
-            )
+            rendered_fps_so_far = set(rendered_candidate_fingerprints) | {fp for fp in fps if fp}
+            section_recovery_metrics: dict[str, object] = {}
             lines, fps, scores, titles, srcs = _apply_section_min_floor_pull_back(
                 section_name, lines, fps, scores, titles, srcs,
                 candidates, rendered_fps_so_far, target_floor, warnings,
-                include_backup=section_name in {"Свежие новости", "Футбол", "Городской радар"},
+                include_backup=section_name in PROTECTED_RECOVERY_SECTIONS,
+                recovery_metrics=section_recovery_metrics,
             )
+            if section_recovery_metrics:
+                sections_report = recovery_controller.setdefault("sections", {})
+                if isinstance(sections_report, dict):
+                    sections_report[section_name] = section_recovery_metrics
         reserved_later_budget = _reserved_later_budget(ordered_sections, section_index, sections)
         remaining_budget = PUBLIC_DIGEST_MAX_VISIBLE_ITEMS - visible_item_count - reserved_later_budget
         if section_name in PUBLIC_SECTION_RESERVED_MIN:
@@ -5763,6 +5894,15 @@ def write_digest(project_root: Path) -> StageResult:
     # Degrade-shrink and global-budget trims are good items held back for
     # capacity, not faults — they belong in the reserve pool.
     drop_breakdown["reserve"] += len(degraded_shrink_dropped) + len(global_budget_dropped)
+    recovery_sections = recovery_controller.get("sections") if isinstance(recovery_controller.get("sections"), dict) else {}
+    recovery_controller["totals"] = {
+        "section_below_floor": len(recovery_sections),
+        "reserve_available": sum(int((row or {}).get("reserve_available") or 0) for row in recovery_sections.values()),
+        "repair_attempts": sum(int((row or {}).get("repair_attempts") or 0) for row in recovery_sections.values()),
+        "replacements_inserted": sum(int((row or {}).get("replacements_inserted") or 0) for row in recovery_sections.values()),
+        "still_underflow": sum(1 for row in recovery_sections.values() if str((row or {}).get("still_underflow_reason") or "")),
+    }
+    a_tier_ticket_trace = _a_tier_ticket_trace(candidates, rendered_fp_set, dropped_candidates)
 
     draft_path.write_text("\n".join(rendered).strip() + "\n", encoding="utf-8")
     write_json(
@@ -5783,6 +5923,7 @@ def write_digest(project_root: Path) -> StageResult:
                 "dropped_count": len(global_budget_dropped),
                 "dropped_items": global_budget_dropped[:80],
             },
+            "recovery_controller": recovery_controller,
             "backfilled_today_focus": backfilled_today_focus,
             "today_focus_board": today_focus_board,
             "final_section_routing": final_section_routing,
@@ -5798,6 +5939,7 @@ def write_digest(project_root: Path) -> StageResult:
                 "prefetch": notability_prefetch,
                 "items": ticket_notability_report[:120],
             },
+            "a_tier_ticket_trace": a_tier_ticket_trace,
             "fresh_news_board": fresh_report,
             "drop_breakdown": drop_breakdown,
             "rendered_after_drop_reconciled": rendered_after_drop_reconciled[:50],

@@ -1401,6 +1401,13 @@ def _ticket_repeat_milestone_days(candidate: dict, previous: dict) -> frozenset[
     return _LOW_TIER_TICKET_REPEAT_MILESTONE_DAYS
 
 
+def _max_public_ticket_repeats(candidate: dict, previous: dict) -> int:
+    tier = _ticket_notability_tier(candidate, previous)
+    if tier in {"A", "PROTECTED"}:
+        return len(_A_TIER_TICKET_REPEAT_MILESTONE_DAYS)
+    return _MAX_PUBLIC_TICKET_REPEATS
+
+
 def _published_count_for_repeat(previous: dict) -> int:
     try:
         count = int(previous.get("published_count") or 0)
@@ -1453,12 +1460,15 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
 
     if is_ticket_item:
         published_count = _published_count_for_repeat(previous)
-        if published_count >= _MAX_PUBLIC_TICKET_REPEATS:
+        repeat_limit = _max_public_ticket_repeats(candidate, previous)
+        if published_count >= repeat_limit:
             return {
                 "applies": True,
                 "allow": False,
                 "reason": "ticket_repeat_limit_reached",
                 "published_count": published_count,
+                "repeat_limit": repeat_limit,
+                "ticket_tier": _ticket_notability_tier(candidate, previous),
             }
 
     current_date = _occurrence_date_from_contract(current_contract)

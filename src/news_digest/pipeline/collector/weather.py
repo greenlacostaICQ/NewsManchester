@@ -120,7 +120,7 @@ def _met_office_practical_angle(headline: str, today_text: str, precip_max: int)
     if precip_max >= 60 and any(token in blob for token in ("heavy rain", "persistent rain", "prolonged rain")):
         return "Возможны продолжительные или сильные осадки; поездки держите с запасом, зонт или непромокаемая куртка пригодятся."
     if precip_max >= 60:
-        return "Возьмите зонт, особенно если планируете прогулки или пересадки днём."
+        return "Возьмите защиту от дождя, особенно если планируете прогулки или пересадки днём."
     if precip_max >= 30:
         return "Во второй половине дня возможны локальные осадки."
     if "showers" in blob:

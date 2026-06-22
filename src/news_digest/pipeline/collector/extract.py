@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from html import unescape
 from html.parser import HTMLParser
 from urllib import parse
+import hashlib
 import json
 import re
 import xml.etree.ElementTree as ET
@@ -325,6 +326,89 @@ def _extract_jsonld_event_hint(html_text: str) -> dict:
         }
         return {key: value for key, value in out.items() if str(value or "").strip()}
     return {}
+
+
+def _jsonld_event_instance_id(name: str, start: str, venue: str) -> str:
+    raw = f"{name}|{start[:10]}|{venue}".strip().lower()
+    return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:12] if raw else ""
+
+
+def _jsonld_event_node_to_item(source: SourceDef, node: dict, index: int) -> ExtractedItem | None:
+    name = _clean_title_text(_jsonld_text(node.get("name")))
+    start = _parse_datetime_value(str(node.get("startDate") or ""))
+    end = _parse_datetime_value(str(node.get("endDate") or ""))
+    venue = _jsonld_location_name(node.get("location"))
+    price, booking_url = _jsonld_offer_fields(node.get("offers"))
+    event_url = _jsonld_text(node.get("url")) or booking_url or source.url
+    event_url = parse.urljoin(source.url, event_url)
+    if not name or not start or not (venue or event_url):
+        return None
+    description = _clean_long_text(_jsonld_text(node.get("description")))
+    status = _jsonld_text(node.get("eventStatus"))
+    instance_id = _jsonld_event_instance_id(name, start.isoformat(), venue) or f"event-{index}"
+    hint = {
+        "schema_source": "jsonld_event",
+        "event_name": name,
+        "venue": venue,
+        "date": start.isoformat(),
+        "date_start": start.isoformat(),
+        "date_end": end.isoformat() if end else "",
+        "date_text": start.date().isoformat(),
+        "price": price,
+        "booking_url": booking_url,
+        "event_status": status,
+        "event_instance_id": instance_id,
+    }
+    hint = {key: value for key, value in hint.items() if str(value or "").strip()}
+    summary_bits = [
+        description,
+        f"Event date: {start.date().isoformat()}",
+        f"Venue: {venue}" if venue else "",
+        f"Price: {price}" if price else "",
+        f"Booking: {booking_url}" if booking_url else "",
+        f"Status: {status}" if status else "",
+    ]
+    evidence = _clean_long_text(" ".join(bit for bit in summary_bits if bit))
+    event_url_with_instance = event_url
+    if clean_url(event_url) == clean_url(source.url):
+        event_url_with_instance = f"{event_url}#jsonld-event-{instance_id}"
+    return ExtractedItem(
+        title=name,
+        url=event_url_with_instance,
+        published_at=start.isoformat(),
+        summary=_summary_from_evidence(evidence) or f"{name} at {venue} on {start.date().isoformat()}",
+        lead=f"{name} at {venue}" if venue else name,
+        evidence_text=evidence[:6000],
+        enrichment_status="ok_jsonld_event",
+        structured_event_hint=hint,
+    )
+
+
+def _source_is_event_listing(source: SourceDef) -> bool:
+    return (
+        source.source_contract in {"event_calendar", "venue_calendar", "ticket_api"}
+        or source.report_category in {"culture_weekly", "venues_tickets", "diaspora_events", "professional_events"}
+        or source.primary_block in {"weekend_activities", "next_7_days", "ticket_radar", "russian_events"}
+    )
+
+
+def _extract_jsonld_event_items(source: SourceDef, html_text: str) -> list[ExtractedItem]:
+    if not _source_is_event_listing(source):
+        return []
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    for index, node in enumerate(_extract_jsonld_nodes(html_text), start=1):
+        if not isinstance(node, dict) or not _jsonld_type_matches(node, "Event"):
+            continue
+        item = _jsonld_event_node_to_item(source, node, index)
+        if item is None:
+            continue
+        key = str((item.structured_event_hint or {}).get("event_instance_id") or item.url)
+        if key in seen:
+            continue
+        seen.add(key)
+        items.append(item)
+    return items
 
 
 def _strip_page_title_suffix(title: str) -> str:
@@ -2472,14 +2556,26 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
                 r"^/news/20\d{2}/",
             )
 
+    jsonld_event_links = _extract_jsonld_event_items(source, body)
+    if jsonld_event_links:
+        links = jsonld_event_links + links
+
     seen: set[str] = set()
     candidates: list[dict] = []
     for item in links:
         base_url = clean_url(item.url)
         fragment = parse.urlsplit(item.url).fragment
-        normalized_url = f"{base_url}#{fragment}" if source.source_type in {"html_the_manc_weekly_events", "html_sectioned_event_guide", "html_heritage_live"} and fragment else base_url
+        jsonld_event_item = str(item.enrichment_status or "") == "ok_jsonld_event"
+        normalized_url = (
+            f"{base_url}#{fragment}"
+            if (
+                source.source_type in {"html_the_manc_weekly_events", "html_sectioned_event_guide", "html_heritage_live"}
+                or jsonld_event_item
+            ) and fragment
+            else base_url
+        )
         same_source_page = source.source_type in {"html_page_event", "html_the_manc_weekly_events", "html_sectioned_event_guide", "html_heritage_live"} and base_url == clean_url(source.url)
-        if not same_source_page and not _is_allowed_source_link(source, base_url, item.title, item.summary):
+        if not jsonld_event_item and not same_source_page and not _is_allowed_source_link(source, base_url, item.title, item.summary):
             continue
         if normalized_url in seen:
             continue
@@ -2569,6 +2665,10 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         if source.report_category == "football" and _is_football_fluff(item.title, normalized_url):
             continue
         candidate["fingerprint"] = fingerprint_for_candidate(candidate)
+        event_instance_id = str((item.structured_event_hint or {}).get("event_instance_id") or "").strip()
+        if event_instance_id:
+            candidate["event_instance_id"] = event_instance_id
+            candidate["fingerprint"] = f"{candidate['fingerprint']}-{event_instance_id}"[:180]
         candidates.append(candidate)
         if len(candidates) >= source.max_candidates:
             break

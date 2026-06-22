@@ -300,12 +300,53 @@ def _source_health_template(source) -> dict:
         "coverage_signal_label": "",
         "usable_for_release": False,
         "fallback_used": False,
+        "failure_class": "",
+        "reliability_ladder_step": "",
+        "recommended_next_action": "",
         "errors": [],
         "warnings": [],
         "duration_seconds": 0.0,
         "fetch_duration_seconds": 0.0,
         "extract_duration_seconds": 0.0,
     }
+
+
+def _classify_source_failure(
+    *,
+    fetched: bool,
+    not_modified: bool,
+    candidate_count: int,
+    errors: list[str],
+    warnings: list[str],
+) -> tuple[str, str, str]:
+    """Return error taxonomy + next reliability step.
+
+    The operational order is deliberate: understand the failure first, fix the
+    parser/pagination when the page fetched, and only then escalate to curl_cffi
+    or proxy for proven access/WAF failures.
+    """
+    if not_modified:
+        return ("healthy_not_modified", "none", "no action; source reached and unchanged")
+    text = " ".join(errors + warnings).lower()
+    if errors:
+        if any(token in text for token in ("403", "forbidden", "cloudflare", "waf")):
+            return ("fetch_403_waf", "curl_cffi_candidate", "prove WAF/403, then try curl_cffi for this source only")
+        if any(token in text for token in ("429", "too many requests", "rate limit")):
+            return ("fetch_rate_limited", "backoff_or_schedule", "reduce request pressure or add per-source backoff")
+        if any(token in text for token in ("timed out", "timeout", "read timed out")):
+            return ("fetch_timeout", "fetch_tuning", "check timeout, fallback URL, and source availability")
+        if any(token in text for token in ("name or service", "nodename", "dns", "temporary failure")):
+            return ("fetch_dns", "source_url_check", "verify source URL/domain before transport workaround")
+        if any(token in text for token in ("404", "not found", "410", "gone")):
+            return ("source_url_dead", "source_registry_fix", "replace or disable dead URL")
+        return ("fetch_error_unknown", "error_taxonomy", "classify the error before adding transport workarounds")
+    if fetched and candidate_count == 0:
+        if any(token in text for token in ("pagination", "page 2", "next page")):
+            return ("pagination_gap", "pagination_fix", "extend parser pagination for this source")
+        return ("parser_or_filter_empty", "parser_fix", "inspect HTML/feed shape and source filter before curl/proxy")
+    if fetched:
+        return ("healthy_with_candidates", "none", "no reliability action")
+    return ("not_checked", "error_taxonomy", "source was not checked")
 
 
 def _collect_single_source(source) -> tuple[dict, list[dict]]:
@@ -333,6 +374,16 @@ def _collect_single_source(source) -> tuple[dict, list[dict]]:
             # health flips to "unhealthy" on quiet days.
             source_health["usable_for_release"] = True
             source_health["warnings"].append("304 Not Modified — no new content since last fetch")
+            cls, step, action = _classify_source_failure(
+                fetched=True,
+                not_modified=True,
+                candidate_count=0,
+                errors=[],
+                warnings=source_health["warnings"],
+            )
+            source_health["failure_class"] = cls
+            source_health["reliability_ladder_step"] = step
+            source_health["recommended_next_action"] = action
             return source_health, []
         source_health["fetch_duration_seconds"] = round(time.perf_counter() - fetch_started_at, 3)
         if attempt_log:
@@ -369,10 +420,30 @@ def _collect_single_source(source) -> tuple[dict, list[dict]]:
         if not source_candidates:
             message = f"{source.name}: fetched successfully but no candidate links passed filters"
             source_health["warnings"].append(message)
+        cls, step, action = _classify_source_failure(
+            fetched=True,
+            not_modified=False,
+            candidate_count=len(source_candidates),
+            errors=[],
+            warnings=source_health["warnings"],
+        )
+        source_health["failure_class"] = cls
+        source_health["reliability_ladder_step"] = step
+        source_health["recommended_next_action"] = action
         return source_health, source_candidates
     except Exception as exc:  # noqa: BLE001 - errors must be surfaced in collector_report.
         source_health["checked"] = True
         source_health["errors"].append(str(exc))
+        cls, step, action = _classify_source_failure(
+            fetched=False,
+            not_modified=False,
+            candidate_count=0,
+            errors=source_health["errors"],
+            warnings=source_health["warnings"],
+        )
+        source_health["failure_class"] = cls
+        source_health["reliability_ladder_step"] = step
+        source_health["recommended_next_action"] = action
         return source_health, []
     finally:
         source_health["duration_seconds"] = round(time.perf_counter() - started_at, 3)

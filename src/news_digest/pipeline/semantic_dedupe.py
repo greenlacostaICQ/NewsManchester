@@ -305,7 +305,7 @@ def embed_with_cache(
 _DEDUP_BLOCK_GROUPS: tuple[frozenset[str], ...] = (
     frozenset({"lead_story", "last_24h", "today_focus", "city_watch", "district_radar"}),
     frozenset({"weekend_activities", "next_7_days", "future_announcements",
-                "ticket_radar", "outside_gm_tickets", "russian_events"}),
+                "ticket_radar", "outside_gm_tickets", "russian_events", "professional_events"}),
     frozenset({"openings", "tech_business"}),
 )
 _TRANSPORT_TICKET_BLOCKS = frozenset({"transport", "weather", "ticket_radar", "outside_gm_tickets"})
@@ -316,7 +316,15 @@ _TRANSPORT_TICKET_BLOCKS = frozenset({"transport", "weather", "ticket_radar", "o
 # through the prose-embedding O(n²) comparison adds nothing and was the bulk of
 # the cost after UK-wide ticket discovery pushed the pool to ~1343 (~700 of
 # them tickets). Skip them here; they are still deduped deterministically.
-_SEMANTIC_DEDUP_SKIP_BLOCKS = frozenset({"ticket_radar", "outside_gm_tickets"})
+_SEMANTIC_DEDUP_SKIP_BLOCKS = frozenset({
+    "weekend_activities",
+    "next_7_days",
+    "future_announcements",
+    "ticket_radar",
+    "outside_gm_tickets",
+    "russian_events",
+    "professional_events",
+})
 _MARKET_LISTING_RE = re.compile(r"\b(?:market|car boot|makers market|artisan market|flea market)\b", re.IGNORECASE)
 
 

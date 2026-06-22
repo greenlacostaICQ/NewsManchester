@@ -7,6 +7,7 @@ import re
 import time
 
 from news_digest.pipeline.common import (
+    canonical_url_identity,
     fingerprint_for_candidate,
     normalize_title,
     now_london,
@@ -1134,7 +1135,7 @@ def _title_entities(title: str) -> frozenset[str]:
 
 _DEDUP_BLOCK_GROUPS: tuple[frozenset[str], ...] = (
     frozenset({"lead_story", "last_24h", "today_focus", "city_watch", "district_radar"}),
-    frozenset({"weekend_activities", "next_7_days", "future_announcements", "ticket_radar", "outside_gm_tickets", "russian_events"}),
+    frozenset({"weekend_activities", "next_7_days", "future_announcements", "ticket_radar", "outside_gm_tickets", "russian_events", "professional_events"}),
     frozenset({"openings", "tech_business"}),
 )
 
@@ -1402,6 +1403,35 @@ def _ticket_event_identity(candidate: dict) -> tuple[str, str]:
         m = re.search(r"event(?:_date)?[=\s]+(\d{4}-\d{2}-\d{2})", haystack)
         date = m.group(1) if m else ""
     return name, date
+
+
+def _event_identity_key(candidate: dict) -> tuple[str, str, str]:
+    """Structured identity for event/calendar candidates.
+
+    Events are not ordinary articles: the same venue, city, or generic title
+    words do not make two listings duplicates. When we have name + date +
+    venue/url identity, that key is the primary dedupe signal.
+    """
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    hint = candidate.get("structured_event_hint") if isinstance(candidate.get("structured_event_hint"), dict) else {}
+    name = normalize_title(str(event.get("event_name") or hint.get("event_name") or ""))
+    date_value = str(
+        event.get("date_start")
+        or event.get("event_date")
+        or event.get("date")
+        or hint.get("date_start")
+        or hint.get("date")
+        or ""
+    ).strip()[:10]
+    venue = normalize_title(str(event.get("venue") or hint.get("venue") or ""))
+    identity_tail = venue
+    if not identity_tail:
+        identity_tail = normalize_title(str(candidate.get("event_instance_id") or hint.get("event_instance_id") or ""))
+    if not identity_tail:
+        identity_tail = normalize_title(canonical_url_identity(str(candidate.get("source_url") or "")))
+    if not name or not date_value or not identity_tail:
+        return ("", "", "")
+    return (name, date_value, identity_tail)
 
 
 def _ticket_exact_dedupe_key(candidate: dict) -> tuple[str, str, str, str]:
@@ -1746,6 +1776,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
         block_i = str(ci.get("primary_block") or "")
         group_i = _dedup_block_group(block_i)
         is_event_ticket_group = group_i == _dedup_block_group("ticket_radar")
+        event_identity_i = _event_identity_key(ci) if is_event_ticket_group else ("", "", "")
         topic_i = topic_key_for_candidate(ci)
         cluster_i = str(ci.get("story_cluster_key") or "")
         rank_i = _source_rank(
@@ -1759,6 +1790,23 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
             cj = included[j]
             if _dedup_block_group(str(cj.get("primary_block") or "")) != group_i:
                 continue
+
+            if is_event_ticket_group:
+                event_identity_j = _event_identity_key(cj)
+                if all(event_identity_i) and all(event_identity_j):
+                    if event_identity_i == event_identity_j:
+                        rank_j = _source_rank(
+                            str(cj.get("source_label") or ""),
+                            str(cj.get("category") or ""),
+                        )
+                        key = "|".join(event_identity_i)
+                        if _prefer_dedupe_candidate(ci, cj, rank_i, rank_j):
+                            to_drop[j] = {"kept_index": i, "overlap": 1.0, "event_identity_key": key}
+                        else:
+                            to_drop[i] = {"kept_index": j, "overlap": 1.0, "event_identity_key": key}
+                            break
+                    else:
+                        continue
 
             # Tickets/events: provably different shows (different artist, or
             # same artist on a different night) are never duplicates. This
@@ -1950,6 +1998,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                 "overlap": drop_context["overlap"],
                 "topic_key": drop_context.get("topic_key") or "",
                 "story_cluster_key": drop_context.get("story_cluster_key") or "",
+                "event_identity_key": drop_context.get("event_identity_key") or "",
                 "reason": c["reason"],
             }
         )

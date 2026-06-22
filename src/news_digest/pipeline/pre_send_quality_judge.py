@@ -24,7 +24,7 @@ from news_digest.pipeline.model_routing import resolve_model_route, sdk_retries_
 logger = logging.getLogger(__name__)
 
 
-PROMPT_VERSION = "v2"
+PROMPT_VERSION = "v3"
 REPORT_NAME = "pre_send_quality_report.json"
 ALLOWED_TO_SEND = {"pass", "warn"}
 BLOCKING_DECISIONS = {"repair_required", "block"}
@@ -65,12 +65,23 @@ Decision:
       "suggested_action": "repair|strip"
     }
   ],
+  "actions": [
+    {
+      "line_index": 1,
+      "section": "...",
+      "action": "keep|patch|replace|strip",
+      "replacement_text": "• ...",
+      "reason": "...",
+      "risk": "factual|legal|sensitive|geo|date|translation|format|product"
+    }
+  ],
   "warnings": ["..."],
   "notes": "до 240 символов"
 }
 
 Если сомневаешься, предпочти "repair_required" только для реально опасной смысловой ошибки. Не требуй переписывать выпуск ради вкуса.
 Если проблема продуктовая, но выпуск всё ещё можно отправить как degraded issue, ставь "warn" и явно назови провал блока.
+actions — это не комментарии, а конкретные редакторские действия. Для безопасной строки ставь keep только если она упомянута в critical_errors; не перечисляй весь выпуск. Для patch/replace replacement_text должен начинаться с «• » и опираться только на rendered_candidates/facts.
 """
 
 
@@ -89,8 +100,10 @@ class PreSendQualityResult:
     duration_seconds: float = 0.0
     confidence: float | None = None
     critical_errors: list[dict[str, Any]] | None = None
+    actions: list[dict[str, Any]] | None = None
     warnings: list[str] | None = None
     product_completeness: dict[str, Any] | None = None
+    deterministic_post_check: dict[str, Any] | None = None
     notes: str = ""
     raw: dict[str, Any] | None = None
 
@@ -219,6 +232,74 @@ def _product_completeness_context(project_root: Path, digest_lines: list[dict[st
     }
 
 
+_DATE_OR_NUMBER_RE = re.compile(
+    r"\b(?:\d{1,2}:\d{2}|\d{1,2}/\d{1,2}/20\d{2}|20\d{2}-\d{2}-\d{2}|"
+    r"\d+(?:[.,]\d+)?%?|£\d+(?:[.,]\d+)?[mk]?)\b",
+    re.IGNORECASE,
+)
+
+
+def _deterministic_action_post_check(
+    actions: list[dict[str, Any]],
+    digest_lines: list[dict[str, Any]],
+    rendered_candidates: list[dict[str, Any]],
+) -> dict[str, Any]:
+    errors: list[str] = []
+    warnings: list[str] = []
+    line_count = len(digest_lines)
+    seen_targets: set[int] = set()
+    fact_blob = " ".join(
+        " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead", "practical_angle", "draft_line"))
+        for candidate in rendered_candidates
+        if isinstance(candidate, dict)
+    )
+    fact_tokens = set(_DATE_OR_NUMBER_RE.findall(fact_blob))
+    seen_line_text: dict[str, int] = {}
+    untranslated_re = re.compile(
+        r"\b(?:councillors|greengrocer|baby-and-carer|cask ale|dining room|"
+        r"pub menu|slot|disruptions|opening)\b",
+        re.IGNORECASE,
+    )
+    for line in digest_lines:
+        text = str(line.get("text") or "").strip()
+        norm = re.sub(r"\W+", " ", text.lower()).strip()
+        if norm and norm in seen_line_text:
+            warnings.append(f"possible duplicate digest line: {seen_line_text[norm]} and {line.get('line_index')}")
+        else:
+            try:
+                seen_line_text[norm] = int(line.get("line_index") or 0)
+            except (TypeError, ValueError):
+                seen_line_text[norm] = 0
+        if untranslated_re.search(text):
+            warnings.append(f"possible untranslated residue on line {line.get('line_index')}: {text[:120]}")
+    for action in actions:
+        try:
+            line_index = int(action.get("line_index") or 0)
+        except (TypeError, ValueError):
+            line_index = 0
+        action_name = str(action.get("action") or "").strip().lower()
+        if line_index < 1 or line_index > line_count:
+            errors.append(f"action target out of range: {line_index}")
+            continue
+        if line_index in seen_targets:
+            warnings.append(f"multiple actions target line {line_index}")
+        seen_targets.add(line_index)
+        replacement = str(action.get("replacement_text") or "").strip()
+        if action_name in {"patch", "replace"}:
+            if not replacement.startswith("• "):
+                errors.append(f"{action_name} for line {line_index} does not start with bullet")
+            replacement_tokens = set(_DATE_OR_NUMBER_RE.findall(replacement))
+            unknown_tokens = sorted(token for token in replacement_tokens if token not in fact_tokens)
+            if unknown_tokens:
+                warnings.append(f"{action_name} for line {line_index} has unchecked number/date token(s): {', '.join(unknown_tokens[:6])}")
+    return {
+        "errors": errors,
+        "warnings": warnings[:20],
+        "can_apply_actions": not errors,
+        "action_count": len(actions),
+    }
+
+
 def _parse_reply(raw: str) -> dict[str, Any] | None:
     text = (raw or "").strip()
     if not text:
@@ -237,7 +318,7 @@ def _parse_reply(raw: str) -> dict[str, Any] | None:
     return payload if isinstance(payload, dict) else None
 
 
-def _normalise_result(parsed: dict[str, Any], *, fallback_reason: str = "") -> tuple[str, bool, str, float | None, list[dict[str, Any]], list[str], str]:
+def _normalise_result(parsed: dict[str, Any], *, fallback_reason: str = "") -> tuple[str, bool, str, float | None, list[dict[str, Any]], list[dict[str, Any]], list[str], str]:
     decision = str(parsed.get("decision") or "").strip().lower()
     if decision not in ALLOWED_TO_SEND | BLOCKING_DECISIONS:
         decision = "repair_required"
@@ -252,13 +333,28 @@ def _normalise_result(parsed: dict[str, Any], *, fallback_reason: str = "") -> t
         confidence = max(0.0, min(1.0, confidence))
     raw_errors = parsed.get("critical_errors") if isinstance(parsed.get("critical_errors"), list) else []
     critical_errors = [err for err in raw_errors if isinstance(err, dict)][:12]
+    raw_actions = parsed.get("actions") if isinstance(parsed.get("actions"), list) else []
+    actions: list[dict[str, Any]] = []
+    for action in raw_actions:
+        if not isinstance(action, dict):
+            continue
+        action_name = str(action.get("action") or "").strip().lower()
+        if action_name not in {"keep", "patch", "replace", "strip"}:
+            continue
+        cleaned = dict(action)
+        cleaned["action"] = action_name
+        cleaned["replacement_text"] = str(cleaned.get("replacement_text") or "")[:900]
+        cleaned["reason"] = str(cleaned.get("reason") or "")[:260]
+        actions.append(cleaned)
+        if len(actions) >= 20:
+            break
     raw_warnings = parsed.get("warnings") if isinstance(parsed.get("warnings"), list) else []
     warnings = [str(item)[:260] for item in raw_warnings if str(item).strip()][:12]
     notes = str(parsed.get("notes") or "")[:320]
     can_send = decision in ALLOWED_TO_SEND
     if not reason:
         reason = "quality judge passed" if can_send else "quality judge found blocking defects"
-    return decision, can_send, reason, confidence, critical_errors, warnings, notes
+    return decision, can_send, reason, confidence, critical_errors, actions, warnings, notes
 
 
 def _pipeline_run_id(project_root: Path) -> str:
@@ -405,7 +501,7 @@ def evaluate_pre_send_quality(
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": user_content},
     ]
-    max_tokens = 900
+    max_tokens = 1200
     try:
         client = OpenAI(
             api_key=key,
@@ -474,7 +570,8 @@ def evaluate_pre_send_quality(
         _write_report(project_root, result)
         return asdict(result)
 
-    decision, can_send, reason, confidence, critical_errors, warnings, notes = _normalise_result(parsed)
+    decision, can_send, reason, confidence, critical_errors, actions, warnings, notes = _normalise_result(parsed)
+    deterministic_post_check = _deterministic_action_post_check(actions, digest_lines, rendered_candidates)
     result = PreSendQualityResult(
         status="ok",
         decision=decision,
@@ -488,8 +585,10 @@ def evaluate_pre_send_quality(
         duration_seconds=round(time.monotonic() - start, 3),
         confidence=confidence,
         critical_errors=critical_errors,
+        actions=actions,
         warnings=warnings,
         product_completeness=product_completeness,
+        deterministic_post_check=deterministic_post_check,
         notes=notes,
         raw=parsed,
     )

@@ -196,6 +196,7 @@ FINAL_TRANSLATE_SYSTEM = """You are the final Russian editor for Greater Manches
 Translate the supplied English reader_card into a polished Russian Telegram bullet.
 
 You are translating final English digest cards, not raw source material. Preserve every date, place, line, venue, amount, status and uncertainty from the English card. Do not add facts from outside the English card/fact_card.
+source_evidence is a selected-item safety net, not a second rewrite brief: use it only to verify or restore a concrete date, venue, amount, role or status that is already implied by the English card/fact_card. Never introduce a new angle from source_evidence alone.
 If glossary_terms are present, follow them for terminology and naming. Glossary terms do not add facts; they only control wording.
 If story_frame.case_frame is present, preserve the case stage, roles and unknowns exactly: do not turn "no charges" into "charged", do not turn a witness/father/driver into a suspect, and do not invent a verdict.
 
@@ -1754,8 +1755,28 @@ def _english_card_batch_items(batch: list[dict]) -> list[dict]:
     return items
 
 
+def _selected_evidence_text(candidate: dict, *, limit: int = 3000) -> str:
+    shortlist_status = str(candidate.get("rewrite_shortlist_status") or "")
+    protected = candidate.get("protected_lane")
+    selected = (
+        shortlist_status.startswith("selected")
+        or shortlist_status == "writer_deterministic"
+        or bool(candidate.get("is_lead"))
+        or bool(protected)
+        or bool(candidate.get("public_reserve"))
+        or bool(candidate.get("backup_candidate"))
+    )
+    if not selected:
+        return ""
+    return _memory_text_digest(candidate.get("evidence_text"), limit=limit)
+
+
 def _translation_batch_items(batch: list[dict]) -> list[dict]:
-    """Final Russian translation payload: short English cards only."""
+    """Final Russian translation payload.
+
+    Broad English-card generation remains capped at 1000 chars. Only selected
+    or reserve items carry richer source_evidence into final translation.
+    """
     items: list[dict] = []
     for c in batch:
         fact_card = c.get("english_fact_card") if isinstance(c.get("english_fact_card"), dict) else {}
@@ -1769,6 +1790,8 @@ def _translation_batch_items(batch: list[dict]) -> list[dict]:
                 "english_rubric": c.get("english_rubric", ""),
                 "english_reader_card": c.get("english_reader_card", ""),
                 "english_fact_card": fact_card,
+                "source_evidence": _selected_evidence_text(c),
+                "event": c.get("event") if isinstance(c.get("event"), dict) else {},
                 "story_frame": c.get("story_frame") if isinstance(c.get("story_frame"), dict) else {},
                 "glossary_terms": _glossary_terms_for_candidate(c),
             }

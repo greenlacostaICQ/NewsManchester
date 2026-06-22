@@ -234,9 +234,9 @@ class ExtractEventTest(unittest.TestCase):
         result = extract_event(c)
         self.assertFalse(result["is_event"])
 
-    def test_is_event_true_with_only_venue(self):
-        # Backlog requires "useful data" — a known venue alone is enough
-        # to keep the candidate alive for prose fallback in writer.
+    def test_is_event_false_with_only_venue(self):
+        # A known venue is useful context, but a structured event now requires
+        # event_name + date + venue/url so listings do not pass as valid events.
         c = {
             "title": "Some show",
             "category": "culture_weekly",
@@ -244,7 +244,7 @@ class ExtractEventTest(unittest.TestCase):
             "entities": {"venues": ["HOME"]},
         }
         result = extract_event(c)
-        self.assertTrue(result["is_event"])
+        self.assertFalse(result["is_event"])
         self.assertEqual(result["venue"], "HOME")
         self.assertEqual(result["date"], "")
 

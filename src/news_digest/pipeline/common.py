@@ -81,6 +81,7 @@ SECTION_MIN_ITEMS = {
     "Еда, открытия и рынки": 3,
     "Бесплатные business/tech события для тебя": 1,
     "Футбол": 2,
+    "Русскоязычные концерты и стендап UK": 1,
 }
 
 # Max items per single source per section. Universities pump out 5+ press

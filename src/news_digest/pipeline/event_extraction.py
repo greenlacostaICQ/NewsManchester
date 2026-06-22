@@ -14,7 +14,7 @@ collector produced:
         "borough": str,       # entities.boroughs[0]
         "price": str,         # "£15", "£15-£75", "from £49.75", "free", or ""
         "booking_url": str,   # source_url for ticket sources, ticket-host URL otherwise
-        "is_event": bool,     # True only when we have a name AND (date or venue)
+        "is_event": bool,     # True only when we have name + date + venue/url
     }
 
 Pure deterministic — regex + entities lookup, no LLM. Runs AFTER
@@ -472,11 +472,11 @@ def extract_event(candidate: dict, entities: dict | None = None) -> dict:
     booking_url = str(hint.get("booking_url") or "").strip() or _extract_booking_url(candidate)
     event_name = str(hint.get("event_name") or "").strip() or _extract_event_name(candidate, entities, venue)
 
-    # An item only counts as a structured event when we know what it IS
-    # (a name) AND at least one of (when, where). Without that the
+    # An item only counts as a structured event when we know what it IS,
+    # when it happens, and where/how to identify the occurrence. Without that the
     # downstream Q5 gate would just see noise; better to leave the field
     # empty and let the existing prose-based fallback handle it.
-    has_event = bool(event_name and (iso_date or venue))
+    has_event = bool(event_name and iso_date and (venue or booking_url or candidate.get("source_url")))
 
     return {
         "schema_version": EVENT_SCHEMA_VERSION,
@@ -496,6 +496,7 @@ def extract_event(candidate: dict, entities: dict | None = None) -> dict:
         "classifications": hint.get("classifications") if isinstance(hint.get("classifications"), dict) else {},
         "attractions": hint.get("attractions") if isinstance(hint.get("attractions"), list) else [],
         "ticketmaster_attraction_id": str(hint.get("ticketmaster_attraction_id") or "").strip(),
+        "event_instance_id": str(hint.get("event_instance_id") or candidate.get("event_instance_id") or "").strip(),
         "promoter": str(hint.get("promoter") or "").strip(),
         "ticket_type": str(hint.get("ticket_type") or "").strip(),
         "is_event": has_event,

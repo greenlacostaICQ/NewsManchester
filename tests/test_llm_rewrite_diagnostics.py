@@ -294,13 +294,12 @@ class LlmRewriteDiagnosticsTests(unittest.TestCase):
                 route_name="rewrite",
             )
 
-        self.assertEqual(set(mapping), {"fp-1", "fp-2", "fp-3"})
+        self.assertEqual(set(mapping), {"fp-1", "fp-2"})
         self.assertEqual(
             calls,
             [
                 ("OpenAI", ["fp-1", "fp-2", "fp-3"], 3),
                 ("OpenAI-retry", ["fp-2", "fp-3"], 1),
-                ("DeepSeek", ["fp-3"], 3),
             ],
         )
 

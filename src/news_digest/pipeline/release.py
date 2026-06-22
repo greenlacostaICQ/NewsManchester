@@ -1147,6 +1147,9 @@ def _summarise_source_health(
                     "reject_reasons": row_yield.get("reject_reasons") or {},
                     "loss_funnel": loss_funnel,
                     "failure_count": len(list(entry.get("errors") or [])),
+                    "failure_class": str(entry.get("failure_class") or ""),
+                    "reliability_ladder_step": str(entry.get("reliability_ladder_step") or ""),
+                    "recommended_next_action": str(entry.get("recommended_next_action") or ""),
                     "candidate_count": raw_count,
                     "fresh_last_24h_count": int(entry.get("fresh_last_24h_count") or 0),
                     "source_contract": str(entry.get("source_contract") or ""),
@@ -1187,6 +1190,9 @@ def _summarise_source_health(
             "reject_reasons": row.get("reject_reasons") or {},
             "loss_funnel": row.get("loss_funnel") or {},
             "failure_count": 0,
+            "failure_class": "",
+            "reliability_ladder_step": "",
+            "recommended_next_action": "",
             "candidate_count": int(row["curated"]),
             "fresh_last_24h_count": 0,
             "curated_count": int(row["curated"]),
@@ -1924,8 +1930,10 @@ def _event_miss_review(
             verdict = "rejected_high_value_event"
         reason_text = reason or "; ".join(str(r) for r in (candidate.get("reject_reasons") or []))
         reason_l = reason_text.lower()
-        if verdict == "covered_by_rendered_duplicate" or (verdict == "dedupe_lost_event" and kept_fp):
+        if verdict == "covered_by_rendered_duplicate":
             alert_class = "duplicate_or_covered"
+        elif verdict == "dedupe_lost_event" and kept_fp:
+            alert_class = "possible_miss"
         elif "ticket not selected" in reason_l or "not selected" in reason_l:
             alert_class = "not_selected_by_design"
         elif "outside global translation board" in reason_l:
