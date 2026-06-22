@@ -33,7 +33,7 @@ Cache:
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import hashlib
@@ -42,6 +42,7 @@ import logging
 import math
 import os
 import re
+import time
 
 from news_digest.pipeline.common import now_london, read_json
 
@@ -419,6 +420,7 @@ class SemanticPassResult:
     intra_drops: list[dict]  # {fingerprint, kept_fingerprint, sim}
     cross_day_drops: list[dict]  # {fingerprint, prev_fingerprint, sim, change_type}
     borderline_pairs: list[dict]  # {fingerprint, other_fingerprint, sim, kind}
+    timings: dict[str, float] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return {
@@ -434,6 +436,7 @@ class SemanticPassResult:
             "intra_drop_count": len(self.intra_drops),
             "cross_day_drop_count": len(self.cross_day_drops),
             "borderline_count": len(self.borderline_pairs),
+            "timings": self.timings,
         }
 
 
@@ -503,6 +506,12 @@ def run_semantic_pass(
     Returns a SemanticPassResult summarising what was done. The caller
     (dedupe_candidates) should serialise it into dedupe_memory.json.
     """
+    stage_started = time.monotonic()
+    timings: dict[str, float] = {}
+
+    def _mark(name: str, started: float) -> None:
+        timings[name] = round(time.monotonic() - started, 3)
+
     if client is None:
         client = EmbeddingClient(api_key=os.environ.get("OPENAI_API_KEY", ""))
     enabled = bool(client.api_key)
@@ -523,10 +532,13 @@ def run_semantic_pass(
             intra_drops=[],
             cross_day_drops=[],
             borderline_pairs=[],
+            timings={"total_seconds": round(time.monotonic() - stage_started, 3)},
         )
 
+    cache_t0 = time.monotonic()
     cache = _load_cache(state_dir)
     pruned = _prune_cache(cache)
+    _mark("cache_load_prune_seconds", cache_t0)
     if pruned:
         logger.info("embedding cache: pruned %d stale entr(ies).", pruned)
 
@@ -538,7 +550,10 @@ def run_semantic_pass(
         if isinstance(c, dict) and c.get("include") and c.get("fingerprint")
         and str(c.get("primary_block") or "") not in _SEMANTIC_DEDUP_SKIP_BLOCKS
     ]
+    embed_t0 = time.monotonic()
     vectors = embed_with_cache(client, included, cache)
+    _mark("embedding_candidates_seconds", embed_t0)
+    normalise_t0 = time.monotonic()
     # Normalise once up front so the O(n²) intra-batch + cross-day loops below
     # use a plain dot product instead of recomputing each vector's norm on
     # every comparison (see _dot_unit). Zero / missing vectors drop out here,
@@ -547,6 +562,7 @@ def run_semantic_pass(
         fp: u for fp, v in vectors.items()
         if (u := _normalise(v)) is not None
     }
+    _mark("normalise_candidates_seconds", normalise_t0)
 
     cache_hits = sum(1 for c in included if str(c.get("fingerprint")) in pre_entries)
     cache_misses = len(included) - cache_hits
@@ -557,6 +573,7 @@ def run_semantic_pass(
     borderline_pairs: list[dict] = []
 
     # ── Intra-batch: drop weaker source among same-bucket high-sim pairs ──
+    intra_t0 = time.monotonic()
     dropped_fps: set[str] = set()
     for i, ci in enumerate(included):
         fp_i = str(ci.get("fingerprint") or "")
@@ -616,6 +633,7 @@ def run_semantic_pass(
                     "sim": round(sim, 4),
                     "kind": "intra_batch",
                 })
+    _mark("intra_batch_seconds", intra_t0)
 
     # ── Cross-day: compare survivors against published_facts ─────────────
     # Published facts don't ship with vectors today, but the cache key by
@@ -650,7 +668,10 @@ def run_semantic_pass(
             if _block_group(str(p.get("primary_block") or "")) in survivor_groups
         ]
 
+        published_embed_t0 = time.monotonic()
         published_vectors = embed_with_cache(client, published_shaped, cache)
+        _mark("published_embedding_seconds", published_embed_t0)
+        cross_t0 = time.monotonic()
         # Same one-shot normalisation as the intra-batch pass: each survivor is
         # compared against every published vector below, so pre-normalising the
         # published side too keeps the inner loop a bare dot product.
@@ -723,8 +744,15 @@ def run_semantic_pass(
                     "match_fingerprint": best_fact_fp,
                     "sim": round(best_sim, 4),
                 })
+        _mark("cross_day_seconds", cross_t0)
+    else:
+        timings.setdefault("published_embedding_seconds", 0.0)
+        timings.setdefault("cross_day_seconds", 0.0)
 
+    save_t0 = time.monotonic()
     _save_cache(state_dir, cache)
+    _mark("cache_save_seconds", save_t0)
+    timings["total_seconds"] = round(time.monotonic() - stage_started, 3)
 
     return SemanticPassResult(
         model=_EMBED_MODEL,
@@ -736,6 +764,7 @@ def run_semantic_pass(
         intra_drops=intra_drops,
         cross_day_drops=cross_day_drops,
         borderline_pairs=borderline_pairs,
+        timings=timings,
     )
 
 

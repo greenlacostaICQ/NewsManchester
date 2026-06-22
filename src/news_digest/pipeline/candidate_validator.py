@@ -2254,7 +2254,23 @@ def validate_candidates(project_root: Path) -> StageResult:
     candidates = payload.get("candidates", [])
     errors: list[str] = []
     items: list[dict] = []
+    timings: dict[str, float | dict[str, float]] = {}
+    gate_timings: dict[str, float] = {}
 
+    def _add_timing(bucket: dict[str, float], name: str, elapsed: float) -> None:
+        bucket[name] = round(float(bucket.get(name) or 0.0) + elapsed, 3)
+
+    def _time_gate(name: str, fn):
+        t0 = time.monotonic()
+        try:
+            return fn()
+        finally:
+            _add_timing(gate_timings, name, time.monotonic() - t0)
+
+    def _mark_timing(name: str, started: float) -> None:
+        timings[name] = round(time.monotonic() - started, 3)
+
+    validation_loop_t0 = time.monotonic()
     for index, candidate in enumerate(candidates, start=1):
         if not isinstance(candidate, dict):
             errors.append(f"Candidate #{index} is not an object.")
@@ -2264,8 +2280,10 @@ def validate_candidates(project_root: Path) -> StageResult:
         # false "no date / no venue / unclear" decisions based on raw RSS
         # snippets when the body or structured source fields already contain
         # the missing facts.
+        enrichment_t0 = time.monotonic()
         enrich_candidate_entities(candidate)
         enrich_candidate_event(candidate)
+        _add_timing(timings, "entity_event_enrichment_seconds", time.monotonic() - enrichment_t0)
 
         validation_errors: list[str] = []
         url = clean_url(str(candidate.get("source_url") or "").strip())
@@ -2299,79 +2317,79 @@ def validate_candidates(project_root: Path) -> StageResult:
         # rewriter never has to infer "Автобус:" vs "Metrolink:" from a
         # TfGM roadworks bulletin. Idempotent and safe for non-transport.
         if candidate.get("include"):
-            apply_professional_event_match(candidate, project_root)
-        classify_transport_candidate(candidate)
-        attach_change_phase(candidate)
-        attach_editorial_contract(candidate)
-        apply_story_intelligence(candidate)
+            _time_gate("professional_event_match", lambda: apply_professional_event_match(candidate, project_root))
+        _time_gate("classify_transport", lambda: classify_transport_candidate(candidate))
+        _time_gate("change_phase", lambda: attach_change_phase(candidate))
+        _time_gate("editorial_contract_initial", lambda: attach_editorial_contract(candidate))
+        _time_gate("story_intelligence_initial", lambda: apply_story_intelligence(candidate))
         if candidate.get("include"):
-            _apply_section_routing_quality(candidate)
-        manual = _manual_override(candidate, state_dir)
+            _time_gate("section_routing_quality", lambda: _apply_section_routing_quality(candidate))
+        manual = _time_gate("manual_override", lambda: _manual_override(candidate, state_dir))
         if candidate.get("include") and manual != "force_include":
-            _exclude_cross_day_rehash(candidate, state_dir)
+            _time_gate("cross_day_rehash", lambda: _exclude_cross_day_rehash(candidate, state_dir))
         if candidate.get("include") and manual != "force_include":
-            _exclude_road_only_transport(candidate)
+            _time_gate("road_only_transport", lambda: _exclude_road_only_transport(candidate))
         if candidate.get("include"):
-            _reclassify_outside_gm_when_local_venue(candidate)
+            _time_gate("reclassify_outside_gm_local_venue", lambda: _reclassify_outside_gm_when_local_venue(candidate))
         if candidate.get("include"):
-            _reclassify_gm_when_outside_venue(candidate)
+            _time_gate("reclassify_gm_outside_venue", lambda: _reclassify_gm_when_outside_venue(candidate))
         if candidate.get("include"):
-            _exclude_stale_ticket_onsale(candidate)
+            _time_gate("stale_ticket_onsale", lambda: _exclude_stale_ticket_onsale(candidate))
         if candidate.get("include"):
-            _ensure_default_ticket_type(candidate)
+            _time_gate("default_ticket_type", lambda: _ensure_default_ticket_type(candidate))
         if candidate.get("include"):
-            _reroute_tour_announcement(candidate)
+            _time_gate("reroute_tour_announcement", lambda: _reroute_tour_announcement(candidate))
         if candidate.get("include"):
-            _exclude_non_gm_news(candidate)
+            _time_gate("non_gm_news", lambda: _exclude_non_gm_news(candidate))
         if candidate.get("include"):
-            _exclude_low_value_news(candidate)
+            _time_gate("low_value_news", lambda: _exclude_low_value_news(candidate))
         if candidate.get("include"):
-            _exclude_celebrity_sighting(candidate)
+            _time_gate("celebrity_sighting", lambda: _exclude_celebrity_sighting(candidate))
         if candidate.get("include"):
-            _exclude_motivational_human_interest(candidate)
+            _time_gate("motivational_human_interest", lambda: _exclude_motivational_human_interest(candidate))
         if candidate.get("include"):
-            _exclude_historical_no_news_angle(candidate)
+            _time_gate("historical_no_news_angle", lambda: _exclude_historical_no_news_angle(candidate))
         if candidate.get("include"):
-            _exclude_book_author_in_tech_business(candidate)
+            _time_gate("book_author_in_tech_business", lambda: _exclude_book_author_in_tech_business(candidate))
         if candidate.get("include"):
-            _exclude_pr_only_tech_business(candidate)
+            _time_gate("pr_only_tech_business", lambda: _exclude_pr_only_tech_business(candidate))
         if candidate.get("include"):
-            _exclude_sold_out_event(candidate)
+            _time_gate("sold_out_event_initial", lambda: _exclude_sold_out_event(candidate))
         if candidate.get("include"):
-            _exclude_court_roundup_listicle(candidate)
+            _time_gate("court_roundup_listicle", lambda: _exclude_court_roundup_listicle(candidate))
         if candidate.get("include"):
-            _exclude_council_admin_without_impact(candidate)
+            _time_gate("council_admin_without_impact", lambda: _exclude_council_admin_without_impact(candidate))
         if candidate.get("include"):
-            _exclude_stale_undated_news_from_text(candidate)
+            _time_gate("stale_undated_news_from_text", lambda: _exclude_stale_undated_news_from_text(candidate))
         if candidate.get("include") and manual != "force_include":
-            _demote_optional_top_news_by_contract(candidate)
+            _time_gate("demote_optional_top_news_by_contract", lambda: _demote_optional_top_news_by_contract(candidate))
         if candidate.get("include") and manual != "force_include":
-            _exclude_by_editorial_contract(candidate)
+            _time_gate("editorial_contract_exclude", lambda: _exclude_by_editorial_contract(candidate))
         if candidate.get("include"):
-            _exclude_paywall_stub(candidate)
+            _time_gate("paywall_stub", lambda: _exclude_paywall_stub(candidate))
         if candidate.get("include") and manual != "force_include":
-            _hold_sensitive_thin_or_failed_enrichment(candidate)
+            _time_gate("sensitive_thin_or_failed_enrichment", lambda: _hold_sensitive_thin_or_failed_enrichment(candidate))
         if candidate.get("include"):
-            _exclude_stale_news_without_new_phase(candidate)
+            _time_gate("stale_news_without_new_phase", lambda: _exclude_stale_news_without_new_phase(candidate))
         if candidate.get("include"):
-            _exclude_wrong_food_opening_category(candidate)
+            _time_gate("wrong_food_opening_category", lambda: _exclude_wrong_food_opening_category(candidate))
         if candidate.get("include"):
-            _exclude_bad_food_opening_timing(candidate)
+            _time_gate("bad_food_opening_timing", lambda: _exclude_bad_food_opening_timing(candidate))
         if candidate.get("include"):
-            _apply_specificity_review(candidate)
+            _time_gate("specificity_review", lambda: _apply_specificity_review(candidate))
         if candidate.get("include"):
-            _exclude_stale_event(candidate)
+            _time_gate("stale_event", lambda: _exclude_stale_event(candidate))
         if candidate.get("include"):
-            _reroute_market_planning_to_weekend(candidate)
+            _time_gate("reroute_market_planning_to_weekend", lambda: _reroute_market_planning_to_weekend(candidate))
         if candidate.get("include"):
-            _demote_distant_weekend_event(candidate)
+            _time_gate("demote_distant_weekend_event", lambda: _demote_distant_weekend_event(candidate))
         if candidate.get("include"):
-            _exclude_undated_event_like_candidate(candidate)
+            _time_gate("undated_event_like_candidate", lambda: _exclude_undated_event_like_candidate(candidate))
         if candidate.get("include"):
-            _exclude_under_specified_event(candidate)
+            _time_gate("under_specified_event", lambda: _exclude_under_specified_event(candidate))
         if candidate.get("include"):
-            _exclude_sold_out_event(candidate)
-        completeness = event_schema_completeness(candidate)
+            _time_gate("sold_out_event_final", lambda: _exclude_sold_out_event(candidate))
+        completeness = _time_gate("event_schema_completeness", lambda: event_schema_completeness(candidate))
         if completeness.get("applies"):
             candidate["event_schema_completeness"] = completeness
             # Only required fields (date_start, venue) hold an event. Missing
@@ -2386,11 +2404,11 @@ def validate_candidates(project_root: Path) -> StageResult:
         if manual == "force_include":
             candidate["include"] = True
             candidate["editorial_status"] = "approved"
-        attach_editorial_contract(candidate)
-        _apply_why_now_gate(candidate, manual_override=manual)
-        attach_reader_action(candidate)
-        attach_editorial_contract(candidate)
-        apply_story_intelligence(candidate)
+        _time_gate("editorial_contract_after_gates", lambda: attach_editorial_contract(candidate))
+        _time_gate("why_now_gate", lambda: _apply_why_now_gate(candidate, manual_override=manual))
+        _time_gate("reader_action", lambda: attach_reader_action(candidate))
+        _time_gate("editorial_contract_final", lambda: attach_editorial_contract(candidate))
+        _time_gate("story_intelligence_final", lambda: apply_story_intelligence(candidate))
         if candidate.get("event_page_type") in {"homepage", "aggregator"}:
             validation_errors.append("Event candidate must use an official event page.")
 
@@ -2402,8 +2420,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             note = "Validator: source is in trial mode, so candidate is measured but not published."
             candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
 
-        attach_reader_value(candidate)
-        attach_scoring_trace(candidate)
+        _time_gate("reader_value", lambda: attach_reader_value(candidate))
+        _time_gate("scoring_trace", lambda: attach_scoring_trace(candidate))
 
         candidate["validation_errors"] = validation_errors
         candidate["validated"] = not validation_errors
@@ -2436,17 +2454,29 @@ def validate_candidates(project_root: Path) -> StageResult:
         if candidate.get("include") and validation_errors:
             errors.append(f"Candidate #{index} failed validation.")
 
+    _mark_timing("validation_loop_seconds", validation_loop_t0)
+    practical_t0 = time.monotonic()
     practical_backfill = apply_practical_backfill(candidates)
+    _mark_timing("practical_backfill_seconds", practical_t0)
     if practical_backfill:
+        refresh_t0 = time.monotonic()
         for candidate in candidates:
             if isinstance(candidate, dict):
                 attach_reader_action(candidate)
                 attach_editorial_contract(candidate)
+        _mark_timing("post_backfill_contract_refresh_seconds", refresh_t0)
+    city_t0 = time.monotonic()
     city_intelligence = annotate_city_intelligence(candidates)
+    _mark_timing("city_intelligence_seconds", city_t0)
     payload["run_at_london"] = now_london().isoformat()
     payload["run_date_london"] = today_london()
     pipeline_run_id = pipeline_run_id_from(payload)
+    write_t0 = time.monotonic()
     write_json(candidates_path, payload)
+    _mark_timing("write_candidates_seconds", write_t0)
+    total_seconds = round(time.monotonic() - stage_started, 3)
+    timings["validation_gates"] = dict(sorted(gate_timings.items(), key=lambda item: item[0]))
+    timings["total_seconds"] = total_seconds
     write_json(
         report_path,
         {
@@ -2459,7 +2489,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             "practical_backfill": practical_backfill,
             "trial_candidates": sum(1 for c in candidates if isinstance(c, dict) and c.get("source_trial")),
             "items": items,
-            "duration_seconds": round(time.monotonic() - stage_started, 3),
+            "timings": timings,
+            "duration_seconds": total_seconds,
         },
     )
 

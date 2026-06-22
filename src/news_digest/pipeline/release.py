@@ -3573,6 +3573,13 @@ def build_release(project_root: Path) -> ReleaseResult:
         "lost_leads": lost_leads,
         "section_underflow": section_underflow,
         "cost_summary": cost_summary,
+        "llm_rewrite_diagnostics": {
+            "diagnostics_summary": (llm_rewrite_report or {}).get("diagnostics_summary") if isinstance(llm_rewrite_report, dict) else {},
+            "token_budget_history": (llm_rewrite_report or {}).get("token_budget_history") if isinstance(llm_rewrite_report, dict) else {},
+            "batching_strategy": (llm_rewrite_report or {}).get("batching_strategy") if isinstance(llm_rewrite_report, dict) else {},
+            "concurrency_policy": (llm_rewrite_report or {}).get("concurrency_policy") if isinstance(llm_rewrite_report, dict) else {},
+            "batch_api_policy": (llm_rewrite_report or {}).get("batch_api_policy") if isinstance(llm_rewrite_report, dict) else {},
+        },
         "cost_latency_budget": cost_latency_budget,
         "model_bakeoff": model_bakeoff,
         "change_type_summary": change_type_summary,

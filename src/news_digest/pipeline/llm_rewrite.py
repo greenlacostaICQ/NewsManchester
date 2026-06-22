@@ -23,6 +23,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 import logging
+import math
 import os
 import random
 import re
@@ -95,6 +96,15 @@ REWRITE_TRANSLATION_BOARD_MAX = 42
 TRANSLATION_MEMORY_VERSION = 1
 TRANSLATION_MEMORY_MAX_ENTRIES = 2500
 TRANSLATION_MEMORY_TTL_DAYS = 45
+ENGLISH_CARD_MEMORY_VERSION = 1
+ENGLISH_CARD_MEMORY_MAX_ENTRIES = 2500
+ENGLISH_CARD_MEMORY_TTL_DAYS = 45
+TOKEN_BUDGET_HISTORY_VERSION = 1
+TOKEN_BUDGET_MIN_SAMPLES = 3
+TOKEN_BUDGET_MARGIN = 1.35
+TOKEN_BUDGET_RESPONSE_BUFFER = 256
+TOKEN_HISTORY_MAX_SAMPLES = 240
+_ACTIVE_TOKEN_BUDGET_HISTORY: dict[str, object] = {}
 _REWRITE_BLOCK_FLOOR = 3
 _REWRITE_BLOCK_FLOORS: dict[str, int] = {
     "last_24h": 7,
@@ -531,6 +541,258 @@ def _estimate_request_tokens(messages: list, max_tokens: int) -> int:
     Deliberately on the high side so we stay under the ceiling."""
     chars = sum(len(str(m.get("content") or "")) for m in messages)
     return chars // 4 + int(max_tokens)
+
+
+def _env_int(name: str, default: int, *, minimum: int = 1, maximum: int = 100000) -> int:
+    try:
+        value = int(os.environ.get(name, str(default)) or default)
+    except (TypeError, ValueError):
+        value = default
+    return max(minimum, min(maximum, value))
+
+
+def _json_token_estimate(value: object) -> int:
+    text = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    return max(1, len(text) // 4)
+
+
+def _percentile(values: list[float], p: float) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(float(v) for v in values)
+    if len(ordered) == 1:
+        return ordered[0]
+    rank = (len(ordered) - 1) * max(0.0, min(1.0, p))
+    lo = int(math.floor(rank))
+    hi = int(math.ceil(rank))
+    if lo == hi:
+        return ordered[lo]
+    weight = rank - lo
+    return ordered[lo] * (1 - weight) + ordered[hi] * weight
+
+
+def _safe_float(value: object) -> float:
+    try:
+        return float(value or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _token_budget_history_path(project_root: Path) -> Path:
+    return project_root / "data" / "state" / "llm_token_budget_history.json"
+
+
+def _load_token_budget_history(project_root: Path) -> dict:
+    path = _token_budget_history_path(project_root)
+    if not path.exists():
+        return {"schema_version": TOKEN_BUDGET_HISTORY_VERSION, "entries": {}}
+    payload = read_json(path, {"schema_version": TOKEN_BUDGET_HISTORY_VERSION, "entries": {}})
+    if not isinstance(payload, dict):
+        return {"schema_version": TOKEN_BUDGET_HISTORY_VERSION, "entries": {}}
+    if not isinstance(payload.get("entries"), dict):
+        payload["entries"] = {}
+    payload["schema_version"] = TOKEN_BUDGET_HISTORY_VERSION
+    return payload
+
+
+def _token_budget_key(prompt_name: str, model: str) -> str:
+    return f"{prompt_name or 'unknown'}::{model or 'unknown'}"
+
+
+def _max_tokens_for_batch(prompt_name: str, model: str, batch_len: int, default_max_tokens: int) -> tuple[int, str]:
+    entries = _ACTIVE_TOKEN_BUDGET_HISTORY.get("entries") if isinstance(_ACTIVE_TOKEN_BUDGET_HISTORY, dict) else {}
+    entry = entries.get(_token_budget_key(prompt_name, model)) if isinstance(entries, dict) else None
+    if not isinstance(entry, dict):
+        return default_max_tokens, "default_formula"
+    samples = int(entry.get("sample_count") or 0)
+    truncated = int(entry.get("truncated_responses") or 0)
+    p95_per_item = _safe_float(entry.get("p95_completion_tokens_per_item"))
+    if samples < TOKEN_BUDGET_MIN_SAMPLES or truncated or p95_per_item <= 0:
+        return default_max_tokens, "history_warmup"
+    recommended = int(math.ceil(p95_per_item * max(1, batch_len) * TOKEN_BUDGET_MARGIN + TOKEN_BUDGET_RESPONSE_BUFFER))
+    # Do not make the first measured tightening too aggressive. One bad day
+    # should not collapse a batch into truncation; acceptance requires zero
+    # length-finish responses before future runs keep tightening.
+    bounded = max(512, min(default_max_tokens, recommended))
+    return bounded, "history_p95"
+
+
+def _response_token_diagnostics(response: object, *, max_tokens: int, batch_len: int) -> dict[str, object]:
+    usage = getattr(response, "usage", None)
+    prompt_tokens = int(getattr(usage, "prompt_tokens", 0) or 0) if usage else 0
+    completion_tokens = int(getattr(usage, "completion_tokens", 0) or 0) if usage else 0
+    total_tokens = int(getattr(usage, "total_tokens", 0) or 0) if usage else prompt_tokens + completion_tokens
+    finish_reasons: list[str] = []
+    for choice in getattr(response, "choices", []) or []:
+        reason = str(getattr(choice, "finish_reason", "") or "").strip()
+        if reason:
+            finish_reasons.append(reason)
+    return {
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "total_tokens": total_tokens,
+        "completion_tokens_per_item": round(completion_tokens / max(1, batch_len), 3) if completion_tokens else 0,
+        "max_tokens": int(max_tokens),
+        "finish_reasons": finish_reasons,
+        "truncated": any(reason == "length" for reason in finish_reasons),
+    }
+
+
+def _token_aware_batches(
+    candidates: list[dict],
+    *,
+    batch_size: int,
+    system_prompt: str,
+    item_builder: Callable[[list[dict]], list[dict]],
+    today_date: str = "",
+    max_items_env: str = "LLM_REWRITE_MAX_BATCH_ITEMS",
+    token_budget_env: str = "LLM_REWRITE_BATCH_TOKEN_BUDGET",
+    default_token_budget: int = 6200,
+) -> list[list[dict]]:
+    """Pack candidates by estimated input tokens, not by raw item count."""
+    if not candidates:
+        return []
+    max_items = min(
+        max(1, batch_size),
+        _env_int(max_items_env, min(8, max(1, batch_size)), minimum=1, maximum=max(1, batch_size)),
+    )
+    token_budget = _env_int(token_budget_env, default_token_budget, minimum=1200, maximum=30000)
+    prompt_overhead = max(1, len(system_prompt) // 4) + 300
+    if today_date:
+        prompt_overhead += 20
+    batches: list[list[dict]] = []
+    current: list[dict] = []
+    current_tokens = prompt_overhead
+    for candidate in candidates:
+        item_tokens = _json_token_estimate(item_builder([candidate]))
+        candidate["rewrite_estimated_item_tokens"] = item_tokens
+        too_many_items = len(current) >= max_items
+        too_many_tokens = current and current_tokens + item_tokens > token_budget
+        if too_many_items or too_many_tokens:
+            batches.append(current)
+            current = []
+            current_tokens = prompt_overhead
+        current.append(candidate)
+        current_tokens += item_tokens
+    if current:
+        batches.append(current)
+    return batches
+
+
+def _summarise_provider_batch_diagnostics(diagnostics: list[dict]) -> dict:
+    if not diagnostics:
+        return {
+            "batch_count": 0,
+            "sent": 0,
+            "accepted": 0,
+            "truncated_responses": 0,
+            "timeout_errors": 0,
+        }
+
+    def _duration_stats(key: str, rows: list[dict]) -> dict[str, float]:
+        values = [_safe_float(row.get(key)) for row in rows if _safe_float(row.get(key)) > 0]
+        return {
+            "total": round(sum(values), 3),
+            "p50": round(_percentile(values, 0.50), 3),
+            "p95": round(_percentile(values, 0.95), 3),
+            "max": round(max(values) if values else 0.0, 3),
+        }
+
+    def _aggregate(rows: list[dict]) -> dict:
+        sent = sum(int(row.get("sent") or 0) for row in rows)
+        accepted = sum(int(row.get("accepted") or 0) for row in rows)
+        returned = sum(int(row.get("returned_items") or 0) for row in rows)
+        completion_per_item = [
+            _safe_float(row.get("completion_tokens_per_item"))
+            for row in rows
+            if _safe_float(row.get("completion_tokens_per_item")) > 0
+        ]
+        max_tokens = [int(row.get("max_tokens") or 0) for row in rows if int(row.get("max_tokens") or 0) > 0]
+        return {
+            "batch_count": len(rows),
+            "sent": sent,
+            "returned_items": returned,
+            "accepted": accepted,
+            "accepted_rate": round(accepted / sent, 3) if sent else 0,
+            "errors": sum(1 for row in rows if row.get("error")),
+            "timeout_errors": sum(1 for row in rows if "timeout" in str(row.get("error") or "").lower()),
+            "truncated_responses": sum(1 for row in rows if row.get("truncated")),
+            "queue_wait_seconds": _duration_stats("queue_wait_seconds", rows),
+            "api_seconds": _duration_stats("api_seconds", rows),
+            "duration_seconds": _duration_stats("duration_seconds", rows),
+            "completion_tokens_per_item": {
+                "p50": round(_percentile(completion_per_item, 0.50), 3),
+                "p95": round(_percentile(completion_per_item, 0.95), 3),
+                "max": round(max(completion_per_item) if completion_per_item else 0.0, 3),
+            },
+            "max_tokens": {
+                "p50": round(_percentile([float(v) for v in max_tokens], 0.50), 1),
+                "p95": round(_percentile([float(v) for v in max_tokens], 0.95), 1),
+                "max": max(max_tokens) if max_tokens else 0,
+            },
+        }
+
+    by_prompt: dict[str, dict] = {}
+    for prompt_name in sorted({str(row.get("prompt_name") or "unknown") for row in diagnostics}):
+        by_prompt[prompt_name] = _aggregate([row for row in diagnostics if str(row.get("prompt_name") or "unknown") == prompt_name])
+    by_provider: dict[str, dict] = {}
+    for provider in sorted({str(row.get("provider") or "unknown") for row in diagnostics}):
+        by_provider[provider] = _aggregate([row for row in diagnostics if str(row.get("provider") or "unknown") == provider])
+    summary = _aggregate(diagnostics)
+    summary["by_prompt"] = by_prompt
+    summary["by_provider"] = by_provider
+    return summary
+
+
+def _update_token_budget_history(project_root: Path, diagnostics: list[dict]) -> dict:
+    history = _load_token_budget_history(project_root)
+    entries = history.setdefault("entries", {})
+    if not isinstance(entries, dict):
+        history["entries"] = {}
+        entries = history["entries"]
+    updated_keys: set[str] = set()
+    for row in diagnostics:
+        if row.get("error"):
+            continue
+        sent = int(row.get("sent") or 0)
+        completion_tokens = int(row.get("completion_tokens") or 0)
+        if sent <= 0 or completion_tokens <= 0:
+            continue
+        key = _token_budget_key(str(row.get("prompt_name") or "unknown"), str(row.get("model") or "unknown"))
+        entry = entries.setdefault(key, {"samples_completion_tokens_per_item": []})
+        samples = entry.setdefault("samples_completion_tokens_per_item", [])
+        if not isinstance(samples, list):
+            samples = []
+            entry["samples_completion_tokens_per_item"] = samples
+        truncated_samples = entry.setdefault("samples_truncated", [])
+        if not isinstance(truncated_samples, list):
+            truncated_samples = []
+            entry["samples_truncated"] = truncated_samples
+        samples.append(round(completion_tokens / sent, 3))
+        truncated_samples.append(1 if row.get("truncated") else 0)
+        if len(samples) > TOKEN_HISTORY_MAX_SAMPLES:
+            del samples[:-TOKEN_HISTORY_MAX_SAMPLES]
+        if len(truncated_samples) > TOKEN_HISTORY_MAX_SAMPLES:
+            del truncated_samples[:-TOKEN_HISTORY_MAX_SAMPLES]
+        entry["prompt_name"] = str(row.get("prompt_name") or "unknown")
+        entry["model"] = str(row.get("model") or "unknown")
+        entry["sample_count"] = len(samples)
+        entry["p50_completion_tokens_per_item"] = round(_percentile([float(v) for v in samples], 0.50), 3)
+        entry["p95_completion_tokens_per_item"] = round(_percentile([float(v) for v in samples], 0.95), 3)
+        entry["max_completion_tokens_per_item"] = round(max(float(v) for v in samples), 3)
+        entry["truncated_responses"] = sum(int(v or 0) for v in truncated_samples)
+        entry["last_seen_london"] = now_london().isoformat()
+        updated_keys.add(key)
+    history["schema_version"] = TOKEN_BUDGET_HISTORY_VERSION
+    history["updated_at_london"] = now_london().isoformat()
+    write_json(_token_budget_history_path(project_root), history)
+    return {
+        "path": str(_token_budget_history_path(project_root).relative_to(project_root)),
+        "updated_prompts": len(updated_keys),
+        "entries": len(entries),
+        "min_samples_before_tightening": TOKEN_BUDGET_MIN_SAMPLES,
+        "margin": TOKEN_BUDGET_MARGIN,
+    }
 
 
 def _jittered_sleep(base: float) -> None:
@@ -1343,6 +1605,8 @@ def _call_english_card_provider_batch(
     batch_size: int = 8,
     diagnostics: list[dict] | None = None,
 ) -> EnglishCardMapping:
+    if not candidates:
+        return {}
     if not api_key:
         logger.warning("%s: API key not set, skipping English cards.", provider_name)
         return {}
@@ -1359,8 +1623,22 @@ def _call_english_card_provider_batch(
         max_retries=0 if provider_name.lower().startswith("openai") else sdk_retries_for_route(provider=provider_name, model=model, base_url=base_url),
     )
     mapping: EnglishCardMapping = {}
-    batches = [candidates[i: i + batch_size] for i in range(0, len(candidates), batch_size)]
-    logger.info("%s English cards: %d candidates → %d batch(es) of ≤%d.", provider_name, len(candidates), len(batches), batch_size)
+    batches = _token_aware_batches(
+        candidates,
+        batch_size=batch_size,
+        system_prompt=ENGLISH_CARD_SYSTEM,
+        item_builder=_english_card_batch_items,
+        max_items_env="LLM_ENGLISH_CARD_MAX_BATCH_ITEMS",
+        token_budget_env="LLM_ENGLISH_CARD_BATCH_TOKEN_BUDGET",
+        default_token_budget=5400,
+    )
+    logger.info(
+        "%s English cards: %d candidates → %d token-aware batch(es), max_items≤%d.",
+        provider_name,
+        len(candidates),
+        len(batches),
+        batch_size,
+    )
 
     def _send_once(batch: list[dict], batch_idx: int, attempt: str) -> EnglishCardMapping:
         user_payload = {"today_date": today_london(), "candidates": _english_card_batch_items(batch)}
@@ -1373,11 +1651,13 @@ def _call_english_card_provider_batch(
         queue_wait_seconds = 0.0
         api_seconds = 0.0
         try:
-            max_tokens = min(8192, 420 * len(batch) + 1400)
+            default_max_tokens = min(8192, 420 * len(batch) + 1400)
+            max_tokens, max_tokens_source = _max_tokens_for_batch("english_cards", model, len(batch), default_max_tokens)
             with _API_SEMAPHORE:
                 queue_t0 = time.monotonic()
                 _API_RATE_LIMITER.acquire()
-                _API_TOKEN_LIMITER.acquire(_estimate_request_tokens(messages, max_tokens))
+                estimated_request_tokens = _estimate_request_tokens(messages, max_tokens)
+                _API_TOKEN_LIMITER.acquire(estimated_request_tokens)
                 queue_wait_seconds = time.monotonic() - queue_t0
                 api_t0 = time.monotonic()
                 response = client.chat.completions.create(
@@ -1406,6 +1686,9 @@ def _call_english_card_provider_batch(
             diagnostic["duration_seconds"] = round(time.monotonic() - t0, 3)
             diagnostic["queue_wait_seconds"] = round(queue_wait_seconds, 3)
             diagnostic["api_seconds"] = round(api_seconds, 3)
+            diagnostic["estimated_request_tokens"] = estimated_request_tokens
+            diagnostic["max_tokens_source"] = max_tokens_source
+            diagnostic.update(_response_token_diagnostics(response, max_tokens=max_tokens, batch_len=len(batch)))
             if diagnostics is not None:
                 diagnostics.append(diagnostic)
             return batch_mapping
@@ -1429,6 +1712,10 @@ def _call_english_card_provider_batch(
                         "duration_seconds": round(time.monotonic() - t0, 3),
                         "queue_wait_seconds": round(queue_wait_seconds, 3),
                         "api_seconds": round(api_seconds, 3),
+                        "max_tokens": max_tokens if "max_tokens" in locals() else 0,
+                        "max_tokens_source": max_tokens_source if "max_tokens_source" in locals() else "",
+                        "estimated_request_tokens": estimated_request_tokens if "estimated_request_tokens" in locals() else 0,
+                        "truncated": False,
                     }
                 )
             return {}
@@ -1803,6 +2090,10 @@ def _translation_memory_path(project_root: Path) -> Path:
     return project_root / "data" / "state" / "translation_memory.json"
 
 
+def _english_card_memory_path(project_root: Path) -> Path:
+    return project_root / "data" / "state" / "english_card_memory.json"
+
+
 def _translation_glossary_path(project_root: Path) -> Path:
     return project_root / "data" / "translation_glossary.json"
 
@@ -1862,6 +2153,26 @@ def _memory_text_digest(value: object, *, limit: int = 1800) -> str:
     return text[:limit]
 
 
+def _candidate_content_hash(candidate: dict) -> str:
+    """Fact hash for reusable model work across repeated event/listing pages."""
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    payload = {
+        "category": str(candidate.get("category") or ""),
+        "primary_block": str(candidate.get("primary_block") or ""),
+        "title": _memory_text_digest(candidate.get("title"), limit=700),
+        "summary": _memory_text_digest(candidate.get("summary"), limit=900),
+        "lead": _memory_text_digest(candidate.get("lead"), limit=900),
+        "evidence_text": _memory_text_digest(candidate.get("source_evidence") or candidate.get("evidence_text"), limit=3200),
+        "published_at": str(candidate.get("published_at") or ""),
+        "event_name": str(event.get("name") or candidate.get("event_name") or ""),
+        "event_date": str(event.get("date_start") or event.get("date") or candidate.get("event_date") or ""),
+        "event_venue": str(event.get("venue") or candidate.get("venue") or ""),
+        "rewrite_packet": _rewrite_packet(candidate),
+    }
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
 def _translation_memory_signature(candidate: dict) -> str:
     """Stable signature for "same facts, safe to reuse Russian".
 
@@ -1872,7 +2183,7 @@ def _translation_memory_signature(candidate: dict) -> str:
     """
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     signature_payload = {
-        "fingerprint": str(candidate.get("fingerprint") or ""),
+        "content_hash": _candidate_content_hash(candidate),
         "category": str(candidate.get("category") or ""),
         "primary_block": str(candidate.get("primary_block") or ""),
         "title": _memory_text_digest(candidate.get("title"), limit=700),
@@ -1887,6 +2198,113 @@ def _translation_memory_signature(candidate: dict) -> str:
     }
     raw = json.dumps(signature_payload, ensure_ascii=False, sort_keys=True)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _load_english_card_memory(project_root: Path) -> dict:
+    path = _english_card_memory_path(project_root)
+    if not path.exists():
+        return {"schema_version": ENGLISH_CARD_MEMORY_VERSION, "entries": {}}
+    payload = read_json(path, {"schema_version": ENGLISH_CARD_MEMORY_VERSION, "entries": {}})
+    if not isinstance(payload, dict):
+        return {"schema_version": ENGLISH_CARD_MEMORY_VERSION, "entries": {}}
+    if not isinstance(payload.get("entries"), dict):
+        payload["entries"] = {}
+    payload["schema_version"] = ENGLISH_CARD_MEMORY_VERSION
+    return payload
+
+
+def _prune_english_card_memory(memory: dict) -> dict:
+    entries = memory.get("entries")
+    if not isinstance(entries, dict):
+        memory["entries"] = {}
+        return memory
+    today = date.fromisoformat(today_london())
+    kept: dict[str, dict] = {}
+    for key, entry in entries.items():
+        if not isinstance(entry, dict):
+            continue
+        last_seen_raw = str(entry.get("last_seen_london") or entry.get("updated_at_london") or "")[:10]
+        try:
+            age_days = (today - date.fromisoformat(last_seen_raw)).days
+        except ValueError:
+            age_days = ENGLISH_CARD_MEMORY_TTL_DAYS + 1
+        if age_days <= ENGLISH_CARD_MEMORY_TTL_DAYS:
+            kept[str(key)] = entry
+    if len(kept) > ENGLISH_CARD_MEMORY_MAX_ENTRIES:
+        rows = sorted(
+            kept.items(),
+            key=lambda item: str(item[1].get("last_seen_london") or item[1].get("updated_at_london") or ""),
+            reverse=True,
+        )
+        kept = dict(rows[:ENGLISH_CARD_MEMORY_MAX_ENTRIES])
+    memory["entries"] = kept
+    return memory
+
+
+def _apply_english_card_memory(candidates: list[dict], memory: dict) -> list[dict]:
+    entries = memory.get("entries") if isinstance(memory.get("entries"), dict) else {}
+    reused: list[dict] = []
+    now_iso = now_london().isoformat()
+    for candidate in candidates:
+        if str(candidate.get("english_reader_card") or "").strip():
+            continue
+        content_hash = _candidate_content_hash(candidate)
+        entry = entries.get(f"content:{content_hash}")
+        if not isinstance(entry, dict) or str(entry.get("content_hash") or "") != content_hash:
+            continue
+        reader_card = str(entry.get("english_reader_card") or "").strip()
+        if len(reader_card) < 20:
+            continue
+        candidate["english_rubric"] = str(entry.get("english_rubric") or "other")
+        candidate["english_reader_card"] = reader_card
+        candidate["english_fact_card"] = entry.get("english_fact_card") if isinstance(entry.get("english_fact_card"), dict) else {}
+        candidate["english_card_provider"] = "english_card_memory"
+        candidate["english_card_model"] = str(entry.get("model") or "")
+        candidate["english_card_written_at"] = now_iso
+        candidate["english_card_memory_hit"] = True
+        entry["last_seen_london"] = today_london()
+        entry["reuse_count"] = int(entry.get("reuse_count") or 0) + 1
+        reused.append(
+            {
+                "fingerprint": candidate.get("fingerprint"),
+                "title": candidate.get("title"),
+                "primary_block": candidate.get("primary_block"),
+                "category": candidate.get("category"),
+                "model": entry.get("model"),
+            }
+        )
+    return reused
+
+
+def _update_english_card_memory(candidates: list[dict], memory: dict) -> int:
+    entries = memory.setdefault("entries", {})
+    if not isinstance(entries, dict):
+        memory["entries"] = {}
+        entries = memory["entries"]
+    updated = 0
+    now_iso = now_london().isoformat()
+    for candidate in candidates:
+        reader_card = str(candidate.get("english_reader_card") or "").strip()
+        if len(reader_card) < 20 or str(candidate.get("category") or "") == "weather":
+            continue
+        content_hash = _candidate_content_hash(candidate)
+        key = f"content:{content_hash}"
+        entries[key] = {
+            "content_hash": content_hash,
+            "fingerprint": str(candidate.get("fingerprint") or ""),
+            "title": str(candidate.get("title") or ""),
+            "english_rubric": str(candidate.get("english_rubric") or "other"),
+            "english_reader_card": reader_card,
+            "english_fact_card": candidate.get("english_fact_card") if isinstance(candidate.get("english_fact_card"), dict) else {},
+            "provider": str(candidate.get("english_card_provider") or ""),
+            "model": str(candidate.get("english_card_model") or ""),
+            "updated_at_london": now_iso,
+            "last_seen_london": today_london(),
+            "reuse_count": int((entries.get(key) or {}).get("reuse_count") or 0),
+        }
+        updated += 1
+    _prune_english_card_memory(memory)
+    return updated
 
 
 def _load_translation_memory(project_root: Path) -> dict:
@@ -1939,11 +2357,20 @@ def _apply_translation_memory(candidates: list[dict], memory: dict) -> list[dict
         fp = str(candidate.get("fingerprint") or "").strip()
         if not fp or str(candidate.get("draft_line") or "").strip():
             continue
-        entry = entries.get(fp)
-        if not isinstance(entry, dict):
-            continue
+        content_hash = _candidate_content_hash(candidate)
         signature = _translation_memory_signature(candidate)
-        if signature != str(entry.get("signature") or ""):
+        candidates_entries = []
+        fp_entry = entries.get(fp)
+        content_entry = entries.get(f"content:{content_hash}")
+        if isinstance(fp_entry, dict):
+            candidates_entries.append(fp_entry)
+        if isinstance(content_entry, dict) and content_entry is not fp_entry:
+            candidates_entries.append(content_entry)
+        entry = next(
+            (item for item in candidates_entries if signature == str(item.get("signature") or "")),
+            None,
+        )
+        if not isinstance(entry, dict):
             continue
         draft_line = str(entry.get("draft_line") or "").strip()
         if not draft_line.startswith("• "):
@@ -1959,6 +2386,7 @@ def _apply_translation_memory(candidates: list[dict], memory: dict) -> list[dict
         reused.append(
             {
                 "fingerprint": fp,
+                "content_hash": content_hash[:12],
                 "title": candidate.get("title"),
                 "primary_block": candidate.get("primary_block"),
                 "category": candidate.get("category"),
@@ -1985,8 +2413,11 @@ def _update_translation_memory(candidates: list[dict], memory: dict) -> int:
         provider = str(candidate.get("draft_line_provider") or "")
         if provider in {"writer_deterministic_pending"}:
             continue
-        entries[fp] = {
+        content_hash = _candidate_content_hash(candidate)
+        entry_payload = {
             "signature": _translation_memory_signature(candidate),
+            "content_hash": content_hash,
+            "fingerprint": fp,
             "draft_line": draft_line,
             "english_reader_card": str(candidate.get("english_reader_card") or ""),
             "source_label": str(candidate.get("source_label") or ""),
@@ -1998,6 +2429,10 @@ def _update_translation_memory(candidates: list[dict], memory: dict) -> int:
             "last_seen_london": today_london(),
             "reuse_count": int((entries.get(fp) or {}).get("reuse_count") or 0),
         }
+        entries[fp] = dict(entry_payload)
+        content_key = f"content:{content_hash}"
+        content_reuse = int((entries.get(content_key) or {}).get("reuse_count") or 0)
+        entries[content_key] = dict(entry_payload, reuse_count=content_reuse)
         updated += 1
     _prune_translation_memory(memory)
     return updated
@@ -2134,6 +2569,8 @@ def _call_provider_batch(
     ``prompt_tokens_details.cached_tokens``). Only date-aware prompts
     pass a non-empty value.
     """
+    if not candidates:
+        return {}
     if not api_key:
         logger.warning("%s: API key not set, skipping.", provider_name)
         return {}
@@ -2162,8 +2599,20 @@ def _call_provider_batch(
     )
     mapping: ProviderMapping = {}
 
-    batches = [candidates[i: i + batch_size] for i in range(0, len(candidates), batch_size)]
-    logger.info("%s: %d candidates → %d batch(es) of ≤%d.", provider_name, len(candidates), len(batches), batch_size)
+    batches = _token_aware_batches(
+        candidates,
+        batch_size=batch_size,
+        system_prompt=system_prompt,
+        today_date=today_date,
+        item_builder=item_builder if item_builder is not None else _rewrite_batch_items,
+    )
+    logger.info(
+        "%s: %d candidates → %d token-aware batch(es), max_items≤%d.",
+        provider_name,
+        len(candidates),
+        len(batches),
+        batch_size,
+    )
 
     def _send_once(batch: list[dict], batch_idx: int, attempt: str) -> ProviderMapping:
         batch_items = item_builder(batch) if item_builder is not None else _rewrite_batch_items(batch)
@@ -2197,14 +2646,16 @@ def _call_provider_batch(
             # 8192 for a handful of short cards wasted ~3/4 of the budget and
             # tripped the TPM 429 storm. ~512 tokens/card + buffer is ample for
             # 350-450 char Russian cards without risking truncation.
-            max_tokens = min(8192, 512 * len(batch) + 1024)
+            default_max_tokens = min(8192, 512 * len(batch) + 1024)
+            max_tokens, max_tokens_source = _max_tokens_for_batch(prompt_name, model, len(batch), default_max_tokens)
             # Three-stage throttle: semaphore caps concurrency, the rate limiter
             # paces *when* calls start, and the token limiter keeps tokens-per-
             # minute under OpenAI's real ceiling (the actual cause of the 429s).
             with _API_SEMAPHORE:
                 _queue_t0 = time.monotonic()
                 _API_RATE_LIMITER.acquire()
-                _API_TOKEN_LIMITER.acquire(_estimate_request_tokens(messages, max_tokens))
+                estimated_request_tokens = _estimate_request_tokens(messages, max_tokens)
+                _API_TOKEN_LIMITER.acquire(estimated_request_tokens)
                 _queue_wait_seconds = time.monotonic() - _queue_t0
                 _api_t0 = time.monotonic()
                 response = client.chat.completions.create(
@@ -2241,6 +2692,9 @@ def _call_provider_batch(
             batch_diagnostic["duration_seconds"] = round(time.monotonic() - _t0, 3)
             batch_diagnostic["queue_wait_seconds"] = round(_queue_wait_seconds, 3)
             batch_diagnostic["api_seconds"] = round(_api_seconds, 3)
+            batch_diagnostic["estimated_request_tokens"] = estimated_request_tokens
+            batch_diagnostic["max_tokens_source"] = max_tokens_source
+            batch_diagnostic.update(_response_token_diagnostics(response, max_tokens=max_tokens, batch_len=len(batch)))
             if diagnostics is not None:
                 diagnostics.append(batch_diagnostic)
             logger.info(
@@ -2282,6 +2736,10 @@ def _call_provider_batch(
                         "duration_seconds": round(time.monotonic() - _t0, 3),
                         "queue_wait_seconds": round(_queue_wait_seconds, 3),
                         "api_seconds": round(_api_seconds, 3),
+                        "max_tokens": max_tokens if "max_tokens" in locals() else 0,
+                        "max_tokens_source": max_tokens_source if "max_tokens_source" in locals() else "",
+                        "estimated_request_tokens": estimated_request_tokens if "estimated_request_tokens" in locals() else 0,
+                        "truncated": False,
                     }
                 )
             return {}
@@ -2545,8 +3003,9 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     report_path = project_root / "data" / "state" / "llm_rewrite_report.json"
     candidates_path = project_root / "data" / "state" / "candidates.json"
     _stage_t0 = time.monotonic()  # #10: total wall-clock of the rewrite stage
-    global _ACTIVE_TRANSLATION_GLOSSARY
+    global _ACTIVE_TRANSLATION_GLOSSARY, _ACTIVE_TOKEN_BUDGET_HISTORY
     _ACTIVE_TRANSLATION_GLOSSARY = _load_translation_glossary(project_root)
+    _ACTIVE_TOKEN_BUDGET_HISTORY = _load_token_budget_history(project_root)
 
     def _prompt_versions() -> list[dict[str, str]]:
         from news_digest.pipeline.prompts_meta import snapshot as prompts_snapshot  # noqa: PLC0415
@@ -2661,6 +3120,9 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     translation_memory_reused: list[dict] = []
     translation_memory_updated = 0
     translation_memory = _load_translation_memory(project_root)
+    english_card_memory_reused: list[dict] = []
+    english_card_memory_updated = 0
+    english_card_memory = _load_english_card_memory(project_root)
 
     if provider_override == "none":
         logger.info("LLM_PROVIDER=none — skipping rewrite.")
@@ -2714,17 +3176,23 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             rewrite_shortlist["held_for_backup"],
         )
 
+        english_card_memory_reused = _apply_english_card_memory(to_rewrite, english_card_memory)
+        english_card_request = [c for c in to_rewrite if not str(c.get("english_reader_card") or "").strip()]
         english_card_mapping = _call_english_cards_with_fallback(
-            to_rewrite,
+            english_card_request,
             provider_override,
             base_url_override,
             model_override,
             diagnostics=provider_batch_diagnostics,
         )
         english_cards_applied = _apply_english_cards_to_candidates(candidates, english_card_mapping, run_iso)
-        if english_cards_applied:
+        if english_cards_applied or english_card_memory_reused:
             candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-            logger.info("Board Judge: applied %d English reader cards before shortlist.", english_cards_applied)
+            logger.info(
+                "Board Judge: applied %d English reader cards before shortlist; reused %d from content cache.",
+                english_cards_applied,
+                len(english_card_memory_reused),
+            )
 
         logger.info(
             "LLM rewrite: %d/%d candidates selected for GPT rewrite; %d held in backup.",
@@ -3049,10 +3517,14 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         soft_warnings.append(
             f"Repair pass rejected {len(repair_rejections)} replacement(s) that still failed writer quality gate."
         )
+    english_card_memory_updated = _update_english_card_memory(candidates, english_card_memory)
+    write_json(_english_card_memory_path(project_root), english_card_memory)
     translation_memory_updated = _update_translation_memory(candidates, translation_memory)
     write_json(_translation_memory_path(project_root), translation_memory)
     rewrite_inventory = _build_rewrite_inventory(candidates)
     write_json(_rewrite_inventory_path(project_root), rewrite_inventory)
+    diagnostics_summary = _summarise_provider_batch_diagnostics(provider_batch_diagnostics)
+    token_budget_history_summary = _update_token_budget_history(project_root, provider_batch_diagnostics)
 
     from news_digest.pipeline.cost_tracker import dump_stage, snapshot, summarise  # noqa: PLC0415
     state_dir = project_root / "data" / "state"
@@ -3081,9 +3553,19 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "pre_board_input": original_rewrite_count if "original_rewrite_count" in locals() else len(to_rewrite),
                 "board_judge_input": len(to_rewrite),
                 "cards_applied": english_cards_applied,
+                "cards_reused_from_content_cache": len(english_card_memory_reused),
                 "selected_for_translation": len(to_rewrite),
                 "cards_missing_on_selected": sum(1 for c in to_rewrite if not str(c.get("english_reader_card") or "").strip()),
                 "policy": "Deterministic pre-board trims the broad scan before mini sees it; Board Judge and final translation are mini-first, with gpt-4o automatic fallback only for the single lead item.",
+            },
+            "english_card_memory": {
+                "enabled": True,
+                "schema_version": ENGLISH_CARD_MEMORY_VERSION,
+                "reused": len(english_card_memory_reused),
+                "updated": english_card_memory_updated,
+                "entries": len(english_card_memory.get("entries") or {}),
+                "examples": english_card_memory_reused[:20],
+                "policy": "Reuse English fact/reader cards by content hash only; changed facts, date, venue, or evidence force a fresh card.",
             },
             "translation_memory": {
                 "enabled": True,
@@ -3092,7 +3574,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "updated": translation_memory_updated,
                 "entries": len(translation_memory.get("entries") or {}),
                 "examples": translation_memory_reused[:20],
-                "policy": "Reuse Russian draft_line only when fingerprint and compact fact signature match; changed facts force fresh LLM rewrite.",
+                "policy": "Reuse Russian draft_line when compact fact signature matches; content-hash entries allow safe reuse across repeated event URLs/fingerprints.",
             },
             "translation_glossary": {
                 "enabled": bool(_ACTIVE_TRANSLATION_GLOSSARY),
@@ -3108,6 +3590,23 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "repaired": repaired,
             "rewrite_seconds": round(time.monotonic() - _stage_t0, 2),
             "cost_summary": cost_summary,
+            "diagnostics_summary": diagnostics_summary,
+            "token_budget_history": token_budget_history_summary,
+            "batching_strategy": {
+                "token_aware": True,
+                "english_card_token_budget": _env_int("LLM_ENGLISH_CARD_BATCH_TOKEN_BUDGET", 5400, minimum=1200, maximum=30000),
+                "rewrite_token_budget": _env_int("LLM_REWRITE_BATCH_TOKEN_BUDGET", 6200, minimum=1200, maximum=30000),
+                "short_card_target_batch": "6-8 items when token budget allows; heavy items split automatically.",
+            },
+            "concurrency_policy": {
+                "current_max_concurrency": _REWRITE_API_CONCURRENCY,
+                "policy": "Do not raise concurrency until token reservation p95 tightening is stable with truncated_responses=0.",
+            },
+            "batch_api_policy": {
+                "morning_digest": "disabled",
+                "nightly_use_only": True,
+                "reason": "Batch API is suited to overnight non-urgent work; the 08:00 digest requires online completion.",
+            },
             "prompt_versions": _prompt_versions(),
             "model_route": route_snapshot().get("rewrite", []),
             "english_card_route": route_snapshot().get("english_cards", []),

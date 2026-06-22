@@ -885,6 +885,43 @@ def _support_actions(
     return actions[:5]
 
 
+def _llm_speed_summary_lines(llm_report: dict) -> list[str]:
+    if not isinstance(llm_report, dict):
+        return []
+    summary = llm_report.get("diagnostics_summary") or {}
+    if not isinstance(summary, dict) or not summary.get("batch_count"):
+        return []
+    queue = summary.get("queue_wait_seconds") or {}
+    api = summary.get("api_seconds") or {}
+    completion = summary.get("completion_tokens_per_item") or {}
+    lines = [
+        (
+            "• LLM speed: "
+            f"batch {summary.get('batch_count', 0)}, "
+            f"accepted {summary.get('accepted', 0)}/{summary.get('sent', 0)}, "
+            f"queue p95 {float(queue.get('p95') or 0):.1f}s, "
+            f"API p95 {float(api.get('p95') or 0):.1f}s."
+        )
+    ]
+    truncated = int(summary.get("truncated_responses") or 0)
+    timeouts = int(summary.get("timeout_errors") or 0)
+    if completion or truncated or timeouts:
+        lines.append(
+            "• Token control: "
+            f"output p95/item {float(completion.get('p95') or 0):.1f}, "
+            f"truncated {truncated}, timeout errors {timeouts}."
+        )
+    english_memory = llm_report.get("english_card_memory") or {}
+    translation_memory = llm_report.get("translation_memory") or {}
+    if isinstance(english_memory, dict) or isinstance(translation_memory, dict):
+        lines.append(
+            "• Reuse: "
+            f"English cards {int((english_memory or {}).get('reused') or 0)}, "
+            f"Russian lines {int((translation_memory or {}).get('reused') or 0)}."
+        )
+    return lines
+
+
 def _build_product_support_text(report: dict, writer_report: dict) -> str:
     run_date = report.get("run_date_london") or ""
     health = report.get("digest_health") or {}
@@ -959,6 +996,12 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
         lines.append(f"• Текст написан, но слабый после ремонта: {weak_text}.")
     lines.append("Примечание: разбор «дубли / отклонено правилами» считается по всему собранному пулу (~сотни), а не по этому набору — детали в JSON (final_loss_check).")
     lines.append("")
+
+    speed_lines = _llm_speed_summary_lines(llm_rewrite)
+    if speed_lines:
+        lines.append("⏱️ Скорость генерации")
+        lines.extend(speed_lines)
+        lines.append("")
 
     issues = _support_top_issues(
         rendered=rendered,
@@ -1425,6 +1468,9 @@ def cmd_send_warnings() -> int:
     feedback_capture = report.get("feedback_capture") or {}
     synthetic_freshness = report.get("synthetic_freshness") or {}
     cost_summary = report.get("cost_summary") or {}
+    llm_report = read_json(PROJECT_ROOT / "data" / "state" / "llm_rewrite_report.json", {})
+    llm_report_payload = llm_report if isinstance(llm_report, dict) else {}
+    llm_speed_lines = _llm_speed_summary_lines(llm_report_payload)
     prompt_drift = report.get("prompt_drift") or []
     reject_review = report.get("reject_review") or {}
     published_review = report.get("published_review") or {}
@@ -1469,6 +1515,7 @@ def cmd_send_warnings() -> int:
         or int((synthetic_freshness or {}).get("stale_count") or 0) > 0
         or bool(prompt_drift)
         or bool((cost_summary or {}).get("unknown_priced_models") or [])
+        or bool(llm_speed_lines and int(((llm_report_payload.get("diagnostics_summary") or {}).get("truncated_responses") or 0)) > 0)
         or cross_day_blocked > 0
         or event_incomplete > 0
         or bad_leads > 0
@@ -1943,7 +1990,7 @@ def cmd_send_warnings() -> int:
         )
         lines.append("")
 
-    if cost_summary or prompt_drift or any(str(w).lower().startswith("llm rewrite was degraded") for w in (report.get("warnings") or [])):
+    if cost_summary or prompt_drift or llm_speed_lines or any(str(w).lower().startswith("llm rewrite was degraded") for w in (report.get("warnings") or [])):
         lines.append("🤖 ГЕНЕРАЦИЯ, ПРОМПТЫ И СТОИМОСТЬ")
         if any(str(w).lower().startswith("llm rewrite was degraded") for w in (report.get("warnings") or [])):
             lines.append("  • Генерация текста: аварийный режим — часть пунктов добрана запасной логикой.")
@@ -1955,6 +2002,9 @@ def cmd_send_warnings() -> int:
             unknown_models = cost_summary.get("unknown_priced_models") or []
             if unknown_models:
                 lines.append(f"  • Без цены в cost monitor: {', '.join(str(m) for m in unknown_models)}.")
+        if llm_speed_lines:
+            for speed_line in llm_speed_lines:
+                lines.append(f"  {speed_line}")
         if prompt_drift:
             lines.append(f"  • Изменения промптов: {len(prompt_drift)} промпт(ов) поменялись без явного обновления версии.")
         else:

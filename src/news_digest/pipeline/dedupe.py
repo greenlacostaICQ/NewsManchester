@@ -111,7 +111,12 @@ def dedupe_candidates(project_root: Path) -> StageResult:
 
     errors: list[str] = []
     decisions: list[dict] = []
+    timings: dict[str, float] = {}
 
+    def _mark_timing(name: str, started: float) -> None:
+        timings[name] = round(time.monotonic() - started, 3)
+
+    history_loop_t0 = time.monotonic()
     for index, candidate in enumerate(candidates, start=1):
         if not isinstance(candidate, dict):
             errors.append(f"Candidate #{index} is not an object.")
@@ -333,13 +338,16 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 "similar_previous": similar_previous,
             }
         )
+    _mark_timing("history_match_and_contracts_seconds", history_loop_t0)
 
     # LLM borderline review: heuristic _classify_change_type can't tell
     # "£230m requested" from "£230m granted". For candidates labelled
     # no_change/same_story_rehash that DO carry substantive evidence_text,
     # ask the LLM to either upgrade the verdict (same_story_new_facts /
     # follow_up → un-drop) or confirm rehash. See _review_borderline_with_llm.
+    borderline_t0 = time.monotonic()
     llm_reviews = _review_borderline_with_llm(candidates, published_by_fp)
+    _mark_timing("borderline_llm_review_seconds", borderline_t0)
     for decision in decisions:
         rev = llm_reviews.get(str(decision.get("fingerprint") or ""))
         if rev:
@@ -347,11 +355,19 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             decision["reason"] = rev["reason"]
             decision["llm_reviewed"] = True
 
+    cluster_t0 = time.monotonic()
     story_cluster_summary = attach_story_clusters(candidates)
+    _mark_timing("story_clusters_seconds", cluster_t0)
+    intelligence_t0 = time.monotonic()
     attach_story_intelligence(candidates)
+    _mark_timing("story_intelligence_seconds", intelligence_t0)
+    jaccard_t0 = time.monotonic()
     intra_batch_drops = _apply_intra_batch_dedup(candidates)
+    _mark_timing("intra_batch_jaccard_seconds", jaccard_t0)
+    ticket_t0 = time.monotonic()
     intra_batch_drops.extend(_merge_multinight_ticket_runs(candidates))  # #7
     intra_batch_drops.extend(_consolidate_tickets(candidates))  # festival/tour/premium/non-music
+    _mark_timing("ticket_identity_merge_seconds", ticket_t0)
 
     # I1: embeddings-based semantic dedup pass. Runs AFTER the
     # deterministic Jaccard/entity pass so it only sees survivors,
@@ -361,16 +377,21 @@ def dedupe_candidates(project_root: Path) -> StageResult:
     try:
         from news_digest.pipeline.semantic_dedupe import run_semantic_pass  # noqa: PLC0415
 
+        semantic_t0 = time.monotonic()
         semantic_result = run_semantic_pass(
             candidates=candidates,
             published_facts=published,
             state_dir=state_dir,
         ).to_dict()
+        _mark_timing("semantic_pass_seconds", semantic_t0)
     except Exception as exc:  # noqa: BLE001 — never block dedupe on semantic
         import logging  # noqa: PLC0415
         logging.getLogger(__name__).warning("semantic dedup pass failed: %s", exc)
         semantic_result = {"enabled": False, "error": str(exc)}
+        timings.setdefault("semantic_pass_seconds", 0.0)
+    semantic_guard_t0 = time.monotonic()
     semantic_guard = _apply_semantic_drop_guard(candidates)
+    _mark_timing("semantic_guard_seconds", semantic_guard_t0)
 
     final_candidates_by_fp = {
         str(candidate.get("fingerprint") or ""): candidate
@@ -390,7 +411,11 @@ def dedupe_candidates(project_root: Path) -> StageResult:
     payload["run_date_london"] = today_london()
     payload["stage_status"] = "complete" if not errors else "failed"
     pipeline_run_id = pipeline_run_id_from(payload)
+    write_t0 = time.monotonic()
     write_json(candidates_path, payload)
+    _mark_timing("write_candidates_seconds", write_t0)
+    total_seconds = round(time.monotonic() - stage_started, 3)
+    timings["total_seconds"] = total_seconds
     write_json(
         report_path,
         {
@@ -410,7 +435,8 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             "story_clusters": story_cluster_summary,
             "intra_batch_dedup_drops": intra_batch_drops,
             "semantic_dedup_summary": semantic_result,
-            "duration_seconds": round(time.monotonic() - stage_started, 3),
+            "timings": timings,
+            "duration_seconds": total_seconds,
         },
     )
 
