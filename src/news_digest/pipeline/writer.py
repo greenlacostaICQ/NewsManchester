@@ -624,6 +624,13 @@ def _fresh_story_cluster_key(row: _SectionRow) -> str:
     return ""
 
 
+_DUP_BOILERPLATE_RE = re.compile(
+    r"manchestereveningnews|aboutmanchester|placenorthwest|\bgreater\b|\breporter\b|"
+    r"correspondent|\beditor\b|\bimages?\b|\bvideo\b|sitemap|\bnews\b|\bwww\b",
+    re.IGNORECASE,
+)
+
+
 def _fresh_rows_are_same_story(left: _SectionRow, right: _SectionRow) -> bool:
     if left.fingerprint and right.fingerprint and left.fingerprint == right.fingerprint:
         return True
@@ -651,10 +658,18 @@ def _fresh_rows_are_same_story(left: _SectionRow, right: _SectionRow) -> bool:
     # Many shared substantive tokens (place + incident specifics) are an
     # unambiguous same-story signal even when one card is much longer and
     # dilutes the Jaccard/overlap ratio — the Oldham Road/Ashton MEN+BBC pair
-    # shared 16 tokens but scored 0.44 overlap (owner 2026-06-15 dup).
+    # shared 16 tokens but scored 0.44 overlap (owner 2026-06-15 dup). BUT
+    # boilerplate shared by ANY two articles from the same outlet (URL-slug
+    # fragments, byline words, bare years) must NOT count — otherwise two
+    # unrelated MEN crime stories merge on "manchestereveningnews /
+    # greater-manchester-news / reporter / 2026" and a real story is suppressed
+    # as a duplicate (owner 2026-06-19: Failsworth stabbing eaten by woman-dies
+    # -in-park).
     substantive_strong = {
         token for token in strong_common
-        if not re.fullmatch(r"https?|\d{4}-\d{2}-\d{2}", token)
+        if not re.fullmatch(r"https?|\d{1,4}|\d{4}-\d{2}-\d{2}", token)
+        and "-" not in token
+        and not _DUP_BOILERPLATE_RE.search(token)
     }
     if len(substantive_strong) >= 6:
         return True
