@@ -25,6 +25,10 @@ from news_digest.pipeline.common import (
     write_json,
 )
 from news_digest.pipeline.glossary_qa import glossary_line_issues, repair_glossary_terms
+from news_digest.pipeline.transport_language import (
+    repair_transport_line_language,
+    transport_language_issues,
+)
 
 
 MIN_CITY_PRACTICAL_ANGLE_LENGTH = 40
@@ -180,6 +184,8 @@ def _polish_russian_line_rules(line: str) -> tuple[str, list[str]]:
     reasons: list[str] = []
     fixed, glossary_reasons = repair_glossary_terms(fixed)
     reasons.extend(glossary_reasons)
+    fixed, transport_reasons = repair_transport_line_language(fixed)
+    reasons.extend(transport_reasons)
     for pattern, replacement in _BAD_RUSSIAN_PATTERNS:
         if pattern.search(fixed):
             fixed = pattern.sub(replacement, fixed)
@@ -201,6 +207,8 @@ def _polish_russian_line_rules(line: str) -> tuple[str, list[str]]:
 
 def _line_needs_russian_editor(line: str) -> bool:
     text = str(line or "")
+    if transport_language_issues(text):
+        return True
     if glossary_line_issues(text):
         return True
     return any(pattern.search(text) for pattern in _BAD_RUSSIAN_DETECTORS)

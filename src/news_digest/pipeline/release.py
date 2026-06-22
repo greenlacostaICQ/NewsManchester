@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+import html
 import json
 import logging
 from pathlib import Path
@@ -24,6 +25,10 @@ from news_digest.pipeline.common import (
     read_json,
     today_london,
     write_json,
+)
+from news_digest.pipeline.transport_language import (
+    repair_transport_line_language,
+    transport_public_contract_errors,
 )
 from news_digest.pipeline.city_intelligence import summarise_city_intelligence
 from news_digest.pipeline.city_trends import (
@@ -458,6 +463,15 @@ def _validate_draft(
     if "<a " not in lower_text:
         errors.append("Draft digest contains no HTML source links.")
 
+    repaired_html, contract_repair = _repair_public_html_contracts(html_text)
+    if contract_repair.get("fixed_count") and repaired_html != html_text:
+        draft_path.write_text(repaired_html, encoding="utf-8")
+        html_text = repaired_html
+        warnings.append(
+            "Release recovered "
+            f"{contract_repair.get('fixed_count')} public-contract transport line(s); digest continues."
+        )
+
     sections = extract_sections(html_text)
     errors.extend(public_html_contract_errors(html_text))
     for block in REQUIRED_BLOCKS:
@@ -619,9 +633,8 @@ def public_html_contract_errors(html_text: str) -> list[str]:
             errors.append(f"Rendered HTML violates public contract: {code}.")
     sections = extract_sections(html_text)
     for line in sections.get("Общественный транспорт сегодня", []):
-        if "метро" in line.lower():
-            errors.append("Rendered HTML violates public contract: metrolink_written_as_metro.")
-            break
+        for issue in transport_public_contract_errors(line):
+            errors.append(f"Rendered HTML violates public contract: {issue}.")
     ticket_lines = [
         line for line in sections.get("Билеты / Ticket Radar", [])
         if line.strip() and line.strip() != "•"
@@ -629,6 +642,35 @@ def public_html_contract_errors(html_text: str) -> list[str]:
     if len(ticket_lines) > 15:
         errors.append(f"Rendered HTML violates public contract: ticket_radar_over_cap ({len(ticket_lines)} > 15).")
     return errors
+
+
+def _repair_public_html_contracts(html_text: str) -> tuple[str, dict[str, object]]:
+    current_section = ""
+    changed_lines: list[dict[str, object]] = []
+    output: list[str] = []
+    for line in html_text.splitlines():
+        header_match = re.fullmatch(r"<b>(.*?)</b>", line.strip())
+        if header_match:
+            current_section = html.unescape(header_match.group(1))
+            output.append(line)
+            continue
+        if current_section == "Общественный транспорт сегодня" and line.lstrip().startswith("•"):
+            fixed, reasons = repair_transport_line_language(line)
+            if reasons and fixed != line:
+                changed_lines.append({
+                    "section": current_section,
+                    "reasons": reasons,
+                    "before": line[:240],
+                    "after": fixed[:240],
+                })
+                line = fixed
+        output.append(line)
+    trailing_newline = "\n" if html_text.endswith("\n") else ""
+    return "\n".join(output) + trailing_newline, {
+        "attempted": True,
+        "fixed_count": len(changed_lines),
+        "fixed_lines": changed_lines,
+    }
 
 
 # Sections that announce things-to-attend. A bullet here without a date

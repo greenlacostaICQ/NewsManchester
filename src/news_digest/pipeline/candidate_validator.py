@@ -213,8 +213,9 @@ _OUTSIDE_GM_PLACE_TOKENS = (
 
 _TRANSPORT_SECTION_RE = re.compile(
     r"\b(?:metrolink|tram|bus(?:es)?|bee\s+network|national\s+rail|"
-    r"northern|transpennine|transport\s+for\s+wales|tfgm|rail\s+replacement|"
-    r"platform|stop)\b",
+    r"northern\s+(?:rail|trains?)|transpennine|transport\s+for\s+wales|"
+    r"tfgm|rail\s+replacement|train(?:s)?|railway|platform)\b|"
+    r"\b(?:bus|tram|metrolink)\s+stop\b|\bstop\s+closure\b",
     re.IGNORECASE,
 )
 _TRANSPORT_IMPACT_RE = re.compile(

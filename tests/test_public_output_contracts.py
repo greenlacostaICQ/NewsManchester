@@ -12,7 +12,8 @@ from news_digest.pipeline.collector.fallbacks import _weather_draft_line
 from news_digest.pipeline.collector.weather import _met_office_practical_angle
 from news_digest.pipeline.curator import _is_curator_protected
 from news_digest.pipeline.editorial_contracts import attach_editorial_contract
-from news_digest.pipeline.release import _final_loss_check, public_html_contract_errors
+from news_digest.pipeline.release import _final_loss_check, _repair_public_html_contracts, public_html_contract_errors
+from news_digest.pipeline.transport_language import repair_transport_line_language
 from news_digest.pipeline.ticket_notability import (
     _tier_from_signals,
     enrich_ticket_notability,
@@ -978,6 +979,42 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertTrue(any("ticket_machine_explanation" in error for error in errors))
         self.assertTrue(any("source_chrome_passthrough" in error for error in errors))
         self.assertTrue(any("ticket_generic_cta" in error for error in errors))
+
+    def test_metrolink_name_does_not_trip_metro_contract(self) -> None:
+        html = (
+            "<b>Greater Manchester Brief — 2026-06-22, 08:10</b>\n"
+            "<b>Общественный транспорт сегодня</b>\n"
+            "• Metrolink: ведутся работы на остановке Metrolink в Prestwich. "
+            "<a href=\"https://tfgm.com/travel-updates\">TfGM</a>\n"
+        )
+        errors = public_html_contract_errors(html)
+        self.assertFalse(any("metrolink_written_as_metro" in error for error in errors))
+
+    def test_transport_language_repair_fixes_today_metrolink_copy(self) -> None:
+        line = (
+            "• Metrolink: ведутся работы по улучшению на остановке трамваев Метролинк "
+            "в Prestwichе, которые продлятся до 19 августа. "
+            "<a href=\"https://tfgm.com/travel-updates/travel-alerts/prestwich-tram-stop-improvement-works\">TfGM</a>"
+        )
+        fixed, reasons = repair_transport_line_language(line)
+        self.assertIn("official_metrolink_name", reasons)
+        self.assertIn("metrolink_stop_wording", reasons)
+        self.assertIn("latin_place_case", reasons)
+        self.assertIn("остановке Metrolink в Prestwich", fixed)
+        self.assertNotIn("Метролинк", fixed)
+        self.assertNotIn("Prestwichе", fixed)
+
+    def test_release_repairs_transport_contract_before_rechecking(self) -> None:
+        html = (
+            "<b>Greater Manchester Brief — 2026-06-22, 08:10</b>\n"
+            "<b>Общественный транспорт сегодня</b>\n"
+            "• В Манчестере закрыты две станции метро — Shudehill и Market Street. "
+            "<a href=\"https://tfgm.com/travel-updates\">TfGM</a>\n"
+        )
+        repaired, report = _repair_public_html_contracts(html)
+        self.assertEqual(report["fixed_count"], 1)
+        self.assertIn("остановки Metrolink", repaired)
+        self.assertFalse(any("metrolink_written_as_metro" in error for error in public_html_contract_errors(repaired)))
 
     def test_recovery_plan_records_ordered_repair_attempts(self) -> None:
         candidate = {

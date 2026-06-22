@@ -72,6 +72,18 @@ class EnglishDataQATests(unittest.TestCase):
                 "title": "Invest Manchester",
                 "summary": "A refreshed investment identity mentions the city region's transport system.",
             },
+            {
+                "include": True,
+                "category": "media_layer",
+                "primary_block": "city_watch",
+                "source_label": "About Manchester News",
+                "title": "GMP's Northern Quarter fight back - About Manchester",
+                "summary": (
+                    "Officers hosted targeted days of action in the Northern Quarter, "
+                    "including stop searches, patrols and a closure order linked to "
+                    "anti-social behaviour."
+                ),
+            },
         ]
         for candidate in cases:
             with self.subTest(candidate["title"]):

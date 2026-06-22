@@ -24,6 +24,10 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.transport_language import (
+    repair_transport_line_language,
+    transport_public_contract_errors,
+)
 from news_digest.pipeline.editorial_contracts import (
     attach_editorial_contract,
     classify_ticket_type,
@@ -3142,11 +3146,8 @@ def _repair_editorial_contract_line(candidate: dict, line: str) -> tuple[str, li
             repaired = updated
             reasons.append("weather_wording")
     if str(candidate.get("primary_block") or "") == "transport":
-        if re.search(r"\bметро\b", repaired, flags=re.IGNORECASE) and re.search(
-            r"\b(?:metrolink|shudehill|market street|tram|трамва)", repaired, flags=re.IGNORECASE
-        ):
-            repaired = re.sub(r"\bметро\b", "Metrolink", repaired, flags=re.IGNORECASE)
-            reasons.append("metrolink_not_metro")
+        repaired, transport_reasons = repair_transport_line_language(repaired)
+        reasons.extend(transport_reasons)
         repaired = re.sub(
             r"\bзакрыты\s+две\s+станции\s+Metrolink\b",
             "закрыты две остановки Metrolink",
@@ -4464,8 +4465,10 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
         errors.append("sold-out event must not be published.")
     if block_key == "weather" and re.search(r"\b(?:локальн\w+\s+)?радар\b", text, re.IGNORECASE):
         errors.append("weather line must not tell the reader to check a radar.")
-    if is_transport_block and re.search(r"\bметро\b", text, re.IGNORECASE):
-        errors.append("Metrolink/tram transport must not be called metro.")
+    if is_transport_block:
+        for issue in transport_public_contract_errors(text):
+            if issue == "metrolink_written_as_metro":
+                errors.append("Metrolink/tram transport must not be called metro.")
     if is_transport_block and re.search(r"ремонтные работы на остановке [^.]{2,60}\.$", text, re.IGNORECASE):
         errors.append("transport stop works line must explain reader impact/action.")
     if _line_has_conflicting_event_date(candidate, text):
