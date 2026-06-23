@@ -896,28 +896,28 @@ def _llm_speed_summary_lines(llm_report: dict) -> list[str]:
     completion = summary.get("completion_tokens_per_item") or {}
     lines = [
         (
-            "• LLM speed: "
-            f"batch {summary.get('batch_count', 0)}, "
-            f"accepted {summary.get('accepted', 0)}/{summary.get('sent', 0)}, "
-            f"queue p95 {float(queue.get('p95') or 0):.1f}s, "
-            f"API p95 {float(api.get('p95') or 0):.1f}s."
+            "• Скорость ИИ: "
+            f"запросов {summary.get('batch_count', 0)}, "
+            f"текст получен для {summary.get('accepted', 0)}/{summary.get('sent', 0)} пунктов, "
+            f"ожидание p95 {float(queue.get('p95') or 0):.1f}s, "
+            f"ответ модели p95 {float(api.get('p95') or 0):.1f}s."
         )
     ]
     truncated = int(summary.get("truncated_responses") or 0)
     timeouts = int(summary.get("timeout_errors") or 0)
     if completion or truncated or timeouts:
         lines.append(
-            "• Token control: "
-            f"output p95/item {float(completion.get('p95') or 0):.1f}, "
-            f"truncated {truncated}, timeout errors {timeouts}."
+            "• Контроль длины ответа: "
+            f"p95 на пункт {float(completion.get('p95') or 0):.1f}, "
+            f"обрезанных ответов {truncated}, ошибок по времени {timeouts}."
         )
     english_memory = llm_report.get("english_card_memory") or {}
     translation_memory = llm_report.get("translation_memory") or {}
     if isinstance(english_memory, dict) or isinstance(translation_memory, dict):
         lines.append(
-            "• Reuse: "
-            f"English cards {int((english_memory or {}).get('reused') or 0)}, "
-            f"Russian lines {int((translation_memory or {}).get('reused') or 0)}."
+            "• Повторное использование: "
+            f"служебных факт-карточек {int((english_memory or {}).get('reused') or 0)}, "
+            f"русских строк {int((translation_memory or {}).get('reused') or 0)}."
         )
     return lines
 
