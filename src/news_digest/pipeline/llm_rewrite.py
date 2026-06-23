@@ -1365,8 +1365,6 @@ def _needs_quality_repair(candidate: dict) -> bool:
     writer_errors = _hard_repair_errors(candidate, line)
     if writer_errors:
         return True
-    if _should_repair_soft_writer_errors(candidate, _soft_repair_errors(candidate, line)):
-        return True
     normalized = re.sub(r"\s+", " ", line)
     lowered = normalized.lower()
     # A complete dated event card (real event + date) is allowed to be concise:
@@ -3513,7 +3511,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         and _needs_quality_repair(c)
     ]
     if to_repair:
-        logger.info("LLM repair pass: %d weak draft_lines, rewriting editorially.", len(to_repair))
+        logger.info("LLM repair pass: %d hard-defect draft_lines, rewriting editorially.", len(to_repair))
         repair_mapping = _call_with_fallback(
             to_repair,
             REPAIR_DRAFT_SYSTEM,
@@ -3555,7 +3553,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
 
         if repaired:
             candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-            logger.info("LLM repair pass: repaired %d weak draft_lines.", repaired)
+            logger.info("LLM repair pass: repaired %d hard-defect draft_lines.", repaired)
 
     # Forcing pass: rich-evidence hard news that the batch passes skipped. The
     # batch prompt lets the model return decision=skip on a story it could
@@ -3746,6 +3744,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "applied": applied,
             "fixed": fixed,
             "repaired": repaired,
+            "repair_policy": "hard_defects_only; soft short/style issues are left for writer recovery and whole-digest final editor",
             "rewrite_seconds": round(time.monotonic() - _stage_t0, 2),
             "cost_summary": cost_summary,
             "diagnostics_summary": diagnostics_summary,

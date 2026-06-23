@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 import html
+import json
 import logging
 import os
 from pathlib import Path
@@ -3319,6 +3320,159 @@ _FALLBACK_BUILDER_BY_CATEGORY: dict[str, str] = {
 }
 
 
+_RECOVERY_MODEL_MAX_PER_SECTION = 2
+_RECOVERY_MODEL_PROMPT = """Ты выпускающий редактор Greater Manchester morning brief.
+Нужно восстановить один пункт для блока, который оказался слишком тонким.
+
+Пиши только по переданным фактам. Если фактов не хватает, верни пустую строку и коротко объясни missing_facts.
+
+Верни только JSON:
+{"draft_line":"• ...","missing_facts":[]}
+
+Правила:
+- строка начинается с "• ";
+- русский живой, без кальки и без generic-фраз;
+- 120-380 символов;
+- сохраняй даты, места, суммы, имена и неопределённость источника;
+- не добавляй факты извне;
+- для событий обязательно укажи что/когда/где, если это есть в evidence;
+- для professional/business объясни конкретную пользу, если она есть в evidence;
+- для hard news начни с того, что произошло.
+"""
+
+
+def _html_to_recovery_text(raw_html: str, *, limit: int = 4500) -> str:
+    text = re.sub(r"(?is)<script[^>]*>.*?</script>", " ", str(raw_html or ""))
+    text = re.sub(r"(?is)<style[^>]*>.*?</style>", " ", text)
+    text = re.sub(r"(?is)<nav[^>]*>.*?</nav>", " ", text)
+    text = re.sub(r"(?is)<footer[^>]*>.*?</footer>", " ", text)
+    text = re.sub(r"(?is)<header[^>]*>.*?</header>", " ", text)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = html.unescape(text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:limit]
+
+
+def _recovery_evidence_text(candidate: dict) -> tuple[str, dict[str, object]]:
+    existing = re.sub(
+        r"\s+",
+        " ",
+        " ".join(
+            str(candidate.get(field) or "")
+            for field in ("title", "summary", "lead", "evidence_text", "practical_angle")
+        ),
+    ).strip()
+    report: dict[str, object] = {
+        "used_refetch": False,
+        "existing_chars": len(existing),
+        "refetched_chars": 0,
+        "source_url": str(candidate.get("source_url") or ""),
+    }
+    if len(existing) >= 1200:
+        return existing[:4500], report
+    url = str(candidate.get("source_url") or "").strip()
+    if not url.startswith(("http://", "https://")):
+        return existing[:4500], report
+    try:
+        from news_digest.pipeline.collector.fetch import _fetch_text  # noqa: PLC0415
+
+        fetched = _html_to_recovery_text(_fetch_text(url), limit=4500)
+    except Exception as exc:  # noqa: BLE001
+        report["refetch_error"] = f"{exc.__class__.__name__}: {exc}"
+        return existing[:4500], report
+    report["refetched_chars"] = len(fetched)
+    if len(fetched) > len(existing) + 200:
+        report["used_refetch"] = True
+        candidate["recovery_refetched_evidence"] = fetched[:4500]
+        return fetched[:4500], report
+    return existing[:4500], report
+
+
+def _model_recover_section_line(candidate: dict, section_name: str, errors: list[str]) -> tuple[str, dict[str, object]]:
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    report: dict[str, object] = {
+        "attempted": False,
+        "status": "skipped_missing_api_key" if not api_key else "skipped",
+        "title": candidate.get("title"),
+        "section": section_name,
+    }
+    if not api_key:
+        return "", report
+    evidence, evidence_report = _recovery_evidence_text(candidate)
+    report["evidence"] = evidence_report
+    if len(evidence) < 120:
+        report["status"] = "not_enough_evidence"
+        return "", report
+    try:
+        from openai import OpenAI  # noqa: PLC0415
+        from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
+        from news_digest.pipeline.model_routing import OPENAI_SCORING_MODEL  # noqa: PLC0415
+    except Exception as exc:  # noqa: BLE001
+        report["status"] = "setup_failed"
+        report["error"] = f"{exc.__class__.__name__}: {exc}"
+        return "", report
+
+    payload = {
+        "section": section_name,
+        "errors_from_previous_line": errors,
+        "candidate": {
+            "fingerprint": candidate.get("fingerprint"),
+            "title": candidate.get("title"),
+            "summary": candidate.get("summary"),
+            "lead": candidate.get("lead"),
+            "source_label": candidate.get("source_label"),
+            "source_url": candidate.get("source_url"),
+            "category": candidate.get("category"),
+            "primary_block": candidate.get("primary_block"),
+            "event": candidate.get("event") if isinstance(candidate.get("event"), dict) else {},
+            "professional_event_match": candidate.get("professional_event_match")
+            if isinstance(candidate.get("professional_event_match"), dict)
+            else {},
+            "evidence_text": evidence,
+        },
+    }
+    messages = [
+        {"role": "system", "content": _RECOVERY_MODEL_PROMPT},
+        {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+    ]
+    report["attempted"] = True
+    try:
+        client = OpenAI(api_key=api_key, timeout=35, max_retries=0)
+        response = client.chat.completions.create(
+            model=OPENAI_SCORING_MODEL,
+            messages=messages,
+            temperature=0.2,
+            max_tokens=900,
+            response_format={"type": "json_object"},
+        )
+        record_call_from_response(
+            response=response,
+            stage="writer",
+            provider="OpenAI",
+            model=OPENAI_SCORING_MODEL,
+            prompt_name="section_floor_model_recovery",
+            messages=messages,
+            max_tokens=900,
+        )
+        raw = str(response.choices[0].message.content or "").strip()
+        parsed = json.loads(raw)
+    except Exception as exc:  # noqa: BLE001
+        report["status"] = "model_failed"
+        report["error"] = f"{exc.__class__.__name__}: {exc}"
+        return "", report
+    line = str(parsed.get("draft_line") or "").strip() if isinstance(parsed, dict) else ""
+    if not line:
+        report["status"] = "model_returned_no_line"
+        if isinstance(parsed, dict):
+            report["missing_facts"] = parsed.get("missing_facts") or []
+        return "", report
+    if not line.startswith("• "):
+        line = f"• {line}"
+    report["status"] = "model_returned_line"
+    report["line_excerpt"] = line[:180]
+    return line, report
+
+
 def _apply_section_min_floor_pull_back(
     section_name: str,
     lines: list[str],
@@ -3354,6 +3508,10 @@ def _apply_section_min_floor_pull_back(
                 "include_backup": bool(include_backup),
                 "reserve_available": 0,
                 "repair_attempts": 0,
+                "model_recovery_attempts": 0,
+                "model_recovery_inserted": 0,
+                "model_recovery_failed": 0,
+                "model_recovery_examples": [],
                 "replacements_inserted": 0,
                 "still_underflow_reason": "",
             }
@@ -3436,12 +3594,39 @@ def _apply_section_min_floor_pull_back(
                 line = _build_football_fallback_line(c)
             elif section_name == "Свежие новости":
                 line = _final_replacement_line(c)
-        if not line:
-            continue
         if not line.startswith("• "):
             line = f"• {line}"
         line, repair_reasons = _repair_editorial_contract_line(c, line)
         errors = _draft_line_quality_errors(c, line)
+        model_recovery_report: dict[str, object] | None = None
+        if (not line.strip("• ").strip() or errors) and recovery_metrics is not None:
+            attempts = int(recovery_metrics.get("model_recovery_attempts") or 0)
+            if attempts < _RECOVERY_MODEL_MAX_PER_SECTION:
+                recovery_metrics["model_recovery_attempts"] = attempts + 1
+                model_line, model_recovery_report = _model_recover_section_line(c, section_name, errors)
+                examples = recovery_metrics.get("model_recovery_examples")
+                if isinstance(examples, list):
+                    examples.append(model_recovery_report)
+                    del examples[8:]
+                if model_line:
+                    model_line, model_repairs = _repair_editorial_contract_line(c, model_line)
+                    model_errors = _draft_line_quality_errors(c, model_line)
+                    if not model_errors:
+                        line = model_line
+                        errors = []
+                        repair_reasons.extend(["model_floor_recovery"] + model_repairs)
+                        c["draft_line"] = model_line
+                        c["draft_line_provider"] = "writer_model_recovery"
+                        c["draft_line_model"] = "gpt-4o-mini"
+                        c["writer_model_recovered"] = True
+                        recovery_metrics["model_recovery_inserted"] = int(recovery_metrics.get("model_recovery_inserted") or 0) + 1
+                    else:
+                        errors = model_errors
+                        recovery_metrics["model_recovery_failed"] = int(recovery_metrics.get("model_recovery_failed") or 0) + 1
+                else:
+                    recovery_metrics["model_recovery_failed"] = int(recovery_metrics.get("model_recovery_failed") or 0) + 1
+        if not line.strip("• ").strip():
+            continue
         if errors:
             recovered_line, recovered_reasons = _recover_soft_draft_line(c, line, errors)
             if recovered_line:
@@ -5923,6 +6108,9 @@ def write_digest(project_root: Path) -> StageResult:
         "section_below_floor": len(recovery_sections),
         "reserve_available": sum(int((row or {}).get("reserve_available") or 0) for row in recovery_sections.values()),
         "repair_attempts": sum(int((row or {}).get("repair_attempts") or 0) for row in recovery_sections.values()),
+        "model_recovery_attempts": sum(int((row or {}).get("model_recovery_attempts") or 0) for row in recovery_sections.values()),
+        "model_recovery_inserted": sum(int((row or {}).get("model_recovery_inserted") or 0) for row in recovery_sections.values()),
+        "model_recovery_failed": sum(int((row or {}).get("model_recovery_failed") or 0) for row in recovery_sections.values()),
         "replacements_inserted": sum(int((row or {}).get("replacements_inserted") or 0) for row in recovery_sections.values()),
         "still_underflow": sum(1 for row in recovery_sections.values() if str((row or {}).get("still_underflow_reason") or "")),
     }

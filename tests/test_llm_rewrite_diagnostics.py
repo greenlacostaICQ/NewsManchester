@@ -185,10 +185,13 @@ class LlmRewriteDiagnosticsTests(unittest.TestCase):
         self.assertTrue(_is_curator_protected({"category": "russian_speaking_events", "primary_block": "russian_events"}))
         self.assertTrue(_is_curator_protected({"category": "diaspora_events"}))
 
-    def test_quality_repair_uses_writer_gate_for_long_format_cards(self) -> None:
+    def test_quality_repair_is_hard_defects_only(self) -> None:
         candidate = _candidate("fp-1")
         candidate["draft_line"] = "• Манчестер: совет опубликовал короткое обновление."
 
+        self.assertFalse(_needs_quality_repair(candidate))
+
+        candidate["draft_line"] = "• Manchester council published an update and residents should check the details."
         self.assertTrue(_needs_quality_repair(candidate))
 
     def test_borderline_items_are_not_sent_to_llm_without_manual_override(self) -> None:

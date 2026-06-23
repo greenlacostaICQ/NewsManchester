@@ -997,6 +997,28 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
     lines.append("Примечание: разбор «дубли / отклонено правилами» считается по всему собранному пулу (~сотни), а не по этому набору — детали в JSON (final_loss_check).")
     lines.append("")
 
+    recovery = writer_report.get("recovery_controller") if isinstance(writer_report, dict) else {}
+    recovery_totals = recovery.get("totals") if isinstance(recovery, dict) else {}
+    if isinstance(recovery_totals, dict) and int(recovery_totals.get("section_below_floor") or 0):
+        lines.append("🧩 Восстановление тонких блоков")
+        lines.append(
+            f"Блоков ниже минимума: {recovery_totals.get('section_below_floor', 0)}; "
+            f"запасных материалов найдено: {recovery_totals.get('reserve_available', 0)}; "
+            f"вставлено замен: {recovery_totals.get('replacements_inserted', 0)}."
+        )
+        if int(recovery_totals.get("model_recovery_attempts") or 0):
+            lines.append(
+                f"ИИ-дописка запасных материалов: попыток {recovery_totals.get('model_recovery_attempts', 0)}, "
+                f"успешно вставлено {recovery_totals.get('model_recovery_inserted', 0)}, "
+                f"не получилось {recovery_totals.get('model_recovery_failed', 0)}."
+            )
+        if int(recovery_totals.get("still_underflow") or 0):
+            lines.append(
+                f"Остались тонкими: {recovery_totals.get('still_underflow', 0)} блока; "
+                "причины по каждому блоку сохранены в writer_report."
+            )
+        lines.append("")
+
     speed_lines = _llm_speed_summary_lines(llm_rewrite)
     if speed_lines:
         lines.append("⏱️ Скорость генерации")

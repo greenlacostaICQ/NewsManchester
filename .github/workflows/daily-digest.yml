@@ -60,7 +60,7 @@ jobs:
       - name: Transport fill — deterministic templates + Metrolink reminders
         run: python3 scripts/run_local_digest.py transport-fill
 
-      - name: LLM rewrite — Board Judge cards → GPT translate → GPT repair
+      - name: LLM rewrite — DeepSeek board → direct Russian writer → hard repair only
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
@@ -165,10 +165,12 @@ jobs:
             data/state/candidate_validation_report.json \
             data/state/curator_report.json \
             data/state/llm_rewrite_report.json \
+            data/state/section_selection_report.json \
             data/state/llm_token_budget_history.json \
             data/state/english_card_memory.json \
             data/state/writer_report.json \
             data/state/editor_report.json \
+            data/state/final_editor_report.json \
             data/state/release_report.json
           do
             echo ""
@@ -200,6 +202,7 @@ jobs:
           git add -f data/state/curator_report.json || true
           git add -f data/state/writer_report.json || true
           git add -f data/state/editor_report.json || true
+          git add -f data/state/final_editor_report.json || true
           git add -f data/state/release_report.json || true
           git add -f data/state/pre_send_quality_report.json || true
           # HTTP-validator cache. Persisting it between runs is what
@@ -217,6 +220,7 @@ jobs:
           git add -f data/state/cost_llm_rewrite.json || true
           git add -f data/state/cost_editor.json || true
           git add -f data/state/llm_rewrite_report.json || true
+          git add -f data/state/section_selection_report.json || true
           git add -f data/state/english_card_memory.json || true
           git add -f data/state/translation_memory.json || true
           git add -f data/state/llm_token_budget_history.json || true
