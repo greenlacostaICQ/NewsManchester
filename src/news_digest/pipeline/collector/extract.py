@@ -1841,6 +1841,86 @@ def _extract_skiddle_items(source: SourceDef, body: str) -> list[ExtractedItem]:
     return items
 
 
+def _extract_skiddle_api_items(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Parse the Skiddle Events API (``json_skiddle``) search response.
+
+    Skiddle's public search endpoint returns
+    ``{"error": 0, "results": [{event}], "totalcount": N}``. Each event
+    carries a clean name, a venue object (name/town/lat/lon) and a start
+    date — exactly the (name + date + venue) identity the event dedupe key
+    needs — so we publish a structured_event_hint instead of leaving the
+    event to be re-derived from a listing page. This replaces the fragile
+    HTML scrape of /whats-on/Manchester/ that broke on Skiddle redesigns.
+    """
+    try:
+        payload = json.loads(body)
+    except (json.JSONDecodeError, TypeError):
+        return []
+    if not isinstance(payload, dict) or int(payload.get("error") or 0) != 0:
+        return []
+    results = payload.get("results")
+    if not isinstance(results, list):
+        return []
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    for event in results:
+        if not isinstance(event, dict):
+            continue
+        title = _clean_title_text(str(event.get("eventname") or ""))
+        url = str(event.get("link") or "").strip()
+        if not title or not url or url in seen:
+            continue
+        seen.add(url)
+        venue_obj = event.get("venue") if isinstance(event.get("venue"), dict) else {}
+        venue_name = str(venue_obj.get("name") or "").strip()
+        town = str(venue_obj.get("town") or "").strip()
+        start_raw = str(event.get("startdate") or event.get("date") or "").strip()
+        start_iso = _parse_datetime_value_flexible(start_raw) or None
+        description = str(event.get("description") or "").strip()
+        genres = event.get("genres") if isinstance(event.get("genres"), list) else []
+        genre_names = ", ".join(
+            str(g.get("name") or "").strip()
+            for g in genres
+            if isinstance(g, dict) and g.get("name")
+        )
+        evidence_parts = [
+            title,
+            f"Venue: {venue_name}" if venue_name else "",
+            f"Town: {town}" if town else "",
+            f"Date: {start_raw[:16].replace('T', ' ')}" if start_raw else "",
+            f"Type: {event.get('EventCode') or ''}" if event.get("EventCode") else "",
+            f"Genres: {genre_names}" if genre_names else "",
+            description,
+        ]
+        evidence = ". ".join(part for part in evidence_parts if part)
+        hint: dict = {}
+        if venue_name or start_iso:
+            instance = _jsonld_event_instance_id(title, start_iso or "", venue_name)
+            hint = {
+                "is_event": True,
+                "event_name": title,
+                "venue": venue_name,
+                "town": town,
+                "start_date": start_iso or start_raw,
+                "event_instance_id": instance or f"skiddle-{event.get('id') or url}",
+            }
+        items.append(
+            ExtractedItem(
+                title=title,
+                url=url,
+                published_at=start_iso,
+                summary=_summary_from_evidence(evidence) or description[:300] or title,
+                lead=_derive_lead(source, title, evidence),
+                evidence_text=evidence[:4000],
+                enrichment_status="ok_skiddle_card",
+                structured_event_hint=hint,
+            )
+        )
+        if len(items) >= source.max_candidates:
+            break
+    return items
+
+
 def _extract_eventbrite_events(source: SourceDef, body: str) -> list[ExtractedItem]:
     """Extract Eventbrite event links from an organiser/search page.
 
@@ -2501,6 +2581,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_sitemap_items(source.url, body)
     elif source.source_type == "json_ticketmaster":
         links = _extract_ticketmaster_items(source, body)
+    elif source.source_type == "json_skiddle":
+        links = _extract_skiddle_api_items(source, body)
     elif source.source_type == "json_wp_rest":
         links = _extract_wp_rest_items(body)
     elif source.source_type == "markdown_links":

@@ -967,22 +967,28 @@ allowed_hosts = ["manchestermarkets.com"]
 enabled = false
 
 [[sources]]
-name = "Skiddle Manchester"
+name = "Skiddle Manchester Festivals"
+notes = "Skiddle Events API (json_skiddle): GM festivals — food/beer/street-food/craft. Replaces the fragile /whats-on/ HTML scrape that broke on Skiddle redesigns. Needs SKIDDLE_API_KEY. Geo = Manchester centre, 15-mile radius (Greater Manchester)."
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
-url = "https://www.skiddle.com/whats-on/Manchester/"
+source_type = "json_skiddle"
+source_contract = "event_calendar"
+url = "https://www.skiddle.com/api/v1/events/search/?api_key={SKIDDLE_API_KEY}&latitude=53.4839&longitude=-2.2446&radius=15&eventcode=FEST&order=distance&description=1&limit=100"
 primary_block = "weekend_activities"
 allowed_hosts = ["skiddle.com"]
+max_candidates = 12
 
 [[sources]]
-name = "Skiddle Manchester Bank Holiday"
-notes = "structured bank-holiday gig/nightlife listings; backfills music/event radar"
+name = "Skiddle Manchester Comedy"
+notes = "Skiddle Events API (json_skiddle): GM comedy/stand-up nights. Needs SKIDDLE_API_KEY."
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
-url = "https://www.skiddle.com/whats-on/manchester/may-bank-holiday-events/"
+source_type = "json_skiddle"
+source_contract = "event_calendar"
+url = "https://www.skiddle.com/api/v1/events/search/?api_key={SKIDDLE_API_KEY}&latitude=53.4839&longitude=-2.2446&radius=15&eventcode=COMEDY&order=distance&description=1&limit=50"
 primary_block = "weekend_activities"
 allowed_hosts = ["skiddle.com"]
-max_candidates = 10
+max_candidates = 8
 
 [[sources]]
 name = "Manchester Flower Festival"
@@ -1496,3 +1502,66 @@ primary_block = "football"
 source_type = "rss"
 allowed_hosts = ["theguardian.com"]
 max_candidates = 6
+
+# ── Added 2026-06-23: replacements for dead market/standup/business sources ──
+# Eventbrite is NOT here on purpose: its public event-search API was retired in
+# 2020 and the category-page scrape returns HTTP 405 on the CI runner — neither
+# path discovers GM events. Skiddle API (above) + the sites below cover the gap.
+# These site parsers rely on generic JSON-LD/meta extraction and must be
+# confirmed on the next live run (source-health failure-taxonomy will flag any
+# that need a dedicated parser).
+
+[[sources]]
+name = "Afisha London"
+notes = "UK Russian-speaking cultural events (theatre/music/social/stand-up). Main UK diaspora listing; volume is London-weighted, which is fine for the UK-wide block."
+report_category = "diaspora_events"
+candidate_category = "russian_speaking_events"
+source_contract = "event_calendar"
+url = "https://afisha.london/en/events/"
+primary_block = "russian_events"
+allowed_hosts = ["afisha.london"]
+max_candidates = 8
+
+[[sources]]
+name = "MTicket Russian Concerts"
+notes = "Russian-speaking concerts/tours across the UK (e.g. Kasta). Owner-supplied source."
+report_category = "diaspora_events"
+candidate_category = "russian_speaking_events"
+source_contract = "event_calendar"
+url = "https://mticket.uk/ru/concert"
+primary_block = "russian_events"
+allowed_hosts = ["mticket.uk"]
+max_candidates = 8
+
+[[sources]]
+name = "CompiledMCR Tech Events"
+notes = "Manchester tech/dev events aggregator (Meetup + Eventbrite + TechNW). Replaces dead Bdaily/MIDAS for professional_events."
+report_category = "professional_events"
+candidate_category = "professional_events"
+source_contract = "event_calendar"
+url = "https://events.compiledmcr.com/"
+primary_block = "professional_events"
+allowed_hosts = ["compiledmcr.com"]
+max_candidates = 8
+
+[[sources]]
+name = "BusinessLive Greater Manchester"
+notes = "Reach plc GM business/tech news RSS; replaces dead BusinessCloud/Bdaily for tech_business."
+report_category = "tech_business"
+candidate_category = "tech_business"
+url = "https://www.business-live.co.uk/all-about/greater-manchester?service=rss"
+primary_block = "tech_business"
+source_type = "rss"
+allowed_hosts = ["business-live.co.uk"]
+max_candidates = 6
+
+[[sources]]
+name = "Pedddle Manchester Markets"
+notes = "UK independent-markets directory (makers/farmers/vintage/flea). Replaces dead Spinningfields Makers / car-boot scrapes for weekend markets."
+report_category = "culture_weekly"
+candidate_category = "culture_weekly"
+source_contract = "event_calendar"
+url = "https://pedddle.com/markets/north-west/greater-manchester/"
+primary_block = "weekend_activities"
+allowed_hosts = ["pedddle.com"]
+max_candidates = 8

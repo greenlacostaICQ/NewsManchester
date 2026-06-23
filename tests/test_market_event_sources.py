@@ -51,6 +51,82 @@ class MarketEventSourcesTest(unittest.TestCase):
         self.assertIn("Free Entry", candidate["evidence_text"])
         self.assertTrue(event_quality_report(candidate)["ok"])
 
+    def test_skiddle_api_parses_distinct_events_with_identity(self) -> None:
+        source = SourceDef(
+            name="Skiddle Manchester Festivals",
+            report_category="culture_weekly",
+            candidate_category="culture_weekly",
+            url="https://www.skiddle.com/api/v1/events/search/?api_key=KEY&eventcode=FEST",
+            primary_block="weekend_activities",
+            source_type="json_skiddle",
+            allowed_hosts=("skiddle.com",),
+            max_candidates=10,
+        )
+        body = json.dumps(
+            {
+                "error": 0,
+                "totalcount": 2,
+                "results": [
+                    {
+                        "id": "111",
+                        "eventname": "Manchester Craft Beer Festival",
+                        "description": "Bottomless craft beer and street food.",
+                        "venue": {"name": "Manchester Academy", "town": "Manchester",
+                                  "latitude": "53.46", "longitude": "-2.23"},
+                        "date": "2026-07-25",
+                        "startdate": "2026-07-25T12:00:00",
+                        "link": "https://www.skiddle.com/whats-on/Manchester/Academy/Craft-Beer/111/",
+                        "EventCode": "FEST",
+                        "genres": [{"name": "Food & Drink"}],
+                    },
+                    {
+                        "id": "222",
+                        "eventname": "Gin & Rum Festival Manchester",
+                        "description": "Tastings across the cathedral hall.",
+                        "venue": {"name": "Manchester Cathedral", "town": "Manchester",
+                                  "latitude": "53.48", "longitude": "-2.24"},
+                        "date": "2026-09-12",
+                        "startdate": "2026-09-12T13:00:00",
+                        "link": "https://www.skiddle.com/whats-on/Manchester/Cathedral/Gin-Rum/222/",
+                        "EventCode": "FEST",
+                        "genres": [{"name": "Food & Drink"}],
+                    },
+                ],
+            }
+        )
+
+        candidates = _extract_source_candidates(source, body)
+
+        self.assertEqual(len(candidates), 2)
+        titles = {c["title"] for c in candidates}
+        self.assertEqual(
+            titles, {"Manchester Craft Beer Festival", "Gin & Rum Festival Manchester"}
+        )
+        first = next(c for c in candidates if c["title"] == "Manchester Craft Beer Festival")
+        self.assertIn("Manchester Academy", first["evidence_text"])
+        self.assertIn("2026-07-25", first["evidence_text"])
+        self.assertIn("skiddle.com", str(first["source_url"]))
+        self.assertIn("111", str(first["source_url"]))
+        # Distinct venue+date identity is published so event dedupe keeps the
+        # two festivals apart (this is the whole point of the API source).
+        ids = {c.get("event_instance_id") for c in candidates}
+        self.assertEqual(len(ids), 2)
+        self.assertNotIn(None, ids)
+
+    def test_skiddle_api_handles_api_error_payload(self) -> None:
+        source = SourceDef(
+            name="Skiddle Manchester Festivals",
+            report_category="culture_weekly",
+            candidate_category="culture_weekly",
+            url="https://www.skiddle.com/api/v1/events/search/?api_key=KEY",
+            primary_block="weekend_activities",
+            source_type="json_skiddle",
+            allowed_hosts=("skiddle.com",),
+        )
+        self.assertEqual(
+            _extract_source_candidates(source, json.dumps({"error": 1, "results": []})), []
+        )
+
     def test_recurring_market_schedule_satisfies_event_date_gate(self) -> None:
         candidate = {
             "category": "culture_weekly",

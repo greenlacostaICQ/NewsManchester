@@ -355,6 +355,8 @@ def _collect_single_source(source) -> tuple[dict, list[dict]]:
     try:
         if source.source_type == "json_ticketmaster" and not os.environ.get("TICKETMASTER_API_KEY", "").strip():
             raise RuntimeError("missing TICKETMASTER_API_KEY for Ticketmaster API source")
+        if source.source_type == "json_skiddle" and not os.environ.get("SKIDDLE_API_KEY", "").strip():
+            raise RuntimeError("missing SKIDDLE_API_KEY for Skiddle API source")
         fetch_started_at = time.perf_counter()
         try:
             body, fetched_url, attempt_log = _fetch_source_body(source)
