@@ -1361,6 +1361,26 @@ def _is_a_tier_ticket(candidate: dict | None) -> bool:
     return str(notability.get("tier") or "").upper() == "A"
 
 
+def _is_active_tram_transport(candidate: dict | None) -> bool:
+    """Active Metrolink/tram items must not be trimmed by the public budget.
+
+    The owner rule is stronger than the compact transport target: if the run
+    found real tram restrictions, every one of them should stay visible.
+    Minor bus-stop closures can still be compacted separately.
+    """
+    if not isinstance(candidate, dict):
+        return False
+    if str(candidate.get("primary_block") or "") != "transport":
+        return False
+    if str(candidate.get("transport_mode") or "").strip().lower() == "tram":
+        return True
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "draft_line", "evidence_text", "source_label")
+    )
+    return bool(re.search(r"\b(?:metrolink|tram|trams|трамва[йеия])\b", blob, re.IGNORECASE))
+
+
 def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
     if section_name in _PUBLIC_BUDGET_EXEMPT_SECTIONS:
         return True
@@ -1370,7 +1390,7 @@ def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
     # Radar must count toward the 45-item issue budget. Evergreen markets /
     # recurring drop-ins stay exempt (they answer "what can I do this weekend"
     # and should survive a noisy news morning). A-tier artists are always exempt.
-    return _is_market_or_recurring_event(candidate) or _is_a_tier_ticket(candidate)
+    return _is_active_tram_transport(candidate) or _is_market_or_recurring_event(candidate) or _is_a_tier_ticket(candidate)
 
 
 def _slice_counting_only_non_exempt(
@@ -1404,7 +1424,11 @@ def _slice_counting_only_non_exempt(
             else:
                 exempt = bool(
                     isinstance(candidate, dict)
-                    and (_is_market_or_recurring_event(candidate) or _is_a_tier_ticket(candidate))
+                    and (
+                        _is_active_tram_transport(candidate)
+                        or _is_market_or_recurring_event(candidate)
+                        or _is_a_tier_ticket(candidate)
+                    )
                 )
         else:
             exempt = _is_public_budget_exempt(section_name, candidate)

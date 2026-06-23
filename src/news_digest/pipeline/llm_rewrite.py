@@ -1,8 +1,8 @@
 """LLM rewrite stage — writes Russian draft_lines to candidates.json.
 
 Default model route:
-  1. OpenAI gpt-4o-mini           — English board-judge fact/reader cards
-  2. OpenAI gpt-4o-mini           — final Russian translation of compact English cards
+  1. OpenAI gpt-4o-mini           — source-language board judge + fact cards
+  2. OpenAI gpt-4o-mini           — direct Russian draft from fact cards + evidence
   3. Legacy category rewrite      — mini-only full-evidence fallback for selected misses
   4. Lead-only gpt-4o fallback    — single visible lead item, never the broad pool
 
@@ -202,11 +202,12 @@ Important: missing date/place/action does not automatically mean weak. Judge aga
 Reader card style: factual, concise, source-faithful, 1-2 sentences, no hype, no "source says", no vague "this is important".
 """
 
-FINAL_TRANSLATE_SYSTEM = """You are the final Russian editor for Greater Manchester AM Brief.
-Translate the supplied English reader_card into a polished Russian Telegram bullet.
+FINAL_TRANSLATE_SYSTEM = """You are the Russian writer for Greater Manchester AM Brief.
+Write the visible Telegram bullet directly in Russian from the supplied fact_card, source_evidence and structured fields.
 
-You are translating final English digest cards, not raw source material. Preserve every date, place, line, venue, amount, status and uncertainty from the English card. Do not add facts from outside the English card/fact_card.
-source_evidence is a selected-item safety net, not a second rewrite brief: use it only to verify or restore a concrete date, venue, amount, role or status that is already implied by the English card/fact_card. Never introduce a new angle from source_evidence alone.
+The English reader_card is only a service note from the board judge. Do NOT translate it literally. Use it only to understand the chosen angle. The visible output must be natural Russian written from facts.
+Preserve every date, place, line, venue, amount, status and uncertainty from english_fact_card/source_evidence/event/story_frame. Do not add facts from outside the supplied payload.
+source_evidence is the safety net for selected items: use it to restore concrete dates, venues, amounts, roles and status, not to invent a new story angle.
 If glossary_terms are present, follow them for terminology and naming. Glossary terms do not add facts; they only control wording.
 If story_frame.case_frame is present, preserve the case stage, roles and unknowns exactly: do not turn "no charges" into "charged", do not turn a witness/father/driver into a suspect, and do not invent a verdict.
 
@@ -215,7 +216,7 @@ Return ONLY a JSON object:
 
 Rules:
 - Start every line with "• ".
-- Write natural Russian, not literal machine translation.
+- Write natural Russian, not literal machine translation and not a калька from English.
 - Keep proper names, venue names, English transport line names and artist names as source names.
 - If the English card says a fact is unspecified, keep that honesty in Russian.
 - Do not add generic filler such as "это важный сигнал", "следите за обновлениями", "может привлечь внимание".
@@ -922,6 +923,43 @@ def _append_reason(candidate: dict, note: str) -> None:
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
 
 
+def _set_digest_selection_verdict(candidate: dict, verdict: str, reason: str) -> None:
+    """Every candidate must leave rewrite selection with a product verdict.
+
+    This deliberately mirrors product language, not internal pipeline state:
+    selected / reserve / needs_enrichment / drop. A "pending" limbo means the
+    next stage cannot explain why a useful event vanished.
+    """
+    candidate["digest_selection_verdict"] = verdict
+    candidate["digest_selection_reason"] = reason
+    if reason:
+        _append_reason(candidate, f"Selection: {reason}")
+
+
+def _needs_selection_enrichment(candidate: dict) -> bool:
+    if _has_nothing_to_write_from(candidate):
+        return True
+    missing = candidate.get("english_missing_facts")
+    if isinstance(missing, list) and missing:
+        return True
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    event_like = block in {
+        "weekend_activities",
+        "next_7_days",
+        "future_announcements",
+        "russian_events",
+        "professional_events",
+        "openings",
+    } or category in {"culture_weekly", "russian_speaking_events", "diaspora_events", "professional_events"}
+    if event_like and event.get("is_event"):
+        has_date = bool(str(event.get("date_start") or event.get("date") or "").strip())
+        has_place_or_booking = bool(str(event.get("venue") or event.get("booking_url") or candidate.get("source_url") or "").strip())
+        return not (has_date and has_place_or_booking)
+    return False
+
+
 def _rewrite_shortlist_priority(candidate: dict) -> tuple[float, float, float, str]:
     apply_story_intelligence(candidate)
     lead_bonus = 1000.0 if candidate.get("is_lead") else 0.0
@@ -1027,6 +1065,11 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
         for candidate in protected_group:
             selected_ids.add(id(candidate))
             candidate["rewrite_shortlist_status"] = "selected_uncapped"
+            _set_digest_selection_verdict(
+                candidate,
+                "selected",
+                "Protected item selected before size limits.",
+            )
             uncapped_selected.append(
                 {
                     "fingerprint": candidate.get("fingerprint") or "",
@@ -1040,6 +1083,11 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
         for candidate in normal_group[:cap]:
             selected_ids.add(id(candidate))
             candidate["rewrite_shortlist_status"] = "selected"
+            _set_digest_selection_verdict(
+                candidate,
+                "selected",
+                f"Selected in {block or 'unknown'} shortlist before writing.",
+            )
         for candidate in normal_group[cap:]:
             candidate["include"] = False
             candidate["backup_candidate"] = True
@@ -1047,7 +1095,8 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
             candidate["public_reserve"] = False
             candidate["rewrite_shortlist_status"] = "backup_before_rewrite"
             candidate["rewrite_shortlist_reason"] = f"Outside pre-rewrite shortlist for {block or 'unknown'}."
-            _append_reason(candidate, candidate["rewrite_shortlist_reason"])
+            verdict = "needs_enrichment" if _needs_selection_enrichment(candidate) else "reserve"
+            _set_digest_selection_verdict(candidate, verdict, candidate["rewrite_shortlist_reason"])
             held.append(
                 {
                     "fingerprint": candidate.get("fingerprint") or "",
@@ -1113,7 +1162,8 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
             candidate["rewrite_shortlist_reason"] = (
                 f"Outside global translation board (soft max {REWRITE_TRANSLATION_BOARD_MAX})."
             )
-            _append_reason(candidate, candidate["rewrite_shortlist_reason"])
+            verdict = "needs_enrichment" if _needs_selection_enrichment(candidate) else "reserve"
+            _set_digest_selection_verdict(candidate, verdict, candidate["rewrite_shortlist_reason"])
             selected_ids.discard(id(candidate))
             board_overflow += 1
             held.append(
@@ -1776,6 +1826,16 @@ def _call_english_cards_with_fallback(
             continue
         if escalation_pending and step.provider != "openai":
             escalation_pending = []
+        if (
+            escalation_pending
+            and not missing
+            and step.priority <= 1
+            and not (provider_override or base_url_override or model_override)
+        ):
+            # A strong-model escalation should go to the surgical gpt-4o lead
+            # step, not through another cheap full-list judge.
+            continue
+        previous_escalation = list(escalation_pending)
         request_candidates = _fallback_request_candidates(
             list(missing),
             step_priority=step.priority,
@@ -1785,7 +1845,7 @@ def _call_english_cards_with_fallback(
             base_url_override=base_url_override,
             model_override=model_override,
         )
-        if escalation_pending:
+        if escalation_pending and step.priority > 1:
             seen_request = {str(c.get("fingerprint") or "") for c in request_candidates}
             request_candidates.extend(
                 c for c in escalation_pending
@@ -1816,14 +1876,20 @@ def _call_english_cards_with_fallback(
             provider_health.record_success(step.provider)
         else:
             provider_health.record_failure(step.provider)
-        if step.role == "board_judge_mini_primary":
-            escalation_pending = [
+        if step.role in {"board_judge_mini_primary", "board_judge_mini_reserve", "board_ranker_deepseek_pro_primary"}:
+            next_escalation = [
                 c for c in candidates
                 if (
                     str(c.get("fingerprint") or "") in step_mapping
                     and bool(step_mapping[str(c.get("fingerprint") or "")][0].get("needs_gpt4o_escalation"))
                 )
             ]
+            existing = {str(c.get("fingerprint") or "") for c in next_escalation}
+            next_escalation.extend(
+                c for c in previous_escalation
+                if _is_lead_candidate(c) and str(c.get("fingerprint") or "") not in existing
+            )
+            escalation_pending = next_escalation
         else:
             escalation_pending = []
         missing = [c for c in candidates if str(c.get("fingerprint") or "") not in mapping]
@@ -2059,10 +2125,11 @@ def _selected_evidence_text(candidate: dict, *, limit: int = 3000) -> str:
 
 
 def _translation_batch_items(batch: list[dict]) -> list[dict]:
-    """Final Russian translation payload.
+    """Direct Russian-writing payload.
 
-    Broad English-card generation remains capped at 1000 chars. Only selected
-    or reserve items carry richer source_evidence into final translation.
+    The English card is only a service fact/angle note. The visible bullet is
+    written directly in Russian from the fact card, structured fields and richer
+    selected-item evidence.
     """
     items: list[dict] = []
     for c in batch:
@@ -2542,6 +2609,84 @@ def _build_rewrite_inventory(candidates: list[dict]) -> dict[str, object]:
         "run_date_london": today_london(),
         "created_at_london": now_london().isoformat(),
         "totals": totals,
+        "sections": sections,
+    }
+
+
+def _section_selection_report_path(project_root: Path) -> Path:
+    return project_root / "data" / "state" / "section_selection_report.json"
+
+
+def _finalize_digest_selection_verdicts(candidates: list[dict]) -> dict[str, object]:
+    """Fill missing product verdicts and produce a compact selection report."""
+    sections: dict[str, dict[str, object]] = {}
+    totals = {"selected": 0, "reserve": 0, "needs_enrichment": 0, "drop": 0, "pending": 0}
+    pending_dedupe_left: list[dict[str, object]] = []
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        block = str(candidate.get("primary_block") or "unknown")
+        row = sections.setdefault(
+            block,
+            {
+                "heading": PRIMARY_BLOCKS.get(block, block),
+                "total": 0,
+                "selected": 0,
+                "reserve": 0,
+                "needs_enrichment": 0,
+                "drop": 0,
+                "examples": [],
+            },
+        )
+        row["total"] = int(row.get("total") or 0) + 1
+        verdict = str(candidate.get("digest_selection_verdict") or "").strip()
+        if verdict not in totals:
+            if candidate.get("include"):
+                verdict = "selected"
+                reason = "Included for the current digest."
+            elif candidate.get("backup_candidate"):
+                verdict = "needs_enrichment" if _needs_selection_enrichment(candidate) else "reserve"
+                reason = (
+                    "Held as backup because it needs more facts before writing."
+                    if verdict == "needs_enrichment"
+                    else "Held as same-block backup for recovery."
+                )
+            else:
+                verdict = "drop"
+                reason = str(candidate.get("reason") or "Not selected for today's digest.")
+            candidate["digest_selection_verdict"] = verdict
+            candidate["digest_selection_reason"] = reason
+        totals[verdict] += 1
+        row[verdict] = int(row.get(verdict) or 0) + 1
+        reason = str(candidate.get("digest_selection_reason") or candidate.get("reason") or "")
+        examples = row["examples"]
+        assert isinstance(examples, list)
+        if len(examples) < 8 and verdict != "selected":
+            examples.append(
+                {
+                    "verdict": verdict,
+                    "title": candidate.get("title"),
+                    "source_label": candidate.get("source_label"),
+                    "reason": reason,
+                }
+            )
+        if "pending dedupe" in str(candidate.get("reason") or "").lower():
+            pending_dedupe_left.append(
+                {
+                    "title": candidate.get("title"),
+                    "source_label": candidate.get("source_label"),
+                    "primary_block": block,
+                    "reason": candidate.get("reason"),
+                }
+            )
+    totals["pending"] = len(pending_dedupe_left)
+    return {
+        "schema_version": 1,
+        "run_date_london": today_london(),
+        "created_at_london": now_london().isoformat(),
+        "policy": "Every candidate must have selected / reserve / needs_enrichment / drop. Pending dedupe is not a valid final state.",
+        "totals": totals,
+        "pending_dedupe_left": pending_dedupe_left[:40],
         "sections": sections,
     }
 
@@ -3069,6 +3214,11 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             c["draft_line_provider"] = "writer_deterministic_pending"
             c["draft_line_model"] = ""
             c["rewrite_shortlist_status"] = "writer_deterministic"
+            _set_digest_selection_verdict(
+                c,
+                "selected",
+                "Structured writer template will produce the visible line.",
+            )
             deterministic_writer_items.append(
                 {
                     "fingerprint": c.get("fingerprint") or "",
@@ -3242,7 +3392,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         mapping: ProviderMapping = {}
 
         if english_ready:
-            logger.info("Final Russian translation: %d English reader cards.", len(english_ready))
+            logger.info("Direct Russian write: %d selected fact cards.", len(english_ready))
             mapping.update(
                 _call_with_fallback(
                     english_ready,
@@ -3263,7 +3413,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             ]
             if translated_missing:
                 logger.info(
-                    "Final Russian translation missed %d item(s); falling back to legacy category prompts.",
+                    "Direct Russian write missed %d item(s); falling back to legacy category prompts.",
                     len(translated_missing),
                 )
                 legacy_rewrite_pool.extend(translated_missing)
@@ -3521,6 +3671,9 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     write_json(_english_card_memory_path(project_root), english_card_memory)
     translation_memory_updated = _update_translation_memory(candidates, translation_memory)
     write_json(_translation_memory_path(project_root), translation_memory)
+    section_selection_report = _finalize_digest_selection_verdicts(candidates)
+    write_json(_section_selection_report_path(project_root), section_selection_report)
+    candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     rewrite_inventory = _build_rewrite_inventory(candidates)
     write_json(_rewrite_inventory_path(project_root), rewrite_inventory)
     diagnostics_summary = _summarise_provider_batch_diagnostics(provider_batch_diagnostics)
@@ -3556,7 +3709,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "cards_reused_from_content_cache": len(english_card_memory_reused),
                 "selected_for_translation": len(to_rewrite),
                 "cards_missing_on_selected": sum(1 for c in to_rewrite if not str(c.get("english_reader_card") or "").strip()),
-                "policy": "Deterministic pre-board trims the broad scan before mini sees it; Board Judge and final translation are mini-first, with gpt-4o automatic fallback only for the single lead item.",
+                "visible_russian_write": "direct_from_fact_card_and_evidence",
+                "policy": "Deterministic pre-board trims the broad scan before model selection; source-language fact cards are service data only, and visible Russian is written directly from facts/evidence. gpt-4o automatic fallback stays surgical for the single lead item.",
             },
             "english_card_memory": {
                 "enabled": True,
@@ -3584,6 +3738,10 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "rewrite_inventory": {
                 "path": str(_rewrite_inventory_path(project_root).relative_to(project_root)),
                 "totals": rewrite_inventory.get("totals", {}),
+            },
+            "section_selection_report": {
+                "path": str(_section_selection_report_path(project_root).relative_to(project_root)),
+                "totals": section_selection_report.get("totals", {}),
             },
             "applied": applied,
             "fixed": fixed,

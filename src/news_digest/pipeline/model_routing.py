@@ -72,20 +72,21 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
     "rewrite": (
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "mini_rewrite_primary", 1, batch_size=6, timeout_seconds=45),
     ),
-    # English-first architecture: judge source-language candidates and prepare
-    # compact English fact/reader cards before any Russian copy is written.
-    # OpenAI mini is the primary board judge; gpt-4o is a surgical single-lead
-    # fallback only, never a broad extraction fallback.
+    # Source-language selection/fact-card pass. DeepSeek v4-pro gets the
+    # reasoning/ranking job on the already-trimmed candidate list; OpenAI mini
+    # is the fast full-list reserve when DeepSeek is unavailable or misses
+    # items; gpt-4o remains surgical for lead escalation only.
     "english_cards": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "board_judge_mini_primary", 1, batch_size=8, timeout_seconds=30),
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_PRO_MODEL, "DEEPSEEK_API_KEY", "board_ranker_deepseek_pro_primary", 1, batch_size=6, timeout_seconds=35),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "board_judge_mini_reserve", 1, batch_size=8, timeout_seconds=30),
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "lead_only_board_fallback", 2, batch_size=1, timeout_seconds=45),
     ),
-    # Translate only the already-formed English reader cards. This keeps the
-    # expensive GPT call on the final short copy, not the raw evidence packet.
-    # gpt-4o is a surgical single-lead fallback only.
+    # Write visible Russian directly from the service fact card + selected
+    # evidence. The English reader card is not translated literally; it is only
+    # an internal angle/fact note. gpt-4o is a surgical single-lead fallback.
     "final_translate": (
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "final_ru_translation_mini_primary", 1, batch_size=8, timeout_seconds=30),
-        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "lead_only_translation_fallback", 2, batch_size=1, timeout_seconds=45),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "direct_ru_writer_mini_primary", 1, batch_size=8, timeout_seconds=30),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "lead_only_direct_ru_fallback", 2, batch_size=1, timeout_seconds=45),
     ),
     # Transport: short structured translation → cheap mini is enough. Most
     # transport lines should already be handled by transport_fill.

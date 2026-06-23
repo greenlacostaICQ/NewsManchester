@@ -317,6 +317,16 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 candidate["dedupe_decision"] = "drop"
                 candidate["include"] = False
 
+        pending_reason = "pending dedupe" in str(candidate.get("reason") or "").lower()
+        if candidate.get("include"):
+            candidate["dedupe_verdict"] = "selected"
+            if pending_reason:
+                candidate["reason"] = (
+                    "Dedupe: live item has no exact/history repeat; accepted for editorial selection."
+                )
+        else:
+            candidate["dedupe_verdict"] = "drop"
+
         if not candidate.get("reason"):
             errors.append(f"Candidate #{index} is missing reason.")
 
@@ -325,6 +335,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 "fingerprint": fingerprint,
                 "title": candidate.get("title"),
                 "decision": candidate.get("dedupe_decision"),
+                "dedupe_verdict": candidate.get("dedupe_verdict"),
                 "change_type": change_type,
                 "reason": candidate.get("reason"),
                 "matched_previous_fingerprint": candidate.get("matched_previous_fingerprint"),

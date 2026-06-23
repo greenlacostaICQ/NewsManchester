@@ -43,7 +43,7 @@ PRE_SEND_RUSSIAN_EDITOR_PROMPT = """Ты выпускающий редактор
 Тебе дают уже видимые строки выпуска и, если удалось сопоставить строку с кандидатом, evidence по исходной новости.
 Исправь русский язык и редакторские дефекты. Если строка непонятная, битая или слишком машинная, пересобери её заново из evidence.
 
-Верни JSON-объект: {"items":[{"index":0,"status":"ok|fixed","line":"...","reason":"..."}]}.
+Верни JSON-объект: {"items":[{"index":0,"action":"ok|rewrite|replace_needed|strip_only_if_replacement_unavailable","line":"...","reason":"..."}]}.
 
 Правила:
 - Сохраняй bullet "• " и HTML-теги/ссылки, если они есть.
@@ -57,7 +57,10 @@ PRE_SEND_RUSSIAN_EDITOR_PROMPT = """Ты выпускающий редактор
 - Футбол и билеты не должны звучать как машинная оценка: убирай "это важная информация" и "интересная информация", заменяй на конкретный смысл из строки.
 - Не переводить всё подряд: имена, площадки, компании, AI/API/SaaS/open banking/open space и другие glossary keep-термины оставлять как есть.
 - Glossary-нарушения чинить точечно: disruptions/anniversary/inquest/open conclusion переводить, CQC/PBSA/AGM/MDC объяснять внутри строки.
-- Если строка нормальная, верни её без изменений со status="ok".
+- Если строка нормальная, верни её без изменений с action="ok".
+- Если строку можно исправить по evidence, верни action="rewrite" и новую line.
+- Если строка плохая, но evidence не хватает для честного исправления, верни action="replace_needed".
+- Если строка должна исчезнуть и замены нет, верни action="strip_only_if_replacement_unavailable".
 """
 
 _BAD_RUSSIAN_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
@@ -469,6 +472,7 @@ def _call_pre_send_russian_editor_batch(
     if not isinstance(rows, list):
         return {}, {"status": "parse_failed", "error": "JSON root has no items list", "raw_excerpt": raw[:400], "items_sent": len(items)}
     fixes: dict[int, str] = {}
+    actions: list[dict[str, object]] = []
     for row in rows:
         if not isinstance(row, dict):
             continue
@@ -477,9 +481,12 @@ def _call_pre_send_russian_editor_batch(
         except (TypeError, ValueError):
             continue
         line = str(row.get("line") or "").strip()
+        action = str(row.get("action") or row.get("status") or "").strip() or "rewrite"
+        reason = str(row.get("reason") or "").strip()
+        actions.append({"index": index, "action": action, "line": line, "reason": reason})
         if line.startswith("• "):
             fixes[index] = line
-    return fixes, {"status": "ok", "items_sent": len(items), "items_returned": len(fixes)}
+    return fixes, {"status": "ok", "items_sent": len(items), "items_returned": len(fixes), "actions": actions[:120]}
 
 
 def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) -> tuple[dict[int, str], dict[str, object]]:
@@ -494,6 +501,7 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
     client = OpenAI(api_key=api_key, timeout=60, max_retries=1)
     fixes: dict[int, str] = {}
     batch_reports: list[dict[str, object]] = []
+    actions: list[dict[str, object]] = []
     batches = _batch_editor_items(items)
     max_workers = max(1, int(os.environ.get("PRE_SEND_EDITOR_MAX_WORKERS", PRE_SEND_EDITOR_MAX_WORKERS)))
     max_workers = min(len(batches), max_workers)
@@ -502,6 +510,7 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
         for batch in batches:
             batch_fixes, batch_report = _call_pre_send_russian_editor_batch(client, batch, record_call_from_response)
             fixes.update(batch_fixes)
+            actions.extend(batch_report.get("actions") or [])
             batch_reports.append(batch_report)
     else:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -512,6 +521,7 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
             for future in futures:
                 batch_fixes, batch_report = future.result()
                 fixes.update(batch_fixes)
+                actions.extend(batch_report.get("actions") or [])
                 batch_reports.append(batch_report)
     failed = [report for report in batch_reports if report.get("status") != "ok"]
     return fixes, {
@@ -522,6 +532,7 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
         "max_workers": max_workers,
         "duration_seconds": round(time.monotonic() - started, 3),
         "failed_batches": len(failed),
+        "actions": actions[:200],
         "batches": batch_reports[:20],
     }
 
@@ -584,17 +595,19 @@ def _pre_send_polish_sections(
         else _visible_line_items(polished)
     )
     evidence_items = sum(1 for item in items if isinstance(item.get("evidence"), dict) and item.get("evidence"))
-    # D12: only the suspicious lines (language detector OR crime/court/sensitive)
-    # go to the gpt-4o pass — clean lines keep the rule polish. The model reads
-    # the few rows that matter instead of skimming the whole issue.
-    suspicious_items = [
-        item
-        for item in items
-        if _line_needs_russian_editor(str(item.get("line") or ""))
-        or _SENSITIVE_LINE_RE.search(str(item.get("line") or ""))
-    ]
-    model_fixes, model_report = _call_pre_send_russian_editor(suspicious_items, api_key)
-    model_report["targeted_items"] = len(suspicious_items)
+    # The final editor must read the whole visible issue, not only rows that a
+    # local regex already suspects. Otherwise bad but regex-clean Russian
+    # ("Boltonа", literal English калька, generic business/football filler)
+    # can pass untouched while the judge only warns after the fact.
+    model_fixes, model_report = _call_pre_send_russian_editor(items, api_key)
+    model_report["targeted_items"] = len(items)
+    model_report["selection_policy"] = "whole_visible_digest"
+    action_by_index = {
+        int(action.get("index")): action
+        for action in (model_report.get("actions") or [])
+        if isinstance(action, dict) and action.get("index") is not None and str(action.get("index")).strip()
+    }
+    model_changes: list[dict[str, object]] = []
     if model_report.get("status") not in {"ok", "skipped_no_items"}:
         warnings.append(f"Pre-send Russian editor skipped/failed: {model_report.get('status')} {model_report.get('error') or ''}".strip())
     if model_fixes:
@@ -609,6 +622,16 @@ def _pre_send_polish_sections(
             if fixed_line != original:
                 item["line"] = fixed_line
                 model_fixed += 1
+                action = action_by_index.get(index, {})
+                model_changes.append(
+                    {
+                        "index": index,
+                        "section": item.get("section"),
+                        "before": original,
+                        "after": fixed_line,
+                        "reason": action.get("reason") if isinstance(action, dict) else "",
+                    }
+                )
         rebuilt: dict[str, list[str]] = {}
         for item in items:
             rebuilt.setdefault(str(item.get("section") or ""), []).append(str(item.get("line") or ""))
@@ -617,17 +640,57 @@ def _pre_send_polish_sections(
             rebuilt.setdefault(section_name, [])
         polished = rebuilt
 
-    # Universal degradation (owner: for everything, always): a row still bad
-    # after the repair pass is REPLACED from a clean same-section public
-    # reserve, else STRIPPED. The issue always ships; a known-bad row never does.
     replaced = 0
     stripped = 0
+    model_requested_replaced = 0
+    model_requested_stripped = 0
     rendered_urls = {
         _line_url_identity(line)
         for lines in polished.values()
         for line in lines
         if line.strip()
     }
+    by_index = {int(item["index"]): item for item in items}
+    for index, action in action_by_index.items():
+        action_name = str(action.get("action") or "").strip()
+        if action_name not in {"replace_needed", "strip_only_if_replacement_unavailable"}:
+            continue
+        item = by_index.get(index)
+        if not item:
+            continue
+        section_name = str(item.get("section") or "")
+        original = str(item.get("line") or "")
+        if section_name not in polished or not original:
+            continue
+        replacement = _same_section_reserve_line(section_name, candidates or [], rendered_urls)
+        section_lines = polished.get(section_name) or []
+        try:
+            pos = section_lines.index(original)
+        except ValueError:
+            continue
+        if replacement:
+            section_lines[pos] = replacement
+            item["line"] = replacement
+            replaced += 1
+            model_requested_replaced += 1
+            model_changes.append(
+                {
+                    "index": index,
+                    "section": section_name,
+                    "before": original,
+                    "after": replacement,
+                    "reason": action.get("reason") or "Model requested same-section replacement.",
+                }
+            )
+        else:
+            del section_lines[pos]
+            stripped += 1
+            model_requested_stripped += 1
+            warnings.append(f"Final editor requested removal in «{section_name}», but no replacement was available.")
+
+    # Universal degradation (owner: for everything, always): a row still bad
+    # after the repair pass is REPLACED from a clean same-section public
+    # reserve, else STRIPPED. The issue always ships; a known-bad row never does.
     for section_name in list(polished.keys()):
         out: list[str] = []
         for line in polished[section_name]:
@@ -666,8 +729,11 @@ def _pre_send_polish_sections(
         "enabled": True,
         "rules_fixed": rule_fixed,
         "model_fixed": model_fixed,
+        "model_changes": model_changes[:120],
         "degraded_replaced": replaced,
         "degraded_stripped": stripped,
+        "model_requested_replaced": model_requested_replaced,
+        "model_requested_stripped": model_requested_stripped,
         "remaining_bad": remaining_bad,
         "bad_examples": bad_examples,
         "model": PRE_SEND_RUSSIAN_EDITOR_MODEL,
@@ -686,6 +752,7 @@ def edit_digest(project_root: Path) -> StageResult:
     candidates_path = state_dir / "candidates.json"
     draft_path = state_dir / "draft_digest.html"
     report_path = state_dir / "editor_report.json"
+    final_editor_report_path = state_dir / "final_editor_report.json"
 
     draft_text = draft_path.read_text(encoding="utf-8") if draft_path.exists() else ""
     sections = extract_sections(draft_text)
@@ -793,25 +860,37 @@ def edit_digest(project_root: Path) -> StageResult:
     except Exception:  # noqa: BLE001
         cost_summary = {}
 
+    report_payload = {
+        "pipeline_run_id": pipeline_run_id,
+        "run_at_london": now_london().isoformat(),
+        "run_date_london": today_london(),
+        "stage_status": "complete" if not errors else "failed",
+        "errors": errors,
+        "warnings": warnings,
+        "city_candidate_count": len(city_candidates),
+        "soft_candidate_count": len(soft_candidates),
+        "weak_city_candidate_count": len(weak_city_candidates),
+        "weak_city_candidate_share": round(weak_city_share, 3),
+        "pre_send_russian_editor": russian_editor_report,
+        "cost_summary": cost_summary,
+        "min_city_practical_angle_length": MIN_CITY_PRACTICAL_ANGLE_LENGTH,
+        "max_weak_city_candidate_share": MAX_WEAK_CITY_CANDIDATE_SHARE,
+        "duplicate_collisions": duplicate_collisions,
+        "duration_seconds": round(time.monotonic() - stage_started, 3),
+        "draft_path": str(draft_path.resolve()),
+    }
+    write_json(report_path, report_payload)
     write_json(
-        report_path,
+        final_editor_report_path,
         {
             "pipeline_run_id": pipeline_run_id,
-            "run_at_london": now_london().isoformat(),
-            "run_date_london": today_london(),
-            "stage_status": "complete" if not errors else "failed",
-            "errors": errors,
-            "warnings": warnings,
-            "city_candidate_count": len(city_candidates),
-            "soft_candidate_count": len(soft_candidates),
-            "weak_city_candidate_count": len(weak_city_candidates),
-            "weak_city_candidate_share": round(weak_city_share, 3),
+            "run_at_london": report_payload["run_at_london"],
+            "run_date_london": report_payload["run_date_london"],
+            "stage_status": report_payload["stage_status"],
+            "policy": "gpt-4o reads the whole visible digest, applies line-level Russian fixes, and the report stores before/after/reason for changed lines.",
             "pre_send_russian_editor": russian_editor_report,
-            "cost_summary": cost_summary,
-            "min_city_practical_angle_length": MIN_CITY_PRACTICAL_ANGLE_LENGTH,
-            "max_weak_city_candidate_share": MAX_WEAK_CITY_CANDIDATE_SHARE,
-            "duplicate_collisions": duplicate_collisions,
-            "duration_seconds": round(time.monotonic() - stage_started, 3),
+            "warnings": warnings,
+            "errors": errors,
             "draft_path": str(draft_path.resolve()),
         },
     )
