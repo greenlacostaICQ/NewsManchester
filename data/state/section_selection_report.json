@@ -1,0 +1,716 @@
+{
+  "schema_version": 1,
+  "run_date_london": "2026-06-24",
+  "created_at_london": "2026-06-24T08:12:35.875681+01:00",
+  "policy": "Every candidate must have selected / reserve / needs_enrichment / drop. Pending dedupe is not a valid final state.",
+  "totals": {
+    "selected": 280,
+    "reserve": 476,
+    "needs_enrichment": 1,
+    "drop": 349,
+    "pending": 0
+  },
+  "pending_dedupe_left": [],
+  "sections": {
+    "weather": {
+      "heading": "Погода",
+      "total": 1,
+      "selected": 1,
+      "reserve": 0,
+      "needs_enrichment": 0,
+      "drop": 0,
+      "examples": []
+    },
+    "city_watch": {
+      "heading": "Городской радар",
+      "total": 66,
+      "selected": 3,
+      "reserve": 22,
+      "needs_enrichment": 0,
+      "drop": 41,
+      "examples": [
+        {
+          "verdict": "reserve",
+          "title": "How is the heatwave affecting the North West of England?",
+          "source_label": "BBC Manchester",
+          "reason": "Outside global translation board (soft max 42)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Nurse exposed by undercover BBC Panorama reporter struck off",
+          "source_label": "BBC Manchester",
+          "reason": "Outside global translation board (soft max 42)."
+        },
+        {
+          "verdict": "drop",
+          "title": "How is the heatwave affecting the North West of England?",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Greater Manchester's mayoral election explained",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Husband accused of drugging wife admits rape",
+          "source_label": "BBC Manchester Web",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Andy Burnham sworn in as new Makerfield MP",
+          "source_label": "BBC Manchester Web",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Greater Manchester mayoral election candidates announced",
+          "source_label": "BBC Manchester Web",
+          "reason": "Semantic intra-batch duplicate (cos=0.878); kept stronger source «BBC Manchester»."
+        },
+        {
+          "verdict": "reserve",
+          "title": "School closures LIVE as over 850 shut today in UK heatwave as urgent government advice issued",
+          "source_label": "MEN",
+          "reason": "Outside global translation board (soft max 42)."
+        }
+      ]
+    },
+    "last_24h": {
+      "heading": "Свежие новости",
+      "total": 118,
+      "selected": 12,
+      "reserve": 27,
+      "needs_enrichment": 0,
+      "drop": 79,
+      "examples": [
+        {
+          "verdict": "reserve",
+          "title": "Mum fears deaf son is missing out at school due to BSL gap",
+          "source_label": "BBC Manchester",
+          "reason": "Outside global translation board (soft max 42)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Bury woman murdered her husband, 84, who had dementia",
+          "source_label": "BBC Manchester",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Manchester firm bombarded people in debt with 5.5m texts",
+          "source_label": "BBC Manchester",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "drop",
+          "title": "Man in his 80s dies in Tameside house fire",
+          "source_label": "BBC Manchester",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Grieving son fights Hattersley school absence ruling 'injustice'",
+          "source_label": "BBC Manchester",
+          "reason": "Same story, but semantic dedupe found concrete new facts. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-23 (anchor=local_action, ttl=3d)."
+        },
+        {
+          "verdict": "drop",
+          "title": "England over-75s to face Germany for 1966 World Cup anniversary match",
+          "source_label": "BBC Manchester",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Mum fears deaf son is missing out at school due to BSL gap",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "TV Festival to move from Edinburgh to Manchester after 50 years",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        }
+      ]
+    },
+    "transport": {
+      "heading": "Общественный транспорт сегодня",
+      "total": 6,
+      "selected": 6,
+      "reserve": 0,
+      "needs_enrichment": 0,
+      "drop": 0,
+      "examples": []
+    },
+    "today_focus": {
+      "heading": "Что важно сегодня",
+      "total": 3,
+      "selected": 2,
+      "reserve": 0,
+      "needs_enrichment": 0,
+      "drop": 1,
+      "examples": [
+        {
+          "verdict": "drop",
+          "title": "Mum fears deaf son is missing out at school due to BSL gap",
+          "source_label": "BBC Manchester public safety fallback",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        }
+      ]
+    },
+    "next_7_days": {
+      "heading": "Что важно в ближайшие 7 дней",
+      "total": 73,
+      "selected": 5,
+      "reserve": 10,
+      "needs_enrichment": 0,
+      "drop": 58,
+      "examples": [
+        {
+          "verdict": "drop",
+          "title": "Inhale Me, Exhale You — By Kate Partington",
+          "source_label": "HOME",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: structured event date 2026-06-02 is in the past."
+        },
+        {
+          "verdict": "drop",
+          "title": "Let Wildflowers Bloom / Que Esclatin Les Flors — A cross-cultural poetic collaboration celebrating the shared voices of Manchester and Barcelona, by Nóra Blascsók & Esteve Plantada.",
+          "source_label": "HOME",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: structured event date 2026-06-10 is in the past."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Disclosure Day (12A) — Emily Blunt and Josh O'Connor star in Spielberg's latest exploration of extraterrestrial life.",
+          "source_label": "HOME",
+          "reason": "Outside global translation board (soft max 42)."
+        },
+        {
+          "verdict": "drop",
+          "title": "The Grey Area Writing Group and Book Club | Whitworth Art Gallery",
+          "source_label": "Whitworth",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event quality gate failed (date, district)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Artist in Residence | Whitworth Art Gallery",
+          "source_label": "Whitworth",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
+        },
+        {
+          "verdict": "drop",
+          "title": "Manchester Sacred Harp | Whitworth Art Gallery",
+          "source_label": "Whitworth",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event quality gate failed (date)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Life Drawing Workshops | Whitworth Art Gallery",
+          "source_label": "Whitworth",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
+        },
+        {
+          "verdict": "drop",
+          "title": "Marina Abramović: Balkan Erotic Epic | Aviva Studios",
+          "source_label": "Factory International",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
+        }
+      ]
+    },
+    "weekend_activities": {
+      "heading": "Выходные в GM",
+      "total": 103,
+      "selected": 10,
+      "reserve": 15,
+      "needs_enrichment": 0,
+      "drop": 78,
+      "examples": [
+        {
+          "verdict": "drop",
+          "title": "${Tripbuilder.Path}",
+          "source_label": "Visit Manchester Weekend",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event quality gate failed (date, place, price_or_free_or_booking)."
+        },
+        {
+          "verdict": "drop",
+          "title": "What's on at Manchester Opera House & Palace Theatre",
+          "source_label": "Visit Manchester Weekend",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Entertainment Events in Manchester",
+          "source_label": "Visit Manchester Weekend",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Events at AO Arena Manchester | Upcoming Concerts and Shows",
+          "source_label": "Visit Manchester Weekend",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "drop",
+          "title": "What's on at Co-op Live",
+          "source_label": "Visit Manchester Weekend",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "What's on at Aviva Studios",
+          "source_label": "Visit Manchester Weekend",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "What's on at Bridgewater Hall",
+          "source_label": "Visit Manchester Weekend",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "What's on at Contact Theatre",
+          "source_label": "Visit Manchester Weekend",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        }
+      ]
+    },
+    "ticket_radar": {
+      "heading": "Билеты / Ticket Radar",
+      "total": 56,
+      "selected": 32,
+      "reserve": 13,
+      "needs_enrichment": 0,
+      "drop": 11,
+      "examples": [
+        {
+          "verdict": "reserve",
+          "title": "Robyn SEXISTENTIAL TOUR Sat 27 Jun 2026 Multiple times",
+          "source_label": "Co-op Live",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Kings Of Leon Special Guest Snuts Sat 4 Jul 2026 Multiple times",
+          "source_label": "Co-op Live",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Def Leppard Special Guest Extreme Mon 6 Jul 2026 Multiple times",
+          "source_label": "Co-op Live",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Beverley Knight - Born To Perform Tour — event 2026-06-26 — public sale 2025-10-10 10:00",
+          "source_label": "Ticketmaster Manchester Upcoming",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "TAKE THAT - THE CIRCUS LIVE - Summer 2026 — event 2026-07-01 — public sale 2025-09-26 10:00",
+          "source_label": "Ticketmaster Manchester Upcoming",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Sounds of the City Present The K's — event 2026-07-03 — public sale 2025-09-19 09:30",
+          "source_label": "Ticketmaster Manchester Upcoming",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Sammy Hagar - Venue Premium Tickets — event 2026-07-04 — public sale 2025-11-05 17:00",
+          "source_label": "Ticketmaster Manchester Upcoming",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Antarctic Monkeys — event 2026-07-04 — public sale 2025-07-25 10:00",
+          "source_label": "Ticketmaster Manchester Upcoming",
+          "reason": "Held as same-block backup for recovery."
+        }
+      ]
+    },
+    "future_announcements": {
+      "heading": "Дальние анонсы",
+      "total": 88,
+      "selected": 85,
+      "reserve": 3,
+      "needs_enrichment": 0,
+      "drop": 0,
+      "examples": [
+        {
+          "verdict": "reserve",
+          "title": "TAKE THAT - THE CIRCUS LIVE - Summer 2026 — event 2026-07-01 — public sale 2025-09-26 10:00",
+          "source_label": "Ticketmaster Manchester Onsale",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "The James Brown Experience — event 2026-05-04 — public sale 2025-01-24 10:00",
+          "source_label": "Ticketmaster UK Major Onsale",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Stand-up workshop (weekly monday sessions)",
+          "source_label": "Skiddle Manchester Comedy",
+          "reason": "Outside global translation board (soft max 42)."
+        }
+      ]
+    },
+    "outside_gm_tickets": {
+      "heading": "Крупные концерты вне GM",
+      "total": 474,
+      "selected": 110,
+      "reserve": 364,
+      "needs_enrichment": 0,
+      "drop": 0,
+      "examples": [
+        {
+          "verdict": "reserve",
+          "title": "Avatar's the Last Airbender - Film with Live Orchestra — event 2026-10-11 — public sale 2025-05-02 15:00",
+          "source_label": "Ticketmaster Liverpool Onsale",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "What's Love Got to do With it? - The Ultimate Tribute to Tina Turner — event 2026-09-19 — public sale 2025-09-05 10:00",
+          "source_label": "Ticketmaster Liverpool Onsale",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Jamie Webster — event 2026-07-04 — public sale 2025-10-03 10:00",
+          "source_label": "Ticketmaster Liverpool Onsale",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Jamie Webster — event 2026-07-05 — public sale 2025-10-03 10:00",
+          "source_label": "Ticketmaster Liverpool Onsale",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Jamie Webster — event 2026-07-05 — public sale 2025-10-03 10:00",
+          "source_label": "Ticketmaster Liverpool Onsale",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Foo Fighters: TAKE COVER TOUR 2026 — event 2026-06-25 — public sale 2025-11-14 10:00",
+          "source_label": "Ticketmaster Liverpool Onsale",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Foo Fighters: TAKE COVER TOUR 2026 — event 2026-06-27 — public sale 2025-11-14 10:00",
+          "source_label": "Ticketmaster Liverpool Onsale",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Foo Fighters: TAKE COVER TOUR 2026 — event 2026-06-25 — public sale 2025-11-14 10:00",
+          "source_label": "Ticketmaster Liverpool Upcoming",
+          "reason": "Held as same-block backup for recovery."
+        }
+      ]
+    },
+    "russian_events": {
+      "heading": "Русскоязычные концерты и стендап UK",
+      "total": 20,
+      "selected": 3,
+      "reserve": 11,
+      "needs_enrichment": 0,
+      "drop": 6,
+      "examples": [
+        {
+          "verdict": "drop",
+          "title": "LEGENDS of the 90s LIVE in London",
+          "source_label": "EventFirst Diaspora",
+          "reason": "Без новых фактов: уже был 2026-06-03 как «LEGENDS of the 90s LIVE in London»."
+        },
+        {
+          "verdict": "drop",
+          "title": "Українська вечірка на Темзi (Summer Boat Party)",
+          "source_label": "EventFirst Diaspora",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event quality gate failed (date)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Спектакль \"Скамейка\"",
+          "source_label": "EventFirst Diaspora",
+          "reason": "Без новых фактов: уже был 2026-06-04 как «Спектакль \"Скамейка\"»."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Goran Bregovic (London)",
+          "source_label": "Kontramarka UK",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "drop",
+          "title": "Afisha London",
+          "source_label": "Afisha London",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
+        },
+        {
+          "verdict": "drop",
+          "title": "Афиша Лондон",
+          "source_label": "Afisha London",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event quality gate failed (date)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Афиша Лондон",
+          "source_label": "Afisha London",
+          "reason": "Outside global translation board (soft max 42)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Афиша Лондон",
+          "source_label": "Afisha London",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
+        }
+      ]
+    },
+    "openings": {
+      "heading": "Еда, открытия и рынки",
+      "total": 13,
+      "selected": 2,
+      "reserve": 2,
+      "needs_enrichment": 0,
+      "drop": 9,
+      "examples": [
+        {
+          "verdict": "drop",
+          "title": "Food Halls and Markets in Manchester - Manchester's Finest",
+          "source_label": "Manchester's Finest",
+          "reason": "Без новых фактов: уже был 2026-06-23 как «Food Halls and Markets in Manchester - Manchester's Finest»."
+        },
+        {
+          "verdict": "drop",
+          "title": "The Manchester charity feeding thousands with restaurant meals",
+          "source_label": "Manchester's Finest",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=day_out_guide, anchor=new_phase, tier=reject)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Manchester Airport to open first-ever Wetherspoons pub",
+          "source_label": "Manchester's Finest",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "drop",
+          "title": "Manchester cocktail bar added to Michelin Guide in ‘incredible surprise'",
+          "source_label": "The Manc Eats",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "12 new openings to still look forward to this year in Greater Manchester",
+          "source_label": "The Manc Eats",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-20 (anchor=new_phase, ttl=3d)."
+        },
+        {
+          "verdict": "drop",
+          "title": "A new restaurant serving seafood boils is opening at Printworks in Manchester",
+          "source_label": "The Manc Eats",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-21 (anchor=new_phase, ttl=3d)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "The legendary Hulme community pub The Old Abbey Taphouse has been reborn",
+          "source_label": "The Manc Eats",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "drop",
+          "title": "The SK Lowdown",
+          "source_label": "SK Lowdown Markets",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-20 (anchor=new_phase, ttl=3d)."
+        }
+      ]
+    },
+    "tech_business": {
+      "heading": "IT и бизнес",
+      "total": 14,
+      "selected": 4,
+      "reserve": 1,
+      "needs_enrichment": 0,
+      "drop": 9,
+      "examples": [
+        {
+          "verdict": "drop",
+          "title": "MD Comment: London Tech Week and the 10,000 policy announcements | Manchester Digital",
+          "source_label": "Manchester Digital",
+          "reason": "Curator drop: Чистый PR без новостного повода."
+        },
+        {
+          "verdict": "drop",
+          "title": "Tech Leader Talks - Build, Buy or Rebuild at Scale | Manchester Digital",
+          "source_label": "Manchester Digital",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Manchester Digital Launches ‘Manchester Digital V25.0' to Mark 25 Years Supporting Greater Manchester Tech | Manchester Digital",
+          "source_label": "Manchester Digital",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "MD Comment: Creating talent is only half the equation | Manchester Digital",
+          "source_label": "Manchester Digital",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Manchester Digital marks 25 years of supporting the sector with a new-look festival | Manchester Digital",
+          "source_label": "Manchester Digital",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Prolific North",
+          "source_label": "Prolific North Manchester",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Prolific North",
+          "source_label": "Prolific North Manchester",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "reserve",
+          "title": "“Wembley of the North” moves closer as Manchester United secures land for 100,000-seat new stadium",
+          "source_label": "Prolific North Manchester",
+          "reason": "Outside global translation board (soft max 42)."
+        }
+      ]
+    },
+    "professional_events": {
+      "heading": "Бесплатные business/tech события для тебя",
+      "total": 42,
+      "selected": 2,
+      "reserve": 2,
+      "needs_enrichment": 1,
+      "drop": 37,
+      "examples": [
+        {
+          "verdict": "drop",
+          "title": "Join the #MDTechCommunity Slack Channel | Manchester Digital",
+          "source_label": "Manchester Digital Events",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
+        },
+        {
+          "verdict": "drop",
+          "title": "A Manifesto for the Northern Tech Economy",
+          "source_label": "Manchester Digital Events",
+          "reason": "Без новых фактов: уже был 2026-06-16 как «A Manifesto for the Northern Tech Economy». LLM-review: Тот же сюжет, просто новая публикация без новых фактов."
+        },
+        {
+          "verdict": "drop",
+          "title": "MD Fintech 26 | Manchester Digital",
+          "source_label": "Manchester Digital Events",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional event match: major_conference_or_expo / unknown / score 72."
+        },
+        {
+          "verdict": "drop",
+          "title": "MD Future 26 | Manchester Digital",
+          "source_label": "Manchester Digital Events",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional event match: major_conference_or_expo / unknown / score 100."
+        },
+        {
+          "verdict": "drop",
+          "title": "The Masterminders 2026 | Manchester Digital",
+          "source_label": "Manchester Digital Events",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional event match: major_conference_or_expo / unknown / score 87."
+        },
+        {
+          "verdict": "drop",
+          "title": "The art of storytelling: Presenting employee feedback results with confidence | Manchester Digital",
+          "source_label": "Manchester Digital Events",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional event match: reject / unknown / score 28."
+        },
+        {
+          "verdict": "drop",
+          "title": "OnlyBrands.Live | Manchester Digital",
+          "source_label": "Manchester Digital Events",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional event match: reject / unknown / score 4."
+        },
+        {
+          "verdict": "drop",
+          "title": "Successify Manchester - Thur 25th June | Manchester Digital",
+          "source_label": "Manchester Digital Events",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional event match: reject / unknown / score 40."
+        }
+      ]
+    },
+    "football": {
+      "heading": "Футбол",
+      "total": 29,
+      "selected": 3,
+      "reserve": 6,
+      "needs_enrichment": 0,
+      "drop": 20,
+      "examples": [
+        {
+          "verdict": "reserve",
+          "title": "Manchester City",
+          "source_label": "Manchester City Men",
+          "reason": "Outside global translation board (soft max 42)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Man United transfer news LIVE: Morgan Rogers update, Mateus Fernandes latest, Brian Brobbey link",
+          "source_label": "MEN Manchester United",
+          "reason": "Outside global translation board (soft max 42)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Man United could be one step from signing Marcus Rashford replacement as transfer moves closer",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Man United latest: Ineos 'plan' for midfielder emerges as transfer rivals make move",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Man United can land themselves unexpected dream transfer to ease Mateus Fernandes pressure",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Roy Keane completes Bruno Fernandes U-turn at World Cup after Man United spat",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Man United must now do three crucial things to beat Tottenham to Mateus Fernandes",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Man United keen on World Cup star after eye-catching display as Tottenham consider bid",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        }
+      ]
+    }
+  }
+}
