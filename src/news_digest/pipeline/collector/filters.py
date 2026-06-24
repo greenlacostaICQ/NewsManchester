@@ -426,6 +426,7 @@ _FOOTBALL_FLUFF_TOKENS: tuple[str, ...] = (
     "u21",
     "pl2",
     "ticket information",
+    "ticket news",
     "ticketing information",
     "club shop",
     "membership",
@@ -438,6 +439,9 @@ _FOOTBALL_FLUFF_TOKENS: tuple[str, ...] = (
     "merchandise",
     # Press conferences, podcasts, behind-the-scenes — not news
     "press conference",
+    "images",
+    "picture special",
+    "media watch",
     "pre-match press",
     "post-match press",
     "podcast",
@@ -511,9 +515,14 @@ def _is_football_publishable(title: str, url: str = "") -> bool:
         "world cup", "club world cup", "premier league", "champions league",
         "europa league", "fa cup", "carabao cup", "fixture", "fixtures",
         "squad", "squad named", "call up", "call-up", "called up", "group stage",
-        "opponent", "opponents", "draw", "training return",
+        "opponent", "opponents", "draw", "training return", "efl trophy",
+        "pre-season", "preseason", "tour",
     )
-    if any(term in normalized for term in competition_terms):
+    club_ops_terms = (
+        "manager", "head coach", "appoint", "appointment", "stadium",
+        "100,000-seater", "100000-seater", "land deal", "takeover",
+    )
+    if any(term in normalized for term in (*competition_terms, *club_ops_terms)):
         return True
     fitness_terms = (
         "doubtful", "injury", "injured", "fit for", "ruled out", "returns from",
@@ -831,6 +840,12 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
         min_title_len=25,
         require_gm_token=True,
     ),
+    "BusinessLive Greater Manchester": _SourcePolicy(
+        path_banned_segments=("/all-about/", "/author/", "/topic/", "/newsletter/", "/page/"),
+        min_path_depth=2,
+        min_title_len=25,
+        require_gm_token=True,
+    ),
     "MIDAS Manchester": _SourcePolicy(
         path_must_contain=("/news/",),
         path_banned_segments=(
@@ -921,12 +936,12 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     ),
     "Manchester Theatres Weekend": _SourcePolicy(
         min_path_depth=2,
-        path_must_contain=("/whatson/", "/events/", "/show/", "/whats-on/"),
+        path_must_contain=("/whatson/", "/events/", "/event/", "/show/", "/whats-on/"),
         block_non_gm_weekend=True,
     ),
     "Manchester Theatres Next Weekend": _SourcePolicy(
         min_path_depth=2,
-        path_must_contain=("/whatson/", "/events/", "/show/", "/whats-on/"),
+        path_must_contain=("/whatson/", "/events/", "/event/", "/show/", "/whats-on/"),
         block_non_gm_weekend=True,
     ),
     "Eventbrite Manchester": _SourcePolicy(
@@ -1111,6 +1126,13 @@ def _source_override(
             "oxford road", "deansgate",
         )
         return any(re.search(rf"\b{re.escape(t)}\b", lowered_title) for t in rail_terms)
+
+    if source.name in {"BBC Sport Manchester United", "BBC Sport Manchester City"}:
+        if "/sport/football/articles/" not in lowered_path:
+            return False
+        if _is_football_fluff(lowered_title, lowered_path, lowered_summary):
+            return False
+        return _is_football_publishable(lowered_title, lowered_path)
 
     if source.name == "Manchester United":
         if "/en/news/" not in lowered_path:

@@ -11,6 +11,7 @@ HTML enrichment helpers used after re-fetching an article.
 
 from __future__ import annotations
 
+from collections import Counter
 from datetime import datetime, timedelta
 from html import unescape
 from html.parser import HTMLParser
@@ -756,8 +757,13 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         or _extract_article_published_at(article_html)
         or _published_at_from_title_or_url(item.title, item.url)
     )
+    preserve_listing_title = source.name in {
+        "RNCM",
+        "Manchester Theatres Weekend",
+        "Manchester Theatres Next Weekend",
+    }
     return ExtractedItem(
-        title=item.title if source.name == "RNCM" else _clean_title_text(unescape(enriched_title or item.title)),
+        title=item.title if preserve_listing_title else _clean_title_text(unescape(enriched_title or item.title)),
         url=item.url,
         published_at=published_at,
         summary=summary,
@@ -772,34 +778,93 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
     )
 
 
+def _norm_feed_title(title: str) -> str:
+    return re.sub(r"\s+", " ", str(title or "").strip()).lower()
+
+
+def _headline_from_summary(summary: str, max_chars: int = 150) -> str:
+    """Derive a headline from a feed item's <description>/<summary>.
+
+    Used when the item <title> is generic — e.g. BBC Sport team feeds give
+    every item the title "Manchester United" and put the actual story in the
+    description. Takes the first sentence, or the fuller snippet when that
+    sentence is too short to stand alone as a title.
+    """
+    cleaned = _clean_snippet(summary, max_chars=max_chars * 2)
+    if not cleaned:
+        return ""
+    first = re.split(r"(?<=[.!?])\s+", cleaned, maxsplit=1)[0].strip()
+    headline = first if len(first) >= 40 else cleaned
+    if len(headline) > max_chars:
+        headline = headline[:max_chars].rsplit(" ", 1)[0].strip()
+    return headline
+
+
 def _extract_feed_items(base_url: str, body: str) -> list[ExtractedItem]:
+    """Parse RSS/Atom items, recovering feeds with generic titles.
+
+    Some live feeds (notably BBC Sport team feeds) repeat the same generic
+    <title> — the section/team name — on every item while the real story
+    lives in <description>. Reading <title> alone makes every item identical,
+    so dedup collapses the whole feed to nothing. A title is treated as
+    generic when it is empty, echoes the channel/feed title, or repeats across
+    two or more items; the headline is then derived from the description.
+    """
     items: list[ExtractedItem] = []
     root = ET.fromstring(body)
-    for item in root.findall(".//item"):
-        title = (item.findtext("title") or "").strip()
+    atom_ns = "{http://www.w3.org/2005/Atom}"
+    channel_title = _norm_feed_title(
+        root.findtext(".//channel/title") or root.findtext(f"{atom_ns}title") or ""
+    )
+
+    def _resolve_title(raw_title: str, description: str, counts: Counter) -> tuple[str, str]:
+        summary = _clean_snippet(description)
+        norm = _norm_feed_title(raw_title)
+        is_generic = (
+            not norm
+            or (bool(channel_title) and norm == channel_title)
+            or counts.get(norm, 0) >= 2
+        )
+        if is_generic:
+            headline = _headline_from_summary(description)
+            if headline:
+                return headline, summary
+        return raw_title, summary
+
+    rss_items = root.findall(".//item")
+    rss_counts = Counter(_norm_feed_title(i.findtext("title") or "") for i in rss_items)
+    for item in rss_items:
+        raw_title = (item.findtext("title") or "").strip()
         link = (item.findtext("link") or "").strip()
         published_at = _feed_item_published_at(item)
+        title, summary = _resolve_title(raw_title, item.findtext("description") or "", rss_counts)
         if title and link and _looks_like_candidate_title(title):
             items.append(
                 ExtractedItem(
                     title=_clean_title_text(title),
                     url=parse.urljoin(base_url, link),
                     published_at=published_at,
-                    summary=_clean_snippet(item.findtext("description") or ""),
+                    summary=summary,
                 )
             )
-    for entry in root.findall(".//{http://www.w3.org/2005/Atom}entry"):
-        title = (entry.findtext("{http://www.w3.org/2005/Atom}title") or "").strip()
-        link_el = entry.find("{http://www.w3.org/2005/Atom}link")
+    atom_entries = root.findall(f".//{atom_ns}entry")
+    atom_counts = Counter(_norm_feed_title(e.findtext(f"{atom_ns}title") or "") for e in atom_entries)
+    for entry in atom_entries:
+        raw_title = (entry.findtext(f"{atom_ns}title") or "").strip()
+        link_el = entry.find(f"{atom_ns}link")
         href = link_el.attrib.get("href", "") if link_el is not None else ""
         published_at = _feed_item_published_at(entry)
+        description = (
+            entry.findtext(f"{atom_ns}summary") or entry.findtext(f"{atom_ns}content") or ""
+        )
+        title, summary = _resolve_title(raw_title, description, atom_counts)
         if title and href and _looks_like_candidate_title(title):
             items.append(
                 ExtractedItem(
                     title=_clean_title_text(title),
                     url=parse.urljoin(base_url, href),
                     published_at=published_at,
-                    summary=_clean_snippet(entry.findtext("{http://www.w3.org/2005/Atom}summary") or ""),
+                    summary=summary,
                 )
             )
     return items
@@ -973,10 +1038,14 @@ _NATIONAL_RAIL_BUILD_ID_PATTERN = re.compile(r'"buildId":"([^"]+)"')
 # (Avanti, CrossCountry) cover non-GM segments too — exclude them here and
 # rely on the National Rail filter's GM-station term list to surface
 # Manchester-stop disruptions when those operators publish them.
-_NATIONAL_RAIL_GM_OPERATOR_NAMES = (
-    "northern",
-    "transpennine",
-)
+_NATIONAL_RAIL_GM_OPERATOR_EXACT = {"northern", "transpennine express"}
+
+
+def _is_national_rail_gm_operator(name: str) -> bool:
+    lowered = re.sub(r"\s+", " ", str(name or "").strip().lower())
+    if lowered in _NATIONAL_RAIL_GM_OPERATOR_EXACT:
+        return True
+    return bool(re.search(r"\btranspennine\b", lowered))
 
 
 def _extract_national_rail(source: SourceDef, body: str) -> list[ExtractedItem]:
@@ -1014,12 +1083,11 @@ def _extract_national_rail(source: SourceDef, body: str) -> list[ExtractedItem]:
     fetched_at = now_london().isoformat()
 
     def _is_gm_operator(name: str, operators_collection: list[dict] | None = None) -> bool:
-        lowered = (name or "").lower()
-        if any(op in lowered for op in _NATIONAL_RAIL_GM_OPERATOR_NAMES):
+        if _is_national_rail_gm_operator(name):
             return True
         for op in operators_collection or []:
-            op_name = str(op.get("name") or "").lower()
-            if any(o in op_name for o in _NATIONAL_RAIL_GM_OPERATOR_NAMES):
+            op_name = str(op.get("name") or "")
+            if _is_national_rail_gm_operator(op_name):
                 return True
         return False
 
@@ -1344,6 +1412,48 @@ def _looks_like_manchester_theatres_chrome(title: str) -> bool:
     return False
 
 
+def _extract_manchester_theatres_link_items(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Fallback for Manchester Theatres pages whose cards are not grouped by day.
+
+    The current pages still expose real event detail links under ``/event/``.
+    Keep those event titles and let enrichment fetch the detail page for dates,
+    venue and richer evidence.
+    """
+
+    parser = LinkExtractor(source.url)
+    parser.feed(body)
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    for link in parser.links:
+        parsed = parse.urlsplit(link.url)
+        if "/event/" not in parsed.path.lower():
+            continue
+        title = _clean_title_text(link.title)
+        if (
+            not _looks_like_candidate_title(title)
+            or _looks_like_manchester_theatres_chrome(title)
+            or len(title) < 4
+        ):
+            continue
+        normalized_url = clean_url(link.url)
+        if normalized_url in seen:
+            continue
+        seen.add(normalized_url)
+        items.append(
+            ExtractedItem(
+                title=title,
+                url=link.url,
+                published_at=link.published_at,
+                summary=title,
+                lead=_derive_lead(source, title, title),
+                enrichment_status="needs_manchester_theatres_detail",
+            )
+        )
+        if len(items) >= source.max_candidates:
+            break
+    return items
+
+
 def _extract_manchester_theatres_events(source: SourceDef, body: str) -> list[ExtractedItem]:
     """Extract event cards from Manchester Theatres weekend pages.
 
@@ -1441,7 +1551,7 @@ def _extract_manchester_theatres_events(source: SourceDef, body: str) -> list[Ex
             )
             if len(items) >= source.max_candidates:
                 return items
-    return items
+    return items or _extract_manchester_theatres_link_items(source, body)
 
 
 def _extract_sectioned_event_guide(source: SourceDef, body: str) -> list[ExtractedItem]:
@@ -1607,6 +1717,146 @@ def _extract_manutd_items(source: SourceDef, body: str) -> list[ExtractedItem]:
         if len(items) >= source.max_candidates:
             break
     return items
+
+
+def _collapse_repeated_card_title(title: str) -> str:
+    clean = _clean_title_text(title)
+    if not clean:
+        return ""
+    # SPA cards often expose the same text through image alt + link text.
+    words = clean.split()
+    for size in range(3, min(len(words) // 2, 14) + 1):
+        if words[:size] == words[size:size * 2]:
+            return _clean_title_text(" ".join(words[:size]))
+    for end in range(24, min(len(clean) // 2, 120)):
+        prefix = clean[:end].strip()
+        if len(prefix) >= 20 and clean[end:].lstrip().startswith(prefix):
+            return _clean_title_text(prefix)
+    return clean
+
+
+def _extract_mancity_items(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Manchester City pages expose useful article links server-side.
+
+    The generic link parser sees them, but some card titles are repeated because
+    image alt text and anchor text are concatenated. This keeps only men's-team
+    news links and collapses repeated card labels before filtering.
+    """
+
+    parser = LinkExtractor(source.url)
+    parser.feed(body)
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    for link in parser.links:
+        parsed = parse.urlsplit(link.url)
+        lowered_path = parsed.path.lower()
+        if "/news/mens/" not in lowered_path:
+            continue
+        if not re.search(r"\d{5,}", lowered_path):
+            continue
+        title = _collapse_repeated_card_title(link.title)
+        if not title or not _looks_like_candidate_title(title) or _is_football_fluff(title, link.url):
+            continue
+        normalized_url = clean_url(link.url)
+        if normalized_url in seen:
+            continue
+        seen.add(normalized_url)
+        items.append(
+            ExtractedItem(
+                title=title,
+                url=link.url,
+                published_at=link.published_at or _date_hint_from_text(link.title),
+                summary=title,
+                lead=_derive_lead(source, title, title),
+                enrichment_status="ok_mancity_link",
+            )
+        )
+        if len(items) >= source.max_candidates:
+            break
+    return items
+
+
+def _clean_bbc_sport_team_title(title: str) -> str:
+    clean = _clean_title_text(title)
+    clean = re.sub(
+        r"^\d{1,2}:\d{2}\s+(?:BST|GMT)\s+\d{1,2}\s+[A-Z][a-z]+\.?\s+",
+        "",
+        clean,
+    )
+    clean = re.sub(r"\s*,?\s*published at\b.*$", "", clean, flags=re.IGNORECASE)
+    return _clean_title_text(clean)
+
+
+def _bbc_sport_team_markers(source_name: str) -> tuple[str, ...]:
+    if "Manchester United" in source_name:
+        return ("man utd", "man united", "manchester united")
+    if "Manchester City" in source_name:
+        return ("man city", "manchester city")
+    return ()
+
+
+def _bbc_sport_team_title_score(source: SourceDef, title: str, raw_title: str) -> int:
+    lowered = title.lower()
+    if not any(marker in lowered for marker in _bbc_sport_team_markers(source.name)):
+        return -1000
+    generic = (
+        "gossip column",
+        "score updates",
+        "live match updates",
+        "live lock screen",
+        "how to follow",
+        "take a dive",
+        "bbc sport journalists",
+        "key names being discussed",
+    )
+    if any(token in lowered for token in generic):
+        return -1000
+    score = min(len(title), 160)
+    if re.search(r"\d{1,2}:\d{2}\s+(?:BST|GMT)", raw_title):
+        score += 20
+    return score
+
+
+def _extract_bbc_sport_team_items(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """BBC team RSS currently surfaces Sounds/podcast cards, not articles.
+
+    The HTML team pages contain real article links under
+    ``/sport/football/articles/``. Extract those directly and let enrichment
+    fetch the article body when the listing text is thin.
+    """
+
+    parser = LinkExtractor(source.url)
+    parser.feed(body)
+    by_url: dict[str, tuple[int, ExtractedItem]] = {}
+    order: list[str] = []
+    for link in parser.links:
+        parsed = parse.urlsplit(link.url)
+        if "/sport/football/articles/" not in parsed.path.lower():
+            continue
+        title = _clean_bbc_sport_team_title(link.title)
+        if not title or not _looks_like_candidate_title(title) or _is_football_fluff(title, link.url):
+            continue
+        normalized_url = clean_url(link.url)
+        score = _bbc_sport_team_title_score(source, title, link.title)
+        if score < 0:
+            continue
+        item = (
+            ExtractedItem(
+                title=title,
+                url=link.url,
+                published_at=link.published_at or _date_hint_from_text(link.title),
+                summary=title,
+                lead=_derive_lead(source, title, title),
+                enrichment_status="ok_bbc_sport_team_link",
+            )
+        )
+        if normalized_url not in by_url:
+            order.append(normalized_url)
+        if normalized_url not in by_url or score > by_url[normalized_url][0]:
+            by_url[normalized_url] = (score, item)
+        if len(order) >= source.max_candidates:
+            break
+    return [by_url[url][1] for url in order if url in by_url]
 
 
 def _extract_rncm_items(source: SourceDef, body: str) -> list[ExtractedItem]:
@@ -2540,7 +2790,7 @@ def _extract_nre_incidents(source: SourceDef, body: str) -> list[ExtractedItem]:
         incidents = _nre.gm_incidents()
     except Exception as exc:  # noqa: BLE001
         logger.warning("NRE incidents extractor failed: %s", exc)
-        return []
+        return _extract_national_rail(source, body)
     for inc in incidents:
         summ = (inc.get("summary") or "").strip()
         if not summ:
@@ -2571,7 +2821,7 @@ def _extract_nre_incidents(source: SourceDef, body: str) -> list[ExtractedItem]:
                 evidence_text=_clean_snippet(detail, max_chars=600),
             )
         )
-    return items
+    return items or _extract_national_rail(source, body)
 
 
 def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
@@ -2623,6 +2873,10 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_gmmh_press_releases(source, body)
     elif source.name == "Manchester United":
         links = _extract_manutd_items(source, body)
+    elif source.name in {"Manchester City", "Manchester City Men"}:
+        links = _extract_mancity_items(source, body)
+    elif source.name in {"BBC Sport Manchester United", "BBC Sport Manchester City"}:
+        links = _extract_bbc_sport_team_items(source, body)
     elif source.name == "RNCM":
         links = _extract_rncm_items(source, body)
     elif "<rss" in body[:500].lower() or "<feed" in body[:500].lower():

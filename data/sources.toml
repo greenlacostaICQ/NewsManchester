@@ -836,9 +836,10 @@ allowed_hosts = ["bdaily.co.uk"]
 name = "MIDAS Manchester"
 report_category = "tech_business"
 candidate_category = "tech_business"
-url = "https://www.investinmanchester.com/news/"
+url = "https://www.investmanchester.co.uk/news/?feed=rss2"
 primary_block = "tech_business"
-allowed_hosts = ["investinmanchester.com"]
+source_type = "rss"
+allowed_hosts = ["investmanchester.co.uk"]
 
 [[sources]]
 name = "University of Salford"
@@ -1209,10 +1210,10 @@ max_candidates = 1
 name = "Bowlee Car Boot Sale"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
-url = "https://www.rochdale.gov.uk/news/article/592/bowlee-is-back---car-boot-sale-and-market-returns-for-new-season"
+url = "https://www.manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale"
 primary_block = "weekend_activities"
 source_type = "html_page_event"
-allowed_hosts = ["rochdale.gov.uk"]
+allowed_hosts = ["manchester-rocks.co.uk"]
 max_candidates = 1
 
 [[sources]]
@@ -1426,6 +1427,7 @@ report_category = "football"
 candidate_category = "football"
 url = "https://www.mancity.com/news?tag=News"
 primary_block = "football"
+allowed_hosts = ["mancity.com"]
 
 [[sources]]
 name = "Manchester City Men"
@@ -1439,23 +1441,22 @@ max_candidates = 8
 
 [[sources]]
 name = "BBC Sport Manchester United"
-notes = "fallback team RSS; balances Manchester United official club feed with independent sport coverage"
+notes = "official BBC Sport team RSS; items repeat the team name as <title> with the story in <description> — handled by the generic-title feed parser"
 report_category = "football"
 candidate_category = "football"
 url = "https://feeds.bbci.co.uk/sport/football/teams/manchester-united/rss.xml"
 primary_block = "football"
 source_type = "rss"
-allowed_hosts = ["bbc.co.uk", "bbc.com"]
+allowed_hosts = ["feeds.bbci.co.uk", "bbc.co.uk", "bbc.com"]
 max_candidates = 8
 
 [[sources]]
 name = "BBC Sport Manchester City"
-notes = "fallback team RSS; mancity.com is frequently Cloudflare/SPA-empty for the runner"
+notes = "fallback team page; keeps independent Man City coverage when official pages are thin"
 report_category = "football"
 candidate_category = "football"
-url = "https://feeds.bbci.co.uk/sport/football/teams/manchester-city/rss.xml"
+url = "https://www.bbc.co.uk/sport/football/teams/manchester-city"
 primary_block = "football"
-source_type = "rss"
 allowed_hosts = ["bbc.co.uk", "bbc.com"]
 max_candidates = 8
 
@@ -1546,17 +1547,17 @@ max_candidates = 8
 
 [[sources]]
 name = "BusinessLive Greater Manchester"
-notes = "Reach plc GM business/tech news RSS; replaces dead BusinessCloud/Bdaily for tech_business."
+notes = "Reach plc GM business/tech news page; RSS all-about URL is dead, parser keeps GM business links only."
 report_category = "tech_business"
 candidate_category = "tech_business"
-url = "https://www.business-live.co.uk/all-about/greater-manchester?service=rss"
+url = "https://www.business-live.co.uk/news/"
 primary_block = "tech_business"
-source_type = "rss"
 allowed_hosts = ["business-live.co.uk"]
 max_candidates = 6
 
 [[sources]]
 name = "Pedddle Manchester Markets"
+enabled = false
 notes = "UK independent-markets directory (makers/farmers/vintage/flea). Replaces dead Spinningfields Makers / car-boot scrapes for weekend markets."
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
