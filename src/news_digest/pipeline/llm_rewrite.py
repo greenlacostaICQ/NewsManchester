@@ -2615,6 +2615,111 @@ def _section_selection_report_path(project_root: Path) -> Path:
     return project_root / "data" / "state" / "section_selection_report.json"
 
 
+def _publish_plan_path(project_root: Path) -> Path:
+    return project_root / "data" / "state" / "publish_plan.json"
+
+
+_PUBLISH_PLAN_BUDGET_BUCKETS = {
+    "lead_story": "core_news",
+    "last_24h": "core_news",
+    "city_watch": "core_news",
+    "today_focus": "today",
+    "transport": "transport",
+    "weekend_activities": "weekend",
+    "next_7_days": "week",
+    "professional_events": "professional",
+    "russian_events": "russian",
+    "ticket_radar": "gm_tickets",
+    "outside_gm_tickets": "outside_gm",
+    "openings": "food_openings",
+    "tech_business": "business",
+    "football": "football",
+    "future_announcements": "optional_soft",
+}
+
+
+def _publish_plan_must_show(candidate: dict) -> bool:
+    block = str(candidate.get("primary_block") or "")
+    protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
+    return bool(
+        candidate.get("is_lead")
+        or protected.get("protected")
+        or block in {"transport", "russian_events", "professional_events"}
+    )
+
+
+def _publish_plan_status(candidate: dict) -> str:
+    verdict = str(candidate.get("digest_selection_verdict") or "").strip()
+    if verdict == "selected":
+        return "must_show" if _publish_plan_must_show(candidate) else "show"
+    if verdict in {"reserve", "needs_enrichment", "drop"}:
+        return verdict
+    return "drop"
+
+
+def _build_publish_plan(candidates: list[dict]) -> dict[str, object]:
+    sections: dict[str, dict[str, object]] = {}
+    totals = {"must_show": 0, "show": 0, "reserve": 0, "needs_enrichment": 0, "drop": 0}
+    items: list[dict[str, object]] = []
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        block = str(candidate.get("primary_block") or "unknown")
+        status = _publish_plan_status(candidate)
+        if status not in totals:
+            status = "drop"
+        totals[status] += 1
+        section = sections.setdefault(
+            block,
+            {
+                "heading": PRIMARY_BLOCKS.get(block, block),
+                "budget_bucket": _PUBLISH_PLAN_BUDGET_BUCKETS.get(block, "optional_soft"),
+                "must_show": 0,
+                "show": 0,
+                "reserve": 0,
+                "needs_enrichment": 0,
+                "drop": 0,
+                "items": [],
+            },
+        )
+        section[status] = int(section.get(status) or 0) + 1
+        row = {
+            "fingerprint": candidate.get("fingerprint") or "",
+            "title": candidate.get("title") or "",
+            "source_label": candidate.get("source_label") or "",
+            "category": candidate.get("category") or "",
+            "primary_block": block,
+            "section": PRIMARY_BLOCKS.get(block, block),
+            "budget_bucket": _PUBLISH_PLAN_BUDGET_BUCKETS.get(block, "optional_soft"),
+            "status": status,
+            "selection_verdict": candidate.get("digest_selection_verdict") or "",
+            "reason": candidate.get("digest_selection_reason") or candidate.get("reason") or "",
+            "is_lead": bool(candidate.get("is_lead")),
+            "protected_lane": candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {},
+            "include": bool(candidate.get("include")),
+            "backup_candidate": bool(candidate.get("backup_candidate")),
+        }
+        candidate["publish_plan_status"] = status
+        candidate["publish_plan_reason"] = str(row["reason"])
+        items.append(row)
+        section_items = section["items"]
+        assert isinstance(section_items, list)
+        if status in {"must_show", "show", "needs_enrichment"} or len(section_items) < 12:
+            section_items.append(row)
+    return {
+        "schema_version": 1,
+        "run_date_london": today_london(),
+        "created_at_london": now_london().isoformat(),
+        "policy": (
+            "Writer must publish must_show items or record repaired / "
+            "replaced_same_block / unrecoverable_no_facts. Silent loss is a contract violation."
+        ),
+        "totals": totals,
+        "sections": sections,
+        "items": items,
+    }
+
+
 def _finalize_digest_selection_verdicts(candidates: list[dict]) -> dict[str, object]:
     """Fill missing product verdicts and produce a compact selection report."""
     sections: dict[str, dict[str, object]] = {}
@@ -3670,7 +3775,9 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     translation_memory_updated = _update_translation_memory(candidates, translation_memory)
     write_json(_translation_memory_path(project_root), translation_memory)
     section_selection_report = _finalize_digest_selection_verdicts(candidates)
+    publish_plan = _build_publish_plan(candidates)
     write_json(_section_selection_report_path(project_root), section_selection_report)
+    write_json(_publish_plan_path(project_root), publish_plan)
     candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     rewrite_inventory = _build_rewrite_inventory(candidates)
     write_json(_rewrite_inventory_path(project_root), rewrite_inventory)
@@ -3740,6 +3847,10 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "section_selection_report": {
                 "path": str(_section_selection_report_path(project_root).relative_to(project_root)),
                 "totals": section_selection_report.get("totals", {}),
+            },
+            "publish_plan": {
+                "path": str(_publish_plan_path(project_root).relative_to(project_root)),
+                "totals": publish_plan.get("totals", {}),
             },
             "applied": applied,
             "fixed": fixed,

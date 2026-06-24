@@ -174,6 +174,151 @@ PROTECTED_RECOVERY_SECTIONS = frozenset({
     "Футбол",
     "Русскоязычные концерты и стендап UK",
 })
+
+
+def _load_publish_plan(state_dir: Path) -> dict[str, object]:
+    path = state_dir / "publish_plan.json"
+    payload = read_json(path, {})
+    return payload if isinstance(payload, dict) else {}
+
+
+def _candidate_publish_plan_status(candidate: dict | None) -> str:
+    if not isinstance(candidate, dict):
+        return ""
+    return str(candidate.get("publish_plan_status") or "").strip()
+
+
+def _is_publish_plan_must_show(candidate: dict | None) -> bool:
+    return bool(
+        isinstance(candidate, dict)
+        and (
+            candidate.get("is_lead")
+            or candidate.get("publish_plan_must_show")
+            or _candidate_publish_plan_status(candidate) == "must_show"
+        )
+    )
+
+
+def _apply_publish_plan_to_candidates(candidates: list[dict], publish_plan: dict[str, object]) -> dict[str, object]:
+    """Stamp publish-plan status onto candidates before writer decisions.
+
+    The plan is a contract from the selection stage. For P0 we enforce the
+    strongest part: ``must_show`` items (lead/protected/transport/russian/
+    professional) cannot be silently lost to normal writer caps or quality
+    shortcuts.
+    """
+
+    plan_items = publish_plan.get("items") if isinstance(publish_plan, dict) else []
+    by_fp = {
+        str(item.get("fingerprint") or ""): item
+        for item in plan_items or []
+        if isinstance(item, dict) and str(item.get("fingerprint") or "")
+    }
+    totals = {
+        "loaded": bool(by_fp),
+        "items_in_plan": len(by_fp),
+        "matched_candidates": 0,
+        "must_show_total": 0,
+        "show_total": 0,
+        "needs_enrichment_total": 0,
+        "reserve_total": 0,
+        "drop_total": 0,
+    }
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        fp = str(candidate.get("fingerprint") or "")
+        row = by_fp.get(fp)
+        if not row:
+            if candidate.get("is_lead"):
+                candidate["publish_plan_status"] = "must_show"
+                candidate["publish_plan_reason"] = "Curator lead; protected even without publish_plan row."
+                candidate["publish_plan_must_show"] = True
+                candidate["manual_override"] = candidate.get("manual_override") or "force_include"
+                totals["must_show_total"] += 1
+            continue
+        status = str(row.get("status") or "").strip()
+        candidate["publish_plan_status"] = status
+        candidate["publish_plan_reason"] = str(row.get("reason") or "")
+        candidate["publish_plan_budget_bucket"] = str(row.get("budget_bucket") or "")
+        totals["matched_candidates"] += 1
+        key = f"{status}_total"
+        if key in totals:
+            totals[key] += 1
+        if status == "must_show":
+            candidate["publish_plan_must_show"] = True
+            candidate["manual_override"] = candidate.get("manual_override") or "force_include"
+    return totals
+
+
+def _build_publish_plan_contract_report(
+    *,
+    candidates: list[dict],
+    rendered_fp_set: set[str],
+    dropped_candidates: list[dict[str, object]],
+    global_budget_dropped: list[dict[str, object]],
+    degraded_shrink_dropped: list[dict[str, object]],
+    publish_plan_application: dict[str, object],
+) -> dict[str, object]:
+    reason_by_fp: dict[str, list[str]] = {}
+    for row in dropped_candidates:
+        fp = str(row.get("fingerprint") or "")
+        if not fp:
+            continue
+        reason_by_fp.setdefault(fp, []).extend(str(r) for r in (row.get("reasons") or []) if str(r).strip())
+    for row in [*global_budget_dropped, *degraded_shrink_dropped]:
+        fp = str(row.get("fingerprint") or "")
+        if not fp:
+            continue
+        reason = str(row.get("reason") or "").strip()
+        if reason:
+            reason_by_fp.setdefault(fp, []).append(reason)
+
+    must_show: list[dict[str, object]] = []
+    show_missing: list[dict[str, object]] = []
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        status = _candidate_publish_plan_status(candidate)
+        if status not in {"must_show", "show"}:
+            continue
+        fp = str(candidate.get("fingerprint") or "")
+        rendered = bool(fp and fp in rendered_fp_set)
+        row = {
+            "fingerprint": fp,
+            "title": candidate.get("title") or "",
+            "source_label": candidate.get("source_label") or "",
+            "primary_block": candidate.get("primary_block") or "",
+            "section": PRIMARY_BLOCKS.get(str(candidate.get("primary_block") or ""), ""),
+            "status": status,
+            "rendered": rendered,
+            "contract_status": "rendered" if rendered else str(candidate.get("publish_plan_contract_status") or "missing"),
+            "reason": candidate.get("publish_plan_reason") or "",
+            "loss_reasons": reason_by_fp.get(fp) or [],
+            "recovery_trace": candidate.get("recovery_trace") or [],
+        }
+        if status == "must_show":
+            must_show.append(row)
+        elif not rendered:
+            show_missing.append(row)
+    missing_must_show = [row for row in must_show if not row["rendered"]]
+    return {
+        "schema_version": 1,
+        "policy": (
+            "must_show items must render, be repaired, be replaced in the same block, "
+            "or carry an unrecoverable_no_facts reason."
+        ),
+        "publish_plan_application": publish_plan_application,
+        "counts": {
+            "must_show_total": len(must_show),
+            "must_show_rendered": sum(1 for row in must_show if row["rendered"]),
+            "must_show_missing": len(missing_must_show),
+            "show_missing": len(show_missing),
+        },
+        "missing_must_show": missing_must_show[:80],
+        "show_missing_examples": show_missing[:40],
+    }
+
 _BAD_EDITORIAL_PROSE_MARKERS = (
     "ticket office",
     "слот входа",
@@ -1391,7 +1536,12 @@ def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
     # Radar must count toward the 45-item issue budget. Evergreen markets /
     # recurring drop-ins stay exempt (they answer "what can I do this weekend"
     # and should survive a noisy news morning). A-tier artists are always exempt.
-    return _is_active_tram_transport(candidate) or _is_market_or_recurring_event(candidate) or _is_a_tier_ticket(candidate)
+    return (
+        _is_publish_plan_must_show(candidate)
+        or _is_active_tram_transport(candidate)
+        or _is_market_or_recurring_event(candidate)
+        or _is_a_tier_ticket(candidate)
+    )
 
 
 def _slice_counting_only_non_exempt(
@@ -5186,6 +5336,8 @@ def write_digest(project_root: Path) -> StageResult:
     payload = read_json(candidates_path, {"candidates": []})
     pipeline_run_id = pipeline_run_id_from(payload)
     candidates = payload.get("candidates", [])
+    publish_plan = _load_publish_plan(state_dir)
+    publish_plan_application = _apply_publish_plan_to_candidates(candidates, publish_plan)
     candidate_by_fp = {
         str(candidate.get("fingerprint") or ""): candidate
         for candidate in candidates
@@ -5683,6 +5835,43 @@ def write_digest(project_root: Path) -> StageResult:
                     )
                 else:
                     _append_recovery_step(candidate, "draft_line_quality_repair", "attempted", missing=recovered_errors)
+        if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors and _is_publish_plan_must_show(candidate):
+            _append_recovery_step(candidate, "must_show_model_recovery", "attempted", missing=draft_line_errors)
+            model_line, model_recovery_report = _model_recover_section_line(candidate, section_name, draft_line_errors)
+            if model_line:
+                model_line, model_repairs = _repair_editorial_contract_line(candidate, model_line)
+                model_errors = _draft_line_quality_errors(candidate, model_line)
+                if not model_errors:
+                    line = model_line
+                    draft_line_errors = []
+                    candidate["draft_line"] = model_line
+                    candidate["draft_line_provider"] = "writer_must_show_model_recovery"
+                    candidate["draft_line_model"] = "gpt-4o-mini"
+                    candidate["publish_plan_contract_status"] = "repaired"
+                    _append_recovery_step(candidate, "must_show_model_recovery", "recovered")
+                    warnings.append(
+                        f"Candidate #{index}: must-show item recovered before drop "
+                        f"({', '.join(model_repairs) or 'model rewrite'})."
+                    )
+                else:
+                    candidate["publish_plan_contract_status"] = "unrecoverable_no_facts"
+                    _append_recovery_step(candidate, "must_show_model_recovery", "held", missing=model_errors)
+                    warnings.append(
+                        f"Candidate #{index}: must-show model recovery still failed "
+                        f"({'; '.join(model_errors)})."
+                    )
+            else:
+                candidate["publish_plan_contract_status"] = "unrecoverable_no_facts"
+                _append_recovery_step(
+                    candidate,
+                    "must_show_model_recovery",
+                    "held",
+                    missing=[str(model_recovery_report.get("status") or "model_recovery_failed")],
+                )
+                warnings.append(
+                    f"Candidate #{index}: must-show model recovery unavailable "
+                    f"({model_recovery_report.get('status') or 'failed'})."
+                )
         if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
             _append_recovery_step(candidate, "draft_line_quality_repair", "held", missing=(candidate.get("story_frame") or {}).get("missing_facts") or draft_line_errors)
             warnings.append(
@@ -6009,22 +6198,25 @@ def write_digest(project_root: Path) -> StageResult:
                     }
                 )
             lines, srcs, fps, scores, titles = next_lines, next_srcs, next_fps, next_scores, next_titles
-        hard_remaining = PUBLIC_DIGEST_HARD_RENDERED_ITEMS - len(rendered_candidate_fingerprints)
+        hard_counted_so_far = 0
+        for rendered_fp in rendered_candidate_fingerprints:
+            rendered_candidate = candidate_by_fp.get(str(rendered_fp or ""))
+            rendered_section = PRIMARY_BLOCKS.get(str((rendered_candidate or {}).get("primary_block") or ""), "")
+            if not _is_public_budget_exempt(rendered_section, rendered_candidate):
+                hard_counted_so_far += 1
+        hard_remaining = PUBLIC_DIGEST_HARD_RENDERED_ITEMS - hard_counted_so_far
         if hard_remaining <= 0:
-            for idx, ln in enumerate(lines):
-                global_budget_dropped.append(
-                    {
-                        "section": section_name,
-                        "fingerprint": fps[idx] if idx < len(fps) else "",
-                        "title": titles[idx] if idx < len(titles) else re.sub(r"<[^>]+>", "", ln)[:120],
-                        "source_label": srcs[idx] if idx < len(srcs) else "",
-                        "reader_value_score": scores[idx] if idx < len(scores) else 0.0,
-                        "reason": f"Hard rendered-item cap {PUBLIC_DIGEST_HARD_RENDERED_ITEMS} reached.",
-                    }
-                )
-            lines, srcs, fps, scores, titles = [], [], [], [], []
-        elif len(lines) > hard_remaining:
-            for idx in range(hard_remaining, len(lines)):
+            next_lines, next_srcs, next_fps, next_scores, next_titles, dropped_idx, _ = _slice_counting_only_non_exempt(
+                lines=lines,
+                srcs=srcs,
+                fps=fps,
+                scores=scores,
+                titles=titles,
+                candidate_by_fp=candidate_by_fp,
+                section_name=section_name,
+                counted_limit=0,
+            )
+            for idx in dropped_idx:
                 ln = lines[idx]
                 global_budget_dropped.append(
                     {
@@ -6036,11 +6228,31 @@ def write_digest(project_root: Path) -> StageResult:
                         "reason": f"Hard rendered-item cap {PUBLIC_DIGEST_HARD_RENDERED_ITEMS} reached.",
                     }
                 )
-            lines = lines[:hard_remaining]
-            srcs = srcs[:hard_remaining]
-            fps = fps[:hard_remaining]
-            scores = scores[:hard_remaining]
-            titles = titles[:hard_remaining]
+            lines, srcs, fps, scores, titles = next_lines, next_srcs, next_fps, next_scores, next_titles
+        else:
+            next_lines, next_srcs, next_fps, next_scores, next_titles, dropped_idx, _ = _slice_counting_only_non_exempt(
+                lines=lines,
+                srcs=srcs,
+                fps=fps,
+                scores=scores,
+                titles=titles,
+                candidate_by_fp=candidate_by_fp,
+                section_name=section_name,
+                counted_limit=hard_remaining,
+            )
+            for idx in dropped_idx:
+                ln = lines[idx]
+                global_budget_dropped.append(
+                    {
+                        "section": section_name,
+                        "fingerprint": fps[idx] if idx < len(fps) else "",
+                        "title": titles[idx] if idx < len(titles) else re.sub(r"<[^>]+>", "", ln)[:120],
+                        "source_label": srcs[idx] if idx < len(srcs) else "",
+                        "reader_value_score": scores[idx] if idx < len(scores) else 0.0,
+                        "reason": f"Hard rendered-item cap {PUBLIC_DIGEST_HARD_RENDERED_ITEMS} reached.",
+                    }
+                )
+            lines, srcs, fps, scores, titles = next_lines, next_srcs, next_fps, next_scores, next_titles
         # Per-source / per-section caps can filter every remaining line —
         # don't emit a bare section header in that case, the release gate
         # rejects empty low-signal blocks.
@@ -6073,6 +6285,20 @@ def write_digest(project_root: Path) -> StageResult:
         quality_counts,
         rendered_fp_set,
     )
+    publish_plan_contract = _build_publish_plan_contract_report(
+        candidates=candidates,
+        rendered_fp_set=rendered_fp_set,
+        dropped_candidates=dropped_candidates,
+        global_budget_dropped=global_budget_dropped,
+        degraded_shrink_dropped=degraded_shrink_dropped,
+        publish_plan_application=publish_plan_application,
+    )
+    missing_must_show = int((publish_plan_contract.get("counts") or {}).get("must_show_missing") or 0)
+    if missing_must_show:
+        warnings.append(
+            f"Publish plan contract: {missing_must_show} must-show item(s) did not render — "
+            "see writer_report.publish_plan_contract.missing_must_show."
+        )
     fresh_candidates = [
         c for c in candidates
         if isinstance(c, dict) and str(c.get("primary_block") or "") == "last_24h"
@@ -6135,6 +6361,7 @@ def write_digest(project_root: Path) -> StageResult:
                 "dropped_count": len(global_budget_dropped),
                 "dropped_items": global_budget_dropped[:80],
             },
+            "publish_plan_contract": publish_plan_contract,
             "recovery_controller": recovery_controller,
             "backfilled_today_focus": backfilled_today_focus,
             "today_focus_board": today_focus_board,

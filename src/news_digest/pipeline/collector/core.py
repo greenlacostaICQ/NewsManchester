@@ -349,6 +349,118 @@ def _classify_source_failure(
     return ("not_checked", "error_taxonomy", "source was not checked")
 
 
+def _build_source_health_report(collector_report: dict) -> dict[str, object]:
+    """Plain-language source health report written immediately after collect.
+
+    ``release_report.source_status`` remains the downstream contribution view
+    (raw -> curated -> rendered). This report is earlier and narrower: did the
+    source open, did the parser extract real items, and what should be fixed
+    before model/writer stages even start.
+    """
+
+    rows: list[dict[str, object]] = []
+    counts: dict[str, int] = {
+        "checked": 0,
+        "ok": 0,
+        "empty_parser": 0,
+        "failed_fetch": 0,
+        "dead_url": 0,
+        "timeout": 0,
+        "not_modified": 0,
+        "needs_action": 0,
+    }
+    dead_parser_today: list[dict[str, object]] = []
+    failed_sources: list[dict[str, object]] = []
+    for category_key, category in (collector_report.get("categories") or {}).items():
+        if not isinstance(category, dict):
+            continue
+        for entry in category.get("source_health") or []:
+            if not isinstance(entry, dict):
+                continue
+            failure_class = str(entry.get("failure_class") or "")
+            candidate_count = int(entry.get("candidate_count") or 0)
+            fetched = bool(entry.get("fetched"))
+            not_modified = bool(entry.get("not_modified"))
+            status = "ok"
+            if not_modified:
+                status = "not_modified"
+            elif not fetched or entry.get("errors"):
+                status = "failed_fetch"
+            elif candidate_count == 0:
+                status = "empty_parser"
+            counts["checked"] += 1
+            counts[status] = int(counts.get(status) or 0) + 1
+            if failure_class == "source_url_dead":
+                counts["dead_url"] += 1
+            if failure_class == "fetch_timeout":
+                counts["timeout"] += 1
+            needs_action = status in {"empty_parser", "failed_fetch"} and not not_modified
+            if needs_action:
+                counts["needs_action"] += 1
+            row = {
+                "name": str(entry.get("name") or ""),
+                "category": str(category_key),
+                "url": str(entry.get("url") or ""),
+                "fetched_url": str(entry.get("fetched_url") or ""),
+                "source_contract": str(entry.get("source_contract") or ""),
+                "status": status,
+                "candidate_count": candidate_count,
+                "publishable_count": int(entry.get("publishable_count") or 0),
+                "dated_candidate_count": int(entry.get("dated_candidate_count") or 0),
+                "coverage_signal_count": int(entry.get("coverage_signal_count") or 0),
+                "coverage_signal_label": str(entry.get("coverage_signal_label") or ""),
+                "failure_class": failure_class,
+                "reliability_ladder_step": str(entry.get("reliability_ladder_step") or ""),
+                "recommended_next_action": str(entry.get("recommended_next_action") or ""),
+                "errors": entry.get("errors") or [],
+                "warnings": entry.get("warnings") or [],
+                "fetch_duration_seconds": float(entry.get("fetch_duration_seconds") or 0.0),
+                "extract_duration_seconds": float(entry.get("extract_duration_seconds") or 0.0),
+                "duration_seconds": float(entry.get("duration_seconds") or 0.0),
+                "needs_action": needs_action,
+            }
+            rows.append(row)
+            if status == "empty_parser":
+                dead_parser_today.append(row)
+            if status == "failed_fetch":
+                failed_sources.append(row)
+
+    return {
+        "schema_version": 1,
+        "pipeline_run_id": collector_report.get("pipeline_run_id"),
+        "run_date_london": collector_report.get("run_date_london") or today_london(),
+        "created_at_london": now_london().isoformat(),
+        "policy": (
+            "A source that fetched OK but extracted 0 items is a parser/filter "
+            "failure to inspect, not proof that the source is healthy."
+        ),
+        "counts": counts,
+        "dead_parser_today": [
+            {
+                "name": row["name"],
+                "category": row["category"],
+                "url": row["url"],
+                "failure_class": row["failure_class"],
+                "recommended_next_action": row["recommended_next_action"],
+                "warnings": row["warnings"],
+            }
+            for row in dead_parser_today[:80]
+        ],
+        "failed_sources": [
+            {
+                "name": row["name"],
+                "category": row["category"],
+                "url": row["url"],
+                "failure_class": row["failure_class"],
+                "recommended_next_action": row["recommended_next_action"],
+                "errors": row["errors"],
+            }
+            for row in failed_sources[:80]
+        ],
+        "sources": rows,
+    }
+
+
 def _collect_single_source(source) -> tuple[dict, list[dict]]:
     source_health = _source_health_template(source)
     started_at = time.perf_counter()
@@ -575,7 +687,9 @@ def collect_digest(project_root: Path) -> StageResult:
     }
 
     report_path = state_dir / "collector_report.json"
+    source_health_report = _build_source_health_report(report)
     write_json(report_path, report)
+    write_json(state_dir / "source_health_report.json", source_health_report)
     write_json(state_dir / "candidates.json", candidates_payload)
 
     if checked_all:
