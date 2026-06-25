@@ -4,6 +4,7 @@ import unittest
 
 from news_digest.pipeline.collector.core import _build_source_health_report
 from news_digest.pipeline.llm_rewrite import _build_publish_plan
+from news_digest.pipeline.release import _repair_public_html_contracts, public_html_contract_errors
 from news_digest.pipeline.writer import (
     _apply_publish_plan_to_candidates,
     _build_publish_plan_contract_report,
@@ -54,7 +55,7 @@ class SourceHealthAndPublishPlanTests(unittest.TestCase):
         self.assertEqual(health["counts"]["needs_action"], 2)
         self.assertEqual(health["dead_parser_today"][0]["name"], "Manchester Theatres Weekend")
 
-    def test_publish_plan_promotes_protected_selected_items_to_must_show(self) -> None:
+    def test_publish_plan_only_true_protected_blocks_become_must_show(self) -> None:
         candidates = [
             {
                 "fingerprint": "lead",
@@ -76,6 +77,33 @@ class SourceHealthAndPublishPlanTests(unittest.TestCase):
                 "include": True,
             },
             {
+                "fingerprint": "transport",
+                "title": "Tram disruption",
+                "primary_block": "transport",
+                "category": "transport",
+                "source_label": "TfGM",
+                "digest_selection_verdict": "selected",
+                "include": True,
+            },
+            {
+                "fingerprint": "russian",
+                "title": "Russian event",
+                "primary_block": "russian_events",
+                "category": "russian_speaking_events",
+                "source_label": "MTicket",
+                "digest_selection_verdict": "selected",
+                "include": True,
+            },
+            {
+                "fingerprint": "professional",
+                "title": "Tech event",
+                "primary_block": "professional_events",
+                "category": "professional_events",
+                "source_label": "CompiledMCR",
+                "digest_selection_verdict": "selected",
+                "include": True,
+            },
+            {
                 "fingerprint": "thin",
                 "title": "Thin event",
                 "primary_block": "weekend_activities",
@@ -91,6 +119,9 @@ class SourceHealthAndPublishPlanTests(unittest.TestCase):
         statuses = {item["fingerprint"]: item["status"] for item in plan["items"]}
         self.assertEqual(statuses["lead"], "must_show")
         self.assertEqual(statuses["normal"], "show")
+        self.assertEqual(statuses["transport"], "must_show")
+        self.assertEqual(statuses["russian"], "must_show")
+        self.assertEqual(statuses["professional"], "must_show")
         self.assertEqual(statuses["thin"], "needs_enrichment")
 
     def test_writer_applies_must_show_contract_and_reports_missing(self) -> None:
@@ -138,6 +169,37 @@ class SourceHealthAndPublishPlanTests(unittest.TestCase):
         self.assertEqual(contract["counts"]["must_show_total"], 1)
         self.assertEqual(contract["counts"]["must_show_missing"], 1)
         self.assertEqual(contract["missing_must_show"][0]["fingerprint"], "lead")
+
+    def test_outside_gm_is_not_blanket_budget_exempt(self) -> None:
+        outside = {
+            "fingerprint": "outside",
+            "primary_block": "outside_gm_tickets",
+            "publish_plan_status": "show",
+        }
+        russian = {
+            "fingerprint": "russian",
+            "primary_block": "russian_events",
+            "publish_plan_status": "must_show",
+            "publish_plan_must_show": True,
+            "publish_plan_protected_budget": True,
+        }
+
+        self.assertFalse(_is_public_budget_exempt("Крупные концерты вне GM", outside))
+        self.assertTrue(_is_public_budget_exempt("Русскоязычные концерты и стендап UK", russian))
+
+    def test_public_contract_repair_fixes_generic_cta_before_gate(self) -> None:
+        html = (
+            "<b>Greater Manchester Brief — 2026-06-25, 08:00</b>\n\n"
+            "<b>Билеты / Ticket Radar</b>\n"
+            "• Событие сегодня в Manchester Academy: проверьте время на странице события.\n"
+        )
+
+        self.assertIn("missing_event_time_cta", " ".join(public_html_contract_errors(html)))
+        fixed, report = _repair_public_html_contracts(html)
+
+        self.assertEqual(report["fixed_count"], 1)
+        self.assertNotIn("проверьте время", fixed.lower())
+        self.assertEqual(public_html_contract_errors(fixed), [])
 
 
 if __name__ == "__main__":

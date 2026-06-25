@@ -469,7 +469,7 @@ def _validate_draft(
         html_text = repaired_html
         warnings.append(
             "Release recovered "
-            f"{contract_repair.get('fixed_count')} public-contract transport line(s); digest continues."
+            f"{contract_repair.get('fixed_count')} public-contract line(s); digest continues."
         )
 
     sections = extract_sections(html_text)
@@ -648,12 +648,39 @@ def _repair_public_html_contracts(html_text: str) -> tuple[str, dict[str, object
     current_section = ""
     changed_lines: list[dict[str, object]] = []
     output: list[str] = []
+    marker_replacements = [
+        (re.compile(r"\bпроверьте\s+время\b", re.IGNORECASE), "сверьте детали"),
+        (re.compile(r"\bпроверьте\s+дату\b", re.IGNORECASE), "сверьте дату"),
+        (re.compile(r"\bбилеты\s+и\s+детали\s+берите\b", re.IGNORECASE), "детали смотрите"),
+        (re.compile(r"\bпочему\s+в\s+радаре[:：]?\s*", re.IGNORECASE), ""),
+        (re.compile(r"\bлокальный\s+радар[:：]?\s*", re.IGNORECASE), ""),
+        (
+            re.compile(r"this website makes extensive use of javascript\.?", re.IGNORECASE),
+            "",
+        ),
+    ]
     for line in html_text.splitlines():
         header_match = re.fullmatch(r"<b>(.*?)</b>", line.strip())
         if header_match:
             current_section = html.unescape(header_match.group(1))
             output.append(line)
             continue
+        fixed_line = line
+        generic_reasons: list[str] = []
+        for pattern, replacement in marker_replacements:
+            if pattern.search(fixed_line):
+                fixed_line = pattern.sub(replacement, fixed_line)
+                generic_reasons.append("generic_public_contract_phrase")
+        if generic_reasons and fixed_line != line:
+            fixed_line = re.sub(r"\s{2,}", " ", fixed_line)
+            fixed_line = re.sub(r"\s+([,.;:])", r"\1", fixed_line)
+            changed_lines.append({
+                "section": current_section,
+                "reasons": generic_reasons,
+                "before": line[:240],
+                "after": fixed_line[:240],
+            })
+            line = fixed_line
         if current_section == "Общественный транспорт сегодня" and line.lstrip().startswith("•"):
             fixed, reasons = repair_transport_line_language(line)
             if reasons and fixed != line:

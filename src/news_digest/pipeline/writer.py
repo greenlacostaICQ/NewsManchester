@@ -199,6 +199,16 @@ def _is_publish_plan_must_show(candidate: dict | None) -> bool:
     )
 
 
+def _is_publish_plan_protected_budget(candidate: dict | None) -> bool:
+    return bool(
+        isinstance(candidate, dict)
+        and (
+            candidate.get("publish_plan_protected_budget")
+            or _is_publish_plan_must_show(candidate)
+        )
+    )
+
+
 def _apply_publish_plan_to_candidates(candidates: list[dict], publish_plan: dict[str, object]) -> dict[str, object]:
     """Stamp publish-plan status onto candidates before writer decisions.
 
@@ -223,6 +233,7 @@ def _apply_publish_plan_to_candidates(candidates: list[dict], publish_plan: dict
         "needs_enrichment_total": 0,
         "reserve_total": 0,
         "drop_total": 0,
+        "protected_budget_total": 0,
     }
     for candidate in candidates:
         if not isinstance(candidate, dict):
@@ -234,14 +245,19 @@ def _apply_publish_plan_to_candidates(candidates: list[dict], publish_plan: dict
                 candidate["publish_plan_status"] = "must_show"
                 candidate["publish_plan_reason"] = "Curator lead; protected even without publish_plan row."
                 candidate["publish_plan_must_show"] = True
+                candidate["publish_plan_protected_budget"] = True
                 candidate["manual_override"] = candidate.get("manual_override") or "force_include"
                 totals["must_show_total"] += 1
+                totals["protected_budget_total"] += 1
             continue
         status = str(row.get("status") or "").strip()
         candidate["publish_plan_status"] = status
         candidate["publish_plan_reason"] = str(row.get("reason") or "")
         candidate["publish_plan_budget_bucket"] = str(row.get("budget_bucket") or "")
+        candidate["publish_plan_protected_budget"] = bool(row.get("protected_budget"))
         totals["matched_candidates"] += 1
+        if candidate["publish_plan_protected_budget"]:
+            totals["protected_budget_total"] += 1
         key = f"{status}_total"
         if key in totals:
             totals[key] += 1
@@ -1450,8 +1466,9 @@ def _reconcile_rendered_dropped_candidates(
 # last by reader-value rather than dropped entirely. The small diaspora rails
 # stay exempt — they serve a distinct audience and are short by nature.
 _PUBLIC_BUDGET_EXEMPT_SECTIONS = {
-    "Крупные концерты вне GM",
+    "Общественный транспорт сегодня",
     "Русскоязычные концерты и стендап UK",
+    "Бесплатные business/tech события для тебя",
 }
 
 _MARKET_EVENT_RE = re.compile(
@@ -1538,6 +1555,10 @@ def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
     # and should survive a noisy news morning). A-tier artists are always exempt.
     return (
         _is_publish_plan_must_show(candidate)
+        or (
+            _is_publish_plan_protected_budget(candidate)
+            and section_name in _PUBLIC_BUDGET_EXEMPT_SECTIONS
+        )
         or _is_active_tram_transport(candidate)
         or _is_market_or_recurring_event(candidate)
         or _is_a_tier_ticket(candidate)
@@ -3512,6 +3533,16 @@ def _recovery_evidence_text(candidate: dict) -> tuple[str, dict[str, object]]:
             for field in ("title", "summary", "lead", "evidence_text", "practical_angle")
         ),
     ).strip()
+    refetched = str(candidate.get("recovery_refetched_evidence") or "").strip()
+    prewrite = str(candidate.get("prewrite_enrichment_text") or "").strip()
+    if not prewrite:
+        enrichment = candidate.get("prewrite_enrichment") if isinstance(candidate.get("prewrite_enrichment"), dict) else {}
+        if enrichment.get("used_refetch") and str(candidate.get("evidence_text") or "").strip():
+            prewrite = str(candidate.get("evidence_text") or "").strip()
+    if len(prewrite) > len(existing) + 200:
+        existing = prewrite
+    elif len(refetched) > len(existing) + 200:
+        existing = refetched
     report: dict[str, object] = {
         "used_refetch": False,
         "existing_chars": len(existing),
@@ -6253,6 +6284,27 @@ def write_digest(project_root: Path) -> StageResult:
                     }
                 )
             lines, srcs, fps, scores, titles = next_lines, next_srcs, next_fps, next_scores, next_titles
+        if target_floor and len(lines) < target_floor:
+            rendered_fps_so_far = set(rendered_candidate_fingerprints) | {fp for fp in fps if fp}
+            post_budget_recovery_metrics: dict[str, object] = {}
+            lines, fps, scores, titles, srcs = _apply_section_min_floor_pull_back(
+                section_name, lines, fps, scores, titles, srcs,
+                candidates, rendered_fps_so_far, target_floor, warnings,
+                include_backup=(
+                    section_name in PROTECTED_RECOVERY_SECTIONS
+                    or section_name in _PUBLIC_BUDGET_EXEMPT_SECTIONS
+                ),
+                recovery_metrics=post_budget_recovery_metrics,
+            )
+            if post_budget_recovery_metrics:
+                post_budget_recovery_metrics["pass"] = "post_budget_and_hard_cap"
+                sections_report = recovery_controller.setdefault("sections", {})
+                if isinstance(sections_report, dict):
+                    existing = sections_report.get(section_name)
+                    if isinstance(existing, dict):
+                        existing["post_budget_recovery"] = post_budget_recovery_metrics
+                    else:
+                        sections_report[section_name] = post_budget_recovery_metrics
         # Per-source / per-section caps can filter every remaining line —
         # don't emit a bare section header in that case, the release gate
         # rejects empty low-signal blocks.

@@ -21,6 +21,7 @@ from __future__ import annotations
 import calendar
 from dataclasses import dataclass
 import hashlib
+import html as html_lib
 import json
 import logging
 import math
@@ -85,12 +86,10 @@ REWRITE_SHORTLIST_CAPS_BY_BLOCK: dict[str, int] = {
 }
 REWRITE_SHORTLIST_DEFAULT_CAP = 6
 
-# #9 Soft global ceiling on how many candidates we translate per run. Even
-# with per-block caps, the protected/uncapped lane could push the board to 76+
-# (2026-06-03), which bloated the digest with thin cards AND slowed rewrite.
-# This is a SOFT cap, not a hard one: we keep a per-block floor so no section
-# is starved (the failure mode the owner flagged — "новости отсеялись, доп не
-# перевёл, провал"), and the lead / transport / today_focus core is never cut.
+# Source-language board judge gets a wider per-block board first. The final
+# Russian writer is capped later, after DeepSeek has assigned scores/decisions.
+REWRITE_RANKING_BOARD_MAX = 72
+# #9 Soft global ceiling on how many candidates we write in Russian per run.
 # Items above the ceiling are not deleted — they stay as backup reserve.
 REWRITE_TRANSLATION_BOARD_MAX = 42
 TRANSLATION_MEMORY_VERSION = 1
@@ -1112,13 +1111,11 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
 
     selected = [candidate for candidate in to_rewrite if id(candidate) in selected_ids]
 
-    # #9 Soft global ceiling. Trim the board to REWRITE_TRANSLATION_BOARD_MAX
-    # by priority, but guarantee: (a) the never-drop core (lead / transport /
-    # today_focus) always stays, and (b) every block that had material keeps
-    # at least _REWRITE_BLOCK_FLOOR items — so a section is never starved.
-    # Overflow is demoted to backup reserve (not deleted), exactly like held.
+    # First ceiling: a wider source-language ranking board. DeepSeek should
+    # see the realistic competition inside each block before the final Russian
+    # writing cut. Overflow is demoted to backup reserve, not deleted.
     board_overflow = 0
-    if len(selected) > REWRITE_TRANSLATION_BOARD_MAX:
+    if len(selected) > REWRITE_RANKING_BOARD_MAX:
         def _never_drop(c: dict) -> bool:
             return bool(c.get("is_lead")) or str(c.get("primary_block") or "") in {"transport", "today_focus"}
 
@@ -1143,7 +1140,7 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
             for c in sorted(items, key=_rewrite_shortlist_priority, reverse=True)[:floor]:
                 keep_ids.add(id(c))
         # Fill the rest of the budget by global priority.
-        room = REWRITE_TRANSLATION_BOARD_MAX - len(keep_ids)
+        room = REWRITE_RANKING_BOARD_MAX - len(keep_ids)
         if room > 0:
             rest = sorted(
                 (c for c in selected if id(c) not in keep_ids),
@@ -1158,9 +1155,9 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
             candidate["backup_candidate"] = True
             candidate["backup_pool_only"] = True
             candidate["public_reserve"] = False
-            candidate["rewrite_shortlist_status"] = "backup_board_cap"
+            candidate["rewrite_shortlist_status"] = "backup_ranking_board_cap"
             candidate["rewrite_shortlist_reason"] = (
-                f"Outside global translation board (soft max {REWRITE_TRANSLATION_BOARD_MAX})."
+                f"Outside DeepSeek ranking board (soft max {REWRITE_RANKING_BOARD_MAX})."
             )
             verdict = "needs_enrichment" if _needs_selection_enrichment(candidate) else "reserve"
             _set_digest_selection_verdict(candidate, verdict, candidate["rewrite_shortlist_reason"])
@@ -1185,10 +1182,95 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
         "selected_for_rewrite": len(selected),
         "held_for_backup": len(held),
         "board_overflow": board_overflow,
-        "board_max": REWRITE_TRANSLATION_BOARD_MAX,
+        "board_max": REWRITE_RANKING_BOARD_MAX,
+        "final_russian_board_max": REWRITE_TRANSLATION_BOARD_MAX,
         "caps_by_block": caps,
         "uncapped_selected": len(uncapped_selected),
         "uncapped_examples": uncapped_selected[:20],
+        "held_examples": held[:40],
+    }
+
+
+def _apply_post_board_translation_cut(candidates: list[dict], board: list[dict]) -> tuple[list[dict], dict[str, object]]:
+    """Trim to the final Russian writing board after source-language ranking.
+
+    DeepSeek / board cards populate ``english_editorial_score`` and
+    ``english_board_decision``. The final cut uses those signals, while still
+    preserving lead, transport/today-focus, and per-block floors.
+    """
+    if len(board) <= REWRITE_TRANSLATION_BOARD_MAX:
+        return board, {
+            "schema_version": 1,
+            "enabled": True,
+            "input_candidates": len(board),
+            "selected_for_russian": len(board),
+            "held_for_backup": 0,
+            "board_max": REWRITE_TRANSLATION_BOARD_MAX,
+            "held_examples": [],
+        }
+
+    def _never_drop(c: dict) -> bool:
+        return bool(c.get("is_lead")) or str(c.get("primary_block") or "") in {"transport", "today_focus"}
+
+    keep_ids: set[int] = {id(c) for c in board if _never_drop(c)}
+    by_block: dict[str, list[dict]] = {}
+    for c in board:
+        by_block.setdefault(str(c.get("primary_block") or ""), []).append(c)
+    for block, items in by_block.items():
+        floor = _REWRITE_BLOCK_FLOORS.get(block, _REWRITE_BLOCK_FLOOR)
+        for c in sorted(items, key=_rewrite_shortlist_priority, reverse=True)[:floor]:
+            keep_ids.add(id(c))
+
+    room = REWRITE_TRANSLATION_BOARD_MAX - len(keep_ids)
+    if room > 0:
+        rest = sorted(
+            (c for c in board if id(c) not in keep_ids),
+            key=_rewrite_shortlist_priority,
+            reverse=True,
+        )
+        keep_ids.update(id(c) for c in rest[:room])
+
+    held: list[dict[str, object]] = []
+    for candidate in board:
+        if id(candidate) in keep_ids:
+            candidate["rewrite_shortlist_status"] = "selected_after_board_rank"
+            _set_digest_selection_verdict(
+                candidate,
+                "selected",
+                "Selected for Russian writing after DeepSeek source-language ranking.",
+            )
+            continue
+        candidate["include"] = False
+        candidate["backup_candidate"] = True
+        candidate["backup_pool_only"] = True
+        candidate["public_reserve"] = False
+        candidate["rewrite_shortlist_status"] = "backup_after_board_rank"
+        candidate["rewrite_shortlist_reason"] = (
+            f"Outside final Russian writing board after DeepSeek ranking (soft max {REWRITE_TRANSLATION_BOARD_MAX})."
+        )
+        verdict = "needs_enrichment" if _needs_selection_enrichment(candidate) else "reserve"
+        _set_digest_selection_verdict(candidate, verdict, candidate["rewrite_shortlist_reason"])
+        held.append(
+            {
+                "fingerprint": candidate.get("fingerprint") or "",
+                "title": candidate.get("title") or "",
+                "source_label": candidate.get("source_label") or "",
+                "category": candidate.get("category") or "",
+                "primary_block": str(candidate.get("primary_block") or ""),
+                "english_editorial_score": candidate.get("english_editorial_score"),
+                "english_board_decision": candidate.get("english_board_decision"),
+                "reason": candidate["rewrite_shortlist_reason"],
+            }
+        )
+
+    selected = [candidate for candidate in board if id(candidate) in keep_ids]
+    return selected, {
+        "schema_version": 1,
+        "enabled": True,
+        "input_candidates": len(board),
+        "selected_for_russian": len(selected),
+        "held_for_backup": len(held),
+        "board_max": REWRITE_TRANSLATION_BOARD_MAX,
         "held_examples": held[:40],
     }
 
@@ -2080,13 +2162,14 @@ def _english_card_batch_items(batch: list[dict]) -> list[dict]:
     for c in batch:
         event = c.get("event") if isinstance(c.get("event"), dict) else {}
         frame = c.get("story_frame") if isinstance(c.get("story_frame"), dict) else {}
+        evidence_limit = 3600 if _is_selected_or_reserve_for_enriched_context(c) else 1000
         items.append(
             {
                 "fingerprint": c.get("fingerprint", ""),
                 "title": c.get("title", ""),
                 "summary": c.get("summary", ""),
                 "lead": c.get("lead", ""),
-                "evidence_text": str(c.get("evidence_text") or "")[:1000],
+                "evidence_text": str(c.get("evidence_text") or "")[:evidence_limit],
                 "category": c.get("category", ""),
                 "primary_block": c.get("primary_block", ""),
                 "source_label": c.get("source_label", ""),
@@ -2104,6 +2187,123 @@ def _english_card_batch_items(batch: list[dict]) -> list[dict]:
             }
         )
     return items
+
+
+def _is_selected_or_reserve_for_enriched_context(candidate: dict) -> bool:
+    status = str(candidate.get("rewrite_shortlist_status") or "")
+    verdict = str(candidate.get("digest_selection_verdict") or "")
+    block = str(candidate.get("primary_block") or "")
+    return bool(
+        status.startswith("selected")
+        or verdict in {"selected", "reserve", "needs_enrichment"}
+        or candidate.get("is_lead")
+        or block in {"russian_events", "professional_events", "weekend_activities", "next_7_days"}
+    )
+
+
+def _plain_source_text(raw_html: str, *, limit: int = 4500) -> str:
+    text = re.sub(r"(?is)<script[^>]*>.*?</script>", " ", str(raw_html or ""))
+    text = re.sub(r"(?is)<style[^>]*>.*?</style>", " ", text)
+    text = re.sub(r"(?is)<nav[^>]*>.*?</nav>", " ", text)
+    text = re.sub(r"(?is)<footer[^>]*>.*?</footer>", " ", text)
+    text = re.sub(r"(?is)<header[^>]*>.*?</header>", " ", text)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = html_lib.unescape(text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:limit]
+
+
+def _needs_prewrite_enrichment(candidate: dict) -> bool:
+    if _needs_selection_enrichment(candidate):
+        return True
+    block = str(candidate.get("primary_block") or "")
+    evidence = re.sub(
+        r"\s+",
+        " ",
+        " ".join(str(candidate.get(field) or "") for field in ("summary", "lead", "evidence_text")).strip(),
+    )
+    if len(evidence) >= 1200:
+        return False
+    return bool(
+        candidate.get("is_lead")
+        or block in {"last_24h", "today_focus", "weekend_activities", "next_7_days", "russian_events", "professional_events", "openings", "tech_business"}
+    )
+
+
+def _enrich_before_board(candidates: list[dict], *, max_items: int = 24) -> dict[str, object]:
+    """Refetch full source text for selected/reserve items before model writing.
+
+    This is a recovery-first step: if a useful item only has a title/snippet, we
+    try to give the board judge and Russian writer real evidence before asking
+    them to write or decide.
+    """
+    report: dict[str, object] = {
+        "attempted": 0,
+        "enriched": 0,
+        "skipped": 0,
+        "failed": 0,
+        "examples": [],
+    }
+    try:
+        from news_digest.pipeline.collector.fetch import _fetch_text  # noqa: PLC0415
+    except Exception as exc:  # noqa: BLE001
+        report["setup_error"] = f"{exc.__class__.__name__}: {exc}"
+        return report
+
+    for candidate in candidates:
+        if int(report["attempted"]) >= max_items:
+            break
+        if not isinstance(candidate, dict) or not _needs_prewrite_enrichment(candidate):
+            report["skipped"] = int(report["skipped"]) + 1
+            continue
+        url = str(candidate.get("source_url") or "").strip()
+        if not url.startswith(("http://", "https://")):
+            report["skipped"] = int(report["skipped"]) + 1
+            continue
+        existing = re.sub(
+            r"\s+",
+            " ",
+            " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead", "evidence_text")).strip(),
+        )
+        report["attempted"] = int(report["attempted"]) + 1
+        try:
+            fetched = _plain_source_text(_fetch_text(url), limit=4500)
+        except Exception as exc:  # noqa: BLE001
+            report["failed"] = int(report["failed"]) + 1
+            examples = report["examples"]
+            if isinstance(examples, list) and len(examples) < 8:
+                examples.append(
+                    {
+                        "fingerprint": candidate.get("fingerprint") or "",
+                        "title": candidate.get("title") or "",
+                        "status": "failed",
+                        "error": f"{exc.__class__.__name__}: {exc}",
+                    }
+                )
+            continue
+        if len(fetched) <= len(existing) + 200:
+            report["skipped"] = int(report["skipped"]) + 1
+            continue
+        candidate["evidence_text"] = fetched[:4500]
+        candidate["prewrite_enrichment"] = {
+            "used_refetch": True,
+            "existing_chars": len(existing),
+            "refetched_chars": len(fetched),
+            "source_url": url,
+        }
+        report["enriched"] = int(report["enriched"]) + 1
+        examples = report["examples"]
+        if isinstance(examples, list) and len(examples) < 8:
+            examples.append(
+                {
+                    "fingerprint": candidate.get("fingerprint") or "",
+                    "title": candidate.get("title") or "",
+                    "status": "enriched",
+                    "existing_chars": len(existing),
+                    "refetched_chars": len(fetched),
+                }
+            )
+    return report
 
 
 def _selected_evidence_text(candidate: dict, *, limit: int = 3000) -> str:
@@ -2640,12 +2840,26 @@ _PUBLISH_PLAN_BUDGET_BUCKETS = {
 
 def _publish_plan_must_show(candidate: dict) -> bool:
     block = str(candidate.get("primary_block") or "")
-    protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
     return bool(
         candidate.get("is_lead")
-        or protected.get("protected")
         or block in {"transport", "russian_events", "professional_events"}
     )
+
+
+def _publish_plan_protected_budget(candidate: dict) -> bool:
+    block = str(candidate.get("primary_block") or "")
+    if _publish_plan_must_show(candidate):
+        return True
+    return block in {
+        "last_24h",
+        "today_focus",
+        "city_watch",
+        "weekend_activities",
+        "next_7_days",
+        "openings",
+        "tech_business",
+        "football",
+    }
 
 
 def _publish_plan_status(candidate: dict) -> str:
@@ -2696,11 +2910,13 @@ def _build_publish_plan(candidates: list[dict]) -> dict[str, object]:
             "reason": candidate.get("digest_selection_reason") or candidate.get("reason") or "",
             "is_lead": bool(candidate.get("is_lead")),
             "protected_lane": candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {},
+            "protected_budget": _publish_plan_protected_budget(candidate),
             "include": bool(candidate.get("include")),
             "backup_candidate": bool(candidate.get("backup_candidate")),
         }
         candidate["publish_plan_status"] = status
         candidate["publish_plan_reason"] = str(row["reason"])
+        candidate["publish_plan_protected_budget"] = bool(row["protected_budget"])
         items.append(row)
         section_items = section["items"]
         assert isinstance(section_items, list)
@@ -3364,6 +3580,19 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         "selected_for_rewrite": len(to_rewrite),
         "held_for_backup": 0,
     }
+    prewrite_enrichment_report: dict[str, object] = {
+        "attempted": 0,
+        "enriched": 0,
+        "skipped": 0,
+        "failed": 0,
+    }
+    post_board_translation_cut: dict[str, object] = {
+        "schema_version": 1,
+        "enabled": False,
+        "input_candidates": 0,
+        "selected_for_russian": 0,
+        "held_for_backup": 0,
+    }
     if deterministic_writer_items:
         candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     applied = 0
@@ -3429,6 +3658,14 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             rewrite_shortlist["held_for_backup"],
         )
 
+        prewrite_enrichment_report = _enrich_before_board(to_rewrite)
+        if prewrite_enrichment_report.get("enriched"):
+            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            logger.info(
+                "Pre-write enrichment: refetched evidence for %s candidate(s) before Board Judge.",
+                prewrite_enrichment_report.get("enriched"),
+            )
+
         english_card_memory_reused = _apply_english_card_memory(to_rewrite, english_card_memory)
         english_card_request = [c for c in to_rewrite if not str(c.get("english_reader_card") or "").strip()]
         english_card_mapping = _call_english_cards_with_fallback(
@@ -3445,6 +3682,16 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "Board Judge: applied %d English reader cards before shortlist; reused %d from content cache.",
                 english_cards_applied,
                 len(english_card_memory_reused),
+            )
+
+        to_rewrite, post_board_translation_cut = _apply_post_board_translation_cut(candidates, to_rewrite)
+        if post_board_translation_cut.get("held_for_backup"):
+            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            logger.info(
+                "Post-board Russian writing cut: %d/%d selected; %d held after DeepSeek ranking.",
+                post_board_translation_cut.get("selected_for_russian"),
+                post_board_translation_cut.get("input_candidates"),
+                post_board_translation_cut.get("held_for_backup"),
             )
 
         logger.info(
@@ -3800,6 +4047,8 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "soft_warnings": soft_warnings,
             "included_for_rewrite": len(to_rewrite),
             "rewrite_shortlist": rewrite_shortlist,
+            "prewrite_enrichment": prewrite_enrichment_report,
+            "post_board_translation_cut": post_board_translation_cut,
             "deterministic_writer_items": {
                 "count": len(deterministic_writer_items),
                 "examples": deterministic_writer_items[:40],
@@ -3809,13 +4058,13 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "enabled": True,
                 "deterministic_pre_board_before_judge": True,
                 "pre_board_input": original_rewrite_count if "original_rewrite_count" in locals() else len(to_rewrite),
-                "board_judge_input": len(to_rewrite),
+                "board_judge_input": int(rewrite_shortlist.get("selected_for_rewrite") or len(to_rewrite)),
                 "cards_applied": english_cards_applied,
                 "cards_reused_from_content_cache": len(english_card_memory_reused),
                 "selected_for_translation": len(to_rewrite),
                 "cards_missing_on_selected": sum(1 for c in to_rewrite if not str(c.get("english_reader_card") or "").strip()),
                 "visible_russian_write": "direct_from_fact_card_and_evidence",
-                "policy": "Deterministic pre-board trims the broad scan before model selection; source-language fact cards are service data only, and visible Russian is written directly from facts/evidence. gpt-4o automatic fallback stays surgical for the single lead item.",
+                "policy": "Deterministic per-block pre-board builds a wider source-language ranking board; DeepSeek scores that board; only then the final Russian writing board is cut. Source-language fact cards are service data only, and visible Russian is written directly from facts/evidence.",
             },
             "english_card_memory": {
                 "enabled": True,
