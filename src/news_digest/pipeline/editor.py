@@ -43,7 +43,16 @@ PRE_SEND_RUSSIAN_EDITOR_PROMPT = """Ты выпускающий редактор
 Тебе дают уже видимые строки выпуска и, если удалось сопоставить строку с кандидатом, evidence по исходной новости.
 Исправь русский язык и редакторские дефекты. Если строка непонятная, битая или слишком машинная, пересобери её заново из evidence.
 
-Верни JSON-объект: {"items":[{"index":0,"action":"ok|rewrite|replace_needed|strip_only_if_replacement_unavailable","line":"...","reason":"..."}]}.
+Верни JSON-объект: {"items":[{"index":0,"action":"ok|rewrite|enrich_and_rewrite|replace_needed|strip_only_if_replacement_unavailable","line":"...","reason":"..."}]}.
+ОБЯЗАТЕЛЬНО верни ровно один item на КАЖДУЮ присланную строку (по её index). Чистая строка — action="ok".
+
+Ищи и чини КОНКРЕТНО эти дефекты:
+- Английское слово в русском тексте (murder, lineup, line-up, venue, sold out, on sale, headliner, festival) → rewrite, переведи. ИСКЛЮЧЕНИЕ: имена и бренды (Co-op Live, openspace, AI/API/SaaS) — оставить латиницей.
+- Латиница, склеенная с русским окончанием (Stockportа, Urmstonе, Rochdaleе) → rewrite, дай корректный русский топоним (Стокпорт, Урмстон, Рочдейл).
+- Смысловой дубль: та же история/событие другими словами уже встречалась выше по выпуску → strip_only_if_replacement_unavailable.
+- Просроченная дата (дата уже прошла относительно сегодня) → rewrite или replace_needed.
+- Шаблон не по теме: "следите за обновлениями полиции или суда" на не-судебной/не-полицейской новости; "если хотите попасть, уточните дату" как наполнитель → rewrite, убери штамп, оставь реальный факт/действие.
+- Рассогласование рода/числа/падежа ("бывший медсестра") → rewrite.
 
 Правила:
 - Сохраняй bullet "• " и HTML-теги/ссылки, если они есть.
@@ -516,7 +525,13 @@ def _call_pre_send_russian_editor_batch(
         actions.append({"index": index, "action": action, "line": line, "reason": reason})
         if line.startswith("• "):
             fixes[index] = line
-    return fixes, {"status": "ok", "items_sent": len(items), "items_returned": len(fixes), "actions": actions[:120]}
+    return fixes, {
+        "status": "ok",
+        "items_sent": len(items),
+        "items_returned": len(fixes),
+        "actions_returned": len(actions),  # one action per visible line is the contract
+        "actions": actions[:120],
+    }
 
 
 def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) -> tuple[dict[int, str], dict[str, object]]:
