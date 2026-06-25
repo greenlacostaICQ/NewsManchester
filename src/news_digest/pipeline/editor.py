@@ -242,6 +242,24 @@ def _line_url_identity(line: str) -> str:
     return canonical_url_identity(html.unescape(match.group(1)))
 
 
+def _line_story_key(line: str, candidates_by_key: dict[str, dict]) -> str:
+    """Cross-section dedup key. Prefer the story cluster so the SAME story
+    rendered in two blocks is caught even when the wording differs ("В деле о
+    murder Престона Дэви" in Свежие vs "после убийства Престона Дейви" in
+    Сегодня). Fall back to the exact line text when no cluster is known, which
+    keeps the previous exact-string behaviour and never merges two stories
+    that don't share a cluster."""
+    url_key = _line_url_identity(line)
+    candidate = candidates_by_key.get(url_key) if url_key else None
+    if isinstance(candidate, dict):
+        cluster = candidate.get("story_cluster_key")
+        if isinstance(cluster, dict):
+            cluster_key = str(cluster.get("cluster_key") or "").strip()
+            if cluster_key:
+                return f"cluster:{cluster_key}"
+    return line.strip()
+
+
 def _candidate_index(candidates: list[dict]) -> dict[str, dict]:
     index: dict[str, dict] = {}
     for candidate in candidates:
@@ -796,13 +814,16 @@ def edit_digest(project_root: Path) -> StageResult:
     normalized_sections: dict[str, list[str]] = {}
     seen_lines_to_section: dict[str, str] = {}
     duplicate_collisions = 0
+    # Index by URL so cross-section dedup can key on the story cluster, not just
+    # the exact rendered string (catches one story in two blocks).
+    candidates_by_key = _candidate_index(all_candidates)
     for section_name, lines in sections.items():
         deduped = _unique_preserving_order(lines)
         filtered: list[str] = []
         if len(deduped) < len(lines):
             warnings.append(f"Removed duplicate lines in section {section_name}.")
         for line in deduped:
-            key = line.strip()
+            key = _line_story_key(line, candidates_by_key)
             previous_section = seen_lines_to_section.get(key)
             if previous_section and previous_section != section_name:
                 duplicate_collisions += 1

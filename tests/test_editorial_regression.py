@@ -691,6 +691,27 @@ class FinalEditorNetTest(unittest.TestCase):
         # Brand/proper names with a space stay Latin and are not flagged.
         self.assertFalse(_line_needs_russian_editor("• Robyn — 27 июня, Co-op Live. Ticketmaster"))
 
+    def test_cross_section_dedup_keys_by_story_cluster(self) -> None:
+        # Same story rendered in two blocks with different wording must share a
+        # dedup key when the candidates share a story cluster.
+        from news_digest.pipeline.editor import _candidate_index, _line_story_key
+
+        cands = [
+            {"source_url": "https://bbc.co.uk/news/articles/c1",
+             "story_cluster_key": {"cluster_key": "incident:preston davey"}},
+            {"source_url": "https://bbc.co.uk/news/articles/c2",
+             "story_cluster_key": {"cluster_key": "incident:preston davey"}},
+        ]
+        cbk = _candidate_index(cands)
+        line1 = '• В деле о murder ребёнка. <a href="https://bbc.co.uk/news/articles/c1">BBC</a>'
+        line2 = '• Меры после убийства Дейви. <a href="https://bbc.co.uk/news/articles/c2">BBC</a>'
+        self.assertEqual(_line_story_key(line1, cbk), _line_story_key(line2, cbk))
+        # Lines without a shared cluster fall back to their own text (no merge).
+        self.assertNotEqual(
+            _line_story_key("• Пожар в Олдеме. MEN", cbk),
+            _line_story_key("• Совет обсудит дома. MEN", cbk),
+        )
+
 
 # --------------------------------------------------------------------------
 # Coverage summary — keep the pack inside the documented 25-30 band.
