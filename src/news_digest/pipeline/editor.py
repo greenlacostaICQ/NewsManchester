@@ -76,6 +76,11 @@ _BAD_RUSSIAN_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"\bинцидент\s+был\s+успешно\s+разреш[её]н\.?", re.IGNORECASE), ""),
     (re.compile(r"\bэто\s+важная\s+информация\s+для\s+", re.IGNORECASE), "это важно для "),
     (re.compile(r"\bэто\s+интересная\s+информация\s+для\s+", re.IGNORECASE), "это может быть полезно для "),
+    # Latin place/word with a glued Russian case ending ("Stockportа",
+    # "Urmstonе", "Rochdaleе"). The place-name kept its Latin spelling but a
+    # declension ending got appended — strip the ending so it reads as the
+    # clean Latin name ("из Stockport") instead of the broken hybrid.
+    (re.compile(r"\b([A-Za-z]{3,})[а-яё]+\b"), r"\1"),
 )
 
 _BAD_RUSSIAN_DETECTORS: tuple[re.Pattern[str], ...] = (
@@ -93,6 +98,13 @@ _BAD_RUSSIAN_DETECTORS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bсубмашин", re.IGNORECASE),
     re.compile(r"\bурбанист", re.IGNORECASE),
     re.compile(r"\bинквест", re.IGNORECASE),
+    # Untranslated English common words that slipped past the rewrite
+    # ("murder", "lineup", "venue", "sold out"). Proper names/brands stay
+    # Latin and are not in this list, so they are not falsely flagged.
+    re.compile(r"\b(?:murder|line-?up|venue|sold\s+out|on\s+sale|headliner)\b", re.IGNORECASE),
+    # Latin word glued to a Russian ending ("Stockportа") — belt-and-braces
+    # for any hybrid the auto-fix above did not normalise.
+    re.compile(r"[A-Za-z]{3,}[а-яё]"),
 )
 
 # Crime/court/sensitive lines always go through the targeted model pass even

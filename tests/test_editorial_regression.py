@@ -668,6 +668,31 @@ class UntranslatedEnglishTest(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------
+# 7b. Final-editor net: untranslated English + Latin/Cyrillic hybrid place names
+# (2026-06-24: "murder", "Stockportа", "Urmstonе" shipped because the post-check
+# detectors did not cover them and remaining_bad falsely read 0).
+# --------------------------------------------------------------------------
+class FinalEditorNetTest(unittest.TestCase):
+    def test_latin_cyrillic_place_ending_is_auto_fixed(self) -> None:
+        from news_digest.pipeline.editor import (
+            _line_needs_russian_editor,
+            _polish_russian_line_rules,
+        )
+
+        fixed, _ = _polish_russian_line_rules("• Мужчина из Stockportа признал вину. BBC")
+        self.assertIn("Stockport", fixed)
+        self.assertNotIn("Stockportа", fixed)
+        self.assertFalse(_line_needs_russian_editor(fixed))
+
+    def test_untranslated_english_word_is_flagged(self) -> None:
+        from news_digest.pipeline.editor import _line_needs_russian_editor
+
+        self.assertTrue(_line_needs_russian_editor("• В деле о murder ребёнка. BBC"))
+        # Brand/proper names with a space stay Latin and are not flagged.
+        self.assertFalse(_line_needs_russian_editor("• Robyn — 27 июня, Co-op Live. Ticketmaster"))
+
+
+# --------------------------------------------------------------------------
 # Coverage summary — keep the pack inside the documented 25-30 band.
 # --------------------------------------------------------------------------
 class CoverageBandTest(unittest.TestCase):
@@ -675,7 +700,7 @@ class CoverageBandTest(unittest.TestCase):
     catches it. Update the band intentionally."""
 
     EXPECTED_MIN = 25
-    EXPECTED_MAX = 35
+    EXPECTED_MAX = 40
 
     def test_total_case_count_inside_band(self) -> None:
         import sys
