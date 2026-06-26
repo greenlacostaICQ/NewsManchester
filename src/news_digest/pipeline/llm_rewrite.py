@@ -2841,9 +2841,62 @@ def _section_ranking_report_path(project_root: Path) -> Path:
     return project_root / "data" / "state" / "section_ranking_report.json"
 
 
-def _build_enrichment_report(candidates: list[dict]) -> dict[str, object]:
+_ENRICH_MAX_PER_RUN = 15
+
+
+def _enrich_thin_candidates_inplace(to_rewrite: list[dict]) -> dict[str, object]:
+    """Phase 6 ACTION: for thin selected candidates (headline-only evidence)
+    pull the full article and replace evidence_text so the writer has real
+    facts to write from. Bounded per run and fully fault-tolerant — a refetch
+    failure leaves the candidate as-is and never blocks the rewrite."""
+    report: dict[str, object] = {
+        "attempted": 0, "enriched": 0, "failed": 0, "skipped_no_url": 0, "examples": [],
+    }
+    targets = [c for c in to_rewrite if isinstance(c, dict) and _needs_selection_enrichment(c)]
+    if not targets:
+        return report
+    from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+    from news_digest.pipeline.collector.extract import _extract_paragraph_evidence  # noqa: PLC0415
+    from news_digest.pipeline.collector.fetch import _fetch_text  # noqa: PLC0415
+
+    def _enrich_one(candidate: dict) -> tuple[dict, str]:
+        url = str(candidate.get("source_url") or "").strip()
+        if not url:
+            return candidate, "__no_url__"
+        try:
+            return candidate, _extract_paragraph_evidence(_fetch_text(url), str(candidate.get("title") or ""))
+        except Exception:  # noqa: BLE001 - one bad refetch must not block the run
+            return candidate, "__failed__"
+
+    batch = targets[:_ENRICH_MAX_PER_RUN]
+    with ThreadPoolExecutor(max_workers=min(8, len(batch))) as executor:
+        for candidate, full in executor.map(_enrich_one, batch):
+            report["attempted"] = int(report["attempted"]) + 1
+            if full == "__no_url__":
+                report["skipped_no_url"] = int(report["skipped_no_url"]) + 1
+                continue
+            if full == "__failed__":
+                report["failed"] = int(report["failed"]) + 1
+                continue
+            existing = str(candidate.get("evidence_text") or "")
+            if full and len(full) > len(existing) + 80:
+                candidate["evidence_text"] = full[:6000]
+                candidate["enriched_from_source"] = True
+                report["enriched"] = int(report["enriched"]) + 1
+                if len(report["examples"]) < 12:
+                    report["examples"].append({
+                        "title": str(candidate.get("title") or "")[:80],
+                        "primary_block": str(candidate.get("primary_block") or ""),
+                        "chars_before": len(existing),
+                        "chars_after": len(full[:6000]),
+                    })
+    return report
+
+
+def _build_enrichment_report(candidates: list[dict], action: dict[str, object] | None = None) -> dict[str, object]:
     """Phase 6: list every candidate that selection marked needs_enrichment,
-    with the facts it is missing, so the enrichment step is auditable."""
+    with the facts it is missing, plus what the enrichment ACTION actually
+    pulled — so the enrichment step is auditable end to end."""
     items: list[dict[str, object]] = []
     by_block: dict[str, int] = {}
     for candidate in candidates:
@@ -2868,6 +2921,7 @@ def _build_enrichment_report(candidates: list[dict]) -> dict[str, object]:
         "run_date_london": today_london(),
         "needs_enrichment_count": len(items),
         "by_block": by_block,
+        "action": action or {},
         "items": items[:200],
     }
 
@@ -3693,10 +3747,16 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         )
         return StageResult(True, "LLM rewrite disabled; continuing with writer/release gates.", report_path)
 
+    enrichment_action: dict[str, object] = {}
     if not to_rewrite:
         logger.info("LLM rewrite: all included candidates already have draft_lines.")
     else:
         original_rewrite_count = len(to_rewrite)
+        # Phase 6 action: pull full article text for thin selected candidates
+        # BEFORE writing, so the writer works from real facts, not a headline.
+        enrichment_action = _enrich_thin_candidates_inplace(to_rewrite)
+        if int(enrichment_action.get("enriched") or 0):
+            logger.info("Enrichment: pulled full text for %d thin candidate(s).", enrichment_action["enriched"])
         run_iso = now_london().isoformat()
         to_rewrite, rewrite_shortlist = _apply_rewrite_shortlist(candidates, to_rewrite)
         if rewrite_shortlist["held_for_backup"]:
@@ -4081,7 +4141,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     section_selection_report = _finalize_digest_selection_verdicts(candidates)
     publish_plan = _build_publish_plan(candidates)
     write_json(_section_selection_report_path(project_root), section_selection_report)
-    write_json(_enrichment_report_path(project_root), _build_enrichment_report(candidates))
+    write_json(_enrichment_report_path(project_root), _build_enrichment_report(candidates, enrichment_action))
     write_json(
         _section_ranking_report_path(project_root),
         {"run_date_london": today_london(), **rewrite_shortlist},
