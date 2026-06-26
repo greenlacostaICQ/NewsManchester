@@ -313,21 +313,34 @@ def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: st
         logger.info("Curator: batch %d/%d (%d candidates).", index, len(batches), len(batch))
         return _call_curator_batch(batch, client, model)
 
-    try:
-        if max_workers <= 1:
-            for i, batch in enumerate(batches, start=1):
+    # Each batch is isolated: one timeout/parse failure must NOT throw away the
+    # other successful batches. The old single try/except returned [] on any
+    # failure, which wiped the whole editorial pass — and the lead with it.
+    failed_batches = 0
+    if max_workers <= 1:
+        for i, batch in enumerate(batches, start=1):
+            try:
                 results.extend(_run_batch(i, batch))
-        else:
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                futures = [
-                    executor.submit(_run_batch, i, batch)
-                    for i, batch in enumerate(batches, start=1)
-                ]
-                for future in futures:
+            except Exception as exc:  # noqa: BLE001
+                failed_batches += 1
+                logger.warning("Curator batch %d failed (kept the rest): %s", i, exc)
+    else:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [
+                executor.submit(_run_batch, i, batch)
+                for i, batch in enumerate(batches, start=1)
+            ]
+            for i, future in enumerate(futures, start=1):
+                try:
                     results.extend(future.result())
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Curator call failed: %s", exc)
-        return []
+                except Exception as exc:  # noqa: BLE001
+                    failed_batches += 1
+                    logger.warning("Curator batch %d failed (kept the rest): %s", i, exc)
+    if failed_batches:
+        logger.warning(
+            "Curator: %d/%d batch(es) failed; applied %d result(s) from the rest.",
+            failed_batches, len(batches), len(results),
+        )
     return results
 
 
@@ -446,6 +459,35 @@ def run_curator_pass(project_root: Path) -> None:
             candidate["is_lead"] = True
             lead_set = True
 
+    # Deterministic lead fallback: the issue must always have a main story. If
+    # the model marked no lead (e.g. its batch timed out and partial-apply kept
+    # the rest but lost the lead vote), pick the strongest included hard-news
+    # item by reader value so the digest never ships without a lead.
+    lead_via_fallback = False
+    if not lead_set:
+        _LEAD_FALLBACK_BLOCKS = {"last_24h", "lead_story", "today_focus", "city_watch"}
+        lead_candidates = [
+            c for c in candidates
+            if isinstance(c, dict)
+            and c.get("include")
+            and not c.get("is_lead")
+            and not _is_curator_protected(c)
+            and str(c.get("primary_block") or "") in _LEAD_FALLBACK_BLOCKS
+        ]
+        if lead_candidates:
+            best = max(
+                lead_candidates,
+                key=lambda c: (float(c.get("reader_value_score") or 0), float(c.get("section_board_score") or 0)),
+            )
+            best["is_lead"] = True
+            best["lead_via_fallback"] = True
+            lead_set = True
+            lead_via_fallback = True
+            logger.warning(
+                "Curator: no model lead; picked deterministic lead by reader value: %s",
+                str(best.get("title") or "")[:60],
+            )
+
     # Semantic dedup pass: catch near-duplicate stories the LLM curator missed
     # (same person / same event covered by multiple sources). On 2026-05-12 we
     # shipped: Adrian Brown × 2 (MEN + BBC), Tour de France × 2 (Manchester +
@@ -480,6 +522,7 @@ def run_curator_pass(project_root: Path) -> None:
         "dropped": dropped,
         "semantic_dropped": semantic_dropped,
         "lead_set": lead_set,
+        "lead_via_fallback": lead_via_fallback,
         "decisions": decisions,
         "cost_summary": cost_summary,
         "duration_seconds": round(time.monotonic() - stage_started, 3),
