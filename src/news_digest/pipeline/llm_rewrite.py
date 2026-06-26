@@ -2819,6 +2819,10 @@ def _enrichment_report_path(project_root: Path) -> Path:
     return project_root / "data" / "state" / "enrichment_report.json"
 
 
+def _section_ranking_report_path(project_root: Path) -> Path:
+    return project_root / "data" / "state" / "section_ranking_report.json"
+
+
 def _build_enrichment_report(candidates: list[dict]) -> dict[str, object]:
     """Phase 6: list every candidate that selection marked needs_enrichment,
     with the facts it is missing, so the enrichment step is auditable."""
@@ -4060,6 +4064,10 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     publish_plan = _build_publish_plan(candidates)
     write_json(_section_selection_report_path(project_root), section_selection_report)
     write_json(_enrichment_report_path(project_root), _build_enrichment_report(candidates))
+    write_json(
+        _section_ranking_report_path(project_root),
+        {"run_date_london": today_london(), **rewrite_shortlist},
+    )
     write_json(_publish_plan_path(project_root), publish_plan)
     candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     rewrite_inventory = _build_rewrite_inventory(candidates)
