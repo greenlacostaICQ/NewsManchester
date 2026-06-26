@@ -502,10 +502,12 @@ def _is_football_publishable(title: str, url: str = "") -> bool:
         return True
     transfer_terms = (
         "sign", "signed", "signs", "joins", "joined", "leaves", "left",
-        "transfer", "fee", "deal agreed", "contract", "loan",
+        "transfer", "fee", "record fee", "agree fee", "agreed fee",
+        "deal agreed", "contract", "loan",
     )
     if any(term in normalized for term in transfer_terms) and (
         "£" in normalized or "from " in normalized or "to " in normalized
+        or " for " in normalized or " with " in normalized
     ):
         return True
     preview_terms = ("match preview", "preview", "team news", "confirmed line up", "confirmed lineup")
@@ -1205,6 +1207,44 @@ def _is_allowed_source_link(source: SourceDef, url: str, title: str, summary: st
         base_host = parse.urlsplit(source.url).netloc.replace("www.", "")
         if host and base_host and not host.endswith(base_host):
             return False
+
+    if source.source_type == "html_designmynight":
+        lowered_title = title.lower()
+        lowered_path = path.lower()
+        lowered_summary = str(summary or "").lower()
+        generic_guide = (
+            "pretty bars",
+            "cocktail classes",
+            "best bars",
+            "best restaurants",
+            "things to do",
+            "guide",
+        )
+        if any(token in lowered_title for token in generic_guide):
+            return False
+        if any(token in lowered_path for token in ("/pretty-bars", "/cocktail-classes", "/best-", "/guide-")):
+            return False
+        return bool(
+            len(lowered_title) >= 4
+            and any(
+                token in f"{lowered_title} {lowered_summary}"
+                for token in (
+                    "weekend",
+                    "saturday",
+                    "sunday",
+                    "brunch",
+                    "show",
+                    "ticket",
+                    "event",
+                    "drag",
+                    "music",
+                    "bar",
+                    "restaurant",
+                    "manchester",
+                )
+            )
+        )
+
     if not path or path == parse.urlsplit(source.url).path.rstrip("/"):
         return False
 

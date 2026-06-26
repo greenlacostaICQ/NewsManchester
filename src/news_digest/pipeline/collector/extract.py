@@ -644,7 +644,7 @@ def _extract_article_published_at(html_text: str) -> str | None:
         match = re.search(pattern, html_text, flags=re.IGNORECASE)
         if not match:
             continue
-        parsed = _parse_datetime_value(match.group(1))
+        parsed = _parse_datetime_value(unescape(match.group(1)))
         if parsed is not None:
             return parsed.isoformat()
     return None
@@ -761,6 +761,9 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         "RNCM",
         "Manchester Theatres Weekend",
         "Manchester Theatres Next Weekend",
+        "Manchester City",
+        "Manchester City Men",
+        "Manchester United",
     }
     return ExtractedItem(
         title=item.title if preserve_listing_title else _clean_title_text(unescape(enriched_title or item.title)),
@@ -1773,6 +1776,26 @@ def _extract_mancity_items(source: SourceDef, body: str) -> list[ExtractedItem]:
         )
         if len(items) >= source.max_candidates:
             break
+    if not items and source.name == "Manchester City" and "/news/mens" not in parse.urlsplit(source.url).path.lower():
+        try:
+            mens_url = "https://www.mancity.com/news/mens"
+            mens_body = _fetch_text(mens_url)
+        except Exception:  # noqa: BLE001 - keep all-news source soft-empty if fallback fails.
+            return items
+        mens_source = SourceDef(
+            name=source.name,
+            report_category=source.report_category,
+            candidate_category=source.candidate_category,
+            url=mens_url,
+            primary_block=source.primary_block,
+            source_type=source.source_type,
+            allowed_hosts=source.allowed_hosts,
+            max_candidates=source.max_candidates,
+            notes=source.notes,
+            source_contract=source.source_contract,
+            trial=source.trial,
+        )
+        return _extract_mancity_items(mens_source, mens_body)
     return items
 
 
@@ -1825,6 +1848,33 @@ def _extract_bbc_sport_team_items(source: SourceDef, body: str) -> list[Extracte
     fetch the article body when the listing text is thin.
     """
 
+    if "<rss" in body[:1000].lower():
+        channel_match = re.search(
+            r"<channel\b.*?<link>\s*([^<]+?)\s*</link>",
+            body,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        channel_url = unescape(channel_match.group(1).strip()) if channel_match else ""
+        if channel_url and channel_url != source.url:
+            try:
+                html_body = _fetch_text(channel_url)
+            except Exception:  # noqa: BLE001 - keep RSS source as soft-empty if fallback fails.
+                return []
+            html_source = SourceDef(
+                name=source.name,
+                report_category=source.report_category,
+                candidate_category=source.candidate_category,
+                url=channel_url,
+                primary_block=source.primary_block,
+                source_type="html",
+                allowed_hosts=source.allowed_hosts,
+                max_candidates=source.max_candidates,
+                notes=source.notes,
+                source_contract=source.source_contract,
+                trial=source.trial,
+            )
+            return _extract_bbc_sport_team_items(html_source, html_body)
+
     parser = LinkExtractor(source.url)
     parser.feed(body)
     by_url: dict[str, tuple[int, ExtractedItem]] = {}
@@ -1857,6 +1907,79 @@ def _extract_bbc_sport_team_items(source: SourceDef, body: str) -> list[Extracte
         if len(order) >= source.max_candidates:
             break
     return [by_url[url][1] for url in order if url in by_url]
+
+
+def _bdaily_article_text(body: str, title: str) -> str:
+    text = _html_to_visible_text(body)
+    lowered = text.lower()
+    title_l = title.lower()
+    positions = [m.start() for m in re.finditer(re.escape(title_l), lowered)] if title_l else []
+    if len(positions) >= 2:
+        text = text[positions[1]:]
+    elif positions:
+        text = text[positions[0]:]
+    text = re.sub(
+        r"\b(?:LinkedIn|Facebook|Twitter|Advertise|Sign Up|Register|Premium News)\b.*?(?=[A-Z][^.]{15,}\.)",
+        " ",
+        text,
+        flags=re.IGNORECASE,
+    )
+    return _clean_long_text(text)
+
+
+def _extract_bdaily_items(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Bdaily region pages are index pages; fetch child articles for facts.
+
+    The listing page often gives only a title/image and no Manchester token, so
+    the old generic link parser threw away useful Manchester/Altrincham
+    business stories before enrichment could see the article body.
+    """
+
+    parser = LinkExtractor(source.url)
+    parser.feed(body)
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    max_child_fetches = max(12, min(source.max_candidates * 4, 20))
+    child_fetches = 0
+    for link in parser.links:
+        url = clean_url(link.url)
+        if url in seen:
+            continue
+        if not re.search(r"/articles/20\d{2}/\d{2}/\d{2}/", parse.urlsplit(url).path):
+            continue
+        title = _clean_title_text(_collapse_repeated_card_title(link.title))
+        if not title or not _looks_like_candidate_title(title):
+            continue
+        seen.add(url)
+        if child_fetches >= max_child_fetches:
+            break
+        child_fetches += 1
+        try:
+            article_body = _fetch_text(url)
+        except Exception:  # noqa: BLE001 - one broken article must not kill the source.
+            article_body = ""
+        article_title = _strip_page_title_suffix(_extract_h1_title(article_body) or title)
+        if article_title and _looks_like_candidate_title(article_title):
+            title = article_title
+        evidence = _bdaily_article_text(article_body, title) if article_body else _clean_long_text(link.title)
+        summary = _extract_meta_description(article_body) if article_body else ""
+        if not summary:
+            summary = _summary_from_evidence(evidence) or title
+        items.append(
+            ExtractedItem(
+                title=title,
+                url=url,
+                published_at=(
+                    _extract_article_published_at(article_body)
+                    or _published_at_from_title_or_url(title, url)
+                ),
+                summary=summary,
+                lead=_derive_lead(source, title, summary or evidence),
+                evidence_text=evidence[:5000],
+                enrichment_status="ok_bdaily_article_page" if article_body else "bdaily_article_fetch_failed",
+            )
+        )
+    return items
 
 
 def _extract_rncm_items(source: SourceDef, body: str) -> list[ExtractedItem]:
@@ -2877,6 +3000,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_mancity_items(source, body)
     elif source.name in {"BBC Sport Manchester United", "BBC Sport Manchester City"}:
         links = _extract_bbc_sport_team_items(source, body)
+    elif source.name == "Bdaily Manchester":
+        links = _extract_bdaily_items(source, body)
     elif source.name == "RNCM":
         links = _extract_rncm_items(source, body)
     elif "<rss" in body[:500].lower() or "<feed" in body[:500].lower():
