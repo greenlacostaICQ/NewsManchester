@@ -6394,6 +6394,19 @@ def write_digest(project_root: Path) -> StageResult:
     }
     a_tier_ticket_trace = _a_tier_ticket_trace(candidates, rendered_fp_set, dropped_candidates)
 
+    # Phase 7: emit recovery as its own report so attempted/inserted/replaced/
+    # unrecoverable per block is visible without digging through writer_report.
+    write_json(
+        state_dir / "recovery_report.json",
+        {
+            "pipeline_run_id": pipeline_run_id,
+            "run_at_london": now_london().isoformat(),
+            "run_date_london": today_london(),
+            "sections": recovery_controller.get("sections", {}),
+            "totals": recovery_controller.get("totals", {}),
+        },
+    )
+
     draft_path.write_text("\n".join(rendered).strip() + "\n", encoding="utf-8")
     write_json(
         report_path,

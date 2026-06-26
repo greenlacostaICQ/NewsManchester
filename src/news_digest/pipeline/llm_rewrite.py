@@ -2815,6 +2815,41 @@ def _section_selection_report_path(project_root: Path) -> Path:
     return project_root / "data" / "state" / "section_selection_report.json"
 
 
+def _enrichment_report_path(project_root: Path) -> Path:
+    return project_root / "data" / "state" / "enrichment_report.json"
+
+
+def _build_enrichment_report(candidates: list[dict]) -> dict[str, object]:
+    """Phase 6: list every candidate that selection marked needs_enrichment,
+    with the facts it is missing, so the enrichment step is auditable."""
+    items: list[dict[str, object]] = []
+    by_block: dict[str, int] = {}
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        if str(candidate.get("digest_selection_verdict") or "") != "needs_enrichment":
+            continue
+        block = str(candidate.get("primary_block") or "unknown")
+        by_block[block] = by_block.get(block, 0) + 1
+        missing = candidate.get("missing_facts") if isinstance(candidate.get("missing_facts"), list) else []
+        items.append(
+            {
+                "fingerprint": str(candidate.get("fingerprint") or ""),
+                "primary_block": block,
+                "title": str(candidate.get("title") or "")[:120],
+                "source_url": str(candidate.get("source_url") or ""),
+                "missing_facts": [str(m)[:80] for m in missing[:8]],
+                "reason": str(candidate.get("digest_selection_reason") or ""),
+            }
+        )
+    return {
+        "run_date_london": today_london(),
+        "needs_enrichment_count": len(items),
+        "by_block": by_block,
+        "items": items[:200],
+    }
+
+
 def _publish_plan_path(project_root: Path) -> Path:
     return project_root / "data" / "state" / "publish_plan.json"
 
@@ -4024,6 +4059,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     section_selection_report = _finalize_digest_selection_verdicts(candidates)
     publish_plan = _build_publish_plan(candidates)
     write_json(_section_selection_report_path(project_root), section_selection_report)
+    write_json(_enrichment_report_path(project_root), _build_enrichment_report(candidates))
     write_json(_publish_plan_path(project_root), publish_plan)
     candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     rewrite_inventory = _build_rewrite_inventory(candidates)

@@ -3332,6 +3332,30 @@ def build_release(project_root: Path) -> ReleaseResult:
         rendered_fingerprints=rendered_fingerprints,
         writer_report=writer_report,
     )
+    # Phase 1: emit the per-source funnel (raw → curated → rendered) as its own
+    # report so "fetched OK / 0 rendered" is a visible red signal instead of
+    # being buried in the release report. Reporting must never block release.
+    try:
+        write_json(
+            state_dir / "source_health_funnel.json",
+            {
+                "run_date_london": today_london(),
+                "sources": [
+                    {
+                        "name": row.get("name"),
+                        "category": row.get("category"),
+                        "status": row.get("status"),
+                        "raw": (row.get("loss_funnel") or {}).get("source_raw_count"),
+                        "rendered": (row.get("loss_funnel") or {}).get("rendered"),
+                        "loss_funnel": row.get("loss_funnel", {}),
+                    }
+                    for row in (source_status or [])
+                    if isinstance(row, dict)
+                ],
+            },
+        )
+    except Exception:  # noqa: BLE001 - reporting must never block release
+        pass
     # Phase 2 #2: append today's source health to the rolling jsonl log so the
     # anomaly check can compare against the trailing window. Never blocks.
     source_anomalies: list[dict] = []
