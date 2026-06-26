@@ -42,6 +42,7 @@ from news_digest.pipeline.writer import (
     _apply_section_min_floor_pull_back,
     _apply_fresh_semantic_duplicate_pass,
     _build_football_fallback_line,
+    _build_weekend_event_fallback_line,
     _build_recurring_event_fallback_line,
     _build_ticket_fallback_line,
     _contract_public_drop_reason,
@@ -681,6 +682,28 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertIn("Bowlee", line)
         self.assertNotRegex(line, r"5\s+апреля|5\s+April")
 
+    def test_weekend_market_does_not_render_collection_time_as_event_time(self) -> None:
+        event_day = now_london().date() + timedelta(days=1)
+        candidate = {
+            "include": True,
+            "fingerprint": "didsbury-market-no-published-time",
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": f"Didsbury Makers Market on {event_day.day} June",
+            "summary": f"Didsbury Makers Market runs on {event_day.day} June with makers, food and craft stalls.",
+            "lead": "Independent makers and food stalls in Didsbury.",
+            "evidence_text": "Makers, food, craft stalls and family-friendly shopping.",
+            "source_label": "The Makers Market",
+            "source_url": "https://example.test/didsbury-makers-market",
+            "published_at": f"{today_london()}T08:14:00+01:00",
+            "event": {"is_event": True, "is_recurring": True, "event_name": "Didsbury Makers Market", "venue": "Didsbury"},
+        }
+
+        line = _build_weekend_event_fallback_line(candidate)
+
+        self.assertIn(str(event_day.day), line)
+        self.assertNotIn("08:14", line)
+
     def test_one_off_event_with_only_russian_past_date_is_rejected(self) -> None:
         """Past dates in Russian month names must be caught.
 
@@ -722,6 +745,34 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             "past",
             str(updated.get("reason") or "").lower(),
         )
+
+    def test_afisha_classical_event_does_not_occupy_russian_speaking_block(self) -> None:
+        event_day = (now_london().date() + timedelta(days=14)).isoformat()
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "afisha-london-eugene-onegin",
+                "category": "russian_speaking_events",
+                "primary_block": "russian_events",
+                "title": "Eugene Onegin at The Grange Festival",
+                "summary": "Tchaikovsky opera at The Grange Festival, performed in Hampshire.",
+                "lead": "Opera production by The Grange Festival.",
+                "evidence_text": "The Grange Festival presents Eugene Onegin. Tickets are available online.",
+                "source_label": "Afisha London",
+                "source_url": "https://afisha.london/en/event/eugene-onegin-at-the-grange-festival",
+                "published_at": now_london().isoformat(),
+                "event": {
+                    "is_event": True,
+                    "event_name": "Eugene Onegin",
+                    "venue": "The Grange Festival",
+                    "date_start": event_day,
+                    "booking_url": "https://afisha.london/en/event/eugene-onegin-at-the-grange-festival",
+                },
+            }
+        )
+
+        self.assertFalse(updated["include"])
+        self.assertEqual(updated["russian_event_classifier"]["decision"], "drop_from_russian_block")
 
     def test_weekend_section_excludes_event_beyond_three_days(self) -> None:
         """User feedback: «Barton Aerodrome 6 июня нахуя? было требование

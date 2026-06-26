@@ -25,7 +25,7 @@ from news_digest.pipeline.entity_extraction import enrich_candidate_entities
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.event_quality import event_quality_reject_reasons, event_quality_report
 from news_digest.pipeline.practical_backfill import apply_practical_backfill
-from news_digest.pipeline.professional_events import apply_professional_event_match
+from news_digest.pipeline.professional_events import apply_professional_event_llm_matches, apply_professional_event_match
 from news_digest.pipeline.reader_actions import attach_reader_action
 from news_digest.pipeline.reader_value import attach_reader_value
 from news_digest.pipeline.story_intelligence import apply_story_intelligence, mark_reject_second_opinion
@@ -497,10 +497,55 @@ _EDITORIAL_MONTH_DAY_RE = re.compile(
 
 
 def _candidate_blob(candidate: dict) -> str:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     return " ".join(
         str(candidate.get(field) or "")
         for field in ("title", "summary", "lead", "evidence_text", "source_url")
+    ) + " " + " ".join(
+        str(event.get(field) or "")
+        for field in ("event_name", "venue", "date_text", "price", "booking_url")
     )
+
+
+_CLASSICAL_NON_DIASPORA_RU_BLOCK_RE = re.compile(
+    r"\b(?:opera|ballet|symphony|orchestra|classical|tchaikovsky|eugene\s+onegin|"
+    r"sleeping\s+beauty|royal\s+albert\s+hall|english\s+national\s+ballet|grange\s+festival|"
+    r"опера|балет|симфони|оркестр|чайковск|евгени[йя]\s+онегин|спящая\s+красавица)\b",
+    re.IGNORECASE,
+)
+_RUSSIAN_LANGUAGE_OR_DIASPORA_RE = re.compile(
+    r"\b(?:russian[-\s]?language|russian[-\s]?speaking|in\s+russian|stand[-\s]?up\s+in\s+russian|"
+    r"kontramarka|eventfirst|uk\s+stand[-\s]?up|mticket|diaspora|"
+    r"русскоязыч|на\s+русском|по-русски|русский\s+стендап|стендап\s+на\s+русском|"
+    r"диаспор|контрамарка)\b",
+    re.IGNORECASE,
+)
+
+
+def _exclude_non_diaspora_classical_from_russian_events(candidate: dict) -> bool:
+    """Russian block means Russian-language/diaspora relevance, not any work
+    by a Russian composer. Afisha classical/opera/ballet pages can be useful
+    culturally, but they must not occupy the Russian-speaking block unless the
+    page itself proves a Russian-language/diaspora signal."""
+    category = str(candidate.get("category") or "")
+    block = str(candidate.get("primary_block") or "")
+    if category not in {"russian_speaking_events", "diaspora_events"} and block != "russian_events":
+        return False
+    blob = _candidate_blob(candidate)
+    if not _CLASSICAL_NON_DIASPORA_RU_BLOCK_RE.search(blob):
+        return False
+    if _RUSSIAN_LANGUAGE_OR_DIASPORA_RE.search(blob):
+        return False
+    candidate["include"] = False
+    candidate["russian_event_classifier"] = {
+        "decision": "drop_from_russian_block",
+        "reason": "classical/opera/ballet without Russian-language or diaspora signal",
+    }
+    candidate["reason"] = (
+        str(candidate.get("reason") or "").rstrip()
+        + " | Russian block classifier: opera/ballet/classical item has no Russian-language or diaspora signal."
+    ).strip()
+    return True
 
 
 _IMPLICIT_WEEKEND_URL_PATTERNS = (
@@ -2318,6 +2363,8 @@ def validate_candidates(project_root: Path) -> StageResult:
         # TfGM roadworks bulletin. Idempotent and safe for non-transport.
         if candidate.get("include"):
             _time_gate("professional_event_match", lambda: apply_professional_event_match(candidate, project_root))
+        if candidate.get("include"):
+            _time_gate("russian_event_classifier", lambda: _exclude_non_diaspora_classical_from_russian_events(candidate))
         _time_gate("classify_transport", lambda: classify_transport_candidate(candidate))
         _time_gate("change_phase", lambda: attach_change_phase(candidate))
         _time_gate("editorial_contract_initial", lambda: attach_editorial_contract(candidate))
@@ -2455,6 +2502,9 @@ def validate_candidates(project_root: Path) -> StageResult:
             errors.append(f"Candidate #{index} failed validation.")
 
     _mark_timing("validation_loop_seconds", validation_loop_t0)
+    professional_llm_t0 = time.monotonic()
+    professional_llm_match = apply_professional_event_llm_matches(candidates, project_root)
+    _mark_timing("professional_llm_match_seconds", professional_llm_t0)
     practical_t0 = time.monotonic()
     practical_backfill = apply_practical_backfill(candidates)
     _mark_timing("practical_backfill_seconds", practical_t0)
@@ -2486,6 +2536,7 @@ def validate_candidates(project_root: Path) -> StageResult:
             "stage_status": "complete" if not errors else "failed",
             "errors": errors,
             "city_intelligence": city_intelligence,
+            "professional_llm_match": professional_llm_match,
             "practical_backfill": practical_backfill,
             "trial_candidates": sum(1 for c in candidates if isinstance(c, dict) and c.get("source_trial")),
             "items": items,

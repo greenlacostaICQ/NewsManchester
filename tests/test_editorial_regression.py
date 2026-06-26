@@ -788,6 +788,39 @@ class FinalEditorNetTest(unittest.TestCase):
         self.assertIn("парки", line)
         self.assertIn("story:parks|civic|salford", rendered_story_keys)
 
+    def test_same_section_reserve_rebuilds_missing_draft_line(self) -> None:
+        from news_digest.pipeline.editor import _same_section_reserve_line
+
+        rendered_story_keys: set[str] = set()
+        rendered_urls: set[str] = set()
+        candidates = [
+            {
+                "primary_block": "ticket_radar",
+                "category": "venues_tickets",
+                "public_reserve": True,
+                "backup_pool_only": False,
+                "title": "Example Artist — event 2026-07-20",
+                "summary": "AO Arena | Manchester | Pop | event_date=2026-07-20 19:00 | ticket_type=major_upcoming",
+                "source_url": "https://ticketmaster.co.uk/example-artist",
+                "source_label": "Ticketmaster",
+                "event": {"venue": "AO Arena", "date_start": "2026-07-20T19:00:00+01:00"},
+                "ticket_notability": {
+                    "artist": "Example Artist",
+                    "kind": "artist",
+                    "tier": "A",
+                    "signal": "streaming_popularity",
+                    "signals": {"lastfm_listeners": 1800000},
+                },
+            },
+        ]
+        stats: dict[str, object] = {}
+
+        line = _same_section_reserve_line("Билеты / Ticket Radar", candidates, rendered_urls, rendered_story_keys, stats)
+
+        self.assertIn("Example Artist", line)
+        self.assertIn("Last.fm", line)
+        self.assertGreaterEqual(int(stats.get("enriched_rewrite_used") or 0), 1)
+
     def test_block_contract_holds_non_a_tier_outside_gm(self) -> None:
         candidate = {
             "primary_block": "outside_gm_tickets",

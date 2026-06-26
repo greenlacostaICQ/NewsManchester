@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from news_digest.pipeline.professional_events import score_professional_event
+from news_digest.pipeline.professional_events import apply_professional_event_match, score_professional_event
 from news_digest.pipeline.writer import _build_professional_event_fallback_line
 
 
@@ -59,6 +59,20 @@ class ProfessionalEventsTest(unittest.TestCase):
         match = score_professional_event(c)
         self.assertFalse(match["publish"])
         self.assertEqual(match["recommended_action"], "skip")
+
+    def test_free_low_signal_event_waits_for_llm_cv_match_before_drop(self) -> None:
+        c = self._candidate(
+            "Generic student careers coffee morning",
+            "Free student-only careers coffee morning with broad employer stalls.",
+            venue="University building",
+        )
+        c["include"] = True
+
+        apply_professional_event_match(c)
+
+        self.assertTrue(c["include"])
+        self.assertEqual(c["professional_match_status"], "needs_llm_cv_match")
+        self.assertIn("professional_llm_cv_match_required", c["quality_warnings"])
 
     def test_writer_builds_self_contained_russian_card(self) -> None:
         c = self._candidate(

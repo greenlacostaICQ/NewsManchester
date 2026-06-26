@@ -2239,6 +2239,48 @@ def _ticket_watch_decision(candidate: dict) -> dict[str, object]:
     }
 
 
+def _format_compact_number(value: object) -> str:
+    try:
+        number = int(value or 0)
+    except (TypeError, ValueError):
+        return ""
+    if number >= 1_000_000:
+        return f"{number / 1_000_000:.1f} млн".replace(".0", "")
+    if number >= 1_000:
+        return f"{round(number / 1000)} тыс."
+    return str(number) if number > 0 else ""
+
+
+def _ticket_notability_proof(candidate: dict) -> str:
+    notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+    signals = notability.get("signals") if isinstance(notability.get("signals"), dict) else {}
+    signal = str(notability.get("signal") or "").strip()
+    spotify_followers = _format_compact_number(signals.get("spotify_followers"))
+    spotify_popularity = str(signals.get("spotify_popularity") or "").strip()
+    lastfm = _format_compact_number(signals.get("lastfm_listeners"))
+    sitelinks = _format_compact_number(notability.get("sitelinks") or signals.get("sitelinks"))
+    if signal == "streaming_popularity":
+        if spotify_followers:
+            return f"Spotify: {spotify_followers} подписчиков"
+        if spotify_popularity and spotify_popularity != "0":
+            return f"Spotify popularity {spotify_popularity}/100"
+        if lastfm:
+            return f"Last.fm: {lastfm} слушателей"
+    if signal.startswith("wikidata") and sitelinks:
+        return f"Wikidata: {sitelinks} языковых страниц"
+    if signal == "ticketmaster_attraction":
+        return "есть официальная артист-карточка Ticketmaster"
+    if signal == "musicbrainz_ticketmaster_identity":
+        return "MusicBrainz и Ticketmaster подтверждают артиста"
+    if lastfm:
+        return f"Last.fm: {lastfm} слушателей"
+    if spotify_followers:
+        return f"Spotify: {spotify_followers} подписчиков"
+    if sitelinks:
+        return f"Wikidata: {sitelinks} языковых страниц"
+    return ""
+
+
 def _ticket_watch_reason(candidate: dict) -> str:
     title = _ticket_headliner(str(candidate.get("title") or ""))
     venue = _ticket_venue(candidate)
@@ -2261,29 +2303,29 @@ def _ticket_watch_reason(candidate: dict) -> str:
     this_week = days is not None and 0 <= days <= 7
     soon = days is not None and 0 <= days <= 14
     where = "в GM" if in_gm else "вне GM"
-    # Reason explains WHY it matters — one human occasion, never a stack of
-    # machine labels (owner 2026-06-13: not "A-tier", not "Глобальный артист;
-    # крупная площадка", not a bare repeated "концерт на ближайшей неделе").
-    # A fresh sale is the clearest "act now" reason.
+    # Reason explains WHY it matters with evidence, not machine praise
+    # ("крупный артист", "крупная площадка"). A fresh sale is the clearest
+    # "act now" reason; notability gets a proof signal from the cache.
     if ticket_type == "presale_soon":
         return "скоро открывается presale"
     if ticket_type in {"on_sale_now", "newly_listed"}:
         return "новая продажа билетов"
     # A festival lineup is a different product from a single headliner.
     if lineup:
-        return "фестивальный lineup, не один артист"
-    # A major artist is the headline reason — pair it with the occasion and
-    # be honest that a near date is a "this week" show, not a fresh sale.
+        return "фестивальный состав, не один артист"
+    proof = _ticket_notability_proof(candidate)
     if tier == "A":
         if this_week:
-            return f"крупный артист, выступление {where} на этой неделе"
-        if soon:
-            return "крупный артист, ближайшая дата"
-        return "крупный артист с UK-датой"
+            base = f"{where} на этой неделе"
+        elif soon:
+            base = "ближайшая дата тура"
+        else:
+            base = "UK-дата в радаре"
+        return f"{base}; сигнал: {proof}" if proof else base
     if arena_show:
         if multi_night:
-            return "крупная площадка, несколько дат"
-        return "крупная площадка, на этой неделе" if this_week else "крупная площадка"
+            return f"несколько дат в {venue}" if venue else "несколько дат"
+        return f"{venue}: дата на этой неделе" if this_week and venue else (f"{venue}: подтверждённая дата" if venue else "подтверждённая дата")
     if estate_show:
         return "open-air концерт на estate-площадке"
     if this_week:
@@ -3116,12 +3158,14 @@ def _weekend_occurrence_datetime(candidate: dict) -> datetime | None:
     current_weekend_dates = [day for day in dates if weekend_start <= day <= weekend_end]
     if current_weekend_dates:
         chosen = current_weekend_dates[0]
-        return datetime.combine(chosen, (structured or now_london()).timetz()).replace(tzinfo=now_london().tzinfo)
+        event_time = structured.timetz() if structured else datetime(2000, 1, 1, 12, 0).timetz()
+        return datetime.combine(chosen, event_time).replace(tzinfo=now_london().tzinfo)
     today = now_london().date()
     future_dates = [day for day in dates if day >= today]
     if future_dates and (event.get("is_recurring") or _RECURRING_EVENT_MARKERS.search(text)):
         chosen = future_dates[0]
-        return datetime.combine(chosen, (structured or now_london()).timetz()).replace(tzinfo=now_london().tzinfo)
+        event_time = structured.timetz() if structured else datetime(2000, 1, 1, 12, 0).timetz()
+        return datetime.combine(chosen, event_time).replace(tzinfo=now_london().tzinfo)
     return structured
 
 

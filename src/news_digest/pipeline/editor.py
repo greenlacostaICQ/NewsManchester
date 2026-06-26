@@ -648,10 +648,16 @@ def _same_section_reserve_line(
     candidates: list[dict],
     rendered_urls: set[str],
     rendered_story_keys: set[str] | None = None,
+    replacement_stats: dict[str, object] | None = None,
 ) -> str:
-    """A clean, ready public-reserve line for this section, used to replace an
-    unrepairable row. Reserve = public_reserve and not backup_pool_only, with a
-    draft_line that passes the language check and isn't already on the board."""
+    """A clean public-reserve line for this section, used to replace an
+    unrepairable row.
+
+    First preference is an already clean public reserve draft. If the reserve
+    has no line or a weak line, refetch/enrich its evidence and rebuild the
+    public line through the writer fallback instead of silently skipping it.
+    """
+    replacement_stats = replacement_stats if replacement_stats is not None else {}
     for c in candidates:
         if not isinstance(c, dict):
             continue
@@ -660,12 +666,44 @@ def _same_section_reserve_line(
         if not (c.get("public_reserve") and not c.get("backup_pool_only")):
             continue
         line = str(c.get("draft_line") or "").strip()
-        if not line:
-            continue
         if not line.startswith("• "):
-            line = f"• {line}"
+            line = f"• {line}" if line else ""
         if _line_needs_russian_editor(line):
-            continue
+            line = ""
+        if not line:
+            replacement_stats["enriched_rewrite_attempts"] = int(replacement_stats.get("enriched_rewrite_attempts") or 0) + 1
+            c_work = dict(c)
+            refetch_stats = replacement_stats.setdefault(
+                "refetch",
+                {"attempted": 0, "improved": 0, "failed": 0, "empty_or_not_better": 0, "skipped": 0},
+            )
+            if isinstance(refetch_stats, dict):
+                evidence_text, evidence_source = _candidate_full_evidence_text(c_work, refetch_stats)
+                if evidence_text:
+                    c_work["evidence_text"] = evidence_text
+                    packet = c_work.get("evidence_packet") if isinstance(c_work.get("evidence_packet"), dict) else {}
+                    packet = dict(packet)
+                    packet["evidence_text"] = evidence_text
+                    packet["evidence_source"] = evidence_source
+                    c_work["evidence_packet"] = packet
+            try:
+                from news_digest.pipeline.writer import _final_replacement_line  # noqa: PLC0415
+            except Exception:  # noqa: BLE001
+                replacement_stats["enriched_rewrite_import_failed"] = int(replacement_stats.get("enriched_rewrite_import_failed") or 0) + 1
+                continue
+            line = _final_replacement_line(c_work)
+            if line and not line.startswith("• "):
+                line = f"• {line}"
+            if line:
+                line, _ = _polish_russian_line_rules(line)
+            if _line_needs_russian_editor(line):
+                replacement_stats["enriched_rewrite_rejected"] = int(replacement_stats.get("enriched_rewrite_rejected") or 0) + 1
+                continue
+            if line:
+                replacement_stats["enriched_rewrite_used"] = int(replacement_stats.get("enriched_rewrite_used") or 0) + 1
+            else:
+                replacement_stats["enriched_rewrite_empty"] = int(replacement_stats.get("enriched_rewrite_empty") or 0) + 1
+                continue
         url = str(c.get("source_url") or "")
         ident = canonical_url_identity(url) if url else ""
         if ident and ident in rendered_urls:
@@ -747,6 +785,7 @@ def _apply_editor_line_actions(
         "model_changes": [],
         "model_requested_replaced": 0,
         "model_requested_stripped": 0,
+        "reserve_replacement": {"enriched_rewrite_attempts": 0, "enriched_rewrite_used": 0},
     }
     changes = stats["model_changes"]
     if model_report.get("status") not in {"ok", "skipped_no_items"}:
@@ -794,7 +833,13 @@ def _apply_editor_line_actions(
         original = str(item.get("line") or "")
         if section_name not in polished or not original:
             continue
-        replacement = _same_section_reserve_line(section_name, candidates, rendered_urls, rendered_story_keys)
+        replacement = _same_section_reserve_line(
+            section_name,
+            candidates,
+            rendered_urls,
+            rendered_story_keys,
+            stats["reserve_replacement"] if isinstance(stats.get("reserve_replacement"), dict) else None,
+        )
         section_lines = polished.get(section_name) or []
         try:
             pos = section_lines.index(original)

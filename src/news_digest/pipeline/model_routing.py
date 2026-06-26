@@ -69,6 +69,9 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
     "curator": (
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "curator_mini_primary", 1, timeout_seconds=30),
     ),
+    "professional_cv_match": (
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "professional_cv_match_mini", 1, batch_size=12, timeout_seconds=35),
+    ),
     "rewrite": (
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "mini_rewrite_primary", 1, batch_size=6, timeout_seconds=45),
     ),

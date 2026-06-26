@@ -507,10 +507,19 @@ class PublicOutputContractTests(unittest.TestCase):
             "summary": "Etihad Stadium | Manchester | Hip-Hop/Rap | event_date=2026-06-11 17:00",
             "event": {"venue": "Etihad Stadium", "date_start": "2026-06-11T17:00:00+01:00"},
             "ticket_type": "event_this_week",
-            "ticket_notability": {"artist": "The Weeknd", "kind": "artist", "tier": "A"},
+            "ticket_notability": {
+                "artist": "The Weeknd",
+                "kind": "artist",
+                "tier": "A",
+                "signal": "streaming_popularity",
+                "signals": {"spotify_followers": 41200000},
+            },
         }
         line = _build_ticket_fallback_line(candidate)
-        self.assertIn("крупный артист", line.lower())
+        self.assertIn("Spotify", line)
+        self.assertIn("сигнал:", line)
+        self.assertNotIn("крупный артист", line.lower())
+        self.assertNotIn("крупная площадка", line.lower())
         self.assertNotIn("A-tier", line)
         self.assertNotIn("A-класс", line)
         self.assertNotIn("Глобальный артист; крупная площадка", line)
