@@ -127,12 +127,14 @@ class PromptVersioningTest(unittest.TestCase):
 
         selected, report = _apply_rewrite_shortlist(candidates, candidates)
 
-        self.assertEqual(report["selected_for_rewrite"], 5)
-        self.assertEqual(report["held_for_backup"], 7)
-        self.assertEqual(len(selected), 5)
+        # tech_business recall cap raised to 10 (2b): the model now sees the
+        # realistic competition, only the lowest-ranked tail is held in backup.
+        self.assertEqual(report["selected_for_rewrite"], 10)
+        self.assertEqual(report["held_for_backup"], 2)
+        self.assertEqual(len(selected), 10)
         self.assertTrue(all(c["include"] for c in selected))
         held = [c for c in candidates if c.get("rewrite_shortlist_status") == "backup_before_rewrite"]
-        self.assertEqual(len(held), 7)
+        self.assertEqual(len(held), 2)
         self.assertTrue(all(c["backup_candidate"] for c in held))
         self.assertTrue(all(not c["include"] for c in held))
 

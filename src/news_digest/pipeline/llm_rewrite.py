@@ -68,27 +68,35 @@ EnglishCardMapping = dict[str, tuple[dict[str, object], str, str]]
 _ACTIVE_TRANSLATION_GLOSSARY: list[dict[str, str]] = []
 
 REWRITE_SHORTLIST_VERSION = 2
+# Per-block recall cap = how many candidates the DeepSeek board judge gets to
+# see and rank. Editorial blocks (news/weekend/civic/professional) get a wide
+# net so the model — not a deterministic rule cap — picks the best from real
+# competition (last_24h had 112 candidates but the model only saw 12).
+# Catalog blocks (tickets, transport) stay narrow: they are ranked by
+# deterministic tier/lifecycle, the model adds nothing there.
 REWRITE_SHORTLIST_CAPS_BY_BLOCK: dict[str, int] = {
-    "transport": 99,
+    "transport": 99,          # rules: show every real tram/rail restriction
     "lead_story": 4,
-    "today_focus": 6,
-    "last_24h": 12,
-    "city_watch": 8,
-    "weekend_activities": 10,
-    "next_7_days": 8,
-    "ticket_radar": 8,
-    "future_announcements": 4,
-    "outside_gm_tickets": 4,
-    "russian_events": 6,
-    "openings": 6,
-    "tech_business": 5,
-    "football": 3,
+    "today_focus": 8,
+    "last_24h": 18,           # was 12 — biggest news pool, give the model recall
+    "city_watch": 15,         # was 8
+    "weekend_activities": 16,  # was 10
+    "next_7_days": 14,        # was 8
+    "ticket_radar": 8,        # catalog: deterministic sale/tier ranking
+    "future_announcements": 14,  # was 4 — far too tight on 88 candidates
+    "outside_gm_tickets": 4,  # catalog: A-tier notability ranking, not the model
+    "russian_events": 12,     # was 6 — show all valid after dedupe
+    "openings": 10,           # was 6
+    "tech_business": 10,      # was 5
+    "football": 6,            # was 3
 }
-REWRITE_SHORTLIST_DEFAULT_CAP = 6
+REWRITE_SHORTLIST_DEFAULT_CAP = 8
 
 # Source-language board judge gets a wider per-block board first. The final
 # Russian writer is capped later, after DeepSeek has assigned scores/decisions.
-REWRITE_RANKING_BOARD_MAX = 72
+# The board judge is the CHEAP model (DeepSeek-pro on compact cards), so a wider
+# board buys recall cheaply; the expensive Russian writing stays capped at 42.
+REWRITE_RANKING_BOARD_MAX = 90
 # #9 Soft global ceiling on how many candidates we write in Russian per run.
 # Items above the ceiling are not deleted — they stay as backup reserve.
 REWRITE_TRANSLATION_BOARD_MAX = 42
@@ -956,6 +964,16 @@ def _needs_selection_enrichment(candidate: dict) -> bool:
         has_date = bool(str(event.get("date_start") or event.get("date") or "").strip())
         has_place_or_booking = bool(str(event.get("venue") or event.get("booking_url") or candidate.get("source_url") or "").strip())
         return not (has_date and has_place_or_booking)
+    # News/civic card with only a headline-length blurb: the full article was
+    # not pulled, so it cannot be written well. This is "the news is weak →
+    # enrich and rewrite", not just "nothing at all" — enrichment must fire on
+    # thin material, not only on empty material.
+    news_like = block in {"last_24h", "city_watch", "today_focus", "tech_business"} or category in {
+        "media_layer", "gmp", "council", "public_services", "tech_business",
+    }
+    if news_like:
+        text = " ".join(str(candidate.get(f) or "") for f in ("evidence_text", "summary", "lead")).strip()
+        return len(text) < 160
     return False
 
 
