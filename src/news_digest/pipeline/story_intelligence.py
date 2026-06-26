@@ -18,6 +18,7 @@ from news_digest.pipeline.source_selection import pick_winner, source_score
 
 EVIDENCE_PACKET_VERSION = 1
 STORY_CLUSTER_VERSION = 1
+STORY_IDENTITY_VERSION = 1
 ENGLISH_JUDGE_SCHEMA_VERSION = 1
 BACKUP_POOL_SCHEMA_VERSION = 1
 AUDIT_TRAIL_SCHEMA_VERSION = 1
@@ -185,6 +186,110 @@ def _entity_values(candidate: dict) -> list[str]:
 
 def _stage_set(text: str) -> set[str]:
     return {name for name, pattern in _STAGE_MARKERS if pattern.search(text)}
+
+
+def _story_date_key(candidate: dict) -> str:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    for value in (
+        event.get("date_start"),
+        event.get("date"),
+        event.get("date_end"),
+        candidate.get("published_date_london"),
+        str(candidate.get("published_at") or "")[:10],
+    ):
+        text = str(value or "").strip()
+        if text:
+            return normalize_title(text[:32])
+    return ""
+
+
+def _first_entity_key(candidate: dict, groups: tuple[str, ...]) -> str:
+    entities = candidate.get("entities") if isinstance(candidate.get("entities"), dict) else {}
+    for group in groups:
+        raw = entities.get(group)
+        if isinstance(raw, list):
+            values = [normalize_title(str(value or "")) for value in raw if normalize_title(str(value or ""))]
+            if values:
+                return "|".join(values[:3])
+    return ""
+
+
+def event_identity_key(candidate: dict) -> str:
+    if not isinstance(candidate, dict):
+        return ""
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    if not event.get("is_event"):
+        return ""
+    name = normalize_title(str(event.get("event_name") or candidate.get("title") or ""))
+    venue = normalize_title(str(event.get("venue") or ""))
+    date_key = normalize_title(str(event.get("date_start") or event.get("date") or event.get("date_text") or ""))
+    if name and (venue or date_key):
+        return f"event:{name[:90]}|{date_key[:32]}|{venue[:70]}"
+    return ""
+
+
+def story_identity_key(candidate: dict) -> str:
+    if not isinstance(candidate, dict):
+        return ""
+    event_key = event_identity_key(candidate)
+    if event_key:
+        return event_key
+    attach_editorial_contract(candidate)
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    topic_key = str(contract.get("topic_key") or candidate.get("topic_key") or "")
+    if topic_key and is_specific_topic_key(topic_key):
+        return f"topic:{topic_key}"
+    subject = _first_entity_key(candidate, ("people", "companies", "venues", "councils", "stations", "clubs"))
+    place = _first_entity_key(candidate, ("boroughs", "districts"))
+    text = _blob(candidate)
+    stages = sorted(_stage_set(text))
+    story_type = normalize_title(str(contract.get("story_type") or candidate.get("category") or ""))
+    stage_or_type = "|".join(stages[:2]) or story_type
+    if subject and stage_or_type:
+        return f"story:{subject[:100]}|{stage_or_type[:60]}|{place[:60]}"
+    title = normalize_title(str(candidate.get("title") or ""))
+    if title and place and story_type:
+        # Last-resort identity for non-event local stories with no extracted
+        # named subject. Keep it shorter than the old full-title key and include
+        # place/type so two unrelated MEN articles do not merge on boilerplate.
+        return f"story:{story_type[:50]}|{place[:60]}|{title[:90]}"
+    return ""
+
+
+def story_phase_key(candidate: dict) -> str:
+    base = story_identity_key(candidate)
+    if not base:
+        return ""
+    event_key = event_identity_key(candidate)
+    if event_key:
+        return event_key
+    phase = str(candidate.get("change_phase") or candidate.get("change_type") or "").strip()
+    text = _blob(candidate)
+    stages = sorted(_stage_set(text))
+    phase_key = normalize_title(phase or "|".join(stages[:2]) or "new")
+    date_key = _story_date_key(candidate)
+    bits = [base, phase_key]
+    if date_key:
+        bits.append(date_key)
+    return "|".join(bits)
+
+
+def attach_story_identity(candidate: dict) -> dict:
+    if not isinstance(candidate, dict):
+        return candidate
+    event_key = event_identity_key(candidate)
+    identity = story_identity_key(candidate)
+    phase = story_phase_key(candidate)
+    candidate["story_identity_version"] = STORY_IDENTITY_VERSION
+    if event_key:
+        candidate["event_identity_key"] = event_key
+    if identity:
+        candidate["story_identity_key"] = identity
+    if phase:
+        candidate["story_phase_key"] = phase
+    change_type = str(candidate.get("change_type") or candidate.get("dedupe_decision") or "")
+    candidate["has_new_story_phase"] = change_type in {"new_phase", "same_story_new_facts", "follow_up"}
+    return candidate
 
 
 def _fact_signature(candidate: dict) -> dict[str, set[str]]:
@@ -520,6 +625,7 @@ def apply_story_intelligence(candidate: dict) -> dict:
     if not isinstance(candidate, dict):
         return candidate
     attach_editorial_contract(candidate)
+    attach_story_identity(candidate)
     candidate["rubric_contract"] = rubric_contract(candidate)
     candidate["news_anchor"] = formal_news_anchor(candidate)
     candidate["protected_lane"] = protected_lane(candidate)
@@ -604,6 +710,14 @@ def build_evidence_packet(
             "topic_key": contract.get("topic_key") or "",
             "publish_tier": contract.get("publish_tier") or "",
             "section_policy": contract.get("section_policy") or {},
+        },
+        "story_identity": {
+            "schema_version": STORY_IDENTITY_VERSION,
+            "event_identity_key": candidate.get("event_identity_key") or "",
+            "story_identity_key": candidate.get("story_identity_key") or "",
+            "story_phase_key": candidate.get("story_phase_key") or "",
+            "has_new_story_phase": bool(candidate.get("has_new_story_phase")),
+            "change_type": str(candidate.get("change_type") or ""),
         },
         "history_matches": history_matches or candidate.get("history_matches") or [],
     }
@@ -718,6 +832,10 @@ def apply_cheap_dedup_before_enrich(candidates: list[dict]) -> dict[str, object]
 def story_cluster_key(candidate: dict) -> str:
     if not isinstance(candidate, dict):
         return ""
+    attach_story_identity(candidate)
+    phase_key = str(candidate.get("story_phase_key") or "").strip()
+    if phase_key:
+        return phase_key
     attach_editorial_contract(candidate)
     contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
     topic_key = str(contract.get("topic_key") or "")

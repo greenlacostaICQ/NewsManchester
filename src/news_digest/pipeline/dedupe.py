@@ -30,6 +30,7 @@ from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.history import ensure_history_files
 from news_digest.pipeline.story_intelligence import (
     attach_evidence_packet,
+    attach_story_identity,
     attach_story_intelligence,
     attach_story_clusters,
     history_match_records,
@@ -229,6 +230,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         # Q6: classify what kind of change this candidate represents.
         change_type = _classify_change_type(candidate, previous, similar_previous, prev_ref)
         candidate["change_type"] = change_type
+        attach_story_identity(candidate)
         if (
             change_type in {"same_story_new_facts", "follow_up"}
             and prev_ref is not None
@@ -344,6 +346,10 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 "previous_title": prev_title,
                 "topic_key": topic_key_for_candidate(candidate),
                 "repeat_story_key": candidate.get("repeat_story_key") or "",
+                "event_identity_key": candidate.get("event_identity_key") or "",
+                "story_identity_key": candidate.get("story_identity_key") or "",
+                "story_phase_key": candidate.get("story_phase_key") or "",
+                "has_new_story_phase": bool(candidate.get("has_new_story_phase")),
                 "topic_lifecycle_repeat": candidate.get("topic_lifecycle_repeat") or {},
                 "carry_over_label": candidate.get("carry_over_label"),
                 "similar_previous": similar_previous,

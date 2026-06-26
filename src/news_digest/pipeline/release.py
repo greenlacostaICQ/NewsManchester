@@ -3035,6 +3035,93 @@ def _cost_latency_budget_report(
     }
 
 
+def _stage_seconds(report: dict | None) -> float:
+    if not isinstance(report, dict):
+        return 0.0
+    for key in ("duration_seconds", "elapsed_seconds", "rewrite_seconds"):
+        try:
+            value = float(report.get(key) or 0)
+        except (TypeError, ValueError):
+            value = 0.0
+        if value > 0:
+            return round(value, 3)
+    timings = report.get("timings") if isinstance(report.get("timings"), dict) else {}
+    try:
+        return round(float(timings.get("total_seconds") or 0), 3)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _build_speed_report(
+    *,
+    state_dir: Path,
+    scan_report: dict | None,
+    curator_report: dict | None,
+    llm_rewrite_report: dict | None,
+    writer_report: dict | None,
+    editor_report: dict | None,
+) -> dict[str, object]:
+    dedupe_report = _load_optional_json(state_dir / "dedupe_memory.json")
+    validator_report = _load_optional_json(state_dir / "candidate_validation_report.json")
+    stages = {
+        "collect": _stage_seconds(scan_report),
+        "dedupe": _stage_seconds(dedupe_report),
+        "validate": _stage_seconds(validator_report),
+        "curator": _stage_seconds(curator_report),
+        "llm_rewrite": _stage_seconds(llm_rewrite_report),
+        "write": _stage_seconds(writer_report),
+        "edit": _stage_seconds(editor_report),
+    }
+    bottlenecks = [
+        {"stage": name, "duration_seconds": seconds}
+        for name, seconds in sorted(stages.items(), key=lambda item: item[1], reverse=True)
+        if seconds > 0
+    ]
+    llm_summary = (
+        llm_rewrite_report.get("diagnostics_summary")
+        if isinstance(llm_rewrite_report, dict) and isinstance(llm_rewrite_report.get("diagnostics_summary"), dict)
+        else {}
+    )
+    llm_actual = {
+        "batch_count": int(llm_summary.get("batch_count") or 0),
+        "sent": int(llm_summary.get("sent") or 0),
+        "accepted": int(llm_summary.get("accepted") or 0),
+        "truncated_responses": int(llm_summary.get("truncated_responses") or 0),
+        "timeout_errors": int(llm_summary.get("timeout_errors") or 0),
+        "queue_wait_seconds": llm_summary.get("queue_wait_seconds") or {},
+        "api_seconds": llm_summary.get("api_seconds") or {},
+        "completion_tokens_per_item": llm_summary.get("completion_tokens_per_item") or {},
+        "max_tokens": llm_summary.get("max_tokens") or {},
+        "by_prompt": llm_summary.get("by_prompt") or {},
+        "by_provider": llm_summary.get("by_provider") or {},
+    }
+    total_known = round(sum(stages.values()), 3)
+    status = "attention" if llm_actual["timeout_errors"] or llm_actual["truncated_responses"] else "ok"
+    return {
+        "schema_version": 1,
+        "run_at_london": now_london().isoformat(),
+        "run_date_london": today_london(),
+        "status": status,
+        "total_known_stage_seconds": total_known,
+        "stage_seconds": stages,
+        "bottlenecks": bottlenecks[:8],
+        "dedupe_timings": (dedupe_report or {}).get("timings") if isinstance(dedupe_report, dict) else {},
+        "validate_timings": (validator_report or {}).get("timings") if isinstance(validator_report, dict) else {},
+        "llm": llm_actual,
+        "token_budget_history": (
+            llm_rewrite_report.get("token_budget_history")
+            if isinstance(llm_rewrite_report, dict)
+            else {}
+        ),
+        "batching_strategy": (
+            llm_rewrite_report.get("batching_strategy")
+            if isinstance(llm_rewrite_report, dict)
+            else {}
+        ),
+        "policy": "Observation-only speed report: no release blocking, no quality cuts. Optimise by parser/cache/token p95 evidence before changing editorial floors.",
+    }
+
+
 def _model_bakeoff_readiness(project_root: Path) -> dict[str, object]:
     labels_path = project_root / "data" / "validation" / "reader_value_labels.json"
     label_count = 0
@@ -3589,6 +3676,18 @@ def build_release(project_root: Path) -> ReleaseResult:
         trend_detection=trend_detection,
         event_miss_review=event_miss_review,
     )
+    speed_report = _build_speed_report(
+        state_dir=state_dir,
+        scan_report=scan_report,
+        curator_report=curator_report,
+        llm_rewrite_report=llm_rewrite_report,
+        writer_report=writer_report,
+        editor_report=editor_report,
+    )
+    try:
+        write_json(state_dir / "speed_report.json", speed_report)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("speed report snapshot failed: %s", exc)
 
     ok = not errors
     if ok:
@@ -3653,6 +3752,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "borderline_queue": borderline_queue,
         "quality_scorecard": quality_scorecard,
         "feedback_capture": feedback_capture,
+        "speed_report": speed_report,
         "synthetic_freshness": synthetic_freshness,
         "city_intelligence": city_intelligence,
         "trend_detection": trend_detection,

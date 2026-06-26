@@ -788,6 +788,10 @@ def _fresh_duplicate_tokens(row: _SectionRow) -> set[str]:
 
 def _fresh_story_cluster_key(row: _SectionRow) -> str:
     c = row.candidate or {}
+    for field in ("story_phase_key", "event_identity_key", "story_identity_key"):
+        value = _normalize_text_key(str(c.get(field) or ""))
+        if len(value) >= 12 and value not in {"none", "unknown"}:
+            return value
     cluster = c.get("story_cluster") if isinstance(c.get("story_cluster"), dict) else {}
     for field in ("cluster_key", "semantic_key", "story_key"):
         value = _normalize_text_key(str(cluster.get(field) or ""))
@@ -1399,6 +1403,41 @@ def _contract_public_drop_reason(candidate: dict) -> str:
     return ""
 
 
+def _block_contract_action(candidate: dict, line: str) -> dict[str, str]:
+    """Visible block contract enforcement.
+
+    Keep useful material by rerouting it when possible; hold optional filler
+    only when it does not satisfy the section's purpose and can be replaced by
+    normal same-section recovery.
+    """
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    text = " ".join(
+        str(value or "")
+        for value in (
+            line,
+            candidate.get("title"),
+            candidate.get("summary"),
+            candidate.get("lead"),
+            candidate.get("evidence_text"),
+            candidate.get("source_label"),
+        )
+    )
+    if block == "transport" and _LIFT_ESCALATOR_RE.search(text) and not _TRANSPORT_MOVEMENT_RE.search(text):
+        return {"action": "hold", "reason": "block_contract:transport_lift_escalator_no_movement"}
+    if block == "weekend_activities" and _SOLO_GIG_RE.search(text) and not _WEEKEND_COMMUNITY_RE.search(text):
+        return {"action": "reroute", "target_block": "ticket_radar", "reason": "block_contract:weekend_solo_gig_to_ticket_radar"}
+    if block == "outside_gm_tickets" and not _is_a_tier_ticket(candidate):
+        return {"action": "hold", "reason": "block_contract:outside_gm_non_a_tier"}
+    if block == "football" and _football_should_route_to_soft(candidate):
+        return {"action": "reroute", "target_block": "city_watch", "reason": "block_contract:football_soft_to_city_watch"}
+    if block == "tech_business" and category == "tech_business" and not _BUSINESS_CONCRETE_RE.search(text):
+        return {"action": "hold", "reason": "block_contract:business_no_concrete_city_impact"}
+    if block == "food_openings" and not _FOOD_CONCRETE_RE.search(text):
+        return {"action": "hold", "reason": "block_contract:food_no_opening_market_or_change"}
+    return {"action": "keep", "reason": ""}
+
+
 def _classify_drop_bucket(item: dict) -> str:
     """Sort a dropped candidate into failure / quarantine / reserve.
 
@@ -1492,6 +1531,34 @@ _RARE_MARKET_OR_FESTIVAL_RE = re.compile(
 _SOLD_OUT_EVENT_RE = re.compile(
     r"\b(?:sold\s*out|fully\s*booked|no\s+(?:tickets|spaces|places)\s+(?:left|available)|"
     r"tickets?\s+(?:are\s+)?(?:sold\s*out|unavailable)|распродан[оаы]?|мест\s+нет)\b",
+    re.IGNORECASE,
+)
+_SOLO_GIG_RE = re.compile(
+    r"\b(?:gig|concert|live\s+music|tour|dj\s+set|headline\s+show|"
+    r"концерт|гастрол|диджей|выступлен)\b",
+    re.IGNORECASE,
+)
+_WEEKEND_COMMUNITY_RE = re.compile(
+    r"\b(?:market|fair|festival|family|community|workshop|exhibition|food|makers|"
+    r"ярмарк|рынок|фестиваль|семейн|сообществ|мастер-класс|выставк|еда)\b",
+    re.IGNORECASE,
+)
+_TRANSPORT_MOVEMENT_RE = re.compile(
+    r"\b(?:cancel|delay|diversion|closure|closed|replacement|suspended|strike|"
+    r"metrolink|tram|rail|train|bus|route|line|station|stop|platform|"
+    r"отмен|задерж|объезд|закрыт|замещающ|трамва|поезд|автобус|маршрут|линия|станци|остановк)\b",
+    re.IGNORECASE,
+)
+_LIFT_ESCALATOR_RE = re.compile(r"\b(?:lift|lifts|escalator|escalators|лифт|эскалатор)\b", re.IGNORECASE)
+_BUSINESS_CONCRETE_RE = re.compile(
+    r"\b(?:funding|investment|deal|contract|office|hq|jobs?|appointment|appoints?|"
+    r"launch|grant|partnership|screen\s+fund|innovation|startup|"
+    r"финансирован|инвестиц|сделк|контракт|офис|назнач|запуск|грант|стартап)\b",
+    re.IGNORECASE,
+)
+_FOOD_CONCRETE_RE = re.compile(
+    r"\b(?:opens?|opening|launch|reopen|market|food\s+hall|restaurant|bar|bakery|"
+    r"откры|запуск|рынок|фуд-холл|ресторан|бар|пекарн)\b",
     re.IGNORECASE,
 )
 
@@ -5452,6 +5519,13 @@ def write_digest(project_root: Path) -> StageResult:
     dropped_candidates: list[dict[str, object]] = []
     degraded_shrink_dropped: list[dict[str, object]] = []
     global_budget_dropped: list[dict[str, object]] = []
+    block_contract_report: dict[str, object] = {
+        "version": 1,
+        "checked": 0,
+        "rerouted": 0,
+        "held": 0,
+        "items": [],
+    }
 
     for index, candidate in enumerate(candidates, start=1):
         if not isinstance(candidate, dict) or not candidate.get("include"):
@@ -5816,6 +5890,65 @@ def write_digest(project_root: Path) -> StageResult:
             warnings.append(
                 f"Candidate #{index}: editorial contract repaired line ({', '.join(repair_reasons)})."
             )
+
+        block_contract = _block_contract_action(candidate, line)
+        block_contract_report["checked"] = int(block_contract_report.get("checked") or 0) + 1
+        if block_contract.get("action") == "reroute":
+            target_block = str(block_contract.get("target_block") or "")
+            target_section = PRIMARY_BLOCKS.get(target_block)
+            if target_section:
+                previous_block = block_key
+                candidate["primary_block"] = target_block
+                block_key = target_block
+                section_name = target_section
+                block_contract_report["rerouted"] = int(block_contract_report.get("rerouted") or 0) + 1
+                items = block_contract_report.get("items")
+                if isinstance(items, list):
+                    items.append(
+                        {
+                            "fingerprint": candidate.get("fingerprint"),
+                            "title": title,
+                            "action": "reroute",
+                            "from_block": previous_block,
+                            "to_block": target_block,
+                            "reason": block_contract.get("reason") or "",
+                        }
+                    )
+                warnings.append(
+                    f"Candidate #{index}: block contract rerouted {previous_block} → {target_block} "
+                    f"({block_contract.get('reason')})."
+                )
+        elif block_contract.get("action") == "hold" and candidate.get("manual_override") != "force_include":
+            reason = str(block_contract.get("reason") or "block_contract:held")
+            block_contract_report["held"] = int(block_contract_report.get("held") or 0) + 1
+            items = block_contract_report.get("items")
+            if isinstance(items, list):
+                items.append(
+                    {
+                        "fingerprint": candidate.get("fingerprint"),
+                        "title": title,
+                        "action": "hold",
+                        "block": block_key,
+                        "reason": reason,
+                    }
+                )
+            _append_recovery_step(candidate, "block_contract", "held", missing=[reason])
+            warnings.append(f"Candidate #{index} held by block contract: {reason}.")
+            quality_counts["dropped_low_quality"] += 1
+            dropped_candidates.append(
+                {
+                    "fingerprint": candidate.get("fingerprint"),
+                    "title": title,
+                    "category": category,
+                    "primary_block": block_key,
+                    "is_lead": bool(candidate.get("is_lead")),
+                    "reasons": [reason],
+                    "story_frame": candidate.get("story_frame") or {},
+                    "recovery_trace": candidate.get("recovery_trace") or [],
+                    "recovery_plan": candidate.get("recovery_plan") or {},
+                }
+            )
+            continue
 
         draft_line_errors = _draft_line_quality_errors(candidate, line)
         if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
@@ -6406,6 +6539,16 @@ def write_digest(project_root: Path) -> StageResult:
             "totals": recovery_controller.get("totals", {}),
         },
     )
+    block_contract_report["items"] = (block_contract_report.get("items") or [])[:120]
+    write_json(
+        state_dir / "block_contract_report.json",
+        {
+            "pipeline_run_id": pipeline_run_id,
+            "run_at_london": now_london().isoformat(),
+            "run_date_london": today_london(),
+            **block_contract_report,
+        },
+    )
 
     draft_path.write_text("\n".join(rendered).strip() + "\n", encoding="utf-8")
     write_json(
@@ -6427,6 +6570,7 @@ def write_digest(project_root: Path) -> StageResult:
                 "dropped_items": global_budget_dropped[:80],
             },
             "publish_plan_contract": publish_plan_contract,
+            "block_contract_report": block_contract_report,
             "recovery_controller": recovery_controller,
             "backfilled_today_focus": backfilled_today_focus,
             "today_focus_board": today_focus_board,

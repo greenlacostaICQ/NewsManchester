@@ -49,6 +49,7 @@ from news_digest.pipeline.event_quality import (
 )
 from news_digest.pipeline.writer import (
     _apply_section_min_floor_pull_back,
+    _block_contract_action,
     _draft_line_quality_errors,
     _looks_like_untranslated_english,
 )
@@ -712,6 +713,103 @@ class FinalEditorNetTest(unittest.TestCase):
             _line_story_key("• Совет обсудит дома. MEN", cbk),
         )
 
+    def test_cross_section_dedup_accepts_string_story_cluster_key(self) -> None:
+        from news_digest.pipeline.editor import _candidate_index, _line_story_key
+
+        cands = [
+            {"source_url": "https://example.com/a", "story_cluster_key": "incident:green"},
+            {"source_url": "https://example.com/b", "story_cluster_key": "incident:green"},
+        ]
+        cbk = _candidate_index(cands)
+        self.assertEqual(
+            _line_story_key('• История Green. <a href="https://example.com/a">MEN</a>', cbk),
+            _line_story_key('• Та же история Green. <a href="https://example.com/b">BBC</a>', cbk),
+        )
+
+    def test_event_identity_uses_name_date_venue(self) -> None:
+        from news_digest.pipeline.story_intelligence import event_identity_key
+
+        candidate = {
+            "title": "Food festival",
+            "event": {
+                "is_event": True,
+                "event_name": "Manchester Food Festival",
+                "date_start": "2026-06-27",
+                "venue": "Mayfield Depot",
+            },
+        }
+        key = event_identity_key(candidate)
+        self.assertIn("manchester food festival", key)
+        self.assertIn("2026 06 27", key)
+        self.assertIn("mayfield depot", key)
+
+    def test_story_cluster_key_prefers_story_phase_key(self) -> None:
+        from news_digest.pipeline.story_intelligence import story_cluster_key
+
+        candidate = {
+            "category": "gmp",
+            "primary_block": "last_24h",
+            "title": "Police charge John Smith after Manchester stabbing",
+            "summary": "John Smith has been charged after a stabbing in Manchester.",
+            "published_at": "2026-06-26T07:10:00+01:00",
+            "change_type": "new_phase",
+            "entities": {"people": ["John Smith"], "districts": ["Manchester"]},
+        }
+        key = story_cluster_key(candidate)
+        self.assertEqual(key, candidate["story_phase_key"])
+        self.assertTrue(candidate["has_new_story_phase"])
+
+    def test_same_section_reserve_skips_story_duplicate(self) -> None:
+        from news_digest.pipeline.editor import _same_section_reserve_line
+
+        rendered_story_keys = {"story:green|civic|manchester"}
+        rendered_urls: set[str] = set()
+        candidates = [
+            {
+                "primary_block": "today_focus",
+                "public_reserve": True,
+                "backup_pool_only": False,
+                "story_identity_key": "story:green|civic|manchester",
+                "draft_line": "• Дубль Green.",
+                "source_url": "https://example.com/dup",
+                "source_label": "BBC",
+            },
+            {
+                "primary_block": "today_focus",
+                "public_reserve": True,
+                "backup_pool_only": False,
+                "story_identity_key": "story:parks|civic|salford",
+                "draft_line": "• Новый пункт про парки.",
+                "source_url": "https://example.com/new",
+                "source_label": "Council",
+            },
+        ]
+        line = _same_section_reserve_line("Что важно сегодня", candidates, rendered_urls, rendered_story_keys)
+        self.assertIn("парки", line)
+        self.assertIn("story:parks|civic|salford", rendered_story_keys)
+
+    def test_block_contract_holds_non_a_tier_outside_gm(self) -> None:
+        candidate = {
+            "primary_block": "outside_gm_tickets",
+            "category": "venues_tickets",
+            "ticket_notability": {"tier": "B"},
+            "title": "B-tier artist at Leeds Arena",
+        }
+        action = _block_contract_action(candidate, "• B-tier artist — Leeds Arena.")
+        self.assertEqual(action["action"], "hold")
+        self.assertEqual(action["reason"], "block_contract:outside_gm_non_a_tier")
+
+    def test_block_contract_moves_solo_gig_out_of_weekend(self) -> None:
+        candidate = {
+            "primary_block": "weekend_activities",
+            "category": "culture_weekly",
+            "title": "Solo gig at Night & Day",
+            "summary": "Headline show on Saturday.",
+        }
+        action = _block_contract_action(candidate, "• Solo gig в Night & Day в субботу.")
+        self.assertEqual(action["action"], "reroute")
+        self.assertEqual(action["target_block"], "ticket_radar")
+
 
 # --------------------------------------------------------------------------
 # Coverage summary — keep the pack inside the documented 25-30 band.
@@ -721,7 +819,7 @@ class CoverageBandTest(unittest.TestCase):
     catches it. Update the band intentionally."""
 
     EXPECTED_MIN = 25
-    EXPECTED_MAX = 40
+    EXPECTED_MAX = 45
 
     def test_total_case_count_inside_band(self) -> None:
         import sys

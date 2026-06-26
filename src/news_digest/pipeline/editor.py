@@ -38,13 +38,23 @@ PRE_SEND_THIN_EVIDENCE_CHARS = 1200
 PRE_SEND_EVIDENCE_MODEL_MAX_CHARS = 18000
 PRE_SEND_EDITOR_BATCH_CHAR_BUDGET = 90000
 PRE_SEND_EDITOR_MAX_WORKERS = 3
+PRE_SEND_EDITOR_MAX_ROUNDS = 2
+
+_EDITOR_TRIMMABLE_SECTIONS = {
+    "Билеты / Ticket Radar",
+    "Крупные концерты вне GM",
+    "Дальние анонсы",
+    "Городской радар",
+    "Радар по районам",
+}
 
 PRE_SEND_RUSSIAN_EDITOR_PROMPT = """Ты выпускающий редактор русского Telegram-дайджеста Greater Manchester.
 Тебе дают уже видимые строки выпуска и, если удалось сопоставить строку с кандидатом, evidence по исходной новости.
 Исправь русский язык и редакторские дефекты. Если строка непонятная, битая или слишком машинная, пересобери её заново из evidence.
 
-Верни JSON-объект: {"items":[{"index":0,"action":"ok|rewrite|enrich_and_rewrite|replace_needed|strip_only_if_replacement_unavailable","line":"...","reason":"..."}]}.
+Верни JSON-объект: {"items":[{"index":0,"action":"ok|rewrite|enrich_and_rewrite|replace_needed|strip_only_if_replacement_unavailable","line":"...","reason":"..."}],"block_actions":[{"action":"recover_lead|backfill|trim|move_outside_gm_to_chunk","section":"...","count":1,"reason":"..."}]}.
 ОБЯЗАТЕЛЬНО верни ровно один item на КАЖДУЮ присланную строку (по её index). Чистая строка — action="ok".
+block_actions верни пустым списком, если блоковых действий не нужно.
 
 Ищи и чини КОНКРЕТНО эти дефекты:
 - Английское слово в русском тексте (murder, lineup, line-up, venue, sold out, on sale, headliner, festival) → rewrite, переведи. ИСКЛЮЧЕНИЕ: имена и бренды (Co-op Live, openspace, AI/API/SaaS) — оставить латиницей.
@@ -68,8 +78,10 @@ PRE_SEND_RUSSIAN_EDITOR_PROMPT = """Ты выпускающий редактор
 - Glossary-нарушения чинить точечно: disruptions/anniversary/inquest/open conclusion переводить, CQC/PBSA/AGM/MDC объяснять внутри строки.
 - Если строка нормальная, верни её без изменений с action="ok".
 - Если строку можно исправить по evidence, верни action="rewrite" и новую line.
+- Если строку нужно переписать после дотягивания evidence, верни action="enrich_and_rewrite" и новую line, если evidence в payload уже хватает.
 - Если строка плохая, но evidence не хватает для честного исправления, верни action="replace_needed".
 - Если строка должна исчезнуть и замены нет, верни action="strip_only_if_replacement_unavailable".
+- Для тонкого protected-блока верни block_action="backfill"; для потерянного lead — "recover_lead"; для доминирующих optional-блоков — "trim"; для outside-GM, который вытесняет protected, — "move_outside_gm_to_chunk".
 """
 
 _BAD_RUSSIAN_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
@@ -260,13 +272,42 @@ def _line_story_key(line: str, candidates_by_key: dict[str, dict]) -> str:
     that don't share a cluster."""
     url_key = _line_url_identity(line)
     candidate = candidates_by_key.get(url_key) if url_key else None
-    if isinstance(candidate, dict):
-        cluster = candidate.get("story_cluster_key")
-        if isinstance(cluster, dict):
-            cluster_key = str(cluster.get("cluster_key") or "").strip()
-            if cluster_key:
-                return f"cluster:{cluster_key}"
+    story_key = _candidate_story_identity_key(candidate)
+    if story_key:
+        return story_key
     return line.strip()
+
+
+def _candidate_story_identity_key(candidate: dict | None) -> str:
+    if not isinstance(candidate, dict):
+        return ""
+    for field in ("story_phase_key", "event_identity_key", "story_identity_key"):
+        value = str(candidate.get(field) or "").strip()
+        if value:
+            return value
+    cluster = candidate.get("story_cluster") if isinstance(candidate.get("story_cluster"), dict) else {}
+    for field in ("cluster_key", "semantic_key", "story_key"):
+        value = str(cluster.get(field) or "").strip()
+        if value:
+            return f"cluster:{value}"
+    cluster_key = candidate.get("story_cluster_key")
+    if isinstance(cluster_key, dict):
+        value = str(cluster_key.get("cluster_key") or "").strip()
+        if value:
+            return f"cluster:{value}"
+    elif str(cluster_key or "").strip():
+        return f"cluster:{str(cluster_key).strip()}"
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    topic = str(contract.get("topic_key") or candidate.get("topic_key") or "").strip()
+    if topic:
+        return f"topic:{topic}"
+    return ""
+
+
+def _line_story_identity_key(line: str, candidates_by_key: dict[str, dict]) -> str:
+    url_key = _line_url_identity(line)
+    candidate = candidates_by_key.get(url_key) if url_key else None
+    return _candidate_story_identity_key(candidate)
 
 
 def _candidate_index(candidates: list[dict]) -> dict[str, dict]:
@@ -512,6 +553,11 @@ def _call_pre_send_russian_editor_batch(
         return {}, {"status": "parse_failed", "error": "JSON root has no items list", "raw_excerpt": raw[:400], "items_sent": len(items)}
     fixes: dict[int, str] = {}
     actions: list[dict[str, object]] = []
+    block_actions = parsed.get("block_actions") if isinstance(parsed, dict) else []
+    if not isinstance(block_actions, list):
+        block_actions = []
+    expected_indices = {int(item.get("index")) for item in items if isinstance(item.get("index"), int)}
+    returned_indices: set[int] = set()
     for row in rows:
         if not isinstance(row, dict):
             continue
@@ -523,14 +569,19 @@ def _call_pre_send_russian_editor_batch(
         action = str(row.get("action") or row.get("status") or "").strip() or "rewrite"
         reason = str(row.get("reason") or "").strip()
         actions.append({"index": index, "action": action, "line": line, "reason": reason})
+        returned_indices.add(index)
         if line.startswith("• "):
             fixes[index] = line
+    missing_indices = sorted(expected_indices - returned_indices)
     return fixes, {
         "status": "ok",
         "items_sent": len(items),
         "items_returned": len(fixes),
         "actions_returned": len(actions),  # one action per visible line is the contract
+        "coverage_complete": not missing_indices and len(returned_indices) >= len(expected_indices),
+        "missing_action_indices": missing_indices[:80],
         "actions": actions[:120],
+        "block_actions": block_actions[:40],
     }
 
 
@@ -547,6 +598,7 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
     fixes: dict[int, str] = {}
     batch_reports: list[dict[str, object]] = []
     actions: list[dict[str, object]] = []
+    block_actions: list[dict[str, object]] = []
     batches = _batch_editor_items(items)
     max_workers = max(1, int(os.environ.get("PRE_SEND_EDITOR_MAX_WORKERS", PRE_SEND_EDITOR_MAX_WORKERS)))
     max_workers = min(len(batches), max_workers)
@@ -556,6 +608,7 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
             batch_fixes, batch_report = _call_pre_send_russian_editor_batch(client, batch, record_call_from_response)
             fixes.update(batch_fixes)
             actions.extend(batch_report.get("actions") or [])
+            block_actions.extend(batch_report.get("block_actions") or [])
             batch_reports.append(batch_report)
     else:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -567,22 +620,35 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
                 batch_fixes, batch_report = future.result()
                 fixes.update(batch_fixes)
                 actions.extend(batch_report.get("actions") or [])
+                block_actions.extend(batch_report.get("block_actions") or [])
                 batch_reports.append(batch_report)
     failed = [report for report in batch_reports if report.get("status") != "ok"]
+    missing_indices: list[int] = []
+    for report in batch_reports:
+        missing_indices.extend(int(i) for i in (report.get("missing_action_indices") or []) if str(i).isdigit())
     return fixes, {
         "status": "partial_failed" if failed and fixes else "failed" if failed else "ok",
         "items_sent": len(items),
         "items_returned": len(fixes),
+        "actions_returned": len(actions),
+        "coverage_complete": not missing_indices and len(actions) >= len(items),
+        "missing_action_indices": sorted(set(missing_indices))[:120],
         "batch_count": len(batch_reports),
         "max_workers": max_workers,
         "duration_seconds": round(time.monotonic() - started, 3),
         "failed_batches": len(failed),
         "actions": actions[:200],
+        "block_actions": block_actions[:80],
         "batches": batch_reports[:20],
     }
 
 
-def _same_section_reserve_line(section_name: str, candidates: list[dict], rendered_urls: set[str]) -> str:
+def _same_section_reserve_line(
+    section_name: str,
+    candidates: list[dict],
+    rendered_urls: set[str],
+    rendered_story_keys: set[str] | None = None,
+) -> str:
     """A clean, ready public-reserve line for this section, used to replace an
     unrepairable row. Reserve = public_reserve and not backup_pool_only, with a
     draft_line that passes the language check and isn't already on the board."""
@@ -604,13 +670,232 @@ def _same_section_reserve_line(section_name: str, candidates: list[dict], render
         ident = canonical_url_identity(url) if url else ""
         if ident and ident in rendered_urls:
             continue
+        story_key = _candidate_story_identity_key(c)
+        if rendered_story_keys is not None and story_key and story_key in rendered_story_keys:
+            continue
         if "<a " not in line.lower() and url:
             label = str(c.get("source_label") or "источник")
             line = f'{line} <a href="{url}">{label}</a>'
         if ident:
             rendered_urls.add(ident)
+        if rendered_story_keys is not None and story_key:
+            rendered_story_keys.add(story_key)
         return line
     return ""
+
+
+def _transport_replacement_for_line(
+    line: str,
+    candidates_by_key: dict[str, dict],
+    rendered_urls: set[str],
+) -> str:
+    candidate = candidates_by_key.get(_line_url_identity(line))
+    if not isinstance(candidate, dict):
+        return ""
+    try:
+        from news_digest.pipeline.writer import _build_transport_fallback_line  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return ""
+    replacement = _build_transport_fallback_line(candidate)
+    if not replacement:
+        return ""
+    if not replacement.startswith("• "):
+        replacement = f"• {replacement}"
+    replacement, _ = _polish_russian_line_rules(replacement)
+    url = str(candidate.get("source_url") or "")
+    ident = canonical_url_identity(url) if url else ""
+    if ident and ident in rendered_urls:
+        return ""
+    if "<a " not in replacement.lower() and url:
+        label = str(candidate.get("source_label") or "источник")
+        replacement = f'{replacement} <a href="{url}">{label}</a>'
+    if _line_needs_russian_editor(replacement):
+        return ""
+    if ident:
+        rendered_urls.add(ident)
+    return replacement
+
+
+def _transport_status_fallback_line() -> str:
+    return (
+        '• Транспорт: конкретных подтверждённых сбоев в выпуск не попало. '
+        'Перед поездкой проверьте страницу статуса TfGM. '
+        '<a href="https://tfgm.com/travel-updates">TfGM</a>'
+    )
+
+
+def _apply_editor_line_actions(
+    polished: dict[str, list[str]],
+    *,
+    items: list[dict[str, object]],
+    model_fixes: dict[int, str],
+    model_report: dict[str, object],
+    candidates: list[dict],
+    rendered_urls: set[str],
+    rendered_story_keys: set[str],
+    warnings: list[str],
+    round_no: int,
+) -> tuple[dict[str, list[str]], dict[str, object]]:
+    action_by_index = {
+        int(action.get("index")): action
+        for action in (model_report.get("actions") or [])
+        if isinstance(action, dict) and action.get("index") is not None and str(action.get("index")).strip()
+    }
+    stats: dict[str, object] = {
+        "round": round_no,
+        "model_fixed": 0,
+        "model_changes": [],
+        "model_requested_replaced": 0,
+        "model_requested_stripped": 0,
+    }
+    changes = stats["model_changes"]
+    if model_report.get("status") not in {"ok", "skipped_no_items"}:
+        warnings.append(f"Pre-send Russian editor skipped/failed: {model_report.get('status')} {model_report.get('error') or ''}".strip())
+    if model_fixes:
+        by_index = {int(item["index"]): item for item in items}
+        for index, fixed_line in model_fixes.items():
+            item = by_index.get(index)
+            if not item:
+                continue
+            original = str(item.get("line") or "")
+            if not _line_preserves_links(original, fixed_line):
+                continue
+            if fixed_line != original:
+                item["line"] = fixed_line
+                stats["model_fixed"] = int(stats["model_fixed"] or 0) + 1
+                action = action_by_index.get(index, {})
+                if isinstance(changes, list):
+                    changes.append(
+                        {
+                            "round": round_no,
+                            "index": index,
+                            "section": item.get("section"),
+                            "before": original,
+                            "after": fixed_line,
+                            "reason": action.get("reason") if isinstance(action, dict) else "",
+                        }
+                    )
+        rebuilt: dict[str, list[str]] = {}
+        for item in items:
+            rebuilt.setdefault(str(item.get("section") or ""), []).append(str(item.get("line") or ""))
+        for section_name in polished:
+            rebuilt.setdefault(section_name, [])
+        polished = rebuilt
+
+    by_index = {int(item["index"]): item for item in items}
+    for index, action in action_by_index.items():
+        action_name = str(action.get("action") or "").strip()
+        if action_name not in {"replace_needed", "strip_only_if_replacement_unavailable"}:
+            continue
+        item = by_index.get(index)
+        if not item:
+            continue
+        section_name = str(item.get("section") or "")
+        original = str(item.get("line") or "")
+        if section_name not in polished or not original:
+            continue
+        replacement = _same_section_reserve_line(section_name, candidates, rendered_urls, rendered_story_keys)
+        section_lines = polished.get(section_name) or []
+        try:
+            pos = section_lines.index(original)
+        except ValueError:
+            continue
+        if replacement:
+            section_lines[pos] = replacement
+            item["line"] = replacement
+            stats["model_requested_replaced"] = int(stats["model_requested_replaced"] or 0) + 1
+            if isinstance(changes, list):
+                changes.append(
+                    {
+                        "round": round_no,
+                        "index": index,
+                        "section": section_name,
+                        "before": original,
+                        "after": replacement,
+                        "reason": action.get("reason") or "Model requested same-section replacement.",
+                    }
+                )
+        else:
+            if section_name == "Общественный транспорт сегодня":
+                warnings.append(
+                    "Final editor requested transport removal, but no replacement was available; "
+                    "kept the row for deterministic transport recovery."
+                )
+                continue
+            del section_lines[pos]
+            stats["model_requested_stripped"] = int(stats["model_requested_stripped"] or 0) + 1
+            warnings.append(f"Final editor requested removal in «{section_name}», but no replacement was available.")
+    return polished, stats
+
+
+def _apply_editor_block_actions(
+    polished: dict[str, list[str]],
+    *,
+    block_actions: list[dict[str, object]],
+    candidates: list[dict],
+    rendered_urls: set[str],
+    rendered_story_keys: set[str],
+    warnings: list[str],
+) -> tuple[dict[str, list[str]], dict[str, object]]:
+    report: dict[str, object] = {"requested": len(block_actions), "applied": 0, "actions": []}
+    rows = report["actions"]
+    if not isinstance(rows, list):
+        return polished, report
+    for raw in block_actions:
+        if not isinstance(raw, dict):
+            continue
+        action = str(raw.get("action") or "").strip()
+        section = str(raw.get("section") or "").strip()
+        count_raw = raw.get("count")
+        try:
+            count = max(1, min(8, int(count_raw or 1)))
+        except (TypeError, ValueError):
+            count = 1
+        entry = {"action": action, "section": section, "count": count, "reason": str(raw.get("reason") or ""), "applied": 0, "status": ""}
+        if action == "recover_lead":
+            section = section or "Главная история дня"
+            for _ in range(count):
+                replacement = _same_section_reserve_line(section, candidates, rendered_urls, rendered_story_keys)
+                if not replacement and section == "Главная история дня":
+                    replacement = _same_section_reserve_line("Свежие новости", candidates, rendered_urls, rendered_story_keys)
+                if not replacement:
+                    break
+                polished.setdefault(section, []).insert(0, replacement)
+                entry["applied"] = int(entry["applied"] or 0) + 1
+        elif action == "backfill":
+            if not section:
+                entry["status"] = "skipped_no_section"
+            else:
+                for _ in range(count):
+                    replacement = _same_section_reserve_line(section, candidates, rendered_urls, rendered_story_keys)
+                    if not replacement:
+                        break
+                    polished.setdefault(section, []).append(replacement)
+                    entry["applied"] = int(entry["applied"] or 0) + 1
+        elif action in {"trim", "move_outside_gm_to_chunk"}:
+            if action == "move_outside_gm_to_chunk" and not section:
+                section = "Крупные концерты вне GM"
+            if section not in _EDITOR_TRIMMABLE_SECTIONS:
+                entry["status"] = "skipped_protected_or_unknown_section"
+            else:
+                lines = polished.get(section) or []
+                floor = 1 if section == "Городской радар" else 0
+                removable = max(0, len(lines) - floor)
+                take = min(count, removable)
+                if take:
+                    del lines[-take:]
+                    entry["applied"] = take
+                    entry["status"] = "trimmed_optional"
+        else:
+            entry["status"] = "unsupported_action"
+        if not entry["status"]:
+            entry["status"] = "applied" if int(entry["applied"] or 0) else "no_replacement_available"
+        if int(entry["applied"] or 0):
+            report["applied"] = int(report["applied"] or 0) + int(entry["applied"] or 0)
+        elif action in {"recover_lead", "backfill"}:
+            warnings.append(f"Final editor requested {action} for «{section}», but no clean reserve was available.")
+        rows.append(entry)
+    return polished, report
 
 
 def _pre_send_polish_sections(
@@ -647,44 +932,6 @@ def _pre_send_polish_sections(
     model_fixes, model_report = _call_pre_send_russian_editor(items, api_key)
     model_report["targeted_items"] = len(items)
     model_report["selection_policy"] = "whole_visible_digest"
-    action_by_index = {
-        int(action.get("index")): action
-        for action in (model_report.get("actions") or [])
-        if isinstance(action, dict) and action.get("index") is not None and str(action.get("index")).strip()
-    }
-    model_changes: list[dict[str, object]] = []
-    if model_report.get("status") not in {"ok", "skipped_no_items"}:
-        warnings.append(f"Pre-send Russian editor skipped/failed: {model_report.get('status')} {model_report.get('error') or ''}".strip())
-    if model_fixes:
-        by_index = {int(item["index"]): item for item in items}
-        for index, fixed_line in model_fixes.items():
-            item = by_index.get(index)
-            if not item:
-                continue
-            original = str(item.get("line") or "")
-            if not _line_preserves_links(original, fixed_line):
-                continue
-            if fixed_line != original:
-                item["line"] = fixed_line
-                model_fixed += 1
-                action = action_by_index.get(index, {})
-                model_changes.append(
-                    {
-                        "index": index,
-                        "section": item.get("section"),
-                        "before": original,
-                        "after": fixed_line,
-                        "reason": action.get("reason") if isinstance(action, dict) else "",
-                    }
-                )
-        rebuilt: dict[str, list[str]] = {}
-        for item in items:
-            rebuilt.setdefault(str(item.get("section") or ""), []).append(str(item.get("line") or ""))
-        # Preserve empty sections that had no visible lines.
-        for section_name in polished:
-            rebuilt.setdefault(section_name, [])
-        polished = rebuilt
-
     replaced = 0
     stripped = 0
     model_requested_replaced = 0
@@ -695,43 +942,45 @@ def _pre_send_polish_sections(
         for line in lines
         if line.strip()
     }
-    by_index = {int(item["index"]): item for item in items}
-    for index, action in action_by_index.items():
-        action_name = str(action.get("action") or "").strip()
-        if action_name not in {"replace_needed", "strip_only_if_replacement_unavailable"}:
-            continue
-        item = by_index.get(index)
-        if not item:
-            continue
-        section_name = str(item.get("section") or "")
-        original = str(item.get("line") or "")
-        if section_name not in polished or not original:
-            continue
-        replacement = _same_section_reserve_line(section_name, candidates or [], rendered_urls)
-        section_lines = polished.get(section_name) or []
-        try:
-            pos = section_lines.index(original)
-        except ValueError:
-            continue
-        if replacement:
-            section_lines[pos] = replacement
-            item["line"] = replacement
-            replaced += 1
-            model_requested_replaced += 1
-            model_changes.append(
-                {
-                    "index": index,
-                    "section": section_name,
-                    "before": original,
-                    "after": replacement,
-                    "reason": action.get("reason") or "Model requested same-section replacement.",
-                }
-            )
-        else:
-            del section_lines[pos]
-            stripped += 1
-            model_requested_stripped += 1
-            warnings.append(f"Final editor requested removal in «{section_name}», but no replacement was available.")
+    rendered_story_keys = {
+        _line_story_identity_key(line, candidates_by_key)
+        for lines in polished.values()
+        for line in lines
+        if line.strip()
+    }
+    rendered_story_keys.discard("")
+    round_reports: list[dict[str, object]] = []
+    block_action_reports: list[dict[str, object]] = []
+    model_changes: list[dict[str, object]] = []
+    polished, round_stats = _apply_editor_line_actions(
+        polished,
+        items=items,
+        model_fixes=model_fixes,
+        model_report=model_report,
+        candidates=candidates or [],
+        rendered_urls=rendered_urls,
+        rendered_story_keys=rendered_story_keys,
+        warnings=warnings,
+        round_no=1,
+    )
+    model_fixed += int(round_stats.get("model_fixed") or 0)
+    model_requested_replaced += int(round_stats.get("model_requested_replaced") or 0)
+    model_requested_stripped += int(round_stats.get("model_requested_stripped") or 0)
+    replaced += int(round_stats.get("model_requested_replaced") or 0)
+    stripped += int(round_stats.get("model_requested_stripped") or 0)
+    model_changes.extend(round_stats.get("model_changes") or [])
+    if not model_report.get("coverage_complete") and model_report.get("status") == "ok":
+        warnings.append("Pre-send Russian editor did not return an action for every visible line; running recovery round.")
+    polished, block_report = _apply_editor_block_actions(
+        polished,
+        block_actions=[row for row in (model_report.get("block_actions") or []) if isinstance(row, dict)],
+        candidates=candidates or [],
+        rendered_urls=rendered_urls,
+        rendered_story_keys=rendered_story_keys,
+        warnings=warnings,
+    )
+    block_action_reports.append(block_report)
+    round_reports.append({"round": 1, **model_report})
 
     # Universal degradation (owner: for everything, always): a row still bad
     # after the repair pass is REPLACED from a clean same-section public
@@ -742,11 +991,20 @@ def _pre_send_polish_sections(
             if not line.strip() or not _line_needs_russian_editor(line):
                 out.append(line)
                 continue
-            replacement = _same_section_reserve_line(section_name, candidates or [], rendered_urls)
+            replacement = _same_section_reserve_line(section_name, candidates or [], rendered_urls, rendered_story_keys)
+            if not replacement and section_name == "Общественный транспорт сегодня":
+                replacement = _transport_replacement_for_line(line, candidates_by_key, rendered_urls)
             if replacement:
                 out.append(replacement)
                 replaced += 1
             else:
+                if section_name == "Общественный транспорт сегодня":
+                    fallback = _transport_status_fallback_line()
+                    if fallback not in out:
+                        out.append(fallback)
+                    replaced += 1
+                    warnings.append("Degradation: replaced unrepairable transport row with TfGM status fallback.")
+                    continue
                 stripped += 1
                 warnings.append(f"Degradation: stripped an unrepairable line in «{section_name}».")
         polished[section_name] = out
@@ -755,12 +1013,77 @@ def _pre_send_polish_sections(
         if line.strip() and line.strip() != "•"
     ]
     if not transport_lines:
-        polished["Общественный транспорт сегодня"] = [
-            '• Транспорт: конкретных подтверждённых сбоев в выпуск не попало. '
-            'Перед поездкой проверьте страницу статуса TfGM. '
-            '<a href="https://tfgm.com/travel-updates">TfGM</a>'
-        ]
+        polished["Общественный транспорт сегодня"] = [_transport_status_fallback_line()]
         warnings.append("Degradation: replaced empty transport block with TfGM status fallback.")
+
+    needs_second_round = (
+        bool(api_key)
+        and PRE_SEND_EDITOR_MAX_ROUNDS >= 2
+        and (
+            not bool(model_report.get("coverage_complete"))
+            or any(_line_needs_russian_editor(line) for lines in polished.values() for line in lines if line.strip())
+        )
+    )
+    if needs_second_round:
+        second_refetch_stats: dict[str, object] = {"attempted": 0, "improved": 0, "failed": 0, "empty_or_not_better": 0, "skipped": 0}
+        second_items = _visible_line_items(polished, candidates_by_key, second_refetch_stats)
+        second_fixes, second_report = _call_pre_send_russian_editor(second_items, api_key)
+        second_report["targeted_items"] = len(second_items)
+        second_report["selection_policy"] = "whole_visible_digest_second_round"
+        second_report["refetch"] = second_refetch_stats
+        polished, second_stats = _apply_editor_line_actions(
+            polished,
+            items=second_items,
+            model_fixes=second_fixes,
+            model_report=second_report,
+            candidates=candidates or [],
+            rendered_urls=rendered_urls,
+            rendered_story_keys=rendered_story_keys,
+            warnings=warnings,
+            round_no=2,
+        )
+        model_fixed += int(second_stats.get("model_fixed") or 0)
+        model_requested_replaced += int(second_stats.get("model_requested_replaced") or 0)
+        model_requested_stripped += int(second_stats.get("model_requested_stripped") or 0)
+        replaced += int(second_stats.get("model_requested_replaced") or 0)
+        stripped += int(second_stats.get("model_requested_stripped") or 0)
+        model_changes.extend(second_stats.get("model_changes") or [])
+        polished, second_block_report = _apply_editor_block_actions(
+            polished,
+            block_actions=[row for row in (second_report.get("block_actions") or []) if isinstance(row, dict)],
+            candidates=candidates or [],
+            rendered_urls=rendered_urls,
+            rendered_story_keys=rendered_story_keys,
+            warnings=warnings,
+        )
+        block_action_reports.append(second_block_report)
+        round_reports.append({"round": 2, **second_report})
+    else:
+        round_reports.append({"round": 2, "status": "skipped_not_needed"})
+
+    for section_name in list(polished.keys()):
+        out: list[str] = []
+        for line in polished[section_name]:
+            if not line.strip() or not _line_needs_russian_editor(line):
+                out.append(line)
+                continue
+            replacement = _same_section_reserve_line(section_name, candidates or [], rendered_urls, rendered_story_keys)
+            if not replacement and section_name == "Общественный транспорт сегодня":
+                replacement = _transport_replacement_for_line(line, candidates_by_key, rendered_urls)
+            if replacement:
+                out.append(replacement)
+                replaced += 1
+            else:
+                if section_name == "Общественный транспорт сегодня":
+                    fallback = _transport_status_fallback_line()
+                    if fallback not in out:
+                        out.append(fallback)
+                    replaced += 1
+                    warnings.append("Final editor stop-loss: replaced unrepairable transport row with TfGM status fallback.")
+                    continue
+                stripped += 1
+                warnings.append(f"Final editor stop-loss: stripped an unrepairable line in «{section_name}».")
+        polished[section_name] = out
 
     bad_examples: list[str] = []
     for item in _visible_line_items(polished):
@@ -782,6 +1105,9 @@ def _pre_send_polish_sections(
         "remaining_bad": remaining_bad,
         "bad_examples": bad_examples,
         "model": PRE_SEND_RUSSIAN_EDITOR_MODEL,
+        "max_rounds": PRE_SEND_EDITOR_MAX_ROUNDS,
+        "rounds": round_reports,
+        "block_action_reports": block_action_reports,
         "visible_items": len(items),
         "evidence_items": evidence_items,
         "refetch": refetch_stats,
