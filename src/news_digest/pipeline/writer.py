@@ -33,6 +33,7 @@ from news_digest.pipeline.editorial_contracts import (
     attach_editorial_contract,
     classify_ticket_type,
     copy_invariant_errors,
+    onsale_datetime_from_blob,
     scrub_vague_ending,
     why_now_is_publishable,
 )
@@ -3050,7 +3051,9 @@ def _ticket_public_onsale_datetime(candidate: dict) -> datetime | None:
         str(candidate.get("summary") or ""),
     )
     if not match:
-        return None
+        # W9: fall back to the on-sale date parsed from the listing's own text
+        # (non-Ticketmaster tickets), so "в продаже с …" can render for them too.
+        return onsale_datetime_from_blob(candidate)
     raw = f"{match.group(1)}T{match.group(2) or '12:00'}:00+01:00"
     try:
         return datetime.fromisoformat(raw)

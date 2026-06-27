@@ -171,6 +171,35 @@ def _ticket_date_token(candidate: dict) -> str:
     return ""
 
 
+_ONSALE_PHRASE_RE = re.compile(
+    r"\b(?:on[-\s]?sale|goes?\s+on\s+sale|public\s+sale|general\s+sale|pre-?sale|presale|в\s+продаж\w*)\b",
+    re.IGNORECASE,
+)
+
+
+def onsale_datetime_from_blob(candidate: dict) -> datetime | None:
+    """W9: the ticket on-sale moment when it lives in the listing's own wording
+    instead of a structured Ticketmaster ``public_onsale`` field (0/625 of the
+    HTML/RSS tickets had it parsed). A date is read only from the tight window
+    around the on-sale phrase, so the event date elsewhere in the blob is never
+    mislabelled as the sale date; low-confidence parses are ignored.
+    """
+    blob = _blob(candidate)
+    match = _ONSALE_PHRASE_RE.search(blob)
+    if not match:
+        return None
+    window = blob[max(0, match.start() - 8): match.end() + 56]
+    from news_digest.pipeline.event_extraction import _parse_date_details  # noqa: PLC0415
+    parsed = _parse_date_details(window)
+    if not parsed.start or parsed.confidence == "low":
+        return None
+    try:
+        day = date.fromisoformat(parsed.start[:10])
+    except ValueError:
+        return None
+    return datetime(day.year, day.month, day.day, 12, 0, tzinfo=now_london().tzinfo)
+
+
 def classify_ticket_type(candidate: dict) -> str:
     summary = str(candidate.get("summary") or "")
     lowered = summary.lower()
@@ -185,6 +214,14 @@ def classify_ticket_type(candidate: dict) -> str:
         if onsale_at <= now:
             return "on_sale_now" if (now - onsale_at) <= timedelta(days=3) else "old_onsale"
         return "presale_soon"
+    # W9: non-Ticketmaster listings carry the on-sale moment in their own text.
+    blob_onsale = onsale_datetime_from_blob(candidate)
+    if blob_onsale is not None:
+        if blob_onsale <= now:
+            return "on_sale_now" if (now - blob_onsale) <= timedelta(days=3) else "old_onsale"
+        return "presale_soon"
+    if _ONSALE_PHRASE_RE.search(_blob(candidate)):
+        return "newly_listed"  # sale announced, but no confidently-parsed date
     if is_major_ticket_venue(ticket_venue(candidate)) or "major_venue=true" in lowered:
         return "major_upcoming"
     return "regular_upcoming"

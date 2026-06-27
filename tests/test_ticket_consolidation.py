@@ -44,6 +44,28 @@ class TicketCardFormatTest(unittest.TestCase):
         self.assertEqual(line.count("Calvin Harris"), 1)  # deduped
 
 
+class TicketOnsaleFromBlobTest(unittest.TestCase):
+    def test_onsale_in_listing_text_classified_without_ticketmaster_field(self) -> None:
+        # W9: on-sale lived in the listing's own headline and was never parsed
+        # for the 600+ non-Ticketmaster tickets. classify now reads it from the
+        # blob (W1 date parser), proximity-bounded so the event date elsewhere is
+        # not mislabelled and an unparseable "soon" never fabricates a date.
+        from datetime import timedelta
+        from news_digest.pipeline.common import now_london
+        from news_digest.pipeline.editorial_contracts import classify_ticket_type, onsale_datetime_from_blob
+
+        future = (now_london() + timedelta(days=20)).strftime("%d %B %Y")
+        future_sale = {"category": "venues_tickets", "title": f"The Offspring at Co-op Live — tickets on sale {future}", "summary": ""}
+        self.assertEqual(classify_ticket_type(future_sale), "presale_soon")
+        self.assertIsNotNone(onsale_datetime_from_blob(future_sale))
+
+        announced = {"category": "venues_tickets", "title": "Big show — tickets on sale soon", "summary": ""}
+        self.assertEqual(classify_ticket_type(announced), "newly_listed")
+        self.assertIsNone(onsale_datetime_from_blob(announced))
+
+        self.assertEqual(classify_ticket_type({"title": "Regular gig at small venue", "summary": ""}), "regular_upcoming")
+
+
 class TicketConsolidationTest(unittest.TestCase):
     def test_consolidation_collapses_and_drops(self) -> None:
         cands = [
