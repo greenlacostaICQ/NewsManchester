@@ -1268,7 +1268,14 @@ def edit_digest(project_root: Path) -> StageResult:
     # Index by URL so cross-section dedup can key on the story cluster, not just
     # the exact rendered string (catches one story in two blocks).
     candidates_by_key = _candidate_index(all_candidates)
-    for section_name, lines in sections.items():
+    # S5: the lead block must win cross-section dedup. Process «Главная история
+    # дня» FIRST so it claims its story key, and never drop a line from it — a
+    # same-story sibling in a later section (e.g. a mayoral item in Городской
+    # радар) is removed instead. Previously section-iteration order decided the
+    # winner, so the lead lost to its own sibling and vanished from the HTML.
+    lead_heading = "Главная история дня"
+    ordered_sections = sorted(sections.items(), key=lambda kv: (kv[0] != lead_heading,))
+    for section_name, lines in ordered_sections:
         deduped = _unique_preserving_order(lines)
         filtered: list[str] = []
         if len(deduped) < len(lines):
@@ -1276,7 +1283,7 @@ def edit_digest(project_root: Path) -> StageResult:
         for line in deduped:
             key = _line_story_key(line, candidates_by_key)
             previous_section = seen_lines_to_section.get(key)
-            if previous_section and previous_section != section_name:
+            if previous_section and previous_section != section_name and section_name != lead_heading:
                 duplicate_collisions += 1
                 warnings.append(
                     f"Removed cross-section duplicate from {section_name}; already present in {previous_section}."

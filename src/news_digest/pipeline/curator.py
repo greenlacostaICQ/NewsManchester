@@ -344,6 +344,16 @@ def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: st
     return results
 
 
+def _arbitrate_global_lead(lead_votes: list[dict]) -> dict:
+    """S5: pick the single strongest lead-voted story by reader value across all
+    curator batches. The prompt elects one lead per batch, so without this the
+    day's main story was decided by list order, not strength."""
+    return max(
+        lead_votes,
+        key=lambda c: (float(c.get("reader_value_score") or 0), float(c.get("section_board_score") or 0)),
+    )
+
+
 def run_curator_pass(project_root: Path) -> None:
     """Drop PR/evergreen candidates and mark lead story before LLM rewrite."""
     stage_started = time.monotonic()
@@ -435,7 +445,7 @@ def run_curator_pass(project_root: Path) -> None:
 
     decision_map = {str(d.get("fingerprint") or ""): d for d in decisions if isinstance(d, dict)}
     dropped = 0
-    lead_set = False
+    lead_votes: list[dict] = []
 
     for candidate in candidates:
         if _is_curator_protected(candidate):
@@ -446,6 +456,8 @@ def run_curator_pass(project_root: Path) -> None:
                 candidate["include"] = True
             candidate["is_lead"] = False
             continue
+        # S5: clear every vote up front; a single global arbiter sets the lead.
+        candidate["is_lead"] = False
         fp = str(candidate.get("fingerprint") or "")
         decision = decision_map.get(fp)
         if not decision:
@@ -455,9 +467,21 @@ def run_curator_pass(project_root: Path) -> None:
             candidate["dedupe_decision"] = "drop"
             candidate["reason"] = f"Curator drop: {decision.get('reason', '')}"
             dropped += 1
-        if decision.get("is_lead") and not lead_set and candidate.get("include"):
-            candidate["is_lead"] = True
-            lead_set = True
+        if decision.get("is_lead") and candidate.get("include"):
+            lead_votes.append(candidate)
+
+    # S5: global lead arbitration. The prompt elects "ровно один лид на батч", so
+    # with N parallel batches up to N candidates carry a lead vote and the old
+    # code let whichever appeared FIRST in the list win — arbitrary, not the
+    # strongest. Pick the single best lead-voted story by reader value across all
+    # batches so the day's main story is deterministic, not list-order luck.
+    lead_set = False
+    if lead_votes:
+        best_lead = _arbitrate_global_lead(lead_votes)
+        best_lead["is_lead"] = True
+        lead_set = True
+        if len(lead_votes) > 1:
+            logger.info("Curator: arbitrated %d batch lead vote(s) into one global lead.", len(lead_votes))
 
     # Deterministic lead fallback: the issue must always have a main story. If
     # the model marked no lead (e.g. its batch timed out and partial-apply kept
