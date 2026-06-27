@@ -1,0 +1,381 @@
+# NewsManchester Product Contracts
+
+Last reviewed: 2026-06-27.
+
+These are product rules, not implementation preferences. If code, prompts,
+reports, or old docs conflict with this file, treat the conflict as a bug or an
+RCA item.
+
+## Global Release Contract
+
+- Delivery is never blocked. Once the issue is built and technically consistent,
+  it always ships. Every quality contract below is a *product* bar that triggers
+  recover/rebalance-before-send and RCA — never a held or blocked send (see
+  "Never block the release" in DECISIONS_AND_LESSONS.md). "Pass" anywhere in
+  these docs means a clean *quality* pass, not a delivery decision.
+- Final HTML is the source of truth. A candidate only counts as shipped if it is
+  visible in `data/outgoing/current_digest.html`.
+- `publish_plan` selected, `must_show`, lead and protected items must be visible
+  in final HTML or explicitly replaced with a human-readable reason.
+- A failed or partially failed editor must trigger recovery/rebalance before
+  send and is not a clean quality pass. It must never block or hold delivery —
+  the issue still ships.
+- A pre-send warning for critical balance issues must trigger action before
+  send: rebalance, recovery or replacement. It must not only report — and it
+  must not hold delivery either.
+- Every visible item must have source, date relevance, section fit and a reason
+  to read.
+- Internal counters are advisory. Final validation must compare counters with
+  rendered HTML.
+- Recovery must preserve useful facts first: enrich, rewrite, replace inside the
+  same block, then omit only when facts cannot be recovered.
+
+## Weather Contract
+
+Weather must reflect actual reader impact:
+
+- heat, cold, rain, wind and warnings;
+- hourly or day-part relevance where available;
+- not just a neutral summary;
+- if the morning is already hot and the max is high, text must say heat,
+  comfort, hydration or travel risk.
+
+Required fields:
+
+- temperature range;
+- rain/wind/warning signal or explicit calm state;
+- one concrete reader action where conditions matter.
+
+Failure examples:
+
+- "20-28C, calm" when the practical issue is heat stress.
+- Weather placeholder that hides source failure without saying so in reports.
+
+## Fresh News Contract
+
+Fresh News must prioritize important local news:
+
+- high-impact public safety;
+- council and civic decisions;
+- crime/courts;
+- housing and planning;
+- transport;
+- health and public services;
+- education;
+- major local economic or community impact.
+
+Contract:
+
+- visible minimum must be recovered/rebalanced before send (never enforced by
+  holding delivery);
+- rejected strong stories require reason;
+- if selected but not visible, recovery must replace from the same block or
+  explain why no replacement exists;
+- no soft/lifestyle/ticket item should displace a strong hard-news item.
+
+Failure examples:
+
+- Fresh ships below minimum while tickets/outside-GM dominate.
+- A selected public-safety story is present in reports but absent from HTML.
+
+## Today Contract
+
+Today means practical impact today:
+
+- closures;
+- service changes;
+- events affecting movement;
+- deadlines;
+- weather impacts;
+- active safety/public-service issues.
+
+Not Today:
+
+- random civic explainer;
+- weak political analysis;
+- future item with no action today;
+- soft event that belongs in Weekend or Next 7 Days.
+
+Contract:
+
+- every item must answer: what is happening today, where, who is affected, and
+  what should the reader do or remember.
+- If the block underflows, recovery should search Fresh, Transport, Weather and
+  public-service candidates before accepting underflow.
+
+## Transport Contract
+
+Transport item must include:
+
+- line, route, stop or section;
+- date/time window;
+- passenger impact;
+- action/advice.
+
+Rules:
+
+- No passenger impact = not Transport.
+- Long-term infrastructure without today/tomorrow travel impact goes to City
+  Radar.
+- Generic TfGM fallback is forbidden if concrete disruption exists.
+- A nearby incident is not transport unless it changes travel.
+- A stop/road/work item must explain what passenger or driver should do.
+
+Failure examples:
+
+- "Bury Interchange received funding" in Transport.
+- "services were at a bus station" treated as transport disruption.
+- "check TfGM" replacing known bus or rail disruption.
+
+## Weekend Contract
+
+Weekend item must be actual upcoming weekend activity:
+
+- markets;
+- fairs;
+- food;
+- community;
+- family;
+- festivals;
+- free/low-cost;
+- Greater Manchester relevance.
+
+Rules:
+
+- Single concerts go to Tickets.
+- 2027 events do not go to Weekend.
+- Weak "check details" items should be rejected or enriched.
+- The item must have date, place and activity type.
+- A market/fair/community event should beat a generic concert if Weekend is
+  thin.
+
+Failure examples:
+
+- Far-future festival in Weekend.
+- Single arena concert in Weekend.
+- Vague guide page with no exact date or place.
+
+## Next 7 Days Contract
+
+Next 7 Days is for practical planning in the next week:
+
+- shows, exhibitions, talks, sports, family events;
+- confirmed restrictions starting within the week;
+- business/tech events with concrete date/place;
+- last chance / final week / deadline soon.
+
+Rules:
+
+- Must have date and place/online.
+- Must not duplicate a full item from Today, Fresh, Weekend or Tickets.
+- Repeat from yesterday requires a stronger window: starts today, tomorrow,
+  final week, sale starts, sold out, extra date or changed venue.
+
+## Ticket Radar Contract
+
+Ticket item must include:
+
+- `venue_scope`: GM / nearby / outside;
+- event date;
+- sale/ticket status if available;
+- tier with evidence;
+- why now;
+- horizon category: tomorrow / this week / next month / future major.
+
+Rules:
+
+- Outside venue cannot use GM wording.
+- A-tier must be evidence-based.
+- Important concerts should be discovered early, not one day before.
+- Ticket volume must be capped before editor, not only reported after render.
+- Ticket Radar is not a general event calendar.
+
+Failure examples:
+
+- London venue described as Greater Manchester.
+- Future major concert shown without why-now.
+- Ticket dominance warning with no rebalance action.
+
+## Outside-GM Contract
+
+Outside-GM exists only for genuinely important UK events outside Greater
+Manchester.
+
+Rules:
+
+- Always say the city/venue plainly.
+- Never use "in Greater Manchester" wording for outside venue.
+- Must be capped before writer/editor.
+- Must not reduce Fresh, Today, Transport, Weekend or public-service coverage.
+
+Failure examples:
+
+- Outside-GM selected pool larger than the whole core-news pool.
+- Outside-GM concerts crowd out hard local news.
+
+## Professional Contract
+
+Professional item must include:
+
+- date;
+- place or online;
+- free/paid/booking;
+- relevance to user profile;
+- CV-match verdict: `go`, `consider`, or `skip`.
+
+Rules:
+
+- `skip` cannot be `must_show` or visible.
+- CV-match must happen after fact extraction and before publish selection.
+- Pages without a concrete event date/place must not become protected publish
+  items.
+- A professional item without booking/access clarity is held unless another
+  source enriches it.
+
+Failure examples:
+
+- "Business engagement services" or generic programme page treated as
+  must-show.
+- CV-match report says skipped/applied 0 but the block still publishes based on
+  generic business terms.
+
+## Russian Events Contract
+
+Russian Events require positive evidence:
+
+- Russian/Ukrainian language;
+- diaspora promoter;
+- Russian-language page;
+- performer/audience evidence;
+- explicit cultural/community relevance.
+
+Rules:
+
+- Afisha London as a source is not enough.
+- UK-wide/London-heavy items must say geography clearly.
+- Generic comedy/music listing cannot be Russian Events without evidence.
+- Positive evidence must be stored on candidate/report before publish selection.
+
+Failure examples:
+
+- Source label alone makes a candidate `russian_events`.
+- London event appears without UK/outside-GM context.
+
+## Food/Openings Contract
+
+Food/opening item must include:
+
+- exact place;
+- area/station if possible;
+- opening status/date;
+- why it matters.
+
+Rules:
+
+- Repeats require a new fact: opening started, date changed, resident changed,
+  menu/concept changed, venue reopened, official confirmation.
+- Markets belong to Weekend when they are weekend activities.
+- Vague "check details" copy is not enough.
+
+Failure examples:
+
+- "new pie shop at a station" without exact station.
+- Repeating yesterday's opening with no new status.
+
+## Business/IT Contract
+
+Business item must explain:
+
+- who;
+- what changed;
+- where;
+- why it matters;
+- money/jobs/product/service impact if available.
+
+Rules:
+
+- Generic "check details" copy is not acceptable.
+- Personnel PR, anniversary, award and campaign posts need concrete action or
+  local impact.
+- Business event listings with date/place/free access belong in Professional,
+  not Business/IT.
+
+Failure examples:
+
+- Staff appointment published with no reader value.
+- Business support homepage treated as a new development.
+
+## Football Contract
+
+Source priority:
+
+- official club;
+- BBC / Guardian / Sky reliable reporting;
+- MEN transfer/opinion only if the fact is confirmed.
+
+Rules:
+
+- Avoid opinion/rumour as main football item.
+- Use match/result/fixture/injury/manager/official confirmation as anchors.
+- If football is quiet, do not force weak filler above stronger city news.
+- Underflow needs a reason: no relevant match/update, not writer loss.
+
+Failure examples:
+
+- Transfer liveblog/speculation as primary item.
+- Club PR quiz/interview as the only football card.
+
+## Recovery Contract
+
+Recovery must not only insert a reserve line.
+
+For each underflow:
+
+1. Find same-block reserve or adjacent allowed source.
+2. Enrich facts from candidate/source fields or refetch if allowed.
+3. Rewrite the line.
+4. Run editor/check on the candidate line.
+5. Insert into draft.
+6. Validate final HTML.
+
+If no replacement exists, report a human-readable reason:
+
+- no candidate with date/place;
+- no passenger impact;
+- no positive Russian evidence;
+- duplicate already covered;
+- outside horizon;
+- source too thin to write without inventing facts.
+
+Failure examples:
+
+- Generic TfGM fallback replacing a concrete rail/bus issue.
+- Must-show missing because line had English, without same-block replacement.
+
+## Repeat Contract
+
+A repeated story is allowed only with a concrete new reader-useful fact:
+
+- new date;
+- booking opened;
+- sale started;
+- sold out;
+- extra date;
+- venue changed;
+- opening started;
+- official confirmation;
+- new disruption window;
+- new court/safety stage;
+- materially more urgent window.
+
+Rules:
+
+- "Announced", "updated", "new phase" or "still important" is not enough by
+  itself.
+- The concrete changed fact must be named in candidate/report.
+- If the changed fact cannot be shown to the reader, the repeat is held.
+
+Failure examples:
+
+- Same venue/event repeated because it is closer, without a new action.
+- Same story from a new source treated as a new phase.
