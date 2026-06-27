@@ -2954,10 +2954,15 @@ _PUBLISH_PLAN_BUDGET_BUCKETS = {
 
 def _publish_plan_must_show(candidate: dict) -> bool:
     block = str(candidate.get("primary_block") or "")
-    return bool(
-        candidate.get("is_lead")
-        or block in {"transport", "russian_events", "professional_events"}
-    )
+    if candidate.get("is_lead") or block in {"transport", "russian_events"}:
+        return True
+    if block == "professional_events":
+        # W6: only a CV go/consider earns the protected slot. The keyword scorer
+        # can no longer force a professional event into must_show; an ungoverned
+        # one is held for enrichment upstream, never silently shown.
+        llm = candidate.get("professional_llm_match") if isinstance(candidate.get("professional_llm_match"), dict) else {}
+        return str(llm.get("fit") or "").strip().lower() in {"go", "consider"}
+    return False
 
 
 def _publish_plan_protected_budget(candidate: dict) -> bool:

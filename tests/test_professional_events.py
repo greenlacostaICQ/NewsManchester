@@ -78,6 +78,28 @@ class ProfessionalEventsTest(unittest.TestCase):
         self.assertEqual(c["professional_match_status"], "needs_llm_cv_match")
         self.assertIn("professional_llm_cv_match_required", c["quality_warnings"])
 
+    def test_keyword_score_does_not_self_publish_ungoverned_event_is_held(self) -> None:
+        # W6: a strong-keyword professional event with no governing CV verdict
+        # (no trustworthy date → never sent to the model, and no API key in CI)
+        # is held for enrichment, not published off the keyword score alone.
+        from news_digest.pipeline.professional_events import apply_professional_event_llm_matches
+
+        c = self._candidate(
+            "Manchester AI and product leadership conference",
+            "Free delegate pass. AI, data, product and digital transformation tracks for business leaders.",
+        )
+        c["event"]["date"] = ""
+        c["event"]["date_start"] = ""
+        c["include"] = True
+
+        apply_professional_event_match(c)
+        self.assertEqual(c["professional_match_status"], "needs_llm_cv_match")
+
+        report = apply_professional_event_llm_matches([c])
+        self.assertFalse(c["include"])
+        self.assertEqual(c["editorial_status"], "held_for_enrichment")
+        self.assertIn("held 1", report["summary"])
+
     def test_writer_builds_self_contained_russian_card(self) -> None:
         c = self._candidate(
             "CreaTech Connect: Accelerating University-Industry Partnerships",

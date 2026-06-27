@@ -240,22 +240,23 @@ def apply_professional_event_match(candidate: dict[str, Any], project_root: Path
     candidate["professional_event_match"] = match
     candidate["reader_action_type"] = "book_or_buy" if match.get("recommended_action") == "register" else "plan_ahead"
     candidate["english_editorial_score"] = max(float(candidate.get("english_editorial_score") or 0), float(match.get("fit_score") or 0))
-    if not match.get("publish"):
-        # Hard commercial/sold-out exclusions are safe deterministically.
-        # Low-score-but-free events stay alive until the LLM CV-match can say
-        # whether the title is actually useful for the owner.
-        if match.get("free_access_status") in {"paid", "sold_out"}:
-            candidate["include"] = False
-            candidate["reason"] = (
-                str(candidate.get("reason") or "").rstrip()
-                + f" | Professional event match: {match.get('event_level')} / {match.get('free_access_status')} / score {match.get('fit_score')}."
-            ).strip()
-        else:
-            candidate["professional_match_status"] = "needs_llm_cv_match"
-            candidate["quality_warnings"] = sorted(set(
-                [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]
-                + ["professional_llm_cv_match_required"]
-            ))
+    # W6: the deterministic keyword score only *ranks* the board; it can no
+    # longer publish a professional event on its own. Hard commercial/sold-out
+    # cases are safe to drop deterministically; every other professional event
+    # — including a high keyword score — waits for the gpt-4o-mini CV verdict,
+    # which is the decisive gate (only its go/consider becomes visible).
+    if match.get("free_access_status") in {"paid", "sold_out"}:
+        candidate["include"] = False
+        candidate["reason"] = (
+            str(candidate.get("reason") or "").rstrip()
+            + f" | Professional event match: {match.get('event_level')} / {match.get('free_access_status')} / score {match.get('fit_score')}."
+        ).strip()
+    else:
+        candidate["professional_match_status"] = "needs_llm_cv_match"
+        candidate["quality_warnings"] = sorted(set(
+            [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]
+            + ["professional_llm_cv_match_required"]
+        ))
     return candidate
 
 
@@ -367,6 +368,46 @@ def _drop_pending_llm_candidates(candidates: list[dict[str, Any]], reason: str) 
 
 
 def apply_professional_event_llm_matches(
+    candidates: list[dict[str, Any]],
+    project_root: Path | None = None,
+    *,
+    max_candidates: int | None = None,
+) -> dict[str, Any]:
+    """CV-match governs visibility: run the model, then hold anything ungoverned.
+
+    The keyword scorer can no longer publish on its own (W6). After the model
+    pass, any professional event still ``include`` without a go/consider verdict
+    — thinly-described items with no event facts, or items the model never
+    returned — is *held for enrichment* (not dropped), so the block only ever
+    shows events a real CV verdict cleared.
+    """
+    report = _run_professional_cv_match(candidates, project_root, max_candidates=max_candidates)
+    held = 0
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        if str(candidate.get("category") or "") != "professional_events" or not candidate.get("include"):
+            continue
+        if candidate.get("professional_match_status") == "llm_cv_matched":
+            continue  # governed by the model (go/consider) — keep visible
+        candidate["include"] = False
+        candidate["editorial_status"] = "held_for_enrichment"
+        candidate["reason"] = (
+            str(candidate.get("reason") or "").rstrip()
+            + " | Professional CV match: held for enrichment (no governing go/consider verdict)."
+        ).strip()
+        held += 1
+    report["held_for_enrich"] = held
+    model_label = report.get("model") or report.get("model_version") or "—"
+    report["summary"] = (
+        f"professional CV match: checked {int(report.get('eligible') or 0)} eligible → "
+        f"sent {int(report.get('sent') or 0)} → shown {int(report.get('applied') or 0)} "
+        f"(model {model_label}); skip {int(report.get('skipped') or 0)}, held {held}."
+    )
+    return report
+
+
+def _run_professional_cv_match(
     candidates: list[dict[str, Any]],
     project_root: Path | None = None,
     *,

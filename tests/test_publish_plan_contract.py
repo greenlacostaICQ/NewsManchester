@@ -102,6 +102,8 @@ class SourceHealthAndPublishPlanTests(unittest.TestCase):
                 "source_label": "CompiledMCR",
                 "digest_selection_verdict": "selected",
                 "include": True,
+                # W6: a professional event is must_show only with a CV go/consider.
+                "professional_llm_match": {"fit": "go"},
             },
             {
                 "fingerprint": "thin",
