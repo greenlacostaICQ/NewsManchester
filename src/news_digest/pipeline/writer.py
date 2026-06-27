@@ -1649,6 +1649,34 @@ def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
     )
 
 
+def _hold_global_capped_a_tier(
+    global_budget_dropped: list[dict[str, object]],
+    candidate_by_fp: dict[str, dict],
+    ticket_inventory_held: list[dict[str, object]],
+) -> None:
+    """Outside-GM A-tier dropped by any global/hard budget cap stays in the
+    ticket inventory, never silently lost (RC4 / #0011). "A-tier and not
+    budget-exempt" == outside/unknown A-tier, since GM/nearby A-tier is exempt
+    and never reaches a drop path."""
+    for dropped in global_budget_dropped:
+        cand = candidate_by_fp.get(str(dropped.get("fingerprint") or ""))
+        if not _is_a_tier_ticket(cand) or _is_budget_exempt_a_tier(cand):
+            continue
+        if isinstance(cand, dict):
+            if cand.get("ticket_inventory_held"):
+                continue
+            cand["ticket_inventory_held"] = True
+        ticket_inventory_held.append({
+            "section": dropped.get("section", ""),
+            "fingerprint": dropped.get("fingerprint", ""),
+            "title": dropped.get("title", ""),
+            "source_label": dropped.get("source_label", ""),
+            "reader_value_score": dropped.get("reader_value_score", 0.0),
+            "tier": "A",
+            "reason": "Outside-GM A-tier over the global budget/hard cap; kept in ticket inventory.",
+        })
+
+
 def _slice_counting_only_non_exempt(
     *,
     lines: list[str],
@@ -6601,6 +6629,9 @@ def write_digest(project_root: Path) -> StageResult:
             "Public issue budget held "
             f"{len(global_budget_dropped)} lower-priority item(s) out of the digest."
         )
+    # RC4 / #0011: outside-GM A-tier dropped by ANY global/hard budget cap (not
+    # only the per-section cap above) also stays in the ticket inventory.
+    _hold_global_capped_a_tier(global_budget_dropped, candidate_by_fp, ticket_inventory_held)
     if ticket_inventory_held:
         warnings.append(
             f"Ticket inventory: held {len(ticket_inventory_held)} outside-GM A-tier "

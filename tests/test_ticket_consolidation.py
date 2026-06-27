@@ -121,6 +121,24 @@ class ATierBudgetExemptionTest(unittest.TestCase):
         kept = self._kept(cand, fps, "Крупные концерты вне GM", 6)
         self.assertEqual(sum(1 for f in kept if f.startswith("n")), 8)  # nearby A-tier kept
 
+    def test_global_cap_dropped_a_tier_goes_to_inventory(self) -> None:
+        # P1 / RC4: outside-GM A-tier dropped by the GLOBAL budget cap (not just
+        # the section cap) must land in the ticket inventory, not vanish.
+        from news_digest.pipeline.writer import _hold_global_capped_a_tier
+        outside = {"primary_block": "outside_gm_tickets", "venue_scope": "outside",
+                   "ticket_notability": {"tier": "A"}}
+        gm = {"primary_block": "ticket_radar", "venue_scope": "gm",
+              "ticket_notability": {"tier": "A"}}
+        candidate_by_fp = {"o1": outside, "g1": gm}
+        dropped = [
+            {"fingerprint": "o1", "title": "Outside A", "section": "X"},
+            {"fingerprint": "g1", "title": "GM A", "section": "X"},  # exempt — ignored
+        ]
+        held: list[dict] = []
+        _hold_global_capped_a_tier(dropped, candidate_by_fp, held)
+        self.assertEqual([h["fingerprint"] for h in held], ["o1"])
+        self.assertTrue(outside["ticket_inventory_held"])
+
 
 if __name__ == "__main__":
     unittest.main()
