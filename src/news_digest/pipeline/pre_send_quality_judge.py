@@ -143,7 +143,10 @@ def digest_lines_from_html(digest_html: str) -> list[dict[str, Any]]:
                 "text": plain[:900],
             }
         )
-    return lines[:60]
+    # The judge model must see the WHOLE issue, not just the first 60 lines —
+    # otherwise tail defects (e.g. a broken line deep in the ticket list) are
+    # invisible to it. 250 covers any realistic issue with headroom.
+    return lines[:250]
 
 
 def _rendered_candidates(project_root: Path) -> list[dict[str, Any]]:

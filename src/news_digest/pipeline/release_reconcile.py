@@ -105,14 +105,6 @@ def reconcile_visible_html(
     html_counts = _html_section_counts(html_text)
     rendered_urls = _existing_url_idents(html_text)
 
-    divergences = []
-    for section, intended in (writer_section_counts or {}).items():
-        shipped = html_counts.get(section, 0)
-        if int(intended or 0) != shipped:
-            divergences.append({"section": section, "writer": int(intended or 0), "html": shipped})
-
-    lead_visible = html_counts.get(LEAD_SECTION, 0) >= 1
-
     recovered: list[dict[str, Any]] = []
     still_short: list[dict[str, Any]] = []
     inserted_total = 0
@@ -181,15 +173,30 @@ def reconcile_visible_html(
         draft_path.write_text(html_text, encoding="utf-8")
         html_counts = _html_section_counts(html_text)
 
+    # P1: compute every report invariant on the FINAL shipped HTML, never a
+    # pre-recovery snapshot — a recovered / must_show line legitimately changes
+    # the counts, so a stale lead_visible or divergence would misreport what was
+    # actually sent ("report says pass, HTML already different").
+    lead_visible = html_counts.get(LEAD_SECTION, 0) >= 1
+    divergences = [
+        {"section": section, "writer": int(intended or 0), "html": html_counts.get(section, 0)}
+        for section, intended in (writer_section_counts or {}).items()
+        if int(intended or 0) != html_counts.get(section, 0)
+    ]
+    # ok = the shipped issue honours the contract: lead visible, no section below
+    # its minimum, no must_show item missing — NOT "writer == html" (recovery and
+    # intentional editor trims make those differ on purpose).
+    contract_ok = lead_visible and not still_short and not must_show_missing
+
     return {
         "schema_version": 1,
         "enabled": True,
         "html_section_counts": html_counts,
         "lead_visible": lead_visible,
         "control_assertion": {
-            "ok": not divergences,
+            "ok": contract_ok,
             "writer_vs_html_divergent_sections": divergences,
-            "note": "Counts must be measured on the shipped HTML, not writer_report (RC1).",
+            "note": "ok = lead visible + minimums met + must_show present, measured on the shipped HTML.",
         },
         "recovered": recovered,
         "inserted_total": inserted_total,

@@ -90,6 +90,22 @@ class VisibleContractTest(unittest.TestCase):
         self.assertEqual(report["must_show_recovered"], 1)
         self.assertIn("Обязательная к показу", self.draft.read_text(encoding="utf-8"))
 
+    def test_report_invariants_recomputed_on_final_html(self):
+        # P1 reviewer repro: writer said Свежие=6 and the HTML started at 6 (no
+        # divergence), then a must_show recovery inserts a 7th line. The report
+        # must reflect the FINAL HTML, not the pre-recovery snapshot.
+        self.draft.write_text(_draft(6, lead=True), encoding="utf-8")
+        must = {
+            "validated": True, "publish_plan_must_show": True, "primary_block": "last_24h",
+            "source_url": "https://must/x", "source_label": "MEN",
+            "draft_line": '• Обязательная новость дня. <a href="https://must/x">MEN</a>',
+        }
+        report = rr.reconcile_visible_html(self.draft, candidates=[must], writer_section_counts={"Свежие новости": 6})
+        self.assertEqual(report["html_section_counts"]["Свежие новости"], 7)
+        diverged = {d["section"]: d["html"] for d in report["control_assertion"]["writer_vs_html_divergent_sections"]}
+        self.assertEqual(diverged.get("Свежие новости"), 7)  # recomputed, not stale 6
+        self.assertTrue(report["lead_visible"])  # recomputed on final HTML
+
     def test_recovery_is_bounded_by_cap(self):
         self.draft.write_text(_draft(0), encoding="utf-8")
         report = rr.reconcile_visible_html(
