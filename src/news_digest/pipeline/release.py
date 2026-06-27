@@ -3689,6 +3689,41 @@ def build_release(project_root: Path) -> ReleaseResult:
     except Exception as exc:  # noqa: BLE001
         logger.warning("speed report snapshot failed: %s", exc)
 
+    # S4: visible-HTML contract. Reconcile the shipped draft against the
+    # per-section minimums + lead contract and run bounded recovery BEFORE
+    # promotion (owner refinement #3: validate the draft, not the already-
+    # promoted outgoing). Guarded — a reconciler error must never abort the
+    # issue (never-block); the issue still ships.
+    visible_contract: dict[str, object] = {"enabled": False}
+    try:
+        from news_digest.pipeline.release_reconcile import reconcile_visible_html  # noqa: PLC0415
+
+        visible_contract = reconcile_visible_html(
+            draft_path,
+            [c for c in (candidates_report.get("candidates") or []) if isinstance(c, dict)],
+            (writer_report or {}).get("section_counts") or {},
+        )
+        write_json(state_dir / "visible_contract_report.json", visible_contract)
+        if not (visible_contract.get("control_assertion") or {}).get("ok", True):
+            warnings.append(
+                "Visible contract: writer section counts diverge from the shipped HTML "
+                "— see visible_contract_report.json (RC1)."
+            )
+        if not visible_contract.get("lead_visible", True):
+            warnings.append("Visible contract: lead block «Главная история дня» is not visible in the shipped HTML.")
+        if visible_contract.get("inserted_total"):
+            warnings.append(
+                f"Visible contract: recovered {visible_contract['inserted_total']} line(s) into thin section(s) "
+                "from the recoverable reserve before promotion."
+            )
+        for short in visible_contract.get("still_under_minimum") or []:
+            warnings.append(
+                f"Visible contract: «{short['section']}» shipped {short['actual']}/{short['minimum']} "
+                f"— {short['reason']} (honest shortfall, issue still ships)."
+            )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("visible-HTML reconciler failed (issue still ships): %s", exc)
+
     ok = not errors
     if ok:
         shutil.copyfile(draft_path, output_path)

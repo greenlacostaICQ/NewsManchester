@@ -187,12 +187,18 @@ def _product_completeness_context(project_root: Path, digest_lines: list[dict[st
     state_dir = project_root / "data" / "state"
     writer_report = read_json(state_dir / "writer_report.json", {})
     release_report = read_json(state_dir / "release_report.json", {})
-    section_counts = dict(writer_report.get("section_counts") or {})
+    # S4 / RC1: measure the SHIPPED HTML (digest_lines), not writer intent. The
+    # editor mutates the draft after the writer reports its counts (drops the
+    # lead via cross-section dedup, trims outside-GM), so writer_report.section_counts
+    # describes a digest that was never sent. Fall back to the writer counts only
+    # if the HTML lines are unavailable.
+    section_counts: dict[str, int] = {}
+    for line in digest_lines:
+        section = str(line.get("section") or "")
+        if section:
+            section_counts[section] = section_counts.get(section, 0) + 1
     if not section_counts:
-        for line in digest_lines:
-            section = str(line.get("section") or "")
-            if section:
-                section_counts[section] = section_counts.get(section, 0) + 1
+        section_counts = dict(writer_report.get("section_counts") or {})
     ticket_sections = {"Билеты / Ticket Radar", "Крупные концерты вне GM", "Русскоязычные концерты и стендап UK"}
     ticket_items = sum(int(section_counts.get(section) or 0) for section in ticket_sections)
     core_sections = {
