@@ -35,7 +35,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Callable
 
-from news_digest.pipeline.common import PRIMARY_BLOCKS, now_london, pipeline_run_id_from, read_json, today_london, write_json
+from news_digest.pipeline.common import PRIMARY_BLOCKS, now_london, pipeline_run_id_from, read_json, recoverable_reserve_eligible, today_london, write_json
 from news_digest.pipeline.model_routing import (
     DEEPSEEK_BASE_URL,
     DEEPSEEK_MODEL,
@@ -1114,6 +1114,7 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
             candidate["rewrite_shortlist_reason"] = f"Outside pre-rewrite shortlist for {block or 'unknown'}."
             verdict = "needs_enrichment" if _needs_selection_enrichment(candidate) else "reserve"
             _set_digest_selection_verdict(candidate, verdict, candidate["rewrite_shortlist_reason"])
+            candidate["recoverable_reserve"] = recoverable_reserve_eligible(candidate)  # S1: capacity-cut, still pullable
             held.append(
                 {
                     "fingerprint": candidate.get("fingerprint") or "",
@@ -1179,6 +1180,7 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
             )
             verdict = "needs_enrichment" if _needs_selection_enrichment(candidate) else "reserve"
             _set_digest_selection_verdict(candidate, verdict, candidate["rewrite_shortlist_reason"])
+            candidate["recoverable_reserve"] = recoverable_reserve_eligible(candidate)  # S1: capacity-cut, still pullable
             selected_ids.discard(id(candidate))
             board_overflow += 1
             held.append(
@@ -1268,6 +1270,7 @@ def _apply_post_board_translation_cut(candidates: list[dict], board: list[dict])
         )
         verdict = "needs_enrichment" if _needs_selection_enrichment(candidate) else "reserve"
         _set_digest_selection_verdict(candidate, verdict, candidate["rewrite_shortlist_reason"])
+        candidate["recoverable_reserve"] = recoverable_reserve_eligible(candidate)  # S1: capacity-cut, still pullable
         held.append(
             {
                 "fingerprint": candidate.get("fingerprint") or "",

@@ -18,6 +18,7 @@ from news_digest.pipeline.common import (
     canonical_url_identity,
     extract_sections,
     is_placeholder_practical_angle,
+    is_recoverable_reserve,
     now_london,
     pipeline_run_id_from,
     read_json,
@@ -663,7 +664,7 @@ def _same_section_reserve_line(
             continue
         if PRIMARY_BLOCKS.get(str(c.get("primary_block") or "")) != section_name:
             continue
-        if not (c.get("public_reserve") and not c.get("backup_pool_only")):
+        if not is_recoverable_reserve(c):  # S1: unified recoverable pool (public_reserve ∪ capacity-cut board overflow)
             continue
         line = str(c.get("draft_line") or "").strip()
         if not line.startswith("• "):
