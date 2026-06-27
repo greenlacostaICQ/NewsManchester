@@ -195,11 +195,15 @@ def _reclassify_outside_gm_when_local_venue(candidate: dict) -> bool:
         return False
     if str(candidate.get("category") or "") != "venues_tickets":
         return False
-    if not _looks_like_local_gm_venue(candidate):
+    # Only an authoritative GM venue scope promotes an outside ticket into the
+    # GM radar. The old blob-token check matched any GM mention anywhere in the
+    # text, so a London show that named a Manchester tour date got "в GM"
+    # (W3 / #0010: Kasabian / Biffy Clyro at Finsbury Park).
+    if resolve_venue_scope(candidate)[0] != "GM":
         return False
     candidate["primary_block"] = "ticket_radar"
     existing = str(candidate.get("reason") or "").strip()
-    note = "Validator: reclassified outside_gm_tickets → ticket_radar (local GM venue detected)."
+    note = "Validator: reclassified outside_gm_tickets → ticket_radar (authoritative GM venue scope)."
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
     return True
 
@@ -214,6 +218,78 @@ _OUTSIDE_GM_PLACE_TOKENS = (
     "tottenham", "scarborough", "delamere", "halifax", "glasgow green",
     "cardiff castle", "edinburgh playhouse",
 )
+
+# ── W3 / RC: authoritative venue → scope resolver ─────────────────────────
+# A small, conservative registry. The scope is decided from the VENUE (plus
+# title/borough), never from arbitrary body text — so a London show that merely
+# mentions a Manchester tour date no longer inherits "в GM". Unknown stays
+# unknown (never silently GM).
+
+# Named non-GM venues that are NOT plain city names (so the city-token scan
+# below would miss them). Maps venue token → city to print.
+_OUTSIDE_GM_VENUE_CITY: dict[str, str] = {
+    "finsbury park": "London", "wembley": "London", "o2 arena": "London",
+    "the o2": "London", "alexandra palace": "London", "ally pally": "London",
+    "crystal palace": "London", "hyde park": "London", "brixton academy": "London",
+    "o2 academy brixton": "London", "royal albert hall": "London",
+    "victoria park": "London", "gunnersbury park": "London",
+    "utilita arena birmingham": "Birmingham", "resorts world": "Birmingham",
+    "first direct arena": "Leeds", "ovo hydro": "Glasgow", "sec": "Glasgow",
+    "principality stadium": "Cardiff", "utilita arena cardiff": "Cardiff",
+}
+# Close-but-outside GM ("nearby"): not Greater Manchester, but A-tier shows here
+# still matter to the reader. Kept separate so W2 can exempt GM/nearby A-tier.
+_NEARBY_VENUE_CITY: dict[str, str] = {
+    "liverpool": "Liverpool", "anfield": "Liverpool",
+    "m&s bank arena": "Liverpool", "liverpool philharmonic": "Liverpool",
+    "chester": "Chester", "warrington": "Warrington", "preston": "Preston",
+    "blackpool": "Blackpool", "cheshire": "Cheshire", "knutsford": "Cheshire",
+}
+
+
+def _venue_scope_haystack(candidate: dict) -> str:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    return " ".join([
+        str(event.get("venue") or ""),
+        str(candidate.get("title") or ""),
+        str(event.get("borough") or ""),
+        str(event.get("city") or candidate.get("city") or ""),
+    ]).lower()
+
+
+def _token_in(haystack: str, token: str) -> bool:
+    return re.search(rf"\b{re.escape(token)}\b", haystack) is not None
+
+
+def resolve_venue_scope(candidate: dict) -> tuple[str, str]:
+    """Return (scope, city) where scope ∈ {GM, nearby, outside, unknown}.
+
+    Priority: explicit non-GM venue → nearby city → outside city → GM venue →
+    unknown. A venue we do not recognise stays unknown, never silently GM."""
+    haystack = _venue_scope_haystack(candidate)
+    for token, city in _OUTSIDE_GM_VENUE_CITY.items():
+        if _token_in(haystack, token):
+            return "outside", city
+    for token, city in _NEARBY_VENUE_CITY.items():
+        if _token_in(haystack, token):
+            return "nearby", city
+    for token in _OUTSIDE_GM_PLACE_TOKENS:
+        if _token_in(haystack, token):
+            return "outside", token.title()
+    if any(_token_in(haystack, token) for token in _LOCAL_GM_VENUE_TOKENS):
+        return "GM", "Greater Manchester"
+    return "unknown", ""
+
+
+def _assign_venue_scope(candidate: dict) -> bool:
+    """Stamp venue_scope/venue_city on ticket candidates so routing, the
+    writer's geography wording, and the W2 cap all read one verdict."""
+    if str(candidate.get("category") or "") != "venues_tickets":
+        return False
+    scope, city = resolve_venue_scope(candidate)
+    candidate["venue_scope"] = scope
+    candidate["venue_city"] = city
+    return False
 
 _TRANSPORT_SECTION_RE = re.compile(
     r"\b(?:metrolink|tram|bus(?:es)?|bee\s+network|national\s+rail|"
@@ -285,17 +361,14 @@ def _reclassify_gm_when_outside_venue(candidate: dict) -> bool:
         return False
     if str(candidate.get("category") or "") != "venues_tickets":
         return False
-    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    haystack = f"{str(event.get('venue') or '')} {str(candidate.get('title') or '')}".lower()
-    # Word-boundary match: "bury" (GM borough) must NOT match inside
-    # "salisbury", and an outside-GM city must be a whole word.
-    if not any(re.search(rf"\b{re.escape(token)}\b", haystack) for token in _OUTSIDE_GM_PLACE_TOKENS):
-        return False
-    if any(re.search(rf"\b{re.escape(token)}\b", haystack) for token in _LOCAL_GM_VENUE_TOKENS):
+    # A non-GM venue scope (outside or nearby) must never sit in the GM radar.
+    # The resolver knows named venues the old city-token list missed, e.g.
+    # "Finsbury Park" → London (W3 / #0010).
+    if resolve_venue_scope(candidate)[0] not in {"outside", "nearby"}:
         return False
     candidate["primary_block"] = "outside_gm_tickets"
     existing = str(candidate.get("reason") or "").strip()
-    note = "Validator: reclassified ticket_radar → outside_gm_tickets (non-GM venue detected)."
+    note = "Validator: reclassified ticket_radar → outside_gm_tickets (non-GM venue scope)."
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
     return True
 
@@ -2397,6 +2470,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _time_gate("cross_day_rehash", lambda: _exclude_cross_day_rehash(candidate, state_dir))
         if candidate.get("include") and manual != "force_include":
             _time_gate("road_only_transport", lambda: _exclude_road_only_transport(candidate))
+        if candidate.get("include"):
+            _time_gate("assign_venue_scope", lambda: _assign_venue_scope(candidate))
         if candidate.get("include"):
             _time_gate("reclassify_outside_gm_local_venue", lambda: _reclassify_outside_gm_when_local_venue(candidate))
         if candidate.get("include"):

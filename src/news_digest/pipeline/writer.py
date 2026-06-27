@@ -2294,7 +2294,16 @@ def _ticket_watch_reason(candidate: dict) -> str:
     tier = str(notability.get("tier") or "").upper()
     ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
     days = _ticket_days_to_event(candidate)
-    in_gm = str(candidate.get("primary_block") or "") != "outside_gm_tickets"
+    # Geography wording follows the authoritative venue scope, not just the
+    # block: an outside/nearby venue never says "в GM" even if it slipped into
+    # the GM radar (W3 / #0010). Unknown scope falls back to block routing.
+    _scope = str(candidate.get("venue_scope") or "").lower()
+    if _scope in {"outside", "nearby"}:
+        in_gm = False
+    elif _scope == "gm":
+        in_gm = True
+    else:
+        in_gm = str(candidate.get("primary_block") or "") != "outside_gm_tickets"
     lineup = re.search(r"\bline[- ]?up\s*=", blob, re.IGNORECASE) or str(notability.get("kind") or "") == "lineup_or_show"
     estate_show = re.search(r"\b(?:estate|open air|open-air|castle|palace|park)\b", blob, re.IGNORECASE)
     arena_show = _TICKET_MAJOR_VENUE_RE.search(venue) or _TICKET_MAJOR_VENUE_RE.search(summary)

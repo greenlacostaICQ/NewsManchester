@@ -2078,6 +2078,45 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         _reclassify_outside_gm_when_local_venue(candidate)
         self.assertEqual(candidate["primary_block"], "ticket_radar")
 
+    def test_venue_scope_finsbury_park_is_outside_london(self) -> None:
+        # W3 / #0010: named non-GM venue the old city-token list missed.
+        from news_digest.pipeline.candidate_validator import resolve_venue_scope
+        c = {"category": "venues_tickets", "title": "Kasabian",
+             "event": {"venue": "Finsbury Park"}}
+        self.assertEqual(resolve_venue_scope(c), ("outside", "London"))
+
+    def test_london_show_mentioning_manchester_not_promoted_to_gm(self) -> None:
+        # The core #0010 false positive: a London show whose blurb names a
+        # Manchester tour date must NOT be pulled into the GM radar.
+        from news_digest.pipeline.candidate_validator import _reclassify_outside_gm_when_local_venue
+        c = {
+            "category": "venues_tickets",
+            "primary_block": "outside_gm_tickets",
+            "title": "Biffy Clyro at Finsbury Park",
+            "summary": "UK tour also stops at Co-op Live Manchester later this year.",
+            "event": {"venue": "Finsbury Park"},
+            "source_label": "Ticketmaster UK Major Onsale",
+        }
+        _reclassify_outside_gm_when_local_venue(c)
+        self.assertEqual(c["primary_block"], "outside_gm_tickets")
+
+    def test_ticket_radar_london_venue_demoted_to_outside(self) -> None:
+        from news_digest.pipeline.candidate_validator import _reclassify_gm_when_outside_venue
+        c = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "Kasabian",
+            "event": {"venue": "Finsbury Park"},
+        }
+        self.assertTrue(_reclassify_gm_when_outside_venue(c))
+        self.assertEqual(c["primary_block"], "outside_gm_tickets")
+
+    def test_unknown_venue_stays_unknown_not_gm(self) -> None:
+        from news_digest.pipeline.candidate_validator import resolve_venue_scope
+        c = {"category": "venues_tickets", "title": "Some Band",
+             "event": {"venue": "The Roundhouse Annex"}}
+        self.assertEqual(resolve_venue_scope(c)[0], "unknown")
+
     def test_ticket_topic_key_includes_event_date_to_separate_tour_legs(self) -> None:
         # Calum Scott on 2026-05-27 vs Calum Scott on 2026-05-28 are two
         # concerts, not one cluster. Without the date suffix the second
