@@ -164,6 +164,21 @@ class SourceHealthSummaryWithYieldTest(unittest.TestCase):
         # MEN: candidate_count=10, rendered=1 ⇒ NOT zero_yield.
         self.assertEqual(result["counts"]["zero_yield"], 1)
 
+    def test_zero_yield_rows_carry_loss_stage_and_reason(self) -> None:
+        # W10: each source that contributed nothing must name WHERE it dropped
+        # out; a source that shipped carries no attribution (no noise).
+        scan = _scan_report_with(
+            {"name": "MEN", "fetched": True, "candidate_count": 10, "publishable_count": 5, "fresh_last_24h_count": 5},
+            {"name": "Quiet Source", "fetched": True, "candidate_count": 3, "publishable_count": 3, "fresh_last_24h_count": 3},
+        )
+        cands = {"candidates": [_candidate("MEN", "fp1", include=True)]}
+        result = _summarise_source_health(scan, candidates_report=cands, rendered_fingerprints={"fp1"})
+        rows = {row["name"]: row for row in result["sources"]}
+        self.assertNotIn("loss_stage", rows["MEN"])  # shipped → no attribution
+        self.assertEqual(rows["Quiet Source"]["loss_stage"], "selected")  # 3 candidates, 0 selected
+        self.assertTrue(rows["Quiet Source"]["loss_reason"])
+        self.assertEqual(result["counts"]["zero_yield_by_stage"].get("selected"), 1)
+
     def test_synthetic_with_curated_but_no_rendered_marked_partial(self) -> None:
         cands = {
             "candidates": [

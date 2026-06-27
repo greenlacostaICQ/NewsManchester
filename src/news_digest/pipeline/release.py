@@ -1155,6 +1155,31 @@ def _source_funnel_human(name: str, row: dict[str, object]) -> dict[str, object]
     }
 
 
+def _source_loss_stage(row: dict[str, object]) -> dict[str, str]:
+    """W10: attribute a zero-contribution source to the funnel stage where it
+    lost everything — fetched → parsed → selected → written → visible. The loss
+    stage is the FIRST step whose count fell to zero, so a "84 sources at 0" list
+    stops being opaque: each one names where (and why) it dropped out. Empty dict
+    for a source that reached the digest (rendered_count > 0), so only zero-yield
+    rows are annotated and healthy ones add no noise.
+    """
+    raw = int(row.get("raw_count") or row.get("candidate_count") or 0)
+    curated = int(row.get("curated_count") or row.get("accepted_count") or 0)
+    rendered = int(row.get("rendered_count") or 0)
+    if rendered > 0:
+        return {}
+    if int(row.get("failure_count") or 0) > 0 and raw == 0:
+        klass = str(row.get("failure_class") or "").strip()
+        return {"stage": "fetched", "reason": f"fetch failed ({klass})" if klass else "fetch failed"}
+    if raw == 0:
+        return {"stage": "parsed", "reason": "fetched OK but parsed 0 candidates (silent feed or parser drift)"}
+    if curated == 0:
+        reasons = row.get("reject_reasons") if isinstance(row.get("reject_reasons"), dict) else {}
+        top = max(reasons.items(), key=lambda kv: int(kv[1] or 0))[0] if reasons else "rejected by validator/curator"
+        return {"stage": "selected", "reason": f"{raw} candidate(s), 0 selected — top reason: {top}"}
+    return {"stage": "written", "reason": f"{curated} selected but 0 reached visible HTML (lost at writer/editor draft_line)"}
+
+
 def _summarise_source_health(
     scan_report: dict | None,
     candidates_report: dict | None = None,
@@ -1290,6 +1315,23 @@ def _summarise_source_health(
         else:
             no_contribution["idle_no_items"] += 1
     counts["no_contribution_breakdown"] = no_contribution
+
+    # W10: stamp the loss stage + reason onto every zero-contribution source so
+    # each "source at 0" is debuggable on its own row, and aggregate the stages.
+    zero_yield_by_stage: dict[str, int] = {}
+    for row in sources:
+        if row.get("category") == "synthetic" or row.get("trial"):
+            continue
+        if int(row.get("rendered_count") or 0) > 0:
+            continue
+        stage_info = _source_loss_stage(row)
+        if not stage_info:
+            continue
+        row["loss_stage"] = stage_info["stage"]
+        row["loss_reason"] = stage_info["reason"]
+        zero_yield_by_stage[stage_info["stage"]] = zero_yield_by_stage.get(stage_info["stage"], 0) + 1
+    counts["zero_yield_by_stage"] = zero_yield_by_stage
+
     return {"counts": counts, "sources": sources}
 
 
