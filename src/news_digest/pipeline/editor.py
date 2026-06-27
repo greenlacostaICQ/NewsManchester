@@ -134,6 +134,13 @@ _BAD_RUSSIAN_DETECTORS: tuple[re.Pattern[str], ...] = (
     # Latin word glued to a Russian ending ("Stockportа") — belt-and-braces
     # for any hybrid the auto-fix above did not normalise.
     re.compile(r"[A-Za-z]{3,}[а-яё]"),
+    # S3: a Cyrillic run glued to Latin ("линияStreet") — the mirror of above.
+    re.compile(r"[а-яё]{2,}[A-Za-z]"),
+    # S3: a half-translated English title — an English article/preposition
+    # immediately followed by a Cyrillic word ("On The линия"). Kept brands stay
+    # fully Latin ("The Mill", "The Lowry") so they are not falsely flagged; only
+    # the broken mix where one word of the title was translated trips this.
+    re.compile(r"\b(?:on|the|in|of|at|for)\s+[а-яё]", re.IGNORECASE),
 )
 
 # Crime/court/sensitive lines always go through the targeted model pass even
