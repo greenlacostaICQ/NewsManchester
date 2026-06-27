@@ -252,6 +252,14 @@ class TransportPassengerImpactContractTest(unittest.TestCase):
         self.assertFalse(self._reroute(c))
         self.assertEqual(c["primary_block"], "transport")
 
+    def test_ambiguous_transport_item_goes_to_city_radar(self) -> None:
+        # No disruption / infra / incident keyword → unproven as today's
+        # transport, so it must not dilute the block.
+        c = self._t("TfGM unveils new Bee Network ticketing app")
+        self.assertTrue(self._reroute(c))
+        self.assertEqual(c["primary_block"], "city_watch")
+        self.assertEqual(c["transport_contract"]["reason"], "no_proven_passenger_impact")
+
     def test_degraded_llm_shrink_holds_lower_priority_soft_section_items(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -2120,6 +2128,20 @@ class TelegramBacklog20260527Test(unittest.TestCase):
         c = {"category": "venues_tickets", "title": "Kasabian",
              "event": {"venue": "Finsbury Park"}}
         self.assertEqual(resolve_venue_scope(c), ("outside", "London"))
+
+    def test_venue_scope_gm_venue_beats_city_in_artist_name(self) -> None:
+        # "London Grammar" is an artist name; the structured AO Arena venue is
+        # the authoritative geography signal.
+        from news_digest.pipeline.candidate_validator import resolve_venue_scope
+        c = {"category": "venues_tickets", "title": "London Grammar at AO Arena",
+             "event": {"venue": "AO Arena"}}
+        self.assertEqual(resolve_venue_scope(c), ("GM", "Greater Manchester"))
+
+    def test_venue_scope_artist_city_name_without_venue_stays_unknown(self) -> None:
+        from news_digest.pipeline.candidate_validator import resolve_venue_scope
+        c = {"category": "venues_tickets", "title": "London Grammar tickets",
+             "event": {}}
+        self.assertEqual(resolve_venue_scope(c), ("unknown", ""))
 
     def test_london_show_mentioning_manchester_not_promoted_to_gm(self) -> None:
         # The core #0010 false positive: a London show whose blurb names a

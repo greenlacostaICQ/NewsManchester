@@ -261,23 +261,60 @@ def _token_in(haystack: str, token: str) -> bool:
     return re.search(rf"\b{re.escape(token)}\b", haystack) is not None
 
 
-def resolve_venue_scope(candidate: dict) -> tuple[str, str]:
-    """Return (scope, city) where scope ∈ {GM, nearby, outside, unknown}.
-
-    Priority: explicit non-GM venue → nearby city → outside city → GM venue →
-    unknown. A venue we do not recognise stays unknown, never silently GM."""
-    haystack = _venue_scope_haystack(candidate)
+def _resolve_named_venue_scope(text: str) -> tuple[str, str]:
+    haystack = str(text or "").lower()
+    if not haystack:
+        return "", ""
     for token, city in _OUTSIDE_GM_VENUE_CITY.items():
         if _token_in(haystack, token):
             return "outside", city
     for token, city in _NEARBY_VENUE_CITY.items():
         if _token_in(haystack, token):
             return "nearby", city
-    for token in _OUTSIDE_GM_PLACE_TOKENS:
-        if _token_in(haystack, token):
-            return "outside", token.title()
     if any(_token_in(haystack, token) for token in _LOCAL_GM_VENUE_TOKENS):
         return "GM", "Greater Manchester"
+    return "", ""
+
+
+def _title_venue_fragment(title: str) -> str:
+    match = re.search(r"(?:\bat\b|@)\s+(.+)$", str(title or ""), flags=re.I)
+    if not match:
+        return ""
+    fragment = match.group(1)
+    fragment = re.split(r"\s+[—-]\s+|\s+\|\s+", fragment, maxsplit=1)[0]
+    return fragment.strip().lower()
+
+
+def resolve_venue_scope(candidate: dict) -> tuple[str, str]:
+    """Return (scope, city) where scope ∈ {GM, nearby, outside, unknown}.
+
+    Priority: structured venue → explicit city/borough → venue fragment from
+    title → unknown. The full title is not geography: artist names such as
+    "London Grammar" must not override a known GM venue."""
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    venue_text = str(event.get("venue") or "").lower()
+    scope, city = _resolve_named_venue_scope(venue_text)
+    if scope:
+        return scope, city
+
+    explicit_location = " ".join([
+        str(event.get("borough") or ""),
+        str(event.get("city") or candidate.get("city") or ""),
+    ]).lower()
+    scope, city = _resolve_named_venue_scope(explicit_location)
+    if scope:
+        return scope, city
+    for token in _OUTSIDE_GM_PLACE_TOKENS:
+        if _token_in(explicit_location, token):
+            return "outside", token.title()
+
+    title_venue = _title_venue_fragment(str(candidate.get("title") or ""))
+    scope, city = _resolve_named_venue_scope(title_venue)
+    if scope:
+        return scope, city
+    for token in _OUTSIDE_GM_PLACE_TOKENS:
+        if _token_in(title_venue, token):
+            return "outside", token.title()
     return "unknown", ""
 
 
@@ -1245,12 +1282,13 @@ _TRANSPORT_INCIDENT_RE = re.compile(
 
 
 def _reroute_non_impact_transport(candidate: dict) -> bool:
-    """Positive passenger-impact contract for the transport block.
+    """Strict positive passenger-impact contract for the transport block.
 
-    A transport item must change someone's journey today/tomorrow. Decided on
-    the headline: a disruption title is genuine transport; otherwise an
-    infrastructure/funding headline → City Radar, and an emergency-incident
-    headline near a transport node → out of the transport block.
+    A transport item stays ONLY if its headline proves a today/tomorrow journey
+    change (the comprehensive disruption vocabulary in _TRANSPORT_TITLE_IMPACT_RE).
+    Everything else is routed to City Radar: infrastructure/funding, an incident
+    merely near a transport node, AND any other ambiguous transport-tagged item
+    that does not prove a disruption — so the block is not diluted by non-events.
     """
     if not candidate.get("include"):
         return False
@@ -1261,18 +1299,23 @@ def _reroute_non_impact_transport(candidate: dict) -> bool:
         return False  # the headline IS a disruption → genuine transport, keep
     infra = bool(_TRANSPORT_INFRA_RE.search(title))
     incident = bool(_TRANSPORT_INCIDENT_RE.search(title))
-    if not infra and not incident:
-        return False  # ambiguous alert — leave for other gates
+    # Strict positive contract: the transport block is "today/tomorrow journey
+    # changes". A genuine disruption matches the comprehensive impact vocabulary
+    # above; anything that does not is transport-tagged but UNPROVEN as a
+    # disruption — route it to City Radar (it stays visible, just not as
+    # "today's transport"). Previously ambiguous items defaulted to staying and
+    # diluted the block.
+    if infra:
+        reason = "infrastructure_no_today_tomorrow_impact"
+        detail = "long-term infrastructure/funding without today/tomorrow travel impact"
+    elif incident:
+        reason = "node_incident_no_passenger_impact"
+        detail = "incident near a transport node that does not change travel"
+    else:
+        reason = "no_proven_passenger_impact"
+        detail = "no proven route/stop + today-tomorrow window + passenger action"
     candidate["primary_block"] = "city_watch"
-    candidate["transport_contract"] = {
-        "decision": "reroute_out_of_transport",
-        "reason": "infrastructure_no_today_tomorrow_impact" if infra else "node_incident_no_passenger_impact",
-    }
-    detail = (
-        "long-term infrastructure/funding without today/tomorrow travel impact"
-        if infra
-        else "incident near a transport node that does not change travel"
-    )
+    candidate["transport_contract"] = {"decision": "reroute_out_of_transport", "reason": reason}
     existing = str(candidate.get("reason") or "").strip()
     note = f"Validator: transport needs passenger impact — {detail}; moved to City Radar."
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
