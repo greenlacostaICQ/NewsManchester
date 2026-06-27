@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "run_date_london": "2026-06-26",
-  "created_at_london": "2026-06-26T08:14:14.481634+01:00",
+  "run_date_london": "2026-06-27",
+  "created_at_london": "2026-06-27T08:16:00.324677+01:00",
   "policy": "Every candidate must have selected / reserve / needs_enrichment / drop. Pending dedupe is not a valid final state.",
   "totals": {
-    "selected": 264,
-    "reserve": 441,
-    "needs_enrichment": 2,
-    "drop": 367,
+    "selected": 329,
+    "reserve": 527,
+    "needs_enrichment": 14,
+    "drop": 390,
     "pending": 0
   },
   "pending_dedupe_left": [],
@@ -21,105 +21,139 @@
       "drop": 0,
       "examples": []
     },
+    "last_24h": {
+      "heading": "Свежие новости",
+      "total": 110,
+      "selected": 7,
+      "reserve": 20,
+      "needs_enrichment": 2,
+      "drop": 81,
+      "examples": [
+        {
+          "verdict": "reserve",
+          "title": "Andy Burnham in Number 10 would give North 'fair crack of the whip'",
+          "source_label": "BBC Manchester",
+          "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Man who punched female police officers at Manchester Airport jailed",
+          "source_label": "BBC Manchester",
+          "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Men who allegedly helped rapist drug and abuse wife can be named",
+          "source_label": "BBC Manchester",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Four arrested in Wigan after man mauled by dog",
+          "source_label": "BBC Manchester",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Angry Ginge says standing up to racism led to online abuse",
+          "source_label": "BBC Manchester",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: entertainment/lifestyle item is only loosely local and has no practical GM impact."
+        },
+        {
+          "verdict": "drop",
+          "title": "Why Blossoms crashed three weddings and closed street ahead of new album",
+          "source_label": "BBC Manchester",
+          "reason": "Повтор сюжета без новых деталей: уже был 2026-06-26 как «Why Blossoms crashed three weddings and closed street ahead of new album»."
+        },
+        {
+          "verdict": "drop",
+          "title": "Andy Burnham in Number 10 would give North 'fair crack of the whip'",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Manchester Royal Infirmary cinema shows Hollywood films to patients",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        }
+      ]
+    },
     "today_focus": {
       "heading": "Что важно сегодня",
       "total": 6,
-      "selected": 4,
+      "selected": 3,
       "reserve": 0,
+      "needs_enrichment": 0,
+      "drop": 3,
+      "examples": [
+        {
+          "verdict": "drop",
+          "title": "Man who punched female police officers at Manchester Airport jailed",
+          "source_label": "BBC Manchester public safety fallback",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Four arrested in Wigan after man mauled by dog",
+          "source_label": "BBC Manchester public safety fallback",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Why Blossoms crashed three weddings and closed street ahead of new album",
+          "source_label": "BBC Manchester public safety fallback",
+          "reason": "LLM-review: Объявлена дата выхода нового альбома 2 октября. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-26 (anchor=new_phase, ttl=1d)."
+        }
+      ]
+    },
+    "transport": {
+      "heading": "Общественный транспорт сегодня",
+      "total": 12,
+      "selected": 9,
+      "reserve": 1,
       "needs_enrichment": 0,
       "drop": 2,
       "examples": [
         {
           "verdict": "drop",
-          "title": "Why Blossoms crashed three weddings and closed street ahead of new album",
-          "source_label": "BBC Manchester",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+          "title": "Heritage railway victim of 'mindless' vandalism attack",
+          "source_label": "ITV Granada Greater Manchester",
+          "reason": "Curator drop: Старая новость о вандализме без актуального влияния."
         },
         {
           "verdict": "drop",
-          "title": "'Disruptive' passenger restrained on Jet2 flight to Manchester dies",
-          "source_label": "BBC Manchester public safety fallback",
-          "reason": "LLM-review: Пассажир Callum Kerr, 35 лет, умер после инцидента на рейсе из Кипра. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-25 (anchor=local_action, ttl=3d)."
-        }
-      ]
-    },
-    "last_24h": {
-      "heading": "Свежие новости",
-      "total": 96,
-      "selected": 7,
-      "reserve": 18,
-      "needs_enrichment": 0,
-      "drop": 71,
-      "examples": [
-        {
-          "verdict": "drop",
-          "title": "'Disruptive' passenger restrained on Jet2 flight to Manchester dies",
-          "source_label": "BBC Manchester",
-          "reason": "Повтор сюжета без новых деталей: уже был 2026-06-25 как «'Disruptive' passenger restrained on Jet2 flight to Manchester dies»."
+          "title": "Amended timetables warning as Piccadilly rail disruption continues into the weekend",
+          "source_label": "ITV Granada Greater Manchester",
+          "reason": "Curator drop: Старая новость о сбоях в движении."
         },
         {
           "verdict": "reserve",
-          "title": "MP demands action over Northern Care Alliance NHS trust concerns",
-          "source_label": "BBC Manchester",
-          "reason": "Outside DeepSeek ranking board (soft max 72)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Salford Lads Club made famous by The Smiths gets listed upgrade",
-          "source_label": "BBC Manchester",
-          "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Firms' adverts disguised as parking tickets banned",
-          "source_label": "BBC Manchester",
-          "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Wigan cabbie says 'crazy' policy will 'put me out of work'",
-          "source_label": "BBC Manchester",
-          "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-        },
-        {
-          "verdict": "drop",
-          "title": "Why Blossoms crashed three weddings and closed street ahead of new album",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Lib Dems name candidate for Manchester mayor by-election",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "'Disruptive' passenger restrained on Jet2 flight to Manchester dies",
-          "source_label": "BBC Manchester Web",
-          "reason": "Повтор сюжета без новых деталей: уже был 2026-06-25 как «'Disruptive' passenger restrained on Jet2 flight to Manchester dies». LLM-review: Тот же сюжет, просто новая редакция без новых фактов. LLM-review: Тот же сюжет, просто новая редакция без новых фактов."
+          "title": "Briscoe Lane, junction of Ten Acres Lane - Road closure",
+          "source_label": "TfGM",
+          "reason": "Held as same-block backup for recovery."
         }
       ]
     },
     "city_watch": {
       "heading": "Городской радар",
-      "total": 78,
-      "selected": 4,
-      "reserve": 26,
-      "needs_enrichment": 1,
-      "drop": 47,
+      "total": 72,
+      "selected": 6,
+      "reserve": 21,
+      "needs_enrichment": 3,
+      "drop": 42,
       "examples": [
+        {
+          "verdict": "drop",
+          "title": "Announced candidates for Greater Manchester mayoral election",
+          "source_label": "BBC Manchester",
+          "reason": "Semantic intra-batch duplicate (cos=0.898); kept more complete fresh-news facts «BBC Manchester»."
+        },
         {
           "verdict": "drop",
           "title": "What is the Greater Manchester mayor and what do they do?",
           "source_label": "BBC Manchester",
           "reason": "Без новых фактов: уже был 2026-06-20 как «What is the Greater Manchester mayor and what do they do?»."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Greater Manchester's mayoral election explained",
-          "source_label": "BBC Manchester",
-          "reason": "Held as same-block backup for recovery."
         },
         {
           "verdict": "reserve",
@@ -129,15 +163,15 @@
         },
         {
           "verdict": "drop",
-          "title": "Grooming gang inquiry to focus on Oldham, Bradford and London",
+          "title": "'Disruptive' passenger restrained on Jet2 flight to Manchester dies",
           "source_label": "BBC Manchester",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=service_accountability, anchor=none, tier=filler)."
+          "reason": "Повтор сюжета без новых деталей: уже был 2026-06-25 как «'Disruptive' passenger restrained on Jet2 flight to Manchester dies»."
         },
         {
           "verdict": "drop",
-          "title": "Labour announces Manchester council boss as metro mayor candidate",
+          "title": "MP demands action over Northern Care Alliance NHS trust concerns",
           "source_label": "BBC Manchester",
-          "reason": "Без новых фактов: уже был 2026-06-24 как «Labour announces Manchester council boss as metro mayor candidate»."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=service_accountability, anchor=none, tier=filler)."
         },
         {
           "verdict": "drop",
@@ -155,25 +189,16 @@
           "verdict": "drop",
           "title": "Greater Manchester's mayoral election explained",
           "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         }
       ]
     },
-    "transport": {
-      "heading": "Общественный транспорт сегодня",
-      "total": 8,
-      "selected": 8,
-      "reserve": 0,
-      "needs_enrichment": 0,
-      "drop": 0,
-      "examples": []
-    },
     "next_7_days": {
       "heading": "Что важно в ближайшие 7 дней",
-      "total": 70,
+      "total": 75,
       "selected": 4,
-      "reserve": 10,
-      "needs_enrichment": 0,
+      "reserve": 12,
+      "needs_enrichment": 3,
       "drop": 56,
       "examples": [
         {
@@ -187,6 +212,24 @@
           "title": "Let Wildflowers Bloom / Que Esclatin Les Flors — A cross-cultural poetic collaboration celebrating the shared voices of Manchester and Barcelona, by Nóra Blascsók & Esteve Plantada.",
           "source_label": "HOME",
           "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: structured event date 2026-06-10 is in the past."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Manchester Open 2026 — The biggest celebration of Greater Manchester's creative talent.",
+          "source_label": "HOME",
+          "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Toy Story 5 (PG) — Woody and friends are back, and this time around it's Toy meets Tech.",
+          "source_label": "HOME",
+          "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Disclosure Day (12A) — Emily Blunt and Josh O'Connor star in Spielberg's latest exploration of extraterrestrial life.",
+          "source_label": "HOME",
+          "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
         },
         {
           "verdict": "drop",
@@ -205,34 +248,16 @@
           "title": "Manchester Sacred Harp | Whitworth Art Gallery",
           "source_label": "Whitworth",
           "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event quality gate failed (date)."
-        },
-        {
-          "verdict": "drop",
-          "title": "Life Drawing Workshops | Whitworth Art Gallery",
-          "source_label": "Whitworth",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
-        },
-        {
-          "verdict": "drop",
-          "title": "Marina Abramović: Balkan Erotic Epic | Aviva Studios",
-          "source_label": "Factory International",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
-        },
-        {
-          "verdict": "drop",
-          "title": "Huang Ruo: City of Floating Sounds",
-          "source_label": "Factory International",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: structured event date 2024-06-08 is in the past."
         }
       ]
     },
     "weekend_activities": {
       "heading": "Выходные в GM",
-      "total": 117,
+      "total": 134,
       "selected": 10,
       "reserve": 14,
       "needs_enrichment": 0,
-      "drop": 93,
+      "drop": 110,
       "examples": [
         {
           "verdict": "drop",
@@ -286,28 +311,16 @@
     },
     "ticket_radar": {
       "heading": "Билеты / Ticket Radar",
-      "total": 56,
-      "selected": 34,
-      "reserve": 14,
+      "total": 60,
+      "selected": 41,
+      "reserve": 11,
       "needs_enrichment": 0,
       "drop": 8,
       "examples": [
         {
           "verdict": "reserve",
-          "title": "Kings Of Leon Special Guest Snuts Sat 4 Jul 2026 Multiple times",
-          "source_label": "Co-op Live",
-          "reason": "Held as same-block backup for recovery."
-        },
-        {
-          "verdict": "reserve",
           "title": "Def Leppard Special Guest Extreme Mon 6 Jul 2026 Multiple times",
           "source_label": "Co-op Live",
-          "reason": "Held as same-block backup for recovery."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Beverley Knight - Born To Perform Tour — event 2026-06-26 — public sale 2025-10-10 10:00",
-          "source_label": "Ticketmaster Manchester Upcoming",
           "reason": "Held as same-block backup for recovery."
         },
         {
@@ -339,14 +352,26 @@
           "title": "Antarctic Monkeys — event 2026-07-04 — public sale 2025-07-25 10:00",
           "source_label": "Ticketmaster Manchester Upcoming",
           "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Def Leppard — event 2026-07-06 — public sale 2025-09-05 10:00",
+          "source_label": "Ticketmaster Manchester Upcoming",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Phantogram — event 2026-07-06 — public sale 2026-02-06 09:00",
+          "source_label": "Ticketmaster Manchester Upcoming",
+          "reason": "Held as same-block backup for recovery."
         }
       ]
     },
     "future_announcements": {
       "heading": "Дальние анонсы",
-      "total": 90,
-      "selected": 84,
-      "reserve": 5,
+      "total": 93,
+      "selected": 86,
+      "reserve": 6,
       "needs_enrichment": 0,
       "drop": 1,
       "examples": [
@@ -372,27 +397,33 @@
           "verdict": "drop",
           "title": "The Science and Industry Museum unveils a spectacular summer of free space-themed fun",
           "source_label": "Manchester Wire",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Demoted from weekend_activities to future_announcements: earliest date 2026-07-18 is 22 days out. | Validator: event-like candidate has no concrete upcoming date."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Demoted from weekend_activities to future_announcements: earliest date 2026-07-18 is 21 days out. | Validator: event quality gate failed (date)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Stand-up workshop (weekly monday sessions)",
+          "source_label": "Skiddle Manchester Comedy",
+          "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
         },
         {
           "verdict": "reserve",
           "title": "Oil Pastel Art Retreat",
           "source_label": "Stockport Events",
-          "reason": "Outside DeepSeek ranking board (soft max 72)."
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
         },
         {
           "verdict": "reserve",
           "title": "An Evening with Oyinkan Braithwaite",
           "source_label": "Stockport Events",
-          "reason": "Outside DeepSeek ranking board (soft max 72)."
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
         }
       ]
     },
     "outside_gm_tickets": {
       "heading": "Крупные концерты вне GM",
-      "total": 429,
-      "selected": 96,
-      "reserve": 333,
+      "total": 565,
+      "selected": 143,
+      "reserve": 422,
       "needs_enrichment": 0,
       "drop": 0,
       "examples": [
@@ -450,16 +481,10 @@
       "heading": "Русскоязычные концерты и стендап UK",
       "total": 20,
       "selected": 3,
-      "reserve": 7,
+      "reserve": 4,
       "needs_enrichment": 0,
-      "drop": 10,
+      "drop": 13,
       "examples": [
-        {
-          "verdict": "reserve",
-          "title": "LEGENDS of the 90s LIVE in London",
-          "source_label": "EventFirst Diaspora",
-          "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-        },
         {
           "verdict": "drop",
           "title": "Українська вечірка на Темзi (Summer Boat Party)",
@@ -471,6 +496,12 @@
           "title": "Спектакль \"Скамейка\"",
           "source_label": "EventFirst Diaspora",
           "reason": "Без новых фактов: уже был 2026-06-04 как «Спектакль \"Скамейка\"»."
+        },
+        {
+          "verdict": "reserve",
+          "title": "ОТКРЫТЫЙ МИКРОФОН | 27 ИЮНЯ | UK STAND-UP CLUB",
+          "source_label": "UK Stand-Up Club Eventbrite",
+          "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
         },
         {
           "verdict": "reserve",
@@ -488,19 +519,19 @@
           "verdict": "drop",
           "title": "Афиша Лондон",
           "source_label": "Afisha London",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event quality gate failed (date)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Афиша Лондон",
-          "source_label": "Afisha London",
-          "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+          "reason": "Повтор сюжета без новых деталей: уже был 2026-06-26 как «Афиша Лондон». LLM-review: Тот же сюжет, просто новый URL."
         },
         {
           "verdict": "drop",
           "title": "Афиша Лондон",
           "source_label": "Afisha London",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
+          "reason": "Повтор сюжета без новых деталей: уже был 2026-06-26 как «Афиша Лондон». LLM-review: Тот же сюжет, просто новая редакция без новых фактов."
+        },
+        {
+          "verdict": "drop",
+          "title": "Афиша Лондон",
+          "source_label": "Afisha London",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Russian block classifier: opera/ballet/classical item has no Russian-language or diaspora signal."
         }
       ]
     },
@@ -508,9 +539,9 @@
       "heading": "Еда, открытия и рынки",
       "total": 13,
       "selected": 2,
-      "reserve": 1,
+      "reserve": 0,
       "needs_enrichment": 0,
-      "drop": 10,
+      "drop": 11,
       "examples": [
         {
           "verdict": "drop",
@@ -522,13 +553,19 @@
           "verdict": "drop",
           "title": "OSMA set to return with new restaurant and grocery in the city centre",
           "source_label": "Manchester's Finest",
-          "reason": "LLM-review: OSMA возвращается в новом месте в центре Манчестера. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-25 (anchor=new_phase, ttl=3d)."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-25 (anchor=new_phase, ttl=3d)."
         },
         {
           "verdict": "drop",
           "title": "The Manchester charity feeding thousands with restaurant meals",
           "source_label": "Manchester's Finest",
           "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=day_out_guide, anchor=new_phase, tier=reject)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Manchester-born pizzeria named one of the world's best",
+          "source_label": "The Manc Eats",
+          "reason": "LLM-review: Forbici признана одной из лучших пиццерий мира на Best Pizza Awards 2026. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-26 (anchor=new_phase, ttl=3d)."
         },
         {
           "verdict": "drop",
@@ -546,30 +583,30 @@
           "verdict": "drop",
           "title": "12 new openings to still look forward to this year in Greater Manchester",
           "source_label": "The Manc Eats",
-          "reason": "Без новых фактов: уже был 2026-06-25 как «12 new openings to still look forward to this year in Greater Manchester». LLM-review: Тот же список новых открытий без новых фактов."
-        },
-        {
-          "verdict": "reserve",
-          "title": "A new restaurant serving seafood boils is opening at Printworks in Manchester",
-          "source_label": "The Manc Eats",
-          "reason": "Held as same-block backup for recovery."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-25 (anchor=new_phase, ttl=3d)."
         },
         {
           "verdict": "drop",
           "title": "The SK Lowdown",
           "source_label": "SK Lowdown Markets",
-          "reason": "LLM-review: Указаны новые даты проведения рынка: 11 июля, 8 августа и т.д. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-25 (anchor=new_phase, ttl=3d)."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-25 (anchor=new_phase, ttl=3d)."
         }
       ]
     },
     "tech_business": {
       "heading": "IT и бизнес",
-      "total": 16,
+      "total": 21,
       "selected": 4,
-      "reserve": 2,
+      "reserve": 3,
       "needs_enrichment": 0,
-      "drop": 10,
+      "drop": 14,
       "examples": [
+        {
+          "verdict": "drop",
+          "title": "MD Comment: London Tech Week and the 10,000 policy announcements | Manchester Digital",
+          "source_label": "Manchester Digital",
+          "reason": "LLM-review: Опубликованы планы по внедрению ИИ 8 июня на AI Adoption Summit. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-26 (anchor=new_phase, ttl=1d)."
+        },
         {
           "verdict": "drop",
           "title": "Tech Leader Talks - Build, Buy or Rebuild at Scale | Manchester Digital",
@@ -604,29 +641,23 @@
           "verdict": "drop",
           "title": "Prolific North",
           "source_label": "Prolific North Manchester",
-          "reason": "Повтор сюжета без новых деталей: уже был 2026-06-24 как «Prolific North». LLM-review: Тот же сюжет, просто новая публикация о документальном фильме."
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
           "verdict": "drop",
-          "title": "Manchester agency invests in entirely in-house sovereign AI platform",
+          "title": "Prolific North",
           "source_label": "Prolific North Manchester",
-          "reason": "Без новых фактов: уже был 2026-06-25 как «Manchester agency invests in entirely in-house sovereign AI platform». LLM-review: Тот же сюжет, просто новая публикация о платформе AI."
-        },
-        {
-          "verdict": "reserve",
-          "title": "THG predicts best cash flow since 2021 as Lookfantastic bags #1 TikTok Shop slot",
-          "source_label": "Prolific North Manchester",
-          "reason": "Outside DeepSeek ranking board (soft max 72)."
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         }
       ]
     },
     "professional_events": {
       "heading": "Бесплатные business/tech события для тебя",
-      "total": 41,
-      "selected": 0,
-      "reserve": 1,
-      "needs_enrichment": 1,
-      "drop": 39,
+      "total": 42,
+      "selected": 6,
+      "reserve": 6,
+      "needs_enrichment": 6,
+      "drop": 24,
       "examples": [
         {
           "verdict": "drop",
@@ -638,77 +669,83 @@
           "verdict": "drop",
           "title": "A Manifesto for the Northern Tech Economy",
           "source_label": "Manchester Digital Events",
-          "reason": "LLM-review: Запуск манифеста перед выборами мэра 2 мая. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-25 (anchor=new_phase, ttl=1d)."
+          "reason": "Без новых фактов: уже был 2026-06-16 как «A Manifesto for the Northern Tech Economy». LLM-review: Тот же сюжет, просто новый URL и редакция."
         },
         {
-          "verdict": "drop",
-          "title": "MD Future 26 | Manchester Digital",
-          "source_label": "Manchester Digital Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional event match: major_conference_or_expo / unknown / score 100."
-        },
-        {
-          "verdict": "drop",
-          "title": "The Masterminders 2026 | Manchester Digital",
-          "source_label": "Manchester Digital Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional event match: major_conference_or_expo / unknown / score 87."
-        },
-        {
-          "verdict": "drop",
+          "verdict": "reserve",
           "title": "Conversations on Responsible Technology in Practice | Manchester Digital",
           "source_label": "Manchester Digital Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional event match: reject / unknown / score 4."
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
         },
         {
           "verdict": "drop",
           "title": "People, Performance & Private Equity - SF Partners & BGF | Manchester Digital",
           "source_label": "Manchester Digital Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional event match: reject / unknown / score 39."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
         },
         {
           "verdict": "drop",
-          "title": "Centre for Digital Trust and Society Forum 2026 | Manchester Digital",
+          "title": "You Know Who Digital secures three-year marketing contract with Grosvenor House Group | Manchester Digital",
           "source_label": "Manchester Digital Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional event match: reject / unknown / score 39."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
         },
         {
           "verdict": "drop",
-          "title": "Spotlight on Ella Wicks at AmafestUK 2026 - Amazon Sellers Conference | Manchester Digital",
-          "source_label": "Manchester Digital Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional event match: reject / unknown / score 27."
+          "title": "Business Support | GM Business Growth Hub",
+          "source_label": "GM Business Growth Hub Events",
+          "reason": "Повтор сюжета без новых деталей: уже был 2026-06-25 как «GM Business Growth Hub | FREE BUSINESS ADVICE @ Stockport Business Support Hub 26/06/2026». LLM-review: Тот же сюжет, просто новый URL и редакция."
+        },
+        {
+          "verdict": "drop",
+          "title": "Fully Funded Business Services and Support | GM BGH",
+          "source_label": "GM Business Growth Hub Events",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
+        },
+        {
+          "verdict": "drop",
+          "title": "GM Business Growth Hub Sectors Sectors",
+          "source_label": "GM Business Growth Hub Events",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
         }
       ]
     },
     "football": {
       "heading": "Футбол",
-      "total": 33,
-      "selected": 3,
-      "reserve": 10,
+      "total": 36,
+      "selected": 4,
+      "reserve": 7,
       "needs_enrichment": 0,
-      "drop": 20,
+      "drop": 25,
       "examples": [
         {
+          "verdict": "reserve",
+          "title": "City in Asia: Our previous Atleti clashes",
+          "source_label": "Manchester City",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
           "verdict": "drop",
-          "title": "Tooney's trip to the World Cup",
-          "source_label": "Manchester United",
-          "reason": "Повтор сюжета без новых деталей: уже был 2026-06-21 как «City prepare for the 2026 FIFA World Cup»."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Confirmed: When pre-season training begins",
-          "source_label": "Manchester United",
-          "reason": "Outside DeepSeek ranking board (soft max 72)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Cunha receives Ronaldo recognition",
-          "source_label": "Manchester United",
-          "reason": "Outside pre-rewrite shortlist for football."
-        },
-        {
-          "verdict": "reserve",
-          "title": "City 1-0 Inter: Official short film",
+          "title": "City in Asia: Our previous Atleti clashes",
           "source_label": "Manchester City Men",
-          "reason": "Outside pre-rewrite shortlist for football."
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "reserve",
+          "title": "City in Asia: All the key dates you need this summer",
+          "source_label": "Manchester City Men",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Man Utd transfers: Keeper Andre Onana close to Trabzonspor loan return",
+          "source_label": "BBC Sport Manchester United",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Elliot Anderson: Manchester City agree club record deal with Nottingham Forest for England midfielder",
+          "source_label": "BBC Sport Manchester City",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
           "verdict": "drop",
@@ -718,19 +755,13 @@
         },
         {
           "verdict": "reserve",
-          "title": "Man United dealt fresh blow as Mason Greenwood 'reaches transfer agreement'",
+          "title": "Man United transfer news LIVE: World Cup injury impact, Mateus Fernandes, £47m star agrees deal",
           "source_label": "MEN Manchester United",
-          "reason": "Outside pre-rewrite shortlist for football."
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
         },
         {
           "verdict": "drop",
-          "title": "Man United transfer news LIVE: £47m star agrees deal, Mateus Fernandes latest, Dortmund twist",
-          "source_label": "MEN Manchester United",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Vincent Kompany thinks £43m Man United target making waves at World Cup is a 'top talent'",
+          "title": "Man United latest: Midfield target's asking price set as Bruno Fernandes makes quit decision",
           "source_label": "MEN Manchester United",
           "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         }
