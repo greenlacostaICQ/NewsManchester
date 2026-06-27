@@ -625,6 +625,91 @@ def _exclude_non_diaspora_classical_from_russian_events(candidate: dict) -> bool
     return True
 
 
+# ── W5 / RC: Russian-events positive-evidence classifier ──────────────────
+# The block requires PROOF of Russian/Ukrainian-language or diaspora relevance,
+# not just an Afisha/Kontramarka source label. Strong signals (real evidence):
+# Cyrillic in the event text itself, or an explicit "in Russian / на русском"
+# phrase. The source label / promoter is only a weak signal — never proof alone.
+
+_RU_UA_CYRILLIC_RE = re.compile(r"[А-Яа-яЁёЄєІіЇїҐґ]")
+_RU_UA_LANGUAGE_PHRASE_RE = re.compile(
+    r"\b(?:russian[-\s]?language|russian[-\s]?speaking|in\s+russian|по-русски|"
+    r"на\s+русском|русскоязыч|русский\s+стендап|стендап\s+на\s+русском|"
+    r"ukrainian[-\s]?language|ukrainian[-\s]?speaking|in\s+ukrainian|"
+    r"українськ|на\s+українській)\b",
+    re.IGNORECASE,
+)
+# Known diaspora promoters/sources — a WEAK signal (presence raises interest,
+# but cannot by itself put a candidate in the Russian block).
+_DIASPORA_PROMOTER_RE = re.compile(
+    r"\b(?:afisha\s+london|афиша\s+лондон|kontramarka|контрамарка|eventfirst|"
+    r"uk\s+stand[-\s]?up|mticket|russian\s+concerts?|diaspora|диаспор)\b",
+    re.IGNORECASE,
+)
+
+
+def _strip_source_brand(text: str, source_label: str) -> str:
+    """Remove the source brand (Latin and known Cyrillic forms) so a repeated
+    "Афиша Лондон" header is not mistaken for Russian event content."""
+    cleaned = text
+    if source_label:
+        cleaned = re.sub(re.escape(source_label), " ", cleaned, flags=re.IGNORECASE)
+    if "afisha" in source_label.lower() or "афиша" in source_label.lower():
+        cleaned = re.sub(r"афиша\s+лондон|афиша", " ", cleaned, flags=re.IGNORECASE)
+    return cleaned
+
+
+def classify_russian_evidence(candidate: dict) -> dict:
+    """Store positive evidence (or its absence) for the Russian block.
+
+    Returns and stores a dict with strong/weak signals so a visible Russian
+    item always carries its evidence (acceptance: every visible russian_events
+    item shows why it qualifies)."""
+    source_label = str(candidate.get("source_label") or "")
+    content = _strip_source_brand(
+        " \n ".join(str(candidate.get(f) or "") for f in ("title", "summary", "lead", "evidence_text")),
+        source_label,
+    )
+    strong: list[str] = []
+    if _RU_UA_CYRILLIC_RE.search(content):
+        strong.append("cyrillic_event_text")
+    if _RU_UA_LANGUAGE_PHRASE_RE.search(content):
+        strong.append("russian_or_ukrainian_language_phrase")
+    weak: list[str] = []
+    if _DIASPORA_PROMOTER_RE.search(source_label) or _DIASPORA_PROMOTER_RE.search(content):
+        weak.append("diaspora_promoter_source")
+    if re.search(r"/(?:ru|uk|ua)(?:/|$)|lang=ru|/russian", str(candidate.get("source_url") or ""), re.IGNORECASE):
+        weak.append("ru_ua_page_url")
+    return {
+        "has_evidence": bool(strong),
+        "strong_signals": strong,
+        "weak_signals": weak,
+        "source_label_only": bool(weak) and not strong,
+    }
+
+
+def _require_russian_positive_evidence(candidate: dict) -> bool:
+    """Drop a Russian-block candidate that has no positive evidence — a source
+    label alone (Afisha London / Kontramarka) is not proof (W5 / RC)."""
+    if not candidate.get("include"):
+        return False
+    category = str(candidate.get("category") or "")
+    block = str(candidate.get("primary_block") or "")
+    if category not in {"russian_speaking_events", "diaspora_events"} and block != "russian_events":
+        return False
+    evidence = classify_russian_evidence(candidate)
+    candidate["russian_evidence"] = evidence
+    if evidence["has_evidence"]:
+        return False  # keep — evidence is now stored on the candidate
+    candidate["include"] = False
+    candidate["reason"] = (
+        str(candidate.get("reason") or "").rstrip()
+        + " | Russian block: no positive Russian/Ukrainian-language or diaspora evidence; "
+        "source label alone is not proof."
+    ).strip()
+    return True
+
+
 _IMPLICIT_WEEKEND_URL_PATTERNS = (
     "this-weekend", "this_weekend", "weekend-in-",
     "things-to-do-this-week", "weekend-events",
@@ -2525,6 +2610,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _time_gate("professional_event_match", lambda: apply_professional_event_match(candidate, project_root))
         if candidate.get("include"):
             _time_gate("russian_event_classifier", lambda: _exclude_non_diaspora_classical_from_russian_events(candidate))
+        if candidate.get("include"):
+            _time_gate("russian_positive_evidence", lambda: _require_russian_positive_evidence(candidate))
         _time_gate("classify_transport", lambda: classify_transport_candidate(candidate))
         _time_gate("change_phase", lambda: attach_change_phase(candidate))
         _time_gate("editorial_contract_initial", lambda: attach_editorial_contract(candidate))

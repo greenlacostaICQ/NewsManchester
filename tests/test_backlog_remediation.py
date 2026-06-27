@@ -2693,5 +2693,55 @@ class SemanticGuardTest(unittest.TestCase):
         self.assertIn("previous_reason", guard["restored_candidates"][0])
 
 
+class RussianPositiveEvidenceTest(unittest.TestCase):
+    """W5 / RC: the Russian block requires positive evidence. A source label
+    (Afisha London / Kontramarka) is not proof on its own."""
+
+    def _ru(self, title: str, summary: str = "", source: str = "Afisha London", url: str = "") -> dict:
+        return {
+            "include": True,
+            "category": "russian_speaking_events",
+            "primary_block": "russian_events",
+            "title": title,
+            "summary": summary,
+            "evidence_text": summary,
+            "source_label": source,
+            "source_url": url,
+        }
+
+    def _classify(self, c: dict) -> dict:
+        from news_digest.pipeline.candidate_validator import classify_russian_evidence
+        return classify_russian_evidence(c)
+
+    def _gate(self, c: dict) -> bool:
+        from news_digest.pipeline.candidate_validator import _require_russian_positive_evidence
+        return _require_russian_positive_evidence(c)
+
+    def test_cyrillic_event_text_is_evidence(self) -> None:
+        c = self._ru('Спектакль "Скамейка"', "Театр на русском языке")
+        self.assertFalse(self._gate(c))
+        self.assertTrue(c["include"])
+        self.assertIn("cyrillic_event_text", c["russian_evidence"]["strong_signals"])
+
+    def test_source_label_alone_is_not_evidence(self) -> None:
+        # English-content show only "Russian" because it sits on Afisha London.
+        c = self._ru("Афиша Лондон", "Young Vic presents a new work by Alexander Zeldin, contemporary theatre.")
+        self.assertTrue(self._gate(c))
+        self.assertFalse(c["include"])
+        self.assertTrue(c["russian_evidence"]["source_label_only"])
+
+    def test_promoter_ticket_without_cyrillic_dropped(self) -> None:
+        c = self._ru("Goran Bregovic (London)", "London | 20:30 Sunday | 54-84 GBP | tickets",
+                     source="Kontramarka UK")
+        self.assertTrue(self._gate(c))
+        self.assertFalse(c["include"])
+
+    def test_english_language_phrase_counts_as_evidence(self) -> None:
+        c = self._ru("Stand-up comedy night", "An evening of stand-up in Russian for the diaspora.",
+                     source="UK Stand-Up Club")
+        self.assertFalse(self._gate(c))
+        self.assertIn("russian_or_ukrainian_language_phrase", c["russian_evidence"]["strong_signals"])
+
+
 if __name__ == "__main__":
     unittest.main()
