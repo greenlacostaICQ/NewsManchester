@@ -104,8 +104,64 @@ class WeatherCandidateFreshnessTest(unittest.TestCase):
         self.assertIsNotNone(candidate["data_fetched_at"])
         self.assertEqual(candidate["synthetic_fetch_attempts"], 1)
         self.assertEqual(candidate["source_label"], "Met Office")
-        # Live data path must include digits in draft_line.
-        self.assertRegex(candidate["draft_line"], r"\d+-\d+°C")
+        self.assertEqual(candidate["weather_facts"]["status"], "live")
+        self.assertFalse(candidate["weather_facts"]["degraded"])
+        # Live data path must include concrete morning/day temperatures.
+        self.assertIn("днём до 18°", candidate["draft_line"])
+
+    def test_weather_facts_make_28c_plain_not_heat_warning(self) -> None:
+        html = """
+        <div id="2026-05-22" class="forecast-table-section">
+          <table><tbody>
+            <tr class="step-time">
+              <td><div class="time-step-hours">08:00</div></td>
+              <td><div class="time-step-hours">14:00</div></td>
+              <td><div class="time-step-hours">18:00</div></td>
+            </tr>
+            <tr><th class="tooltip-header">Weather symbols</th>
+              <td><img alt="Sunny intervals"></td><td><img alt="Sunny day"></td><td><img alt="Clear night"></td>
+            </tr>
+            <tr><th class="tooltip-header">Chance of precipitation</th>
+              <td><div data-value="5">&lt;5%</div></td>
+              <td><div data-value="10">10%</div></td>
+              <td><div data-value="10">10%</div></td>
+            </tr>
+            <tr><th class="tooltip-header">Temperature</th>
+              <td><div data-unit="temperature" data-c="20°">20°</div></td>
+              <td><div data-unit="temperature" data-c="28°">28°</div></td>
+              <td><div data-unit="temperature" data-c="24°">24°</div></td>
+            </tr>
+          </tbody></table>
+        </div>
+        """
+
+        with mock.patch.object(weather, "today_london", return_value="2026-05-22"):
+            facts = weather._extract_met_office_weather_facts(html)
+        line = fallbacks._weather_draft_line(20, 28, 10, "", "Met Office", facts)
+
+        self.assertEqual(facts["morning_temp_c"], 20)
+        self.assertEqual(facts["max_temp_c"], 28)
+        self.assertEqual(facts["rain_probability_max"], 10)
+        self.assertEqual(len(facts["hourly"]), 3)
+        self.assertEqual(facts["warnings"], [])
+        self.assertIn("утром ~20°, днём до 28°", line)
+        self.assertNotIn("очень тепло", line)
+        self.assertNotIn("жарко", line)
+        self.assertNotIn("предупреждение", line.lower())
+
+    def test_weather_heat_wording_requires_impact_threshold(self) -> None:
+        base_facts = {
+            "morning_temp_c": 20,
+            "hourly": [{"hour": 8, "temperature_c": 20, "rain_probability": 0}],
+            "warnings": [],
+        }
+
+        warm_line = fallbacks._weather_draft_line(20, 29, 0, "", "Met Office", base_facts)
+        hot_line = fallbacks._weather_draft_line(20, 30, 0, "", "Met Office", base_facts)
+
+        self.assertNotIn("очень тепло", warm_line)
+        self.assertNotIn("жарко", warm_line)
+        self.assertIn("очень тепло", hot_line)
 
     def test_met_office_v2_parser_scopes_precipitation_to_today_section(self) -> None:
         html = """
@@ -167,7 +223,8 @@ class WeatherCandidateFreshnessTest(unittest.TestCase):
         self.assertIsNotNone(candidate["data_fetched_at"])
         # 3 attempts for Met Office (all failed) + 1 attempt for Open-Meteo (succeeded).
         self.assertEqual(candidate["synthetic_fetch_attempts"], 4)
-        self.assertRegex(candidate["draft_line"], r"\d+-\d+°C")
+        self.assertEqual(candidate["weather_facts"]["source"], "Open-Meteo")
+        self.assertIn("днём до 15°", candidate["draft_line"])
 
     def test_both_sources_fail_marks_candidate_synthetic_stale(self) -> None:
         with mock.patch.object(
@@ -184,6 +241,9 @@ class WeatherCandidateFreshnessTest(unittest.TestCase):
         self.assertIn("временно недоступны", candidate["draft_line"])
         self.assertTrue(candidate["include"])
         self.assertEqual(len(candidate["synthetic_warnings"]), 2)
+        self.assertTrue(candidate["synthetic_degraded"])
+        self.assertTrue(candidate["weather_facts"]["degraded"])
+        self.assertTrue(candidate["weather_facts"]["placeholder"])
 
 
 # --------------------------------------------------------------------------
@@ -252,11 +312,56 @@ class SyntheticFreshnessSummaryTest(unittest.TestCase):
         self.assertEqual(result["total"], 2)
         self.assertEqual(result["stale_count"], 1)
         self.assertEqual(result["stale_sources"], ["Metrolink"])
+        self.assertEqual(result["degraded_count"], 1)
+        self.assertEqual(result["degraded_sources"], ["Metrolink"])
         self.assertEqual(len(result["items"]), 2)
+
+    def test_weather_placeholder_is_degraded_in_release_summary(self) -> None:
+        candidates = {
+            "candidates": [
+                {
+                    "synthetic": True,
+                    "synthetic_stale": True,
+                    "synthetic_degraded": True,
+                    "source_label": "Met Office",
+                    "primary_block": "weather",
+                    "data_fetched_at": None,
+                    "synthetic_fetch_attempts": 6,
+                    "weather_facts": {
+                        "status": "degraded_placeholder",
+                        "source": "Met Office",
+                        "hourly": [],
+                        "max_temp_c": None,
+                        "rain_probability_max": None,
+                        "warnings": [],
+                        "placeholder": True,
+                        "degraded": True,
+                    },
+                },
+            ]
+        }
+
+        result = _summarise_synthetic_freshness(candidates)
+
+        self.assertEqual(result["degraded_count"], 1)
+        self.assertEqual(result["degraded_sources"], ["Met Office"])
+        self.assertTrue(result["items"][0]["degraded"])
+        self.assertTrue(result["items"][0]["weather_facts"]["placeholder"])
+        self.assertEqual(result["items"][0]["weather_facts"]["status"], "degraded_placeholder")
 
     def test_summary_handles_empty_input(self) -> None:
         result = _summarise_synthetic_freshness(None)
-        self.assertEqual(result, {"total": 0, "stale_count": 0, "stale_sources": [], "items": []})
+        self.assertEqual(
+            result,
+            {
+                "total": 0,
+                "stale_count": 0,
+                "stale_sources": [],
+                "degraded_count": 0,
+                "degraded_sources": [],
+                "items": [],
+            },
+        )
 
 
 if __name__ == "__main__":

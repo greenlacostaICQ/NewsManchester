@@ -926,36 +926,66 @@ def _summarise_synthetic_freshness(candidates_report: dict | None) -> dict[str, 
         - ``total`` — count of candidates with ``synthetic=True``.
         - ``stale_count`` — how many of those are ``synthetic_stale=True``.
         - ``stale_sources`` — sorted unique ``source_label`` of stale items.
+        - ``degraded_count`` — how many synthetic items shipped with degraded
+          placeholder facts rather than freshly fetched source facts.
         - ``items[]`` — per-candidate triplet of (source_label,
           data_fetched_at, attempts) for the release_report drilldown.
     """
     items: list[dict[str, object]] = []
     stale_sources: set[str] = set()
+    degraded_sources: set[str] = set()
     total = 0
     stale_count = 0
+    degraded_count = 0
     for candidate in (candidates_report or {}).get("candidates") or []:
         if not isinstance(candidate, dict) or not candidate.get("synthetic"):
             continue
         total += 1
         is_stale = bool(candidate.get("synthetic_stale"))
+        weather_facts = candidate.get("weather_facts") if isinstance(candidate.get("weather_facts"), dict) else {}
+        is_degraded = bool(
+            candidate.get("synthetic_degraded")
+            or is_stale
+            or weather_facts.get("degraded")
+            or weather_facts.get("placeholder")
+        )
         source_label = str(candidate.get("source_label") or "")
         if is_stale:
             stale_count += 1
             if source_label:
                 stale_sources.add(source_label)
-        items.append(
-            {
-                "source_label": source_label,
-                "primary_block": str(candidate.get("primary_block") or ""),
-                "synthetic_stale": is_stale,
-                "data_fetched_at": candidate.get("data_fetched_at"),
-                "fetch_attempts": int(candidate.get("synthetic_fetch_attempts") or 0),
+        if is_degraded:
+            degraded_count += 1
+            if source_label:
+                degraded_sources.add(source_label)
+        item = {
+            "source_label": source_label,
+            "primary_block": str(candidate.get("primary_block") or ""),
+            "synthetic_stale": is_stale,
+            "degraded": is_degraded,
+            "data_fetched_at": candidate.get("data_fetched_at"),
+            "fetch_attempts": int(candidate.get("synthetic_fetch_attempts") or 0),
+        }
+        if weather_facts:
+            item["weather_facts"] = {
+                "status": weather_facts.get("status"),
+                "source": weather_facts.get("source"),
+                "hourly": weather_facts.get("hourly") or [],
+                "morning_temp_c": weather_facts.get("morning_temp_c"),
+                "min_temp_c": weather_facts.get("min_temp_c"),
+                "max_temp_c": weather_facts.get("max_temp_c"),
+                "rain_probability_max": weather_facts.get("rain_probability_max"),
+                "warnings": weather_facts.get("warnings") or [],
+                "placeholder": bool(weather_facts.get("placeholder")),
+                "degraded": bool(weather_facts.get("degraded")),
             }
-        )
+        items.append(item)
     return {
         "total": total,
         "stale_count": stale_count,
         "stale_sources": sorted(stale_sources),
+        "degraded_count": degraded_count,
+        "degraded_sources": sorted(degraded_sources),
         "items": items,
     }
 

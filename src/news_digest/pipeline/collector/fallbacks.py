@@ -27,12 +27,13 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 
 from news_digest.pipeline.common import fingerprint_for_candidate, now_london, today_london
 
 from .fetch import _fetch_text
-from .weather import _extract_met_office_weather
+from .weather import _extract_met_office_weather_facts
 
 
 logger = logging.getLogger(__name__)
@@ -77,11 +78,17 @@ def _weather_draft_line(
     rain_probability: int,
     practical: str,
     source_label: str,
+    weather_facts: dict[str, object] | None = None,
 ) -> str:
     """Compose the weather card in a small, deterministic Russian phrasebook."""
-    temp = f"{min_temp}-{max_temp}°C"
+    facts = weather_facts if isinstance(weather_facts, dict) else {}
+    morning_temp = facts.get("morning_temp_c")
+    if isinstance(morning_temp, (int, float)):
+        temp_phrase = f"утром ~{round(float(morning_temp))}°, днём до {max_temp}°"
+    else:
+        temp_phrase = f"сегодня {min_temp}-{max_temp}°C"
 
-    weather_bits: list[str] = [f"сегодня {temp}"]
+    weather_bits: list[str] = [temp_phrase]
     if max_temp <= 5:
         weather_bits.append("холодно")
         heat_severity = "none"
@@ -91,15 +98,12 @@ def _weather_draft_line(
     elif max_temp <= 17:
         weather_bits.append("свежо")
         heat_severity = "none"
-    elif max_temp >= 30:
+    elif max_temp >= 32:
         weather_bits.append("жарко")
         heat_severity = "high"
-    elif max_temp >= 27:
+    elif max_temp >= 30:
         weather_bits.append("очень тепло")
         heat_severity = "moderate"
-    elif max_temp >= 25:
-        weather_bits.append("тепло")
-        heat_severity = "mild"
     else:
         heat_severity = "none"
 
@@ -141,18 +145,93 @@ def _weather_draft_line(
     return f"• Погода: {body}; {rain_text}. {practical} {source_label}"
 
 
+def _open_meteo_weather_facts(payload: dict) -> dict[str, object]:
+    daily = payload.get("daily", {}) if isinstance(payload.get("daily"), dict) else {}
+    hourly_payload = payload.get("hourly", {}) if isinstance(payload.get("hourly"), dict) else {}
+
+    min_temp = round(float((daily.get("temperature_2m_min") or [0])[0]))
+    max_temp = round(float((daily.get("temperature_2m_max") or [0])[0]))
+    rain_probability = round(float((daily.get("precipitation_probability_max") or [0])[0]))
+
+    hourly: list[dict[str, int | str]] = []
+    times = hourly_payload.get("time") or []
+    temps = hourly_payload.get("temperature_2m") or []
+    rains = hourly_payload.get("precipitation_probability") or []
+    if isinstance(times, list) and isinstance(temps, list) and isinstance(rains, list):
+        for time_value, temp_value, rain_value in zip(times, temps, rains):
+            match = re.search(r"T(\d{2}):", str(time_value))
+            if not match:
+                continue
+            try:
+                hourly.append({
+                    "hour": int(match.group(1)),
+                    "temperature_c": round(float(temp_value)),
+                    "rain_probability": round(float(rain_value)),
+                })
+            except (TypeError, ValueError):
+                continue
+    if hourly:
+        temperatures = [int(row["temperature_c"]) for row in hourly]
+        rains = [int(row["rain_probability"]) for row in hourly]
+        min_temp = min(temperatures)
+        max_temp = max(temperatures)
+        rain_probability = max(rains)
+        morning_values = [
+            int(row["temperature_c"])
+            for row in hourly
+            if isinstance(row.get("hour"), int) and 6 <= int(row["hour"]) <= 11
+        ]
+        morning_temp = round(sum(morning_values) / len(morning_values)) if morning_values else min_temp
+    else:
+        morning_temp = min_temp
+
+    return {
+        "schema_version": 1,
+        "status": "live",
+        "source": "Open-Meteo",
+        "hourly": hourly,
+        "morning_temp_c": morning_temp,
+        "min_temp_c": min_temp,
+        "max_temp_c": max_temp,
+        "rain_probability_max": rain_probability,
+        "warnings": [],
+        "practical_angle": "",
+        "placeholder": False,
+        "degraded": False,
+    }
+
+
+def _weather_placeholder_facts(source_label: str) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "status": "degraded_placeholder",
+        "source": source_label,
+        "hourly": [],
+        "morning_temp_c": None,
+        "min_temp_c": None,
+        "max_temp_c": None,
+        "rain_probability_max": None,
+        "warnings": [],
+        "practical_angle": "",
+        "placeholder": True,
+        "degraded": True,
+    }
+
+
 def _weather_candidate() -> dict:
     current = now_london()
     weather_url = "https://weather.metoffice.gov.uk/forecast/gcw2hzs1u?new-design=false"
     fallback_url = (
         "https://api.open-meteo.com/v1/forecast"
         "?latitude=53.4808&longitude=-2.2426"
+        "&hourly=temperature_2m,precipitation_probability"
         "&daily=temperature_2m_min,temperature_2m_max,precipitation_probability_max"
         "&timezone=Europe%2FLondon&forecast_days=1"
     )
     draft_line = "• Погода: данные Met Office временно недоступны. Met Office"
     source_url = weather_url
     source_label = "Met Office"
+    weather_facts: dict[str, object] = _weather_placeholder_facts(source_label)
 
     data_fetched_at: str | None = None
     synthetic_stale = False
@@ -163,8 +242,14 @@ def _weather_candidate() -> dict:
     try:
         body, attempts = _fetch_with_retries(weather_url)
         total_attempts += attempts
-        min_temp, max_temp, rain_probability, practical = _extract_met_office_weather(body)
-        draft_line = _weather_draft_line(min_temp, max_temp, rain_probability, practical, "Met Office")
+        weather_facts = _extract_met_office_weather_facts(body)
+        min_temp = int(weather_facts.get("min_temp_c") or 0)
+        max_temp = int(weather_facts.get("max_temp_c") or 0)
+        rain_probability = int(weather_facts.get("rain_probability_max") or 0)
+        practical = str(weather_facts.get("practical_angle") or "")
+        draft_line = _weather_draft_line(
+            min_temp, max_temp, rain_probability, practical, "Met Office", weather_facts
+        )
         data_fetched_at = now_london().isoformat()
     except Exception as exc:  # noqa: BLE001 — fall through to fallback.
         total_attempts += _SYNTHETIC_FETCH_ATTEMPTS
@@ -176,11 +261,13 @@ def _weather_candidate() -> dict:
             body, attempts = _fetch_with_retries(fallback_url)
             total_attempts += attempts
             payload = json.loads(body)
-            daily = payload.get("daily", {})
-            min_temp = round(float(daily.get("temperature_2m_min", [0])[0]))
-            max_temp = round(float(daily.get("temperature_2m_max", [0])[0]))
-            rain_probability = round(float(daily.get("precipitation_probability_max", [0])[0]))
-            draft_line = _weather_draft_line(min_temp, max_temp, rain_probability, "", "Open-Meteo")
+            weather_facts = _open_meteo_weather_facts(payload)
+            min_temp = int(weather_facts.get("min_temp_c") or 0)
+            max_temp = int(weather_facts.get("max_temp_c") or 0)
+            rain_probability = int(weather_facts.get("rain_probability_max") or 0)
+            draft_line = _weather_draft_line(
+                min_temp, max_temp, rain_probability, "", "Open-Meteo", weather_facts
+            )
             source_url = fallback_url
             source_label = "Open-Meteo"
             data_fetched_at = now_london().isoformat()
@@ -190,6 +277,7 @@ def _weather_candidate() -> dict:
                 f"Open-Meteo unreachable after {_SYNTHETIC_FETCH_ATTEMPTS} attempts: {fallback_exc}"
             )
             synthetic_stale = True
+            weather_facts = _weather_placeholder_facts(source_label)
             logger.warning(
                 "Weather synthetic: all sources failed after %d total attempts; shipping placeholder.",
                 total_attempts,
@@ -223,8 +311,10 @@ def _weather_candidate() -> dict:
         "synthetic": True,
         "data_fetched_at": data_fetched_at,
         "synthetic_stale": synthetic_stale,
+        "synthetic_degraded": bool(synthetic_stale or weather_facts.get("degraded")),
         "synthetic_fetch_attempts": total_attempts,
         "synthetic_warnings": synthetic_warnings,
+        "weather_facts": weather_facts,
     }
     candidate["fingerprint"] = fingerprint_for_candidate(candidate)
     return candidate
