@@ -21,6 +21,11 @@ import json
 import re
 import xml.etree.ElementTree as ET
 
+try:  # Generic article extractor; optional so the module imports without it.
+    import trafilatura as _trafilatura
+except ImportError:  # pragma: no cover - exercised only when dep is absent.
+    _trafilatura = None
+
 from news_digest.pipeline.common import clean_url, fingerprint_for_candidate, now_london
 from news_digest.pipeline.editorial_contracts import is_major_ticket_venue
 
@@ -690,6 +695,28 @@ _TRUSTED_CARD_ENRICHMENT = {
 _MIN_BODY_EVIDENCE_CHARS = 240
 
 
+def _trafilatura_evidence(article_html: str) -> str:
+    """Generic article-body extraction as a safety net.
+
+    trafilatura reads the main content from any article page, so sources
+    without a tuned parser (or whose tuned parser returns too little) stop
+    shipping empty/thin evidence. Best-effort: returns "" on any failure or
+    when the optional dependency is unavailable.
+    """
+    if not article_html or _trafilatura is None:
+        return ""
+    try:
+        text = _trafilatura.extract(
+            article_html,
+            include_comments=False,
+            include_tables=False,
+            favor_precision=True,
+        )
+    except Exception:  # noqa: BLE001 - extraction is best-effort.
+        return ""
+    return _clean_long_text(text or "")
+
+
 def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
     # Dedicated card extractors (RNCM, Skiddle, DesignMyNight, …) already
     # produce a trustworthy clean title from the listing card. Re-enriching
@@ -738,6 +765,10 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         )
 
     paragraph_evidence = _extract_paragraph_evidence(article_html, item.title)
+    if len(paragraph_evidence) < _MIN_BODY_EVIDENCE_CHARS:
+        # Tuned extractor came up short — fall back to the generic extractor so
+        # weak/long-tail sources still get real article body, not empty evidence.
+        paragraph_evidence = _trafilatura_evidence(article_html) or paragraph_evidence
     enriched_summary = _extract_jsonld_description(article_html) or _extract_meta_description(article_html)
     enriched_title = _extract_jsonld_title(article_html) or _extract_page_title(article_html)
     structured_event_hint = _extract_jsonld_event_hint(article_html) or dict(item.structured_event_hint or {})
