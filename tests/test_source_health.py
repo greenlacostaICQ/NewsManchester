@@ -177,7 +177,7 @@ class SourceHealthSummaryWithYieldTest(unittest.TestCase):
         self.assertNotIn("loss_stage", rows["MEN"])  # shipped → no attribution
         self.assertEqual(rows["Quiet Source"]["loss_stage"], "selected")  # 3 candidates, 0 selected
         self.assertTrue(rows["Quiet Source"]["loss_reason"])
-        self.assertEqual(result["counts"]["zero_yield_by_stage"].get("selected"), 1)
+        self.assertEqual(result["counts"]["zero_contribution_by_stage"].get("selected"), 1)
 
     def test_synthetic_with_curated_but_no_rendered_marked_partial(self) -> None:
         cands = {

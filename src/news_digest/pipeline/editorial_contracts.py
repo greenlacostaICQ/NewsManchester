@@ -181,14 +181,26 @@ def onsale_datetime_from_blob(candidate: dict) -> datetime | None:
     """W9: the ticket on-sale moment when it lives in the listing's own wording
     instead of a structured Ticketmaster ``public_onsale`` field (0/625 of the
     HTML/RSS tickets had it parsed). A date is read only from the tight window
-    around the on-sale phrase, so the event date elsewhere in the blob is never
-    mislabelled as the sale date; low-confidence parses are ignored.
+    around the on-sale phrase, bounded by sentence end, so the event date
+    elsewhere in the blob is never mislabelled as the sale date. On-sale date
+    must not be preceded by event-date markers in the same sentence.
     """
     blob = _blob(candidate)
     match = _ONSALE_PHRASE_RE.search(blob)
     if not match:
         return None
-    window = blob[max(0, match.start() - 8): match.end() + 56]
+    # The sale date sits in the on-sale phrase's own clause. Bound the window to
+    # that clause (stop at the sentence break .!?;\n on either side) and cut the
+    # forward part at any event-date marker, so "on sale soon. Event date 20 Aug"
+    # and the comma/dash variant "...on sale soon, event date 20 Aug" never read
+    # the event date as the sale date. Cutting raw text needs no date offset, so
+    # the marker guard fires regardless of the parser's ISO formatting.
+    head = re.split(r"[.!?;\n]", blob[max(0, match.start() - 8): match.start()])[-1]
+    tail = re.split(r"[.!?;\n]", blob[match.end(): match.end() + 80])[0]
+    marker = re.search(r"event\s*date|date\s+of|концерт|\bshow\b|festival|событи|\bevent\b", tail, re.IGNORECASE)
+    if marker:
+        tail = tail[: marker.start()]
+    window = head + blob[match.start(): match.end()] + tail
     from news_digest.pipeline.event_extraction import _parse_date_details  # noqa: PLC0415
     parsed = _parse_date_details(window)
     if not parsed.start or parsed.confidence == "low":

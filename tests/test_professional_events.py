@@ -100,6 +100,33 @@ class ProfessionalEventsTest(unittest.TestCase):
         self.assertEqual(c["editorial_status"], "held_for_enrichment")
         self.assertIn("held 1", report["summary"])
 
+    def test_eligible_event_unevaluated_by_model_is_held_not_dropped(self) -> None:
+        # W6: a professional event WITH minimum facts is sent to the model, but
+        # when no route can rule on it (cap / unavailable / no API key) it must be
+        # held for enrichment — recoverable next run — not silently dropped, and
+        # the held count must include it. The sibling test above covers the
+        # no-facts candidate the post-model sweep holds; this covers the pending
+        # path (_drop_pending_llm_candidates), which previously dropped without a
+        # held status and was never counted in "held N".
+        from unittest.mock import patch
+        from news_digest.pipeline.professional_events import apply_professional_event_llm_matches
+
+        c = self._candidate(
+            "GM Chamber digital leadership briefing",
+            "Free briefing on AI, data and digital transformation for business leaders.",
+        )
+        c["include"] = True
+        apply_professional_event_match(c)
+        self.assertEqual(c["professional_match_status"], "needs_llm_cv_match")
+        self.assertTrue(_professional_event_has_minimum_facts(c))
+
+        with patch("news_digest.pipeline.model_routing.resolve_model_route", return_value=[]):
+            report = apply_professional_event_llm_matches([c])
+
+        self.assertFalse(c["include"])
+        self.assertEqual(c["editorial_status"], "held_for_enrichment")
+        self.assertIn("held 1", report["summary"])
+
     def test_writer_builds_self_contained_russian_card(self) -> None:
         c = self._candidate(
             "CreaTech Connect: Accelerating University-Industry Partnerships",

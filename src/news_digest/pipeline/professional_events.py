@@ -359,6 +359,10 @@ def _drop_pending_llm_candidates(candidates: list[dict[str, Any]], reason: str) 
         if candidate.get("professional_match_status") != "needs_llm_cv_match":
             continue
         candidate["include"] = False
+        # cap / model-unavailable / model-failed = the model never ruled on it,
+        # so it is held (recoverable next run), not a genuine drop like a model
+        # skip. Genuine skip is set on the model-rows path, untouched here.
+        candidate["editorial_status"] = "held_for_enrichment"
         candidate["reason"] = (
             str(candidate.get("reason") or "").rstrip()
             + f" | Professional LLM CV match: {reason}."
@@ -397,6 +401,10 @@ def apply_professional_event_llm_matches(
             + " | Professional CV match: held for enrichment (no governing go/consider verdict)."
         ).strip()
         held += 1
+    # Eligible candidates the model never ruled on (cap / unavailable / failed)
+    # are held inside _drop_pending_llm_candidates; the sweep above skips them
+    # (already include=False), so fold their count into the held total.
+    held += int(report.get("dropped_not_sent_pending") or 0) + int(report.get("dropped_pending") or 0)
     report["held_for_enrich"] = held
     model_label = report.get("model") or report.get("model_version") or "—"
     report["summary"] = (

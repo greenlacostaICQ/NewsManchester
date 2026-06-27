@@ -65,6 +65,21 @@ class TicketOnsaleFromBlobTest(unittest.TestCase):
 
         self.assertEqual(classify_ticket_type({"title": "Regular gig at small venue", "summary": ""}), "regular_upcoming")
 
+    def test_event_date_after_onsale_phrase_is_not_read_as_sale_date(self) -> None:
+        # W9 regression (owner synthetic): the on-sale window must stay inside the
+        # phrase's own clause. A following event date — whether the next sentence
+        # (period) or the same one (comma/dash) — is the event's, never the
+        # sale's, so it must not surface as "в продаже с <event date>".
+        from news_digest.pipeline.editorial_contracts import classify_ticket_type, onsale_datetime_from_blob
+
+        period = {"category": "venues_tickets", "title": "Tickets on sale soon. Event date 20 August 2026", "summary": ""}
+        self.assertIsNone(onsale_datetime_from_blob(period))
+        self.assertEqual(classify_ticket_type(period), "newly_listed")
+
+        comma = {"category": "venues_tickets", "title": "Tickets on sale soon, event date 20 August 2026", "summary": ""}
+        self.assertIsNone(onsale_datetime_from_blob(comma))
+        self.assertEqual(classify_ticket_type(comma), "newly_listed")
+
 
 class TicketConsolidationTest(unittest.TestCase):
     def test_consolidation_collapses_and_drops(self) -> None:

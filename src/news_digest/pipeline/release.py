@@ -1318,7 +1318,7 @@ def _summarise_source_health(
 
     # W10: stamp the loss stage + reason onto every zero-contribution source so
     # each "source at 0" is debuggable on its own row, and aggregate the stages.
-    zero_yield_by_stage: dict[str, int] = {}
+    zero_contribution_by_stage: dict[str, int] = {}
     for row in sources:
         if row.get("category") == "synthetic" or row.get("trial"):
             continue
@@ -1329,8 +1329,8 @@ def _summarise_source_health(
             continue
         row["loss_stage"] = stage_info["stage"]
         row["loss_reason"] = stage_info["reason"]
-        zero_yield_by_stage[stage_info["stage"]] = zero_yield_by_stage.get(stage_info["stage"], 0) + 1
-    counts["zero_yield_by_stage"] = zero_yield_by_stage
+        zero_contribution_by_stage[stage_info["stage"]] = zero_contribution_by_stage.get(stage_info["stage"], 0) + 1
+    counts["zero_contribution_by_stage"] = zero_contribution_by_stage
 
     return {"counts": counts, "sources": sources}
 
