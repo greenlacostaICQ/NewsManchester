@@ -5522,6 +5522,33 @@ def _a_tier_ticket_trace(
     return {"counts": counts, "items": items[:80]}
 
 
+_WEEKEND_FAR_FUTURE_NOTE = "weekend_activities item's event date is beyond"
+_WEEKEND_GIG_REROUTE_NOTE = "weekend_solo_gig_to_ticket_radar"
+
+
+def _weekend_empty_reason(candidates: list[dict], *, show_weekend: bool, weekend_lines: list) -> str:
+    """W8 safety valve. When «Выходные в GM» is shown but the weekend product
+    contract pruned it empty, return a reason string naming what was removed —
+    so an over-enforced empty block is debuggable (and points at source
+    coverage) instead of silently vanishing. Empty string when not applicable.
+    """
+    if not show_weekend or weekend_lines:
+        return ""
+    demoted = sum(
+        1 for c in candidates
+        if isinstance(c, dict) and _WEEKEND_FAR_FUTURE_NOTE in str(c.get("reason") or "")
+    )
+    gigs = sum(
+        1 for c in candidates
+        if isinstance(c, dict) and _WEEKEND_GIG_REROUTE_NOTE in str(c.get("reason") or "")
+    )
+    return (
+        "«Выходные в GM» пуст после контракта: "
+        f"{demoted} far-future/не-эти-выходные демотировано, {gigs} концерт(ов) уведено в билеты. "
+        "Проверь покрытие weekend-источников (рынки/ярмарки/фестивали/community)."
+    )
+
+
 def write_digest(project_root: Path) -> StageResult:
     stage_started = time.monotonic()
     state_dir = project_root / "data" / "state"
@@ -6233,6 +6260,12 @@ def write_digest(project_root: Path) -> StageResult:
     # "Выходные в GM" показываем только с четверга (weekday >= 3)
     london_weekday = now_london().weekday()  # 0=Пн … 6=Вс
     show_weekend = london_weekday >= 3
+
+    weekend_empty_reason = _weekend_empty_reason(
+        candidates, show_weekend=show_weekend, weekend_lines=sections.get("Выходные в GM") or []
+    )
+    if weekend_empty_reason:
+        warnings.append(f"Writer: {weekend_empty_reason}")
 
     ordered_sections = [
         "Погода",

@@ -14,6 +14,26 @@ from news_digest.pipeline.event_quality import event_quality_report
 from news_digest.pipeline.place_names import preserve_place_names
 
 
+class WeekendContractReasonTest(unittest.TestCase):
+    def test_empty_weekend_block_emits_contract_reason(self) -> None:
+        # W8: when the weekend product contract prunes «Выходные в GM» empty on a
+        # day it is shown, a reason string must name what was removed (so an
+        # over-enforced empty block points at source coverage, not silence).
+        from news_digest.pipeline.writer import _weekend_empty_reason
+
+        candidates = [
+            {"reason": "Validator: weekend_activities item's event date is beyond the 30-day actionable horizon (far-future)."},
+            {"reason": "x | block_contract:weekend_solo_gig_to_ticket_radar"},
+        ]
+        reason = _weekend_empty_reason(candidates, show_weekend=True, weekend_lines=[])
+        self.assertIn("пуст после контракта", reason)
+        self.assertIn("1 far-future", reason)
+        self.assertIn("1 концерт", reason)
+        # No noise when the block has items or the weekend is not shown yet.
+        self.assertEqual(_weekend_empty_reason(candidates, show_weekend=True, weekend_lines=["• market"]), "")
+        self.assertEqual(_weekend_empty_reason(candidates, show_weekend=False, weekend_lines=[]), "")
+
+
 class MarketEventSourcesTest(unittest.TestCase):
     def test_html_page_event_keeps_direct_market_page(self) -> None:
         source = SourceDef(
