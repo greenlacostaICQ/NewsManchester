@@ -696,6 +696,16 @@ _NEW_PHASE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# W7: announcement words that re-state a story without a concrete development.
+# "X announced / confirmed / plans" is NOT a named fact on its own — only the
+# strong words in _NEW_PHASE_RE (charged, inquest, approved, opens, on sale,
+# new date, …) are. A new_phase anchor triggered solely by these is suppressed
+# as a rehash (Örme via "announced") unless a real fact changed vs last publish.
+_WEAK_NEW_PHASE_RE = re.compile(
+    r"\b(?:confirmed|announced|updated|plans?|planned|подтверд|обнов)\b",
+    re.IGNORECASE,
+)
+
 _TOPIC_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("politics:makerfield_by_election_2026", re.compile(r"\b(?:makerfield|josh\s+simons|andy\s+burnham.*makerfield|by-?election.*makerfield)\b", re.IGNORECASE)),
     ("memorial:manchester_arena_anniversary", _MEMORIAL_RE),
@@ -1435,6 +1445,25 @@ def _event_material_change(candidate: dict, previous: dict) -> str:
     return ""
 
 
+def _new_phase_named_fact(candidate: dict, previous: dict) -> str:
+    """The named fact that earns a ``new_phase`` repeat (W7).
+
+    A phase WORD in the blob is not enough. A repeat needs either a concrete
+    event fact that changed vs the last publication (date / venue / price /
+    sold-out / ticket type) or a strong development word — charged, inquest,
+    approved/rejected, opens, on sale, new date — surviving after the weak
+    announcement words are stripped. A story re-stating "announced / confirmed /
+    plans" with nothing new (Örme) returns "" and is suppressed.
+    """
+    material = _event_material_change(candidate, previous)
+    if material:
+        return material
+    blob = _contract_blob(candidate)
+    if _NEW_PHASE_RE.search(_WEAK_NEW_PHASE_RE.sub(" ", blob)):
+        return "strong_phase_development"
+    return ""
+
+
 def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]:
     """Decide whether a previously published event/ticket deserves a repeat.
 
@@ -1588,8 +1617,22 @@ def lifecycle_repeat_review(candidate: dict, previous: dict) -> dict[str, object
             "calendar_repeat_review": calendar_review,
         }
 
-    if anchor in {"new_phase", "service_status", "today_weather"}:
+    if anchor in {"service_status", "today_weather"}:
         return {"repeat": False, "reason": f"publishable_anchor:{anchor}"}
+    if anchor == "new_phase":
+        # W7: a new_phase WORD is not a reader moment. Allow the repeat only on a
+        # real named fact (strong development word or an event fact that changed
+        # vs the last publication); otherwise suppress the rehash. changed_fact
+        # is logged either way so a wrongly-suppressed reminder is debuggable.
+        changed_fact = _new_phase_named_fact(candidate, previous)
+        if changed_fact:
+            return {"repeat": False, "reason": "publishable_anchor:new_phase", "changed_fact": changed_fact}
+        return {
+            "repeat": True,
+            "topic_key": topic,
+            "reason": "new_phase_without_named_fact",
+            "changed_fact": "",
+        }
     # Curated historical/incident subjects (Arena anniversary, 1996 IRA bomb)
     # often resurface as a generic-"news" retrospective with no new-phase
     # anchor. Suppress those rehashes too — a known historical subject only

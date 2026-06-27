@@ -1988,6 +1988,27 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(lifecycle_repeat_review(rehash, previous)["repeat"])
         self.assertFalse(lifecycle_repeat_review(new_phase, previous)["repeat"])
 
+    def test_new_phase_named_fact_gates_announcement_rehash(self) -> None:
+        # W7: the named-fact gate behind the new_phase repeat. An "announced /
+        # confirmed" rehash (Örme) carries no concrete development → "" → the
+        # lifecycle review suppresses it. A strong development word (opens) or an
+        # event fact that changed vs the last publication is a real reader moment.
+        from news_digest.pipeline.editorial_contracts import _new_phase_named_fact
+
+        previous = {"title": "Örme bakery announced for Ancoats", "summary": "A new bakery, Örme, has been announced for Ancoats."}
+        rehash = {"title": "Örme bakery announced for Ancoats", "summary": "The Örme bakery has been announced and confirmed for Ancoats."}
+        opens = {"title": "Örme bakery opens in Ancoats", "summary": "Örme bakery opens its doors in Ancoats this week."}
+        date_changed = {
+            "title": "Örme bakery announced for Ancoats",
+            "summary": "Örme bakery announced.",
+            "event": {"date": "2026-07-10"},
+        }
+        previous_with_date = {"event": {"date": "2026-07-02"}}
+
+        self.assertEqual(_new_phase_named_fact(rehash, previous), "")
+        self.assertEqual(_new_phase_named_fact(opens, previous), "strong_phase_development")
+        self.assertTrue(_new_phase_named_fact(date_changed, previous_with_date).startswith("event_"))
+
     def test_undated_event_like_market_repeat_is_not_carried_daily(self) -> None:
         from news_digest.pipeline.dedupe import _calendar_item_should_carry_over
         candidate = {
