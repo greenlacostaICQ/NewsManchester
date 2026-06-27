@@ -183,7 +183,11 @@ def _rendered_candidates(project_root: Path) -> list[dict[str, Any]]:
                 "protected_lane": str(candidate.get("protected_lane") or ""),
             }
         )
-    return summary[:60]
+    # Match digest_lines_from_html: the judge must see metadata for the WHOLE
+    # issue, not the first 60 rendered candidates — otherwise tail items (deep in
+    # the ticket list) have no metadata for the model to cross-check. 250 covers
+    # any realistic issue with headroom.
+    return summary[:250]
 
 
 def _product_completeness_context(project_root: Path, digest_lines: list[dict[str, Any]]) -> dict[str, Any]:
