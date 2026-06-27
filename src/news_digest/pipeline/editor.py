@@ -36,17 +36,27 @@ MIN_CITY_PRACTICAL_ANGLE_LENGTH = 40
 MAX_WEAK_CITY_CANDIDATE_SHARE = 0.5
 PRE_SEND_RUSSIAN_EDITOR_MODEL = "gpt-4o"
 PRE_SEND_THIN_EVIDENCE_CHARS = 1200
-PRE_SEND_EVIDENCE_MODEL_MAX_CHARS = 18000
-# S2: smaller batches stay well under the gpt-4o 30k TPM tier so a single batch
-# cannot, on its own, breach the per-minute limit; combined with sequential
-# dispatch (max_workers=1) and 429 backoff this makes the editor must-complete.
+PRE_SEND_EVIDENCE_MODEL_MAX_CHARS = 18000  # full evidence — kept for sensitive (crime/court) lines
+PRE_SEND_EVIDENCE_ROUTINE_MAX_CHARS = 4000  # E2: routine lines (events/tickets/food/business) need far less
+# E1: pace the editor by the gpt-4o tokens-per-minute budget instead of running
+# sequentially. Batches run concurrently again, but each reserves its estimated
+# token cost from a bucket sized to the 30k TPM ceiling (with headroom), so the
+# editor is fast AND never breaches the limit. S2 backoff stays as the net.
 PRE_SEND_EDITOR_BATCH_CHAR_BUDGET = 60000
-PRE_SEND_EDITOR_MAX_WORKERS = 1
+PRE_SEND_EDITOR_MAX_WORKERS = 3
+PRE_SEND_EDITOR_MAX_TPM = 27000.0
 PRE_SEND_EDITOR_MAX_ROUNDS = 2
-# S2: survive transient rate-limit/5xx instead of recording a failed batch as a
-# clean pass. The API states "try again in Ns" on a 429 — honour it, capped.
 PRE_SEND_EDITOR_MAX_RETRIES = 4
 PRE_SEND_EDITOR_RETRY_CAP_SECONDS = 60.0
+_EDITOR_TOKEN_LIMITER = None  # lazily built token bucket (reuses the rewrite-stage pacer)
+# E2: keep full evidence whenever the line touches a faithfulness-critical topic.
+# _SENSITIVE_LINE_RE (below) covers the Russian rendered line; this covers the
+# still-English source evidence/title so a crime/court item is never under-fed.
+_EVIDENCE_SENSITIVE_EN = re.compile(
+    r"\b(?:murder|kill|stab|knife|shot|shoot|court|charg|convict|sentenc|died|death|dead|"
+    r"victim|assault|rape|abus|crash|collision|fire|evacuat|coroner|inquest|missing|arrest)\w*",
+    re.IGNORECASE,
+)
 
 _EDITOR_TRIMMABLE_SECTIONS = {
     "Билеты / Ticket Radar",
@@ -449,6 +459,16 @@ def _candidate_full_evidence_text(candidate: dict, refetch_stats: dict[str, obje
     return evidence, source
 
 
+def _evidence_is_sensitive(candidate: dict, evidence_text: str = "") -> bool:
+    """E2: full editor evidence is reserved for faithfulness-critical lines
+    (crime/court/casualty). Checks the Russian rendered line and the English
+    title/evidence so neither language slips a sensitive item past the trim."""
+    blob = " ".join(str(candidate.get(key) or "") for key in ("draft_line", "lead", "title"))
+    if _SENSITIVE_LINE_RE.search(blob):
+        return True
+    return bool(_EVIDENCE_SENSITIVE_EN.search(blob + " " + (evidence_text or "")[:1500]))
+
+
 def _compact_candidate_evidence(candidate: dict | None, refetch_stats: dict[str, object] | None = None) -> dict[str, object]:
     if not isinstance(candidate, dict):
         return {}
@@ -459,7 +479,14 @@ def _compact_candidate_evidence(candidate: dict | None, refetch_stats: dict[str,
     story_frame = candidate.get("story_frame") if isinstance(candidate.get("story_frame"), dict) else {}
     evidence_text, evidence_source = _candidate_full_evidence_text(candidate, refetch_stats)
     evidence_full_chars = len(evidence_text)
-    evidence_for_model = _clip_text(evidence_text, PRE_SEND_EVIDENCE_MODEL_MAX_CHARS)
+    # E2: full evidence only where faithfulness is critical; routine items get a
+    # fraction of it (far fewer tokens → faster, cheaper, same quality).
+    evidence_cap = (
+        PRE_SEND_EVIDENCE_MODEL_MAX_CHARS
+        if _evidence_is_sensitive(candidate, evidence_text)
+        else PRE_SEND_EVIDENCE_ROUTINE_MAX_CHARS
+    )
+    evidence_for_model = _clip_text(evidence_text, evidence_cap)
     return {
         "fingerprint": str(candidate.get("fingerprint") or packet.get("fingerprint") or ""),
         "category": str(candidate.get("category") or packet.get("category") or ""),
@@ -549,6 +576,17 @@ def _editor_retry_seconds(exc: Exception, attempt: int) -> float:
     return min(2.0 * (2 ** attempt), PRE_SEND_EDITOR_RETRY_CAP_SECONDS)
 
 
+def _editor_token_limiter():
+    """E1: the per-minute token pacer. Reuses the rewrite stage's proven token
+    bucket (lazy import keeps it cycle-safe) so the editor runs concurrently yet
+    never exceeds the gpt-4o TPM ceiling — fast without 429."""
+    global _EDITOR_TOKEN_LIMITER
+    if _EDITOR_TOKEN_LIMITER is None:
+        from news_digest.pipeline.llm_rewrite import _TokenRateLimiter  # noqa: PLC0415
+        _EDITOR_TOKEN_LIMITER = _TokenRateLimiter(PRE_SEND_EDITOR_MAX_TPM)
+    return _EDITOR_TOKEN_LIMITER
+
+
 def _editor_create_with_backoff(client: object, **kwargs: object) -> object:
     """gpt-4o tier-1 caps at 30k TPM; a saturated minute returns 429 with an
     explicit wait. Honour it (capped) and retry instead of dropping the batch —
@@ -576,6 +614,10 @@ def _call_pre_send_russian_editor_batch(
         {"role": "user", "content": json.dumps({"items": items}, ensure_ascii=False)},
     ]
     max_tokens = min(12000, 300 * len(items) + 1200)
+    # E1: reserve this batch's estimated token cost before firing so concurrent
+    # batches stay under the per-minute ceiling (chars/4 input + reserved output).
+    est_tokens = sum(len(str(m.get("content") or "")) for m in messages) // 4 + max_tokens
+    _editor_token_limiter().acquire(est_tokens)
     try:
         response = _editor_create_with_backoff(
             client,

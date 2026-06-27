@@ -67,6 +67,8 @@ def test_create_with_backoff_gives_up_on_non_retryable(monkeypatch):
     assert bad.calls == 1  # no pointless retries on a bad request
 
 
-def test_editor_dispatch_is_sequential_by_default():
-    # 3 concurrent 24k-token batches were what breached the 30k TPM limit.
-    assert editor.PRE_SEND_EDITOR_MAX_WORKERS == 1
+def test_editor_dispatch_is_paced_concurrent():
+    # E1 superseded S2's sequential stop-gap: concurrency is restored but gated
+    # by a token bucket sized to the TPM ceiling, so it is fast AND never 429s.
+    assert editor.PRE_SEND_EDITOR_MAX_WORKERS >= 2
+    assert editor.PRE_SEND_EDITOR_MAX_TPM > 0
