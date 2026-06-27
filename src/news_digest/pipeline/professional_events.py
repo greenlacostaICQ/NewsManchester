@@ -264,13 +264,49 @@ def _event_field(candidate: dict[str, Any], key: str) -> str:
     return str(event.get(key) or "").strip()
 
 
+# GM professional sources are GM-local by curation, so a parsed venue string is
+# not required to satisfy the "place or online" contract — the event happens in
+# Greater Manchester. Requiring a *specific* venue string was the real reason
+# CV eligible sat at 1/42: dated GM Chamber / Manchester Digital events have a
+# date + booking URL but no venue token parsed off their listing page.
+_GM_PLACE_TOKENS = (
+    "greater manchester", "manchester", "salford", "bury", "rochdale",
+    "oldham", "stockport", "tameside", "trafford", "wigan",
+)
+_GM_PROFESSIONAL_SOURCE_TOKENS = (
+    "chamber", "manchester digital", "growth hub", "pro-manchester",
+    "promanchester", "university of manchester", "compiledmcr",
+    "manchester central", "midas",
+)
+_ONLINE_TOKENS = ("online", "webinar", "virtual", "remote", "livestream", "zoom", "teams")
+
+
+def _has_place_or_online(candidate: dict[str, Any], event: dict[str, Any]) -> bool:
+    if str(event.get("venue") or "").strip() or str(event.get("borough") or "").strip():
+        return True
+    blob = _blob(candidate)
+    if any(tok in blob for tok in _ONLINE_TOKENS):
+        return True
+    if any(tok in blob for tok in _GM_PLACE_TOKENS):
+        return True
+    source = str(candidate.get("source_label") or "").lower()
+    return any(tok in source for tok in _GM_PROFESSIONAL_SOURCE_TOKENS)
+
+
 def _professional_event_has_minimum_facts(candidate: dict[str, Any]) -> bool:
+    from news_digest.pipeline.event_extraction import event_date_is_trustworthy  # noqa: PLC0415
+
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     name = str(event.get("event_name") or candidate.get("title") or "").strip()
-    date = str(event.get("date_start") or event.get("date") or event.get("date_text") or "").strip()
-    venue = str(event.get("venue") or "").strip()
     url = str(event.get("booking_url") or candidate.get("source_url") or "").strip()
-    return bool(name and date and (venue or "online" in _blob(candidate)) and url)
+    if not (name and url):
+        return False
+    # A trustworthy, concrete date is the discriminator that keeps generic
+    # programme / membership pages (no date, or a stray far-future month/day)
+    # out of the protected professional block.
+    if not event_date_is_trustworthy(candidate):
+        return False
+    return _has_place_or_online(candidate, event)
 
 
 def _profile_for_prompt(project_root: Path | None = None) -> dict[str, object]:

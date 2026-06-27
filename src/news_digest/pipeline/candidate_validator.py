@@ -22,7 +22,11 @@ from news_digest.pipeline.editorial_contracts import (
     why_now_is_publishable,
 )
 from news_digest.pipeline.entity_extraction import enrich_candidate_entities
-from news_digest.pipeline.event_extraction import enrich_candidate_event
+from news_digest.pipeline.event_extraction import (
+    enrich_candidate_event,
+    event_date_is_trustworthy,
+    event_is_far_future,
+)
 from news_digest.pipeline.event_quality import event_quality_reject_reasons, event_quality_report
 from news_digest.pipeline.practical_backfill import apply_practical_backfill
 from news_digest.pipeline.professional_events import apply_professional_event_llm_matches, apply_professional_event_match
@@ -1692,6 +1696,23 @@ def _demote_distant_weekend_event(candidate: dict) -> bool:
 
     today = now_london().date()
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+
+    # A trustworthy far-future structured date always leaves the weekend board,
+    # before any recurrence short-circuit below. Without this, a misfired
+    # is_recurring flag on weak "Saturday market" wording could keep a "21 May
+    # 2027" festival in «Выходные в GM» when today is near a weekend. Canonical
+    # event facts are the source of truth here (W1 / RC3). Gate on trustworthy
+    # so a recurring market's auto-rolled past start ("5 April" → next year, low
+    # confidence) is left to the recurring branch, not dropped as far-future.
+    if event_date_is_trustworthy(candidate) and event_is_far_future(candidate, today=today, horizon_days=30):
+        candidate["include"] = False
+        existing = str(candidate.get("reason") or "").strip()
+        note = (
+            "Validator: weekend_activities item's event date is beyond the "
+            "30-day actionable horizon (far-future)."
+        )
+        candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+        return True
 
     # A concrete future STRUCTURED date wins over recurrence detection: a
     # "one-off … event_date=2026-06-29" card is about that date even when

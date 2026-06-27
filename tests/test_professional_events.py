@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import unittest
 
-from news_digest.pipeline.professional_events import apply_professional_event_match, score_professional_event
+from news_digest.pipeline.professional_events import (
+    apply_professional_event_match,
+    score_professional_event,
+    _professional_event_has_minimum_facts,
+)
 from news_digest.pipeline.writer import _build_professional_event_fallback_line
 
 
@@ -88,6 +92,37 @@ class ProfessionalEventsTest(unittest.TestCase):
         self.assertIn("бесплат", line.lower())
         self.assertIn("Почему тебе:", line)
         self.assertIn("Действие:", line)
+
+
+class ProfessionalMinimumFactsTest(unittest.TestCase):
+    """W1 / RC3: the eligible=1/42 bottleneck was the gate requiring a parsed
+    venue string. A dated GM event with a date + booking URL + GM source is
+    eligible even without a venue token; a low-confidence far-future date is
+    not."""
+
+    def _prof(self, **event) -> dict:
+        ev = {"event_name": "X", "date": "", "date_confidence": "none",
+              "venue": "", "booking_url": ""}
+        ev.update(event)
+        return {
+            "category": "professional_events",
+            "primary_block": "professional_events",
+            "title": "X",
+            "source_label": "GM Chamber",
+            "source_url": "https://www.gmchamber.co.uk/events/example",
+            "event": ev,
+        }
+
+    def test_dated_gm_event_without_parsed_venue_is_eligible(self) -> None:
+        c = self._prof(date="2026-07-03", date_confidence="medium", venue="")
+        self.assertTrue(_professional_event_has_minimum_facts(c))
+
+    def test_low_confidence_far_future_date_is_not_eligible(self) -> None:
+        c = self._prof(date="2027-05-02", date_confidence="low", venue="Somewhere")
+        self.assertFalse(_professional_event_has_minimum_facts(c))
+
+    def test_no_date_is_not_eligible(self) -> None:
+        self.assertFalse(_professional_event_has_minimum_facts(self._prof()))
 
 
 if __name__ == "__main__":

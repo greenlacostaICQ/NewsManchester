@@ -34,9 +34,15 @@ from __future__ import annotations
 import re
 from datetime import date as date_cls
 from datetime import datetime
+from typing import NamedTuple
 from zoneinfo import ZoneInfo
 
 EVENT_SCHEMA_VERSION = 1
+
+# How far ahead a "this weekend / next 7 days" block may reasonably reach.
+# A date beyond this is far-future and must not be presented as imminent
+# (e.g. a "21 May 2027" festival must never land in the Weekend block).
+NEAR_HORIZON_DAYS = 120
 
 _LONDON_TZ = ZoneInfo("Europe/London")
 
@@ -166,6 +172,24 @@ _DAY_RANGE_RU_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Cross-month day range: "27 June – 5 July", "30 December – 2 January" (year
+# wrap). The same-month range above only covers "16–17 May"; multi-day
+# festivals that span a month boundary (Didsbury Arts 27 Jun – 5 Jul) need this.
+_CROSS_MONTH_RANGE_EN_RE = re.compile(
+    r"\b(?P<sday>\d{1,2})\s+(?P<smonth>" + "|".join(_EN_MONTHS.keys()) + r")"
+    r"(?:\s+(?P<syear>20\d{2}))?\s*[-–—]\s*"
+    r"(?P<eday>\d{1,2})\s+(?P<emonth>" + "|".join(_EN_MONTHS.keys()) + r")"
+    r"(?:\s+(?P<eyear>20\d{2}))?\b",
+    re.IGNORECASE,
+)
+_CROSS_MONTH_RANGE_RU_RE = re.compile(
+    r"\b(?P<sday>\d{1,2})\s+(?P<smonth>" + "|".join(_RU_MONTHS.keys()) + r")"
+    r"(?:\s+(?P<syear>20\d{2}))?\s*[-–—]\s*"
+    r"(?P<eday>\d{1,2})\s+(?P<emonth>" + "|".join(_RU_MONTHS.keys()) + r")"
+    r"(?:\s+(?P<eyear>20\d{2}))?\b",
+    re.IGNORECASE,
+)
+
 
 def _today_london() -> date_cls:
     return datetime.now(tz=_LONDON_TZ).date()
@@ -196,8 +220,32 @@ def _safe_date(year: int, month: int, day: int) -> str:
         return ""
 
 
-def _parse_date_from_blob(blob: str, *, today: date_cls | None = None) -> tuple[str, str]:
-    """Return (iso_date, date_text) — both empty strings if no date found.
+class DateParse(NamedTuple):
+    start: str        # ISO start date, "" if none
+    end: str          # ISO end date for ranges, "" otherwise
+    text: str         # human-readable as found
+    confidence: str   # "high" | "medium" | "low" | "none"
+
+
+def _bare_month_confidence(month: int, year_hint: str | None, today: date_cls) -> str:
+    """Confidence for a single day+month with no inline year.
+
+    high   — the year was written out ("16 May 2026").
+    medium — no year, but the month is still ahead this year ("3 July" in June):
+             almost certainly the real upcoming event.
+    low    — no year and the month already passed, so we rolled it to *next*
+             year ("May 2" seen in late June → 2027). That rollover is the
+             classic false positive: a stray "May 2" in body copy becomes a
+             phantom far-future event. Mark it low so gates can hold-for-enrich
+             instead of publishing a wrong date.
+    """
+    if year_hint:
+        return "high"
+    return "medium" if month >= today.month else "low"
+
+
+def _parse_date_details(blob: str, *, today: date_cls | None = None) -> DateParse:
+    """Structured date parse: start, end (ranges), human text, confidence.
 
     Tries in order:
       1. Day-range English ("16-17 May")            — most informative
@@ -208,11 +256,26 @@ def _parse_date_from_blob(blob: str, *, today: date_cls | None = None) -> tuple[
       6. English "May 16[, 2026]"
       7. Russian "16 мая [2026]"
 
-    For ranges, returns the START date as ``iso_date`` so other code
-    (deduplication, "is in the future?" gates) has a single sortable
-    value, and the human range as ``date_text``.
+    For ranges, ``start`` is the first day (a single sortable value for
+    dedupe / "is in the future?" gates) and ``end`` is the last day, so a
+    multi-day festival reads as one continuous occurrence rather than a
+    repeat. Ranges and fully-written ISO/year dates are high confidence.
     """
     today = today or _today_london()
+
+    for cross_re, months in ((_CROSS_MONTH_RANGE_EN_RE, _EN_MONTHS), (_CROSS_MONTH_RANGE_RU_RE, _RU_MONTHS)):
+        if m := cross_re.search(blob):
+            smonth = months[m.group("smonth").lower()]
+            emonth = months[m.group("emonth").lower()]
+            syear = _resolve_year(smonth, m.group("syear"), today)
+            # End month before start month means the range wraps the new year.
+            eyear = int(m.group("eyear")) if m.group("eyear") else (syear + 1 if emonth < smonth else syear)
+            start_iso = _safe_date(syear, smonth, int(m.group("sday")))
+            end_iso = _safe_date(eyear, emonth, int(m.group("eday")))
+            if start_iso and end_iso:
+                year_suffix = f" {m.group('eyear')}" if m.group("eyear") else ""
+                text = f"{m.group('sday')} {m.group('smonth')} – {m.group('eday')} {m.group('emonth')}{year_suffix}".strip()
+                return DateParse(start_iso, end_iso, text, "high")
 
     if m := _DAY_RANGE_EN_RE.search(blob):
         start = int(m.group("start"))
@@ -221,7 +284,8 @@ def _parse_date_from_blob(blob: str, *, today: date_cls | None = None) -> tuple[
         year = _resolve_year(month, m.group("year"), today)
         iso = _safe_date(year, month, start)
         if iso:
-            return iso, f"{start}–{end} {m.group('month')}{(' ' + m.group('year')) if m.group('year') else ''}".strip()
+            text = f"{start}–{end} {m.group('month')}{(' ' + m.group('year')) if m.group('year') else ''}".strip()
+            return DateParse(iso, _safe_date(year, month, end), text, "high")
 
     if m := _DAY_RANGE_RU_RE.search(blob):
         start = int(m.group("start"))
@@ -230,17 +294,18 @@ def _parse_date_from_blob(blob: str, *, today: date_cls | None = None) -> tuple[
         year = _resolve_year(month, m.group("year"), today)
         iso = _safe_date(year, month, start)
         if iso:
-            return iso, f"{start}–{end} {m.group('month')}{(' ' + m.group('year')) if m.group('year') else ''}".strip()
+            text = f"{start}–{end} {m.group('month')}{(' ' + m.group('year')) if m.group('year') else ''}".strip()
+            return DateParse(iso, _safe_date(year, month, end), text, "high")
 
     if m := _ISO_DATE_RE.search(blob):
         iso = _safe_date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
         if iso:
-            return iso, iso
+            return DateParse(iso, "", iso, "high")
 
     if m := _UK_SLASH_DATE_RE.search(blob):
         iso = _safe_date(int(m.group("year")), int(m.group("month")), int(m.group("day")))
         if iso:
-            return iso, iso
+            return DateParse(iso, "", iso, "high")
 
     if m := _EN_DAY_MONTH_YEAR_RE.search(blob):
         day = int(m.group("day"))
@@ -248,7 +313,8 @@ def _parse_date_from_blob(blob: str, *, today: date_cls | None = None) -> tuple[
         year = _resolve_year(month, m.group("year"), today)
         iso = _safe_date(year, month, day)
         if iso:
-            return iso, f"{day} {m.group('month')}{(' ' + m.group('year')) if m.group('year') else ''}".strip()
+            text = f"{day} {m.group('month')}{(' ' + m.group('year')) if m.group('year') else ''}".strip()
+            return DateParse(iso, "", text, _bare_month_confidence(month, m.group("year"), today))
 
     if m := _EN_MONTH_DAY_YEAR_RE.search(blob):
         day = int(m.group("day"))
@@ -256,7 +322,8 @@ def _parse_date_from_blob(blob: str, *, today: date_cls | None = None) -> tuple[
         year = _resolve_year(month, m.group("year"), today)
         iso = _safe_date(year, month, day)
         if iso:
-            return iso, f"{m.group('month')} {day}{(', ' + m.group('year')) if m.group('year') else ''}".strip()
+            text = f"{m.group('month')} {day}{(', ' + m.group('year')) if m.group('year') else ''}".strip()
+            return DateParse(iso, "", text, _bare_month_confidence(month, m.group("year"), today))
 
     if m := _RU_DAY_MONTH_YEAR_RE.search(blob):
         day = int(m.group("day"))
@@ -264,9 +331,16 @@ def _parse_date_from_blob(blob: str, *, today: date_cls | None = None) -> tuple[
         year = _resolve_year(month, m.group("year"), today)
         iso = _safe_date(year, month, day)
         if iso:
-            return iso, f"{day} {m.group('month')}{(' ' + m.group('year')) if m.group('year') else ''}".strip()
+            text = f"{day} {m.group('month')}{(' ' + m.group('year')) if m.group('year') else ''}".strip()
+            return DateParse(iso, "", text, _bare_month_confidence(month, m.group("year"), today))
 
-    return "", ""
+    return DateParse("", "", "", "none")
+
+
+def _parse_date_from_blob(blob: str, *, today: date_cls | None = None) -> tuple[str, str]:
+    """Back-compat 2-tuple wrapper: (iso_start, date_text)."""
+    parsed = _parse_date_details(blob, today=today)
+    return parsed.start, parsed.text
 
 
 # ── Price extraction ──────────────────────────────────────────────────────
@@ -376,6 +450,15 @@ def _extract_booking_url(candidate: dict) -> str:
 _AT_VENUE_RE = re.compile(
     r"\b(?:at|in)\s+(?P<name>[A-Z][A-Za-z'\-]+(?:\s+[A-Z][A-Za-z'\-]+){0,3})\b"
 )
+# A single capitalised word after "at/in" is only a venue if it reads like a
+# place. Without this, "...Technology in Practice" yields venue="Practice".
+_VENUE_KEYWORD_RE = re.compile(
+    r"\b(?:hall|centre|center|theatre|theater|arena|museum|gallery|library|"
+    r"stadium|club|bar|venue|hotel|park|church|cathedral|warehouse|studios?|"
+    r"rooms?|institute|academy|university|college|cinema|chapel|exchange|"
+    r"factory|works|mill|square|gardens?|house|live)\b",
+    re.IGNORECASE,
+)
 _LABELLED_LOCATION_RE = re.compile(
     r"\b(?:Location|Venue)\s*:\s*(?P<name>[^.;\n\r]+)",
     re.IGNORECASE,
@@ -397,7 +480,11 @@ def _extract_venue(candidate: dict, entities: dict) -> str:
             return ", ".join(parts[:2])
     if m := _AT_VENUE_RE.search(blob):
         name = m.group("name").strip()
-        if name.lower() not in {"home", "manchester", "london", "the uk", "the future"}:
+        if name.lower() in {"home", "manchester", "london", "the uk", "the future"}:
+            return ""
+        # Accept only multi-word names or names that read like a venue, so a
+        # stray "in Practice" / "at Scale" doesn't become a phantom venue.
+        if " " in name or _VENUE_KEYWORD_RE.search(name):
             return name
     return ""
 
@@ -459,16 +546,22 @@ def extract_event(candidate: dict, entities: dict | None = None) -> dict:
     hint = candidate.get("structured_event_hint") if isinstance(candidate.get("structured_event_hint"), dict) else {}
     blob = _candidate_blob(candidate)
     venue = str(hint.get("venue") or "").strip() or _extract_venue(candidate, entities)
-    iso_date, date_text = _parse_date_from_blob(blob)
+    parsed = _parse_date_details(blob)
+    iso_date, iso_end, date_text, date_confidence = parsed.start, parsed.end, parsed.text, parsed.confidence
     hint_date = str(hint.get("date_start") or hint.get("date") or "").strip()
     if hint_date:
-        parsed_hint = _parse_date_from_blob(hint_date)[0] or hint_date[:10]
+        hint_parsed = _parse_date_details(hint_date)
+        parsed_hint = hint_parsed.start or hint_date[:10]
         if parsed_hint:
+            # A structured source (JSON-LD / API) is authoritative: trust it.
             iso_date = parsed_hint
+            iso_end = str(hint.get("date_end") or "").strip()[:10] or hint_parsed.end
             date_text = str(hint.get("date_text") or "").strip() or date_text or parsed_hint
+            date_confidence = "high"
     boroughs = entities.get("boroughs") if isinstance(entities.get("boroughs"), list) else []
     borough = str(boroughs[0]) if boroughs else ""
     price = str(hint.get("price") or "").strip() or _extract_price(blob)
+    is_free = price.lower() == "free" or bool(_FREE_RE.search(blob))
     booking_url = str(hint.get("booking_url") or "").strip() or _extract_booking_url(candidate)
     event_name = str(hint.get("event_name") or "").strip() or _extract_event_name(candidate, entities, venue)
 
@@ -484,10 +577,12 @@ def extract_event(candidate: dict, entities: dict | None = None) -> dict:
         "venue": venue,
         "date": iso_date,
         "date_start": iso_date,
-        "date_end": "",
+        "date_end": iso_end,
         "date_text": date_text,
+        "date_confidence": date_confidence if iso_date else "none",
         "borough": borough,
         "price": price,
+        "free": is_free,
         "booking_url": booking_url,
         "schema_source": str(hint.get("schema_source") or ""),
         "event_status": str(hint.get("event_status") or ""),
@@ -501,6 +596,84 @@ def extract_event(candidate: dict, entities: dict | None = None) -> dict:
         "ticket_type": str(hint.get("ticket_type") or "").strip(),
         "is_event": has_event,
     }
+
+
+# ── Canonical consumers' helpers ──────────────────────────────────────────
+# The event blocks (Weekend, Next 7 Days, Tickets) and the repeat policy read
+# these instead of re-parsing dates themselves — one source of truth.
+
+
+def _event_dict(candidate_or_event: dict) -> dict:
+    """Accept either a candidate (read its ``event`` sub-dict) or an event dict
+    directly (use it as-is)."""
+    if not isinstance(candidate_or_event, dict):
+        return {}
+    inner = candidate_or_event.get("event")
+    if isinstance(inner, dict):
+        return inner
+    return candidate_or_event
+
+
+def event_start_date(candidate_or_event: dict) -> date_cls | None:
+    event = _event_dict(candidate_or_event)
+    raw = str(event.get("date_start") or event.get("date") or "").strip()[:10]
+    try:
+        return date_cls.fromisoformat(raw) if raw else None
+    except ValueError:
+        return None
+
+
+def event_end_date(candidate_or_event: dict) -> date_cls | None:
+    event = _event_dict(candidate_or_event)
+    raw = str(event.get("date_end") or "").strip()[:10]
+    try:
+        return date_cls.fromisoformat(raw) if raw else None
+    except ValueError:
+        return None
+
+
+def event_is_multi_day(candidate_or_event: dict) -> bool:
+    start = event_start_date(candidate_or_event)
+    end = event_end_date(candidate_or_event)
+    return bool(start and end and end > start)
+
+
+def event_active_on(candidate_or_event: dict, day: date_cls) -> bool:
+    """True when ``day`` falls inside the event's run (start..end inclusive).
+
+    A multi-day festival that started yesterday and ends next week is still
+    *active today* — so the repeat policy must not kill it as a stale repeat.
+    """
+    start = event_start_date(candidate_or_event)
+    if start is None:
+        return False
+    end = event_end_date(candidate_or_event) or start
+    return start <= day <= end
+
+
+def event_is_far_future(
+    candidate_or_event: dict,
+    *,
+    today: date_cls | None = None,
+    horizon_days: int = NEAR_HORIZON_DAYS,
+) -> bool:
+    """True when the event starts beyond the near horizon — so a 2027 item
+    can never be presented as 'this weekend' / imminent."""
+    start = event_start_date(candidate_or_event)
+    if start is None:
+        return False
+    today = today or _today_london()
+    return (start - today).days > horizon_days
+
+
+def event_date_is_trustworthy(candidate_or_event: dict) -> bool:
+    """A date we can publish as-is. Low-confidence dates (a bare month/day that
+    had to roll into next year — the classic stray-mention false positive) are
+    held for enrichment rather than shown with a possibly wrong year."""
+    event = _event_dict(candidate_or_event)
+    if not str(event.get("date") or "").strip():
+        return False
+    return str(event.get("date_confidence") or "").strip() != "low"
 
 
 def enrich_candidate_event(candidate: dict) -> dict:

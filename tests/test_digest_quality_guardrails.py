@@ -1443,6 +1443,38 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(lifecycle["repeat"], lifecycle)
         self.assertEqual(review["reason"], "same_calendar_item_without_new_reader_moment")
 
+    def test_multi_day_festival_in_progress_is_not_a_passed_repeat(self) -> None:
+        """W1 / RC3 (Didsbury Arts): a multi-day festival that started yesterday
+        and ends next week is still running today — not a stale "already passed"
+        repeat. The END date, not just the start, decides whether it passed."""
+        today = now_london().date()
+        start = today - timedelta(days=1)
+        end = today + timedelta(days=7)
+        candidate = {
+            "include": True,
+            "dedupe_decision": "repeat",
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": "Didsbury Arts Festival",
+            "summary": f"Festival runs {start.day}–{end.day} {end.strftime('%B')}.",
+            "event": {
+                "is_event": True,
+                "event_name": "Didsbury Arts Festival",
+                "venue": "Didsbury",
+                "date": start.isoformat(),
+                "date_start": start.isoformat(),
+                "date_end": end.isoformat(),
+            },
+        }
+        previous = dict(candidate)
+        previous["last_published_day_london"] = start.isoformat()
+        previous["first_published_day_london"] = start.isoformat()
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        review = calendar_repeat_review(candidate, previous)
+        self.assertNotEqual(review.get("reason"), "event_already_passed", review)
+        self.assertTrue(review["allow"], review)
+
     def test_calendar_repeat_rehash_is_not_sent_to_llm_review(self) -> None:
         event_day = (now_london().date() + timedelta(days=170)).isoformat()
         previous = {

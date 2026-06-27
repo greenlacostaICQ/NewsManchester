@@ -1484,7 +1484,16 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
     if current_date:
         days_until = (current_date - today).days
         if days_until < 0:
-            return {"applies": True, "allow": False, "reason": "event_already_passed"}
+            # A multi-day event has only "passed" once its END date is behind
+            # us. A festival 27 Jun–5 Jul is still running on 1 Jul even though
+            # its start is in the past — shown yesterday, still live today; not
+            # a stale repeat (W1 / RC3: Didsbury Arts was killed here because
+            # only its start date was considered).
+            from news_digest.pipeline.event_extraction import event_end_date  # noqa: PLC0415
+            end_date = event_end_date(candidate)
+            if not (end_date and end_date >= today):
+                return {"applies": True, "allow": False, "reason": "event_already_passed"}
+            days_until = 0  # ongoing multi-day run → treat as happening today
         last_published_day = _history_day(last_published)
         if (
             str(candidate.get("primary_block") or "") == "weekend_activities"

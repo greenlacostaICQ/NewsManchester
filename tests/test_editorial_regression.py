@@ -25,6 +25,7 @@ import unittest
 from datetime import timedelta
 
 from news_digest.pipeline.candidate_validator import (
+    _demote_distant_weekend_event,
     _exclude_stale_event,
     _exclude_stale_ticket_onsale,
     _exclude_undated_event_like_candidate,
@@ -543,6 +544,30 @@ class StaleEventAndSyntheticTest(unittest.TestCase):
         self.assertFalse(_exclude_stale_event(candidate))
         self.assertTrue(candidate["include"])
 
+    def test_far_future_weekend_event_dropped_even_if_recurrence_misfires(self) -> None:
+        # W1 / RC3: a "21 May 2027"-style festival must leave «Выходные в GM»
+        # even when a weak-wording recurrence flag is set. Date is far beyond the
+        # 30-day horizon relative to today, so the test stays calendar-stable.
+        far = now_london().date() + timedelta(days=400)
+        candidate = {
+            "include": True,
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": "Manchester Jazz Festival",
+            "summary": "Annual festival.",
+            "event": {
+                "is_event": True,
+                "event_name": "Manchester Jazz Festival",
+                "date": far.isoformat(),
+                "date_start": far.isoformat(),
+                "date_confidence": "high",
+                "is_recurring": True,
+            },
+        }
+        self.assertTrue(_demote_distant_weekend_event(candidate))
+        self.assertFalse(candidate["include"])
+        self.assertIn("far-future", candidate["reason"])
+
     def test_stale_structured_event_date_dropped(self) -> None:
         past = now_london().date() - timedelta(days=30)
         candidate = {
@@ -852,7 +877,7 @@ class CoverageBandTest(unittest.TestCase):
     catches it. Update the band intentionally."""
 
     EXPECTED_MIN = 25
-    EXPECTED_MAX = 45
+    EXPECTED_MAX = 50
 
     def test_total_case_count_inside_band(self) -> None:
         import sys

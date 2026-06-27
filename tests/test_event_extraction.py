@@ -22,8 +22,13 @@ from news_digest.pipeline.event_extraction import (
     EVENT_SCHEMA_VERSION,
     enrich_candidate_event,
     enrich_candidates_events,
+    event_active_on,
+    event_date_is_trustworthy,
+    event_is_far_future,
+    event_is_multi_day,
     extract_event,
     is_event_candidate,
+    _parse_date_details,
     _parse_date_from_blob,
     _extract_price,
 )
@@ -347,6 +352,79 @@ class EnrichCandidateEventTest(unittest.TestCase):
         self.assertTrue(candidates[0]["event"]["is_event"])
         self.assertEqual(candidates[1]["event"], {})
         self.assertEqual(candidates[2], "not-a-dict")
+
+
+class CanonicalEventFactsTest(unittest.TestCase):
+    """W1 / RC3: one module yields date range, free, confidence, and the
+    consumer helpers the event blocks + repeat policy read."""
+
+    def setUp(self):
+        self.today = date(2026, 6, 27)
+
+    def _culture(self, **extra):
+        c = {"category": "culture_weekly", "primary_block": "next_7_days"}
+        c.update(extra)
+        return c
+
+    def test_multi_day_range_populates_date_end(self):
+        parsed = _parse_date_details("Didsbury Arts Festival 27 June – 5 July", today=self.today)
+        self.assertEqual(parsed.start, "2026-06-27")
+        self.assertEqual(parsed.end, "2026-07-05")
+        self.assertEqual(parsed.confidence, "high")
+
+    def test_single_date_has_no_end(self):
+        parsed = _parse_date_details("Show on 15 July 2026", today=self.today)
+        self.assertEqual(parsed.end, "")
+
+    def test_confidence_low_for_rolled_far_future_bare_month(self):
+        # "May 2" seen in late June rolls to NEXT year — the classic stray-
+        # mention false positive. Low confidence → not trustworthy.
+        parsed = _parse_date_details("A Manifesto, published May 2", today=self.today)
+        self.assertEqual(parsed.start, "2027-05-02")
+        self.assertEqual(parsed.confidence, "low")
+
+    def test_confidence_medium_for_near_bare_month(self):
+        parsed = _parse_date_details("Summit on 3 July", today=self.today)
+        self.assertEqual(parsed.confidence, "medium")
+
+    def test_confidence_high_when_year_written(self):
+        self.assertEqual(_parse_date_details("3 July 2026", today=self.today).confidence, "high")
+
+    def test_free_boolean_set(self):
+        ev = extract_event(self._culture(title="Free family day at HOME 5 July",
+                                         summary="Free entry"))
+        self.assertTrue(ev["free"])
+        self.assertEqual(ev["price"], "free")
+
+    def test_paid_event_not_free(self):
+        ev = extract_event(self._culture(title="Show 5 July", summary="Tickets £15"))
+        self.assertFalse(ev["free"])
+
+    def test_in_lowercase_word_is_not_a_venue(self):
+        # "...Technology in Practice" must not yield venue="Practice".
+        ev = extract_event(self._culture(
+            title="Conversations on Responsible Technology in Practice 2 July"))
+        self.assertEqual(ev["venue"], "")
+
+    def test_multiword_venue_still_extracted(self):
+        ev = extract_event(self._culture(title="Recital at Bridgewater Hall 2 July"))
+        self.assertEqual(ev["venue"], "Bridgewater Hall")
+
+    def test_far_future_helper(self):
+        self.assertTrue(event_is_far_future({"date": "2027-05-21"}, today=self.today))
+        self.assertFalse(event_is_far_future({"date": "2026-07-03"}, today=self.today))
+
+    def test_multi_day_and_active_on_helpers(self):
+        festival = {"date_start": "2026-06-25", "date_end": "2026-07-05"}
+        self.assertTrue(event_is_multi_day(festival))
+        self.assertTrue(event_active_on(festival, self.today))      # mid-run
+        self.assertFalse(event_active_on(festival, date(2026, 7, 6)))  # after end
+
+    def test_trustworthy_rejects_low_confidence(self):
+        self.assertFalse(event_date_is_trustworthy(
+            {"date": "2027-05-02", "date_confidence": "low"}))
+        self.assertTrue(event_date_is_trustworthy(
+            {"date": "2026-07-03", "date_confidence": "medium"}))
 
 
 if __name__ == "__main__":
