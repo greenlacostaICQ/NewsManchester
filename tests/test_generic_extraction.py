@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import unittest
 
+from news_digest.pipeline.collector import extract
 from news_digest.pipeline.collector.extract import _trafilatura_evidence
 
 
@@ -36,6 +37,22 @@ class TrafilaturaEvidenceTests(unittest.TestCase):
         self.assertIn("Metrolink tram line", text)
         self.assertIn("40,000 passengers", text)
         # Precision extraction drops nav/footer boilerplate.
+        self.assertNotIn("Cookie policy", text)
+
+    def test_empty_trafilatura_result_uses_article_fallback(self) -> None:
+        class EmptyTrafilatura:
+            @staticmethod
+            def extract(*_args: object, **_kwargs: object) -> str:
+                return ""
+
+        original = extract._trafilatura
+        extract._trafilatura = EmptyTrafilatura()
+        try:
+            text = _trafilatura_evidence(ARTICLE_HTML)
+        finally:
+            extract._trafilatura = original
+
+        self.assertIn("Metrolink tram line", text)
         self.assertNotIn("Cookie policy", text)
 
     def test_empty_input_returns_empty(self) -> None:

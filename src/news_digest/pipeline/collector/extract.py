@@ -563,6 +563,17 @@ def _html_to_visible_text(html_text: str) -> str:
     return _clean_long_text(text)
 
 
+def _article_body_fallback(article_html: str) -> str:
+    article_match = re.search(
+        r"<(?:article|main)[^>]*>(.*?)</(?:article|main)>",
+        article_html,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if article_match:
+        return _strip_evidence_chrome(_html_to_visible_text(article_match.group(1)))
+    return _extract_paragraph_evidence(article_html)
+
+
 def _extract_h1_title(html_text: str) -> str:
     match = re.search(r"<h1\b[^>]*>(.*?)</h1>", html_text, flags=re.IGNORECASE | re.DOTALL)
     if not match:
@@ -698,13 +709,16 @@ _MIN_BODY_EVIDENCE_CHARS = 240
 def _trafilatura_evidence(article_html: str) -> str:
     """Generic article-body extraction as a safety net.
 
-    trafilatura reads the main content from any article page, so sources
-    without a tuned parser (or whose tuned parser returns too little) stop
-    shipping empty/thin evidence. Best-effort: returns "" on any failure or
-    when the optional dependency is unavailable.
+    trafilatura reads the main content from any article page. When it is
+    unavailable or version-sensitive extraction comes back empty, fall back to
+    a deterministic article/main parser so sources without a tuned parser stop
+    shipping empty/thin evidence.
     """
-    if not article_html or _trafilatura is None:
+    if not article_html:
         return ""
+    fallback = _article_body_fallback(article_html)
+    if _trafilatura is None:
+        return fallback
     try:
         text = _trafilatura.extract(
             article_html,
@@ -713,8 +727,11 @@ def _trafilatura_evidence(article_html: str) -> str:
             favor_precision=True,
         )
     except Exception:  # noqa: BLE001 - extraction is best-effort.
-        return ""
-    return _clean_long_text(text or "")
+        return fallback
+    cleaned = _strip_evidence_chrome(_clean_long_text(text or ""))
+    if len(fallback) > len(cleaned):
+        return fallback
+    return cleaned
 
 
 def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:

@@ -195,3 +195,14 @@
 - Файлы/места: `candidate_validator.py:602` (классификатор+gate), wired после `russian_event_classifier`.
 - ПРОВЕРКА: офлайн на 20 рус-кандидатах — 15 keep (все со strong-evidence), 5 drop (Goran + англо-Afisha/индекс-страницы). Прод — на следующем прогоне.
 - Где была ошибка: —
+
+### 0017 — ВОЛНА 2 / W2: pre-writer balance + payload cap (RC4) — 2026-06-27
+- Статус: внедрено (main), ПРОВЕРКА на следующем прод-прогоне
+- Проблема: outside-GM (565→143, ВСЁ A-tier) давит core; editor ловит 429 (RC4). Кэп холостой — доказано: blanket A-tier exemption + outside-GM весь A-tier.
+- Причина (корень): `_is_a_tier_ticket` делал A-tier exempt от ВСЕХ кэпов в обоих блоках (`writer.py:1631,1669`), а outside-GM весь A-tier → ни секционный, ни глобальный кэп не считали его → секция росла без границ.
+- Решение: `_is_budget_exempt_a_tier` — A-tier exempt от кэпа ТОЛЬКО при `venue_scope ∈ {GM, nearby}` (использует резолвер W3). Outside/unknown A-tier теперь СЧИТАЕТСЯ → кэпируется tier-blind (SECTION_MAX_ITEMS + CORE_UNDERFLOW_TICKET_CAPS снова кусают). «Worth-showing» hold (`:1430`) на `_is_a_tier_ticket` оставлен — outside A-tier по-прежнему показывается, но топ-N. Излишек outside A-tier → `ticket_inventory` репорт + флаг `ticket_inventory_held` (трекается, не дроп) — #0011 п.2.
+- Почему так (отвергли): отдельный кэп в llm_rewrite-board до writer — не нужен: после починки exemption рендер-кэп реально кусает, в editor уходит меньше строк → меньше токенов (вместе с S2 backoff даёт editor ≤ TPM). `missing_draft_line` в editor НЕ идёт — дропается/обогащается на writer (S4 #0002), в секции редактора не попадает.
+- Ожидаемый эффект и метрика: outside-GM кэпируется (на данных: 503/565 теперь не-exempt — outside 170 + unknown 333; exempt только nearby 39 + GM 23); `release_report…ticket_inventory.outside_gm_a_tier_held_count` ≥0; tickets(HTML) ≤ max(6,core).
+- Файлы/места: `writer.py:1594` (`_is_budget_exempt_a_tier`), `:1631,:1672` (budget-сайты), `:6353` (inventory-трекинг), report `ticket_inventory`.
+- ПРОВЕРКА: офлайн — outside/unknown A-tier не exempt, GM/nearby exempt; unit: 8 outside A-tier при cap 6 → 6 (было 8). Прод — на следующем прогоне.
+- Где была ошибка: —

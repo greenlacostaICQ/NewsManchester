@@ -72,23 +72,54 @@ class TicketConsolidationTest(unittest.TestCase):
         self.assertTrue(festival.get("festival_lineup"))                    # lineup carried
 
 
-class ATierNeverTrimmedTest(unittest.TestCase):
-    def test_a_tier_tickets_survive_the_section_cap(self) -> None:
-        from news_digest.pipeline.writer import _slice_counting_only_non_exempt
+class ATierBudgetExemptionTest(unittest.TestCase):
+    """W2 / RC4: outside-GM A-tier is capped in the morning digest (excess →
+    ticket inventory); only GM/nearby A-tier stays cap-exempt. This supersedes
+    the old 'A-tier never trimmed' rule for outside-GM venues — the rule that
+    made every cap idle when the outside-GM pool was entirely A-tier
+    (owner 2026-06-27 / #0011)."""
 
+    def _kept(self, cand: dict, fps: list[str], section: str, cap: int) -> list[str]:
+        from news_digest.pipeline.writer import _slice_counting_only_non_exempt
+        lines = ["• x"] * len(fps)
+        return _slice_counting_only_non_exempt(
+            lines=lines, srcs=lines, fps=fps, scores=[0.0] * len(fps), titles=lines,
+            candidate_by_fp=cand, section_name=section,
+            counted_limit=cap, ignore_section_exemption=True,
+        )[2]
+
+    def test_outside_gm_a_tier_is_capped(self) -> None:
         cand: dict = {}
         fps: list[str] = []
-        for i in range(8):  # 8 A-tier, more than any cap
+        for i in range(8):  # 8 outside-GM A-tier, cap 6
             fp = f"a{i}"
             fps.append(fp)
-            cand[fp] = {"primary_block": "outside_gm_tickets", "ticket_notability": {"tier": "A"}}
-        lines = ["• x"] * len(fps)
-        kept_fps = _slice_counting_only_non_exempt(
-            lines=lines, srcs=lines, fps=fps, scores=[0.0] * len(fps), titles=lines,
-            candidate_by_fp=cand, section_name="Крупные концерты вне GM",
-            counted_limit=6, ignore_section_exemption=True,
-        )[2]
-        self.assertEqual(sum(1 for f in kept_fps if f.startswith("a")), 8)  # all A-tier kept
+            cand[fp] = {"primary_block": "outside_gm_tickets", "venue_scope": "outside",
+                        "ticket_notability": {"tier": "A"}}
+        kept = self._kept(cand, fps, "Крупные концерты вне GM", 6)
+        self.assertEqual(sum(1 for f in kept if f.startswith("a")), 6)  # capped, not 8
+
+    def test_gm_a_tier_stays_exempt(self) -> None:
+        cand: dict = {}
+        fps: list[str] = []
+        for i in range(8):
+            fp = f"g{i}"
+            fps.append(fp)
+            cand[fp] = {"primary_block": "ticket_radar", "venue_scope": "gm",
+                        "ticket_notability": {"tier": "A"}}
+        kept = self._kept(cand, fps, "Билеты / Ticket Radar", 6)
+        self.assertEqual(sum(1 for f in kept if f.startswith("g")), 8)  # all GM A-tier kept
+
+    def test_nearby_a_tier_stays_exempt(self) -> None:
+        cand: dict = {}
+        fps: list[str] = []
+        for i in range(8):
+            fp = f"n{i}"
+            fps.append(fp)
+            cand[fp] = {"primary_block": "outside_gm_tickets", "venue_scope": "nearby",
+                        "ticket_notability": {"tier": "A"}}
+        kept = self._kept(cand, fps, "Крупные концерты вне GM", 6)
+        self.assertEqual(sum(1 for f in kept if f.startswith("n")), 8)  # nearby A-tier kept
 
 
 if __name__ == "__main__":

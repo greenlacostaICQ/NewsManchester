@@ -1591,6 +1591,23 @@ def _is_a_tier_ticket(candidate: dict | None) -> bool:
     return str(notability.get("tier") or "").upper() == "A"
 
 
+def _is_budget_exempt_a_tier(candidate: dict | None) -> bool:
+    """A-tier ticket exempt from caps ONLY when its venue is GM/nearby.
+
+    Outside-GM A-tier is NOT cap-exempt: on 2026-06-04 the outside-GM pool was
+    565→143 and *entirely* A-tier, so the blanket A-tier exemption made every
+    cap idle and let concerts bury core news (RC4). Outside A-tier is still
+    worth showing (it passes the block-contract hold), but in the morning digest
+    it is capped tier-blind; the excess is kept in the ticket inventory."""
+    if not _is_a_tier_ticket(candidate):
+        return False
+    scope = str((candidate or {}).get("venue_scope") or "").lower()
+    if not scope:
+        # No resolver verdict: trust the block — ticket_radar is the GM radar.
+        scope = "gm" if str((candidate or {}).get("primary_block") or "") == "ticket_radar" else "outside"
+    return scope in {"gm", "nearby"}
+
+
 def _is_active_tram_transport(candidate: dict | None) -> bool:
     """Active Metrolink/tram items must not be trimmed by the public budget.
 
@@ -1628,7 +1645,7 @@ def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
         )
         or _is_active_tram_transport(candidate)
         or _is_market_or_recurring_event(candidate)
-        or _is_a_tier_ticket(candidate)
+        or _is_budget_exempt_a_tier(candidate)
     )
 
 
@@ -1666,7 +1683,7 @@ def _slice_counting_only_non_exempt(
                     and (
                         _is_active_tram_transport(candidate)
                         or _is_market_or_recurring_event(candidate)
-                        or _is_a_tier_ticket(candidate)
+                        or _is_budget_exempt_a_tier(candidate)
                     )
                 )
         else:
@@ -5571,6 +5588,7 @@ def write_digest(project_root: Path) -> StageResult:
     }
     dropped_candidates: list[dict[str, object]] = []
     degraded_shrink_dropped: list[dict[str, object]] = []
+    ticket_inventory_held: list[dict[str, object]] = []
     global_budget_dropped: list[dict[str, object]] = []
     block_contract_report: dict[str, object] = {
         "version": 1,
@@ -6319,6 +6337,9 @@ def write_digest(project_root: Path) -> StageResult:
                             "reason": "LLM rewrite was degraded; held lower-priority item for review.",
                         }
                     )
+            _pre_cap_fps, _pre_cap_titles, _pre_cap_srcs, _pre_cap_scores = (
+                list(fps), list(titles), list(srcs), list(scores),
+            )
             lines, srcs, fps, scores, titles, _cap_dropped_idx, _ = _slice_counting_only_non_exempt(
                 lines=lines,
                 srcs=srcs,
@@ -6330,6 +6351,26 @@ def write_digest(project_root: Path) -> StageResult:
                 counted_limit=cap,
                 ignore_section_exemption=True,
             )
+            # Outside-GM A-tier dropped by the cap is not lost: it stays in the
+            # ticket inventory (tracked + flagged), per RC4 / #0011 — "A-tier
+            # disappears from the morning digest, not from inventory".
+            if section_name == "Крупные концерты вне GM":
+                for idx in _cap_dropped_idx:
+                    held_fp = str(_pre_cap_fps[idx]) if idx < len(_pre_cap_fps) else ""
+                    held_candidate = candidate_by_fp.get(held_fp)
+                    if not _is_a_tier_ticket(held_candidate):
+                        continue
+                    if isinstance(held_candidate, dict):
+                        held_candidate["ticket_inventory_held"] = True
+                    ticket_inventory_held.append({
+                        "section": section_name,
+                        "fingerprint": held_fp,
+                        "title": _pre_cap_titles[idx] if idx < len(_pre_cap_titles) else "",
+                        "source_label": _pre_cap_srcs[idx] if idx < len(_pre_cap_srcs) else "",
+                        "reader_value_score": _pre_cap_scores[idx] if idx < len(_pre_cap_scores) else 0.0,
+                        "tier": "A",
+                        "reason": "Outside-GM A-tier over the morning cap; kept in ticket inventory.",
+                    })
         # Section min-floor pull-back. On 2026-05-27 «Главная история
         # дня»=1 and «Что важно сегодня»=2 while score-10 candidates
         # sat with include=True but never made it through the writer
@@ -6560,6 +6601,11 @@ def write_digest(project_root: Path) -> StageResult:
             "Public issue budget held "
             f"{len(global_budget_dropped)} lower-priority item(s) out of the digest."
         )
+    if ticket_inventory_held:
+        warnings.append(
+            f"Ticket inventory: held {len(ticket_inventory_held)} outside-GM A-tier "
+            "concert(s) over the morning cap (tracked, not dropped)."
+        )
 
     drop_breakdown = {"failure": 0, "quarantine": 0, "reserve": 0}
     for _item in dropped_candidates:
@@ -6639,6 +6685,10 @@ def write_digest(project_root: Path) -> StageResult:
                 "lookup_enabled": bool(os.environ.get("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "").strip() == "1"),
                 "prefetch": notability_prefetch,
                 "items": ticket_notability_report[:120],
+            },
+            "ticket_inventory": {
+                "outside_gm_a_tier_held_count": len(ticket_inventory_held),
+                "items": ticket_inventory_held[:80],
             },
             "a_tier_ticket_trace": a_tier_ticket_trace,
             "fresh_news_board": fresh_report,
