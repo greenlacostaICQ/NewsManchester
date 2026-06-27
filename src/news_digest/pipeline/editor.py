@@ -37,9 +37,16 @@ MAX_WEAK_CITY_CANDIDATE_SHARE = 0.5
 PRE_SEND_RUSSIAN_EDITOR_MODEL = "gpt-4o"
 PRE_SEND_THIN_EVIDENCE_CHARS = 1200
 PRE_SEND_EVIDENCE_MODEL_MAX_CHARS = 18000
-PRE_SEND_EDITOR_BATCH_CHAR_BUDGET = 90000
-PRE_SEND_EDITOR_MAX_WORKERS = 3
+# S2: smaller batches stay well under the gpt-4o 30k TPM tier so a single batch
+# cannot, on its own, breach the per-minute limit; combined with sequential
+# dispatch (max_workers=1) and 429 backoff this makes the editor must-complete.
+PRE_SEND_EDITOR_BATCH_CHAR_BUDGET = 60000
+PRE_SEND_EDITOR_MAX_WORKERS = 1
 PRE_SEND_EDITOR_MAX_ROUNDS = 2
+# S2: survive transient rate-limit/5xx instead of recording a failed batch as a
+# clean pass. The API states "try again in Ns" on a 429 — honour it, capped.
+PRE_SEND_EDITOR_MAX_RETRIES = 4
+PRE_SEND_EDITOR_RETRY_CAP_SECONDS = 60.0
 
 _EDITOR_TRIMMABLE_SECTIONS = {
     "Билеты / Ticket Radar",
@@ -515,6 +522,43 @@ def _batch_editor_items(items: list[dict[str, object]]) -> list[list[dict[str, o
     return batches
 
 
+def _is_retryable_api_error(exc: Exception) -> bool:
+    """A transient error worth a backoff retry (rate limit / 5xx / timeout),
+    as opposed to a genuine bad request we should not retry."""
+    status = getattr(exc, "status_code", None) or getattr(getattr(exc, "response", None), "status_code", None)
+    if status in {429, 500, 502, 503, 504}:
+        return True
+    name = exc.__class__.__name__.lower()
+    if any(k in name for k in ("ratelimit", "timeout", "apiconnection", "internalserver", "serviceunavailable", "apistatus")):
+        return True
+    msg = str(exc).lower()
+    return any(k in msg for k in ("rate limit", "429", "overloaded", "temporarily unavailable", "timed out"))
+
+
+def _editor_retry_seconds(exc: Exception, attempt: int) -> float:
+    match = re.search(r"try again in ([\d.]+)\s*s", str(exc), flags=re.IGNORECASE)
+    if match:
+        return min(float(match.group(1)) + 0.5, PRE_SEND_EDITOR_RETRY_CAP_SECONDS)
+    return min(2.0 * (2 ** attempt), PRE_SEND_EDITOR_RETRY_CAP_SECONDS)
+
+
+def _editor_create_with_backoff(client: object, **kwargs: object) -> object:
+    """gpt-4o tier-1 caps at 30k TPM; a saturated minute returns 429 with an
+    explicit wait. Honour it (capped) and retry instead of dropping the batch —
+    an unreviewed line must never be recorded as a clean line (RC5)."""
+    last_exc: Exception | None = None
+    for attempt in range(PRE_SEND_EDITOR_MAX_RETRIES + 1):
+        try:
+            return client.chat.completions.create(**kwargs)
+        except Exception as exc:  # noqa: BLE001
+            last_exc = exc
+            if attempt >= PRE_SEND_EDITOR_MAX_RETRIES or not _is_retryable_api_error(exc):
+                raise
+            time.sleep(_editor_retry_seconds(exc, attempt))
+    assert last_exc is not None
+    raise last_exc
+
+
 def _call_pre_send_russian_editor_batch(
     client: object,
     items: list[dict[str, object]],
@@ -526,7 +570,8 @@ def _call_pre_send_russian_editor_batch(
     ]
     max_tokens = min(12000, 300 * len(items) + 1200)
     try:
-        response = client.chat.completions.create(
+        response = _editor_create_with_backoff(
+            client,
             model=PRE_SEND_RUSSIAN_EDITOR_MODEL,
             messages=messages,
             temperature=0.1,
@@ -1139,6 +1184,17 @@ def _pre_send_polish_sections(
             if len(bad_examples) < 8:
                 bad_examples.append(line[:240])
 
+    # S2: honest coverage. The final round's outcome is the editor's true state;
+    # a failed/partial round must not be laundered into a clean pass just because
+    # the narrow defect regex found nothing in the lines it never reviewed (RC5).
+    final_round = round_reports[-1] if round_reports else {}
+    coverage_complete = bool(final_round.get("coverage_complete")) and str(final_round.get("status") or "") in {"ok", "skipped_no_items"}
+    if round_reports and not coverage_complete:
+        warnings.append(
+            "Pre-send editor coverage incomplete after all rounds — unreviewed "
+            "lines are flagged for recovery, not counted as clean (S2)."
+        )
+
     return polished, {
         "enabled": True,
         "rules_fixed": rule_fixed,
@@ -1149,6 +1205,7 @@ def _pre_send_polish_sections(
         "model_requested_replaced": model_requested_replaced,
         "model_requested_stripped": model_requested_stripped,
         "remaining_bad": remaining_bad,
+        "coverage_complete": coverage_complete,
         "bad_examples": bad_examples,
         "model": PRE_SEND_RUSSIAN_EDITOR_MODEL,
         "max_rounds": PRE_SEND_EDITOR_MAX_ROUNDS,
