@@ -1128,6 +1128,72 @@ def _exclude_road_only_transport(candidate: dict) -> bool:
     return True
 
 
+# The headline is the truest signal of what a transport card IS. A genuine
+# disruption says so in the title ("Bus Stop Closure", "No trains", "Buses
+# replace trains"). These three patterns drive the passenger-impact contract.
+_TRANSPORT_TITLE_IMPACT_RE = re.compile(
+    r"\b(?:closure|closed|cancel(?:led|ling)?|disrupt|delay|divert|suspend|"
+    r"no\s+trains?|not\s+running|replacement\s+bus|buses\s+replace|"
+    r"rail\s+replacement|engineering\s+work|amended\s+timetable|"
+    r"reduced\s+service|part[\s-]?suspended|lift\s+out\s+of\s+service|"
+    r"stop\s+closure|line\s+closed|severe\s+delays?|minor\s+delays?|"
+    r"road\s+closure|roadworks?)\b",
+    re.IGNORECASE,
+)
+# Long-term infrastructure / capital-spend with no today-tomorrow travel impact
+# → City Radar (contract: "Bury Interchange received funding" is not Transport).
+_TRANSPORT_INFRA_RE = re.compile(
+    r"\b(?:funding|funded|investment|invest(?:ing|ed)?|£\s?\d|\d+\s?m(?:illion|n)?\b|"
+    r"boost|upgrade|regeneration|redevelopment|redevelop|revamp|refurbish(?:ment)?|"
+    r"rebuild|new\s+interchange|levelling[\s-]?up|improvement\s+scheme|masterplan|"
+    r"business\s+case|consultation|long[\s-]?term\s+plan|by\s+20\d\d|"
+    r"construction\s+(?:begins|starts|to\s+start)|set\s+to\s+(?:open|be\s+built))\b",
+    re.IGNORECASE,
+)
+# Emergency / incident merely *near* a transport node, with no travel change.
+_TRANSPORT_INCIDENT_RE = re.compile(
+    r"\b(?:police|emergency\s+services?|air\s+ambulance|paramedic|999|"
+    r"incident|cordon|evacuat|fire\s+service|vandalis|mindless|attack|"
+    r"stabb|assault)\b",
+    re.IGNORECASE,
+)
+
+
+def _reroute_non_impact_transport(candidate: dict) -> bool:
+    """Positive passenger-impact contract for the transport block.
+
+    A transport item must change someone's journey today/tomorrow. Decided on
+    the headline: a disruption title is genuine transport; otherwise an
+    infrastructure/funding headline → City Radar, and an emergency-incident
+    headline near a transport node → out of the transport block.
+    """
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("primary_block") or "") != "transport" and str(candidate.get("category") or "") != "transport":
+        return False
+    title = str(candidate.get("title") or "")
+    if _TRANSPORT_TITLE_IMPACT_RE.search(title):
+        return False  # the headline IS a disruption → genuine transport, keep
+    infra = bool(_TRANSPORT_INFRA_RE.search(title))
+    incident = bool(_TRANSPORT_INCIDENT_RE.search(title))
+    if not infra and not incident:
+        return False  # ambiguous alert — leave for other gates
+    candidate["primary_block"] = "city_watch"
+    candidate["transport_contract"] = {
+        "decision": "reroute_out_of_transport",
+        "reason": "infrastructure_no_today_tomorrow_impact" if infra else "node_incident_no_passenger_impact",
+    }
+    detail = (
+        "long-term infrastructure/funding without today/tomorrow travel impact"
+        if infra
+        else "incident near a transport node that does not change travel"
+    )
+    existing = str(candidate.get("reason") or "").strip()
+    note = f"Validator: transport needs passenger impact — {detail}; moved to City Radar."
+    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    return True
+
+
 def _exclude_historical_no_news_angle(candidate: dict) -> bool:
     """User feedback: «Salford Винни Клей 90-х годов — уже было и
     зачем мне эта новость про город сейчас».
@@ -2470,6 +2536,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _time_gate("cross_day_rehash", lambda: _exclude_cross_day_rehash(candidate, state_dir))
         if candidate.get("include") and manual != "force_include":
             _time_gate("road_only_transport", lambda: _exclude_road_only_transport(candidate))
+        if candidate.get("include") and manual != "force_include":
+            _time_gate("non_impact_transport", lambda: _reroute_non_impact_transport(candidate))
         if candidate.get("include"):
             _time_gate("assign_venue_scope", lambda: _assign_venue_scope(candidate))
         if candidate.get("include"):

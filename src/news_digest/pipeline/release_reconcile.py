@@ -19,7 +19,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from news_digest.pipeline.common import SECTION_MIN_ITEMS, canonical_url_identity, extract_sections
+from news_digest.pipeline.common import PRIMARY_BLOCKS, SECTION_MIN_ITEMS, canonical_url_identity, extract_sections
 
 LEAD_SECTION = "Главная история дня"
 RECOVERY_INSERT_CAP = 8
@@ -36,6 +36,21 @@ def _existing_url_idents(html_text: str) -> set[str]:
     # Match the identity _same_section_reserve_line dedups on (canonical), so a
     # recovered line can never duplicate an item already visible in the issue.
     return {canonical_url_identity(url) for url in _HREF_RE.findall(html_text) if url}
+
+
+def _candidate_bullet_line(candidate: dict[str, Any]) -> str:
+    """A renderable bullet line for a specific must_show candidate, used to
+    recover it when it is missing from the HTML."""
+    line = str(candidate.get("draft_line") or "").strip()
+    if not line:
+        return ""
+    if not line.startswith("• "):
+        line = f"• {line}"
+    url = str(candidate.get("source_url") or "")
+    if url and "<a " not in line.lower():
+        label = str(candidate.get("source_label") or "источник")
+        line = f'{line} <a href="{url}">{label}</a>'
+    return line
 
 
 def insert_bullets_after_section(
@@ -131,6 +146,37 @@ def reconcile_visible_html(
                 }
             )
 
+    # P0-2: the must_show contract — every protected/must_show item must be
+    # visible in the HTML or honestly reported. (S4 originally checked only
+    # section minimums; this enforces item-level "selected => visible or
+    # replaced".) Recover a missing must_show item by inserting its own line.
+    must_show_missing: list[dict[str, Any]] = []
+    must_show_recovered = 0
+    for candidate in candidates:
+        if not (candidate.get("publish_plan_must_show") or str(candidate.get("publish_plan_status") or "") == "must_show"):
+            continue
+        ident = canonical_url_identity(str(candidate.get("source_url") or "")) if candidate.get("source_url") else ""
+        if ident and ident in rendered_urls:
+            continue  # already visible in the issue
+        section = PRIMARY_BLOCKS.get(str(candidate.get("primary_block") or ""))
+        line = _candidate_bullet_line(candidate)
+        added = 0
+        if section and line and inserted_total < insert_cap:
+            html_text, added = insert_bullets_after_section(html_text, section, [line])
+        if added:
+            inserted_total += added
+            must_show_recovered += added
+            if ident:
+                rendered_urls.add(ident)
+        else:
+            must_show_missing.append(
+                {
+                    "title": str(candidate.get("title") or "")[:80],
+                    "section": section or "",
+                    "reason": "no_draft_line_or_section_absent_or_cap_reached",
+                }
+            )
+
     if inserted_total:
         draft_path.write_text(html_text, encoding="utf-8")
         html_counts = _html_section_counts(html_text)
@@ -148,4 +194,6 @@ def reconcile_visible_html(
         "recovered": recovered,
         "inserted_total": inserted_total,
         "still_under_minimum": still_short,
+        "must_show_recovered": must_show_recovered,
+        "must_show_missing": must_show_missing,
     }

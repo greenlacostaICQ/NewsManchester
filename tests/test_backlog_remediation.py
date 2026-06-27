@@ -216,6 +216,42 @@ class WriterRenderedFingerprintTest(unittest.TestCase):
             self.assertIn("конкретных подтверждённых сбоев", html)
             self.assertIn("https://tfgm.com/travel-updates", html)
 
+
+class TransportPassengerImpactContractTest(unittest.TestCase):
+    """W4 / RC: the transport block requires concrete passenger impact. Decided
+    on the headline — infrastructure/funding → City Radar; an incident near a
+    transport node → out of transport; a real disruption stays."""
+
+    def _t(self, title: str) -> dict:
+        return {"include": True, "category": "transport", "primary_block": "transport",
+                "title": title, "summary": title}
+
+    def _reroute(self, candidate: dict) -> bool:
+        from news_digest.pipeline.candidate_validator import _reroute_non_impact_transport
+        return _reroute_non_impact_transport(candidate)
+
+    def test_interchange_funding_goes_to_city_radar(self) -> None:
+        c = self._t("Bury's tram and bus interchange revamp gets £25m boost")
+        self.assertTrue(self._reroute(c))
+        self.assertEqual(c["primary_block"], "city_watch")
+        self.assertEqual(c["transport_contract"]["reason"], "infrastructure_no_today_tomorrow_impact")
+
+    def test_incident_near_node_leaves_transport(self) -> None:
+        c = self._t("Rawtenstall incident as police and air ambulance called")
+        self.assertTrue(self._reroute(c))
+        self.assertEqual(c["primary_block"], "city_watch")
+        self.assertEqual(c["transport_contract"]["reason"], "node_incident_no_passenger_impact")
+
+    def test_concrete_no_trains_disruption_stays(self) -> None:
+        c = self._t("Northern: No trains to / from Salford Central on Saturday")
+        self.assertFalse(self._reroute(c))
+        self.assertEqual(c["primary_block"], "transport")
+
+    def test_bus_stop_closure_stays(self) -> None:
+        c = self._t("Whitworth Street, Manchester - Bus Stop Closure")
+        self.assertFalse(self._reroute(c))
+        self.assertEqual(c["primary_block"], "transport")
+
     def test_degraded_llm_shrink_holds_lower_priority_soft_section_items(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

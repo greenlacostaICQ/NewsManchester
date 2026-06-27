@@ -1138,13 +1138,12 @@ def _pre_send_polish_sections(
                 out.append(replacement)
                 replaced += 1
             else:
-                if section_name == "Общественный транспорт сегодня":
-                    fallback = _transport_status_fallback_line()
-                    if fallback not in out:
-                        out.append(fallback)
-                    replaced += 1
-                    warnings.append("Degradation: replaced unrepairable transport row with TfGM status fallback.")
-                    continue
+                # A concrete transport row we cannot render is STRIPPED, never
+                # swapped for the generic "check TfGM" status line: that line
+                # may only stand in for an *empty* block (contract: generic
+                # fallback is forbidden when concrete disruption exists). The
+                # concrete location-bearing recovery already ran above
+                # (_transport_replacement_for_line).
                 stripped += 1
                 warnings.append(f"Degradation: stripped an unrepairable line in «{section_name}».")
         polished[section_name] = out
@@ -1214,16 +1213,21 @@ def _pre_send_polish_sections(
                 out.append(replacement)
                 replaced += 1
             else:
-                if section_name == "Общественный транспорт сегодня":
-                    fallback = _transport_status_fallback_line()
-                    if fallback not in out:
-                        out.append(fallback)
-                    replaced += 1
-                    warnings.append("Final editor stop-loss: replaced unrepairable transport row with TfGM status fallback.")
-                    continue
+                # Strip, don't substitute the generic status line for a concrete
+                # row (see first-round note above).
                 stripped += 1
                 warnings.append(f"Final editor stop-loss: stripped an unrepairable line in «{section_name}».")
         polished[section_name] = out
+
+    # Generic TfGM status line stands in ONLY for an otherwise-empty transport
+    # block (honest "no confirmed disruptions"), never beside concrete lines.
+    _second_round_transport = [
+        line for line in polished.get("Общественный транспорт сегодня", [])
+        if line.strip() and line.strip() != "•"
+    ]
+    if not _second_round_transport and "Общественный транспорт сегодня" in polished:
+        polished["Общественный транспорт сегодня"] = [_transport_status_fallback_line()]
+        warnings.append("Final editor stop-loss: empty transport block replaced with TfGM status fallback.")
 
     bad_examples: list[str] = []
     for item in _visible_line_items(polished):
@@ -1233,11 +1237,15 @@ def _pre_send_polish_sections(
             if len(bad_examples) < 8:
                 bad_examples.append(line[:240])
 
-    # S2: honest coverage. The final round's outcome is the editor's true state;
-    # a failed/partial round must not be laundered into a clean pass just because
-    # the narrow defect regex found nothing in the lines it never reviewed (RC5).
-    final_round = round_reports[-1] if round_reports else {}
-    coverage_complete = bool(final_round.get("coverage_complete")) and str(final_round.get("status") or "") in {"ok", "skipped_no_items"}
+    # S2: honest coverage. Every visible line must be reviewed at some point — so
+    # coverage is complete if ANY round achieved full coverage (each round
+    # re-processes the whole visible digest). A skipped/not-needed second round
+    # must NOT flip a clean first round to incomplete; only a genuine
+    # failed/partial pass with no covering round counts as incomplete (RC5).
+    coverage_complete = any(
+        bool(r.get("coverage_complete")) and str(r.get("status") or "") in {"ok", "skipped_no_items"}
+        for r in round_reports
+    )
     if round_reports and not coverage_complete:
         warnings.append(
             "Pre-send editor coverage incomplete after all rounds — unreviewed "

@@ -273,5 +273,13 @@ def extract_sections(html_text: str) -> dict[str, list[str]]:
             continue
         if line.startswith("• "):
             sections[current_section].append(line)
+        elif line.startswith("<b>"):
+            # The lead story renders as a bold sentence with NO bullet (see
+            # writer.py "Lead story: no bullet, bold first sentence"). A pure
+            # <b>heading</b> was already consumed above, so a <b>-prefixed line
+            # here is real content (the lead). Capture it, otherwise the lead
+            # block parses as empty and the editor rebuild / HTML-truth count /
+            # lead-visible check all silently lose the day's main story.
+            sections[current_section].append(line)
 
     return sections

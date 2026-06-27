@@ -173,3 +173,14 @@
 - Файлы/места: `candidate_validator.py:174,279,~217` (резолвер), `writer.py:2297`.
 - ПРОВЕРКА: офлайн — Finsbury Park → ('outside','London'), reclassify → outside_gm_tickets; Co-op Live → GM (остаётся). Прод — на следующем прогоне.
 - Где была ошибка: —
+
+### 0015 — ВОЛНА 2 / W4: транспорт = контракт пассажирского эффекта — 2026-06-27
+- Статус: внедрено (main), ПРОВЕРКА на следующем прод-прогоне
+- Проблема: в блоке транспорта — Bury Interchange (стройка/£25m), Rawtenstall (ЧП у автостанции), и generic «проверьте TfGM» вместо/рядом с конкретными сбоями (P0 в PROJECT_STATE).
+- Причина (корень): (а) правило негативное — `_should_route_to_transport` пускает TfGM-источники безусловно, нет позитивного требования пассажирского эффекта; (б) `editor.py:1142,1218` подменял неремонтируемую КОНКРЕТНУЮ строку generic-статусом «сбоев нет» (`_transport_status_fallback_line`) — прямое нарушение «generic запрещён при наличии конкретного».
+- Решение: (а) `_reroute_non_impact_transport` — решает по ЗАГОЛОВКУ: title-impact (closure/cancelled/no trains/buses replace/...) → транспорт; иначе infra/funding (£Nm/revamp/boost/...) → City Radar; иначе incident-у-узла (police/air ambulance/vandalism/...) → из транспорта. (б) editor: неремонтируемую строку только STRIP, никогда не подменять generic; generic-статус ставится ТОЛЬКО на пустой блок (честное «сбоев нет»), в т.ч. добавлен empty-check после 2-го раунда.
+- Почему так (отвергли): blob-скан на impact — ложно-срабатывал (Bury имел «works» в теле); решаем по заголовку — он и есть суть карточки.
+- Ожидаемый эффект и метрика: Bury→Городской радар; Rawtenstall→вне транспорта; Northern/bus-stop с конкретикой остаются; в HTML нет generic-строки рядом с конкретной.
+- Файлы/места: `candidate_validator.py:1131` (`_reroute_non_impact_transport`), `editor.py:1141,1216` (strip+empty-check).
+- ПРОВЕРКА: офлайн на 12 транспорт-кандидатах — Bury/Rawtenstall/heritage-vandalism уходят, 9 конкретных остаются. Прод — на следующем прогоне.
+- Где была ошибка: —
