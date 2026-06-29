@@ -15,6 +15,7 @@ class TranslationDefectCheckerTest(unittest.TestCase):
     def test_glued_bilingual_tokens_flagged_both_directions(self):
         self.assertTrue(_line_needs_russian_editor("• Stockportа закрыт для проезда."))   # latin→cyrillic (existing)
         self.assertTrue(_line_needs_russian_editor("• улицаStreet закрыта на ремонт."))   # cyrillic→latin (S3)
+        self.assertTrue(_line_needs_russian_editor("• В Норт Уэстern открыли новый маршрут."))
 
     def test_kept_english_brands_are_not_false_flagged(self):
         for clean in (

@@ -29,6 +29,33 @@ class GlossaryQATests(unittest.TestCase):
         self.assertEqual(glossary_line_issues(fixed), [])
 
 
+class WriterLanguageQATests(unittest.TestCase):
+    def test_mixed_latin_cyrillic_word_is_quality_error(self) -> None:
+        candidate = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "evidence_text": "Greater Manchester leaders discussed regional transport.",
+        }
+        line = "• В Норт Уэстern обсудили транспортный план. Жителям стоит проверить сроки."
+
+        errors = _draft_line_quality_errors(candidate, line)
+
+        self.assertTrue(any("mixed Latin/Cyrillic word" in error for error in errors), errors)
+
+    def test_kept_english_brand_words_are_not_mixed_script_errors(self) -> None:
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "next_7_days",
+            "evidence_text": "The Lowry hosts a dated performance for visitors.",
+            "event": {"is_event": True, "date_start": "2026-07-01", "venue": "The Lowry"},
+        }
+        line = "• The Lowry проведет спектакль 1 июля. Сверьте время перед поездкой."
+
+        errors = _draft_line_quality_errors(candidate, line)
+
+        self.assertFalse(any("mixed Latin/Cyrillic word" in error for error in errors), errors)
+
+
 class EnglishDataQATests(unittest.TestCase):
     def test_transport_item_reroutes_before_translation(self) -> None:
         candidate = {

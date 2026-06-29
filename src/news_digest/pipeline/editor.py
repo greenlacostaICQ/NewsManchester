@@ -141,6 +141,13 @@ _BAD_RUSSIAN_DETECTORS: tuple[re.Pattern[str], ...] = (
     # ("murder", "lineup", "venue", "sold out"). Proper names/brands stay
     # Latin and are not in this list, so they are not falsely flagged.
     re.compile(r"\b(?:murder|line-?up|venue|sold\s+out|on\s+sale|headliner)\b", re.IGNORECASE),
+    # Any single token that mixes Latin and Cyrillic characters ("Уэстern",
+    # "Яndex"). This catches short mixed tokens beyond the older suffix-only
+    # patterns below.
+    re.compile(
+        r"\b(?=[A-Za-zА-Яа-яЁё]*[A-Za-z])(?=[A-Za-zА-Яа-яЁё]*[А-Яа-яЁё])"
+        r"[A-Za-zА-Яа-яЁё]{2,}\b"
+    ),
     # Latin word glued to a Russian ending ("Stockportа") — belt-and-braces
     # for any hybrid the auto-fix above did not normalise.
     re.compile(r"[A-Za-z]{3,}[а-яё]"),

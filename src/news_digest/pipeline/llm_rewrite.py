@@ -100,6 +100,7 @@ REWRITE_RANKING_BOARD_MAX = 90
 # #9 Soft global ceiling on how many candidates we write in Russian per run.
 # Items above the ceiling are not deleted — they stay as backup reserve.
 REWRITE_TRANSLATION_BOARD_MAX = 42
+REPAIR_DRAFT_MAX_ITEMS_DEFAULT = 8
 TRANSLATION_MEMORY_VERSION = 1
 TRANSLATION_MEMORY_MAX_ENTRIES = 2500
 TRANSLATION_MEMORY_TTL_DAYS = 45
@@ -118,6 +119,34 @@ _REWRITE_BLOCK_FLOORS: dict[str, int] = {
     "weekend_activities": 8,
 }
 _FRESH_GLOBAL_PROTECTED_TARGET = 12
+
+_EVENT_DATE_TEXT_RE = re.compile(
+    r"\b(?:\d{1,2}(?:st|nd|rd|th)?\s+(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|"
+    r"apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|"
+    r"oct(?:ober)?|nov(?:ember)?|dec(?:ember)?|"
+    r"января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)|"
+    r"(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|"
+    r"aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?|"
+    r"\d{4}-\d{2}-\d{2}|today|tomorrow|tonight|this\s+week|сегодня|завтра|послезавтра)\b",
+    re.IGNORECASE,
+)
+_COST_GUARD_EVENT_BLOCKS = {
+    "weekend_activities",
+    "next_7_days",
+    "future_announcements",
+    "russian_events",
+    "professional_events",
+    "ticket_radar",
+    "outside_gm_tickets",
+}
+_COST_GUARD_EVENT_CATEGORIES = {
+    "culture_weekly",
+    "food_openings",
+    "russian_speaking_events",
+    "diaspora_events",
+    "professional_events",
+    "venues_tickets",
+}
 
 _PROMPT_FOOTER = (
     '\nВерни ТОЛЬКО JSON-объект: {"items": [{"fingerprint": "...", "decision": "write|needs_enrichment|skip", '
@@ -1380,6 +1409,137 @@ def _has_nothing_to_write_from(candidate: dict) -> bool:
         ev.get("is_event") and (ev.get("date_start") or ev.get("date")) and ev.get("venue")
     )
     return len(text) < 40 and not structured_event
+
+
+def _event_like_without_date(candidate: dict) -> bool:
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    if block not in _COST_GUARD_EVENT_BLOCKS and category not in _COST_GUARD_EVENT_CATEGORIES:
+        return False
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    if str(event.get("date_start") or event.get("date") or "").strip():
+        return False
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "practical_angle")
+    )
+    if _EVENT_DATE_TEXT_RE.search(blob):
+        return False
+    event_like = bool(event.get("is_event")) or bool(
+        re.search(
+            r"\b(?:event|events?|ticket|tickets?|concert|gig|show|festival|market|"
+            r"workshop|webinar|meetup|comedy|stand-?up|exhibition|performance|"
+            r"событи[ея]|билет|концерт|фестивал|маркет|рынок|мастер-?класс|"
+            r"выставк|спектакл|стендап)\b",
+            blob,
+            re.IGNORECASE,
+        )
+    )
+    return event_like
+
+
+def _cost_after_quality_skip_reason(candidate: dict) -> str:
+    """Return why an item should not consume another model call.
+
+    P0/P1 quality rules already decide which no-date / no-fact items are not
+    safe to render. This guard makes the cost layer obey that decision before
+    the Board Judge, final translation, repair, or forcing passes spend tokens.
+    """
+    if str(candidate.get("manual_override") or "") == "force_include":
+        return ""
+    if _has_nothing_to_write_from(candidate):
+        return "No source facts after enrichment; hold for enrichment instead of model rewrite."
+    if _event_like_without_date(candidate):
+        return "Event-like candidate has no actionable date after enrichment; hold before model rewrite."
+    reject_reasons = candidate.get("reject_reasons")
+    if isinstance(reject_reasons, list) and reject_reasons:
+        return "Candidate already carries reject reasons; do not spend model calls on a line that should not publish."
+    if str(candidate.get("reject_reason") or "").strip():
+        return "Candidate already carries a reject reason; do not spend model calls on a line that should not publish."
+    return ""
+
+
+def _apply_cost_after_quality_guard(to_rewrite: list[dict]) -> tuple[list[dict], dict[str, object]]:
+    selected: list[dict] = []
+    held: list[dict[str, object]] = []
+    for candidate in to_rewrite:
+        reason = _cost_after_quality_skip_reason(candidate)
+        if not reason:
+            selected.append(candidate)
+            continue
+        candidate["include"] = False
+        candidate["backup_candidate"] = True
+        candidate["backup_pool_only"] = True
+        candidate["public_reserve"] = False
+        candidate["recoverable_reserve"] = False
+        candidate["rewrite_shortlist_status"] = "held_cost_after_quality"
+        candidate["rewrite_shortlist_reason"] = reason
+        verdict = "needs_enrichment" if (
+            "No source facts" in reason or "no actionable date" in reason
+        ) else "drop"
+        _set_digest_selection_verdict(candidate, verdict, reason)
+        held.append(
+            {
+                "fingerprint": candidate.get("fingerprint") or "",
+                "title": candidate.get("title") or "",
+                "source_label": candidate.get("source_label") or "",
+                "category": candidate.get("category") or "",
+                "primary_block": candidate.get("primary_block") or "",
+                "reason": reason,
+            }
+        )
+    return selected, {
+        "schema_version": 1,
+        "enabled": True,
+        "input_candidates": len(to_rewrite),
+        "selected_for_model": len(selected),
+        "held_before_model": len(held),
+        "held_examples": held[:40],
+    }
+
+
+def _cap_repair_targets(to_repair: list[dict], *, max_items: int | None = None) -> tuple[list[dict], dict[str, object]]:
+    cap = max_items if max_items is not None else _env_int(
+        "LLM_REPAIR_DRAFT_MAX_ITEMS",
+        REPAIR_DRAFT_MAX_ITEMS_DEFAULT,
+        minimum=1,
+        maximum=40,
+    )
+    if len(to_repair) <= cap:
+        return to_repair, {
+            "schema_version": 1,
+            "enabled": True,
+            "max_items": cap,
+            "input_candidates": len(to_repair),
+            "selected_for_repair": len(to_repair),
+            "held_after_cap": 0,
+            "held_examples": [],
+        }
+    ranked = sorted(to_repair, key=_rewrite_shortlist_priority, reverse=True)
+    selected = ranked[:cap]
+    held = ranked[cap:]
+    for candidate in held:
+        candidate["llm_repair_skipped_reason"] = (
+            f"Outside repair cap ({cap}); writer/release recovery will handle or drop."
+        )
+    return selected, {
+        "schema_version": 1,
+        "enabled": True,
+        "max_items": cap,
+        "input_candidates": len(to_repair),
+        "selected_for_repair": len(selected),
+        "held_after_cap": len(held),
+        "held_examples": [
+            {
+                "fingerprint": candidate.get("fingerprint") or "",
+                "title": candidate.get("title") or "",
+                "category": candidate.get("category") or "",
+                "primary_block": candidate.get("primary_block") or "",
+                "reason": candidate.get("llm_repair_skipped_reason") or "",
+            }
+            for candidate in held[:30]
+        ],
+    }
 
 
 def _force_write_evidence_floor(candidate: dict) -> int:
@@ -3712,6 +3872,23 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         "selected_for_russian": 0,
         "held_for_backup": 0,
     }
+    cost_after_quality_guard: dict[str, object] = {
+        "schema_version": 1,
+        "enabled": False,
+        "input_candidates": len(to_rewrite),
+        "selected_for_model": len(to_rewrite),
+        "held_before_model": 0,
+        "held_examples": [],
+    }
+    repair_cap_report: dict[str, object] = {
+        "schema_version": 1,
+        "enabled": False,
+        "max_items": REPAIR_DRAFT_MAX_ITEMS_DEFAULT,
+        "input_candidates": 0,
+        "selected_for_repair": 0,
+        "held_after_cap": 0,
+        "held_examples": [],
+    }
     if deterministic_writer_items:
         candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     applied = 0
@@ -3740,6 +3917,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "errors": errors,
                 "warnings": warnings,
                 "included_for_rewrite": len(to_rewrite),
+                "cost_after_quality_guard": cost_after_quality_guard,
                 "rewrite_shortlist": rewrite_shortlist,
                 "deterministic_writer_items": {
                     "count": len(deterministic_writer_items),
@@ -3749,6 +3927,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "applied": 0,
                 "fixed": 0,
                 "repaired": 0,
+                "repair_cap": repair_cap_report,
                 "prompt_versions": _prompt_versions(),
                 "model_route": route_snapshot().get("rewrite", []),
             },
@@ -3766,6 +3945,19 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         if int(enrichment_action.get("enriched") or 0):
             logger.info("Enrichment: pulled full text for %d thin candidate(s).", enrichment_action["enriched"])
         run_iso = now_london().isoformat()
+        to_rewrite, cost_after_quality_guard = _apply_cost_after_quality_guard(to_rewrite)
+        if cost_after_quality_guard.get("held_before_model"):
+            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            soft_warnings.append(
+                "Cost-after-quality guard: "
+                f"{cost_after_quality_guard['held_before_model']} candidate(s) held before model calls."
+            )
+            logger.info(
+                "Cost-after-quality guard: %d/%d candidates still eligible for model calls; %d held.",
+                cost_after_quality_guard.get("selected_for_model"),
+                cost_after_quality_guard.get("input_candidates"),
+                cost_after_quality_guard.get("held_before_model"),
+            )
         to_rewrite, rewrite_shortlist = _apply_rewrite_shortlist(candidates, to_rewrite)
         if rewrite_shortlist["held_for_backup"]:
             # Pre-board before any model call: mini should judge the real
@@ -3987,6 +4179,12 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         and not _skip_llm_for_manual_review(c)
         and _needs_quality_repair(c)
     ]
+    to_repair, repair_cap_report = _cap_repair_targets(to_repair)
+    if repair_cap_report.get("held_after_cap"):
+        soft_warnings.append(
+            "Repair cap: "
+            f"{repair_cap_report['held_after_cap']} hard-defect draft_line(s) left for deterministic recovery/drop."
+        )
     if to_repair:
         logger.info("LLM repair pass: %d hard-defect draft_lines, rewriting editorially.", len(to_repair))
         repair_mapping = _call_with_fallback(
@@ -4176,6 +4374,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "warnings": warnings,
             "soft_warnings": soft_warnings,
             "included_for_rewrite": len(to_rewrite),
+            "cost_after_quality_guard": cost_after_quality_guard,
             "rewrite_shortlist": rewrite_shortlist,
             "prewrite_enrichment": prewrite_enrichment_report,
             "post_board_translation_cut": post_board_translation_cut,
@@ -4234,6 +4433,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "applied": applied,
             "fixed": fixed,
             "repaired": repaired,
+            "repair_cap": repair_cap_report,
             "repair_policy": "hard_defects_only; soft short/style issues are left for writer recovery and whole-digest final editor",
             "rewrite_seconds": round(time.monotonic() - _stage_t0, 2),
             "cost_summary": cost_summary,

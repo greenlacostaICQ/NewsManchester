@@ -1754,6 +1754,17 @@ def _contains_cyrillic(value: str) -> bool:
     return bool(re.search(r"[а-яё]", str(value or ""), flags=re.IGNORECASE))
 
 
+_MIXED_SCRIPT_WORD_RE = re.compile(
+    r"\b(?=[A-Za-zА-Яа-яЁё]*[A-Za-z])(?=[A-Za-zА-Яа-яЁё]*[А-Яа-яЁё])"
+    r"[A-Za-zА-Яа-яЁё]{2,}\b"
+)
+
+
+def _mixed_latin_cyrillic_words(value: str) -> list[str]:
+    text = re.sub(r"<[^>]+>", " ", str(value or ""))
+    return _MIXED_SCRIPT_WORD_RE.findall(text)
+
+
 def _looks_like_untranslated_english(value: str) -> bool:
     text = str(value or "").strip()
     if not text or _contains_cyrillic(text):
@@ -5066,6 +5077,9 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
         errors.append("draft_line must not use Markdown emphasis markers.")
     if not _contains_cyrillic(text):
         errors.append("draft_line must contain normal Russian prose.")
+    mixed_words = _mixed_latin_cyrillic_words(text)
+    if mixed_words:
+        errors.append(f"draft_line contains mixed Latin/Cyrillic word: {mixed_words[0]}.")
     normalized = re.sub(r"\s+", " ", text)
     if len(normalized) < 45:
         errors.append("draft_line is too short to be a self-contained item.")

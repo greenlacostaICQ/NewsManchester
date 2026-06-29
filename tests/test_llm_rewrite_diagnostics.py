@@ -4,7 +4,10 @@ from datetime import date, timedelta
 from unittest import mock
 
 from news_digest.pipeline.llm_rewrite import (
+    _apply_cost_after_quality_guard,
+    _cap_repair_targets,
     _call_with_fallback,
+    _cost_after_quality_skip_reason,
     _force_write_evidence_floor,
     _is_protected_rewrite_candidate,
     _is_actionable_weekend_candidate,
@@ -193,6 +196,91 @@ class LlmRewriteDiagnosticsTests(unittest.TestCase):
 
         candidate["draft_line"] = "• Manchester council published an update and residents should check the details."
         self.assertTrue(_needs_quality_repair(candidate))
+
+    def test_cost_after_quality_holds_headline_only_candidate_before_model(self) -> None:
+        candidate = {
+            "include": True,
+            "fingerprint": "fp-empty",
+            "title": "Teaser headline",
+            "summary": "",
+            "lead": "",
+            "evidence_text": "",
+            "primary_block": "last_24h",
+            "category": "media_layer",
+        }
+
+        selected, report = _apply_cost_after_quality_guard([candidate])
+
+        self.assertEqual(selected, [])
+        self.assertFalse(candidate["include"])
+        self.assertEqual(candidate["digest_selection_verdict"], "needs_enrichment")
+        self.assertTrue(candidate["backup_pool_only"])
+        self.assertEqual(report["held_before_model"], 1)
+
+    def test_cost_after_quality_holds_no_date_event_before_model(self) -> None:
+        candidate = {
+            "include": True,
+            "fingerprint": "fp-no-date-event",
+            "title": "Community workshop at HOME",
+            "summary": "A workshop for local residents.",
+            "lead": "",
+            "evidence_text": "A workshop for local residents at HOME.",
+            "primary_block": "next_7_days",
+            "category": "culture_weekly",
+            "event": {"is_event": True, "event_name": "Community workshop", "venue": "HOME"},
+        }
+
+        self.assertIn("no actionable date", _cost_after_quality_skip_reason(candidate))
+
+    def test_cost_after_quality_keeps_dated_event_for_model(self) -> None:
+        candidate = {
+            "include": True,
+            "fingerprint": "fp-dated-event",
+            "title": "Community workshop at HOME",
+            "summary": "A workshop for local residents.",
+            "lead": "",
+            "evidence_text": "A workshop for local residents at HOME.",
+            "primary_block": "next_7_days",
+            "category": "culture_weekly",
+            "event": {
+                "is_event": True,
+                "event_name": "Community workshop",
+                "venue": "HOME",
+                "date_start": today_london(),
+            },
+        }
+
+        self.assertEqual(_cost_after_quality_skip_reason(candidate), "")
+
+    def test_cost_after_quality_keeps_text_dated_event_when_struct_missing(self) -> None:
+        candidate = {
+            "include": True,
+            "fingerprint": "fp-text-date-event",
+            "title": "Community workshop at HOME on 1 July 2026",
+            "summary": "A workshop for local residents.",
+            "lead": "",
+            "evidence_text": "A workshop for local residents at HOME on 1 July 2026.",
+            "primary_block": "next_7_days",
+            "category": "culture_weekly",
+            "event": {"is_event": True, "event_name": "Community workshop", "venue": "HOME"},
+        }
+
+        self.assertEqual(_cost_after_quality_skip_reason(candidate), "")
+
+    def test_repair_targets_are_capped_before_second_model_spend(self) -> None:
+        candidates = [
+            {**_candidate(f"fp-{idx}"), "draft_line": "• Manchester council published an update and residents should check the details."}
+            for idx in range(3)
+        ]
+
+        selected, report = _cap_repair_targets(candidates, max_items=1)
+
+        self.assertEqual(len(selected), 1)
+        self.assertEqual(report["held_after_cap"], 2)
+        self.assertEqual(
+            sum(1 for candidate in candidates if candidate.get("llm_repair_skipped_reason")),
+            2,
+        )
 
     def test_borderline_items_are_not_sent_to_llm_without_manual_override(self) -> None:
         candidate = _candidate("fp-1")

@@ -390,6 +390,22 @@ class CanonicalEventFactsTest(unittest.TestCase):
     def test_confidence_high_when_year_written(self):
         self.assertEqual(_parse_date_details("3 July 2026", today=self.today).confidence, "high")
 
+    def test_listing_ordinal_comma_date(self):
+        # P1-A: Manchester's Finest / Skiddle put the date as "Sun 28th Jun,
+        # 2026 - Venue" — ordinal suffix + comma + weekday prefix used to defeat
+        # the parser, leaving real events undated and dropped as junk.
+        parsed = _parse_date_details("Sun 28th Jun, 2026 - The Beeswing Wine Bar", today=self.today)
+        self.assertEqual(parsed.start, "2026-06-28")
+        self.assertEqual(parsed.confidence, "high")
+
+    def test_listing_ordinal_range_populates_end(self):
+        parsed = _parse_date_details(
+            "Thu 2nd Jul, 2026 - Sun 6th Sep, 2026 - Aviva Studios", today=self.today
+        )
+        self.assertEqual(parsed.start, "2026-07-02")
+        self.assertEqual(parsed.end, "2026-09-06")
+        self.assertEqual(parsed.confidence, "high")
+
     def test_free_boolean_set(self):
         ev = extract_event(self._culture(title="Free family day at HOME 5 July",
                                          summary="Free entry"))

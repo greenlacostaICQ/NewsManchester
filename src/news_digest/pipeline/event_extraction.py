@@ -136,11 +136,13 @@ _EN_MONTHS: dict[str, int] = {
 _ISO_DATE_RE = re.compile(r"\b(20\d{2})-(\d{2})-(\d{2})\b")
 _UK_SLASH_DATE_RE = re.compile(r"\b(?P<day>\d{1,2})/(?P<month>\d{1,2})/(?P<year>20\d{2})\b")
 
-# English: "16 May 2026", "May 16, 2026", "16 May", "May 16"
+# English: "16 May 2026", "May 16, 2026", "16 May", "May 16",
+# and listing format "Sun 28th Jun, 2026" (ordinal suffix + comma before year,
+# weekday prefix ignored). Manchester's Finest / Skiddle put the date there.
 _EN_DAY_MONTH_YEAR_RE = re.compile(
-    r"\b(?P<day>\d{1,2})\s+(?P<month>"
+    r"\b(?P<day>\d{1,2})(?:st|nd|rd|th)?\s+(?P<month>"
     + "|".join(_EN_MONTHS.keys())
-    + r")(?:\s+(?P<year>20\d{2}))?\b",
+    + r")(?:,?\s+(?P<year>20\d{2}))?\b",
     re.IGNORECASE,
 )
 _EN_MONTH_DAY_YEAR_RE = re.compile(
@@ -176,10 +178,10 @@ _DAY_RANGE_RU_RE = re.compile(
 # wrap). The same-month range above only covers "16–17 May"; multi-day
 # festivals that span a month boundary (Didsbury Arts 27 Jun – 5 Jul) need this.
 _CROSS_MONTH_RANGE_EN_RE = re.compile(
-    r"\b(?P<sday>\d{1,2})\s+(?P<smonth>" + "|".join(_EN_MONTHS.keys()) + r")"
-    r"(?:\s+(?P<syear>20\d{2}))?\s*[-–—]\s*"
-    r"(?P<eday>\d{1,2})\s+(?P<emonth>" + "|".join(_EN_MONTHS.keys()) + r")"
-    r"(?:\s+(?P<eyear>20\d{2}))?\b",
+    r"\b(?P<sday>\d{1,2})(?:st|nd|rd|th)?\s+(?P<smonth>" + "|".join(_EN_MONTHS.keys()) + r")"
+    r"(?:,?\s+(?P<syear>20\d{2}))?\s*[-–—]\s*(?:(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*\s+)?"
+    r"(?P<eday>\d{1,2})(?:st|nd|rd|th)?\s+(?P<emonth>" + "|".join(_EN_MONTHS.keys()) + r")"
+    r"(?:,?\s+(?P<eyear>20\d{2}))?\b",
     re.IGNORECASE,
 )
 _CROSS_MONTH_RANGE_RU_RE = re.compile(
