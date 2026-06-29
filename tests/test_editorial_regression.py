@@ -843,7 +843,8 @@ class FinalEditorNetTest(unittest.TestCase):
         line = _same_section_reserve_line("Билеты / Ticket Radar", candidates, rendered_urls, rendered_story_keys, stats)
 
         self.assertIn("Example Artist", line)
-        self.assertIn("Last.fm", line)
+        self.assertNotIn("Last.fm", line)
+        self.assertIn("AO Arena", line)
         self.assertGreaterEqual(int(stats.get("enriched_rewrite_used") or 0), 1)
 
     def test_block_contract_holds_non_a_tier_outside_gm(self) -> None:

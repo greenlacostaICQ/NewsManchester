@@ -2379,15 +2379,17 @@ def _ticket_watch_reason(candidate: dict) -> str:
     # A festival lineup is a different product from a single headliner.
     if lineup:
         return "фестивальный состав, не один артист"
-    proof = _ticket_notability_proof(candidate)
     if tier == "A":
+        # P1-B: give the reader a reason to act (date / venue), not the machine
+        # notability signal. Last.fm / Spotify / Wikidata stay in the internal
+        # ticket_notability report, never in the published line.
+        if days == 0:
+            return f"сегодня в {venue}" if venue else "сегодня"
         if this_week:
-            base = f"{where} на этой неделе"
-        elif soon:
-            base = "ближайшая дата тура"
-        else:
-            base = "UK-дата в радаре"
-        return f"{base}; сигнал: {proof}" if proof else base
+            return f"{where} на этой неделе"
+        if soon:
+            return "ближайшая дата тура"
+        return f"{venue}: дата впереди" if venue else "UK-дата в радаре"
     if arena_show:
         if multi_night:
             return f"несколько дат в {venue}" if venue else "несколько дат"

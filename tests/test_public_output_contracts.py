@@ -516,8 +516,9 @@ class PublicOutputContractTests(unittest.TestCase):
             },
         }
         line = _build_ticket_fallback_line(candidate)
-        self.assertIn("Spotify", line)
-        self.assertIn("сигнал:", line)
+        self.assertNotIn("Spotify", line)
+        self.assertNotIn("сигнал:", line)
+        self.assertIn("Etihad Stadium", line)
         self.assertNotIn("крупный артист", line.lower())
         self.assertNotIn("крупная площадка", line.lower())
         self.assertNotIn("A-tier", line)
