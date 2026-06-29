@@ -698,6 +698,94 @@ _TRUSTED_CARD_ENRICHMENT = {
     "ok_heritage_card", "ok_manchester_theatres_card",
 }
 
+_DEEP_EVENT_ENRICHMENT_SOURCES = {
+    "HOME",
+    "Manchester's Finest",
+    "Manchester's Finest Events",
+    "GM Chamber Events",
+    "CompiledMCR Tech Events",
+}
+
+
+def _event_card_needs_deep_enrichment(source: SourceDef, item: ExtractedItem) -> bool:
+    """Trusted listing cards still need child-page facts for named event feeds."""
+    hint = item.structured_event_hint if isinstance(item.structured_event_hint, dict) else {}
+    missing_core = not (hint.get("venue") and (hint.get("date_start") or hint.get("date") or item.published_at))
+    missing_ticketing = not (hint.get("booking_url") or hint.get("price"))
+    if source.name in _DEEP_EVENT_ENRICHMENT_SOURCES:
+        return missing_core or missing_ticketing or len(str(item.evidence_text or item.summary or "")) < _MIN_BODY_EVIDENCE_CHARS
+    if "skiddle" in source.name.lower():
+        return missing_core
+    return source.report_category == "professional_events" and (missing_core or missing_ticketing)
+
+
+def _detail_url_allowed(source: SourceDef, url: str) -> bool:
+    try:
+        host = parse.urlsplit(url).netloc.lower()
+    except ValueError:
+        return False
+    if not host:
+        return False
+    allowed = tuple(getattr(source, "allowed_hosts", ()) or ())
+    if not allowed:
+        source_host = parse.urlsplit(source.url).netloc.lower()
+        allowed = (source_host,) if source_host else ()
+    for raw_host in allowed:
+        allowed_host = str(raw_host or "").lower().lstrip(".")
+        if host == allowed_host or host.endswith(f".{allowed_host}"):
+            return True
+    return False
+
+
+def _candidate_detail_urls(source: SourceDef, item: ExtractedItem) -> list[str]:
+    raw_parts = [
+        item.url,
+        item.summary,
+        item.lead,
+        item.evidence_text,
+    ]
+    urls: list[str] = []
+    for raw in raw_parts:
+        text = unescape(str(raw or ""))
+        for href in re.findall(r'href=["\']([^"\']+)["\']', text, flags=re.IGNORECASE):
+            urls.append(parse.urljoin(source.url, href.strip()))
+        for match in re.findall(r"https?://[^\s\"'<>]+", text):
+            urls.append(match.strip())
+        if text.startswith("http") and "<" in text:
+            urls.append(text.split("<", 1)[0].strip())
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for url in urls:
+        url = clean_url(re.sub(r"[\s\"'>].*$", "", url.strip()))
+        if not url or url in seen:
+            continue
+        if _detail_url_allowed(source, url):
+            cleaned.append(url)
+            seen.add(url)
+    return cleaned
+
+
+def _detail_url_for_enrichment(source: SourceDef, item: ExtractedItem) -> str:
+    url = clean_url(unescape(str(item.url or "").strip()))
+    parsed_ok = False
+    try:
+        parsed = parse.urlsplit(url)
+        parsed_ok = bool(parsed.scheme in {"http", "https"} and parsed.netloc and "<" not in url and ">" not in url)
+    except ValueError:
+        parsed_ok = False
+    if parsed_ok and _detail_url_allowed(source, url):
+        return url
+    candidates = _candidate_detail_urls(source, item)
+    return candidates[0] if candidates else url
+
+
+def _merge_event_hints(primary: dict, fallback: dict) -> dict:
+    merged = dict(fallback or {})
+    for key, value in (primary or {}).items():
+        if str(value or "").strip():
+            merged[key] = value
+    return merged
+
 
 # #1 A summary can clear the 60-char "thin" bar yet still be too short to
 # enrich from (BBC Sport's "Milner has broken the appearance record" = 110
@@ -741,10 +829,12 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
     # which for venues carries a venue suffix — e.g. "Rickie Lee Jones"
     # became "Rickie Lee Jones - Royal Northern College of Music". Keep
     # the card title.
-    if str(item.enrichment_status or "") in _TRUSTED_CARD_ENRICHMENT:
+    trusted_card = str(item.enrichment_status or "") in _TRUSTED_CARD_ENRICHMENT
+    if trusted_card and not _event_card_needs_deep_enrichment(source, item):
         return item
     if not _should_enrich_source(source):
         return item
+    detail_url = _detail_url_for_enrichment(source, item)
     summary_thin = _is_thin_summary(item.summary, item.title)
     # #1 Treat a short-but-not-"thin" summary as needing the article body too,
     # so sources like BBC Sport stop shipping a one-line RSS teaser as evidence.
@@ -753,12 +843,13 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         source.report_category in {"media_layer", "gmp", "food_openings"}
         or source.candidate_category == "council"
         or source.name == "Albert Hall Manchester"
+        or (trusted_card and _event_card_needs_deep_enrichment(source, item))
     )
     if item.published_at and not summary_thin and not force_fetch and not evidence_too_short:
         summary = _strip_evidence_chrome(_source_specific_summary(source, item.title, item.summary))
         return ExtractedItem(
             title=_clean_title_text(item.title),
-            url=item.url,
+            url=detail_url or item.url,
             published_at=item.published_at,
             summary=summary,
             lead=_strip_evidence_chrome(item.lead or _derive_lead(source, item.title, summary)),
@@ -767,12 +858,12 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
             structured_event_hint=dict(item.structured_event_hint or {}),
         )
     try:
-        article_html = _fetch_text(item.url)
+        article_html = _fetch_text(detail_url or item.url)
     except Exception as exc:  # noqa: BLE001 - enrichment is best-effort.
         summary = _strip_evidence_chrome(_source_specific_summary(source, item.title, item.summary))
         return ExtractedItem(
             title=_clean_title_text(item.title),
-            url=item.url,
+            url=detail_url or item.url,
             published_at=item.published_at,
             summary=summary,
             lead=_strip_evidence_chrome(item.lead or _derive_lead(source, item.title, summary)),
@@ -788,7 +879,12 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         paragraph_evidence = _trafilatura_evidence(article_html) or paragraph_evidence
     enriched_summary = _extract_jsonld_description(article_html) or _extract_meta_description(article_html)
     enriched_title = _extract_jsonld_title(article_html) or _extract_page_title(article_html)
-    structured_event_hint = _extract_jsonld_event_hint(article_html) or dict(item.structured_event_hint or {})
+    structured_event_hint = _merge_event_hints(
+        _extract_jsonld_event_hint(article_html),
+        dict(item.structured_event_hint or {}),
+    )
+    if detail_url and structured_event_hint and not structured_event_hint.get("booking_url"):
+        structured_event_hint["booking_url"] = detail_url
     evidence_text = _strip_evidence_chrome(paragraph_evidence or enriched_summary or item.summary)
     if summary_thin and paragraph_evidence:
         enriched_summary = _summary_from_evidence(paragraph_evidence)
@@ -807,6 +903,11 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
     )
     preserve_listing_title = source.name in {
         "RNCM",
+        "HOME",
+        "Manchester's Finest",
+        "Manchester's Finest Events",
+        "GM Chamber Events",
+        "CompiledMCR Tech Events",
         "Manchester Theatres Weekend",
         "Manchester Theatres Next Weekend",
         "Manchester City",
@@ -815,7 +916,7 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
     }
     return ExtractedItem(
         title=item.title if preserve_listing_title else _clean_title_text(unescape(enriched_title or item.title)),
-        url=item.url,
+        url=detail_url or item.url,
         published_at=published_at,
         summary=summary,
         lead=lead,

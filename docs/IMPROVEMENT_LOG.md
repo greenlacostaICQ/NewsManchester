@@ -239,3 +239,47 @@
 - Файлы/места: `release.py:1321-1333`; тест `test_source_health.py:180`.
 - ПРОВЕРКА: офлайн — grep на `zero_yield_by_stage` пуст; 714 OK.
 - Где была ошибка: —
+
+### 0021 — P0: Pre-send repair executor — 2026-06-29
+- Статус: внедрено локально; ПРОВЕРКА офлайн (unit), прод — следующий прогон
+- Проблема: финальный pre-send judge видел плохую строку, но мог оставить её как warning; отправка не была обязана пройти путь ремонта до Telegram.
+- Причина (корень): `pre_send_quality_judge.py` нормализовал `actions`, писал `pre_send_quality_report.json`, но не менял `data/outgoing/current_digest.html`; `send-file` вообще смотрел только на build-gate.
+- Решение: добавлен repair executor: проверяет model patch через fact-lock → пробует deterministic rewrite из фактов кандидата с refetch/enrichment → берёт same-section clean reserve → если не вышло, честно удаляет строку/ставит транспортный fallback только для пустого транспортного блока. После ремонта пересчитывает digest hash и штампует `release_report.pre_send_repair_executor`.
+- Почему так (отвергли): не блокировать отправку и не откатывать выпуск; бизнес-процесс — ремонт/замена/честное сокращение, а не silent warning.
+- Ожидаемый эффект и метрика: `pre_send_quality_report.repair_executor.applied > 0` при actionable defect; hash отчёта совпадает с финальным `current_digest.html`; `release_decision=ship_degraded` при ремонте/сокращении.
+- Файлы/места: `pre_send_quality_judge.py`, `scripts/run_local_digest.py`, `.github/workflows/daily-digest.yml`; тест `test_pre_send_repair_executor.py`.
+- ПРОВЕРКА: офлайн — hallucinated model patch rejected by fact-lock, строка заменена clean reserve.
+- Где была ошибка: —
+
+### 0022 — P0: hard fact-lock для финального редактора — 2026-06-29
+- Статус: внедрено локально; ПРОВЕРКА офлайн (unit), прод — следующий прогон
+- Проблема: prompt запрещал выдумывать, но не было единого механизма, который отклоняет новую дату/место/имя/число/сумму от редактора.
+- Причина (корень): `editor.py:_apply_editor_line_actions` применял model fix после проверки ссылок, но не сверял добавленные факты с evidence.
+- Решение: общий `fact_lock.py` выделяет видимые fact tokens (даты, время, деньги, числа, Latin proper nouns); editor и pre-send repair отклоняют правку, если token отсутствует в исходной строке/evidence/кандидате. Если правильный факт есть в evidence, правка проходит.
+- Почему так (отвергли): не запрещать редактору исправлять ошибку; запрещается только новый факт без evidence. Полный NER/fact-check не вводим, чтобы не плодить architecture drift.
+- Ожидаемый эффект и метрика: `editor_report.pre_send_russian_editor.model_changes` не содержит правок с новыми fact tokens; rejected правки видны как `fact_lock_rejected`.
+- Файлы/места: `fact_lock.py`, `editor.py`, `pre_send_quality_judge.py`; тест `test_pre_send_repair_executor.py`.
+- ПРОВЕРКА: офлайн — дата из evidence проходит, новая `1 July` отклоняется.
+- Где была ошибка: —
+
+### 0023 — P1: deep enrichment для афиш и professional events — 2026-06-29
+- Статус: внедрено локально; ПРОВЕРКА офлайн (unit), прод — следующий прогон
+- Проблема: HOME/Skiddle/Manchester's Finest/GM Chamber/CompiledMCR могли дать карточку со слабым summary, а система считала её trusted и не заходила на дочернюю страницу за venue/price/booking/organizer.
+- Причина (корень): `_enrich_item` сразу возвращал `ok_*_card` из `_TRUSTED_CARD_ENRICHMENT`; deep enrichment не запускался даже когда structured event facts отсутствовали.
+- Решение: trusted-card остаётся стопом только если core event facts уже есть. Для named event/professional sources включён detail-page fetch, нормализация грязных event URLs и merge JSON-LD event hint с исходной карточкой.
+- Почему так (отвергли): не “не показывать без фактов” как первый шаг; сначала добираем факты из дочерней страницы, затем downstream уже решает publish/hold.
+- Ожидаемый эффект и метрика: у HOME/GM Chamber/CompiledMCR больше кандидатов с `structured_event_hint.venue/date_start/booking_url`; меньше `held_for_enrichment` из-за пустых фактов.
+- Файлы/места: `collector/extract.py`; тест `test_pre_send_repair_executor.py`.
+- ПРОВЕРКА: офлайн — HOME `ok_page_event` fetches child page JSON-LD and returns venue/date/price/booking.
+- Где была ошибка: —
+
+### 0024 — P1: финальный отчёт выбора и замен по каждому блоку — 2026-06-29
+- Статус: внедрено локально; ПРОВЕРКА офлайн (unit), прод — следующий прогон
+- Проблема: scores и отдельные reports были, но после editor/recovery/final HTML не было одной таблицы “кто был top, кто виден, кто заменён, кто потерян и почему”.
+- Причина (корень): `release_report` показывал stage diagnostics, но не финальную человекочитаемую per-block картину после HTML recovery.
+- Решение: `build_release` пишет `data/state/final_selection_report.json`: sections → top by score, visible, lost/rejected, reserve reason, repeat decision, final status; workflow сохраняет файл.
+- Почему так (отвергли): не собирать это вручную скриптами из разных json — это повторяет старую проблему “можно восстановить, но нельзя быстро понять”.
+- Ожидаемый эффект и метрика: в каждом прогоне есть `release_report.final_selection_report.path`; в `final_selection_report.sections[*]` видны top/visible/lost_or_rejected.
+- Файлы/места: `release.py`, `.github/workflows/daily-digest.yml`; тест `test_pre_send_repair_executor.py`.
+- ПРОВЕРКА: офлайн — report сортирует top по score и показывает `visible_after_repair`/`writer_dropped`.
+- Где была ошибка: —

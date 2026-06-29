@@ -25,6 +25,7 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.fact_lock import FACT_LOCK_VERSION, iter_fact_texts, unsupported_fact_tokens
 from news_digest.pipeline.glossary_qa import glossary_line_issues, repair_glossary_terms
 from news_digest.pipeline.transport_language import (
     repair_transport_line_language,
@@ -73,6 +74,10 @@ PRE_SEND_RUSSIAN_EDITOR_PROMPT = """Ты выпускающий редактор
 Верни JSON-объект: {"items":[{"index":0,"action":"ok|rewrite|enrich_and_rewrite|replace_needed|strip_only_if_replacement_unavailable","line":"...","reason":"..."}],"block_actions":[{"action":"recover_lead|backfill|trim|move_outside_gm_to_chunk","section":"...","count":1,"reason":"..."}]}.
 ОБЯЗАТЕЛЬНО верни ровно один item на КАЖДУЮ присланную строку (по её index). Чистая строка — action="ok".
 block_actions верни пустым списком, если блоковых действий не нужно.
+Fact-lock: меняй русский язык, порядок и ясность, но НЕ добавляй новую дату,
+время, место, имя, число или сумму, которых нет в evidence. Если правильный
+факт есть в evidence — исправь строку; если факта нет — верни
+replace_needed или strip_only_if_replacement_unavailable.
 
 Ищи и чини КОНКРЕТНО эти дефекты:
 - Английское слово в русском тексте (murder, lineup, line-up, venue, sold out, on sale, headliner, festival) → rewrite, переведи. ИСКЛЮЧЕНИЕ: имена и бренды (Co-op Live, openspace, AI/API/SaaS) — оставить латиницей.
@@ -521,6 +526,21 @@ def _compact_candidate_evidence(candidate: dict | None, refetch_stats: dict[str,
     }
 
 
+def _editor_item_fact_lock_errors(item: dict[str, object], fixed_line: str) -> list[str]:
+    """Facts added by the final editor must already exist in item evidence.
+
+    The original line is allowed too: this check prevents *new* facts from being
+    introduced by the editor, while still allowing a model to preserve facts
+    already visible or correct them when the source evidence contains the
+    corrected value.
+    """
+    evidence = item.get("evidence") if isinstance(item.get("evidence"), dict) else {}
+    allowed_values: list[object] = [item.get("line") or ""]
+    if isinstance(evidence, dict):
+        allowed_values.extend(iter_fact_texts(evidence))
+    return unsupported_fact_tokens(fixed_line, allowed_values)
+
+
 def _visible_line_items(
     sections: dict[str, list[str]],
     candidates_by_key: dict[str, dict] | None = None,
@@ -936,6 +956,8 @@ def _apply_editor_line_actions(
         "round": round_no,
         "model_fixed": 0,
         "model_changes": [],
+        "fact_lock_version": FACT_LOCK_VERSION,
+        "fact_lock_rejected": 0,
         "model_requested_replaced": 0,
         "model_requested_stripped": 0,
         "reserve_replacement": {"enriched_rewrite_attempts": 0, "enriched_rewrite_used": 0},
@@ -951,6 +973,14 @@ def _apply_editor_line_actions(
                 continue
             original = str(item.get("line") or "")
             if not _line_preserves_links(original, fixed_line):
+                continue
+            unsupported = _editor_item_fact_lock_errors(item, fixed_line)
+            if unsupported:
+                stats["fact_lock_rejected"] = int(stats.get("fact_lock_rejected") or 0) + 1
+                warnings.append(
+                    "Fact-lock rejected final-editor change on line "
+                    f"{index}: new fact token(s) not in evidence: {', '.join(unsupported[:6])}."
+                )
                 continue
             if fixed_line != original:
                 item["line"] = fixed_line
@@ -1134,6 +1164,7 @@ def _pre_send_polish_sections(
     stripped = 0
     model_requested_replaced = 0
     model_requested_stripped = 0
+    fact_lock_rejected = 0
     rendered_urls = {
         _line_url_identity(line)
         for lines in polished.values()
@@ -1164,6 +1195,7 @@ def _pre_send_polish_sections(
     model_fixed += int(round_stats.get("model_fixed") or 0)
     model_requested_replaced += int(round_stats.get("model_requested_replaced") or 0)
     model_requested_stripped += int(round_stats.get("model_requested_stripped") or 0)
+    fact_lock_rejected += int(round_stats.get("fact_lock_rejected") or 0)
     replaced += int(round_stats.get("model_requested_replaced") or 0)
     stripped += int(round_stats.get("model_requested_stripped") or 0)
     model_changes.extend(round_stats.get("model_changes") or [])
@@ -1242,6 +1274,7 @@ def _pre_send_polish_sections(
         model_fixed += int(second_stats.get("model_fixed") or 0)
         model_requested_replaced += int(second_stats.get("model_requested_replaced") or 0)
         model_requested_stripped += int(second_stats.get("model_requested_stripped") or 0)
+        fact_lock_rejected += int(second_stats.get("fact_lock_rejected") or 0)
         replaced += int(second_stats.get("model_requested_replaced") or 0)
         stripped += int(second_stats.get("model_requested_stripped") or 0)
         model_changes.extend(second_stats.get("model_changes") or [])
@@ -1319,6 +1352,8 @@ def _pre_send_polish_sections(
         "degraded_stripped": stripped,
         "model_requested_replaced": model_requested_replaced,
         "model_requested_stripped": model_requested_stripped,
+        "fact_lock_version": FACT_LOCK_VERSION,
+        "fact_lock_rejected": fact_lock_rejected,
         "remaining_bad": remaining_bad,
         "coverage_complete": coverage_complete,
         "bad_examples": bad_examples,

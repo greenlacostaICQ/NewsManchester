@@ -19,6 +19,7 @@ from news_digest.pipeline.common import (
     REQUIRED_BLOCKS,
     REQUIRED_SCAN_CATEGORIES,
     SECTION_MIN_ITEMS,
+    canonical_url_identity,
     extract_sections,
     now_london,
     pipeline_run_id_from,
@@ -2390,6 +2391,170 @@ def _write_audit_trail(
     return str(path.resolve())
 
 
+def _visible_fingerprints_from_html(digest_html: str, candidates: list[dict]) -> set[str]:
+    by_url: dict[str, str] = {}
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        fp = str(candidate.get("fingerprint") or "").strip()
+        url = str(candidate.get("source_url") or "").strip()
+        if not fp or not url:
+            continue
+        ident = canonical_url_identity(url)
+        if ident:
+            by_url.setdefault(ident, fp)
+    visible: set[str] = set()
+    for href in re.findall(r'<a\s+[^>]*href="([^"]+)"', digest_html, flags=re.IGNORECASE):
+        fp = by_url.get(canonical_url_identity(html.unescape(href)))
+        if fp:
+            visible.add(fp)
+    return visible
+
+
+def _candidate_selection_score(candidate: dict) -> float:
+    for field in ("section_board_score", "reader_value_score", "source_score"):
+        try:
+            return float(candidate.get(field) or 0.0)
+        except (TypeError, ValueError):
+            continue
+    return 0.0
+
+
+def _candidate_selection_reason(candidate: dict, final_reason: str) -> str:
+    for field in (
+        "publish_plan_reason",
+        "digest_selection_reason",
+        "rewrite_shortlist_reason",
+        "section_board_reason",
+        "reason",
+    ):
+        value = str(candidate.get(field) or "").strip()
+        if value:
+            return value[:280]
+    return str(final_reason or "")[:280]
+
+
+def _write_final_selection_report(
+    *,
+    state_dir: Path,
+    current_day_london: str,
+    candidates_report: dict | None,
+    writer_report: dict | None,
+    rendered_fingerprints: set[str],
+    dedupe_memory: dict | None,
+    final_html: str,
+) -> dict[str, object]:
+    """Human-readable final choice/loss table per block after HTML recovery."""
+    path = state_dir / "final_selection_report.json"
+    candidates = [c for c in (candidates_report or {}).get("candidates") or [] if isinstance(c, dict)]
+    html_visible = _visible_fingerprints_from_html(final_html, candidates)
+    rendered_set = {str(fp) for fp in rendered_fingerprints if fp}
+    visible_set = set(rendered_set) | html_visible
+    writer_drops = {
+        str(item.get("fingerprint") or ""): item
+        for item in ((writer_report or {}).get("dropped_candidates") or [])
+        if isinstance(item, dict)
+    }
+    dedupe_drops = _dedupe_drop_map(dedupe_memory)
+    sections: dict[str, dict[str, object]] = {}
+    totals = Counter()
+    for candidate in candidates:
+        apply_story_intelligence(candidate)
+        fp = str(candidate.get("fingerprint") or "").strip()
+        block = str(candidate.get("primary_block") or "unknown")
+        section_name = PRIMARY_BLOCKS.get(block, block)
+        disposition, reason = _disposition_for_candidate(
+            candidate,
+            rendered_set=visible_set,
+            writer_drops=writer_drops,
+            dedupe_drops=dedupe_drops,
+        )
+        html_visible_only = bool(fp and fp in html_visible and fp not in rendered_set)
+        score = _candidate_selection_score(candidate)
+        final_status = "visible_after_repair" if html_visible_only else "visible" if fp in visible_set else disposition
+        selection_status = (
+            candidate.get("publish_plan_status")
+            or candidate.get("digest_selection_verdict")
+            or ("selected" if candidate.get("include") else "not_selected")
+        )
+        reserve_reason = ""
+        if candidate.get("recoverable_reserve") or candidate.get("public_reserve"):
+            reserve_reason = str(candidate.get("digest_selection_reason") or candidate.get("publish_plan_reason") or "same-block reserve")
+        row = {
+            "fingerprint": fp,
+            "title": str(candidate.get("title") or "")[:180],
+            "source_label": str(candidate.get("source_label") or ""),
+            "score": score,
+            "reader_value_score": candidate.get("reader_value_score"),
+            "section_board_score": candidate.get("section_board_score"),
+            "selection_status": selection_status,
+            "final_status": final_status,
+            "final_reason": _candidate_selection_reason(candidate, reason),
+            "reserve_reason": reserve_reason[:240],
+            "repeat_decision": candidate.get("change_type") or candidate.get("dedupe_decision") or "",
+            "include": bool(candidate.get("include")),
+            "recoverable_reserve": bool(candidate.get("recoverable_reserve") or candidate.get("public_reserve")),
+            "html_visible_only_after_repair": html_visible_only,
+        }
+        section = sections.setdefault(
+            section_name,
+            {
+                "primary_blocks": sorted({block}),
+                "top": [],
+                "visible": [],
+                "lost_or_rejected": [],
+                "counts": Counter(),
+            },
+        )
+        blocks = set(section.get("primary_blocks") or [])
+        blocks.add(block)
+        section["primary_blocks"] = sorted(blocks)
+        counts = section["counts"]
+        assert isinstance(counts, Counter)
+        counts[str(final_status)] += 1
+        totals[str(final_status)] += 1
+        top_items = section["top"]
+        assert isinstance(top_items, list)
+        top_items.append(row)
+        if final_status in {"visible", "visible_after_repair"}:
+            visible_items = section["visible"]
+            assert isinstance(visible_items, list)
+            visible_items.append(row)
+        else:
+            lost_items = section["lost_or_rejected"]
+            assert isinstance(lost_items, list)
+            lost_items.append(row)
+
+    for section in sections.values():
+        for key in ("top", "visible", "lost_or_rejected"):
+            rows = section.get(key)
+            if isinstance(rows, list):
+                rows.sort(key=lambda item: (-float(item.get("score") or 0.0), str(item.get("title") or "")))
+                section[key] = rows[:20] if key == "top" else rows[:30]
+        counts = section.get("counts")
+        if isinstance(counts, Counter):
+            section["counts"] = dict(counts)
+    payload = {
+        "schema_version": 1,
+        "run_date_london": current_day_london,
+        "created_at_london": now_london().isoformat(),
+        "policy": (
+            "Final per-block table after editor, visible recovery and final HTML. "
+            "Shows who ranked high, who became visible, who was replaced/recovered, "
+            "and why a candidate was lost or rejected."
+        ),
+        "totals": dict(totals),
+        "sections": dict(sorted(sections.items())),
+    }
+    write_json(path, payload)
+    return {
+        "path": str(path.resolve()),
+        "schema_version": payload["schema_version"],
+        "totals": payload["totals"],
+        "section_count": len(sections),
+    }
+
+
 def _classify_published_candidates(
     candidates_report: dict | None,
     rendered_fingerprints: set[str],
@@ -3840,6 +4005,21 @@ def build_release(project_root: Path) -> ReleaseResult:
         logger.warning("audit trail snapshot failed: %s", exc)
         warnings.append("Audit trail: snapshot failed; check release logs.")
 
+    final_selection_report: dict[str, object] = {}
+    try:
+        final_selection_report = _write_final_selection_report(
+            state_dir=state_dir,
+            current_day_london=current_day_london,
+            candidates_report=candidates_report,
+            writer_report=writer_report,
+            rendered_fingerprints=rendered_fingerprints,
+            dedupe_memory=dedupe_memory,
+            final_html=draft_path.read_text(encoding="utf-8") if draft_path.exists() else "",
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("final selection report failed: %s", exc)
+        warnings.append("Final selection report: snapshot failed; check release logs.")
+
     report_payload = {
         "release_gate_version": RELEASE_GATE_VERSION,
         "pipeline_run_id": pipeline_run_id,
@@ -3889,6 +4069,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "prompt_versions": _prompts_snapshot(),
         "prompt_drift": prompt_drift,
         "audit_trail_path": audit_trail_path,
+        "final_selection_report": final_selection_report,
         "inputs": {
             "collector_report": str((state_dir / "collector_report.json").resolve()),
             "candidates": str((state_dir / "candidates.json").resolve()),

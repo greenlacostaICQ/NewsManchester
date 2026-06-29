@@ -119,7 +119,7 @@ def _release_gate_error_for_file(path: Path) -> str | None:
         return "release_report.json is missing"
     report = read_json(report_path, {})
     today = datetime.now(LONDON_TZ).strftime("%Y-%m-%d")
-    if report.get("release_decision") != "pass":
+    if report.get("release_decision") not in {"pass", "ship_degraded"}:
         return f"release gate did not pass: {report.get('message') or report.get('errors')}"
     if int(report.get("release_gate_version") or 0) < REQUIRED_RELEASE_GATE_VERSION:
         return "release_report was produced by an old gate version"
@@ -136,11 +136,9 @@ def _release_gate_error_for_file(path: Path) -> str | None:
     if f"Greater Manchester Brief — {today}," not in text:
         return "current_digest.html does not contain today's digest header"
     # The send gate blocks ONLY on technical consistency (built+promoted digest,
-    # passing release decision, matching date/header). The pre-send quality
-    # judge is a CONTENT check and must NEVER block delivery — it runs as its
-    # own non-blocking step and writes pre_send_quality_report.json. A factual
-    # nit ("did not mention the 2-year driving ban") silently killed the send
-    # for three days; never again.
+    # matching date/header, no hard release failure). "ship_degraded" is allowed:
+    # it means the issue was promoted and visible quality problems were repaired,
+    # replaced or honestly marked instead of silently cancelling delivery.
     return None
 
 
@@ -2279,13 +2277,12 @@ def cmd_post_publish_judge() -> int:
 def cmd_pre_send_quality_judge(dry_run: bool) -> int:
     """Run the strong-model quality judge before Telegram send.
 
-    The judge is a CONTENT check: it surfaces factual/repair issues into the
-    report so they can be fixed, but it must NEVER block the send. A content
-    nit ("did not mention the 2-year driving ban") is not a reason to skip the
-    daily digest — that contradicts the never-block / degradation principle and
-    silently killed delivery for three days. Only technical send-consistency
-    (built+promoted digest, matching date/marker) may block, and that lives in
-    the send-file gate, not here. So always exit 0; loudly warn on issues.
+    The judge is a CONTENT check with a repair executor: it tries repair from
+    facts, same-block replacement, then honest degradation before Telegram.
+    It still must NEVER block the send; only technical send-consistency
+    (built+promoted digest, matching date/marker, no hard release failure) may
+    block, and that lives in the send-file gate. So always exit 0; loudly warn
+    on issues.
     """
     from news_digest.pipeline.pre_send_quality_judge import evaluate_pre_send_quality  # noqa: PLC0415
 

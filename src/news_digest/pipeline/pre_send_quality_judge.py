@@ -8,6 +8,7 @@ safe to send.
 from __future__ import annotations
 
 import hashlib
+import html
 import json
 import logging
 import os
@@ -17,7 +18,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from news_digest.pipeline.common import pipeline_run_id_from, read_json, today_london, write_json
+from news_digest.pipeline.common import canonical_url_identity, pipeline_run_id_from, read_json, today_london, write_json
+from news_digest.pipeline.fact_lock import FACT_LOCK_VERSION, iter_fact_texts, unsupported_fact_tokens
 from news_digest.pipeline.model_routing import resolve_model_route, sdk_retries_for_route
 
 
@@ -104,6 +106,7 @@ class PreSendQualityResult:
     warnings: list[str] | None = None
     product_completeness: dict[str, Any] | None = None
     deterministic_post_check: dict[str, Any] | None = None
+    repair_executor: dict[str, Any] | None = None
     notes: str = ""
     raw: dict[str, Any] | None = None
 
@@ -119,10 +122,10 @@ def _strip_tags(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def digest_lines_from_html(digest_html: str) -> list[dict[str, Any]]:
+def _digest_line_slots_from_html(digest_html: str) -> list[dict[str, Any]]:
     section = ""
     lines: list[dict[str, Any]] = []
-    for raw_line in digest_html.splitlines():
+    for raw_index, raw_line in enumerate(digest_html.splitlines()):
         line = raw_line.strip()
         if not line:
             continue
@@ -141,12 +144,42 @@ def digest_lines_from_html(digest_html: str) -> list[dict[str, Any]]:
                 "line_index": len(lines) + 1,
                 "section": section,
                 "text": plain[:900],
+                "html": line,
+                "raw_index": raw_index,
             }
         )
     # The judge model must see the WHOLE issue, not just the first 60 lines —
     # otherwise tail defects (e.g. a broken line deep in the ticket list) are
     # invisible to it. 250 covers any realistic issue with headroom.
     return lines[:250]
+
+
+def digest_lines_from_html(digest_html: str) -> list[dict[str, Any]]:
+    return [
+        {"line_index": item["line_index"], "section": item.get("section") or "", "text": item.get("text") or ""}
+        for item in _digest_line_slots_from_html(digest_html)
+    ]
+
+
+def _line_url_identity(line: str) -> str:
+    match = re.search(r'<a\s+[^>]*href="([^"]+)"', str(line or ""), flags=re.IGNORECASE)
+    if not match:
+        return ""
+    return canonical_url_identity(html.unescape(match.group(1)))
+
+
+def _candidate_index(candidates: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    index: dict[str, dict[str, Any]] = {}
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        url_key = canonical_url_identity(str(candidate.get("source_url") or ""))
+        if url_key:
+            index.setdefault(url_key, candidate)
+        fp = str(candidate.get("fingerprint") or "").strip()
+        if fp:
+            index.setdefault(fp, candidate)
+    return index
 
 
 def _rendered_candidates(project_root: Path) -> list[dict[str, Any]]:
@@ -173,10 +206,14 @@ def _rendered_candidates(project_root: Path) -> list[dict[str, Any]]:
                 "fingerprint": fingerprint,
                 "title": str(candidate.get("title") or "")[:220],
                 "source_label": str(candidate.get("source_label") or ""),
+                "source_url": str(candidate.get("source_url") or ""),
                 "primary_block": str(candidate.get("primary_block") or ""),
                 "category": str(candidate.get("category") or ""),
                 "summary": str(candidate.get("summary") or "")[:360],
                 "lead": str(candidate.get("lead") or "")[:360],
+                "evidence_text": str(candidate.get("evidence_text") or "")[:700],
+                "event": candidate.get("event") if isinstance(candidate.get("event"), dict) else {},
+                "structured_event_hint": candidate.get("structured_event_hint") if isinstance(candidate.get("structured_event_hint"), dict) else {},
                 "practical_angle": str(candidate.get("practical_angle") or "")[:260],
                 "draft_line": _strip_tags(str(candidate.get("draft_line") or ""))[:700],
                 "is_lead": bool(candidate.get("is_lead")),
@@ -322,6 +359,354 @@ def _deterministic_action_post_check(
     }
 
 
+def _action_rows(actions: list[dict[str, Any]], critical_errors: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    seen: set[int] = set()
+    for action in actions:
+        if not isinstance(action, dict):
+            continue
+        try:
+            line_index = int(action.get("line_index") or 0)
+        except (TypeError, ValueError):
+            line_index = 0
+        if line_index <= 0:
+            continue
+        rows.append(dict(action))
+        seen.add(line_index)
+    for error in critical_errors:
+        if not isinstance(error, dict):
+            continue
+        try:
+            line_index = int(error.get("line_index") or 0)
+        except (TypeError, ValueError):
+            line_index = 0
+        if line_index <= 0 or line_index in seen:
+            continue
+        suggested = str(error.get("suggested_action") or "repair").strip().lower()
+        rows.append(
+            {
+                "line_index": line_index,
+                "section": error.get("section") or "",
+                "action": "strip" if suggested == "strip" else "replace",
+                "replacement_text": "",
+                "reason": error.get("problem") or "critical pre-send issue",
+                "risk": error.get("risk") or "",
+            }
+        )
+        seen.add(line_index)
+    return rows[:30]
+
+
+def _candidate_fact_values(candidate: dict[str, Any] | None, *, include_original_line: str = "") -> list[Any]:
+    values: list[Any] = []
+    if include_original_line:
+        values.append(include_original_line)
+    if isinstance(candidate, dict):
+        values.extend(iter_fact_texts(candidate))
+    return values
+
+
+def _replacement_with_link(replacement: str, original_line: str, candidate: dict[str, Any] | None = None) -> str:
+    line = str(replacement or "").strip()
+    if not line:
+        return ""
+    if not line.startswith("• "):
+        line = f"• {line.lstrip('• ').strip()}"
+    if re.search(r"<a\s+[^>]*href=", line, flags=re.IGNORECASE):
+        return line
+    original_link = re.search(r'(<a\s+[^>]*href="[^"]+"[^>]*>.*?</a>)', str(original_line or ""), flags=re.IGNORECASE | re.DOTALL)
+    if original_link:
+        return f"{line} {original_link.group(1)}"
+    if isinstance(candidate, dict):
+        url = str(candidate.get("source_url") or "").strip()
+        if url:
+            label = html.escape(str(candidate.get("source_label") or "источник"))
+            return f'{line} <a href="{html.escape(url, quote=True)}">{label}</a>'
+    return line
+
+
+def _fact_lock_errors_for_replacement(
+    replacement: str,
+    *,
+    candidate: dict[str, Any] | None,
+    original_line: str,
+    allow_original_line_facts: bool,
+) -> list[str]:
+    allowed = _candidate_fact_values(
+        candidate,
+        include_original_line=original_line if allow_original_line_facts else "",
+    )
+    if not allowed:
+        allowed = [original_line]
+    return unsupported_fact_tokens(replacement, allowed)
+
+
+def _deterministic_rewrite_from_candidate(
+    candidate: dict[str, Any] | None,
+    original_line: str,
+    stats: dict[str, Any],
+) -> str:
+    if not isinstance(candidate, dict):
+        return ""
+    stats["enrich_attempted"] = int(stats.get("enrich_attempted") or 0) + 1
+    c_work = dict(candidate)
+    refetch_stats = stats.setdefault(
+        "refetch",
+        {"attempted": 0, "improved": 0, "failed": 0, "empty_or_not_better": 0, "skipped": 0},
+    )
+    if isinstance(refetch_stats, dict):
+        try:
+            from news_digest.pipeline.editor import _candidate_full_evidence_text  # noqa: PLC0415
+
+            evidence_text, evidence_source = _candidate_full_evidence_text(c_work, refetch_stats)
+        except Exception:  # noqa: BLE001
+            evidence_text, evidence_source = "", ""
+        if evidence_text:
+            c_work["evidence_text"] = evidence_text
+            packet = c_work.get("evidence_packet") if isinstance(c_work.get("evidence_packet"), dict) else {}
+            packet = dict(packet)
+            packet["evidence_text"] = evidence_text
+            packet["evidence_source"] = evidence_source
+            c_work["evidence_packet"] = packet
+            stats["enrich_improved"] = int(stats.get("enrich_improved") or 0) + 1
+    try:
+        from news_digest.pipeline.editor import _line_needs_russian_editor, _polish_russian_line_rules  # noqa: PLC0415
+        from news_digest.pipeline.writer import _final_replacement_line  # noqa: PLC0415
+
+        line = _final_replacement_line(c_work)
+        if line and not line.startswith("• "):
+            line = f"• {line}"
+        if line:
+            line, _ = _polish_russian_line_rules(line)
+        line = _replacement_with_link(line, original_line, c_work)
+        if not line or _line_needs_russian_editor(line):
+            stats["deterministic_rewrite_rejected"] = int(stats.get("deterministic_rewrite_rejected") or 0) + 1
+            return ""
+    except Exception:  # noqa: BLE001
+        stats["deterministic_rewrite_failed"] = int(stats.get("deterministic_rewrite_failed") or 0) + 1
+        return ""
+    unsupported = _fact_lock_errors_for_replacement(
+        line,
+        candidate=c_work,
+        original_line=original_line,
+        allow_original_line_facts=False,
+    )
+    if unsupported:
+        stats["deterministic_fact_lock_rejected"] = int(stats.get("deterministic_fact_lock_rejected") or 0) + 1
+        return ""
+    stats["deterministic_rewrite_built"] = int(stats.get("deterministic_rewrite_built") or 0) + 1
+    return line
+
+
+def _reserve_replacement_line(
+    section_name: str,
+    candidates: list[dict[str, Any]],
+    rendered_urls: set[str],
+    rendered_story_keys: set[str],
+    stats: dict[str, Any],
+) -> str:
+    try:
+        from news_digest.pipeline.editor import _same_section_reserve_line  # noqa: PLC0415
+
+        line = _same_section_reserve_line(section_name, candidates, rendered_urls, rendered_story_keys, stats)
+    except Exception:  # noqa: BLE001
+        line = ""
+    if line:
+        stats["reserve_replacement_used"] = int(stats.get("reserve_replacement_used") or 0) + 1
+    return line
+
+
+def _html_lines_for_section(html_lines: list[str], section_name: str) -> list[int]:
+    current = ""
+    indexes: list[int] = []
+    for idx, raw_line in enumerate(html_lines):
+        line = raw_line.strip()
+        header_match = re.fullmatch(r"<b>(.*?)</b>", line)
+        if header_match and not _strip_tags(line).startswith("Greater Manchester Brief"):
+            current = _strip_tags(header_match.group(1))
+            continue
+        if current == section_name and _strip_tags(line).startswith("•"):
+            indexes.append(idx)
+    return indexes
+
+
+def _ensure_transport_fallback_if_empty(html_lines: list[str], touched_sections: set[str], stats: dict[str, Any]) -> None:
+    section = "Общественный транспорт сегодня"
+    if section not in touched_sections:
+        return
+    if _html_lines_for_section(html_lines, section):
+        return
+    try:
+        from news_digest.pipeline.editor import _transport_status_fallback_line  # noqa: PLC0415
+
+        fallback = _transport_status_fallback_line()
+    except Exception:  # noqa: BLE001
+        fallback = (
+            '• Транспорт: конкретных подтверждённых сбоев в выпуск не попало. '
+            'Перед поездкой проверьте страницу статуса TfGM. '
+            '<a href="https://tfgm.com/travel-updates">TfGM</a>'
+        )
+    for idx, raw_line in enumerate(html_lines):
+        if re.fullmatch(r"<b>Общественный транспорт сегодня</b>", raw_line.strip()):
+            html_lines.insert(idx + 1, fallback)
+            stats["transport_status_fallback_inserted"] = int(stats.get("transport_status_fallback_inserted") or 0) + 1
+            return
+
+
+def _apply_repair_executor(
+    *,
+    project_root: Path,
+    digest_html: str,
+    actions: list[dict[str, Any]],
+    critical_errors: list[dict[str, Any]],
+    deterministic_post_check: dict[str, Any],
+    dry_run: bool,
+) -> tuple[str, dict[str, Any]]:
+    rows = _action_rows(actions, critical_errors)
+    report: dict[str, Any] = {
+        "enabled": True,
+        "dry_run": dry_run,
+        "fact_lock_version": FACT_LOCK_VERSION,
+        "requested": len(rows),
+        "attempted": 0,
+        "applied": 0,
+        "model_patch_applied": 0,
+        "deterministic_rewrite_used": 0,
+        "reserve_replacement_used": 0,
+        "stripped": 0,
+        "unresolved": 0,
+        "fact_lock_rejected": 0,
+        "enrich_attempted": 0,
+        "post_check_errors": deterministic_post_check.get("errors") or [],
+        "actions": [],
+    }
+    if not rows:
+        report["status"] = "skipped_no_actions"
+        return digest_html, report
+
+    state_dir = project_root / "data" / "state"
+    candidates_payload = read_json(state_dir / "candidates.json", {"candidates": []})
+    candidates = [c for c in candidates_payload.get("candidates") or [] if isinstance(c, dict)]
+    candidates_by_key = _candidate_index(candidates)
+    slots = _digest_line_slots_from_html(digest_html)
+    slot_by_index = {int(slot.get("line_index") or 0): slot for slot in slots}
+    html_lines = digest_html.splitlines()
+    rendered_urls = {
+        _line_url_identity(str(slot.get("html") or ""))
+        for slot in slots
+        if str(slot.get("html") or "").strip()
+    }
+    rendered_urls.discard("")
+    try:
+        from news_digest.pipeline.editor import _line_needs_russian_editor, _line_story_identity_key, _line_preserves_links  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        _line_needs_russian_editor = lambda line: False  # type: ignore[assignment]
+        _line_preserves_links = lambda original, fixed: True  # type: ignore[assignment]
+
+        def _line_story_identity_key(line: str, candidates_by_key: dict[str, dict[str, Any]]) -> str:  # type: ignore[no-redef]
+            return ""
+
+    rendered_story_keys = {
+        _line_story_identity_key(str(slot.get("html") or ""), candidates_by_key)
+        for slot in slots
+        if str(slot.get("html") or "").strip()
+    }
+    rendered_story_keys.discard("")
+    touched_sections: set[str] = set()
+
+    for row in rows:
+        try:
+            line_index = int(row.get("line_index") or 0)
+        except (TypeError, ValueError):
+            line_index = 0
+        slot = slot_by_index.get(line_index)
+        action_record = {
+            "line_index": line_index,
+            "section": row.get("section") or (slot or {}).get("section") or "",
+            "requested_action": row.get("action") or "",
+            "reason": row.get("reason") or "",
+            "outcome": "",
+        }
+        if not slot:
+            action_record["outcome"] = "skipped_missing_line"
+            report["actions"].append(action_record)
+            report["unresolved"] = int(report.get("unresolved") or 0) + 1
+            continue
+        raw_index = int(slot.get("raw_index") or 0)
+        original = str(slot.get("html") or "")
+        section_name = str(slot.get("section") or row.get("section") or "")
+        touched_sections.add(section_name)
+        action_name = str(row.get("action") or "").strip().lower()
+        if action_name == "keep":
+            action_record["outcome"] = "kept"
+            report["actions"].append(action_record)
+            continue
+        report["attempted"] = int(report.get("attempted") or 0) + 1
+        candidate = candidates_by_key.get(_line_url_identity(original))
+        replacement = ""
+        model_replacement = str(row.get("replacement_text") or "").strip()
+        if action_name in {"patch", "replace"} and model_replacement:
+            model_line = _replacement_with_link(model_replacement, original, candidate)
+            unsupported = _fact_lock_errors_for_replacement(
+                model_line,
+                candidate=candidate,
+                original_line=original,
+                allow_original_line_facts=False,
+            )
+            if unsupported:
+                action_record["model_replacement_rejected"] = f"fact_lock: {', '.join(unsupported[:6])}"
+                report["fact_lock_rejected"] = int(report.get("fact_lock_rejected") or 0) + 1
+            elif not _line_preserves_links(original, model_line):
+                action_record["model_replacement_rejected"] = "link_mismatch"
+            elif _line_needs_russian_editor(model_line):
+                action_record["model_replacement_rejected"] = "still_needs_editor"
+            else:
+                replacement = model_line
+                action_record["outcome"] = "model_patch_applied"
+                report["model_patch_applied"] = int(report.get("model_patch_applied") or 0) + 1
+
+        if not replacement and action_name != "strip":
+            replacement = _deterministic_rewrite_from_candidate(candidate, original, report)
+            if replacement:
+                action_record["outcome"] = "deterministic_rewrite"
+
+        if not replacement:
+            reserve_stats = report.setdefault("reserve_stats", {"enriched_rewrite_attempts": 0, "enriched_rewrite_used": 0})
+            replacement = _reserve_replacement_line(
+                section_name,
+                candidates,
+                rendered_urls,
+                rendered_story_keys,
+                reserve_stats if isinstance(reserve_stats, dict) else {},
+            )
+            if replacement:
+                action_record["outcome"] = "reserve_replacement"
+
+        if replacement:
+            if not dry_run:
+                html_lines[raw_index] = replacement
+            report["applied"] = int(report.get("applied") or 0) + 1
+            if action_record["outcome"] == "deterministic_rewrite":
+                report["deterministic_rewrite_used"] = int(report.get("deterministic_rewrite_used") or 0) + 1
+            elif action_record["outcome"] == "reserve_replacement":
+                report["reserve_replacement_used"] = int(report.get("reserve_replacement_used") or 0) + 1
+            report["actions"].append(action_record)
+            continue
+
+        if not dry_run:
+            html_lines[raw_index] = ""
+        action_record["outcome"] = "stripped_honest_shortfall"
+        report["stripped"] = int(report.get("stripped") or 0) + 1
+        report["applied"] = int(report.get("applied") or 0) + 1
+        report["actions"].append(action_record)
+
+    if not dry_run:
+        _ensure_transport_fallback_if_empty(html_lines, touched_sections, report)
+    unresolved = int(report.get("unresolved") or 0)
+    report["status"] = "applied" if int(report.get("applied") or 0) and not unresolved else "partial" if int(report.get("applied") or 0) else "unresolved"
+    return "\n".join(html_lines).strip(), report
+
+
 def _parse_reply(raw: str) -> dict[str, Any] | None:
     text = (raw or "").strip()
     if not text:
@@ -396,6 +781,21 @@ def _write_report(project_root: Path, result: PreSendQualityResult) -> Path:
     release_report = read_json(release_path, {})
     if isinstance(release_report, dict) and release_report:
         release_report["pre_send_quality_judge"] = asdict(result)
+        repair = result.repair_executor if isinstance(result.repair_executor, dict) else {}
+        repair_applied = int(repair.get("applied") or 0) if repair else 0
+        repair_unresolved = int(repair.get("unresolved") or 0) if repair else 0
+        if repair:
+            release_report["pre_send_repair_executor"] = repair
+        if result.decision == "warn" or repair_applied or repair_unresolved:
+            if release_report.get("release_decision") == "pass":
+                release_report["release_decision"] = "ship_degraded"
+            warnings = release_report.setdefault("warnings", [])
+            if isinstance(warnings, list):
+                warnings.append(
+                    "Pre-send repair executor: "
+                    f"applied={repair_applied}, stripped={repair.get('stripped', 0) if repair else 0}, "
+                    f"unresolved={repair_unresolved}."
+                )
         try:
             write_json(release_path, release_report)
         except OSError as exc:
@@ -594,6 +994,36 @@ def evaluate_pre_send_quality(
 
     decision, can_send, reason, confidence, critical_errors, actions, warnings, notes = _normalise_result(parsed)
     deterministic_post_check = _deterministic_action_post_check(actions, digest_lines, rendered_candidates)
+    repair_executor: dict[str, Any] | None = None
+    final_sha = sha
+    if actions or critical_errors:
+        repaired_html, repair_executor = _apply_repair_executor(
+            project_root=project_root,
+            digest_html=digest_html,
+            actions=actions,
+            critical_errors=critical_errors,
+            deterministic_post_check=deterministic_post_check,
+            dry_run=dry_run,
+        )
+        if repaired_html != digest_html and not dry_run:
+            digest_path.write_text(repaired_html + "\n", encoding="utf-8")
+            digest_html = repaired_html + "\n"
+            final_sha = digest_hash(digest_html)
+            digest_lines = digest_lines_from_html(digest_html)
+            product_completeness = _product_completeness_context(project_root, digest_lines)
+        if repair_executor and int(repair_executor.get("applied") or 0):
+            decision = "warn"
+            can_send = True
+            reason = (
+                "pre-send repair executor applied "
+                f"{repair_executor.get('applied')} repair(s); issue ships with honest degradation report"
+            )
+        elif decision in BLOCKING_DECISIONS:
+            # Content defects should not silently cancel the daily send. If the
+            # executor could not act, surface it as degraded output instead.
+            decision = "warn"
+            can_send = True
+            reason = "pre-send judge found issues, but no executable repair was available; shipping degraded with report"
     result = PreSendQualityResult(
         status="ok",
         decision=decision,
@@ -603,7 +1033,7 @@ def evaluate_pre_send_quality(
         provider=step.provider,
         run_date_london=run_date,
         pipeline_run_id=pipeline_run_id,
-        digest_sha256=sha,
+        digest_sha256=final_sha,
         duration_seconds=round(time.monotonic() - start, 3),
         confidence=confidence,
         critical_errors=critical_errors,
@@ -611,6 +1041,7 @@ def evaluate_pre_send_quality(
         warnings=warnings,
         product_completeness=product_completeness,
         deterministic_post_check=deterministic_post_check,
+        repair_executor=repair_executor,
         notes=notes,
         raw=parsed,
     )

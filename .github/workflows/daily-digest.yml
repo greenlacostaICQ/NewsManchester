@@ -87,10 +87,10 @@ jobs:
           python3 scripts/run_local_digest.py build-digest
 
       - name: Pre-send quality judge — strong final editor
-        # CONTENT judge only — must never block the send (a factual nit is not a
-        # reason to skip the daily digest). It surfaces issues into the report;
-        # the send proceeds regardless. continue-on-error guards against a judge
-        # crash blocking delivery, same as the post-publish judge below.
+        # CONTENT judge with repair executor — must never block the send. It
+        # applies executable line repairs/replacements first; if a defect cannot
+        # be recovered, the issue ships as degraded with an explicit report.
+        # continue-on-error guards against a judge crash blocking delivery.
         continue-on-error: true
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI }}
@@ -209,6 +209,7 @@ jobs:
           git add -f data/state/release_report.json || true
           git add -f data/state/visible_contract_report.json || true
           git add -f data/state/pre_send_quality_report.json || true
+          git add -f data/state/final_selection_report.json || true
           # HTTP-validator cache. Persisting it between runs is what
           # makes If-None-Match send a real value on day N+1.
           git add -f data/state/fetch_cache.json || true
