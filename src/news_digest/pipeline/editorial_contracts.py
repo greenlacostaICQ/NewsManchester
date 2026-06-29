@@ -1087,7 +1087,9 @@ def history_window_days_for_contract(story_type: str, event_shape: str, anchor_t
         return 30
     if story_type in {"incident", "planning", "civic", "memorial", "local_cost"}:
         return 14
-    if story_type in {"opening", "research"}:
+    if story_type == "opening":
+        return 21  # longer memory so a re-announced opening (Örme) stays repeat-checked
+    if story_type == "research":
         return 7
     if story_type in {"human_interest", "soft_news", "property_listing", "day_out_guide", "old_existing_food"}:
         return 2
@@ -1494,19 +1496,50 @@ def _event_material_change(candidate: dict, previous: dict) -> str:
     return ""
 
 
+def _opening_event_day(candidate: dict) -> date | None:
+    """The concrete opening/relaunch day from the candidate's event facts."""
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    raw = str(event.get("date_start") or event.get("date") or "").strip()[:10]
+    if not raw:
+        return None
+    try:
+        return datetime.strptime(raw, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
 def _new_phase_named_fact(candidate: dict, previous: dict) -> str:
     """The named fact that earns a ``new_phase`` repeat (W7).
 
-    A phase WORD in the blob is not enough. A repeat needs either a concrete
-    event fact that changed vs the last publication (date / venue / price /
-    sold-out / ticket type) or a strong development word — charged, inquest,
-    approved/rejected, opens, on sale, new date — surviving after the weak
-    announcement words are stripped. A story re-stating "announced / confirmed /
-    plans" with nothing new (Örme) returns "" and is suppressed.
+    A phase WORD in the blob is not enough. A repeat needs a concrete event fact
+    that changed vs the last publication (date / venue / price / sold-out /
+    ticket type) or a strong development word — charged, inquest, approved,
+    opens, on sale, new date — surviving after the weak announcement words are
+    stripped. A story re-stating "announced / confirmed / plans" with nothing
+    new (Örme) returns "" and is suppressed.
+
+    An announcement-style opening/relaunch is special: it re-states the same
+    headline every morning (Örme — "reverses closure / reopens 1 July" — was
+    published 7× over 10 days), and its permanent development word is not a fresh
+    reader moment. Once such a story has been published before, only a CHANGED
+    event fact (handled above) or its actual opening day (today/tomorrow) earns
+    another run. Court / incident / civic stories are untouched: there a new
+    development word (charged → sentenced) is a real new phase with no event fact
+    to compare against.
     """
     material = _event_material_change(candidate, previous)
     if material:
         return material
+    already_published = isinstance(previous, dict) and bool(
+        previous.get("first_published_day_london") or previous.get("last_published_day_london")
+    )
+    if already_published and str(build_editorial_contract(candidate).get("story_type") or "") in {
+        "opening",
+        "old_existing_food",
+    }:
+        opening_day = _opening_event_day(candidate)
+        if opening_day is None or not (0 <= (opening_day - now_london().date()).days <= 1):
+            return ""
     blob = _contract_blob(candidate)
     if _NEW_PHASE_RE.search(_WEAK_NEW_PHASE_RE.sub(" ", blob)):
         return "strong_phase_development"

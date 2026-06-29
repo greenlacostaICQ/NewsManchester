@@ -889,5 +889,54 @@ class CoverageBandTest(unittest.TestCase):
         self.assertLessEqual(count, self.EXPECTED_MAX)
 
 
+class NewPhaseRepeatTest(unittest.TestCase):
+    """W7: a re-announced opening must not republish every morning (Örme).
+
+    Örme ran 7 times over 10 days — same relaunch fact, same headline. Only a
+    changed event fact or its actual opening day earns another run; court and
+    incident stories keep the development-word rule (charged -> sentenced).
+    """
+
+    def _opening(self, *, event_day: str) -> dict:
+        return {
+            "title": "Michelin-listed cafe reverses closure plans and reopens with a new concept",
+            "category": "food_openings",
+            "primary_block": "openings",
+            "event": {"date_start": event_day, "date": event_day},
+        }
+
+    def test_reannounced_opening_before_its_day_is_suppressed(self) -> None:
+        from news_digest.pipeline.editorial_contracts import _new_phase_named_fact
+
+        far = (now_london().date() + timedelta(days=10)).isoformat()
+        today = self._opening(event_day=far)
+        previous = {
+            **self._opening(event_day=far),
+            "first_published_day_london": (now_london().date() - timedelta(days=9)).isoformat(),
+        }
+        self.assertEqual(_new_phase_named_fact(today, previous), "")
+
+    def test_opening_publishes_on_its_opening_day(self) -> None:
+        from news_digest.pipeline.editorial_contracts import _new_phase_named_fact
+
+        day = now_london().date().isoformat()
+        today = self._opening(event_day=day)
+        previous = {
+            **self._opening(event_day=day),
+            "first_published_day_london": (now_london().date() - timedelta(days=5)).isoformat(),
+        }
+        self.assertEqual(_new_phase_named_fact(today, previous), "strong_phase_development")
+
+    def test_incident_new_development_word_is_a_new_phase(self) -> None:
+        from news_digest.pipeline.editorial_contracts import _new_phase_named_fact
+
+        previous = {
+            "title": "Man charged over Bury town centre incident",
+            "first_published_day_london": (now_london().date() - timedelta(days=1)).isoformat(),
+        }
+        today = {"title": "Man sentenced over Bury town centre incident"}
+        self.assertEqual(_new_phase_named_fact(today, previous), "strong_phase_development")
+
+
 if __name__ == "__main__":
     unittest.main()
