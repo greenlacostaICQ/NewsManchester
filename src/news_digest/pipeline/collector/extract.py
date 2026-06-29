@@ -316,12 +316,14 @@ def _extract_jsonld_event_hint(html_text: str) -> dict:
         start = _parse_datetime_value(str(node.get("startDate") or ""))
         end = _parse_datetime_value(str(node.get("endDate") or ""))
         venue = _jsonld_location_name(node.get("location"))
+        organizer = _jsonld_location_name(node.get("organizer"))
         price, booking_url = _jsonld_offer_fields(node.get("offers"))
         status = _jsonld_text(node.get("eventStatus"))
         out = {
             "schema_source": "jsonld_event",
             "event_name": name,
             "venue": venue,
+            "organizer": organizer,
             "date": start.isoformat() if start else "",
             "date_start": start.isoformat() if start else "",
             "date_end": end.isoformat() if end else "",
@@ -344,6 +346,7 @@ def _jsonld_event_node_to_item(source: SourceDef, node: dict, index: int) -> Ext
     start = _parse_datetime_value(str(node.get("startDate") or ""))
     end = _parse_datetime_value(str(node.get("endDate") or ""))
     venue = _jsonld_location_name(node.get("location"))
+    organizer = _jsonld_location_name(node.get("organizer"))
     price, booking_url = _jsonld_offer_fields(node.get("offers"))
     event_url = _jsonld_text(node.get("url")) or booking_url or source.url
     event_url = parse.urljoin(source.url, event_url)
@@ -356,6 +359,7 @@ def _jsonld_event_node_to_item(source: SourceDef, node: dict, index: int) -> Ext
         "schema_source": "jsonld_event",
         "event_name": name,
         "venue": venue,
+        "organizer": organizer,
         "date": start.isoformat(),
         "date_start": start.isoformat(),
         "date_end": end.isoformat() if end else "",

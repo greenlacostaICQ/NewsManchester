@@ -109,6 +109,7 @@ class PreSendRepairExecutorTest(unittest.TestCase):
           {"@context":"https://schema.org","@type":"Event","name":"Film night",
            "startDate":"2026-07-03T19:30:00+01:00",
            "location":{"@type":"Place","name":"HOME"},
+           "organizer":{"@type":"Organization","name":"HOME Events"},
            "offers":{"price":"12","priceCurrency":"GBP","url":"https://homemcr.org/book/film-night"}}
           </script>
           <meta name="description" content="Film night at HOME with booking details.">
@@ -119,6 +120,7 @@ class PreSendRepairExecutorTest(unittest.TestCase):
 
         self.assertEqual(enriched.title, "Film night")
         self.assertEqual(enriched.structured_event_hint["venue"], "HOME")
+        self.assertEqual(enriched.structured_event_hint["organizer"], "HOME Events")
         self.assertEqual(enriched.structured_event_hint["date_start"][:10], "2026-07-03")
         self.assertEqual(enriched.structured_event_hint["price"], "£12")
         self.assertIn("book", enriched.structured_event_hint["booking_url"])
