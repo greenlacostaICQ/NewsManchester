@@ -3795,8 +3795,30 @@ def build_release(project_root: Path) -> ReleaseResult:
             )
     except Exception as exc:  # noqa: BLE001
         logger.warning("visible-HTML reconciler failed (issue still ships): %s", exc)
+        # The report must ALWAYS exist (RC1): a missing file used to read as
+        # "no divergence". Write an explicit degraded marker instead.
+        visible_contract = {"enabled": False, "error": str(exc)}
+        try:
+            write_json(state_dir / "visible_contract_report.json", visible_contract)
+        except Exception:  # noqa: BLE001
+            pass
 
+    # A known visible failure must not ship as a silent "pass". The issue still
+    # ships (never-block), but the decision tells the truth: "ship_degraded".
+    # Technical errors still fail-close. (P0-A.)
     ok = not errors
+    visible_contract_failed = bool(visible_contract.get("enabled")) and not (
+        (visible_contract.get("control_assertion") or {}).get("ok", True)
+    )
+    unrepaired_bad_visible_lines = int(
+        (rendered_html_review.get("counts") or {}).get("bad_visible_items", 0) or 0
+    ) > 0
+    if not ok:
+        release_decision = "fail"
+    elif visible_contract_failed or unrepaired_bad_visible_lines:
+        release_decision = "ship_degraded"
+    else:
+        release_decision = "pass"
     if ok:
         shutil.copyfile(draft_path, output_path)
         message = f"Release passed. Promoted {draft_path} to {output_path}."
@@ -3812,7 +3834,7 @@ def build_release(project_root: Path) -> ReleaseResult:
             writer_report=writer_report,
             rendered_fingerprints=rendered_fingerprints,
             dedupe_memory=dedupe_memory,
-            release_decision="pass" if ok else "fail",
+            release_decision=release_decision,
         )
     except Exception as exc:  # noqa: BLE001
         logger.warning("audit trail snapshot failed: %s", exc)
@@ -3823,7 +3845,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "pipeline_run_id": pipeline_run_id,
         "run_at_london": now_london().isoformat(),
         "run_date_london": current_day_london,
-        "release_decision": "pass" if ok else "fail",
+        "release_decision": release_decision,
         "message": message,
         "errors": errors,
         "warnings": warnings,

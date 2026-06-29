@@ -1556,7 +1556,11 @@ class PublishedReviewTest(unittest.TestCase):
             report = json.loads((state_dir / "release_report.json").read_text(encoding="utf-8"))
 
             self.assertTrue(result.ok)
-            self.assertEqual(report["release_decision"], "pass")
+            # P0-A: a thin draft (no lead, sections under minimum) still ships,
+            # but the decision is honest — "ship_degraded", not a silent "pass" —
+            # and the visible-contract report always exists (RC1).
+            self.assertEqual(report["release_decision"], "ship_degraded")
+            self.assertTrue((state_dir / "visible_contract_report.json").exists())
             self.assertEqual(report["errors"], [])
             self.assertEqual(report["event_miss_review"]["counts"]["critical_misses"], 1)
             self.assertTrue(any("Event miss review" in warning for warning in report["warnings"]))
@@ -1669,7 +1673,8 @@ class PublishedReviewTest(unittest.TestCase):
             report = json.loads((state_dir / "release_report.json").read_text(encoding="utf-8"))
 
             self.assertTrue(result.ok)
-            self.assertEqual(report["release_decision"], "pass")
+            # P0-A: ships even when degraded; the source failure must not block.
+            self.assertIn(report["release_decision"], {"pass", "ship_degraded"})
             self.assertFalse(any("public services" in error for error in report["errors"]))
 
     def test_release_review_flags_bad_visible_items(self) -> None:

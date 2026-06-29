@@ -170,7 +170,10 @@ class DigestBotService:
             report = json.loads(report_path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             return "release_report.json не читается."
-        if report.get("release_decision") != "pass":
+        # "ship_degraded" still ships (never-block): the issue was promoted, the
+        # decision is just honest about a visible-contract shortfall. Only a hard
+        # "fail" (technical block, nothing promoted) refuses delivery here.
+        if report.get("release_decision") not in {"pass", "ship_degraded"}:
             message = report.get("message") or "release gate не прошёл"
             return str(message)
         if int(report.get("release_gate_version") or 0) < REQUIRED_RELEASE_GATE_VERSION:
