@@ -46,6 +46,39 @@ Do not add model API calls, new pipeline stages, or shell-script changes
 without updating `.github/workflows/daily-digest.yml` and
 `scripts/run_local_digest.py` in the same commit.
 
+## Proportional work sizing
+
+The agent owns scope control. The user should not have to label a request as
+"micro" or "full"; choose the smallest workflow that genuinely satisfies the
+request and the project's delivery rules.
+
+Default shape for a single backlog item, symptom, failing test, visible phrase,
+predicate/template tweak, or report-field acceptance:
+
+- inspect the named or directly implied files/functions only;
+- make the smallest deterministic change that fixes the stated behavior;
+- add a focused regression test only when it protects the exact acceptance;
+- run the directly affected test file/class/function, not a broad suite;
+- stop after the focused verification with a clear status unless delivery was
+  explicitly requested or the project rules make delivery part of "done".
+
+Broaden one step at a time only when the touched surface requires it: shared
+schema/interface, stage boundary, release/send behavior, workflow/shell
+orchestration, model routing, state migration, external I/O, or evidence that
+the narrow fix does not cover the failure. The escalation ladder is: targeted
+test -> affected stage/probe -> broader tests -> runtime sync -> commit/push
+-> GitHub Actions. Do not jump to the end of that ladder by default.
+
+Commit, push, runtime sync, and CI are delivery actions, not default proof for
+every small patch. Use them when the user asks to ship/commit/push/deploy,
+when fixing a current CI/production automation failure, or when the relevant
+project rule below explicitly says the change is not finished without them.
+
+For preventive backlog contracts, prefer a narrow predicate, phrasebook, or
+report-field change that enforces the acceptance. Avoid new abstractions,
+data-model redesign, or end-to-end pipeline work unless that breadth is
+actually required.
+
 One pass per stage; if uncertain, leave Python output as-is.
 
 1. Run `collect-digest`. Review `data/state/candidates.json` and change
@@ -167,6 +200,20 @@ done only after it is committed to `main`, pushed to GitHub, and the
 runtime copy is synced when local automation uses it. If code only exists in
 the working tree, an unpushed branch, or `~/.mnewsdigest`, describe it as a
 local experiment, not as a completed improvement.
+
+## Improvement Log Rule
+
+Every code or config change that affects pipeline behaviour, output, or
+operations MUST be recorded in `docs/IMPROVEMENT_LOG.md` before it is considered
+done — one ADR-style entry per improvement (template at the top of that file),
+with a unique sequential id (NNNN). No "too small to log" exception: the log
+exists because the same fixes were reworked 5–8 times, and an unlogged change
+cannot be diagnosed a month later.
+
+Definition of done for this project = committed to `main` + runtime-synced
+(Deploy Rule above) + **logged in `docs/IMPROVEMENT_LOG.md`**. The `ПРОВЕРКА`
+field is filled only from a real run with numbers; offline/unit verification is
+labelled as such until the next prod run confirms it.
 
 ## Where to look first
 

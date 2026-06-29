@@ -206,3 +206,36 @@
 - Файлы/места: `writer.py:1594` (`_is_budget_exempt_a_tier`), `:1631,:1672` (budget-сайты), `:6353` (inventory-трекинг), report `ticket_inventory`.
 - ПРОВЕРКА: офлайн — outside/unknown A-tier не exempt, GM/nearby exempt; unit: 8 outside A-tier при cap 6 → 6 (было 8). Прод — на следующем прогоне.
 - Где была ошибка: —
+
+### 0018 — ВОЛНА 3 / W9-fix: on-sale окно не читает дату СОБЫТИЯ — 2026-06-27
+- Статус: внедрено (main c7c15e3), runtime synced; ПРОВЕРКА офлайн (unit), прод на следующем прогоне
+- Проблема: `onsale_datetime_from_blob` на тексте «on sale soon. Event date 20 August 2026» возвращал onsale=2026-08-20 (дату СОБЫТИЯ) → в выпуск могло уйти «в продаже с 20 августа» = выдуманный факт (reader-facing).
+- Причина (корень): окно `[start-8 : end+56]` без границы предложения перепрыгивало «soon.» и хватало следующую дату. Конкурентная правка добавила sentence-bound, но её marker-reject был МЁРТВЫМ кодом: `window.find(parsed.start[:10])` искал ISO-строку «2026-08-20» в человеческом тексте «20 August 2026» → всегда -1 → guard не срабатывал; вариант с запятой/тире (`,`/`—` не входят в `[.!?;\n]`) протекал.
+- Решение: окно режется по границе клаузы (`[.!?;\n]`) с обеих сторон + tail обрезается по event-date маркеру (`event date|date of|концерт|show|festival|событи|event`) на СЫРОМ тексте до парсинга — смещение даты не нужно, guard срабатывает независимо от ISO-формата. Нет даты в окне → None → newly_listed (факт не фабрикуется).
+- Почему так (отвергли): parse-then-find-ISO (конкурентная версия) структурно не чинится — парсер не отдаёт позицию даты; cut-on-marker до парсинга надёжнее.
+- Ожидаемый эффект и метрика: 0 onsale из event-date; «on sale 4 July» сохраняется (presale_soon).
+- Файлы/места: `editorial_contracts.py:192`; тест `test_ticket_consolidation.py::TicketOnsaleFromBlobTest::test_event_date_after_onsale_phrase_is_not_read_as_sale_date` (период+запятая).
+- ПРОВЕРКА: офлайн — owner-синтетика период→None, запятая→None; позитив «on sale 4 July»→presale_soon; полный `unittest discover` 714 OK. Прод — на следующем прогоне (в выпуске нет «в продаже с <event date>»).
+- Где была ошибка: —
+
+### 0019 — ВОЛНА 3 / W6-fix: не-отсуженные eligible держатся (held), не дропаются — 2026-06-27
+- Статус: внедрено (main c7c15e3), runtime synced; ПРОВЕРКА офлайн (unit), прод на следующем прогоне
+- Проблема: при cap / model-unavailable / model-failed professional-кандидаты С фактами выходили `include=False` БЕЗ `held_for_enrichment`, и `held N` в отчёте = 0 → выглядело как drop, восстановимость на следующий день терялась.
+- Причина (корень): post-model sweep (`professional_events.py:386-400`) пропускает уже-`include=False`; pending-путь `_drop_pending_llm_candidates` (`:354`) выходил раньше и не ставил статус и не считался в held.
+- Решение: `_drop_pending_llm_candidates` ставит `editorial_status="held_for_enrichment"`; в `apply_professional_event_llm_matches` pending-счёт (`dropped_not_sent_pending`+`dropped_pending`) влит в `held`. Genuine model-skip (путь rows, `:525+`) НЕ тронут — остаётся drop.
+- Почему так (отвергли): считать held по статусу на всех кандидатах — риск пересчёта (candidate_validator тоже ставит held); локальная сумма по report-ключам точна и изолирована.
+- Ожидаемый эффект и метрика: cap/no-key eligible → `include=False` + `held_for_enrichment`; `held N` ≠ 0 при pending; genuine skip не растит held.
+- Файлы/места: `professional_events.py:354` (статус), `:400` (сумма); тест `test_professional_events.py::ProfessionalEventsTest::test_eligible_event_unevaluated_by_model_is_held_not_dropped`.
+- ПРОВЕРКА: офлайн — eligible + no-route → `held_for_enrichment`, summary «held 1»; sibling no-facts тест зелёный; 714 OK. Прод — на следующем прогоне.
+- Где была ошибка: —
+
+### 0020 — ВОЛНА 3 / W10-fix: метрика zero_contribution_by_stage (переименование) — 2026-06-27
+- Статус: внедрено (main c7c15e3), runtime synced; ПРОВЕРКА офлайн (unit)
+- Проблема: ключ `zero_yield_by_stage` суммировал ВСЕ zero-rendered стадии (incl parsed/fetched), а имя обещало узкий `zero_yield` (candidate_count>0 & rendered=0) → путаница при разборе «N источников 0».
+- Причина (корень): агрегат в `_summarise_source_health` (`release.py:1321`) считает все zero-contribution строки, имя не отражало семантику.
+- Решение: переименование ключа+переменной в `zero_contribution_by_stage`; узкий `zero_yield` не тронут. Потребителей не было (метрика добавлена в той же волне) — обновлён единственный тест.
+- Почему так (отвергли): alias не нужен — нет внешних потребителей (grep на старый ключ пуст).
+- Ожидаемый эффект и метрика: имя ключа = `zero_contribution_by_stage`; `zero_yield` без изменений.
+- Файлы/места: `release.py:1321-1333`; тест `test_source_health.py:180`.
+- ПРОВЕРКА: офлайн — grep на `zero_yield_by_stage` пуст; 714 OK.
+- Где была ошибка: —
