@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 import html
 import json
 import os
@@ -738,6 +738,55 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
     }
 
 
+# P0-D: recovery may only insert an event into a date-anchored section if the
+# event has a concrete occurrence date inside that section's horizon. A no-date
+# listing (Black Friar / Boro) or a far-future one (Manchester Psych Festival,
+# 5 Sept, in «Выходные») was being re-manufactured into a thin weekend block
+# even though validation had dropped it — recovery filled the counter with a
+# line that is not actually this weekend. News/city blocks carry no such date
+# contract and are unaffected.
+_RESERVE_INSERT_EVENT_HORIZON_DAYS: dict[str, int | None] = {
+    "Выходные в GM": 3,
+    "Что важно в ближайшие 7 дней": 7,
+    "Дальние анонсы": None,  # future, any horizon
+    "Билеты / Ticket Radar": None,
+    "Крупные концерты вне GM": None,
+    "Русскоязычные концерты и стендап UK": None,
+}
+
+
+def _reserve_insert_allowed(section_name: str, candidate: dict) -> bool:
+    """Whether recovery may insert ``candidate`` into ``section_name`` (P0-D).
+
+    Date-anchored sections require a concrete occurrence date in window; a
+    no-date or out-of-window event is not a real entry for that section and
+    must not be manufactured to hit a minimum.
+    """
+    if section_name not in _RESERVE_INSERT_EVENT_HORIZON_DAYS:
+        return True
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    raw = str(event.get("date_start") or event.get("date") or "").strip()[:10]
+    if not raw:
+        return False
+    try:
+        start = date.fromisoformat(raw)
+    except ValueError:
+        return False
+    try:
+        from news_digest.pipeline.event_extraction import event_end_date  # noqa: PLC0415
+
+        end = event_end_date(candidate) or start
+    except Exception:  # noqa: BLE001
+        end = start
+    today = now_london().date()
+    if end < today:  # already over
+        return False
+    horizon = _RESERVE_INSERT_EVENT_HORIZON_DAYS.get(section_name)
+    if horizon is not None and start > today + timedelta(days=horizon):
+        return False
+    return True
+
+
 def _same_section_reserve_line(
     section_name: str,
     candidates: list[dict],
@@ -759,6 +808,8 @@ def _same_section_reserve_line(
         if PRIMARY_BLOCKS.get(str(c.get("primary_block") or "")) != section_name:
             continue
         if not is_recoverable_reserve(c):  # S1: unified recoverable pool (public_reserve ∪ capacity-cut board overflow)
+            continue
+        if not _reserve_insert_allowed(section_name, c):  # P0-D: no no-date / out-of-window events
             continue
         line = str(c.get("draft_line") or "").strip()
         if not line.startswith("• "):

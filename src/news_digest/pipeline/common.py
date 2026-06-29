@@ -113,7 +113,9 @@ def recoverable_reserve_eligible(candidate: dict) -> bool:
         return False
     if str(candidate.get("publish_plan_status") or "") == "drop":
         return False
-    if candidate.get("synthetic_stale"):  # stale
+    if candidate.get("synthetic_stale"):  # stale (synthetic placeholder)
+        return False
+    if str(candidate.get("freshness_status") or "") == "stale":  # stale by freshness (P0-B)
         return False
     if candidate.get("source_trial"):  # untested / low-trust source
         return False

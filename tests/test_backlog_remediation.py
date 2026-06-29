@@ -2770,5 +2770,48 @@ class RussianPositiveEvidenceTest(unittest.TestCase):
         self.assertIn("russian_or_ukrainian_language_phrase", c["russian_evidence"]["strong_signals"])
 
 
+class ReserveAndRecoveryContractTest(unittest.TestCase):
+    """P0-B: only capacity-cut material is recoverable (never stale).
+    P0-D: recovery cannot manufacture a no-date / out-of-window event line."""
+
+    def _clean_reserve_base(self) -> dict:
+        return {
+            "validated": True,
+            "recoverable_reserve": True,
+            "title": "Manchester council confirms update",
+            "primary_block": "city_watch",
+        }
+
+    def test_p0b_stale_freshness_is_not_recoverable(self) -> None:
+        from news_digest.pipeline.common import recoverable_reserve_eligible
+
+        base = self._clean_reserve_base()
+        self.assertTrue(recoverable_reserve_eligible({**base, "freshness_status": "fresh_24h"}))
+        self.assertTrue(recoverable_reserve_eligible({**base, "freshness_status": "not_applicable"}))
+        self.assertFalse(recoverable_reserve_eligible({**base, "freshness_status": "stale"}))
+
+    def test_p0d_no_date_event_not_insertable_into_weekend(self) -> None:
+        from news_digest.pipeline.editor import _reserve_insert_allowed
+
+        self.assertFalse(_reserve_insert_allowed("Выходные в GM", {"event": {}}))
+
+    def test_p0d_in_window_event_is_insertable(self) -> None:
+        from news_digest.pipeline.editor import _reserve_insert_allowed
+
+        tomorrow = (now_london().date() + timedelta(days=1)).isoformat()
+        self.assertTrue(_reserve_insert_allowed("Выходные в GM", {"event": {"date_start": tomorrow}}))
+
+    def test_p0d_far_future_event_not_in_weekend(self) -> None:
+        from news_digest.pipeline.editor import _reserve_insert_allowed
+
+        sept = (now_london().date() + timedelta(days=60)).isoformat()
+        self.assertFalse(_reserve_insert_allowed("Выходные в GM", {"event": {"date_start": sept}}))
+
+    def test_p0d_news_section_has_no_date_contract(self) -> None:
+        from news_digest.pipeline.editor import _reserve_insert_allowed
+
+        self.assertTrue(_reserve_insert_allowed("Свежие новости", {"event": {}}))
+
+
 if __name__ == "__main__":
     unittest.main()
