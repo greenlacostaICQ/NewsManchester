@@ -917,6 +917,11 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         "Manchester City",
         "Manchester City Men",
         "Manchester United",
+        # Skiddle cards carry the rich "<Event> at <Venue>" alt text; the deep
+        # fetch (needed for venue/date facts) returns a bare event-name <title>
+        # ("Manchester Forever") that would otherwise clobber it.
+        "Skiddle Manchester",
+        "Skiddle Manchester Bank Holiday",
     }
     return ExtractedItem(
         title=item.title if preserve_listing_title else _clean_title_text(unescape(enriched_title or item.title)),
