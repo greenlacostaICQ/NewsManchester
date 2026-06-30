@@ -321,3 +321,14 @@
 - Файлы/места: `candidate_validator.py:1201`, `writer.py:1635` (`_is_dated_weekend_event`), `writer.py:1644`; тесты `test_publish_plan_contract.py`, `test_digest_quality_guardrails.py`, `test_backlog_remediation.py`, `test_llm_rewrite_diagnostics.py`.
 - ПРОВЕРКА: `PYTHONPATH=src python3 -m unittest discover -s tests` → 737 тестов, 1 pre-existing провал (skiddle, не связан). Реальные данные: `_exclude_by_editorial_contract` на живых Ai Weiwei/Crossroad → `excluded=False`; `write-digest` офлайн ok. Прогнали ИМЕННО CI-командой (не pytest).
 - Где была ошибка: 0025 был залогирован «ПРОВЕРЕНО-работает», но прогон шёл не CI-командой — E2-баг и 7 упавших тестов не заметили. Урок: гонять `unittest discover` (как CI) и смотреть funnel на реальном `candidates.json`, а не только компиляцию.
+
+### 0027 — Операционная страховка: workflow timeout 35 минут — 2026-06-30
+- Статус: внедрено
+- Проблема: GitHub Actions run `28426401071` был отменен по job timeout через 25 минут: `edit-digest` завершился, но `build-digest`, pre-send judge и Telegram send не стартовали. `delivery_state.json` остался за 2026-06-29, а `release_report.json` тоже остался старым, что создало смешанное состояние отчетов.
+- Причина (корень): в daily workflow стоял общий `timeout-minutes: 25`; 2026-06-30 критический путь вырос из-за трех одновременных факторов: долгий Visit Manchester extraction/enrichment, увеличенный LLM rewrite board и второй круг final editor.
+- Решение: увеличить общий job timeout до 35 минут как временный предохранитель, чтобы текущий выпуск успевал дойти до `build-digest`/send, пока внедряются настоящие stage budgets и перенос broad event/ticket inventory из утреннего critical path.
+- Почему так (отвергнутые альтернативы): не считаем это корневым решением. Просто поднять timeout выше 35 минут отвергнуто: это скрывает деградацию и может сдвигать утреннюю отправку слишком поздно. Оставить 25 минут отвергнуто: при уже известном 24m+ pre-build path следующий похожий день снова отменит выпуск до отправки.
+- Ожидаемый эффект и метрика проверки: следующий workflow при похожем профиле должен завершить `build-digest` и Telegram send вместо cancel; в GitHub Actions duration может быть >25m, но conclusion должен быть `success`, а `delivery_state.last_delivery_day_london` должен обновиться на день прогона.
+- Файлы/места: `.github/workflows/daily-digest.yml:13`.
+- ПРОВЕРКА (после прогона): не проверено реальным прогоном; это config-only страховка до следующего daily/workflow_dispatch.
+- Где была ошибка (если не сработало): —
