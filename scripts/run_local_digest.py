@@ -46,7 +46,7 @@ from news_digest.pipeline.dedupe import dedupe_candidates, initialize_candidates
 from news_digest.pipeline.editor import edit_digest
 from news_digest.pipeline.history import ensure_history_files, record_delivery_artifacts
 from news_digest.pipeline.llm_rewrite import run_llm_rewrite
-from news_digest.pipeline.release import build_release, initialize_release_inputs
+from news_digest.pipeline.release import build_release, flush_stage_observability, initialize_release_inputs
 from news_digest.pipeline.writer import write_digest
 from news_digest.state.store import StateStore
 
@@ -2432,6 +2432,15 @@ def cmd_init_build_state(overwrite: bool) -> int:
     return 0
 
 
+def _flush_obs(stage: str) -> None:
+    """Cancel-proof observability flush after a stage. Guarded: a flush error
+    must never fail the stage or block the issue."""
+    try:
+        flush_stage_observability(PROJECT_ROOT, stage)
+    except Exception as exc:  # noqa: BLE001
+        print(f"observability flush failed ({stage}): {exc}", file=sys.stderr)
+
+
 def _stage_payload(result) -> dict[str, object]:
     payload = {"ok": result.ok, "message": result.message, "report_path": str(result.report_path)}
     if hasattr(result, "draft_path"):
@@ -2460,23 +2469,27 @@ def cmd_collect_digest() -> int:
                         "candidates_path": str(candidates_path),
                         "candidate_count": len(candidates.get("candidates", [])),
                     }, ensure_ascii=False, indent=2))
+                    _flush_obs("collect")
                     return 0
             except Exception:
                 pass
     result = collect_digest(PROJECT_ROOT)
     print(json.dumps(_stage_payload(result), ensure_ascii=False, indent=2))
+    _flush_obs("collect")
     return 0 if result.ok else 1
 
 
 def cmd_dedupe_digest() -> int:
     result = dedupe_candidates(PROJECT_ROOT)
     print(json.dumps(_stage_payload(result), ensure_ascii=False, indent=2))
+    _flush_obs("dedupe")
     return 0 if result.ok else 1
 
 
 def cmd_validate_candidates() -> int:
     result = validate_candidates(PROJECT_ROOT)
     print(json.dumps(_stage_payload(result), ensure_ascii=False, indent=2))
+    _flush_obs("validate")
     return 0 if result.ok else 1
 
 
@@ -2485,6 +2498,7 @@ def cmd_curator_pass() -> int:
     from news_digest.pipeline.curator import run_curator_pass  # noqa: PLC0415
     run_curator_pass(PROJECT_ROOT)
     print(json.dumps({"ok": True, "message": "Curator pass complete."}, ensure_ascii=False))
+    _flush_obs("curator")
     return 0
 
 
@@ -2497,6 +2511,7 @@ def cmd_transport_fill() -> int:
     from news_digest.pipeline.transport_fill import run_transport_fill  # noqa: PLC0415
     result = run_transport_fill(PROJECT_ROOT)
     print(json.dumps(_stage_payload(result), ensure_ascii=False))
+    _flush_obs("transport_fill")
     return 0 if result.ok else 1
 
 
@@ -2504,6 +2519,7 @@ def cmd_llm_rewrite() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     result = run_llm_rewrite(PROJECT_ROOT)
     print(json.dumps(_stage_payload(result), ensure_ascii=False))
+    _flush_obs("llm_rewrite")
     return 0 if result.ok else 1
 
 
@@ -2634,6 +2650,7 @@ def cmd_write_digest() -> int:
     os.environ.setdefault("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "1")
     result = write_digest(PROJECT_ROOT)
     print(json.dumps(_stage_payload(result), ensure_ascii=False, indent=2))
+    _flush_obs("write")
     return 0 if result.ok else 1
 
 
@@ -2644,6 +2661,7 @@ def cmd_edit_digest() -> int:
     payload["errors"] = report.get("errors", [])
     payload["warnings"] = report.get("warnings", [])
     print(json.dumps(payload, ensure_ascii=False, indent=2))
+    _flush_obs("edit")
     return 0 if result.ok else 1
 
 

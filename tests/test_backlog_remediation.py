@@ -38,6 +38,7 @@ from news_digest.pipeline.release import (
     _summarise_source_health,
     _summarise_transport_coverage,
     _update_feedback_items,
+    flush_stage_observability,
 )
 from news_digest.pipeline.writer import write_digest
 from scripts.run_local_digest import (
@@ -215,6 +216,205 @@ class WriterRenderedFingerprintTest(unittest.TestCase):
             html = (state_dir / "draft_digest.html").read_text(encoding="utf-8")
             self.assertIn("конкретных подтверждённых сбоев", html)
             self.assertIn("https://tfgm.com/travel-updates", html)
+
+
+class TargetedEditorSecondRoundTest(unittest.TestCase):
+    """Backlog item 2: round 2 re-sends to the model ONLY the lines round 1 left
+    unclean/uncovered (plus sensitive), not the whole visible digest — while
+    keeping honest coverage and never dropping a line."""
+
+    def _url(self, line: str) -> str:
+        import re as _re
+        m = _re.search(r'href="([^"]+)"', line)
+        return m.group(1) if m else ""
+
+    def test_round2_is_targeted_not_whole_digest(self) -> None:
+        from news_digest.pipeline import editor as editor_mod
+
+        captured: list[list[dict]] = []
+
+        def fake_editor(items, api_key):
+            captured.append([dict(it) for it in items])
+            if len(captured) == 1:
+                # Round 1 reads the whole digest. Mark every line "ok" EXCEPT the
+                # /c line, which it leaves uncovered (no action) → coverage
+                # incomplete, so a recovery round 2 is required.
+                actions = [
+                    {"index": it["index"], "action": "ok", "line": "", "reason": ""}
+                    for it in items
+                    if "example.test/c" not in str(it["line"])
+                ]
+                missing = [it["index"] for it in items if "example.test/c" in str(it["line"])]
+                return {}, {
+                    "status": "ok",
+                    "items_sent": len(items),
+                    "items_returned": 0,
+                    "actions_returned": len(actions),
+                    "coverage_complete": False,
+                    "missing_action_indices": missing,
+                    "actions": actions,
+                    "block_actions": [],
+                }
+            # Round 2 covers everything it was actually sent.
+            actions = [
+                {"index": it["index"], "action": "ok", "line": "", "reason": ""} for it in items
+            ]
+            return {}, {
+                "status": "ok",
+                "items_sent": len(items),
+                "items_returned": 0,
+                "actions_returned": len(actions),
+                "coverage_complete": True,
+                "missing_action_indices": [],
+                "actions": actions,
+                "block_actions": [],
+            }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            run_date = now_london().strftime("%Y-%m-%d")
+            candidates = [
+                {
+                    "include": True,
+                    "fingerprint": f"city-{slug}",
+                    "category": "media_layer",
+                    "primary_block": "last_24h",
+                    "title": f"Manchester council update {slug}",
+                    "summary": "Manchester council confirmed an update for residents.",
+                    "source_label": "Manchester Council",
+                    "source_url": f"https://example.test/{slug}",
+                }
+                for slug in ("a", "b", "c")
+            ]
+            (state_dir / "candidates.json").write_text(
+                json.dumps(
+                    {"pipeline_run_id": "test-run", "run_date_london": run_date, "candidates": candidates},
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            (state_dir / "draft_digest.html").write_text(
+                f"<b>Greater Manchester Brief — {run_date}, 08:00</b>\n\n"
+                "<b>Погода</b>\n"
+                "• Погода: сухо. <a href=\"https://example.test/weather\">Met Office</a>\n\n"
+                "<b>Свежие новости</b>\n"
+                "• Manchester: сервис обновлён. <a href=\"https://example.test/a\">Совет</a>\n"
+                "• Manchester: парк открыт. <a href=\"https://example.test/b\">Совет</a>\n"
+                "• Manchester: фестиваль начался. <a href=\"https://example.test/c\">Совет</a>\n",
+                encoding="utf-8",
+            )
+
+            with mock.patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"}), \
+                    mock.patch.object(editor_mod, "_call_pre_send_russian_editor", side_effect=fake_editor):
+                result = edit_digest(root)
+            html = (state_dir / "draft_digest.html").read_text(encoding="utf-8")
+            report = json.loads((state_dir / "editor_report.json").read_text(encoding="utf-8"))
+
+        self.assertTrue(result.ok)
+        # Round 2 ran.
+        self.assertEqual(len(captured), 2, "second round did not run")
+        round1_urls = {self._url(str(it["line"])) for it in captured[0]}
+        round2_urls = {self._url(str(it["line"])) for it in captured[1]}
+        # Targeted: round 2 saw strictly fewer lines than round 1 (not the whole digest).
+        self.assertLess(len(captured[1]), len(captured[0]))
+        # The uncovered /c line is re-reviewed; the clean+ok weather line is NOT.
+        self.assertIn("https://example.test/c", round2_urls)
+        self.assertNotIn("https://example.test/weather", round2_urls)
+        self.assertIn("https://example.test/weather", round1_urls)
+        # No line is dropped: every original line still ships.
+        for url in ("weather", "a", "b", "c"):
+            self.assertIn(f"https://example.test/{url}", html)
+        # Honest coverage holds across the two rounds.
+        pre_send = report["pre_send_russian_editor"]
+        self.assertTrue(pre_send["coverage_complete"])
+        round2_report = next(r for r in pre_send["rounds"] if r.get("round") == 2)
+        self.assertEqual(round2_report["selection_policy"], "targeted_second_round")
+        self.assertEqual(round2_report["targeted_items"], len(captured[1]))
+
+
+class CancelProofObservabilityTest(unittest.TestCase):
+    def test_flush_writes_speed_source_log_timings_and_selection_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            run_date = now_london().strftime("%Y-%m-%d")
+            (state_dir / "collector_report.json").write_text(
+                json.dumps(
+                    {
+                        "run_date_london": run_date,
+                        "total_duration_seconds": 12.5,
+                        "categories": {
+                            "city": {
+                                "source_health": [
+                                    {
+                                        "name": "MEN",
+                                        "url": "https://example.test/rss",
+                                        "checked": True,
+                                        "fetched": True,
+                                        "candidate_count": 3,
+                                        "publishable_count": 2,
+                                        "dated_candidate_count": 2,
+                                        "fresh_last_24h_count": 1,
+                                        "duration_seconds": 1.25,
+                                    }
+                                ]
+                            }
+                        },
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            (state_dir / "candidate_validation_report.json").write_text(
+                json.dumps({"duration_seconds": 2.0}, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            (state_dir / "candidates.json").write_text(
+                json.dumps(
+                    {
+                        "run_date_london": run_date,
+                        "candidates": [
+                            {
+                                "fingerprint": "fp-1",
+                                "title": "Council update",
+                                "source_label": "MEN",
+                                "primary_block": "last_24h",
+                                "digest_selection_verdict": "selected",
+                                "include": True,
+                                "draft_line": "• Совет обновил сервис. Проверьте детали.",
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            collect_result = flush_stage_observability(root, "collect")
+            validate_result = flush_stage_observability(root, "validate")
+
+            self.assertEqual(collect_result["source_run_log_rows"], 1)
+            self.assertEqual(collect_result["selection_snapshot"]["candidate_count"], 1)
+            source_rows = (state_dir / "source_run_log.jsonl").read_text(encoding="utf-8").splitlines()
+            self.assertEqual(len(source_rows), 1)
+            self.assertEqual(json.loads(source_rows[0])["found"], 3)
+
+            speed_report = json.loads((state_dir / "speed_report.json").read_text(encoding="utf-8"))
+            self.assertTrue(speed_report["provisional"])
+            self.assertEqual(speed_report["stage_seconds"]["collect"], 12.5)
+            self.assertEqual(speed_report["stage_seconds"]["validate"], 2.0)
+
+            timing_rows = (state_dir / "stage_timings.jsonl").read_text(encoding="utf-8").splitlines()
+            self.assertEqual([json.loads(row)["stage"] for row in timing_rows], ["collect", "validate"])
+
+            snapshot = json.loads((state_dir / "selection_snapshot.json").read_text(encoding="utf-8"))
+            self.assertEqual(snapshot["after_stage"], "validate")
+            self.assertEqual(validate_result["selection_snapshot"]["candidate_count"], 1)
+            self.assertEqual(snapshot["totals"]["selected"], 1)
+            self.assertTrue(snapshot["sections"]["Свежие новости"]["items"][0]["has_public_text"])
 
 
 class TransportPassengerImpactContractTest(unittest.TestCase):

@@ -301,6 +301,27 @@ def _line_url_identity(line: str) -> str:
     return canonical_url_identity(html.unescape(match.group(1)))
 
 
+def _editor_line_identity(line: str) -> str:
+    """Stable identity for round-to-round line matching (targeted round 2).
+    Prefers the link target — it survives a rewrite that only changes wording —
+    and falls back to normalized text for URL-less lines. The fallback is
+    conservative: a URL-less line whose text changed won't match, so it is
+    re-reviewed rather than wrongly skipped."""
+    url = _line_url_identity(line)
+    if url:
+        return f"url:{url}"
+    return "txt:" + re.sub(r"\s+", " ", str(line or "").strip().lower())[:160]
+
+
+def _line_is_sensitive(line: str, candidates_by_key: dict[str, dict]) -> bool:
+    """Crime/court/casualty lines always go back through the model in round 2,
+    even if round 1 marked them ok — faithfulness on these is non-negotiable."""
+    candidate = candidates_by_key.get(_line_url_identity(line))
+    if isinstance(candidate, dict):
+        return _evidence_is_sensitive(candidate)
+    return bool(_SENSITIVE_LINE_RE.search(str(line or "")))
+
+
 def _line_story_key(line: str, candidates_by_key: dict[str, dict]) -> str:
     """Cross-section dedup key. Prefer the story cluster so the SAME story
     rendered in two blocks is caught even when the wording differs ("В деле о
@@ -1256,14 +1277,48 @@ def _pre_send_polish_sections(
     )
     if needs_second_round:
         second_refetch_stats: dict[str, object] = {"attempted": 0, "improved": 0, "failed": 0, "empty_or_not_better": 0, "skipped": 0}
-        second_items = _visible_line_items(polished, candidates_by_key, second_refetch_stats)
+        second_items_all = _visible_line_items(polished, candidates_by_key, second_refetch_stats)
+        # Targeted round 2 (backlog item 2). Round 1 already read the WHOLE visible
+        # digest, so re-send to the model only the lines that are not cleanly
+        # covered yet: action != ok (rewrite/replace/strip/fact-lock-rejected),
+        # never reviewed (uncovered_by_round1 or newly inserted by degradation),
+        # or sensitive. Lines round 1 marked "ok" are skipped —
+        # they were reviewed, so honest coverage holds across the two rounds
+        # (targeted ∪ round1_ok ⊇ whole visible). Applying still runs over the
+        # FULL list (second_items_all) because _apply_editor_line_actions rebuilds
+        # `polished` from `items`; a filtered list there would drop untouched lines.
+        first_items_by_index = {
+            int(item["index"]): item
+            for item in items
+            if isinstance(item.get("index"), int)
+        }
+        round1_clean: set[str] = set()
+        for action in (model_report.get("actions") or []):
+            if not isinstance(action, dict):
+                continue
+            try:
+                index = int(action.get("index"))
+            except (TypeError, ValueError):
+                continue
+            if str(action.get("action") or "").strip() != "ok":
+                continue
+            item = first_items_by_index.get(index)
+            if item:
+                round1_clean.add(_editor_line_identity(str(item.get("line") or "")))
+        second_items = [
+            item
+            for item in second_items_all
+            if _editor_line_identity(str(item.get("line") or "")) not in round1_clean
+            or _line_is_sensitive(str(item.get("line") or ""), candidates_by_key)
+        ]
         second_fixes, second_report = _call_pre_send_russian_editor(second_items, api_key)
         second_report["targeted_items"] = len(second_items)
-        second_report["selection_policy"] = "whole_visible_digest_second_round"
+        second_report["visible_items"] = len(second_items_all)
+        second_report["selection_policy"] = "targeted_second_round"
         second_report["refetch"] = second_refetch_stats
         polished, second_stats = _apply_editor_line_actions(
             polished,
-            items=second_items,
+            items=second_items_all,
             model_fixes=second_fixes,
             model_report=second_report,
             candidates=candidates or [],
@@ -1330,10 +1385,14 @@ def _pre_send_polish_sections(
                 bad_examples.append(line[:240])
 
     # S2: honest coverage. Every visible line must be reviewed at some point — so
-    # coverage is complete if ANY round achieved full coverage (each round
-    # re-processes the whole visible digest). A skipped/not-needed second round
-    # must NOT flip a clean first round to incomplete; only a genuine
-    # failed/partial pass with no covering round counts as incomplete (RC5).
+    # coverage is complete if ANY round achieved full coverage. Round 1 reads the
+    # whole visible digest; round 2 is TARGETED (only the lines round 1 left
+    # unclean/uncovered, plus sensitive). This stays honest because the lines
+    # round 2 skips are exactly the ones round 1 already marked "ok" — so a
+    # complete targeted round 2 means union(round1_ok, round2) = whole digest.
+    # A skipped/not-needed second round must NOT flip a clean first round to
+    # incomplete; only a genuine failed/partial pass with no covering round
+    # counts as incomplete (RC5).
     coverage_complete = any(
         bool(r.get("coverage_complete")) and str(r.get("status") or "") in {"ok", "skipped_no_items"}
         for r in round_reports

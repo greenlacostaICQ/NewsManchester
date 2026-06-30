@@ -3275,7 +3275,7 @@ def _cost_latency_budget_report(
 def _stage_seconds(report: dict | None) -> float:
     if not isinstance(report, dict):
         return 0.0
-    for key in ("duration_seconds", "elapsed_seconds", "rewrite_seconds"):
+    for key in ("duration_seconds", "elapsed_seconds", "rewrite_seconds", "total_duration_seconds"):
         try:
             value = float(report.get(key) or 0)
         except (TypeError, ValueError):
@@ -3357,6 +3357,216 @@ def _build_speed_report(
         ),
         "policy": "Observation-only speed report: no release blocking, no quality cuts. Optimise by parser/cache/token p95 evidence before changing editorial floors.",
     }
+
+
+# ── Cancel-proof observability (backlog item 1) ───────────────────────────
+#
+# The pipeline runs as a chain of SEPARATE processes (collect → dedupe →
+# validate → … → write → edit → build). speed_report.json and
+# final_selection_report.json used to be written only by the build/release
+# gate, so a run killed BEFORE build left nothing on disk and forensics had to
+# be reconstructed from per-file mtimes. These helpers flush incrementally
+# after every stage, so at any kill point on disk we have: per-stage timings,
+# a per-source run log, and a provisional selection snapshot. final_selection_
+# report.json stays the authoritative post-render table. All writes are guarded
+# — observability must never abort the issue.
+
+_STAGE_REPORT_FILES: dict[str, str] = {
+    "collect": "collector_report.json",
+    "dedupe": "dedupe_memory.json",
+    "validate": "candidate_validation_report.json",
+    "curator": "curator_report.json",
+    "transport_fill": "transport_fill_report.json",
+    "llm_rewrite": "llm_rewrite_report.json",
+    "write": "writer_report.json",
+    "edit": "editor_report.json",
+}
+
+# Stages after which the selection set is meaningful enough to snapshot.
+_SELECTION_SNAPSHOT_STAGES = {
+    "collect",
+    "dedupe",
+    "validate",
+    "curator",
+    "transport_fill",
+    "llm_rewrite",
+    "write",
+    "edit",
+}
+
+
+def _candidate_has_public_text(candidate: dict) -> bool:
+    """A candidate is renderable only if it already carries public text."""
+    for key in ("draft_line", "render_line", "public_line"):
+        if str(candidate.get(key) or "").strip():
+            return True
+    return False
+
+
+def _refresh_speed_report_snapshot(state_dir: Path) -> None:
+    """Rebuild speed_report.json from whatever stage reports exist on disk.
+    Provisional until build writes the final one; always reflects completed
+    stages so a kill mid-run still leaves accurate timings."""
+    speed_report = _build_speed_report(
+        state_dir=state_dir,
+        scan_report=_load_optional_json(state_dir / "collector_report.json"),
+        curator_report=_load_optional_json(state_dir / "curator_report.json"),
+        llm_rewrite_report=_load_optional_json(state_dir / "llm_rewrite_report.json"),
+        writer_report=_load_optional_json(state_dir / "writer_report.json"),
+        editor_report=_load_optional_json(state_dir / "editor_report.json"),
+    )
+    speed_report["provisional"] = True
+    write_json(state_dir / "speed_report.json", speed_report)
+
+
+def _append_stage_timing(state_dir: Path, stage: str) -> None:
+    """Append one append-only line per finished stage to stage_timings.jsonl."""
+    report_name = _STAGE_REPORT_FILES.get(stage)
+    report = _load_optional_json(state_dir / report_name) if report_name else None
+    record = {
+        "stage": stage,
+        "duration_seconds": _stage_seconds(report),
+        "stage_status": str((report or {}).get("stage_status") or ("complete" if report else "unknown")),
+        "finished_at_london": now_london().isoformat(),
+        "run_date_london": today_london(),
+    }
+    with (state_dir / "stage_timings.jsonl").open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
+def _write_source_run_log(state_dir: Path) -> int:
+    """Flatten collector_report categories→source_health into source_run_log.jsonl
+    (one line per source: found/enriched/dropped/failed/duration). Cancel-proof
+    'which source did what' without parsing the big collector report."""
+    collector_report = _load_optional_json(state_dir / "collector_report.json")
+    categories = collector_report.get("categories") if isinstance(collector_report, dict) else None
+    if not isinstance(categories, dict):
+        return 0
+    run_date = str(collector_report.get("run_date_london") or today_london())
+    rows: list[dict[str, object]] = []
+    for category, payload in categories.items():
+        sources = (payload or {}).get("source_health") if isinstance(payload, dict) else None
+        if not isinstance(sources, list):
+            continue
+        for source in sources:
+            if not isinstance(source, dict):
+                continue
+            found = int(source.get("candidate_count") or 0)
+            enriched = int(source.get("publishable_count") or 0)
+            rows.append({
+                "run_date_london": run_date,
+                "category": str(category),
+                "name": str(source.get("name") or ""),
+                "url": str(source.get("url") or ""),
+                "checked": bool(source.get("checked")),
+                "fetched": bool(source.get("fetched")),
+                "not_modified": bool(source.get("not_modified")),
+                "found": found,
+                "enriched": enriched,
+                "dated": int(source.get("dated_candidate_count") or 0),
+                "fresh_24h": int(source.get("fresh_last_24h_count") or 0),
+                "dropped_at_collect": max(found - enriched, 0),
+                "failure_class": str(source.get("failure_class") or ""),
+                "errors": len(source.get("errors") or []),
+                "warnings": len(source.get("warnings") or []),
+                "duration_seconds": float(source.get("duration_seconds") or 0.0),
+                "fetch_seconds": float(source.get("fetch_duration_seconds") or 0.0),
+                "extract_seconds": float(source.get("extract_duration_seconds") or 0.0),
+            })
+    with (state_dir / "source_run_log.jsonl").open("w", encoding="utf-8") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+    return len(rows)
+
+
+def _write_selection_snapshot(state_dir: Path, stage: str) -> dict[str, object]:
+    """Provisional pre-build selection table from candidates.json. Sibling of
+    _write_final_selection_report but without rendered HTML — answers 'who is
+    selected and why' at the moment <stage> finished, even if the run is killed
+    before the writer/build produces the final report."""
+    candidates_payload = _load_optional_json(state_dir / "candidates.json") or {}
+    candidates = [c for c in (candidates_payload.get("candidates") or []) if isinstance(c, dict)]
+    sections: dict[str, dict[str, object]] = {}
+    totals: Counter = Counter()
+    for candidate in candidates:
+        block = str(candidate.get("primary_block") or "unknown")
+        section_name = PRIMARY_BLOCKS.get(block, block)
+        status = str(
+            candidate.get("publish_plan_status")
+            or candidate.get("digest_selection_verdict")
+            or ("selected" if candidate.get("include") else "not_selected")
+        )
+        totals[status] += 1
+        section = sections.setdefault(section_name, {"counts": Counter(), "items": []})
+        counts = section["counts"]
+        assert isinstance(counts, Counter)
+        counts[status] += 1
+        items = section["items"]
+        assert isinstance(items, list)
+        if status not in {"not_selected", "drop"} or len(items) < 30:
+            items.append({
+                "fingerprint": str(candidate.get("fingerprint") or ""),
+                "title": str(candidate.get("title") or "")[:180],
+                "source_label": str(candidate.get("source_label") or ""),
+                "status": status,
+                "include": bool(candidate.get("include")),
+                "has_public_text": _candidate_has_public_text(candidate),
+                "recoverable_reserve": bool(candidate.get("recoverable_reserve") or candidate.get("public_reserve")),
+                "reason": str(candidate.get("digest_selection_reason") or candidate.get("publish_plan_reason") or "")[:240],
+            })
+    for section in sections.values():
+        counts = section.get("counts")
+        if isinstance(counts, Counter):
+            section["counts"] = dict(counts)
+    payload = {
+        "schema_version": 1,
+        "provisional": True,
+        "after_stage": stage,
+        "run_date_london": today_london(),
+        "created_at_london": now_london().isoformat(),
+        "policy": (
+            "Provisional pre-build selection snapshot. The authoritative per-block "
+            "choice/loss table is final_selection_report.json, written after HTML render."
+        ),
+        "totals": dict(totals),
+        "sections": dict(sorted(sections.items())),
+    }
+    write_json(state_dir / "selection_snapshot.json", payload)
+    return {"candidate_count": len(candidates), "totals": dict(totals)}
+
+
+def flush_stage_observability(project_root: Path, stage: str) -> dict[str, object]:
+    """Cancel-proof incremental flush, called by the orchestrator after each
+    pipeline stage. Refreshes per-stage timings + provisional speed report, the
+    per-source run log (after collect) and the provisional selection snapshot
+    (after selection-affecting stages). Never raises — observability must not
+    block the issue."""
+    state_dir = project_root / "data" / "state"
+    result: dict[str, object] = {"stage": stage}
+    try:
+        state_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("observability: state dir unavailable (%s)", exc)
+        return result
+    for label, fn in (
+        ("stage_timings", lambda: _append_stage_timing(state_dir, stage)),
+        ("speed_report", lambda: _refresh_speed_report_snapshot(state_dir)),
+    ):
+        try:
+            fn()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("observability: %s flush failed after %s (%s)", label, stage, exc)
+    if stage == "collect":
+        try:
+            result["source_run_log_rows"] = _write_source_run_log(state_dir)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("observability: source_run_log flush failed (%s)", exc)
+    if stage in _SELECTION_SNAPSHOT_STAGES:
+        try:
+            result["selection_snapshot"] = _write_selection_snapshot(state_dir, stage)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("observability: selection_snapshot flush failed after %s (%s)", stage, exc)
+    return result
 
 
 def _model_bakeoff_readiness(project_root: Path) -> dict[str, object]:

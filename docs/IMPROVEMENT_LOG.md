@@ -332,3 +332,25 @@
 - Файлы/места: `.github/workflows/daily-digest.yml:13`.
 - ПРОВЕРКА (после прогона): не проверено реальным прогоном; это config-only страховка до следующего daily/workflow_dispatch.
 - Где была ошибка (если не сработало): —
+
+### 0028 — Cancel-proof observability до build — 2026-06-30
+- Статус: внедрено локально; ПРОВЕРКА офлайн (unit), прод — следующий прогон/cancel-drill
+- Проблема: при отмене до `build-digest` не оставалось актуальных `speed_report.json` и `final_selection_report.json`; разбор 30 июня приходилось собирать по mtimes и смешанным state-файлам.
+- Причина (корень): `speed_report.json` и финальная таблица выбора писались только внутри `build_release`; pipeline-стадии запускаются отдельными командами, поэтому kill до build не даёт release-артефактов.
+- Решение: добавлен `flush_stage_observability`: после стадий пишет provisional `speed_report.json`, append-only `stage_timings.jsonl`, `source_run_log.jsonl` после collect и `selection_snapshot.json` после стадий, где уже есть/меняется candidate state (`collect`, `dedupe`, `validate`, `curator`, `transport_fill`, `llm_rewrite`, `write`, `edit`). `final_selection_report.json` остаётся финальным post-render отчётом.
+- Почему так (отвергнутые альтернативы): не переносить финальный отчёт до render — до HTML это только provisional snapshot; не делать flush fail-closed — observability не должна блокировать выпуск.
+- Ожидаемый эффект и метрика проверки: kill до build оставляет stage timings до последней завершённой стадии, source rows после collect и selection snapshot начиная с collect и после каждого следующего изменения candidate state.
+- Файлы/места: `release.py:_stage_seconds`, `release.py:flush_stage_observability`, `scripts/run_local_digest.py:_flush_obs`; тест `CancelProofObservabilityTest`.
+- ПРОВЕРКА (после прогона): офлайн — `PYTHONPATH=src python3 -m unittest tests.test_backlog_remediation.CancelProofObservabilityTest.test_flush_writes_speed_source_log_timings_and_selection_snapshot` пишет `speed_report`, `source_run_log`, `stage_timings`, `selection_snapshot`; prod/cancel-drill не выполнялся.
+- Где была ошибка (если не сработало): —
+
+### 0029 — Targeted editor round 2 без перечитывания всего выпуска — 2026-06-30
+- Статус: внедрено локально; ПРОВЕРКА офлайн (unit), прод — следующий прогон
+- Проблема: второй круг final editor 30 июня отправлял почти весь выпуск заново (примерно 43 строки после 45 в первом круге), добавляя около 100 секунд к critical path.
+- Причина (корень): `editor.py` при `needs_second_round` строил `second_items` как полный `_visible_line_items`, а `_apply_editor_line_actions` одновременно требовал полный список items, потому что при model fixes пересобирает `polished`.
+- Решение: round 2 отправляет в модель только строки `action != ok`, uncovered/newly inserted и sensitive; применение всё равно идёт по полному `second_items_all`, чтобы не потерять untouched lines при rebuild. Удалены незавершённые debug prints.
+- Почему так (отвергнутые альтернативы): не передавать filtered items в `_apply_editor_line_actions` — это роняет untouched lines; не включать detector-hit поверх round1 `ok` — это снова расширяет второй круг до почти полного выпуска и нарушает утверждённый контракт.
+- Ожидаемый эффект и метрика проверки: `editor_report.pre_send_russian_editor.rounds[1].selection_policy == "targeted_second_round"`; `targeted_items < visible_items` при recovery round; `coverage_complete` остаётся true за счёт union(round1 ok, round2 targeted).
+- Файлы/места: `editor.py:_editor_line_identity`, `editor.py:_line_is_sensitive`, `editor.py:_pre_send_polish_sections`; тест `TargetedEditorSecondRoundTest`.
+- ПРОВЕРКА (после прогона): офлайн — `PYTHONPATH=src python3 -m unittest tests.test_backlog_remediation.TargetedEditorSecondRoundTest.test_round2_is_targeted_not_whole_digest` проверяет targeted subset, сохранение всех строк и `coverage_complete`; prod run не выполнялся.
+- Где была ошибка (если не сработало): —
