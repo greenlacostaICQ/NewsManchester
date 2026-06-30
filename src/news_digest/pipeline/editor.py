@@ -280,11 +280,12 @@ def _polish_russian_line_rules(line: str) -> tuple[str, list[str]]:
 
 def _line_needs_russian_editor(line: str) -> bool:
     text = str(line or "")
-    if transport_language_issues(text):
+    clean_text = re.sub(r"<a\s+[^>]*>.*?</a>", "", text, flags=re.IGNORECASE | re.DOTALL)
+    if transport_language_issues(clean_text):
         return True
     if glossary_line_issues(text):
         return True
-    return any(pattern.search(text) for pattern in _BAD_RUSSIAN_DETECTORS)
+    return any(pattern.search(clean_text) for pattern in _BAD_RUSSIAN_DETECTORS)
 
 
 def _line_preserves_links(original: str, fixed: str) -> bool:

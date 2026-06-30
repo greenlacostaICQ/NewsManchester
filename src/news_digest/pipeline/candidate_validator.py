@@ -1198,6 +1198,13 @@ def _exclude_by_editorial_contract(candidate: dict) -> bool:
                 and "designmynight" in str(candidate.get("source_label") or "").lower()
             )
         ):
+            event_dict = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+            has_specific_date = bool(event_dict.get("date_start") and event_dict.get("date_confidence") in {"high", "medium"})
+            if has_specific_date:
+                # E2: a dated event (Ai Weiwei, Crossroad, a makers-market on a
+                # known date) is a real listing, not «bookable activity» filler —
+                # keep it. Only undated venue-activity cards are dropped here.
+                return False
             reject_reason = "bookable_activity_filler"
         else:
             return False
@@ -1284,42 +1291,10 @@ _TRANSPORT_INCIDENT_RE = re.compile(
 def _reroute_non_impact_transport(candidate: dict) -> bool:
     """Strict positive passenger-impact contract for the transport block.
 
-    A transport item stays ONLY if its headline proves a today/tomorrow journey
-    change (the comprehensive disruption vocabulary in _TRANSPORT_TITLE_IMPACT_RE).
-    Everything else is routed to City Radar: infrastructure/funding, an incident
-    merely near a transport node, AND any other ambiguous transport-tagged item
-    that does not prove a disruption — so the block is not diluted by non-events.
+    Disabled: Nothing should be rerouted to City Radar. We keep all transport items
+    in the transport block and enrich them.
     """
-    if not candidate.get("include"):
-        return False
-    if str(candidate.get("primary_block") or "") != "transport" and str(candidate.get("category") or "") != "transport":
-        return False
-    title = str(candidate.get("title") or "")
-    if _TRANSPORT_TITLE_IMPACT_RE.search(title):
-        return False  # the headline IS a disruption → genuine transport, keep
-    infra = bool(_TRANSPORT_INFRA_RE.search(title))
-    incident = bool(_TRANSPORT_INCIDENT_RE.search(title))
-    # Strict positive contract: the transport block is "today/tomorrow journey
-    # changes". A genuine disruption matches the comprehensive impact vocabulary
-    # above; anything that does not is transport-tagged but UNPROVEN as a
-    # disruption — route it to City Radar (it stays visible, just not as
-    # "today's transport"). Previously ambiguous items defaulted to staying and
-    # diluted the block.
-    if infra:
-        reason = "infrastructure_no_today_tomorrow_impact"
-        detail = "long-term infrastructure/funding without today/tomorrow travel impact"
-    elif incident:
-        reason = "node_incident_no_passenger_impact"
-        detail = "incident near a transport node that does not change travel"
-    else:
-        reason = "no_proven_passenger_impact"
-        detail = "no proven route/stop + today-tomorrow window + passenger action"
-    candidate["primary_block"] = "city_watch"
-    candidate["transport_contract"] = {"decision": "reroute_out_of_transport", "reason": reason}
-    existing = str(candidate.get("reason") or "").strip()
-    note = f"Validator: transport needs passenger impact — {detail}; moved to City Radar."
-    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
-    return True
+    return False
 
 
 def _exclude_historical_no_news_angle(candidate: dict) -> bool:

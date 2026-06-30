@@ -32,10 +32,65 @@ Why this stage exists (Q5/I3 in the backlog):
 from __future__ import annotations
 
 import re
-from datetime import date as date_cls
-from datetime import datetime
+import calendar
+from datetime import date as date_cls, datetime, timedelta
 from typing import NamedTuple
 from zoneinfo import ZoneInfo
+
+# ---------------------------------------------------------------------------
+# Recurring-event date extraction helpers (E1)
+# ---------------------------------------------------------------------------
+_ORDINAL_MAP = {"first": 1, "1st": 1, "second": 2, "2nd": 2,
+                "third": 3, "3rd": 3, "fourth": 4, "4th": 4, "last": -1}
+_WEEKDAY_MAP = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
+                "friday": 4, "saturday": 5, "sunday": 6}
+_RUSSIAN_WEEKDAY_ACCUS = ["понедельник", "вторник", "среду", "четверг",
+                          "пятницу", "субботу", "воскресенье"]
+_RUSSIAN_MONTHS = ["января", "февраля", "марта", "апреля", "мая", "июня",
+                   "июля", "августа", "сентября", "октября", "ноября", "декабря"]
+
+_RECURRING_PATTERN = re.compile(
+    r'\b(first|1st|second|2nd|third|3rd|fourth|4th|last)\s+'
+    r'(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s+'
+    r'(?:of\s+)?(?:each|every)\s+month\b',
+    re.IGNORECASE,
+)
+
+def _nth_weekday_of_month(year: int, month: int, weekday: int, n: int) -> date_cls | None:
+    if n == -1:
+        last_day = calendar.monthrange(year, month)[1]
+        d = date_cls(year, month, last_day)
+        while d.weekday() != weekday:
+            d -= timedelta(days=1)
+        return d
+    count = 0
+    d = date_cls(year, month, 1)
+    while d.month == month:
+        if d.weekday() == weekday:
+            count += 1
+            if count == n:
+                return d
+        d += timedelta(days=1)
+    return None
+
+def _calculate_recurring_date(text: str, from_date: date_cls) -> tuple[date_cls, str] | None:
+    m = _RECURRING_PATTERN.search(text)
+    if not m:
+        return None
+    ordinal = _ORDINAL_MAP[m.group(1).lower()]
+    weekday = _WEEKDAY_MAP[m.group(2).lower()]
+
+    for delta_months in (0, 1):
+        month = from_date.month + delta_months
+        year = from_date.year + (month - 1) // 12
+        month = ((month - 1) % 12) + 1
+        occurrence = _nth_weekday_of_month(year, month, weekday, ordinal)
+        if occurrence and occurrence >= from_date:
+            day_name = _RUSSIAN_WEEKDAY_ACCUS[occurrence.weekday()]
+            month_name = _RUSSIAN_MONTHS[occurrence.month - 1]
+            date_text = f"{day_name}, {occurrence.day} {month_name} {occurrence.year}"
+            return occurrence, date_text
+    return None
 
 EVENT_SCHEMA_VERSION = 1
 
@@ -550,6 +605,14 @@ def extract_event(candidate: dict, entities: dict | None = None) -> dict:
     venue = str(hint.get("venue") or "").strip() or _extract_venue(candidate, entities)
     parsed = _parse_date_details(blob)
     iso_date, iso_end, date_text, date_confidence = parsed.start, parsed.end, parsed.text, parsed.confidence
+    if not iso_date:
+        today = _today_london()
+        rec_res = _calculate_recurring_date(blob, today)
+        if rec_res:
+            rec_date, rec_text = rec_res
+            iso_date = rec_date.isoformat()
+            date_text = rec_text
+            date_confidence = "high"
     hint_date = str(hint.get("date_start") or hint.get("date") or "").strip()
     if hint_date:
         hint_parsed = _parse_date_details(hint_date)

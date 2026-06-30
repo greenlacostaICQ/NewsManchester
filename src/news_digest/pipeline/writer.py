@@ -1400,7 +1400,10 @@ def _contract_public_drop_reason(candidate: dict) -> str:
             and "designmynight" in str(candidate.get("source_label") or "").lower()
         )
     ):
-        return "bookable_activity_filler"
+        event_dict = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        has_specific_date = bool(event_dict.get("date_start") and event_dict.get("date_confidence") in {"high", "medium"})
+        if not has_specific_date:
+            return "bookable_activity_filler"
     return ""
 
 
@@ -1629,6 +1632,19 @@ def _is_active_tram_transport(candidate: dict | None) -> bool:
     return bool(re.search(r"\b(?:metrolink|tram|trams|трамва[йеия])\b", blob, re.IGNORECASE))
 
 
+def _is_dated_weekend_event(section_name: str, candidate: dict | None) -> bool:
+    """E4 (owner 2026-06-30): «Выходные в GM» has no per-section cap, and a
+    weekend event confirmed by a trustworthy date must not be cut by the global
+    visible/hard budget either — if the date says it is on this weekend, it
+    ships. Undated «bookable activity» filler is already dropped upstream (E2),
+    so only genuinely dated weekend events get this pass, which naturally bounds
+    the count (markets/recurring already get the same treatment)."""
+    if section_name != "Выходные в GM" or not isinstance(candidate, dict):
+        return False
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    return bool(event.get("date_start") and event.get("date_confidence") in {"high", "medium"})
+
+
 def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
     if section_name in _PUBLIC_BUDGET_EXEMPT_SECTIONS:
         return True
@@ -1638,6 +1654,8 @@ def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
     # Radar must count toward the 45-item issue budget. Evergreen markets /
     # recurring drop-ins stay exempt (they answer "what can I do this weekend"
     # and should survive a noisy news morning). A-tier artists are always exempt.
+    # Dated weekend events (E4) are exempt too: a confirmed this-weekend date
+    # means the reader can act on it, so the budget must not silently cut it.
     return (
         _is_publish_plan_must_show(candidate)
         or (
@@ -1647,6 +1665,7 @@ def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
         or _is_active_tram_transport(candidate)
         or _is_market_or_recurring_event(candidate)
         or _is_budget_exempt_a_tier(candidate)
+        or _is_dated_weekend_event(section_name, candidate)
     )
 
 
@@ -5687,6 +5706,8 @@ def write_digest(project_root: Path) -> StageResult:
         if contract_drop_reason and candidate.get("manual_override") != "force_include":
             warnings.append(f"Candidate #{index} dropped by editorial contract: {contract_drop_reason}.")
             quality_counts["dropped_low_quality"] += 1
+            candidate["include"] = False
+            candidate["recoverable_reserve"] = True
             dropped_candidates.append(
                 {
                     "fingerprint": candidate.get("fingerprint"),
@@ -5700,25 +5721,7 @@ def write_digest(project_root: Path) -> StageResult:
                 }
             )
             continue
-        if (
-            candidate.get("editorial_status") == "borderline"
-            and candidate.get("manual_override") != "force_include"
-        ):
-            warnings.append(f"Candidate #{index} held for manual review: borderline editorial status.")
-            quality_counts["held_for_editorial_quality"] += 1
-            dropped_candidates.append(
-                {
-                    "fingerprint": candidate.get("fingerprint"),
-                    "title": str(candidate.get("title") or ""),
-                    "category": str(candidate.get("category") or ""),
-                    "primary_block": str(candidate.get("primary_block") or ""),
-                    "is_lead": bool(candidate.get("is_lead")),
-                    "reasons": ["Held for manual review: borderline editorial status."],
-                    "story_frame": candidate.get("story_frame") or {},
-                    "recovery_trace": candidate.get("recovery_trace") or [],
-                }
-            )
-            continue
+        # Borderline candidates are no longer silently dropped; they are kept and ranked normally.
         if candidate.get("validation_errors"):
             errors.append(f"Candidate #{index} is include=true but still has validation_errors.")
             quality_counts["blocked_for_quality"] += 1
@@ -6144,7 +6147,7 @@ def write_digest(project_root: Path) -> StageResult:
                     )
                 else:
                     _append_recovery_step(candidate, "draft_line_quality_repair", "attempted", missing=recovered_errors)
-        if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors and _is_publish_plan_must_show(candidate):
+        if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
             _append_recovery_step(candidate, "must_show_model_recovery", "attempted", missing=draft_line_errors)
             model_line, model_recovery_report = _model_recover_section_line(candidate, section_name, draft_line_errors)
             if model_line:
@@ -6159,14 +6162,14 @@ def write_digest(project_root: Path) -> StageResult:
                     candidate["publish_plan_contract_status"] = "repaired"
                     _append_recovery_step(candidate, "must_show_model_recovery", "recovered")
                     warnings.append(
-                        f"Candidate #{index}: must-show item recovered before drop "
+                        f"Candidate #{index}: item recovered before drop via model rewrite "
                         f"({', '.join(model_repairs) or 'model rewrite'})."
                     )
                 else:
                     candidate["publish_plan_contract_status"] = "unrecoverable_no_facts"
                     _append_recovery_step(candidate, "must_show_model_recovery", "held", missing=model_errors)
                     warnings.append(
-                        f"Candidate #{index}: must-show model recovery still failed "
+                        f"Candidate #{index}: model recovery still failed "
                         f"({'; '.join(model_errors)})."
                     )
             else:
@@ -6178,7 +6181,7 @@ def write_digest(project_root: Path) -> StageResult:
                     missing=[str(model_recovery_report.get("status") or "model_recovery_failed")],
                 )
                 warnings.append(
-                    f"Candidate #{index}: must-show model recovery unavailable "
+                    f"Candidate #{index}: model recovery unavailable "
                     f"({model_recovery_report.get('status') or 'failed'})."
                 )
         if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
@@ -6188,6 +6191,8 @@ def write_digest(project_root: Path) -> StageResult:
             )
             logger.info("DROP low_quality | %s | %s | %s | %s", category, block_key, title[:80], "; ".join(draft_line_errors))
             quality_counts["dropped_low_quality"] += 1
+            candidate["include"] = False
+            candidate["recoverable_reserve"] = True
             dropped_candidates.append(
                 {
                     "fingerprint": candidate.get("fingerprint"),

@@ -282,16 +282,22 @@ class LlmRewriteDiagnosticsTests(unittest.TestCase):
             2,
         )
 
-    def test_borderline_items_are_not_sent_to_llm_without_manual_override(self) -> None:
-        candidate = _candidate("fp-1")
-        candidate["include"] = True
-        candidate["editorial_status"] = "borderline"
+    def test_included_borderline_items_are_sent_to_llm(self) -> None:
+        # ADR 0025: borderline items are no longer dropped by the writer, so an
+        # included borderline item must still be rewritten into good Russian
+        # copy. Only a non-included borderline item skips the model spend.
+        included = _candidate("fp-1")
+        included["include"] = True
+        included["editorial_status"] = "borderline"
+        self.assertFalse(_skip_llm_for_manual_review(included))
 
-        self.assertTrue(_skip_llm_for_manual_review(candidate))
+        held = _candidate("fp-2")
+        held["editorial_status"] = "borderline"
+        self.assertTrue(_skip_llm_for_manual_review(held))
 
-        candidate["manual_override"] = "force_include"
-        self.assertFalse(_skip_llm_for_manual_review(candidate))
-        self.assertFalse(_skip_curator_for_manual_review(candidate))
+        held["manual_override"] = "force_include"
+        self.assertFalse(_skip_llm_for_manual_review(held))
+        self.assertFalse(_skip_curator_for_manual_review(held))
 
     def test_curator_also_skips_borderline_without_manual_override(self) -> None:
         candidate = _candidate("fp-1")

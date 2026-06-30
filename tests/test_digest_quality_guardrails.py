@@ -684,13 +684,14 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
     def test_weekend_market_does_not_render_collection_time_as_event_time(self) -> None:
         event_day = now_london().date() + timedelta(days=1)
+        event_month = event_day.strftime("%B")  # real month of tomorrow — robust across month boundaries
         candidate = {
             "include": True,
             "fingerprint": "didsbury-market-no-published-time",
             "category": "culture_weekly",
             "primary_block": "weekend_activities",
-            "title": f"Didsbury Makers Market on {event_day.day} June",
-            "summary": f"Didsbury Makers Market runs on {event_day.day} June with makers, food and craft stalls.",
+            "title": f"Didsbury Makers Market on {event_day.day} {event_month}",
+            "summary": f"Didsbury Makers Market runs on {event_day.day} {event_month} with makers, food and craft stalls.",
             "lead": "Independent makers and food stalls in Didsbury.",
             "evidence_text": "Makers, food, craft stalls and family-friendly shopping.",
             "source_label": "The Makers Market",
@@ -2896,6 +2897,26 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertEqual(build_editorial_contract(bookable)["event_shape"], "bookable_activity")
         bookable["editorial_contract"] = build_editorial_contract(bookable)
         self.assertEqual(_contract_public_drop_reason(bookable), "bookable_activity_filler")
+
+    def test_dated_bookable_activity_is_kept_by_validator(self) -> None:
+        # E2 (2026-06-30): a bookable_activity with a concrete, trustworthy date
+        # (Ai Weiwei, Crossroad, a dated makers-market) is a real listing — the
+        # validator must keep it, not drop it as filler. Regresses the
+        # fall-through that still rejected dated ones despite the E2 guard.
+        from news_digest.pipeline.candidate_validator import _exclude_by_editorial_contract
+        dated = {
+            "include": True,
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": "Crossroad - The Price of Choice",
+            "summary": "DesignMyNight bookable experience in Manchester. Tickets from £20.",
+            "source_label": "DesignMyNight",
+            "source_url": "https://example.test/crossroad",
+            "event": {"is_event": True, "date_start": "2026-07-03", "date_confidence": "high", "venue": "Aviva Studios"},
+        }
+        self.assertEqual(build_editorial_contract(dated)["event_shape"], "bookable_activity")
+        self.assertFalse(_exclude_by_editorial_contract(dated))
+        self.assertTrue(dated["include"])
 
     def test_core_news_sources_use_news_surfaces_not_homepage_only(self) -> None:
         by_name = {source.name: source for source in SOURCES}

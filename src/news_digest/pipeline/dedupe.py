@@ -859,7 +859,22 @@ def _classify_change_type(
         current_title = normalize_title(str(candidate.get("title") or ""))
         previous_title = normalize_title(str(previous_ref.get("title") or ""))
         if current_title and current_title == previous_title:
+            # E3: Recurring events repeat policy — if the event date is different, it is a new phase / new facts, not a rehash.
+            cand_event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+            prev_event = previous_ref.get("event") if isinstance(previous_ref.get("event"), dict) else {}
+            cand_date = cand_event.get("date_start")
+            prev_date = prev_event.get("date_start")
+            if cand_date and prev_date and cand_date != prev_date:
+                return "same_story_new_facts"
             return "no_change" if previous is not None else "same_story_rehash"
+
+    if previous_ref is not None:
+        cand_event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        prev_event = previous_ref.get("event") if isinstance(previous_ref.get("event"), dict) else {}
+        cand_date = cand_event.get("date_start")
+        prev_date = prev_event.get("date_start")
+        if cand_date and prev_date and cand_date != prev_date:
+            return "same_story_new_facts"
 
     if previous_ref is not None and has_new_fact_signal(candidate, previous_ref):
         return "same_story_new_facts"

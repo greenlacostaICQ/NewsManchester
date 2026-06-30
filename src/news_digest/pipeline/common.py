@@ -51,7 +51,6 @@ SECTION_MAX_ITEMS = {
     "IT и бизнес": 5,
     "Бесплатные business/tech события для тебя": 4,
     "Что важно в ближайшие 7 дней": 6,
-    "Выходные в GM": 10,
     "Еда, открытия и рынки": 6,
     # Tickets are capped like every other section: a quiet news day must not
     # turn the issue into a ticket catalogue. On 2026-05-31 an uncapped rail

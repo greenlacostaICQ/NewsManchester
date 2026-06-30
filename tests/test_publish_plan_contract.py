@@ -189,6 +189,23 @@ class SourceHealthAndPublishPlanTests(unittest.TestCase):
         self.assertFalse(_is_public_budget_exempt("Крупные концерты вне GM", outside))
         self.assertTrue(_is_public_budget_exempt("Русскоязычные концерты и стендап UK", russian))
 
+    def test_dated_weekend_event_is_budget_exempt(self) -> None:
+        # E4 (2026-06-30): «Выходные в GM» has no cap — a weekend event
+        # confirmed by a trustworthy date survives the global budget; undated
+        # bookable filler does not (it is dropped upstream by E2 anyway).
+        dated = {
+            "fingerprint": "weekend-dated",
+            "primary_block": "weekend_activities",
+            "event": {"is_event": True, "date_start": "2026-07-04", "date_confidence": "high"},
+        }
+        undated = {
+            "fingerprint": "weekend-undated",
+            "primary_block": "weekend_activities",
+            "event": {"is_event": True, "date_confidence": "none"},
+        }
+        self.assertTrue(_is_public_budget_exempt("Выходные в GM", dated))
+        self.assertFalse(_is_public_budget_exempt("Выходные в GM", undated))
+
     def test_public_contract_repair_fixes_generic_cta_before_gate(self) -> None:
         html = (
             "<b>Greater Manchester Brief — 2026-06-25, 08:00</b>\n\n"

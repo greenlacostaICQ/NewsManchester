@@ -909,6 +909,8 @@ def _writer_quality_errors(candidate: dict, line: str) -> list[str]:
 
 def _skip_llm_for_manual_review(candidate: dict) -> bool:
     """Do not spend model calls on items the writer will hold anyway."""
+    if candidate.get("include"):
+        return False
     return (
         str(candidate.get("editorial_status") or "") == "borderline"
         and str(candidate.get("manual_override") or "") != "force_include"

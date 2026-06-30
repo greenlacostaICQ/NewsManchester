@@ -218,9 +218,9 @@ class WriterRenderedFingerprintTest(unittest.TestCase):
 
 
 class TransportPassengerImpactContractTest(unittest.TestCase):
-    """W4 / RC: the transport block requires concrete passenger impact. Decided
-    on the headline — infrastructure/funding → City Radar; an incident near a
-    transport node → out of transport; a real disruption stays."""
+    """Transport reroute is disabled (ADR 0025, 2026-06-29): nothing is pushed
+    to City Radar. Every transport-tagged item stays in the transport block and
+    is enriched there — the prior over-eager reroute was emptying the block."""
 
     def _t(self, title: str) -> dict:
         return {"include": True, "category": "transport", "primary_block": "transport",
@@ -230,17 +230,15 @@ class TransportPassengerImpactContractTest(unittest.TestCase):
         from news_digest.pipeline.candidate_validator import _reroute_non_impact_transport
         return _reroute_non_impact_transport(candidate)
 
-    def test_interchange_funding_goes_to_city_radar(self) -> None:
+    def test_interchange_funding_stays_in_transport(self) -> None:
         c = self._t("Bury's tram and bus interchange revamp gets £25m boost")
-        self.assertTrue(self._reroute(c))
-        self.assertEqual(c["primary_block"], "city_watch")
-        self.assertEqual(c["transport_contract"]["reason"], "infrastructure_no_today_tomorrow_impact")
+        self.assertFalse(self._reroute(c))
+        self.assertEqual(c["primary_block"], "transport")
 
-    def test_incident_near_node_leaves_transport(self) -> None:
+    def test_incident_near_node_stays_in_transport(self) -> None:
         c = self._t("Rawtenstall incident as police and air ambulance called")
-        self.assertTrue(self._reroute(c))
-        self.assertEqual(c["primary_block"], "city_watch")
-        self.assertEqual(c["transport_contract"]["reason"], "node_incident_no_passenger_impact")
+        self.assertFalse(self._reroute(c))
+        self.assertEqual(c["primary_block"], "transport")
 
     def test_concrete_no_trains_disruption_stays(self) -> None:
         c = self._t("Northern: No trains to / from Salford Central on Saturday")
@@ -252,13 +250,10 @@ class TransportPassengerImpactContractTest(unittest.TestCase):
         self.assertFalse(self._reroute(c))
         self.assertEqual(c["primary_block"], "transport")
 
-    def test_ambiguous_transport_item_goes_to_city_radar(self) -> None:
-        # No disruption / infra / incident keyword → unproven as today's
-        # transport, so it must not dilute the block.
+    def test_ambiguous_transport_item_stays_in_transport(self) -> None:
         c = self._t("TfGM unveils new Bee Network ticketing app")
-        self.assertTrue(self._reroute(c))
-        self.assertEqual(c["primary_block"], "city_watch")
-        self.assertEqual(c["transport_contract"]["reason"], "no_proven_passenger_impact")
+        self.assertFalse(self._reroute(c))
+        self.assertEqual(c["primary_block"], "transport")
 
     def test_degraded_llm_shrink_holds_lower_priority_soft_section_items(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -315,7 +310,7 @@ class TransportPassengerImpactContractTest(unittest.TestCase):
             self.assertGreaterEqual(len(report["rendered_candidate_fingerprints"]), 5)
             self.assertTrue(report["degraded_shrink"]["enabled"])
 
-    def test_borderline_candidate_is_held_not_rendered(self) -> None:
+    def test_borderline_candidate_is_kept_and_rendered(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             state_dir = root / "data" / "state"
@@ -349,8 +344,10 @@ class TransportPassengerImpactContractTest(unittest.TestCase):
 
             self.assertTrue(result.ok)
             report = json.loads((state_dir / "writer_report.json").read_text(encoding="utf-8"))
-            self.assertEqual(report["quality_counts"]["held_for_editorial_quality"], 1)
-            self.assertNotIn("borderline-1", report["rendered_candidate_fingerprints"])
+            # ADR 0025: borderline items are no longer silently held — they are
+            # kept and ranked like everything else, so this one renders.
+            self.assertEqual(report["quality_counts"]["held_for_editorial_quality"], 0)
+            self.assertIn("borderline-1", report["rendered_candidate_fingerprints"])
 
     def test_capped_sections_keep_higher_reader_value_items(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
