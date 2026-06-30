@@ -949,9 +949,26 @@ def _uses_deterministic_writer(candidate: dict) -> bool:
     which are safer than free-form prose for "this weekend" planning.
     """
     category = str(candidate.get("category") or "")
-    if category == "venues_tickets":
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    text = " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead", "evidence_text"))
+    has_title = bool(str(candidate.get("title") or "").strip())
+    has_event_date = bool(
+        str(event.get("date_start") or event.get("start_date") or event.get("date") or "").strip()
+        or re.search(r"\bevent_date\s*=\s*\d{4}-\d{2}-\d{2}", text, re.IGNORECASE)
+    )
+    has_venue = bool(
+        str(event.get("venue") or event.get("location") or candidate.get("venue") or "").strip()
+        or re.search(r"\b(?:venue|location)\s*=", text, re.IGNORECASE)
+    )
+    if category == "venues_tickets" and has_title and has_event_date and has_venue:
         return True
-    if category in {"culture_weekly", "food_openings", "russian_speaking_events", "diaspora_events"} and _is_market_or_recurring_event(candidate):
+    if (
+        category in {"culture_weekly", "food_openings", "russian_speaking_events", "diaspora_events"}
+        and _is_market_or_recurring_event(candidate)
+        and bool(event.get("is_event"))
+        and has_title
+        and (has_event_date or bool(event.get("is_recurring")))
+    ):
         return True
     return False
 
@@ -3146,6 +3163,9 @@ def _publish_plan_protected_budget(candidate: dict) -> bool:
 def _publish_plan_status(candidate: dict) -> str:
     verdict = str(candidate.get("digest_selection_verdict") or "").strip()
     if verdict == "selected":
+        draft_line = str(candidate.get("draft_line") or "").strip()
+        if not draft_line and not _uses_deterministic_writer(candidate):
+            return "needs_enrichment"
         return "must_show" if _publish_plan_must_show(candidate) else "show"
     if verdict in {"reserve", "needs_enrichment", "drop"}:
         return verdict

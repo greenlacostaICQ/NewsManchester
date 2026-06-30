@@ -354,3 +354,25 @@
 - Файлы/места: `editor.py:_editor_line_identity`, `editor.py:_line_is_sensitive`, `editor.py:_pre_send_polish_sections`; тест `TargetedEditorSecondRoundTest`.
 - ПРОВЕРКА (после прогона): офлайн — `PYTHONPATH=src python3 -m unittest tests.test_backlog_remediation.TargetedEditorSecondRoundTest.test_round2_is_targeted_not_whole_digest` проверяет targeted subset, сохранение всех строк и `coverage_complete`; prod run не выполнялся.
 - Где была ошибка (если не сработало): —
+
+### 0030 — `show = renderable` и строгий Fresh incident dedupe — 2026-06-30
+- Статус: внедрено локально; ПРОВЕРКА офлайн (unit), прод — следующий прогон
+- Проблема: `publish_plan_status=show/must_show` мог ставиться выбранному кандидату без публичной строки; writer затем рендерил по остаточному `include=True`. Параллельно writer-level Fresh dedupe мог склеить разные crime/incident строки по общим словам.
+- Причина (корень): `_publish_plan_status` смотрел только на `digest_selection_verdict=selected`; `_fresh_rows_are_same_story` разрешал token-overlap/Jaccard для incident/court так же, как для council/planning.
+- Решение: selected без `draft_line` или явных deterministic-ready полей получает `needs_enrichment`; writer не рендерит non-`show/must_show` даже при `include=True`. Для crime/incident/court token-overlap больше не склеивает строки сам по себе: нужен общий конкретный anchor или общая location + incident marker, совместимые date/type; обычный non-incident overlap сохранён.
+- Почему так (отвергнутые альтернативы): не удалять Jaccard/overlap глобально — иначе ломаются нормальные council/planning/service дубли; не считать любой `venues_tickets` deterministic-ready — ticket должен иметь хотя бы title/date/venue.
+- Ожидаемый эффект и метрика проверки: `show_missing` должен стремиться к 0 структурно; murder-trial / Fallowfield-car не склеиваются; Moston firearms/guns склеиваются с `dedupe_merge_evidence`.
+- Файлы/места: `llm_rewrite.py:_uses_deterministic_writer`, `llm_rewrite.py:_publish_plan_status`, `writer.py:fresh_dedupe_evidence`, `writer.py:_fresh_rows_are_same_story`, `writer.py:write_digest`; тест `tests/test_dedupe_and_show.py`.
+- ПРОВЕРКА (после прогона): офлайн — `PYTHONPATH=src python3 -m unittest tests.test_dedupe_and_show` проверяет incident dedupe, non-incident overlap, deterministic-ready и writer enforcement; prod run не выполнялся.
+- Где была ошибка (если не сработало): —
+
+### 0031 — No weak fallback + prevalidated reserve — 2026-06-30
+- Статус: внедрено локально; ПРОВЕРКА офлайн (unit), прод — следующий прогон
+- Проблема: после repair попыток hard news/events/tickets всё ещё могли деградировать в строку из одного title/summary, а editor reserve снова проходил мини-квест refetch/rewrite/quality во время replacement.
+- Причина (корень): в конце writer render-loop оставался общий headline fallback для категорий вне строгого draft_line gate; `_same_section_reserve_line` смешивал две роли — подбор готового резерва и попытку его дообогатить на лету.
+- Решение: для hard news/events/tickets title-only fallback запрещён: item либо чинится recovery/deterministic rewrite, либо честно drops/held с `recoverable_reserve=False`. В editor добавлен `_PrevalidatedReservePool`: render-ready reserve строки собираются один раз по секциям, проходят section/date/URL/story/lint checks и сортируются по score; stop-loss replacement делает pop из готовой очереди.
+- Почему так (отвергнутые альтернативы): не блокировать send из-за одной строки — bad row strip/remove уже есть; не тянуть textless reserve в replacement — это возвращает ту же проблему weak fallback, только позже.
+- Ожидаемый эффект и метрика проверки: в send нет headline-only строк для hard news/events/tickets; non-renderable drops не становятся recoverable reserve; при непустом prevalidated reserve replacement не падает на `reserve_failed_quality_or_caps`.
+- Файлы/места: `writer.py:_headline_fallback_forbidden`, `writer.py:write_digest`, `editor.py:_PrevalidatedReservePool`, `editor.py:_same_section_reserve_line`, `editor.py:_pre_send_polish_sections`; тесты `tests/test_dedupe_and_show.py`, `tests/test_pre_send_repair_executor.py`, `tests/test_recoverable_reserve.py`.
+- ПРОВЕРКА (после прогона): офлайн — `PYTHONPATH=src python3 -m unittest tests.test_dedupe_and_show tests.test_recoverable_reserve tests.test_pre_send_repair_executor tests.test_publish_plan_contract` + focused editor/writer regressions; prod run не выполнялся.
+- Где была ошибка (если не сработало): —

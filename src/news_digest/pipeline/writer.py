@@ -811,6 +811,218 @@ _DUP_BOILERPLATE_RE = re.compile(
     re.IGNORECASE,
 )
 
+_INCIDENT_TOPIC_KEYS = {"crime", "incident", "court", "public_safety_after_incident"}
+_INCIDENT_EVENT_TYPES = {"crime", "incident", "court", "public_safety", "public_safety_after_incident"}
+_INCIDENT_MARKER_ALIASES = {
+    "firearm": "firearms",
+    "firearms": "firearms",
+    "gun": "firearms",
+    "guns": "firearms",
+    "weapon": "weapons",
+    "weapons": "weapons",
+    "knife": "knife",
+    "knives": "knife",
+    "stab": "stabbing",
+    "stabbing": "stabbing",
+    "stabbings": "stabbing",
+    "shot": "shooting",
+    "shooting": "shooting",
+    "murder": "murder",
+    "homicide": "murder",
+    "crash": "crash",
+    "collision": "crash",
+    "fire": "fire",
+    "arson": "fire",
+    "evacuation": "evacuation",
+    "evacuated": "evacuation",
+    "trial": "court",
+    "court": "court",
+    "charged": "charge",
+    "charge": "charge",
+    "arrest": "arrest",
+    "arrested": "arrest",
+    "appeal": "appeal",
+}
+_INCIDENT_MARKER_RE = re.compile(
+    r"\b(?:firearms?|guns?|weapons?|knives|knife|stab(?:bed|bing|s)?|shot|shooting|"
+    r"murder|homicide|crash|collision|fire|arson|evacuat(?:ed|ion)|trial|court|"
+    r"charg(?:ed|e)|arrest(?:ed)?|appeal)\b",
+    re.IGNORECASE,
+)
+_CONCRETE_ENTITY_KEYS = {"people", "venues", "companies", "clubs", "stations"}
+_LOCATION_ENTITY_KEYS = {"boroughs", "districts", "councils", "stations", "venues"}
+_BROAD_INCIDENT_LOCATIONS = {"greater manchester", "manchester", "gm"}
+_GENERIC_INCIDENT_ANCHORS = {
+    "police",
+    "man",
+    "woman",
+    "boy",
+    "girl",
+    "teen",
+    "teenager",
+    "child",
+    "victim",
+    "person",
+    "people",
+    "court",
+    "incident",
+    "crime",
+    "firearms",
+    "weapons",
+    "stabbing",
+    "shooting",
+    "crash",
+    "fire",
+}
+
+
+def _fresh_evidence_token(value: object) -> str:
+    token = _normalize_text_key(str(value or ""))
+    token = re.sub(r"\s+", " ", token).strip()
+    if len(token) < 4 or token in {"none", "unknown", "n/a"}:
+        return ""
+    return token
+
+
+def _fresh_incident_markers(text: str) -> set[str]:
+    markers: set[str] = set()
+    for match in _INCIDENT_MARKER_RE.finditer(str(text or "")):
+        raw = match.group(0).lower()
+        stem = re.sub(r"(?:ed|ing|s)$", "", raw)
+        markers.add(_INCIDENT_MARKER_ALIASES.get(raw) or _INCIDENT_MARKER_ALIASES.get(stem) or raw)
+    return markers
+
+
+def _fresh_date_tokens(candidate: dict, frame: dict) -> set[str]:
+    values = [
+        frame.get("when"),
+        candidate.get("published_at"),
+        candidate.get("updated_at"),
+        candidate.get("date_start"),
+    ]
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    values.extend([event.get("date_start"), event.get("start_date"), event.get("date")])
+    out: set[str] = set()
+    for value in values:
+        out.update(re.findall(r"\b\d{4}-\d{2}-\d{2}\b", str(value or "")))
+    return out
+
+
+def fresh_dedupe_evidence(row: _SectionRow) -> dict[str, object]:
+    c = row.candidate or {}
+    entities = c.get("entities")
+    if not isinstance(entities, dict):
+        from news_digest.pipeline.entity_extraction import extract_entities  # noqa: PLC0415
+
+        entities = extract_entities(c)
+
+    frame = c.get("story_frame") if isinstance(c.get("story_frame"), dict) else {}
+    contract = c.get("editorial_contract") if isinstance(c.get("editorial_contract"), dict) else {}
+    topic_key = _fresh_evidence_token(c.get("topic_key") or contract.get("topic_key"))
+    event_type = _fresh_evidence_token(frame.get("event_type") or contract.get("event_type"))
+    anchors: set[str] = set()
+    locations: set[str] = set()
+    if isinstance(entities, dict):
+        for key, values in entities.items():
+            if not isinstance(values, list):
+                continue
+            for value in values:
+                token = _fresh_evidence_token(value)
+                if not token:
+                    continue
+                if key in _CONCRETE_ENTITY_KEYS and token not in _GENERIC_INCIDENT_ANCHORS:
+                    anchors.add(token)
+                if key in _LOCATION_ENTITY_KEYS:
+                    locations.add(token)
+    for key_field in ("story_identity_key", "event_identity_key", "story_phase_key"):
+        token = _fresh_evidence_token(c.get(key_field))
+        if token:
+            anchors.add(token)
+    cluster = c.get("story_cluster") if isinstance(c.get("story_cluster"), dict) else {}
+    for key_field in ("cluster_key", "semantic_key", "story_key"):
+        token = _fresh_evidence_token(cluster.get(key_field))
+        if token:
+            anchors.add(token)
+    where = _fresh_evidence_token(frame.get("where_exact") or frame.get("where") or c.get("location"))
+    if where:
+        locations.add(where)
+    text = " ".join(
+        str(value or "")
+        for value in (
+            row.title,
+            row.line,
+            c.get("title"),
+            c.get("summary"),
+            c.get("lead"),
+            c.get("evidence_text"),
+            frame.get("what_happened"),
+            frame.get("who_affected"),
+        )
+    )
+    markers = _fresh_incident_markers(text)
+    return {
+        "topic_key": topic_key,
+        "event_type": event_type,
+        "anchors": anchors,
+        "locations": locations,
+        "markers": markers,
+        "dates": _fresh_date_tokens(c, frame),
+    }
+
+
+def _fresh_is_incident_evidence(evidence: dict[str, object]) -> bool:
+    topic_key = str(evidence.get("topic_key") or "")
+    event_type = str(evidence.get("event_type") or "")
+    markers = evidence.get("markers")
+    return topic_key in _INCIDENT_TOPIC_KEYS or event_type in _INCIDENT_EVENT_TYPES or bool(markers)
+
+
+def _fresh_sets_compatible(left: set[str], right: set[str]) -> bool:
+    return not left or not right or bool(left & right)
+
+
+def _fresh_incident_types_compatible(left: dict[str, object], right: dict[str, object]) -> bool:
+    left_type = str(left.get("event_type") or left.get("topic_key") or "")
+    right_type = str(right.get("event_type") or right.get("topic_key") or "")
+    if left_type and right_type and left_type == right_type:
+        return True
+    left_markers = left.get("markers") if isinstance(left.get("markers"), set) else set()
+    right_markers = right.get("markers") if isinstance(right.get("markers"), set) else set()
+    if left_markers and right_markers:
+        return bool(left_markers & right_markers)
+    broad = {"crime", "incident", "public_safety", "public_safety_after_incident"}
+    return bool(left_type in broad or right_type in broad)
+
+
+def _fresh_incident_match_evidence(left: dict[str, object], right: dict[str, object]) -> dict[str, object]:
+    left_anchors = left.get("anchors") if isinstance(left.get("anchors"), set) else set()
+    right_anchors = right.get("anchors") if isinstance(right.get("anchors"), set) else set()
+    left_locations = left.get("locations") if isinstance(left.get("locations"), set) else set()
+    right_locations = right.get("locations") if isinstance(right.get("locations"), set) else set()
+    left_markers = left.get("markers") if isinstance(left.get("markers"), set) else set()
+    right_markers = right.get("markers") if isinstance(right.get("markers"), set) else set()
+    left_dates = left.get("dates") if isinstance(left.get("dates"), set) else set()
+    right_dates = right.get("dates") if isinstance(right.get("dates"), set) else set()
+    shared_anchors = left_anchors & right_anchors
+    shared_locations = left_locations & right_locations
+    precise_shared_locations = {
+        location for location in shared_locations if location not in _BROAD_INCIDENT_LOCATIONS
+    }
+    shared_markers = left_markers & right_markers
+    compatible = (
+        _fresh_sets_compatible(left_dates, right_dates)
+        and _fresh_sets_compatible(left_locations, right_locations)
+        and _fresh_incident_types_compatible(left, right)
+    )
+    same_story = bool(compatible and (shared_anchors or (precise_shared_locations and shared_markers)))
+    return {
+        "same_story": same_story,
+        "matched_entities": sorted(shared_anchors),
+        "location": sorted(shared_locations),
+        "date": sorted(left_dates & right_dates),
+        "type": sorted(shared_markers) or [str(left.get("event_type") or left.get("topic_key") or "")],
+    }
+
 
 def _fresh_rows_are_same_story(left: _SectionRow, right: _SectionRow) -> bool:
     if left.fingerprint and right.fingerprint and left.fingerprint == right.fingerprint:
@@ -852,6 +1064,22 @@ def _fresh_rows_are_same_story(left: _SectionRow, right: _SectionRow) -> bool:
         and "-" not in token
         and not _DUP_BOILERPLATE_RE.search(token)
     }
+
+    left_ev = fresh_dedupe_evidence(left)
+    right_ev = fresh_dedupe_evidence(right)
+
+    if _fresh_is_incident_evidence(left_ev) or _fresh_is_incident_evidence(right_ev):
+        evidence = _fresh_incident_match_evidence(left_ev, right_ev)
+        if evidence["same_story"]:
+            if left.candidate is not None:
+                left.candidate["dedupe_merge_reason"] = "fresh_incident_evidence_match"
+                left.candidate["dedupe_merge_evidence"] = evidence
+            if right.candidate is not None:
+                right.candidate["dedupe_merge_reason"] = "fresh_incident_evidence_match"
+                right.candidate["dedupe_merge_evidence"] = evidence
+            return True
+        return False
+
     if len(substantive_strong) >= 6:
         return True
     if len(strong_common) < 2:
@@ -5244,6 +5472,36 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     return errors
 
 
+_NO_HEADLINE_FALLBACK_BLOCKS = {
+    "last_24h",
+    "today_focus",
+    "city_watch",
+    "weekend_activities",
+    "next_7_days",
+    "future_announcements",
+    "ticket_radar",
+    "outside_gm_tickets",
+    "russian_events",
+    "professional_events",
+}
+_NO_HEADLINE_FALLBACK_CATEGORIES = REQUIRE_DRAFT_LINE_CATEGORIES | {
+    "venues_tickets",
+    "culture_weekly",
+    "russian_speaking_events",
+    "diaspora_events",
+    "professional_events",
+}
+
+
+def _headline_fallback_forbidden(candidate: dict) -> bool:
+    """Hard news, events and tickets need a real public line or deterministic
+    structured card. A title-only bullet is not recovery; it is a weak visible
+    row that hides the missing-facts problem from reports."""
+    category = str(candidate.get("category") or "")
+    block = str(candidate.get("primary_block") or "")
+    return category in _NO_HEADLINE_FALLBACK_CATEGORIES or block in _NO_HEADLINE_FALLBACK_BLOCKS
+
+
 _FOOTBALL_SPORT_RE = re.compile(
     r"\b(?:match|fixture|result|score|goal|injur|fitness|transfer|sign(?:s|ed|ing)?|"
     r"contract|loan|squad|line[- ]?up|team news|manager|coach|tournament|cup|"
@@ -5694,6 +5952,28 @@ def write_digest(project_root: Path) -> StageResult:
     for index, candidate in enumerate(candidates, start=1):
         if not isinstance(candidate, dict) or not candidate.get("include"):
             continue
+
+        plan_status = candidate.get("publish_plan_status")
+        if plan_status and plan_status not in {"show", "must_show"}:
+            warnings.append(f"Candidate #{index} dropped: publish_plan_status is {plan_status}.")
+            quality_counts["dropped_missing_draft_line"] += 1
+            candidate["include"] = False
+            candidate["publish_plan_contract_status"] = "not_render_ready"
+            candidate["recoverable_reserve"] = False
+            dropped_candidates.append(
+                {
+                    "fingerprint": candidate.get("fingerprint"),
+                    "title": str(candidate.get("title") or ""),
+                    "category": str(candidate.get("category") or ""),
+                    "primary_block": str(candidate.get("primary_block") or ""),
+                    "is_lead": bool(candidate.get("is_lead")),
+                    "reasons": [f"Status: {plan_status}"],
+                    "story_frame": candidate.get("story_frame") or {},
+                    "recovery_trace": candidate.get("recovery_trace") or [],
+                }
+            )
+            continue
+
         attach_editorial_contract(candidate)
         _append_recovery_step(
             candidate,
@@ -5707,7 +5987,8 @@ def write_digest(project_root: Path) -> StageResult:
             warnings.append(f"Candidate #{index} dropped by editorial contract: {contract_drop_reason}.")
             quality_counts["dropped_low_quality"] += 1
             candidate["include"] = False
-            candidate["recoverable_reserve"] = True
+            candidate["publish_plan_contract_status"] = "contract_drop"
+            candidate["recoverable_reserve"] = False
             dropped_candidates.append(
                 {
                     "fingerprint": candidate.get("fingerprint"),
@@ -5716,6 +5997,7 @@ def write_digest(project_root: Path) -> StageResult:
                     "primary_block": str(candidate.get("primary_block") or ""),
                     "is_lead": bool(candidate.get("is_lead")),
                     "reasons": [contract_drop_reason],
+                    "recoverable_reserve": False,
                     "story_frame": candidate.get("story_frame") or {},
                     "recovery_trace": candidate.get("recovery_trace") or [],
                 }
@@ -5962,6 +6244,9 @@ def write_digest(project_root: Path) -> StageResult:
                 )
                 logger.info("HOLD ticket_not_selected | %s | %s | %s", block_key, title[:80], "; ".join(reasons))
                 quality_counts["dropped_ticket_not_selected"] += 1
+                candidate["include"] = False
+                candidate["publish_plan_contract_status"] = "not_render_ready"
+                candidate["recoverable_reserve"] = False
                 dropped_candidates.append(
                     {
                         "fingerprint": candidate.get("fingerprint"),
@@ -5970,6 +6255,7 @@ def write_digest(project_root: Path) -> StageResult:
                         "primary_block": block_key,
                         "is_lead": bool(candidate.get("is_lead")),
                         "reasons": [f"Ticket not selected: {reason}" for reason in reasons],
+                        "recoverable_reserve": False,
                         "ticket_watch": decision,
                         "story_frame": candidate.get("story_frame") or {},
                         "recovery_trace": candidate.get("recovery_trace") or [],
@@ -5982,6 +6268,9 @@ def write_digest(project_root: Path) -> StageResult:
                 warnings.append(f"Candidate #{index} dropped: no model draft_line for {category!r}.")
                 logger.info("DROP no_draft_line | %s | %s | %s", category, block_key, title[:80])
                 quality_counts["dropped_missing_draft_line"] += 1
+                candidate["include"] = False
+                candidate["publish_plan_contract_status"] = "not_render_ready"
+                candidate["recoverable_reserve"] = False
                 dropped_candidates.append(
                     {
                         "fingerprint": candidate.get("fingerprint"),
@@ -5990,6 +6279,38 @@ def write_digest(project_root: Path) -> StageResult:
                         "primary_block": block_key,
                         "is_lead": bool(candidate.get("is_lead")),
                         "reasons": ["Missing draft_line."],
+                        "recoverable_reserve": False,
+                        "story_frame": candidate.get("story_frame") or {},
+                        "recovery_trace": candidate.get("recovery_trace") or [],
+                        "recovery_plan": candidate.get("recovery_plan") or {},
+                    }
+                )
+                continue
+            if _headline_fallback_forbidden(candidate):
+                _append_recovery_step(
+                    candidate,
+                    "headline_fallback_guard",
+                    "held",
+                    missing=(candidate.get("story_frame") or {}).get("missing_facts") or ["render_ready_text"],
+                )
+                warnings.append(
+                    f"Candidate #{index} dropped: no render-ready line for hard news/event/ticket; "
+                    "headline-only fallback is forbidden."
+                )
+                logger.info("DROP headline_only_forbidden | %s | %s | %s", category, block_key, title[:80])
+                quality_counts["dropped_missing_draft_line"] += 1
+                candidate["include"] = False
+                candidate["publish_plan_contract_status"] = "not_render_ready"
+                candidate["recoverable_reserve"] = False
+                dropped_candidates.append(
+                    {
+                        "fingerprint": candidate.get("fingerprint"),
+                        "title": title,
+                        "category": category,
+                        "primary_block": block_key,
+                        "is_lead": bool(candidate.get("is_lead")),
+                        "reasons": ["Headline-only fallback forbidden."],
+                        "recoverable_reserve": False,
                         "story_frame": candidate.get("story_frame") or {},
                         "recovery_trace": candidate.get("recovery_trace") or [],
                         "recovery_plan": candidate.get("recovery_plan") or {},
@@ -6192,7 +6513,8 @@ def write_digest(project_root: Path) -> StageResult:
             logger.info("DROP low_quality | %s | %s | %s | %s", category, block_key, title[:80], "; ".join(draft_line_errors))
             quality_counts["dropped_low_quality"] += 1
             candidate["include"] = False
-            candidate["recoverable_reserve"] = True
+            candidate["publish_plan_contract_status"] = "not_render_ready"
+            candidate["recoverable_reserve"] = False
             dropped_candidates.append(
                 {
                     "fingerprint": candidate.get("fingerprint"),
@@ -6201,6 +6523,7 @@ def write_digest(project_root: Path) -> StageResult:
                     "primary_block": block_key,
                     "is_lead": bool(candidate.get("is_lead")),
                     "reasons": draft_line_errors,
+                    "recoverable_reserve": False,
                     "story_frame": candidate.get("story_frame") or {},
                     "recovery_trace": candidate.get("recovery_trace") or [],
                     "recovery_plan": candidate.get("recovery_plan") or {},

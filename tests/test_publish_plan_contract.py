@@ -66,6 +66,7 @@ class SourceHealthAndPublishPlanTests(unittest.TestCase):
                 "digest_selection_verdict": "selected",
                 "is_lead": True,
                 "include": True,
+                "draft_line": "• Lead story has a ready public line.",
             },
             {
                 "fingerprint": "normal",
@@ -75,6 +76,7 @@ class SourceHealthAndPublishPlanTests(unittest.TestCase):
                 "source_label": "BBC",
                 "digest_selection_verdict": "selected",
                 "include": True,
+                "draft_line": "• Normal story has a ready public line.",
             },
             {
                 "fingerprint": "transport",
@@ -84,6 +86,7 @@ class SourceHealthAndPublishPlanTests(unittest.TestCase):
                 "source_label": "TfGM",
                 "digest_selection_verdict": "selected",
                 "include": True,
+                "draft_line": "• Tram disruption has a ready public line.",
             },
             {
                 "fingerprint": "russian",
@@ -93,6 +96,7 @@ class SourceHealthAndPublishPlanTests(unittest.TestCase):
                 "source_label": "MTicket",
                 "digest_selection_verdict": "selected",
                 "include": True,
+                "draft_line": "• Russian event has a ready public line.",
             },
             {
                 "fingerprint": "professional",
@@ -104,6 +108,7 @@ class SourceHealthAndPublishPlanTests(unittest.TestCase):
                 "include": True,
                 # W6: a professional event is must_show only with a CV go/consider.
                 "professional_llm_match": {"fit": "go"},
+                "draft_line": "• Tech event has a ready public line.",
             },
             {
                 "fingerprint": "thin",

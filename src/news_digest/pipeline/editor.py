@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -836,12 +837,118 @@ def _reserve_insert_allowed(section_name: str, candidate: dict) -> bool:
     return True
 
 
+@dataclass(frozen=True)
+class _PrevalidatedReserveEntry:
+    line: str
+    url_identity: str
+    story_key: str
+    score: float
+
+
+class _PrevalidatedReservePool:
+    """Render-ready same-section reserve queues for editor recovery.
+
+    The expensive/fragile work is done once while the editor still has the full
+    candidate set: section match, reserve eligibility, event window, duplicate
+    URL/story exclusion, source anchor, Russian/editor lint and section score.
+    Replacement itself is then a small pop from the prepared queue.
+    """
+
+    def __init__(self, by_section: dict[str, deque[_PrevalidatedReserveEntry]]) -> None:
+        self._by_section = by_section
+
+    @classmethod
+    def build(
+        cls,
+        candidates: list[dict],
+        rendered_urls: set[str],
+        rendered_story_keys: set[str] | None,
+    ) -> "_PrevalidatedReservePool":
+        entries: dict[str, list[_PrevalidatedReserveEntry]] = defaultdict(list)
+        seen_urls: set[str] = set(rendered_urls)
+        seen_story_keys: set[str] = set(rendered_story_keys or set())
+        try:
+            from news_digest.pipeline.writer import _section_priority_score  # noqa: PLC0415
+        except Exception:  # noqa: BLE001
+            _section_priority_score = None
+
+        for candidate in candidates:
+            if not isinstance(candidate, dict):
+                continue
+            section_name = PRIMARY_BLOCKS.get(str(candidate.get("primary_block") or ""))
+            if not section_name or not is_recoverable_reserve(candidate):
+                continue
+            if not _reserve_insert_allowed(section_name, candidate):
+                continue
+            line = str(candidate.get("draft_line") or "").strip()
+            if not line:
+                continue
+            if not line.startswith("• "):
+                line = f"• {line}"
+            url = str(candidate.get("source_url") or "")
+            url_identity = canonical_url_identity(url) if url else ""
+            if url_identity and url_identity in seen_urls:
+                continue
+            story_key = _candidate_story_identity_key(candidate)
+            if story_key and story_key in seen_story_keys:
+                continue
+            if "<a " not in line.lower() and url:
+                label = str(candidate.get("source_label") or "источник")
+                line = f'{line} <a href="{url}">{label}</a>'
+            line, _ = _polish_russian_line_rules(line)
+            if _line_needs_russian_editor(line):
+                continue
+            if url_identity:
+                seen_urls.add(url_identity)
+            if story_key:
+                seen_story_keys.add(story_key)
+            if _section_priority_score is not None:
+                try:
+                    score = float(_section_priority_score(candidate, section_name, line))
+                except Exception:  # noqa: BLE001
+                    score = float(candidate.get("reader_value_score") or 0)
+            else:
+                score = float(candidate.get("reader_value_score") or 0)
+            entries[section_name].append(
+                _PrevalidatedReserveEntry(
+                    line=line,
+                    url_identity=url_identity,
+                    story_key=story_key,
+                    score=score,
+                )
+            )
+        return cls(
+            {
+                section: deque(sorted(rows, key=lambda row: row.score, reverse=True))
+                for section, rows in entries.items()
+            }
+        )
+
+    def pop(self, section_name: str, rendered_urls: set[str], rendered_story_keys: set[str] | None) -> str:
+        queue = self._by_section.get(section_name)
+        if not queue:
+            return ""
+        while queue:
+            entry = queue.popleft()
+            if entry.url_identity and entry.url_identity in rendered_urls:
+                continue
+            if rendered_story_keys is not None and entry.story_key and entry.story_key in rendered_story_keys:
+                continue
+            if entry.url_identity:
+                rendered_urls.add(entry.url_identity)
+            if rendered_story_keys is not None and entry.story_key:
+                rendered_story_keys.add(entry.story_key)
+            return entry.line
+        return ""
+
+
 def _same_section_reserve_line(
     section_name: str,
     candidates: list[dict],
     rendered_urls: set[str],
     rendered_story_keys: set[str] | None = None,
     replacement_stats: dict[str, object] | None = None,
+    reserve_pool: _PrevalidatedReservePool | None = None,
 ) -> str:
     """A clean public-reserve line for this section, used to replace an
     unrepairable row.
@@ -851,6 +958,13 @@ def _same_section_reserve_line(
     public line through the writer fallback instead of silently skipping it.
     """
     replacement_stats = replacement_stats if replacement_stats is not None else {}
+    if reserve_pool is not None:
+        line = reserve_pool.pop(section_name, rendered_urls, rendered_story_keys)
+        if line:
+            replacement_stats["prevalidated_pop_used"] = int(replacement_stats.get("prevalidated_pop_used") or 0) + 1
+        else:
+            replacement_stats["prevalidated_pop_empty"] = int(replacement_stats.get("prevalidated_pop_empty") or 0) + 1
+        return line
     for c in candidates:
         if not isinstance(c, dict):
             continue
@@ -968,6 +1082,7 @@ def _apply_editor_line_actions(
     rendered_story_keys: set[str],
     warnings: list[str],
     round_no: int,
+    reserve_pool: _PrevalidatedReservePool | None = None,
 ) -> tuple[dict[str, list[str]], dict[str, object]]:
     action_by_index = {
         int(action.get("index")): action
@@ -1044,6 +1159,7 @@ def _apply_editor_line_actions(
             rendered_urls,
             rendered_story_keys,
             stats["reserve_replacement"] if isinstance(stats.get("reserve_replacement"), dict) else None,
+            reserve_pool,
         )
         section_lines = polished.get(section_name) or []
         try:
@@ -1086,6 +1202,7 @@ def _apply_editor_block_actions(
     rendered_urls: set[str],
     rendered_story_keys: set[str],
     warnings: list[str],
+    reserve_pool: _PrevalidatedReservePool | None = None,
 ) -> tuple[dict[str, list[str]], dict[str, object]]:
     report: dict[str, object] = {"requested": len(block_actions), "applied": 0, "actions": []}
     rows = report["actions"]
@@ -1105,9 +1222,9 @@ def _apply_editor_block_actions(
         if action == "recover_lead":
             section = section or "Главная история дня"
             for _ in range(count):
-                replacement = _same_section_reserve_line(section, candidates, rendered_urls, rendered_story_keys)
+                replacement = _same_section_reserve_line(section, candidates, rendered_urls, rendered_story_keys, reserve_pool=reserve_pool)
                 if not replacement and section == "Главная история дня":
-                    replacement = _same_section_reserve_line("Свежие новости", candidates, rendered_urls, rendered_story_keys)
+                    replacement = _same_section_reserve_line("Свежие новости", candidates, rendered_urls, rendered_story_keys, reserve_pool=reserve_pool)
                 if not replacement:
                     break
                 polished.setdefault(section, []).insert(0, replacement)
@@ -1117,7 +1234,7 @@ def _apply_editor_block_actions(
                 entry["status"] = "skipped_no_section"
             else:
                 for _ in range(count):
-                    replacement = _same_section_reserve_line(section, candidates, rendered_urls, rendered_story_keys)
+                    replacement = _same_section_reserve_line(section, candidates, rendered_urls, rendered_story_keys, reserve_pool=reserve_pool)
                     if not replacement:
                         break
                     polished.setdefault(section, []).append(replacement)
@@ -1200,6 +1317,7 @@ def _pre_send_polish_sections(
         if line.strip()
     }
     rendered_story_keys.discard("")
+    reserve_pool = _PrevalidatedReservePool.build(candidates or [], rendered_urls, rendered_story_keys)
     round_reports: list[dict[str, object]] = []
     block_action_reports: list[dict[str, object]] = []
     model_changes: list[dict[str, object]] = []
@@ -1213,6 +1331,7 @@ def _pre_send_polish_sections(
         rendered_story_keys=rendered_story_keys,
         warnings=warnings,
         round_no=1,
+        reserve_pool=reserve_pool,
     )
     model_fixed += int(round_stats.get("model_fixed") or 0)
     model_requested_replaced += int(round_stats.get("model_requested_replaced") or 0)
@@ -1230,6 +1349,7 @@ def _pre_send_polish_sections(
         rendered_urls=rendered_urls,
         rendered_story_keys=rendered_story_keys,
         warnings=warnings,
+        reserve_pool=reserve_pool,
     )
     block_action_reports.append(block_report)
     round_reports.append({"round": 1, **model_report})
@@ -1243,7 +1363,7 @@ def _pre_send_polish_sections(
             if not line.strip() or not _line_needs_russian_editor(line):
                 out.append(line)
                 continue
-            replacement = _same_section_reserve_line(section_name, candidates or [], rendered_urls, rendered_story_keys)
+            replacement = _same_section_reserve_line(section_name, candidates or [], rendered_urls, rendered_story_keys, reserve_pool=reserve_pool)
             if not replacement and section_name == "Общественный транспорт сегодня":
                 replacement = _transport_replacement_for_line(line, candidates_by_key, rendered_urls)
             if replacement:
@@ -1326,6 +1446,7 @@ def _pre_send_polish_sections(
             rendered_story_keys=rendered_story_keys,
             warnings=warnings,
             round_no=2,
+            reserve_pool=reserve_pool,
         )
         model_fixed += int(second_stats.get("model_fixed") or 0)
         model_requested_replaced += int(second_stats.get("model_requested_replaced") or 0)
@@ -1353,7 +1474,7 @@ def _pre_send_polish_sections(
             if not line.strip() or not _line_needs_russian_editor(line):
                 out.append(line)
                 continue
-            replacement = _same_section_reserve_line(section_name, candidates or [], rendered_urls, rendered_story_keys)
+            replacement = _same_section_reserve_line(section_name, candidates or [], rendered_urls, rendered_story_keys, reserve_pool=reserve_pool)
             if not replacement and section_name == "Общественный транспорт сегодня":
                 replacement = _transport_replacement_for_line(line, candidates_by_key, rendered_urls)
             if replacement:
