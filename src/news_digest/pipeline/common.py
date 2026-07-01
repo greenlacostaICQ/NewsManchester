@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import json
+import os
 from pathlib import Path
 import re
 from urllib import parse
@@ -192,6 +193,15 @@ def read_json(path: Path, default: dict | None = None) -> dict:
 def write_json(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def write_json_atomic(path: Path, payload: dict) -> None:
+    """Write via temp file + rename so a concurrent reader never sees a
+    partially-written file (os.replace is atomic on the same filesystem)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f".{path.name}.tmp{os.getpid()}")
+    tmp_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    os.replace(tmp_path, path)
 
 
 def clean_url(url: str) -> str:

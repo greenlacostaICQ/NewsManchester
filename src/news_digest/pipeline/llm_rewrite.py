@@ -2701,7 +2701,15 @@ def _memory_text_digest(value: object, *, limit: int = 1800) -> str:
 
 
 def _candidate_content_hash(candidate: dict) -> str:
-    """Fact hash for reusable model work across repeated event/listing pages."""
+    """Fact hash for reusable model work across repeated event/listing pages.
+
+    Backlog 8.3: includes prompt_version + structured story facts (not just
+    truncated evidence text) so a prompt change or a materially changed hard-
+    news fact (casualty count, court stage) invalidates reuse even when the
+    change sits past the evidence-text truncation point (3200 chars)."""
+    from news_digest.pipeline.inventory import INVENTORY_SCHEMA_VERSION, evidence_cache_extra_fields  # noqa: PLC0415
+    from news_digest.pipeline.prompts_meta import PROMPT_REGISTRY_VERSION  # noqa: PLC0415
+
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     payload = {
         "category": str(candidate.get("category") or ""),
@@ -2715,6 +2723,9 @@ def _candidate_content_hash(candidate: dict) -> str:
         "event_date": str(event.get("date_start") or event.get("date") or candidate.get("event_date") or ""),
         "event_venue": str(event.get("venue") or candidate.get("venue") or ""),
         "rewrite_packet": _rewrite_packet(candidate),
+        "prompt_version": PROMPT_REGISTRY_VERSION,
+        "schema_version": INVENTORY_SCHEMA_VERSION,
+        "story_facts": evidence_cache_extra_fields(candidate),
     }
     raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()

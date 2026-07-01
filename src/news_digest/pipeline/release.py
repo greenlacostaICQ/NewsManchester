@@ -36,6 +36,7 @@ from news_digest.pipeline.city_trends import (
     append_city_intelligence_history,
     build_trend_detection,
 )
+from news_digest.pipeline.inventory import aggregate_category_health, verify_conservation
 from news_digest.pipeline.reader_value import validate_reader_value_labels
 from news_digest.pipeline.story_intelligence import (
     AUDIT_TRAIL_SCHEMA_VERSION,
@@ -2457,6 +2458,23 @@ def _candidate_selection_reason(candidate: dict, final_reason: str) -> str:
     return str(final_reason or "")[:280]
 
 
+def _read_jsonl_rows(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    rows: list[dict] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(row, dict):
+            rows.append(row)
+    return rows
+
+
 def _write_final_selection_report(
     *,
     state_dir: Path,
@@ -2470,6 +2488,9 @@ def _write_final_selection_report(
     """Human-readable final choice/loss table per block after HTML recovery."""
     path = state_dir / "final_selection_report.json"
     candidates = [c for c in (candidates_report or {}).get("candidates") or [] if isinstance(c, dict)]
+    source_run_log_rows = _read_jsonl_rows(state_dir / "source_run_log.jsonl")
+    category_health = aggregate_category_health(source_run_log_rows)
+    conservation = verify_conservation(source_run_log_rows, len(candidates))
     html_visible = _visible_fingerprints_from_html(final_html, candidates)
     rendered_set = {str(fp) for fp in rendered_fingerprints if fp}
     visible_set = set(rendered_set) | html_visible
@@ -2568,6 +2589,8 @@ def _write_final_selection_report(
         ),
         "totals": dict(totals),
         "sections": dict(sorted(sections.items())),
+        "category_health": category_health,
+        "conservation": conservation,
     }
     write_json(path, payload)
     return {
@@ -2575,6 +2598,7 @@ def _write_final_selection_report(
         "schema_version": payload["schema_version"],
         "totals": payload["totals"],
         "section_count": len(sections),
+        "conservation": conservation,
     }
 
 
@@ -3553,6 +3577,8 @@ def _write_selection_snapshot(state_dir: Path, stage: str) -> dict[str, object]:
         ),
         "totals": dict(totals),
         "sections": dict(sorted(sections.items())),
+        "category_health": aggregate_category_health(_read_jsonl_rows(state_dir / "source_run_log.jsonl")),
+        "conservation": verify_conservation(_read_jsonl_rows(state_dir / "source_run_log.jsonl"), len(candidates)),
     }
     write_json(state_dir / "selection_snapshot.json", payload)
     return {"candidate_count": len(candidates), "totals": dict(totals)}
