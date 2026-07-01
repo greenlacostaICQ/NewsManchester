@@ -7,6 +7,13 @@ on:
 permissions:
   contents: write
 
+# Serialize with the night-inventory waves (same group) so a late 07:30
+# 'breaking' wave and this 08:00 build never race on the state commit. This run
+# queues behind an in-flight wave rather than cancelling it.
+concurrency:
+  group: digest-state
+  cancel-in-progress: false
+
 jobs:
   digest:
     runs-on: ubuntu-latest

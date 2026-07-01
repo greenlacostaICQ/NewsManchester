@@ -1,0 +1,163 @@
+name: GM Night Inventory
+
+# Backlog 8.4 on the REAL prod substrate (GitHub Actions, not launchd): each
+# night wave collects ONLY into data/state/inventory/*.jsonl and commits it
+# back to the repo, so the 08:00 morning run (which checks out main) can read
+# it. A wave never writes candidates.json, so it can't block/corrupt the
+# morning release. The morning build does not yet consume inventory — that is
+# the gradual next step (item 15) after several clean nights.
+
+on:
+  schedule:
+    # UTC. The wave is bound to which cron entry fired (github.event.schedule),
+    # so there is no wall-clock/DST ambiguity. 'breaking' is placed so it lands
+    # before the 08:00 London morning run in BOTH seasons (08:00 London = 07:00
+    # UTC in BST / 08:00 UTC in GMT); the other waves tolerate the ±1h shift.
+    - cron: '30 23 * * *'   # events           → 00:30 BST / 23:30 GMT London
+    - cron: '0 1 * * *'     # tickets          → 02:00 BST / 01:00 GMT
+    - cron: '30 2 * * *'    # pro_food_russian → 03:30 BST / 02:30 GMT
+    - cron: '15 5 * * *'    # live_news        → 06:15 BST / 05:15 GMT
+    - cron: '30 6 * * *'    # breaking         → 07:30 BST / 06:30 GMT (before morning)
+  workflow_dispatch:
+    inputs:
+      wave:
+        description: 'Wave to collect'
+        required: true
+        type: choice
+        options:
+          - events
+          - tickets
+          - pro_food_russian
+          - live_news
+          - breaking
+
+permissions:
+  contents: write
+
+# Serialize with the morning digest (same group) so a late 'breaking' wave and
+# the 08:00 build never race on the state commit; the morning run queues behind
+# it rather than being cancelled.
+concurrency:
+  group: digest-state
+  cancel-in-progress: false
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -e . openai
+
+      - name: Resolve wave from trigger
+        id: wave
+        run: |
+          set -euo pipefail
+          case "${{ github.event.schedule }}" in
+            "30 23 * * *") WAVE=events ;;
+            "0 1 * * *")   WAVE=tickets ;;
+            "30 2 * * *")  WAVE=pro_food_russian ;;
+            "15 5 * * *")  WAVE=live_news ;;
+            "30 6 * * *")  WAVE=breaking ;;
+            *)             WAVE="${{ github.event.inputs.wave }}" ;;
+          esac
+          if [ -z "$WAVE" ]; then echo "No wave resolved" >&2; exit 1; fi
+          echo "wave=$WAVE" >> "$GITHUB_OUTPUT"
+          echo "Resolved wave: $WAVE (schedule='${{ github.event.schedule }}')"
+
+      - name: Collect inventory wave
+        env:
+          TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+          SKIDDLE_API_KEY: ${{ secrets.SKIDDLE_APIKEY }}
+          NRE_USERNAME: ${{ secrets.NRE_USERNAME }}
+          NRE_PASSWORD: ${{ secrets.NRE_PASSWORD }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI }}
+        run: |
+          set -euo pipefail
+          python3 scripts/run_local_digest.py collect-inventory --wave "${{ steps.wave.outputs.wave }}" | tee /tmp/inventory_summary.json
+
+      - name: Commit inventory to repo
+        if: always()
+        run: |
+          git config user.name "digest-bot"
+          git config user.email "digest-bot@users.noreply.github.com"
+          git add -f data/state/inventory/*.jsonl || true
+          git add -f data/state/inventory_run_log.jsonl || true
+          if git diff --staged --quiet; then
+            echo "No inventory changes to commit."
+          else
+            git commit -m "chore: night inventory ${{ steps.wave.outputs.wave }} $(TZ=Europe/London date '+%Y-%m-%d %H:%M')"
+            git pull --rebase --autostash origin main
+            git push
+          fi
+
+      - name: Notify Telegram — wave complete
+        if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
+          TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.parse, urllib.request
+
+          try:
+              with open("/tmp/inventory_summary.json", encoding="utf-8") as fh:
+                  summary = json.load(fh)
+          except Exception:
+              summary = {}
+
+          wave = summary.get("wave", "?")
+          polled = summary.get("sources_polled", 0)
+          merged = summary.get("merged_totals", {}) or {}
+          cards = sum(int(v) for v in merged.values())
+          dur = summary.get("duration_seconds", 0)
+          text = (
+              f"🌙 Инвентарь · волна {wave}\n"
+              f"источников опрошено: {polled}\n"
+              f"карточек в инвентаре: {cards}\n"
+              f"время: {dur}s"
+          )
+
+          token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+          target = os.environ.get("TELEGRAM_TARGET", "")
+          if not token or not target:
+              print("No Telegram token/target — skipping notify.")
+          else:
+              data = urllib.parse.urlencode({"chat_id": target, "text": text}).encode()
+              req = urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=data)
+              with urllib.request.urlopen(req, timeout=20) as resp:
+                  print("Telegram notify status:", resp.status)
+          PY
+
+      - name: Notify Telegram — wave failed
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
+          TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
+        run: |
+          python3 - <<'PY'
+          import os, urllib.parse, urllib.request
+          token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+          target = os.environ.get("TELEGRAM_TARGET", "")
+          text = "❌ Инвентарь: ночная волна упала — см. GitHub Actions лог."
+          if token and target:
+              data = urllib.parse.urlencode({"chat_id": target, "text": text}).encode()
+              req = urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=data)
+              try:
+                  with urllib.request.urlopen(req, timeout=20) as resp:
+                      print("Telegram notify status:", resp.status)
+              except Exception as exc:
+                  print("Telegram notify failed:", exc)
+          PY
