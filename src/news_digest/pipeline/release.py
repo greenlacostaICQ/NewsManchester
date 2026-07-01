@@ -431,6 +431,7 @@ def _validate_draft(
     scan_report: dict | None,
     included_candidates: list[dict],
     rendered_fingerprints: set[str],
+    writer_report: dict | None,
     current_day_london: str,
     errors: list[str],
     warnings: list[str],
@@ -481,14 +482,36 @@ def _validate_draft(
             for candidate in included_candidates
             if isinstance(candidate, dict) and candidate.get("include")
         )
+        today_focus_board = (writer_report or {}).get("today_focus_board")
+        today_focus_has_no_eligible_rows = (
+            block == "Что важно сегодня"
+            and isinstance(today_focus_board, dict)
+            and int(today_focus_board.get("eligible_candidates") or 0) == 0
+            and int(today_focus_board.get("rendered_candidates") or 0) == 0
+        )
+        today_focus_warning_reason = ""
+        if today_focus_has_no_eligible_rows:
+            today_focus_warning_reason = str(today_focus_board.get("underflow_reason") or "no_eligible_practical_items")
         if block not in sections:
-            if block == "Что важно сегодня" and not has_candidates_for_block:
-                warnings.append("Draft has no «Что важно сегодня» section because no today_focus candidates survived.")
+            if block == "Что важно сегодня" and (not has_candidates_for_block or today_focus_has_no_eligible_rows):
+                if today_focus_has_no_eligible_rows:
+                    warnings.append(
+                        "Draft has no «Что важно сегодня» section because writer found no eligible "
+                        f"practical today-focus item ({today_focus_warning_reason})."
+                    )
+                else:
+                    warnings.append("Draft has no «Что важно сегодня» section because no today_focus candidates survived.")
             else:
                 errors.append(f"Draft digest is missing required block: {block}.")
         elif not [line for line in sections.get(block, []) if line.strip() != "•"]:
-            if block == "Что важно сегодня" and not has_candidates_for_block:
-                warnings.append("Draft has empty «Что важно сегодня» section because no today_focus candidates survived.")
+            if block == "Что важно сегодня" and (not has_candidates_for_block or today_focus_has_no_eligible_rows):
+                if today_focus_has_no_eligible_rows:
+                    warnings.append(
+                        "Draft has empty «Что важно сегодня» section because writer found no eligible "
+                        f"practical today-focus item ({today_focus_warning_reason})."
+                    )
+                else:
+                    warnings.append("Draft has empty «Что важно сегодня» section because no today_focus candidates survived.")
             else:
                 errors.append(f"Draft digest has no substantive item in required block: {block}.")
 
@@ -3837,6 +3860,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         scan_report=scan_report,
         included_candidates=candidate_context["included_candidates"],
         rendered_fingerprints=rendered_fingerprints,
+        writer_report=writer_report,
         current_day_london=current_day_london,
         errors=errors,
         warnings=warnings,

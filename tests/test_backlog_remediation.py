@@ -1762,6 +1762,229 @@ class PublishedReviewTest(unittest.TestCase):
             self.assertEqual(report["event_miss_review"]["counts"]["critical_misses"], 1)
             self.assertTrue(any("Event miss review" in warning for warning in report["warnings"]))
 
+    def test_empty_today_focus_with_no_eligible_writer_rows_warns_not_blocks(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            run_date = now_london().strftime("%Y-%m-%d")
+            run_id = "today-focus-no-eligible-test"
+            categories = {
+                key: {
+                    "checked": True,
+                    "usable_for_release": True,
+                    "candidate_count": 1,
+                    "publishable_count": 1,
+                    "sources": [],
+                    "source_health": [],
+                }
+                for key in REQUIRED_SCAN_CATEGORIES
+            }
+            (state_dir / "collector_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "categories": categories,
+            }), encoding="utf-8")
+            (state_dir / "candidates.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "candidates": [
+                    {
+                        "fingerprint": "soft-today",
+                        "title": "Mayor says he would split time with London",
+                        "source_label": "BBC Manchester",
+                        "source_url": "https://example.test/soft-today",
+                        "category": "media_layer",
+                        "primary_block": "today_focus",
+                        "include": True,
+                        "dedupe_decision": "new",
+                        "summary": "A political positioning story with no reader action today.",
+                    },
+                    {
+                        "fingerprint": "fresh-1",
+                        "title": "Stockport transport works confirmed",
+                        "source_label": "BBC Manchester",
+                        "source_url": "https://example.test/fresh-1",
+                        "category": "media_layer",
+                        "primary_block": "last_24h",
+                        "include": True,
+                        "dedupe_decision": "new",
+                        "freshness_status": "fresh_24h",
+                        "summary": "A local transport update was confirmed today.",
+                    },
+                    {
+                        "fingerprint": "fresh-2",
+                        "title": "Council confirms library service change",
+                        "source_label": "Manchester Council",
+                        "source_url": "https://example.test/fresh-2",
+                        "category": "council",
+                        "primary_block": "last_24h",
+                        "include": True,
+                        "dedupe_decision": "new",
+                        "freshness_status": "fresh_24h",
+                        "summary": "A council service update was confirmed today.",
+                    },
+                ],
+            }), encoding="utf-8")
+            (state_dir / "curator_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "status": "complete",
+                "reviewed": 2,
+            }), encoding="utf-8")
+            (state_dir / "llm_rewrite_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "stage_status": "complete",
+            }), encoding="utf-8")
+            (state_dir / "writer_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "stage_status": "complete",
+                "rendered_candidate_fingerprints": ["fresh-1", "fresh-2"],
+                "quality_counts": {"included_candidates": 3, "rendered_candidates": 2},
+                "section_counts": {"Погода": 1, "Что важно сегодня": 0, "Свежие новости": 2},
+                "today_focus_board": {
+                    "eligible_candidates": 0,
+                    "rendered_candidates": 0,
+                    "underflow_reason": "not_enough_eligible_practical_items",
+                },
+                "dropped_candidates": [
+                    {"fingerprint": "soft-today", "primary_block": "today_focus", "reasons": ["not eligible for Today Focus"]}
+                ],
+            }), encoding="utf-8")
+            (state_dir / "editor_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "stage_status": "complete",
+            }), encoding="utf-8")
+            (state_dir / "draft_digest.html").write_text(
+                f"<b>Greater Manchester Brief — {run_date}, 08:00</b>\n\n"
+                "<b>Погода</b>\n"
+                "• Погода: 12-16°C. <a href=\"https://example.test/weather\">Met Office</a>\n\n"
+                "<b>Свежие новости</b>\n"
+                "• Stockport transport works confirmed. <a href=\"https://example.test/fresh-1\">BBC Manchester</a>\n"
+                "• Council confirms library service change. <a href=\"https://example.test/fresh-2\">Manchester Council</a>\n",
+                encoding="utf-8",
+            )
+
+            result = build_release(root)
+            report = json.loads((state_dir / "release_report.json").read_text(encoding="utf-8"))
+
+            self.assertTrue(result.ok)
+            self.assertNotIn("Draft digest is missing required block: Что важно сегодня.", report["errors"])
+            self.assertTrue(any("no eligible practical today-focus item" in warning for warning in report["warnings"]))
+
+    def test_empty_today_focus_with_eligible_writer_rows_still_blocks(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            run_date = now_london().strftime("%Y-%m-%d")
+            run_id = "today-focus-eligible-missing-test"
+            categories = {
+                key: {
+                    "checked": True,
+                    "usable_for_release": True,
+                    "candidate_count": 1,
+                    "publishable_count": 1,
+                    "sources": [],
+                    "source_health": [],
+                }
+                for key in REQUIRED_SCAN_CATEGORIES
+            }
+            (state_dir / "collector_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "categories": categories,
+            }), encoding="utf-8")
+            (state_dir / "candidates.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "candidates": [
+                    {
+                        "fingerprint": "practical-today",
+                        "title": "Council warns residents of road closure today",
+                        "source_label": "Manchester Council",
+                        "source_url": "https://example.test/practical-today",
+                        "category": "council",
+                        "primary_block": "today_focus",
+                        "include": True,
+                        "dedupe_decision": "new",
+                        "summary": "A road closure affects residents today.",
+                    },
+                    {
+                        "fingerprint": "fresh-1",
+                        "title": "Stockport transport works confirmed",
+                        "source_label": "BBC Manchester",
+                        "source_url": "https://example.test/fresh-1",
+                        "category": "media_layer",
+                        "primary_block": "last_24h",
+                        "include": True,
+                        "dedupe_decision": "new",
+                        "freshness_status": "fresh_24h",
+                        "summary": "A local transport update was confirmed today.",
+                    },
+                    {
+                        "fingerprint": "fresh-2",
+                        "title": "Council confirms library service change",
+                        "source_label": "Manchester Council",
+                        "source_url": "https://example.test/fresh-2",
+                        "category": "council",
+                        "primary_block": "last_24h",
+                        "include": True,
+                        "dedupe_decision": "new",
+                        "freshness_status": "fresh_24h",
+                        "summary": "A council service update was confirmed today.",
+                    },
+                ],
+            }), encoding="utf-8")
+            (state_dir / "curator_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "status": "complete",
+                "reviewed": 2,
+            }), encoding="utf-8")
+            (state_dir / "llm_rewrite_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "stage_status": "complete",
+            }), encoding="utf-8")
+            (state_dir / "writer_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "stage_status": "complete",
+                "rendered_candidate_fingerprints": ["fresh-1", "fresh-2"],
+                "quality_counts": {"included_candidates": 3, "rendered_candidates": 2},
+                "section_counts": {"Погода": 1, "Что важно сегодня": 0, "Свежие новости": 2},
+                "today_focus_board": {
+                    "eligible_candidates": 1,
+                    "rendered_candidates": 0,
+                    "underflow_reason": "render_missing_after_selection",
+                },
+                "dropped_candidates": [],
+            }), encoding="utf-8")
+            (state_dir / "editor_report.json").write_text(json.dumps({
+                "pipeline_run_id": run_id,
+                "run_date_london": run_date,
+                "stage_status": "complete",
+            }), encoding="utf-8")
+            (state_dir / "draft_digest.html").write_text(
+                f"<b>Greater Manchester Brief — {run_date}, 08:00</b>\n\n"
+                "<b>Погода</b>\n"
+                "• Погода: 12-16°C. <a href=\"https://example.test/weather\">Met Office</a>\n\n"
+                "<b>Свежие новости</b>\n"
+                "• Stockport transport works confirmed. <a href=\"https://example.test/fresh-1\">BBC Manchester</a>\n"
+                "• Council confirms library service change. <a href=\"https://example.test/fresh-2\">Manchester Council</a>\n",
+                encoding="utf-8",
+            )
+
+            result = build_release(root)
+            report = json.loads((state_dir / "release_report.json").read_text(encoding="utf-8"))
+
+            self.assertFalse(result.ok)
+            self.assertIn("Draft digest is missing required block: Что важно сегодня.", report["errors"])
+
     def test_public_services_source_failure_does_not_block_release(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
