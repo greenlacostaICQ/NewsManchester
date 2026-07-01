@@ -119,6 +119,29 @@ _REWRITE_BLOCK_FLOORS: dict[str, int] = {
     "weekend_activities": 8,
 }
 _FRESH_GLOBAL_PROTECTED_TARGET = 12
+TODAY_PRACTICAL_TRANSLATION_RESERVE = 3
+
+_TODAY_PRACTICAL_ACTIVE_RE = re.compile(
+    r"\b(?:m6|m60|m62|m56|a580|traffic|roadworks?|road\s+closed|motorway|"
+    r"shut|closed|closure|delays?|queues?|congestion|diversion|warning|"
+    r"unsafe|danger|appeal|witness|cctv|deadline|consultation|reopen|"
+    r"inspection|cqc|ofsted|requires\s+improvement|inadequate|safeguarding|"
+    r"school\s+closed|service\s+change|strike|airport|polls?\s+open|"
+    r"polling\s+station|by-election)\b",
+    re.IGNORECASE,
+)
+_TODAY_PRACTICAL_SOFT_RE = re.compile(
+    r"\b(?:charity|fundrais|tribute|anniversary|opening|restaurant|deli|"
+    r"concert|gig|ticket|festival|market|poll:|have\s+your\s+say|"
+    r"changed\s+.*\s+forever|look\s+back)\b",
+    re.IGNORECASE,
+)
+_TODAY_PRACTICAL_LOCAL_RE = re.compile(
+    r"\b(?:greater manchester|manchester|m6|m60|m62|m56|a580|stockport|"
+    r"tameside|trafford|salford|bolton|bury|oldham|rochdale|wigan|"
+    r"prestwich|altrincham|wythenshawe|airport|metrolink|tfgm)\b",
+    re.IGNORECASE,
+)
 
 _EVENT_DATE_TEXT_RE = re.compile(
     r"\b(?:\d{1,2}(?:st|nd|rd|th)?\s+(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|"
@@ -1054,6 +1077,8 @@ def _must_translate_before_cap(candidate: dict) -> bool:
     apply_story_intelligence(candidate)
     if candidate.get("is_lead"):
         return True
+    if candidate.get("today_practical_translation_reserve"):
+        return True
     block = str(candidate.get("primary_block") or "")
     category = str(candidate.get("category") or "")
     contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
@@ -1076,6 +1101,51 @@ def _must_translate_before_cap(candidate: dict) -> bool:
     if protected.get("protected") and category != "venues_tickets":
         return True
     return False
+
+
+def _today_practical_translation_candidate(candidate: dict) -> bool:
+    apply_story_intelligence(candidate)
+    if candidate.get("reject_reasons") or candidate.get("validation_errors"):
+        return False
+    block = str(candidate.get("primary_block") or "")
+    if block not in {"last_24h", "city_watch"}:
+        return False
+    category = str(candidate.get("category") or "")
+    if category not in {"media_layer", "gmp", "council", "public_services", "city_news"}:
+        return False
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    if event.get("is_event"):
+        return False
+    text = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "practical_angle", "source_label")
+    )
+    if _TODAY_PRACTICAL_SOFT_RE.search(text):
+        return False
+    return bool(_TODAY_PRACTICAL_ACTIVE_RE.search(text) and _TODAY_PRACTICAL_LOCAL_RE.search(text))
+
+
+def _mark_today_practical_translation_reserve(candidates: list[dict]) -> list[dict[str, object]]:
+    ranked = sorted(
+        (candidate for candidate in candidates if _today_practical_translation_candidate(candidate)),
+        key=_rewrite_shortlist_priority,
+        reverse=True,
+    )
+    protected: list[dict[str, object]] = []
+    for candidate in ranked[:TODAY_PRACTICAL_TRANSLATION_RESERVE]:
+        candidate["today_practical_translation_reserve"] = True
+        protected.append(
+            {
+                "fingerprint": candidate.get("fingerprint") or "",
+                "title": candidate.get("title") or "",
+                "source_label": candidate.get("source_label") or "",
+                "primary_block": candidate.get("primary_block") or "",
+                "category": candidate.get("category") or "",
+                "score": reader_value_score({**candidate, "included": True}),
+                "reason": "Protected practical Today Focus reserve before Russian writing.",
+            }
+        )
+    return protected
 
 
 def _candidate_event_day(candidate: dict) -> date | None:
@@ -1111,6 +1181,7 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
     held back are not deleted: they are marked as backup candidates so the
     release report and backup_pool can explain what was not translated.
     """
+    today_practical_reserve = _mark_today_practical_translation_reserve(to_rewrite)
     groups: dict[str, list[dict]] = {}
     for candidate in to_rewrite:
         block = str(candidate.get("primary_block") or "")
@@ -1184,7 +1255,11 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
     board_overflow = 0
     if len(selected) > REWRITE_RANKING_BOARD_MAX:
         def _never_drop(c: dict) -> bool:
-            return bool(c.get("is_lead")) or str(c.get("primary_block") or "") in {"transport", "today_focus"}
+            return (
+                bool(c.get("is_lead"))
+                or str(c.get("primary_block") or "") in {"transport", "today_focus"}
+                or bool(c.get("today_practical_translation_reserve"))
+            )
 
         keep_ids: set[int] = {id(c) for c in selected if _never_drop(c)}
         # Fresh hard-news was still allowed to fall out of the global board
@@ -1255,6 +1330,7 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
         "caps_by_block": caps,
         "uncapped_selected": len(uncapped_selected),
         "uncapped_examples": uncapped_selected[:20],
+        "today_practical_translation_reserve": today_practical_reserve,
         "held_examples": held[:40],
     }
 
@@ -1274,11 +1350,16 @@ def _apply_post_board_translation_cut(candidates: list[dict], board: list[dict])
             "selected_for_russian": len(board),
             "held_for_backup": 0,
             "board_max": REWRITE_TRANSLATION_BOARD_MAX,
+            "today_practical_protected": sum(1 for candidate in board if candidate.get("today_practical_translation_reserve")),
             "held_examples": [],
         }
 
     def _never_drop(c: dict) -> bool:
-        return bool(c.get("is_lead")) or str(c.get("primary_block") or "") in {"transport", "today_focus"}
+        return (
+            bool(c.get("is_lead"))
+            or str(c.get("primary_block") or "") in {"transport", "today_focus"}
+            or bool(c.get("today_practical_translation_reserve"))
+        )
 
     keep_ids: set[int] = {id(c) for c in board if _never_drop(c)}
     by_block: dict[str, list[dict]] = {}
@@ -1340,6 +1421,7 @@ def _apply_post_board_translation_cut(candidates: list[dict], board: list[dict])
         "selected_for_russian": len(selected),
         "held_for_backup": len(held),
         "board_max": REWRITE_TRANSLATION_BOARD_MAX,
+        "today_practical_protected": sum(1 for candidate in selected if candidate.get("today_practical_translation_reserve")),
         "held_examples": held[:40],
     }
 

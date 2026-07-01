@@ -57,6 +57,8 @@ from news_digest.pipeline.writer import (
     _SectionRow,
     _strip_unsupported_number_phrases,
     _today_focus_candidate_is_eligible,
+    _today_focus_loss_trace,
+    _today_focus_recovery_line,
 )
 
 
@@ -2742,6 +2744,181 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertEqual(len(lines), 1)
         self.assertEqual(fps, ["fallowfield-cordon"])
+
+    def test_today_focus_topup_can_promote_practical_fresh_reserve(self) -> None:
+        candidate = {
+            "include": False,
+            "validated": True,
+            "backup_candidate": True,
+            "backup_pool_only": True,
+            "recoverable_reserve": True,
+            "fingerprint": "m60-prestwich-police-incident",
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "M60 Prestwich traffic RECAP: Major motorway shut due to police incident with miles of congestion",
+            "summary": "The M60 at Prestwich has been shut due to a police incident, with miles of congestion.",
+            "practical_angle": "Drivers should check routes today and allow extra time.",
+            "source_label": "MEN",
+            "source_url": "https://example.test/m60-prestwich",
+            "editorial_contract": {
+                "story_type": "public_safety_after_incident",
+                "event_shape": "none",
+                "publish_tier": "strong",
+                "story_frame": {"why_now": "active_today"},
+            },
+        }
+
+        lines, fps, _scores, _titles, _srcs = _apply_section_min_floor_pull_back(
+            "Что важно сегодня",
+            [],
+            [],
+            [],
+            [],
+            [],
+            [candidate],
+            set(),
+            1,
+            [],
+            include_backup=True,
+        )
+
+        self.assertEqual(fps, ["m60-prestwich-police-incident"])
+        self.assertIn("M60", lines[0])
+        self.assertIn("проверьте", lines[0])
+
+    def test_today_focus_board_claims_recoverable_practical_reserve_before_fresh(self) -> None:
+        candidate = {
+            "include": False,
+            "validated": True,
+            "backup_candidate": True,
+            "backup_pool_only": True,
+            "recoverable_reserve": True,
+            "fingerprint": "m60-prestwich-police-incident",
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "M60 Prestwich traffic RECAP: Major motorway shut due to police incident with miles of congestion",
+            "summary": "The M60 at Prestwich has been shut due to a police incident, with miles of congestion.",
+            "practical_angle": "Drivers should check routes today and allow extra time.",
+            "source_label": "MEN",
+            "source_url": "https://example.test/m60-prestwich",
+            "editorial_contract": {
+                "story_type": "public_safety_after_incident",
+                "event_shape": "none",
+                "publish_tier": "strong",
+                "story_frame": {"why_now": "active_today"},
+            },
+        }
+        sections = {
+            "Свежие новости": [],
+            "Что важно сегодня": [],
+            "Городской радар": [],
+            "Главная история дня": [],
+        }
+        section_sources = {key: [] for key in sections}
+        section_scores = {key: [] for key in sections}
+        section_fingerprints = {key: [] for key in sections}
+        section_titles = {key: [] for key in sections}
+
+        report = _allocate_fresh_and_today_focus(
+            sections,
+            section_sources,
+            section_scores,
+            section_fingerprints,
+            section_titles,
+            {candidate["fingerprint"]: candidate},
+        )
+
+        self.assertEqual(report["rendered_candidates"], 1)
+        self.assertEqual(section_fingerprints["Что важно сегодня"], ["m60-prestwich-police-incident"])
+        self.assertEqual(section_fingerprints["Свежие новости"], [])
+
+    def test_today_focus_eligibility_rejects_soft_opening(self) -> None:
+        candidate = {
+            "include": True,
+            "category": "food_openings",
+            "primary_block": "today_focus",
+            "title": "Irish deli opens in Altrincham",
+            "summary": "A new deli has opened with sandwiches and coffee.",
+            "source_label": "Altrincham Today",
+            "editorial_contract": {
+                "story_type": "opening",
+                "event_shape": "none",
+                "publish_tier": "optional",
+            },
+        }
+
+        self.assertFalse(_today_focus_candidate_is_eligible(candidate))
+
+    def test_today_focus_recovery_line_handles_oldham_pub_planning(self) -> None:
+        candidate = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "The 'rare' Oldham pub that could be bought by the council - and then demolished",
+            "summary": "Oldham £1m plans to buy and then demolish a rare pub; a local MP called for pubs to be protected.",
+            "source_label": "MEN",
+            "editorial_contract": {
+                "story_type": "planning",
+                "event_shape": "none",
+                "publish_tier": "strong",
+                "story_frame": {"why_now": "new_today"},
+            },
+        }
+
+        line = _today_focus_recovery_line(candidate)
+
+        self.assertIn("Oldham", line)
+        self.assertIn("£1m", line)
+        self.assertEqual(_draft_line_quality_errors(candidate, line), [])
+
+    def test_today_focus_recovery_line_handles_bury_school_safeguarding(self) -> None:
+        candidate = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "Woman arrested at Bury school on suspicion of child sex offences",
+            "summary": "An investigation continues after police arrest a woman at St Gabriel's RC High School in Bury on suspicion of child sex offences and safeguarding concerns.",
+            "source_label": "BBC Manchester",
+            "editorial_contract": {
+                "story_type": "service_accountability",
+                "event_shape": "none",
+                "publish_tier": "strong",
+                "story_frame": {"why_now": "new_today"},
+            },
+        }
+
+        line = _today_focus_recovery_line(candidate)
+
+        self.assertIn("Bury", line)
+        self.assertIn("St Gabriel", line)
+        self.assertEqual(_draft_line_quality_errors(candidate, line), [])
+
+    def test_today_focus_loss_trace_names_recoverable_reserve(self) -> None:
+        candidate = {
+            "include": False,
+            "validated": True,
+            "backup_candidate": True,
+            "backup_pool_only": True,
+            "recoverable_reserve": True,
+            "fingerprint": "m60-prestwich-police-incident",
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "M60 Prestwich traffic RECAP: Major motorway shut due to police incident",
+            "summary": "The M60 at Prestwich has been shut due to a police incident.",
+            "practical_angle": "Drivers should check routes today.",
+            "source_label": "MEN",
+            "rewrite_shortlist_reason": "Outside final Russian writing board after DeepSeek ranking.",
+            "editorial_contract": {
+                "story_type": "public_safety_after_incident",
+                "event_shape": "none",
+                "publish_tier": "strong",
+                "story_frame": {"why_now": "active_today"},
+            },
+        }
+
+        trace = _today_focus_loss_trace([candidate], {}, [])
+
+        self.assertEqual(trace["items"][0]["loss_stage"], "recoverable_reserve_not_rendered")
+        self.assertTrue(trace["items"][0]["eligible_today_focus"])
+        self.assertIn("Russian writing board", trace["items"][0]["reason"])
 
     def test_fresh_final_board_suppresses_cross_source_same_story(self) -> None:
         about_candidate = {

@@ -18,6 +18,7 @@ from news_digest.pipeline.common import (
     SECTION_MAX_ITEMS,
     SECTION_MAX_PER_SOURCE,
     SECTION_MIN_ITEMS,
+    is_recoverable_reserve,
     is_placeholder_practical_angle,
     now_london,
     pipeline_run_id_from,
@@ -438,6 +439,11 @@ _TODAY_FOCUS_BOARD_SOURCE_SECTIONS = (
     TODAY_FOCUS_SECTION,
     "Городской радар",
 )
+_TODAY_FOCUS_RECOVERY_SOURCE_BLOCKS = {
+    "today_focus",
+    "last_24h",
+    "city_watch",
+}
 _TODAY_FOCUS_ALLOWED_STORY_TYPES = {
     "public_safety_after_incident",
     "service_accountability",
@@ -1302,7 +1308,15 @@ def _allocate_fresh_and_today_focus(
     # later floor. Put them on the board now, while section assignment is still
     # editable.
     for candidate in candidate_by_fp.values():
-        if not isinstance(candidate, dict) or not candidate.get("include"):
+        if not isinstance(candidate, dict):
+            continue
+        recoverable_today_reserve = (
+            not candidate.get("include")
+            and is_recoverable_reserve(candidate)
+            and str(candidate.get("primary_block") or "") in _TODAY_FOCUS_RECOVERY_SOURCE_BLOCKS
+            and _today_focus_candidate_is_eligible(candidate, str(candidate.get("draft_line") or ""))
+        )
+        if not candidate.get("include") and not recoverable_today_reserve:
             continue
         if candidate.get("reject_reasons") or candidate.get("validation_errors"):
             continue
@@ -1325,7 +1339,13 @@ def _allocate_fresh_and_today_focus(
             continue
         line = str(candidate.get("draft_line") or "").strip()
         if not line:
-            continue
+            if recoverable_today_reserve:
+                line = _today_focus_recovery_line(candidate)
+                if line:
+                    candidate["draft_line_provider"] = "writer_today_focus_recovery"
+                    candidate["draft_line_model"] = "deterministic_today_focus_recovery"
+            if not line:
+                continue
         if not line.startswith("• "):
             line = f"• {line}"
         row = _SectionRow(
@@ -3121,6 +3141,13 @@ def _hard_news_recovery_line(candidate: dict) -> str:
         place = str(boroughs[0]) if boroughs else ""
     prefix = f"{place}: " if place else ""
     lowered = title.lower()
+    road_match = re.search(r"\b(m6|m60|m62|m56|a580)\b", title, flags=re.IGNORECASE)
+    if road_match and re.search(r"\b(?:traffic|shut|closed|closure|congestion|delays?|queues?|police incident)\b", lowered):
+        road = road_match.group(1).upper()
+        return (
+            f"• {road}: на участке есть серьёзные ограничения из-за инцидента, возможны очереди и объезды. "
+            "Если маршрут идёт через этот коридор сегодня, проверьте карту дорог и заложите больше времени."
+        )
     if "m6" in lowered and ("delay" in lowered or "traffic stopped" in lowered):
         return "• M6: движение остановлено после инцидента, задержки доходят примерно до часа. Если маршрут проходит через этот участок, закладывайте объезд."
     if "two men charged" in lowered and "shot" in lowered:
@@ -3133,6 +3160,47 @@ def _hard_news_recovery_line(candidate: dict) -> str:
         return f"• {prefix or 'Суд: '}в суде прозвучали новые детали дела об убийстве. Это важное обновление по расследованию; подробности сверяйте в источнике."
     if "police incident" in lowered:
         return f"• {prefix}полиция продолжает работу на месте инцидента. Если вы рядом, учитывайте возможные ограничения доступа и движение служб."
+    return ""
+
+
+def _today_focus_recovery_line(candidate: dict) -> str:
+    line = _hard_news_recovery_line(candidate)
+    if line:
+        return line
+    title = re.sub(r"\s+", " ", str(candidate.get("title") or "")).strip()
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "practical_angle")
+    )
+    lowered = blob.lower()
+    if not title or _looks_like_source_chrome(title):
+        return ""
+    if re.search(r"\boldham\b", lowered) and re.search(r"\bpub\b", lowered) and re.search(r"\bcouncil\b", lowered) and re.search(r"\bdemolish", lowered):
+        price = ""
+        price_match = re.search(r"£\s?\d+(?:\.\d+)?\s?(?:m|million)?", blob, flags=re.IGNORECASE)
+        if price_match:
+            price = f" за {price_match.group(0).replace(' ', '')}"
+        return (
+            f"• Oldham: совет может купить редкий паб{price} и затем снести его; "
+            "депутат парламента предупреждает о потере исторических пабов. "
+            "Если вам важен район, следите за решением совета."
+        )
+    if re.search(r"\bbury\b", lowered) and re.search(r"\bschool\b", lowered) and re.search(r"\bchild sex offences?\b|\bsafeguarding\b", lowered):
+        school = "St Gabriel's RC High School" if "st gabriel" in lowered else "школе в Bury"
+        return (
+            f"• Bury: женщину арестовали в {school} по подозрению в сексуальных преступлениях против ребёнка. "
+            "Если это ваша школа, следите за обновлениями полиции и администрации."
+        )
+    if re.search(r"\bconsultation\b", lowered) and re.search(r"\b(?:open|deadline|closing|closes)\b", lowered):
+        place = "Greater Manchester"
+        borough_match = re.search(r"\b(Oldham|Rochdale|Bury|Bolton|Wigan|Stockport|Salford|Trafford|Tameside|Manchester)\b", blob)
+        if borough_match:
+            place = borough_match.group(1)
+        subject = re.sub(r"\s+[|–—-]\s+.*$", "", title).strip(" .")
+        return (
+            f"• {place}: открыта консультация — {subject}. "
+            "Если это касается вашего района, проверьте сроки и отправьте замечания до закрытия."
+        )
     return ""
 
 
@@ -4102,13 +4170,17 @@ def _apply_section_min_floor_pull_back(
     recovery_metrics: dict | None = None,
 ) -> tuple[list[str], list[str], list[float], list[str], list[str]]:
     """Top up a thin section up to SECTION_MIN_ITEMS by promoting any
-    included candidate whose primary_block maps to this section, sorted
-    by reader_value_score, using the LLM draft_line if present or a
-    deterministic fallback otherwise. Never reaches into other sections,
-    never bypasses include=False, never adds the same fingerprint twice."""
+    included/recoverable candidate whose primary_block maps to this section,
+    sorted by reader value, using the LLM draft_line if present or a
+    deterministic fallback otherwise. Today Focus may also pull eligible
+    practical items from Fresh/City reserve; other sections stay same-block.
+    Never publishes rejected/manual-review material and never adds the same
+    fingerprint twice."""
     target_blocks = [
         block for block, name in PRIMARY_BLOCKS.items() if name == section_name
     ]
+    if section_name == TODAY_FOCUS_SECTION:
+        target_blocks = [block for block in PRIMARY_BLOCKS if block in _TODAY_FOCUS_RECOVERY_SOURCE_BLOCKS]
     if not target_blocks:
         if recovery_metrics is not None:
             recovery_metrics["still_underflow_reason"] = "no_primary_block_mapping"
@@ -4145,11 +4217,13 @@ def _apply_section_min_floor_pull_back(
             return True
         if str(candidate.get("manual_override") or "") == "force_include":
             return True
-        # A clean backup (reject_reasons / borderline already excluded above)
-        # may be pulled into a thin section. Only backup_pool_only items stay
-        # archived — never published. (The old check required public_reserve AND
-        # include, but it was reached only when include is falsy, so it was dead
-        # code and no official backup could ever be recovered.)
+        # A clean capacity-cut backup may be pulled into a thin section. The
+        # canonical predicate lives in common.py so rewrite, editor and writer
+        # agree on what "recoverable reserve" means; this includes the
+        # historical backup_pool_only capacity overflow when it passed all
+        # upstream gates.
+        if include_backup and is_recoverable_reserve(candidate):
+            return True
         return bool(
             include_backup
             and candidate.get("backup_candidate")
@@ -4206,6 +4280,11 @@ def _apply_section_min_floor_pull_back(
                 line = _build_public_service_fallback_line(c)
             elif section_name == "Футбол" or category == "football":
                 line = _build_football_fallback_line(c)
+            elif section_name == TODAY_FOCUS_SECTION:
+                line = _today_focus_recovery_line(c)
+                if line:
+                    c["draft_line_provider"] = "writer_today_focus_recovery"
+                    c["draft_line_model"] = "deterministic_today_focus_recovery"
             elif section_name == "Свежие новости":
                 line = _final_replacement_line(c)
         if not line.startswith("• "):
@@ -4302,6 +4381,97 @@ def _apply_section_min_floor_pull_back(
                 reason = "reserve_exhausted_before_floor"
             recovery_metrics["still_underflow_reason"] = reason
     return lines, fps, scores, titles, srcs
+
+
+def _today_focus_loss_trace(
+    candidates: list[dict],
+    rendered_section_by_fp: dict[str, str],
+    dropped_candidates: list[dict[str, object]],
+) -> dict[str, object]:
+    dropped_by_fp = {
+        str(item.get("fingerprint") or ""): item
+        for item in dropped_candidates
+        if isinstance(item, dict)
+    }
+    rows: list[dict[str, object]] = []
+    counts: dict[str, int] = {}
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        block = str(candidate.get("primary_block") or "")
+        if block not in _TODAY_FOCUS_RECOVERY_SOURCE_BLOCKS:
+            continue
+        fp = str(candidate.get("fingerprint") or "")
+        draft_line = str(candidate.get("draft_line") or "")
+        eligible = _today_focus_candidate_is_eligible(candidate, draft_line)
+        if block != "today_focus" and not eligible and not candidate.get("recoverable_reserve"):
+            continue
+        rendered_section = rendered_section_by_fp.get(fp, "")
+        dropped = dropped_by_fp.get(fp) or {}
+        if rendered_section == TODAY_FOCUS_SECTION:
+            stage = "rendered_today_focus"
+            reason = "visible in Today Focus"
+        elif rendered_section:
+            stage = "visible_elsewhere"
+            reason = f"visible in {rendered_section}"
+        elif dropped:
+            stage = "writer_drop"
+            reason = "; ".join(str(item) for item in (dropped.get("reasons") or [])) or "writer dropped candidate"
+        elif candidate.get("backup_candidate") or candidate.get("recoverable_reserve"):
+            stage = "recoverable_reserve_not_rendered"
+            reason = str(candidate.get("rewrite_shortlist_reason") or candidate.get("digest_selection_reason") or "capacity reserve not rendered")
+        elif not candidate.get("include"):
+            stage = "not_included"
+            reason = str(candidate.get("reason") or candidate.get("digest_selection_reason") or "not included")
+        elif not draft_line.strip():
+            stage = "missing_draft_line"
+            reason = "included candidate had no public draft_line"
+        else:
+            stage = "not_selected_or_capped"
+            reason = str(candidate.get("publish_plan_reason") or candidate.get("digest_selection_reason") or "not selected for final section")
+        trace = candidate.get("recovery_trace") if isinstance(candidate.get("recovery_trace"), list) else []
+        counts[stage] = counts.get(stage, 0) + 1
+        rows.append(
+            {
+                "fingerprint": fp,
+                "title": str(candidate.get("title") or "")[:180],
+                "source_label": str(candidate.get("source_label") or ""),
+                "primary_block": block,
+                "category": str(candidate.get("category") or ""),
+                "eligible_today_focus": bool(eligible),
+                "include": bool(candidate.get("include")),
+                "backup_candidate": bool(candidate.get("backup_candidate")),
+                "backup_pool_only": bool(candidate.get("backup_pool_only")),
+                "recoverable_reserve": bool(candidate.get("recoverable_reserve")),
+                "rendered_section": rendered_section,
+                "loss_stage": stage,
+                "reason": reason,
+                "story_type": _candidate_story_type(candidate),
+                "reader_action_type": str(candidate.get("reader_action_type") or ""),
+                "rewrite_shortlist_status": str(candidate.get("rewrite_shortlist_status") or ""),
+                "publish_plan_status": str(candidate.get("publish_plan_status") or ""),
+                "recovery_attempted": bool(trace),
+                "last_recovery_step": trace[-1] if trace else {},
+                "score": round(_section_priority_score(candidate, TODAY_FOCUS_SECTION, draft_line), 3),
+            }
+        )
+    rows.sort(
+        key=lambda row: (
+            row["loss_stage"] != "rendered_today_focus",
+            not row["eligible_today_focus"],
+            -float(row["score"] or 0),
+            str(row["title"]),
+        )
+    )
+    return {
+        "schema_version": 1,
+        "policy": (
+            "Explains every Today Focus candidate and eligible Fresh/City reserve item: "
+            "where it rendered or why it did not."
+        ),
+        "counts": counts,
+        "items": rows[:120],
+    }
 
 
 def _build_event_fallback_line(candidate: dict) -> str:
@@ -5588,6 +5758,8 @@ def _top_news_route_or_drop(candidate: dict) -> str:
         return "city_watch"
     if story_type in {"human_interest", "soft_news", "day_out_guide", "property_listing"} or _SOFT_TOP_NEWS_RE.search(text):
         return "city_watch"
+    if block == "today_focus" and not _today_focus_candidate_is_eligible(candidate):
+        return "city_watch"
     if _NON_GM_REGIONAL_RE.search(text) and not _GM_TEXT_RE.search(text):
         return "drop_non_gm_regional"
     return ""
@@ -6640,6 +6812,7 @@ def write_digest(project_root: Path) -> StageResult:
     ]
     section_counts: dict[str, int] = {}
     rendered_candidate_fingerprints: list[str] = []
+    rendered_section_by_fp: dict[str, str] = {}
     visible_item_count = 0
     recovery_controller: dict[str, object] = {"sections": {}, "totals": {}}
     for section_index, section_name in enumerate(ordered_sections):
@@ -6794,7 +6967,13 @@ def write_digest(project_root: Path) -> StageResult:
         min_floor = SECTION_MIN_ITEMS.get(section_name, 0)
         target_floor = FRESH_NEWS_TARGET_ITEMS if section_name == "Свежие новости" else min_floor
         if target_floor and len(lines) < target_floor:
-            rendered_fps_so_far = set(rendered_candidate_fingerprints) | {fp for fp in fps if fp}
+            queued_fps = {
+                queued_fp
+                for section_fp_list in section_fingerprints.values()
+                for queued_fp in section_fp_list
+                if queued_fp
+            }
+            rendered_fps_so_far = set(rendered_candidate_fingerprints) | queued_fps | {fp for fp in fps if fp}
             section_recovery_metrics: dict[str, object] = {}
             lines, fps, scores, titles, srcs = _apply_section_min_floor_pull_back(
                 section_name, lines, fps, scores, titles, srcs,
@@ -6925,7 +7104,13 @@ def write_digest(project_root: Path) -> StageResult:
                 )
             lines, srcs, fps, scores, titles = next_lines, next_srcs, next_fps, next_scores, next_titles
         if target_floor and len(lines) < target_floor:
-            rendered_fps_so_far = set(rendered_candidate_fingerprints) | {fp for fp in fps if fp}
+            queued_fps = {
+                queued_fp
+                for section_fp_list in section_fingerprints.values()
+                for queued_fp in section_fp_list
+                if queued_fp
+            }
+            rendered_fps_so_far = set(rendered_candidate_fingerprints) | queued_fps | {fp for fp in fps if fp}
             post_budget_recovery_metrics: dict[str, object] = {}
             lines, fps, scores, titles, srcs = _apply_section_min_floor_pull_back(
                 section_name, lines, fps, scores, titles, srcs,
@@ -6961,6 +7146,9 @@ def write_digest(project_root: Path) -> StageResult:
             for idx, ln in enumerate(lines)
         ]
         section_counts[section_name] = len(lines)
+        for fp in fps:
+            if fp:
+                rendered_section_by_fp[str(fp)] = section_name
         visible_item_count += sum(
             0 if _is_public_budget_exempt(section_name, candidate_by_fp.get(str(fp or ""))) else 1
             for fp in fps
@@ -7022,6 +7210,13 @@ def write_digest(project_root: Path) -> StageResult:
             f"Ticket inventory: held {len(ticket_inventory_held)} outside-GM A-tier "
             "concert(s) over the morning cap (tracked, not dropped)."
         )
+    today_focus_board["rendered_after_recovery"] = int(section_counts.get(TODAY_FOCUS_SECTION) or 0)
+    today_focus_board["recovery_inserted"] = int(
+        ((recovery_controller.get("sections") or {}).get(TODAY_FOCUS_SECTION) or {}).get("replacements_inserted") or 0
+    ) if isinstance(recovery_controller.get("sections"), dict) else 0
+    if today_focus_board["rendered_after_recovery"] >= SECTION_MIN_ITEMS.get(TODAY_FOCUS_SECTION, 3):
+        today_focus_board["underflow_reason"] = ""
+    today_focus_loss = _today_focus_loss_trace(candidates, rendered_section_by_fp, dropped_candidates)
 
     drop_breakdown = {"failure": 0, "quarantine": 0, "reserve": 0}
     for _item in dropped_candidates:
@@ -7089,6 +7284,7 @@ def write_digest(project_root: Path) -> StageResult:
             "recovery_controller": recovery_controller,
             "backfilled_today_focus": backfilled_today_focus,
             "today_focus_board": today_focus_board,
+            "today_focus_loss_trace": today_focus_loss,
             "final_section_routing": final_section_routing,
             "degraded_shrink": {
                 "enabled": bool(llm_degraded),

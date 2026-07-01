@@ -138,6 +138,41 @@ class PromptVersioningTest(unittest.TestCase):
         self.assertTrue(all(c["backup_candidate"] for c in held))
         self.assertTrue(all(not c["include"] for c in held))
 
+    def test_today_practical_reserve_survives_rewrite_shortlist_cap(self) -> None:
+        practical = {
+            "fingerprint": "m60-prestwich",
+            "title": "M60 Prestwich traffic RECAP: Major motorway shut due to police incident",
+            "summary": "The M60 at Prestwich has been shut today, with congestion and delays for drivers.",
+            "practical_angle": "Drivers should check routes today and allow extra time.",
+            "source_label": "MEN",
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "include": True,
+            "reader_value_score": 1,
+            "section_board_score": 1,
+        }
+        crowded = [
+            {
+                "fingerprint": f"fresh-{idx}",
+                "title": f"Fresh council update {idx}",
+                "summary": "A council update in Greater Manchester.",
+                "source_label": "Local Source",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "include": True,
+                "reader_value_score": 200 - idx,
+                "section_board_score": 200 - idx,
+            }
+            for idx in range(20)
+        ]
+
+        selected, report = _apply_rewrite_shortlist([practical] + crowded, [practical] + crowded)
+
+        self.assertIn(practical, selected)
+        self.assertTrue(practical.get("today_practical_translation_reserve"))
+        self.assertEqual(practical["rewrite_shortlist_status"], "selected_uncapped")
+        self.assertEqual(report["today_practical_translation_reserve"][0]["fingerprint"], "m60-prestwich")
+
     def test_prompt_lookup_ignores_runtime_date_header(self) -> None:
         prompt = "TODAY_DATE=2026-05-18\n\n" + llm_rewrite.PROMPT_EVENTS
 
