@@ -176,6 +176,15 @@ class ATierBudgetExemptionTest(unittest.TestCase):
         self.assertEqual([h["fingerprint"] for h in held], ["o1"])
         self.assertTrue(outside["ticket_inventory_held"])
 
+    def test_future_announcement_a_tier_is_recognised(self) -> None:
+        # Backlog item 7: a future A-tier announcement (e.g. The Weeknd, The
+        # Fratellis) is an A-tier artist and must be recognised, not slipped
+        # silently into manual-review by the block guard.
+        from news_digest.pipeline.writer import _is_a_tier_ticket
+        future = {"primary_block": "future_announcements", "venue_scope": "gm",
+                  "ticket_notability": {"tier": "A"}}
+        self.assertTrue(_is_a_tier_ticket(future))
+
 
 if __name__ == "__main__":
     unittest.main()

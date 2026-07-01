@@ -1814,10 +1814,15 @@ def _is_a_tier_ticket(candidate: dict | None) -> bool:
     """A top-tier (A) artist in a ticket block must NEVER be trimmed from view
     (owner rule 2026-06-14: "A-artists must not disappear"). Treated as exempt
     so neither the per-section cap nor the global issue budget can drop it —
-    even if that means the ticket section grows past its normal cap."""
+    even if that means the ticket section grows past its normal cap.
+
+    future_announcements is included: a future A-tier (e.g. The Weeknd, The
+    Fratellis) announced for a later date is still an A-tier artist. Without it
+    the block guard failed the A-tier check and the item slipped silently into
+    manual-review instead of being recognised and held (backlog item 7)."""
     if not isinstance(candidate, dict):
         return False
-    if str(candidate.get("primary_block") or "") not in {"ticket_radar", "outside_gm_tickets"}:
+    if str(candidate.get("primary_block") or "") not in {"ticket_radar", "outside_gm_tickets", "future_announcements"}:
         return False
     notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
     return str(notability.get("tier") or "").upper() == "A"

@@ -376,3 +376,14 @@
 - Файлы/места: `writer.py:_headline_fallback_forbidden`, `writer.py:write_digest`, `editor.py:_PrevalidatedReservePool`, `editor.py:_same_section_reserve_line`, `editor.py:_pre_send_polish_sections`; тесты `tests/test_dedupe_and_show.py`, `tests/test_pre_send_repair_executor.py`, `tests/test_recoverable_reserve.py`.
 - ПРОВЕРКА (после прогона): офлайн — `PYTHONPATH=src python3 -m unittest tests.test_dedupe_and_show tests.test_recoverable_reserve tests.test_pre_send_repair_executor tests.test_publish_plan_contract` + focused editor/writer regressions; prod run не выполнялся.
 - Где была ошибка (если не сработало): —
+
+### 0032 — A-tier microfix: future_announcements распознаётся как A-tier — 2026-07-01
+- Статус: внедрено локально; ПРОВЕРКА офлайн (unit), прод — следующий прогон
+- Проблема: будущий A-tier анонс (The Weeknd, The Fratellis в блоке `future_announcements`) не проходил A-tier проверку и молча уходил в manual-review вместо показа/удержания в инвентаре.
+- Причина (корень): `_is_a_tier_ticket` гейтил блок только по `{ticket_radar, outside_gm_tickets}`, поэтому `future_announcements` с `ticket_notability.tier=A` (notability уже считается для `category=venues_tickets`) не признавался A-tier.
+- Решение: добавлен `future_announcements` в допустимый набор блоков `_is_a_tier_ticket`. Downstream уже корректен: `_hold_global_capped_a_tier` теперь держит выпавший будущий A-tier в ticket inventory, а не теряет молча; budget-exempt остаётся scope-gated (gm/nearby), т.е. без блоат-риска для outside/unknown.
+- Почему так (отвергнутые альтернативы): не расширять notability-enrichment на `future_announcements` по блоку (лишние сетевые lookups) — venues_tickets category уже даёт notability; большой horizon-gating (milestone-only) вынесен в отдельный пункт бэклога, здесь только распознавание.
+- Ожидаемый эффект и метрика проверки: `_is_a_tier_ticket(future_announcements A-tier)` == True; выпавший по бюджету будущий A-tier виден в ticket_inventory_held, а не в тихом manual-review.
+- Файлы/места: `writer.py:_is_a_tier_ticket`; тест `tests/test_ticket_consolidation.py::ATierBudgetExemptionTest.test_future_announcement_a_tier_is_recognised`.
+- ПРОВЕРКА (после прогона): офлайн — `PYTHONPATH=src python3 -m unittest tests.test_ticket_consolidation` (10 ok) + A-tier/budget regressions `tests.test_editorial_regression tests.test_digest_quality_guardrails tests.test_release_20260604_fixes tests.test_public_output_contracts tests.test_product_backlog` (270 ok); prod run не выполнялся.
+- Где была ошибка (если не сработало): —
