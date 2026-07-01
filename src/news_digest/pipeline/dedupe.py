@@ -18,7 +18,6 @@ from news_digest.pipeline.common import (
 )
 from news_digest.pipeline.editorial_contracts import (
     attach_editorial_contract,
-    calendar_repeat_review,
     history_window_days_for_contract,
     is_specific_topic_key,
     lifecycle_repeat_review,
@@ -28,6 +27,7 @@ from news_digest.pipeline.change_classifier import classify_change_phase
 from news_digest.pipeline.entity_extraction import enrich_candidate_entities
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.history import ensure_history_files
+from news_digest.pipeline.repeat_policy import calendar_carry_verdict, is_calendar_carry_candidate
 from news_digest.pipeline.story_intelligence import (
     attach_evidence_packet,
     attach_story_identity,
@@ -481,7 +481,6 @@ _TITLE_STOPWORDS: frozenset[str] = frozenset({
 })
 
 _CALENDAR_CARRY_BLOCKS: frozenset[str] = frozenset({
-    "openings",
     "weekend_activities",
     "next_7_days",
     "ticket_radar",
@@ -490,7 +489,6 @@ _CALENDAR_CARRY_BLOCKS: frozenset[str] = frozenset({
     "future_announcements",
 })
 _CALENDAR_CARRY_CATEGORIES: frozenset[str] = frozenset({
-    "food_openings",
     "culture_weekly",
     "venues_tickets",
     "russian_speaking_events",
@@ -642,7 +640,11 @@ def _calendar_dates_from_text(text: str) -> list[date]:
 def _calendar_item_should_carry_over(candidate: dict, previous: dict) -> bool:
     primary_block = str(candidate.get("primary_block") or "")
     category = str(candidate.get("category") or "")
-    if primary_block not in _CALENDAR_CARRY_BLOCKS and category not in _CALENDAR_CARRY_CATEGORIES:
+    if (
+        primary_block not in _CALENDAR_CARRY_BLOCKS
+        and category not in _CALENDAR_CARRY_CATEGORIES
+        and not is_calendar_carry_candidate(candidate)
+    ):
         return False
 
     today = now_london().date()
@@ -661,12 +663,11 @@ def _calendar_item_should_carry_over(candidate: dict, previous: dict) -> bool:
         except ValueError:
             ev_day = None
         if ev_day is not None and today <= ev_day <= today + timedelta(days=14):
-            review = calendar_repeat_review(candidate, previous)
-            return bool(review.get("allow"))
+            return calendar_carry_verdict(candidate, previous).allow
 
-    contract_review = calendar_repeat_review(candidate, previous)
-    if contract_review.get("applies"):
-        return bool(contract_review.get("allow"))
+    policy_review = calendar_carry_verdict(candidate, previous)
+    if policy_review.repeat_class == "calendar":
+        return policy_review.allow
 
     text = _candidate_text(candidate)
     lowered = text.lower()
@@ -697,9 +698,7 @@ def _calendar_item_should_carry_over(candidate: dict, previous: dict) -> bool:
     if explicit_dates:
         return max(explicit_dates) >= today
 
-    # Food/opening pages often lack machine-readable event dates. Keep them
-    # eligible briefly instead of dropping an opening forever after one URL hit.
-    return primary_block == "openings" or category == "food_openings"
+    return False
 
 
 def _topic_published_matches(candidate: dict, published_by_topic: dict[str, list[dict]]) -> list[dict]:

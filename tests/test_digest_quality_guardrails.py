@@ -1860,6 +1860,159 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertTrue(_calendar_item_should_carry_over(candidate, previous))
 
+    def test_food_opening_day_of_date_does_not_get_ticket_repeat_exception(self) -> None:
+        from news_digest.pipeline.dedupe import _calendar_item_should_carry_over
+        from news_digest.pipeline.repeat_policy import (
+            validator_same_fingerprint_allow,
+            visible_repeat_verdict,
+        )
+
+        event_day = now_london().date().isoformat()
+        candidate = {
+            "include": True,
+            "fingerprint": "food-openings-manchesters-finest-orme",
+            "primary_block": "openings",
+            "category": "food_openings",
+            "title": "Michelin-listed Orme returns to Manchester",
+            "summary": f"Orme relaunches in Manchester on {event_day}.",
+            "source_label": "Manchester's Finest",
+            "source_url": "https://www.manchestersfinest.com/eating-and-drinking/restaurants/orme/",
+            "event": {
+                "event_name": "Orme restaurant relaunch",
+                "venue": "Manchester",
+                "date_start": event_day,
+            },
+        }
+        previous = dict(candidate)
+        previous["last_published_day_london"] = (now_london().date() - timedelta(days=1)).isoformat()
+        previous["first_published_day_london"] = previous["last_published_day_london"]
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        self.assertFalse(_calendar_item_should_carry_over(candidate, previous))
+        self.assertFalse(validator_same_fingerprint_allow(candidate).allow)
+        verdict = visible_repeat_verdict(candidate, previous)
+        self.assertFalse(verdict.allow, verdict)
+        self.assertEqual(verdict.matched_by, "fingerprint")
+        self.assertIn(
+            verdict.reason,
+            {"topic_lifecycle_rehash:opening:none", "exact_fingerprint_already_published"},
+        )
+
+    def test_day_of_ticket_visible_repeat_policy_still_allows_exact_repeat(self) -> None:
+        from news_digest.pipeline.repeat_policy import visible_repeat_verdict
+
+        event_day = now_london().date().isoformat()
+        candidate = {
+            "include": True,
+            "fingerprint": "ticket-cammy-barnes",
+            "primary_block": "ticket_radar",
+            "category": "venues_tickets",
+            "title": f"Cammy Barnes — event {event_day} — public sale 2026-04-02 10:00",
+            "summary": f"Manchester The Deaf Institute | event_date={event_day} 19:30 | public_onsale=2026-04-02 10:00",
+            "source_label": "Ticketmaster Manchester Upcoming",
+            "source_url": "https://example.test/tickets/cammy-barnes",
+            "event": {
+                "event_name": "Cammy Barnes",
+                "venue": "Manchester The Deaf Institute",
+                "date_start": event_day,
+            },
+        }
+        previous = dict(candidate)
+        previous["last_published_day_london"] = (now_london().date() - timedelta(days=7)).isoformat()
+        previous["first_published_day_london"] = previous["last_published_day_london"]
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        verdict = visible_repeat_verdict(candidate, previous)
+
+        self.assertTrue(verdict.allow, verdict)
+        self.assertEqual(verdict.repeat_class, "calendar")
+        self.assertEqual(verdict.reason, "event_milestone_d0")
+
+    def test_undated_ticket_visible_repeat_policy_does_not_bypass_calendar_review(self) -> None:
+        from news_digest.pipeline.repeat_policy import visible_repeat_verdict
+
+        candidate = {
+            "include": True,
+            "fingerprint": "ticket-undated-repeat",
+            "primary_block": "ticket_radar",
+            "category": "venues_tickets",
+            "title": "Small venue announces another listing",
+            "summary": "A ticket listing without a usable event date.",
+            "source_label": "Ticketmaster Manchester Upcoming",
+            "source_url": "https://example.test/tickets/undated",
+            "event": {
+                "event_name": "Small venue listing",
+                "venue": "Manchester",
+            },
+        }
+        previous = dict(candidate)
+        previous["last_published_day_london"] = (now_london().date() - timedelta(days=1)).isoformat()
+        previous["first_published_day_london"] = previous["last_published_day_london"]
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        verdict = visible_repeat_verdict(candidate, previous)
+
+        self.assertFalse(verdict.allow, verdict)
+        self.assertEqual(verdict.repeat_class, "calendar")
+        self.assertIn(
+            verdict.reason,
+            {"calendar_review_not_applicable", "same_calendar_item_without_new_reader_moment"},
+        )
+
+    def test_repeat_policy_report_counts_vector_matches_and_canonical_url_visibility(self) -> None:
+        from news_digest.pipeline.release import (
+            _classify_visible_repeat_policy,
+            _quarantine_repeat_rendered_html_items,
+            _write_repeat_policy_report,
+        )
+
+        fp = "food-openings-example-orme"
+        candidate = {
+            "include": True,
+            "fingerprint": fp,
+            "primary_block": "openings",
+            "category": "food_openings",
+            "title": "Michelin-listed Orme returns to Manchester",
+            "summary": "Orme relaunches in Manchester.",
+            "source_label": "Manchester's Finest",
+            "source_url": "https://example.test/orme",
+            "semantic_dedupe_match": {"fingerprint": "older-orme", "score": 0.92},
+            "semantic_dedupe_score": 0.92,
+        }
+        previous = dict(candidate)
+        previous["last_published_day_london"] = (now_london().date() - timedelta(days=1)).isoformat()
+        previous["first_published_day_london"] = previous["last_published_day_london"]
+        previous["editorial_contract"] = build_editorial_contract(previous)
+        candidates_report = {"candidates": [candidate]}
+        published_facts = {"facts": [previous]}
+        html_text = (
+            "• <b>Еда:</b> Orme снова в выпуске — проверьте, нужно ли это читателю. "
+            '<a href="https://www.example.test/orme?utm=telegram">Manchester\'s Finest</a>\n'
+        )
+
+        review = _classify_visible_repeat_policy(html_text, candidates_report, published_facts)
+        sanitized, quarantine = _quarantine_repeat_rendered_html_items(html_text, candidates_report, review)
+
+        self.assertEqual(review["counts"]["bad_visible_repeats"], 1, review)
+        self.assertEqual(quarantine["removed_count"], 1, quarantine)
+        self.assertNotIn("Orme снова", sanitized)
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+            report = _write_repeat_policy_report(
+                state_dir,
+                current_day_london=today_london(),
+                candidates_report=candidates_report,
+                rendered_fingerprints={fp},
+                published_facts=published_facts,
+                visible_repeat_review=review,
+                visible_repeat_quarantine=quarantine,
+            )
+
+        self.assertEqual(report["counts"]["exact_previous"], 1, report)
+        self.assertEqual(report["counts"]["visible_repeat_rejected"], 1, report)
+        self.assertEqual(report["counts"]["vector_or_semantic_matches"], 1, report)
+        self.assertEqual(report["by_match_type"]["semantic_embedding"], 1, report)
+
     def test_day_of_ticket_repeat_allowed_across_sources(self) -> None:
         event_day = now_london().date().isoformat()
         previous = {

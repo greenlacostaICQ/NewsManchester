@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 import html
@@ -43,6 +43,7 @@ from news_digest.pipeline.inventory import (
     verify_dispositions,
 )
 from news_digest.pipeline.reader_value import validate_reader_value_labels
+from news_digest.pipeline.repeat_policy import visible_repeat_verdict
 from news_digest.pipeline.story_intelligence import (
     AUDIT_TRAIL_SCHEMA_VERSION,
     COST_LATENCY_BUDGETS,
@@ -1473,6 +1474,28 @@ def _candidate_by_source_url(candidates_report: dict | None) -> dict[str, dict]:
         url = str(candidate.get("source_url") or "").strip()
         if url:
             out[url] = candidate
+            ident = canonical_url_identity(url)
+            if ident:
+                out[ident] = candidate
+    return out
+
+
+def _candidate_for_rendered_url(by_url: dict[str, dict], url: object) -> dict | None:
+    raw = html.unescape(str(url or "")).strip()
+    if not raw:
+        return None
+    return by_url.get(raw) or by_url.get(canonical_url_identity(raw))
+
+
+def _published_by_fingerprint(published_facts: dict | None) -> dict[str, dict]:
+    out: dict[str, dict] = {}
+    facts = (published_facts or {}).get("facts") if isinstance(published_facts, dict) else []
+    for fact in facts or []:
+        if not isinstance(fact, dict):
+            continue
+        fp = str(fact.get("fingerprint") or "").strip()
+        if fp:
+            out[fp] = fact
     return out
 
 
@@ -1488,12 +1511,118 @@ def _rendered_html_lines(html_text: str) -> list[dict[str, object]]:
     return lines
 
 
+def _classify_visible_repeat_policy(
+    html_text: str,
+    candidates_report: dict | None,
+    published_facts: dict | None,
+) -> dict[str, object]:
+    by_url = _candidate_by_source_url(candidates_report)
+    previous_by_fp = _published_by_fingerprint(published_facts)
+    bad: list[dict[str, object]] = []
+    checked = 0
+    allowed = 0
+    for row in _rendered_html_lines(html_text):
+        matched: list[dict] = []
+        seen_fps: set[str] = set()
+        for url in row["urls"]:
+            candidate = _candidate_for_rendered_url(by_url, url)
+            if not candidate:
+                continue
+            fp = str(candidate.get("fingerprint") or "")
+            if fp in seen_fps:
+                continue
+            seen_fps.add(fp)
+            matched.append(candidate)
+        for candidate in matched:
+            fp = str(candidate.get("fingerprint") or "")
+            previous = previous_by_fp.get(fp)
+            if not previous:
+                continue
+            checked += 1
+            verdict = visible_repeat_verdict(candidate, previous)
+            if verdict.allow:
+                allowed += 1
+                continue
+            bad.append(
+                {
+                    "fingerprint": fp,
+                    "title": candidate.get("title"),
+                    "source_label": candidate.get("source_label"),
+                    "primary_block": candidate.get("primary_block"),
+                    "category": candidate.get("category"),
+                    "visible_text": row["visible_text"],
+                    "repeat_policy": verdict.as_dict(),
+                }
+            )
+    return {
+        "counts": {
+            "visible_lines": len(_rendered_html_lines(html_text)),
+            "checked_exact_previous": checked,
+            "allowed_visible_repeats": allowed,
+            "bad_visible_repeats": len(bad),
+        },
+        "bad_visible_repeats": bad[:30],
+    }
+
+
+def _quarantine_repeat_rendered_html_items(
+    html_text: str,
+    candidates_report: dict | None,
+    repeat_review: dict[str, object],
+) -> tuple[str, dict[str, object]]:
+    bad_items = repeat_review.get("bad_visible_repeats") if isinstance(repeat_review, dict) else []
+    bad_fps = {
+        str(item.get("fingerprint") or "")
+        for item in bad_items or []
+        if isinstance(item, dict) and item.get("fingerprint")
+    }
+    by_url = _candidate_by_source_url(candidates_report)
+    bad_url_count = sum(
+        1
+        for candidate in by_url.values()
+        if str(candidate.get("fingerprint") or "") in bad_fps
+    )
+    kept: list[str] = []
+    removed: list[dict[str, object]] = []
+    for line in html_text.splitlines():
+        raw = line.strip()
+        if not raw.startswith("•"):
+            kept.append(line)
+            continue
+        urls = re.findall(r'<a\b[^>]*href=["\']([^"\']+)["\']', raw, flags=re.IGNORECASE)
+        if any(
+            (candidate := _candidate_for_rendered_url(by_url, url)) is not None
+            and str(candidate.get("fingerprint") or "") in bad_fps
+            for url in urls
+        ):
+            removed.append(
+                {
+                    "visible_text": re.sub(r"\s+", " ", _visible_text_from_html(raw)).strip()[:240],
+                    "urls": urls,
+                    "matched_by": "url",
+                }
+            )
+            continue
+        kept.append(line)
+    return "\n".join(kept).strip() + ("\n" if kept else ""), {
+        "attempted": bool(bad_fps),
+        "bad_fingerprints": sorted(bad_fps),
+        "bad_url_count": bad_url_count,
+        "removed_count": len(removed),
+        "removed_items": removed[:30],
+    }
+
+
 def _classify_rendered_html_quality(html_text: str, candidates_report: dict | None) -> dict[str, object]:
     """A2: inspect what actually reached Telegram HTML, not candidates.json."""
     by_url = _candidate_by_source_url(candidates_report)
     bad: list[dict[str, object]] = []
     for row in _rendered_html_lines(html_text):
-        matched = [by_url[url] for url in row["urls"] if url in by_url]
+        matched = [
+            candidate
+            for candidate in (_candidate_for_rendered_url(by_url, url) for url in row["urls"])
+            if candidate is not None
+        ]
         for candidate in matched:
             reasons: list[str] = []
             if candidate.get("editorial_status") == "borderline" and candidate.get("manual_override") != "force_include":
@@ -3598,6 +3727,107 @@ def _write_selection_snapshot(state_dir: Path, stage: str) -> dict[str, object]:
     return {"candidate_count": len(candidates), "totals": dict(totals)}
 
 
+def _repeat_match_types(candidate: dict) -> list[str]:
+    types: set[str] = set()
+    if candidate.get("history_matches"):
+        for match in candidate.get("history_matches") or []:
+            if isinstance(match, dict):
+                mt = str(match.get("match_type") or "fingerprint").strip() or "fingerprint"
+                types.add(mt)
+    if candidate.get("semantic_dedupe_match") or candidate.get("semantic_dedupe_score") is not None:
+        types.add("semantic_embedding")
+    if candidate.get("topic_lifecycle_match") or candidate.get("topic_lifecycle_repeat"):
+        types.add("topic_lifecycle")
+    if candidate.get("people_dedupe_match"):
+        types.add("people_entity")
+    return sorted(types)
+
+
+def _write_repeat_policy_report(
+    state_dir: Path,
+    *,
+    current_day_london: str,
+    candidates_report: dict | None,
+    rendered_fingerprints: set[str],
+    published_facts: dict | None,
+    visible_repeat_review: dict[str, object],
+    visible_repeat_quarantine: dict[str, object],
+) -> dict[str, object]:
+    candidates = [c for c in (candidates_report or {}).get("candidates") or [] if isinstance(c, dict)]
+    previous_by_fp = _published_by_fingerprint(published_facts)
+    rows: list[dict[str, object]] = []
+    counts: Counter = Counter()
+    by_block: dict[str, Counter] = defaultdict(Counter)
+    by_match_type: Counter = Counter()
+    for candidate in candidates:
+        fp = str(candidate.get("fingerprint") or "")
+        block = str(candidate.get("primary_block") or "unknown")
+        status = "rendered" if fp in rendered_fingerprints else ("included" if candidate.get("include") else "not_included")
+        previous = previous_by_fp.get(fp)
+        verdict = visible_repeat_verdict(candidate, previous).as_dict() if previous else {
+            "allow": True,
+            "repeat_class": "new",
+            "reason": "no_previous_match",
+        }
+        match_types = _repeat_match_types(candidate)
+        if previous and "fingerprint" not in match_types:
+            match_types.append("fingerprint")
+        for mt in match_types:
+            by_match_type[mt] += 1
+        counts["candidates"] += 1
+        counts[status] += 1
+        if previous:
+            counts["exact_previous"] += 1
+        if any("semantic" in mt or "embedding" in mt for mt in match_types):
+            counts["vector_or_semantic_matches"] += 1
+        if status == "rendered" and previous:
+            key = "visible_repeat_allowed" if verdict.get("allow") else "visible_repeat_rejected"
+            counts[key] += 1
+            by_block[block][key] += 1
+        if previous or match_types or status == "rendered":
+            rows.append(
+                {
+                    "fingerprint": fp,
+                    "title": str(candidate.get("title") or "")[:180],
+                    "source_label": candidate.get("source_label"),
+                    "primary_block": block,
+                    "category": candidate.get("category"),
+                    "status": status,
+                    "include": bool(candidate.get("include")),
+                    "change_type": candidate.get("change_type"),
+                    "dedupe_decision": candidate.get("dedupe_decision"),
+                    "match_types": sorted(set(match_types)),
+                    "repeat_policy": verdict,
+                    "previous_title": str((previous or {}).get("title") or "")[:180],
+                    "published_count": (previous or {}).get("published_count"),
+                }
+            )
+    payload = {
+        "schema_version": 1,
+        "run_date_london": current_day_london,
+        "created_at_london": now_london().isoformat(),
+        "policy": (
+            "Repeat-policy audit after writer. Exact fingerprint repeats are checked "
+            "against typed repeat exceptions; vector/semantic match counts are surfaced "
+            "for review, not used as a final HTML removal key."
+        ),
+        "counts": dict(counts),
+        "by_block": {block: dict(counter) for block, counter in sorted(by_block.items())},
+        "by_match_type": dict(by_match_type),
+        "visible_repeat_review": visible_repeat_review,
+        "visible_repeat_quarantine": visible_repeat_quarantine,
+        "items": rows[:400],
+    }
+    path = state_dir / "repeat_policy_report.json"
+    write_json(path, payload)
+    return {
+        "path": str(path.resolve()),
+        "schema_version": payload["schema_version"],
+        "counts": payload["counts"],
+        "by_match_type": payload["by_match_type"],
+    }
+
+
 def flush_stage_observability(project_root: Path, stage: str) -> dict[str, object]:
     """Cancel-proof incremental flush, called by the orchestrator after each
     pipeline stage. Refreshes per-stage timings + provisional speed report, the
@@ -4057,6 +4287,53 @@ def build_release(project_root: Path) -> ReleaseResult:
             f"Published review: {published_review['counts']['suspiciously_published']} "
             "suspicious visible candidate(s) shipped with warning; see release_report.published_review."
         )
+    published_facts = read_json(state_dir / "published_facts.json", {"facts": []}) if (state_dir / "published_facts.json").exists() else {"facts": []}
+    visible_repeat_review = {"counts": {"visible_lines": 0, "bad_visible_repeats": 0}, "bad_visible_repeats": []}
+    visible_repeat_quarantine: dict[str, object] = {"attempted": False, "removed_count": 0}
+    if draft_path.exists():
+        repeat_html_text = draft_path.read_text(encoding="utf-8")
+        visible_repeat_review = _classify_visible_repeat_policy(
+            repeat_html_text,
+            candidates_report,
+            published_facts,
+        )
+        if int((visible_repeat_review.get("counts") or {}).get("bad_visible_repeats") or 0) > 0:
+            sanitized_html, visible_repeat_quarantine = _quarantine_repeat_rendered_html_items(
+                repeat_html_text,
+                candidates_report,
+                visible_repeat_review,
+            )
+            if int(visible_repeat_quarantine.get("removed_count") or 0) > 0:
+                draft_path.write_text(sanitized_html, encoding="utf-8")
+                warnings.append(
+                    "Repeat policy: removed "
+                    f"{visible_repeat_quarantine.get('removed_count')} exact previously-published visible item(s); "
+                    "digest continues."
+                )
+                visible_repeat_review = _classify_visible_repeat_policy(
+                    sanitized_html,
+                    candidates_report,
+                    published_facts,
+                )
+            else:
+                warnings.append(
+                    "Repeat policy: suspicious visible repeat(s) detected but no exact HTML line was removed; "
+                    "see release_report.visible_repeat_review."
+                )
+    repeat_policy_report: dict[str, object] = {}
+    try:
+        repeat_policy_report = _write_repeat_policy_report(
+            state_dir,
+            current_day_london=current_day_london,
+            candidates_report=candidates_report,
+            rendered_fingerprints=rendered_fingerprints,
+            published_facts=published_facts,
+            visible_repeat_review=visible_repeat_review,
+            visible_repeat_quarantine=visible_repeat_quarantine,
+        )
+    except Exception as exc:  # noqa: BLE001 - observability must not block release
+        logger.warning("repeat policy report failed: %s", exc)
+        warnings.append("Repeat policy report: snapshot failed; check release logs.")
     rendered_html_review = {"counts": {"visible_lines": 0, "bad_visible_items": 0}, "bad_visible_items": []}
     rendered_html_quarantine: dict[str, object] = {"attempted": False, "removed_count": 0}
     if draft_path.exists():
@@ -4249,12 +4526,13 @@ def build_release(project_root: Path) -> ReleaseResult:
     visible_contract_failed = bool(visible_contract.get("enabled")) and not (
         (visible_contract.get("control_assertion") or {}).get("ok", True)
     )
+    repeat_policy_removed = int(visible_repeat_quarantine.get("removed_count") or 0) > 0
     unrepaired_bad_visible_lines = int(
         (rendered_html_review.get("counts") or {}).get("bad_visible_items", 0) or 0
     ) > 0
     if not ok:
         release_decision = "fail"
-    elif visible_contract_failed or unrepaired_bad_visible_lines:
+    elif visible_contract_failed or unrepaired_bad_visible_lines or repeat_policy_removed:
         release_decision = "ship_degraded"
     else:
         release_decision = "pass"
@@ -4327,6 +4605,9 @@ def build_release(project_root: Path) -> ReleaseResult:
         "diaspora_diagnostics": diaspora_diagnostics,
         "reject_review": reject_review,
         "published_review": published_review,
+        "visible_repeat_review": visible_repeat_review,
+        "visible_repeat_quarantine": visible_repeat_quarantine,
+        "repeat_policy_report": repeat_policy_report,
         "rendered_html_review": rendered_html_review,
         "rendered_html_quarantine": rendered_html_quarantine,
         "event_miss_review": event_miss_review,

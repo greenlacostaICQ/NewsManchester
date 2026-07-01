@@ -32,6 +32,7 @@ from news_digest.pipeline.practical_backfill import apply_practical_backfill
 from news_digest.pipeline.professional_events import apply_professional_event_llm_matches, apply_professional_event_match
 from news_digest.pipeline.reader_actions import attach_reader_action
 from news_digest.pipeline.reader_value import attach_reader_value
+from news_digest.pipeline.repeat_policy import validator_same_fingerprint_allow
 from news_digest.pipeline.story_intelligence import apply_story_intelligence, mark_reject_second_opinion
 from news_digest.pipeline.transport_classifier import classify_transport_candidate
 
@@ -2380,20 +2381,6 @@ def _manual_override(candidate: dict, state_dir: Path) -> str:
     return ""
 
 
-# Anchor types that legitimately re-appear day after day. Conservative
-# on purpose: transport service status, weather, dated events with a
-# concrete future date, on-sale ticket windows. Everything else (including
-# anchors like ``new_phase`` and ``local_action`` that LLMs assign liberally
-# to repeats) is fair game for cross-day stale-rehash blocking.
-_ALWAYS_PUBLISHABLE_REPEAT_ANCHORS = frozenset({
-    "service_status",       # ongoing transport / road / utility disruption
-    "today_weather",        # daily weather card
-    "dated_event",          # event with a concrete future date
-    "ticket_opportunity",   # on-sale / presale window
-    "ongoing_disruption",   # explicit ongoing flag
-})
-
-
 def _exclude_cross_day_rehash(candidate: dict, state_dir: Path) -> bool:
     """Block items whose fingerprint already shipped in the digest within
     the past few days.
@@ -2418,7 +2405,8 @@ def _exclude_cross_day_rehash(candidate: dict, state_dir: Path) -> bool:
         return False
     contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
     anchor = str(contract.get("anchor_type") or "")
-    if anchor in _ALWAYS_PUBLISHABLE_REPEAT_ANCHORS:
+    repeat_allow = validator_same_fingerprint_allow(candidate)
+    if repeat_allow.allow:
         return False
     # Operational blocks (transport, weather) self-manage rotation via
     # transport_fill and synthetic_freshness; never gate them here.
