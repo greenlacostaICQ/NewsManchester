@@ -36,7 +36,12 @@ from news_digest.pipeline.city_trends import (
     append_city_intelligence_history,
     build_trend_detection,
 )
-from news_digest.pipeline.inventory import aggregate_category_health, verify_conservation
+from news_digest.pipeline.inventory import (
+    aggregate_category_health,
+    categories_needing_live_fallback,
+    verify_collect_conservation,
+    verify_dispositions,
+)
 from news_digest.pipeline.reader_value import validate_reader_value_labels
 from news_digest.pipeline.story_intelligence import (
     AUDIT_TRAIL_SCHEMA_VERSION,
@@ -2490,10 +2495,13 @@ def _write_final_selection_report(
     candidates = [c for c in (candidates_report or {}).get("candidates") or [] if isinstance(c, dict)]
     source_run_log_rows = _read_jsonl_rows(state_dir / "source_run_log.jsonl")
     category_health = aggregate_category_health(source_run_log_rows)
-    conservation = verify_conservation(source_run_log_rows, len(candidates))
+    collect_conservation = verify_collect_conservation(source_run_log_rows, len(candidates))
     html_visible = _visible_fingerprints_from_html(final_html, candidates)
     rendered_set = {str(fp) for fp in rendered_fingerprints if fp}
     visible_set = set(rendered_set) | html_visible
+    # 8.7 no-loss: every captured item has exactly one disposition, computed
+    # against the truly-visible set (rendered + HTML-recovered).
+    disposition_conservation = verify_dispositions(candidates, visible_set)
     writer_drops = {
         str(item.get("fingerprint") or ""): item
         for item in ((writer_report or {}).get("dropped_candidates") or [])
@@ -2590,7 +2598,9 @@ def _write_final_selection_report(
         "totals": dict(totals),
         "sections": dict(sorted(sections.items())),
         "category_health": category_health,
-        "conservation": conservation,
+        "live_fallback_categories": categories_needing_live_fallback(category_health),
+        "collect_conservation": collect_conservation,
+        "disposition_conservation": disposition_conservation,
     }
     write_json(path, payload)
     return {
@@ -2598,7 +2608,8 @@ def _write_final_selection_report(
         "schema_version": payload["schema_version"],
         "totals": payload["totals"],
         "section_count": len(sections),
-        "conservation": conservation,
+        "collect_conservation": collect_conservation,
+        "disposition_conservation": disposition_conservation,
     }
 
 
@@ -3533,6 +3544,8 @@ def _write_selection_snapshot(state_dir: Path, stage: str) -> dict[str, object]:
     before the writer/build produces the final report."""
     candidates_payload = _load_optional_json(state_dir / "candidates.json") or {}
     candidates = [c for c in (candidates_payload.get("candidates") or []) if isinstance(c, dict)]
+    _snapshot_rows = _read_jsonl_rows(state_dir / "source_run_log.jsonl")
+    _snapshot_category_health = aggregate_category_health(_snapshot_rows)
     sections: dict[str, dict[str, object]] = {}
     totals: Counter = Counter()
     for candidate in candidates:
@@ -3577,8 +3590,9 @@ def _write_selection_snapshot(state_dir: Path, stage: str) -> dict[str, object]:
         ),
         "totals": dict(totals),
         "sections": dict(sorted(sections.items())),
-        "category_health": aggregate_category_health(_read_jsonl_rows(state_dir / "source_run_log.jsonl")),
-        "conservation": verify_conservation(_read_jsonl_rows(state_dir / "source_run_log.jsonl"), len(candidates)),
+        "category_health": _snapshot_category_health,
+        "live_fallback_categories": categories_needing_live_fallback(_snapshot_category_health),
+        "collect_conservation": verify_collect_conservation(_snapshot_rows, len(candidates)),
     }
     write_json(state_dir / "selection_snapshot.json", payload)
     return {"candidate_count": len(candidates), "totals": dict(totals)}

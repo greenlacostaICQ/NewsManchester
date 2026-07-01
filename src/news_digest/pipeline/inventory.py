@@ -1,45 +1,429 @@
-"""Backlog item 8 (semantic layer): per-category collection health and a
-cross-stage no-loss check — applied to the EXISTING single daily collect/
-select run, not a new night-job architecture.
+"""Backlog item 8 — inventory as a verifiable layer, not a warehouse.
 
-Scope note: this module intentionally does NOT schedule or run new night-time
-collection waves (that requires new scraper coverage per source plus a
-production cron/launchd change — see IMPROVEMENT_LOG 0033 for what was
-deferred and why). Two things it deliberately does NOT reinvent, because they
-already exist and cover the same intent:
-  - per-candidate disposition + reason: release.py's `_disposition_for_candidate`
-    / `final_status` / `_candidate_selection_reason` already give a reason for
-    every non-visible item in final_selection_report.json;
-  - render-ready gating and reserve pooling: llm_rewrite.py's `_publish_plan_status`
-    (0030) and editor.py's `_PrevalidatedReservePool` (0031) already enforce
-    show=renderable and prevalidated same-block reserve.
+This module turns the collected pool into checkable inventory: schema-versioned
+records with readiness/liveness/expiry, a per-category health verdict, a no-loss
+disposition contract, a bounded morning-selection contract, and re-entry of
+yesterday's unshown-but-still-relevant items — deduped against the EXISTING
+`published_facts` (never a second dedup system).
 
-What this module adds instead:
-  - a per-category health verdict from the existing source_run_log, so a
-    silently-dead source reads as `failed`/`empty_suspicious`, not as
-    indistinguishable from a quiet news day;
-  - a cross-stage conservation check (collected-at-source vs. survived-into-
-    candidates.json), tolerant of the small positive slack from synthetic
-    weather/transport cards, that flags only a real net LOSS between collect
-    and candidates.json;
-  - cache-key fields (`prompt_version`, structured story facts) for
-    llm_rewrite's existing reuse-memory, so a changed fact (casualty count,
-    court stage) invalidates a cached line even when the change sits past the
-    evidence-text truncation point. (Wired into llm_rewrite.py's
-    `_candidate_content_hash`.)
+Design constraints honoured (owner, 2026-07-01):
+  - checks stay bounded; stale / last-known-good is NEVER rendered as fresh —
+    it is only reserve/diagnostic carrying an honest age;
+  - the Russian line is never truth — it stays a cache keyed by
+    evidence_hash + prompt_version (handled in llm_rewrite, not here);
+  - re-entry reuses `published_facts`, so a re-entered item can't duplicate a
+    shown one;
+  - show=renderable and prevalidated reserve already exist (0030/0031); this
+    layer feeds them, it does not replace them.
+
+The night-collection SCHEDULE (00:30/02:00/03:30/06:15/06:30/07:45) and the
+per-category collect command live in the orchestrator + launchd artifacts;
+this module is the pure data/contract layer they call into.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
+import os
+import time
+from pathlib import Path
+
+from news_digest.pipeline.common import now_london, today_london, write_json_atomic
+
 INVENTORY_SCHEMA_VERSION = 1
 
 
+# ── 8.1 State foundation ──────────────────────────────────────────────────
+
+def inventory_dir(state_dir: Path) -> Path:
+    return state_dir / "inventory"
+
+
+class InventoryLock:
+    """Coarse cross-process lock so a night wave, the 06:30 refresh and the
+    08:00 build never write inventory state on top of each other. A stale lock
+    (holder crashed) is broken after `stale_after_seconds` so a dead job can't
+    wedge the pipeline forever — the never-block rule applies to locks too."""
+
+    def __init__(self, state_dir: Path, name: str = "inventory", stale_after_seconds: float = 900.0):
+        self.path = inventory_dir(state_dir) / f".{name}.lock"
+        self.stale_after_seconds = stale_after_seconds
+        self._fd: int | None = None
+
+    def __enter__(self) -> "InventoryLock":
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        for _ in range(3):
+            try:
+                self._fd = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                os.write(self._fd, f"{os.getpid()} {now_london().isoformat()}".encode("utf-8"))
+                return self
+            except FileExistsError:
+                try:
+                    age = time.time() - self.path.stat().st_mtime
+                except OSError:
+                    age = 0.0
+                if age > self.stale_after_seconds:
+                    try:
+                        self.path.unlink()
+                    except OSError:
+                        pass
+                    continue
+                # Someone healthy holds it — proceed without blocking the run
+                # (observability, not mutual exclusion of last resort).
+                return self
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        if self._fd is not None:
+            try:
+                os.close(self._fd)
+            except OSError:
+                pass
+        try:
+            self.path.unlink()
+        except OSError:
+            pass
+
+
+def write_inventory(state_dir: Path, category: str, records: list[dict]) -> Path:
+    """Persist one category's inventory as schema-versioned JSONL, atomically,
+    under the inventory lock. A partial write is never observable (temp+rename),
+    so a reader never sees an inventory file as empty mid-write."""
+    path = inventory_dir(state_dir) / f"{category}.jsonl"
+    body = "\n".join(
+        json.dumps({"schema_version": INVENTORY_SCHEMA_VERSION, **record}, ensure_ascii=False)
+        for record in records
+    )
+    with InventoryLock(state_dir, name=f"write-{category}"):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp_path = path.with_name(f".{path.name}.tmp{os.getpid()}")
+        tmp_path.write_text(body + ("\n" if body else ""), encoding="utf-8")
+        os.replace(tmp_path, path)
+    return path
+
+
+# 8.4 night waves → category groups. A wave collects ONLY into inventory
+# (upsert), never candidates.json — so the 08:00 hot path is untouched and a
+# night job can never block or corrupt the morning release.
+NIGHT_WAVES: dict[str, frozenset[str]] = {
+    "events": frozenset({"culture_weekly"}),
+    "tickets": frozenset({"venues_tickets"}),
+    "pro_food_russian": frozenset({"professional_events", "food_openings", "diaspora_events"}),
+    "live_news": frozenset({"media_layer", "gmp", "public_services", "transport", "football", "tech_business"}),
+}
+# 07:45 bounded breaking-check: a tiny hard-news subset, headlines only, hard
+# time budget — never a second full collect.
+BREAKING_CHECK_CATEGORIES: frozenset[str] = frozenset({"media_layer", "gmp", "transport"})
+
+
+def merge_inventory(state_dir: Path, category: str, new_records: list[dict]) -> int:
+    """Upsert new records into a category's inventory by fingerprint (newest
+    record wins, refreshing last_seen_at). Returns the resulting record count.
+    Used by night waves to accumulate inventory across runs without dropping
+    still-valid cards collected earlier."""
+    existing = {
+        str(r.get("fingerprint") or ""): r
+        for r in read_inventory(state_dir, category)
+        if isinstance(r, dict) and r.get("fingerprint")
+    }
+    for record in new_records:
+        fingerprint = str(record.get("fingerprint") or "")
+        if fingerprint:
+            existing[fingerprint] = record
+    write_inventory(state_dir, category, list(existing.values()))
+    return len(existing)
+
+
+def read_inventory(state_dir: Path, category: str) -> list[dict]:
+    path = inventory_dir(state_dir) / f"{category}.jsonl"
+    if not path.exists():
+        return []
+    rows: list[dict] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(row, dict):
+            rows.append(row)
+    return rows
+
+
+# ── 8.5 Card rules → readiness ────────────────────────────────────────────
+#
+# Required structured fields per block. render_ready is true only when the
+# fields needed to write a public line without guessing are present AND a
+# public text (draft_line or deterministic template) already exists.
+
+_CARD_REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
+    "next_7_days": ("event_name", "venue", "date_start"),
+    "weekend_activities": ("event_name", "venue", "date_start"),
+    "ticket_radar": ("event_name", "date_start", "venue"),
+    "future_announcements": ("event_name", "venue"),
+    "outside_gm_tickets": ("event_name", "date_start", "venue"),
+    "openings": ("venue",),
+    "professional_events": ("date_start",),
+    "russian_events": ("date_start", "venue"),
+}
+# Hard-news blocks: structured facts live on the candidate, not the event dict.
+_HARD_NEWS_BLOCKS = frozenset({"last_24h", "today_focus", "city_watch", "tech_business", "football"})
+_HARD_NEWS_REQUIRED = ("what_happened", "why_now")
+
+
+def _card_field_value(candidate: dict, field: str) -> str:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    return str(candidate.get(field) or event.get(field) or "").strip()
+
+
+def evaluate_card(candidate: dict) -> tuple[str, bool, list[str]]:
+    """(quality_status, render_ready, missing_facts) for one candidate against
+    its block's card rule. render_ready requires both the structured fields and
+    an existing public line — matching the show=renderable contract (0030)."""
+    block = str(candidate.get("primary_block") or "")
+    required = _HARD_NEWS_REQUIRED if block in _HARD_NEWS_BLOCKS else _CARD_REQUIRED_FIELDS.get(block, ())
+    missing = [field for field in required if not _card_field_value(candidate, field)]
+    has_text = bool(str(candidate.get("draft_line") or "").strip())
+    if missing:
+        return "missing_facts", False, missing
+    if not has_text:
+        return "needs_text", False, ["draft_line"]
+    return "ready", True, []
+
+
+# ── 8.3 evidence identity (inventory-local; decoupled from the reuse cache) ─
+
+def evidence_cache_extra_fields(candidate: dict) -> dict[str, str]:
+    """Structured story facts folded into llm_rewrite's reuse-cache hash (wired
+    there). Empty for events/tickets; for hard news a changed fact — casualty
+    count, court stage, who's affected — invalidates a cached line even past the
+    evidence-text truncation point."""
+    return {
+        "what_happened": str(candidate.get("what_happened") or "")[:300],
+        "who_affected": str(candidate.get("who_affected") or "")[:200],
+        "why_now": str(candidate.get("why_now") or "")[:200],
+        "event_type": str(candidate.get("story_type") or candidate.get("event_type") or ""),
+    }
+
+
+def compute_evidence_hash(candidate: dict) -> str:
+    """Stable identity for an inventory card. Includes structured story facts so
+    a materially changed hard-news fact yields a new hash (the same principle as
+    the reuse cache, computed standalone so inventory has no llm_rewrite dep)."""
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    payload = {
+        "primary_block": str(candidate.get("primary_block") or ""),
+        "title": str(candidate.get("title") or "")[:300],
+        "event_name": str(event.get("event_name") or event.get("name") or ""),
+        "event_date": str(event.get("date_start") or event.get("date") or ""),
+        "venue": str(event.get("venue") or candidate.get("venue") or ""),
+        "story_facts": evidence_cache_extra_fields(candidate),
+        "evidence_text": str(candidate.get("evidence_text") or candidate.get("source_evidence") or "")[:1200],
+        "schema_version": INVENTORY_SCHEMA_VERSION,
+    }
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
+
+
+# ── 8.2 Canonical item schema ─────────────────────────────────────────────
+
+def build_inventory_record(candidate: dict, *, prompt_version: int, now_iso: str | None = None) -> dict:
+    """Canonical inventory card. Stores English raw/evidence for audit, but the
+    working unit is the fact card + readiness, never the raw English text."""
+    now_iso = now_iso or now_london().isoformat()
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    quality_status, render_ready, missing_facts = evaluate_card(candidate)
+    fact_card = {
+        "event_name": str(event.get("event_name") or event.get("name") or ""),
+        "venue": str(event.get("venue") or candidate.get("venue") or ""),
+        "date_start": str(event.get("date_start") or event.get("date") or ""),
+        "date_confidence": str(event.get("date_confidence") or ""),
+        "venue_scope": str(candidate.get("venue_scope") or ""),
+        "ticket_type": str(candidate.get("ticket_type") or ""),
+        "tier": str((candidate.get("ticket_notability") or {}).get("tier") or "")
+        if isinstance(candidate.get("ticket_notability"), dict) else "",
+        "what_happened": str(candidate.get("what_happened") or "")[:300],
+        "why_now": str(candidate.get("why_now") or "")[:200],
+        "story_type": str(candidate.get("story_type") or ""),
+    }
+    return {
+        "fingerprint": str(candidate.get("fingerprint") or ""),
+        "evidence_hash": compute_evidence_hash(candidate),
+        "prompt_version": prompt_version,
+        "last_seen_at": now_iso,
+        "source_url": str(candidate.get("source_url") or ""),
+        "booking_url": str(candidate.get("booking_url") or event.get("booking_url") or ""),
+        "source_label": str(candidate.get("source_label") or ""),
+        "primary_block": str(candidate.get("primary_block") or ""),
+        "category": str(candidate.get("category") or ""),
+        "raw_evidence": str(candidate.get("evidence_text") or candidate.get("source_evidence") or "")[:4000],
+        "fact_card": fact_card,
+        "quality_status": quality_status,
+        "render_ready": render_ready,
+        "missing_facts": missing_facts,
+        "liveness_status": str(candidate.get("liveness_status") or "unknown"),
+        "liveness_checked_at": str(candidate.get("liveness_checked_at") or ""),
+        "expires_at": str(candidate.get("expires_at") or ""),
+    }
+
+
+# ── 8.7 No-loss disposition contract ──────────────────────────────────────
+
+_EXPIRED_TICKET_TYPES = frozenset({"old_onsale", "old_public_sale"})
+
+# `deferred` and `not_morning_relevant` are valid terminal states produced only
+# by the night-inventory path (an item captured at night but not yet morning-
+# relevant). The single-run classifier below never needs to invent them, but
+# they are accepted so a night-job record is not flagged as unclassified.
+TERMINAL_DISPOSITIONS = frozenset(
+    {
+        "shown",
+        "reserve",
+        "inventory_only",
+        "missing_facts",
+        "expired",
+        "duplicate",
+        "not_render_ready",
+        "dropped",
+        "deferred",
+        "not_morning_relevant",
+    }
+)
+
+
+def classify_disposition(candidate: dict, rendered_fingerprints: set[str]) -> str:
+    """Exactly one terminal disposition per captured candidate, from fields the
+    pipeline already computes. `not_render_ready` is the load-bearing bucket: a
+    candidate marked selected/show but absent from the rendered set is the
+    'silently lost after selection' failure this contract exists to catch."""
+    if not isinstance(candidate, dict):
+        return "dropped"
+    fingerprint = str(candidate.get("fingerprint") or "")
+    if fingerprint and fingerprint in rendered_fingerprints:
+        return "shown"
+    if candidate.get("recoverable_reserve") or candidate.get("public_reserve"):
+        return "reserve"
+    if candidate.get("ticket_inventory_held"):
+        return "inventory_only"
+    if str(candidate.get("dedupe_decision") or candidate.get("change_type") or "") == "drop":
+        return "duplicate"
+    if str(candidate.get("ticket_type") or "") in _EXPIRED_TICKET_TYPES:
+        return "expired"
+    status = str(candidate.get("publish_plan_status") or "")
+    verdict = str(candidate.get("digest_selection_verdict") or "")
+    if status == "needs_enrichment" or verdict == "needs_enrichment":
+        return "missing_facts"
+    if status in {"must_show", "show"} or verdict == "selected":
+        return "not_render_ready"
+    return "dropped"
+
+
+def verify_dispositions(candidates: list[dict], rendered_fingerprints: set[str]) -> dict[str, object]:
+    """8.7 criterion: every captured item lands in exactly one disposition and
+    sum(dispositions) == captured. A non-empty `violations` means the classifier
+    missed a real pipeline state, not that an item is actually lost."""
+    totals: dict[str, int] = {}
+    violations: list[dict[str, object]] = []
+    captured = 0
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        captured += 1
+        disposition = classify_disposition(candidate, rendered_fingerprints)
+        totals[disposition] = totals.get(disposition, 0) + 1
+        if disposition not in TERMINAL_DISPOSITIONS:
+            violations.append(
+                {"fingerprint": candidate.get("fingerprint"), "unclassified": disposition}
+            )
+    accounted = sum(totals.values())
+    return {
+        "schema_version": INVENTORY_SCHEMA_VERSION,
+        "captured": captured,
+        "accounted": accounted,
+        "conserved": accounted == captured and not violations,
+        "totals": totals,
+        "silent_loss": int(totals.get("not_render_ready", 0)),
+        "violations": violations[:50],
+    }
+
+
+# ── 8.6 Morning selection contract ────────────────────────────────────────
+
+_TICKET_BLOCKS = frozenset({"ticket_radar", "outside_gm_tickets", "future_announcements"})
+_TICKET_MORNING_TYPES = frozenset({"on_sale_now", "presale_soon", "newly_listed", "event_this_week", "major_upcoming"})
+
+
+def _is_expired(record: dict, today: str) -> bool:
+    expires_at = str(record.get("expires_at") or "")
+    return bool(expires_at) and expires_at < today
+
+
+def ticket_reaches_morning(record: dict) -> bool:
+    """Tickets reach the morning issue only on a real reason: new-on-sale,
+    near-date, notable tier, or milestone — otherwise inventory_only."""
+    fact = record.get("fact_card") if isinstance(record.get("fact_card"), dict) else {}
+    if str(fact.get("ticket_type") or "") in _TICKET_MORNING_TYPES:
+        return True
+    if str(fact.get("tier") or "").upper() in {"A", "B"}:
+        return True
+    return bool(record.get("milestone"))
+
+
+def passes_morning_contract(record: dict, *, today: str | None = None) -> tuple[bool, str]:
+    """Bounded gate for what the writer may see. Returns (ok, reason). Stale /
+    dead-link / expired never pass as fresh; tickets without a morning reason
+    fall to inventory_only."""
+    today = today or today_london()
+    if not record.get("render_ready"):
+        return False, "not_render_ready"
+    if str(record.get("liveness_status") or "") == "dead":
+        return False, "dead_link"
+    if _is_expired(record, today):
+        return False, "expired"
+    block = str(record.get("primary_block") or "")
+    if block in _TICKET_BLOCKS and not ticket_reaches_morning(record):
+        return False, "inventory_only"
+    return True, "morning_relevant"
+
+
+# ── 8.7 Re-entry of yesterday's unshown-but-still-relevant items ───────────
+
+def published_fingerprints(published_facts: dict | None) -> set[str]:
+    facts = (published_facts or {}).get("facts") if isinstance(published_facts, dict) else None
+    return {str(item.get("fingerprint") or "") for item in (facts or []) if isinstance(item, dict)}
+
+
+def reentry_candidates(prior_records: list[dict], published_facts: dict | None, *, today: str | None = None) -> list[dict]:
+    """Yesterday's inventory_only / reserve items that are still render_ready and
+    not expired re-enter selection — deduped against `published_facts` so a
+    re-entered card can never repeat one already shown. Reuses the existing
+    dedup surface; introduces no second dedup system."""
+    today = today or today_london()
+    already = published_fingerprints(published_facts)
+    out: list[dict] = []
+    for record in prior_records:
+        if not isinstance(record, dict):
+            continue
+        if str(record.get("fingerprint") or "") in already:
+            continue
+        if not record.get("render_ready"):
+            continue
+        if _is_expired(record, today):
+            continue
+        out.append(record)
+    return out
+
+
+# ── 8.9 Per-category health verdict + fallback ────────────────────────────
+
 def classify_category_health(row: dict[str, object]) -> str:
-    """ok / partial / failed / empty_legit / empty_suspicious for one
-    category, from the aggregated counts in source_run_log.jsonl (item 1).
-    A category that fetched nothing at all is `failed`, not indistinguishable
-    from a quiet day; a category that fetched fine but errored on every item
-    is `empty_suspicious`, not `empty_legit`."""
+    """ok / partial / failed / empty_legit / empty_suspicious for one category,
+    from aggregated source_run_log counts. A category that fetched nothing is
+    `failed`, not indistinguishable from a quiet day; a category that fetched
+    fine but errored on every item is `empty_suspicious`, not `empty_legit`."""
     checked = int(row.get("checked_count") or 0)
     fetched = int(row.get("fetched_count") or 0)
     found = int(row.get("found") or 0)
@@ -49,16 +433,14 @@ def classify_category_health(row: dict[str, object]) -> str:
         return "failed"
     if found == 0:
         return "empty_suspicious" if errors > 0 else "empty_legit"
-    if enriched == 0:
-        return "partial"
-    if errors > 0:
+    if enriched == 0 or errors > 0:
         return "partial"
     return "ok"
 
 
 def aggregate_category_health(source_run_log_rows: list[dict]) -> dict[str, dict[str, object]]:
-    """Roll up per-source source_run_log rows (item 1) into one verdict per
-    category. Reuses the existing log rather than a second collection pass."""
+    """Roll up per-source source_run_log rows into one verdict per category.
+    Reuses the existing log rather than a second collection pass."""
     by_category: dict[str, dict[str, object]] = {}
     for row in source_run_log_rows:
         if not isinstance(row, dict):
@@ -80,17 +462,26 @@ def aggregate_category_health(source_run_log_rows: list[dict]) -> dict[str, dict
     }
 
 
-def verify_conservation(source_run_log_rows: list[dict], candidates_json_count: int) -> dict[str, object]:
-    """Cross-stage check: did fewer candidates survive into candidates.json
-    than collect actually found? A small POSITIVE delta (candidates_json_count
-    slightly above collected_found) is expected and healthy — synthetic
-    weather/transport status cards are added outside the per-source collect
-    count. Only a net shortfall (candidates.json has FEWER than collect
-    found) indicates something silently disappeared between collect and
-    candidates.json, and that is what `conserved` flags."""
-    collected_found = sum(
-        int(row.get("found") or 0) for row in source_run_log_rows if isinstance(row, dict)
+def categories_needing_live_fallback(category_health: dict[str, dict[str, object]]) -> list[str]:
+    """Categories whose inventory is stale/failed/suspicious — the morning build
+    should fall back to a bounded live crawl for these rather than ship a
+    silently-empty block as a quiet day."""
+    return sorted(
+        category
+        for category, health in category_health.items()
+        if str(health.get("verdict") or "") in {"failed", "stale", "empty_suspicious"}
     )
+
+
+# ── 8.1 cross-stage integrity (collect → candidates.json) ─────────────────
+
+def verify_collect_conservation(source_run_log_rows: list[dict], candidates_json_count: int) -> dict[str, object]:
+    """Cross-stage: did fewer candidates survive into candidates.json than
+    collect found? A small POSITIVE delta is expected (synthetic weather/
+    transport cards, added outside the per-source count). Only a net shortfall
+    (candidates.json has FEWER than collect found) means something disappeared
+    between collect and candidates.json."""
+    collected_found = sum(int(row.get("found") or 0) for row in source_run_log_rows if isinstance(row, dict))
     delta = candidates_json_count - collected_found
     return {
         "schema_version": INVENTORY_SCHEMA_VERSION,
@@ -101,15 +492,19 @@ def verify_conservation(source_run_log_rows: list[dict], candidates_json_count: 
     }
 
 
-def evidence_cache_extra_fields(candidate: dict) -> dict[str, str]:
-    """Structured story facts folded into the reuse-cache hash alongside the
-    existing truncated evidence text. Harmless no-op for events/tickets
-    (fields empty there); for hard news it means a materially changed fact —
-    casualty count, court stage, who's affected — invalidates the cached line
-    even if the change sits past the evidence-text truncation point."""
-    return {
-        "what_happened": str(candidate.get("what_happened") or "")[:300],
-        "who_affected": str(candidate.get("who_affected") or "")[:200],
-        "why_now": str(candidate.get("why_now") or "")[:200],
-        "event_type": str(candidate.get("story_type") or candidate.get("event_type") or ""),
-    }
+# ── 8.11 Light morning-relevance fields (ahead of full 0–100 scoring) ─────
+
+def annotate_morning_relevance(candidate: dict, rendered_fingerprints: set[str]) -> None:
+    """Attach the light fields backlog 8.11 asks for, ahead of the deferred
+    full 0–100 unified scorer. Mutates candidate in place; without these the
+    inventory would be opaque."""
+    disposition = classify_disposition(candidate, rendered_fingerprints)
+    is_must_show = str(candidate.get("publish_plan_status") or "") == "must_show" or bool(candidate.get("is_lead"))
+    candidate["selection_bucket"] = (
+        "show_candidate" if disposition == "shown"
+        else "reserve" if disposition in {"reserve", "inventory_only"}
+        else "deferred"
+    )
+    candidate["morning_relevance_status"] = "relevant" if disposition == "shown" else "not_shown"
+    candidate["morning_relevance_reason"] = disposition
+    candidate["inventory_priority"] = 100 if is_must_show else 50 if disposition == "shown" else 10

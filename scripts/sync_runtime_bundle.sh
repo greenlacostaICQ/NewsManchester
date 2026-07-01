@@ -74,11 +74,13 @@ fi
 
 copy_required "$PROJECT_ROOT/scripts/run_local_digest.py" "$RUNTIME_ROOT/scripts/run_local_digest.py"
 copy_required "$PROJECT_ROOT/scripts/run_daily_digest.sh" "$RUNTIME_ROOT/scripts/run_daily_digest.sh"
+copy_required "$PROJECT_ROOT/scripts/run_night_inventory.sh" "$RUNTIME_ROOT/scripts/run_night_inventory.sh"
 copy_required "$PROJECT_ROOT/scripts/process_bot_updates.sh" "$RUNTIME_ROOT/scripts/process_bot_updates.sh"
 copy_required "$PROJECT_ROOT/scripts/sync_runtime_bundle.sh" "$RUNTIME_ROOT/scripts/sync_runtime_bundle.sh"
 
 chmod +x \
   "$RUNTIME_ROOT/scripts/run_daily_digest.sh" \
+  "$RUNTIME_ROOT/scripts/run_night_inventory.sh" \
   "$RUNTIME_ROOT/scripts/process_bot_updates.sh" \
   "$RUNTIME_ROOT/scripts/sync_runtime_bundle.sh"
 

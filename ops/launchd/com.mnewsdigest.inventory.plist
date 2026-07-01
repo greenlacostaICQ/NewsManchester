@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.mnewsdigest.inventory</string>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>/bin/bash</string>
+      <string>__RUNTIME_ROOT__/scripts/run_night_inventory.sh</string>
+    </array>
+
+    <!-- Backlog 8.4 night waves; the wrapper derives the wave from the firing
+         time. 00:30 events, 02:00 tickets, 03:30 pro/food/russian,
+         06:15 live news, 07:45 bounded breaking-check. -->
+    <key>StartCalendarInterval</key>
+    <array>
+      <dict><key>Hour</key><integer>0</integer><key>Minute</key><integer>30</integer></dict>
+      <dict><key>Hour</key><integer>2</integer><key>Minute</key><integer>0</integer></dict>
+      <dict><key>Hour</key><integer>3</integer><key>Minute</key><integer>30</integer></dict>
+      <dict><key>Hour</key><integer>6</integer><key>Minute</key><integer>15</integer></dict>
+      <dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>45</integer></dict>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__RUNTIME_ROOT__</string>
+
+    <key>StandardOutPath</key>
+    <string>__RUNTIME_ROOT__/data/state/inventory.stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>__RUNTIME_ROOT__/data/state/inventory.stderr.log</string>
+
+    <key>RunAtLoad</key>
+    <false/>
+  </dict>
+</plist>

@@ -2479,6 +2479,104 @@ def cmd_collect_digest() -> int:
     return 0 if result.ok else 1
 
 
+def cmd_build_inventory() -> int:
+    """Backlog 8.1/8.2: persist schema-versioned inventory records from the
+    current candidates.json. Additive and non-breaking — writes only under
+    data/state/inventory/, never touches the hot path."""
+    from news_digest.pipeline.inventory import build_inventory_record, merge_inventory  # noqa: PLC0415
+    from news_digest.pipeline.prompts_meta import PROMPT_REGISTRY_VERSION  # noqa: PLC0415
+    from news_digest.pipeline.common import write_json_atomic  # noqa: PLC0415
+
+    state_dir = PROJECT_ROOT / "data" / "state"
+    payload = read_json(state_dir / "candidates.json", {"candidates": []})
+    candidates = [c for c in payload.get("candidates", []) if isinstance(c, dict)]
+    by_category: dict[str, list[dict]] = {}
+    for candidate in candidates:
+        category = str(candidate.get("category") or "unknown")
+        by_category.setdefault(category, []).append(
+            build_inventory_record(candidate, prompt_version=PROMPT_REGISTRY_VERSION)
+        )
+    written: dict[str, dict[str, int]] = {}
+    for category, records in by_category.items():
+        total = merge_inventory(state_dir, category, records)
+        written[category] = {"new": len(records), "total": total, "render_ready": sum(1 for r in records if r.get("render_ready"))}
+    report = {
+        "schema_version": 1,
+        "run_at_london": datetime.now(LONDON_TZ).isoformat(),
+        "source": "candidates.json",
+        "categories": written,
+        "total_records": sum(v["total"] for v in written.values()),
+    }
+    write_json_atomic(state_dir / "inventory_refresh_report.json", report)
+    print(json.dumps({"ok": True, **report}, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_collect_inventory(wave: str) -> int:
+    """Backlog 8.4: one night wave collects ONLY into inventory (upsert),
+    never candidates.json. The 08:00 build is untouched, so a night job can
+    never block or corrupt the morning release."""
+    from news_digest.pipeline.collector.core import SOURCES, _collect_single_source  # noqa: PLC0415
+    from news_digest.pipeline.inventory import (  # noqa: PLC0415
+        BREAKING_CHECK_CATEGORIES,
+        NIGHT_WAVES,
+        build_inventory_record,
+        merge_inventory,
+    )
+    from news_digest.pipeline.prompts_meta import PROMPT_REGISTRY_VERSION  # noqa: PLC0415
+    from news_digest.pipeline.common import write_json_atomic  # noqa: PLC0415
+
+    if wave == "breaking":
+        categories = BREAKING_CHECK_CATEGORIES
+    else:
+        categories = NIGHT_WAVES.get(wave)
+    if not categories:
+        print(json.dumps({"ok": False, "error": f"unknown wave '{wave}'", "known": sorted(NIGHT_WAVES) + ["breaking"]}, ensure_ascii=False))
+        return 1
+
+    state_dir = PROJECT_ROOT / "data" / "state"
+    sources = [s for s in SOURCES if s.report_category in categories]
+    per_category: dict[str, list[dict]] = {}
+    run_log: list[dict] = []
+    started = time.monotonic()
+    for source in sources:
+        try:
+            health, source_candidates = _collect_single_source(source)
+        except Exception as exc:  # noqa: BLE001
+            run_log.append({"wave": wave, "source": source.name, "category": source.report_category, "error": str(exc), "found": 0})
+            continue
+        records = [build_inventory_record(c, prompt_version=PROMPT_REGISTRY_VERSION) for c in source_candidates if isinstance(c, dict)]
+        per_category.setdefault(source.report_category, []).extend(records)
+        run_log.append({
+            "wave": wave,
+            "source": source.name,
+            "category": source.report_category,
+            "checked": bool(health.get("checked")),
+            "fetched": bool(health.get("fetched")),
+            "found": len(source_candidates),
+            "enriched": sum(1 for c in source_candidates if isinstance(c, dict) and c.get("include")),
+            "errors": len(health.get("errors") or []),
+            "render_ready": sum(1 for r in records if r.get("render_ready")),
+        })
+    merged: dict[str, int] = {}
+    for category, records in per_category.items():
+        merged[category] = merge_inventory(state_dir, category, records)
+    # Append this wave's run log (never overwrites earlier waves).
+    with (state_dir / "inventory_run_log.jsonl").open("a", encoding="utf-8") as handle:
+        for row in run_log:
+            handle.write(json.dumps({**row, "run_at_london": datetime.now(LONDON_TZ).isoformat()}, ensure_ascii=False) + "\n")
+    summary = {
+        "ok": True,
+        "wave": wave,
+        "categories": sorted(categories),
+        "sources_polled": len(sources),
+        "merged_totals": merged,
+        "duration_seconds": round(time.monotonic() - started, 2),
+    }
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_dedupe_digest() -> int:
     result = dedupe_candidates(PROJECT_ROOT)
     print(json.dumps(_stage_payload(result), ensure_ascii=False, indent=2))
@@ -2752,6 +2850,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Validate broad scan coverage in collector_report.json.",
     )
     subparsers.add_parser(
+        "build-inventory",
+        help="Persist schema-versioned inventory records from candidates.json (backlog 8.1/8.2).",
+    )
+    collect_inventory_parser = subparsers.add_parser(
+        "collect-inventory",
+        help="Run one night wave into inventory only, never candidates.json (backlog 8.4).",
+    )
+    collect_inventory_parser.add_argument(
+        "--wave",
+        required=True,
+        help="Night wave: events | tickets | pro_food_russian | live_news | breaking.",
+    )
+    subparsers.add_parser(
         "dedupe-digest",
         help="Apply repeat handling and write dedupe_memory.json.",
     )
@@ -2935,6 +3046,10 @@ def main() -> int:
         return cmd_build_digest()
     if args.command == "collect-digest":
         return cmd_collect_digest()
+    if args.command == "build-inventory":
+        return cmd_build_inventory()
+    if args.command == "collect-inventory":
+        return cmd_collect_inventory(args.wave)
     if args.command == "dedupe-digest":
         return cmd_dedupe_digest()
     if args.command == "validate-candidates":
