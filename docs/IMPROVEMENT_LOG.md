@@ -503,13 +503,16 @@
 - ПРОВЕРКА (после прогона): —
 
 ### 0043 — Проверка полноты перевода (пропажа факта, не выдумка) — 2026-07-02
-- Статус: предложено
+- Статус: внедрено локально (staged, детерминированный слой); прод-проверка на следующем реальном прогоне
 - Проблема: история Tinder потеряла severity-деталь «rape fantasy», хотя она была в evidence. Ни один гейт не поймал.
 - Причина (корень): все проверки односторонние. Промпт rewrite просит «сохрани всё» + самоаттестация (`llm_rewrite.py:268-274`); `fact_lock.unsupported_fact_tokens` (`fact_lock.py:105`) проверяет русский→evidence (выдумка), не evidence→русский (пропажа); редактор sensitive-проход (`editor.py:171`) ловит добавленную ложь, не потерю.
-- Решение: новый дешёвый шаг после rewrite, единый для всех блоков, строже для крим/суд: взять 1-3 ключевых факта из `english_reader_card`/evidence и проверить mini-моделью «сохранён ли смысл в русском»; нет → переписать/пометить. Дополнить `fact_lock` обратной проверкой.
-- Ожидаемый эффект и метрика: отчёт с числом карточек, где severity-факт восстановлен/помечен; на Tinder-классе «rape fantasy» присутствует или строка на доработке.
-- Файлы/места: новый шаг рядом с `llm_rewrite`; `fact_lock.py:105`; `editor.py:171,497`.
-- ПРОВЕРКА (после прогона): —
+- Реализация (staged, детерминированное сначала — LLM-судья остаётся семантическим fallback'ом, нового вызова не добавлял):
+  - Новый `fact_completeness.py`: обратный fact-lock. Двуязычный лексикон grave-severity концептов (sexual_offence/homicide/death/weapon_violence/acquittal): en-паттерн ⇒ «факт есть в источнике», ru-паттерн ⇒ «сохранён ли в строке». en есть, ru нет ⇒ critical omission (MQM omission). `critical_fact_obligations`, `translation_completeness_review`, `line_satisfies_concept`.
+  - `fact_lock.scalar_fact_tokens` — только числа/деньги/даты без Latin-имён (для non-critical диффа; digest обязан сжимать ⇒ warning-only).
+  - `pre_send_quality_judge`: `_deterministic_completeness_scan` по shipped-строкам с match по URL; critical omission ⇒ critical_error (`risk=translation`, `suggested_action=repair`) уходит в существующий repair-executor (rewrite из кандидата → иначе строка снимается). После repair `_recount_completeness_recovery` считает `recovered` / `pulled_for_rework` / `still_missing`: замена на reserve или снятие строки не выдаётся за восстановление, но и не остаётся как shipped omission.
+- Ожидаемый эффект и метрика: отчёт с `critical_omission_count`/`recovered`/`pulled_for_rework`/`still_missing`; на Tinder-классе «rape fantasy» присутствует (изнасил…) или строка на доработке.
+- Файлы/места: `fact_completeness.py` (нов.); `fact_lock.py:97` (`scalar_fact_tokens`); `pre_send_quality_judge.py` (скан+рекаунт+поле); `tests/test_fact_completeness.py`.
+- ПРОВЕРКА: `PYTHONPATH=src python3 -m unittest tests.test_fact_completeness tests.test_pre_send_quality_judge` — 13 зелёных; `python3 -m py_compile src/news_digest/pipeline/fact_completeness.py src/news_digest/pipeline/fact_lock.py src/news_digest/pipeline/pre_send_quality_judge.py` OK; Tinder-нейтрализованная строка ⇒ missing_critical=['sexual_offence'], верная строка ⇒ []; benign event не срабатывает; post-repair recount различает recovered и pulled_for_rework.
 
 ### 0044 — Редактор: правило пустых концовок + deterministic post-check — 2026-07-02
 - Статус: внедрено локально; прод-проверка на следующем реальном прогоне

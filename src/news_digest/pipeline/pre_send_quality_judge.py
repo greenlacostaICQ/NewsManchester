@@ -20,6 +20,11 @@ from pathlib import Path
 from typing import Any
 
 from news_digest.pipeline.common import canonical_url_identity, pipeline_run_id_from, read_json, today_london, write_json
+from news_digest.pipeline.fact_completeness import (
+    FACT_COMPLETENESS_VERSION,
+    line_satisfies_concept,
+    translation_completeness_review,
+)
 from news_digest.pipeline.fact_lock import FACT_LOCK_VERSION, iter_fact_texts, unsupported_fact_tokens
 from news_digest.pipeline.model_routing import resolve_model_route, sdk_retries_for_route
 
@@ -132,6 +137,7 @@ class PreSendQualityResult:
     warnings: list[str] | None = None
     product_completeness: dict[str, Any] | None = None
     deterministic_post_check: dict[str, Any] | None = None
+    translation_completeness: dict[str, Any] | None = None
     repair_executor: dict[str, Any] | None = None
     notes: str = ""
     raw: dict[str, Any] | None = None
@@ -520,6 +526,127 @@ def _deterministic_html_scan(slots: list[dict[str, Any]]) -> dict[str, Any]:
         "defect_count": len(findings),
         "findings": findings[:60],
     }
+
+
+def _completeness_source_blob(candidate: dict[str, Any]) -> str:
+    """English source headline blob for the reverse fact-lock check.
+
+    Kept to title + compact facts (which already carry the event fields and the
+    first ~320 chars of evidence): a grave severity concept lives in the
+    headline of a crime story, so this is enough to decide presence without
+    re-reading the full article.
+    """
+    return " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "compact_facts")
+    ).strip()
+
+
+def _deterministic_completeness_scan(
+    slots: list[dict[str, Any]],
+    rendered_by_url: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """0043: reverse fact-lock — flag grave source facts dropped from the line.
+
+    Deterministic omission net for sensitive / hard-news lines. A grave severity
+    concept present in the English source but absent (in any Russian rendering)
+    from the shipped line is a critical omission → emitted as a repair-worthy
+    critical error so the executor rewrites from the candidate or pulls the line.
+    Dropped number/date facts are warning-only (the digest may compress).
+    """
+    critical_errors: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    critical_omissions: list[dict[str, Any]] = []
+    noncritical_omissions: list[dict[str, Any]] = []
+    checked = 0
+    for slot in slots:
+        html_line = str(slot.get("html") or "")
+        candidate = rendered_by_url.get(_line_url_identity(html_line))
+        if not candidate:
+            continue
+        review = translation_completeness_review(
+            _completeness_source_blob(candidate), str(slot.get("text") or "")
+        )
+        if not review.get("applies"):
+            continue
+        checked += 1
+        idx = int(slot.get("line_index") or 0)
+        section = str(slot.get("section") or "")
+        source_url_key = canonical_url_identity(str(candidate.get("source_url") or ""))
+        for miss in review.get("missing_critical", []):
+            concept = str(miss.get("concept") or "")
+            critical_omissions.append({"line_index": idx, "source_url_key": source_url_key, **miss})
+            critical_errors.append(
+                {
+                    "line_index": idx,
+                    "section": section,
+                    "risk": "translation",
+                    "problem": (
+                        f"critical source fact dropped in translation: "
+                        f"'{miss.get('source_hit')}' ({concept}/{miss.get('obligation')}) "
+                        f"has no Russian rendering in the shipped line"
+                    ),
+                    "suggested_action": "repair",
+                    "completeness_concept": concept,
+                }
+            )
+        dropped = review.get("missing_noncritical") or []
+        if dropped:
+            noncritical_omissions.append({"line_index": idx, "dropped": dropped[:6]})
+            warnings.append(
+                f"line {idx} drops source number/date fact(s): {', '.join(dropped[:6])}"
+            )
+    return {
+        "version": FACT_COMPLETENESS_VERSION,
+        "checked_lines": checked,
+        "critical_omission_count": len(critical_omissions),
+        "critical_omissions": critical_omissions[:40],
+        "noncritical_omissions": noncritical_omissions[:40],
+        "critical_errors": critical_errors,
+        "warnings": warnings[:20],
+        "recovered": 0,
+        "pulled_for_rework": 0,
+        "still_missing": len(critical_omissions),
+    }
+
+
+def _recount_completeness_recovery(
+    completeness: dict[str, Any],
+    digest_html_after: str,
+) -> None:
+    """After repair, count how many flagged omissions now render the concept."""
+    omissions = completeness.get("critical_omissions") or []
+    if not omissions:
+        return
+    slots = _digest_line_slots_from_html(digest_html_after)
+    text_by_index = {int(s.get("line_index") or 0): str(s.get("text") or "") for s in slots}
+    url_by_index = {
+        int(s.get("line_index") or 0): _line_url_identity(str(s.get("html") or ""))
+        for s in slots
+    }
+    recovered = 0
+    pulled_for_rework = 0
+    still_missing = 0
+    for miss in omissions:
+        idx = int(miss.get("line_index") or 0)
+        concept = str(miss.get("concept") or "")
+        text = text_by_index.get(idx, "")
+        original_url = str(miss.get("source_url_key") or "")
+        current_url = url_by_index.get(idx, "")
+        # A stripped/removed line renders no text: the fact is not recovered but
+        # the neutered line no longer ships — count it as pulled, not recovered.
+        if text and original_url and current_url and current_url != original_url:
+            pulled_for_rework += 1
+        elif text and line_satisfies_concept(concept, text):
+            recovered += 1
+        else:
+            if text:
+                still_missing += 1
+            else:
+                pulled_for_rework += 1
+    completeness["recovered"] = recovered
+    completeness["pulled_for_rework"] = pulled_for_rework
+    completeness["still_missing"] = still_missing
 
 
 def _action_rows(actions: list[dict[str, Any]], critical_errors: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -1418,6 +1545,14 @@ def evaluate_pre_send_quality(
 
     decision, can_send, reason, confidence, critical_errors, actions, warnings, notes = _normalise_result(parsed)
     deterministic_post_check = _deterministic_action_post_check(actions, digest_lines, rendered_candidates)
+    # 0043: reverse fact-lock — deterministic net for grave source facts dropped
+    # in translation. Its critical errors join the LLM's so the repair executor
+    # rewrites/pulls the neutered line; its scalar drops are warning-only.
+    translation_completeness = _deterministic_completeness_scan(
+        digest_slots, _rendered_candidates_by_url(rendered_candidates)
+    )
+    critical_errors.extend(translation_completeness.pop("critical_errors", []))
+    warnings.extend(translation_completeness.pop("warnings", []))
     # 0040: when no chunk produced a usable verdict, the action-based post-check
     # above sees an empty action list and reports nothing. Fall back to a direct
     # model-free scan of the shipped HTML so the failure report is not blind.
@@ -1446,6 +1581,7 @@ def evaluate_pre_send_quality(
             final_sha = digest_hash(digest_html)
             digest_lines = digest_lines_from_html(digest_html)
             product_completeness = _product_completeness_context(project_root, digest_lines)
+            _recount_completeness_recovery(translation_completeness, digest_html)
         if repair_executor and int(repair_executor.get("applied") or 0):
             decision = "warn"
             can_send = True
@@ -1476,6 +1612,7 @@ def evaluate_pre_send_quality(
         warnings=warnings,
         product_completeness=product_completeness,
         deterministic_post_check=deterministic_post_check,
+        translation_completeness=translation_completeness,
         repair_executor=repair_executor,
         notes=notes,
         raw={**parsed, "map_reduce": map_reduce_raw},

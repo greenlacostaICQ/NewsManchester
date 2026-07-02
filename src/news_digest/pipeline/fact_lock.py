@@ -94,6 +94,20 @@ def fact_tokens_from_text(text: str) -> set[str]:
     return tokens
 
 
+def scalar_fact_tokens(text: str) -> set[str]:
+    """Return only the scalar facts (money, %, time, date, number) in ``text``.
+
+    Unlike :func:`fact_tokens_from_text` this excludes Latin proper nouns, so it
+    is safe for cross-language coverage checks where names get transliterated.
+    """
+    tokens: set[str] = set()
+    for match in _SCALAR_FACT_RE.finditer(str(text or "")):
+        token = _normalise_token(match.group(0))
+        if token:
+            tokens.add(token)
+    return tokens
+
+
 def allowed_fact_tokens(values: Iterable[Any]) -> set[str]:
     tokens: set[str] = set()
     for value in values:
