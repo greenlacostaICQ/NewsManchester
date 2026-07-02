@@ -455,6 +455,30 @@ class TransportPassengerImpactContractTest(unittest.TestCase):
         self.assertFalse(self._reroute(c))
         self.assertEqual(c["primary_block"], "transport")
 
+    def test_lift_without_movement_impact_is_dropped(self) -> None:
+        from news_digest.pipeline.candidate_validator import _exclude_transport_accessibility_only
+
+        for title in (
+            "Firswood tram stop lift out of service",
+            "Queens Road escalator is unavailable today",
+        ):
+            c = self._t(title)
+            self.assertTrue(_exclude_transport_accessibility_only(c))
+            self.assertFalse(c["include"])
+            self.assertIn("transport_accessibility_only_no_movement", c["reject_reasons"])
+
+    def test_replacement_bus_and_station_closure_are_movement_impact(self) -> None:
+        from news_digest.pipeline.candidate_validator import _exclude_transport_accessibility_only, transport_movement_impact
+
+        for title in (
+            "Northern: no trains to Salford Central, replacement buses run",
+            "Manchester Victoria station closure this weekend",
+        ):
+            c = self._t(title)
+            self.assertTrue(transport_movement_impact(c))
+            self.assertFalse(_exclude_transport_accessibility_only(c))
+            self.assertTrue(c["include"])
+
     def test_degraded_llm_shrink_holds_lower_priority_soft_section_items(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -630,6 +654,99 @@ class TransportPassengerImpactContractTest(unittest.TestCase):
             rendered = set(report["rendered_candidate_fingerprints"])
             self.assertIn("high-police", rendered)
             self.assertNotIn("low-10", rendered)
+
+
+class LeisureRoutingContractTest(unittest.TestCase):
+    def test_car_boot_is_not_allowed_to_remain_in_next_7_days(self) -> None:
+        from news_digest.pipeline.candidate_validator import _enforce_leisure_routing_contract, _reroute_market_planning_to_weekend
+
+        c = {
+            "include": True,
+            "category": "culture_weekly",
+            "primary_block": "next_7_days",
+            "title": "Bowlee Car Boot Sale returns this Sunday",
+            "summary": "A recurring car boot sale with traders and food.",
+            "event": {"is_recurring": True},
+        }
+
+        self.assertTrue(_reroute_market_planning_to_weekend(c))
+        self.assertEqual(c["primary_block"], "weekend_activities")
+        self.assertFalse(_enforce_leisure_routing_contract(c))
+
+    def test_lunchtime_concert_is_dropped_from_next_7_days(self) -> None:
+        from news_digest.pipeline.candidate_validator import _enforce_leisure_routing_contract
+
+        c = {
+            "include": True,
+            "category": "culture_weekly",
+            "primary_block": "next_7_days",
+            "title": "Lunchtime concert at St Ann's Church",
+            "summary": "A lunchtime concert in Manchester city centre.",
+        }
+
+        self.assertTrue(_enforce_leisure_routing_contract(c))
+        self.assertFalse(c["include"])
+        self.assertIn("leisure_not_next_7_days", c["reject_reasons"])
+
+    def test_ticket_event_moves_from_next_7_days_to_ticket_radar(self) -> None:
+        from news_digest.pipeline.candidate_validator import _enforce_leisure_routing_contract
+
+        c = {
+            "include": True,
+            "category": "venues_tickets",
+            "primary_block": "next_7_days",
+            "title": "Singer announces Manchester Academy show",
+            "summary": "Tickets are on sale for a Manchester concert.",
+        }
+
+        self.assertTrue(_enforce_leisure_routing_contract(c))
+        self.assertTrue(c["include"])
+        self.assertEqual(c["primary_block"], "ticket_radar")
+
+
+class ControlledEnrichmentContractTest(unittest.TestCase):
+    def test_structured_event_short_line_is_complete_not_padded(self) -> None:
+        from news_digest.pipeline.writer import _recover_soft_draft_line
+
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": "Makers Market",
+            "summary": "Makers Market at Stockport Market Hall on Saturday.",
+            "event": {
+                "event_name": "Makers Market",
+                "venue": "Stockport Market Hall",
+                "date_start": "2026-07-04",
+            },
+        }
+        line = "• Makers Market пройдёт 4 июля в Stockport Market Hall."
+
+        recovered, reasons = _recover_soft_draft_line(candidate, line, ["draft_line is too short"])
+
+        self.assertEqual(recovered, line)
+        self.assertEqual(reasons, ["short_but_complete"])
+        self.assertNotIn("следите", recovered.lower())
+        self.assertNotIn("проверьте детали", recovered.lower())
+
+    def test_thin_evidence_news_is_short_not_padded(self) -> None:
+        from news_digest.pipeline.writer import _recover_soft_draft_line
+
+        candidate = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "Council update",
+            "summary": "Council update.",
+        }
+
+        recovered, reasons = _recover_soft_draft_line(
+            candidate,
+            "• Совет сообщил обновление. Проверьте детали.",
+            ["draft_line is too short"],
+        )
+
+        self.assertEqual(recovered, "• Совет сообщил обновление.")
+        self.assertEqual(reasons, ["held_thin_evidence"])
+        self.assertNotIn("Проверьте детали", recovered)
 
 
 class EventQualityPipelineTest(unittest.TestCase):

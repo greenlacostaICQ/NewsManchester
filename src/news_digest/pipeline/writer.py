@@ -3206,6 +3206,7 @@ _SOFT_DRAFT_LINE_ERROR_MARKERS = (
     "draft_line is too short",
     "draft_line must contain at least one complete sentence",
     "draft_line for long-format category needs",
+    "draft_line contains bad editorial prose marker",
 )
 
 _CORE_SOFT_RECOVERY_BLOCKS = {
@@ -3242,24 +3243,48 @@ def _core_soft_recovery_allowed(candidate: dict) -> bool:
     }
 
 
-def _soft_recovery_action_sentence(candidate: dict) -> str:
+def _existing_evidence_chars(candidate: dict) -> int:
+    return len(
+        re.sub(
+            r"\s+",
+            " ",
+            " ".join(str(candidate.get(field) or "") for field in ("summary", "lead", "evidence_text", "practical_angle")),
+        ).strip()
+    )
+
+
+def _structured_event_or_ticket_complete(candidate: dict) -> bool:
     block = str(candidate.get("primary_block") or "")
     category = str(candidate.get("category") or "")
-    blob = " ".join(
-        str(candidate.get(field) or "")
-        for field in ("title", "summary", "lead", "evidence_text", "draft_line")
-    ).lower()
-    if block == "football" or category == "football":
-        return "Для болельщиков это влияет на ближайшие матчи, состав или планы клуба; следите за обновлениями команды."
-    if block in {"weekend_activities", "next_7_days", "openings"} or category in {"culture_weekly", "food_openings"}:
-        return "Если хотите попасть, уточните дату, время и доступность мест перед выходом."
-    if category == "tech_business" or block == "tech_business":
-        return "Если это касается вашей работы, района или поездки, проверьте сроки и детали перед планами."
-    if re.search(r"\b(?:police|gmp|court|charged|sentenced|jailed|knife|stab|crash|collision|fire|cordon|evacuat)\b", blob):
-        return "Следите за обновлениями полиции или суда и сверяйте ограничения перед поездкой."
-    if re.search(r"\b(?:council|planning|application|consultation|approved|development|homes|roadworks|service)\b", blob):
-        return "Если вы живёте рядом или пользуетесь сервисом, проверьте сроки и условия на странице совета."
-    return "Перед планами на день проверьте детали и дальнейшие обновления в источнике."
+    if category not in {"venues_tickets", "culture_weekly", "russian_speaking_events", "diaspora_events", "professional_events"} and block not in {
+        "weekend_activities",
+        "ticket_radar",
+        "outside_gm_tickets",
+        "russian_events",
+        "future_announcements",
+    }:
+        return False
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    has_name = bool(str(event.get("event_name") or candidate.get("title") or "").strip())
+    has_date = bool(str(event.get("date_start") or event.get("date") or event.get("date_text") or "").strip())
+    has_place = bool(str(event.get("venue") or event.get("borough") or "").strip())
+    return has_name and has_date and has_place
+
+
+_GENERIC_RECOVERY_TAIL_RE = re.compile(
+    r"(?:[.;]\s*)?(?:следите\s+за\s+обновлениями[^.]*|"
+    r"проверьте\s+(?:детали|обновления|подробности|сроки\s+и\s+детали)[^.]*|"
+    r"уточните\s+(?:дату|время|детали|доступность)[^.]*|"
+    r"свер(?:ьте|яйте)\s+(?:обновления|детали)[^.]*|"
+    r"если\s+хотите\s+попасть[^.]*)\.?\s*$",
+    re.IGNORECASE,
+)
+
+
+def _strip_generic_recovery_tail(line: str) -> str:
+    text = str(line or "").strip()
+    fixed = _GENERIC_RECOVERY_TAIL_RE.sub("", text).rstrip(" ;.")
+    return f"{fixed}." if fixed and fixed != text else text
 
 
 def _recover_soft_draft_line(candidate: dict, line: str, errors: list[str]) -> tuple[str, list[str]]:
@@ -3279,15 +3304,14 @@ def _recover_soft_draft_line(candidate: dict, line: str, errors: list[str]) -> t
         return "", []
     if not text.startswith("• "):
         text = f"• {text}"
-    action = _soft_recovery_action_sentence(candidate)
-    if action and action not in text:
-        text = text.rstrip(" .")
-        text = f"{text}. {action}"
-    if len(re.sub(r"\s+", " ", text).strip()) < LONG_FORMAT_MIN_CHARS:
-        extra = "Не откладывайте проверку, если это влияет на маршрут, запись или планы на сегодня."
-        if extra not in text:
-            text = f"{text.rstrip(' .')}. {extra}"
-    return text, ["soft_length_sentence_recovery"]
+    if _structured_event_or_ticket_complete(candidate):
+        return text, ["short_but_complete"]
+    if _existing_evidence_chars(candidate) < 180:
+        stripped = _strip_generic_recovery_tail(text)
+        if len(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", stripped)).strip()) >= 18:
+            return stripped, ["held_thin_evidence"]
+        return "", ["held_thin_evidence"]
+    return "", ["needs_model_enrichment"]
 
 
 def _core_underflow_sections_for_ticket_throttle(section_counts: dict[str, int], *, show_weekend: bool) -> list[str]:
@@ -3991,6 +4015,9 @@ _FALLBACK_BUILDER_BY_CATEGORY: dict[str, str] = {
 
 
 _RECOVERY_MODEL_MAX_PER_SECTION = 2
+_CONTROLLED_ENRICHMENT_MAX_PER_RUN = 4
+_RECOVERY_MODEL_MAX_TPM = 27000.0
+_RECOVERY_TOKEN_LIMITER = None
 _RECOVERY_MODEL_PROMPT = """Ты выпускающий редактор Greater Manchester morning brief.
 Нужно восстановить один пункт для блока, который оказался слишком тонким.
 
@@ -4009,6 +4036,16 @@ _RECOVERY_MODEL_PROMPT = """Ты выпускающий редактор Greater
 - для professional/business объясни конкретную пользу, если она есть в evidence;
 - для hard news начни с того, что произошло.
 """
+
+
+def _writer_recovery_token_limiter():
+    global _RECOVERY_TOKEN_LIMITER
+    if _RECOVERY_TOKEN_LIMITER is None:
+        from news_digest.pipeline.llm_rewrite import _TokenRateLimiter  # noqa: PLC0415
+
+        max_tpm = max(2000.0, float(os.environ.get("WRITER_RECOVERY_MAX_TPM", _RECOVERY_MODEL_MAX_TPM)))
+        _RECOVERY_TOKEN_LIMITER = _TokenRateLimiter(max_tpm)
+    return _RECOVERY_TOKEN_LIMITER
 
 
 def _html_to_recovery_text(raw_html: str, *, limit: int = 4500) -> str:
@@ -4118,6 +4155,9 @@ def _model_recover_section_line(candidate: dict, section_name: str, errors: list
     report["attempted"] = True
     try:
         client = OpenAI(api_key=api_key, timeout=35, max_retries=0)
+        _writer_recovery_token_limiter().acquire(
+            int(sum(len(str(message.get("content") or "")) for message in messages) / 4) + 900
+        )
         response = client.chat.completions.create(
             model=OPENAI_SCORING_MODEL,
             messages=messages,
@@ -4196,6 +4236,8 @@ def _apply_section_min_floor_pull_back(
                 "model_recovery_inserted": 0,
                 "model_recovery_failed": 0,
                 "model_recovery_examples": [],
+                "short_but_complete": 0,
+                "held_thin_evidence": 0,
                 "replacements_inserted": 0,
                 "still_underflow_reason": "",
             }
@@ -4322,13 +4364,19 @@ def _apply_section_min_floor_pull_back(
             recovered_line, recovered_reasons = _recover_soft_draft_line(c, line, errors)
             if recovered_line:
                 recovered_line, recovered_repairs = _repair_editorial_contract_line(c, recovered_line)
-                recovered_errors = _draft_line_quality_errors(c, recovered_line)
+                recovered_errors = [] if {"short_but_complete", "held_thin_evidence"} & set(recovered_reasons) else _draft_line_quality_errors(c, recovered_line)
                 if not recovered_errors:
                     line = recovered_line
                     errors = []
                     repair_reasons.extend(recovered_reasons + recovered_repairs)
+                    if recovery_metrics is not None and "short_but_complete" in recovered_reasons:
+                        recovery_metrics["short_but_complete"] = int(recovery_metrics.get("short_but_complete") or 0) + 1
+                    if recovery_metrics is not None and "held_thin_evidence" in recovered_reasons:
+                        recovery_metrics["held_thin_evidence"] = int(recovery_metrics.get("held_thin_evidence") or 0) + 1
                 else:
                     errors = recovered_errors
+            elif recovery_metrics is not None and "held_thin_evidence" in recovered_reasons:
+                recovery_metrics["held_thin_evidence"] = int(recovery_metrics.get("held_thin_evidence") or 0) + 1
             if errors:
                 warnings.append(
                     f"Section «{section_name}» top-up skipped candidate "
@@ -6206,6 +6254,13 @@ def write_digest(project_root: Path) -> StageResult:
         "held": 0,
         "items": [],
     }
+    controlled_enrichment_report: dict[str, object] = {
+        "model_enriched": 0,
+        "model_attempts": 0,
+        "model_cap": _CONTROLLED_ENRICHMENT_MAX_PER_RUN,
+        "short_but_complete": 0,
+        "held_thin_evidence": 0,
+    }
 
     for index, candidate in enumerate(candidates, start=1):
         if not isinstance(candidate, dict) or not candidate.get("include"):
@@ -6710,15 +6765,25 @@ def write_digest(project_root: Path) -> StageResult:
                 else:
                     _append_recovery_step(candidate, "final_replacement", "held", missing=replacement_errors)
         if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
+            skip_model_recovery = False
             recovered_line, recovered_reasons = _recover_soft_draft_line(candidate, line, draft_line_errors)
             if recovered_line:
                 recovered_line, recovered_repairs = _repair_editorial_contract_line(candidate, recovered_line)
-                recovered_errors = _draft_line_quality_errors(candidate, recovered_line)
+                recovered_errors = [] if {"short_but_complete", "held_thin_evidence"} & set(recovered_reasons) else _draft_line_quality_errors(candidate, recovered_line)
                 if not recovered_errors:
                     line = recovered_line
                     draft_line_errors = []
-                    candidate["draft_line_provider"] = "writer_soft_line_recovery"
-                    candidate["draft_line_model"] = "deterministic_soft_line_recovery"
+                    if "short_but_complete" in recovered_reasons:
+                        controlled_enrichment_report["short_but_complete"] = int(controlled_enrichment_report.get("short_but_complete") or 0) + 1
+                        candidate["draft_line_provider"] = "writer_short_but_complete"
+                        candidate["draft_line_model"] = "deterministic_short_but_complete"
+                    elif "held_thin_evidence" in recovered_reasons:
+                        controlled_enrichment_report["held_thin_evidence"] = int(controlled_enrichment_report.get("held_thin_evidence") or 0) + 1
+                        candidate["draft_line_provider"] = "writer_thin_evidence_short"
+                        candidate["draft_line_model"] = "deterministic_thin_evidence_short"
+                    else:
+                        candidate["draft_line_provider"] = "writer_soft_line_recovery"
+                        candidate["draft_line_model"] = "deterministic_soft_line_recovery"
                     _append_recovery_step(candidate, "draft_line_quality_repair", "recovered", missing=recovered_reasons)
                     warnings.append(
                         f"Candidate #{index}: recovered compact core card instead of dropping "
@@ -6726,15 +6791,25 @@ def write_digest(project_root: Path) -> StageResult:
                     )
                 else:
                     _append_recovery_step(candidate, "draft_line_quality_repair", "attempted", missing=recovered_errors)
-        if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
+            elif recovered_reasons:
+                _append_recovery_step(candidate, "draft_line_quality_repair", "attempted", missing=recovered_reasons)
+                if "held_thin_evidence" in recovered_reasons:
+                    skip_model_recovery = True
+                    controlled_enrichment_report["held_thin_evidence"] = int(controlled_enrichment_report.get("held_thin_evidence") or 0) + 1
+        if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors and not skip_model_recovery:
             _append_recovery_step(candidate, "must_show_model_recovery", "attempted", missing=draft_line_errors)
-            model_line, model_recovery_report = _model_recover_section_line(candidate, section_name, draft_line_errors)
+            if int(controlled_enrichment_report.get("model_attempts") or 0) >= _CONTROLLED_ENRICHMENT_MAX_PER_RUN:
+                model_line, model_recovery_report = "", {"status": "skipped_run_cap", "attempted": False}
+            else:
+                controlled_enrichment_report["model_attempts"] = int(controlled_enrichment_report.get("model_attempts") or 0) + 1
+                model_line, model_recovery_report = _model_recover_section_line(candidate, section_name, draft_line_errors)
             if model_line:
                 model_line, model_repairs = _repair_editorial_contract_line(candidate, model_line)
                 model_errors = _draft_line_quality_errors(candidate, model_line)
                 if not model_errors:
                     line = model_line
                     draft_line_errors = []
+                    controlled_enrichment_report["model_enriched"] = int(controlled_enrichment_report.get("model_enriched") or 0) + 1
                     candidate["draft_line"] = model_line
                     candidate["draft_line_provider"] = "writer_must_show_model_recovery"
                     candidate["draft_line_model"] = "gpt-4o-mini"
@@ -7314,6 +7389,8 @@ def write_digest(project_root: Path) -> StageResult:
         "model_recovery_attempts": sum(int((row or {}).get("model_recovery_attempts") or 0) for row in recovery_sections.values()),
         "model_recovery_inserted": sum(int((row or {}).get("model_recovery_inserted") or 0) for row in recovery_sections.values()),
         "model_recovery_failed": sum(int((row or {}).get("model_recovery_failed") or 0) for row in recovery_sections.values()),
+        "short_but_complete": sum(int((row or {}).get("short_but_complete") or 0) for row in recovery_sections.values()),
+        "held_thin_evidence": sum(int((row or {}).get("held_thin_evidence") or 0) for row in recovery_sections.values()),
         "replacements_inserted": sum(int((row or {}).get("replacements_inserted") or 0) for row in recovery_sections.values()),
         "still_underflow": sum(1 for row in recovery_sections.values() if str((row or {}).get("still_underflow_reason") or "")),
     }
@@ -7363,6 +7440,7 @@ def write_digest(project_root: Path) -> StageResult:
             },
             "publish_plan_contract": publish_plan_contract,
             "block_contract_report": block_contract_report,
+            "controlled_enrichment": controlled_enrichment_report,
             "recovery_controller": recovery_controller,
             "backfilled_today_focus": backfilled_today_focus,
             "today_focus_board": today_focus_board,

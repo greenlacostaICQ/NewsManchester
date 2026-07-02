@@ -342,6 +342,22 @@ _TRANSPORT_IMPACT_RE = re.compile(
     r"сбой|задерж|отмен|объезд|закрыт|работы|лифт)\b",
     re.IGNORECASE,
 )
+_TRANSPORT_MOVEMENT_IMPACT_RE = re.compile(
+    r"\b(?:cancel(?:led|ling|lation)?|delay(?:ed|s)?|disruption|disrupted|"
+    r"no\s+service|no\s+trains?|not\s+running|replacement\s+bus(?:es)?|"
+    r"buses\s+replace|rail\s+replacement|closure|closed|diversion|diverted|"
+    r"suspend(?:ed|ed)?|strike|industrial\s+action|part[\s-]?suspended|"
+    r"line\s+closed|stop\s+closure|station\s+closure|severe\s+delays?|"
+    r"minor\s+delays?|"
+    r"сбой|задержк|отмен|не\s+ходит|не\s+будет\s+(?:поездов|трамваев|автобусов)|"
+    r"замен[аы]\s+автобус|закрыт|закрытие|перекрыт|объезд|забастовк)\b",
+    re.IGNORECASE,
+)
+_TRANSPORT_ACCESSIBILITY_ONLY_RE = re.compile(
+    r"\b(?:lift|lifts|escalator|escalators|step[\s-]?free|accessibility|accessible|"
+    r"лифт|лифты|эскалатор|эскалаторы|безбарьерн|доступн(?:ость|ый|ая))\b",
+    re.IGNORECASE,
+)
 _TRANSPORT_SOURCE_LABELS = {
     "tfgm",
     "metrolink",
@@ -1258,6 +1274,27 @@ def _exclude_road_only_transport(candidate: dict) -> bool:
     return True
 
 
+def transport_movement_impact(candidate: dict) -> bool:
+    return bool(_TRANSPORT_MOVEMENT_IMPACT_RE.search(_candidate_blob(candidate)))
+
+
+def _exclude_transport_accessibility_only(candidate: dict) -> bool:
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("primary_block") or "") != "transport" and str(candidate.get("category") or "") != "transport":
+        return False
+    if not _TRANSPORT_ACCESSIBILITY_ONLY_RE.search(_candidate_blob(candidate)):
+        return False
+    if transport_movement_impact(candidate):
+        return False
+    _append_reject(
+        candidate,
+        "transport_accessibility_only_no_movement",
+        "Validator: lift/escalator/step-free alert has no service cancellation, diversion, closure or replacement-travel impact.",
+    )
+    return True
+
+
 # The headline is the truest signal of what a transport card IS. A genuine
 # disruption says so in the title ("Bus Stop Closure", "No trains", "Buses
 # replace trains"). These three patterns drive the passenger-impact contract.
@@ -1751,6 +1788,43 @@ def _reroute_market_planning_to_weekend(candidate: dict) -> bool:
     existing = str(candidate.get("reason") or "").strip()
     note = "Validator: market/car boot/fair belongs in weekend_activities, not next_7_days."
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    return True
+
+
+_LEISURE_NEXT7_RE = re.compile(
+    r"\b(?:car\s+boot|market|makers?\s+market|artisan\s+market|fair|fete|festival|"
+    r"concert|gig|live\s+music|lunchtime\s+concert|lunch(?:time)?\s+recital|"
+    r"open\s+day|workshop|screening|exhibition|tour|walk|comedy|stand[-\s]?up)\b",
+    re.IGNORECASE,
+)
+
+
+def _enforce_leisure_routing_contract(candidate: dict) -> bool:
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("primary_block") or "") != "next_7_days":
+        return False
+    category = str(candidate.get("category") or "")
+    blob = _candidate_blob(candidate)
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    leisure_like = (
+        category in {"culture_weekly", "venues_tickets", "russian_speaking_events", "diaspora_events"}
+        or str(event.get("is_event") or "").lower() == "true"
+        or _LEISURE_NEXT7_RE.search(blob)
+    )
+    if not leisure_like:
+        return False
+    if category == "venues_tickets":
+        candidate["primary_block"] = "ticket_radar"
+        note = "Validator: leisure/ticket item belongs in ticket_radar, not next_7_days."
+        existing = str(candidate.get("reason") or "").strip()
+        candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+        return True
+    _append_reject(
+        candidate,
+        "leisure_not_next_7_days",
+        "Validator: leisure/event item is not part of the next_7_days civic/planning contract.",
+    )
     return True
 
 
@@ -2630,6 +2704,8 @@ def validate_candidates(project_root: Path) -> StageResult:
         if candidate.get("include") and manual != "force_include":
             _time_gate("road_only_transport", lambda: _exclude_road_only_transport(candidate))
         if candidate.get("include") and manual != "force_include":
+            _time_gate("transport_accessibility_only", lambda: _exclude_transport_accessibility_only(candidate))
+        if candidate.get("include") and manual != "force_include":
             _time_gate("non_impact_transport", lambda: _reroute_non_impact_transport(candidate))
         if candidate.get("include"):
             _time_gate("assign_venue_scope", lambda: _assign_venue_scope(candidate))
@@ -2687,6 +2763,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _time_gate("reroute_market_planning_to_weekend", lambda: _reroute_market_planning_to_weekend(candidate))
         if candidate.get("include"):
             _time_gate("demote_distant_weekend_event", lambda: _demote_distant_weekend_event(candidate))
+        if candidate.get("include") and manual != "force_include":
+            _time_gate("leisure_routing_contract", lambda: _enforce_leisure_routing_contract(candidate))
         if candidate.get("include"):
             _time_gate("undated_event_like_candidate", lambda: _exclude_undated_event_like_candidate(candidate))
         if candidate.get("include"):

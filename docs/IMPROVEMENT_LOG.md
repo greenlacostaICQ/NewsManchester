@@ -484,14 +484,14 @@
 - ПРОВЕРКА (после прогона): —
 
 ### 0041 — Убрать добивку шаблоном, обогащать каждую короткую карточку — 2026-07-02
-- Статус: предложено
+- Статус: внедрено локально; прод-проверка на следующем реальном прогоне
 - Проблема: лид, футбол, M60 и др. заканчиваются штампом «следите за обновлениями / проверьте карту дорог». Это добивка длины, не факт.
 - Причина (корень): контракт `LONG_FORMAT_MIN_CHARS=150` + `LONG_FORMAT_MIN_SENTENCES=2` (`writer.py:78,86`); при недоборе вызывается `_soft_recovery_action_sentence` (`writer.py:3247-3264`), пришивающий фразу из зашитого списка. Настоящий обогатитель `_model_recover_section_line` (`writer.py:4073`) включается ТОЛЬКО когда секция ниже порога по количеству, кап `_RECOVERY_MODEL_MAX_PER_SECTION=2`. На отдельную короткую карточку не вызывается.
-- Решение: заменить путь. Короткая карточка → `_model_recover_section_line` из `evidence_text` всегда → если ≥150, берём → если evidence тонкий и дотянуть нечем, публикуем короткой (снять min_chars для фактически полной карточки). `_soft_recovery_action_sentence` удалить.
+- Решение: заменить путь. `_soft_recovery_action_sentence` удалён. Короткая карточка идёт через controlled recovery: структурированное событие/билет с датой+местом+названием публикуется как `short_but_complete`; thin evidence не добивается штампом, а выходит честно коротко после снятия generic-хвоста или удерживается, если строки почти нет; важная новость с достаточным evidence уходит в `_model_recover_section_line` под run-cap и token limiter. После восстановления строка снова проходит fact/quality checks.
 - Почему так (отвергли): «просто снизить 150 до 100» — теряем длинные качественные там, где evidence богатый; правильный порядок — сначала обогатить, потом разрешить короче.
-- Ожидаемый эффект и метрика: в `writer_report` доля карточек, заканчивающихся штампом → 0; `model_recovery_inserted` растёт; `english_card_memory`/HTML без «следите за обновлениями».
-- Файлы/места: `writer.py:3247-3292` (удалить), `writer.py:4073` (вызывать per-card), гейт `writer.py:5561-5593`.
-- ПРОВЕРКА (после прогона): —
+- Ожидаемый эффект и метрика: в `writer_report.controlled_enrichment` видны `model_enriched`, `short_but_complete`, `held_thin_evidence`; HTML без добивочных «следите/проверьте детали».
+- Файлы/места: `src/news_digest/pipeline/writer.py` (`_recover_soft_draft_line`, `_model_recover_section_line`, `controlled_enrichment` report).
+- ПРОВЕРКА (после прогона): offline — `py_compile` OK; focused tests OK: controlled structured event stays short without filler; thin evidence strips «Проверьте детали» instead of padding; existing borderline render contract preserved. Прод-проверка — следующий прогон.
 
 ### 0042 — Кэш перевода не отдаёт короткое как есть — 2026-07-02
 - Статус: внедрено локально; ПРОВЕРКА офлайн (smoke + unittest llm_rewrite), прод — следующий прогон. Гейт `_cached_line_meets_contract` перед reuse в `_apply_translation_memory`. Где была ошибка первой версии: использовал полный `_draft_line_quality_errors`, который включает числовую проверку против сегодняшнего evidence — валидная кэш-проза ложно отклонялась при тонком re-fetch (риск обнуления кэша). Сужено до чисто структурных проверок: block-aware длина (short-блоки пропускаются), ≥2 предложений для прозы, mixed-script, штамп-хвост (scrub_vague_ending). Проверено: валидная проза reused, короткие билеты reused, stub/штамп → cache miss.
@@ -524,14 +524,14 @@
 - ПРОВЕРКА (после прогона): offline — `py_compile` OK; `tests.test_editor_pacing` OK. Регрессии: generic ending strips + preserves link; concrete TfGM status action stays unchanged; report counts removed rows. Прод-проверка по `editor_report.pre_send_russian_editor.empty_ending_post_check` — после следующего реального прогона.
 
 ### 0045 — Лифты/эскалаторы не публиковать (только влияние на движение) — 2026-07-02
-- Статус: предложено
+- Статус: внедрено локально; прод-проверка на следующем реальном прогоне
 - Проблема: owner хочет только новости, влияющие на движение; лифты не нужны. В выпуске Firswood и Queens Road (лифты) опубликованы.
 - Причина (корень): гард `writer.py:1678` держит лифт только если `_LIFT_ESCALATOR_RE` И НЕ `_TRANSPORT_MOVEMENT_RE`. Но `_TRANSPORT_MOVEMENT_RE` (`writer.py:1798`) включает слова-локации `tram|rail|station|stop|platform|трамва|остановк` — любой алерт про лифт на остановке их содержит → «нет движения»=ложь → гард не срабатывает.
-- Решение: ввести отдельный признак «влияет на движение» = только слова сбоя (cancel/delay/suspend/no service/replacement/closure/diversion/strike + RU). Транспортную карточку с lift/escalator/step-free и БЕЗ признака сбоя движения — дропать на валидации (`candidate_validator.py`), а не держать в writer.
+- Решение: введён отдельный признак `transport_movement_impact` = только слова сбоя (cancel/delay/no service/replacement/closure/diversion/strike + RU). Транспортная карточка с lift/escalator/step-free/accessibility и БЕЗ признака сбоя движения дропается в validator с `transport_accessibility_only_no_movement`, до writer.
 - Почему так (отвергли): оставить hold в writer — поздно и не отсекает; чинить только регэксп — полумера, owner хочет исключение класса.
 - Ожидаемый эффект и метрика: в выпуске 0 карточек про лифт/эскалатор без сбоя движения.
-- Файлы/места: `candidate_validator.py` (новый exclude), регэкспы `writer.py:1798,1804`.
-- ПРОВЕРКА (после прогона): —
+- Файлы/места: `src/news_digest/pipeline/candidate_validator.py` (`transport_movement_impact`, `_exclude_transport_accessibility_only`).
+- ПРОВЕРКА (после прогона): offline — Firswood/Queens Road-style lift/escalator → drop; no trains/replacement bus and station closure → keep; focused tests OK. Прод-проверка — следующий прогон.
 
 ### 0046 — Профсобытия: матч смыслом, не словами — 2026-07-02
 - Статус: предложено
@@ -601,12 +601,12 @@
 - **Порядок реализации (пакеты):** П1 быстрые безопасные: 0050, 0047, 0042, 0040 → П2 контроль: 0039, 0044 → П3 видимый мусор: 0045 + runtime-энфорсер 0052, 0041 → П4: 0043 → П5 связанный ranking-пакет: 0046, 0049, 0048, 0051. F1-контракт (0052-док) уже записан в PRODUCT_CONTRACTS.md.
 
 ### 0052 — Контракт маршрутизации для ВСЕХ блоков — 2026-07-02
-- Статус: предложено (контракт записан в PRODUCT_CONTRACTS.md § Section Routing Contract; runtime-энфорсер — пакет 3)
+- Статус: внедрено локально для leisure→next_7_days enforcement; прод-проверка на следующем реальном прогоне
 - Проблема: car boot и обеденный концерт попали в «важное за 7 дней»; принципы «что куда» разбросаны и заданы точечно.
 - Причина (корень): «Выходные в GM» скрыты Пн-Ср (`writer.py:6786` `show_weekend=weekday>=3`), досуг перетекает в next_7_days; правила размазаны по `PRIMARY_BLOCKS` (`common.py`), block_contract (`writer.py:1665`), reroute (`candidate_validator.py:1732`).
-- Решение: свести в один контракт в `docs/PRODUCT_CONTRACTS.md`: для каждого блока — назначение, что входит, куда перетекает при скрытии. Код правится под контракт.
-- Файлы/места: `docs/PRODUCT_CONTRACTS.md`; далее `candidate_validator.py`, `writer.py`.
-- ПРОВЕРКА (после прогона): —
+- Решение: контракт уже записан в `docs/PRODUCT_CONTRACTS.md`; runtime-энфорсер добавлен в validator: leisure/event items не могут оставаться в `next_7_days`. Market/car boot/fair сохраняются в `weekend_activities`; ticket-like events reroute в `ticket_radar`; прочий leisure/culture в `next_7_days` получает `leisure_not_next_7_days`.
+- Файлы/места: `src/news_digest/pipeline/candidate_validator.py` (`_enforce_leisure_routing_contract`, `_reroute_market_planning_to_weekend` integration).
+- ПРОВЕРКА (после прогона): offline — car boot не остаётся в `next_7_days`; lunchtime concert drops from `next_7_days`; ticket event moves to `ticket_radar`; focused tests OK. Прод-проверка — следующий прогон.
 
 ### 0053 — Weekend Inventory защищён от ranking/caps/repeat — 2026-07-02
 - Статус: внедрено; ПРОВЕРКА офлайн (focused unittest), прод — следующий прогон.
