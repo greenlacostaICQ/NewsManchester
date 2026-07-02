@@ -7,6 +7,9 @@ from pathlib import Path
 
 from news_digest.pipeline.pre_send_quality_judge import (
     REPORT_NAME,
+    _chunk_digest_slots,
+    _combine_map_reduce_results,
+    _rendered_candidates,
     digest_hash,
     digest_lines_from_html,
     evaluate_pre_send_quality,
@@ -113,6 +116,96 @@ class PreSendQualityJudgeTests(unittest.TestCase):
             alerts = result["product_completeness"]["alerts"]
             self.assertTrue(any("Свежие новости" in alert for alert in alerts))
             self.assertTrue(any("ticket dominance" in alert for alert in alerts))
+
+    def test_rendered_candidates_uses_compact_judge_payload(self) -> None:
+        tmp, root = self._project()
+        with tmp:
+            state_dir = root / "data" / "state"
+            (state_dir / "writer_report.json").write_text(
+                json.dumps({"rendered_candidate_fingerprints": ["fp-1"]}),
+                encoding="utf-8",
+            )
+            (state_dir / "candidates.json").write_text(
+                json.dumps(
+                    {
+                        "candidates": [
+                            {
+                                "fingerprint": "fp-1",
+                                "title": "Council confirms a new city centre consultation",
+                                "source_label": "Manchester City Council",
+                                "source_url": "https://example.test/story?utm=1",
+                                "primary_block": "city",
+                                "category": "council",
+                                "summary": "summary that should not be copied",
+                                "lead": "lead that should not be copied",
+                                "draft_line": "• Draft line that should not be copied.",
+                                "evidence_text": "Evidence " + ("x" * 1500),
+                                "practical_angle": "Check the consultation deadline before responding.",
+                            }
+                        ]
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            rows = _rendered_candidates(root)
+
+            self.assertEqual(len(rows), 1)
+            row = rows[0]
+            self.assertNotIn("summary", row)
+            self.assertNotIn("lead", row)
+            self.assertNotIn("draft_line", row)
+            self.assertNotIn("evidence_text", row)
+            self.assertNotIn("practical_angle", row)
+            self.assertLessEqual(len(row["compact_facts"]), 520)
+
+    def test_judge_chunks_split_large_section_without_cross_section_blending(self) -> None:
+        slots = [
+            {"line_index": idx, "section": "Билеты / Ticket Radar", "text": f"Ticket {idx}", "html": f"• Ticket {idx}."}
+            for idx in range(1, 14)
+        ]
+
+        chunks = _chunk_digest_slots(slots, {}, max_lines=12)
+
+        self.assertEqual(len(chunks), 2)
+        self.assertEqual(chunks[0]["line_range"], [1, 12])
+        self.assertEqual(chunks[1]["line_range"], [13, 13])
+        self.assertEqual(chunks[0]["sections"], ["Билеты / Ticket Radar"])
+
+    def test_map_reduce_partial_escalates_clean_pass_to_warn(self) -> None:
+        status, combined, raw = _combine_map_reduce_results(
+            [
+                {
+                    "status": "ok",
+                    "chunk_id": "chunk-01",
+                    "parsed": {
+                        "decision": "pass",
+                        "confidence": 0.9,
+                        "critical_errors": [],
+                        "actions": [],
+                        "warnings": [],
+                    },
+                },
+                {"status": "failed", "chunk_id": "chunk-02", "error": "429 rate limit"},
+            ],
+            {
+                "status": "ok",
+                "chunk_id": "reduce",
+                "parsed": {
+                    "decision": "pass",
+                    "confidence": 0.8,
+                    "critical_errors": [],
+                    "actions": [],
+                    "warnings": [],
+                },
+            },
+        )
+
+        self.assertEqual(status, "partial")
+        self.assertEqual(combined["decision"], "warn")
+        self.assertEqual(raw["failed_chunk_count"], 1)
+        self.assertTrue(any("429" in warning for warning in combined["warnings"]))
 
 
 if __name__ == "__main__":

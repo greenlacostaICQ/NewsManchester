@@ -14,6 +14,7 @@ import logging
 import os
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -26,10 +27,16 @@ from news_digest.pipeline.model_routing import resolve_model_route, sdk_retries_
 logger = logging.getLogger(__name__)
 
 
-PROMPT_VERSION = "v3"
+PROMPT_VERSION = "v4"
 REPORT_NAME = "pre_send_quality_report.json"
 ALLOWED_TO_SEND = {"pass", "warn"}
 BLOCKING_DECISIONS = {"repair_required", "block"}
+PRE_SEND_JUDGE_CHUNK_LINES = 12
+PRE_SEND_JUDGE_MAX_WORKERS = 3
+PRE_SEND_JUDGE_MAX_TPM = 27000.0
+PRE_SEND_JUDGE_MAP_MAX_TOKENS = 900
+PRE_SEND_JUDGE_REDUCE_MAX_TOKENS = 900
+_JUDGE_TOKEN_LIMITER = None
 
 
 SYSTEM_PROMPT = """Ты старший редактор и fact-check судья русскоязычного утреннего дайджеста Greater Manchester.
@@ -84,6 +91,25 @@ Decision:
 Если сомневаешься, предпочти "repair_required" только для реально опасной смысловой ошибки. Не требуй переписывать выпуск ради вкуса.
 Если проблема продуктовая, но выпуск всё ещё можно отправить как degraded issue, ставь "warn" и явно назови провал блока.
 actions — это не комментарии, а конкретные редакторские действия. Для безопасной строки ставь keep только если она упомянута в critical_errors; не перечисляй весь выпуск. Для patch/replace replacement_text должен начинаться с «• » и опираться только на rendered_candidates/facts.
+"""
+
+
+MAP_SYSTEM_PROMPT = SYSTEM_PROMPT + """
+
+Режим MAP: тебе дали один фрагмент финального выпуска. Проверяй только строки
+этого фрагмента. Не делай выводов о балансе всего выпуска — этим занимается
+reduce-судья. Если строка безопасна, не добавляй action. line_index — глобальный
+номер строки в выпуске, используй его без изменения.
+"""
+
+
+REDUCE_SYSTEM_PROMPT = SYSTEM_PROMPT + """
+
+Режим REDUCE: тебе дали краткий контур всего выпуска и результаты chunk-судей.
+Проверяй только глобальные проблемы: баланс секций, дубли между чанками,
+доминирование optional-блоков, missing lead/must_show, и failed chunks. Не
+переписывай отдельные строки, если для них не хватает facts; line actions давай
+только для очевидных глобальных дублей или форматных дефектов из digest_outline.
 """
 
 
@@ -182,6 +208,65 @@ def _candidate_index(candidates: list[dict[str, Any]]) -> dict[str, dict[str, An
     return index
 
 
+def _compact_text(value: object, limit: int) -> str:
+    text = re.sub(r"\s+", " ", str(value or "")).strip()
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1].rstrip() + "…"
+
+
+def _compact_event(event: object, hint: object) -> dict[str, Any]:
+    event_dict = event if isinstance(event, dict) else {}
+    hint_dict = hint if isinstance(hint, dict) else {}
+    out: dict[str, Any] = {}
+    for key in (
+        "event_name",
+        "date_start",
+        "date",
+        "date_text",
+        "venue",
+        "borough",
+        "price",
+        "booking_url",
+    ):
+        value = event_dict.get(key) or hint_dict.get(key)
+        if str(value or "").strip():
+            out[key] = str(value)[:220]
+    return out
+
+
+def _compact_candidate_for_judge(candidate: dict[str, Any]) -> dict[str, Any]:
+    """Small, line-checkable candidate facts for judge map chunks.
+
+    The old judge payload copied summary + lead + 700 chars of evidence +
+    700 chars of draft for every rendered card, which made a 57-item issue
+    exceed a 30k TPM tier. Keep only identifiers plus the source facts a judge
+    needs to verify the visible line.
+    """
+    event = _compact_event(candidate.get("event"), candidate.get("structured_event_hint"))
+    fact_bits: list[str] = []
+    if event:
+        fact_bits.append(
+            "; ".join(f"{key}={value}" for key, value in event.items() if str(value).strip())
+        )
+    for field in ("evidence_text", "practical_angle"):
+        value = _compact_text(candidate.get(field), 320 if field == "evidence_text" else 180)
+        if value:
+            fact_bits.append(value)
+    return {
+        "fingerprint": str(candidate.get("fingerprint") or "").strip(),
+        "title": _compact_text(candidate.get("title"), 220),
+        "source_label": _compact_text(candidate.get("source_label"), 80),
+        "source_url": str(candidate.get("source_url") or "")[:260],
+        "primary_block": str(candidate.get("primary_block") or ""),
+        "category": str(candidate.get("category") or ""),
+        "compact_facts": _compact_text(" | ".join(fact_bits), 520),
+        "event": event,
+        "is_lead": bool(candidate.get("is_lead")),
+        "protected_lane": candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {},
+    }
+
+
 def _rendered_candidates(project_root: Path) -> list[dict[str, Any]]:
     state_dir = project_root / "data" / "state"
     writer_report = read_json(state_dir / "writer_report.json", {})
@@ -201,30 +286,72 @@ def _rendered_candidates(project_root: Path) -> list[dict[str, Any]]:
         fingerprint = str(candidate.get("fingerprint") or "").strip()
         if fingerprint not in rendered:
             continue
-        summary.append(
-            {
-                "fingerprint": fingerprint,
-                "title": str(candidate.get("title") or "")[:220],
-                "source_label": str(candidate.get("source_label") or ""),
-                "source_url": str(candidate.get("source_url") or ""),
-                "primary_block": str(candidate.get("primary_block") or ""),
-                "category": str(candidate.get("category") or ""),
-                "summary": str(candidate.get("summary") or "")[:360],
-                "lead": str(candidate.get("lead") or "")[:360],
-                "evidence_text": str(candidate.get("evidence_text") or "")[:700],
-                "event": candidate.get("event") if isinstance(candidate.get("event"), dict) else {},
-                "structured_event_hint": candidate.get("structured_event_hint") if isinstance(candidate.get("structured_event_hint"), dict) else {},
-                "practical_angle": str(candidate.get("practical_angle") or "")[:260],
-                "draft_line": _strip_tags(str(candidate.get("draft_line") or ""))[:700],
-                "is_lead": bool(candidate.get("is_lead")),
-                "protected_lane": str(candidate.get("protected_lane") or ""),
-            }
-        )
+        summary.append(_compact_candidate_for_judge(candidate))
     # Match digest_lines_from_html: the judge must see metadata for the WHOLE
     # issue, not the first 60 rendered candidates — otherwise tail items (deep in
     # the ticket list) have no metadata for the model to cross-check. 250 covers
     # any realistic issue with headroom.
     return summary[:250]
+
+
+def _rendered_candidates_by_url(rendered_candidates: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    for candidate in rendered_candidates:
+        url_key = canonical_url_identity(str(candidate.get("source_url") or ""))
+        if url_key:
+            out.setdefault(url_key, candidate)
+    return out
+
+
+def _line_payload_for_judge(slot: dict[str, Any], rendered_by_url: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    html_line = str(slot.get("html") or "")
+    candidate = rendered_by_url.get(_line_url_identity(html_line)) or {}
+    payload = {
+        "line_index": int(slot.get("line_index") or 0),
+        "section": str(slot.get("section") or ""),
+        "text": _compact_text(slot.get("text"), 650),
+    }
+    if candidate:
+        payload["candidate"] = candidate
+    return payload
+
+
+def _chunk_digest_slots(
+    slots: list[dict[str, Any]],
+    rendered_by_url: dict[str, dict[str, Any]],
+    *,
+    max_lines: int = PRE_SEND_JUDGE_CHUNK_LINES,
+) -> list[dict[str, Any]]:
+    chunks: list[dict[str, Any]] = []
+    by_section: list[tuple[str, list[dict[str, Any]]]] = []
+    current_section = ""
+    current: list[dict[str, Any]] = []
+    for slot in slots:
+        section = str(slot.get("section") or "")
+        if current and section != current_section:
+            by_section.append((current_section, current))
+            current = []
+        current_section = section
+        current.append(slot)
+    if current:
+        by_section.append((current_section, current))
+
+    chunk_no = 1
+    for section, rows in by_section:
+        for start in range(0, len(rows), max_lines):
+            part = rows[start:start + max_lines]
+            lines = [_line_payload_for_judge(slot, rendered_by_url) for slot in part]
+            line_indexes = [int(line.get("line_index") or 0) for line in lines]
+            chunks.append(
+                {
+                    "chunk_id": f"chunk-{chunk_no:02d}",
+                    "sections": sorted({section} if section else {str(line.get("section") or "") for line in lines}),
+                    "line_range": [min(line_indexes), max(line_indexes)] if line_indexes else [],
+                    "digest_lines": lines,
+                }
+            )
+            chunk_no += 1
+    return chunks
 
 
 def _product_completeness_context(project_root: Path, digest_lines: list[dict[str, Any]]) -> dict[str, Any]:
@@ -308,7 +435,7 @@ def _deterministic_action_post_check(
     line_count = len(digest_lines)
     seen_targets: set[int] = set()
     fact_blob = " ".join(
-        " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead", "practical_angle", "draft_line"))
+        " ".join(str(candidate.get(field) or "") for field in ("title", "compact_facts", "source_label", "source_url"))
         for candidate in rendered_candidates
         if isinstance(candidate, dict)
     )
@@ -764,6 +891,279 @@ def _normalise_result(parsed: dict[str, Any], *, fallback_reason: str = "") -> t
     return decision, can_send, reason, confidence, critical_errors, actions, warnings, notes
 
 
+_DECISION_RANK = {"pass": 0, "warn": 1, "repair_required": 2, "block": 3}
+
+
+def _judge_token_limiter():
+    global _JUDGE_TOKEN_LIMITER
+    if _JUDGE_TOKEN_LIMITER is None:
+        from news_digest.pipeline.llm_rewrite import _TokenRateLimiter  # noqa: PLC0415
+
+        max_tpm = max(2000.0, float(os.environ.get("PRE_SEND_JUDGE_MAX_TPM", PRE_SEND_JUDGE_MAX_TPM)))
+        _JUDGE_TOKEN_LIMITER = _TokenRateLimiter(max_tpm)
+    return _JUDGE_TOKEN_LIMITER
+
+
+def _estimate_messages_tokens(messages: list[dict[str, str]], max_tokens: int) -> int:
+    # Conservative enough for pacing: OpenAI-compatible chat prompts in this
+    # repo average around 3.5-4 chars/token; use /3.5 plus reserved output.
+    chars = sum(len(str(message.get("content") or "")) for message in messages)
+    return max(1, int(chars / 3.5) + int(max_tokens or 0))
+
+
+def _call_judge_payload(
+    *,
+    client: object,
+    step: object,
+    system_prompt: str,
+    payload: dict[str, Any],
+    max_tokens: int,
+    prompt_name: str,
+) -> dict[str, Any]:
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+    ]
+    estimated_tokens = _estimate_messages_tokens(messages, max_tokens)
+    started = time.monotonic()
+    try:
+        _judge_token_limiter().acquire(estimated_tokens)
+        response = client.chat.completions.create(
+            model=step.model,
+            messages=messages,
+            temperature=0.0,
+            max_tokens=max_tokens,
+        )
+        raw_text = response.choices[0].message.content or ""
+        try:
+            from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
+
+            record_call_from_response(
+                response=response,
+                stage="pre_send_quality_judge",
+                provider=step.provider,
+                model=step.model,
+                prompt_name=prompt_name,
+                messages=messages,
+                max_tokens=max_tokens,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("pre-send quality judge: cost tracking failed: %s", exc)
+        parsed = _parse_reply(raw_text)
+        if parsed is None:
+            return {
+                "status": "parse_failed",
+                "error": "no parseable JSON",
+                "raw_excerpt": raw_text[:500],
+                "estimated_tokens": estimated_tokens,
+                "duration_seconds": round(time.monotonic() - started, 3),
+            }
+        return {
+            "status": "ok",
+            "parsed": parsed,
+            "estimated_tokens": estimated_tokens,
+            "duration_seconds": round(time.monotonic() - started, 3),
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "status": "failed",
+            "error": f"{exc.__class__.__name__}: {exc}",
+            "estimated_tokens": estimated_tokens,
+            "duration_seconds": round(time.monotonic() - started, 3),
+        }
+
+
+def _chunk_summary(report: dict[str, Any]) -> dict[str, Any]:
+    parsed = report.get("parsed") if isinstance(report.get("parsed"), dict) else {}
+    return {
+        "chunk_id": report.get("chunk_id"),
+        "status": report.get("status"),
+        "line_range": report.get("line_range") or [],
+        "sections": report.get("sections") or [],
+        "decision": parsed.get("decision") if parsed else "",
+        "critical_error_count": len(parsed.get("critical_errors") or []) if parsed else 0,
+        "action_count": len(parsed.get("actions") or []) if parsed else 0,
+        "warning_count": len(parsed.get("warnings") or []) if parsed else 0,
+        "error": report.get("error") or "",
+        "estimated_tokens": report.get("estimated_tokens") or 0,
+        "duration_seconds": report.get("duration_seconds") or 0,
+    }
+
+
+def _combine_map_reduce_results(
+    chunk_reports: list[dict[str, Any]],
+    reduce_report: dict[str, Any] | None,
+) -> tuple[str, dict[str, Any], dict[str, Any]]:
+    reports = list(chunk_reports)
+    if reduce_report:
+        reports.append(reduce_report)
+    successful = [r for r in reports if r.get("status") == "ok" and isinstance(r.get("parsed"), dict)]
+    failed = [r for r in reports if r.get("status") != "ok"]
+
+    if not successful:
+        combined = {
+            "decision": "block",
+            "confidence": 0.0,
+            "critical_errors": [],
+            "actions": [],
+            "warnings": [f"all judge calls failed: {len(failed)} failure(s)"],
+            "notes": "pre-send judge failed before producing usable verdicts",
+        }
+        return "failed", combined, {"chunks": [_chunk_summary(r) for r in chunk_reports], "reduce": _chunk_summary(reduce_report or {})}
+
+    decision = "pass"
+    confidence_values: list[float] = []
+    critical_errors: list[dict[str, Any]] = []
+    actions: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    notes: list[str] = []
+    for report in successful:
+        parsed = report["parsed"]
+        parsed_decision = str(parsed.get("decision") or "repair_required").strip().lower()
+        if _DECISION_RANK.get(parsed_decision, 2) > _DECISION_RANK.get(decision, 0):
+            decision = parsed_decision if parsed_decision in _DECISION_RANK else "repair_required"
+        try:
+            confidence_values.append(float(parsed.get("confidence")))
+        except (TypeError, ValueError):
+            pass
+        critical_errors.extend(row for row in (parsed.get("critical_errors") or []) if isinstance(row, dict))
+        actions.extend(row for row in (parsed.get("actions") or []) if isinstance(row, dict))
+        warnings.extend(str(row)[:260] for row in (parsed.get("warnings") or []) if str(row).strip())
+        note = str(parsed.get("notes") or "").strip()
+        if note:
+            notes.append(note[:160])
+
+    if failed and _DECISION_RANK.get(decision, 0) < _DECISION_RANK["warn"]:
+        decision = "warn"
+    for report in failed:
+        warnings.append(
+            f"judge {report.get('chunk_id') or report.get('mode') or 'call'} failed: "
+            f"{report.get('status')} {report.get('error') or ''}".strip()
+        )
+    status = "partial" if failed else "ok"
+    combined = {
+        "decision": decision,
+        "confidence": min(confidence_values) if confidence_values else (0.65 if failed else 0.8),
+        "critical_errors": critical_errors[:24],
+        "actions": actions[:40],
+        "warnings": warnings[:30],
+        "notes": "; ".join(notes)[:320] if notes else ("partial judge verdict" if failed else "map/reduce judge verdict"),
+    }
+    raw = {
+        "mode": "map_reduce",
+        "status": status,
+        "chunk_count": len(chunk_reports),
+        "failed_chunk_count": sum(1 for r in chunk_reports if r.get("status") != "ok"),
+        "chunks": [_chunk_summary(r) for r in chunk_reports],
+        "reduce": _chunk_summary(reduce_report or {}),
+    }
+    return status, combined, raw
+
+
+def _run_map_reduce_judge(
+    *,
+    client: object,
+    step: object,
+    state_dir: Path,
+    run_date: str,
+    pipeline_run_id: str,
+    sha: str,
+    slots: list[dict[str, Any]],
+    rendered_candidates: list[dict[str, Any]],
+    product_completeness: dict[str, Any],
+) -> tuple[str, dict[str, Any], dict[str, Any]]:
+    rendered_by_url = _rendered_candidates_by_url(rendered_candidates)
+    chunks = _chunk_digest_slots(slots, rendered_by_url)
+    chunk_reports: list[dict[str, Any]] = []
+
+    def _call_chunk(chunk: dict[str, Any]) -> dict[str, Any]:
+        payload = {
+            "mode": "map",
+            "run_date_london": run_date,
+            "pipeline_run_id": pipeline_run_id,
+            "digest_sha256": sha,
+            "chunk": chunk,
+        }
+        report = _call_judge_payload(
+            client=client,
+            step=step,
+            system_prompt=MAP_SYSTEM_PROMPT,
+            payload=payload,
+            max_tokens=PRE_SEND_JUDGE_MAP_MAX_TOKENS,
+            prompt_name="pre_send_quality_judge_map",
+        )
+        report.update({
+            "mode": "map",
+            "chunk_id": chunk.get("chunk_id"),
+            "sections": chunk.get("sections") or [],
+            "line_range": chunk.get("line_range") or [],
+        })
+        return report
+
+    max_workers = max(1, int(os.environ.get("PRE_SEND_JUDGE_MAX_WORKERS", PRE_SEND_JUDGE_MAX_WORKERS)))
+    max_workers = min(max_workers, len(chunks) or 1)
+    if max_workers <= 1:
+        chunk_reports = [_call_chunk(chunk) for chunk in chunks]
+    else:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_index = {executor.submit(_call_chunk, chunk): idx for idx, chunk in enumerate(chunks)}
+            ordered: list[dict[str, Any] | None] = [None] * len(chunks)
+            for future in as_completed(future_to_index):
+                ordered[future_to_index[future]] = future.result()
+            chunk_reports = [report for report in ordered if isinstance(report, dict)]
+
+    digest_outline = [
+        {
+            "line_index": int(slot.get("line_index") or 0),
+            "section": str(slot.get("section") or ""),
+            "text": _compact_text(slot.get("text"), 260),
+        }
+        for slot in slots
+    ]
+    reduce_payload = {
+        "mode": "reduce",
+        "run_date_london": run_date,
+        "pipeline_run_id": pipeline_run_id,
+        "digest_sha256": sha,
+        "product_completeness": product_completeness,
+        "digest_outline": digest_outline,
+        "rendered_leads_and_protected": [
+            {
+                "fingerprint": c.get("fingerprint"),
+                "title": c.get("title"),
+                "primary_block": c.get("primary_block"),
+                "is_lead": c.get("is_lead"),
+                "protected_lane": c.get("protected_lane") or {},
+            }
+            for c in rendered_candidates
+            if c.get("is_lead") or c.get("protected_lane")
+        ][:40],
+        "chunk_summaries": [_chunk_summary(report) for report in chunk_reports],
+    }
+    reduce_report = _call_judge_payload(
+        client=client,
+        step=step,
+        system_prompt=REDUCE_SYSTEM_PROMPT,
+        payload=reduce_payload,
+        max_tokens=PRE_SEND_JUDGE_REDUCE_MAX_TOKENS,
+        prompt_name="pre_send_quality_judge_reduce",
+    )
+    reduce_report.update({"mode": "reduce", "chunk_id": "reduce"})
+
+    try:
+        from news_digest.pipeline.cost_tracker import dump_stage  # noqa: PLC0415
+
+        dump_stage(state_dir, "pre_send_quality_judge")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("pre-send quality judge: cost dump failed: %s", exc)
+
+    status, combined, raw = _combine_map_reduce_results(chunk_reports, reduce_report)
+    raw["max_workers"] = max_workers
+    raw["chunk_line_target"] = PRE_SEND_JUDGE_CHUNK_LINES
+    raw["max_tpm"] = max(2000.0, float(os.environ.get("PRE_SEND_JUDGE_MAX_TPM", PRE_SEND_JUDGE_MAX_TPM)))
+    return status, combined, raw
+
+
 def _pipeline_run_id(project_root: Path) -> str:
     state_dir = project_root / "data" / "state"
     for filename in ("release_report.json", "llm_rewrite_report.json", "writer_report.json"):
@@ -830,7 +1230,11 @@ def evaluate_pre_send_quality(
 
     digest_html = digest_path.read_text(encoding="utf-8")
     sha = digest_hash(digest_html)
-    digest_lines = digest_lines_from_html(digest_html)
+    digest_slots = _digest_line_slots_from_html(digest_html)
+    digest_lines = [
+        {"line_index": item["line_index"], "section": item.get("section") or "", "text": item.get("text") or ""}
+        for item in digest_slots
+    ]
     rendered_candidates = _rendered_candidates(project_root)
     product_completeness = _product_completeness_context(project_root, digest_lines)
 
@@ -910,20 +1314,6 @@ def evaluate_pre_send_quality(
         _write_report(project_root, result)
         return asdict(result)
 
-    payload = {
-        "run_date_london": run_date,
-        "pipeline_run_id": pipeline_run_id,
-        "digest_sha256": sha,
-        "digest_lines": digest_lines,
-        "rendered_candidates": rendered_candidates,
-        "product_completeness": product_completeness,
-    }
-    user_content = json.dumps(payload, ensure_ascii=False)
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": user_content},
-    ]
-    max_tokens = 1200
     try:
         client = OpenAI(
             api_key=key,
@@ -931,28 +1321,17 @@ def evaluate_pre_send_quality(
             timeout=step.timeout_seconds or 75,
             max_retries=sdk_retries_for_route(provider=step.provider, model=step.model, base_url=step.base_url),
         )
-        response = client.chat.completions.create(
-            model=step.model,
-            messages=messages,
-            temperature=0.0,
-            max_tokens=max_tokens,
+        judge_status, parsed, map_reduce_raw = _run_map_reduce_judge(
+            client=client,
+            step=step,
+            state_dir=state_dir,
+            run_date=run_date,
+            pipeline_run_id=pipeline_run_id,
+            sha=sha,
+            slots=digest_slots,
+            rendered_candidates=rendered_candidates,
+            product_completeness=product_completeness,
         )
-        raw_text = response.choices[0].message.content or ""
-        try:
-            from news_digest.pipeline.cost_tracker import dump_stage, record_call_from_response  # noqa: PLC0415
-
-            record_call_from_response(
-                response=response,
-                stage="pre_send_quality_judge",
-                provider=step.provider,
-                model=step.model,
-                prompt_name="pre_send_quality_judge",
-                messages=messages,
-                max_tokens=max_tokens,
-            )
-            dump_stage(state_dir, "pre_send_quality_judge")
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("pre-send quality judge: cost tracking failed: %s", exc)
     except Exception as exc:  # noqa: BLE001
         result = PreSendQualityResult(
             status="failed",
@@ -972,7 +1351,6 @@ def evaluate_pre_send_quality(
         _write_report(project_root, result)
         return asdict(result)
 
-    parsed = _parse_reply(raw_text)
     if parsed is None:
         result = PreSendQualityResult(
             status="failed",
@@ -1025,7 +1403,7 @@ def evaluate_pre_send_quality(
             can_send = True
             reason = "pre-send judge found issues, but no executable repair was available; shipping degraded with report"
     result = PreSendQualityResult(
-        status="ok",
+        status=judge_status,
         decision=decision,
         can_send=can_send,
         reason=reason,
@@ -1043,7 +1421,7 @@ def evaluate_pre_send_quality(
         deterministic_post_check=deterministic_post_check,
         repair_executor=repair_executor,
         notes=notes,
-        raw=parsed,
+        raw={**parsed, "map_reduce": map_reduce_raw},
     )
     _write_report(project_root, result)
     return asdict(result)

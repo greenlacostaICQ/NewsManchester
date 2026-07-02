@@ -21,6 +21,49 @@ class EditorPacingTest(unittest.TestCase):
             limiter.acquire(1000)  # reuses the rewrite-stage bucket; no import cycle
         self.assertGreaterEqual(editor.PRE_SEND_EDITOR_MAX_WORKERS, 2)
 
+    def test_empty_ending_post_check_strips_generic_filler_and_keeps_link(self):
+        line = (
+            '• HOME: билеты на серию показов поступят в продажу 5 июля, '
+            'а участники программы уже названы. Следите за обновлениями площадки. '
+            '<a href="https://example.test/home">HOME</a>'
+        )
+
+        fixed, reason = editor._strip_empty_editor_ending(line)
+
+        self.assertEqual(reason, "empty_generic_ending_stripped")
+        self.assertIn("5 июля", fixed)
+        self.assertNotIn("Следите за обновлениями", fixed)
+        self.assertTrue(fixed.endswith('<a href="https://example.test/home">HOME</a>'))
+
+    def test_empty_ending_post_check_keeps_concrete_status_action(self):
+        line = (
+            '• Metrolink: задержки на линии Bury идут из-за проверки путей; '
+            'перед поездкой проверьте страницу статуса TfGM. '
+            '<a href="https://tfgm.com/status">TfGM</a>'
+        )
+
+        fixed, reason = editor._strip_empty_editor_ending(line)
+
+        self.assertEqual(reason, "")
+        self.assertEqual(fixed, line)
+
+    def test_empty_ending_post_check_reports_removed_rows(self):
+        warnings: list[str] = []
+        polished, report = editor._apply_empty_ending_post_check(
+            {
+                "Свежие новости": [
+                    '• Manchester: совет открыл консультацию по центру города до 12 июля. '
+                    'Проверьте сроки и детали. <a href="https://example.test/council">Council</a>'
+                ]
+            },
+            warnings,
+        )
+
+        self.assertEqual(report["removed"], 1)
+        self.assertEqual(report["remaining"], 0)
+        self.assertIn("Final editor post-check stripped 1", warnings[0])
+        self.assertNotIn("Проверьте сроки и детали", polished["Свежие новости"][0])
+
 
 if __name__ == "__main__":
     unittest.main()

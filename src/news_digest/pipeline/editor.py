@@ -85,7 +85,7 @@ replace_needed или strip_only_if_replacement_unavailable.
 - Латиница, склеенная с русским окончанием (Stockportа, Urmstonе, Rochdaleе) → rewrite, дай корректный русский топоним (Стокпорт, Урмстон, Рочдейл).
 - Смысловой дубль: та же история/событие другими словами уже встречалась выше по выпуску → strip_only_if_replacement_unavailable.
 - Просроченная дата (дата уже прошла относительно сегодня) → rewrite или replace_needed.
-- Шаблон не по теме: "следите за обновлениями полиции или суда" на не-судебной/не-полицейской новости; "если хотите попасть, уточните дату" как наполнитель → rewrite, убери штамп, оставь реальный факт/действие.
+- Пустая концовка-призыв: "следите за обновлениями", "проверьте/сверьте/уточните детали", "если хотите попасть..." без нового конкретного факта после неё → rewrite, замени конкретным фактом из evidence; если факта нет, удали призыв целиком, даже если строка станет короче.
 - Рассогласование рода/числа/падежа ("бывший медсестра") → rewrite.
 
 Правила:
@@ -287,6 +287,94 @@ def _line_needs_russian_editor(line: str) -> bool:
     if glossary_line_issues(text):
         return True
     return any(pattern.search(clean_text) for pattern in _BAD_RUSSIAN_DETECTORS)
+
+
+def _strip_editor_tags(text: str) -> str:
+    text = re.sub(r"<a\s+[^>]*>(.*?)</a>", r"\1", str(text or ""), flags=re.IGNORECASE | re.DOTALL)
+    text = re.sub(r"</?(?:b|i|strong|em)>", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", " ", text)
+    return re.sub(r"\s+", " ", html.unescape(text)).strip()
+
+
+_EMPTY_ENDING_RE = re.compile(
+    r"(?:[.;]\s*)?(?:"
+    r"следите\s+за\s+обновлениями[^.]*|"
+    r"если\s+хотите\s+попасть[^.]*уточните\s+(?:дату|время|детали|доступность)[^.]*|"
+    r"если\s+это\s+касается[^.]*проверьте\s+(?:сроки\s+и\s+детали|детали)[^.]*|"
+    r"перед\s+планами[^.]*проверьте\s+(?:детали|обновления)[^.]*|"
+    r"не\s+откладывайте\s+проверку[^.]*|"
+    r"свер(?:ьте|яйте)\s+(?:обновления|ограничения|детали)[^.]*|"
+    r"уточните\s+(?:дату,\s*)?(?:время\s+и\s+)?(?:детали|доступность|доступность\s+мест)[^.]*|"
+    r"проверьте\s+(?:сроки\s+и\s+детали|детали|обновления|подробности)\b[^.]*"
+    r")\.?\s*$",
+    re.IGNORECASE,
+)
+
+
+def _strip_empty_editor_ending(line: str) -> tuple[str, str]:
+    """Remove final generic call-to-action filler while preserving source link.
+
+    This is deliberately narrower than the model prompt: it catches only the
+    boilerplate endings we know were used to pad short cards. A useful concrete
+    action such as "проверьте страницу статуса TfGM" is left alone.
+    """
+    raw = str(line or "").strip()
+    if not raw:
+        return raw, ""
+    link = ""
+    link_match = re.search(r"\s*(<a\s+[^>]*href=\"[^\"]+\"[^>]*>.*?</a>)\s*$", raw, flags=re.IGNORECASE | re.DOTALL)
+    body = raw
+    if link_match:
+        link = link_match.group(1)
+        body = raw[: link_match.start()].rstrip()
+    match = _EMPTY_ENDING_RE.search(_strip_editor_tags(body))
+    if not match:
+        return raw, ""
+    html_match = _EMPTY_ENDING_RE.search(body)
+    if not html_match:
+        return raw, ""
+    kept = body[: html_match.start()].rstrip(" ;.")
+    if len(_strip_editor_tags(kept)) < 55:
+        return raw, "empty_ending_detected_not_stripped_short_line"
+    fixed = f"{kept}."
+    if link:
+        fixed = f"{fixed} {link}"
+    return fixed, "empty_generic_ending_stripped"
+
+
+def _apply_empty_ending_post_check(
+    polished: dict[str, list[str]],
+    warnings: list[str],
+) -> tuple[dict[str, list[str]], dict[str, object]]:
+    removed = 0
+    remaining = 0
+    examples: list[dict[str, object]] = []
+    for section_name, lines in list(polished.items()):
+        out: list[str] = []
+        for line in lines:
+            fixed, reason = _strip_empty_editor_ending(line)
+            if reason == "empty_generic_ending_stripped" and fixed != line:
+                removed += 1
+                if len(examples) < 12:
+                    examples.append({"section": section_name, "before": line[:220], "after": fixed[:220]})
+                out.append(fixed)
+                continue
+            if reason:
+                remaining += 1
+                if len(examples) < 12:
+                    examples.append({"section": section_name, "before": line[:220], "status": reason})
+            out.append(line)
+        polished[section_name] = out
+    if removed:
+        warnings.append(f"Final editor post-check stripped {removed} empty generic ending(s).")
+    if remaining:
+        warnings.append(f"Final editor post-check left {remaining} short generic ending(s) for report-only review.")
+    return polished, {
+        "checked": sum(len(lines) for lines in polished.values()),
+        "removed": removed,
+        "remaining": remaining,
+        "examples": examples,
+    }
 
 
 def _line_preserves_links(original: str, fixed: str) -> bool:
@@ -1497,6 +1585,8 @@ def _pre_send_polish_sections(
         polished["Общественный транспорт сегодня"] = [_transport_status_fallback_line()]
         warnings.append("Final editor stop-loss: empty transport block replaced with TfGM status fallback.")
 
+    polished, empty_ending_post_check = _apply_empty_ending_post_check(polished, warnings)
+
     bad_examples: list[str] = []
     for item in _visible_line_items(polished):
         line = str(item.get("line") or "")
@@ -1542,6 +1632,7 @@ def _pre_send_polish_sections(
         "max_rounds": PRE_SEND_EDITOR_MAX_ROUNDS,
         "rounds": round_reports,
         "block_action_reports": block_action_reports,
+        "empty_ending_post_check": empty_ending_post_check,
         "visible_items": len(items),
         "evidence_items": evidence_items,
         "refetch": refetch_stats,

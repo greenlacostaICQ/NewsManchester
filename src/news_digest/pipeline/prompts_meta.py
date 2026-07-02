@@ -66,6 +66,10 @@ PROMPTS: tuple[PromptMeta, ...] = (
                hash=_h(_ppj.JUDGE_PROMPT)),
     PromptMeta(name="pre_send_quality_judge", version=_psq.PROMPT_VERSION,
                hash=_h(_psq.SYSTEM_PROMPT)),
+    PromptMeta(name="pre_send_quality_judge_map", version=_psq.PROMPT_VERSION,
+               hash=_h(_psq.MAP_SYSTEM_PROMPT)),
+    PromptMeta(name="pre_send_quality_judge_reduce", version=_psq.PROMPT_VERSION,
+               hash=_h(_psq.REDUCE_SYSTEM_PROMPT)),
 )
 
 
