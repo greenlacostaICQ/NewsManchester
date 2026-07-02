@@ -1,0 +1,7 @@
+# Night-inventory state is concurrent-append JSONL committed by parallel
+# GitHub Actions waves (see .github/workflows/night-inventory.yml). union-merge
+# keeps both sides' lines instead of failing a wave on a rebase conflict when a
+# concurrent run advanced main between checkout and push. Duplicate records
+# self-heal on the next merge_inventory pass (upsert by fingerprint).
+data/state/inventory_run_log.jsonl merge=union
+data/state/inventory/*.jsonl merge=union

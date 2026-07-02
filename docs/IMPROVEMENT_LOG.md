@@ -637,3 +637,21 @@
   - **0053** (2 регрессии): (а) `calendar_repeat_review` — ветка `current_weekend_inventory_occurrence` затеняла более специфичную `planning_item_reached_weekend` для перехода next_7→weekend; добавлен guard. `editorial_contracts.py`. (б) `_is_actionable_weekend_candidate` был сведён к узкому `is_weekend_inventory_candidate` (требует блок weekend_activities), из-за чего датированное weekend-событие не распознавалось; восстановлена широкая проверка (дата на ближайшие сб/вс ИЛИ weekly-рекурренс), inventory-кейс оставлен. `llm_rewrite.py`.
 - Файлы/места: `candidate_validator.py`, `writer.py`, `editorial_contracts.py`, `llm_rewrite.py`, `tests/test_backlog_remediation.py`.
 - ПРОВЕРКА: полный `unittest discover` — 7 failures (все pre-existing, вне пакета); 8 бывших регрессий + `tests.test_weekend_inventory_contract` зелёные.
+
+### 0056 — Night Inventory: commit-шаг устойчив к гонке за state-файлы — 2026-07-02
+- Статус: внедрено; ПРОВЕРКА — воспроизвёл конфликт в одноразовом git-репо: без `.gitattributes` `git rebase` падает `CONFLICT (content): Merge conflict in data/state/inventory_run_log.jsonl`; с `merge=union` в базовом коммите rebase проходит `exit 0`, обе волны сохранены, маркеров нет.
+- Проблема: ран `28585118004` (ручной TEST RUN, волна `breaking`) упал на шаге `Commit inventory to repo` — `git pull --rebase --autostash` не смог слить две append-строки в `inventory_run_log.jsonl`, когда параллельная волна успела запушить main между checkout и push → exit 1 → Telegram «волна упала».
+- Причина (корень): `inventory_run_log.jsonl` — чистый append (`open("a")`); при расхождении соседние дописанные строки git видит как конфликт. `git pull --rebase` поверх append-only JSONL хрупок к любому продвижению main (параллельная волна или утренний build в той же `concurrency: digest-state`).
+- Решение: (1) `.gitattributes` — `merge=union` для `data/state/inventory_run_log.jsonl` и `data/state/inventory/*.jsonl`: git сохраняет строки обеих сторон вместо конфликта; дубли в `inventory/*.jsonl` самозалечиваются на следующем `merge_inventory` (upsert по fingerprint). (2) commit-шаг обёрнут в bounded retry (5 попыток `pull --rebase && push` с backoff) — гасит гонку push, не роняет волну на транзиенте.
+- Требование к деплою: `.gitattributes` должен попасть в main ДО ближайшей ночи (union-драйвер читается из дерева на момент rebase; если атрибут придёт позже расхождения — не применится).
+- Файлы/места: `.gitattributes` (новый), `.github/workflows/night-inventory.yml` (шаг `Commit inventory to repo`).
+- ПРОВЕРКА (после ночи): в логах волн нет `CONFLICT`/`could not apply`; при наложении — строка `Pushed inventory on attempt N`.
+
+### 0057 — Остаток из 7 pre-existing падений (не из пакета) — весь набор зелёный — 2026-07-02
+- Статус: внедрено; ПРОВЕРКА — полный `PYTHONPATH=src python3 -m unittest discover -s tests`: 815 тестов, 0 failures.
+- Проблема: после 0055 оставалось 7 красных тестов старого music-notability/ticket-headliner кластера + skiddle-заголовок; красные ещё до пакета 0039–0053.
+- Корень и фиксы:
+  - **6 notability-тестов** (`test_public_output_contracts`): time-bomb в фикстуре, не баг продукта. `_ticket_notability_cache` хардкодил `checked_at="2026-06-02"`; окно recheck в `_artist_notability` = 30 дней (`ticket_notability.py:560`). Как только реальные часы прошли 30 дней (сегодня 2026-07-02), кэш-записи протухали → `tier="unknown"`. Фикс: `checked_at = (now_london() - 1d)` — фикстура всегда внутри окна. `tests/test_public_output_contracts.py`.
+  - **skiddle-заголовок** (`test_market_event_sources`): `_enrich_item` при успешном deep-fetch перезаписывал чистый заголовок карточки (из `<img alt>` = «Event at Venue») заголовком дочерней страницы (без venue) — `preserve_listing_title` не включал Skiddle (`extract.py:917`). Фикс: добавил `Skiddle Manchester`/`Skiddle Manchester Bank Holiday` в allow-list — тот же паттерн, что RNCM/HOME. Заголовок карточки сохраняется, deep-enrichment всё равно тянет факты. Сеть-независимо.
+- Файлы/места: `tests/test_public_output_contracts.py`, `src/news_digest/pipeline/collector/extract.py`.
+- ПРОВЕРКА: полный `unittest discover` — 815 pass, 0 fail.

@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
+from news_digest.pipeline.common import now_london
 from news_digest.pipeline.collector.fallbacks import _weather_draft_line
 from news_digest.pipeline.collector.weather import _met_office_practical_angle
 from news_digest.pipeline.curator import _is_curator_protected
@@ -48,7 +49,11 @@ class PublicOutputContractTests(unittest.TestCase):
         tempdir = tempfile.TemporaryDirectory()
         self.addCleanup(tempdir.cleanup)
         path = Path(tempdir.name) / "ticket_notability_cache.json"
-        checked_at = "2026-06-02T12:00:00+01:00"
+        # Keep the fixture inside the 30-day recheck window relative to the real
+        # clock, otherwise the cached tiers age out to "unknown" and these
+        # contract tests become a time-bomb (they were red once the repo clock
+        # passed 30 days after a hardcoded 2026-06-02 timestamp).
+        checked_at = (now_london() - timedelta(days=1)).isoformat()
         artists = {}
         for key, record in records.items():
             payload = {

@@ -926,6 +926,11 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         "Manchester City",
         "Manchester City Men",
         "Manchester United",
+        # Skiddle listing cards already carry a clean "<Event> at <Venue>" title
+        # from the card alt text; deep-enriching for venue/ticketing facts must
+        # not overwrite it with the child page <title>, which drops the venue.
+        "Skiddle Manchester",
+        "Skiddle Manchester Bank Holiday",
     }
     return ExtractedItem(
         title=item.title if preserve_listing_title else _clean_title_text(unescape(enriched_title or item.title)),

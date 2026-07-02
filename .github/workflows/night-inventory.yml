@@ -75,17 +75,31 @@ jobs:
       - name: Commit inventory to repo
         if: always()
         run: |
+          set -uo pipefail
           git config user.name "digest-bot"
           git config user.email "digest-bot@users.noreply.github.com"
           git add -f data/state/inventory/*.jsonl || true
           git add -f data/state/inventory_run_log.jsonl || true
           if git diff --staged --quiet; then
             echo "No inventory changes to commit."
-          else
-            git commit -m "chore: night inventory ${{ steps.wave.outputs.wave }} $(TZ=Europe/London date '+%Y-%m-%d %H:%M')"
-            git pull --rebase --autostash origin main
-            git push
+            exit 0
           fi
+          git commit -m "chore: night inventory ${{ steps.wave.outputs.wave }} $(TZ=Europe/London date '+%Y-%m-%d %H:%M')"
+          # A concurrent wave (or the morning build) can advance main between our
+          # checkout and push. The state files are union-merged (.gitattributes),
+          # so the rebase never conflicts on them; this loop only re-syncs and
+          # retries the push race. Never fail the wave on a transient race.
+          for attempt in 1 2 3 4 5; do
+            if git pull --rebase --autostash origin main && git push; then
+              echo "Pushed inventory on attempt ${attempt}."
+              exit 0
+            fi
+            echo "Push race on attempt ${attempt} — re-syncing and retrying."
+            git rebase --abort 2>/dev/null || true
+            sleep $((attempt * 5))
+          done
+          echo "Could not push inventory after 5 attempts." >&2
+          exit 1
 
       - name: Notify Telegram — wave complete
         if: success()
