@@ -1594,12 +1594,21 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
         return {"applies": True, "allow": False, "reason": "already_shown_today"}
 
     if current_date and is_weekend_inventory_candidate(candidate):
-        return {
-            "applies": True,
-            "allow": True,
-            "reason": "current_weekend_inventory_occurrence",
-            "days_until_event": (current_date - today).days,
-        }
+        # A planning item that has now reached its weekend is handled by the more
+        # specific transition branch below; don't shadow it with the generic
+        # weekend-inventory occurrence reason.
+        planning_to_weekend = (
+            str(candidate.get("primary_block") or "") == "weekend_activities"
+            and str(previous.get("primary_block") or "") in {"next_7_days", "future_announcements"}
+            and 0 <= (current_date - today).days <= 3
+        )
+        if not planning_to_weekend:
+            return {
+                "applies": True,
+                "allow": True,
+                "reason": "current_weekend_inventory_occurrence",
+                "days_until_event": (current_date - today).days,
+            }
 
     if current_date:
         days_until = (current_date - today).days

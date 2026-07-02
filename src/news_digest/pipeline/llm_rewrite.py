@@ -1194,7 +1194,22 @@ def _candidate_event_day(candidate: dict) -> date | None:
 
 
 def _is_actionable_weekend_candidate(candidate: dict) -> bool:
-    return is_weekend_inventory_candidate(candidate)
+    # Weekend-inventory items (markets/fairs/festivals in the weekend block) are
+    # always actionable, but so is any card whose concrete event date lands on
+    # the upcoming weekend, or which recurs every weekend. The caller already
+    # gates on block == "weekend_activities", so this must judge the date, not
+    # re-check the block (which would drop dated weekend events).
+    if is_weekend_inventory_candidate(candidate):
+        return True
+    today = date.fromisoformat(today_london())
+    days_to_sat = (5 - today.weekday()) % 7
+    start = today + timedelta(days=days_to_sat)
+    end = start + timedelta(days=1)
+    event_day = _candidate_event_day(candidate)
+    if event_day and start <= event_day <= end:
+        return True
+    blob = " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead", "evidence_text")).lower()
+    return bool(re.search(r"\b(?:every|weekly|saturdays?|sundays?|weekend|каждую\s+субботу|каждое\s+воскресенье)\b", blob))
 
 
 def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> tuple[list[dict], dict[str, object]]:

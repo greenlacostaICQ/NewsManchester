@@ -3314,6 +3314,28 @@ def _recover_soft_draft_line(candidate: dict, line: str, errors: list[str]) -> t
     return "", ["needs_model_enrichment"]
 
 
+def _keep_core_card_short(candidate: dict, line: str) -> tuple[str, list[str]]:
+    """Deterministic last resort for core cards when model enrichment is
+    unavailable or fails: keep the existing line honestly short instead of
+    dropping a real story. Auto-repairs editorial-contract (glossary) defects
+    and strips any generic recovery tail first. Refuses if a non-soft
+    (factual/numeric/translation/sensitive/HTML) error survives — those still
+    hold the item. This is the "честно короче" fallback, not a filler stamp.
+    """
+    if not _core_soft_recovery_allowed(candidate):
+        return "", []
+    repaired, _repairs = _repair_editorial_contract_line(candidate, line)
+    repaired = _strip_generic_recovery_tail(repaired)
+    if not repaired.startswith("• "):
+        repaired = f"• {repaired.lstrip('• ').strip()}"
+    if len(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", repaired)).strip()) < 18:
+        return "", []
+    residual = _draft_line_quality_errors(candidate, repaired)
+    if residual and not _only_soft_draft_line_errors(residual):
+        return "", []
+    return repaired, ["held_thin_evidence"]
+
+
 def _core_underflow_sections_for_ticket_throttle(section_counts: dict[str, int], *, show_weekend: bool) -> list[str]:
     underflow: list[str] = []
     for section_name, floor in CORE_EMERGENCY_FLOORS.items():
@@ -6862,6 +6884,20 @@ def write_digest(project_root: Path) -> StageResult:
                 warnings.append(
                     f"Candidate #{index}: model recovery unavailable "
                     f"({model_recovery_report.get('status') or 'failed'})."
+                )
+        if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
+            kept_line, kept_reasons = _keep_core_card_short(candidate, line)
+            if kept_line:
+                line = kept_line
+                draft_line_errors = []
+                controlled_enrichment_report["held_thin_evidence"] = int(controlled_enrichment_report.get("held_thin_evidence") or 0) + 1
+                candidate["draft_line"] = kept_line
+                candidate["draft_line_provider"] = "writer_core_kept_short"
+                candidate["draft_line_model"] = "deterministic_core_kept_short"
+                candidate["publish_plan_contract_status"] = "kept_short"
+                _append_recovery_step(candidate, "core_kept_short", "recovered", missing=kept_reasons)
+                warnings.append(
+                    f"Candidate #{index}: core card kept honestly short after model enrichment unavailable."
                 )
         if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
             _append_recovery_step(candidate, "draft_line_quality_repair", "held", missing=(candidate.get("story_frame") or {}).get("missing_facts") or draft_line_errors)

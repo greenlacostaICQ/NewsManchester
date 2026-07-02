@@ -169,7 +169,10 @@ class WriterRenderedFingerprintTest(unittest.TestCase):
             self.assertIn("short-core", report["rendered_candidate_fingerprints"])
             self.assertEqual(report["quality_counts"]["dropped_low_quality"], 0)
             html = (state_dir / "draft_digest.html").read_text(encoding="utf-8")
-            self.assertIn("проверьте сроки", html)
+            # 0041: the compact core card is kept honestly short instead of being
+            # dropped, but the generic filler stamp must NOT come back.
+            self.assertIn("обновление городского сервиса", html)
+            self.assertNotIn("проверьте сроки", html)
 
     def test_editor_replaces_empty_transport_after_stripping_bad_line(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

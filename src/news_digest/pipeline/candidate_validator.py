@@ -1820,10 +1820,16 @@ def _enforce_leisure_routing_contract(candidate: dict) -> bool:
         existing = str(candidate.get("reason") or "").strip()
         candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
         return True
+    # A leisure item that carries a concrete upcoming date is a real dated plan
+    # (annual festival, dated workshop, visitor experience) and legitimately
+    # belongs in next_7_days. Only undated routine leisure (a generic lunchtime
+    # concert, an open-ended listing) is dropped from the civic/planning block.
+    if _has_future_or_concrete_date(candidate):
+        return False
     _append_reject(
         candidate,
         "leisure_not_next_7_days",
-        "Validator: leisure/event item is not part of the next_7_days civic/planning contract.",
+        "Validator: undated leisure item is not part of the next_7_days civic/planning contract.",
     )
     return True
 
@@ -2763,8 +2769,6 @@ def validate_candidates(project_root: Path) -> StageResult:
             _time_gate("reroute_market_planning_to_weekend", lambda: _reroute_market_planning_to_weekend(candidate))
         if candidate.get("include"):
             _time_gate("demote_distant_weekend_event", lambda: _demote_distant_weekend_event(candidate))
-        if candidate.get("include") and manual != "force_include":
-            _time_gate("leisure_routing_contract", lambda: _enforce_leisure_routing_contract(candidate))
         if candidate.get("include"):
             _time_gate("undated_event_like_candidate", lambda: _exclude_undated_event_like_candidate(candidate))
         if candidate.get("include"):
@@ -2783,6 +2787,12 @@ def validate_candidates(project_root: Path) -> StageResult:
                     [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]
                     + [f"event_schema_missing:{','.join(str(m) for m in required_missing)}"]
                 ))
+        # Leisure routing runs AFTER the event-quality gates so a truly undated
+        # event is dropped with `no_date` (hard) rather than mislabelled as
+        # leisure, and a dated event has its date_start populated before we
+        # decide whether it is routine leisure or a real next_7_days plan.
+        if candidate.get("include") and manual != "force_include":
+            _time_gate("leisure_routing_contract", lambda: _enforce_leisure_routing_contract(candidate))
         if manual == "force_include":
             candidate["include"] = True
             candidate["editorial_status"] = "approved"
