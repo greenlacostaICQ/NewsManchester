@@ -1,23 +1,14 @@
 name: GM Night Inventory
 
-# Backlog 8.4 on the REAL prod substrate (GitHub Actions, not launchd): each
-# night wave collects ONLY into data/state/inventory/*.jsonl and commits it
-# back to the repo, so the 08:00 morning run (which checks out main) can read
-# it. A wave never writes candidates.json, so it can't block/corrupt the
-# morning release. The morning build does not yet consume inventory — that is
-# the gradual next step (item 15) after several clean nights.
+# Backlog 8.4 on the REAL prod substrate: cron-job.org is the London-time
+# scheduler, GitHub Actions is the executor. Each night wave collects ONLY into
+# data/state/inventory/*.jsonl and commits it back to the repo, so the 08:00
+# morning run (which checks out main) can read it. A wave never writes
+# candidates.json, so it can't block/corrupt the morning release. The morning
+# build does not yet consume inventory — that is the gradual next step (item 15)
+# after several clean nights.
 
 on:
-  schedule:
-    # UTC. The wave is bound to which cron entry fired (github.event.schedule),
-    # so there is no wall-clock/DST ambiguity. 'breaking' is placed so it lands
-    # before the 08:00 London morning run in BOTH seasons (08:00 London = 07:00
-    # UTC in BST / 08:00 UTC in GMT); the other waves tolerate the ±1h shift.
-    - cron: '30 23 * * *'   # events           → 00:30 BST / 23:30 GMT London
-    - cron: '0 1 * * *'     # tickets          → 02:00 BST / 01:00 GMT
-    - cron: '30 2 * * *'    # pro_food_russian → 03:30 BST / 02:30 GMT
-    - cron: '15 5 * * *'    # live_news        → 06:15 BST / 05:15 GMT
-    - cron: '30 6 * * *'    # breaking         → 07:30 BST / 06:30 GMT (before morning)
   workflow_dispatch:
     inputs:
       wave:
@@ -61,21 +52,14 @@ jobs:
       - name: Install dependencies
         run: pip install -e . openai
 
-      - name: Resolve wave from trigger
+      - name: Resolve wave from dispatch input
         id: wave
         run: |
           set -euo pipefail
-          case "${{ github.event.schedule }}" in
-            "30 23 * * *") WAVE=events ;;
-            "0 1 * * *")   WAVE=tickets ;;
-            "30 2 * * *")  WAVE=pro_food_russian ;;
-            "15 5 * * *")  WAVE=live_news ;;
-            "30 6 * * *")  WAVE=breaking ;;
-            *)             WAVE="${{ github.event.inputs.wave }}" ;;
-          esac
+          WAVE="${{ github.event.inputs.wave }}"
           if [ -z "$WAVE" ]; then echo "No wave resolved" >&2; exit 1; fi
           echo "wave=$WAVE" >> "$GITHUB_OUTPUT"
-          echo "Resolved wave: $WAVE (schedule='${{ github.event.schedule }}')"
+          echo "Resolved wave: $WAVE"
 
       - name: Collect inventory wave
         env:

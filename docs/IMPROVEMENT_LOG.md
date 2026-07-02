@@ -618,3 +618,12 @@
 - Файлы/места: `src/news_digest/pipeline/weekend_inventory.py`; `event_extraction.py`; `llm_rewrite.py`; `editorial_contracts.py`; `writer.py`; `collector/core.py`; `release.py`; `tests/test_weekend_inventory_contract.py`; `tests/test_source_health.py`.
 - ПРОВЕРКА (после прогона): offline unittest only until next prod run.
 - Где была ошибка (если не сработало): —
+
+### 0054 — Night Inventory: cron-job.org стал единственным будильником — 2026-07-02
+- Статус: внедрено; ПРОВЕРКА — cron-job.org test run `events` вернул `204 No Content`; GitHub `schedule` отключён, `workflow_dispatch` оставлен.
+- Проблема: GitHub `schedule` для night inventory сработал с большим лагом: `live_news` и `breaking` пришли уже после утреннего выпуска, поэтому ночной слой не мог помочь 08:00-пайплайну. Плюс GitHub cron живёт в UTC и уже исторически был слабым местом проекта.
+- Причина (корень): `.github/workflows/night-inventory.yml` совмещал executor и scheduler; `schedule:` запускал волны сам, а cron-job.org дублировал бы их после настройки внешних jobs.
+- Решение: `night-inventory.yml` теперь только `workflow_dispatch` executor. Production schedule вынесен в cron-job.org с timezone `Europe/London`: `00:31 events`, `02:07 tickets`, `03:37 pro_food_russian`, `06:17 live_news`, `07:31 breaking`. Утренний `Manchester Digest` cron-job не трогается.
+- Ожидаемый эффект и метрика: ночью ровно 5 `GM Night Inventory` runs с `event=workflow_dispatch`, без `event=schedule`; все завершаются до 08:00 London и коммитят `data/state/inventory/*.jsonl`.
+- Файлы/места: `.github/workflows/night-inventory.yml`.
+- ПРОВЕРКА (после прогона): после первой полной ночи сверить `gh run list --workflow night-inventory.yml --limit 10`, `data/state/inventory_run_log.jsonl`, и отсутствие scheduled runs.
