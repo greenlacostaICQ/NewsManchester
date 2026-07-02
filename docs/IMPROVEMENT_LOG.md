@@ -503,10 +503,10 @@
 - ПРОВЕРКА (после прогона): —
 
 ### 0043 — Проверка полноты перевода (пропажа факта, не выдумка) — 2026-07-02
-- Статус: внедрено локально (staged, детерминированный слой); прод-проверка на следующем реальном прогоне
+- Статус: внедрено в `main` и runtime-synced (детерминированный слой); прод-проверка на следующем реальном прогоне
 - Проблема: история Tinder потеряла severity-деталь «rape fantasy», хотя она была в evidence. Ни один гейт не поймал.
 - Причина (корень): все проверки односторонние. Промпт rewrite просит «сохрани всё» + самоаттестация (`llm_rewrite.py:268-274`); `fact_lock.unsupported_fact_tokens` (`fact_lock.py:105`) проверяет русский→evidence (выдумка), не evidence→русский (пропажа); редактор sensitive-проход (`editor.py:171`) ловит добавленную ложь, не потерю.
-- Реализация (staged, детерминированное сначала — LLM-судья остаётся семантическим fallback'ом, нового вызова не добавлял):
+- Реализация (детерминированное сначала — LLM-судья остаётся семантическим fallback'ом, нового вызова не добавлял):
   - Новый `fact_completeness.py`: обратный fact-lock. Двуязычный лексикон grave-severity концептов (sexual_offence/homicide/death/weapon_violence/acquittal): en-паттерн ⇒ «факт есть в источнике», ru-паттерн ⇒ «сохранён ли в строке». en есть, ru нет ⇒ critical omission (MQM omission). `critical_fact_obligations`, `translation_completeness_review`, `line_satisfies_concept`.
   - `fact_lock.scalar_fact_tokens` — только числа/деньги/даты без Latin-имён (для non-critical диффа; digest обязан сжимать ⇒ warning-only).
   - `pre_send_quality_judge`: `_deterministic_completeness_scan` по shipped-строкам с match по URL; critical omission ⇒ critical_error (`risk=translation`, `suggested_action=repair`) уходит в существующий repair-executor (rewrite из кандидата → иначе строка снимается). После repair `_recount_completeness_recovery` считает `recovered` / `pulled_for_rework` / `still_missing`: замена на reserve или снятие строки не выдаётся за восстановление, но и не остаётся как shipped omission.
