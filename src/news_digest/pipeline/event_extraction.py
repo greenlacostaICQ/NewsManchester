@@ -55,6 +55,19 @@ _RECURRING_PATTERN = re.compile(
     r'(?:of\s+)?(?:each|every)\s+month\b',
     re.IGNORECASE,
 )
+_WEEKLY_RECURRING_PATTERN = re.compile(
+    r"\b(?:"
+    r"(?:every|each|all|most|weekly)\s+"
+    r"(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?|"
+    r"(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?\s+"
+    r"(?:weekly|every\s+week)|"
+    r"runs?\s+(?:on\s+)?"
+    r"(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?|"
+    r"open(?:ing)?\s+(?:hours?\s+)?(?:on\s+)?"
+    r"(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?"
+    r")\b",
+    re.IGNORECASE,
+)
 
 def _nth_weekday_of_month(year: int, month: int, weekday: int, n: int) -> date_cls | None:
     if n == -1:
@@ -75,17 +88,27 @@ def _nth_weekday_of_month(year: int, month: int, weekday: int, n: int) -> date_c
 
 def _calculate_recurring_date(text: str, from_date: date_cls) -> tuple[date_cls, str] | None:
     m = _RECURRING_PATTERN.search(text)
-    if not m:
-        return None
-    ordinal = _ORDINAL_MAP[m.group(1).lower()]
-    weekday = _WEEKDAY_MAP[m.group(2).lower()]
+    if m:
+        ordinal = _ORDINAL_MAP[m.group(1).lower()]
+        weekday = _WEEKDAY_MAP[m.group(2).lower()]
 
-    for delta_months in (0, 1):
-        month = from_date.month + delta_months
-        year = from_date.year + (month - 1) // 12
-        month = ((month - 1) % 12) + 1
-        occurrence = _nth_weekday_of_month(year, month, weekday, ordinal)
-        if occurrence and occurrence >= from_date:
+        for delta_months in (0, 1):
+            month = from_date.month + delta_months
+            year = from_date.year + (month - 1) // 12
+            month = ((month - 1) % 12) + 1
+            occurrence = _nth_weekday_of_month(year, month, weekday, ordinal)
+            if occurrence and occurrence >= from_date:
+                day_name = _RUSSIAN_WEEKDAY_ACCUS[occurrence.weekday()]
+                month_name = _RUSSIAN_MONTHS[occurrence.month - 1]
+                date_text = f"{day_name}, {occurrence.day} {month_name} {occurrence.year}"
+                return occurrence, date_text
+
+    weekly = _WEEKLY_RECURRING_PATTERN.search(text)
+    if weekly:
+        weekday_text = next((str(group or "").lower() for group in weekly.groups() if group), "")
+        weekday = _WEEKDAY_MAP.get(weekday_text)
+        if weekday is not None:
+            occurrence = from_date + timedelta(days=(weekday - from_date.weekday()) % 7)
             day_name = _RUSSIAN_WEEKDAY_ACCUS[occurrence.weekday()]
             month_name = _RUSSIAN_MONTHS[occurrence.month - 1]
             date_text = f"{day_name}, {occurrence.day} {month_name} {occurrence.year}"
@@ -563,7 +586,7 @@ def _extract_event_name(candidate: dict, entities: dict, venue: str) -> str:
     # Strip trailing "- The Lowry" / "| BBC Manchester" style suffix only
     # if the suffix looks like a source label rather than part of the name.
     source_label = str(candidate.get("source_label") or "").strip()
-    if source_label and title.endswith(source_label):
+    if source_label and title != source_label and title.endswith(source_label):
         title = title[: -len(source_label)].rstrip(" -–—|:")
     # Strip "Source Label - " prefix similarly.
     if source_label and title.startswith(source_label + ":"):
@@ -605,6 +628,7 @@ def extract_event(candidate: dict, entities: dict | None = None) -> dict:
     venue = str(hint.get("venue") or "").strip() or _extract_venue(candidate, entities)
     parsed = _parse_date_details(blob)
     iso_date, iso_end, date_text, date_confidence = parsed.start, parsed.end, parsed.text, parsed.confidence
+    recurring_date_used = False
     if not iso_date:
         today = _today_london()
         rec_res = _calculate_recurring_date(blob, today)
@@ -613,6 +637,7 @@ def extract_event(candidate: dict, entities: dict | None = None) -> dict:
             iso_date = rec_date.isoformat()
             date_text = rec_text
             date_confidence = "high"
+            recurring_date_used = True
     hint_date = str(hint.get("date_start") or hint.get("date") or "").strip()
     if hint_date:
         hint_parsed = _parse_date_details(hint_date)
@@ -659,6 +684,7 @@ def extract_event(candidate: dict, entities: dict | None = None) -> dict:
         "event_instance_id": str(hint.get("event_instance_id") or candidate.get("event_instance_id") or "").strip(),
         "promoter": str(hint.get("promoter") or "").strip(),
         "ticket_type": str(hint.get("ticket_type") or "").strip(),
+        "is_recurring": bool(hint.get("is_recurring") or recurring_date_used),
         "is_event": has_event,
     }
 

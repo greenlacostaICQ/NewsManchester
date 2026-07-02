@@ -1211,6 +1211,69 @@ def _source_loss_stage(row: dict[str, object]) -> dict[str, str]:
     return {"stage": "written", "reason": f"{curated} selected but 0 reached visible HTML (lost at writer/editor draft_line)"}
 
 
+def _weekend_source_coverage_report(sources: list[dict[str, object]]) -> dict[str, object]:
+    """Weekend source-level audit.
+
+    `weekend_inventory_loss_trace` explains candidate-level losses after an
+    item exists. This report catches the earlier blind spot: trusted Weekend
+    sources that fetched OK but yielded no usable visitor inventory at all.
+    """
+    watched = [
+        row for row in sources
+        if isinstance(row, dict)
+        and row.get("category") != "synthetic"
+        and not row.get("trial")
+        and str(row.get("primary_block") or "") == "weekend_activities"
+        and str(row.get("source_contract") or "") == "event_calendar"
+    ]
+    incidents: list[dict[str, object]] = []
+    rendered_sources = 0
+    for row in watched:
+        raw = int(row.get("candidate_count") or row.get("raw_count") or 0)
+        rendered = int(row.get("rendered_count") or 0)
+        coverage_signal = int(row.get("coverage_signal_count") or 0)
+        if rendered > 0:
+            rendered_sources += 1
+            continue
+        if not row.get("fetched") or int(row.get("failure_count") or 0) > 0:
+            stage = "fetch_failed"
+            reason = str(row.get("loss_reason") or row.get("detail") or "source did not fetch cleanly")
+        elif raw == 0:
+            stage = "parser_empty"
+            reason = "trusted Weekend source fetched OK but parsed 0 candidates"
+        elif coverage_signal == 0:
+            stage = "date_not_recovered"
+            reason = "source produced candidates but no usable dated Weekend signal"
+        else:
+            stage = str(row.get("loss_stage") or "not_rendered")
+            reason = str(row.get("loss_reason") or "source produced candidates but none reached visible Weekend output")
+        incidents.append(
+            {
+                "name": str(row.get("name") or ""),
+                "stage": stage,
+                "reason": reason[:180],
+                "candidate_count": raw,
+                "coverage_signal_count": coverage_signal,
+                "curated_count": int(row.get("curated_count") or 0),
+                "rendered_count": rendered,
+                "url": str(row.get("url") or ""),
+                "recommended_next_action": str(row.get("recommended_next_action") or ""),
+            }
+        )
+    counts: dict[str, int] = {}
+    for item in incidents:
+        stage = str(item.get("stage") or "unknown")
+        counts[stage] = counts.get(stage, 0) + 1
+    return {
+        "schema_version": 1,
+        "checked_sources": len(watched),
+        "rendered_sources": rendered_sources,
+        "incident_count": len(incidents),
+        "counts_by_stage": counts,
+        "incidents": incidents[:80],
+    }
+
+
 def _summarise_source_health(
     scan_report: dict | None,
     candidates_report: dict | None = None,
@@ -1263,6 +1326,9 @@ def _summarise_source_health(
                     "failure_class": str(entry.get("failure_class") or ""),
                     "reliability_ladder_step": str(entry.get("reliability_ladder_step") or ""),
                     "recommended_next_action": str(entry.get("recommended_next_action") or ""),
+                    "fetched": bool(entry.get("fetched")),
+                    "primary_block": str(entry.get("primary_block") or ""),
+                    "url": str(entry.get("url") or ""),
                     "candidate_count": raw_count,
                     "fresh_last_24h_count": int(entry.get("fresh_last_24h_count") or 0),
                     "source_contract": str(entry.get("source_contract") or ""),
@@ -1306,6 +1372,9 @@ def _summarise_source_health(
             "failure_class": "",
             "reliability_ladder_step": "",
             "recommended_next_action": "",
+            "fetched": True,
+            "primary_block": "",
+            "url": "",
             "candidate_count": int(row["curated"]),
             "fresh_last_24h_count": 0,
             "curated_count": int(row["curated"]),
@@ -1362,8 +1431,10 @@ def _summarise_source_health(
         row["loss_reason"] = stage_info["reason"]
         zero_contribution_by_stage[stage_info["stage"]] = zero_contribution_by_stage.get(stage_info["stage"], 0) + 1
     counts["zero_contribution_by_stage"] = zero_contribution_by_stage
+    weekend_source_coverage = _weekend_source_coverage_report(sources)
+    counts["weekend_source_coverage_incidents"] = int(weekend_source_coverage["incident_count"])
 
-    return {"counts": counts, "sources": sources}
+    return {"counts": counts, "sources": sources, "weekend_source_coverage": weekend_source_coverage}
 
 
 def _summarise_transport_coverage(

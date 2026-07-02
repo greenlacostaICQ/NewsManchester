@@ -47,6 +47,7 @@ from news_digest.pipeline.ticket_notability import enrich_ticket_notability, pre
 from news_digest.pipeline.toponyms import restore_english_toponyms
 from news_digest.pipeline.place_names import preserve_place_names
 from news_digest.pipeline.professional_events import score_professional_event
+from news_digest.pipeline.weekend_inventory import is_weekend_inventory_candidate
 
 
 MODEL_WRITTEN_CATEGORIES = {"media_layer", "gmp", "council", "public_services", "food_openings"}
@@ -1886,16 +1887,12 @@ def _is_active_tram_transport(candidate: dict | None) -> bool:
 
 
 def _is_dated_weekend_event(section_name: str, candidate: dict | None) -> bool:
-    """E4 (owner 2026-06-30): «Выходные в GM» has no per-section cap, and a
-    weekend event confirmed by a trustworthy date must not be cut by the global
-    visible/hard budget either — if the date says it is on this weekend, it
-    ships. Undated «bookable activity» filler is already dropped upstream (E2),
-    so only genuinely dated weekend events get this pass, which naturally bounds
-    the count (markets/recurring already get the same treatment)."""
-    if section_name != "Выходные в GM" or not isinstance(candidate, dict):
-        return False
-    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    return bool(event.get("date_start") and event.get("date_confidence") in {"high", "medium"})
+    """Protected Weekend Inventory must not be cut by public/section caps.
+
+    This is intentionally narrower than "any dated event": ordinary theatre,
+    gigs, comedy and Ticketmaster-style listings remain outside this pass.
+    """
+    return section_name == "Выходные в GM" and is_weekend_inventory_candidate(candidate)
 
 
 def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
@@ -1974,10 +1971,11 @@ def _slice_counting_only_non_exempt(
         # only the per-candidate market/recurring pass applies.
         if ignore_section_exemption:
             # Weekend markets/fairs should rank first, but still count toward
-            # the weekend section cap. Otherwise a market-heavy Saturday can
-            # grow without bound and crowd out the rest of the issue.
+            # the old weekend section cap no longer applies to eligible
+            # Weekend Inventory: compression must happen inside the section,
+            # not by silently dropping current-weekend inventory.
             if section_name == "Выходные в GM":
-                exempt = False
+                exempt = is_weekend_inventory_candidate(candidate)
             else:
                 exempt = bool(
                     isinstance(candidate, dict)
@@ -4471,6 +4469,89 @@ def _today_focus_loss_trace(
         ),
         "counts": counts,
         "items": rows[:120],
+    }
+
+
+def _weekend_inventory_loss_trace(
+    candidates: list[dict],
+    rendered_section_by_fp: dict[str, str],
+    dropped_candidates: list[dict[str, object]],
+) -> dict[str, object]:
+    dropped_by_fp = {
+        str(item.get("fingerprint") or ""): item
+        for item in dropped_candidates
+        if isinstance(item, dict)
+    }
+    rows: list[dict[str, object]] = []
+    counts: dict[str, int] = {}
+    for candidate in candidates:
+        if not isinstance(candidate, dict) or not is_weekend_inventory_candidate(candidate):
+            continue
+        fp = str(candidate.get("fingerprint") or "")
+        rendered_section = rendered_section_by_fp.get(fp, "")
+        dropped = dropped_by_fp.get(fp) or {}
+        if rendered_section == "Выходные в GM":
+            stage = "rendered_weekend"
+            reason = "visible in Weekend"
+        elif rendered_section:
+            stage = "visible_elsewhere"
+            reason = f"visible in {rendered_section}"
+        elif dropped:
+            stage = "writer_drop"
+            reason = "; ".join(str(item) for item in (dropped.get("reasons") or [])) or "writer dropped candidate"
+        elif candidate.get("backup_candidate") or candidate.get("recoverable_reserve"):
+            stage = "recoverable_reserve_not_rendered"
+            reason = str(candidate.get("rewrite_shortlist_reason") or candidate.get("digest_selection_reason") or "capacity reserve not rendered")
+        elif not candidate.get("include"):
+            stage = "not_included"
+            reason = str(candidate.get("reason") or candidate.get("digest_selection_reason") or "not included")
+        elif not str(candidate.get("draft_line") or "").strip():
+            stage = "missing_draft_line"
+            reason = "included Weekend Inventory candidate had no public draft_line"
+        else:
+            stage = "not_selected_or_capped"
+            reason = str(candidate.get("publish_plan_reason") or candidate.get("digest_selection_reason") or "not selected for final Weekend section")
+        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        counts[stage] = counts.get(stage, 0) + 1
+        rows.append(
+            {
+                "fingerprint": fp,
+                "title": str(candidate.get("title") or "")[:180],
+                "source_label": str(candidate.get("source_label") or ""),
+                "source_url": str(candidate.get("source_url") or ""),
+                "include": bool(candidate.get("include")),
+                "rendered_section": rendered_section,
+                "loss_stage": stage,
+                "reason": reason,
+                "date_start": str(event.get("date_start") or event.get("date") or ""),
+                "date_text": str(event.get("date_text") or ""),
+                "is_recurring": bool(event.get("is_recurring")),
+                "rewrite_shortlist_status": str(candidate.get("rewrite_shortlist_status") or ""),
+                "publish_plan_status": str(candidate.get("publish_plan_status") or ""),
+            }
+        )
+    rows.sort(
+        key=lambda row: (
+            row["loss_stage"] != "rendered_weekend",
+            str(row["date_start"] or "9999-12-31"),
+            str(row["title"]),
+        )
+    )
+    rendered = counts.get("rendered_weekend", 0)
+    total = len(rows)
+    return {
+        "schema_version": 1,
+        "policy": (
+            "Explains every eligible Weekend Inventory candidate: visible in "
+            "Weekend or why it was missing."
+        ),
+        "counts": {
+            "eligible": total,
+            "rendered": rendered,
+            "missing": max(0, total - rendered),
+            **counts,
+        },
+        "items": rows[:240],
     }
 
 
@@ -7217,6 +7298,7 @@ def write_digest(project_root: Path) -> StageResult:
     if today_focus_board["rendered_after_recovery"] >= SECTION_MIN_ITEMS.get(TODAY_FOCUS_SECTION, 3):
         today_focus_board["underflow_reason"] = ""
     today_focus_loss = _today_focus_loss_trace(candidates, rendered_section_by_fp, dropped_candidates)
+    weekend_inventory_loss = _weekend_inventory_loss_trace(candidates, rendered_section_by_fp, dropped_candidates)
 
     drop_breakdown = {"failure": 0, "quarantine": 0, "reserve": 0}
     for _item in dropped_candidates:
@@ -7285,6 +7367,7 @@ def write_digest(project_root: Path) -> StageResult:
             "backfilled_today_focus": backfilled_today_focus,
             "today_focus_board": today_focus_board,
             "today_focus_loss_trace": today_focus_loss,
+            "weekend_inventory_loss_trace": weekend_inventory_loss,
             "final_section_routing": final_section_routing,
             "degraded_shrink": {
                 "enabled": bool(llm_degraded),

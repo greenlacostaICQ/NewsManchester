@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 import re
 
 from news_digest.pipeline.common import normalize_title, now_london
+from news_digest.pipeline.weekend_inventory import is_weekend_inventory_candidate
 
 
 MAJOR_TICKET_VENUES: tuple[str, ...] = (
@@ -1591,6 +1592,14 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
     today = now_london().date()
     if last_published == today.isoformat():
         return {"applies": True, "allow": False, "reason": "already_shown_today"}
+
+    if current_date and is_weekend_inventory_candidate(candidate):
+        return {
+            "applies": True,
+            "allow": True,
+            "reason": "current_weekend_inventory_occurrence",
+            "days_until_event": (current_date - today).days,
+        }
 
     if current_date:
         days_until = (current_date - today).days

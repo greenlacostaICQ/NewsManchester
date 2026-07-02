@@ -288,6 +288,7 @@ def _source_health_template(source) -> dict:
         "name": source.name,
         "url": source.url,
         "source_contract": _source_contract(source),
+        "primary_block": source.primary_block,
         "trial": bool(getattr(source, "trial", False)),
         "checked": False,
         "fetched": False,

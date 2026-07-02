@@ -201,6 +201,9 @@ class SourceHealthAndPublishPlanTests(unittest.TestCase):
         dated = {
             "fingerprint": "weekend-dated",
             "primary_block": "weekend_activities",
+            "title": "Cheadle Makers Market",
+            "summary": "Makers market with food and crafts this Saturday.",
+            "source_label": "Pedddle Makers Market",
             "event": {"is_event": True, "date_start": "2026-07-04", "date_confidence": "high"},
         }
         undated = {

@@ -1,6 +1,6 @@
 # NewsManchester Product Contracts
 
-Last reviewed: 2026-06-27.
+Last reviewed: 2026-07-02.
 
 These are product rules, not implementation preferences. If code, prompts,
 reports, or old docs conflict with this file, treat the conflict as a bug or an
@@ -214,6 +214,80 @@ Failure examples:
 - Far-future festival in Weekend.
 - Single arena concert in Weekend.
 - Vague guide page with no exact date or place.
+
+## Weekend Inventory Protection Contract
+
+`weekend_activities` is a protected inventory block for the current weekend,
+not a ranked sample of leisure content. Any change that affects the whole
+issue - public item budgets, LLM ranking, dedupe, repeat policy, source
+selection, enrichment, editor repair, QA or release reconciliation - must
+verify this block separately.
+
+Inventory scope:
+
+- all Greater Manchester public visitor weekend events from trusted weekend
+  sources when they happen in the current weekend window: markets, makers /
+  artisan markets, fairs, car boots, flea/vintage sales, food and drink
+  festivals, beer festivals, Pride/community festivals, heritage / medieval /
+  re-enactment festivals, family/community days and distinctive public weekend
+  activities;
+- distinctive one-off weekend activities can qualify when the source gives a
+  concrete date, place and visitor value, for example a beauty brunch, a museum
+  after-hours/protest-music event, a public workshop or a themed public trail;
+- current weekend means the rendered issue's Friday-Sunday window, plus bank
+  holiday Monday where the weekend window explicitly includes it;
+- ordinary standalone theatre shows, arena/gig/concert listings, comedy club
+  runs, generic nightlife and Ticketmaster-style ticket inventory do not qualify
+  by default. They stay in Tickets / future announcement blocks unless the item
+  is part of a qualifying festival/community/public-weekend activity above.
+
+Selection rule:
+
+- Eligibility is date + place + activity type + GM fit.
+- Ranking may order eligible Weekend items, but must not exclude an eligible
+  current-weekend inventory item.
+- Global public-budget caps, DeepSeek board caps, ticket balancing and soft-item
+  throttles must not remove eligible current-weekend inventory. If the full
+  digest needs compression, Weekend inventory is compacted inside the section,
+  not silently dropped.
+- If inventory is large, render grouped compact subsections rather than dropping
+  eligible items, for example markets/car boots, festivals/community/family,
+  food/drink/beer, Pride/heritage/special activity and museum/workshop/trails.
+
+Recurring and repeat rule:
+
+- Recurring source text such as "every Saturday", "every Sunday", "first
+  Saturday of the month" or source-declared next-market dates must be promoted
+  into a concrete `event.date_start` before validator, publish plan, dedupe and
+  writer decisions.
+- Repeats are evaluated by occurrence, not only by source URL/title. A recurring
+  market already shown before is allowed again when the new occurrence date is
+  inside the current weekend, and the visible line must name that occurrence.
+- A repeated recurring event is held only when the occurrence is not current, the
+  date cannot be recovered, or the item is not actually useful to visitors
+  (for example a seller/admin page rather than a public visitor event).
+
+Recovery rule:
+
+- Before holding a trusted Weekend source for missing facts, run the available
+  page/detail enrichment and recurrence extraction. Hold only after enrichment
+  still cannot recover date, place or public activity type.
+- A trusted market/fair/festival source that fetched successfully but parsed
+  zero candidates is a coverage incident, not a clean empty source, unless the
+  source explicitly has no current public event.
+
+Reporting rule:
+
+- Weekend reports must show collected current-weekend eligible inventory,
+  rendered eligible inventory and every missing eligible item with a plain
+  reason: parser empty, date not recovered, not current weekend, duplicate
+  same occurrence, not public visitor event, or source facts too thin.
+- Candidate-level loss is reported in `writer_report.weekend_inventory_loss_trace`.
+  Source-level coverage incidents are reported in
+  `release_report.source_status.weekend_source_coverage`.
+- The final HTML is the truth: an eligible Weekend item counts only if it is
+  visible in `data/outgoing/current_digest.html` or replaced by another eligible
+  item with a recorded reason.
 
 ## Next 7 Days Contract
 

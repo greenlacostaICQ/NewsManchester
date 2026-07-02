@@ -240,6 +240,51 @@ class SourceHealthSummaryWithYieldTest(unittest.TestCase):
         self.assertEqual(row["source_contract"], "event_calendar")
         self.assertEqual(row["coverage_signal_count"], 12)
 
+    def test_weekend_source_coverage_flags_parser_empty_source(self) -> None:
+        scan = {
+            "categories": {
+                "culture_weekly": {
+                    "source_health": [
+                        {
+                            "name": "Great Northern Makers Market",
+                            "url": "https://example.test/great-northern",
+                            "fetched": True,
+                            "candidate_count": 0,
+                            "source_contract": "event_calendar",
+                            "primary_block": "weekend_activities",
+                            "coverage_signal_count": 0,
+                            "coverage_signal_label": "upcoming dated items",
+                            "errors": [],
+                            "warnings": [],
+                        },
+                        {
+                            "name": "Rendered Weekend Market",
+                            "url": "https://example.test/rendered",
+                            "fetched": True,
+                            "candidate_count": 2,
+                            "source_contract": "event_calendar",
+                            "primary_block": "weekend_activities",
+                            "coverage_signal_count": 2,
+                            "coverage_signal_label": "upcoming dated items",
+                            "errors": [],
+                            "warnings": [],
+                        },
+                    ]
+                }
+            }
+        }
+        cands = {"candidates": [_candidate("Rendered Weekend Market", "fp1", include=True)]}
+
+        result = _summarise_source_health(scan, candidates_report=cands, rendered_fingerprints={"fp1"})
+
+        coverage = result["weekend_source_coverage"]
+        self.assertEqual(coverage["checked_sources"], 2)
+        self.assertEqual(coverage["rendered_sources"], 1)
+        self.assertEqual(coverage["incident_count"], 1)
+        self.assertEqual(coverage["incidents"][0]["name"], "Great Northern Makers Market")
+        self.assertEqual(coverage["incidents"][0]["stage"], "parser_empty")
+        self.assertEqual(result["counts"]["weekend_source_coverage_incidents"], 1)
+
     def test_hard_news_still_requires_fresh_publication_signal(self) -> None:
         scan = _scan_report_with(
             {

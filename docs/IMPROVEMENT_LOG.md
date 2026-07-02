@@ -604,3 +604,14 @@
 - Решение: свести в один контракт в `docs/PRODUCT_CONTRACTS.md`: для каждого блока — назначение, что входит, куда перетекает при скрытии. Код правится под контракт.
 - Файлы/места: `docs/PRODUCT_CONTRACTS.md`; далее `candidate_validator.py`, `writer.py`.
 - ПРОВЕРКА (после прогона): —
+
+### 0053 — Weekend Inventory защищён от ranking/caps/repeat — 2026-07-02
+- Статус: внедрено; ПРОВЕРКА офлайн (focused unittest), прод — следующий прогон.
+- Проблема: «Выходные в GM» в выпуске 2026-07-02 показал 6 строк из 128 weekend-кандидатов; Rum Festival и часть рынков/ярмарок потерялись на ranking/caps/repeat, Campfield `Every Saturday` не получил конкретную дату.
+- Причина (корень): weekend item мог быть `selected_uncapped`, но позже всё равно выпадал на глобальном DeepSeek board cap / final Russian board cap (`llm_rewrite.py`); writer per-section cap считал eligible Weekend items и мог их резать; repeat-policy сравнивал recurring events не как occurrence; event extraction не вычислял простое `every Saturday/Sunday`.
+- Решение: отдельный helper `weekend_inventory.py` с узким scope (markets/fairs/festivals/car boots/special public weekend activity, не обычная афиша); weekly recurrence → concrete `event.date_start` + `is_recurring`; eligible Weekend Inventory never-drop на rewrite caps; writer caps не режут eligible inventory; repeat-policy разрешает current-weekend occurrence; writer report получает `weekend_inventory_loss_trace`; release source-status получает `weekend_source_coverage` для parser-empty/no-date/zero-render weekend источников.
+- Почему так (отвергли): не расширяем Weekend до всех концертов/театров/ночной афиши; не отключаем dedupe глобально; не строим отдельный календарный storage layer в этом патче.
+- Ожидаемый эффект и метрика: `writer_report.weekend_inventory_loss_trace.counts.missing == 0` для eligible collected inventory; Campfield-like weekly pages имеют `event.date_start` ближайшей субботы/воскресенья; `Outside DeepSeek ranking board` не появляется для eligible Weekend Inventory.
+- Файлы/места: `src/news_digest/pipeline/weekend_inventory.py`; `event_extraction.py`; `llm_rewrite.py`; `editorial_contracts.py`; `writer.py`; `collector/core.py`; `release.py`; `tests/test_weekend_inventory_contract.py`; `tests/test_source_health.py`.
+- ПРОВЕРКА (после прогона): offline unittest only until next prod run.
+- Где была ошибка (если не сработало): —

@@ -50,6 +50,7 @@ from news_digest.pipeline.model_routing import (
 )
 from news_digest.pipeline.reader_value import reader_value_score
 from news_digest.pipeline.story_intelligence import apply_story_intelligence, section_board_score
+from news_digest.pipeline.weekend_inventory import is_weekend_inventory_candidate
 
 logger = logging.getLogger(__name__)
 
@@ -1162,15 +1163,7 @@ def _candidate_event_day(candidate: dict) -> date | None:
 
 
 def _is_actionable_weekend_candidate(candidate: dict) -> bool:
-    today = date.fromisoformat(today_london())
-    days_to_sat = (5 - today.weekday()) % 7
-    start = today + timedelta(days=days_to_sat)
-    end = start + timedelta(days=1)
-    event_day = _candidate_event_day(candidate)
-    if event_day and start <= event_day <= end:
-        return True
-    blob = " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead", "evidence_text")).lower()
-    return bool(re.search(r"\b(?:every|weekly|saturdays?|sundays?|weekend|каждую\s+субботу|каждое\s+воскресенье)\b", blob))
+    return is_weekend_inventory_candidate(candidate)
 
 
 def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> tuple[list[dict], dict[str, object]]:
@@ -1259,6 +1252,7 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
                 bool(c.get("is_lead"))
                 or str(c.get("primary_block") or "") in {"transport", "today_focus"}
                 or bool(c.get("today_practical_translation_reserve"))
+                or is_weekend_inventory_candidate(c)
             )
 
         keep_ids: set[int] = {id(c) for c in selected if _never_drop(c)}
@@ -1359,6 +1353,7 @@ def _apply_post_board_translation_cut(candidates: list[dict], board: list[dict])
             bool(c.get("is_lead"))
             or str(c.get("primary_block") or "") in {"transport", "today_focus"}
             or bool(c.get("today_practical_translation_reserve"))
+            or is_weekend_inventory_candidate(c)
         )
 
     keep_ids: set[int] = {id(c) for c in board if _never_drop(c)}
