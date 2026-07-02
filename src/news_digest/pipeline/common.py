@@ -217,6 +217,36 @@ def clean_url(url: str) -> str:
     return parse.urlunsplit((scheme, netloc, path, "", ""))
 
 
+# A published source_url must be a clean absolute http(s) link. JSON-LD `url`
+# fields and some feeds leak raw HTML/description text into the URL slot — e.g.
+# a CONEXEN event whose `url` was "<p><strong>Registration needed: https:/..."
+# which urljoin then glued into a broken href. Reject anything carrying markup,
+# whitespace or a non-http scheme so the caller can fall back to a real link.
+# Note: bare "&" (valid query separator) is intentionally NOT rejected; only the
+# HTML-entity forms "&lt;"/"&gt;" and literal angle brackets/whitespace are.
+_URL_MARKUP_RE = re.compile(r"[<>\s]|&lt;|&gt;")
+
+
+def valid_http_url(url: str) -> bool:
+    raw = str(url or "").strip()
+    if not raw or _URL_MARKUP_RE.search(raw):
+        return False
+    parsed = parse.urlsplit(raw)
+    if parsed.scheme.lower() not in {"http", "https"}:
+        return False
+    # A real host has a dot; "https:/host/path" (single slash) lands the host in
+    # the path and leaves netloc empty — reject it.
+    return bool(parsed.netloc) and "." in parsed.netloc
+
+
+def first_valid_http_url(*candidates: str) -> str:
+    for candidate in candidates:
+        cleaned = str(candidate or "").strip()
+        if valid_http_url(cleaned):
+            return cleaned
+    return ""
+
+
 # BBC publishes the same article under both bbc.com and bbc.co.uk. Our two
 # BBC Manchester feeds (RSS → bbc.com links, web backup → bbc.co.uk links) thus
 # produced two different URL identities for one story, so the twin slipped past

@@ -563,7 +563,12 @@ def _run_professional_cv_match(
             "publish": fit in {"go", "consider"},
             "fit_score": max(int(match.get("fit_score") or 0), score),
             "llm_fit": fit,
-            "why_this_fits_aleksei": llm_match["why"] or match.get("why_this_fits_aleksei") or "",
+            # D2/0047: the model's per-event `reason` is genuinely specific
+            # ("Событие по AI с акцентом на возможности для молодёжи"), while
+            # `why` came back as a generic template identical across events.
+            # Surface the specific reason first so the stored/diagnostic
+            # explanation reflects real per-event judgement.
+            "why_this_fits_aleksei": llm_match["reason"] or llm_match["why"] or match.get("why_this_fits_aleksei") or "",
             "recommended_action": "register" if fit == "go" else ("consider" if fit == "consider" else "skip"),
         })
         candidate["professional_event_match"] = match

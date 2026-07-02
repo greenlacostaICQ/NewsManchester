@@ -486,6 +486,42 @@ def _deterministic_action_post_check(
     }
 
 
+def _deterministic_html_scan(slots: list[dict[str, Any]]) -> dict[str, Any]:
+    """0040: model-free safety net. When the judge LLM cannot produce a verdict
+    (rate limit, timeout, unparseable, all chunks failed) the failure report was
+    previously a blind zero — the issue shipped with no final check at all
+    (2026-07-01: 429, empty critical_errors). This scans the shipped HTML for
+    mechanical defects so the report carries real findings even with no model.
+
+    Report-only: it does not mutate the HTML (repair stays with the executor).
+    Detects broken hrefs (raw HTML/whitespace — the CONEXEN class), empty
+    generic call-to-action tails, and Latin/Cyrillic glued words per line.
+    """
+    from news_digest.pipeline.editorial_contracts import scrub_vague_ending  # noqa: PLC0415
+    from news_digest.pipeline.writer import _mixed_latin_cyrillic_words  # noqa: PLC0415
+
+    findings: list[dict[str, Any]] = []
+    for slot in slots:
+        idx = int(slot.get("line_index") or 0)
+        html_line = str(slot.get("html") or "")
+        text = str(slot.get("text") or "")
+        for href in re.findall(r'href="([^"]*)"', html_line):
+            if re.search(r"[<>\s]|&lt;|&gt;", href):
+                findings.append({"line_index": idx, "type": "broken_href", "detail": href[:80]})
+        _, removed = scrub_vague_ending(text)
+        if removed:
+            findings.append({"line_index": idx, "type": "empty_generic_ending", "detail": str(removed[0])[:80]})
+        mixed = _mixed_latin_cyrillic_words(text)
+        if mixed:
+            findings.append({"line_index": idx, "type": "mixed_script", "detail": str(mixed[0])[:80]})
+    return {
+        "status": "ran",
+        "mode": "model_unavailable_fallback",
+        "defect_count": len(findings),
+        "findings": findings[:60],
+    }
+
+
 def _action_rows(actions: list[dict[str, Any]], critical_errors: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     seen: set[int] = set()
@@ -1333,6 +1369,7 @@ def evaluate_pre_send_quality(
             product_completeness=product_completeness,
         )
     except Exception as exc:  # noqa: BLE001
+        fallback_scan = _deterministic_html_scan(digest_slots)
         result = PreSendQualityResult(
             status="failed",
             decision="block",
@@ -1345,13 +1382,18 @@ def evaluate_pre_send_quality(
             digest_sha256=sha,
             duration_seconds=round(time.monotonic() - start, 3),
             critical_errors=[],
-            warnings=[],
+            warnings=[
+                f"deterministic fallback: {f.get('type')} on line {f.get('line_index')} — {f.get('detail')}"
+                for f in fallback_scan.get("findings", [])
+            ],
             product_completeness=product_completeness,
+            deterministic_post_check={"model_unavailable_fallback": fallback_scan},
         )
         _write_report(project_root, result)
         return asdict(result)
 
     if parsed is None:
+        fallback_scan = _deterministic_html_scan(digest_slots)
         result = PreSendQualityResult(
             status="failed",
             decision="block",
@@ -1364,14 +1406,29 @@ def evaluate_pre_send_quality(
             digest_sha256=sha,
             duration_seconds=round(time.monotonic() - start, 3),
             critical_errors=[],
-            warnings=[],
+            warnings=[
+                f"deterministic fallback: {f.get('type')} on line {f.get('line_index')} — {f.get('detail')}"
+                for f in fallback_scan.get("findings", [])
+            ],
             product_completeness=product_completeness,
+            deterministic_post_check={"model_unavailable_fallback": fallback_scan},
         )
         _write_report(project_root, result)
         return asdict(result)
 
     decision, can_send, reason, confidence, critical_errors, actions, warnings, notes = _normalise_result(parsed)
     deterministic_post_check = _deterministic_action_post_check(actions, digest_lines, rendered_candidates)
+    # 0040: when no chunk produced a usable verdict, the action-based post-check
+    # above sees an empty action list and reports nothing. Fall back to a direct
+    # model-free scan of the shipped HTML so the failure report is not blind.
+    if judge_status == "failed":
+        fallback_scan = _deterministic_html_scan(digest_slots)
+        deterministic_post_check = {**(deterministic_post_check or {}), "model_unavailable_fallback": fallback_scan}
+        for finding in fallback_scan.get("findings", []):
+            warnings.append(
+                f"deterministic fallback: {finding.get('type')} on line "
+                f"{finding.get('line_index')} — {finding.get('detail')}"
+            )
     repair_executor: dict[str, Any] | None = None
     final_sha = sha
     if actions or critical_errors:

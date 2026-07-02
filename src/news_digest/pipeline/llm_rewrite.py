@@ -2907,6 +2907,53 @@ def _prune_translation_memory(memory: dict) -> dict:
     return memory
 
 
+# 0042: blocks whose cards are legitimately short (tickets, weekend planning,
+# transport, weather, russian/food listings) skip the prose length bar.
+_CACHE_SHORT_OK_BLOCKS = {
+    "ticket_radar",
+    "outside_gm_tickets",
+    "weekend_activities",
+    "future_announcements",
+    "russian_events",
+    "weather",
+    "transport",
+    "openings",
+}
+_CACHE_PROSE_MIN_CHARS = 140
+
+
+def _cached_line_meets_contract(candidate: dict, draft_line: str) -> bool:
+    """0042: a cached Russian line may only be reused if it still meets the
+    CURRENT structural contract for its block. The signature match already
+    guards against changed facts (stale date ⇒ different signature ⇒ no hit),
+    so this deliberately checks only STRUCTURAL quality, not evidence-derived
+    facts: a full `_draft_line_quality_errors` here would falsely reject a good
+    cached line whenever today's re-fetched evidence is thinner than the day the
+    line was written (its numbers/entities would look "unsupported").
+
+    Rejects (⇒ cache miss ⇒ regenerate): mixed Latin/Cyrillic words, a generic
+    call-to-action tail, and — for prose blocks only — a stub that is too short
+    or single-sentence. Short-by-design blocks skip the length bar.
+    """
+    from news_digest.pipeline.writer import _mixed_latin_cyrillic_words  # noqa: PLC0415
+    from news_digest.pipeline.editorial_contracts import scrub_vague_ending  # noqa: PLC0415
+
+    text = re.sub(r"\s+", " ", str(draft_line or "")).strip()
+    if not text:
+        return False
+    if _mixed_latin_cyrillic_words(text):
+        return False
+    _, removed = scrub_vague_ending(draft_line)
+    if removed:
+        return False
+    if str(candidate.get("primary_block") or "") in _CACHE_SHORT_OK_BLOCKS:
+        return True
+    # Prose block: a real card, not a one-sentence stub.
+    if len(text) < _CACHE_PROSE_MIN_CHARS:
+        return False
+    return len(re.findall(r"[.!?]", text)) >= 2
+
+
 def _apply_translation_memory(candidates: list[dict], memory: dict) -> list[dict]:
     entries = memory.get("entries") if isinstance(memory.get("entries"), dict) else {}
     reused: list[dict] = []
@@ -2932,6 +2979,12 @@ def _apply_translation_memory(candidates: list[dict], memory: dict) -> list[dict
             continue
         draft_line = str(entry.get("draft_line") or "").strip()
         if not draft_line.startswith("• "):
+            continue
+        # 0042: quality gate — do not serve a cached line that no longer meets
+        # the block's contract (too short for a prose block, banned generic
+        # tail, mixed-script). It becomes a cache miss and goes to the LLM.
+        if not _cached_line_meets_contract(candidate, draft_line):
+            candidate["translation_memory_gate"] = "contract_fail"
             continue
         candidate["draft_line"] = draft_line
         candidate["draft_line_provider"] = "translation_memory"

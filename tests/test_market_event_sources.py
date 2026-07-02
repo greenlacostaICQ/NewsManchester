@@ -7,11 +7,58 @@ from unittest import mock
 from zoneinfo import ZoneInfo
 
 from news_digest.pipeline.collector.core import _fetch_ticketmaster_paginated_body
-from news_digest.pipeline.collector.extract import _extract_source_candidates
+from news_digest.pipeline.collector.extract import _extract_source_candidates, _jsonld_event_node_to_item
 from news_digest.pipeline.collector.sources import SourceDef
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.event_quality import event_quality_report
 from news_digest.pipeline.place_names import preserve_place_names
+
+
+class JsonLdUrlSanitizationTest(unittest.TestCase):
+    """0050: a JSON-LD `url` field that carries description HTML (CONEXEN)
+    must not become a broken href — it falls back to a valid link."""
+
+    def test_html_in_jsonld_url_falls_back_to_source(self) -> None:
+        source = SourceDef(
+            name="CompiledMCR Tech Events",
+            report_category="professional_events",
+            candidate_category="professional_events",
+            url="https://events.compiledmcr.com/",
+            primary_block="professional_events",
+            source_type="html_page_event",
+            allowed_hosts=("events.compiledmcr.com",),
+            max_candidates=5,
+        )
+        node = {
+            "name": "CONEXEN Manchester July",
+            "startDate": "2026-07-01T08:00:00",
+            "url": "<p><strong>Registration needed: https:/conexen.net/x</strong>",
+        }
+        item = _jsonld_event_node_to_item(source, node, 0)
+        self.assertIsNotNone(item)
+        self.assertNotIn("<", item.url)
+        self.assertNotIn(" ", item.url)
+        self.assertTrue(item.url.startswith("https://events.compiledmcr.com"))
+
+    def test_valid_jsonld_url_is_kept(self) -> None:
+        source = SourceDef(
+            name="CompiledMCR Tech Events",
+            report_category="professional_events",
+            candidate_category="professional_events",
+            url="https://events.compiledmcr.com/",
+            primary_block="professional_events",
+            source_type="html_page_event",
+            allowed_hosts=("events.compiledmcr.com",),
+            max_candidates=5,
+        )
+        node = {
+            "name": "Real Event",
+            "startDate": "2026-07-01T08:00:00",
+            "url": "https://events.compiledmcr.com/real-event?ref=1",
+        }
+        item = _jsonld_event_node_to_item(source, node, 0)
+        self.assertIsNotNone(item)
+        self.assertIn("/real-event", item.url)
 
 
 class WeekendContractReasonTest(unittest.TestCase):

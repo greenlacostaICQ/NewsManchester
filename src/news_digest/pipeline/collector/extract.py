@@ -26,7 +26,7 @@ try:  # Generic article extractor; optional so the module imports without it.
 except ImportError:  # pragma: no cover - exercised only when dep is absent.
     _trafilatura = None
 
-from news_digest.pipeline.common import clean_url, fingerprint_for_candidate, now_london
+from news_digest.pipeline.common import clean_url, fingerprint_for_candidate, first_valid_http_url, now_london, valid_http_url
 from news_digest.pipeline.editorial_contracts import is_major_ticket_venue
 
 from .dates import (
@@ -350,6 +350,15 @@ def _jsonld_event_node_to_item(source: SourceDef, node: dict, index: int) -> Ext
     price, booking_url = _jsonld_offer_fields(node.get("offers"))
     event_url = _jsonld_text(node.get("url")) or booking_url or source.url
     event_url = parse.urljoin(source.url, event_url)
+    # A JSON-LD `url` sometimes carries the event description HTML, not a link
+    # (CONEXEN: "<p><strong>Registration needed…"). urljoin then produced a
+    # broken href. If the joined URL is not a clean http(s) link, fall back to a
+    # valid booking link, then to the feed's own page.
+    if not valid_http_url(event_url):
+        event_url = first_valid_http_url(
+            parse.urljoin(source.url, booking_url) if booking_url else "",
+            source.url,
+        )
     if not name or not start or not (venue or event_url):
         return None
     description = _clean_long_text(_jsonld_text(node.get("description")))
@@ -3233,7 +3242,7 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
             "title": item.title,
             "category": source.candidate_category,
             "summary": item.summary or _default_summary(source, item.title),
-            "source_url": normalized_url,
+            "source_url": normalized_url if valid_http_url(normalized_url) else clean_url(source.url),
             "source_label": source.name,
             "primary_block": primary_block,
             "include": True,

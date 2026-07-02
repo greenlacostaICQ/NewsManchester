@@ -30,6 +30,66 @@ RCA item.
 - Recovery must preserve useful facts first: enrich, rewrite, replace inside the
   same block, then omit only when facts cannot be recovered.
 
+## Section Routing Contract
+
+Every block belongs to exactly one **purpose class**. A block only accepts items
+of its own class; content never leaks across classes, even when a block is
+hidden or thin. This is the single source of truth for "what belongs where" —
+per-block contracts below refine it, they do not override it.
+
+Purpose classes and their blocks:
+
+- **News** — what happened, matters now: `lead_story` (Главная история дня),
+  `last_24h` (Свежие новости), `today_focus` (Что важно сегодня),
+  `city_watch` (Городской радар), `district_radar` (Радар по районам).
+- **Service** — what is disrupted / act today: `transport`
+  (Общественный транспорт сегодня), `weather` (Погода).
+- **Leisure / what's-on** — plan your free time: `weekend_activities`
+  (Выходные в GM), `future_announcements` (Дальние анонсы).
+- **Tickets** — buy / plan a ticketed show: `ticket_radar` (Билеты),
+  `outside_gm_tickets` (Крупные концерты вне GM).
+- **Planning (dated, non-leisure)** — `next_7_days` (Что важно в ближайшие
+  7 дней): confirmed restrictions, deadlines, last-chance civic/service items
+  in the coming week. NOT a what's-on calendar.
+- **Culture-diaspora** — `russian_events` (Русскоязычные концерты и стендап UK).
+- **Local commerce** — `openings` (Еда, открытия и рынки).
+- **Business / career (personal)** — `tech_business` (IT и бизнес),
+  `professional_events` (business/tech события для тебя).
+- **Sport** — `football` (Футбол).
+
+Rules:
+
+- A News-class block never receives a leisure/what's-on item, and a
+  Leisure/Tickets block never receives a hard-news item. A car boot, market or
+  concert is Leisure/Tickets — it must never appear in `next_7_days`,
+  `today_focus`, `last_24h` or `city_watch`.
+- `next_7_days` is Planning, not Leisure. A dated market/fair/festival/concert
+  is Leisure/Tickets and does not qualify for `next_7_days` on the ground of
+  "it has a date this week".
+- Each item has one primary purpose class; if two could apply, News > Service >
+  Planning > Tickets > Leisure decides.
+
+Hidden-block spillover map (a conditionally-shown block must declare where its
+items go when it is not rendered — content is held or re-homed **within its own
+purpose class**, never promoted into a News/Planning block):
+
+- `weekend_activities` is shown Thu–Sun only (`writer.py` `show_weekend =
+  weekday >= 3`). When hidden (Mon–Wed): a weekend leisure item is **held in
+  reserve** for the weekend; if it is a single ticketed show it re-homes to
+  `ticket_radar`; it must NOT flow into `next_7_days`.
+- `outside_gm_tickets` non-A-tier overflow is held to backup reserve, not
+  promoted into GM ticket or event blocks.
+- Any block below its floor recovers from its own class first (see Recovery
+  Contract); it never borrows a leisure item to fill a news block.
+
+Failure examples:
+
+- Bolton car boot / Manchester Open shown in "Что важно в ближайшие 7 дней"
+  (Leisure leaking into Planning because Weekend was hidden midweek).
+- A tribute concert with no ticket data shown in `next_7_days` instead of
+  Tickets.
+- A council roundup pulled into Weekend to fill an empty leisure block.
+
 ## Weather Contract
 
 Weather must reflect actual reader impact:
@@ -157,19 +217,27 @@ Failure examples:
 
 ## Next 7 Days Contract
 
-Next 7 Days is for practical planning in the next week:
+Next 7 Days is Planning (see Section Routing Contract): important dated,
+**non-leisure** items in the coming week that the reader must act on or know:
 
-- shows, exhibitions, talks, sports, family events;
-- confirmed restrictions starting within the week;
-- business/tech events with concrete date/place;
-- last chance / final week / deadline soon.
+- confirmed restrictions / roadworks / closures starting within the week;
+- civic deadlines, consultations closing, last chance / final week;
+- practical service changes with a concrete date.
 
 Rules:
 
 - Must have date and place/online.
+- Leisure / what's-on (markets, fairs, festivals, shows, exhibitions, concerts)
+  does NOT belong here — it is Weekend, Tickets or Дальние анонсы. A date this
+  week is not enough to admit a leisure item.
 - Must not duplicate a full item from Today, Fresh, Weekend or Tickets.
 - Repeat from yesterday requires a stronger window: starts today, tomorrow,
   final week, sale starts, sold out, extra date or changed venue.
+
+Failure examples:
+
+- Bolton car boot or a gallery exhibition shown here instead of Weekend/Tickets.
+- A leisure item admitted only because Weekend was hidden midweek.
 
 ## Ticket Radar Contract
 
