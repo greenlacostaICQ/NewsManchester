@@ -135,7 +135,7 @@ DEGRADED_LLM_SECTION_MAX_ITEMS = {
     "Городской радар": 5,
     "Что важно в ближайшие 7 дней": 4,
     "Выходные в GM": 6,
-    "Бесплатные business/tech события для тебя": 2,
+    "Business/tech события для тебя": 2,
     "Билеты / Ticket Radar": 3,
     "Еда, открытия и рынки": 2,
     "IT и бизнес": 2,
@@ -155,7 +155,7 @@ PUBLIC_SECTION_RESERVED_MIN = {
     # disappear just because early news sections are noisy on a given morning.
     "Выходные в GM": 8,
     "Что важно в ближайшие 7 дней": 3,
-    "Бесплатные business/tech события для тебя": 2,
+    "Business/tech события для тебя": 2,
     "Билеты / Ticket Radar": 2,
     "Футбол": 2,
     "Русскоязычные концерты и стендап UK": 2,
@@ -172,7 +172,7 @@ PROTECTED_RECOVERY_SECTIONS = frozenset({
     "Общественный транспорт сегодня",
     "Выходные в GM",
     "Что важно в ближайшие 7 дней",
-    "Бесплатные business/tech события для тебя",
+    "Business/tech события для тебя",
     "Еда, открытия и рынки",
     "Футбол",
     "Русскоязычные концерты и стендап UK",
@@ -1760,7 +1760,7 @@ def _reconcile_rendered_dropped_candidates(
 _PUBLIC_BUDGET_EXEMPT_SECTIONS = {
     "Общественный транспорт сегодня",
     "Русскоязычные концерты и стендап UK",
-    "Бесплатные business/tech события для тебя",
+    "Business/tech события для тебя",
 }
 
 _MARKET_EVENT_RE = re.compile(
@@ -4673,7 +4673,18 @@ def _professional_event_priority_score(candidate: dict) -> float:
     match = candidate.get("professional_event_match") if isinstance(candidate.get("professional_event_match"), dict) else {}
     if not match:
         match = score_professional_event(candidate)
-    score = float(match.get("fit_score") or 0)
+    llm = candidate.get("professional_llm_match") if isinstance(candidate.get("professional_llm_match"), dict) else {}
+    verdict = str(llm.get("fit") or candidate.get("score_verdict") or match.get("llm_fit") or "").strip().lower()
+    try:
+        score = float(candidate.get("score_value") if str(candidate.get("score_source") or "") == "model" else match.get("fit_score"))
+    except (TypeError, ValueError):
+        score = 0.0
+    if verdict == "go":
+        score += 1000
+    elif verdict == "consider":
+        score += 500
+    elif verdict == "skip":
+        score -= 1000
     level = str(match.get("event_level") or "")
     if level == "major_conference_or_expo":
         score += 18
@@ -4684,6 +4695,20 @@ def _professional_event_priority_score(candidate: dict) -> float:
     if match.get("english_practice_value"):
         score += 4
     return score
+
+
+def _professional_event_access_text(match: dict) -> str:
+    label = str(match.get("access_label") or "").strip().lower()
+    if label == "free":
+        return "Доступ: бесплатно"
+    if label == "paid":
+        return "Доступ: платно"
+    if label == "booking_required":
+        return "Доступ: нужна регистрация"
+    if label == "unknown":
+        return "Доступ: стоимость нужно уточнить"
+    fallback = str(match.get("free_access_reason") or "").strip()
+    return f"Доступ: {fallback}" if fallback else "Доступ: уточните условия"
 
 
 def _professional_event_label(level: str) -> str:
@@ -4717,7 +4742,7 @@ def _build_professional_event_fallback_line(candidate: dict) -> str:
         return ""
 
     level = _professional_event_label(str(match.get("event_level") or ""))
-    access = str(match.get("free_access_reason") or "бесплатную регистрацию нужно сверить").strip()
+    access = _professional_event_access_text(match)
     why = str(match.get("why_this_fits_aleksei") or "").strip()
     if not why:
         gets = match.get("what_he_gets_from_it") if isinstance(match.get("what_he_gets_from_it"), list) else []
@@ -5475,7 +5500,7 @@ def _section_priority_score(candidate: dict, section_name: str, line: str) -> fl
         score += _weekend_activity_score(candidate, line) / 4.0
     elif section_name == "Что важно в ближайшие 7 дней":
         score += _event_planning_score(candidate, line) / 4.0
-    elif section_name == "Бесплатные business/tech события для тебя":
+    elif section_name == "Business/tech события для тебя":
         return _professional_event_priority_score(candidate)
     elif section_name == "Билеты / Ticket Radar":
         return _ticket_public_priority_score(candidate)
@@ -6959,7 +6984,7 @@ def write_digest(project_root: Path) -> StageResult:
         "Что важно в ближайшие 7 дней",
         "Еда, открытия и рынки",
         "IT и бизнес",
-        "Бесплатные business/tech события для тебя",
+        "Business/tech события для тебя",
         "Дальние анонсы",
         "Билеты / Ticket Radar",
         "Крупные концерты вне GM",

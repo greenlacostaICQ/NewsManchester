@@ -39,7 +39,7 @@ LOW_SIGNAL_BLOCKS = [
     "Русскоязычные концерты и стендап UK",
     "Еда, открытия и рынки",
     "IT и бизнес",
-    "Бесплатные business/tech события для тебя",
+    "Business/tech события для тебя",
     "Радар по районам",
 ]
 
@@ -50,7 +50,7 @@ SECTION_MAX_ITEMS = {
     "Городской радар": 12,
     "Футбол": 3,
     "IT и бизнес": 5,
-    "Бесплатные business/tech события для тебя": 4,
+    "Business/tech события для тебя": 4,
     "Что важно в ближайшие 7 дней": 6,
     "Еда, открытия и рынки": 6,
     # Tickets are capped like every other section: a quiet news day must not
@@ -79,7 +79,7 @@ SECTION_MIN_ITEMS = {
     "Выходные в GM": 6,
     "Билеты / Ticket Radar": 2,
     "Еда, открытия и рынки": 3,
-    "Бесплатные business/tech события для тебя": 1,
+    "Business/tech события для тебя": 1,
     "Футбол": 2,
     "Русскоязычные концерты и стендап UK": 1,
 }
@@ -160,7 +160,7 @@ PRIMARY_BLOCKS = {
     "russian_events": "Русскоязычные концерты и стендап UK",
     "openings": "Еда, открытия и рынки",
     "tech_business": "IT и бизнес",
-    "professional_events": "Бесплатные business/tech события для тебя",
+    "professional_events": "Business/tech события для тебя",
     "football": "Футбол",
     "district_radar": "Радар по районам",
 }

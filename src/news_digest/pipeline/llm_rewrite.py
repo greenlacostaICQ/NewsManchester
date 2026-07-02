@@ -89,6 +89,7 @@ REWRITE_SHORTLIST_CAPS_BY_BLOCK: dict[str, int] = {
     "russian_events": 12,     # was 6 — show all valid after dedupe
     "openings": 10,           # was 6
     "tech_business": 10,      # was 5
+    "professional_events": 3,  # CV-approved personal rail; keep compact.
     "football": 6,            # was 3
 }
 REWRITE_SHORTLIST_DEFAULT_CAP = 8
@@ -1049,11 +1050,41 @@ def _needs_selection_enrichment(candidate: dict) -> bool:
     return False
 
 
+def _professional_cv_approved(candidate: dict) -> bool:
+    if str(candidate.get("primary_block") or "") != "professional_events":
+        return False
+    llm = candidate.get("professional_llm_match") if isinstance(candidate.get("professional_llm_match"), dict) else {}
+    return str(llm.get("fit") or candidate.get("score_verdict") or "").strip().lower() in {"go", "consider"}
+
+
+def _professional_cv_priority(candidate: dict) -> float:
+    llm = candidate.get("professional_llm_match") if isinstance(candidate.get("professional_llm_match"), dict) else {}
+    verdict = str(llm.get("fit") or candidate.get("score_verdict") or "").strip().lower()
+    try:
+        score = float(candidate.get("score_value") if str(candidate.get("score_source") or "") == "model" else llm.get("score"))
+    except (TypeError, ValueError):
+        score = 0.0
+    if verdict == "go":
+        return 1000.0 + score
+    if verdict == "consider":
+        return 500.0 + score
+    if verdict == "skip":
+        return -1000.0
+    return -500.0
+
+
 def _rewrite_shortlist_priority(candidate: dict) -> tuple[float, float, float, str]:
     apply_story_intelligence(candidate)
     lead_bonus = 1000.0 if candidate.get("is_lead") else 0.0
     protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
     protected_bonus = 250.0 if protected.get("protected") else 0.0
+    if str(candidate.get("primary_block") or "") == "professional_events":
+        return (
+            _professional_cv_priority(candidate),
+            float(section_board_score(candidate)),
+            float(reader_value_score({**candidate, "included": True})),
+            str(candidate.get("title") or ""),
+        )
     board_score = candidate.get("english_editorial_score")
     try:
         board_score_bonus = float(board_score)
@@ -1253,6 +1284,7 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
                 or str(c.get("primary_block") or "") in {"transport", "today_focus"}
                 or bool(c.get("today_practical_translation_reserve"))
                 or is_weekend_inventory_candidate(c)
+                or _professional_cv_approved(c)
             )
 
         keep_ids: set[int] = {id(c) for c in selected if _never_drop(c)}
@@ -1307,6 +1339,10 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
                     "source_label": candidate.get("source_label") or "",
                     "category": candidate.get("category") or "",
                     "primary_block": str(candidate.get("primary_block") or ""),
+                    "score_value": candidate.get("score_value"),
+                    "score_source": candidate.get("score_source") or "not model scored",
+                    "score_scope": candidate.get("score_scope"),
+                    "score_verdict": candidate.get("score_verdict"),
                     "reason": candidate["rewrite_shortlist_reason"],
                 }
             )
@@ -1354,6 +1390,7 @@ def _apply_post_board_translation_cut(candidates: list[dict], board: list[dict])
             or str(c.get("primary_block") or "") in {"transport", "today_focus"}
             or bool(c.get("today_practical_translation_reserve"))
             or is_weekend_inventory_candidate(c)
+            or _professional_cv_approved(c)
         )
 
     keep_ids: set[int] = {id(c) for c in board if _never_drop(c)}
@@ -1404,6 +1441,10 @@ def _apply_post_board_translation_cut(candidates: list[dict], board: list[dict])
                 "primary_block": str(candidate.get("primary_block") or ""),
                 "english_editorial_score": candidate.get("english_editorial_score"),
                 "english_board_decision": candidate.get("english_board_decision"),
+                "score_value": candidate.get("score_value"),
+                "score_source": candidate.get("score_source") or "not model scored",
+                "score_scope": candidate.get("score_scope"),
+                "score_verdict": candidate.get("score_verdict"),
                 "reason": candidate["rewrite_shortlist_reason"],
             }
         )

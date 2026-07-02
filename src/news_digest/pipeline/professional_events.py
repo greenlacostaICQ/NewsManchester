@@ -1,4 +1,4 @@
-"""Profile-aware matching for free professional events.
+"""Profile-aware matching for professional events.
 
 The deterministic score is the cheap first pass. A compact LLM pass then
 compares publishable professional events with the owner's CV/profile so the
@@ -18,7 +18,7 @@ PROFILE_ENV_JSON = "BUSINESS_EVENT_PROFILE_JSON"
 PROFILE_ENV_PATH = "BUSINESS_EVENT_PROFILE_PATH"
 MATCH_MODEL_VERSION = "professional_event_match_v1"
 LLM_MATCH_MODEL_VERSION = "professional_event_llm_cv_match_v1"
-LLM_MATCH_MAX_CANDIDATES = int(os.getenv("PROFESSIONAL_EVENT_LLM_MATCH_MAX", "16"))
+LLM_MATCH_BATCH_SIZE = int(os.getenv("PROFESSIONAL_EVENT_LLM_MATCH_BATCH_SIZE", "12"))
 
 HIGH_VALUE_TOPICS = (
     "ai", "agentic ai", "artificial intelligence", "machine learning",
@@ -137,7 +137,32 @@ def _free_access(blob: str, source_label: str) -> tuple[str, str]:
         return "likely_free", "обычно бесплатное business-support событие; цену нужно сверить"
     if has_paid:
         return "paid", "платное событие"
-    return "unknown", "бесплатный доступ не подтверждён"
+    return "unknown", "стоимость не подтверждена"
+
+
+def _access_label(access_status: str) -> str:
+    return {
+        "free": "free",
+        "eligible_free": "free",
+        "likely_free": "booking_required",
+        "paid": "paid",
+        "sold_out": "sold_out",
+        "unknown": "unknown",
+    }.get(str(access_status or "").strip().lower(), "unknown")
+
+
+def _set_score_provenance(
+    candidate: dict[str, Any],
+    *,
+    value: float | int,
+    source: str,
+    scope: str = "professional",
+    verdict: str = "",
+) -> None:
+    candidate["score_value"] = max(0, min(100, int(float(value or 0))))
+    candidate["score_source"] = source
+    candidate["score_scope"] = scope
+    candidate["score_verdict"] = verdict or "not_model_scored"
 
 
 def _profile_terms(profile: dict[str, Any], key: str, fallback: tuple[str, ...]) -> tuple[str, ...]:
@@ -216,6 +241,7 @@ def score_professional_event(candidate: dict[str, Any], project_root: Path | Non
         "event_level": event_level,
         "major_conference_or_expo": major,
         "free_access_status": access_status,
+        "access_label": _access_label(access_status),
         "free_access_reason": access_reason,
         "why_this_fits_aleksei": "; ".join(gets[:2]),
         "what_he_gets_from_it": gets[:4],
@@ -239,13 +265,18 @@ def apply_professional_event_match(candidate: dict[str, Any], project_root: Path
     match = score_professional_event(candidate, project_root)
     candidate["professional_event_match"] = match
     candidate["reader_action_type"] = "book_or_buy" if match.get("recommended_action") == "register" else "plan_ahead"
-    candidate["english_editorial_score"] = max(float(candidate.get("english_editorial_score") or 0), float(match.get("fit_score") or 0))
+    _set_score_provenance(
+        candidate,
+        value=float(match.get("fit_score") or 0),
+        source="keyword",
+        verdict=str(match.get("event_level") or "not_model_scored"),
+    )
     # W6: the deterministic keyword score only *ranks* the board; it can no
     # longer publish a professional event on its own. Hard commercial/sold-out
     # cases are safe to drop deterministically; every other professional event
     # — including a high keyword score — waits for the gpt-4o-mini CV verdict,
     # which is the decisive gate (only its go/consider becomes visible).
-    if match.get("free_access_status") in {"paid", "sold_out"}:
+    if match.get("free_access_status") == "sold_out":
         candidate["include"] = False
         candidate["reason"] = (
             str(candidate.get("reason") or "").rstrip()
@@ -294,10 +325,24 @@ def _has_place_or_online(candidate: dict[str, Any], event: dict[str, Any]) -> bo
     return any(tok in source for tok in _GM_PROFESSIONAL_SOURCE_TOKENS)
 
 
+def _is_programme_page(candidate: dict[str, Any], event: dict[str, Any]) -> bool:
+    title = str(event.get("event_name") or candidate.get("title") or "").strip().lower()
+    url = str(event.get("booking_url") or candidate.get("source_url") or "").strip().lower().rstrip("/")
+    if re.search(r"/(?:events|event|programme|programmes|whats-on|what-s-on)$", url):
+        return True
+    if re.search(r"\b(?:programme|membership|training\s+programme)\b", title) and not str(event.get("date_start") or event.get("date") or "").strip():
+        return True
+    return False
+
+
 def _professional_event_has_minimum_facts(candidate: dict[str, Any]) -> bool:
     from news_digest.pipeline.event_extraction import event_date_is_trustworthy  # noqa: PLC0415
 
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    if event.get("is_event") is False:
+        return False
+    if _is_programme_page(candidate, event):
+        return False
     name = str(event.get("event_name") or candidate.get("title") or "").strip()
     url = str(event.get("booking_url") or candidate.get("source_url") or "").strip()
     if not (name and url):
@@ -308,6 +353,26 @@ def _professional_event_has_minimum_facts(candidate: dict[str, Any]) -> bool:
     if not event_date_is_trustworthy(candidate):
         return False
     return _has_place_or_online(candidate, event)
+
+
+def _professional_event_has_full_public_facts(candidate: dict[str, Any]) -> bool:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    if not _professional_event_has_minimum_facts(candidate):
+        return False
+    if str(event.get("venue") or event.get("borough") or "").strip():
+        return True
+    blob = _blob(candidate)
+    return any(tok in blob for tok in _ONLINE_TOKENS)
+
+
+def _professional_access_allowed(candidate: dict[str, Any], *, fit: str, score: int, access_label: str) -> bool:
+    if fit not in {"go", "consider"}:
+        return False
+    if access_label in {"free", "booking_required"}:
+        return True
+    if access_label in {"paid", "unknown"}:
+        return _professional_event_has_full_public_facts(candidate) and (fit == "go" or score >= 75)
+    return False
 
 
 def _profile_for_prompt(project_root: Path | None = None) -> dict[str, object]:
@@ -369,6 +434,11 @@ def _drop_pending_llm_candidates(candidates: list[dict[str, Any]], reason: str) 
         ).strip()
         dropped += 1
     return dropped
+
+
+def _chunks(items: list[dict[str, Any]], size: int) -> list[list[dict[str, Any]]]:
+    safe_size = max(1, int(size or 1))
+    return [items[index:index + safe_size] for index in range(0, len(items), safe_size)]
 
 
 def apply_professional_event_llm_matches(
@@ -435,20 +505,26 @@ def _run_professional_cv_match(
         and _professional_event_has_minimum_facts(c)
     ]
     professional.sort(key=_candidate_sort_key, reverse=True)
-    limit = max_candidates if max_candidates is not None else LLM_MATCH_MAX_CANDIDATES
-    selected = professional[: max(0, limit)]
-    not_sent = professional[max(0, limit):]
+    if max_candidates is None:
+        selected = professional
+        not_sent: list[dict[str, Any]] = []
+    else:
+        limit = max(0, int(max_candidates))
+        selected = professional[:limit]
+        not_sent = professional[limit:]
     report: dict[str, Any] = {
         "model_version": LLM_MATCH_MODEL_VERSION,
         "eligible": len(professional),
         "sent": len(selected),
         "not_sent": len(not_sent),
+        "batch_size": max(1, int(LLM_MATCH_BATCH_SIZE or 1)),
+        "batches": 0,
         "applied": 0,
         "skipped": 0,
         "status": "skipped_no_candidates" if not selected else "pending",
     }
     if not_sent:
-        report["dropped_not_sent_pending"] = _drop_pending_llm_candidates(not_sent, "not evaluated inside morning CV-match cap")
+        report["dropped_not_sent_pending"] = _drop_pending_llm_candidates(not_sent, "not evaluated inside explicit CV-match override cap")
     if not selected:
         return report
 
@@ -471,118 +547,149 @@ def _run_professional_cv_match(
         report.update({"status": "skipped_no_api_key"})
         return report
     route = routes[0]
-    payload = {
-        "profile": _profile_for_prompt(project_root),
-        "events": [_llm_payload(c) for c in selected],
-    }
     system_prompt = (
-        "Ты оцениваешь бесплатные business/tech события под конкретный профиль владельца дайджеста. "
+        "Ты оцениваешь business/tech события под конкретный профиль владельца дайджеста. "
         "Нужно выбрать не просто события с business-словами, а те, куда ему реально стоит пойти: "
         "CPO/CDTO, fintech/SaaS, AI/ML, product, digital transformation, board/advisory, UK networking, "
         "практика профессионального английского. Верни строгий JSON: "
         "{\"items\":[{\"id\":\"...\",\"fit\":\"go|consider|skip\",\"score\":0-100,"
         "\"why\":\"одно конкретное предложение\",\"action\":\"register|consider|skip\","
-        "\"free_access\":true|false,\"reason\":\"кратко\"}]}."
-        "Если нет даты, места/online или понятного доступа, fit=skip. Не выдумывай факты."
+        "\"access_label\":\"free|paid|unknown|booking_required\",\"reason\":\"кратко\"}]}."
+        "Если нет даты, места/online или ссылки, fit=skip. Платное или unknown можно пометить go/consider "
+        "только при сильном соответствии профилю. Не выдумывай факты."
     )
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
-    ]
-    try:
-        client = OpenAI(
-            api_key=route.api_key,
-            base_url=route.base_url,
-            timeout=route.timeout_seconds or 35,
-            max_retries=sdk_retries_for_route(provider=route.provider, model=route.model, base_url=route.base_url),
-        )
-        response = client.chat.completions.create(
-            model=route.model,
-            messages=messages,
-            temperature=0.1,
-            max_tokens=min(6000, 360 * len(selected) + 900),
-            response_format={"type": "json_object"},
-            **chat_completion_options_for_route(provider=route.provider, model=route.model, base_url=route.base_url),
-        )
-        record_call_from_response(
-            response=response,
-            stage="validate",
-            provider=route.provider_label,
-            model=route.model,
-            prompt_name="professional_cv_match",
-            messages=messages,
-            max_tokens=min(6000, 360 * len(selected) + 900),
-        )
-        parsed = json.loads(str(response.choices[0].message.content or "{}"))
-    except Exception as exc:  # noqa: BLE001
-        report["dropped_pending"] = int(report.get("dropped_pending") or 0) + _drop_pending_llm_candidates(selected, "model call failed")
-        report.update({
-            "status": "failed",
-            "provider": route.provider_label,
-            "model": route.model,
-            "error": f"{exc.__class__.__name__}: {exc}",
-        })
-        return report
-
-    rows = parsed.get("items") if isinstance(parsed, dict) else []
-    if not isinstance(rows, list):
-        report["dropped_pending"] = int(report.get("dropped_pending") or 0) + _drop_pending_llm_candidates(selected, "model response could not be parsed")
-        report.update({"status": "parse_failed", "raw_type": type(parsed).__name__})
-        return report
-    by_id = {str(_llm_payload(c)["id"]): c for c in selected}
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        cid = str(row.get("id") or "")
-        candidate = by_id.get(cid)
-        if not candidate:
-            continue
-        fit = str(row.get("fit") or "").strip().lower()
-        if fit not in {"go", "consider", "skip"}:
-            fit = "consider" if bool(row.get("free_access")) else "skip"
-        try:
-            score = max(0, min(100, int(row.get("score") or 0)))
-        except (TypeError, ValueError):
-            score = 0
-        llm_match = {
-            "model": LLM_MATCH_MODEL_VERSION,
-            "provider": route.provider_label,
-            "route_role": route.role,
-            "fit": fit,
-            "score": score,
-            "why": str(row.get("why") or row.get("reason") or "").strip(),
-            "action": str(row.get("action") or ("register" if fit == "go" else fit)).strip(),
-            "free_access": bool(row.get("free_access")),
-            "reason": str(row.get("reason") or "").strip(),
+    client = OpenAI(
+        api_key=route.api_key,
+        base_url=route.base_url,
+        timeout=route.timeout_seconds or 35,
+        max_retries=sdk_retries_for_route(provider=route.provider, model=route.model, base_url=route.base_url),
+    )
+    profile = _profile_for_prompt(project_root)
+    batch_failures = 0
+    for batch in _chunks(selected, int(LLM_MATCH_BATCH_SIZE or 1)):
+        report["batches"] = int(report.get("batches") or 0) + 1
+        payload = {
+            "profile": profile,
+            "events": [_llm_payload(c) for c in batch],
         }
-        candidate["professional_llm_match"] = llm_match
-        match = candidate.get("professional_event_match") if isinstance(candidate.get("professional_event_match"), dict) else {}
-        match = dict(match)
-        match.update({
-            "model": f"{MATCH_MODEL_VERSION}+{LLM_MATCH_MODEL_VERSION}",
-            "publish": fit in {"go", "consider"},
-            "fit_score": max(int(match.get("fit_score") or 0), score),
-            "llm_fit": fit,
-            # D2/0047: the model's per-event `reason` is genuinely specific
-            # ("Событие по AI с акцентом на возможности для молодёжи"), while
-            # `why` came back as a generic template identical across events.
-            # Surface the specific reason first so the stored/diagnostic
-            # explanation reflects real per-event judgement.
-            "why_this_fits_aleksei": llm_match["reason"] or llm_match["why"] or match.get("why_this_fits_aleksei") or "",
-            "recommended_action": "register" if fit == "go" else ("consider" if fit == "consider" else "skip"),
-        })
-        candidate["professional_event_match"] = match
-        candidate["professional_match_status"] = "llm_cv_matched"
-        candidate["reader_action_type"] = "book_or_buy" if match["recommended_action"] == "register" else "plan_ahead"
-        candidate["english_editorial_score"] = max(float(candidate.get("english_editorial_score") or 0), float(match.get("fit_score") or 0))
-        if fit == "skip":
-            candidate["include"] = False
-            candidate["reason"] = (
-                str(candidate.get("reason") or "").rstrip()
-                + f" | Professional LLM CV match: skip — {llm_match['reason'] or llm_match['why']}."
-            ).strip()
-            report["skipped"] = int(report.get("skipped") or 0) + 1
-        else:
-            report["applied"] = int(report.get("applied") or 0) + 1
-    report.update({"status": "ok", "provider": route.provider_label, "model": route.model})
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+        ]
+        try:
+            response = client.chat.completions.create(
+                model=route.model,
+                messages=messages,
+                temperature=0.1,
+                max_tokens=min(6000, 360 * len(batch) + 900),
+                response_format={"type": "json_object"},
+                **chat_completion_options_for_route(provider=route.provider, model=route.model, base_url=route.base_url),
+            )
+            record_call_from_response(
+                response=response,
+                stage="validate",
+                provider=route.provider_label,
+                model=route.model,
+                prompt_name="professional_cv_match",
+                messages=messages,
+                max_tokens=min(6000, 360 * len(batch) + 900),
+            )
+            parsed = json.loads(str(response.choices[0].message.content or "{}"))
+        except Exception as exc:  # noqa: BLE001
+            batch_failures += 1
+            report["dropped_pending"] = int(report.get("dropped_pending") or 0) + _drop_pending_llm_candidates(batch, "model call failed")
+            report.update({
+                "provider": route.provider_label,
+                "model": route.model,
+                "error": f"{exc.__class__.__name__}: {exc}",
+            })
+            continue
+
+        rows = parsed.get("items") if isinstance(parsed, dict) else []
+        if not isinstance(rows, list):
+            batch_failures += 1
+            report["dropped_pending"] = int(report.get("dropped_pending") or 0) + _drop_pending_llm_candidates(batch, "model response could not be parsed")
+            report.update({"raw_type": type(parsed).__name__})
+            continue
+        by_id = {str(_llm_payload(c)["id"]): c for c in batch}
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            cid = str(row.get("id") or "")
+            candidate = by_id.get(cid)
+            if not candidate:
+                continue
+            fit = str(row.get("fit") or "").strip().lower()
+            if fit not in {"go", "consider", "skip"}:
+                fit = "consider" if bool(row.get("free_access")) else "skip"
+            try:
+                score = max(0, min(100, int(row.get("score") or 0)))
+            except (TypeError, ValueError):
+                score = 0
+            base_match = candidate.get("professional_event_match") if isinstance(candidate.get("professional_event_match"), dict) else {}
+            base_access = _access_label(str(base_match.get("free_access_status") or "unknown"))
+            access_label = str(row.get("access_label") or "").strip().lower()
+            if access_label not in {"free", "paid", "unknown", "booking_required"}:
+                access_label = base_access if base_access != "sold_out" else "unknown"
+            llm_match = {
+                "model": LLM_MATCH_MODEL_VERSION,
+                "provider": route.provider_label,
+                "route_role": route.role,
+                "fit": fit,
+                "score": score,
+                "why": str(row.get("why") or row.get("reason") or "").strip(),
+                "action": str(row.get("action") or ("register" if fit == "go" else fit)).strip(),
+                "access_label": access_label,
+                "free_access": access_label == "free" or bool(row.get("free_access")),
+                "reason": str(row.get("reason") or "").strip(),
+            }
+            candidate["professional_llm_match"] = llm_match
+            match = dict(base_match)
+            publish = fit in {"go", "consider"} and _professional_access_allowed(
+                candidate,
+                fit=fit,
+                score=score,
+                access_label=access_label,
+            )
+            match.update({
+                "model": f"{MATCH_MODEL_VERSION}+{LLM_MATCH_MODEL_VERSION}",
+                "publish": publish,
+                "fit_score": score,
+                "llm_fit": fit,
+                "access_label": access_label,
+                # D2/0047: the model's per-event `reason` is genuinely specific
+                # ("Событие по AI с акцентом на возможности для молодёжи"), while
+                # `why` came back as a generic template identical across events.
+                # Surface the specific reason first so the stored/diagnostic
+                # explanation reflects real per-event judgement.
+                "why_this_fits_aleksei": llm_match["reason"] or llm_match["why"] or match.get("why_this_fits_aleksei") or "",
+                "recommended_action": "register" if fit == "go" else ("consider" if fit == "consider" else "skip"),
+            })
+            candidate["professional_event_match"] = match
+            candidate["professional_match_status"] = "llm_cv_matched"
+            candidate["reader_action_type"] = "book_or_buy" if match["recommended_action"] == "register" else "plan_ahead"
+            _set_score_provenance(candidate, value=score, source="model", verdict=fit)
+            if fit == "skip":
+                candidate["include"] = False
+                candidate["reason"] = (
+                    str(candidate.get("reason") or "").rstrip()
+                    + f" | Professional LLM CV match: skip — {llm_match['reason'] or llm_match['why']}."
+                ).strip()
+                report["skipped"] = int(report.get("skipped") or 0) + 1
+            elif not publish:
+                candidate["include"] = False
+                candidate["editorial_status"] = "held_for_enrichment"
+                candidate["reason"] = (
+                    str(candidate.get("reason") or "").rstrip()
+                    + f" | Professional LLM CV match: held — {access_label} access needs CV go or strong consider plus full date/place."
+                ).strip()
+                report["skipped"] = int(report.get("skipped") or 0) + 1
+            else:
+                report["applied"] = int(report.get("applied") or 0) + 1
+    status = "ok"
+    if batch_failures and int(report.get("applied") or 0) + int(report.get("skipped") or 0) > 0:
+        status = "partial_failed"
+    elif batch_failures:
+        status = "failed"
+    report.update({"status": status, "provider": route.provider_label, "model": route.model})
     return report

@@ -534,13 +534,13 @@
 - ПРОВЕРКА (после прогона): offline — Firswood/Queens Road-style lift/escalator → drop; no trains/replacement bus and station closure → keep; focused tests OK. Прод-проверка — следующий прогон.
 
 ### 0046 — Профсобытия: матч смыслом, не словами — 2026-07-02
-- Статус: предложено
+- Статус: внедрено локально; ПРОВЕРКА офлайн — `PYTHONPATH=src python3 -m unittest tests.test_professional_events` (16 tests OK), прод — следующий прогон.
 - Проблема: подходящая по смыслу конференция может не иметь слов из резюме и не дойти до модели. 25 из 42 не дошли до CV-модели вообще.
 - Причина (корень): keyword-скорер гейтит доступ к модели; кап `LLM_MATCH_MAX_CANDIDATES=16` (`professional_events.py:21`); held → `needs_llm_cv_match` (`professional_events.py:249-258`).
-- Решение: убрать keyword-кап перед моделью (или поднять до охвата eligible); ранжировать по вердикту модели; keyword оставить только как грубый предфильтр «это вообще проф-событие».
+- Решение: Stage 1 deterministic eligibility (реальное событие, trustworthy date, place/online/source-locality, URL, не programme/listing page); Stage 2 отправляет всех eligible в CV-модель батчами. Keyword оставлен как ordering/diagnostic signal, но не финальный score и не visible-гейт.
 - Ожидаемый эффект и метрика: `needs_llm_cv_match` (не дошедшие) → ~0; события без keyword-overlap, но подходящие, проходят.
-- Файлы/места: `professional_events.py:21,236-258,418-470`.
-- ПРОВЕРКА (после прогона): —
+- Файлы/места: `professional_events.py` (`LLM_MATCH_BATCH_SIZE`, `_professional_event_has_minimum_facts`, `_run_professional_cv_match`).
+- ПРОВЕРКА (после прогона): offline OK; prod pending.
 
 ### 0047 — Профсобытия: показывать реальное обоснование модели — 2026-07-02
 - Статус: внедрено локально; ПРОВЕРКА офлайн (unittest профсобытий), прод — следующий прогон. `professional_events.py:566` теперь `reason → why → шаблон`. Диагностическое поле; видимую карточку не меняет (её пишет rewrite-промпт) — это отмечено честно.
@@ -551,20 +551,20 @@
 - ПРОВЕРКА (после прогона): —
 
 ### 0048 — Профсобытия: убрать требование бесплатности / честная метка доступа — 2026-07-02
-- Статус: предложено
+- Статус: внедрено локально; ПРОВЕРКА офлайн — `PYTHONPATH=src python3 -m unittest tests.test_professional_events` (16 tests OK), прод — следующий прогон.
 - Проблема: 2 из 3 показанных — `free_access_status=unknown` в секции «Бесплатные»; требование free — затык.
 - Причина (корень): секция обещает бесплатность, а гейт/данные это не держат (`professional_events.py` free_access_*).
-- Решение: снять фильтр по free; переформулировать секцию (не обещать «бесплатно»); писать статус доступа честно, если известен.
-- Файлы/места: `professional_events.py`; заголовок секции в `common.py`.
-- ПРОВЕРКА (после прогона): —
+- Решение: секция переименована в нейтральную `Business/tech события для тебя`; карточка получает `access_label` (`free`/`paid`/`unknown`/`booking_required`); paid/unknown публикуются только при CV `go` или сильном `consider` + полной дате/месте; квота не расширена.
+- Файлы/места: `professional_events.py`, `common.py`, `writer.py`.
+- ПРОВЕРКА (после прогона): offline OK; prod pending.
 
 ### 0049 — Профсобытия: согласовать гейты отбора — 2026-07-02
-- Статус: предложено
+- Статус: внедрено локально; ПРОВЕРКА офлайн — `PYTHONPATH=src python3 -m unittest tests.test_professional_events` (16 tests OK), прод — следующий прогон.
 - Проблема: go/100 (Networking North) выпал из общей доски-90 и куратора, а consider/51 (event_level=reject, Pro-Manchester) прошёл.
 - Причина (корень): 3 несогласованных гейта поверх CV-вердикта: `Outside DeepSeek ranking board (soft max 90)` (`llm_rewrite.py:1302`), `Curator drop: чистый PR` (`curator.py`), секционный кап=3.
-- Решение: профсобытиям — своя квота вне общей доски ИЛИ единая шкала; go/consider не выпадает молча без учёта фита.
-- Файлы/места: `llm_rewrite.py:1252-1308`, `curator.py`, section cap.
-- ПРОВЕРКА (после прогона): —
+- Решение: `skip` never visible; `go` сортируется выше `consider`; professional cap=3 режет только model-approved внутри своего блока; уже выбранные CV-approved профсобытия защищены от общей hard-news board и финальной Russian-board отсечки. Capacity/date/duplicate/access-facts причины пишутся в candidate reason / held examples.
+- Файлы/места: `professional_events.py`, `llm_rewrite.py`, `writer.py`.
+- ПРОВЕРКА (после прогона): offline OK; prod pending.
 
 ### 0050 — Валидация URL при извлечении (сырой HTML в href) — 2026-07-02
 - Статус: внедрено локально; ПРОВЕРКА офлайн (golden unittest на реальном CONEXEN-кейсе + smoke), прод — следующий прогон. `valid_http_url`/`first_valid_http_url` в common.py; фолбэк в `_jsonld_event_node_to_item` (extract.py:351) + санитайзинг source_url при создании кандидата. Нормальные URL (query `&`, фрагмент, percent-encoding) сохраняются; `clean_url` не тронут (он ключ dedup). Тест `tests/test_market_event_sources.py::JsonLdUrlSanitizationTest`.
@@ -576,12 +576,12 @@
 - ПРОВЕРКА (после прогона): —
 
 ### 0051 — Единая шкала ранжирования (доска смешивает 2 шкалы) — 2026-07-02
-- Статус: предложено
+- Статус: внедрено локально; ПРОВЕРКА офлайн — `PYTHONPATH=src python3 -m unittest tests.test_professional_events` (16 tests OK), прод — следующий прогон.
 - Проблема: модель оценила 66 из 375; у 36 вердикт `none` — профсобытия с keyword-100 забивают верх доски выше реальных новостей (Бёрнэм 90), но режутся секционным капом.
 - Причина (корень): `_rewrite_shortlist_priority` (`llm_rewrite.py:1051`) использует `english_editorial_score`, куда профсобытиям пишется keyword `fit_score` без модельного вердикта (`professional_events.py:564,572`).
-- Решение: все видимые кандидаты получают вердикт модели (или явную метку «не оценён»); профсобытия не сидят на общей доске с keyword-100 без вердикта; доска не мешает две шкалы.
-- Файлы/места: `llm_rewrite.py:1051-1308`, `reader_value.py:111`, `professional_events.py:564-572`.
-- ПРОВЕРКА (после прогона): —
+- Решение: введены `score_value`, `score_source`, `score_scope`, `score_verdict`; deterministic keyword пишет `score_source=keyword`, CV-модель пишет `score_source=model`; professional ranking читает свою шкалу и не использует keyword/CV score как `english_editorial_score` news-board score. Held reports показывают `not model scored`/provenance.
+- Файлы/места: `professional_events.py`, `llm_rewrite.py`, `writer.py`.
+- ПРОВЕРКА (после прогона): offline OK; prod pending.
 
 ## Корректировка плана 0039–0052 после архитектурной рецензии — 2026-07-02
 
