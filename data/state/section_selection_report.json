@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "run_date_london": "2026-07-02",
-  "created_at_london": "2026-07-02T08:23:30.050155+01:00",
+  "run_date_london": "2026-07-03",
+  "created_at_london": "2026-07-03T08:20:45.494588+01:00",
   "policy": "Every candidate must have selected / reserve / needs_enrichment / drop. Pending dedupe is not a valid final state.",
   "totals": {
-    "selected": 363,
-    "reserve": 680,
-    "needs_enrichment": 8,
-    "drop": 366,
+    "selected": 361,
+    "reserve": 691,
+    "needs_enrichment": 6,
+    "drop": 388,
     "pending": 0
   },
   "pending_dedupe_left": [],
@@ -23,15 +23,27 @@
     },
     "city_watch": {
       "heading": "Городской радар",
-      "total": 78,
+      "total": 91,
       "selected": 3,
-      "reserve": 35,
+      "reserve": 43,
       "needs_enrichment": 2,
-      "drop": 38,
+      "drop": 43,
       "examples": [
         {
           "verdict": "reserve",
-          "title": "Artist hails Manchester's 'amazing' culture as exhibition begins",
+          "title": "Woman realised she had ADHD during early menopause",
+          "source_label": "BBC Manchester",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Ai Weiwei hails Manchester's amazing culture as exhibition opens",
+          "source_label": "BBC Manchester",
+          "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "'XL bully-type' dogs and drugs seized in Manchester raid",
           "source_label": "BBC Manchester",
           "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
         },
@@ -39,7 +51,7 @@
           "verdict": "drop",
           "title": "Announced candidates for Greater Manchester mayoral election",
           "source_label": "BBC Manchester",
-          "reason": "Повтор темы без новой фазы: уже был 2026-06-26 как «Announced candidates for Greater Manchester mayoral election»."
+          "reason": "Same story, but semantic dedupe found concrete new facts. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-02 (anchor=new_phase, ttl=1d)."
         },
         {
           "verdict": "drop",
@@ -60,80 +72,10 @@
           "reason": "Held as same-block backup for recovery."
         },
         {
-          "verdict": "drop",
+          "verdict": "reserve",
           "title": "Andy Burnham plans to work some days in Manchester as PM",
           "source_label": "BBC Manchester",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Woman arrested at Bury school on suspicion of child sex offences",
-          "source_label": "BBC Manchester",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        },
-        {
-          "verdict": "drop",
-          "title": "What is the Greater Manchester mayor and what do they do?",
-          "source_label": "BBC Manchester Web",
-          "reason": "Без новых фактов: уже был 2026-06-20 как «What is the Greater Manchester mayor and what do they do?». LLM-review: Перепечатка о роли мэра, без новых фактов. LLM-review: Перепечатка о роли мэра, без новых фактов."
-        }
-      ]
-    },
-    "last_24h": {
-      "heading": "Свежие новости",
-      "total": 109,
-      "selected": 9,
-      "reserve": 31,
-      "needs_enrichment": 0,
-      "drop": 69,
-      "examples": [
-        {
-          "verdict": "reserve",
-          "title": "Stockport Dementia Discos give 'opportunity for joy'",
-          "source_label": "BBC Manchester",
           "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-        },
-        {
-          "verdict": "drop",
-          "title": "Walkers criticise National Trust over move to close 'unsafe' footbridge",
-          "source_label": "BBC Manchester",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Artist hails Manchester's 'amazing' culture as exhibition begins",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Stockport Dementia Discos give 'opportunity for joy'",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Burnham calls for grooming gang ringleader to be deported",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Rochdale grooming victims heard of abuser's release on social media, MP says",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Ban too lenient for dentist who made sexual comments",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "'XL bully-type' dogs and drugs seized in Manchester raid",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         }
       ]
     },
@@ -147,35 +89,105 @@
       "examples": [
         {
           "verdict": "drop",
-          "title": "'XL bully-type' dogs and drugs seized in Manchester raid",
+          "title": "Rhamero West: Two more men jailed for student's stab murder in Manchester",
           "source_label": "BBC Manchester public safety fallback",
           "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         }
       ]
     },
+    "last_24h": {
+      "heading": "Свежие новости",
+      "total": 97,
+      "selected": 8,
+      "reserve": 20,
+      "needs_enrichment": 0,
+      "drop": 69,
+      "examples": [
+        {
+          "verdict": "reserve",
+          "title": "Stockport Dementia Discos give 'opportunity for joy'",
+          "source_label": "BBC Manchester",
+          "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Woman realised she had ADHD during early menopause",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Rhamero West: Two more men jailed for student's stab murder in Manchester",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Rochdale grooming gang leader released from prison",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Ai Weiwei hails Manchester's amazing culture as exhibition opens",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Stockport Dementia Discos give 'opportunity for joy'",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Nelson teenage Islamic extremist jailed over gun attack plot",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Ex-Labour MP Joan Walley says Burnham brings different perspective",
+          "source_label": "BBC Manchester Web",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        }
+      ]
+    },
     "transport": {
       "heading": "Общественный транспорт сегодня",
-      "total": 9,
+      "total": 11,
       "selected": 8,
-      "reserve": 0,
+      "reserve": 2,
       "needs_enrichment": 0,
       "drop": 1,
       "examples": [
+        {
+          "verdict": "reserve",
+          "title": "Queens Road Tram Stop - Lift out of service",
+          "source_label": "TfGM",
+          "reason": "Held as same-block backup for recovery."
+        },
         {
           "verdict": "drop",
           "title": "Dane Road Tram Stop - Lift out of service",
           "source_label": "TfGM",
           "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Chorlton Tram Stop - Lift out of service",
+          "source_label": "TfGM",
+          "reason": "Held as same-block backup for recovery."
         }
       ]
     },
     "next_7_days": {
       "heading": "Что важно в ближайшие 7 дней",
-      "total": 75,
-      "selected": 4,
+      "total": 76,
+      "selected": 3,
       "reserve": 11,
       "needs_enrichment": 4,
-      "drop": 56,
+      "drop": 58,
       "examples": [
         {
           "verdict": "drop",
@@ -191,7 +203,7 @@
         },
         {
           "verdict": "reserve",
-          "title": "Effi o Blaenau (15) A vibrant coming of age story set in North Wales, based on Gary Owen's hit play Iphigenia in Splot. Fri 19 Jun - Thu 9 Jul",
+          "title": "Manchester Open 2026 The biggest celebration of Greater Manchester's creative talent. Fri 19 Jun - Sun 6 Sep Gallery",
           "source_label": "HOME",
           "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
         },
@@ -199,7 +211,7 @@
           "verdict": "reserve",
           "title": "The Last Viking (15) Mads Mikkelson stars in the latest outrageous black comedy from Anders Thomas Jensen. Fri 26 Jun - Thu 9 Jul",
           "source_label": "HOME",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
+          "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
         },
         {
           "verdict": "drop",
@@ -229,11 +241,11 @@
     },
     "weekend_activities": {
       "heading": "Выходные в GM",
-      "total": 128,
-      "selected": 9,
-      "reserve": 20,
-      "needs_enrichment": 2,
-      "drop": 97,
+      "total": 148,
+      "selected": 21,
+      "reserve": 21,
+      "needs_enrichment": 0,
+      "drop": 106,
       "examples": [
         {
           "verdict": "drop",
@@ -275,7 +287,7 @@
           "verdict": "drop",
           "title": "What's on at Bridgewater Hall",
           "source_label": "Visit Manchester Weekend",
-          "reason": "Повтор сюжета без новых деталей: уже был 2026-06-29 как «An Evening With David Sedaris | The Bridgewater Hall». LLM-review: Тот же сюжет, просто новый URL."
+          "reason": "Повтор сюжета без новых деталей: уже был 2026-06-29 как «An Evening With David Sedaris | The Bridgewater Hall». LLM-review: Тот же сюжет, просто новая редакция."
         },
         {
           "verdict": "drop",
@@ -287,18 +299,12 @@
     },
     "ticket_radar": {
       "heading": "Билеты / Ticket Radar",
-      "total": 56,
-      "selected": 32,
-      "reserve": 15,
+      "total": 57,
+      "selected": 34,
+      "reserve": 14,
       "needs_enrichment": 0,
       "drop": 9,
       "examples": [
-        {
-          "verdict": "reserve",
-          "title": "Kings Of Leon Special Guest Snuts Sat 4 Jul 2026 Multiple times",
-          "source_label": "Co-op Live",
-          "reason": "Held as same-block backup for recovery."
-        },
         {
           "verdict": "reserve",
           "title": "Def Leppard Special Guest Extreme Mon 6 Jul 2026 Multiple times",
@@ -340,20 +346,32 @@
           "title": "THE BEST OF ALL WORLDS - UK TOUR 2026 - SAMMY HAGAR — event 2026-07-07 — public sale 2026-04-24 10:00",
           "source_label": "Ticketmaster Manchester Upcoming",
           "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Sounds of the City Present Johnny Marr — event 2026-07-09 — public sale 2025-10-17 10:00",
+          "source_label": "Ticketmaster Manchester Upcoming",
+          "reason": "Held as same-block backup for recovery."
         }
       ]
     },
     "future_announcements": {
       "heading": "Дальние анонсы",
-      "total": 86,
-      "selected": 72,
-      "reserve": 13,
+      "total": 79,
+      "selected": 63,
+      "reserve": 16,
       "needs_enrichment": 0,
-      "drop": 1,
+      "drop": 0,
       "examples": [
         {
           "verdict": "reserve",
           "title": "Radar Festival 2026 - Weekend — event 2026-07-31 — public sale 2025-07-04 12:00",
+          "source_label": "Ticketmaster Manchester Onsale",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Antarctic Monkeys — event 2026-07-04 — public sale 2025-07-25 10:00",
           "source_label": "Ticketmaster Manchester Onsale",
           "reason": "Held as same-block backup for recovery."
         },
@@ -392,20 +410,14 @@
           "title": "The James Brown Experience — event 2026-05-04 — public sale 2025-01-24 10:00",
           "source_label": "Ticketmaster UK Major Onsale",
           "reason": "Held as same-block backup for recovery."
-        },
-        {
-          "verdict": "drop",
-          "title": "The Science and Industry Museum unveils a spectacular summer of free space-themed fun",
-          "source_label": "Manchester Wire",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Demoted from weekend_activities to future_announcements: earliest date 2026-07-18 is 16 days out. | Validator: event quality gate failed (date)."
         }
       ]
     },
     "outside_gm_tickets": {
       "heading": "Крупные концерты вне GM",
-      "total": 747,
-      "selected": 211,
-      "reserve": 536,
+      "total": 759,
+      "selected": 209,
+      "reserve": 550,
       "needs_enrichment": 0,
       "drop": 0,
       "examples": [
@@ -521,27 +533,21 @@
       "heading": "Еда, открытия и рынки",
       "total": 13,
       "selected": 2,
-      "reserve": 1,
+      "reserve": 0,
       "needs_enrichment": 0,
-      "drop": 10,
+      "drop": 11,
       "examples": [
         {
           "verdict": "drop",
           "title": "Food Halls and Markets",
           "source_label": "Manchester's Finest",
-          "reason": "LLM-review: Добавлены новые места, такие как New Century и Depot Mayfield. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-29 (anchor=none, ttl=3d)."
+          "reason": "Без новых фактов: уже был 2026-06-23 как «Food Halls and Markets in Manchester - Manchester's Finest». LLM-review: Тот же сюжет, просто новая редакция без новых фактов."
         },
         {
           "verdict": "drop",
           "title": "OSMA set to return with new restaurant and grocery in the city centre",
           "source_label": "Manchester's Finest",
-          "reason": "Без новых фактов: уже был 2026-06-25 как «OSMA set to return with new restaurant and grocery in the city centre». LLM-review: Тот же сюжет, просто новый URL."
-        },
-        {
-          "verdict": "drop",
-          "title": "Michelin-listed Örme reverses closure plans and unveils new direction for the future",
-          "source_label": "Manchester's Finest",
-          "reason": "Повтор темы без новой фазы: уже был 2026-07-01 как «Michelin-listed Örme reverses closure plans and unveils new direction for the future». LLM-review: Тот же сюжет, просто новый URL."
+          "reason": "LLM-review: Указано новое местоположение ресторана OSMA в центре города. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-01 (anchor=new_phase, ttl=3d)."
         },
         {
           "verdict": "drop",
@@ -551,37 +557,43 @@
         },
         {
           "verdict": "drop",
-          "title": "New pie shop with Indian-inspired fillings opens at Greater Manchester train station",
+          "title": "Manchester-born pizzeria named one of the world's best",
           "source_label": "The Manc Eats",
-          "reason": "Без новых фактов: уже был 2026-06-27 как «New pie shop with Indian-inspired fillings opens at Greater Manchester train station». LLM-review: Тот же сюжет, просто новый URL."
+          "reason": "LLM-review: Forbici признана одной из лучших пиццерий мира на Best Pizza Awards 2026. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-02 (anchor=new_phase, ttl=3d)."
         },
         {
           "verdict": "drop",
           "title": "Manchester's tiniest coffee shop has opened in Ancoats serving £2.50 flat whites",
           "source_label": "The Manc Eats",
-          "reason": "LLM-review: Кофейня 7ZZ открылась в Анкоатсе с ценами на латте от £2.50. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-29 (anchor=new_phase, ttl=3d)."
+          "reason": "LLM-review: Открытие нового кафе 7ZZ с доступными ценами на кофе. | Validator: cross-day rehash — fingerprint already shipped on 2026-06-29 (anchor=new_phase, ttl=3d)."
         },
         {
-          "verdict": "reserve",
+          "verdict": "drop",
           "title": "Manchester cocktail bar added to Michelin Guide in ‘incredible surprise'",
           "source_label": "The Manc Eats",
-          "reason": "Held as same-block backup for recovery."
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
           "verdict": "drop",
           "title": "12 new openings to still look forward to this year in Greater Manchester",
           "source_label": "The Manc Eats",
           "reason": "Без новых фактов: уже был 2026-06-25 как «12 new openings to still look forward to this year in Greater Manchester». LLM-review: Тот же сюжет, просто новый URL."
+        },
+        {
+          "verdict": "drop",
+          "title": "The SK Lowdown",
+          "source_label": "SK Lowdown Markets",
+          "reason": "LLM-review: Возвращение ночного рынка каждую вторую пятницу месяца. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-02 (anchor=new_phase, ttl=3d)."
         }
       ]
     },
     "tech_business": {
       "heading": "IT и бизнес",
-      "total": 18,
+      "total": 19,
       "selected": 3,
-      "reserve": 4,
+      "reserve": 7,
       "needs_enrichment": 0,
-      "drop": 11,
+      "drop": 9,
       "examples": [
         {
           "verdict": "reserve",
@@ -593,7 +605,7 @@
           "verdict": "drop",
           "title": "MD Comment: London Tech Week and the 10,000 policy announcements | Manchester Digital",
           "source_label": "Manchester Digital",
-          "reason": "Без новых фактов: уже был 2026-06-21 как «MD Comment: London Tech Week and the 10,000 policy announcements | Manchester Digital». LLM-review: Тот же сюжет, просто новый URL."
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
           "verdict": "drop",
@@ -634,42 +646,36 @@
       ]
     },
     "professional_events": {
-      "heading": "Бесплатные business/tech события для тебя",
+      "heading": "Business/tech события для тебя",
       "total": 42,
-      "selected": 3,
-      "reserve": 5,
+      "selected": 0,
+      "reserve": 0,
       "needs_enrichment": 0,
-      "drop": 34,
+      "drop": 42,
       "examples": [
         {
           "verdict": "drop",
           "title": "Join the #MDTechCommunity Slack Channel | Manchester Digital",
           "source_label": "Manchester Digital Events",
-          "reason": "Повтор сюжета без новых деталей: уже был 2026-06-27 как «MD Future 26 | Manchester Digital». LLM-review: Тот же сюжет, просто новый URL и редакция."
+          "reason": "Повтор сюжета без новых деталей: уже был 2026-06-27 как «MD Future 26 | Manchester Digital». LLM-review: Тот же сюжет, просто новый URL."
         },
         {
           "verdict": "drop",
           "title": "A Manifesto for the Northern Tech Economy",
           "source_label": "Manchester Digital Events",
-          "reason": "LLM-review: Объявили о манифесте перед выборами мэра 2 мая. | Professional CV match: held for enrichment (no governing go/consider verdict)."
+          "reason": "Без новых фактов: уже был 2026-06-16 как «A Manifesto for the Northern Tech Economy». LLM-review: Тот же сюжет, просто новый URL."
+        },
+        {
+          "verdict": "drop",
+          "title": "Getting Found in an AI-First World | Manchester Digital",
+          "source_label": "Manchester Digital Events",
+          "reason": "LLM-review: Обсуждение изменений в поисковых системах из-за ИИ. | Validator: event-like candidate has no concrete upcoming date."
         },
         {
           "verdict": "drop",
           "title": "MD Future 26 | Manchester Digital",
           "source_label": "Manchester Digital Events",
-          "reason": "Без новых фактов: уже был 2026-06-27 как «MD Future 26 | Manchester Digital». LLM-review: Тот же сюжет, просто новый URL и редакция."
-        },
-        {
-          "verdict": "drop",
-          "title": "Centre for Digital Trust and Society Forum 2026 | Manchester Digital",
-          "source_label": "Manchester Digital Events",
-          "reason": "Без новых фактов: уже был 2026-06-27 как «Centre for Digital Trust and Society Forum 2026 | Manchester Digital». LLM-review: Тот же сюжет, просто новый URL и редакция."
-        },
-        {
-          "verdict": "drop",
-          "title": "Driving the Future of Advanced Manufacturing | Manchester Digital",
-          "source_label": "Manchester Digital Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
+          "reason": "Без новых фактов: уже был 2026-06-27 как «MD Future 26 | Manchester Digital». LLM-review: Тот же сюжет, просто новый URL."
         },
         {
           "verdict": "drop",
@@ -685,17 +691,23 @@
         },
         {
           "verdict": "drop",
-          "title": "Business Support | GM Business Growth Hub",
-          "source_label": "GM Business Growth Hub Events",
-          "reason": "LLM-review: Обновили информацию о поддержке бизнеса в регионе. | Validator: event-like candidate has no concrete upcoming date."
+          "title": "Beyond the quick answer - How to get real work out of Claude and your business data with Tugger | Manchester Digital",
+          "source_label": "Manchester Digital Events",
+          "reason": "Same story, but semantic dedupe found concrete new facts. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-02 (anchor=none, ttl=1d)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Make, Learn, Connect | Manchester Digital",
+          "source_label": "Manchester Digital Events",
+          "reason": "Повтор сюжета без новых деталей: уже был 2026-06-27 как «MD Future 26 | Manchester Digital». LLM-review: Тот же сюжет, просто новый URL."
         }
       ]
     },
     "football": {
       "heading": "Футбол",
-      "total": 33,
+      "total": 31,
       "selected": 3,
-      "reserve": 8,
+      "reserve": 6,
       "needs_enrichment": 0,
       "drop": 22,
       "examples": [
@@ -713,39 +725,39 @@
         },
         {
           "verdict": "drop",
-          "title": "Maresca impressed with balance of City squad",
-          "source_label": "Manchester City Men",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Man Utd transfers: Keeper Andre Onana close to Trabzonspor loan return",
-          "source_label": "BBC Sport Manchester United",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        },
-        {
-          "verdict": "drop",
           "title": "Enzo Maresca signs three-year Man City deal after agreeing Chelsea compensation",
           "source_label": "BBC Sport Manchester City",
           "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
-          "verdict": "drop",
-          "title": "Marcus Rashford's damning statement, 'letting Man United down' and squad's stance on return",
-          "source_label": "MEN Manchester United",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Man United latest: New signing announcement nears as Bruno Fernandes interest emerges",
-          "source_label": "MEN Manchester United",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
           "verdict": "reserve",
-          "title": "Manchester United are having a summer like 2022 - and that worked out in the end",
+          "title": "Man United transfer news LIVE: Crysencio Summerville talks, deal 'signed', Marcus Rashford impact",
           "source_label": "MEN Manchester United",
           "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Man United transfer latest: Double deal lined up as midfield targets grow clearer",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Aurelien Tchouameni is the dream Man United signing - but there's one thing they cannot ignore",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Man United dream midfield after Mateus Fernandes blow as £160m alternatives identified",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Man United already have significant transfer plan earmarked for 2027 summer window",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         }
       ]
     }

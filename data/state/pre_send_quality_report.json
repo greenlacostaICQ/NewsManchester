@@ -1,88 +1,633 @@
 {
-  "status": "failed",
-  "decision": "block",
-  "can_send": false,
-  "reason": "pre-send quality judge LLM call failed: Error code: 429 - {'error': {'message': 'Request too large for gpt-4o in organization org-SGLpm5ixhMIaGJS9AIpPj2XF on tokens per min (TPM): Limit 30000, Requested 43721. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}",
+  "status": "ok",
+  "decision": "warn",
+  "can_send": true,
+  "reason": "pre-send repair executor applied 6 repair(s); issue ships with honest degradation report",
   "model": "gpt-4o",
   "provider": "openai",
-  "prompt_version": "v3",
-  "run_date_london": "2026-07-02",
-  "pipeline_run_id": "20260702T080137+0100",
-  "digest_sha256": "193ebaed3582df853463a005e30b7a5beb9ec738b97680ff11c76707fb8eb4f5",
-  "duration_seconds": 1.578,
-  "confidence": null,
-  "critical_errors": [],
-  "actions": null,
-  "warnings": [],
+  "prompt_version": "v4",
+  "run_date_london": "2026-07-03",
+  "pipeline_run_id": "20260703T080138+0100",
+  "digest_sha256": "a2bb15f518099302de07e71a33c67723349b7d56fb69e85b9ad9720ca931f2fa",
+  "duration_seconds": 70.419,
+  "confidence": 0.8,
+  "critical_errors": [
+    {
+      "line_index": 2,
+      "section": "Свежие новости",
+      "problem": "Указано имя несовершеннолетней жертвы сексуальной эксплуатации.",
+      "risk": "sensitive",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 16,
+      "section": "Что важно сегодня",
+      "problem": "Неправильная дата выборов.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 19,
+      "section": "Футбол",
+      "problem": "Неверная информация о клубе Сандро Тонали.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 22,
+      "section": "Выходные в GM",
+      "problem": "Неправильная дата мероприятия.",
+      "risk": "date",
+      "suggested_action": "repair"
+    }
+  ],
+  "actions": [
+    {
+      "line_index": 2,
+      "section": "Свежие новости",
+      "action": "patch",
+      "replacement_text": "• Мэр Greater Manchester, кандидат от Restore Марлон Уэст, рассказывает о том, как жизнь его семьи изменилась после того, как его 14-летняя дочь стала жертвой сексуальной эксплуатации. Уэст подчеркивает, что его дочь была подвергнута жестокому обращению и не получила должной поддержки от властей, что стало основным мотивом его участия в выборах мэра в 2026 году. MEN",
+      "reason": "Удаление имени несовершеннолетней жертвы для защиты её конфиденциальности.",
+      "risk": "sensitive"
+    },
+    {
+      "line_index": 11,
+      "section": "Общественный транспорт сегодня",
+      "action": "strip",
+      "reason": "Информация о капитальном ремонте офисного блока One Piccadilly Gardens не относится к общественному транспорту и не соответствует теме раздела.",
+      "risk": "product",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 16,
+      "section": "Что важно сегодня",
+      "action": "patch",
+      "replacement_text": "• В четверг, 30 июля 2026 года, в Большом Манчестере состоятся выборы мэра, чтобы заполнить вакансию после того, как Энди Бернхэм был избран депутатом. Избиратели будут использовать восстановленную правительством систему дополнительного голосования, как это было в 2017 и 2021 годах. Это изменение может повлиять на результаты выборов и политическую динамику региона. MEN",
+      "reason": "Дата выборов указана неверно, так как 30 июля 2026 года не является четвергом.",
+      "risk": "date"
+    },
+    {
+      "line_index": 19,
+      "section": "Футбол",
+      "action": "replace",
+      "replacement_text": "• Сделка на £100 миллионов в Премьер-лиге может позволить Манчестер Сити подписать полузащитника Сандро Тонали, так как клуб ищет усиления в центре поля. MEN Manchester City",
+      "reason": "Сандро Тонали не является игроком Ньюкасла.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 22,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 5 июля 2026 года в 7:00 в Macron Stadium, Bolton, пройдет car boot sale с более чем 300 стендами. Вход £1 за машину, открытие для покупателей с 7:00, для продавцов с 6:00. Bolton Car Boot Sale",
+      "reason": "Дата мероприятия указана неверно, должно быть 5 июля 2026 года.",
+      "risk": "date"
+    },
+    {
+      "line_index": 34,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 5 июля 2026 года в Barton Aerodrome пройдет Barton Live: Electric Heart Indie Festival с участием The Fratellis, Scouting For Girls и других. Билеты стоят £50.73. Проверьте дату, время и бронирование перед планированием.",
+      "reason": "Добавление стандартного предупреждения о проверке даты и времени.",
+      "risk": "date"
+    }
+  ],
+  "warnings": [
+    "Строка о капитальном ремонте офисного блока One Piccadilly Gardens не соответствует теме раздела 'Общественный транспорт сегодня'.",
+    "Добавлено предупреждение о проверке даты и времени для события 5 июля.",
+    "Выпуск содержит плотные формулировки, которые могут быть сложны для восприятия без контекста. Однако, фактических ошибок нет.",
+    "Секция 'Крупные концерты вне GM' содержит информацию о концертах, которые проходят за пределами Greater Manchester. Это может быть неинтересно основной аудитории, но не является критической ошибкой.",
+    "Низкая полнота секции 'Свежие новости': 4 из 6 минимально необходимых.",
+    "Низкая полнота секции 'Городской радар': 4 из 5 минимально необходимых.",
+    "Высокая доля билетов и концертов: 12 из 65 строк.",
+    "Низкая производительность писателей: 65 из 358 кандидатов включены.",
+    "line 2 drops source number/date fact(s): 02 jul 2026, 17:38",
+    "line 4 drops source number/date fact(s): 03 jul 2026, 05:58, 07:31"
+  ],
   "product_completeness": {
     "section_counts": {
       "Погода": 1,
-      "Свежие новости": 8,
+      "Свежие новости": 4,
       "Общественный транспорт сегодня": 8,
-      "Что важно сегодня": 3,
+      "Что важно сегодня": 5,
       "Футбол": 3,
-      "Выходные в GM": 6,
-      "Городской радар": 2,
-      "Что важно в ближайшие 7 дней": 5,
+      "Выходные в GM": 14,
+      "Городской радар": 3,
+      "Что важно в ближайшие 7 дней": 3,
       "Еда, открытия и рынки": 0,
-      "IT и бизнес": 1,
-      "Бесплатные business/tech события для тебя": 3,
-      "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 5,
-      "Русскоязычные концерты и стендап UK": 1
+      "IT и бизнес": 3,
+      "Дальние анонсы": 2,
+      "Билеты / Ticket Radar": 7,
+      "Крупные концерты вне GM": 5
     },
     "core_counts": {
-      "Свежие новости": 8,
+      "Свежие новости": 4,
       "Футбол": 3,
-      "Выходные в GM": 6,
-      "Что важно сегодня": 3,
+      "Выходные в GM": 14,
+      "Что важно сегодня": 5,
       "Общественный транспорт сегодня": 8
     },
-    "ticket_items": 6,
-    "core_items": 28,
+    "ticket_items": 12,
+    "core_items": 34,
     "writer_quality_counts": {
       "included_candidates": 358,
-      "rendered_candidates": 60,
+      "rendered_candidates": 65,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
-      "dropped_missing_draft_line": 5,
-      "dropped_ticket_not_selected": 220,
+      "dropped_missing_draft_line": 4,
+      "dropped_ticket_not_selected": 213,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 61
+      "dropped_low_quality": 68
     },
     "section_underflow": [
       {
-        "section": "Городской радар",
-        "actual": 2,
-        "minimum": 5,
+        "section": "Свежие новости",
+        "actual": 4,
+        "minimum": 6,
         "dropped_by_writer": 1
+      },
+      {
+        "section": "Городской радар",
+        "actual": 4,
+        "minimum": 5,
+        "dropped_by_writer": 2
       }
     ],
     "source_health_counts": {
-      "ok": 103,
+      "ok": 106,
       "partial": 2,
-      "stale": 10,
-      "empty": 6,
+      "stale": 9,
+      "empty": 4,
       "failed": 2,
-      "zero_yield": 78,
+      "zero_yield": 81,
       "no_contribution_breakdown": {
         "fetch_failed": 2,
-        "all_rejected": 78,
-        "idle_no_items": 14
+        "all_rejected": 81,
+        "idle_no_items": 11
       },
       "zero_contribution_by_stage": {
-        "written": 11,
-        "selected": 67,
-        "parsed": 14,
+        "written": 17,
+        "selected": 64,
+        "parsed": 11,
         "fetched": 2
-      }
+      },
+      "weekend_source_coverage_incidents": 35
     },
     "alerts": [
-      "low writer yield: 60/358 included candidates rendered"
+      "low writer yield: 65/358 included candidates rendered"
     ]
   },
-  "deterministic_post_check": null,
-  "repair_executor": null,
-  "notes": "",
-  "raw": null
+  "deterministic_post_check": {
+    "errors": [],
+    "warnings": [
+      "patch for line 16 has unchecked number/date token(s): 2017, 2021",
+      "replace for line 19 has unchecked number/date token(s): 100",
+      "patch for line 22 has unchecked number/date token(s): 6:00, 7:00"
+    ],
+    "can_apply_actions": true,
+    "action_count": 6
+  },
+  "translation_completeness": {
+    "version": "v1",
+    "checked_lines": 2,
+    "critical_omission_count": 0,
+    "critical_omissions": [],
+    "noncritical_omissions": [
+      {
+        "line_index": 2,
+        "dropped": [
+          "02 jul 2026",
+          "17:38"
+        ]
+      },
+      {
+        "line_index": 4,
+        "dropped": [
+          "03 jul 2026",
+          "05:58",
+          "07:31"
+        ]
+      }
+    ],
+    "recovered": 0,
+    "pulled_for_rework": 0,
+    "still_missing": 0
+  },
+  "repair_executor": {
+    "enabled": true,
+    "dry_run": false,
+    "fact_lock_version": "v1",
+    "requested": 6,
+    "attempted": 6,
+    "applied": 6,
+    "model_patch_applied": 5,
+    "deterministic_rewrite_used": 0,
+    "reserve_replacement_used": 0,
+    "stripped": 1,
+    "unresolved": 0,
+    "fact_lock_rejected": 0,
+    "enrich_attempted": 0,
+    "post_check_errors": [],
+    "actions": [
+      {
+        "line_index": 2,
+        "section": "Свежие новости",
+        "requested_action": "patch",
+        "reason": "Удаление имени несовершеннолетней жертвы для защиты её конфиденциальности.",
+        "outcome": "model_patch_applied"
+      },
+      {
+        "line_index": 11,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "strip",
+        "reason": "Информация о капитальном ремонте офисного блока One Piccadilly Gardens не относится к общественному транспорту и не соответствует теме раздела.",
+        "outcome": "stripped_honest_shortfall"
+      },
+      {
+        "line_index": 16,
+        "section": "Что важно сегодня",
+        "requested_action": "patch",
+        "reason": "Дата выборов указана неверно, так как 30 июля 2026 года не является четвергом.",
+        "outcome": "model_patch_applied"
+      },
+      {
+        "line_index": 19,
+        "section": "Футбол",
+        "requested_action": "replace",
+        "reason": "Сандро Тонали не является игроком Ньюкасла.",
+        "outcome": "model_patch_applied"
+      },
+      {
+        "line_index": 22,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата мероприятия указана неверно, должно быть 5 июля 2026 года.",
+        "outcome": "model_patch_applied"
+      },
+      {
+        "line_index": 34,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Добавление стандартного предупреждения о проверке даты и времени.",
+        "outcome": "model_patch_applied"
+      }
+    ],
+    "reserve_stats": {
+      "enriched_rewrite_attempts": 0,
+      "enriched_rewrite_used": 0
+    },
+    "status": "applied"
+  },
+  "notes": "Прогноз погоды корректен и безопасен для публикации.; Имя несовершеннолетней жертвы удалено для защиты конфиденциальности.; Выпуск можно отправить, но строка о ремонте офисного блока не соответствует теме раздела и должна быть удалена.; Дата выборов указана неверно, необходимо исправить на правильную дату.; Ошибка в кл",
+  "raw": {
+    "decision": "repair_required",
+    "confidence": 0.8,
+    "critical_errors": [
+      {
+        "line_index": 2,
+        "section": "Свежие новости",
+        "problem": "Указано имя несовершеннолетней жертвы сексуальной эксплуатации.",
+        "risk": "sensitive",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 16,
+        "section": "Что важно сегодня",
+        "problem": "Неправильная дата выборов.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 19,
+        "section": "Футбол",
+        "problem": "Неверная информация о клубе Сандро Тонали.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 22,
+        "section": "Выходные в GM",
+        "problem": "Неправильная дата мероприятия.",
+        "risk": "date",
+        "suggested_action": "repair"
+      }
+    ],
+    "actions": [
+      {
+        "line_index": 2,
+        "section": "Свежие новости",
+        "action": "patch",
+        "replacement_text": "• Мэр Greater Manchester, кандидат от Restore Марлон Уэст, рассказывает о том, как жизнь его семьи изменилась после того, как его 14-летняя дочь стала жертвой сексуальной эксплуатации. Уэст подчеркивает, что его дочь была подвергнута жестокому обращению и не получила должной поддержки от властей, что стало основным мотивом его участия в выборах мэра в 2026 году. MEN",
+        "reason": "Удаление имени несовершеннолетней жертвы для защиты её конфиденциальности.",
+        "risk": "sensitive"
+      },
+      {
+        "line_index": 11,
+        "section": "Общественный транспорт сегодня",
+        "action": "strip",
+        "reason": "Информация о капитальном ремонте офисного блока One Piccadilly Gardens не относится к общественному транспорту и не соответствует теме раздела.",
+        "risk": "product"
+      },
+      {
+        "line_index": 16,
+        "section": "Что важно сегодня",
+        "action": "patch",
+        "replacement_text": "• В четверг, 30 июля 2026 года, в Большом Манчестере состоятся выборы мэра, чтобы заполнить вакансию после того, как Энди Бернхэм был избран депутатом. Избиратели будут использовать восстановленную правительством систему дополнительного голосования, как это было в 2017 и 2021 годах. Это изменение может повлиять на результаты выборов и политическую динамику региона. MEN",
+        "reason": "Дата выборов указана неверно, так как 30 июля 2026 года не является четвергом.",
+        "risk": "date"
+      },
+      {
+        "line_index": 19,
+        "section": "Футбол",
+        "action": "replace",
+        "replacement_text": "• Сделка на £100 миллионов в Премьер-лиге может позволить Манчестер Сити подписать полузащитника Сандро Тонали, так как клуб ищет усиления в центре поля. MEN Manchester City",
+        "reason": "Сандро Тонали не является игроком Ньюкасла.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 22,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 5 июля 2026 года в 7:00 в Macron Stadium, Bolton, пройдет car boot sale с более чем 300 стендами. Вход £1 за машину, открытие для покупателей с 7:00, для продавцов с 6:00. Bolton Car Boot Sale",
+        "reason": "Дата мероприятия указана неверно, должно быть 5 июля 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 34,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 5 июля 2026 года в Barton Aerodrome пройдет Barton Live: Electric Heart Indie Festival с участием The Fratellis, Scouting For Girls и других. Билеты стоят £50.73. Проверьте дату, время и бронирование перед планированием.",
+        "reason": "Добавление стандартного предупреждения о проверке даты и времени.",
+        "risk": "date"
+      }
+    ],
+    "warnings": [
+      "Строка о капитальном ремонте офисного блока One Piccadilly Gardens не соответствует теме раздела 'Общественный транспорт сегодня'.",
+      "Добавлено предупреждение о проверке даты и времени для события 5 июля.",
+      "Выпуск содержит плотные формулировки, которые могут быть сложны для восприятия без контекста. Однако, фактических ошибок нет.",
+      "Секция 'Крупные концерты вне GM' содержит информацию о концертах, которые проходят за пределами Greater Manchester. Это может быть неинтересно основной аудитории, но не является критической ошибкой.",
+      "Низкая полнота секции 'Свежие новости': 4 из 6 минимально необходимых.",
+      "Низкая полнота секции 'Городской радар': 4 из 5 минимально необходимых.",
+      "Высокая доля билетов и концертов: 12 из 65 строк.",
+      "Низкая производительность писателей: 65 из 358 кандидатов включены."
+    ],
+    "notes": "Прогноз погоды корректен и безопасен для публикации.; Имя несовершеннолетней жертвы удалено для защиты конфиденциальности.; Выпуск можно отправить, но строка о ремонте офисного блока не соответствует теме раздела и должна быть удалена.; Дата выборов указана неверно, необходимо исправить на правильную дату.; Ошибка в кл",
+    "map_reduce": {
+      "mode": "map_reduce",
+      "status": "ok",
+      "chunk_count": 13,
+      "failed_chunk_count": 0,
+      "chunks": [
+        {
+          "chunk_id": "chunk-01",
+          "status": "ok",
+          "line_range": [
+            1,
+            1
+          ],
+          "sections": [
+            "Погода"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 1973,
+          "duration_seconds": 2.213
+        },
+        {
+          "chunk_id": "chunk-02",
+          "status": "ok",
+          "line_range": [
+            2,
+            5
+          ],
+          "sections": [
+            "Свежие новости"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3458,
+          "duration_seconds": 5.916
+        },
+        {
+          "chunk_id": "chunk-03",
+          "status": "ok",
+          "line_range": [
+            6,
+            13
+          ],
+          "sections": [
+            "Общественный транспорт сегодня"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 1,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 4431,
+          "duration_seconds": 2.21
+        },
+        {
+          "chunk_id": "chunk-04",
+          "status": "ok",
+          "line_range": [
+            14,
+            18
+          ],
+          "sections": [
+            "Что важно сегодня"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3393,
+          "duration_seconds": 2.733
+        },
+        {
+          "chunk_id": "chunk-05",
+          "status": "ok",
+          "line_range": [
+            19,
+            21
+          ],
+          "sections": [
+            "Футбол"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2860,
+          "duration_seconds": 1.995
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "ok",
+          "line_range": [
+            22,
+            33
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 6861,
+          "duration_seconds": 2.531
+        },
+        {
+          "chunk_id": "chunk-07",
+          "status": "ok",
+          "line_range": [
+            34,
+            35
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 1,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 2676,
+          "duration_seconds": 2.033
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            36,
+            38
+          ],
+          "sections": [
+            "Городской радар"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 2925,
+          "duration_seconds": 1.281
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            39,
+            41
+          ],
+          "sections": [
+            "Что важно в ближайшие 7 дней"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3064,
+          "duration_seconds": 17.065
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            42,
+            44
+          ],
+          "sections": [
+            "IT и бизнес"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2841,
+          "duration_seconds": 10.319
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            45,
+            46
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2807,
+          "duration_seconds": 3.868
+        },
+        {
+          "chunk_id": "chunk-12",
+          "status": "ok",
+          "line_range": [
+            47,
+            53
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 4578,
+          "duration_seconds": 32.59
+        },
+        {
+          "chunk_id": "chunk-13",
+          "status": "ok",
+          "line_range": [
+            54,
+            58
+          ],
+          "sections": [
+            "Крупные концерты вне GM"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 3978,
+          "duration_seconds": 15.966
+        }
+      ],
+      "reduce": {
+        "chunk_id": "reduce",
+        "status": "ok",
+        "line_range": [],
+        "sections": [],
+        "decision": "warn",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 4,
+        "error": "",
+        "estimated_tokens": 11380,
+        "duration_seconds": 25.647
+      },
+      "max_workers": 3,
+      "chunk_line_target": 12,
+      "max_tpm": 27000.0
+    }
+  }
 }
