@@ -2,509 +2,429 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 14 repair(s); issue ships with honest degradation report",
+  "reason": "pre-send repair executor applied 11 repair(s); issue ships with honest degradation report",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
-  "run_date_london": "2026-07-05",
-  "pipeline_run_id": "20260705T080141+0100",
-  "digest_sha256": "19cdd9807322a93191206786d9190382d3a684fdf5f80500eef1534f8db7ce87",
-  "duration_seconds": 323.143,
+  "run_date_london": "2026-07-06",
+  "pipeline_run_id": "20260706T080154+0100",
+  "digest_sha256": "e9e9bd9c5cc54d03d15638d63228e0bd5a6f696df9e16e1e816e3becdea2f28c",
+  "duration_seconds": 56.848,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Географическая ошибка: арест произошел в районе Манчестера, а не в самом Манчестере.",
+      "line_index": 8,
+      "section": "Свежие новости",
+      "problem": "Географическая ошибка: Блэкпул не является частью Greater Manchester.",
       "risk": "geo",
       "suggested_action": "repair"
     },
     {
-      "line_index": 29,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана как 21 мая, что не соответствует текущему году и не относится к выходным в GM.",
-      "risk": "date",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 30,
-      "section": "Городской радар",
-      "problem": "Текст утверждает, что осужденный убийца признал себя виновным в похищении и сексуальном насилии, но неясно, был ли он осужден за эти преступления.",
+      "line_index": 20,
+      "section": "Футбол",
+      "problem": "Неверная информация о трансфере Элиота Андерсона из Ноттингем Форест в Манчестер Сити.",
       "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 32,
-      "section": "Городской радар",
-      "problem": "Текст утверждает, что Меган Мерфи солгала полиции, но не уточняет, была ли она осуждена за это.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 42,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дата концерта указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Неправильное указание возраста подозреваемого.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 29,
-      "section": "Выходные в GM",
-      "problem": "Дата мероприятия указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 30,
-      "section": "Городской радар",
-      "problem": "Неправильное указание статуса дела.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 31,
-      "section": "Городской радар",
-      "problem": "Неправильное указание статуса дела.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 40,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Неправильное указание даты концерта.",
-      "risk": "date",
       "suggested_action": "repair"
     },
     {
       "line_index": 4,
       "section": "Свежие новости",
       "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'grooming' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "sexual_offence"
-    },
-    {
-      "line_index": 31,
-      "section": "Городской радар",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "death"
-    },
-    {
-      "line_index": 31,
-      "section": "Городской радар",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'stabbing' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+      "problem": "critical source fact dropped in translation: 'Gun' (weapon_violence/who/what) has no Russian rendering in the shipped line",
       "suggested_action": "repair",
       "completeness_concept": "weapon_violence"
     }
   ],
   "actions": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• В районе Манчестера арестован 62-летний мужчина по подозрению в убийстве Донны Киог, пропавшей в 1998 году. BBC Manchester",
-      "reason": "Уточнение географического местоположения ареста.",
+      "line_index": 8,
+      "section": "Свежие новости",
+      "action": "replace",
+      "replacement_text": "• 19-летний Джои Грегори был срочно доставлен в больницу Wythenshawe после того, как его извлекли из разрушительного пожара в доме на Редкар-Роуд в Блэкпуле, который произошел 30 июня. В результате инцидента он получил серьезные ожоги и находится в медикаментозной коме. Его мать сообщила, что первые 24-48 часов были критическими, и призвала всех молиться за его выздоровление. MEN (Блэкпул не относится к Greater Manchester)",
+      "reason": "Уточнение географического контекста для читателей.",
       "risk": "geo"
     },
     {
-      "line_index": 29,
-      "section": "Выходные в GM",
-      "action": "strip",
-      "reason": "Дата события не соответствует текущему году и не относится к выходным в GM.",
-      "risk": "date",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 30,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Осужденный убийца из Стокпорта признал себя виновным в похищении 15-летней девочки с ножом и сексуальном насилии над ней в своем автомобиле. Судебное разбирательство продолжается. MEN",
-      "reason": "Уточнение статуса дела, чтобы избежать недопонимания.",
+      "line_index": 20,
+      "section": "Футбол",
+      "action": "replace",
+      "replacement_text": "• Манчестер Сити завершил трансфер игрока за £116 млн. Также подтверждена сделка по продаже Нейтана Аке в Фенербахче, и клуб продолжает искать новых игроков для усиления состава. MEN Manchester City",
+      "reason": "Уточнение информации о трансфере, чтобы избежать фактической ошибки.",
       "risk": "factual"
     },
     {
-      "line_index": 32,
-      "section": "Городской радар",
+      "line_index": 33,
+      "section": "Дальние анонсы",
       "action": "patch",
-      "replacement_text": "• В семье Даррела Томлинсона, который погиб под колесами водителя Меган Мерфи, возникли новые подробности после того, как стало известно, что она солгала полиции. Судебное разбирательство продолжается. MEN",
-      "reason": "Уточнение статуса дела, чтобы избежать недопонимания.",
-      "risk": "factual"
+      "replacement_text": "• В Манчестере 3 августа 2026 года в 19:00 начнётся еженедельный воркшоп по стендап-комедии на площадке 33 Oldham St., где участники смогут научиться писать шутки и выступать на сцене. Подробности на Skiddle Manchester Comedy.",
+      "reason": "Добавление источника информации для полноты и практической пользы.",
+      "risk": "product"
     },
     {
-      "line_index": 35,
-      "section": "Что важно в ближайшие 7 дней",
+      "line_index": 34,
+      "section": "Билеты / Ticket Radar",
       "action": "patch",
-      "replacement_text": "• 9 июля 2026 года в 18:00 в FOLD Bistro, Marple Bridge, пройдет дегустация Пино Нуар. Marple Bridge находится в Стокпорте.",
-      "reason": "Уточнение географического контекста для читателей, так как Marple Bridge находится в Стокпорте, а не в Манчестере.",
+      "replacement_text": "• Def Leppard — 6 июля, Co-op Live. Сегодня в Co-op Live.",
+      "reason": "Повторение названия 'Co-op Live' трижды в одной строке.",
+      "risk": "format"
+    },
+    {
+      "line_index": 41,
+      "section": "Крупные концерты вне GM",
+      "action": "patch",
+      "replacement_text": "• Michael Bublé — 6 июля, Scarborough Open Air Theatre (Adult Contemporary). Фестивальный состав, не один артист. Ticketmaster",
+      "reason": "Текст корректен, но стоит уточнить, что Scarborough не в Greater Manchester.",
       "risk": "geo"
     },
     {
       "line_index": 42,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Sex Pistols — 12 июля, Castlefield Bowl (Рок). Концерт в Greater Manchester на следующей неделе. Ticketmaster",
-      "reason": "Дата концерта 12 июля, а не на этой неделе.",
-      "risk": "date"
-    },
-    {
-      "line_index": 48,
       "section": "Крупные концерты вне GM",
       "action": "patch",
-      "replacement_text": "• Pitbull — 5 июля, Lytham Green (Поп). Фестивальный состав: Lil Jon, DJ Laz. Ticketmaster",
-      "reason": "Уточнение формулировки о составе фестиваля.",
-      "risk": "format"
+      "replacement_text": "• Kings of Leon — 6 июля, Leeds First Direct Bank Arena (Pop). Сегодня в Leeds First Direct Bank Arena. Ticketmaster",
+      "reason": "Текст корректен, но стоит уточнить, что Leeds не в Greater Manchester.",
+      "risk": "geo"
     },
     {
-      "line_index": 50,
+      "line_index": 43,
       "section": "Крупные концерты вне GM",
       "action": "patch",
-      "replacement_text": "• Michael Bublé — 6 июля, Scarborough Open Air Theatre (Adult Contemporary). Ticketmaster",
-      "reason": "Уточнение формулировки о составе фестиваля.",
-      "risk": "format"
+      "replacement_text": "• Lily Allen — 7 июля, The O2 (Pop). Вне Greater Manchester на этой неделе. Ticketmaster",
+      "reason": "Текст корректен, но стоит уточнить, что The O2 в Лондоне.",
+      "risk": "geo"
     },
     {
-      "line_index": 1,
-      "section": "Главная история дня",
+      "line_index": 44,
+      "section": "Крупные концерты вне GM",
       "action": "patch",
-      "replacement_text": "• В Манчестере арестован мужчина по подозрению в убийстве Донны Киог, пропавшей в 1998 году. BBC Manchester",
-      "reason": "Указание возраста подозреваемого может быть неверным.",
-      "risk": "factual"
+      "replacement_text": "• Phantogram — 7 июля, Warehouse SWG3 (Pop). Вне Greater Manchester на этой неделе. Ticketmaster",
+      "reason": "Текст корректен, но стоит уточнить, что Warehouse SWG3 в Глазго.",
+      "risk": "geo"
     },
     {
-      "line_index": 29,
-      "section": "Выходные в GM",
+      "line_index": 45,
+      "section": "Крупные концерты вне GM",
       "action": "patch",
-      "replacement_text": "• 21 мая в First Street Bar And Kitchen — Manchester Jazz Festival: фестиваль. Сверьте часы и условия перед поездкой. Skiddle Manchester Festivals",
-      "reason": "Дата мероприятия указана неверно.",
-      "risk": "date"
+      "replacement_text": "• My Chemical Romance — 8 июля, Wembley Stadium (Alternative Rock). Вне Greater Manchester на этой неделе. Ticketmaster",
+      "reason": "Текст корректен, но стоит уточнить, что Wembley Stadium в Лондоне.",
+      "risk": "geo"
     },
     {
-      "line_index": 30,
-      "section": "Городской радар",
+      "line_index": 46,
+      "section": "Крупные концерты вне GM",
       "action": "patch",
-      "replacement_text": "• Осужденный убийца из Стокпорта признал себя виновным в похищении 15-летней девочки с ножом и сексуальном насилии над ней в своем автомобиле. MEN",
-      "reason": "Неправильное указание статуса дела.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 31,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Антони Джуниор Мюррей, обвиняемый в убийстве, заявил присяжным, что он просто хотел выгнать парня своей сестры из дома и отрицал намерение его убить. MEN",
-      "reason": "Неправильное указание статуса дела.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 40,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Def Leppard — 6 июля, Co-op Live. Концерт в Greater Manchester на этой неделе. Co-op Live",
-      "reason": "Неправильное указание даты концерта.",
-      "risk": "date"
+      "replacement_text": "• Lewis Capaldi — 8 июля, Exhibition Park (Alternative Rock). Фестивальный состав, не один артист. Состав: Maximo Park, Heidi Curtis, Jacob Alon. Ticketmaster",
+      "reason": "Текст корректен, но стоит уточнить, что Exhibition Park в Ньюкасле.",
+      "risk": "geo"
     }
   ],
   "warnings": [
-    "Выпуск содержит много новостей о преступлениях и судебных делах, что может создать впечатление дисбаланса в освещении событий.",
-    "Некоторые строки содержат информацию о транспортных изменениях, которые могут быть неактуальны на момент публикации. Рекомендуется проверить актуальность данных перед отправкой.",
-    "В разделе 'Футбол' информация о трансферах и назначениях может быстро устареть. Рекомендуется проверять актуальность данных перед отправкой.",
-    "Уточнено местоположение Marple Bridge для ясности.",
-    "Некоторые формулировки о составе фестиваля могут быть неясными.",
-    "События в Лондоне и Хэмпшире не относятся к Greater Manchester, но находятся в разделе 'Русскоязычные концерты и стендап UK', что может быть допустимо в контексте рубрики.",
-    "low writer yield: 57/357 included candidates rendered",
-    "line 1 drops source number/date fact(s): 17, 28 april",
-    "line 4 drops source number/date fact(s): 04 jul 2026, 12:47",
-    "line 31 drops source number/date fact(s): 03 jul 2026, 19:30, 23, 25"
+    "В выпуске много информации о транспортных сбоях, что может перегрузить читателя. Возможно, стоит рассмотреть сокращение или объединение некоторых пунктов.",
+    "Выпуск содержит много информации о безопасности и планировании, но может не хватать других новостей.",
+    "Некоторые события могут быть перегружены информацией о билетах и мероприятиях, что может повлиять на баланс выпуска.",
+    "Добавьте источник информации для полноты и практической пользы.",
+    "Повторение названия 'Co-op Live' в строке 34 может быть избыточным.",
+    "Уточните географическое расположение мест проведения концертов, чтобы избежать путаницы.",
+    "Выходные в GM: 0 item(s), emergency floor 3",
+    "low writer yield: 51/358 included candidates rendered",
+    "line 4 drops source number/date fact(s): 17",
+    "line 7 drops source number/date fact(s): 05 jul 2026, 15:45",
+    "line 23 drops source number/date fact(s): 04 jul 2026, 15:57, 16, 1998"
   ],
   "product_completeness": {
     "section_counts": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 6,
-      "Общественный транспорт сегодня": 10,
+      "Свежие новости": 7,
+      "Общественный транспорт сегодня": 7,
       "Что важно сегодня": 3,
       "Футбол": 2,
-      "Выходные в GM": 6,
       "Городской радар": 4,
-      "Что важно в ближайшие 7 дней": 3,
+      "Что важно в ближайшие 7 дней": 6,
+      "IT и бизнес": 0,
       "Business/tech события для тебя": 1,
-      "Дальние анонсы": 2,
-      "Билеты / Ticket Radar": 8,
-      "Крупные концерты вне GM": 5,
-      "Русскоязычные концерты и стендап UK": 3
+      "Дальние анонсы": 1,
+      "Билеты / Ticket Radar": 7,
+      "Крупные концерты вне GM": 6
     },
     "core_counts": {
-      "Свежие новости": 6,
+      "Свежие новости": 7,
       "Футбол": 2,
-      "Выходные в GM": 6,
+      "Выходные в GM": 0,
       "Что важно сегодня": 3,
-      "Общественный транспорт сегодня": 10
+      "Общественный транспорт сегодня": 7
     },
-    "ticket_items": 16,
-    "core_items": 27,
+    "ticket_items": 13,
+    "core_items": 19,
     "writer_quality_counts": {
-      "included_candidates": 357,
-      "rendered_candidates": 57,
+      "included_candidates": 358,
+      "rendered_candidates": 51,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
-      "dropped_missing_draft_line": 2,
-      "dropped_ticket_not_selected": 219,
+      "dropped_missing_draft_line": 4,
+      "dropped_ticket_not_selected": 222,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 80
+      "dropped_low_quality": 81
     },
     "section_underflow": [],
     "source_health_counts": {
-      "ok": 98,
+      "ok": 103,
       "partial": 2,
       "stale": 12,
-      "empty": 9,
+      "empty": 4,
       "failed": 2,
-      "zero_yield": 82,
+      "zero_yield": 85,
       "no_contribution_breakdown": {
         "fetch_failed": 2,
-        "all_rejected": 82,
-        "idle_no_items": 19
+        "all_rejected": 85,
+        "idle_no_items": 14
       },
       "zero_contribution_by_stage": {
-        "written": 22,
-        "selected": 60,
-        "parsed": 19,
+        "written": 18,
+        "selected": 67,
+        "parsed": 14,
         "fetched": 2
       },
       "weekend_source_coverage_incidents": 40
     },
     "alerts": [
-      "low writer yield: 57/357 included candidates rendered"
+      "Выходные в GM: 0 item(s), emergency floor 3",
+      "low writer yield: 51/358 included candidates rendered"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "multiple actions target line 1",
-      "multiple actions target line 29",
-      "patch for line 29 has unchecked number/date token(s): 21",
-      "multiple actions target line 30"
+      "replace for line 8 has unchecked number/date token(s): 24, 30, 48",
+      "replace for line 20 has unchecked number/date token(s): 116"
     ],
     "can_apply_actions": true,
-    "action_count": 13
+    "action_count": 10
   },
   "translation_completeness": {
     "version": "v1",
     "checked_lines": 3,
-    "critical_omission_count": 3,
+    "critical_omission_count": 1,
     "critical_omissions": [
       {
         "line_index": 4,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/major-investigation-update-issued-after-34237056",
-        "concept": "sexual_offence",
-        "obligation": "charge/verdict/victim",
-        "source_hit": "grooming"
-      },
-      {
-        "line_index": 31,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/alleged-murderer-tells-jury-just-34232420",
-        "concept": "death",
-        "obligation": "who/what",
-        "source_hit": "death"
-      },
-      {
-        "line_index": 31,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/alleged-murderer-tells-jury-just-34232420",
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/gun-fire-prison-killer-hygiene-34216982",
         "concept": "weapon_violence",
         "obligation": "who/what",
-        "source_hit": "stabbing"
+        "source_hit": "Gun"
       }
     ],
     "noncritical_omissions": [
       {
-        "line_index": 1,
-        "dropped": [
-          "17",
-          "28 april"
-        ]
-      },
-      {
         "line_index": 4,
         "dropped": [
-          "04 jul 2026",
-          "12:47"
+          "17"
         ]
       },
       {
-        "line_index": 31,
+        "line_index": 7,
         "dropped": [
-          "03 jul 2026",
-          "19:30",
-          "23",
-          "25"
+          "05 jul 2026",
+          "15:45"
+        ]
+      },
+      {
+        "line_index": 23,
+        "dropped": [
+          "04 jul 2026",
+          "15:57",
+          "16",
+          "1998"
         ]
       }
     ],
     "recovered": 0,
-    "pulled_for_rework": 3,
+    "pulled_for_rework": 1,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 14,
-    "attempted": 14,
-    "applied": 14,
-    "model_patch_applied": 5,
+    "requested": 11,
+    "attempted": 11,
+    "applied": 11,
+    "model_patch_applied": 3,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 2,
-    "stripped": 7,
+    "reserve_replacement_used": 0,
+    "stripped": 8,
     "unresolved": 0,
     "fact_lock_rejected": 7,
     "enrich_attempted": 8,
     "post_check_errors": [],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "requested_action": "patch",
-        "reason": "Уточнение географического местоположения ареста.",
-        "outcome": "model_patch_applied"
-      },
-      {
-        "line_index": 29,
-        "section": "Выходные в GM",
-        "requested_action": "strip",
-        "reason": "Дата события не соответствует текущему году и не относится к выходным в GM.",
-        "outcome": "reserve_replacement"
-      },
-      {
-        "line_index": 30,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Уточнение статуса дела, чтобы избежать недопонимания.",
+        "line_index": 8,
+        "section": "Свежие новости",
+        "requested_action": "replace",
+        "reason": "Уточнение географического контекста для читателей.",
         "outcome": "stripped_honest_shortfall",
-        "model_replacement_rejected": "fact_lock: men"
+        "model_replacement_rejected": "fact_lock: 30 июня, greater manchester"
       },
       {
-        "line_index": 32,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Уточнение статуса дела, чтобы избежать недопонимания.",
+        "line_index": 20,
+        "section": "Футбол",
+        "requested_action": "replace",
+        "reason": "Уточнение информации о трансфере, чтобы избежать фактической ошибки.",
         "outcome": "model_patch_applied"
       },
       {
-        "line_index": 35,
-        "section": "Что важно в ближайшие 7 дней",
+        "line_index": 33,
+        "section": "Дальние анонсы",
         "requested_action": "patch",
-        "reason": "Уточнение географического контекста для читателей, так как Marple Bridge находится в Стокпорте, а не в Манчестере.",
-        "outcome": "reserve_replacement",
-        "model_replacement_rejected": "fact_lock: finest events, manchester&"
+        "reason": "Добавление источника информации для полноты и практической пользы.",
+        "outcome": "model_patch_applied"
+      },
+      {
+        "line_index": 34,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "patch",
+        "reason": "Повторение названия 'Co-op Live' трижды в одной строке.",
+        "outcome": "stripped_honest_shortfall",
+        "model_replacement_rejected": "fact_lock: def leppard"
+      },
+      {
+        "line_index": 41,
+        "section": "Крупные концерты вне GM",
+        "requested_action": "patch",
+        "reason": "Текст корректен, но стоит уточнить, что Scarborough не в Greater Manchester.",
+        "outcome": "model_patch_applied"
       },
       {
         "line_index": 42,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Дата концерта 12 июля, а не на этой неделе.",
-        "outcome": "stripped_honest_shortfall",
-        "model_replacement_rejected": "fact_lock: sex pistols"
-      },
-      {
-        "line_index": 48,
         "section": "Крупные концерты вне GM",
         "requested_action": "patch",
-        "reason": "Уточнение формулировки о составе фестиваля.",
+        "reason": "Текст корректен, но стоит уточнить, что Leeds не в Greater Manchester.",
         "outcome": "stripped_honest_shortfall",
-        "model_replacement_rejected": "fact_lock: dj laz. ticketmaster"
+        "model_replacement_rejected": "fact_lock: leeds first direct bank arena. ticketmaster"
       },
       {
-        "line_index": 50,
+        "line_index": 43,
         "section": "Крупные концерты вне GM",
         "requested_action": "patch",
-        "reason": "Уточнение формулировки о составе фестиваля.",
-        "outcome": "model_patch_applied"
-      },
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "requested_action": "patch",
-        "reason": "Указание возраста подозреваемого может быть неверным.",
-        "outcome": "model_patch_applied"
-      },
-      {
-        "line_index": 29,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата мероприятия указана неверно.",
-        "outcome": "model_patch_applied"
-      },
-      {
-        "line_index": 30,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Неправильное указание статуса дела.",
+        "reason": "Текст корректен, но стоит уточнить, что The O2 в Лондоне.",
         "outcome": "stripped_honest_shortfall",
-        "model_replacement_rejected": "fact_lock: men"
+        "model_replacement_rejected": "fact_lock: greater manchester"
       },
       {
-        "line_index": 31,
-        "section": "Городской радар",
+        "line_index": 44,
+        "section": "Крупные концерты вне GM",
         "requested_action": "patch",
-        "reason": "Неправильное указание статуса дела.",
+        "reason": "Текст корректен, но стоит уточнить, что Warehouse SWG3 в Глазго.",
         "outcome": "stripped_honest_shortfall",
-        "model_replacement_rejected": "fact_lock: men"
+        "model_replacement_rejected": "fact_lock: greater manchester"
       },
       {
-        "line_index": 40,
-        "section": "Билеты / Ticket Radar",
+        "line_index": 45,
+        "section": "Крупные концерты вне GM",
         "requested_action": "patch",
-        "reason": "Неправильное указание даты концерта.",
+        "reason": "Текст корректен, но стоит уточнить, что Wembley Stadium в Лондоне.",
         "outcome": "stripped_honest_shortfall",
-        "model_replacement_rejected": "fact_lock: def leppard"
+        "model_replacement_rejected": "fact_lock: greater manchester"
+      },
+      {
+        "line_index": 46,
+        "section": "Крупные концерты вне GM",
+        "requested_action": "patch",
+        "reason": "Текст корректен, но стоит уточнить, что Exhibition Park в Ньюкасле.",
+        "outcome": "stripped_honest_shortfall",
+        "model_replacement_rejected": "fact_lock: jacob alon. ticketmaster"
       },
       {
         "line_index": 4,
         "section": "Свежие новости",
         "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'grooming' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
+        "reason": "critical source fact dropped in translation: 'Gun' (weapon_violence/who/what) has no Russian rendering in the shipped line",
         "outcome": "stripped_honest_shortfall"
       }
     ],
+    "refetch": {
+      "attempted": 0,
+      "improved": 0,
+      "failed": 0,
+      "empty_or_not_better": 0,
+      "skipped": 6,
+      "reports": [
+        {
+          "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-def-leppard-s4q2",
+          "title": "Def Leppard Special Guest Extreme Mon 6 Jul 2026 Multiple times",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://cooplive.com/events/def-leppard-s4q2",
+          "candidate_evidence_chars": 0
+        },
+        {
+          "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-kings-of-leon-leeds-06-07-2026-event-1-0063728-3-04",
+          "title": "Kings of Leon — event 2026-07-06 — public sale 2025-11-21 09:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/kings-of-leon-leeds-06-07-2026/event/1F0063728CFF3B04",
+          "candidate_evidence_chars": 379
+        },
+        {
+          "fingerprint": "venues-tickets-ticketmaster-london-major-upcoming-ticketmaster-co-uk-lily-allen-london-07-07-2026-event-3500637-83-32-7",
+          "title": "Lily Allen — event 2026-07-07 — public sale 2025-11-27 10:15",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/lily-allen-london-07-07-2026/event/3500637A83AC32C7",
+          "candidate_evidence_chars": 329
+        },
+        {
+          "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-phantogram-glasgow-07-07-2026-event-3600643-3-80-2",
+          "title": "Phantogram — event 2026-07-07 — public sale 2026-02-06 09:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/phantogram-glasgow-07-07-2026/event/3600643DDF3B80E2",
+          "candidate_evidence_chars": 353
+        },
+        {
+          "fingerprint": "venues-tickets-ticketmaster-london-major-upcoming-ticketmaster-co-uk-my-chemical-romance-long-live-the-london-08-07-2026-event-2300630-3530-22",
+          "title": "My Chemical Romance - Long Live The Black Parade Tour — event 2026-07-08 — public sale 2025-09-26 12:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/my-chemical-romance-long-live-the-london-08-07-2026/event/2300630EE3530F22",
+          "candidate_evidence_chars": 347
+        },
+        {
+          "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-in-the-park-newcastle-presents-lewis-newcastle-08-07-2026-event-1-006332-2-7414",
+          "title": "In the Park Newcastle presents Lewis Capaldi — event 2026-07-08 — public sale 2025-11-21 09:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/in-the-park-newcastle-presents-lewis-newcastle-08-07-2026/event/1F006332B2CD7414",
+          "candidate_evidence_chars": 359
+        }
+      ]
+    },
+    "enrich_improved": 7,
+    "deterministic_rewrite_rejected": 8,
     "reserve_stats": {
-      "enriched_rewrite_attempts": 870,
-      "enriched_rewrite_used": 3,
+      "enriched_rewrite_attempts": 3789,
+      "enriched_rewrite_used": 0,
       "refetch": {
-        "attempted": 6,
+        "attempted": 0,
         "improved": 0,
-        "failed": 6,
+        "failed": 0,
         "empty_or_not_better": 0,
-        "skipped": 821,
+        "skipped": 3761,
         "reports": [
-          {
-            "fingerprint": "council-stockport-council-stockport-gov-uk-news-stockport-local-election-2026-results",
-            "title": "8 May 2026 Stockport local election 2026 results Results from 7 May 2026",
-            "status": "failed",
-            "url": "https://stockport.gov.uk/news/stockport-local-election-2026-results",
-            "error": "RuntimeError: Failed to perform, curl: (7) Failed to connect to stockport.gov.uk port 443 after 441 ms: Could not connect to server. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
-          },
-          {
-            "fingerprint": "council-stockport-council-stockport-gov-uk-news-state-of-the-art-send-school-shortlisted-for-two-national-awards",
-            "title": "10 October 2025 State of the Art SEND School shortlisted for two national awards Lisburne School has been shortlisted in the Education Estate Awards.",
-            "status": "failed",
-            "url": "https://stockport.gov.uk/news/state-of-the-art-send-school-shortlisted-for-two-national-awards",
-            "error": "RuntimeError: Failed to perform, curl: (7) Failed to connect to stockport.gov.uk port 443 after 717 ms: Could not connect to server. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
-          },
           {
             "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-def-leppard-s4q2",
             "title": "Def Leppard Special Guest Extreme Mon 6 Jul 2026 Multiple times",
             "status": "skipped",
             "reason": "structured_ticket_candidate",
             "url": "https://cooplive.com/events/def-leppard-s4q2",
+            "candidate_evidence_chars": 0
+          },
+          {
+            "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-england-quarter-finals-73f8",
+            "title": "England Quarter Finals England VS Norway Sat 11 Jul 2026 22:00",
+            "status": "skipped",
+            "reason": "structured_ticket_candidate",
+            "url": "https://cooplive.com/events/england-quarter-finals-73f8",
             "candidate_evidence_chars": 0
           },
           {
@@ -529,14 +449,6 @@
             "status": "skipped",
             "reason": "structured_ticket_candidate",
             "url": "https://cooplive.com/events/daniel-caesar-n25f",
-            "candidate_evidence_chars": 0
-          },
-          {
-            "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-a-ap-rocky-s3t2",
-            "title": "A$AP ROCKY Don't Be Dumb World Tour Sat 5 Sep 2026 Multiple times",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://cooplive.com/events/a-ap-rocky-s3t2",
             "candidate_evidence_chars": 0
           },
           {
@@ -722,245 +634,146 @@
             "reason": "structured_ticket_candidate",
             "url": "https://ticketmaster.co.uk/charlie-puth-whatevers-clever-world-tour-manchester-22-07-2026/event/1F006391DC2E659B",
             "candidate_evidence_chars": 361
+          },
+          {
+            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-theo-kandel-manchester-22-07-2026-event-1-0064-8589-1",
+            "title": "Theo Kandel — event 2026-07-22 — public sale 2026-05-27 10:00",
+            "status": "skipped",
+            "reason": "structured_ticket_candidate",
+            "url": "https://ticketmaster.co.uk/theo-kandel-manchester-22-07-2026/event/1F0064BAEC8589D1",
+            "candidate_evidence_chars": 355
+          },
+          {
+            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-westislonely-manchester-23-07-2026-event-1-006496-6915145",
+            "title": "Westislonely — event 2026-07-23 — public sale 2026-05-01 10:00",
+            "status": "skipped",
+            "reason": "structured_ticket_candidate",
+            "url": "https://ticketmaster.co.uk/westislonely-manchester-23-07-2026/event/1F006496B6915145",
+            "candidate_evidence_chars": 375
           }
         ]
       },
-      "reserve_replacement_used": 2,
-      "enriched_rewrite_empty": 867
+      "enriched_rewrite_empty": 3789
     },
-    "refetch": {
-      "attempted": 0,
-      "improved": 0,
-      "failed": 0,
-      "empty_or_not_better": 0,
-      "skipped": 3,
-      "reports": [
-        {
-          "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-sounds-of-the-city-present-sex-manchester-12-07-2026-event-1-00636-052-0-4",
-          "title": "Sounds of the City Present Sex Pistols — event 2026-07-12 — public sale 2025-11-28 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/sounds-of-the-city-present-sex-manchester-12-07-2026/event/1F00636E052ED0E4",
-          "candidate_evidence_chars": 357
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-lytham-festival-pitbull-im-back-lancashire-05-07-2026-event-3500633-08-55",
-          "title": "Lytham Festival - Pitbull - I'm Back! — event 2026-07-05 — public sale 2025-10-10 12:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/lytham-festival-pitbull-im-back-lancashire-05-07-2026/event/3500633AA08FAB55",
-          "candidate_evidence_chars": 353
-        },
-        {
-          "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-def-leppard-s4q2",
-          "title": "Def Leppard Special Guest Extreme Mon 6 Jul 2026 Multiple times",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://cooplive.com/events/def-leppard-s4q2",
-          "candidate_evidence_chars": 0
-        }
-      ]
-    },
-    "enrich_improved": 7,
-    "deterministic_rewrite_rejected": 7,
-    "deterministic_fact_lock_rejected": 1,
     "status": "applied"
   },
-  "notes": "Уточнено местоположение ареста для соответствия фактам.; Прогноз погоды корректен и соответствует источнику Met Office. Нет критических ошибок.; Все новости корректны, но стоит учесть, что выпуск может восприниматься как перегруженный криминальными новостями.; Выпуск содержит актуальные транспортные обновления, но стои",
+  "notes": "Информация о закрытии линий Metrolink и замещающих автобусах представлена корректно и соответствует источнику.; Прогноз погоды корректен и безопасен для публикации.; Уточнена география для события в Блэкпуле, чтобы избежать путаницы с Greater Manchester.; Выпуск содержит актуальную информацию о транспортных изменениях ",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Географическая ошибка: арест произошел в районе Манчестера, а не в самом Манчестере.",
+        "line_index": 8,
+        "section": "Свежие новости",
+        "problem": "Географическая ошибка: Блэкпул не является частью Greater Manchester.",
         "risk": "geo",
         "suggested_action": "repair"
       },
       {
-        "line_index": 29,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана как 21 мая, что не соответствует текущему году и не относится к выходным в GM.",
-        "risk": "date",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 30,
-        "section": "Городской радар",
-        "problem": "Текст утверждает, что осужденный убийца признал себя виновным в похищении и сексуальном насилии, но неясно, был ли он осужден за эти преступления.",
+        "line_index": 20,
+        "section": "Футбол",
+        "problem": "Неверная информация о трансфере Элиота Андерсона из Ноттингем Форест в Манчестер Сити.",
         "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 32,
-        "section": "Городской радар",
-        "problem": "Текст утверждает, что Меган Мерфи солгала полиции, но не уточняет, была ли она осуждена за это.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 42,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дата концерта указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Неправильное указание возраста подозреваемого.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 29,
-        "section": "Выходные в GM",
-        "problem": "Дата мероприятия указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 30,
-        "section": "Городской радар",
-        "problem": "Неправильное указание статуса дела.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 31,
-        "section": "Городской радар",
-        "problem": "Неправильное указание статуса дела.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 40,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Неправильное указание даты концерта.",
-        "risk": "date",
         "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• В районе Манчестера арестован 62-летний мужчина по подозрению в убийстве Донны Киог, пропавшей в 1998 году. BBC Manchester",
-        "reason": "Уточнение географического местоположения ареста.",
+        "line_index": 8,
+        "section": "Свежие новости",
+        "action": "replace",
+        "replacement_text": "• 19-летний Джои Грегори был срочно доставлен в больницу Wythenshawe после того, как его извлекли из разрушительного пожара в доме на Редкар-Роуд в Блэкпуле, который произошел 30 июня. В результате инцидента он получил серьезные ожоги и находится в медикаментозной коме. Его мать сообщила, что первые 24-48 часов были критическими, и призвала всех молиться за его выздоровление. MEN (Блэкпул не относится к Greater Manchester)",
+        "reason": "Уточнение географического контекста для читателей.",
         "risk": "geo"
       },
       {
-        "line_index": 29,
-        "section": "Выходные в GM",
-        "action": "strip",
-        "reason": "Дата события не соответствует текущему году и не относится к выходным в GM.",
-        "risk": "date"
-      },
-      {
-        "line_index": 30,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Осужденный убийца из Стокпорта признал себя виновным в похищении 15-летней девочки с ножом и сексуальном насилии над ней в своем автомобиле. Судебное разбирательство продолжается. MEN",
-        "reason": "Уточнение статуса дела, чтобы избежать недопонимания.",
+        "line_index": 20,
+        "section": "Футбол",
+        "action": "replace",
+        "replacement_text": "• Манчестер Сити завершил трансфер игрока за £116 млн. Также подтверждена сделка по продаже Нейтана Аке в Фенербахче, и клуб продолжает искать новых игроков для усиления состава. MEN Manchester City",
+        "reason": "Уточнение информации о трансфере, чтобы избежать фактической ошибки.",
         "risk": "factual"
       },
       {
-        "line_index": 32,
-        "section": "Городской радар",
+        "line_index": 33,
+        "section": "Дальние анонсы",
         "action": "patch",
-        "replacement_text": "• В семье Даррела Томлинсона, который погиб под колесами водителя Меган Мерфи, возникли новые подробности после того, как стало известно, что она солгала полиции. Судебное разбирательство продолжается. MEN",
-        "reason": "Уточнение статуса дела, чтобы избежать недопонимания.",
-        "risk": "factual"
+        "replacement_text": "• В Манчестере 3 августа 2026 года в 19:00 начнётся еженедельный воркшоп по стендап-комедии на площадке 33 Oldham St., где участники смогут научиться писать шутки и выступать на сцене. Подробности на Skiddle Manchester Comedy.",
+        "reason": "Добавление источника информации для полноты и практической пользы.",
+        "risk": "product"
       },
       {
-        "line_index": 35,
-        "section": "Что важно в ближайшие 7 дней",
+        "line_index": 34,
+        "section": "Билеты / Ticket Radar",
         "action": "patch",
-        "replacement_text": "• 9 июля 2026 года в 18:00 в FOLD Bistro, Marple Bridge, пройдет дегустация Пино Нуар. Marple Bridge находится в Стокпорте.",
-        "reason": "Уточнение географического контекста для читателей, так как Marple Bridge находится в Стокпорте, а не в Манчестере.",
+        "replacement_text": "• Def Leppard — 6 июля, Co-op Live. Сегодня в Co-op Live.",
+        "reason": "Повторение названия 'Co-op Live' трижды в одной строке.",
+        "risk": "format"
+      },
+      {
+        "line_index": 41,
+        "section": "Крупные концерты вне GM",
+        "action": "patch",
+        "replacement_text": "• Michael Bublé — 6 июля, Scarborough Open Air Theatre (Adult Contemporary). Фестивальный состав, не один артист. Ticketmaster",
+        "reason": "Текст корректен, но стоит уточнить, что Scarborough не в Greater Manchester.",
         "risk": "geo"
       },
       {
         "line_index": 42,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Sex Pistols — 12 июля, Castlefield Bowl (Рок). Концерт в Greater Manchester на следующей неделе. Ticketmaster",
-        "reason": "Дата концерта 12 июля, а не на этой неделе.",
-        "risk": "date"
-      },
-      {
-        "line_index": 48,
         "section": "Крупные концерты вне GM",
         "action": "patch",
-        "replacement_text": "• Pitbull — 5 июля, Lytham Green (Поп). Фестивальный состав: Lil Jon, DJ Laz. Ticketmaster",
-        "reason": "Уточнение формулировки о составе фестиваля.",
-        "risk": "format"
+        "replacement_text": "• Kings of Leon — 6 июля, Leeds First Direct Bank Arena (Pop). Сегодня в Leeds First Direct Bank Arena. Ticketmaster",
+        "reason": "Текст корректен, но стоит уточнить, что Leeds не в Greater Manchester.",
+        "risk": "geo"
       },
       {
-        "line_index": 50,
+        "line_index": 43,
         "section": "Крупные концерты вне GM",
         "action": "patch",
-        "replacement_text": "• Michael Bublé — 6 июля, Scarborough Open Air Theatre (Adult Contemporary). Ticketmaster",
-        "reason": "Уточнение формулировки о составе фестиваля.",
-        "risk": "format"
+        "replacement_text": "• Lily Allen — 7 июля, The O2 (Pop). Вне Greater Manchester на этой неделе. Ticketmaster",
+        "reason": "Текст корректен, но стоит уточнить, что The O2 в Лондоне.",
+        "risk": "geo"
       },
       {
-        "line_index": 1,
-        "section": "Главная история дня",
+        "line_index": 44,
+        "section": "Крупные концерты вне GM",
         "action": "patch",
-        "replacement_text": "• В Манчестере арестован мужчина по подозрению в убийстве Донны Киог, пропавшей в 1998 году. BBC Manchester",
-        "reason": "Указание возраста подозреваемого может быть неверным.",
-        "risk": "factual"
+        "replacement_text": "• Phantogram — 7 июля, Warehouse SWG3 (Pop). Вне Greater Manchester на этой неделе. Ticketmaster",
+        "reason": "Текст корректен, но стоит уточнить, что Warehouse SWG3 в Глазго.",
+        "risk": "geo"
       },
       {
-        "line_index": 29,
-        "section": "Выходные в GM",
+        "line_index": 45,
+        "section": "Крупные концерты вне GM",
         "action": "patch",
-        "replacement_text": "• 21 мая в First Street Bar And Kitchen — Manchester Jazz Festival: фестиваль. Сверьте часы и условия перед поездкой. Skiddle Manchester Festivals",
-        "reason": "Дата мероприятия указана неверно.",
-        "risk": "date"
+        "replacement_text": "• My Chemical Romance — 8 июля, Wembley Stadium (Alternative Rock). Вне Greater Manchester на этой неделе. Ticketmaster",
+        "reason": "Текст корректен, но стоит уточнить, что Wembley Stadium в Лондоне.",
+        "risk": "geo"
       },
       {
-        "line_index": 30,
-        "section": "Городской радар",
+        "line_index": 46,
+        "section": "Крупные концерты вне GM",
         "action": "patch",
-        "replacement_text": "• Осужденный убийца из Стокпорта признал себя виновным в похищении 15-летней девочки с ножом и сексуальном насилии над ней в своем автомобиле. MEN",
-        "reason": "Неправильное указание статуса дела.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 31,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Антони Джуниор Мюррей, обвиняемый в убийстве, заявил присяжным, что он просто хотел выгнать парня своей сестры из дома и отрицал намерение его убить. MEN",
-        "reason": "Неправильное указание статуса дела.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 40,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Def Leppard — 6 июля, Co-op Live. Концерт в Greater Manchester на этой неделе. Co-op Live",
-        "reason": "Неправильное указание даты концерта.",
-        "risk": "date"
+        "replacement_text": "• Lewis Capaldi — 8 июля, Exhibition Park (Alternative Rock). Фестивальный состав, не один артист. Состав: Maximo Park, Heidi Curtis, Jacob Alon. Ticketmaster",
+        "reason": "Текст корректен, но стоит уточнить, что Exhibition Park в Ньюкасле.",
+        "risk": "geo"
       }
     ],
     "warnings": [
-      "Выпуск содержит много новостей о преступлениях и судебных делах, что может создать впечатление дисбаланса в освещении событий.",
-      "Некоторые строки содержат информацию о транспортных изменениях, которые могут быть неактуальны на момент публикации. Рекомендуется проверить актуальность данных перед отправкой.",
-      "В разделе 'Футбол' информация о трансферах и назначениях может быстро устареть. Рекомендуется проверять актуальность данных перед отправкой.",
-      "Уточнено местоположение Marple Bridge для ясности.",
-      "Некоторые формулировки о составе фестиваля могут быть неясными.",
-      "События в Лондоне и Хэмпшире не относятся к Greater Manchester, но находятся в разделе 'Русскоязычные концерты и стендап UK', что может быть допустимо в контексте рубрики.",
-      "low writer yield: 57/357 included candidates rendered"
+      "В выпуске много информации о транспортных сбоях, что может перегрузить читателя. Возможно, стоит рассмотреть сокращение или объединение некоторых пунктов.",
+      "Выпуск содержит много информации о безопасности и планировании, но может не хватать других новостей.",
+      "Некоторые события могут быть перегружены информацией о билетах и мероприятиях, что может повлиять на баланс выпуска.",
+      "Добавьте источник информации для полноты и практической пользы.",
+      "Повторение названия 'Co-op Live' в строке 34 может быть избыточным.",
+      "Уточните географическое расположение мест проведения концертов, чтобы избежать путаницы.",
+      "Выходные в GM: 0 item(s), emergency floor 3",
+      "low writer yield: 51/358 included candidates rendered"
     ],
-    "notes": "Уточнено местоположение ареста для соответствия фактам.; Прогноз погоды корректен и соответствует источнику Met Office. Нет критических ошибок.; Все новости корректны, но стоит учесть, что выпуск может восприниматься как перегруженный криминальными новостями.; Выпуск содержит актуальные транспортные обновления, но стои",
+    "notes": "Информация о закрытии линий Metrolink и замещающих автобусах представлена корректно и соответствует источнику.; Прогноз погоды корректен и безопасен для публикации.; Уточнена география для события в Блэкпуле, чтобы избежать путаницы с Greater Manchester.; Выпуск содержит актуальную информацию о транспортных изменениях ",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 14,
+      "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -973,13 +786,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2107,
-          "duration_seconds": 2.532
+          "estimated_tokens": 2150,
+          "duration_seconds": 1.729
         },
         {
           "chunk_id": "chunk-02",
@@ -996,33 +809,33 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 1988,
-          "duration_seconds": 1.413
+          "estimated_tokens": 1973,
+          "duration_seconds": 1.312
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            8
+            9
           ],
           "sections": [
             "Свежие новости"
           ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4158,
-          "duration_seconds": 1.651
+          "estimated_tokens": 4521,
+          "duration_seconds": 3.903
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            9,
-            18
+            10,
+            16
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -1032,15 +845,15 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 5067,
-          "duration_seconds": 1.368
+          "estimated_tokens": 4310,
+          "duration_seconds": 3.226
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            19,
-            21
+            17,
+            19
           ],
           "sections": [
             "Что важно сегодня"
@@ -1050,87 +863,69 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2956,
-          "duration_seconds": 0.899
+          "estimated_tokens": 2949,
+          "duration_seconds": 0.976
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            22,
-            23
+            20,
+            21
           ],
           "sections": [
             "Футбол"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 2612,
-          "duration_seconds": 1.203
-        },
-        {
-          "chunk_id": "chunk-07",
-          "status": "ok",
-          "line_range": [
-            24,
-            29
-          ],
-          "sections": [
-            "Выходные в GM"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4406,
-          "duration_seconds": 2.442
+          "estimated_tokens": 2512,
+          "duration_seconds": 3.114
+        },
+        {
+          "chunk_id": "chunk-07",
+          "status": "ok",
+          "line_range": [
+            22,
+            25
+          ],
+          "sections": [
+            "Городской радар"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 3272,
+          "duration_seconds": 1.552
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            30,
-            33
-          ],
-          "sections": [
-            "Городской радар"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3270,
-          "duration_seconds": 3.336
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            34,
-            36
+            26,
+            31
           ],
           "sections": [
             "Что важно в ближайшие 7 дней"
           ],
           "decision": "warn",
           "critical_error_count": 0,
-          "action_count": 1,
+          "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 3054,
-          "duration_seconds": 15.186
+          "estimated_tokens": 4440,
+          "duration_seconds": 4.326
         },
         {
-          "chunk_id": "chunk-10",
+          "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            37,
-            37
+            32,
+            32
           ],
           "sections": [
             "Business/tech события для тебя"
@@ -1140,80 +935,62 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2235,
-          "duration_seconds": 0.998
+          "estimated_tokens": 2318,
+          "duration_seconds": 1.182
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            33,
+            33
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 1,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 2294,
+          "duration_seconds": 5.543
         },
         {
           "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            38,
-            39
+            34,
+            40
           ],
           "sections": [
-            "Дальние анонсы"
+            "Билеты / Ticket Radar"
           ],
-          "decision": "pass",
+          "decision": "warn",
           "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
+          "action_count": 1,
+          "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2741,
-          "duration_seconds": 5.134
+          "estimated_tokens": 4555,
+          "duration_seconds": 23.413
         },
         {
           "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
-            40,
-            47
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 5035,
-          "duration_seconds": 38.576
-        },
-        {
-          "chunk_id": "chunk-13",
-          "status": "ok",
-          "line_range": [
-            48,
-            52
+            41,
+            46
           ],
           "sections": [
             "Крупные концерты вне GM"
           ],
           "decision": "warn",
           "critical_error_count": 0,
-          "action_count": 2,
+          "action_count": 6,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 3695,
-          "duration_seconds": 22.049
-        },
-        {
-          "chunk_id": "chunk-14",
-          "status": "ok",
-          "line_range": [
-            53,
-            55
-          ],
-          "sections": [
-            "Русскоязычные концерты и стендап UK"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 2776,
-          "duration_seconds": 5.367
+          "estimated_tokens": 4178,
+          "duration_seconds": 15.975
         }
       ],
       "reduce": {
@@ -1221,13 +998,13 @@
         "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "repair_required",
-        "critical_error_count": 5,
-        "action_count": 5,
-        "warning_count": 1,
+        "decision": "warn",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 2,
         "error": "",
-        "estimated_tokens": 11163,
-        "duration_seconds": 28.1
+        "estimated_tokens": 10579,
+        "duration_seconds": 23.084
       },
       "max_workers": 3,
       "chunk_line_target": 12,
