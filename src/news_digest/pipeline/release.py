@@ -3395,6 +3395,8 @@ def _aggregate_cost(state_dir: Path) -> dict:
                     cost_usd=float(r.get("cost_usd") or 0.0),
                     estimated_cost_usd=float(r.get("estimated_cost_usd") or r.get("cost_usd") or 0.0),
                     usage_source=str(r.get("usage_source") or "actual"),
+                    cache_hit_tokens=int(r.get("cache_hit_tokens") or 0),
+                    cache_miss_tokens=int(r.get("cache_miss_tokens") or 0),
                 )
             )
     return summarise(records)
@@ -3614,6 +3616,82 @@ def _build_speed_report(
             else {}
         ),
         "policy": "Observation-only speed report: no release blocking, no quality cuts. Optimise by parser/cache/token p95 evidence before changing editorial floors.",
+    }
+
+
+def _summarise_inventory_morning_effect(state_dir: Path) -> dict[str, object]:
+    """Observation-only status for the night inventory layer.
+
+    Night waves intentionally write inventory side files; the 08:00 hot path
+    still collects live candidates. This report prevents a false inference that
+    existing inventory files are already feeding the morning digest.
+    """
+    inv_dir = state_dir / "inventory"
+    files = sorted(inv_dir.glob("*.jsonl")) if inv_dir.exists() else []
+    by_category: dict[str, dict[str, object]] = {}
+    total_records = 0
+    render_ready_records = 0
+    newest_seen = ""
+    for path in files:
+        rows = []
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(row, dict):
+                rows.append(row)
+        ready = sum(1 for row in rows if row.get("render_ready"))
+        total_records += len(rows)
+        render_ready_records += ready
+        for row in rows:
+            seen = str(row.get("last_seen_at") or "")
+            if seen > newest_seen:
+                newest_seen = seen
+        by_category[path.stem] = {
+            "records": len(rows),
+            "render_ready": ready,
+        }
+
+    run_log_path = state_dir / "inventory_run_log.jsonl"
+    run_log_lines = 0
+    last_wave = ""
+    last_wave_at = ""
+    if run_log_path.exists():
+        for line in run_log_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            run_log_lines += 1
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(row, dict):
+                continue
+            run_at = str(row.get("run_at_london") or "")
+            if run_at >= last_wave_at:
+                last_wave_at = run_at
+                last_wave = str(row.get("wave") or "")
+
+    return {
+        "schema_version": 1,
+        "enabled": True,
+        "morning_consumed": False,
+        "reason": (
+            "Night inventory is collected into data/state/inventory/*.jsonl, "
+            "but the 08:00 digest still uses live collect; inventory-first "
+            "morning re-entry has not been enabled."
+        ),
+        "inventory_files": len(files),
+        "total_records": total_records,
+        "render_ready_records": render_ready_records,
+        "newest_last_seen_at": newest_seen,
+        "run_log_lines": run_log_lines,
+        "last_wave": last_wave,
+        "last_wave_at": last_wave_at,
+        "by_category": by_category,
     }
 
 
@@ -3984,6 +4062,9 @@ def _append_cost_history(
             "run_at_london": now_london().isoformat(),
             "total_cost_usd": cost_summary.get("total_cost_usd", 0.0),
             "total_calls": cost_summary.get("total_calls", 0),
+            "total_cache_hit_tokens": cost_summary.get("total_cache_hit_tokens", 0),
+            "total_cache_miss_tokens": cost_summary.get("total_cache_miss_tokens", 0),
+            "cache_hit_ratio": cost_summary.get("cache_hit_ratio", 0.0),
             "by_stage": cost_summary.get("by_stage", {}),
             "by_provider": cost_summary.get("by_provider", {}),
             "by_model": cost_summary.get("by_model", {}),
@@ -4543,6 +4624,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         writer_report=writer_report,
         editor_report=editor_report,
     )
+    inventory_morning_effect = _summarise_inventory_morning_effect(state_dir)
     try:
         write_json(state_dir / "speed_report.json", speed_report)
     except Exception as exc:  # noqa: BLE001
@@ -4663,6 +4745,7 @@ def build_release(project_root: Path) -> ReleaseResult:
             "batch_api_policy": (llm_rewrite_report or {}).get("batch_api_policy") if isinstance(llm_rewrite_report, dict) else {},
         },
         "cost_latency_budget": cost_latency_budget,
+        "inventory_morning_effect": inventory_morning_effect,
         "model_bakeoff": model_bakeoff,
         "change_type_summary": change_type_summary,
         "cross_day_recurrence": cross_day_recurrence,

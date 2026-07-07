@@ -22,6 +22,7 @@ from news_digest.pipeline.inventory import (
     write_inventory,
 )
 from news_digest.pipeline.llm_rewrite import _candidate_content_hash
+from news_digest.pipeline.release import _summarise_inventory_morning_effect
 
 
 class CategoryHealthTest(unittest.TestCase):
@@ -225,6 +226,39 @@ class NightWaveTest(unittest.TestCase):
             self.assertEqual([r["fingerprint"] for r in read_inventory(root / "data" / "state", "gmp")], ["GMP-1"])
             # the ticket source is outside the live_news wave — not collected
             self.assertEqual(read_inventory(root / "data" / "state", "venues_tickets"), [])
+
+    def test_release_reports_inventory_as_not_yet_morning_consumed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp) / "data" / "state"
+            state_dir.mkdir(parents=True)
+            write_inventory(
+                state_dir,
+                "media_layer",
+                [
+                    {
+                        "fingerprint": "night-1",
+                        "render_ready": True,
+                        "last_seen_at": "2026-07-07T07:34:00+01:00",
+                    },
+                    {
+                        "fingerprint": "night-2",
+                        "render_ready": False,
+                        "last_seen_at": "2026-07-07T07:35:00+01:00",
+                    },
+                ],
+            )
+            (state_dir / "inventory_run_log.jsonl").write_text(
+                '{"wave":"breaking","run_at_london":"2026-07-07T07:35:00+01:00"}\n',
+                encoding="utf-8",
+            )
+
+            summary = _summarise_inventory_morning_effect(state_dir)
+
+        self.assertFalse(summary["morning_consumed"])
+        self.assertEqual(summary["inventory_files"], 1)
+        self.assertEqual(summary["total_records"], 2)
+        self.assertEqual(summary["render_ready_records"], 1)
+        self.assertEqual(summary["last_wave"], "breaking")
 
 
 class EvidenceCacheStructuredFactsTest(unittest.TestCase):

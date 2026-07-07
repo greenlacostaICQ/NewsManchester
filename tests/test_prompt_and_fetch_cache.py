@@ -23,6 +23,7 @@ from urllib import error
 from news_digest.pipeline import cost_tracker
 from news_digest.pipeline.collector import fetch
 from news_digest.pipeline.collector.sources import SourceDef
+from news_digest.pipeline.release import _aggregate_cost, _append_cost_history
 
 
 class CostForCachePricingTest(unittest.TestCase):
@@ -210,6 +211,64 @@ class SummariseCacheTest(unittest.TestCase):
         ds = summary["by_provider"]["DeepSeek"]
         self.assertEqual(ds["cache_hit_tokens"], 700)
         self.assertEqual(ds["cache_miss_tokens"], 300)
+
+    def test_release_aggregate_preserves_stage_cache_tokens(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+            (state_dir / "cost_llm_rewrite.json").write_text(
+                json.dumps(
+                    {
+                        "records": [
+                            {
+                                "stage": "llm_rewrite",
+                                "provider": "DeepSeek",
+                                "model": "deepseek-chat",
+                                "prompt_name": "english_cards",
+                                "prompt_version": "english_cards@v1",
+                                "prompt_tokens": 1000,
+                                "completion_tokens": 200,
+                                "estimated_prompt_tokens": 1000,
+                                "estimated_completion_tokens": 200,
+                                "cost_usd": 0.0001,
+                                "estimated_cost_usd": 0.0002,
+                                "usage_source": "actual",
+                                "cache_hit_tokens": 700,
+                                "cache_miss_tokens": 300,
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            summary = _aggregate_cost(state_dir)
+
+        self.assertEqual(summary["total_cache_hit_tokens"], 700)
+        self.assertEqual(summary["total_cache_miss_tokens"], 300)
+        self.assertEqual(summary["cache_hit_ratio"], 0.7)
+        self.assertEqual(summary["by_stage"]["llm_rewrite"]["cache_hit_tokens"], 700)
+
+    def test_cost_history_keeps_cache_totals(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+            _append_cost_history(
+                state_dir,
+                "2026-07-07",
+                {
+                    "total_cost_usd": 0.1,
+                    "total_calls": 2,
+                    "total_cache_hit_tokens": 700,
+                    "total_cache_miss_tokens": 300,
+                    "cache_hit_ratio": 0.7,
+                },
+                [],
+            )
+
+            history = json.loads((state_dir / "cost_history.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(history[0]["total_cache_hit_tokens"], 700)
+        self.assertEqual(history[0]["total_cache_miss_tokens"], 300)
+        self.assertEqual(history[0]["cache_hit_ratio"], 0.7)
 
 
 # ── Fetch cache ──────────────────────────────────────────────────────────
