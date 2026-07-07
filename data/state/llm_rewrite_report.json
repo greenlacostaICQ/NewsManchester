@@ -1,24 +1,41 @@
 {
-  "pipeline_run_id": "20260706T080154+0100",
-  "run_at_london": "2026-07-06T08:20:47.830923+01:00",
-  "run_date_london": "2026-07-06",
+  "pipeline_run_id": "20260707T080159+0100",
+  "run_at_london": "2026-07-07T08:19:40.589975+01:00",
+  "run_date_london": "2026-07-07",
   "stage_status": "complete",
   "errors": [],
   "warnings": [],
   "soft_warnings": [
-    "Cost-after-quality guard: 1 candidate(s) held before model calls.",
-    "Rewrite pre-board: 16 candidate(s) held in backup before Board Judge.",
-    "3 draft_line(s) still look weak after repair.",
-    "Repair pass rejected 3 replacement(s) that still failed writer quality gate."
+    "Cost-after-quality guard: 3 candidate(s) held before model calls.",
+    "Rewrite pre-board: 22 candidate(s) held in backup before Board Judge.",
+    "Repair cap: 6 hard-defect draft_line(s) left for deterministic recovery/drop.",
+    "12 draft_line(s) still look weak after repair.",
+    "Repair pass rejected 6 replacement(s) that still failed writer quality gate."
   ],
-  "included_for_rewrite": 43,
+  "included_for_rewrite": 44,
   "cost_after_quality_guard": {
     "schema_version": 1,
     "enabled": true,
-    "input_candidates": 107,
-    "selected_for_model": 106,
-    "held_before_model": 1,
+    "input_candidates": 115,
+    "selected_for_model": 112,
+    "held_before_model": 3,
     "held_examples": [
+      {
+        "fingerprint": "food-openings-manchester-s-finest-manchestersfinest-com-category-eating-and-drinking-food-halls-and-markets",
+        "title": "Food Halls and Markets",
+        "source_label": "Manchester's Finest",
+        "category": "food_openings",
+        "primary_block": "openings",
+        "reason": "Event-like candidate has no actionable date after enrichment; hold before model rewrite."
+      },
+      {
+        "fingerprint": "food-openings-manchester-s-finest-manchestersfinest-com-eating-and-drinking-food-halls-and-markets-hello-oriental-become-manchesters-first-dedicated-east-asian-food-hall",
+        "title": "Hello Oriental to become Manchester's first dedicated East Asian food hall - and is putting the call out for traders",
+        "source_label": "Manchester's Finest",
+        "category": "food_openings",
+        "primary_block": "openings",
+        "reason": "Event-like candidate has no actionable date after enrichment; hold before model rewrite."
+      },
       {
         "fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-the-place-to-play-reddish",
         "title": "We offer over 12 different role play areas, loads of toys and activities for your little one.",
@@ -32,192 +49,202 @@
   "rewrite_shortlist": {
     "schema_version": 2,
     "enabled": true,
-    "input_candidates": 106,
+    "input_candidates": 112,
     "selected_for_rewrite": 90,
-    "held_for_backup": 16,
-    "board_overflow": 14,
+    "held_for_backup": 22,
+    "board_overflow": 22,
     "board_max": 90,
     "final_russian_board_max": 42,
     "caps_by_block": {
-      "last_24h": 18,
-      "city_watch": 15,
       "transport": 99,
+      "city_watch": 15,
       "today_focus": 8,
+      "last_24h": 18,
       "next_7_days": 14,
       "future_announcements": 14,
       "weekend_activities": 16,
       "russian_events": 12,
+      "openings": 10,
       "tech_business": 10,
       "professional_events": 3,
       "football": 6
     },
-    "uncapped_selected": 86,
+    "uncapped_selected": 94,
     "uncapped_examples": [
       {
-        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-cvg44l3g2leo",
+        "fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-whitworth-street-manchester-bus-stop-closure",
+        "title": "Whitworth Street, Manchester - Bus Stop Closure",
+        "source_label": "TfGM",
+        "category": "transport",
+        "primary_block": "transport",
+        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
+      },
+      {
+        "fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-dumers-lane-bury-bus-stop-closure",
+        "title": "Dumers Lane, Bury - Bus Stop Closure",
+        "source_label": "TfGM",
+        "category": "transport",
+        "primary_block": "transport",
+        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
+      },
+      {
+        "fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-broad-road-sale-bus-stop-closure",
+        "title": "Broad Road, Sale - Bus Stop Closure",
+        "source_label": "TfGM",
+        "category": "transport",
+        "primary_block": "transport",
+        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
+      },
+      {
+        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c5yzzz9ynewo",
+        "title": "Major disruption to Metrolink services for £150m upgrade works",
+        "source_label": "BBC Manchester",
+        "category": "media_layer",
+        "primary_block": "transport",
+        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
+      },
+      {
+        "fingerprint": "transport-national-rail-enquiries-nationalrail-co-uk-status-and-disruptions-crosscountry-amended-19-25-manchester-piccadilly-to-southampton-central-service",
+        "title": "CrossCountry: Amended 19:25 Manchester Piccadilly to Southampton Central service from Monday 6 to Thursday 9 July",
+        "source_label": "National Rail Enquiries",
+        "category": "transport",
+        "primary_block": "transport",
+        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
+      },
+      {
+        "fingerprint": "transport-national-rail-enquiries-nationalrail-co-uk-status-and-disruptions-amended-late-night-early-morning-transpennine-express-service-to-from-manchester",
+        "title": "Amended late night / early morning TransPennine Express service to / from Manchester Airport from Monday 6 to Friday 10 July",
+        "source_label": "National Rail Enquiries",
+        "category": "transport",
+        "primary_block": "transport",
+        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
+      },
+      {
+        "fingerprint": "transport-national-rail-enquiries-nationalrail-co-uk-status-and-disruptions-amended-late-night-early-morning-northern-services-to-from-manchester-piccadilly",
+        "title": "Amended late night / early morning Northern services to / from Manchester Piccadilly from Monday 6 to Friday 10 July",
+        "source_label": "National Rail Enquiries",
+        "category": "transport",
+        "primary_block": "transport",
+        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
+      },
+      {
+        "fingerprint": "transport-national-rail-enquiries-nationalrail-co-uk-status-and-disruptions-northern-disruption-between-salford-central-and-wigan-wallgate-expected-until-09",
+        "title": "Northern: Disruption between Salford Central and Wigan Wallgate expected until 09:30",
+        "source_label": "National Rail Enquiries",
+        "category": "transport",
+        "primary_block": "transport",
+        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
+      },
+      {
+        "fingerprint": "media-layer-the-mill-manchestermill-co-uk-football-maybe-sunshine-certainly-heres-whats-coming-home",
+        "title": "Football: maybe. Sunshine: certainly — here's what's coming home",
+        "source_label": "The Mill",
+        "category": "media_layer",
+        "primary_block": "transport",
+        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
+      },
+      {
+        "fingerprint": "media-layer-about-manchester-news-aboutmanchester-co-uk-passengers-thanked-after-major-manchester-victoria-engineering-work-completed",
+        "title": "Passengers thanked after major Manchester Victoria engineering work completed - About Manchester",
+        "source_label": "About Manchester News",
+        "category": "media_layer",
+        "primary_block": "transport",
+        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
+      },
+      {
+        "fingerprint": "gmp-bbc-manchester-public-safety-fallback-bbc-com-news-articles-cvg44l3g2leo",
         "title": "Two arrested in Bolton for obstructing police helping crash victim",
+        "source_label": "BBC Manchester public safety fallback",
+        "category": "gmp",
+        "primary_block": "city_watch",
+        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
+      },
+      {
+        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c39yd73xml3o",
+        "title": "Announced candidates for Greater Manchester mayoral election",
         "source_label": "BBC Manchester",
         "category": "media_layer",
-        "primary_block": "last_24h",
+        "primary_block": "city_watch",
         "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
       },
       {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-police-officer-rushed-hospital-after-34239791",
-        "title": "Police officer rushed to hospital after police van involved in Middleton crash",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
+        "fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-new-outdoor-basketball-court-opens-in-cringle-park-as-part-of-city-wide-investment-in-community-sport",
+        "title": "New outdoor basketball court opens in Cringle Park as part of city-wide investment in community sport",
+        "source_label": "Manchester Council",
+        "category": "council",
+        "primary_block": "city_watch",
         "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
       },
       {
-        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c17yv591dnro",
-        "title": "Illegal medical devices to feed newborns were sold around world",
+        "fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-public-back-transformational-water-street-regeneration-plans-with-major-new-city-centre-park-at-its-heart",
+        "title": "Public back transformational Water Street regeneration plans with major new city centre park at its heart",
+        "source_label": "Manchester Council",
+        "category": "council",
+        "primary_block": "city_watch",
+        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
+      },
+      {
+        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-ckg0nkk2lrvo",
+        "title": "Why voting method change matters in mayoral poll",
         "source_label": "BBC Manchester",
         "category": "media_layer",
-        "primary_block": "last_24h",
+        "primary_block": "city_watch",
         "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
       },
       {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-rspca-responds-after-social-media-34240439",
-        "title": "RSPCA responds after social media video shows dog chained up in Salford",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
+        "fingerprint": "council-wigan-council-wigan-gov-uk-ews-rticles-2026-une-lood-risk-investment-to-support-residents-in-indley-latt-ridge-and-bram-aspx",
+        "title": "Flood risk investment to support residents in Hindley, Platt Bridge and Abram",
+        "source_label": "Wigan Council",
+        "category": "council",
+        "primary_block": "city_watch",
         "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
       },
       {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-hundreds-people-were-meant-living-34203498",
-        "title": "Hundreds of people were meant to be living here by now - instead it looks like a 'bad day in Beirut'",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
+        "fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-investing-in-jobs-how-councils-3m-plan-will-help-mancunians-to-share-in-success",
+        "title": "Investing in jobs - how Council's £3m plan will help Mancunians to share in success",
+        "source_label": "Manchester Council",
+        "category": "council",
+        "primary_block": "city_watch",
         "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
       },
       {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-gun-fire-prison-killer-hygiene-34216982",
-        "title": "Gun-for-fire, prison killer and hygiene-obsessed fitness fanatic: The life and crimes of The Iceman",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
+        "fingerprint": "council-oldham-council-oldham-gov-uk-news-article-2932-new-grants-of-up-to-10000-available-to-help-businesses-grow-and-create-jobs",
+        "title": "New grants of up to £10,000 available to help businesses grow and create jobs",
+        "source_label": "Oldham Council",
+        "category": "council",
+        "primary_block": "city_watch",
         "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
       },
       {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-carnage-driver-ploughs-wall-parked-34239677",
-        "title": "Carnage as driver ploughs into wall and parked van near Rochdale beauty spot",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
+        "fingerprint": "tech-business-businesslive-greater-manchester-business-live-co-uk-economic-development-plans-major-metrolink-expansion-through-34191411",
+        "title": "Plans for major Metrolink expansion through Salford to Wigan and Bolton",
+        "source_label": "BusinessLive Greater Manchester",
+        "category": "tech_business",
+        "primary_block": "city_watch",
         "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
       },
       {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-boy-19-remains-hospital-after-34240327",
-        "title": "Boy, 19, pulled from devastating house fire as mum issues update",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
-      },
-      {
-        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-cr475r2k97lo",
-        "title": "Tree removal objectors work with council on Poynton Pool safety plan",
-        "source_label": "BBC Manchester",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
-      },
-      {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-urgent-police-appeal-find-missing-34240176",
-        "title": "Urgent police appeal to find missing person from Oldham",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
-      },
-      {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-wedding-picture-police-hope-might-34221056",
-        "title": "The wedding picture police hope might crack unsolved case of 'laughing assassin'",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
-      },
-      {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-reform-councillor-wigan-under-investigation-34240876",
-        "title": "Reform councillor in Wigan under investigation over social media posts calling for politicians to be 'shot'",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
-      },
-      {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-prison-officer-brushed-migraine-woke-34203568",
-        "title": "Prison officer brushed it off as a migraine, then she woke up to 'terrifying' experience",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
-      },
-      {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-rapist-ben-fitton-victim-jail-34231289",
-        "title": "'I was terrified as my rapist ex tried to appeal his conviction, but now I'm free'",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
-      },
-      {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-if-im-going-something-big-34229899",
-        "title": "'If I'm going to do something this big, I want it to mean something beyond me'",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
-      },
-      {
-        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-two-very-different-corners-greater-34215826",
-        "title": "Two very different corners of Greater Manchester, one very similar problem",
-        "source_label": "MEN News Sitemap",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
-      },
-      {
-        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-cheapest-petrol-diesel-greater-manchester-34239221",
-        "title": "The cheapest place to get petrol and diesel in Greater Manchester today - Sunday, 5 July",
-        "source_label": "MEN News Sitemap",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
-      },
-      {
-        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-fireplace-law-change-labour-uk-34238940",
-        "title": "New fireplace rules around log burners and wood-burning stoves could see bans",
-        "source_label": "MEN News Sitemap",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
-      },
-      {
-        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-missing-teenage-boy-may-caught-34239119",
-        "title": "Missing teenage boy 'may have caught train to Manchester'",
-        "source_label": "MEN News Sitemap",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
-      },
-      {
-        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-we-dont-need-turn-lights-34215678",
-        "title": "'We don't need to turn the lights on at night, we just open up the curtains'",
-        "source_label": "MEN News Sitemap",
-        "category": "media_layer",
-        "primary_block": "last_24h",
+        "fingerprint": "council-stockport-council-stockport-gov-uk-news-stockport-local-election-2026-results",
+        "title": "8 May 2026 Stockport local election 2026 results Results from 7 May 2026",
+        "source_label": "Stockport Council",
+        "category": "council",
+        "primary_block": "city_watch",
         "reason": "Protected hard news / transport / today-focus item; not capped before rewrite."
       }
     ],
     "today_practical_translation_reserve": [
       {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-rspca-responds-after-social-media-34240439",
-        "title": "RSPCA responds after social media video shows dog chained up in Salford",
+        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-police-manchester-car-wash-crime-34242190",
+        "title": "Police descend on Manchester car wash and businesses in major crime strikes",
+        "source_label": "MEN News Sitemap",
+        "primary_block": "last_24h",
+        "category": "media_layer",
+        "score": 82,
+        "reason": "Protected practical Today Focus reserve before Russian writing."
+      },
+      {
+        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-forest-bank-prisoner-handed-note-34245227",
+        "title": "Forest Bank prisoner handed note to guards saying he feared for his safety - a week later he took his own life",
         "source_label": "MEN",
         "primary_block": "last_24h",
         "category": "media_layer",
@@ -225,44 +252,99 @@
         "reason": "Protected practical Today Focus reserve before Russian writing."
       },
       {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-hundreds-people-were-meant-living-34203498",
-        "title": "Hundreds of people were meant to be living here by now - instead it looks like a 'bad day in Beirut'",
+        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-police-reveal-results-breath-tests-34247296",
+        "title": "Police reveal results of breath tests as drivers pulled over after early morning World Cup celebrations",
         "source_label": "MEN",
         "primary_block": "last_24h",
         "category": "media_layer",
-        "score": 68,
-        "reason": "Protected practical Today Focus reserve before Russian writing."
-      },
-      {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-gun-fire-prison-killer-hygiene-34216982",
-        "title": "Gun-for-fire, prison killer and hygiene-obsessed fitness fanatic: The life and crimes of The Iceman",
-        "source_label": "MEN",
-        "primary_block": "last_24h",
-        "category": "media_layer",
-        "score": 68,
+        "score": 82,
         "reason": "Protected practical Today Focus reserve before Russian writing."
       }
     ],
     "held_examples": [
       {
-        "fingerprint": "football-bbc-sport-manchester-city-bbc-com-sport-football-articles-c20y27eqj13o",
-        "title": "Nathan Ake: Fenerbahce complete signing of Netherlands defender from Manchester City",
-        "source_label": "BBC Sport Manchester City",
-        "category": "football",
-        "primary_block": "football",
-        "section_board_score": 23.75,
-        "reader_value_score": 24,
-        "reason": "Outside pre-rewrite shortlist for football."
+        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-crellpwnw4jo",
+        "title": "Most of the UK's at risk theatres in North West England",
+        "source_label": "BBC Manchester",
+        "category": "media_layer",
+        "primary_block": "city_watch",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside DeepSeek ranking board (soft max 90)."
       },
       {
-        "fingerprint": "football-guardian-manchester-united-theguardian-com-football-2026-jun-30-tottenham-west-ham-mateus-fernandes-club-record-85m-manchester-united-transfers",
-        "title": "Tottenham win race to sign West Ham's Mateus Fernandes for club record £85m",
-        "source_label": "Guardian Manchester United",
-        "category": "football",
-        "primary_block": "football",
-        "section_board_score": -3.75,
-        "reader_value_score": 24,
-        "reason": "Outside pre-rewrite shortlist for football."
+        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-police-tape-area-blue-tent-34247553",
+        "title": "Police tape off area with blue tent erected following Piccadilly Gardens incident",
+        "source_label": "MEN",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside DeepSeek ranking board (soft max 90)."
+      },
+      {
+        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-motorway-closures-update-34243151",
+        "title": "All of the Greater Manchester motorway closures this week, including on the M6, M60 and M62",
+        "source_label": "MEN News Sitemap",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside DeepSeek ranking board (soft max 90)."
+      },
+      {
+        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-glossop-police-update-homes-evacuated-34241666",
+        "title": "Police update after Glossop homes evacuated over 'WW2 ordnance found in garden'",
+        "source_label": "MEN News Sitemap",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside DeepSeek ranking board (soft max 90)."
+      },
+      {
+        "fingerprint": "media-layer-about-manchester-news-aboutmanchester-co-uk-why-greater-manchesters-remote-workers-are-logging-on-sick-and-what-it-means-for-employers",
+        "title": "Why Greater Manchester's remote workers are logging on sick, and what it means for employers - About Manchester",
+        "source_label": "About Manchester News",
+        "category": "media_layer",
+        "primary_block": "city_watch",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside DeepSeek ranking board (soft max 90)."
+      },
+      {
+        "fingerprint": "council-stockport-council-stockport-gov-uk-news-stockport-local-election-2026-results",
+        "title": "8 May 2026 Stockport local election 2026 results Results from 7 May 2026",
+        "source_label": "Stockport Council",
+        "category": "council",
+        "primary_block": "city_watch",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside DeepSeek ranking board (soft max 90)."
+      },
+      {
+        "fingerprint": "council-wigan-council-wigan-gov-uk-ews-rticles-2026-une-ioneering-crop-scientist-receives-lue-laque-aspx",
+        "title": "Pioneering crop scientist receives Blue Plaque",
+        "source_label": "Wigan Council",
+        "category": "council",
+        "primary_block": "city_watch",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside DeepSeek ranking board (soft max 90)."
       },
       {
         "fingerprint": "culture-weekly-the-lowry-thelowry-com-whats-on-this-is-rambert-bwbd",
@@ -277,8 +359,44 @@
         "reason": "Outside DeepSeek ranking board (soft max 90)."
       },
       {
+        "fingerprint": "culture-weekly-contact-theatre-contactmcr-com-support-us",
+        "title": "Contact Theatre",
+        "source_label": "Contact Theatre",
+        "category": "culture_weekly",
+        "primary_block": "next_7_days",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside DeepSeek ranking board (soft max 90)."
+      },
+      {
+        "fingerprint": "culture-weekly-visit-manchester-weekend-visitmanchester-com-whats-on-whats-on-this-week",
+        "title": "What's On in Manchester This Week | Events, Gigs & Things To Do",
+        "source_label": "Visit Manchester Weekend",
+        "category": "culture_weekly",
+        "primary_block": "future_announcements",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside DeepSeek ranking board (soft max 90)."
+      },
+      {
         "fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-sound-bazaar-festival",
         "title": "Sound Bazaar Festival",
+        "source_label": "Manchester's Finest Events",
+        "category": "culture_weekly",
+        "primary_block": "next_7_days",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside DeepSeek ranking board (soft max 90)."
+      },
+      {
+        "fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-we-are-football-england-quarter-final-depot-mayfield",
+        "title": "We Are Football Festival England Quarter Final at Depot Mayfield",
         "source_label": "Manchester's Finest Events",
         "category": "culture_weekly",
         "primary_block": "next_7_days",
@@ -301,20 +419,8 @@
         "reason": "Outside DeepSeek ranking board (soft max 90)."
       },
       {
-        "fingerprint": "tech-business-businesscloud-businesscloud-co-uk-news-hip-pops-journey-from-kitchen-kombucha-to-supergirl",
-        "title": "Hip Pop's journey from kitchen kombucha to Supergirl",
-        "source_label": "BusinessCloud",
-        "category": "tech_business",
-        "primary_block": "tech_business",
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside DeepSeek ranking board (soft max 90)."
-      },
-      {
-        "fingerprint": "tech-business-bdaily-manchester-bdaily-co-uk-articles-2026-06-29-the-norths-future-doesnt-end-at-manchester",
-        "title": "The North's future doesn't end at Manchester",
+        "fingerprint": "tech-business-bdaily-manchester-bdaily-co-uk-articles-2026-07-05-gorvins-solicitors-makes-three-senior-hires",
+        "title": "Gorvins Solicitors makes three senior hires",
         "source_label": "Bdaily Manchester",
         "category": "tech_business",
         "primary_block": "tech_business",
@@ -373,8 +479,8 @@
         "reason": "Outside DeepSeek ranking board (soft max 90)."
       },
       {
-        "fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-fostering-information-at-hazel-grove-carnival",
-        "title": "Fostering information at Hazel Grove Carnival",
+        "fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-poke-a-pot-kids-clay-workshop",
+        "title": "Poke-A-Pot: kids clay workshop",
         "source_label": "Stockport Events",
         "category": "culture_weekly",
         "primary_block": "future_announcements",
@@ -385,21 +491,9 @@
         "reason": "Outside DeepSeek ranking board (soft max 90)."
       },
       {
-        "fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-the-convergence-of-art-and-photography",
-        "title": "The Convergence of Art and Photography",
-        "source_label": "Stockport Events",
-        "category": "culture_weekly",
-        "primary_block": "future_announcements",
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside DeepSeek ranking board (soft max 90)."
-      },
-      {
-        "fingerprint": "football-men-manchester-city-manchestereveningnews-co-uk-sport-football-transfer-news-sverre-nypan-golden-man-city-34240062",
-        "title": "Sverre Nypan has golden Man City opportunity after transfer frustration as crucial decision looms",
-        "source_label": "MEN Manchester City",
+        "fingerprint": "football-bbc-sport-manchester-city-bbc-com-sport-football-articles-c20y27eqj13o",
+        "title": "Nathan Ake: Fenerbahce complete signing of Netherlands defender from Manchester City",
+        "source_label": "BBC Sport Manchester City",
         "category": "football",
         "primary_block": "football",
         "score_value": null,
@@ -409,9 +503,9 @@
         "reason": "Outside DeepSeek ranking board (soft max 90)."
       },
       {
-        "fingerprint": "football-men-manchester-city-manchestereveningnews-co-uk-sport-football-football-news-thomas-tuchel-confirm-unpopular-man-34239896",
-        "title": "Thomas Tuchel may confirm unpopular Man City transfer call in England game",
-        "source_label": "MEN Manchester City",
+        "fingerprint": "football-guardian-manchester-united-theguardian-com-football-2026-jul-05-a-footballing-deepfake-how-bruno-fernandes-fell-victim-to-an-unlicensed-betting-operator",
+        "title": "A footballing deepfake: how Bruno Fernandes fell victim to an unlicensed betting operator",
+        "source_label": "Guardian Manchester United",
         "category": "football",
         "primary_block": "football",
         "score_value": null,
@@ -421,11 +515,11 @@
         "reason": "Outside DeepSeek ranking board (soft max 90)."
       },
       {
-        "fingerprint": "football-men-manchester-city-manchestereveningnews-co-uk-sport-football-who-jeremy-monga-16-year-34234796",
-        "title": "Who is Jeremy Monga? 16-year-old at centre of huge Man City transfer",
-        "source_label": "MEN Manchester City",
-        "category": "football",
-        "primary_block": "football",
+        "fingerprint": "tech-business-businesslive-greater-manchester-business-live-co-uk-economic-development-greater-manchesters-economic-growth-not-34226284",
+        "title": "Greater Manchester's economic growth has not boosted outer borough incomes, report finds",
+        "source_label": "BusinessLive Greater Manchester",
+        "category": "tech_business",
+        "primary_block": "city_watch",
         "score_value": null,
         "score_source": "not model scored",
         "score_scope": null,
@@ -435,37 +529,31 @@
     ]
   },
   "prewrite_enrichment": {
-    "attempted": 22,
-    "enriched": 17,
+    "attempted": 20,
+    "enriched": 18,
     "skipped": 72,
-    "failed": 1,
+    "failed": 0,
     "examples": [
+      {
+        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c05yy2jzd6zo",
+        "title": "Murder arrest after woman dies in fire at Rochdale farm",
+        "status": "enriched",
+        "existing_chars": 964,
+        "refetched_chars": 4500
+      },
+      {
+        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c0qyy3720njo",
+        "title": "Alleged Palestine Action activist not guilty of violent disorder in Elbit raid",
+        "status": "enriched",
+        "existing_chars": 980,
+        "refetched_chars": 4500
+      },
       {
         "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-cr475r2k97lo",
         "title": "Tree removal objectors work with council on Poynton Pool safety plan",
         "status": "enriched",
         "existing_chars": 1057,
         "refetched_chars": 4500
-      },
-      {
-        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-cvg44l3g2leo",
-        "title": "Two arrested in Bolton for obstructing police helping crash victim",
-        "status": "enriched",
-        "existing_chars": 1081,
-        "refetched_chars": 4500
-      },
-      {
-        "fingerprint": "council-stockport-council-stockport-gov-uk-news-stockport-local-election-2026-results",
-        "title": "8 May 2026 Stockport local election 2026 results Results from 7 May 2026",
-        "status": "failed",
-        "error": "RuntimeError: Failed to perform, curl: (7) Failed to connect to stockport.gov.uk port 443 after 151 ms: Could not connect to server. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
-      },
-      {
-        "fingerprint": "culture-weekly-home-homemcr-org-whats-on-my-father-s-island-15-rsfk",
-        "title": "My Father's Island (15)",
-        "status": "enriched",
-        "existing_chars": 1158,
-        "refetched_chars": 3294
       },
       {
         "fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-sounds-of-the-city-wet-leg",
@@ -494,6 +582,13 @@
         "status": "enriched",
         "existing_chars": 1126,
         "refetched_chars": 2315
+      },
+      {
+        "fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-remarket-flea-market",
+        "title": "ReMarket Flea Market",
+        "status": "enriched",
+        "existing_chars": 1082,
+        "refetched_chars": 2253
       }
     ]
   },
@@ -501,11 +596,25 @@
     "schema_version": 1,
     "enabled": true,
     "input_candidates": 90,
-    "selected_for_russian": 47,
-    "held_for_backup": 43,
+    "selected_for_russian": 50,
+    "held_for_backup": 40,
     "board_max": 42,
     "today_practical_protected": 3,
     "held_examples": [
+      {
+        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c17yv591dnro",
+        "title": "Illegal medical devices to feed newborns were sold around world",
+        "source_label": "BBC Manchester",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "english_editorial_score": null,
+        "english_board_decision": null,
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
       {
         "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-ckg0nkk2lrvo",
         "title": "Why voting method change matters in mayoral poll",
@@ -521,54 +630,12 @@
         "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
       },
       {
-        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c39yd73xml3o",
-        "title": "Announced candidates for Greater Manchester mayoral election",
+        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c0qyy3720njo",
+        "title": "Alleged Palestine Action activist not guilty of violent disorder in Elbit raid",
         "source_label": "BBC Manchester",
         "category": "media_layer",
-        "primary_block": "city_watch",
-        "english_editorial_score": null,
-        "english_board_decision": null,
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-glossop-police-update-homes-evacuated-34241666",
-        "title": "Police update after Glossop homes evacuated over 'WW2 ordnance found in garden'",
-        "source_label": "MEN",
-        "category": "media_layer",
         "primary_block": "last_24h",
-        "english_editorial_score": 82,
-        "english_board_decision": "publish",
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-reform-councillor-wigan-under-investigation-34240876",
-        "title": "Reform councillor in Wigan under investigation over social media posts calling for politicians to be 'shot'",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "english_editorial_score": 68,
-        "english_board_decision": "publish",
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-prison-officer-brushed-migraine-woke-34203568",
-        "title": "Prison officer brushed it off as a migraine, then she woke up to 'terrifying' experience",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "english_editorial_score": 44,
+        "english_editorial_score": 65,
         "english_board_decision": "backup",
         "score_value": null,
         "score_source": "not model scored",
@@ -577,8 +644,22 @@
         "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
       },
       {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-rapist-ben-fitton-victim-jail-34231289",
-        "title": "'I was terrified as my rapist ex tried to appeal his conviction, but now I'm free'",
+        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-preston-davey-murderer-jamie-varleys-34247700",
+        "title": "Preston Davey murderer Jamie Varley's neighbour reported him to police after 'nightmare' incidents",
+        "source_label": "MEN",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "english_editorial_score": 40,
+        "english_board_decision": "reject",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-green-mayoral-candidate-promises-high-34244432",
+        "title": "Green mayoral candidate promises high streets 'task force' to take over empty shops",
         "source_label": "MEN",
         "category": "media_layer",
         "primary_block": "last_24h",
@@ -591,12 +672,26 @@
         "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
       },
       {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-if-im-going-something-big-34229899",
-        "title": "'If I'm going to do something this big, I want it to mean something beyond me'",
+        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-salford-man-20-fighting-life-34246957",
+        "title": "Salford man, 20, fighting for life after horror quad bike crash on lads' holiday to Zante",
         "source_label": "MEN",
         "category": "media_layer",
         "primary_block": "last_24h",
-        "english_editorial_score": 65,
+        "english_editorial_score": 67,
+        "english_board_decision": "backup",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-george-galloway-isnt-standing-replace-34247104",
+        "title": "Why George Galloway isn't standing to replace Andy Burnham in the Greater Manchester Mayoral by-election",
+        "source_label": "MEN",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "english_editorial_score": 75,
         "english_board_decision": "publish",
         "score_value": null,
         "score_source": "not model scored",
@@ -605,9 +700,163 @@
         "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
       },
       {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-boy-19-remains-hospital-after-34240327",
-        "title": "Boy, 19, pulled from devastating house fire as mum issues update",
+        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-ashton-couple-stuck-belgium-after-34246679",
+        "title": "Ashton couple stuck in Belgium after birth of miracle baby",
         "source_label": "MEN",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "english_editorial_score": 60,
+        "english_board_decision": "backup",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-cusp-special-moment-34245232",
+        "title": "Greater Manchester on cusp of 'special moment', says Bev Craig as she backs No 10 North plans",
+        "source_label": "MEN",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "english_editorial_score": 68,
+        "english_board_decision": "publish",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-rapist-lured-way-womans-home-34246253",
+        "title": "Rapist lured his way into woman's home before vile sex attack",
+        "source_label": "MEN",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "english_editorial_score": 68,
+        "english_board_decision": "publish",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "media-layer-men-latest-news-manchestereveningnews-co-uk-news-greater-manchester-news-prince-harry-back-in-uk-34247892",
+        "title": "Prince Harry back in UK for Daily Mail ruling as King Charles withdraws Buckingham Palace offer",
+        "source_label": "MEN Latest News",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "english_editorial_score": 44,
+        "english_board_decision": "reject",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "media-layer-men-latest-news-manchestereveningnews-co-uk-news-greater-manchester-news-hmp-hindley-inmate-iphone-crime-34242118",
+        "title": "Inmate continued to run his crime gang from behind bars, before his secret iPhone revealed all",
+        "source_label": "MEN Latest News",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "english_editorial_score": 68,
+        "english_board_decision": "publish",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "media-layer-men-latest-news-manchestereveningnews-co-uk-news-greater-manchester-news-27k-plan-rid-chewing-gum-34246026",
+        "title": "The £27k plan to rid chewing gum from the streets of one Greater Manchester town",
+        "source_label": "MEN Latest News",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "english_editorial_score": 68,
+        "english_board_decision": "publish",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-boy-13-tragically-dies-teenager-34246017",
+        "title": "Boy, 13, tragically dies with other teenager still fighting for life after Blackpool horror house fire",
+        "source_label": "MEN News Sitemap",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "english_editorial_score": 68,
+        "english_board_decision": "publish",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-ex-altrincham-footballer-spared-jail-34244597",
+        "title": "Ex-Altrincham footballer spared jail after 'violent and grotesque' attack in Derbyshire pub toilet",
+        "source_label": "MEN News Sitemap",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "english_editorial_score": 68,
+        "english_board_decision": "publish",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-cheapest-petrol-diesel-greater-manchester-34243344",
+        "title": "The cheapest place to get petrol and diesel in Greater Manchester today - Monday, 6 July",
+        "source_label": "MEN News Sitemap",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "english_editorial_score": 68,
+        "english_board_decision": "publish",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-marlon-king-dad-will-court-34242750",
+        "title": "Ex-Wigan striker Marlon King wins court battle over dad's £600k will in bitter family feud",
+        "source_label": "MEN News Sitemap",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "english_editorial_score": 68,
+        "english_board_decision": "publish",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-woke-up-covered-bruises-diagnosed-34230281",
+        "title": "She woke up covered in bruises and was diagnosed with dementia - then fiancé's mask dropped",
+        "source_label": "MEN News Sitemap",
+        "category": "media_layer",
+        "primary_block": "last_24h",
+        "english_editorial_score": 68,
+        "english_board_decision": "publish",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-said-24-years-ago-should-34226233",
+        "title": "They said 24 years ago that it should be demolished. How wrong they were",
+        "source_label": "MEN News Sitemap",
         "category": "media_layer",
         "primary_block": "last_24h",
         "english_editorial_score": 70,
@@ -619,106 +868,8 @@
         "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
       },
       {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-royton-car-park-taped-after-34240275",
-        "title": "Royton car park taped off after man injured in stabbing",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "english_editorial_score": 78,
-        "english_board_decision": "publish",
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-met-office-latest-another-heatwave-34240105",
-        "title": "Met Office latest on when another heatwave will hit Greater Manchester",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "city_watch",
-        "english_editorial_score": 48,
-        "english_board_decision": "backup",
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-major-rescue-effort-sees-mountain-34239836",
-        "title": "Major rescue effort sees mountain rescuers, Coastguard and air ambulance scrambled to Peak District",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "english_editorial_score": 68,
-        "english_board_decision": "publish",
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-carnage-driver-ploughs-wall-parked-34239677",
-        "title": "Carnage as driver ploughs into wall and parked van near Rochdale beauty spot",
-        "source_label": "MEN",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "english_editorial_score": 68,
-        "english_board_decision": "publish",
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-cheapest-petrol-diesel-greater-manchester-34239221",
-        "title": "The cheapest place to get petrol and diesel in Greater Manchester today - Sunday, 5 July",
-        "source_label": "MEN News Sitemap",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "english_editorial_score": 68,
-        "english_board_decision": "publish",
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-missing-teenage-boy-may-caught-34239119",
-        "title": "Missing teenage boy 'may have caught train to Manchester'",
-        "source_label": "MEN News Sitemap",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "english_editorial_score": 68,
-        "english_board_decision": "publish",
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-fireplace-law-change-labour-uk-34238940",
-        "title": "New fireplace rules around log burners and wood-burning stoves could see bans",
-        "source_label": "MEN News Sitemap",
-        "category": "media_layer",
-        "primary_block": "last_24h",
-        "english_editorial_score": 68,
-        "english_board_decision": "backup",
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-we-dont-need-turn-lights-34215678",
-        "title": "'We don't need to turn the lights on at night, we just open up the curtains'",
+        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-prison-officer-brushed-migraine-woke-34203568",
+        "title": "Prison officer brushed it off as a migraine, then she woke up to 'terrifying' experience",
         "source_label": "MEN News Sitemap",
         "category": "media_layer",
         "primary_block": "last_24h",
@@ -731,26 +882,12 @@
         "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
       },
       {
-        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-two-very-different-corners-greater-34215826",
-        "title": "Two very different corners of Greater Manchester, one very similar problem",
+        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-rapist-ben-fitton-victim-jail-34231289",
+        "title": "Woman raped and abused by her ex speaks out after his desperate bid for freedom",
         "source_label": "MEN News Sitemap",
         "category": "media_layer",
         "primary_block": "last_24h",
-        "english_editorial_score": null,
-        "english_board_decision": null,
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-horrific-past-murderer-who-kidnapped-34237557",
-        "title": "The horrific past of murderer who kidnapped girl, 15, and abused her",
-        "source_label": "MEN News Sitemap",
-        "category": "media_layer",
-        "primary_block": "city_watch",
-        "english_editorial_score": 60,
+        "english_editorial_score": 68,
         "english_board_decision": "publish",
         "score_value": null,
         "score_source": "not model scored",
@@ -759,40 +896,12 @@
         "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
       },
       {
-        "fingerprint": "media-layer-about-manchester-news-aboutmanchester-co-uk-man-found-guilty-of-raping-two-14-year-old-girls",
-        "title": "Man found guilty of raping two 14 year old girls - About Manchester",
+        "fingerprint": "media-layer-about-manchester-news-aboutmanchester-co-uk-four-members-of-trafford-drugs-organised-crime-group-sentenced-to-a-combined-25-years-behind-bars",
+        "title": "Four members of Trafford drugs organised crime group sentenced to a combined 25 years behind bars - About Manchester",
         "source_label": "About Manchester News",
         "category": "media_layer",
-        "primary_block": "city_watch",
-        "english_editorial_score": null,
-        "english_board_decision": null,
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "media-layer-altrincham-today-altrincham-todaynews-co-uk-police-fire-and-court-2026-07-04-convicted-murderer-pleads-guilty-to-kidnapping-girl-15-at-knifepoint-in-altrincham",
-        "title": "Convicted murderer pleads guilty to kidnapping girl, 15, at knifepoint in Altrincham",
-        "source_label": "Altrincham Today",
-        "category": "media_layer",
-        "primary_block": "city_watch",
-        "english_editorial_score": 60,
-        "english_board_decision": "backup",
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "media-layer-altrincham-today-altrincham-todaynews-co-uk-transport-2026-07-02-hale-residents-petition-trafford-council-over-dangerous-junction-with-no-pedestrian-crossing",
-        "title": "Hale residents petition Trafford Council over \"dangerous\" junction with no pedestrian crossing",
-        "source_label": "Altrincham Today",
-        "category": "media_layer",
-        "primary_block": "city_watch",
-        "english_editorial_score": 65,
+        "primary_block": "last_24h",
+        "english_editorial_score": 72,
         "english_board_decision": "publish",
         "score_value": null,
         "score_source": "not model scored",
@@ -801,13 +910,27 @@
         "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
       },
       {
-        "fingerprint": "council-gmca-greatermanchester-ca-gov-uk-news-court-of-appeal-judgment-monday-29-june-2026",
-        "title": "Court of Appeal judgment - Monday 29 June 2026 - Greater Manchester Combined Authority",
-        "source_label": "GMCA",
+        "fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-big-burnage-parade-to-brighten-up-the-streets-and-bring-communities-together2",
+        "title": "Big Burnage Parade to brighten up the streets and bring communities together",
+        "source_label": "Manchester Council",
+        "category": "council",
+        "primary_block": "last_24h",
+        "english_editorial_score": 47,
+        "english_board_decision": "backup",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-public-back-transformational-water-street-regeneration-plans-with-major-new-city-centre-park-at-its-heart",
+        "title": "Public back transformational Water Street regeneration plans with major new city centre park at its heart",
+        "source_label": "Manchester Council",
         "category": "council",
         "primary_block": "city_watch",
-        "english_editorial_score": null,
-        "english_board_decision": null,
+        "english_editorial_score": 34,
+        "english_board_decision": "backup",
         "score_value": null,
         "score_source": "not model scored",
         "score_scope": null,
@@ -829,41 +952,13 @@
         "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
       },
       {
-        "fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-new-outdoor-basketball-court-opens-in-cringle-park-as-part-of-city-wide-investment-in-community-sport",
-        "title": "New outdoor basketball court opens in Cringle Park as part of city-wide investment in community sport",
-        "source_label": "Manchester Council",
+        "fingerprint": "council-oldham-council-oldham-gov-uk-news-article-2932-new-grants-of-up-to-10000-available-to-help-businesses-grow-and-create-jobs",
+        "title": "New grants of up to £10,000 available to help businesses grow and create jobs",
+        "source_label": "Oldham Council",
         "category": "council",
         "primary_block": "city_watch",
-        "english_editorial_score": null,
-        "english_board_decision": null,
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "council-stockport-council-stockport-gov-uk-news-stockport-local-election-2026-results",
-        "title": "8 May 2026 Stockport local election 2026 results Results from 7 May 2026",
-        "source_label": "Stockport Council",
-        "category": "council",
-        "primary_block": "city_watch",
-        "english_editorial_score": 41,
+        "english_editorial_score": 9,
         "english_board_decision": "reject",
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "council-wigan-council-wigan-gov-uk-ews-rticles-2026-une-ioneering-crop-scientist-receives-lue-laque-aspx",
-        "title": "Pioneering crop scientist receives Blue Plaque",
-        "source_label": "Wigan Council",
-        "category": "council",
-        "primary_block": "city_watch",
-        "english_editorial_score": null,
-        "english_board_decision": null,
         "score_value": null,
         "score_source": "not model scored",
         "score_scope": null,
@@ -885,13 +980,13 @@
         "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
       },
       {
-        "fingerprint": "culture-weekly-home-homemcr-org-whats-on-my-father-s-island-15-rsfk",
-        "title": "My Father's Island (15)",
-        "source_label": "HOME",
+        "fingerprint": "culture-weekly-people-s-history-museum-phm-org-uk-events-new-100-years-of-strikes-solidarity",
+        "title": "100 years of strikes & solidarity - People's History Museum",
+        "source_label": "People's History Museum",
         "category": "culture_weekly",
         "primary_block": "next_7_days",
-        "english_editorial_score": 29,
-        "english_board_decision": "backup",
+        "english_editorial_score": null,
+        "english_board_decision": null,
         "score_value": null,
         "score_source": "not model scored",
         "score_scope": null,
@@ -899,13 +994,27 @@
         "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
       },
       {
-        "fingerprint": "culture-weekly-contact-theatre-contactmcr-com-support-us",
-        "title": "Contact Theatre",
-        "source_label": "Contact Theatre",
+        "fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-remarket-flea-market",
+        "title": "ReMarket Flea Market",
+        "source_label": "Manchester's Finest Events",
         "category": "culture_weekly",
         "primary_block": "next_7_days",
-        "english_editorial_score": 10,
-        "english_board_decision": "reject",
+        "english_editorial_score": 45,
+        "english_board_decision": "publish",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "culture-weekly-pedddle-makers-market-pedddle-com-market-stretford-makers-market",
+        "title": "Stretford Makers Market | Markets on Pedddle",
+        "source_label": "Pedddle Makers Market",
+        "category": "culture_weekly",
+        "primary_block": "future_announcements",
+        "english_editorial_score": null,
+        "english_board_decision": null,
         "score_value": null,
         "score_source": "not model scored",
         "score_scope": null,
@@ -918,20 +1027,6 @@
         "source_label": "Manchester Wire",
         "category": "culture_weekly",
         "primary_block": "future_announcements",
-        "english_editorial_score": null,
-        "english_board_decision": null,
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "culture-weekly-creative-tourist-manchester-creativetourist-com-event-turn-your-f-ing-phones-off-work-in-progress-sharing-and-long-table-discussion",
-        "title": "TURN YOUR F***ING PHONES OFF (WIP) at Waterside - Creative Tourist",
-        "source_label": "Creative Tourist Manchester",
-        "category": "culture_weekly",
-        "primary_block": "next_7_days",
         "english_editorial_score": null,
         "english_board_decision": null,
         "score_value": null,
@@ -960,8 +1055,8 @@
         "source_label": "Skiddle Manchester Comedy",
         "category": "culture_weekly",
         "primary_block": "future_announcements",
-        "english_editorial_score": null,
-        "english_board_decision": null,
+        "english_editorial_score": 25,
+        "english_board_decision": "backup",
         "score_value": null,
         "score_source": "not model scored",
         "score_scope": null,
@@ -974,8 +1069,22 @@
         "source_label": "Skiddle Manchester Comedy",
         "category": "culture_weekly",
         "primary_block": "next_7_days",
-        "english_editorial_score": 50,
+        "english_editorial_score": 40,
         "english_board_decision": "backup",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "culture-weekly-skiddle-manchester-comedy-skiddle-com-whats-on-anchester-33-ldham-t-tand-up-workshop-weekly-monday-sessions-41972049",
+        "title": "Stand-up workshop (weekly monday sessions)",
+        "source_label": "Skiddle Manchester Comedy",
+        "category": "culture_weekly",
+        "primary_block": "future_announcements",
+        "english_editorial_score": 25,
+        "english_board_decision": "reject",
         "score_value": null,
         "score_source": "not model scored",
         "score_scope": null,
@@ -988,8 +1097,8 @@
         "source_label": "South Manchester Food Festival",
         "category": "culture_weekly",
         "primary_block": "next_7_days",
-        "english_editorial_score": 10,
-        "english_board_decision": "reject",
+        "english_editorial_score": null,
+        "english_board_decision": null,
         "score_value": null,
         "score_source": "not model scored",
         "score_scope": null,
@@ -1011,11 +1120,25 @@
         "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
       },
       {
-        "fingerprint": "culture-weekly-chorlton-makers-market-chorlton-coop-event-chorlton-makers-market-2026-07-18",
-        "title": "Chorlton Makers' Market",
-        "source_label": "Chorlton Makers Market",
+        "fingerprint": "culture-weekly-bolton-car-boot-sale-carbootdirectory-co-uk-listings-bolton-car-boot",
+        "title": "Bolton Car Boot Sale",
+        "source_label": "Bolton Car Boot Sale",
         "category": "culture_weekly",
-        "primary_block": "future_announcements",
+        "primary_block": "next_7_days",
+        "english_editorial_score": 40,
+        "english_board_decision": "publish",
+        "score_value": null,
+        "score_source": "not model scored",
+        "score_scope": null,
+        "score_verdict": null,
+        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
+      },
+      {
+        "fingerprint": "tech-business-businesslive-greater-manchester-business-live-co-uk-economic-development-manchesters-economy-grows-34-decade-34215271",
+        "title": "Manchester's economy grows 34% in a decade, outpacing UK average and rival cities",
+        "source_label": "BusinessLive Greater Manchester",
+        "category": "tech_business",
+        "primary_block": "city_watch",
         "english_editorial_score": null,
         "english_board_decision": null,
         "score_value": null,
@@ -1025,36 +1148,8 @@
         "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
       },
       {
-        "fingerprint": "football-manchester-city-mancity-com-news-mens-rayan-cherki-france-paraguay-63918851",
-        "title": "Cherki's France progress to World Cup quarter-finals",
-        "source_label": "Manchester City",
-        "category": "football",
-        "primary_block": "football",
-        "english_editorial_score": 60,
-        "english_board_decision": "publish",
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-transfer-news-man-united-transfer-news-live-34236069",
-        "title": "Man United transfer news LIVE: Andrey Santos 'contact', Rashford 'talks', Tchouameni, Berge latest",
-        "source_label": "MEN Manchester United",
-        "category": "football",
-        "primary_block": "football",
-        "english_editorial_score": 70,
-        "english_board_decision": "publish",
-        "score_value": null,
-        "score_source": "not model scored",
-        "score_scope": null,
-        "score_verdict": null,
-        "reason": "Outside final Russian writing board after DeepSeek ranking (soft max 42)."
-      },
-      {
-        "fingerprint": "tech-business-businesslive-greater-manchester-business-live-co-uk-economic-development-greater-manchesters-economic-growth-not-34226284",
-        "title": "Greater Manchester's economic growth has not boosted outer borough incomes, report finds",
+        "fingerprint": "tech-business-businesslive-greater-manchester-business-live-co-uk-economic-development-plans-major-metrolink-expansion-through-34191411",
+        "title": "Plans for major Metrolink expansion through Salford to Wigan and Bolton",
         "source_label": "BusinessLive Greater Manchester",
         "category": "tech_business",
         "primary_block": "city_watch",
@@ -1069,16 +1164,8 @@
     ]
   },
   "deterministic_writer_items": {
-    "count": 313,
+    "count": 338,
     "examples": [
-      {
-        "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-def-leppard-s4q2",
-        "title": "Def Leppard Special Guest Extreme Mon 6 Jul 2026 Multiple times",
-        "source_label": "Co-op Live",
-        "category": "venues_tickets",
-        "primary_block": "ticket_radar",
-        "reason": "Structured ticket/market/event template; skipped LLM rewrite for speed and consistency."
-      },
       {
         "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-england-quarter-finals-73f8",
         "title": "England Quarter Finals England VS Norway Sat 11 Jul 2026 22:00",
@@ -1106,6 +1193,14 @@
       {
         "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-daniel-caesar-n25f",
         "title": "Daniel Caesar Son of Spergy Tour Fri 4 Sep 2026 Multiple times",
+        "source_label": "Co-op Live",
+        "category": "venues_tickets",
+        "primary_block": "ticket_radar",
+        "reason": "Structured ticket/market/event template; skipped LLM rewrite for speed and consistency."
+      },
+      {
+        "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-a-ap-rocky-s3t2",
+        "title": "A$AP ROCKY Don't Be Dumb World Tour Sat 5 Sep 2026 Multiple times",
         "source_label": "Co-op Live",
         "category": "venues_tickets",
         "primary_block": "ticket_radar",
@@ -1232,6 +1327,14 @@
         "reason": "Structured ticket/market/event template; skipped LLM rewrite for speed and consistency."
       },
       {
+        "fingerprint": "venues-tickets-ticketmaster-manchester-onsale-ticketmaster-co-uk-witchz-manchester-02-09-2026-event-1-0063580164-56",
+        "title": "WITCHZ — event 2026-09-02 — public sale 2025-10-30 10:00",
+        "source_label": "Ticketmaster Manchester Onsale",
+        "category": "venues_tickets",
+        "primary_block": "future_announcements",
+        "reason": "Structured ticket/market/event template; skipped LLM rewrite for speed and consistency."
+      },
+      {
         "fingerprint": "venues-tickets-ticketmaster-liverpool-onsale-ticketmaster-co-uk-the-southmartins-liverpool-21-11-2026-event-3-00628-0-29-8",
         "title": "The Southmartins — event 2026-11-21 — public sale 2025-04-25 10:00",
         "source_label": "Ticketmaster Liverpool Onsale",
@@ -1336,22 +1439,6 @@
         "reason": "Structured ticket/market/event template; skipped LLM rewrite for speed and consistency."
       },
       {
-        "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-phantogram-manchester-06-07-2026-event-1-006442-1-449",
-        "title": "Phantogram — event 2026-07-06 — public sale 2026-02-06 09:00",
-        "source_label": "Ticketmaster Manchester Upcoming",
-        "category": "venues_tickets",
-        "primary_block": "ticket_radar",
-        "reason": "Structured ticket/market/event template; skipped LLM rewrite for speed and consistency."
-      },
-      {
-        "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-alana-springsteen-manchester-06-07-2026-event-1-00646-901-240",
-        "title": "Alana Springsteen — event 2026-07-06 — public sale 2026-03-25 10:00",
-        "source_label": "Ticketmaster Manchester Upcoming",
-        "category": "venues_tickets",
-        "primary_block": "ticket_radar",
-        "reason": "Structured ticket/market/event template; skipped LLM rewrite for speed and consistency."
-      },
-      {
         "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-che-lost-in-europe-manchester-07-07-2026-event-37006474-785824",
         "title": "Che: Lost in Europe — event 2026-07-07 — public sale 2026-03-27 10:00",
         "source_label": "Ticketmaster Manchester Upcoming",
@@ -1390,6 +1477,14 @@
         "category": "venues_tickets",
         "primary_block": "ticket_radar",
         "reason": "Structured ticket/market/event template; skipped LLM rewrite for speed and consistency."
+      },
+      {
+        "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-alkaline-trio-manchester-08-07-2026-event-3-006471-7306",
+        "title": "Alkaline Trio — event 2026-07-08 — public sale 2026-04-02 10:00",
+        "source_label": "Ticketmaster Manchester Upcoming",
+        "category": "venues_tickets",
+        "primary_block": "ticket_radar",
+        "reason": "Structured ticket/market/event template; skipped LLM rewrite for speed and consistency."
       }
     ]
   },
@@ -1397,11 +1492,11 @@
   "english_first": {
     "enabled": true,
     "deterministic_pre_board_before_judge": true,
-    "pre_board_input": 107,
+    "pre_board_input": 115,
     "board_judge_input": 90,
-    "cards_applied": 68,
-    "cards_reused_from_content_cache": 25,
-    "selected_for_translation": 43,
+    "cards_applied": 71,
+    "cards_reused_from_content_cache": 23,
+    "selected_for_translation": 44,
     "cards_missing_on_selected": 0,
     "visible_russian_write": "direct_from_fact_card_and_evidence",
     "policy": "Deterministic per-block pre-board builds a wider source-language ranking board; DeepSeek scores that board; only then the final Russian writing board is cut. Source-language fact cards are service data only, and visible Russian is written directly from facts/evidence."
@@ -1409,10 +1504,17 @@
   "english_card_memory": {
     "enabled": true,
     "schema_version": 1,
-    "reused": 25,
-    "updated": 93,
-    "entries": 1117,
+    "reused": 23,
+    "updated": 94,
+    "entries": 1186,
     "examples": [
+      {
+        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c17yv591dnro",
+        "title": "Illegal medical devices to feed newborns were sold around world",
+        "primary_block": "last_24h",
+        "category": "media_layer",
+        "model": "deepseek-v4-pro"
+      },
       {
         "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-ckg0nkk2lrvo",
         "title": "Why voting method change matters in mayoral poll",
@@ -1428,38 +1530,10 @@
         "model": "deepseek-v4-pro"
       },
       {
-        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-we-dont-need-turn-lights-34215678",
-        "title": "'We don't need to turn the lights on at night, we just open up the curtains'",
+        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-prison-officer-brushed-migraine-woke-34203568",
+        "title": "Prison officer brushed it off as a migraine, then she woke up to 'terrifying' experience",
         "primary_block": "last_24h",
         "category": "media_layer",
-        "model": "deepseek-v4-pro"
-      },
-      {
-        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-two-very-different-corners-greater-34215826",
-        "title": "Two very different corners of Greater Manchester, one very similar problem",
-        "primary_block": "last_24h",
-        "category": "media_layer",
-        "model": "deepseek-v4-pro"
-      },
-      {
-        "fingerprint": "media-layer-itv-granada-greater-manchester-itv-com-news-granada-2026-04-17-manchester-piccadilly-rail-disruption-continues-into-the-weekend",
-        "title": "Amended timetables warning as Piccadilly rail disruption continues into the weekend",
-        "primary_block": "transport",
-        "category": "media_layer",
-        "model": "deepseek-v4-pro"
-      },
-      {
-        "fingerprint": "media-layer-about-manchester-news-aboutmanchester-co-uk-man-found-guilty-of-raping-two-14-year-old-girls",
-        "title": "Man found guilty of raping two 14 year old girls - About Manchester",
-        "primary_block": "city_watch",
-        "category": "media_layer",
-        "model": "deepseek-v4-pro"
-      },
-      {
-        "fingerprint": "council-gmca-greatermanchester-ca-gov-uk-news-court-of-appeal-judgment-monday-29-june-2026",
-        "title": "Court of Appeal judgment - Monday 29 June 2026 - Greater Manchester Combined Authority",
-        "primary_block": "city_watch",
-        "category": "council",
         "model": "deepseek-v4-pro"
       },
       {
@@ -1477,13 +1551,6 @@
         "model": "deepseek-v4-pro"
       },
       {
-        "fingerprint": "council-wigan-council-wigan-gov-uk-ews-rticles-2026-une-ioneering-crop-scientist-receives-lue-laque-aspx",
-        "title": "Pioneering crop scientist receives Blue Plaque",
-        "primary_block": "city_watch",
-        "category": "council",
-        "model": "deepseek-v4-pro"
-      },
-      {
         "fingerprint": "council-wigan-council-wigan-gov-uk-ews-rticles-2026-une-lood-risk-investment-to-support-residents-in-indley-latt-ridge-and-bram-aspx",
         "title": "Flood risk investment to support residents in Hindley, Platt Bridge and Abram",
         "primary_block": "city_watch",
@@ -1491,9 +1558,9 @@
         "model": "deepseek-v4-pro"
       },
       {
-        "fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-sounds-of-the-city-wet-leg",
-        "title": "Sounds of the City: Wet Leg",
-        "primary_block": "weekend_activities",
+        "fingerprint": "culture-weekly-people-s-history-museum-phm-org-uk-events-new-100-years-of-strikes-solidarity",
+        "title": "100 years of strikes & solidarity - People's History Museum",
+        "primary_block": "next_7_days",
         "category": "culture_weekly",
         "model": "deepseek-v4-pro"
       },
@@ -1502,6 +1569,41 @@
         "title": "An Evening With Simon Shaw & Alfredo Arribas",
         "primary_block": "weekend_activities",
         "category": "culture_weekly",
+        "model": "deepseek-v4-pro"
+      },
+      {
+        "fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-sounds-of-the-city-johnny-marr",
+        "title": "Sounds of the City: Johnny Marr",
+        "primary_block": "weekend_activities",
+        "category": "culture_weekly",
+        "model": "deepseek-v4-pro"
+      },
+      {
+        "fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-expressions-of-pinot-noir",
+        "title": "Expressions of Pinot Noir",
+        "primary_block": "weekend_activities",
+        "category": "culture_weekly",
+        "model": "deepseek-v4-pro"
+      },
+      {
+        "fingerprint": "russian-speaking-events-eventfirst-diaspora-eventfirst-co-uk-event-skameika",
+        "title": "Спектакль \"Скамейка\"",
+        "primary_block": "russian_events",
+        "category": "russian_speaking_events",
+        "model": "deepseek-v4-pro"
+      },
+      {
+        "fingerprint": "culture-weekly-pedddle-makers-market-pedddle-com-market-stretford-makers-market",
+        "title": "Stretford Makers Market | Markets on Pedddle",
+        "primary_block": "future_announcements",
+        "category": "culture_weekly",
+        "model": "deepseek-v4-pro"
+      },
+      {
+        "fingerprint": "food-openings-sk-lowdown-markets-sklowdown-co-uk-whats-on-stockport-asian-food-night-market-july",
+        "title": "The SK Lowdown",
+        "primary_block": "openings",
+        "category": "food_openings",
         "model": "deepseek-v4-pro"
       },
       {
@@ -1519,13 +1621,6 @@
         "model": "deepseek-v4-pro"
       },
       {
-        "fingerprint": "culture-weekly-creative-tourist-manchester-creativetourist-com-event-turn-your-f-ing-phones-off-work-in-progress-sharing-and-long-table-discussion",
-        "title": "TURN YOUR F***ING PHONES OFF (WIP) at Waterside - Creative Tourist",
-        "primary_block": "next_7_days",
-        "category": "culture_weekly",
-        "model": "deepseek-v4-pro"
-      },
-      {
         "fingerprint": "culture-weekly-skiddle-manchester-festivals-skiddle-com-whats-on-anchester-he-ard-ubble-ubble-ound-azar-estival-42296597",
         "title": "Hubble Bubble Sound Bazar Festival",
         "primary_block": "next_7_days",
@@ -1533,22 +1628,22 @@
         "model": "deepseek-v4-pro"
       },
       {
-        "fingerprint": "culture-weekly-skiddle-manchester-comedy-skiddle-com-whats-on-anchester-33-ldham-t-tand-up-workshop-weekly-monday-sessions-41972045",
-        "title": "Stand-up workshop (weekly monday sessions)",
-        "primary_block": "weekend_activities",
+        "fingerprint": "culture-weekly-south-manchester-food-festival-tickettailor-com-events-foodfestival-1883190",
+        "title": "Buy Tickets - The South Manchester Food Festival 2026: A Springtime Feast - Wythenshawe Park & Gardens",
+        "primary_block": "next_7_days",
         "category": "culture_weekly",
         "model": "deepseek-v4-pro"
       },
       {
-        "fingerprint": "culture-weekly-skiddle-manchester-comedy-skiddle-com-whats-on-anchester-33-ldham-t-tand-up-workshop-weekly-monday-sessions-41972047",
-        "title": "Stand-up workshop (weekly monday sessions)",
-        "primary_block": "future_announcements",
+        "fingerprint": "culture-weekly-stockport-makers-market-pedddle-com-market-stockport-makers-market",
+        "title": "Stockport Makers Market, Greater Manchester - Pedddle",
+        "primary_block": "next_7_days",
         "category": "culture_weekly",
         "model": "deepseek-v4-pro"
       },
       {
-        "fingerprint": "culture-weekly-skiddle-manchester-comedy-skiddle-com-whats-on-anchester-33-ldham-t-tand-up-workshop-weekly-monday-sessions-41972049",
-        "title": "Stand-up workshop (weekly monday sessions)",
+        "fingerprint": "culture-weekly-chorlton-makers-market-chorlton-coop-event-chorlton-makers-market-2026-07-18",
+        "title": "Chorlton Makers' Market",
         "primary_block": "future_announcements",
         "category": "culture_weekly",
         "model": "deepseek-v4-pro"
@@ -1559,26 +1654,10 @@
   "translation_memory": {
     "enabled": true,
     "schema_version": 1,
-    "reused": 4,
-    "updated": 50,
-    "entries": 1495,
+    "reused": 6,
+    "updated": 55,
+    "entries": 1564,
     "examples": [
-      {
-        "fingerprint": "media-layer-itv-granada-greater-manchester-itv-com-news-granada-2026-04-17-manchester-piccadilly-rail-disruption-continues-into-the-weekend",
-        "content_hash": "d9a8cdf57827",
-        "title": "Amended timetables warning as Piccadilly rail disruption continues into the weekend",
-        "primary_block": "transport",
-        "category": "media_layer",
-        "model": "gpt-4o-mini"
-      },
-      {
-        "fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-sounds-of-the-city-wet-leg",
-        "content_hash": "50d5ebc9cdd8",
-        "title": "Sounds of the City: Wet Leg",
-        "primary_block": "weekend_activities",
-        "category": "culture_weekly",
-        "model": "gpt-4o-mini"
-      },
       {
         "fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-an-evening-with-simon-shaw-alfredo-arribas",
         "content_hash": "4c082ebb3602",
@@ -1588,10 +1667,42 @@
         "model": "gpt-4o-mini"
       },
       {
-        "fingerprint": "culture-weekly-skiddle-manchester-comedy-skiddle-com-whats-on-anchester-33-ldham-t-tand-up-workshop-weekly-monday-sessions-41972045",
-        "content_hash": "da3547845206",
-        "title": "Stand-up workshop (weekly monday sessions)",
+        "fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-sounds-of-the-city-johnny-marr",
+        "content_hash": "d36256db11f2",
+        "title": "Sounds of the City: Johnny Marr",
         "primary_block": "weekend_activities",
+        "category": "culture_weekly",
+        "model": "gpt-4o-mini"
+      },
+      {
+        "fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-expressions-of-pinot-noir",
+        "content_hash": "17f0c968a2b4",
+        "title": "Expressions of Pinot Noir",
+        "primary_block": "weekend_activities",
+        "category": "culture_weekly",
+        "model": "gpt-4o-mini"
+      },
+      {
+        "fingerprint": "russian-speaking-events-eventfirst-diaspora-eventfirst-co-uk-event-skameika",
+        "content_hash": "7fa5bdcd4fbc",
+        "title": "Спектакль \"Скамейка\"",
+        "primary_block": "russian_events",
+        "category": "russian_speaking_events",
+        "model": "gpt-4o-mini"
+      },
+      {
+        "fingerprint": "food-openings-sk-lowdown-markets-sklowdown-co-uk-whats-on-stockport-asian-food-night-market-july",
+        "content_hash": "f1fdf14d48c9",
+        "title": "The SK Lowdown",
+        "primary_block": "openings",
+        "category": "food_openings",
+        "model": "gpt-4o-mini"
+      },
+      {
+        "fingerprint": "culture-weekly-chorlton-makers-market-chorlton-coop-event-chorlton-makers-market-2026-07-18",
+        "content_hash": "35953e5704fa",
+        "title": "Chorlton Makers' Market",
+        "primary_block": "future_announcements",
         "category": "culture_weekly",
         "model": "gpt-4o-mini"
       }
@@ -1606,12 +1717,12 @@
   "rewrite_inventory": {
     "path": "data/state/rewrite_inventory.json",
     "totals": {
-      "candidates": 1376,
-      "included": 361,
-      "with_draft_line": 51,
-      "translation_memory": 4,
-      "llm": 43,
-      "writer_deterministic": 313,
+      "candidates": 1432,
+      "included": 390,
+      "with_draft_line": 56,
+      "translation_memory": 6,
+      "llm": 45,
+      "writer_deterministic": 338,
       "backup_before_translation": 0,
       "missing_draft_line": 0
     }
@@ -1619,269 +1730,361 @@
   "section_selection_report": {
     "path": "data/state/section_selection_report.json",
     "totals": {
-      "selected": 361,
-      "reserve": 650,
-      "needs_enrichment": 11,
-      "drop": 354,
+      "selected": 390,
+      "reserve": 669,
+      "needs_enrichment": 9,
+      "drop": 364,
       "pending": 0
     }
   },
   "publish_plan": {
     "path": "data/state/publish_plan.json",
     "totals": {
-      "must_show": 11,
-      "show": 350,
-      "reserve": 650,
-      "needs_enrichment": 11,
-      "drop": 354
+      "must_show": 16,
+      "show": 374,
+      "reserve": 669,
+      "needs_enrichment": 9,
+      "drop": 364
     }
   },
-  "applied": 46,
+  "applied": 48,
   "fixed": 0,
   "repaired": 2,
   "repair_cap": {
     "schema_version": 1,
     "enabled": true,
     "max_items": 8,
-    "input_candidates": 5,
-    "selected_for_repair": 5,
-    "held_after_cap": 0,
-    "held_examples": []
+    "input_candidates": 14,
+    "selected_for_repair": 8,
+    "held_after_cap": 6,
+    "held_examples": [
+      {
+        "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c39yd73xml3o",
+        "title": "Announced candidates for Greater Manchester mayoral election",
+        "category": "media_layer",
+        "primary_block": "city_watch",
+        "reason": "Outside repair cap (8); writer/release recovery will handle or drop."
+      },
+      {
+        "fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-transfer-news-man-united-transfer-news-live-34236069",
+        "title": "Man United transfer news LIVE: Aurelien Tchouameni 'contact', Santos deal, Rashford talks",
+        "category": "football",
+        "primary_block": "football",
+        "reason": "Outside repair cap (8); writer/release recovery will handle or drop."
+      },
+      {
+        "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-met-office-verdict-exact-date-34242950",
+        "title": "Met Office verdict on exact date it will hit 30C in Manchester this week",
+        "category": "media_layer",
+        "primary_block": "today_focus",
+        "reason": "Outside repair cap (8); writer/release recovery will handle or drop."
+      },
+      {
+        "fingerprint": "russian-speaking-events-mticket-russian-concerts-mticket-uk-ru-oxford-anton-timosenko-4056-html",
+        "title": "Антон Тимошенко",
+        "category": "russian_speaking_events",
+        "primary_block": "russian_events",
+        "reason": "Outside repair cap (8); writer/release recovery will handle or drop."
+      },
+      {
+        "fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-football-news-matheus-cunha-returns-manchester-united-34245816",
+        "title": "Matheus Cunha returns to Manchester United with a new option for Michael Carrick",
+        "category": "football",
+        "primary_block": "football",
+        "reason": "Outside repair cap (8); writer/release recovery will handle or drop."
+      },
+      {
+        "fingerprint": "football-manchester-city-mancity-com-news-mens-rayan-cherki-france-paraguay-63918851",
+        "title": "Cherki's France progress to World Cup quarter-finals",
+        "category": "football",
+        "primary_block": "football",
+        "reason": "Outside repair cap (8); writer/release recovery will handle or drop."
+      }
+    ]
   },
   "repair_policy": "hard_defects_only; soft short/style issues are left for writer recovery and whole-digest final editor",
-  "rewrite_seconds": 482.09,
+  "rewrite_seconds": 487.42,
   "cost_summary": {
     "total_calls": 30,
-    "total_cost_usd": 0.066925,
-    "total_estimated_cost_usd": 0.076172,
-    "total_prompt_tokens": 147363,
-    "total_completion_tokens": 28821,
-    "total_estimated_prompt_tokens": 159913,
-    "total_estimated_completion_tokens": 28821,
+    "total_cost_usd": 0.067793,
+    "total_estimated_cost_usd": 0.07684,
+    "total_prompt_tokens": 149863,
+    "total_completion_tokens": 30180,
+    "total_estimated_prompt_tokens": 161861,
+    "total_estimated_completion_tokens": 30180,
     "total_cache_hit_tokens": 13824,
-    "total_cache_miss_tokens": 81628,
-    "cache_hit_ratio": 0.1448,
+    "total_cache_miss_tokens": 80002,
+    "cache_hit_ratio": 0.1473,
     "by_stage": {
       "llm_rewrite": {
         "calls": 30,
-        "prompt_tokens": 147363,
-        "completion_tokens": 28821,
-        "estimated_prompt_tokens": 159913,
-        "estimated_completion_tokens": 28821,
+        "prompt_tokens": 149863,
+        "completion_tokens": 30180,
+        "estimated_prompt_tokens": 161861,
+        "estimated_completion_tokens": 30180,
         "cache_hit_tokens": 13824,
-        "cache_miss_tokens": 81628,
-        "cost_usd": 0.066924762,
-        "estimated_cost_usd": 0.07617193500000002
+        "cache_miss_tokens": 80002,
+        "cost_usd": 0.06779296199999998,
+        "estimated_cost_usd": 0.076840485
       }
     },
     "by_provider": {
       "DeepSeek": {
         "calls": 18,
-        "prompt_tokens": 95452,
-        "completion_tokens": 23286,
-        "estimated_prompt_tokens": 100369,
-        "estimated_completion_tokens": 23286,
+        "prompt_tokens": 93826,
+        "completion_tokens": 23809,
+        "estimated_prompt_tokens": 98333,
+        "estimated_completion_tokens": 23809,
         "cache_hit_tokens": 13824,
-        "cache_miss_tokens": 81628,
-        "cost_usd": 0.055817112,
-        "estimated_cost_usd": 0.063919335
+        "cache_miss_tokens": 80002,
+        "cost_usd": 0.055564812,
+        "estimated_cost_usd": 0.063488685
       },
       "OpenAI": {
         "calls": 12,
-        "prompt_tokens": 51911,
-        "completion_tokens": 5535,
-        "estimated_prompt_tokens": 59544,
-        "estimated_completion_tokens": 5535,
+        "prompt_tokens": 56037,
+        "completion_tokens": 6371,
+        "estimated_prompt_tokens": 63528,
+        "estimated_completion_tokens": 6371,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.01110765,
-        "estimated_cost_usd": 0.0122526
+        "cost_usd": 0.01222815,
+        "estimated_cost_usd": 0.013351799999999999
       }
     },
     "by_model": {
       "deepseek-v4-pro": {
         "calls": 18,
-        "prompt_tokens": 95452,
-        "completion_tokens": 23286,
-        "estimated_prompt_tokens": 100369,
-        "estimated_completion_tokens": 23286,
+        "prompt_tokens": 93826,
+        "completion_tokens": 23809,
+        "estimated_prompt_tokens": 98333,
+        "estimated_completion_tokens": 23809,
         "cache_hit_tokens": 13824,
-        "cache_miss_tokens": 81628,
-        "cost_usd": 0.055817112,
-        "estimated_cost_usd": 0.063919335
+        "cache_miss_tokens": 80002,
+        "cost_usd": 0.055564812,
+        "estimated_cost_usd": 0.063488685
       },
       "gpt-4o-mini": {
         "calls": 12,
-        "prompt_tokens": 51911,
-        "completion_tokens": 5535,
-        "estimated_prompt_tokens": 59544,
-        "estimated_completion_tokens": 5535,
+        "prompt_tokens": 56037,
+        "completion_tokens": 6371,
+        "estimated_prompt_tokens": 63528,
+        "estimated_completion_tokens": 6371,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.01110765,
-        "estimated_cost_usd": 0.0122526
+        "cost_usd": 0.01222815,
+        "estimated_cost_usd": 0.013351799999999999
       }
     },
     "by_prompt": {
       "english_cards@unknown": {
         "calls": 18,
-        "prompt_tokens": 95452,
-        "completion_tokens": 23286,
-        "estimated_prompt_tokens": 100369,
-        "estimated_completion_tokens": 23286,
+        "prompt_tokens": 93826,
+        "completion_tokens": 23809,
+        "estimated_prompt_tokens": 98333,
+        "estimated_completion_tokens": 23809,
         "cache_hit_tokens": 13824,
-        "cache_miss_tokens": 81628,
-        "cost_usd": 0.055817112,
-        "estimated_cost_usd": 0.063919335
+        "cache_miss_tokens": 80002,
+        "cost_usd": 0.055564812,
+        "estimated_cost_usd": 0.063488685
       },
       "final_translate@unknown": {
-        "calls": 9,
-        "prompt_tokens": 43855,
-        "completion_tokens": 4989,
-        "estimated_prompt_tokens": 51076,
-        "estimated_completion_tokens": 4989,
+        "calls": 8,
+        "prompt_tokens": 40866,
+        "completion_tokens": 5353,
+        "estimated_prompt_tokens": 47428,
+        "estimated_completion_tokens": 5353,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.009571650000000001,
-        "estimated_cost_usd": 0.0106548
+        "cost_usd": 0.0093417,
+        "estimated_cost_usd": 0.010326
+      },
+      "business@v4+c919609d": {
+        "calls": 1,
+        "prompt_tokens": 3561,
+        "completion_tokens": 165,
+        "estimated_prompt_tokens": 3662,
+        "estimated_completion_tokens": 165,
+        "cache_hit_tokens": 0,
+        "cache_miss_tokens": 0,
+        "cost_usd": 0.00063315,
+        "estimated_cost_usd": 0.0006483
       },
       "fix_translate@v2+97141411": {
         "calls": 1,
         "prompt_tokens": 366,
-        "completion_tokens": 81,
-        "estimated_prompt_tokens": 359,
-        "estimated_completion_tokens": 81,
+        "completion_tokens": 84,
+        "estimated_prompt_tokens": 358,
+        "estimated_completion_tokens": 84,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.0001035,
-        "estimated_cost_usd": 0.00010245
+        "cost_usd": 0.0001053,
+        "estimated_cost_usd": 0.0001041
       },
       "repair_draft@v3+67a73f3b": {
         "calls": 2,
-        "prompt_tokens": 7690,
-        "completion_tokens": 465,
-        "estimated_prompt_tokens": 8109,
-        "estimated_completion_tokens": 465,
+        "prompt_tokens": 11244,
+        "completion_tokens": 769,
+        "estimated_prompt_tokens": 12080,
+        "estimated_completion_tokens": 769,
         "cache_hit_tokens": 0,
         "cache_miss_tokens": 0,
-        "cost_usd": 0.0014325000000000002,
-        "estimated_cost_usd": 0.0014953499999999999
+        "cost_usd": 0.002148,
+        "estimated_cost_usd": 0.0022734
       }
     },
     "unknown_priced_models": []
   },
   "diagnostics_summary": {
     "batch_count": 30,
-    "sent": 114,
-    "returned_items": 114,
-    "accepted": 114,
-    "accepted_rate": 1.0,
+    "sent": 121,
+    "returned_items": 121,
+    "accepted": 120,
+    "accepted_rate": 0.992,
     "errors": 0,
     "timeout_errors": 0,
     "truncated_responses": 0,
     "queue_wait_seconds": {
-      "total": 1604.514,
-      "p50": 52.975,
-      "p95": 187.858,
-      "max": 208.186
+      "total": 1564.229,
+      "p50": 42.226,
+      "p95": 178.004,
+      "max": 202.27
     },
     "api_seconds": {
-      "total": 476.044,
-      "p50": 16.419,
-      "p95": 24.479,
-      "max": 29.923
+      "total": 528.691,
+      "p50": 18.76,
+      "p95": 24.49,
+      "max": 29.066
     },
     "duration_seconds": {
-      "total": 2080.566,
-      "p50": 33.005,
-      "p95": 208.284,
-      "max": 238.109
+      "total": 2092.941,
+      "p50": 31.044,
+      "p95": 195.253,
+      "max": 224.648
     },
     "completion_tokens_per_item": {
-      "p50": 325.5,
-      "p95": 408.758,
-      "max": 424.333
+      "p50": 333.625,
+      "p95": 378.688,
+      "max": 395.0
     },
     "max_tokens": {
-      "p50": 2405.0,
-      "p95": 4096.0,
-      "max": 4096
+      "p50": 2415.0,
+      "p95": 4659.2,
+      "max": 5120
     },
     "by_prompt": {
-      "english_cards": {
-        "batch_count": 18,
-        "sent": 65,
-        "returned_items": 65,
-        "accepted": 65,
+      "business": {
+        "batch_count": 1,
+        "sent": 1,
+        "returned_items": 1,
+        "accepted": 1,
         "accepted_rate": 1.0,
         "errors": 0,
         "timeout_errors": 0,
         "truncated_responses": 0,
         "queue_wait_seconds": {
-          "total": 1125.752,
-          "p50": 52.975,
-          "p95": 194.321,
-          "max": 208.186
+          "total": 0,
+          "p50": 0.0,
+          "p95": 0.0,
+          "max": 0.0
         },
         "api_seconds": {
-          "total": 358.915,
-          "p50": 20.188,
-          "p95": 25.743,
-          "max": 29.923
+          "total": 2.366,
+          "p50": 2.366,
+          "p95": 2.366,
+          "max": 2.366
         },
         "duration_seconds": {
-          "total": 1484.673,
-          "p50": 34.597,
-          "p95": 216.101,
-          "max": 238.109
+          "total": 2.366,
+          "p50": 2.366,
+          "p95": 2.366,
+          "max": 2.366
         },
         "completion_tokens_per_item": {
-          "p50": 346.708,
-          "p95": 417.533,
-          "max": 424.333
+          "p50": 165.0,
+          "p95": 165.0,
+          "max": 165.0
         },
         "max_tokens": {
-          "p50": 2405.0,
-          "p95": 2485.5,
-          "max": 2942
+          "p50": 1536.0,
+          "p95": 1536.0,
+          "max": 1536
+        }
+      },
+      "english_cards": {
+        "batch_count": 18,
+        "sent": 67,
+        "returned_items": 67,
+        "accepted": 67,
+        "accepted_rate": 1.0,
+        "errors": 0,
+        "timeout_errors": 0,
+        "truncated_responses": 0,
+        "queue_wait_seconds": {
+          "total": 1107.553,
+          "p50": 17.269,
+          "p95": 185.878,
+          "max": 202.27
+        },
+        "api_seconds": {
+          "total": 355.113,
+          "p50": 19.113,
+          "p95": 23.433,
+          "max": 24.434
+        },
+        "duration_seconds": {
+          "total": 1462.674,
+          "p50": 31.044,
+          "p95": 201.303,
+          "max": 224.648
+        },
+        "completion_tokens_per_item": {
+          "p50": 361.125,
+          "p95": 381.612,
+          "max": 395.0
+        },
+        "max_tokens": {
+          "p50": 2415.0,
+          "p95": 2577.0,
+          "max": 3495
         }
       },
       "final_translate": {
-        "batch_count": 9,
-        "sent": 43,
-        "returned_items": 43,
+        "batch_count": 8,
+        "sent": 44,
+        "returned_items": 44,
         "accepted": 43,
-        "accepted_rate": 1.0,
+        "accepted_rate": 0.977,
         "errors": 0,
         "timeout_errors": 0,
         "truncated_responses": 0,
         "queue_wait_seconds": {
-          "total": 475.889,
-          "p50": 67.559,
-          "p95": 125.845,
-          "max": 132.504
+          "total": 452.878,
+          "p50": 62.833,
+          "p95": 124.629,
+          "max": 131.878
         },
         "api_seconds": {
-          "total": 101.089,
-          "p50": 11.405,
-          "p95": 17.54,
-          "max": 19.158
+          "total": 150.913,
+          "p50": 20.277,
+          "p95": 27.48,
+          "max": 29.066
         },
         "duration_seconds": {
-          "total": 576.979,
-          "p50": 58.092,
-          "p95": 137.066,
-          "max": 147.617
+          "total": 603.804,
+          "p50": 75.255,
+          "p95": 150.904,
+          "max": 160.948
         },
         "completion_tokens_per_item": {
-          "p50": 110.0,
-          "p95": 128.62,
-          "max": 129.833
+          "p50": 112.975,
+          "p95": 143.577,
+          "max": 148.6
         },
         "max_tokens": {
           "p50": 3584.0,
-          "p95": 4096.0,
-          "max": 4096
+          "p95": 5120.0,
+          "max": 5120
         }
       },
       "fix_translate": {
@@ -1900,21 +2103,21 @@
           "max": 0.0
         },
         "api_seconds": {
-          "total": 1.813,
-          "p50": 1.813,
-          "p95": 1.813,
-          "max": 1.813
+          "total": 1.865,
+          "p50": 1.865,
+          "p95": 1.865,
+          "max": 1.865
         },
         "duration_seconds": {
-          "total": 1.813,
-          "p50": 1.813,
-          "p95": 1.813,
-          "max": 1.813
+          "total": 1.865,
+          "p50": 1.865,
+          "p95": 1.865,
+          "max": 1.865
         },
         "completion_tokens_per_item": {
-          "p50": 81.0,
-          "p95": 81.0,
-          "max": 81.0
+          "p50": 84.0,
+          "p95": 84.0,
+          "max": 84.0
         },
         "max_tokens": {
           "p50": 512.0,
@@ -1924,118 +2127,118 @@
       },
       "repair_draft": {
         "batch_count": 2,
-        "sent": 5,
-        "returned_items": 5,
-        "accepted": 5,
+        "sent": 8,
+        "returned_items": 8,
+        "accepted": 8,
         "accepted_rate": 1.0,
         "errors": 0,
         "timeout_errors": 0,
         "truncated_responses": 0,
         "queue_wait_seconds": {
-          "total": 2.873,
-          "p50": 2.873,
-          "p95": 2.873,
-          "max": 2.873
+          "total": 3.798,
+          "p50": 3.798,
+          "p95": 3.798,
+          "max": 3.798
         },
         "api_seconds": {
-          "total": 14.227,
-          "p50": 7.114,
-          "p95": 10.879,
-          "max": 11.297
+          "total": 18.434,
+          "p50": 9.217,
+          "p95": 12.629,
+          "max": 13.008
         },
         "duration_seconds": {
-          "total": 17.101,
-          "p50": 8.55,
-          "p95": 11.023,
-          "max": 11.298
+          "total": 22.232,
+          "p50": 11.116,
+          "p95": 16.237,
+          "max": 16.806
         },
         "completion_tokens_per_item": {
-          "p50": 99.375,
-          "p95": 108.938,
-          "max": 110.0
+          "p50": 96.125,
+          "p95": 97.137,
+          "max": 97.25
         },
         "max_tokens": {
-          "p50": 684.0,
-          "p95": 838.8,
-          "max": 856
+          "p50": 855.0,
+          "p95": 855.0,
+          "max": 855
         }
       }
     },
     "by_provider": {
       "DeepSeek": {
         "batch_count": 18,
-        "sent": 65,
-        "returned_items": 65,
-        "accepted": 65,
+        "sent": 67,
+        "returned_items": 67,
+        "accepted": 67,
         "accepted_rate": 1.0,
         "errors": 0,
         "timeout_errors": 0,
         "truncated_responses": 0,
         "queue_wait_seconds": {
-          "total": 1125.752,
-          "p50": 52.975,
-          "p95": 194.321,
-          "max": 208.186
+          "total": 1107.553,
+          "p50": 17.269,
+          "p95": 185.878,
+          "max": 202.27
         },
         "api_seconds": {
-          "total": 358.915,
-          "p50": 20.188,
-          "p95": 25.743,
-          "max": 29.923
+          "total": 355.113,
+          "p50": 19.113,
+          "p95": 23.433,
+          "max": 24.434
         },
         "duration_seconds": {
-          "total": 1484.673,
-          "p50": 34.597,
-          "p95": 216.101,
-          "max": 238.109
+          "total": 1462.674,
+          "p50": 31.044,
+          "p95": 201.303,
+          "max": 224.648
         },
         "completion_tokens_per_item": {
-          "p50": 346.708,
-          "p95": 417.533,
-          "max": 424.333
+          "p50": 361.125,
+          "p95": 381.612,
+          "max": 395.0
         },
         "max_tokens": {
-          "p50": 2405.0,
-          "p95": 2485.5,
-          "max": 2942
+          "p50": 2415.0,
+          "p95": 2577.0,
+          "max": 3495
         }
       },
       "OpenAI": {
         "batch_count": 9,
-        "sent": 43,
-        "returned_items": 43,
-        "accepted": 43,
-        "accepted_rate": 1.0,
+        "sent": 45,
+        "returned_items": 45,
+        "accepted": 44,
+        "accepted_rate": 0.978,
         "errors": 0,
         "timeout_errors": 0,
         "truncated_responses": 0,
         "queue_wait_seconds": {
-          "total": 475.889,
-          "p50": 67.559,
-          "p95": 125.845,
-          "max": 132.504
+          "total": 452.878,
+          "p50": 62.833,
+          "p95": 124.629,
+          "max": 131.878
         },
         "api_seconds": {
-          "total": 101.089,
-          "p50": 11.405,
-          "p95": 17.54,
-          "max": 19.158
+          "total": 153.279,
+          "p50": 18.679,
+          "p95": 27.254,
+          "max": 29.066
         },
         "duration_seconds": {
-          "total": 576.979,
-          "p50": 58.092,
-          "p95": 137.066,
-          "max": 147.617
+          "total": 606.17,
+          "p50": 65.8,
+          "p95": 149.469,
+          "max": 160.948
         },
         "completion_tokens_per_item": {
-          "p50": 110.0,
-          "p95": 128.62,
-          "max": 129.833
+          "p50": 113.75,
+          "p95": 158.44,
+          "max": 165.0
         },
         "max_tokens": {
           "p50": 3584.0,
-          "p95": 4096.0,
-          "max": 4096
+          "p95": 5120.0,
+          "max": 5120
         }
       },
       "OpenAI-fix": {
@@ -2054,21 +2257,21 @@
           "max": 0.0
         },
         "api_seconds": {
-          "total": 1.813,
-          "p50": 1.813,
-          "p95": 1.813,
-          "max": 1.813
+          "total": 1.865,
+          "p50": 1.865,
+          "p95": 1.865,
+          "max": 1.865
         },
         "duration_seconds": {
-          "total": 1.813,
-          "p50": 1.813,
-          "p95": 1.813,
-          "max": 1.813
+          "total": 1.865,
+          "p50": 1.865,
+          "p95": 1.865,
+          "max": 1.865
         },
         "completion_tokens_per_item": {
-          "p50": 81.0,
-          "p95": 81.0,
-          "max": 81.0
+          "p50": 84.0,
+          "p95": 84.0,
+          "max": 84.0
         },
         "max_tokens": {
           "p50": 512.0,
@@ -2078,48 +2281,48 @@
       },
       "OpenAI-repair": {
         "batch_count": 2,
-        "sent": 5,
-        "returned_items": 5,
-        "accepted": 5,
+        "sent": 8,
+        "returned_items": 8,
+        "accepted": 8,
         "accepted_rate": 1.0,
         "errors": 0,
         "timeout_errors": 0,
         "truncated_responses": 0,
         "queue_wait_seconds": {
-          "total": 2.873,
-          "p50": 2.873,
-          "p95": 2.873,
-          "max": 2.873
+          "total": 3.798,
+          "p50": 3.798,
+          "p95": 3.798,
+          "max": 3.798
         },
         "api_seconds": {
-          "total": 14.227,
-          "p50": 7.114,
-          "p95": 10.879,
-          "max": 11.297
+          "total": 18.434,
+          "p50": 9.217,
+          "p95": 12.629,
+          "max": 13.008
         },
         "duration_seconds": {
-          "total": 17.101,
-          "p50": 8.55,
-          "p95": 11.023,
-          "max": 11.298
+          "total": 22.232,
+          "p50": 11.116,
+          "p95": 16.237,
+          "max": 16.806
         },
         "completion_tokens_per_item": {
-          "p50": 99.375,
-          "p95": 108.938,
-          "max": 110.0
+          "p50": 96.125,
+          "p95": 97.137,
+          "max": 97.25
         },
         "max_tokens": {
-          "p50": 684.0,
-          "p95": 838.8,
-          "max": 856
+          "p50": 855.0,
+          "p95": 855.0,
+          "max": 855
         }
       }
     }
   },
   "token_budget_history": {
     "path": "data/state/llm_token_budget_history.json",
-    "updated_prompts": 4,
-    "entries": 8,
+    "updated_prompts": 5,
+    "entries": 9,
     "min_samples_before_tightening": 3,
     "margin": 1.35
   },
@@ -2307,6 +2510,43 @@
       "provider": "DeepSeek",
       "model": "deepseek-v4-pro",
       "prompt_name": "english_cards",
+      "batch_index": 2,
+      "batch_count": 18,
+      "sent": 3,
+      "returned_items": 3,
+      "accepted": 3,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "missing_reader_card": 0,
+        "duplicate_fingerprint": 0,
+        "parse_error": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:12:24.447384+01:00",
+      "finished_at": "2026-07-07T08:12:42.679031+01:00",
+      "duration_seconds": 18.232,
+      "queue_wait_seconds": 0.0,
+      "api_seconds": 18.23,
+      "estimated_request_tokens": 6302,
+      "max_tokens_source": "history_p95",
+      "prompt_tokens": 4742,
+      "completion_tokens": 1119,
+      "total_tokens": 5861,
+      "completion_tokens_per_item": 373.0,
+      "max_tokens": 1876,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "prompt_name": "english_cards",
       "batch_index": 1,
       "batch_count": 18,
       "sent": 3,
@@ -2323,92 +2563,18 @@
       "rejected_examples": [],
       "missing_candidates": [],
       "attempt": "initial",
-      "started_at": "2026-07-06T08:13:45.958630+01:00",
-      "finished_at": "2026-07-06T08:14:00.425128+01:00",
-      "duration_seconds": 14.466,
+      "started_at": "2026-07-07T08:12:24.410342+01:00",
+      "finished_at": "2026-07-07T08:12:43.598998+01:00",
+      "duration_seconds": 19.189,
       "queue_wait_seconds": 0.0,
-      "api_seconds": 14.465,
-      "estimated_request_tokens": 6694,
+      "api_seconds": 19.188,
+      "estimated_request_tokens": 7044,
       "max_tokens_source": "history_p95",
-      "prompt_tokens": 5095,
-      "completion_tokens": 913,
-      "total_tokens": 6008,
-      "completion_tokens_per_item": 304.333,
-      "max_tokens": 1868,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "DeepSeek",
-      "model": "deepseek-v4-pro",
-      "prompt_name": "english_cards",
-      "batch_index": 8,
-      "batch_count": 18,
-      "sent": 3,
-      "returned_items": 3,
-      "accepted": 3,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "missing_reader_card": 0,
-        "duplicate_fingerprint": 0,
-        "parse_error": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:13:46.112308+01:00",
-      "finished_at": "2026-07-06T08:14:07.790876+01:00",
-      "duration_seconds": 21.679,
-      "queue_wait_seconds": 1.847,
-      "api_seconds": 19.832,
-      "estimated_request_tokens": 6402,
-      "max_tokens_source": "history_p95",
-      "prompt_tokens": 4919,
-      "completion_tokens": 1273,
-      "total_tokens": 6192,
-      "completion_tokens_per_item": 424.333,
-      "max_tokens": 1868,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "DeepSeek",
-      "model": "deepseek-v4-pro",
-      "prompt_name": "english_cards",
-      "batch_index": 2,
-      "batch_count": 18,
-      "sent": 4,
-      "returned_items": 4,
-      "accepted": 4,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "missing_reader_card": 0,
-        "duplicate_fingerprint": 0,
-        "parse_error": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:13:46.033733+01:00",
-      "finished_at": "2026-07-06T08:14:08.306608+01:00",
-      "duration_seconds": 22.273,
-      "queue_wait_seconds": 0.0,
-      "api_seconds": 22.273,
-      "estimated_request_tokens": 7202,
-      "max_tokens_source": "history_p95",
-      "prompt_tokens": 5244,
-      "completion_tokens": 1387,
-      "total_tokens": 6631,
-      "completion_tokens_per_item": 346.75,
-      "max_tokens": 2405,
+      "prompt_tokens": 5701,
+      "completion_tokens": 1185,
+      "total_tokens": 6886,
+      "completion_tokens_per_item": 395.0,
+      "max_tokens": 1876,
       "finish_reasons": [
         "stop"
       ],
@@ -2434,18 +2600,18 @@
       "rejected_examples": [],
       "missing_candidates": [],
       "attempt": "initial",
-      "started_at": "2026-07-06T08:13:46.044650+01:00",
-      "finished_at": "2026-07-06T08:14:11.049834+01:00",
-      "duration_seconds": 25.005,
+      "started_at": "2026-07-07T08:12:24.456453+01:00",
+      "finished_at": "2026-07-07T08:12:45.469563+01:00",
+      "duration_seconds": 21.013,
       "queue_wait_seconds": 0.0,
-      "api_seconds": 25.005,
-      "estimated_request_tokens": 7324,
+      "api_seconds": 21.013,
+      "estimated_request_tokens": 7370,
       "max_tokens_source": "history_p95",
-      "prompt_tokens": 5419,
-      "completion_tokens": 1509,
-      "total_tokens": 6928,
-      "completion_tokens_per_item": 377.25,
-      "max_tokens": 2405,
+      "prompt_tokens": 5171,
+      "completion_tokens": 1397,
+      "total_tokens": 6568,
+      "completion_tokens_per_item": 349.25,
+      "max_tokens": 2415,
       "finish_reasons": [
         "stop"
       ],
@@ -2471,18 +2637,18 @@
       "rejected_examples": [],
       "missing_candidates": [],
       "attempt": "initial",
-      "started_at": "2026-07-06T08:13:46.068771+01:00",
-      "finished_at": "2026-07-06T08:14:24.100561+01:00",
-      "duration_seconds": 38.032,
-      "queue_wait_seconds": 17.237,
-      "api_seconds": 20.795,
-      "estimated_request_tokens": 7184,
+      "started_at": "2026-07-07T08:12:24.511683+01:00",
+      "finished_at": "2026-07-07T08:12:49.257851+01:00",
+      "duration_seconds": 24.746,
+      "queue_wait_seconds": 1.49,
+      "api_seconds": 23.256,
+      "estimated_request_tokens": 7000,
       "max_tokens_source": "history_p95",
-      "prompt_tokens": 5310,
-      "completion_tokens": 1460,
-      "total_tokens": 6770,
-      "completion_tokens_per_item": 365.0,
-      "max_tokens": 2405,
+      "prompt_tokens": 4914,
+      "completion_tokens": 1445,
+      "total_tokens": 6359,
+      "completion_tokens_per_item": 361.25,
+      "max_tokens": 2415,
       "finish_reasons": [
         "stop"
       ],
@@ -2492,192 +2658,7 @@
       "provider": "DeepSeek",
       "model": "deepseek-v4-pro",
       "prompt_name": "english_cards",
-      "batch_index": 12,
-      "batch_count": 18,
-      "sent": 3,
-      "returned_items": 3,
-      "accepted": 3,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "missing_reader_card": 0,
-        "duplicate_fingerprint": 0,
-        "parse_error": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:14:11.067958+01:00",
-      "finished_at": "2026-07-06T08:14:33.127981+01:00",
-      "duration_seconds": 22.06,
-      "queue_wait_seconds": 6.849,
-      "api_seconds": 15.211,
-      "estimated_request_tokens": 6575,
-      "max_tokens_source": "history_p95",
-      "prompt_tokens": 5093,
-      "completion_tokens": 994,
-      "total_tokens": 6087,
-      "completion_tokens_per_item": 331.333,
-      "max_tokens": 1868,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "DeepSeek",
-      "model": "deepseek-v4-pro",
-      "prompt_name": "english_cards",
-      "batch_index": 13,
-      "batch_count": 18,
-      "sent": 3,
-      "returned_items": 3,
-      "accepted": 3,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "missing_reader_card": 0,
-        "duplicate_fingerprint": 0,
-        "parse_error": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:14:24.117281+01:00",
-      "finished_at": "2026-07-06T08:14:49.364060+01:00",
-      "duration_seconds": 25.247,
-      "queue_wait_seconds": 8.07,
-      "api_seconds": 17.176,
-      "estimated_request_tokens": 6422,
-      "max_tokens_source": "history_p95",
-      "prompt_tokens": 5249,
-      "completion_tokens": 1249,
-      "total_tokens": 6498,
-      "completion_tokens_per_item": 416.333,
-      "max_tokens": 1868,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "DeepSeek",
-      "model": "deepseek-v4-pro",
-      "prompt_name": "english_cards",
-      "batch_index": 14,
-      "batch_count": 18,
-      "sent": 3,
-      "returned_items": 3,
-      "accepted": 3,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "missing_reader_card": 0,
-        "duplicate_fingerprint": 0,
-        "parse_error": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:14:33.162146+01:00",
-      "finished_at": "2026-07-06T08:15:04.323734+01:00",
-      "duration_seconds": 31.162,
-      "queue_wait_seconds": 13.812,
-      "api_seconds": 17.349,
-      "estimated_request_tokens": 6654,
-      "max_tokens_source": "history_p95",
-      "prompt_tokens": 4875,
-      "completion_tokens": 1040,
-      "total_tokens": 5915,
-      "completion_tokens_per_item": 346.667,
-      "max_tokens": 1868,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "DeepSeek",
-      "model": "deepseek-v4-pro",
-      "prompt_name": "english_cards",
-      "batch_index": 15,
-      "batch_count": 18,
-      "sent": 2,
-      "returned_items": 2,
-      "accepted": 2,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "missing_reader_card": 0,
-        "duplicate_fingerprint": 0,
-        "parse_error": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:14:49.382557+01:00",
-      "finished_at": "2026-07-06T08:15:10.658829+01:00",
-      "duration_seconds": 21.276,
-      "queue_wait_seconds": 9.738,
-      "api_seconds": 11.538,
-      "estimated_request_tokens": 5466,
-      "max_tokens_source": "history_p95",
-      "prompt_tokens": 4530,
-      "completion_tokens": 683,
-      "total_tokens": 5213,
-      "completion_tokens_per_item": 341.5,
-      "max_tokens": 1331,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "DeepSeek",
-      "model": "deepseek-v4-pro",
-      "prompt_name": "english_cards",
-      "batch_index": 16,
-      "batch_count": 18,
-      "sent": 3,
-      "returned_items": 3,
-      "accepted": 3,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "missing_reader_card": 0,
-        "duplicate_fingerprint": 0,
-        "parse_error": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:15:04.342460+01:00",
-      "finished_at": "2026-07-06T08:15:30.306124+01:00",
-      "duration_seconds": 25.964,
-      "queue_wait_seconds": 10.301,
-      "api_seconds": 15.663,
-      "estimated_request_tokens": 6985,
-      "max_tokens_source": "history_p95",
-      "prompt_tokens": 5568,
-      "completion_tokens": 999,
-      "total_tokens": 6567,
-      "completion_tokens_per_item": 333.0,
-      "max_tokens": 1868,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "DeepSeek",
-      "model": "deepseek-v4-pro",
-      "prompt_name": "english_cards",
-      "batch_index": 10,
+      "batch_index": 8,
       "batch_count": 18,
       "sent": 4,
       "returned_items": 4,
@@ -2693,203 +2674,18 @@
       "rejected_examples": [],
       "missing_candidates": [],
       "attempt": "initial",
-      "started_at": "2026-07-06T08:14:07.804781+01:00",
-      "finished_at": "2026-07-06T08:15:48.561020+01:00",
-      "duration_seconds": 100.756,
-      "queue_wait_seconds": 82.736,
-      "api_seconds": 18.02,
-      "estimated_request_tokens": 7154,
+      "started_at": "2026-07-07T08:12:24.581381+01:00",
+      "finished_at": "2026-07-07T08:13:06.285102+01:00",
+      "duration_seconds": 41.704,
+      "queue_wait_seconds": 17.269,
+      "api_seconds": 24.434,
+      "estimated_request_tokens": 7132,
       "max_tokens_source": "history_p95",
-      "prompt_tokens": 5244,
-      "completion_tokens": 1286,
-      "total_tokens": 6530,
-      "completion_tokens_per_item": 321.5,
-      "max_tokens": 2405,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "DeepSeek",
-      "model": "deepseek-v4-pro",
-      "prompt_name": "english_cards",
-      "batch_index": 5,
-      "batch_count": 18,
-      "sent": 4,
-      "returned_items": 4,
-      "accepted": 4,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "missing_reader_card": 0,
-        "duplicate_fingerprint": 0,
-        "parse_error": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:13:46.092669+01:00",
-      "finished_at": "2026-07-06T08:16:09.493205+01:00",
-      "duration_seconds": 143.401,
-      "queue_wait_seconds": 120.757,
-      "api_seconds": 22.643,
-      "estimated_request_tokens": 7339,
-      "max_tokens_source": "history_p95",
-      "prompt_tokens": 5271,
+      "prompt_tokens": 5116,
       "completion_tokens": 1517,
-      "total_tokens": 6788,
+      "total_tokens": 6633,
       "completion_tokens_per_item": 379.25,
-      "max_tokens": 2405,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "DeepSeek",
-      "model": "deepseek-v4-pro",
-      "prompt_name": "english_cards",
-      "batch_index": 17,
-      "batch_count": 18,
-      "sent": 4,
-      "returned_items": 4,
-      "accepted": 4,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "missing_reader_card": 0,
-        "duplicate_fingerprint": 0,
-        "parse_error": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:15:10.685543+01:00",
-      "finished_at": "2026-07-06T08:16:24.695418+01:00",
-      "duration_seconds": 74.01,
-      "queue_wait_seconds": 52.975,
-      "api_seconds": 21.034,
-      "estimated_request_tokens": 7565,
-      "max_tokens_source": "history_p95",
-      "prompt_tokens": 5610,
-      "completion_tokens": 1351,
-      "total_tokens": 6961,
-      "completion_tokens_per_item": 337.75,
-      "max_tokens": 2405,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "DeepSeek",
-      "model": "deepseek-v4-pro",
-      "prompt_name": "english_cards",
-      "batch_index": 7,
-      "batch_count": 18,
-      "sent": 4,
-      "returned_items": 4,
-      "accepted": 4,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "missing_reader_card": 0,
-        "duplicate_fingerprint": 0,
-        "parse_error": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:13:46.103352+01:00",
-      "finished_at": "2026-07-06T08:16:44.372664+01:00",
-      "duration_seconds": 178.269,
-      "queue_wait_seconds": 154.493,
-      "api_seconds": 23.776,
-      "estimated_request_tokens": 7621,
-      "max_tokens_source": "history_p95",
-      "prompt_tokens": 5556,
-      "completion_tokens": 1492,
-      "total_tokens": 7048,
-      "completion_tokens_per_item": 373.0,
-      "max_tokens": 2405,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "DeepSeek",
-      "model": "deepseek-v4-pro",
-      "prompt_name": "english_cards",
-      "batch_index": 18,
-      "batch_count": 18,
-      "sent": 4,
-      "returned_items": 4,
-      "accepted": 4,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "missing_reader_card": 0,
-        "duplicate_fingerprint": 0,
-        "parse_error": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:15:30.336040+01:00",
-      "finished_at": "2026-07-06T08:16:57.606765+01:00",
-      "duration_seconds": 87.271,
-      "queue_wait_seconds": 67.203,
-      "api_seconds": 20.068,
-      "estimated_request_tokens": 7624,
-      "max_tokens_source": "history_p95",
-      "prompt_tokens": 5816,
-      "completion_tokens": 1315,
-      "total_tokens": 7131,
-      "completion_tokens_per_item": 328.75,
-      "max_tokens": 2405,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "DeepSeek",
-      "model": "deepseek-v4-pro",
-      "prompt_name": "english_cards",
-      "batch_index": 6,
-      "batch_count": 18,
-      "sent": 4,
-      "returned_items": 4,
-      "accepted": 4,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "missing_reader_card": 0,
-        "duplicate_fingerprint": 0,
-        "parse_error": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:13:46.106165+01:00",
-      "finished_at": "2026-07-06T08:17:18.323017+01:00",
-      "duration_seconds": 212.217,
-      "queue_wait_seconds": 188.379,
-      "api_seconds": 23.837,
-      "estimated_request_tokens": 7626,
-      "max_tokens_source": "history_p95",
-      "prompt_tokens": 5645,
-      "completion_tokens": 1598,
-      "total_tokens": 7243,
-      "completion_tokens_per_item": 399.5,
-      "max_tokens": 2405,
+      "max_tokens": 2415,
       "finish_reasons": [
         "stop"
       ],
@@ -2915,18 +2711,18 @@
       "rejected_examples": [],
       "missing_candidates": [],
       "attempt": "initial",
-      "started_at": "2026-07-06T08:14:08.327947+01:00",
-      "finished_at": "2026-07-06T08:17:31.803507+01:00",
-      "duration_seconds": 203.476,
-      "queue_wait_seconds": 183.169,
-      "api_seconds": 20.307,
-      "estimated_request_tokens": 7655,
+      "started_at": "2026-07-07T08:12:45.488142+01:00",
+      "finished_at": "2026-07-07T08:13:16.242404+01:00",
+      "duration_seconds": 30.754,
+      "queue_wait_seconds": 11.716,
+      "api_seconds": 19.038,
+      "estimated_request_tokens": 6909,
       "max_tokens_source": "history_p95",
-      "prompt_tokens": 5742,
-      "completion_tokens": 1289,
-      "total_tokens": 7031,
-      "completion_tokens_per_item": 322.25,
-      "max_tokens": 2405,
+      "prompt_tokens": 4684,
+      "completion_tokens": 1338,
+      "total_tokens": 6022,
+      "completion_tokens_per_item": 334.5,
+      "max_tokens": 2415,
       "finish_reasons": [
         "stop"
       ],
@@ -2936,11 +2732,11 @@
       "provider": "DeepSeek",
       "model": "deepseek-v4-pro",
       "prompt_name": "english_cards",
-      "batch_index": 9,
+      "batch_index": 13,
       "batch_count": 18,
-      "sent": 5,
-      "returned_items": 5,
-      "accepted": 5,
+      "sent": 3,
+      "returned_items": 3,
+      "accepted": 3,
       "rejected_counts": {
         "bad_item_shape": 0,
         "missing_fingerprint": 0,
@@ -2952,18 +2748,465 @@
       "rejected_examples": [],
       "missing_candidates": [],
       "attempt": "initial",
-      "started_at": "2026-07-06T08:14:00.439206+01:00",
-      "finished_at": "2026-07-06T08:17:58.548407+01:00",
-      "duration_seconds": 238.109,
-      "queue_wait_seconds": 208.186,
-      "api_seconds": 29.923,
-      "estimated_request_tokens": 7708,
+      "started_at": "2026-07-07T08:13:06.301951+01:00",
+      "finished_at": "2026-07-07T08:13:28.518445+01:00",
+      "duration_seconds": 22.217,
+      "queue_wait_seconds": 5.14,
+      "api_seconds": 17.077,
+      "estimated_request_tokens": 6407,
       "max_tokens_source": "history_p95",
-      "prompt_tokens": 5266,
-      "completion_tokens": 1931,
-      "total_tokens": 7197,
-      "completion_tokens_per_item": 386.2,
-      "max_tokens": 2942,
+      "prompt_tokens": 4954,
+      "completion_tokens": 1134,
+      "total_tokens": 6088,
+      "completion_tokens_per_item": 378.0,
+      "max_tokens": 1876,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "prompt_name": "english_cards",
+      "batch_index": 14,
+      "batch_count": 18,
+      "sent": 3,
+      "returned_items": 3,
+      "accepted": 3,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "missing_reader_card": 0,
+        "duplicate_fingerprint": 0,
+        "parse_error": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:13:16.267704+01:00",
+      "finished_at": "2026-07-07T08:13:43.000801+01:00",
+      "duration_seconds": 26.733,
+      "queue_wait_seconds": 9.567,
+      "api_seconds": 17.166,
+      "estimated_request_tokens": 6477,
+      "max_tokens_source": "history_p95",
+      "prompt_tokens": 4790,
+      "completion_tokens": 1123,
+      "total_tokens": 5913,
+      "completion_tokens_per_item": 374.333,
+      "max_tokens": 1876,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "prompt_name": "english_cards",
+      "batch_index": 15,
+      "batch_count": 18,
+      "sent": 3,
+      "returned_items": 3,
+      "accepted": 3,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "missing_reader_card": 0,
+        "duplicate_fingerprint": 0,
+        "parse_error": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:13:28.537273+01:00",
+      "finished_at": "2026-07-07T08:13:57.536267+01:00",
+      "duration_seconds": 28.999,
+      "queue_wait_seconds": 12.078,
+      "api_seconds": 16.921,
+      "estimated_request_tokens": 6651,
+      "max_tokens_source": "history_p95",
+      "prompt_tokens": 5071,
+      "completion_tokens": 1053,
+      "total_tokens": 6124,
+      "completion_tokens_per_item": 351.0,
+      "max_tokens": 1876,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "prompt_name": "english_cards",
+      "batch_index": 16,
+      "batch_count": 18,
+      "sent": 3,
+      "returned_items": 3,
+      "accepted": 3,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "missing_reader_card": 0,
+        "duplicate_fingerprint": 0,
+        "parse_error": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:13:43.020630+01:00",
+      "finished_at": "2026-07-07T08:14:14.355935+01:00",
+      "duration_seconds": 31.335,
+      "queue_wait_seconds": 12.932,
+      "api_seconds": 18.403,
+      "estimated_request_tokens": 6902,
+      "max_tokens_source": "history_p95",
+      "prompt_tokens": 5482,
+      "completion_tokens": 1097,
+      "total_tokens": 6579,
+      "completion_tokens_per_item": 365.667,
+      "max_tokens": 1876,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "prompt_name": "english_cards",
+      "batch_index": 9,
+      "batch_count": 18,
+      "sent": 4,
+      "returned_items": 4,
+      "accepted": 4,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "missing_reader_card": 0,
+        "duplicate_fingerprint": 0,
+        "parse_error": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:12:42.693701+01:00",
+      "finished_at": "2026-07-07T08:14:32.747432+01:00",
+      "duration_seconds": 110.054,
+      "queue_wait_seconds": 89.19,
+      "api_seconds": 20.863,
+      "estimated_request_tokens": 7169,
+      "max_tokens_source": "history_p95",
+      "prompt_tokens": 5062,
+      "completion_tokens": 1444,
+      "total_tokens": 6506,
+      "completion_tokens_per_item": 361.0,
+      "max_tokens": 2415,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "prompt_name": "english_cards",
+      "batch_index": 18,
+      "batch_count": 18,
+      "sent": 3,
+      "returned_items": 3,
+      "accepted": 3,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "missing_reader_card": 0,
+        "duplicate_fingerprint": 0,
+        "parse_error": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:14:14.381297+01:00",
+      "finished_at": "2026-07-07T08:14:40.024394+01:00",
+      "duration_seconds": 25.643,
+      "queue_wait_seconds": 11.491,
+      "api_seconds": 14.151,
+      "estimated_request_tokens": 6295,
+      "max_tokens_source": "history_p95",
+      "prompt_tokens": 5441,
+      "completion_tokens": 979,
+      "total_tokens": 6420,
+      "completion_tokens_per_item": 326.333,
+      "max_tokens": 1876,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "prompt_name": "english_cards",
+      "batch_index": 7,
+      "batch_count": 18,
+      "sent": 4,
+      "returned_items": 4,
+      "accepted": 4,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "missing_reader_card": 0,
+        "duplicate_fingerprint": 0,
+        "parse_error": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:12:24.582546+01:00",
+      "finished_at": "2026-07-07T08:15:03.792452+01:00",
+      "duration_seconds": 159.21,
+      "queue_wait_seconds": 137.557,
+      "api_seconds": 21.653,
+      "estimated_request_tokens": 7320,
+      "max_tokens_source": "history_p95",
+      "prompt_tokens": 5303,
+      "completion_tokens": 1497,
+      "total_tokens": 6800,
+      "completion_tokens_per_item": 374.25,
+      "max_tokens": 2415,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "prompt_name": "english_cards",
+      "batch_index": 6,
+      "batch_count": 18,
+      "sent": 4,
+      "returned_items": 4,
+      "accepted": 4,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "missing_reader_card": 0,
+        "duplicate_fingerprint": 0,
+        "parse_error": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:12:24.576160+01:00",
+      "finished_at": "2026-07-07T08:15:20.087384+01:00",
+      "duration_seconds": 175.511,
+      "queue_wait_seconds": 153.874,
+      "api_seconds": 21.637,
+      "estimated_request_tokens": 7340,
+      "max_tokens_source": "history_p95",
+      "prompt_tokens": 5372,
+      "completion_tokens": 1510,
+      "total_tokens": 6882,
+      "completion_tokens_per_item": 377.5,
+      "max_tokens": 2415,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "prompt_name": "english_cards",
+      "batch_index": 5,
+      "batch_count": 18,
+      "sent": 4,
+      "returned_items": 4,
+      "accepted": 4,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "missing_reader_card": 0,
+        "duplicate_fingerprint": 0,
+        "parse_error": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:12:24.523286+01:00",
+      "finished_at": "2026-07-07T08:15:37.417036+01:00",
+      "duration_seconds": 192.894,
+      "queue_wait_seconds": 170.358,
+      "api_seconds": 22.535,
+      "estimated_request_tokens": 7394,
+      "max_tokens_source": "history_p95",
+      "prompt_tokens": 5353,
+      "completion_tokens": 1441,
+      "total_tokens": 6794,
+      "completion_tokens_per_item": 360.25,
+      "max_tokens": 2415,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "prompt_name": "english_cards",
+      "batch_index": 17,
+      "batch_count": 18,
+      "sent": 4,
+      "returned_items": 4,
+      "accepted": 4,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "missing_reader_card": 0,
+        "duplicate_fingerprint": 0,
+        "parse_error": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:13:57.551407+01:00",
+      "finished_at": "2026-07-07T08:15:50.160637+01:00",
+      "duration_seconds": 112.609,
+      "queue_wait_seconds": 93.768,
+      "api_seconds": 18.841,
+      "estimated_request_tokens": 7397,
+      "max_tokens_source": "history_p95",
+      "prompt_tokens": 5681,
+      "completion_tokens": 1331,
+      "total_tokens": 7012,
+      "completion_tokens_per_item": 332.75,
+      "max_tokens": 2415,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "prompt_name": "english_cards",
+      "batch_index": 12,
+      "batch_count": 18,
+      "sent": 4,
+      "returned_items": 4,
+      "accepted": 4,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "missing_reader_card": 0,
+        "duplicate_fingerprint": 0,
+        "parse_error": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:12:49.277893+01:00",
+      "finished_at": "2026-07-07T08:16:06.460527+01:00",
+      "duration_seconds": 197.183,
+      "queue_wait_seconds": 178.853,
+      "api_seconds": 18.33,
+      "estimated_request_tokens": 7565,
+      "max_tokens_source": "history_p95",
+      "prompt_tokens": 5768,
+      "completion_tokens": 1364,
+      "total_tokens": 7132,
+      "completion_tokens_per_item": 341.0,
+      "max_tokens": 2415,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "prompt_name": "english_cards",
+      "batch_index": 10,
+      "batch_count": 18,
+      "sent": 6,
+      "returned_items": 6,
+      "accepted": 6,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "missing_reader_card": 0,
+        "duplicate_fingerprint": 0,
+        "parse_error": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:12:43.604592+01:00",
+      "finished_at": "2026-07-07T08:16:28.252653+01:00",
+      "duration_seconds": 224.648,
+      "queue_wait_seconds": 202.27,
+      "api_seconds": 22.377,
+      "estimated_request_tokens": 7985,
+      "max_tokens_source": "history_p95",
+      "prompt_tokens": 5221,
+      "completion_tokens": 1835,
+      "total_tokens": 7056,
+      "completion_tokens_per_item": 305.833,
+      "max_tokens": 3495,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "OpenAI",
+      "model": "gpt-4o-mini",
+      "prompt_name": "final_translate",
+      "batch_index": 8,
+      "batch_count": 8,
+      "sent": 2,
+      "returned_items": 2,
+      "accepted": 2,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "empty_draft_line": 0,
+        "empty_draft_line_with_reason": 0,
+        "missing_bullet": 0,
+        "too_short": 0,
+        "duplicate_fingerprint": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "coerced_from_object_key": "items",
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:16:34.338182+01:00",
+      "finished_at": "2026-07-07T08:16:41.668206+01:00",
+      "duration_seconds": 7.33,
+      "queue_wait_seconds": 2.29,
+      "api_seconds": 5.04,
+      "estimated_request_tokens": 4852,
+      "max_tokens_source": "history_warmup",
+      "prompt_tokens": 3342,
+      "completion_tokens": 214,
+      "total_tokens": 3556,
+      "completion_tokens_per_item": 107.0,
+      "max_tokens": 2048,
       "finish_reasons": [
         "stop"
       ],
@@ -2974,7 +3217,7 @@
       "model": "gpt-4o-mini",
       "prompt_name": "final_translate",
       "batch_index": 1,
-      "batch_count": 9,
+      "batch_count": 8,
       "sent": 5,
       "returned_items": 5,
       "accepted": 5,
@@ -2992,17 +3235,17 @@
       "missing_candidates": [],
       "coerced_from_object_key": "items",
       "attempt": "initial",
-      "started_at": "2026-07-06T08:18:04.659605+01:00",
-      "finished_at": "2026-07-06T08:18:16.690674+01:00",
-      "duration_seconds": 12.031,
+      "started_at": "2026-07-07T08:16:34.324833+01:00",
+      "finished_at": "2026-07-07T08:16:44.533868+01:00",
+      "duration_seconds": 10.209,
       "queue_wait_seconds": 0.0,
-      "api_seconds": 12.031,
-      "estimated_request_tokens": 9026,
+      "api_seconds": 10.209,
+      "estimated_request_tokens": 8987,
       "max_tokens_source": "history_warmup",
-      "prompt_tokens": 5164,
-      "completion_tokens": 565,
-      "total_tokens": 5729,
-      "completion_tokens_per_item": 113.0,
+      "prompt_tokens": 5255,
+      "completion_tokens": 555,
+      "total_tokens": 5810,
+      "completion_tokens_per_item": 111.0,
       "max_tokens": 3584,
       "finish_reasons": [
         "stop"
@@ -3014,10 +3257,10 @@
       "model": "gpt-4o-mini",
       "prompt_name": "final_translate",
       "batch_index": 5,
-      "batch_count": 9,
-      "sent": 4,
-      "returned_items": 4,
-      "accepted": 4,
+      "batch_count": 8,
+      "sent": 5,
+      "returned_items": 5,
+      "accepted": 5,
       "rejected_counts": {
         "bad_item_shape": 0,
         "missing_fingerprint": 0,
@@ -3032,18 +3275,18 @@
       "missing_candidates": [],
       "coerced_from_object_key": "items",
       "attempt": "initial",
-      "started_at": "2026-07-06T08:18:04.666459+01:00",
-      "finished_at": "2026-07-06T08:18:16.760873+01:00",
-      "duration_seconds": 12.094,
-      "queue_wait_seconds": 2.993,
-      "api_seconds": 9.101,
-      "estimated_request_tokens": 8117,
+      "started_at": "2026-07-07T08:16:34.332313+01:00",
+      "finished_at": "2026-07-07T08:17:14.508612+01:00",
+      "duration_seconds": 40.176,
+      "queue_wait_seconds": 22.237,
+      "api_seconds": 17.936,
+      "estimated_request_tokens": 8975,
       "max_tokens_source": "history_warmup",
-      "prompt_tokens": 4904,
-      "completion_tokens": 421,
-      "total_tokens": 5325,
-      "completion_tokens_per_item": 105.25,
-      "max_tokens": 3072,
+      "prompt_tokens": 5214,
+      "completion_tokens": 543,
+      "total_tokens": 5757,
+      "completion_tokens_per_item": 108.6,
+      "max_tokens": 3584,
       "finish_reasons": [
         "stop"
       ],
@@ -3053,8 +3296,223 @@
       "provider": "OpenAI",
       "model": "gpt-4o-mini",
       "prompt_name": "final_translate",
-      "batch_index": 9,
-      "batch_count": 9,
+      "batch_index": 7,
+      "batch_count": 8,
+      "sent": 5,
+      "returned_items": 5,
+      "accepted": 5,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "empty_draft_line": 0,
+        "empty_draft_line_with_reason": 0,
+        "missing_bullet": 0,
+        "too_short": 0,
+        "duplicate_fingerprint": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "coerced_from_object_key": "items",
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:16:34.337188+01:00",
+      "finished_at": "2026-07-07T08:17:40.137231+01:00",
+      "duration_seconds": 65.8,
+      "queue_wait_seconds": 42.226,
+      "api_seconds": 23.573,
+      "estimated_request_tokens": 8996,
+      "max_tokens_source": "history_warmup",
+      "prompt_tokens": 5343,
+      "completion_tokens": 743,
+      "total_tokens": 6086,
+      "completion_tokens_per_item": 148.6,
+      "max_tokens": 3584,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "OpenAI",
+      "model": "gpt-4o-mini",
+      "prompt_name": "final_translate",
+      "batch_index": 6,
+      "batch_count": 8,
+      "sent": 5,
+      "returned_items": 5,
+      "accepted": 4,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 1,
+        "empty_draft_line": 0,
+        "empty_draft_line_with_reason": 0,
+        "missing_bullet": 0,
+        "too_short": 0,
+        "duplicate_fingerprint": 0
+      },
+      "rejected_examples": [
+        {
+          "reason": "unknown_fingerprint",
+          "fingerprint": "tech-business-prolific-north-manchester-prolificnorth-co-op-live-drops-pint-prices-for-huge-england-world-cup-quarter-final-watch-party",
+          "draft_line_excerpt": "• Co-op Live объявляет о проведении вечеринки по просмотру четвертьфинала Кубка мира между Англией и Норвегией 11 июля 2026 года в 20:00 с пониженными ценами на пиво.",
+          "item_excerpt": "{\"fingerprint\": \"tech-business-prolific-north-manchester-prolificnorth-co-op-live-drops-pint-prices-for-huge-england-world-cup-quarter-final-watch-party\", \"draft_line\": \"• Co-op Live объявляет о проведении вечеринки по просмотру четвертьфин"
+        }
+      ],
+      "missing_candidates": [
+        {
+          "fingerprint": "tech-business-prolific-north-manchester-prolificnorth-co-uk-news-co-op-live-drops-pint-prices-for-huge-england-world-cup-quarter-final-watch-party",
+          "title": "Co-op Live drops pint prices for huge England World Cup quarter final watch party",
+          "category": "tech_business",
+          "primary_block": "tech_business"
+        }
+      ],
+      "coerced_from_object_key": "items",
+      "raw_excerpt": "{\"items\":[{\"fingerprint\":\"tech-business-prolific-north-manchester-prolificnorth-co-op-live-drops-pint-prices-for-huge-england-world-cup-quarter-final-watch-party\",\"draft_line\":\"• Co-op Live объявляет о проведении вечеринки по просмотру четвертьфинала Кубка мира между Англией и Норвегией 11 июля 2026 года в 20:00 с пониженными ценами на пиво.\",\"subject\":\"Co-op Live\",\"roles_preserved\":true,\"numbers_preserved\":true,\"untranslated_tokens\":[]},{\"fingerprint\":\"tech-business-prolific-north-manchester-prolificnorth-co-uk-news-we-need-a-more-inclusive-tech-ecosystem-autotrader-steps-up-efforts-to-support-manchester-tech-talent\",\"draft_line\":\"• Autotrader расширяет программу стажировок и ученичества дл",
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:16:34.335018+01:00",
+      "finished_at": "2026-07-07T08:17:59.045685+01:00",
+      "duration_seconds": 84.711,
+      "queue_wait_seconds": 62.833,
+      "api_seconds": 21.875,
+      "estimated_request_tokens": 9273,
+      "max_tokens_source": "history_warmup",
+      "prompt_tokens": 5416,
+      "completion_tokens": 561,
+      "total_tokens": 5977,
+      "completion_tokens_per_item": 112.2,
+      "max_tokens": 3584,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "OpenAI",
+      "model": "gpt-4o-mini",
+      "prompt_name": "final_translate",
+      "batch_index": 2,
+      "batch_count": 8,
+      "sent": 6,
+      "returned_items": 6,
+      "accepted": 6,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "empty_draft_line": 0,
+        "empty_draft_line_with_reason": 0,
+        "missing_bullet": 0,
+        "too_short": 0,
+        "duplicate_fingerprint": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "coerced_from_object_key": "items",
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:16:34.327901+01:00",
+      "finished_at": "2026-07-07T08:18:16.707350+01:00",
+      "duration_seconds": 102.379,
+      "queue_wait_seconds": 83.7,
+      "api_seconds": 18.679,
+      "estimated_request_tokens": 9386,
+      "max_tokens_source": "history_warmup",
+      "prompt_tokens": 5062,
+      "completion_tokens": 753,
+      "total_tokens": 5815,
+      "completion_tokens_per_item": 125.5,
+      "max_tokens": 4096,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "OpenAI",
+      "model": "gpt-4o-mini",
+      "prompt_name": "final_translate",
+      "batch_index": 3,
+      "batch_count": 8,
+      "sent": 8,
+      "returned_items": 8,
+      "accepted": 8,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "empty_draft_line": 0,
+        "empty_draft_line_with_reason": 0,
+        "missing_bullet": 0,
+        "too_short": 0,
+        "duplicate_fingerprint": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "coerced_from_object_key": "items",
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:16:34.329472+01:00",
+      "finished_at": "2026-07-07T08:18:46.580883+01:00",
+      "duration_seconds": 132.251,
+      "queue_wait_seconds": 107.714,
+      "api_seconds": 24.535,
+      "estimated_request_tokens": 10808,
+      "max_tokens_source": "history_warmup",
+      "prompt_tokens": 5461,
+      "completion_tokens": 1074,
+      "total_tokens": 6535,
+      "completion_tokens_per_item": 134.25,
+      "max_tokens": 5120,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "OpenAI",
+      "model": "gpt-4o-mini",
+      "prompt_name": "final_translate",
+      "batch_index": 4,
+      "batch_count": 8,
+      "sent": 8,
+      "returned_items": 8,
+      "accepted": 8,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "empty_draft_line": 0,
+        "empty_draft_line_with_reason": 0,
+        "missing_bullet": 0,
+        "too_short": 0,
+        "duplicate_fingerprint": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "coerced_from_object_key": "items",
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:16:34.330911+01:00",
+      "finished_at": "2026-07-07T08:19:15.278739+01:00",
+      "duration_seconds": 160.948,
+      "queue_wait_seconds": 131.878,
+      "api_seconds": 29.066,
+      "estimated_request_tokens": 10875,
+      "max_tokens_source": "history_warmup",
+      "prompt_tokens": 5773,
+      "completion_tokens": 910,
+      "total_tokens": 6683,
+      "completion_tokens_per_item": 113.75,
+      "max_tokens": 5120,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "OpenAI",
+      "model": "gpt-4o-mini",
+      "prompt_name": "business",
+      "batch_index": 1,
+      "batch_count": 1,
       "sent": 1,
       "returned_items": 1,
       "accepted": 1,
@@ -3072,258 +3530,18 @@
       "missing_candidates": [],
       "coerced_from_object_key": "items",
       "attempt": "initial",
-      "started_at": "2026-07-06T08:18:16.691278+01:00",
-      "finished_at": "2026-07-06T08:18:19.077931+01:00",
-      "duration_seconds": 2.387,
+      "started_at": "2026-07-07T08:19:16.297633+01:00",
+      "finished_at": "2026-07-07T08:19:18.663939+01:00",
+      "duration_seconds": 2.366,
       "queue_wait_seconds": 0.0,
-      "api_seconds": 2.386,
-      "estimated_request_tokens": 3256,
-      "max_tokens_source": "history_warmup",
-      "prompt_tokens": 1994,
-      "completion_tokens": 99,
-      "total_tokens": 2093,
-      "completion_tokens_per_item": 99.0,
+      "api_seconds": 2.366,
+      "estimated_request_tokens": 4732,
+      "max_tokens_source": "default_formula",
+      "prompt_tokens": 3561,
+      "completion_tokens": 165,
+      "total_tokens": 3726,
+      "completion_tokens_per_item": 165.0,
       "max_tokens": 1536,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "OpenAI",
-      "model": "gpt-4o-mini",
-      "prompt_name": "final_translate",
-      "batch_index": 7,
-      "batch_count": 9,
-      "sent": 4,
-      "returned_items": 4,
-      "accepted": 4,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "empty_draft_line": 0,
-        "empty_draft_line_with_reason": 0,
-        "missing_bullet": 0,
-        "too_short": 0,
-        "duplicate_fingerprint": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "coerced_from_object_key": "items",
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:18:04.670583+01:00",
-      "finished_at": "2026-07-06T08:18:39.518411+01:00",
-      "duration_seconds": 34.848,
-      "queue_wait_seconds": 27.073,
-      "api_seconds": 7.775,
-      "estimated_request_tokens": 8004,
-      "max_tokens_source": "history_warmup",
-      "prompt_tokens": 4869,
-      "completion_tokens": 435,
-      "total_tokens": 5304,
-      "completion_tokens_per_item": 108.75,
-      "max_tokens": 3072,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "OpenAI",
-      "model": "gpt-4o-mini",
-      "prompt_name": "final_translate",
-      "batch_index": 4,
-      "batch_count": 9,
-      "sent": 6,
-      "returned_items": 6,
-      "accepted": 6,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "empty_draft_line": 0,
-        "empty_draft_line_with_reason": 0,
-        "missing_bullet": 0,
-        "too_short": 0,
-        "duplicate_fingerprint": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "coerced_from_object_key": "items",
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:18:04.665080+01:00",
-      "finished_at": "2026-07-06T08:19:02.757030+01:00",
-      "duration_seconds": 58.092,
-      "queue_wait_seconds": 46.687,
-      "api_seconds": 11.405,
-      "estimated_request_tokens": 8824,
-      "max_tokens_source": "history_warmup",
-      "prompt_tokens": 4696,
-      "completion_tokens": 660,
-      "total_tokens": 5356,
-      "completion_tokens_per_item": 110.0,
-      "max_tokens": 4096,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "OpenAI",
-      "model": "gpt-4o-mini",
-      "prompt_name": "final_translate",
-      "batch_index": 6,
-      "batch_count": 9,
-      "sent": 5,
-      "returned_items": 5,
-      "accepted": 5,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "empty_draft_line": 0,
-        "empty_draft_line_with_reason": 0,
-        "missing_bullet": 0,
-        "too_short": 0,
-        "duplicate_fingerprint": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "coerced_from_object_key": "items",
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:18:04.668854+01:00",
-      "finished_at": "2026-07-06T08:19:25.414765+01:00",
-      "duration_seconds": 80.746,
-      "queue_wait_seconds": 67.559,
-      "api_seconds": 13.187,
-      "estimated_request_tokens": 9394,
-      "max_tokens_source": "history_warmup",
-      "prompt_tokens": 5719,
-      "completion_tokens": 634,
-      "total_tokens": 6353,
-      "completion_tokens_per_item": 126.8,
-      "max_tokens": 3584,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "OpenAI",
-      "model": "gpt-4o-mini",
-      "prompt_name": "final_translate",
-      "batch_index": 2,
-      "batch_count": 9,
-      "sent": 6,
-      "returned_items": 6,
-      "accepted": 6,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "empty_draft_line": 0,
-        "empty_draft_line_with_reason": 0,
-        "missing_bullet": 0,
-        "too_short": 0,
-        "duplicate_fingerprint": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "coerced_from_object_key": "items",
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:18:04.662431+01:00",
-      "finished_at": "2026-07-06T08:19:52.587815+01:00",
-      "duration_seconds": 107.925,
-      "queue_wait_seconds": 88.767,
-      "api_seconds": 19.158,
-      "estimated_request_tokens": 9541,
-      "max_tokens_source": "history_warmup",
-      "prompt_tokens": 5326,
-      "completion_tokens": 749,
-      "total_tokens": 6075,
-      "completion_tokens_per_item": 124.833,
-      "max_tokens": 4096,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "OpenAI",
-      "model": "gpt-4o-mini",
-      "prompt_name": "final_translate",
-      "batch_index": 3,
-      "batch_count": 9,
-      "sent": 6,
-      "returned_items": 6,
-      "accepted": 6,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "empty_draft_line": 0,
-        "empty_draft_line_with_reason": 0,
-        "missing_bullet": 0,
-        "too_short": 0,
-        "duplicate_fingerprint": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "coerced_from_object_key": "items",
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:18:04.663990+01:00",
-      "finished_at": "2026-07-06T08:20:05.902842+01:00",
-      "duration_seconds": 121.239,
-      "queue_wait_seconds": 110.306,
-      "api_seconds": 10.933,
-      "estimated_request_tokens": 9693,
-      "max_tokens_source": "history_warmup",
-      "prompt_tokens": 5348,
-      "completion_tokens": 647,
-      "total_tokens": 5995,
-      "completion_tokens_per_item": 107.833,
-      "max_tokens": 4096,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "OpenAI",
-      "model": "gpt-4o-mini",
-      "prompt_name": "final_translate",
-      "batch_index": 8,
-      "batch_count": 9,
-      "sent": 6,
-      "returned_items": 6,
-      "accepted": 6,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "empty_draft_line": 0,
-        "empty_draft_line_with_reason": 0,
-        "missing_bullet": 0,
-        "too_short": 0,
-        "duplicate_fingerprint": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "coerced_from_object_key": "items",
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:18:04.672333+01:00",
-      "finished_at": "2026-07-06T08:20:32.289560+01:00",
-      "duration_seconds": 147.617,
-      "queue_wait_seconds": 132.504,
-      "api_seconds": 15.113,
-      "estimated_request_tokens": 9993,
-      "max_tokens_source": "history_warmup",
-      "prompt_tokens": 5835,
-      "completion_tokens": 779,
-      "total_tokens": 6614,
-      "completion_tokens_per_item": 129.833,
-      "max_tokens": 4096,
       "finish_reasons": [
         "stop"
       ],
@@ -3352,57 +3570,17 @@
       "missing_candidates": [],
       "coerced_from_object_key": "items",
       "attempt": "initial",
-      "started_at": "2026-07-06T08:20:32.998200+01:00",
-      "finished_at": "2026-07-06T08:20:34.811475+01:00",
-      "duration_seconds": 1.813,
+      "started_at": "2026-07-07T08:19:19.428473+01:00",
+      "finished_at": "2026-07-07T08:19:21.293618+01:00",
+      "duration_seconds": 1.865,
       "queue_wait_seconds": 0.0,
-      "api_seconds": 1.813,
-      "estimated_request_tokens": 818,
+      "api_seconds": 1.865,
+      "estimated_request_tokens": 817,
       "max_tokens_source": "history_p95",
       "prompt_tokens": 366,
-      "completion_tokens": 81,
-      "total_tokens": 447,
-      "completion_tokens_per_item": 81.0,
-      "max_tokens": 512,
-      "finish_reasons": [
-        "stop"
-      ],
-      "truncated": false
-    },
-    {
-      "provider": "OpenAI-repair",
-      "model": "gpt-4o-mini",
-      "prompt_name": "repair_draft",
-      "batch_index": 2,
-      "batch_count": 2,
-      "sent": 1,
-      "returned_items": 1,
-      "accepted": 1,
-      "rejected_counts": {
-        "bad_item_shape": 0,
-        "missing_fingerprint": 0,
-        "unknown_fingerprint": 0,
-        "empty_draft_line": 0,
-        "empty_draft_line_with_reason": 0,
-        "missing_bullet": 0,
-        "too_short": 0,
-        "duplicate_fingerprint": 0
-      },
-      "rejected_examples": [],
-      "missing_candidates": [],
-      "coerced_from_object_key": "items",
-      "attempt": "initial",
-      "started_at": "2026-07-06T08:20:34.892830+01:00",
-      "finished_at": "2026-07-06T08:20:40.695993+01:00",
-      "duration_seconds": 5.803,
-      "queue_wait_seconds": 2.873,
-      "api_seconds": 2.93,
-      "estimated_request_tokens": 1969,
-      "max_tokens_source": "history_p95",
-      "prompt_tokens": 1579,
-      "completion_tokens": 110,
-      "total_tokens": 1689,
-      "completion_tokens_per_item": 110.0,
+      "completion_tokens": 84,
+      "total_tokens": 450,
+      "completion_tokens_per_item": 84.0,
       "max_tokens": 512,
       "finish_reasons": [
         "stop"
@@ -3432,18 +3610,58 @@
       "missing_candidates": [],
       "coerced_from_object_key": "items",
       "attempt": "initial",
-      "started_at": "2026-07-06T08:20:34.890796+01:00",
-      "finished_at": "2026-07-06T08:20:46.188488+01:00",
-      "duration_seconds": 11.298,
+      "started_at": "2026-07-07T08:19:21.994785+01:00",
+      "finished_at": "2026-07-07T08:19:27.420725+01:00",
+      "duration_seconds": 5.426,
       "queue_wait_seconds": 0.0,
-      "api_seconds": 11.297,
-      "estimated_request_tokens": 6478,
+      "api_seconds": 5.426,
+      "estimated_request_tokens": 6292,
       "max_tokens_source": "history_p95",
-      "prompt_tokens": 6111,
-      "completion_tokens": 355,
-      "total_tokens": 6466,
-      "completion_tokens_per_item": 88.75,
-      "max_tokens": 856,
+      "prompt_tokens": 5655,
+      "completion_tokens": 389,
+      "total_tokens": 6044,
+      "completion_tokens_per_item": 97.25,
+      "max_tokens": 855,
+      "finish_reasons": [
+        "stop"
+      ],
+      "truncated": false
+    },
+    {
+      "provider": "OpenAI-repair",
+      "model": "gpt-4o-mini",
+      "prompt_name": "repair_draft",
+      "batch_index": 2,
+      "batch_count": 2,
+      "sent": 4,
+      "returned_items": 4,
+      "accepted": 4,
+      "rejected_counts": {
+        "bad_item_shape": 0,
+        "missing_fingerprint": 0,
+        "unknown_fingerprint": 0,
+        "empty_draft_line": 0,
+        "empty_draft_line_with_reason": 0,
+        "missing_bullet": 0,
+        "too_short": 0,
+        "duplicate_fingerprint": 0
+      },
+      "rejected_examples": [],
+      "missing_candidates": [],
+      "coerced_from_object_key": "items",
+      "attempt": "initial",
+      "started_at": "2026-07-07T08:19:21.997277+01:00",
+      "finished_at": "2026-07-07T08:19:38.803170+01:00",
+      "duration_seconds": 16.806,
+      "queue_wait_seconds": 3.798,
+      "api_seconds": 13.008,
+      "estimated_request_tokens": 5971,
+      "max_tokens_source": "history_p95",
+      "prompt_tokens": 5589,
+      "completion_tokens": 380,
+      "total_tokens": 5969,
+      "completion_tokens_per_item": 95.0,
+      "max_tokens": 855,
       "finish_reasons": [
         "stop"
       ],
@@ -3451,6 +3669,30 @@
     }
   ],
   "repair_rejections": [
+    {
+      "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-shame-mum-five-personal-trainer-34245225",
+      "title": "Shame of mum-of-five and personal trainer jailed after descending into organised crime",
+      "category": "media_layer",
+      "primary_block": "last_24h",
+      "provider": "OpenAI-repair",
+      "model": "gpt-4o-mini",
+      "quality_errors": [
+        "draft_line contains number(s) not present in candidate evidence: 2025."
+      ],
+      "draft_line_excerpt": "• Мать пятерых детей Летития Сэндис и личный тренер Николас Гриффин были приговорены к тюремному заключению за участие в наркоторговле в Сейле и Алтринчаме. Суд установил, что они помогали организованной преступной группе, которая действова"
+    },
+    {
+      "fingerprint": "culture-weekly-home-homemcr-org-whats-on-manchesteropen2026-rslt",
+      "title": "Manchester Open 2026 The biggest celebration of Greater Manchester's creative talent. Fri 19 Jun - Sun 6 Sep Gallery",
+      "category": "culture_weekly",
+      "primary_block": "today_focus",
+      "provider": "OpenAI-repair",
+      "model": "gpt-4o-mini",
+      "quality_errors": [
+        "event date in draft_line conflicts with structured event date."
+      ],
+      "draft_line_excerpt": "• Выставка Manchester Open 2026 в галерее HOME проходит до 6 сентября, представлены 420 художников из Greater Manchester."
+    },
     {
       "fingerprint": "russian-speaking-events-eventfirst-diaspora-eventfirst-co-uk-event-skameika",
       "title": "Спектакль \"Скамейка\"",
@@ -3464,8 +3706,32 @@
       "draft_line_excerpt": "• 29 ноября 2026 года в Logan Hall в Лондоне пройдет спектакль «Скамейка» с Алексеем Паниным и Ольгой Силиной, начало в 19:00, двери открываются в 18:00. Билеты от £30."
     },
     {
-      "fingerprint": "culture-weekly-designmynight-bank-holiday-designmynight-com-manchester-whats-on-party-bottomless-pizzaluxe",
-      "title": "Bottomless PizzaLuxe Manchester",
+      "fingerprint": "tech-business-prolific-north-manchester-prolificnorth-co-uk-news-co-op-live-drops-pint-prices-for-huge-england-world-cup-quarter-final-watch-party",
+      "title": "Co-op Live drops pint prices for huge England World Cup quarter final watch party",
+      "category": "tech_business",
+      "primary_block": "tech_business",
+      "provider": "OpenAI-repair",
+      "model": "gpt-4o-mini",
+      "quality_errors": [
+        "draft_line contains number(s) not present in candidate evidence: 11."
+      ],
+      "draft_line_excerpt": "• Co-op Live в Манчестере объявил о снижении цен на пиво для вечеринки по просмотру четвертьфинала Кубка мира 11 июля. Пивные цены начнутся с £6.50, а билеты стоят £10; мероприятие обещает живую музыку и атмосферу, вдохновленную крупнейшими"
+    },
+    {
+      "fingerprint": "culture-weekly-creative-tourist-manchester-creativetourist-com-event-turn-your-f-ing-phones-off-work-in-progress-sharing-and-long-table-discussion",
+      "title": "TURN YOUR F***ING PHONES OFF (WIP) at Waterside - Creative Tourist",
+      "category": "culture_weekly",
+      "primary_block": "weekend_activities",
+      "provider": "OpenAI-repair",
+      "model": "gpt-4o-mini",
+      "quality_errors": [
+        "draft_line must not use Markdown emphasis markers."
+      ],
+      "draft_line_excerpt": "• 10 июля 2026 года в Waterside, Manchester, пройдет работающая версия спектакля Ханны Максвелл \"TURN YOUR F***ING PHONES OFF\", исследующая нашу зависимость от технологий."
+    },
+    {
+      "fingerprint": "culture-weekly-designmynight-bank-holiday-designmynight-com-manchester-whats-on-daytime-the-great-game-virus-safe-outdoor-treasure-hunt-manchester",
+      "title": "Manchester Fun Puzzle Treasure Hunt! Single route or double for racing!",
       "category": "culture_weekly",
       "primary_block": "weekend_activities",
       "provider": "OpenAI-repair",
@@ -3473,20 +3739,7 @@
       "quality_errors": [
         "event date in draft_line conflicts with structured event date."
       ],
-      "draft_line_excerpt": "• Bottomless PizzaLuxe в Manchester Arndale предлагает неограниченные пиццы и напитки с 5 июля 2026 года, билеты £38.44."
-    },
-    {
-      "fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-manchester-united-players-expected-back-34240054",
-      "title": "The Manchester United players expected back for Michael Carrick's first day of pre-season training",
-      "category": "football",
-      "primary_block": "football",
-      "provider": "OpenAI-repair",
-      "model": "gpt-4o-mini",
-      "quality_errors": [
-        "draft_line for long-format category needs ≥2 sentences (got 1).",
-        "draft_line contains number(s) not present in candidate evidence: 2026, 9."
-      ],
-      "draft_line_excerpt": "• Игроки Манчестер Юнайтед вернутся к предсезонной подготовке на базе Каррингтон в четверг, 9 июля 2026 года, под руководством нового главного тренера Майкла Каррика, перед товарищеским матчем против Уэксема 18 июля."
+      "draft_line_excerpt": "• С 6 июля 2026 года в Манчестере стартует «Великое приключение» — уличная охота за сокровищами, начинающаяся на станции Piccadilly, с возможностью получить 20% скидку в пабе; билеты от £19.99 за группу."
     }
   ],
   "last_resort_writes": [],
@@ -3494,22 +3747,76 @@
   "no_source_text": [],
   "weak_after": [
     {
-      "fingerprint": "russian-speaking-events-eventfirst-diaspora-eventfirst-co-uk-event-skameika",
-      "title": "Спектакль \"Скамейка\"",
-      "category": "russian_speaking_events",
-      "primary_block": "russian_events"
+      "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c39yd73xml3o",
+      "title": "Announced candidates for Greater Manchester mayoral election",
+      "category": "media_layer",
+      "primary_block": "city_watch"
     },
     {
-      "fingerprint": "culture-weekly-designmynight-bank-holiday-designmynight-com-manchester-whats-on-party-bottomless-pizzaluxe",
-      "title": "Bottomless PizzaLuxe Manchester",
+      "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-shame-mum-five-personal-trainer-34245225",
+      "title": "Shame of mum-of-five and personal trainer jailed after descending into organised crime",
+      "category": "media_layer",
+      "primary_block": "last_24h"
+    },
+    {
+      "fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-met-office-verdict-exact-date-34242950",
+      "title": "Met Office verdict on exact date it will hit 30C in Manchester this week",
+      "category": "media_layer",
+      "primary_block": "today_focus"
+    },
+    {
+      "fingerprint": "culture-weekly-home-homemcr-org-whats-on-manchesteropen2026-rslt",
+      "title": "Manchester Open 2026 The biggest celebration of Greater Manchester's creative talent. Fri 19 Jun - Sun 6 Sep Gallery",
+      "category": "culture_weekly",
+      "primary_block": "today_focus"
+    },
+    {
+      "fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-sounds-of-the-city-wet-leg",
+      "title": "Sounds of the City: Wet Leg",
       "category": "culture_weekly",
       "primary_block": "weekend_activities"
     },
     {
-      "fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-manchester-united-players-expected-back-34240054",
-      "title": "The Manchester United players expected back for Michael Carrick's first day of pre-season training",
+      "fingerprint": "tech-business-prolific-north-manchester-prolificnorth-co-uk-news-co-op-live-drops-pint-prices-for-huge-england-world-cup-quarter-final-watch-party",
+      "title": "Co-op Live drops pint prices for huge England World Cup quarter final watch party",
+      "category": "tech_business",
+      "primary_block": "tech_business"
+    },
+    {
+      "fingerprint": "culture-weekly-creative-tourist-manchester-creativetourist-com-event-turn-your-f-ing-phones-off-work-in-progress-sharing-and-long-table-discussion",
+      "title": "TURN YOUR F***ING PHONES OFF (WIP) at Waterside - Creative Tourist",
+      "category": "culture_weekly",
+      "primary_block": "weekend_activities"
+    },
+    {
+      "fingerprint": "culture-weekly-designmynight-bank-holiday-designmynight-com-manchester-whats-on-daytime-the-great-game-virus-safe-outdoor-treasure-hunt-manchester",
+      "title": "Manchester Fun Puzzle Treasure Hunt! Single route or double for racing!",
+      "category": "culture_weekly",
+      "primary_block": "weekend_activities"
+    },
+    {
+      "fingerprint": "football-manchester-city-mancity-com-news-mens-rayan-cherki-france-paraguay-63918851",
+      "title": "Cherki's France progress to World Cup quarter-finals",
       "category": "football",
       "primary_block": "football"
+    },
+    {
+      "fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-transfer-news-man-united-transfer-news-live-34236069",
+      "title": "Man United transfer news LIVE: Aurelien Tchouameni 'contact', Santos deal, Rashford talks",
+      "category": "football",
+      "primary_block": "football"
+    },
+    {
+      "fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-football-news-matheus-cunha-returns-manchester-united-34245816",
+      "title": "Matheus Cunha returns to Manchester United with a new option for Michael Carrick",
+      "category": "football",
+      "primary_block": "football"
+    },
+    {
+      "fingerprint": "russian-speaking-events-mticket-russian-concerts-mticket-uk-ru-oxford-anton-timosenko-4056-html",
+      "title": "Антон Тимошенко",
+      "category": "russian_speaking_events",
+      "primary_block": "russian_events"
     }
   ]
 }

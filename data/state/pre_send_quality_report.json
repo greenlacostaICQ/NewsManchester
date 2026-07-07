@@ -2,344 +2,187 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 11 repair(s); issue ships with honest degradation report",
+  "reason": "pre-send repair executor applied 3 repair(s); issue ships with honest degradation report",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
-  "run_date_london": "2026-07-06",
-  "pipeline_run_id": "20260706T080154+0100",
-  "digest_sha256": "e9e9bd9c5cc54d03d15638d63228e0bd5a6f696df9e16e1e816e3becdea2f28c",
-  "duration_seconds": 56.848,
-  "confidence": 0.9,
+  "run_date_london": "2026-07-07",
+  "pipeline_run_id": "20260707T080159+0100",
+  "digest_sha256": "87aa0a47eeeea569cc63e0515c396fc8e508cbdcf32dd5721bce8acb1dd2c2ea",
+  "duration_seconds": 51.952,
+  "confidence": 0.85,
   "critical_errors": [
     {
-      "line_index": 8,
-      "section": "Свежие новости",
-      "problem": "Географическая ошибка: Блэкпул не является частью Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 20,
-      "section": "Футбол",
-      "problem": "Неверная информация о трансфере Элиота Андерсона из Ноттингем Форест в Манчестер Сити.",
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Текст утверждает, что Тарант и его сообщники уже получили тюремные сроки, что не подтверждается предоставленной информацией.",
       "risk": "factual",
       "suggested_action": "repair"
-    },
-    {
-      "line_index": 4,
-      "section": "Свежие новости",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'Gun' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "weapon_violence"
     }
   ],
   "actions": [
     {
-      "line_index": 8,
-      "section": "Свежие новости",
-      "action": "replace",
-      "replacement_text": "• 19-летний Джои Грегори был срочно доставлен в больницу Wythenshawe после того, как его извлекли из разрушительного пожара в доме на Редкар-Роуд в Блэкпуле, который произошел 30 июня. В результате инцидента он получил серьезные ожоги и находится в медикаментозной коме. Его мать сообщила, что первые 24-48 часов были критическими, и призвала всех молиться за его выздоровление. MEN (Блэкпул не относится к Greater Manchester)",
-      "reason": "Уточнение географического контекста для читателей.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 20,
-      "section": "Футбол",
-      "action": "replace",
-      "replacement_text": "• Манчестер Сити завершил трансфер игрока за £116 млн. Также подтверждена сделка по продаже Нейтана Аке в Фенербахче, и клуб продолжает искать новых игроков для усиления состава. MEN Manchester City",
-      "reason": "Уточнение информации о трансфере, чтобы избежать фактической ошибки.",
+      "line_index": 1,
+      "section": "Главная история дня",
+      "action": "patch",
+      "replacement_text": "• Полиция провела операцию по задержанию наркобосса Германа Таранта, который был арестован в своем доме в Сэле 6 июля 2026 года. Операция завершилась успешным задержанием Таранта и его сообщников, которые, по данным суда, с августа 2024 года занимались распространением наркотиков в Сэле и Алтринчаме. Судебное разбирательство продолжается.",
+      "reason": "Утверждение о вынесении приговора не подтверждено источником.",
       "risk": "factual"
     },
     {
-      "line_index": 33,
-      "section": "Дальние анонсы",
+      "line_index": 22,
+      "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• В Манчестере 3 августа 2026 года в 19:00 начнётся еженедельный воркшоп по стендап-комедии на площадке 33 Oldham St., где участники смогут научиться писать шутки и выступать на сцене. Подробности на Skiddle Manchester Comedy.",
-      "reason": "Добавление источника информации для полноты и практической пользы.",
-      "risk": "product"
-    },
-    {
-      "line_index": 34,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Def Leppard — 6 июля, Co-op Live. Сегодня в Co-op Live.",
-      "reason": "Повторение названия 'Co-op Live' трижды в одной строке.",
+      "replacement_text": "• Незаконные онлайн-казино используют фальшивые истории от BBC и видео с ИИ, чтобы обмануть клиентов. В частности, манипуляции коснулись капитана Манчестер Юнайтед Бруно Фернандеша, который стал жертвой мошенников, создавших поддельные материалы с его участием. Эти действия подчеркивают отсутствие уважения к авторским правам со стороны нелицензированных операторов ставок, которые действуют в оффшорных юрисдикциях. Источник: Guardian Manchester United",
+      "reason": "Добавление источника в конце текста для ясности.",
       "risk": "format"
     },
     {
-      "line_index": 41,
-      "section": "Крупные концерты вне GM",
+      "line_index": 40,
+      "section": "Билеты / Ticket Radar",
       "action": "patch",
-      "replacement_text": "• Michael Bublé — 6 июля, Scarborough Open Air Theatre (Adult Contemporary). Фестивальный состав, не один артист. Ticketmaster",
-      "reason": "Текст корректен, но стоит уточнить, что Scarborough не в Greater Manchester.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 42,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• Kings of Leon — 6 июля, Leeds First Direct Bank Arena (Pop). Сегодня в Leeds First Direct Bank Arena. Ticketmaster",
-      "reason": "Текст корректен, но стоит уточнить, что Leeds не в Greater Manchester.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 43,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• Lily Allen — 7 июля, The O2 (Pop). Вне Greater Manchester на этой неделе. Ticketmaster",
-      "reason": "Текст корректен, но стоит уточнить, что The O2 в Лондоне.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 44,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• Phantogram — 7 июля, Warehouse SWG3 (Pop). Вне Greater Manchester на этой неделе. Ticketmaster",
-      "reason": "Текст корректен, но стоит уточнить, что Warehouse SWG3 в Глазго.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 45,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• My Chemical Romance — 8 июля, Wembley Stadium (Alternative Rock). Вне Greater Manchester на этой неделе. Ticketmaster",
-      "reason": "Текст корректен, но стоит уточнить, что Wembley Stadium в Лондоне.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 46,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• Lewis Capaldi — 8 июля, Exhibition Park (Alternative Rock). Фестивальный состав, не один артист. Состав: Maximo Park, Heidi Curtis, Jacob Alon. Ticketmaster",
-      "reason": "Текст корректен, но стоит уточнить, что Exhibition Park в Ньюкасле.",
-      "risk": "geo"
+      "replacement_text": "• Sunny Day Real Estate — 14 июля, Manchester New Century Hall (Рок). Концерт в Манчестере на следующей неделе. Ticketmaster",
+      "reason": "Дата 14 июля не соответствует текущей неделе, исправлено на 'следующей неделе'.",
+      "risk": "date"
     }
   ],
   "warnings": [
-    "В выпуске много информации о транспортных сбоях, что может перегрузить читателя. Возможно, стоит рассмотреть сокращение или объединение некоторых пунктов.",
-    "Выпуск содержит много информации о безопасности и планировании, но может не хватать других новостей.",
-    "Некоторые события могут быть перегружены информацией о билетах и мероприятиях, что может повлиять на баланс выпуска.",
-    "Добавьте источник информации для полноты и практической пользы.",
-    "Повторение названия 'Co-op Live' в строке 34 может быть избыточным.",
-    "Уточните географическое расположение мест проведения концертов, чтобы избежать путаницы.",
+    "Выпуск содержит много новостей о преступлениях и происшествиях, что может создать впечатление однобокости. Рекомендуется добавить более разнообразные темы в будущих выпусках.",
+    "Некоторые строки содержат информацию о будущих изменениях в расписании, которые могут быть неактуальны на момент публикации.",
+    "Выпуск содержит много информации о планах и событиях, но может не хватать более актуальных новостей.",
+    "Добавлен источник в конце текста для ясности.",
+    "Выпуск содержит много информации о событиях и инициативах, но может не хватать более глубокого анализа или контекста для некоторых новостей.",
+    "В разделе 'Что важно в ближайшие 7 дней' все события относятся к культурным мероприятиям, что может создать дисбаланс в выпуске, если другие важные события не освещены.",
+    "Дата события Sunny Day Real Estate указана как 'на этой неделе', но фактически это следующая неделя.",
+    "Событие в Оксфорде не относится к Greater Manchester, но находится в разделе русскоязычных концертов и стендапа UK, что может быть допустимо в контексте.",
     "Выходные в GM: 0 item(s), emergency floor 3",
-    "low writer yield: 51/358 included candidates rendered",
-    "line 4 drops source number/date fact(s): 17",
-    "line 7 drops source number/date fact(s): 05 jul 2026, 15:45",
-    "line 23 drops source number/date fact(s): 04 jul 2026, 15:57, 16, 1998"
+    "low writer yield: 52/386 included candidates rendered",
+    "Футбол: section underflow, minimum 2 items required, only 1 present"
   ],
   "product_completeness": {
     "section_counts": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 7,
-      "Общественный транспорт сегодня": 7,
+      "Свежие новости": 5,
+      "Общественный транспорт сегодня": 11,
       "Что важно сегодня": 3,
       "Футбол": 2,
-      "Городской радар": 4,
-      "Что важно в ближайшие 7 дней": 6,
-      "IT и бизнес": 0,
+      "Городской радар": 5,
+      "Что важно в ближайшие 7 дней": 3,
+      "Еда, открытия и рынки": 0,
+      "IT и бизнес": 1,
       "Business/tech события для тебя": 1,
-      "Дальние анонсы": 1,
+      "Дальние анонсы": 0,
       "Билеты / Ticket Radar": 7,
-      "Крупные концерты вне GM": 6
+      "Русскоязычные концерты и стендап UK": 3
     },
     "core_counts": {
-      "Свежие новости": 7,
+      "Свежие новости": 5,
       "Футбол": 2,
       "Выходные в GM": 0,
       "Что важно сегодня": 3,
-      "Общественный транспорт сегодня": 7
+      "Общественный транспорт сегодня": 11
     },
-    "ticket_items": 13,
-    "core_items": 19,
+    "ticket_items": 10,
+    "core_items": 21,
     "writer_quality_counts": {
-      "included_candidates": 358,
-      "rendered_candidates": 51,
+      "included_candidates": 386,
+      "rendered_candidates": 52,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
-      "dropped_missing_draft_line": 4,
-      "dropped_ticket_not_selected": 222,
+      "dropped_missing_draft_line": 5,
+      "dropped_ticket_not_selected": 219,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 81
+      "dropped_low_quality": 88
     },
-    "section_underflow": [],
+    "section_underflow": [
+      {
+        "section": "Футбол",
+        "actual": 1,
+        "minimum": 2,
+        "dropped_by_writer": 2
+      }
+    ],
     "source_health_counts": {
-      "ok": 103,
+      "ok": 98,
       "partial": 2,
-      "stale": 12,
-      "empty": 4,
+      "stale": 13,
+      "empty": 8,
       "failed": 2,
-      "zero_yield": 85,
+      "zero_yield": 82,
       "no_contribution_breakdown": {
         "fetch_failed": 2,
-        "all_rejected": 85,
-        "idle_no_items": 14
+        "all_rejected": 82,
+        "idle_no_items": 19
       },
       "zero_contribution_by_stage": {
-        "written": 18,
-        "selected": 67,
-        "parsed": 14,
+        "written": 22,
+        "selected": 60,
+        "parsed": 19,
         "fetched": 2
       },
-      "weekend_source_coverage_incidents": 40
+      "weekend_source_coverage_incidents": 43
     },
     "alerts": [
       "Выходные в GM: 0 item(s), emergency floor 3",
-      "low writer yield: 51/358 included candidates rendered"
+      "low writer yield: 52/386 included candidates rendered"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "replace for line 8 has unchecked number/date token(s): 24, 30, 48",
-      "replace for line 20 has unchecked number/date token(s): 116"
+      "patch for line 1 has unchecked number/date token(s): 2024"
     ],
     "can_apply_actions": true,
-    "action_count": 10
+    "action_count": 3
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 3,
-    "critical_omission_count": 1,
-    "critical_omissions": [
-      {
-        "line_index": 4,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/gun-fire-prison-killer-hygiene-34216982",
-        "concept": "weapon_violence",
-        "obligation": "who/what",
-        "source_hit": "Gun"
-      }
-    ],
-    "noncritical_omissions": [
-      {
-        "line_index": 4,
-        "dropped": [
-          "17"
-        ]
-      },
-      {
-        "line_index": 7,
-        "dropped": [
-          "05 jul 2026",
-          "15:45"
-        ]
-      },
-      {
-        "line_index": 23,
-        "dropped": [
-          "04 jul 2026",
-          "15:57",
-          "16",
-          "1998"
-        ]
-      }
-    ],
+    "checked_lines": 0,
+    "critical_omission_count": 0,
+    "critical_omissions": [],
+    "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 1,
+    "pulled_for_rework": 0,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 11,
-    "attempted": 11,
-    "applied": 11,
-    "model_patch_applied": 3,
+    "requested": 3,
+    "attempted": 3,
+    "applied": 3,
+    "model_patch_applied": 2,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 0,
-    "stripped": 8,
+    "stripped": 1,
     "unresolved": 0,
-    "fact_lock_rejected": 7,
-    "enrich_attempted": 8,
+    "fact_lock_rejected": 1,
+    "enrich_attempted": 1,
     "post_check_errors": [],
     "actions": [
       {
-        "line_index": 8,
-        "section": "Свежие новости",
-        "requested_action": "replace",
-        "reason": "Уточнение географического контекста для читателей.",
-        "outcome": "stripped_honest_shortfall",
-        "model_replacement_rejected": "fact_lock: 30 июня, greater manchester"
-      },
-      {
-        "line_index": 20,
-        "section": "Футбол",
-        "requested_action": "replace",
-        "reason": "Уточнение информации о трансфере, чтобы избежать фактической ошибки.",
-        "outcome": "model_patch_applied"
-      },
-      {
-        "line_index": 33,
-        "section": "Дальние анонсы",
+        "line_index": 1,
+        "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Добавление источника информации для полноты и практической пользы.",
+        "reason": "Утверждение о вынесении приговора не подтверждено источником.",
+        "outcome": "stripped_honest_shortfall",
+        "model_replacement_rejected": "fact_lock: 6 июля 2026"
+      },
+      {
+        "line_index": 22,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Добавление источника в конце текста для ясности.",
         "outcome": "model_patch_applied"
       },
       {
-        "line_index": 34,
+        "line_index": 40,
         "section": "Билеты / Ticket Radar",
         "requested_action": "patch",
-        "reason": "Повторение названия 'Co-op Live' трижды в одной строке.",
-        "outcome": "stripped_honest_shortfall",
-        "model_replacement_rejected": "fact_lock: def leppard"
-      },
-      {
-        "line_index": 41,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Текст корректен, но стоит уточнить, что Scarborough не в Greater Manchester.",
+        "reason": "Дата 14 июля не соответствует текущей неделе, исправлено на 'следующей неделе'.",
         "outcome": "model_patch_applied"
-      },
-      {
-        "line_index": 42,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Текст корректен, но стоит уточнить, что Leeds не в Greater Manchester.",
-        "outcome": "stripped_honest_shortfall",
-        "model_replacement_rejected": "fact_lock: leeds first direct bank arena. ticketmaster"
-      },
-      {
-        "line_index": 43,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Текст корректен, но стоит уточнить, что The O2 в Лондоне.",
-        "outcome": "stripped_honest_shortfall",
-        "model_replacement_rejected": "fact_lock: greater manchester"
-      },
-      {
-        "line_index": 44,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Текст корректен, но стоит уточнить, что Warehouse SWG3 в Глазго.",
-        "outcome": "stripped_honest_shortfall",
-        "model_replacement_rejected": "fact_lock: greater manchester"
-      },
-      {
-        "line_index": 45,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Текст корректен, но стоит уточнить, что Wembley Stadium в Лондоне.",
-        "outcome": "stripped_honest_shortfall",
-        "model_replacement_rejected": "fact_lock: greater manchester"
-      },
-      {
-        "line_index": 46,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Текст корректен, но стоит уточнить, что Exhibition Park в Ньюкасле.",
-        "outcome": "stripped_honest_shortfall",
-        "model_replacement_rejected": "fact_lock: jacob alon. ticketmaster"
-      },
-      {
-        "line_index": 4,
-        "section": "Свежие новости",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'Gun' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-        "outcome": "stripped_honest_shortfall"
       }
     ],
     "refetch": {
@@ -347,429 +190,69 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 6,
-      "reports": [
-        {
-          "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-def-leppard-s4q2",
-          "title": "Def Leppard Special Guest Extreme Mon 6 Jul 2026 Multiple times",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://cooplive.com/events/def-leppard-s4q2",
-          "candidate_evidence_chars": 0
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-kings-of-leon-leeds-06-07-2026-event-1-0063728-3-04",
-          "title": "Kings of Leon — event 2026-07-06 — public sale 2025-11-21 09:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/kings-of-leon-leeds-06-07-2026/event/1F0063728CFF3B04",
-          "candidate_evidence_chars": 379
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-london-major-upcoming-ticketmaster-co-uk-lily-allen-london-07-07-2026-event-3500637-83-32-7",
-          "title": "Lily Allen — event 2026-07-07 — public sale 2025-11-27 10:15",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/lily-allen-london-07-07-2026/event/3500637A83AC32C7",
-          "candidate_evidence_chars": 329
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-phantogram-glasgow-07-07-2026-event-3600643-3-80-2",
-          "title": "Phantogram — event 2026-07-07 — public sale 2026-02-06 09:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/phantogram-glasgow-07-07-2026/event/3600643DDF3B80E2",
-          "candidate_evidence_chars": 353
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-london-major-upcoming-ticketmaster-co-uk-my-chemical-romance-long-live-the-london-08-07-2026-event-2300630-3530-22",
-          "title": "My Chemical Romance - Long Live The Black Parade Tour — event 2026-07-08 — public sale 2025-09-26 12:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/my-chemical-romance-long-live-the-london-08-07-2026/event/2300630EE3530F22",
-          "candidate_evidence_chars": 347
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-in-the-park-newcastle-presents-lewis-newcastle-08-07-2026-event-1-006332-2-7414",
-          "title": "In the Park Newcastle presents Lewis Capaldi — event 2026-07-08 — public sale 2025-11-21 09:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/in-the-park-newcastle-presents-lewis-newcastle-08-07-2026/event/1F006332B2CD7414",
-          "candidate_evidence_chars": 359
-        }
-      ]
+      "skipped": 0
     },
-    "enrich_improved": 7,
-    "deterministic_rewrite_rejected": 8,
+    "enrich_improved": 1,
+    "deterministic_rewrite_rejected": 1,
     "reserve_stats": {
-      "enriched_rewrite_attempts": 3789,
-      "enriched_rewrite_used": 0,
-      "refetch": {
-        "attempted": 0,
-        "improved": 0,
-        "failed": 0,
-        "empty_or_not_better": 0,
-        "skipped": 3761,
-        "reports": [
-          {
-            "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-def-leppard-s4q2",
-            "title": "Def Leppard Special Guest Extreme Mon 6 Jul 2026 Multiple times",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://cooplive.com/events/def-leppard-s4q2",
-            "candidate_evidence_chars": 0
-          },
-          {
-            "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-england-quarter-finals-73f8",
-            "title": "England Quarter Finals England VS Norway Sat 11 Jul 2026 22:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://cooplive.com/events/england-quarter-finals-73f8",
-            "candidate_evidence_chars": 0
-          },
-          {
-            "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-joji-rzp7",
-            "title": "JOJI SOLARIS TOUR, with special guest Tommy Richman Sun 16 Aug 2026 Multiple times",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://cooplive.com/events/joji-rzp7",
-            "candidate_evidence_chars": 0
-          },
-          {
-            "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-the-neighbourhood-4dd3",
-            "title": "The Neighbourhood THE WOURLD TOUR, plus special guests Nessa Barrett & Noise Dept Tue 1 Sep 2026 Multiple times",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://cooplive.com/events/the-neighbourhood-4dd3",
-            "candidate_evidence_chars": 0
-          },
-          {
-            "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-daniel-caesar-n25f",
-            "title": "Daniel Caesar Son of Spergy Tour Fri 4 Sep 2026 Multiple times",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://cooplive.com/events/daniel-caesar-n25f",
-            "candidate_evidence_chars": 0
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-def-leppard-manchester-06-07-2026-event-3700631-05-1872",
-            "title": "Def Leppard — event 2026-07-06 — public sale 2025-09-05 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/def-leppard-manchester-06-07-2026/event/3700631BB05A1872",
-            "candidate_evidence_chars": 345
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-phantogram-manchester-06-07-2026-event-1-006442-1-449",
-            "title": "Phantogram — event 2026-07-06 — public sale 2026-02-06 09:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/phantogram-manchester-06-07-2026/event/1F006442BE1F449C",
-            "candidate_evidence_chars": 377
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-alana-springsteen-manchester-06-07-2026-event-1-00646-901-240",
-            "title": "Alana Springsteen — event 2026-07-06 — public sale 2026-03-25 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/alana-springsteen-manchester-06-07-2026/event/1F00646C901F240E",
-            "candidate_evidence_chars": 371
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-che-lost-in-europe-manchester-07-07-2026-event-37006474-785824",
-            "title": "Che: Lost in Europe — event 2026-07-07 — public sale 2026-03-27 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/che-lost-in-europe-manchester-07-07-2026/event/37006474D785824D",
-            "candidate_evidence_chars": 393
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-the-best-of-all-worlds-uk-manchester-07-07-2026-event-36006490-6423-2",
-            "title": "THE BEST OF ALL WORLDS - UK TOUR 2026 - SAMMY HAGAR — event 2026-07-07 — public sale 2026-04-24 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/the-best-of-all-worlds-uk-manchester-07-07-2026/event/36006490A6423C2F",
-            "candidate_evidence_chars": 365
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-house-of-protection-manchester-07-07-2026-event-3600648-6-430",
-            "title": "House of Protection — event 2026-07-07 — public sale 2026-04-17 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/house-of-protection-manchester-07-07-2026/event/3600648DAF6D430D",
-            "candidate_evidence_chars": 371
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-chris-isaak-manchester-07-07-2026-event-1-006371-63-75-9",
-            "title": "Chris Isaak — event 2026-07-07 — public sale 2025-11-21 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/chris-isaak-manchester-07-07-2026/event/1F006371D63A75F9",
-            "candidate_evidence_chars": 357
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-sounds-of-the-city-present-wet-manchester-08-07-2026-event-1-006357-078833",
-            "title": "Sounds of the City Present Wet Leg — event 2026-07-08 — public sale 2025-10-31 09:30",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/sounds-of-the-city-present-wet-manchester-08-07-2026/event/1F006357D078833D",
-            "candidate_evidence_chars": 357
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-alkaline-trio-manchester-08-07-2026-event-3-006471-7306",
-            "title": "Alkaline Trio — event 2026-07-08 — public sale 2026-04-02 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/alkaline-trio-manchester-08-07-2026/event/3E006471EEBB7306",
-            "candidate_evidence_chars": 367
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-sounds-of-the-city-present-johnny-manchester-09-07-2026-event-1-00634-02754-8",
-            "title": "Sounds of the City Present Johnny Marr — event 2026-07-09 — public sale 2025-10-17 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/sounds-of-the-city-present-johnny-manchester-09-07-2026/event/1F00634DA02754B8",
-            "candidate_evidence_chars": 357
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-kevin-morby-manchester-09-07-2026-event-3-006446-5-8-30",
-            "title": "Kevin Morby — event 2026-07-09 — public sale 2026-02-13 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/kevin-morby-manchester-09-07-2026/event/3E006446DC5A8E30",
-            "candidate_evidence_chars": 367
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-sounds-of-the-city-present-the-manchester-10-07-2026-event-1-00634-1-8239",
-            "title": "Sounds of the City Present THE STREETS — event 2026-07-10 — public sale 2025-10-17 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/sounds-of-the-city-present-the-manchester-10-07-2026/event/1F00634FDC1F8239",
-            "candidate_evidence_chars": 375
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-sounds-of-the-city-present-the-manchester-11-07-2026-event-1-00634-042-9741",
-            "title": "Sounds of the City Present THE STREETS — event 2026-07-11 — public sale 2025-10-17 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/sounds-of-the-city-present-the-manchester-11-07-2026/event/1F00634A042E9741",
-            "candidate_evidence_chars": 375
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-sounds-of-the-city-present-sex-manchester-12-07-2026-event-1-00636-052-0-4",
-            "title": "Sounds of the City Present Sex Pistols — event 2026-07-12 — public sale 2025-11-28 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/sounds-of-the-city-present-sex-manchester-12-07-2026/event/1F00636E052ED0E4",
-            "candidate_evidence_chars": 357
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-militarie-gun-manchester-13-07-2026-event-1-006472-25-3-2",
-            "title": "Militarie Gun — event 2026-07-13 — public sale 2026-03-25 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/militarie-gun-manchester-13-07-2026/event/1F006472A25E3CF2",
-            "candidate_evidence_chars": 367
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-sunny-day-real-estate-manchester-14-07-2026-event-3700643-98-2195",
-            "title": "Sunny Day Real Estate — event 2026-07-14 — public sale 2026-02-06 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/sunny-day-real-estate-manchester-14-07-2026/event/3700643E98EE2195",
-            "candidate_evidence_chars": 379
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-bat-sabbath-manchester-14-07-2026-event-3600636585063-0",
-            "title": "Bat Sabbath — event 2026-07-14 — public sale 2025-11-07 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/bat-sabbath-manchester-14-07-2026/event/3600636585063CA0",
-            "candidate_evidence_chars": 381
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-breaking-benjamin-manchester-16-07-2026-event-3-006390-6163-85",
-            "title": "Breaking Benjamin — event 2026-07-16 — public sale 2025-12-18 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/breaking-benjamin-manchester-16-07-2026/event/3E006390B6163A85",
-            "candidate_evidence_chars": 395
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-boys-like-girls-manchester-17-07-2026-event-1-0063828-513964",
-            "title": "Boys Like Girls — event 2026-07-17 — public sale 2025-12-05 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/boys-like-girls-manchester-17-07-2026/event/1F0063828B513964",
-            "candidate_evidence_chars": 361
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-an-afternoon-of-indie-indie-for-manchester-18-07-2026-event-3-0064-8-1-47",
-            "title": "An Afternoon of Indie - Indie for the over 30s — event 2026-07-18 — public sale 2026-06-10 15:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/an-afternoon-of-indie-indie-for-manchester-18-07-2026/event/3E0064C8BD1A47CF",
-            "candidate_evidence_chars": 367
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-lenny-pearce-manchester-19-07-2026-event-1-006453-83-3",
-            "title": "Lenny Pearce — event 2026-07-19 — public sale 2026-02-27 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/lenny-pearce-manchester-19-07-2026/event/1F006453FAEE83D3",
-            "candidate_evidence_chars": 359
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-steel-panther-manchester-21-07-2026-event-1-00638-4979-1",
-            "title": "Steel Panther — event 2026-07-21 — public sale 2025-12-18 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/steel-panther-manchester-21-07-2026/event/1F00638BEE4979A1",
-            "candidate_evidence_chars": 361
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-charlie-puth-whatevers-clever-world-tour-manchester-22-07-2026-event-1-006391-2-659",
-            "title": "Charlie Puth - Whatever's Clever! World Tour — event 2026-07-22 — public sale 2026-01-16 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/charlie-puth-whatevers-clever-world-tour-manchester-22-07-2026/event/1F006391DC2E659B",
-            "candidate_evidence_chars": 361
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-theo-kandel-manchester-22-07-2026-event-1-0064-8589-1",
-            "title": "Theo Kandel — event 2026-07-22 — public sale 2026-05-27 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/theo-kandel-manchester-22-07-2026/event/1F0064BAEC8589D1",
-            "candidate_evidence_chars": 355
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-westislonely-manchester-23-07-2026-event-1-006496-6915145",
-            "title": "Westislonely — event 2026-07-23 — public sale 2026-05-01 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/westislonely-manchester-23-07-2026/event/1F006496B6915145",
-            "candidate_evidence_chars": 375
-          }
-        ]
-      },
-      "enriched_rewrite_empty": 3789
+      "enriched_rewrite_attempts": 0,
+      "enriched_rewrite_used": 0
     },
     "status": "applied"
   },
-  "notes": "Информация о закрытии линий Metrolink и замещающих автобусах представлена корректно и соответствует источнику.; Прогноз погоды корректен и безопасен для публикации.; Уточнена география для события в Блэкпуле, чтобы избежать путаницы с Greater Manchester.; Выпуск содержит актуальную информацию о транспортных изменениях ",
+  "notes": "Утверждение о вынесении приговора требует корректировки, так как не подтверждено источником.; Прогноз погоды корректен и безопасен для публикации.; Все строки безопасны, но выпуск может показаться слишком сфокусированным на криминальных новостях.; Выпуск содержит актуальные транспортные обновления, но стоит отметить, ч",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.9,
+    "confidence": 0.85,
     "critical_errors": [
       {
-        "line_index": 8,
-        "section": "Свежие новости",
-        "problem": "Географическая ошибка: Блэкпул не является частью Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 20,
-        "section": "Футбол",
-        "problem": "Неверная информация о трансфере Элиота Андерсона из Ноттингем Форест в Манчестер Сити.",
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Текст утверждает, что Тарант и его сообщники уже получили тюремные сроки, что не подтверждается предоставленной информацией.",
         "risk": "factual",
         "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 8,
-        "section": "Свежие новости",
-        "action": "replace",
-        "replacement_text": "• 19-летний Джои Грегори был срочно доставлен в больницу Wythenshawe после того, как его извлекли из разрушительного пожара в доме на Редкар-Роуд в Блэкпуле, который произошел 30 июня. В результате инцидента он получил серьезные ожоги и находится в медикаментозной коме. Его мать сообщила, что первые 24-48 часов были критическими, и призвала всех молиться за его выздоровление. MEN (Блэкпул не относится к Greater Manchester)",
-        "reason": "Уточнение географического контекста для читателей.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 20,
-        "section": "Футбол",
-        "action": "replace",
-        "replacement_text": "• Манчестер Сити завершил трансфер игрока за £116 млн. Также подтверждена сделка по продаже Нейтана Аке в Фенербахче, и клуб продолжает искать новых игроков для усиления состава. MEN Manchester City",
-        "reason": "Уточнение информации о трансфере, чтобы избежать фактической ошибки.",
+        "line_index": 1,
+        "section": "Главная история дня",
+        "action": "patch",
+        "replacement_text": "• Полиция провела операцию по задержанию наркобосса Германа Таранта, который был арестован в своем доме в Сэле 6 июля 2026 года. Операция завершилась успешным задержанием Таранта и его сообщников, которые, по данным суда, с августа 2024 года занимались распространением наркотиков в Сэле и Алтринчаме. Судебное разбирательство продолжается.",
+        "reason": "Утверждение о вынесении приговора не подтверждено источником.",
         "risk": "factual"
       },
       {
-        "line_index": 33,
-        "section": "Дальние анонсы",
+        "line_index": 22,
+        "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• В Манчестере 3 августа 2026 года в 19:00 начнётся еженедельный воркшоп по стендап-комедии на площадке 33 Oldham St., где участники смогут научиться писать шутки и выступать на сцене. Подробности на Skiddle Manchester Comedy.",
-        "reason": "Добавление источника информации для полноты и практической пользы.",
-        "risk": "product"
-      },
-      {
-        "line_index": 34,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Def Leppard — 6 июля, Co-op Live. Сегодня в Co-op Live.",
-        "reason": "Повторение названия 'Co-op Live' трижды в одной строке.",
+        "replacement_text": "• Незаконные онлайн-казино используют фальшивые истории от BBC и видео с ИИ, чтобы обмануть клиентов. В частности, манипуляции коснулись капитана Манчестер Юнайтед Бруно Фернандеша, который стал жертвой мошенников, создавших поддельные материалы с его участием. Эти действия подчеркивают отсутствие уважения к авторским правам со стороны нелицензированных операторов ставок, которые действуют в оффшорных юрисдикциях. Источник: Guardian Manchester United",
+        "reason": "Добавление источника в конце текста для ясности.",
         "risk": "format"
       },
       {
-        "line_index": 41,
-        "section": "Крупные концерты вне GM",
+        "line_index": 40,
+        "section": "Билеты / Ticket Radar",
         "action": "patch",
-        "replacement_text": "• Michael Bublé — 6 июля, Scarborough Open Air Theatre (Adult Contemporary). Фестивальный состав, не один артист. Ticketmaster",
-        "reason": "Текст корректен, но стоит уточнить, что Scarborough не в Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 42,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• Kings of Leon — 6 июля, Leeds First Direct Bank Arena (Pop). Сегодня в Leeds First Direct Bank Arena. Ticketmaster",
-        "reason": "Текст корректен, но стоит уточнить, что Leeds не в Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 43,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• Lily Allen — 7 июля, The O2 (Pop). Вне Greater Manchester на этой неделе. Ticketmaster",
-        "reason": "Текст корректен, но стоит уточнить, что The O2 в Лондоне.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 44,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• Phantogram — 7 июля, Warehouse SWG3 (Pop). Вне Greater Manchester на этой неделе. Ticketmaster",
-        "reason": "Текст корректен, но стоит уточнить, что Warehouse SWG3 в Глазго.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 45,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• My Chemical Romance — 8 июля, Wembley Stadium (Alternative Rock). Вне Greater Manchester на этой неделе. Ticketmaster",
-        "reason": "Текст корректен, но стоит уточнить, что Wembley Stadium в Лондоне.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 46,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• Lewis Capaldi — 8 июля, Exhibition Park (Alternative Rock). Фестивальный состав, не один артист. Состав: Maximo Park, Heidi Curtis, Jacob Alon. Ticketmaster",
-        "reason": "Текст корректен, но стоит уточнить, что Exhibition Park в Ньюкасле.",
-        "risk": "geo"
+        "replacement_text": "• Sunny Day Real Estate — 14 июля, Manchester New Century Hall (Рок). Концерт в Манчестере на следующей неделе. Ticketmaster",
+        "reason": "Дата 14 июля не соответствует текущей неделе, исправлено на 'следующей неделе'.",
+        "risk": "date"
       }
     ],
     "warnings": [
-      "В выпуске много информации о транспортных сбоях, что может перегрузить читателя. Возможно, стоит рассмотреть сокращение или объединение некоторых пунктов.",
-      "Выпуск содержит много информации о безопасности и планировании, но может не хватать других новостей.",
-      "Некоторые события могут быть перегружены информацией о билетах и мероприятиях, что может повлиять на баланс выпуска.",
-      "Добавьте источник информации для полноты и практической пользы.",
-      "Повторение названия 'Co-op Live' в строке 34 может быть избыточным.",
-      "Уточните географическое расположение мест проведения концертов, чтобы избежать путаницы.",
+      "Выпуск содержит много новостей о преступлениях и происшествиях, что может создать впечатление однобокости. Рекомендуется добавить более разнообразные темы в будущих выпусках.",
+      "Некоторые строки содержат информацию о будущих изменениях в расписании, которые могут быть неактуальны на момент публикации.",
+      "Выпуск содержит много информации о планах и событиях, но может не хватать более актуальных новостей.",
+      "Добавлен источник в конце текста для ясности.",
+      "Выпуск содержит много информации о событиях и инициативах, но может не хватать более глубокого анализа или контекста для некоторых новостей.",
+      "В разделе 'Что важно в ближайшие 7 дней' все события относятся к культурным мероприятиям, что может создать дисбаланс в выпуске, если другие важные события не освещены.",
+      "Дата события Sunny Day Real Estate указана как 'на этой неделе', но фактически это следующая неделя.",
+      "Событие в Оксфорде не относится к Greater Manchester, но находится в разделе русскоязычных концертов и стендапа UK, что может быть допустимо в контексте.",
       "Выходные в GM: 0 item(s), emergency floor 3",
-      "low writer yield: 51/358 included candidates rendered"
+      "low writer yield: 52/386 included candidates rendered",
+      "Футбол: section underflow, minimum 2 items required, only 1 present"
     ],
-    "notes": "Информация о закрытии линий Metrolink и замещающих автобусах представлена корректно и соответствует источнику.; Прогноз погоды корректен и безопасен для публикации.; Уточнена география для события в Блэкпуле, чтобы избежать путаницы с Greater Manchester.; Выпуск содержит актуальную информацию о транспортных изменениях ",
+    "notes": "Утверждение о вынесении приговора требует корректировки, так как не подтверждено источником.; Прогноз погоды корректен и безопасен для публикации.; Все строки безопасны, но выпуск может показаться слишком сфокусированным на криминальных новостях.; Выпуск содержит актуальные транспортные обновления, но стоит отметить, ч",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
@@ -786,13 +269,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2150,
-          "duration_seconds": 1.729
+          "estimated_tokens": 2210,
+          "duration_seconds": 3.655
         },
         {
           "chunk_id": "chunk-02",
@@ -809,33 +292,33 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 1973,
-          "duration_seconds": 1.312
+          "estimated_tokens": 1968,
+          "duration_seconds": 1.547
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            9
+            7
           ],
           "sections": [
             "Свежие новости"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
           "error": "",
-          "estimated_tokens": 4521,
-          "duration_seconds": 3.903
+          "estimated_tokens": 3748,
+          "duration_seconds": 2.296
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            10,
-            16
+            8,
+            18
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -845,51 +328,51 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 4310,
-          "duration_seconds": 3.226
+          "estimated_tokens": 5094,
+          "duration_seconds": 1.386
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            17,
-            19
+            19,
+            21
           ],
           "sections": [
             "Что важно сегодня"
           ],
-          "decision": "pass",
+          "decision": "warn",
           "critical_error_count": 0,
           "action_count": 0,
-          "warning_count": 0,
+          "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2949,
-          "duration_seconds": 0.976
+          "estimated_tokens": 2994,
+          "duration_seconds": 1.425
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            20,
-            21
+            22,
+            23
           ],
           "sections": [
             "Футбол"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
+          "decision": "warn",
+          "critical_error_count": 0,
           "action_count": 1,
-          "warning_count": 0,
+          "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2512,
-          "duration_seconds": 3.114
+          "estimated_tokens": 2282,
+          "duration_seconds": 2.585
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            22,
-            25
+            24,
+            28
           ],
           "sections": [
             "Городской радар"
@@ -899,14 +382,14 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 3272,
-          "duration_seconds": 1.552
+          "estimated_tokens": 3713,
+          "duration_seconds": 1.628
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            26,
+            29,
             31
           ],
           "sections": [
@@ -917,8 +400,8 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 4440,
-          "duration_seconds": 4.326
+          "estimated_tokens": 3137,
+          "duration_seconds": 1.659
         },
         {
           "chunk_id": "chunk-09",
@@ -928,15 +411,15 @@
             32
           ],
           "sections": [
-            "Business/tech события для тебя"
+            "IT и бизнес"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2318,
-          "duration_seconds": 1.182
+          "estimated_tokens": 2155,
+          "duration_seconds": 2.482
         },
         {
           "chunk_id": "chunk-10",
@@ -946,15 +429,15 @@
             33
           ],
           "sections": [
-            "Дальние анонсы"
+            "Business/tech события для тебя"
           ],
-          "decision": "warn",
+          "decision": "pass",
           "critical_error_count": 0,
-          "action_count": 1,
-          "warning_count": 1,
+          "action_count": 0,
+          "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2294,
-          "duration_seconds": 5.543
+          "estimated_tokens": 2214,
+          "duration_seconds": 1.23
         },
         {
           "chunk_id": "chunk-11",
@@ -971,26 +454,26 @@
           "action_count": 1,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 4555,
-          "duration_seconds": 23.413
+          "estimated_tokens": 4644,
+          "duration_seconds": 18.201
         },
         {
           "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
             41,
-            46
+            43
           ],
           "sections": [
-            "Крупные концерты вне GM"
+            "Русскоязычные концерты и стендап UK"
           ],
           "decision": "warn",
           "critical_error_count": 0,
-          "action_count": 6,
+          "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 4178,
-          "duration_seconds": 15.975
+          "estimated_tokens": 2350,
+          "duration_seconds": 5.77
         }
       ],
       "reduce": {
@@ -1001,10 +484,10 @@
         "decision": "warn",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 2,
+        "warning_count": 3,
         "error": "",
-        "estimated_tokens": 10579,
-        "duration_seconds": 23.084
+        "estimated_tokens": 10426,
+        "duration_seconds": 26.844
       },
       "max_workers": 3,
       "chunk_line_target": 12,
