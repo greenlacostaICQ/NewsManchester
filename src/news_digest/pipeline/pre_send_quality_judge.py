@@ -843,6 +843,38 @@ def _ensure_transport_fallback_if_empty(html_lines: list[str], touched_sections:
             return
 
 
+def _strip_empty_section_headings(html_text: str) -> str:
+    """Drop a section heading that has no content beneath it before shipping.
+
+    The repair executor can strip a line as an honest shortfall (e.g. an
+    unsupported lead), and some sections collect nothing on a quiet day. The
+    shortfall stays in the release report, but the reader-facing HTML must not
+    carry a bare «<b>Section</b>» with nothing under it. The brief title and any
+    section that still has a bullet or a bold lead line are kept untouched."""
+    heading_re = re.compile(r"^\s*<b>[^<]+</b>\s*$")
+    lines = html_text.splitlines()
+    keep = [True] * len(lines)
+    for i, line in enumerate(lines):
+        if not heading_re.match(line) or line.strip().startswith("<b>Greater Manchester Brief"):
+            continue
+        has_content = False
+        j = i + 1
+        while j < len(lines) and not heading_re.match(lines[j]):
+            if lines[j].strip():
+                has_content = True
+                break
+            j += 1
+        if has_content:
+            continue
+        keep[i] = False
+        k = i + 1
+        while k < len(lines) and not heading_re.match(lines[k]) and not lines[k].strip():
+            keep[k] = False
+            k += 1
+    trailing = "\n" if html_text.endswith("\n") else ""
+    return "\n".join(l for l, k in zip(lines, keep) if k).rstrip("\n") + trailing
+
+
 def _apply_repair_executor(
     *,
     project_root: Path,
@@ -1595,6 +1627,16 @@ def evaluate_pre_send_quality(
             decision = "warn"
             can_send = True
             reason = "pre-send judge found issues, but no executable repair was available; shipping degraded with report"
+    # Final reader-facing hygiene: never ship a bare section heading (lead stripped
+    # as honest shortfall, or Еда/Дальние empty). Runs regardless of repairs.
+    if not dry_run:
+        pruned_html = _strip_empty_section_headings(digest_html)
+        if pruned_html != digest_html:
+            digest_path.write_text(pruned_html, encoding="utf-8")
+            digest_html = pruned_html
+            final_sha = digest_hash(digest_html)
+            digest_lines = digest_lines_from_html(digest_html)
+            product_completeness = _product_completeness_context(project_root, digest_lines)
     result = PreSendQualityResult(
         status=judge_status,
         decision=decision,
