@@ -19,7 +19,13 @@ import re
 from pathlib import Path
 from typing import Any
 
-from news_digest.pipeline.common import PRIMARY_BLOCKS, SECTION_MIN_ITEMS, canonical_url_identity, extract_sections
+from news_digest.pipeline.common import (
+    PRIMARY_BLOCKS,
+    SECTION_MIN_ITEMS,
+    canonical_url_identity,
+    extract_sections,
+    now_london,
+)
 
 LEAD_SECTION = "Главная история дня"
 RECOVERY_INSERT_CAP = 8
@@ -36,6 +42,15 @@ def _existing_url_idents(html_text: str) -> set[str]:
     # Match the identity _same_section_reserve_line dedups on (canonical), so a
     # recovered line can never duplicate an item already visible in the issue.
     return {canonical_url_identity(url) for url in _HREF_RE.findall(html_text) if url}
+
+
+def _section_minimum_active(section: str, html_counts: dict[str, int]) -> bool:
+    # Weekend planning is intentionally not rendered Monday-Wednesday. Treating
+    # the absent block as a release shortfall created false "broken Weekend"
+    # reports and masked the real issue: completeness only on active Weekend days.
+    if section == "Выходные в GM" and now_london().weekday() < 3:
+        return False
+    return section in html_counts or section in {"Погода", "Что важно сегодня", "Свежие новости"}
 
 
 def _candidate_bullet_line(candidate: dict[str, Any]) -> str:
@@ -148,6 +163,8 @@ def reconcile_visible_html(
     still_short: list[dict[str, Any]] = []
     inserted_total = 0
     for section, minimum in minimums.items():
+        if not _section_minimum_active(section, html_counts):
+            continue
         actual = html_counts.get(section, 0)
         if actual >= minimum:
             continue

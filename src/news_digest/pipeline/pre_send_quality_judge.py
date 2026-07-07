@@ -19,7 +19,16 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from news_digest.pipeline.common import canonical_url_identity, pipeline_run_id_from, read_json, today_london, write_json
+from news_digest.pipeline.common import (
+    SECTION_MIN_ITEMS,
+    canonical_url_identity,
+    extract_sections,
+    now_london,
+    pipeline_run_id_from,
+    read_json,
+    today_london,
+    write_json,
+)
 from news_digest.pipeline.fact_completeness import (
     FACT_COMPLETENESS_VERSION,
     line_satisfies_concept,
@@ -41,6 +50,7 @@ PRE_SEND_JUDGE_MAX_WORKERS = 3
 PRE_SEND_JUDGE_MAX_TPM = 27000.0
 PRE_SEND_JUDGE_MAP_MAX_TOKENS = 900
 PRE_SEND_JUDGE_REDUCE_MAX_TOKENS = 900
+POST_REPAIR_SECTION_TOP_UP_CAP = 8
 _JUDGE_TOKEN_LIMITER = None
 
 
@@ -843,6 +853,75 @@ def _ensure_transport_fallback_if_empty(html_lines: list[str], touched_sections:
             return
 
 
+_LEAD_SECTION_TITLE = "Главная история дня"
+# Blocks whose lead is a weak "main story of the day" — a transport disruption or
+# a weather line should never be promoted into «Главная история дня».
+_WEAK_LEAD_RE = re.compile(
+    r"\b(?:delay|delays|cancel|cancelled|disrupt|diversion|replacement\s+bus|"
+    r"roadworks?|road\s+closed|weather|forecast|temperature|°)\b",
+    re.IGNORECASE,
+)
+
+
+def _ensure_lead_present(html_text: str) -> str:
+    """Guarantee «Главная история дня» carries a story before shipping.
+
+    The pre-send repair can strip the lead as an honest shortfall (unsupported
+    claim), which left the issue with no main story 3 of 7 days this week. If the
+    lead block is empty/absent, promote the strongest top-news bullet (first non
+    weak line of «Свежие новости», then «Что важно сегодня») into it — this is
+    what the writer normally does with the day's top story."""
+    heading_re = re.compile(r"^\s*<b>[^<]+</b>\s*$")
+
+    def title_of(line: str) -> str:
+        m = re.match(r"^\s*<b>([^<]+)</b>", line)
+        return m.group(1).strip() if m else ""
+
+    def content_indices(lines: list[str], name: str) -> list[int]:
+        out: list[int] = []
+        cur = None
+        for i, l in enumerate(lines):
+            if heading_re.match(l):
+                cur = title_of(l)
+                continue
+            if cur == name and l.strip():
+                out.append(i)
+        return out
+
+    lines = html_text.splitlines()
+    if content_indices(lines, _LEAD_SECTION_TITLE):
+        return html_text  # lead already present
+    src_idx = None
+    for src in ("Свежие новости", "Что важно сегодня", "Городской радар"):
+        for i in content_indices(lines, src):
+            if not _WEAK_LEAD_RE.search(re.sub(r"<[^>]+>", "", lines[i])):
+                src_idx = i
+                break
+        if src_idx is not None:
+            break
+    if src_idx is None:
+        return html_text  # nothing worth promoting
+    bullet = lines[src_idx].strip()
+    body = bullet.lstrip("• ").strip()
+    m = re.match(r"^(.*?)(\s*<a\b.*)$", body, re.S)
+    core, anchor = (m.group(1).strip(), m.group(2)) if m else (body, "")
+    parts = re.split(r"(?<=[.!?])\s+", core, maxsplit=1)
+    core = f"<b>{parts[0]}</b> {parts[1]}" if len(parts) == 2 else f"<b>{core}</b>"
+    lead_line = (core + anchor).strip()
+    del lines[src_idx]
+    # Insert under an existing (empty) lead heading, else create the block after the title.
+    lead_hdr = next((i for i, l in enumerate(lines) if heading_re.match(l) and title_of(l) == _LEAD_SECTION_TITLE), None)
+    if lead_hdr is not None:
+        lines[lead_hdr + 1 : lead_hdr + 1] = [lead_line]
+    else:
+        title_i = next((i for i, l in enumerate(lines) if heading_re.match(l) and title_of(l).startswith("Greater Manchester Brief")), None)
+        if title_i is None:
+            return html_text
+        lines[title_i + 1 : title_i + 1] = ["", f"<b>{_LEAD_SECTION_TITLE}</b>", lead_line]
+    trailing = "\n" if html_text.endswith("\n") else ""
+    return "\n".join(lines) + trailing
+
+
 def _strip_empty_section_headings(html_text: str) -> str:
     """Drop a section heading that has no content beneath it before shipping.
 
@@ -1027,6 +1106,119 @@ def _apply_repair_executor(
     unresolved = int(report.get("unresolved") or 0)
     report["status"] = "applied" if int(report.get("applied") or 0) and not unresolved else "partial" if int(report.get("applied") or 0) else "unresolved"
     return "\n".join(html_lines).strip(), report
+
+
+def _section_minimum_active_after_repair(section: str, sections: dict[str, list[str]]) -> bool:
+    """Whether pre-send may recover this section after judge repair.
+
+    This deliberately does not fabricate optional blocks that the writer hid.
+    If a low-signal block heading exists, recovery may fill it; if it is absent,
+    the pre-send judge reports the shortfall elsewhere instead of creating a new
+    section. Weekend keeps its product rule: hidden Monday-Wednesday.
+    """
+    if section == "Выходные в GM" and now_london().weekday() < 3:
+        return False
+    return section in sections
+
+
+def _recover_section_minimums_after_repair(
+    *,
+    project_root: Path,
+    html_text: str,
+    insert_cap: int = POST_REPAIR_SECTION_TOP_UP_CAP,
+) -> tuple[str, dict[str, Any]]:
+    """Top up visible sections after the judge has stripped bad rows.
+
+    The release reconciler runs before the pre-send judge. If the judge later
+    strips a line, section floors can regress after the release gate already
+    passed. This pass uses the same editor reserve machinery, so event windows,
+    duplicate story checks, Russian lint, and source anchors stay enforced.
+    """
+    report: dict[str, Any] = {
+        "enabled": True,
+        "insert_cap": insert_cap,
+        "attempted_sections": [],
+        "inserted_total": 0,
+        "still_under_minimum": [],
+        "reserve_stats": {"enriched_rewrite_attempts": 0, "enriched_rewrite_used": 0},
+    }
+    sections = extract_sections(html_text)
+    if not sections:
+        report["status"] = "skipped_no_sections"
+        return html_text, report
+
+    state_dir = project_root / "data" / "state"
+    candidates_payload = read_json(state_dir / "candidates.json", {"candidates": []})
+    candidates = [c for c in candidates_payload.get("candidates") or [] if isinstance(c, dict)]
+    if not candidates:
+        report["status"] = "skipped_no_candidates"
+        return html_text, report
+
+    slots = _digest_line_slots_from_html(html_text)
+    candidates_by_key = _candidate_index(candidates)
+    rendered_urls = {
+        _line_url_identity(str(slot.get("html") or ""))
+        for slot in slots
+        if str(slot.get("html") or "").strip()
+    }
+    rendered_urls.discard("")
+    try:
+        from news_digest.pipeline.editor import _line_story_identity_key, _same_section_reserve_line  # noqa: PLC0415
+        from news_digest.pipeline.release_reconcile import insert_bullets_after_section  # noqa: PLC0415
+    except Exception as exc:  # noqa: BLE001
+        report["status"] = "skipped_import_failed"
+        report["error"] = str(exc)
+        return html_text, report
+
+    rendered_story_keys = {
+        _line_story_identity_key(str(slot.get("html") or ""), candidates_by_key)
+        for slot in slots
+        if str(slot.get("html") or "").strip()
+    }
+    rendered_story_keys.discard("")
+
+    inserted_total = 0
+    html_counts = {section: len(lines) for section, lines in sections.items()}
+    for section, minimum in SECTION_MIN_ITEMS.items():
+        if inserted_total >= insert_cap:
+            break
+        if not _section_minimum_active_after_repair(section, sections):
+            continue
+        actual = html_counts.get(section, 0)
+        if actual >= minimum:
+            continue
+        section_report = {"section": section, "from": actual, "minimum": minimum, "added": 0}
+        report["attempted_sections"].append(section_report)
+        new_bullets: list[str] = []
+        while actual + len(new_bullets) < minimum and inserted_total + len(new_bullets) < insert_cap:
+            line = _same_section_reserve_line(
+                section,
+                candidates,
+                rendered_urls,
+                rendered_story_keys,
+                report["reserve_stats"] if isinstance(report.get("reserve_stats"), dict) else {},
+            )
+            if not line or not line.strip().startswith("• "):
+                break
+            new_bullets.append(line)
+        if new_bullets:
+            html_text, added = insert_bullets_after_section(html_text, section, new_bullets)
+            inserted_total += added
+            actual += added
+            section_report["added"] = added
+            section_report["to"] = actual
+        if actual < minimum:
+            report["still_under_minimum"].append(
+                {
+                    "section": section,
+                    "actual": actual,
+                    "minimum": minimum,
+                    "reason": "no_visible_section_or_no_recoverable_reserve",
+                }
+            )
+    report["inserted_total"] = inserted_total
+    report["status"] = "applied" if inserted_total else "no_recoverable_shortfall"
+    return html_text, report
 
 
 def _parse_reply(raw: str) -> dict[str, Any] | None:
@@ -1627,13 +1819,38 @@ def evaluate_pre_send_quality(
             decision = "warn"
             can_send = True
             reason = "pre-send judge found issues, but no executable repair was available; shipping degraded with report"
-    # Final reader-facing hygiene: never ship a bare section heading (lead stripped
-    # as honest shortfall, or Еда/Дальние empty). Runs regardless of repairs.
+    # Final reader-facing hygiene: guarantee a lead (promote top news if the repair
+    # stripped it), then never ship a bare section heading. Runs regardless of repairs.
     if not dry_run:
-        pruned_html = _strip_empty_section_headings(digest_html)
-        if pruned_html != digest_html:
-            digest_path.write_text(pruned_html, encoding="utf-8")
-            digest_html = pruned_html
+        hygiene_html = _ensure_lead_present(digest_html)
+        hygiene_html, section_recovery = _recover_section_minimums_after_repair(
+            project_root=project_root,
+            html_text=hygiene_html,
+        )
+        if section_recovery.get("attempted_sections") or int(section_recovery.get("inserted_total") or 0):
+            if repair_executor is None:
+                repair_executor = {
+                    "enabled": True,
+                    "dry_run": False,
+                    "status": "post_repair_section_recovery",
+                    "requested": 0,
+                    "attempted": 0,
+                    "applied": 0,
+                    "actions": [],
+                }
+            repair_executor["post_repair_section_recovery"] = section_recovery
+            inserted = int(section_recovery.get("inserted_total") or 0)
+            if inserted:
+                repair_executor["applied"] = int(repair_executor.get("applied") or 0) + inserted
+                repair_executor["reserve_replacement_used"] = int(repair_executor.get("reserve_replacement_used") or 0) + inserted
+                if decision not in BLOCKING_DECISIONS:
+                    decision = "warn"
+                    can_send = True
+                    reason = f"pre-send section recovery inserted {inserted} reserve line(s) after final judge repair"
+        hygiene_html = _strip_empty_section_headings(hygiene_html)
+        if hygiene_html != digest_html:
+            digest_path.write_text(hygiene_html, encoding="utf-8")
+            digest_html = hygiene_html
             final_sha = digest_hash(digest_html)
             digest_lines = digest_lines_from_html(digest_html)
             product_completeness = _product_completeness_context(project_root, digest_lines)

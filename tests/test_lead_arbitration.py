@@ -23,6 +23,32 @@ class LeadArbitrationTest(unittest.TestCase):
         ]
         self.assertEqual(_arbitrate_global_lead(votes)["title"], "tie-high-board")
 
+    def test_transport_status_does_not_beat_real_city_lead(self):
+        votes = [
+            {
+                "title": "Metrolink delays to Bury after signalling fault",
+                "summary": "Passengers face delays this morning.",
+                "primary_block": "last_24h",
+                "reader_value_score": 99,
+                "section_board_score": 99,
+            },
+            {
+                "title": "Council confirms major housing safety intervention",
+                "summary": "Manchester Council has ordered urgent action at a housing block.",
+                "primary_block": "last_24h",
+                "reader_value_score": 70,
+                "section_board_score": 20,
+            },
+        ]
+        self.assertEqual(_arbitrate_global_lead(votes)["title"], "Council confirms major housing safety intervention")
+
+    def test_all_weak_leads_still_fall_back_to_score(self):
+        votes = [
+            {"title": "Weather warning for Greater Manchester", "primary_block": "weather", "reader_value_score": 40},
+            {"title": "Metrolink delays on the Bury line", "primary_block": "transport", "reader_value_score": 80},
+        ]
+        self.assertEqual(_arbitrate_global_lead(votes)["title"], "Metrolink delays on the Bury line")
+
 
 if __name__ == "__main__":
     unittest.main()

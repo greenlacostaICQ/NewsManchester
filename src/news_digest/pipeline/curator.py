@@ -344,14 +344,27 @@ def _call_curator(candidates: list[dict], api_key: str, base_url: str, model: st
     return results
 
 
+_WEAK_LEAD_BLOCKS = {"transport", "weather", "football", "ticket_radar", "outside_gm_tickets", "future_announcements"}
+
+
+def _is_weak_lead(candidate: dict) -> bool:
+    """A transport disruption / weather / listing is never "the main story of the
+    day" — even a rail-chaos article that lands in last_24h. Such a lead is also
+    the one the pre-send judge most often strips as unsupported, leaving the issue
+    with no lead at all."""
+    if str(candidate.get("primary_block") or "") in _WEAK_LEAD_BLOCKS:
+        return True
+    text = " ".join(str(candidate.get(f) or "") for f in ("title", "summary"))
+    return bool(re.search(r"\b(?:tram|rail|train|metrolink|roadworks?|road\s+closed|weather|forecast|delays?\s+to)\b", text, re.IGNORECASE))
+
+
 def _arbitrate_global_lead(lead_votes: list[dict]) -> dict:
     """S5: pick the single strongest lead-voted story by reader value across all
     curator batches. The prompt elects one lead per batch, so without this the
     day's main story was decided by list order, not strength."""
-    return max(
-        lead_votes,
-        key=lambda c: (float(c.get("reader_value_score") or 0), float(c.get("section_board_score") or 0)),
-    )
+    key = lambda c: (float(c.get("reader_value_score") or 0), float(c.get("section_board_score") or 0))
+    strong = [c for c in lead_votes if not _is_weak_lead(c)]
+    return max(strong or lead_votes, key=key)
 
 
 def run_curator_pass(project_root: Path) -> None:
@@ -499,8 +512,9 @@ def run_curator_pass(project_root: Path) -> None:
             and str(c.get("primary_block") or "") in _LEAD_FALLBACK_BLOCKS
         ]
         if lead_candidates:
+            strong = [c for c in lead_candidates if not _is_weak_lead(c)]
             best = max(
-                lead_candidates,
+                strong or lead_candidates,
                 key=lambda c: (float(c.get("reader_value_score") or 0), float(c.get("section_board_score") or 0)),
             )
             best["is_lead"] = True

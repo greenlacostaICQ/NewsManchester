@@ -101,7 +101,12 @@ REWRITE_SHORTLIST_DEFAULT_CAP = 8
 REWRITE_RANKING_BOARD_MAX = 90
 # #9 Soft global ceiling on how many candidates we write in Russian per run.
 # Items above the ceiling are not deleted — they stay as backup reserve.
-REWRITE_TRANSLATION_BOARD_MAX = 42
+# Raised 42→50 (2026-07-07): per-section floors starve on a busy morning when the
+# global cap is too tight — Свежие/Еда shipped below their minimums most of the
+# week because there was no board room left after events/tickets. The per-section
+# floors do the shaping; the global cap only needs to be wide enough not to fight
+# them.
+REWRITE_TRANSLATION_BOARD_MAX = 50
 REPAIR_DRAFT_MAX_ITEMS_DEFAULT = 8
 TRANSLATION_MEMORY_VERSION = 1
 TRANSLATION_MEMORY_MAX_ENTRIES = 2500

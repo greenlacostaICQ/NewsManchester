@@ -1341,10 +1341,31 @@ _TRANSPORT_INCIDENT_RE = re.compile(
 def _reroute_non_impact_transport(candidate: dict) -> bool:
     """Strict positive passenger-impact contract for the transport block.
 
-    Disabled: Nothing should be rerouted to City Radar. We keep all transport items
-    in the transport block and enrich them.
+    Transport is for reader travel impact: cancellations, closures, delays,
+    diversions, replacement travel, amended timetables, or active roadworks.
+    Capital-spend, app launches, policy, policing near a station, and completed
+    works may still be local news, but they are not a passenger-status card.
     """
-    return False
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("primary_block") or "") != "transport" and str(candidate.get("category") or "") != "transport":
+        return False
+    title = str(candidate.get("title") or "")
+    blob = _candidate_blob(candidate)
+    if _TRANSPORT_TITLE_IMPACT_RE.search(title) or transport_movement_impact(candidate):
+        return False
+    if not (_TRANSPORT_INFRA_RE.search(blob) or _TRANSPORT_INCIDENT_RE.search(blob) or "tfgm" in blob.lower()):
+        return False
+    candidate["primary_block"] = "city_watch"
+    candidate["section_routing_reason"] = "non_impact_transport_to_city_watch"
+    candidate["transport_impact_contract"] = "no_passenger_movement_impact"
+    existing = str(candidate.get("reason") or "").strip()
+    note = (
+        "Validator: transport item has no passenger movement impact; routed to "
+        "city_watch instead of the transport status block."
+    )
+    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    return True
 
 
 def _exclude_historical_no_news_angle(candidate: dict) -> bool:

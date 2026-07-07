@@ -526,6 +526,25 @@ _HARD_SERVICE_ACCOUNTABILITY_RE = re.compile(
     r"patients?|children'?s\s+safety|police|court)\b",
     re.IGNORECASE,
 )
+# «Что важно сегодня» is a practical block: a story about the past — a heritage
+# retrospective ("24 years ago…"), an old conviction commentary ("murderer…
+# serving life") — is not "what a resident should account for today". It only
+# qualifies if a concrete current/upcoming hook (this week, pending decision,
+# deadline) makes it actionable now.
+_TODAY_FOCUS_RETROSPECTIVE_RE = re.compile(
+    r"\b(?:\d{1,3}\s+years?\s+ago|decades?\s+ago|back\s+in\s+(?:19|20)\d\d|"
+    r"serving\s+(?:a\s+)?life|sentenced\s+to\s+life|jailed\s+for\s+life|"
+    r"years?\s+later|murderer|killer)\b",
+    re.IGNORECASE,
+)
+_TODAY_FOCUS_CURRENT_HOOK_RE = re.compile(
+    r"\b(?:this\s+week|today|tonight|tomorrow|this\s+morning|pending|awaiting|"
+    r"will\s+(?:be\s+)?(?:decid|approv|clos|open|start|vot)|"
+    r"to\s+be\s+(?:approved|decided|built|demolished|held)|deadline|"
+    r"closes?\s+on|next\s+week|due\s+to\s+(?:open|start|close)|"
+    r"expected\s+(?:this|next|to))\b",
+    re.IGNORECASE,
+)
 
 
 def _candidate_contract(candidate: dict | None) -> dict:
@@ -640,6 +659,11 @@ def _today_focus_candidate_is_eligible(candidate: dict | None, line: str = "") -
     if line:
         text = f"{text} {line}"
     if tier == "reject":
+        return False
+    # Past retrospective / old-conviction commentary without a current hook is
+    # not a practical "today" item (neighbour-of-a-murderer piece, «24 years
+    # ago…» heritage feature) — keep it out of the morning practical block.
+    if _TODAY_FOCUS_RETROSPECTIVE_RE.search(text) and not _TODAY_FOCUS_CURRENT_HOOK_RE.search(text):
         return False
     story_frame = contract.get("story_frame") if isinstance(contract.get("story_frame"), dict) else {}
     why_now = str(story_frame.get("why_now") or "")

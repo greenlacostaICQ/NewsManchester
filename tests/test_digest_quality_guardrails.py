@@ -3647,9 +3647,21 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             "evidence_text": "The strategy asks residents to spot and report empty homes.",
             "source_label": "Manchester Council",
         }
+        old_conviction = {
+            "include": True,
+            "fingerprint": "old-conviction",
+            "category": "media_layer",
+            "primary_block": "today_focus",
+            "title": "Murderer serving life after city centre attack speaks from prison",
+            "summary": "The article revisits an old conviction and sentence.",
+            "lead": "The offender is serving life for a past murder.",
+            "evidence_text": "No current hearing, deadline or service change is attached.",
+            "source_label": "MEN",
+        }
 
         self.assertFalse(_today_focus_candidate_is_eligible(anniversary))
         self.assertFalse(_today_focus_candidate_is_eligible(poll))
+        self.assertFalse(_today_focus_candidate_is_eligible(old_conviction))
         self.assertTrue(_today_focus_candidate_is_eligible(cqc))
         self.assertTrue(_today_focus_candidate_is_eligible(empty_homes))
 
