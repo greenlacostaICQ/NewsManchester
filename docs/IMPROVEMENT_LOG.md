@@ -655,3 +655,26 @@
   - **skiddle-заголовок** (`test_market_event_sources`): `_enrich_item` при успешном deep-fetch перезаписывал чистый заголовок карточки (из `<img alt>` = «Event at Venue») заголовком дочерней страницы (без venue) — `preserve_listing_title` не включал Skiddle (`extract.py:917`). Фикс: добавил `Skiddle Manchester`/`Skiddle Manchester Bank Holiday` в allow-list — тот же паттерн, что RNCM/HOME. Заголовок карточки сохраняется, deep-enrichment всё равно тянет факты. Сеть-независимо.
 - Файлы/места: `tests/test_public_output_contracts.py`, `src/news_digest/pipeline/collector/extract.py`.
 - ПРОВЕРКА: полный `unittest discover` — 815 pass, 0 fail.
+
+### 0058 — CI time-bomb: датированный weekend-тест хардкодил прошедшую субботу — 2026-07-07
+- Статус: внедрено; ПРОВЕРКА — `unittest discover`: 815 pass, 0 fail (был 1 fail с 2026-07-04).
+- Проблема: `test_dated_weekend_event_is_budget_exempt` падал начиная с 2026-07-04. На 02.07 (0057) был зелёный.
+- Причина: фикстура хардкодила `event.date_start="2026-07-04"`; `_is_public_budget_exempt`→`is_weekend_inventory_candidate`→`has_current_weekend_occurrence(now_london())` — после прохода даты событие перестаёт быть текущим weekend. Тот же анти-паттерн, что 0026/0057, но новый (пришёл с weekend-тестами 0053).
+- Решение: вычислять ближайшую субботу от `now_london()` вместо хардкода. `tests/test_publish_plan_contract.py`.
+- ПРОВЕРКА: тест зелёный в любой день недели; полный набор 815/0.
+
+### 0059 — Потерянный лид восстанавливается в лид-блок, а не демотируется в «Свежие» — 2026-07-07
+- Статус: внедрено; ПРОВЕРКА на реальном артефакте (выпуск 2026-07-02) + 815/0.
+- Проблема: в отправленном 02.07 `lead_visible=false` — блок «Главная история дня» пуст, а curator-лид (Бернхэм, BBC) стоял обычной строкой в «Свежие» рядом со своим твином (About Manchester) = видимый дубль.
+- Причина (корень): writer не отрисовал лид (кандидат пришёл `status=drop` из-за дубля fingerprint), а must_show-recovery (`release_reconcile.py:147-170`) вставляла лид как `•`-bullet в его `primary_block` (last_24h→«Свежие»), игнорируя `is_lead`. Заголовок лид-блока в HTML отсутствовал, а `insert_bullets_after_section` его не создаёт.
+- Решение: `_candidate_lead_line` (жирная первая фраза + источник, без bullet) + `_insert_or_create_lead` (вставляет в существующий лид-блок или создаёт его сразу после титула). В must_show-цикле `is_lead`-кандидат идёт по лид-пути, а не bullet'ом в секцию.
+- ПРОВЕРКА: реконструирован pre-recovery draft из реального `current_digest.html` (убрана recovery-строка) + реальный кандидат Бернхэма → `lead_visible=True`, лид-блок вверху жирным с источником, 0 дублей в «Свежие». Общий набор 815/0.
+- Осталось: семантический твин (About Manchester vs лид) — writer-level story-clustering, требует прод-прогона; не в этом заходе.
+
+### 0060 — Гео: билет вне GM (Ньюкасл) не попадает в GM-секцию «Дальние анонсы» — 2026-07-07
+- Статус: внедрено; ПРОВЕРКА на реальных кандидатах + 815/0.
+- Проблема: в «Дальних анонсах» 02.07 висел фестиваль в Ньюкасле (Lost Minds, Exhibition Park) и события «O2 City Hall Newcastle» с `venue_scope=unknown`.
+- Причина (корень): (1) `resolve_venue_scope` применял `_OUTSIDE_GM_PLACE_TOKENS` (где есть newcastle) к `explicit_location`/title, но НЕ к `venue_text` — а у ticket-фидов city/borough часто пусты, город сидит в venue; (2) `future_announcements` назначался билету без учёта гео.
+- Решение: (1) добавлена проверка place-token по `venue_text` в `resolve_venue_scope`; (2) при назначении `future_announcements` scope=`outside` → `outside_gm_tickets` («Крупные концерты вне GM», где показывается только A-tier). `candidate_validator.py`.
+- ПРОВЕРКА: `resolve_venue_scope` на реальных «O2 City Hall Newcastle» → `('outside','Newcastle')`; GM-venue (Bridgewater) остаётся `GM` (без регрессии); 16 outside-scope из 86 future_announcements реклассифицируются. Набор 815/0.
+- Осталось: потеря writer 11→HTML 1 на рендере «Дальних» — отдельный render-loss, не гео; не в этом заходе.

@@ -198,13 +198,21 @@ class SourceHealthAndPublishPlanTests(unittest.TestCase):
         # E4 (2026-06-30): «Выходные в GM» has no cap — a weekend event
         # confirmed by a trustworthy date survives the global budget; undated
         # bookable filler does not (it is dropped upstream by E2 anyway).
+        # Use the upcoming Saturday relative to the run date so the fixture never
+        # rots into the past (was a hardcoded 2026-07-04 time-bomb).
+        from datetime import timedelta
+
+        from news_digest.pipeline.common import now_london
+
+        today = now_london().date()
+        saturday = today + timedelta(days=(5 - today.weekday()) % 7)
         dated = {
             "fingerprint": "weekend-dated",
             "primary_block": "weekend_activities",
             "title": "Cheadle Makers Market",
             "summary": "Makers market with food and crafts this Saturday.",
             "source_label": "Pedddle Makers Market",
-            "event": {"is_event": True, "date_start": "2026-07-04", "date_confidence": "high"},
+            "event": {"is_event": True, "date_start": saturday.isoformat(), "date_confidence": "high"},
         }
         undated = {
             "fingerprint": "weekend-undated",

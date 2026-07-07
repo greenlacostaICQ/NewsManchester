@@ -117,6 +117,12 @@ def _exclude_stale_ticket_onsale(candidate: dict) -> bool:
         return False
     candidate["primary_block"] = "future_announcements"
     candidate["ticket_type"] = "old_onsale"
+    # Geo contract: «Дальние анонсы» (future_announcements) is a GM far-announce
+    # block. A ticket at a clearly non-GM venue belongs in «Крупные концерты вне
+    # GM» (outside_gm_tickets), where it only shows if A-tier — never in the GM
+    # section as if it were local.
+    if resolve_venue_scope(candidate)[0] == "outside":
+        candidate["primary_block"] = "outside_gm_tickets"
     if age_days > 14:
         candidate["editorial_status"] = "borderline"
         candidate["quality_warnings"] = sorted(set(
@@ -297,6 +303,12 @@ def resolve_venue_scope(candidate: dict) -> tuple[str, str]:
     scope, city = _resolve_named_venue_scope(venue_text)
     if scope:
         return scope, city
+    # A non-GM city named inside the venue string itself ("O2 City Hall
+    # Newcastle") — event.city/borough are often empty for ticket feeds, so the
+    # place token must be checked against the venue too, not only explicit_location.
+    for token in _OUTSIDE_GM_PLACE_TOKENS:
+        if _token_in(venue_text, token):
+            return "outside", token.title()
 
     explicit_location = " ".join([
         str(event.get("borough") or ""),

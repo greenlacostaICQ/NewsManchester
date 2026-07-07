@@ -53,6 +53,45 @@ def _candidate_bullet_line(candidate: dict[str, Any]) -> str:
     return line
 
 
+def _candidate_lead_line(candidate: dict[str, Any]) -> str:
+    """A renderable LEAD line (bold first sentence, no bullet) mirroring the
+    writer lead format, used to recover a lost curator lead into the lead block
+    instead of demoting it to a plain bullet in its primary_block section."""
+    line = str(candidate.get("draft_line") or "").strip()
+    if not line:
+        return ""
+    line = line.lstrip("• ").strip()
+    sentences = re.split(r"(?<=[.!?])\s+", line, maxsplit=1)
+    line = f"<b>{sentences[0]}</b> {sentences[1]}" if len(sentences) == 2 else f"<b>{line}</b>"
+    url = str(candidate.get("source_url") or "")
+    if url and "<a " not in line.lower():
+        label = str(candidate.get("source_label") or "источник")
+        line = f'{line} <a href="{url}">{label}</a>'
+    return line
+
+
+def _insert_or_create_lead(html_text: str, lead_line: str) -> tuple[str, int]:
+    """Place a recovered lead into the lead block. If the lead heading exists,
+    insert the bold line after it; if the writer never rendered a lead (heading
+    absent), create the block right after the brief title so the day's main story
+    is visible in «Главная история дня» rather than lost or demoted into «Свежие»."""
+    if not lead_line.strip().startswith("<b>"):
+        return html_text, 0
+    lines = html_text.splitlines()
+    trailing = "\n" if html_text.endswith("\n") else ""
+    for idx, raw in enumerate(lines):
+        match = _HEADING_RE.fullmatch(raw.strip())
+        if match and match.group(1).strip() == LEAD_SECTION:
+            merged = lines[: idx + 1] + [lead_line] + lines[idx + 1 :]
+            return "\n".join(merged) + trailing, 1
+    for idx, raw in enumerate(lines):
+        match = _HEADING_RE.fullmatch(raw.strip())
+        if match and match.group(1).strip().startswith("Greater Manchester Brief"):
+            merged = lines[: idx + 1] + ["", f"<b>{LEAD_SECTION}</b>", lead_line] + lines[idx + 1 :]
+            return "\n".join(merged) + trailing, 1
+    return html_text, 0
+
+
 def insert_bullets_after_section(
     html_text: str, section_heading: str, new_bullets: list[str]
 ) -> tuple[str, int]:
@@ -150,11 +189,18 @@ def reconcile_visible_html(
         ident = canonical_url_identity(str(candidate.get("source_url") or "")) if candidate.get("source_url") else ""
         if ident and ident in rendered_urls:
             continue  # already visible in the issue
-        section = PRIMARY_BLOCKS.get(str(candidate.get("primary_block") or ""))
-        line = _candidate_bullet_line(candidate)
+        # A curator lead recovers into the lead block (bold, top of issue), never
+        # as a plain bullet demoted into its primary_block section (which both
+        # left «Главная история дня» empty and duplicated the story into «Свежие»).
+        is_lead = bool(candidate.get("is_lead"))
+        section = LEAD_SECTION if is_lead else PRIMARY_BLOCKS.get(str(candidate.get("primary_block") or ""))
+        line = _candidate_lead_line(candidate) if is_lead else _candidate_bullet_line(candidate)
         added = 0
-        if section and line and inserted_total < insert_cap:
-            html_text, added = insert_bullets_after_section(html_text, section, [line])
+        if line and inserted_total < insert_cap:
+            if is_lead:
+                html_text, added = _insert_or_create_lead(html_text, line)
+            elif section:
+                html_text, added = insert_bullets_after_section(html_text, section, [line])
         if added:
             inserted_total += added
             must_show_recovered += added
