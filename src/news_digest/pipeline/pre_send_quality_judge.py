@@ -52,6 +52,25 @@ PRE_SEND_JUDGE_MAP_MAX_TOKENS = 900
 PRE_SEND_JUDGE_REDUCE_MAX_TOKENS = 900
 POST_REPAIR_SECTION_TOP_UP_CAP = 8
 _JUDGE_TOKEN_LIMITER = None
+POST_REPAIR_SECTION_ORDER = [
+    "Погода",
+    "Главная история дня",
+    "Свежие новости",
+    "Общественный транспорт сегодня",
+    "Что важно сегодня",
+    "Футбол",
+    "Выходные в GM",
+    "Городской радар",
+    "Что важно в ближайшие 7 дней",
+    "Еда, открытия и рынки",
+    "IT и бизнес",
+    "Business/tech события для тебя",
+    "Дальние анонсы",
+    "Билеты / Ticket Radar",
+    "Крупные концерты вне GM",
+    "Русскоязычные концерты и стендап UK",
+    "Радар по районам",
+]
 
 
 SYSTEM_PROMPT = """Ты старший редактор и fact-check судья русскоязычного утреннего дайджеста Greater Manchester.
@@ -400,10 +419,11 @@ def _product_completeness_context(project_root: Path, digest_lines: list[dict[st
     core_sections = {
         "Свежие новости": 3,
         "Футбол": 1,
-        "Выходные в GM": 3,
         "Что важно сегодня": 2,
         "Общественный транспорт сегодня": 1,
     }
+    if now_london().weekday() >= 3:
+        core_sections["Выходные в GM"] = 3
     core_counts = {section: int(section_counts.get(section) or 0) for section in core_sections}
     alerts: list[str] = []
     for section, floor in core_sections.items():
@@ -569,17 +589,21 @@ def _deterministic_completeness_scan(
     critical_omissions: list[dict[str, Any]] = []
     noncritical_omissions: list[dict[str, Any]] = []
     checked = 0
+    applicable = 0
+    unmatched = 0
     for slot in slots:
         html_line = str(slot.get("html") or "")
         candidate = rendered_by_url.get(_line_url_identity(html_line))
         if not candidate:
+            unmatched += 1
             continue
+        checked += 1
         review = translation_completeness_review(
             _completeness_source_blob(candidate), str(slot.get("text") or "")
         )
         if not review.get("applies"):
             continue
-        checked += 1
+        applicable += 1
         idx = int(slot.get("line_index") or 0)
         section = str(slot.get("section") or "")
         source_url_key = canonical_url_identity(str(candidate.get("source_url") or ""))
@@ -609,6 +633,9 @@ def _deterministic_completeness_scan(
     return {
         "version": FACT_COMPLETENESS_VERSION,
         "checked_lines": checked,
+        "matched_lines": checked,
+        "applicable_lines": applicable,
+        "unmatched_lines": unmatched,
         "critical_omission_count": len(critical_omissions),
         "critical_omissions": critical_omissions[:40],
         "noncritical_omissions": noncritical_omissions[:40],
@@ -1108,7 +1135,11 @@ def _apply_repair_executor(
     return "\n".join(html_lines).strip(), report
 
 
-def _section_minimum_active_after_repair(section: str, sections: dict[str, list[str]]) -> bool:
+def _section_minimum_active_after_repair(
+    section: str,
+    sections: dict[str, list[str]],
+    writer_counts: dict[str, int],
+) -> bool:
     """Whether pre-send may recover this section after judge repair.
 
     This deliberately does not fabricate optional blocks that the writer hid.
@@ -1118,7 +1149,44 @@ def _section_minimum_active_after_repair(section: str, sections: dict[str, list[
     """
     if section == "Выходные в GM" and now_london().weekday() < 3:
         return False
-    return section in sections
+    return section in sections or int(writer_counts.get(section) or 0) > 0
+
+
+def _insert_or_create_section_bullets(html_text: str, section: str, bullets: list[str]) -> tuple[str, int, bool]:
+    """Insert bullets into an existing section, or recreate a writer-intended
+    section that disappeared after pre-send repair.
+
+    The caller has already obtained clean bullets from the same-section reserve.
+    This helper only handles placement in the public section order.
+    """
+    from news_digest.pipeline.release_reconcile import insert_bullets_after_section  # noqa: PLC0415
+
+    html_text, added = insert_bullets_after_section(html_text, section, bullets)
+    if added:
+        return html_text, added, False
+
+    clean_bullets = [line for line in bullets if str(line).strip().startswith("• ")]
+    if not clean_bullets:
+        return html_text, 0, False
+    lines = html_text.splitlines()
+    heading_re = re.compile(r"^\s*<b>([^<]+)</b>\s*$")
+    current_order = {name: idx for idx, name in enumerate(POST_REPAIR_SECTION_ORDER)}
+    target_order = current_order.get(section, len(POST_REPAIR_SECTION_ORDER))
+    insert_at = len(lines)
+    for idx, raw in enumerate(lines):
+        match = heading_re.match(raw.strip())
+        if not match:
+            continue
+        name = match.group(1).strip()
+        if current_order.get(name, -1) > target_order:
+            insert_at = idx
+            break
+    block = [f"<b>{section}</b>", *clean_bullets, ""]
+    if insert_at > 0 and lines[insert_at - 1].strip():
+        block = ["", *block]
+    merged = lines[:insert_at] + block + lines[insert_at:]
+    trailing = "\n" if html_text.endswith("\n") else ""
+    return "\n".join(merged).rstrip("\n") + trailing, len(clean_bullets), True
 
 
 def _recover_section_minimums_after_repair(
@@ -1148,6 +1216,11 @@ def _recover_section_minimums_after_repair(
         return html_text, report
 
     state_dir = project_root / "data" / "state"
+    writer_report = read_json(state_dir / "writer_report.json", {})
+    writer_counts = {
+        str(section): int(count or 0)
+        for section, count in (writer_report.get("section_counts") or {}).items()
+    }
     candidates_payload = read_json(state_dir / "candidates.json", {"candidates": []})
     candidates = [c for c in candidates_payload.get("candidates") or [] if isinstance(c, dict)]
     if not candidates:
@@ -1164,7 +1237,6 @@ def _recover_section_minimums_after_repair(
     rendered_urls.discard("")
     try:
         from news_digest.pipeline.editor import _line_story_identity_key, _same_section_reserve_line  # noqa: PLC0415
-        from news_digest.pipeline.release_reconcile import insert_bullets_after_section  # noqa: PLC0415
     except Exception as exc:  # noqa: BLE001
         report["status"] = "skipped_import_failed"
         report["error"] = str(exc)
@@ -1182,7 +1254,7 @@ def _recover_section_minimums_after_repair(
     for section, minimum in SECTION_MIN_ITEMS.items():
         if inserted_total >= insert_cap:
             break
-        if not _section_minimum_active_after_repair(section, sections):
+        if not _section_minimum_active_after_repair(section, sections, writer_counts):
             continue
         actual = html_counts.get(section, 0)
         if actual >= minimum:
@@ -1202,11 +1274,13 @@ def _recover_section_minimums_after_repair(
                 break
             new_bullets.append(line)
         if new_bullets:
-            html_text, added = insert_bullets_after_section(html_text, section, new_bullets)
+            html_text, added, created_section = _insert_or_create_section_bullets(html_text, section, new_bullets)
             inserted_total += added
             actual += added
             section_report["added"] = added
             section_report["to"] = actual
+            if created_section:
+                section_report["created_section"] = True
         if actual < minimum:
             report["still_under_minimum"].append(
                 {

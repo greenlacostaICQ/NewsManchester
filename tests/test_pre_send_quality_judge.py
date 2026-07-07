@@ -3,12 +3,15 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
+from unittest import mock
 
 from news_digest.pipeline.pre_send_quality_judge import (
     REPORT_NAME,
     _chunk_digest_slots,
     _combine_map_reduce_results,
+    _product_completeness_context,
     _rendered_candidates,
     digest_hash,
     digest_lines_from_html,
@@ -116,6 +119,20 @@ class PreSendQualityJudgeTests(unittest.TestCase):
             alerts = result["product_completeness"]["alerts"]
             self.assertTrue(any("Свежие новости" in alert for alert in alerts))
             self.assertTrue(any("ticket dominance" in alert for alert in alerts))
+
+    def test_product_completeness_does_not_alert_hidden_weekend_monday_to_wednesday(self) -> None:
+        tmp, root = self._project()
+        with tmp, mock.patch("news_digest.pipeline.pre_send_quality_judge.now_london", return_value=datetime(2026, 7, 7, 8, 0)):
+            (root / "data" / "state" / "draft_digest.html").write_text(
+                "<b>Greater Manchester Brief — 2026-07-07, 08:00</b>\n\n"
+                "<b>Свежие новости</b>\n"
+                "• One news line.\n",
+                encoding="utf-8",
+            )
+            product = _product_completeness_context(root, [])
+
+        self.assertNotIn("Выходные в GM", product["core_counts"])
+        self.assertFalse(any("Выходные в GM" in alert for alert in product["alerts"]))
 
     def test_rendered_candidates_uses_compact_judge_payload(self) -> None:
         tmp, root = self._project()

@@ -4570,6 +4570,8 @@ def _weekend_inventory_loss_trace(
     candidates: list[dict],
     rendered_section_by_fp: dict[str, str],
     dropped_candidates: list[dict[str, object]],
+    *,
+    show_weekend: bool,
 ) -> dict[str, object]:
     dropped_by_fp = {
         str(item.get("fingerprint") or ""): item
@@ -4584,7 +4586,10 @@ def _weekend_inventory_loss_trace(
         fp = str(candidate.get("fingerprint") or "")
         rendered_section = rendered_section_by_fp.get(fp, "")
         dropped = dropped_by_fp.get(fp) or {}
-        if rendered_section == "Выходные в GM":
+        if not show_weekend:
+            stage = "hidden_by_schedule"
+            reason = "Weekend section is intentionally hidden Monday-Wednesday."
+        elif rendered_section == "Выходные в GM":
             stage = "rendered_weekend"
             reason = "visible in Weekend"
         elif rendered_section:
@@ -4633,16 +4638,19 @@ def _weekend_inventory_loss_trace(
     )
     rendered = counts.get("rendered_weekend", 0)
     total = len(rows)
+    hidden = counts.get("hidden_by_schedule", 0)
     return {
         "schema_version": 1,
+        "show_weekend": show_weekend,
         "policy": (
             "Explains every eligible Weekend Inventory candidate: visible in "
-            "Weekend or why it was missing."
+            "Weekend on active days, or why it was missing/hidden."
         ),
         "counts": {
             "eligible": total,
             "rendered": rendered,
-            "missing": max(0, total - rendered),
+            "missing": 0 if not show_weekend else max(0, total - rendered),
+            "hidden_by_schedule": hidden,
             **counts,
         },
         "items": rows[:240],
@@ -7458,7 +7466,12 @@ def write_digest(project_root: Path) -> StageResult:
     if today_focus_board["rendered_after_recovery"] >= SECTION_MIN_ITEMS.get(TODAY_FOCUS_SECTION, 3):
         today_focus_board["underflow_reason"] = ""
     today_focus_loss = _today_focus_loss_trace(candidates, rendered_section_by_fp, dropped_candidates)
-    weekend_inventory_loss = _weekend_inventory_loss_trace(candidates, rendered_section_by_fp, dropped_candidates)
+    weekend_inventory_loss = _weekend_inventory_loss_trace(
+        candidates,
+        rendered_section_by_fp,
+        dropped_candidates,
+        show_weekend=show_weekend,
+    )
 
     drop_breakdown = {"failure": 0, "quarantine": 0, "reserve": 0}
     for _item in dropped_candidates:

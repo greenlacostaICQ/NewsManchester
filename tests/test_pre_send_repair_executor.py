@@ -73,6 +73,47 @@ class PreSendRepairExecutorTest(unittest.TestCase):
         self.assertEqual(report["attempted_sections"][0]["section"], "Свежие новости")
         self.assertEqual(report["attempted_sections"][0]["to"], 6)
 
+    def test_post_repair_recreates_writer_intended_section_from_reserve(self) -> None:
+        digest_html = (
+            "<b>Greater Manchester Brief — 2026-07-07, 08:00</b>\n\n"
+            "<b>IT и бизнес</b>\n"
+            "• Офисная новость. <a href=\"https://example.test/business\">MEN</a>\n"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            (state_dir / "writer_report.json").write_text(
+                json.dumps({"section_counts": {"Еда, открытия и рынки": 1}}),
+                encoding="utf-8",
+            )
+            (state_dir / "candidates.json").write_text(
+                json.dumps(
+                    {
+                        "candidates": [
+                            {
+                                "fingerprint": "food-reserve-1",
+                                "primary_block": "openings",
+                                "validated": True,
+                                "public_reserve": True,
+                                "backup_pool_only": False,
+                                "draft_line": "• В центре открылся новый рынок с готовой едой.",
+                                "source_url": "https://example.test/food-reserve-1",
+                                "source_label": "Manchester's Finest",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            recovered, report = _recover_section_minimums_after_repair(project_root=root, html_text=digest_html)
+
+        self.assertIn("<b>Еда, открытия и рынки</b>", recovered)
+        self.assertIn("новый рынок с готовой едой", recovered)
+        self.assertTrue(report["attempted_sections"][0]["created_section"])
+        self.assertEqual(report["inserted_total"], 1)
+
     def test_editor_fact_lock_allows_source_fact_but_rejects_new_date(self) -> None:
         item = {
             "line": "• HOME показывает выставку на 28 June. <a href=\"https://home.test/event\">HOME</a>",

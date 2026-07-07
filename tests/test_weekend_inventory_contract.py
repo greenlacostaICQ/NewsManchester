@@ -9,7 +9,7 @@ from news_digest.pipeline.editorial_contracts import calendar_repeat_review
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.llm_rewrite import _apply_post_board_translation_cut, _apply_rewrite_shortlist
 from news_digest.pipeline.weekend_inventory import is_weekend_inventory_candidate
-from news_digest.pipeline.writer import _slice_counting_only_non_exempt
+from news_digest.pipeline.writer import _slice_counting_only_non_exempt, _weekend_inventory_loss_trace
 
 
 def _next_saturday() -> date:
@@ -106,6 +106,21 @@ class WeekendInventoryContractTests(unittest.TestCase):
         self.assertTrue(is_weekend_inventory_candidate(beauty, today=date(2026, 7, 2)))
         self.assertFalse(is_weekend_inventory_candidate(concert, today=date(2026, 7, 2)))
         self.assertEqual(market["event"]["date_start"], event_day.isoformat())
+
+    def test_hidden_weekend_inventory_is_not_reported_as_missing(self) -> None:
+        candidate = _weekend_inventory_candidate()
+
+        trace = _weekend_inventory_loss_trace(
+            [candidate],
+            {},
+            [],
+            show_weekend=False,
+        )
+
+        self.assertEqual(trace["counts"]["eligible"], 1)
+        self.assertEqual(trace["counts"]["missing"], 0)
+        self.assertEqual(trace["counts"]["hidden_by_schedule"], 1)
+        self.assertEqual(trace["items"][0]["loss_stage"], "hidden_by_schedule")
 
     def test_rewrite_board_caps_do_not_cut_weekend_inventory(self) -> None:
         weekend = [_weekend_inventory_candidate(idx) for idx in range(12)]

@@ -67,12 +67,38 @@ class TranslationCompletenessTests(unittest.TestCase):
             }
         ]
         scan = _deterministic_completeness_scan(slots, _rendered_candidates_by_url([candidate]))
+        self.assertEqual(scan["checked_lines"], 1)
+        self.assertEqual(scan["matched_lines"], 1)
+        self.assertEqual(scan["applicable_lines"], 1)
         self.assertEqual(scan["critical_omission_count"], 1)
         self.assertEqual(len(scan["critical_errors"]), 1)
         err = scan["critical_errors"][0]
         self.assertEqual(err["line_index"], 3)
         self.assertEqual(err["risk"], "translation")
         self.assertEqual(err["suggested_action"], "repair")
+
+    def test_scan_counts_matched_benign_lines_as_checked(self) -> None:
+        url = "https://example.com/events/jazz"
+        candidate = {
+            "source_url": url,
+            "title": "Jazz festival at Albert Hall, tickets £12",
+            "compact_facts": "summary=Jazz festival at Albert Hall, tickets £12",
+        }
+        slots = [
+            {
+                "line_index": 4,
+                "section": "Что важно в ближайшие 7 дней",
+                "html": f'• Джазовый фестиваль в Albert Hall, билеты £12. <a href="{url}">Venue</a>',
+                "text": "• Джазовый фестиваль в Albert Hall, билеты £12.",
+            }
+        ]
+
+        scan = _deterministic_completeness_scan(slots, _rendered_candidates_by_url([candidate]))
+
+        self.assertEqual(scan["checked_lines"], 1)
+        self.assertEqual(scan["matched_lines"], 1)
+        self.assertEqual(scan["applicable_lines"], 0)
+        self.assertEqual(scan["critical_omission_count"], 0)
 
     def test_recount_distinguishes_recovered_from_pulled_line(self) -> None:
         url = "https://example.com/crime/tinder-case"
