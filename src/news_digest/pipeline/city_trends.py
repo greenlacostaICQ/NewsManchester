@@ -387,7 +387,7 @@ def build_weekly_city_rollup(
     end_date = end_date_london or str(history[-1].get("run_date_london") or now_london().strftime("%Y-%m-%d"))
     end_dt = _parse_day(end_date)
     if end_dt is None:
-        end_dt = _parse_day(str(history[-1].get("run_date_london") or "")) or datetime.now()
+        end_dt = _parse_day(str(history[-1].get("run_date_london") or "")) or now_london().replace(tzinfo=None)
         end_date = end_dt.strftime("%Y-%m-%d")
     start_dt = end_dt - timedelta(days=6)
     selected = [

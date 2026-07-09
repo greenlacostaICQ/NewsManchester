@@ -272,7 +272,9 @@ _CROSS_MONTH_RANGE_RU_RE = re.compile(
 
 
 def _today_london() -> date_cls:
-    return datetime.now(tz=_LONDON_TZ).date()
+    from news_digest.pipeline.common import now_london  # noqa: PLC0415
+
+    return now_london().date()
 
 
 def _resolve_year(month: int, year_hint: str | None, today: date_cls | None = None) -> int:

@@ -167,6 +167,14 @@ PRIMARY_BLOCKS = {
 
 
 def now_london() -> datetime:
+    # NEWS_DIGEST_FAKE_NOW (ISO datetime) freezes pipeline time for offline
+    # replays of past days (scripts/replay_day.py). Never set in production.
+    fake = os.environ.get("NEWS_DIGEST_FAKE_NOW", "").strip()
+    if fake:
+        parsed = datetime.fromisoformat(fake)
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=LONDON_TZ)
+        return parsed.astimezone(LONDON_TZ)
     return datetime.now(LONDON_TZ)
 
 

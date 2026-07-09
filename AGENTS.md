@@ -377,6 +377,41 @@ python3 -c "import json; r=json.load(open('data/state/release_report.json')); ro
 python3 -c "import json; r=json.load(open('data/state/published_facts.json')); print(len(r['facts']), 'facts; last_updated', r['last_updated_london'])"
 ```
 
+## Replay harness — MANDATORY check for writer/editor/release changes
+
+`scripts/replay_day.py` re-runs write → edit → build offline (no network, no
+LLM, no Telegram) on any past day's committed state snapshot and compares the
+rebuilt digest against the HTML that actually shipped. Every daily
+"chore: digest state YYYY-MM-DD" commit is a replayable fixture.
+
+```
+# One day (~2-3 min, sandbox path is printed):
+python3 scripts/replay_day.py 2026-07-09
+
+# Golden defect days + 6 ordinary days:
+python3 scripts/replay_day.py --golden
+```
+
+**Rule: any change touching `writer.py`, `editor.py`, `release.py`, or
+rendering/selection logic they call is NOT done until it has been replayed.**
+Workflow:
+
+1. Before the change: replay the day the defect shipped on (and `--golden` for
+   wide changes). Keep the sandbox — it is the baseline.
+2. After the change: replay the same days. The defect must be gone from the
+   rebuilt HTML; ordinary days must not regress (section/bullet counts,
+   lead_status, blank runs, boilerplate endings — all printed side by side).
+3. Quote the before/after metrics in the IMPROVEMENT_LOG entry as the ПРОВЕРКА.
+
+How to read the output: the state snapshot is committed AFTER the morning run,
+so post-send mutations (e.g. reassigned `is_lead`, drifted statuses) make a
+byte-identical match with the sent HTML impossible. The regression signal is
+**replay-vs-replay across code versions** (replay is deterministic for a given
+code + snapshot); the diff against the sent HTML is context, not a gate.
+Known-defect expectations for golden days are asserted on the *sent* artifact
+and never go stale. Time is frozen via `NEWS_DIGEST_FAKE_NOW` (honored in
+`common.now_london()`); network is hard-blocked at the socket level.
+
 ## Current blockers (hand-maintained — last reviewed 2026-04-28 AM)
 
 Phase 1 is considered complete. This section tracks accepted waivers and
