@@ -13,9 +13,11 @@ from news_digest.pipeline.inventory import (
     classify_category_health,
     classify_disposition,
     evaluate_card,
+    inventory_record_to_candidate,
     passes_morning_contract,
     read_inventory,
     reentry_candidates,
+    summarise_morning_intake,
     ticket_reaches_morning,
     verify_collect_conservation,
     verify_dispositions,
@@ -115,22 +117,68 @@ class CardRulesTest(unittest.TestCase):
 
 class MorningContractTest(unittest.TestCase):
     def test_stale_ticket_without_reason_is_inventory_only(self) -> None:
-        record = {"primary_block": "ticket_radar", "render_ready": True, "fact_card": {"ticket_type": "regular_upcoming", "tier": "C"}}
+        record = {
+            "primary_block": "ticket_radar",
+            "render_ready": True,
+            "last_seen_at": "2026-07-09T08:00:00+01:00",
+            "fact_card": {"ticket_type": "regular_upcoming", "tier": "C"},
+        }
         ok, reason = passes_morning_contract(record, today="2026-07-01")
         self.assertFalse(ok)
         self.assertEqual(reason, "inventory_only")
 
     def test_a_tier_ticket_reaches_morning(self) -> None:
-        record = {"primary_block": "ticket_radar", "render_ready": True, "fact_card": {"tier": "A", "ticket_type": "regular_upcoming"}}
+        record = {
+            "primary_block": "ticket_radar",
+            "render_ready": True,
+            "last_seen_at": "2026-07-09T08:00:00+01:00",
+            "fact_card": {"tier": "A", "ticket_type": "regular_upcoming"},
+        }
         self.assertTrue(ticket_reaches_morning(record))
         ok, reason = passes_morning_contract(record, today="2026-07-01")
         self.assertTrue(ok)
 
     def test_expired_never_passes_as_fresh(self) -> None:
-        record = {"primary_block": "last_24h", "render_ready": True, "expires_at": "2026-06-01"}
+        record = {"primary_block": "last_24h", "render_ready": True, "last_seen_at": "2026-07-09T08:00:00+01:00", "expires_at": "2026-06-01"}
         ok, reason = passes_morning_contract(record, today="2026-07-01")
         self.assertFalse(ok)
         self.assertEqual(reason, "expired")
+
+    def test_fact_ready_without_text_reaches_morning_as_needs_text(self) -> None:
+        record = {
+            "primary_block": "weekend_activities",
+            "quality_status": "needs_text",
+            "missing_facts": ["draft_line"],
+            "render_ready": False,
+            "last_seen_at": "2026-07-09T08:00:00+01:00",
+            "fact_card": {"event_name": "Market", "venue": "Stockport", "date_start": "2026-07-11"},
+        }
+        ok, reason = passes_morning_contract(record, today="2026-07-09")
+        self.assertTrue(ok)
+        self.assertEqual(reason, "morning_relevant_needs_text")
+
+    def test_ttl_expired_record_is_not_morning_relevant(self) -> None:
+        record = {
+            "primary_block": "last_24h",
+            "quality_status": "needs_text",
+            "missing_facts": ["draft_line"],
+            "last_seen_at": "2026-07-01T08:00:00+01:00",
+            "fact_card": {"what_happened": "x", "why_now": "today"},
+        }
+        ok, reason = passes_morning_contract(record, today="2026-07-09")
+        self.assertFalse(ok)
+        self.assertEqual(reason, "ttl_expired")
+
+    def test_transport_needs_live_refetch_when_only_fact_ready(self) -> None:
+        record = {
+            "primary_block": "transport",
+            "quality_status": "needs_text",
+            "missing_facts": ["draft_line"],
+            "last_seen_at": "2099-07-09T08:00:00+01:00",
+        }
+        ok, reason = passes_morning_contract(record, today="2026-07-09")
+        self.assertFalse(ok)
+        self.assertEqual(reason, "needs_live_refetch")
 
 
 class ReentryTest(unittest.TestCase):
@@ -181,6 +229,54 @@ class BuildRecordTest(unittest.TestCase):
             self.assertIn(key, rec)
         self.assertTrue(rec["render_ready"])
         self.assertEqual(rec["fact_card"]["ticket_type"], "on_sale_now")
+        self.assertEqual(rec["title"], "")
+
+    def test_inventory_record_restores_normal_candidate_shape(self) -> None:
+        record = {
+            "fingerprint": "fp1",
+            "title": "Stockport Makers Market",
+            "summary": "Market this weekend.",
+            "source_url": "https://example.test/market",
+            "source_label": "Stockport Events",
+            "primary_block": "weekend_activities",
+            "category": "culture_weekly",
+            "raw_evidence": "Stockport Makers Market runs this Saturday.",
+            "quality_status": "needs_text",
+            "missing_facts": ["draft_line"],
+            "last_seen_at": "2026-07-09T01:00:00+01:00",
+            "fact_card": {"event_name": "Stockport Makers Market", "venue": "Stockport", "date_start": "2026-07-11"},
+        }
+        candidate = inventory_record_to_candidate(record)
+        self.assertEqual(candidate["inventory_source"], "night_inventory")
+        self.assertTrue(candidate["include"])
+        self.assertTrue(candidate["inventory_needs_text"])
+        self.assertEqual(candidate["event"]["venue"], "Stockport")
+
+    def test_report_only_intake_counts_fact_ready_candidates(self) -> None:
+        records = [
+            {
+                "fingerprint": "fp1",
+                "title": "Market",
+                "primary_block": "weekend_activities",
+                "quality_status": "needs_text",
+                "missing_facts": ["draft_line"],
+                "last_seen_at": "2026-07-09T01:00:00+01:00",
+                "fact_card": {"event_name": "Market", "venue": "Stockport", "date_start": "2026-07-11"},
+            },
+            {
+                "fingerprint": "fp2",
+                "primary_block": "weekend_activities",
+                "quality_status": "missing_facts",
+                "missing_facts": ["venue"],
+                "last_seen_at": "2026-07-09T01:00:00+01:00",
+            },
+        ]
+        report = summarise_morning_intake(records, today="2026-07-09")
+        self.assertEqual(report["mode"], "report_only")
+        self.assertEqual(report["totals"]["records"], 2)
+        self.assertEqual(report["totals"]["fact_ready"], 1)
+        self.assertEqual(report["totals"]["eligible"], 1)
+        self.assertEqual(report["reasons"]["missing_facts"], 1)
 
 
 class NightWaveTest(unittest.TestCase):
@@ -190,6 +286,7 @@ class NightWaveTest(unittest.TestCase):
 
         import scripts.run_local_digest as runner
         from news_digest.pipeline.collector import core as collector_core
+        from news_digest.pipeline import entity_extraction, event_extraction
 
         fake_sources = [
             types.SimpleNamespace(name="BBC Manchester", report_category="media_layer"),
@@ -201,13 +298,19 @@ class NightWaveTest(unittest.TestCase):
             health = {"checked": True, "fetched": True, "errors": []}
             cand = {
                 "fingerprint": f"{source.name}-1",
-                "primary_block": "last_24h",
+                "primary_block": "next_7_days",
                 "category": source.report_category,
-                "what_happened": "something happened",
-                "why_now": "today",
-                "draft_line": "• Новость.",
+                "title": "Market at HOME",
             }
             return health, [cand]
+
+        def fake_entities(candidates):
+            for candidate in candidates:
+                candidate["entities"] = {"venues": ["HOME"]}
+
+        def fake_events(candidates):
+            for candidate in candidates:
+                candidate["event"] = {"event_name": "Market", "venue": "HOME", "date_start": "2026-07-11"}
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -215,6 +318,8 @@ class NightWaveTest(unittest.TestCase):
             with mock.patch.object(runner, "PROJECT_ROOT", root), \
                     mock.patch.object(collector_core, "SOURCES", fake_sources), \
                     mock.patch.object(collector_core, "_collect_single_source", side_effect=fake_collect), \
+                    mock.patch.object(entity_extraction, "enrich_candidates_entities", side_effect=fake_entities), \
+                    mock.patch.object(event_extraction, "enrich_candidates_events", side_effect=fake_events), \
                     mock.patch("sys.stdout"):
                 rc = runner.cmd_collect_inventory("live_news")
 
@@ -224,6 +329,8 @@ class NightWaveTest(unittest.TestCase):
             # inventory written for the wave's categories only
             self.assertEqual([r["fingerprint"] for r in read_inventory(root / "data" / "state", "media_layer")], ["BBC Manchester-1"])
             self.assertEqual([r["fingerprint"] for r in read_inventory(root / "data" / "state", "gmp")], ["GMP-1"])
+            self.assertEqual(read_inventory(root / "data" / "state", "media_layer")[0]["fact_card"]["venue"], "HOME")
+            self.assertEqual(read_inventory(root / "data" / "state", "media_layer")[0]["quality_status"], "needs_text")
             # the ticket source is outside the live_news wave — not collected
             self.assertEqual(read_inventory(root / "data" / "state", "venues_tickets"), [])
 

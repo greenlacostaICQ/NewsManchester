@@ -716,3 +716,58 @@
 - Ожидаемый эффект и метрика проверки: `release_report.cost_summary.cache_hit_ratio` совпадает с агрегированными `cost_*.json`; `cost_history.json[-1].cache_hit_ratio` не теряется; `release_report.inventory_morning_effect.morning_consumed=false` до отдельного inventory-first product change, при этом видны `total_records/render_ready_records`.
 - Файлы/места: `release.py:_aggregate_cost`, `_append_cost_history`, `_summarise_inventory_morning_effect`; тесты `tests/test_prompt_and_fetch_cache.py`, `tests/test_inventory.py`.
 - ПРОВЕРКА: offline — `py_compile` OK; `tests.test_prompt_and_fetch_cache`, `tests.test_inventory` OK. На реальных `data/state/cost_*.json` 07.07: `total_cache_hit_tokens=25216`, `total_cache_miss_tokens=130876`, `cache_hit_ratio=0.1615` вместо `0.0`. На реальном inventory: `inventory_files=11`, `total_records=2366`, `render_ready_records=0`, `last_wave=breaking`, `morning_consumed=false`.
+
+### 0065 — Night inventory fact-ready gate без schema v2 — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА offline, prod-proof после следующей ночи/утра.
+- Проблема: night inventory уже различал `quality_status=needs_text`, но morning contract требовал `render_ready=true`, то есть готовую `draft_line`. Из-за этого карточка с полными фактами, но без русского текста, считалась непригодной для утра.
+- Причина (корень): `passes_morning_contract` смотрел только `record.render_ready`, хотя `evaluate_card` уже умеет состояние `needs_text` = факты есть, нужен только текст.
+- Решение: добавлен `inventory_fact_ready`: `render_ready` или `quality_status=needs_text` с единственным missing `draft_line`. `passes_morning_contract` теперь пропускает такие записи как `morning_relevant_needs_text`, а не требует schema v2. В inventory-record добавлены недостающие для восстановления candidate поля: `title`, `summary`, `lead`, `published_at`, `freshness_status`, `practical_angle`, `draft_line`.
+- Почему так (отвергнутые альтернативы): не создаём новую схему v2, потому что базовый split `missing_facts/needs_text/ready` уже есть; не пускаем `missing_facts` в утренний поток.
+- Ожидаемый эффект и метрика проверки: после новой ночной волны `release_report.inventory_morning_effect.fact_ready_records` должен быть выше `render_ready_records`, а `report_only_intake.reasons.morning_relevant_needs_text` покажет кандидатов, которые можно утром писать, не собирая заново.
+- Файлы/места: `inventory.py:inventory_fact_ready`, `passes_morning_contract`, `build_inventory_record`; тесты `tests/test_inventory.py`.
+- ПРОВЕРКА: offline — `tests.test_inventory` OK; на реальном inventory 2026-07-09 старые файлы теперь дают `fact_ready_records=41`, `render_ready_records=0`, но все 41 уже `ttl_expired` к моменту проверки.
+- Где была ошибка (если не сработало): —
+
+### 0066 — Night inventory per-card enrichment (0066a), без corpus-дедупа ночью — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА offline, prod-proof после следующей ночной волны.
+- Проблема: `collect-inventory` писал записи прямо из `_collect_single_source`, до entity/event enrichment. Поэтому event/ticket/weekend карточки часто имели пустые `event_name`, `venue`, `date_start` и не могли стать fact-ready.
+- Причина (корень): утренний `collect_digest` после сбора делает per-card enrichment (`enrich_candidates_entities`, `enrich_candidates_events`) и отдельные corpus-level шаги. Ночная волна не делала даже безопасную per-card часть.
+- Решение: `cmd_collect_inventory` теперь перед `build_inventory_record` запускает только `enrich_candidates_entities` и `enrich_candidates_events` для кандидатов текущего source. Corpus-level дедуп/кластеры/общая story intelligence оставлены в утреннем пути.
+- Почему так (отвергнутые альтернативы): не переносим `apply_cheap_dedup_before_enrich` и `attach_story_clusters` в одну ночную волну, потому что они требуют всего корпуса, а не одного source/wave.
+- Ожидаемый эффект и метрика проверки: в `inventory_run_log.jsonl` у новых волн появится `fact_ready`; в `data/state/inventory/*.jsonl` для events/tickets/weekend должны расти `quality_status=needs_text` вместо `missing_facts` по venue/date/event_name.
+- Файлы/места: `scripts/run_local_digest.py:cmd_collect_inventory`; тест `NightWaveTest.test_wave_writes_inventory_only_never_candidates`.
+- ПРОВЕРКА: offline — `tests.test_inventory` OK; тест доказывает, что ночная волна не создаёт `candidates.json`, но пишет в fact_card результат per-card enrichment.
+- Где была ошибка (если не сработало): —
+
+### 0067 — Report-only morning inventory intake — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА offline на реальном inventory 2026-07-09, prod-proof после следующего build.
+- Проблема: 0064 показывал, что morning inventory не потребляется, но не отвечал, сколько ночных карточек уже можно было бы безопасно взять в утренний поток и почему остальные не проходят.
+- Причина (корень): `_summarise_inventory_morning_effect` считал только files/records/render_ready и последнюю волну. Не было product-фаннела: fact-ready → eligible → converted-candidate → rejected reasons.
+- Решение: добавлен `summarise_morning_intake` и вложенный `release_report.inventory_morning_effect.report_only_intake`. Он ничего не меняет в выпуске (`morning_consumed=false`), но считает `records`, `fact_ready`, `needs_text`, `eligible`, `converted_candidates`, причины отказа и примеры eligible.
+- Почему так (отвергнутые альтернативы): не включаем inventory-first сразу; сначала измеряем на реальных ночных данных, что бы попало в утро.
+- Ожидаемый эффект и метрика проверки: после следующего build в `release_report.inventory_morning_effect.report_only_intake` должны быть ненулевые counts и причины, достаточные для решения, какие блоки включать первыми.
+- Файлы/места: `inventory.py:summarise_morning_intake`; `release.py:_summarise_inventory_morning_effect`; тесты `tests/test_inventory.py`.
+- ПРОВЕРКА: offline — `tests.test_inventory` OK; на реальном inventory 2026-07-09: `records=2726`, `fact_ready=41`, `eligible=0`, reasons: `missing_facts=2685`, `ttl_expired=41`.
+- Где была ошибка (если не сработало): —
+
+### 0068 — Inventory record → normal candidate converter — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА offline, пока не подключено к изменению выпуска.
+- Проблема: даже если ночная запись fact-ready, утро не имело общей формы, как вернуть её в обычный кандидат, не обходя dedupe/validator/writer.
+- Причина (корень): inventory-record хранил fact_card и raw_evidence, но не было функции, которая восстанавливает стандартные поля candidate и помечает provenance (`night_inventory`).
+- Решение: добавлен `inventory_record_to_candidate`: восстанавливает `title/summary/lead/source_url/source_label/category/primary_block/evidence_text/event/venue_scope/ticket_type/what_happened/why_now`, ставит `inventory_source=night_inventory`, `inventory_needs_text`, `inventory_requires_refetch` для transport и `include=true`. В текущем пакете используется только в report-only примерах.
+- Почему так (отвергнутые альтернативы): не пишем ночные записи сразу в HTML и не создаём второй writer; будущий intake должен идти через обычный candidate vocabulary.
+- Ожидаемый эффект и метрика проверки: report-only intake сможет показать examples как нормальные candidates; следующий пакет сможет подключить converter перед dedupe/validate без нового формата.
+- Файлы/места: `inventory.py:inventory_record_to_candidate`; тесты `tests/test_inventory.py`.
+- ПРОВЕРКА: offline — `tests.test_inventory` OK; тест восстанавливает weekend inventory record в candidate с `inventory_source=night_inventory`, `event.venue`, `inventory_needs_text=true`.
+- Где была ошибка (если не сработало): —
+
+### 0069 — Block-specific TTL для night inventory — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА offline, prod-proof после следующей ночи/утра.
+- Проблема: ночные карточки нельзя оценивать одним сроком свежести. Transport и fresh быстро тухнут, а weekend/tickets/food/pro/russian могут жить дольше, если дата не прошла.
+- Причина (корень): `passes_morning_contract` проверял dead/expired/ticket reason, но не ограничивал `last_seen_at` по типу блока.
+- Решение: добавлены TTL по `primary_block`: `transport=1h`, `last_24h/today_focus=6h`, `city_watch/tech_business=24h`, `weekend/next7=96h`, `openings/pro/russian/ticket_radar=168h`, `future/outside_gm=336h`. Transport без `render_ready` отдельно возвращает `needs_live_refetch`, а не проходит как обычная утренняя карточка.
+- Почему так (отвергнутые альтернативы): не доверяем ночному transport как утреннему факту; не заставляем long-horizon blocks жить по hard-news TTL.
+- Ожидаемый эффект и метрика проверки: `report_only_intake.reasons.ttl_expired` должен объяснять старые ночные карточки, а свежие stable-block записи должны проходить как eligible/needs_text.
+- Файлы/места: `inventory.py:passes_ttl_contract`, `inventory_ttl_hours`, `passes_morning_contract`; тесты `tests/test_inventory.py`.
+- ПРОВЕРКА: offline — `tests.test_inventory` OK; на реальном inventory 2026-07-09 старые fact-ready transport-like записи дали `ttl_expired=41`, что подтверждает, что просроченный ночной запас не считается пригодным.
+- Где была ошибка (если не сработало): —

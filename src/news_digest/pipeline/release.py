@@ -39,6 +39,8 @@ from news_digest.pipeline.city_trends import (
 from news_digest.pipeline.inventory import (
     aggregate_category_health,
     categories_needing_live_fallback,
+    inventory_fact_ready,
+    summarise_morning_intake,
     verify_collect_conservation,
     verify_dispositions,
 )
@@ -3630,8 +3632,11 @@ def _summarise_inventory_morning_effect(state_dir: Path) -> dict[str, object]:
     files = sorted(inv_dir.glob("*.jsonl")) if inv_dir.exists() else []
     by_category: dict[str, dict[str, object]] = {}
     total_records = 0
+    fact_ready_records = 0
     render_ready_records = 0
+    needs_text_records = 0
     newest_seen = ""
+    all_rows: list[dict] = []
     for path in files:
         rows = []
         for line in path.read_text(encoding="utf-8").splitlines():
@@ -3643,16 +3648,23 @@ def _summarise_inventory_morning_effect(state_dir: Path) -> dict[str, object]:
                 continue
             if isinstance(row, dict):
                 rows.append(row)
+                all_rows.append(row)
         ready = sum(1 for row in rows if row.get("render_ready"))
+        fact_ready = sum(1 for row in rows if inventory_fact_ready(row))
+        needs_text = sum(1 for row in rows if str(row.get("quality_status") or "") == "needs_text")
         total_records += len(rows)
         render_ready_records += ready
+        fact_ready_records += fact_ready
+        needs_text_records += needs_text
         for row in rows:
             seen = str(row.get("last_seen_at") or "")
             if seen > newest_seen:
                 newest_seen = seen
         by_category[path.stem] = {
             "records": len(rows),
+            "fact_ready": fact_ready,
             "render_ready": ready,
+            "needs_text": needs_text,
         }
 
     run_log_path = state_dir / "inventory_run_log.jsonl"
@@ -3686,12 +3698,15 @@ def _summarise_inventory_morning_effect(state_dir: Path) -> dict[str, object]:
         ),
         "inventory_files": len(files),
         "total_records": total_records,
+        "fact_ready_records": fact_ready_records,
         "render_ready_records": render_ready_records,
+        "needs_text_records": needs_text_records,
         "newest_last_seen_at": newest_seen,
         "run_log_lines": run_log_lines,
         "last_wave": last_wave,
         "last_wave_at": last_wave_at,
         "by_category": by_category,
+        "report_only_intake": summarise_morning_intake(all_rows),
     }
 
 

@@ -27,6 +27,7 @@ import hashlib
 import json
 import os
 import time
+from datetime import datetime
 from pathlib import Path
 
 from news_digest.pipeline.common import now_london, today_london, write_json_atomic
@@ -254,6 +255,13 @@ def build_inventory_record(candidate: dict, *, prompt_version: int, now_iso: str
         "evidence_hash": compute_evidence_hash(candidate),
         "prompt_version": prompt_version,
         "last_seen_at": now_iso,
+        "title": str(candidate.get("title") or ""),
+        "summary": str(candidate.get("summary") or ""),
+        "lead": str(candidate.get("lead") or ""),
+        "published_at": str(candidate.get("published_at") or ""),
+        "freshness_status": str(candidate.get("freshness_status") or ""),
+        "practical_angle": str(candidate.get("practical_angle") or ""),
+        "draft_line": str(candidate.get("draft_line") or ""),
         "source_url": str(candidate.get("source_url") or ""),
         "booking_url": str(candidate.get("booking_url") or event.get("booking_url") or ""),
         "source_label": str(candidate.get("source_label") or ""),
@@ -354,11 +362,72 @@ def verify_dispositions(candidates: list[dict], rendered_fingerprints: set[str])
 
 _TICKET_BLOCKS = frozenset({"ticket_radar", "outside_gm_tickets", "future_announcements"})
 _TICKET_MORNING_TYPES = frozenset({"on_sale_now", "presale_soon", "newly_listed", "event_this_week", "major_upcoming"})
+_BLOCK_TTL_HOURS: dict[str, float] = {
+    "transport": 1.0,
+    "last_24h": 6.0,
+    "today_focus": 6.0,
+    "city_watch": 24.0,
+    "football": 12.0,
+    "tech_business": 24.0,
+    "weekend_activities": 96.0,
+    "next_7_days": 96.0,
+    "openings": 168.0,
+    "professional_events": 168.0,
+    "russian_events": 168.0,
+    "ticket_radar": 168.0,
+    "future_announcements": 336.0,
+    "outside_gm_tickets": 336.0,
+}
+_DEFAULT_TTL_HOURS = 24.0
 
 
 def _is_expired(record: dict, today: str) -> bool:
     expires_at = str(record.get("expires_at") or "")
     return bool(expires_at) and expires_at < today
+
+
+def _parse_iso_datetime(raw: str) -> datetime | None:
+    value = str(raw or "").strip()
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def inventory_ttl_hours(record: dict) -> float:
+    block = str(record.get("primary_block") or "")
+    return _BLOCK_TTL_HOURS.get(block, _DEFAULT_TTL_HOURS)
+
+
+def inventory_age_hours(record: dict, *, now: datetime | None = None) -> float | None:
+    seen = _parse_iso_datetime(str(record.get("last_seen_at") or ""))
+    if seen is None:
+        return None
+    now_dt = now or now_london()
+    if seen.tzinfo is not None and now_dt.tzinfo is None:
+        now_dt = now_dt.replace(tzinfo=seen.tzinfo)
+    if seen.tzinfo is None and now_dt.tzinfo is not None:
+        seen = seen.replace(tzinfo=now_dt.tzinfo)
+    return max(0.0, (now_dt - seen).total_seconds() / 3600)
+
+
+def passes_ttl_contract(record: dict, *, now: datetime | None = None) -> tuple[bool, str]:
+    age = inventory_age_hours(record, now=now)
+    if age is None:
+        return False, "missing_last_seen_at"
+    if age > inventory_ttl_hours(record):
+        return False, "ttl_expired"
+    return True, "ttl_ok"
+
+
+def inventory_fact_ready(record: dict) -> bool:
+    if record.get("render_ready"):
+        return True
+    status = str(record.get("quality_status") or "")
+    missing = [str(item) for item in (record.get("missing_facts") or [])]
+    return status == "needs_text" and missing == ["draft_line"]
 
 
 def ticket_reaches_morning(record: dict) -> bool:
@@ -377,16 +446,130 @@ def passes_morning_contract(record: dict, *, today: str | None = None) -> tuple[
     dead-link / expired never pass as fresh; tickets without a morning reason
     fall to inventory_only."""
     today = today or today_london()
-    if not record.get("render_ready"):
-        return False, "not_render_ready"
+    if not inventory_fact_ready(record):
+        return False, "missing_facts"
     if str(record.get("liveness_status") or "") == "dead":
         return False, "dead_link"
     if _is_expired(record, today):
         return False, "expired"
+    ttl_ok, ttl_reason = passes_ttl_contract(record)
+    if not ttl_ok:
+        return False, ttl_reason
     block = str(record.get("primary_block") or "")
+    if block == "transport" and not record.get("render_ready"):
+        return False, "needs_live_refetch"
     if block in _TICKET_BLOCKS and not ticket_reaches_morning(record):
         return False, "inventory_only"
+    if str(record.get("quality_status") or "") == "needs_text":
+        return True, "morning_relevant_needs_text"
     return True, "morning_relevant"
+
+
+def inventory_record_to_candidate(record: dict) -> dict:
+    """Restore an inventory record to the normal candidate shape without
+    bypassing the existing morning validation and writing contracts."""
+    fact = record.get("fact_card") if isinstance(record.get("fact_card"), dict) else {}
+    event = {
+        "event_name": str(fact.get("event_name") or ""),
+        "name": str(fact.get("event_name") or ""),
+        "venue": str(fact.get("venue") or ""),
+        "date_start": str(fact.get("date_start") or ""),
+        "date_confidence": str(fact.get("date_confidence") or ""),
+        "booking_url": str(record.get("booking_url") or ""),
+    }
+    candidate = {
+        "fingerprint": str(record.get("fingerprint") or ""),
+        "title": str(record.get("title") or fact.get("event_name") or ""),
+        "summary": str(record.get("summary") or ""),
+        "lead": str(record.get("lead") or ""),
+        "published_at": str(record.get("published_at") or ""),
+        "freshness_status": str(record.get("freshness_status") or ""),
+        "practical_angle": str(record.get("practical_angle") or ""),
+        "source_url": str(record.get("source_url") or ""),
+        "booking_url": str(record.get("booking_url") or ""),
+        "source_label": str(record.get("source_label") or ""),
+        "primary_block": str(record.get("primary_block") or ""),
+        "category": str(record.get("category") or ""),
+        "evidence_text": str(record.get("raw_evidence") or ""),
+        "source_evidence": str(record.get("raw_evidence") or ""),
+        "draft_line": str(record.get("draft_line") or ""),
+        "event": event,
+        "venue_scope": str(fact.get("venue_scope") or ""),
+        "ticket_type": str(fact.get("ticket_type") or ""),
+        "what_happened": str(fact.get("what_happened") or ""),
+        "why_now": str(fact.get("why_now") or ""),
+        "story_type": str(fact.get("story_type") or ""),
+        "inventory_source": "night_inventory",
+        "inventory_last_seen_at": str(record.get("last_seen_at") or ""),
+        "inventory_quality_status": str(record.get("quality_status") or ""),
+        "inventory_missing_facts": list(record.get("missing_facts") or []),
+        "inventory_needs_text": str(record.get("quality_status") or "") == "needs_text",
+        "inventory_requires_refetch": str(record.get("primary_block") or "") == "transport",
+        "include": True,
+    }
+    tier = str(fact.get("tier") or "")
+    if tier:
+        candidate["ticket_notability"] = {"tier": tier}
+    return candidate
+
+
+def summarise_morning_intake(records: list[dict], *, today: str | None = None, now: datetime | None = None) -> dict[str, object]:
+    """Report-only morning inventory intake: what could be considered without
+    mutating candidates.json or the public issue."""
+    today = today or today_london()
+    totals = {
+        "records": 0,
+        "fact_ready": 0,
+        "render_ready": 0,
+        "needs_text": 0,
+        "eligible": 0,
+        "converted_candidates": 0,
+    }
+    reasons: dict[str, int] = {}
+    by_block: dict[str, dict[str, int]] = {}
+    examples: list[dict[str, object]] = []
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        block = str(record.get("primary_block") or "unknown")
+        bucket = by_block.setdefault(block, {"records": 0, "fact_ready": 0, "eligible": 0, "needs_text": 0, "render_ready": 0})
+        totals["records"] += 1
+        bucket["records"] += 1
+        if inventory_fact_ready(record):
+            totals["fact_ready"] += 1
+            bucket["fact_ready"] += 1
+        if record.get("render_ready"):
+            totals["render_ready"] += 1
+            bucket["render_ready"] += 1
+        if str(record.get("quality_status") or "") == "needs_text":
+            totals["needs_text"] += 1
+            bucket["needs_text"] += 1
+        ok, reason = passes_morning_contract(record, today=today)
+        reasons[reason] = reasons.get(reason, 0) + 1
+        if ok:
+            totals["eligible"] += 1
+            totals["converted_candidates"] += 1
+            bucket["eligible"] += 1
+            if len(examples) < 20:
+                candidate = inventory_record_to_candidate(record)
+                examples.append(
+                    {
+                        "fingerprint": candidate.get("fingerprint"),
+                        "title": candidate.get("title"),
+                        "primary_block": candidate.get("primary_block"),
+                        "quality_status": candidate.get("inventory_quality_status"),
+                        "age_hours": inventory_age_hours(record, now=now),
+                    }
+                )
+    return {
+        "schema_version": INVENTORY_SCHEMA_VERSION,
+        "mode": "report_only",
+        "morning_consumed": False,
+        "totals": totals,
+        "reasons": reasons,
+        "by_block": by_block,
+        "eligible_examples": examples,
+    }
 
 
 # ── 8.7 Re-entry of yesterday's unshown-but-still-relevant items ───────────

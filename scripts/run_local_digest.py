@@ -2523,6 +2523,8 @@ def cmd_collect_inventory(wave: str) -> int:
         build_inventory_record,
         merge_inventory,
     )
+    from news_digest.pipeline.entity_extraction import enrich_candidates_entities  # noqa: PLC0415
+    from news_digest.pipeline.event_extraction import enrich_candidates_events  # noqa: PLC0415
     from news_digest.pipeline.prompts_meta import PROMPT_REGISTRY_VERSION  # noqa: PLC0415
     from news_digest.pipeline.common import write_json_atomic  # noqa: PLC0415
 
@@ -2545,6 +2547,10 @@ def cmd_collect_inventory(wave: str) -> int:
         except Exception as exc:  # noqa: BLE001
             run_log.append({"wave": wave, "source": source.name, "category": source.report_category, "error": str(exc), "found": 0})
             continue
+        # 0066a: per-card night enrichment only. Corpus-level dedupe/clusters
+        # stay in the morning path because a single wave is not the whole corpus.
+        enrich_candidates_entities(source_candidates)
+        enrich_candidates_events(source_candidates)
         records = [build_inventory_record(c, prompt_version=PROMPT_REGISTRY_VERSION) for c in source_candidates if isinstance(c, dict)]
         per_category.setdefault(source.report_category, []).extend(records)
         run_log.append({
@@ -2556,6 +2562,7 @@ def cmd_collect_inventory(wave: str) -> int:
             "found": len(source_candidates),
             "enriched": sum(1 for c in source_candidates if isinstance(c, dict) and c.get("include")),
             "errors": len(health.get("errors") or []),
+            "fact_ready": sum(1 for r in records if str(r.get("quality_status") or "") in {"ready", "needs_text"}),
             "render_ready": sum(1 for r in records if r.get("render_ready")),
         })
     merged: dict[str, int] = {}
