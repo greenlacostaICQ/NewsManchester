@@ -2,210 +2,256 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 6 repair(s); issue ships with honest degradation report",
+  "reason": "pre-send section recovery inserted 1 reserve line(s) after final judge repair",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
-  "run_date_london": "2026-07-08",
-  "pipeline_run_id": "20260708T080157+0100",
-  "digest_sha256": "2fc50aa4fb259ad9f620a89ef64f99b2408e6e2e49053b1f2758c13cfdf0dd4e",
-  "duration_seconds": 75.686,
-  "confidence": 0.9,
+  "run_date_london": "2026-07-09",
+  "pipeline_run_id": "20260709T081200+0100",
+  "digest_sha256": "b8c5a38e4b0ef09d1ff426e3a93ba90552555038189cdf1f3dac30a20ed09bb7",
+  "duration_seconds": 83.881,
+  "confidence": 0.8,
   "critical_errors": [
     {
-      "line_index": 23,
-      "section": "Что важно в ближайшие 7 дней",
-      "problem": "Дата окончания события не указана, что может ввести в заблуждение.",
+      "line_index": 8,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Дата 9 августа не соответствует источнику.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 25,
-      "section": "Что важно в ближайшие 7 дней",
-      "problem": "Недостаточная информация о событии, неясно, что такое The Last Viking (15).",
+      "line_index": 15,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Тема не относится к общественному транспорту.",
+      "risk": "format",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 17,
+      "section": "Что важно сегодня",
+      "problem": "Энди Бернэм не может стать премьер-министром в ближайшие дни, так как это требует официального назначения и утверждения.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 31,
-      "section": "Дальние анонсы",
-      "problem": "Несоответствие информации о событии: текст говорит о выступлении Nia Archives, но данные кандидата относятся к The K's.",
+      "line_index": 20,
+      "section": "Футбол",
+      "problem": "Неверная информация о сделке Манчестер Юнайтед на £35 миллионов за Эдерсона.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 6,
+      "line_index": 4,
+      "section": "Свежие новости",
+      "problem": "Дублирование информации о дорожных ограничениях на M62 и M6.",
+      "risk": "format",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 5,
+      "section": "Свежие новости",
+      "problem": "Дублирование информации о дорожных ограничениях на M62 и M6.",
+      "risk": "format",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 3,
       "section": "Свежие новости",
       "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'killed' (death/who/what) has no Russian rendering in the shipped line",
+      "problem": "critical source fact dropped in translation: 'stabbing' (weapon_violence/who/what) has no Russian rendering in the shipped line",
       "suggested_action": "repair",
-      "completeness_concept": "death"
+      "completeness_concept": "weapon_violence"
     }
   ],
   "actions": [
     {
-      "line_index": 13,
+      "line_index": 8,
       "section": "Общественный транспорт сегодня",
       "action": "patch",
-      "replacement_text": "• С 13 июля по 2 августа 2026 года трамваи Metrolink не будут ходить по линиям Eccles, Trafford Centre и Altrincham из-за замены путей в рамках работ по модернизации на сумму 150 миллионов фунтов стерлингов. Источник: BBC Manchester",
-      "reason": "Добавление источника для повышения доверия к информации.",
-      "risk": "format"
+      "replacement_text": "• Metrolink: линия Metrolink в Альтринхаме будет закрыта с понедельника 13 июля по воскресенье 2 августа 2026 года для проведения работ по улучшению на станциях Deansgate-Castlefield и Trafford Bar.",
+      "reason": "Дата 9 августа не подтверждена источником.",
+      "risk": "date"
     },
     {
-      "line_index": 23,
-      "section": "Что важно в ближайшие 7 дней",
+      "line_index": 15,
+      "section": "Общественный транспорт сегодня",
+      "action": "strip",
+      "reason": "Информация о строительстве не относится к общественному транспорту.",
+      "risk": "format",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 17,
+      "section": "Что важно сегодня",
       "action": "patch",
-      "replacement_text": "• 8 июля в HOME начнется Manchester Open 2026 — крупнейшее празднование творческих талантов Большого Манчестера, которое продлится до 6 сентября. HOME",
-      "reason": "Уточнение даты окончания события для полноты информации.",
-      "risk": "date"
+      "replacement_text": "• Экс-мэр Манчестера Энди Бернэм может стать премьер-министром, так как он единственный кандидат на пост лидера Лейбористской партии. Его официальное назначение ожидается на специальной конференции после открытия номинаций сегодня, 9 июля. Бернэм получил поддержку от бывшего министра вооруженных сил Алла Карнса, который отметил, что стране сейчас нужен лидер, способный действовать. MEN",
+      "reason": "Уточнение статуса назначения на пост премьер-министра.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 20,
+      "section": "Футбол",
+      "action": "replace",
+      "replacement_text": "• Манчестер Юнайтед проявляет интерес к Тчуамени, Скотту и Саммервиллю, но сделка на £35 миллионов за Эдерсона не подтверждена. MEN Manchester United",
+      "reason": "Указанная сделка на £35 миллионов за Эдерсона не подтверждена в источнике.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 22,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• В воскресенье, 12 июля 2026 года, на площадке Bolton Car Boot Sale в Bolton пройдет 'car boot sale' с более чем 300 прилавками. Вход для покупателей с 7:00, стоимость £1 за машину.",
+      "reason": "Уточнение названия площадки для соответствия источнику.",
+      "risk": "factual"
     },
     {
       "line_index": 25,
-      "section": "Что важно в ближайшие 7 дней",
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• Фестиваль Sound Bazaar пройдет в The Yard MCR в Cheetham Hill в эту субботу с живой музыкой, диджеями и мастер-классами; билеты от £10.",
+      "reason": "Уточнение названия площадки для соответствия источнику.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 4,
+      "section": "Свежие новости",
       "action": "strip",
       "replacement_text": "",
-      "reason": "Недостаточная информация о событии, неясно, что такое The Last Viking (15).",
-      "risk": "factual"
+      "reason": "Дублирование информации о дорожных ограничениях на M62 и M6.",
+      "risk": "format"
     },
     {
-      "line_index": 31,
-      "section": "Дальние анонсы",
-      "action": "replace",
-      "replacement_text": "• The K's выступят в Castlefield Bowl в Манчестере 3 июля 2026 года, открывая серию Sounds of the City 2026.",
-      "reason": "Исправление фактической ошибки: информация о событии должна соответствовать данным кандидата.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 36,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Sunny Day Real Estate — 14 июля, Manchester New Century Hall (Рок). Концерт в Greater Manchester на следующей неделе. Ticketmaster",
-      "reason": "Дата концерта 14 июля, что не соответствует текущей неделе.",
-      "risk": "date"
+      "line_index": 5,
+      "section": "Свежие новости",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации о дорожных ограничениях на M62 и M6.",
+      "risk": "format"
     }
   ],
   "warnings": [
-    "В блоке 'Свежие новости' есть плотность информации, но все строки безопасны и соответствуют фактам. Убедитесь, что другие разделы выпуска также сбалансированы.",
-    "Отсутствие источника в последней строке может снизить доверие к информации.",
-    "Выпуск содержит информацию о событиях и инициативах, которые могут быть полезны для жителей, но не все новости имеют прямое отношение к Greater Manchester. Например, информация о театрах в Северо-Западной Англии включает регионы за пределами GM.",
-    "Дата концерта Sunny Day Real Estate указана как 'на этой неделе', но фактически он состоится на следующей неделе.",
-    "Секция 'Крупные концерты вне GM' содержит информацию о концертах, которые проходят за пределами Greater Manchester. Это может быть неинтересно основной аудитории, но не является критической ошибкой.",
+    "Две новости о дорожных инцидентах на M62 и M6 имеют схожий текст, что может создать впечатление дублирования. Однако они касаются разных дорог, поэтому это не критично.",
+    "Некоторые названия площадок были уточнены для соответствия источникам.",
+    "Выпуск содержит много информации о планах и проектах, но может не хватать более актуальных новостей или событий, которые происходят в данный момент.",
+    "В строке 34 упоминается 'временные входы', что может быть не совсем понятно без контекста. Возможно, стоит уточнить, что это временные слоты для посещения выставки.",
+    "В разделе 'Еда, открытия и рынки' упоминается мероприятие, которое уже прошло (8 июля 2026 года). Это может снизить актуальность информации для читателей.",
+    "Некоторые строки содержат информацию о том, что мероприятие является частью фестиваля, но это не подтверждается в данных. Это может вызвать путаницу у читателей.",
+    "Секция 'Крупные концерты вне GM' содержит только информацию о концертах за пределами Greater Manchester, что может не соответствовать интересам всех читателей.",
     "События в Лондоне и Хэмпшире не относятся к Greater Manchester, но находятся в разделе 'Русскоязычные концерты и стендап UK', что может быть допустимо в контексте рубрики.",
-    "Низкая производительность писателей: 48/350 включенных кандидатов отрендерено.",
-    "Секция 'Билеты / Ticket Radar' доминирует над core news.",
-    "Секция 'Крупные концерты вне GM' содержит много элементов, что может отвлечь от местных новостей.",
-    "line 1 drops source number/date fact(s): 07 jul, 10:59, 202",
-    "line 4 drops source number/date fact(s): 07 jul, 18:23, 202",
-    "line 6 drops source number/date fact(s): 07 jul 2026, 18:40, 60"
+    "Низкая производительность писателя: 61/341 включенных кандидатов отрендерено.",
+    "Проблемы с источниками: 4 сбоя.",
+    "line 2 drops source number/date fact(s): 08 jul 2026, 11:22, 13:13",
+    "line 32 drops source number/date fact(s): 30 june, 42"
   ],
   "product_completeness": {
     "section_counts": {
-      "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 7,
-      "Общественный транспорт сегодня": 4,
+      "Свежие новости": 5,
+      "Общественный транспорт сегодня": 9,
       "Что важно сегодня": 3,
-      "Футбол": 2,
-      "Городской радар": 4,
+      "Футбол": 3,
+      "Выходные в GM": 7,
+      "Городской радар": 5,
       "Что важно в ближайшие 7 дней": 3,
       "Еда, открытия и рынки": 2,
       "IT и бизнес": 2,
-      "Business/tech события для тебя": 1,
-      "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 5,
-      "Крупные концерты вне GM": 5,
+      "Business/tech события для тебя": 2,
+      "Дальние анонсы": 2,
+      "Билеты / Ticket Radar": 6,
+      "Крупные концерты вне GM": 6,
       "Русскоязычные концерты и стендап UK": 3
     },
     "core_counts": {
-      "Свежие новости": 7,
-      "Футбол": 2,
+      "Свежие новости": 5,
+      "Футбол": 3,
       "Что важно сегодня": 3,
-      "Общественный транспорт сегодня": 4
+      "Общественный транспорт сегодня": 9,
+      "Выходные в GM": 7
     },
-    "ticket_items": 13,
-    "core_items": 16,
+    "ticket_items": 15,
+    "core_items": 27,
     "writer_quality_counts": {
-      "included_candidates": 350,
-      "rendered_candidates": 48,
+      "included_candidates": 341,
+      "rendered_candidates": 61,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 4,
-      "dropped_ticket_not_selected": 228,
+      "dropped_ticket_not_selected": 220,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 64
+      "dropped_low_quality": 58
     },
-    "section_underflow": [],
+    "section_underflow": [
+      {
+        "section": "Свежие новости",
+        "actual": 5,
+        "minimum": 6,
+        "dropped_by_writer": 3
+      }
+    ],
     "source_health_counts": {
-      "ok": 106,
+      "ok": 109,
       "partial": 2,
-      "stale": 9,
-      "empty": 4,
-      "failed": 2,
-      "zero_yield": 87,
+      "stale": 3,
+      "empty": 5,
+      "failed": 4,
+      "zero_yield": 82,
       "no_contribution_breakdown": {
-        "fetch_failed": 2,
-        "all_rejected": 87,
-        "idle_no_items": 11
+        "fetch_failed": 4,
+        "all_rejected": 82,
+        "idle_no_items": 6
       },
       "zero_contribution_by_stage": {
-        "written": 23,
-        "selected": 64,
-        "parsed": 11,
-        "fetched": 2
+        "written": 14,
+        "selected": 68,
+        "fetched": 4,
+        "parsed": 6
       },
-      "weekend_source_coverage_incidents": 42
+      "weekend_source_coverage_incidents": 37
     },
     "alerts": [
-      "low writer yield: 48/350 included candidates rendered"
+      "low writer yield: 61/341 included candidates rendered",
+      "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 13 has unchecked number/date token(s): 13, 150"
+      "replace for line 20 has unchecked number/date token(s): 35",
+      "patch for line 22 has unchecked number/date token(s): 300, 7:00"
     ],
     "can_apply_actions": true,
-    "action_count": 5
+    "action_count": 8
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 40,
-    "matched_lines": 40,
+    "checked_lines": 56,
+    "matched_lines": 56,
     "applicable_lines": 3,
-    "unmatched_lines": 4,
+    "unmatched_lines": 3,
     "critical_omission_count": 1,
     "critical_omissions": [
       {
-        "line_index": 6,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/driver-mowed-down-killed-teenage-34251952",
-        "concept": "death",
+        "line_index": 3,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/lying-murderer-found-guilty-stabbing-34258607",
+        "concept": "weapon_violence",
         "obligation": "who/what",
-        "source_hit": "killed"
+        "source_hit": "stabbing"
       }
     ],
     "noncritical_omissions": [
       {
-        "line_index": 1,
+        "line_index": 2,
         "dropped": [
-          "07 jul",
-          "10:59",
-          "202"
+          "08 jul 2026",
+          "11:22",
+          "13:13"
         ]
       },
       {
-        "line_index": 4,
+        "line_index": 32,
         "dropped": [
-          "07 jul",
-          "18:23",
-          "202"
-        ]
-      },
-      {
-        "line_index": 6,
-        "dropped": [
-          "07 jul 2026",
-          "18:40",
-          "60"
+          "30 june",
+          "42"
         ]
       }
     ],
@@ -217,63 +263,115 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 6,
-    "attempted": 6,
-    "applied": 6,
-    "model_patch_applied": 2,
-    "deterministic_rewrite_used": 2,
-    "reserve_replacement_used": 1,
-    "stripped": 1,
+    "requested": 9,
+    "attempted": 9,
+    "applied": 10,
+    "model_patch_applied": 3,
+    "deterministic_rewrite_used": 1,
+    "reserve_replacement_used": 3,
+    "stripped": 3,
     "unresolved": 0,
     "fact_lock_rejected": 2,
     "enrich_attempted": 3,
     "post_check_errors": [],
     "actions": [
       {
-        "line_index": 13,
+        "line_index": 8,
         "section": "Общественный транспорт сегодня",
         "requested_action": "patch",
-        "reason": "Добавление источника для повышения доверия к информации.",
+        "reason": "Дата 9 августа не подтверждена источником.",
         "outcome": "model_patch_applied"
       },
       {
-        "line_index": 23,
-        "section": "Что важно в ближайшие 7 дней",
-        "requested_action": "patch",
-        "reason": "Уточнение даты окончания события для полноты информации.",
-        "outcome": "deterministic_rewrite",
-        "model_replacement_rejected": "fact_lock: 6 сентября"
-      },
-      {
-        "line_index": 25,
-        "section": "Что важно в ближайшие 7 дней",
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
         "requested_action": "strip",
-        "reason": "Недостаточная информация о событии, неясно, что такое The Last Viking (15).",
+        "reason": "Информация о строительстве не относится к общественному транспорту.",
         "outcome": "reserve_replacement"
       },
       {
-        "line_index": 31,
-        "section": "Дальние анонсы",
-        "requested_action": "replace",
-        "reason": "Исправление фактической ошибки: информация о событии должна соответствовать данным кандидата.",
-        "outcome": "deterministic_rewrite",
-        "model_replacement_rejected": "fact_lock: 3 июля 2026"
+        "line_index": 17,
+        "section": "Что важно сегодня",
+        "requested_action": "patch",
+        "reason": "Уточнение статуса назначения на пост премьер-министра.",
+        "outcome": "reserve_replacement",
+        "model_replacement_rejected": "fact_lock: 9 июля"
       },
       {
-        "line_index": 36,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Дата концерта 14 июля, что не соответствует текущей неделе.",
+        "line_index": 20,
+        "section": "Футбол",
+        "requested_action": "replace",
+        "reason": "Указанная сделка на £35 миллионов за Эдерсона не подтверждена в источнике.",
         "outcome": "model_patch_applied"
       },
       {
-        "line_index": 6,
+        "line_index": 22,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Уточнение названия площадки для соответствия источнику.",
+        "outcome": "model_patch_applied"
+      },
+      {
+        "line_index": 25,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Уточнение названия площадки для соответствия источнику.",
+        "outcome": "deterministic_rewrite",
+        "model_replacement_rejected": "fact_lock: the yard mcr"
+      },
+      {
+        "line_index": 4,
+        "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о дорожных ограничениях на M62 и M6.",
+        "outcome": "stripped_honest_shortfall"
+      },
+      {
+        "line_index": 5,
+        "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о дорожных ограничениях на M62 и M6.",
+        "outcome": "stripped_honest_shortfall"
+      },
+      {
+        "line_index": 3,
         "section": "Свежие новости",
         "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'killed' (death/who/what) has no Russian rendering in the shipped line",
+        "reason": "critical source fact dropped in translation: 'stabbing' (weapon_violence/who/what) has no Russian rendering in the shipped line",
         "outcome": "stripped_honest_shortfall"
       }
     ],
+    "reserve_stats": {
+      "enriched_rewrite_attempts": 68,
+      "enriched_rewrite_used": 8,
+      "refetch": {
+        "attempted": 0,
+        "improved": 0,
+        "failed": 0,
+        "empty_or_not_better": 0,
+        "skipped": 2,
+        "reports": [
+          {
+            "fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-brooklands-road-sale-roadworks",
+            "title": "Brooklands Road, Sale - Roadworks",
+            "status": "skipped",
+            "reason": "tfgm_ephemeral_alert",
+            "url": "https://tfgm.com/travel-updates/travel-alerts/brooklands-road-sale-roadworks",
+            "candidate_evidence_chars": 605
+          },
+          {
+            "fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-major-tram-works-13-july-2-august",
+            "title": "Major tram works [13 July - 2 August]",
+            "status": "skipped",
+            "reason": "tfgm_ephemeral_alert",
+            "url": "https://tfgm.com/travel-updates/travel-alerts/major-tram-works-13-july-2-august",
+            "candidate_evidence_chars": 75
+          }
+        ]
+      },
+      "reserve_replacement_used": 2,
+      "enriched_rewrite_empty": 60
+    },
     "refetch": {
       "attempted": 0,
       "improved": 0,
@@ -282,31 +380,19 @@
       "skipped": 0
     },
     "enrich_improved": 3,
-    "deterministic_rewrite_built": 2,
-    "reserve_stats": {
-      "enriched_rewrite_attempts": 22,
-      "enriched_rewrite_used": 3,
-      "refetch": {
-        "attempted": 0,
-        "improved": 0,
-        "failed": 0,
-        "empty_or_not_better": 0,
-        "skipped": 0
-      },
-      "reserve_replacement_used": 1,
-      "enriched_rewrite_empty": 19
-    },
-    "deterministic_rewrite_rejected": 1,
+    "deterministic_rewrite_rejected": 2,
+    "deterministic_rewrite_built": 1,
     "status": "applied",
     "post_repair_section_recovery": {
       "enabled": true,
       "insert_cap": 8,
       "attempted_sections": [
         {
-          "section": "Городской радар",
-          "from": 4,
-          "minimum": 5,
-          "added": 0
+          "section": "Свежие новости",
+          "from": 1,
+          "minimum": 6,
+          "added": 1,
+          "to": 2
         },
         {
           "section": "Еда, открытия и рынки",
@@ -315,12 +401,12 @@
           "added": 0
         }
       ],
-      "inserted_total": 0,
+      "inserted_total": 1,
       "still_under_minimum": [
         {
-          "section": "Городской радар",
-          "actual": 4,
-          "minimum": 5,
+          "section": "Свежие новости",
+          "actual": 2,
+          "minimum": 6,
           "reason": "no_visible_section_or_no_recoverable_reserve"
         },
         {
@@ -331,117 +417,155 @@
         }
       ],
       "reserve_stats": {
-        "enriched_rewrite_attempts": 12,
-        "enriched_rewrite_used": 0,
+        "enriched_rewrite_attempts": 31,
+        "enriched_rewrite_used": 4,
         "refetch": {
-          "attempted": 2,
+          "attempted": 1,
           "improved": 0,
-          "failed": 2,
-          "empty_or_not_better": 0,
+          "failed": 0,
+          "empty_or_not_better": 1,
           "skipped": 0,
           "reports": [
             {
-              "fingerprint": "council-stockport-council-stockport-gov-uk-news-stockport-local-election-2026-results",
-              "title": "8 May 2026 Stockport local election 2026 results Results from 7 May 2026",
-              "status": "failed",
-              "url": "https://stockport.gov.uk/news/stockport-local-election-2026-results",
-              "error": "RuntimeError: Failed to perform, curl: (7) Failed to connect to stockport.gov.uk port 443 after 96 ms: Could not connect to server. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
-            },
-            {
-              "fingerprint": "council-stockport-council-stockport-gov-uk-news-state-of-the-art-send-school-shortlisted-for-two-national-awards",
-              "title": "10 October 2025 State of the Art SEND School shortlisted for two national awards Lisburne School has been shortlisted in the Education Estate Awards.",
-              "status": "failed",
-              "url": "https://stockport.gov.uk/news/state-of-the-art-send-school-shortlisted-for-two-national-awards",
-              "error": "RuntimeError: Failed to perform, curl: (7) Failed to connect to stockport.gov.uk port 443 after 94 ms: Could not connect to server. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
+              "fingerprint": "food-openings-manchester-s-finest-manchestersfinest-com-category-eating-and-drinking-food-halls-and-markets",
+              "title": "Food Halls and Markets",
+              "status": "ok",
+              "url": "https://manchestersfinest.com/category/eating-and-drinking/food-halls-and-markets",
+              "chars": 42
             }
           ]
         },
-        "enriched_rewrite_empty": 12
+        "enriched_rewrite_empty": 27
       },
-      "status": "no_recoverable_shortfall"
+      "status": "applied"
     }
   },
-  "notes": "Текст корректно передает информацию о происшествии, без искажения фактов или юридических рисков.; Прогноз погоды корректен и безопасен для публикации.; Все новости в этом фрагменте корректны и соответствуют источникам. Убедитесь, что выпуск в целом сбалансирован по темам.; Добавление источника в последней строке улучши",
+  "notes": "Прогноз погоды корректен и безопасен для публикации.; Выпуск содержит актуальные и важные новости, но стоит обратить внимание на схожесть формулировок в дорожных инцидентах.; Исправьте дату в строке 8 и удалите строку 15, чтобы выпуск был корректным.; Уточнён статус назначения Энди Бернэма, чтобы избежать фактической о",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.9,
+    "confidence": 0.8,
     "critical_errors": [
       {
-        "line_index": 23,
-        "section": "Что важно в ближайшие 7 дней",
-        "problem": "Дата окончания события не указана, что может ввести в заблуждение.",
+        "line_index": 8,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дата 9 августа не соответствует источнику.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 25,
-        "section": "Что важно в ближайшие 7 дней",
-        "problem": "Недостаточная информация о событии, неясно, что такое The Last Viking (15).",
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Тема не относится к общественному транспорту.",
+        "risk": "format",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 17,
+        "section": "Что важно сегодня",
+        "problem": "Энди Бернэм не может стать премьер-министром в ближайшие дни, так как это требует официального назначения и утверждения.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 31,
-        "section": "Дальние анонсы",
-        "problem": "Несоответствие информации о событии: текст говорит о выступлении Nia Archives, но данные кандидата относятся к The K's.",
+        "line_index": 20,
+        "section": "Футбол",
+        "problem": "Неверная информация о сделке Манчестер Юнайтед на £35 миллионов за Эдерсона.",
         "risk": "factual",
         "suggested_action": "repair"
+      },
+      {
+        "line_index": 4,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о дорожных ограничениях на M62 и M6.",
+        "risk": "format",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 5,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о дорожных ограничениях на M62 и M6.",
+        "risk": "format",
+        "suggested_action": "strip"
       }
     ],
     "actions": [
       {
-        "line_index": 13,
+        "line_index": 8,
         "section": "Общественный транспорт сегодня",
         "action": "patch",
-        "replacement_text": "• С 13 июля по 2 августа 2026 года трамваи Metrolink не будут ходить по линиям Eccles, Trafford Centre и Altrincham из-за замены путей в рамках работ по модернизации на сумму 150 миллионов фунтов стерлингов. Источник: BBC Manchester",
-        "reason": "Добавление источника для повышения доверия к информации.",
+        "replacement_text": "• Metrolink: линия Metrolink в Альтринхаме будет закрыта с понедельника 13 июля по воскресенье 2 августа 2026 года для проведения работ по улучшению на станциях Deansgate-Castlefield и Trafford Bar.",
+        "reason": "Дата 9 августа не подтверждена источником.",
+        "risk": "date"
+      },
+      {
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
+        "action": "strip",
+        "reason": "Информация о строительстве не относится к общественному транспорту.",
         "risk": "format"
       },
       {
-        "line_index": 23,
-        "section": "Что важно в ближайшие 7 дней",
+        "line_index": 17,
+        "section": "Что важно сегодня",
         "action": "patch",
-        "replacement_text": "• 8 июля в HOME начнется Manchester Open 2026 — крупнейшее празднование творческих талантов Большого Манчестера, которое продлится до 6 сентября. HOME",
-        "reason": "Уточнение даты окончания события для полноты информации.",
-        "risk": "date"
+        "replacement_text": "• Экс-мэр Манчестера Энди Бернэм может стать премьер-министром, так как он единственный кандидат на пост лидера Лейбористской партии. Его официальное назначение ожидается на специальной конференции после открытия номинаций сегодня, 9 июля. Бернэм получил поддержку от бывшего министра вооруженных сил Алла Карнса, который отметил, что стране сейчас нужен лидер, способный действовать. MEN",
+        "reason": "Уточнение статуса назначения на пост премьер-министра.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 20,
+        "section": "Футбол",
+        "action": "replace",
+        "replacement_text": "• Манчестер Юнайтед проявляет интерес к Тчуамени, Скотту и Саммервиллю, но сделка на £35 миллионов за Эдерсона не подтверждена. MEN Manchester United",
+        "reason": "Указанная сделка на £35 миллионов за Эдерсона не подтверждена в источнике.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 22,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• В воскресенье, 12 июля 2026 года, на площадке Bolton Car Boot Sale в Bolton пройдет 'car boot sale' с более чем 300 прилавками. Вход для покупателей с 7:00, стоимость £1 за машину.",
+        "reason": "Уточнение названия площадки для соответствия источнику.",
+        "risk": "factual"
       },
       {
         "line_index": 25,
-        "section": "Что важно в ближайшие 7 дней",
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• Фестиваль Sound Bazaar пройдет в The Yard MCR в Cheetham Hill в эту субботу с живой музыкой, диджеями и мастер-классами; билеты от £10.",
+        "reason": "Уточнение названия площадки для соответствия источнику.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 4,
+        "section": "Свежие новости",
         "action": "strip",
         "replacement_text": "",
-        "reason": "Недостаточная информация о событии, неясно, что такое The Last Viking (15).",
-        "risk": "factual"
+        "reason": "Дублирование информации о дорожных ограничениях на M62 и M6.",
+        "risk": "format"
       },
       {
-        "line_index": 31,
-        "section": "Дальние анонсы",
-        "action": "replace",
-        "replacement_text": "• The K's выступят в Castlefield Bowl в Манчестере 3 июля 2026 года, открывая серию Sounds of the City 2026.",
-        "reason": "Исправление фактической ошибки: информация о событии должна соответствовать данным кандидата.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 36,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Sunny Day Real Estate — 14 июля, Manchester New Century Hall (Рок). Концерт в Greater Manchester на следующей неделе. Ticketmaster",
-        "reason": "Дата концерта 14 июля, что не соответствует текущей неделе.",
-        "risk": "date"
+        "line_index": 5,
+        "section": "Свежие новости",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации о дорожных ограничениях на M62 и M6.",
+        "risk": "format"
       }
     ],
     "warnings": [
-      "В блоке 'Свежие новости' есть плотность информации, но все строки безопасны и соответствуют фактам. Убедитесь, что другие разделы выпуска также сбалансированы.",
-      "Отсутствие источника в последней строке может снизить доверие к информации.",
-      "Выпуск содержит информацию о событиях и инициативах, которые могут быть полезны для жителей, но не все новости имеют прямое отношение к Greater Manchester. Например, информация о театрах в Северо-Западной Англии включает регионы за пределами GM.",
-      "Дата концерта Sunny Day Real Estate указана как 'на этой неделе', но фактически он состоится на следующей неделе.",
-      "Секция 'Крупные концерты вне GM' содержит информацию о концертах, которые проходят за пределами Greater Manchester. Это может быть неинтересно основной аудитории, но не является критической ошибкой.",
+      "Две новости о дорожных инцидентах на M62 и M6 имеют схожий текст, что может создать впечатление дублирования. Однако они касаются разных дорог, поэтому это не критично.",
+      "Некоторые названия площадок были уточнены для соответствия источникам.",
+      "Выпуск содержит много информации о планах и проектах, но может не хватать более актуальных новостей или событий, которые происходят в данный момент.",
+      "В строке 34 упоминается 'временные входы', что может быть не совсем понятно без контекста. Возможно, стоит уточнить, что это временные слоты для посещения выставки.",
+      "В разделе 'Еда, открытия и рынки' упоминается мероприятие, которое уже прошло (8 июля 2026 года). Это может снизить актуальность информации для читателей.",
+      "Некоторые строки содержат информацию о том, что мероприятие является частью фестиваля, но это не подтверждается в данных. Это может вызвать путаницу у читателей.",
+      "Секция 'Крупные концерты вне GM' содержит только информацию о концертах за пределами Greater Manchester, что может не соответствовать интересам всех читателей.",
       "События в Лондоне и Хэмпшире не относятся к Greater Manchester, но находятся в разделе 'Русскоязычные концерты и стендап UK', что может быть допустимо в контексте рубрики.",
-      "Низкая производительность писателей: 48/350 включенных кандидатов отрендерено.",
-      "Секция 'Билеты / Ticket Radar' доминирует над core news.",
-      "Секция 'Крупные концерты вне GM' содержит много элементов, что может отвлечь от местных новостей."
+      "Низкая производительность писателя: 61/341 включенных кандидатов отрендерено.",
+      "Проблемы с источниками: 4 сбоя."
     ],
-    "notes": "Текст корректно передает информацию о происшествии, без искажения фактов или юридических рисков.; Прогноз погоды корректен и безопасен для публикации.; Все новости в этом фрагменте корректны и соответствуют источникам. Убедитесь, что выпуск в целом сбалансирован по темам.; Добавление источника в последней строке улучши",
+    "notes": "Прогноз погоды корректен и безопасен для публикации.; Выпуск содержит актуальные и важные новости, но стоит обратить внимание на схожесть формулировок в дорожных инцидентах.; Исправьте дату в строке 8 и удалите строку 15, чтобы выпуск был корректным.; Уточнён статус назначения Энди Бернэма, чтобы избежать фактической о",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
@@ -456,24 +580,6 @@
             1
           ],
           "sections": [
-            "Главная история дня"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2162,
-          "duration_seconds": 1.249
-        },
-        {
-          "chunk_id": "chunk-02",
-          "status": "ok",
-          "line_range": [
-            2,
-            2
-          ],
-          "sections": [
             "Погода"
           ],
           "decision": "pass",
@@ -482,14 +588,14 @@
           "warning_count": 0,
           "error": "",
           "estimated_tokens": 1968,
-          "duration_seconds": 1.355
+          "duration_seconds": 1.568
         },
         {
-          "chunk_id": "chunk-03",
+          "chunk_id": "chunk-02",
           "status": "ok",
           "line_range": [
-            3,
-            9
+            2,
+            6
           ],
           "sections": [
             "Свежие новости"
@@ -499,69 +605,87 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 4437,
-          "duration_seconds": 2.433
+          "estimated_tokens": 3630,
+          "duration_seconds": 2.811
+        },
+        {
+          "chunk_id": "chunk-03",
+          "status": "ok",
+          "line_range": [
+            7,
+            15
+          ],
+          "sections": [
+            "Общественный транспорт сегодня"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 4646,
+          "duration_seconds": 4.536
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            10,
-            13
+            16,
+            18
           ],
           "sections": [
-            "Общественный транспорт сегодня"
+            "Что важно сегодня"
           ],
-          "decision": "warn",
-          "critical_error_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
           "action_count": 1,
-          "warning_count": 1,
+          "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2787,
-          "duration_seconds": 2.141
+          "estimated_tokens": 2974,
+          "duration_seconds": 5.105
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            14,
-            16
+            19,
+            21
           ],
           "sections": [
-            "Что важно сегодня"
+            "Футбол"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2950,
-          "duration_seconds": 0.866
+          "estimated_tokens": 2853,
+          "duration_seconds": 2.905
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            17,
-            18
+            22,
+            28
           ],
           "sections": [
-            "Футбол"
+            "Выходные в GM"
           ],
-          "decision": "pass",
+          "decision": "warn",
           "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
+          "action_count": 2,
+          "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2478,
-          "duration_seconds": 1.046
+          "estimated_tokens": 4833,
+          "duration_seconds": 3.367
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            19,
-            22
+            29,
+            33
           ],
           "sections": [
             "Городской радар"
@@ -571,51 +695,51 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 3326,
-          "duration_seconds": 1.598
+          "estimated_tokens": 3688,
+          "duration_seconds": 1.687
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            23,
-            25
+            34,
+            36
           ],
           "sections": [
             "Что важно в ближайшие 7 дней"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
-          "warning_count": 0,
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2732,
-          "duration_seconds": 2.643
+          "estimated_tokens": 3090,
+          "duration_seconds": 3.577
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            26,
-            27
+            37,
+            38
           ],
           "sections": [
             "Еда, открытия и рынки"
           ],
-          "decision": "pass",
+          "decision": "warn",
           "critical_error_count": 0,
           "action_count": 0,
-          "warning_count": 0,
+          "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2750,
-          "duration_seconds": 0.821
+          "estimated_tokens": 2806,
+          "duration_seconds": 2.329
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            28,
-            29
+            39,
+            40
           ],
           "sections": [
             "IT и бизнес"
@@ -625,15 +749,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2555,
-          "duration_seconds": 1.192
+          "estimated_tokens": 2540,
+          "duration_seconds": 6.548
         },
         {
           "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            30,
-            30
+            41,
+            42
           ],
           "sections": [
             "Business/tech события для тебя"
@@ -643,51 +767,51 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2229,
-          "duration_seconds": 8.841
+          "estimated_tokens": 2742,
+          "duration_seconds": 10.882
         },
         {
           "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
-            31,
-            31
+            43,
+            44
           ],
           "sections": [
             "Дальние анонсы"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2155,
-          "duration_seconds": 4.234
+          "estimated_tokens": 2796,
+          "duration_seconds": 16.45
         },
         {
           "chunk_id": "chunk-13",
           "status": "ok",
           "line_range": [
-            32,
-            36
+            45,
+            50
           ],
           "sections": [
             "Билеты / Ticket Radar"
           ],
           "decision": "warn",
           "critical_error_count": 0,
-          "action_count": 1,
+          "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 3900,
-          "duration_seconds": 22.884
+          "estimated_tokens": 4420,
+          "duration_seconds": 37.775
         },
         {
           "chunk_id": "chunk-14",
           "status": "ok",
           "line_range": [
-            37,
-            41
+            51,
+            56
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -697,15 +821,15 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 3965,
-          "duration_seconds": 26.918
+          "estimated_tokens": 4307,
+          "duration_seconds": 21.249
         },
         {
           "chunk_id": "chunk-15",
           "status": "ok",
           "line_range": [
-            42,
-            44
+            57,
+            59
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
@@ -715,8 +839,8 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2369,
-          "duration_seconds": 6.047
+          "estimated_tokens": 2287,
+          "duration_seconds": 5.33
         }
       ],
       "reduce": {
@@ -724,13 +848,13 @@
         "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "warn",
-        "critical_error_count": 0,
-        "action_count": 0,
-        "warning_count": 3,
+        "decision": "repair_required",
+        "critical_error_count": 2,
+        "action_count": 2,
+        "warning_count": 2,
         "error": "",
-        "estimated_tokens": 10601,
-        "duration_seconds": 25.155
+        "estimated_tokens": 11718,
+        "duration_seconds": 28.161
       },
       "max_workers": 3,
       "chunk_line_target": 12,
