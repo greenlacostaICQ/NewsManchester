@@ -2522,6 +2522,7 @@ def cmd_collect_inventory(wave: str) -> int:
         NIGHT_WAVES,
         build_inventory_record,
         merge_inventory,
+        prewrite_stable_inventory_candidate,
     )
     from news_digest.pipeline.entity_extraction import enrich_candidates_entities  # noqa: PLC0415
     from news_digest.pipeline.event_extraction import enrich_candidates_events  # noqa: PLC0415
@@ -2551,6 +2552,10 @@ def cmd_collect_inventory(wave: str) -> int:
         # stay in the morning path because a single wave is not the whole corpus.
         enrich_candidates_entities(source_candidates)
         enrich_candidates_events(source_candidates)
+        prewritten = 0
+        for candidate in source_candidates:
+            if isinstance(candidate, dict) and prewrite_stable_inventory_candidate(candidate):
+                prewritten += 1
         records = [build_inventory_record(c, prompt_version=PROMPT_REGISTRY_VERSION) for c in source_candidates if isinstance(c, dict)]
         per_category.setdefault(source.report_category, []).extend(records)
         run_log.append({
@@ -2563,6 +2568,7 @@ def cmd_collect_inventory(wave: str) -> int:
             "enriched": sum(1 for c in source_candidates if isinstance(c, dict) and c.get("include")),
             "errors": len(health.get("errors") or []),
             "fact_ready": sum(1 for r in records if str(r.get("quality_status") or "") in {"ready", "needs_text"}),
+            "prewritten": prewritten,
             "render_ready": sum(1 for r in records if r.get("render_ready")),
         })
     merged: dict[str, int] = {}

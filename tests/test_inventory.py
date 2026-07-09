@@ -9,12 +9,15 @@ from news_digest.pipeline.inventory import (
     aggregate_category_health,
     annotate_morning_relevance,
     build_inventory_record,
+    build_morning_inventory_intake,
     categories_needing_live_fallback,
     classify_category_health,
     classify_disposition,
     evaluate_card,
+    inventory_stable_block_completeness,
     inventory_record_to_candidate,
     passes_morning_contract,
+    prewrite_stable_inventory_candidate,
     read_inventory,
     reentry_candidates,
     summarise_morning_intake,
@@ -277,6 +280,83 @@ class BuildRecordTest(unittest.TestCase):
         self.assertEqual(report["totals"]["fact_ready"], 1)
         self.assertEqual(report["totals"]["eligible"], 1)
         self.assertEqual(report["reasons"]["missing_facts"], 1)
+
+    def test_morning_inventory_intake_only_inserts_stable_blocks(self) -> None:
+        records = [
+            {
+                "fingerprint": "weekend-1",
+                "title": "Stockport Makers Market",
+                "primary_block": "weekend_activities",
+                "category": "culture_weekly",
+                "quality_status": "needs_text",
+                "missing_facts": ["draft_line"],
+                "last_seen_at": "2026-07-09T01:00:00+01:00",
+                "fact_card": {"event_name": "Stockport Makers Market", "venue": "Stockport", "date_start": "2026-07-11"},
+            },
+            {
+                "fingerprint": "fresh-1",
+                "title": "Breaking story",
+                "primary_block": "last_24h",
+                "category": "media_layer",
+                "quality_status": "needs_text",
+                "missing_facts": ["draft_line"],
+                "last_seen_at": "2026-07-09T07:30:00+01:00",
+                "fact_card": {"what_happened": "x", "why_now": "today"},
+            },
+        ]
+        candidates, report = build_morning_inventory_intake(records, mode="assist", today="2026-07-09")
+        self.assertEqual([candidate["fingerprint"] for candidate in candidates], ["weekend-1"])
+        self.assertEqual(report["inserted_candidates"], 1)
+        self.assertIn("morning_relevant_needs_text", report["hybrid_signals"])
+
+    def test_stable_block_completeness_has_floors(self) -> None:
+        candidates = [
+            {"primary_block": "weekend_activities", "source_label": f"src{i}", "draft_line": "• line"}
+            for i in range(6)
+        ] + [
+            {"primary_block": "openings", "source_label": "food"}
+        ]
+        report = inventory_stable_block_completeness(candidates)
+        self.assertIn("weekend_activities", report["complete_blocks"])
+        self.assertIn("openings", report["incomplete_blocks"])
+
+    def test_ticket_inventory_intake_is_capped(self) -> None:
+        records = [
+            {
+                "fingerprint": f"ticket-{idx}",
+                "title": f"A-tier show {idx}",
+                "primary_block": "ticket_radar",
+                "category": "venues_tickets",
+                "quality_status": "needs_text",
+                "missing_facts": ["draft_line"],
+                "last_seen_at": "2026-07-09T01:00:00+01:00",
+                "fact_card": {
+                    "event_name": f"A-tier show {idx}",
+                    "venue": "Co-op Live",
+                    "date_start": "2026-08-01",
+                    "ticket_type": "major_upcoming",
+                    "tier": "A",
+                },
+            }
+            for idx in range(25)
+        ]
+        candidates, report = build_morning_inventory_intake(records, mode="assist", today="2026-07-09")
+        self.assertEqual(len(candidates), 20)
+        self.assertEqual(report["held_by_cap"], 5)
+
+    def test_prewrite_uses_ticket_deterministic_writer(self) -> None:
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "Artist at Co-op Live",
+            "source_url": "https://example.test/ticket",
+            "ticket_type": "major_upcoming",
+            "ticket_notability": {"artist": "Artist", "tier": "A", "kind": "artist", "confidence": 0.9},
+            "event": {"event_name": "Artist", "venue": "Co-op Live", "date_start": "2026-08-01"},
+        }
+        self.assertTrue(prewrite_stable_inventory_candidate(candidate))
+        self.assertTrue(str(candidate.get("draft_line") or "").startswith("• "))
+        self.assertEqual(candidate["draft_line_provider"], "night_inventory_prewrite")
 
 
 class NightWaveTest(unittest.TestCase):

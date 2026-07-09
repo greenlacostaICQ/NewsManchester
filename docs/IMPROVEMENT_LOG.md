@@ -771,3 +771,103 @@
 - Файлы/места: `inventory.py:passes_ttl_contract`, `inventory_ttl_hours`, `passes_morning_contract`; тесты `tests/test_inventory.py`.
 - ПРОВЕРКА: offline — `tests.test_inventory` OK; на реальном inventory 2026-07-09 старые fact-ready transport-like записи дали `ttl_expired=41`, что подтверждает, что просроченный ночной запас не считается пригодным.
 - Где была ошибка (если не сработало): —
+
+### 0070 — Inventory assist/first для стабильных блоков — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА offline, prod-proof после следующей ночи/утра.
+- Проблема: ночной inventory оставался отчётом, а стабильные блоки (`Выходные`, `Ticket Radar`, `Еда`) утром всё равно начинали только с live-crawl.
+- Причина (корень): `collect_digest` не читал `data/state/inventory/*.jsonl` как candidate source.
+- Решение: добавлен morning inventory intake в `collect_digest`. Default `MORNING_INVENTORY_MODE=assist`: eligible stable records (`weekend_activities`, `ticket_radar`, `openings`) добавляются как обычные candidates после live-сбора и до dedupe/validate. `mode=on` готовит inventory-first режим для source skipping.
+- Почему так: default не пропускает live scan, чтобы первый prod-день не потерял блоки из-за неполного inventory.
+- Ожидаемый эффект и метрика проверки: `collector_report.morning_inventory.actual_intake.inserted_candidates > 0` после свежей ночи; candidates получают `inventory_source=night_inventory`.
+- Файлы/места: `collector/core.py:collect_digest`; `inventory.py:build_morning_inventory_intake`; тесты `tests/test_inventory.py`.
+- ПРОВЕРКА: offline — `tests.test_inventory` OK; на старом inventory 2026-07-09 inserted=0 из-за `missing_facts/ttl_expired`.
+
+### 0071 — Ticket Radar inventory shortlist + cap — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА offline, prod-proof после свежей night tickets wave.
+- Проблема: ticket inventory может давать сотни записей; если пустить всё утром, мы вернём 900-кандидатную лавину.
+- Причина (корень): inventory intake не имел отдельного cap/shortlist для `ticket_radar`.
+- Решение: stable intake сортирует ticket candidates по tier/type и режет `ticket_radar` до 20 записей. Остальные считаются `inventory_block_cap`, не исчезают из inventory.
+- Почему так: morning writer/validator видит короткий shortlist + reserve, а не весь билетный каталог.
+- Ожидаемый эффект и метрика проверки: `morning_inventory_intake_report.actual_intake.held_by_cap` показывает срез; `ticket_radar.candidate_count <= 20` из inventory.
+- Файлы/места: `inventory.py:INVENTORY_INTAKE_CAPS`, `_inventory_candidate_priority`, `build_morning_inventory_intake`; тест `test_ticket_inventory_intake_is_capped`.
+- ПРОВЕРКА: offline — `tests.test_inventory` OK; synthetic 25 A-tier tickets → 20 inserted, 5 held_by_cap.
+
+### 0072 — Weekend completeness из inventory — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА offline, prod-proof после свежей events wave.
+- Проблема: `Выходные` нельзя считать здоровыми только по наличию строк; нужен floor и источник полноты для ночного слоя.
+- Причина (корень): release/collector не имели stable-block completeness по inventory candidates.
+- Решение: `inventory_stable_block_completeness` считает floor для `weekend_activities` (6), source_count, with_prewrite и complete/incomplete. Collector кладёт это в `morning_inventory_intake_report`.
+- Почему так: пока это floor/completeness checkpoint, без попытки заменить весь weekend source coverage.
+- Ожидаемый эффект и метрика проверки: после свежей ночи `completeness.blocks.weekend_activities.complete=true/false` объясняет, можно ли доверять inventory-first.
+- Файлы/места: `inventory.py:inventory_stable_block_completeness`.
+- ПРОВЕРКА: offline — `tests.test_inventory` OK; 6 weekend candidates → block complete.
+
+### 0073 — Food/openings inventory резерв и completeness — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА offline, prod-proof после fresh `pro_food_russian` wave.
+- Проблема: `Еда, открытия и рынки` часто пустеет, но не было видно, может ли ночной слой закрыть floor.
+- Причина (корень): food/openings inventory не входил в morning candidate pool и не имел отдельного floor.
+- Решение: `openings` добавлен в stable intake с floor=3 и cap=10. Если ночная карточка fact-ready, она станет обычным candidate; если нет — отчёт покажет `missing_facts`.
+- Почему так: не фабрикуем food-текст без фактов; prewrite для food сработает только через существующий event fallback, если структура достаточная.
+- Ожидаемый эффект и метрика проверки: `completeness.blocks.openings.candidate_count` и `complete` показывают, спасает ли inventory блок еды.
+- Файлы/места: `inventory.py:INVENTORY_ASSIST_BLOCKS`, `INVENTORY_COMPLETENESS_FLOORS`.
+- ПРОВЕРКА: offline — `tests.test_inventory` OK; старый inventory 2026-07-09 пока даёт `openings.complete=false`.
+
+### 0074 — Transport остаётся live-refetch/hybrid, не inventory-publish — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА offline.
+- Проблема: транспорт нельзя публиковать из ночного склада как текущий факт.
+- Причина (корень): после fact-ready gate транспорт мог бы выглядеть как обычный candidate без отдельной защиты.
+- Решение: `passes_morning_contract` возвращает `needs_live_refetch` для transport без `render_ready`; `build_morning_inventory_intake` не вставляет transport в stable candidates, а считает его в `hybrid_signals`.
+- Почему так: transport должен подтверждаться утром по passenger impact.
+- Ожидаемый эффект и метрика проверки: `actual_intake.hybrid_signals.needs_live_refetch`/TTL reasons есть, но transport не попадает в inserted candidates.
+- Файлы/места: `inventory.py:passes_morning_contract`, `build_morning_inventory_intake`.
+- ПРОВЕРКА: offline — `tests.test_inventory` OK; fact-ready transport returns `needs_live_refetch`.
+
+### 0075 — Fresh/lead остаются hybrid/report, не inventory-first — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА offline.
+- Проблема: fresh/lead нельзя выбирать только ночью, иначе лид может быть устаревшим.
+- Причина (корень): night inventory содержит `last_24h/today_focus` records, но они должны конкурировать с утренним breaking/live layer.
+- Решение: `last_24h`, `today_focus`, `lead_story` добавлены в hybrid-only set: intake считает причины/сигналы, но не вставляет их как stable candidates.
+- Почему так: стабильные блоки включаются первыми, fresh/lead после отдельного live-delta дизайна.
+- Ожидаемый эффект и метрика проверки: fresh/lead records видны в `hybrid_signals`, но `inserted_candidates` содержит только stable blocks.
+- Файлы/места: `inventory.py:INVENTORY_HYBRID_BLOCKS`, `build_morning_inventory_intake`.
+- ПРОВЕРКА: offline — `tests.test_inventory` OK; `last_24h` synthetic record counted in hybrid, not inserted.
+
+### 0077 — Skip-wide для здоровых night sources в режиме `on` — 2026-07-09
+- Статус: внедрено как capability; default не активирует skip (`assist`).
+- Проблема: без пропуска широкого утреннего скана night inventory улучшает полноту, но не снимает collect-время.
+- Причина (корень): daily collect всегда обходил все sources, независимо от качества night inventory.
+- Решение: `MORNING_INVENTORY_MODE=on` позволяет collector skip-wide для `venues_tickets` и `food_openings`, если соответствующий stable block уже complete по inventory. Skipped sources получают source_health `skipped_by_inventory=true`, а не выглядят как падение.
+- Почему так: `culture_weekly` пока не skip'аем, потому что он кормит weekend/next7/future сразу; риск выше.
+- Ожидаемый эффект и метрика проверки: в режиме `on` `collector_report.categories.*.source_health[].skipped_by_inventory=true`, collect seconds ниже; в default `assist` skip=0.
+- Файлы/места: `collector/core.py:_morning_inventory_mode`, `_inventory_skip_source_health`, `collect_digest`.
+- ПРОВЕРКА: offline — `py_compile`/`tests.test_inventory` OK; prod включение требует `MORNING_INVENTORY_MODE=on`.
+
+### 0078 — Night prewrite для стабильных structured карточек — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА offline, prod-proof после следующей night wave.
+- Проблема: inventory-first без текста всё равно переносит работу в утренний rewrite/writer.
+- Причина (корень): `collect-inventory` не пытался использовать уже существующие deterministic writer templates ночью.
+- Решение: после night per-card enrichment `cmd_collect_inventory` вызывает `prewrite_stable_inventory_candidate`. Она использует существующие writer fallback templates для tickets/events/pro, пишет `draft_line_provider=night_inventory_prewrite`, а run_log пишет `prewritten`.
+- Почему так: не создаём новый слабый phrasebook; если writer fallback не может безопасно написать строку, prewrite не происходит.
+- Ожидаемый эффект и метрика проверки: новые night wave logs показывают `prewritten > 0`, а соответствующие records становятся `render_ready=true`.
+- Файлы/места: `inventory.py:prewrite_stable_inventory_candidate`; `scripts/run_local_digest.py:cmd_collect_inventory`.
+- ПРОВЕРКА: offline — `tests.test_inventory` OK; structured A-tier ticket получает deterministic `draft_line`.
+
+### 0079 — Inventory effect report после collect/release — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА offline.
+- Проблема: после включения assist/on нужно видеть не только общий склад, а фактическое влияние на утренний collect.
+- Причина (корень): 0067 был report-only по raw inventory; не было `actual_intake` после dedupe против live fingerprints.
+- Решение: collector пишет `data/state/morning_inventory_intake_report.json` и `collector_report.morning_inventory`; release вкладывает его в `inventory_morning_effect.collect_intake`.
+- Почему так: forensic truth теперь виден и в collect-stage, и в release-stage.
+- Ожидаемый эффект и метрика проверки: `release_report.inventory_morning_effect.collect_intake.actual_intake.inserted_candidates` показывает реальный вклад.
+- Файлы/места: `collector/core.py`, `release.py:_summarise_inventory_morning_effect`.
+- ПРОВЕРКА: offline — py_compile OK; текущий old inventory даёт inserted=0 и причины `missing_facts/ttl_expired`.
+
+### 0080 — Inventory performance budget — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА offline, реальные числа после следующего build.
+- Проблема: success night inventory нельзя мерить только наличием кандидатов; нужно видеть, падают ли collect/rewrite/total.
+- Причина (корень): `speed_report` показывал bottlenecks, но не имел inventory activation targets.
+- Решение: `speed_report.inventory_performance_budget` задаёт targets: collect ≤180s, llm_rewrite ≤360s, total_known_stage_seconds ≤1320s, и пишет breaches/status.
+- Почему так: цели warning/report-only, не блокируют выпуск.
+- Ожидаемый эффект и метрика проверки: после prod build видно, какие стадии ещё превышают цель после inventory activation.
+- Файлы/места: `release.py:_build_speed_report`.
+- ПРОВЕРКА: offline — py_compile OK; prod-proof после следующего daily build.

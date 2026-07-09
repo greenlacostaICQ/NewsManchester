@@ -931,6 +931,8 @@ def _classify_source_status(entry: dict, category: str) -> tuple[str, str]:
     contract = str(entry.get("source_contract") or "")
     signal = int(entry.get("coverage_signal_count") or 0)
     signal_label = str(entry.get("coverage_signal_label") or "coverage item(s)")
+    if entry.get("skipped_by_inventory"):
+        return "ok", f"broad live scan skipped; night inventory has {signal} {signal_label}"
     if not fetched or errors:
         return "failed", (errors[0] if errors else "fetch failed")[:140]
     if entry.get("not_modified"):
@@ -3596,6 +3598,28 @@ def _build_speed_report(
     }
     total_known = round(sum(stages.values()), 3)
     status = "attention" if llm_actual["timeout_errors"] or llm_actual["truncated_responses"] else "ok"
+    inventory_budget = {
+        "schema_version": 1,
+        "targets_seconds": {
+            "collect": 180,
+            "llm_rewrite": 360,
+            "total_known_stage_seconds": 1320,
+        },
+        "actual_seconds": {
+            "collect": stages.get("collect", 0.0),
+            "llm_rewrite": stages.get("llm_rewrite", 0.0),
+            "total_known_stage_seconds": total_known,
+        },
+        "status": "ok",
+        "breaches": [],
+        "policy": "Inventory activation target: stable blocks should reduce live collect and morning rewrite while fresh/lead/transport remain checked.",
+    }
+    for key, target in inventory_budget["targets_seconds"].items():
+        actual = float(inventory_budget["actual_seconds"].get(key) or 0.0)
+        if actual > float(target):
+            inventory_budget["breaches"].append(key)
+    if inventory_budget["breaches"]:
+        inventory_budget["status"] = "attention"
     return {
         "schema_version": 1,
         "run_at_london": now_london().isoformat(),
@@ -3617,6 +3641,7 @@ def _build_speed_report(
             if isinstance(llm_rewrite_report, dict)
             else {}
         ),
+        "inventory_performance_budget": inventory_budget,
         "policy": "Observation-only speed report: no release blocking, no quality cuts. Optimise by parser/cache/token p95 evidence before changing editorial floors.",
     }
 
@@ -3686,6 +3711,7 @@ def _summarise_inventory_morning_effect(state_dir: Path) -> dict[str, object]:
             if run_at >= last_wave_at:
                 last_wave_at = run_at
                 last_wave = str(row.get("wave") or "")
+    collect_intake_report = _load_optional_json(state_dir / "morning_inventory_intake_report.json")
 
     return {
         "schema_version": 1,
@@ -3707,6 +3733,7 @@ def _summarise_inventory_morning_effect(state_dir: Path) -> dict[str, object]:
         "last_wave_at": last_wave_at,
         "by_category": by_category,
         "report_only_intake": summarise_morning_intake(all_rows),
+        "collect_intake": collect_intake_report if isinstance(collect_intake_report, dict) else {},
     }
 
 

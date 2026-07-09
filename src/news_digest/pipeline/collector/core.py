@@ -30,6 +30,11 @@ from news_digest.pipeline.common import (
 from news_digest.pipeline.entity_extraction import enrich_candidates_entities
 from news_digest.pipeline.event_extraction import enrich_candidates_events
 from news_digest.pipeline.history import ensure_history_files
+from news_digest.pipeline.inventory import (
+    build_morning_inventory_intake,
+    read_all_inventory,
+    summarise_morning_intake,
+)
 from news_digest.pipeline.story_intelligence import (
     apply_cheap_dedup_before_enrich,
     attach_story_clusters,
@@ -60,6 +65,11 @@ class StageResult:
 # Cloudflare-protected sources still go through the curl_cffi cascade
 # inside _fetch_source_body, so per-source resilience is unchanged.
 _COLLECTOR_MAX_WORKERS = 12
+_MORNING_INVENTORY_DEFAULT_MODE = "assist"
+_INVENTORY_SKIP_CATEGORIES = {
+    "venues_tickets": "ticket_radar",
+    "food_openings": "openings",
+}
 _SENSITIVE_QUERY_KEYS = {"apikey", "api_key", "key", "token", "access_token"}
 _HARD_NEWS_SOURCES = {
     "BBC Manchester",
@@ -312,6 +322,33 @@ def _source_health_template(source) -> dict:
     }
 
 
+def _morning_inventory_mode() -> str:
+    mode = os.environ.get("MORNING_INVENTORY_MODE", _MORNING_INVENTORY_DEFAULT_MODE)
+    mode = str(mode or "").strip().lower()
+    return mode if mode in {"off", "report", "assist", "on"} else _MORNING_INVENTORY_DEFAULT_MODE
+
+
+def _inventory_skip_source_health(source, *, block: str, available: int) -> dict:
+    health = _source_health_template(source)
+    health.update(
+        {
+            "checked": True,
+            "fetched": False,
+            "skipped_by_inventory": True,
+            "inventory_block": block,
+            "inventory_available": available,
+            "usable_for_release": True,
+            "coverage_signal_count": available,
+            "coverage_signal_label": "night inventory candidates",
+            "failure_class": "inventory_satisfied",
+            "reliability_ladder_step": "skip_live_broad_scan",
+            "recommended_next_action": "refetch selected inventory URLs only",
+            "warnings": [f"Skipped broad live scan: night inventory has {available} {block} candidate(s)."],
+        }
+    )
+    return health
+
+
 def _classify_source_failure(
     *,
     fetched: bool,
@@ -382,8 +419,11 @@ def _build_source_health_report(collector_report: dict) -> dict[str, object]:
             candidate_count = int(entry.get("candidate_count") or 0)
             fetched = bool(entry.get("fetched"))
             not_modified = bool(entry.get("not_modified"))
+            skipped_by_inventory = bool(entry.get("skipped_by_inventory"))
             status = "ok"
-            if not_modified:
+            if skipped_by_inventory:
+                status = "ok"
+            elif not_modified:
                 status = "not_modified"
             elif not fetched or entry.get("errors"):
                 status = "failed_fetch"
@@ -586,6 +626,27 @@ def collect_digest(project_root: Path) -> StageResult:
     report = _default_report()
     report["pipeline_run_id"] = pipeline_run_id
     candidates: list[dict] = [_weather_candidate()]
+    inventory_mode = _morning_inventory_mode()
+    inventory_records = read_all_inventory(state_dir)
+    inventory_preview_candidates, inventory_preview_report = build_morning_inventory_intake(
+        inventory_records,
+        existing_fingerprints=set(),
+        mode=inventory_mode,
+    )
+    inventory_report: dict[str, object] = {
+        **summarise_morning_intake(inventory_records),
+        "mode": inventory_mode,
+        "assist_blocks": ["weekend_activities", "ticket_radar", "openings"],
+        "preview": inventory_preview_report,
+    }
+    skip_categories: dict[str, dict[str, object]] = {}
+    if inventory_mode == "on":
+        completeness = inventory_preview_report.get("completeness") if isinstance(inventory_preview_report, dict) else {}
+        blocks = completeness.get("blocks") if isinstance(completeness, dict) else {}
+        for category, block in _INVENTORY_SKIP_CATEGORIES.items():
+            row = blocks.get(block) if isinstance(blocks, dict) else None
+            if isinstance(row, dict) and row.get("complete"):
+                skip_categories[category] = {"block": block, "available": int(row.get("candidate_count") or 0)}
     for source in SOURCES:
         report["categories"][source.report_category]["sources"].append(source.name)
 
@@ -594,12 +655,13 @@ def collect_digest(project_root: Path) -> StageResult:
     # of the run regardless of whether parsing succeeds.
     load_fetch_cache(state_dir)
 
+    sources_to_collect = [source for source in SOURCES if source.report_category not in skip_categories]
     with ThreadPoolExecutor(max_workers=_COLLECTOR_MAX_WORKERS) as executor:
-        source_results = list(executor.map(_collect_single_source, SOURCES))
+        source_results = list(executor.map(_collect_single_source, sources_to_collect))
 
     save_fetch_cache(state_dir)
 
-    for source, (source_health, source_candidates) in zip(SOURCES, source_results, strict=True):
+    for source, (source_health, source_candidates) in zip(sources_to_collect, source_results, strict=True):
         category_report = report["categories"][source.report_category]
         category_report["source_health"].append(source_health)
         category_report["checked"] = True
@@ -626,6 +688,82 @@ def collect_digest(project_root: Path) -> StageResult:
                 f"{source.name}: fetched successfully but no candidate links passed filters"
             )
         candidates.extend(source_candidates)
+
+    for source in SOURCES:
+        skip = skip_categories.get(source.report_category)
+        if not skip:
+            continue
+        source_health = _inventory_skip_source_health(
+            source,
+            block=str(skip.get("block") or ""),
+            available=int(skip.get("available") or 0),
+        )
+        category_report = report["categories"][source.report_category]
+        category_report["source_health"].append(source_health)
+        category_report["checked"] = True
+
+    if inventory_mode in {"assist", "on"}:
+        existing_fps = {
+            str(candidate.get("fingerprint") or "")
+            for candidate in candidates
+            if isinstance(candidate, dict) and candidate.get("fingerprint")
+        }
+        inventory_candidates, intake_report = build_morning_inventory_intake(
+            inventory_records,
+            existing_fingerprints=existing_fps,
+            mode=inventory_mode,
+        )
+        candidates.extend(inventory_candidates)
+        inventory_report["actual_intake"] = intake_report
+        for candidate in inventory_candidates:
+            category_key = str(candidate.get("category") or "")
+            if category_key not in report["categories"]:
+                continue
+            event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+            category_report = report["categories"][category_key]
+            category_report["candidate_count"] += 1
+            category_report["publishable_count"] += 1 if candidate.get("include") else 0
+            category_report["dated_candidate_count"] += 1 if candidate.get("published_at") or event.get("date_start") else 0
+        for category_key, category_report in report["categories"].items():
+            inserted = [
+                candidate for candidate in inventory_candidates
+                if isinstance(candidate, dict) and str(candidate.get("category") or "") == category_key
+            ]
+            if not inserted:
+                continue
+            category_report["source_health"].append(
+                {
+                    "name": "Night Inventory",
+                    "url": "data/state/inventory",
+                    "source_contract": "night_inventory",
+                    "primary_block": "inventory_stable_blocks",
+                    "trial": False,
+                    "checked": True,
+                    "fetched": False,
+                    "inventory_intake": True,
+                    "candidate_count": len(inserted),
+                    "publishable_count": sum(1 for candidate in inserted if candidate.get("include")),
+                    "dated_candidate_count": sum(
+                        1
+                        for candidate in inserted
+                        if candidate.get("published_at")
+                        or (
+                            isinstance(candidate.get("event"), dict)
+                            and candidate.get("event", {}).get("date_start")
+                        )
+                    ),
+                    "fresh_last_24h_count": 0,
+                    "coverage_signal_count": len(inserted),
+                    "coverage_signal_label": "night inventory candidates",
+                    "usable_for_release": True,
+                    "warnings": [],
+                    "errors": [],
+                    "duration_seconds": 0.0,
+                }
+            )
+    else:
+        inventory_report["actual_intake"] = {"mode": inventory_mode, "inserted_candidates": 0}
+    report["morning_inventory"] = inventory_report
 
     for category in report["categories"].values():
         if category["checked"]:
@@ -691,6 +829,7 @@ def collect_digest(project_root: Path) -> StageResult:
     source_health_report = _build_source_health_report(report)
     write_json(report_path, report)
     write_json(state_dir / "source_health_report.json", source_health_report)
+    write_json(state_dir / "morning_inventory_intake_report.json", inventory_report)
     write_json(state_dir / "candidates.json", candidates_payload)
 
     if checked_all:
