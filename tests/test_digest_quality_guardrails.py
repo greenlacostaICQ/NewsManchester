@@ -27,6 +27,7 @@ from news_digest.pipeline.dedupe import (
     _normalise_person_tokens,
     _people_published_matches,
     _prefer_dedupe_candidate,
+    _topic_published_matches,
     dedupe_candidates,
 )
 from news_digest.pipeline.entity_extraction import extract_entities
@@ -699,6 +700,49 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertIn("воскресенье", line.lower())
         self.assertIn("Bowlee", line)
         self.assertNotRegex(line, r"5\s+апреля|5\s+April")
+
+    def test_weekend_market_topic_key_does_not_match_planning_story(self) -> None:
+        candidate = {
+            "include": True,
+            "fingerprint": "bowlee-car-boot",
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": "Bowlee Car Boot Sale",
+            "summary": (
+                "Bowlee Car Boot Sale and MarketDates: Sundays and Bank Holiday "
+                "Mondays (April - October 2026)."
+            ),
+            "lead": "Bowlee Car Boot Sale at Bowlee Community Park.",
+            "evidence_text": (
+                "Dates: Sundays and Bank Holiday Mondays (April - October 2026). "
+                "Location: Bowlee Community Park, Middleton."
+            ),
+            "source_label": "Bowlee Car Boot Sale",
+            "source_url": "https://example.test/bowlee-car-boot",
+            "repeat_story_key": "event:bowlee_car_boot_sale",
+            "event": {
+                "is_event": True,
+                "event_name": "Bowlee Car Boot Sale",
+                "date_start": "2026-07-05",
+                "venue": "Bowlee Community Park",
+            },
+        }
+        previous = {
+            "fingerprint": "planning-bowlee-homes",
+            "title": "Shout of traitors as thousands of homes signed off for countryside",
+            "primary_block": "last_24h",
+            "category": "media_layer",
+            "repeat_story_key": "event:bowlee_car_boot_sale",
+            "last_published_day_london": "2026-07-08",
+            "editorial_contract": {
+                "story_type": "planning",
+                "event_shape": "none",
+            },
+        }
+
+        matches = _topic_published_matches(candidate, {"event:bowlee_car_boot_sale": [previous]})
+
+        self.assertEqual(matches, [])
 
     def test_weekend_market_does_not_render_collection_time_as_event_time(self) -> None:
         event_day = now_london().date() + timedelta(days=1)

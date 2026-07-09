@@ -10,6 +10,7 @@ from news_digest.pipeline.editorial_contracts import (
     calendar_repeat_review,
     lifecycle_repeat_review,
 )
+from news_digest.pipeline.weekend_inventory import weekend_occurrence_date
 
 
 OPERATIONAL_REPEAT_BLOCKS = frozenset({"weather", "transport"})
@@ -58,6 +59,10 @@ def _contract(candidate: dict[str, Any]) -> dict[str, Any]:
 
 
 def _event_day(candidate: dict[str, Any]) -> date | None:
+    if str(candidate.get("primary_block") or "") == "weekend_activities":
+        occurrence = weekend_occurrence_date(candidate)
+        if occurrence is not None:
+            return occurrence
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     raw = str(event.get("date_start") or event.get("date") or "").strip()[:10]
     if not raw:

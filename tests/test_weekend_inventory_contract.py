@@ -8,8 +8,18 @@ from news_digest.pipeline.common import now_london
 from news_digest.pipeline.editorial_contracts import calendar_repeat_review
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.llm_rewrite import _apply_post_board_translation_cut, _apply_rewrite_shortlist
-from news_digest.pipeline.weekend_inventory import is_weekend_inventory_candidate
-from news_digest.pipeline.writer import _slice_counting_only_non_exempt, _weekend_inventory_loss_trace
+from news_digest.pipeline.weekend_inventory import (
+    current_weekend_window,
+    is_weekend_inventory_candidate,
+    weekend_occurrence_date,
+)
+from news_digest.pipeline.writer import (
+    _collapse_weekend_duplicate_events,
+    _is_outside_current_weekend_candidate,
+    _line_has_conflicting_event_date,
+    _slice_counting_only_non_exempt,
+    _weekend_inventory_loss_trace,
+)
 
 
 def _next_saturday() -> date:
@@ -90,6 +100,126 @@ class WeekendInventoryContractTests(unittest.TestCase):
         self.assertEqual(event["date_start"], "2026-07-04")
         self.assertTrue(event["is_recurring"])
         self.assertTrue(event["is_event"])
+
+    def test_sundays_bank_holiday_market_uses_current_weekend_occurrence(self) -> None:
+        today = now_london().date()
+        _, weekend_end = current_weekend_window(today=today)
+        old_date = today - timedelta(days=4)
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": "Bowlee Car Boot Sale",
+            "summary": (
+                "Bowlee Car Boot Sale and Market. Dates: Sundays and Bank Holiday "
+                "Mondays (April - October 2026). Time: from early morning."
+            ),
+            "lead": "Bowlee Car Boot Sale at Bowlee Community Park.",
+            "evidence_text": (
+                "Dates: Sundays and Bank Holiday Mondays (April - October 2026). "
+                "Location: Bowlee Community Park."
+            ),
+            "source_label": "Bowlee Car Boot Sale",
+            "source_url": "https://example.test/bowlee",
+            "event": {
+                "is_event": True,
+                "event_name": "Bowlee Car Boot Sale",
+                "venue": "Bowlee Community Park",
+                "date_start": old_date.isoformat(),
+                "date": old_date.isoformat(),
+            },
+        }
+
+        occurrence = weekend_occurrence_date(candidate, today=today)
+
+        self.assertEqual(occurrence, weekend_end)
+        self.assertTrue(is_weekend_inventory_candidate(candidate, today=today))
+        self.assertFalse(_is_outside_current_weekend_candidate(candidate))
+        self.assertFalse(
+            _line_has_conflicting_event_date(
+                candidate,
+                f"• {weekend_end.day} июля — Bowlee Car Boot Sale.",
+            )
+        )
+
+    def test_from_saturday_market_uses_current_weekend_occurrence(self) -> None:
+        today = now_london().date()
+        expected_saturday = _next_saturday()
+        old_date = today - timedelta(days=5)
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "title": "Barton Aerodrome Car Boot Sale",
+            "summary": (
+                "Barton Aerodrome Car Boot SaleDates: From Saturday 4th April "
+                "2026Time: Sellers from 7am | Buyers from 9am."
+            ),
+            "lead": "Barton Aerodrome Car Boot Sale at Barton Aerodrome.",
+            "evidence_text": (
+                "Dates: From Saturday 4th April 2026. Location: Barton "
+                "Aerodrome, Eccles."
+            ),
+            "source_label": "Barton Aerodrome Car Boot",
+            "source_url": "https://example.test/barton",
+            "event": {
+                "is_event": True,
+                "event_name": "Barton Aerodrome Car Boot Sale",
+                "venue": "Barton Aerodrome",
+                "date_start": old_date.isoformat(),
+                "date": old_date.isoformat(),
+            },
+        }
+
+        occurrence = weekend_occurrence_date(candidate, today=today)
+
+        self.assertEqual(occurrence, expected_saturday)
+        self.assertFalse(_is_outside_current_weekend_candidate(candidate))
+
+    def test_weekend_duplicate_events_collapse_same_date_venue_family(self) -> None:
+        date_key = _next_saturday().isoformat()
+        sound_fp = "sound"
+        hubble_fp = "hubble"
+        candidate_by_fp = {
+            sound_fp: {
+                "fingerprint": sound_fp,
+                "primary_block": "weekend_activities",
+                "category": "culture_weekly",
+                "title": "Sound Bazaar Festival",
+                "summary": "Sound Bazaar Festival at The Yard Manchester.",
+                "event": {
+                    "date_start": date_key,
+                    "event_name": "Sound Bazaar Festival",
+                    "venue": "The Yard Manchester",
+                },
+            },
+            hubble_fp: {
+                "fingerprint": hubble_fp,
+                "primary_block": "weekend_activities",
+                "category": "culture_weekly",
+                "title": "Hubble Bubble Sound Bazar Festival",
+                "summary": "Hubble Bubble Sound Bazar Festival at The Yard MCR.",
+                "event": {
+                    "date_start": date_key,
+                    "event_name": "Hubble Bubble Sound Bazar Festival",
+                    "venue": "The Yard MCR",
+                },
+            },
+        }
+
+        lines, _srcs, fps, _scores, _titles, dropped = _collapse_weekend_duplicate_events(
+            [
+                "• Hubble Bubble Sound Bazar Festival at The Yard MCR.",
+                "• Sound Bazaar Festival at The Yard Manchester.",
+            ],
+            ["Skiddle", "Manchester's Finest"],
+            [hubble_fp, sound_fp],
+            [100.0, 90.0],
+            ["Hubble Bubble Sound Bazar Festival", "Sound Bazaar Festival"],
+            candidate_by_fp,
+        )
+
+        self.assertEqual(lines, ["• Hubble Bubble Sound Bazar Festival at The Yard MCR."])
+        self.assertEqual(fps, [hubble_fp])
+        self.assertEqual(dropped[0]["fingerprint"], sound_fp)
 
     def test_inventory_scope_excludes_ordinary_afisha_but_keeps_special_weekend_activity(self) -> None:
         event_day = date(2026, 7, 4)

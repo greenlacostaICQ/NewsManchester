@@ -60,12 +60,13 @@ _SELLER_ADMIN_RE = re.compile(
 )
 
 _WEEKLY_RE = re.compile(
-    r"\b(?:"
+    r"(?:"
+    r"dates?:\s*(?:from\s+|every\s+)?(saturdays?|sundays?)(?:\s+and\s+bank\s+holiday\s+mondays?)?|"
     r"(?:every|each|all|most|weekly)\s+(saturdays?|sundays?)|"
     r"(saturdays?|sundays?)\s+(?:weekly|every\s+week)|"
     r"runs?\s+(?:on\s+)?(saturdays?|sundays?)|"
     r"open(?:ing)?\s+(?:hours?\s+)?(?:on\s+)?(saturdays?|sundays?)"
-    r")\b",
+    r")",
     re.IGNORECASE,
 )
 _MONTHLY_RE = re.compile(
@@ -148,16 +149,45 @@ def recurring_occurrence_date(text: str, *, today: date | None = None) -> date |
     return None
 
 
-def has_current_weekend_occurrence(candidate: dict, *, today: date | None = None) -> bool:
+def _contract_occurrence_date(candidate: dict) -> date | None:
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    occurrence = contract.get("occurrence") if isinstance(contract.get("occurrence"), dict) else {}
+    raw = str(occurrence.get("date") or "").strip()[:10]
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        return None
+
+
+def weekend_occurrence_date(candidate: dict, *, today: date | None = None) -> date | None:
+    """Return the effective date for current-weekend inventory.
+
+    Recurring market/car-boot pages often expose a stale schema.org startDate
+    while the visible copy says "Sundays" or "every Saturday". The computed
+    occurrence is the public planning truth for this weekend; the stale
+    structured date remains evidence only.
+    """
     today = today or now_london().date()
     start, end = current_weekend_window(today=today)
+    contract_day = _contract_occurrence_date(candidate)
+    if contract_day and start <= contract_day <= end:
+        return contract_day
+    rec_date = recurring_occurrence_date(_blob(candidate), today=today)
+    if rec_date and start <= rec_date <= end:
+        return rec_date
     event_start = event_start_date(candidate)
     if event_start:
         event_end = event_end_date(candidate) or event_start
         if event_start <= end and event_end >= start:
-            return True
-    rec_date = recurring_occurrence_date(_blob(candidate), today=today)
-    if rec_date and start <= rec_date <= end:
+            return max(event_start, start)
+    return None
+
+
+def has_current_weekend_occurrence(candidate: dict, *, today: date | None = None) -> bool:
+    today = today or now_london().date()
+    if weekend_occurrence_date(candidate, today=today):
         return True
     return bool(_THIS_WEEKEND_RE.search(_blob(candidate)))
 
@@ -175,4 +205,3 @@ def is_weekend_inventory_candidate(candidate: dict | None, *, today: date | None
     if _ORDINARY_AFISHA_RE.search(text) and not re.search(r"\bfestival|fair|market|pride|heritage\b", text, re.IGNORECASE):
         return False
     return has_current_weekend_occurrence(candidate, today=today)
-

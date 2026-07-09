@@ -36,6 +36,7 @@ from news_digest.pipeline.story_intelligence import (
     history_match_records,
     new_facts_diff,
 )
+from news_digest.pipeline.weekend_inventory import weekend_occurrence_date
 from news_digest.pipeline.semantic_dedupe import (
     EMBEDDING_VERSION,
     anchor_tokens,
@@ -707,7 +708,11 @@ def _topic_published_matches(candidate: dict, published_by_topic: dict[str, list
         return []
     matches = [
         item for item in (published_by_topic.get(topic_key) or [])
-        if isinstance(item, dict) and _within_history_window(candidate, item)
+        if (
+            isinstance(item, dict)
+            and _within_history_window(candidate, item)
+            and _topic_match_is_compatible(candidate, item)
+        )
     ]
     if not matches:
         return []
@@ -728,6 +733,22 @@ def _topic_published_matches(candidate: dict, published_by_topic: dict[str, list
         copy["match_type"] = "topic_lifecycle"
         out.append(copy)
     return out
+
+
+def _topic_match_is_compatible(candidate: dict, previous: dict) -> bool:
+    """Prevent venue/name topic collisions from suppressing live weekend events."""
+    candidate_block = str(candidate.get("primary_block") or "")
+    previous_block = str(previous.get("primary_block") or "")
+    if candidate_block == "weekend_activities" and weekend_occurrence_date(candidate):
+        if is_calendar_carry_candidate(previous):
+            return True
+        previous_contract = previous.get("editorial_contract") if isinstance(previous.get("editorial_contract"), dict) else {}
+        previous_story_type = str(previous_contract.get("story_type") or "")
+        previous_event_shape = str(previous_contract.get("event_shape") or "")
+        return previous_story_type in {"event", "ticket"} or previous_event_shape not in {"", "none"}
+    if previous_block == "weekend_activities" and weekend_occurrence_date(previous):
+        return is_calendar_carry_candidate(candidate)
+    return True
 
 
 def _extract_borough(title: str) -> str | None:

@@ -47,7 +47,11 @@ from news_digest.pipeline.ticket_notability import enrich_ticket_notability, pre
 from news_digest.pipeline.toponyms import restore_english_toponyms
 from news_digest.pipeline.place_names import preserve_place_names
 from news_digest.pipeline.professional_events import score_professional_event
-from news_digest.pipeline.weekend_inventory import is_weekend_inventory_candidate
+from news_digest.pipeline.weekend_inventory import (
+    current_weekend_window,
+    is_weekend_inventory_candidate,
+    weekend_occurrence_date,
+)
 
 
 MODEL_WRITTEN_CATEGORIES = {"media_layer", "gmp", "council", "public_services", "food_openings"}
@@ -3108,7 +3112,12 @@ def _bridgewater_slug_datetime(candidate: dict) -> datetime | None:
 
 
 def _line_has_conflicting_event_date(candidate: dict, line: str) -> bool:
-    event_dt = _event_structured_datetime(candidate)
+    event_dt = (
+        _weekend_occurrence_datetime(candidate)
+        if str(candidate.get("primary_block") or "") == _WEEKEND_BLOCK
+        else None
+    )
+    event_dt = event_dt or _event_structured_datetime(candidate)
     if event_dt is None:
         return False
     expected = _format_ru_day_month(event_dt)
@@ -3596,6 +3605,10 @@ def _event_venue(candidate: dict) -> str:
 
 def _weekend_occurrence_datetime(candidate: dict) -> datetime | None:
     structured = _event_structured_datetime(candidate) or _parse_ticket_datetime(candidate)
+    occurrence_day = weekend_occurrence_date(candidate)
+    if occurrence_day:
+        event_time = structured.timetz() if structured else datetime(2000, 1, 1, 12, 0).timetz()
+        return datetime.combine(occurrence_day, event_time).replace(tzinfo=now_london().tzinfo)
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     text = " ".join(
         str(value or "")
@@ -3611,8 +3624,7 @@ def _weekend_occurrence_datetime(candidate: dict) -> datetime | None:
         )
     )
     dates = sorted(dict.fromkeys(_date_signals(text)))
-    weekend_start = _current_weekend_start()
-    weekend_end = _current_weekend_end()
+    weekend_start, weekend_end = current_weekend_window()
     current_weekend_dates = [day for day in dates if weekend_start <= day <= weekend_end]
     if current_weekend_dates:
         chosen = current_weekend_dates[0]
@@ -5068,36 +5080,9 @@ def _transport_empty_line(project_root: Path) -> str:
     )
 
 
-def _is_late_may_bank_holiday(day: date) -> bool:
-    if day.month != 5 or day.weekday() != 0:
-        return False
-    return day + timedelta(days=7) > date(day.year, 5, 31)
-
-
-def _current_weekend_start() -> date:
-    # Weekend planning is shown from Thursday, but the item window starts on
-    # Friday so Thursday one-offs do not crowd out bank-holiday weekend picks.
-    today = now_london().date()
-    friday = today + timedelta(days=(4 - today.weekday()) % 7)
-    if today.weekday() in {5, 6} or _is_late_may_bank_holiday(today):
-        return today
-    return friday
-
-
-def _current_weekend_end() -> date:
-    today = now_london().date()
-    days_until_sunday = (6 - today.weekday()) % 7
-    sunday = today + timedelta(days=days_until_sunday)
-    bank_monday = sunday + timedelta(days=1)
-    if _is_late_may_bank_holiday(bank_monday):
-        return bank_monday
-    return sunday
-
-
 def _has_current_weekend_recurring_signal(text: str) -> bool:
     lowered = str(text or "").lower()
-    today = _current_weekend_start()
-    weekend_end = _current_weekend_end()
+    today, weekend_end = current_weekend_window()
     weekdays = {
         date.fromordinal(ordinal).weekday()
         for ordinal in range(today.toordinal(), weekend_end.toordinal() + 1)
@@ -5119,6 +5104,8 @@ def _has_current_weekend_recurring_signal(text: str) -> bool:
 def _is_outside_current_weekend_candidate(candidate: dict, line: str = "") -> bool:
     if str(candidate.get("primary_block") or "") != _WEEKEND_BLOCK:
         return False
+    if weekend_occurrence_date(candidate):
+        return False
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     text = " ".join(
         str(value or "")
@@ -5136,8 +5123,7 @@ def _is_outside_current_weekend_candidate(candidate: dict, line: str = "") -> bo
         )
     )
     dates = _date_signals(text)
-    today = _current_weekend_start()
-    weekend_end = _current_weekend_end()
+    today, weekend_end = current_weekend_window()
     if any(today <= day <= weekend_end for day in dates):
         return False
     if _has_current_weekend_recurring_signal(text):
@@ -5233,6 +5219,119 @@ def _weekend_activity_score(candidate: dict, line: str) -> float:
     if re.search(r"\b(?:until|до)\s+(?:20\d{2}|december|декабр)", blob):
         score -= 25
     return score
+
+
+_WEEKEND_DUP_STOPWORDS = {
+    "the", "and", "for", "with", "festival", "fest", "event", "events",
+    "market", "markets", "manchester", "mcr", "greater", "gm", "uk",
+}
+
+
+def _weekend_duplicate_venue(candidate: dict, line: str) -> str:
+    venue = _event_venue(candidate)
+    blob = " ".join(
+        str(value or "")
+        for value in (
+            venue,
+            line,
+            candidate.get("title"),
+            candidate.get("summary"),
+            candidate.get("lead"),
+            candidate.get("evidence_text"),
+        )
+    )
+    for pattern in (
+        r"\b(The\s+Yard\s+(?:MCR|Manchester)?)\b",
+        r"\b(11\s+Bent\s+Street)\b",
+        r"\b(Cutting\s+Room\s+Square)\b",
+        r"\b(Stockport\s+Market\s+Hall)\b",
+        r"\b(Sugden\s+Sports\s+Centre)\b",
+    ):
+        match = re.search(pattern, blob, flags=re.IGNORECASE)
+        if match:
+            venue = match.group(1)
+            break
+    venue = re.sub(r"\bmcr\b", "manchester", venue, flags=re.IGNORECASE)
+    return re.sub(r"[^a-z0-9]+", " ", venue.lower()).strip()
+
+
+def _weekend_duplicate_tokens(candidate: dict, line: str, title: str) -> set[str]:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            title,
+            event.get("event_name"),
+            candidate.get("title"),
+            line,
+        )
+    ).lower()
+    text = text.replace("bazar", "bazaar")
+    return {
+        token
+        for token in re.findall(r"[a-z0-9]{3,}", text)
+        if token not in _WEEKEND_DUP_STOPWORDS
+    }
+
+
+def _weekend_duplicate_date(candidate: dict) -> str:
+    occurrence = weekend_occurrence_date(candidate)
+    if occurrence:
+        return occurrence.isoformat()
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    return str(event.get("date_start") or event.get("date") or "").strip()[:10]
+
+
+def _collapse_weekend_duplicate_events(
+    lines: list[str],
+    srcs: list[str],
+    fps: list[str],
+    scores: list[float],
+    titles: list[str],
+    candidate_by_fp: dict[str, dict],
+) -> tuple[list[str], list[str], list[str], list[float], list[str], list[dict[str, object]]]:
+    kept: list[int] = []
+    dropped: list[dict[str, object]] = []
+    seen: list[tuple[str, str, set[str], int]] = []
+    for idx, line in enumerate(lines):
+        fp = str(fps[idx] if idx < len(fps) else "")
+        candidate = candidate_by_fp.get(fp) or {}
+        date_key = _weekend_duplicate_date(candidate)
+        venue_key = _weekend_duplicate_venue(candidate, line)
+        token_key = _weekend_duplicate_tokens(candidate, line, titles[idx] if idx < len(titles) else "")
+        duplicate_of = ""
+        if date_key and venue_key and len(token_key) >= 2:
+            for seen_date, seen_venue, seen_tokens, seen_idx in seen:
+                if seen_date == date_key and seen_venue == venue_key and len(token_key & seen_tokens) >= 2:
+                    duplicate_of = str(fps[seen_idx] if seen_idx < len(fps) else "")
+                    break
+        if duplicate_of:
+            dropped.append(
+                {
+                    "fingerprint": fp,
+                    "title": str(candidate.get("title") or (titles[idx] if idx < len(titles) else "")),
+                    "category": str(candidate.get("category") or ""),
+                    "primary_block": str(candidate.get("primary_block") or ""),
+                    "is_lead": bool(candidate.get("is_lead")),
+                    "reasons": [f"Duplicate weekend event already rendered ({duplicate_of})."],
+                    "duplicate_of": duplicate_of,
+                    "recoverable_reserve": False,
+                    "story_frame": candidate.get("story_frame") or {},
+                    "recovery_trace": candidate.get("recovery_trace") or [],
+                }
+            )
+            continue
+        kept.append(idx)
+        if date_key and venue_key and token_key:
+            seen.append((date_key, venue_key, token_key, idx))
+    return (
+        [lines[i] for i in kept],
+        [srcs[i] if i < len(srcs) else "" for i in kept],
+        [fps[i] if i < len(fps) else "" for i in kept],
+        [scores[i] if i < len(scores) else 0.0 for i in kept],
+        [titles[i] if i < len(titles) else "" for i in kept],
+        dropped,
+    )
 
 
 def _event_planning_score(candidate: dict, line: str) -> float:
@@ -7122,6 +7221,20 @@ def write_digest(project_root: Path) -> StageResult:
                 fps = filtered_fps
                 scores = filtered_scores
                 titles = filtered_titles
+        if section_name == "Выходные в GM":
+            lines, srcs, fps, scores, titles, weekend_duplicate_drops = _collapse_weekend_duplicate_events(
+                lines,
+                srcs,
+                fps,
+                scores,
+                titles,
+                candidate_by_fp,
+            )
+            if weekend_duplicate_drops:
+                dropped_candidates.extend(weekend_duplicate_drops)
+                warnings.append(
+                    f"Weekend dedupe: held {len(weekend_duplicate_drops)} duplicate event row(s)."
+                )
         if section_name == "Общественный транспорт сегодня":
             lines, srcs, fps, scores, titles, minor_bus_dropped = _cap_minor_bus_stop_lines(lines, srcs, fps, scores, titles)
             lines = [

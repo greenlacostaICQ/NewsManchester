@@ -684,6 +684,7 @@ _BOOKABLE_ACTIVITY_RE = re.compile(
 )
 _RECURRING_EVENT_RE = re.compile(
     r"\b(?:every|weekly|each)\s+(?:saturdays?|sundays?|mondays?|tuesdays?|wednesdays?|thursdays?|fridays?)\b|"
+    r"dates?:\s*(?:from\s+|every\s+)?(?:sundays?|saturdays?)(?:\s+and\s+bank\s+holiday\s+mondays?)?|"
     r"\b(?:runs?|regular|returns?)\s+(?:on\s+)?(?:saturdays?|sundays?|bank\s+holiday\s+mondays?)\b|"
     r"\bnext\s+dates?\b.{0,80}\b(?:saturday|sunday|monday)\b|"
     r"\b(?:saturdays?|sundays?)\s+(?:until|through|throughout)\b|"

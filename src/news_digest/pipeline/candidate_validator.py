@@ -816,6 +816,7 @@ def _has_computable_market_schedule(candidate: dict) -> bool:
         re.search(
             r"\b(?:every|each|all|most|weekly|first|1st|second|2nd|third|3rd|last)\s+"
             r"(?:saturday|sunday|weekend|month)\b|"
+            r"dates?:\s*(?:from\s+|every\s+)?(?:saturdays?|sundays?|bank\s+holiday\s+mondays?)\b|"
             r"\bruns?\s+(?:on\s+)?(?:saturdays?|sundays?|weekends?|bank holiday mondays?)\b|"
             r"\bopen(?:ing)?\s+(?:hours?\s+)?(?:on\s+)?(?:saturdays?|sundays?|weekends?)\b|"
             r"\b(?:saturdays?|sundays?|weekends?)\b.{0,80}\b(?:open|trading|market|car boot)\b",
@@ -851,9 +852,10 @@ _MONTH_NUM = {
 # "every Sunday" / "каждое воскресенье" / "weekly" / "monthly" /
 # "runs until DD month" / "идёт до DD месяц".
 _RECURRENCE_PATTERN_RE = re.compile(
-    r"\b(?:"
-    r"every\s+(?:sunday|saturday|weekend|monday|tuesday|wednesday|thursday|friday|week|month|day)|"
-    r"weekly|monthly|each\s+(?:week|month|sunday|saturday|weekend)|"
+    r"(?:"
+    r"\bevery\s+(?:sunday|saturday|weekend|monday|tuesday|wednesday|thursday|friday|week|month|day)|"
+    r"\bweekly|monthly|each\s+(?:week|month|sunday|saturday|weekend)|"
+    r"dates?:\s*(?:from\s+|every\s+)?(?:sundays?|saturdays?)(?:\s+and\s+bank\s+holiday\s+mondays?)?|"
     r"runs?\s+(?:until|through|to)\s+\d|season\s+runs?|"
     r"season\s+(?:until|through|to)\s+\d|"
     r"открыт(?:а|о|ы)?\s+с\s+\d|сезон\s+(?:до|по|с)\s+\d|"
