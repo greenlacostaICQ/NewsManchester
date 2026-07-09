@@ -303,20 +303,27 @@ _EMPTY_ENDING_RE = re.compile(
     r"если\s+это\s+касается[^.]*проверьте\s+(?:сроки\s+и\s+детали|детали)[^.]*|"
     r"перед\s+планами[^.]*проверьте\s+(?:детали|обновления)[^.]*|"
     r"не\s+откладывайте\s+проверку[^.]*|"
-    r"свер(?:ьте|яйте)\s+(?:обновления|ограничения|детали)[^.]*|"
-    r"уточните\s+(?:дату,\s*)?(?:время\s+и\s+)?(?:детали|доступность|доступность\s+мест)[^.]*|"
-    r"проверьте\s+(?:сроки\s+и\s+детали|детали|обновления|подробности)\b[^.]*"
+    r"свер(?:ьте|яйте)\s+(?:обновления|ограничения|детали|часы|время)[^.]*|"
+    r"сроки\s+и\s+объ[её]мы\s+работ\s+уточн(?:ите|яйте)[^.]*|"
+    r"уточн(?:ите|яйте)\s+(?:дату,\s*)?(?:время\s+и\s+)?(?:детали|доступность|доступность\s+мест)[^.]*|"
+    r"уточн(?:ите|яйте)[^.]*(?:на\s+странице|перевозчика)[^.]*|"
+    r"проверьте\s+(?:сроки\s+и\s+детали|детали|обновления|подробности|часы(?:\s+работы)?|время)\b[^.]*"
     r")\.?\s*$",
     re.IGNORECASE,
 )
 
 
-def _strip_empty_editor_ending(line: str) -> tuple[str, str]:
+def _strip_empty_editor_ending(line: str, *, strip_short: bool = False) -> tuple[str, str]:
     """Remove final generic call-to-action filler while preserving source link.
 
     This is deliberately narrower than the model prompt: it catches only the
     boilerplate endings we know were used to pad short cards. A useful concrete
     action such as "проверьте страницу статуса TfGM" is left alone.
+
+    ``strip_short`` is the ship-time last resort: the editor stage keeps the
+    <55c guard so enrichment still has a chance, but the final pre-send pass over
+    the shipped HTML has no enrichment left — there a clean terse line beats a
+    padded one, so it strips even short cards (down to a 20c floor).
     """
     raw = str(line or "").strip()
     if not raw:
@@ -334,8 +341,14 @@ def _strip_empty_editor_ending(line: str) -> tuple[str, str]:
     if not html_match:
         return raw, ""
     kept = body[: html_match.start()].rstrip(" ;.")
-    if len(_strip_editor_tags(kept)) < 55:
-        return raw, "empty_ending_detected_not_stripped_short_line"
+    kept_len = len(_strip_editor_tags(kept))
+    if kept_len < 55:
+        if not strip_short or kept_len < 20:
+            return raw, "empty_ending_detected_not_stripped_short_line"
+        fixed = f"{kept}."
+        if link:
+            fixed = f"{fixed} {link}"
+        return fixed, "empty_ending_stripped_short_line"
     fixed = f"{kept}."
     if link:
         fixed = f"{fixed} {link}"

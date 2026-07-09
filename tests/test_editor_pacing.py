@@ -64,6 +64,30 @@ class EditorPacingTest(unittest.TestCase):
         self.assertIn("Final editor post-check stripped 1", warnings[0])
         self.assertNotIn("Проверьте сроки и детали", polished["Свежие новости"][0])
 
+    def test_ship_time_pass_strips_broadened_and_short_boilerplate_endings(self):
+        # Weekend/transport lines bypass the editor post-check, so the ship-time
+        # pass over the shipped HTML must catch broadened patterns ("Сверьте
+        # часы") and short transport stubs ("уточняйте на странице перевозчика").
+        from news_digest.pipeline.pre_send_quality_judge import _strip_empty_endings_in_html
+
+        html = (
+            "<b>Выходные в GM</b>\n"
+            "• 11 июля — Sound Bazaar Festival: фестиваль: еда, живая музыка. "
+            'Сверьте часы и условия перед поездкой. <a href="https://example.test/sb">MF</a>\n'
+            "<b>Общественный транспорт сегодня</b>\n"
+            "• TfGM: ремонтные работы — Brooklands. Сроки и объёмы работ уточняйте "
+            'на странице перевозчика. <a href="https://tfgm.com/x">TfGM</a>\n'
+        )
+
+        cleaned, n = _strip_empty_endings_in_html(html)
+
+        self.assertEqual(n, 2)
+        self.assertNotIn("Сверьте часы", cleaned)
+        self.assertIn("Sound Bazaar Festival", cleaned)
+        self.assertIn('href="https://example.test/sb"', cleaned)
+        self.assertNotIn("уточняйте на странице перевозчика", cleaned)
+        self.assertIn("ремонтные работы — Brooklands", cleaned)
+
 
 if __name__ == "__main__":
     unittest.main()

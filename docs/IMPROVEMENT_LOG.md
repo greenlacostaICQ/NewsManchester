@@ -871,3 +871,33 @@
 - Ожидаемый эффект и метрика проверки: после prod build видно, какие стадии ещё превышают цель после inventory activation.
 - Файлы/места: `release.py:_build_speed_report`.
 - ПРОВЕРКА: offline — py_compile OK; prod-proof после следующего daily build.
+
+### 0081 — Порядок гейта: перемерять visible-contract ПОСЛЕ pre-send repair (FIX-1) — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА на реальном артефакте 2026-07-09 + 837/0.
+- Проблема: на отправленном выпуске 09.07 `visible_contract_report.json` рапортовал `lead_visible=false` и `Свежие новости=5`, тогда как реально отправлено `lead_visible=true, Свежие=2`. RC1-гейт (0011) описывал не тот HTML, что ушёл читателю → «measure on shipped HTML» нарушено, `product_completeness` завышал (5 vs 2).
+- Причина (корень): порядок стадий в `scripts/run_daily_digest.sh` — `build-digest` меряет контракт и промоутит draft→`current_digest.html` (`release.py:4657` `reconcile_visible_html`), ПОТОМ `pre-send-quality-judge` (`pre_send_quality_judge.py`) правит уже промоутнутый файл (strip/patch/добор), но контракт никто не перемеряет. Отчёт остаётся до-repair снимком.
+- Решение: в конце `evaluate_pre_send_quality` (после финального write) перегоняем `reconcile_visible_html` на ФИНАЛЬНОМ `current_digest.html` и перезаписываем `visible_contract_report.json`; заодно последний reserve-добор идёт по реальному HTML. Guarded — ошибка рефреша не блокирует отправку.
+- Почему так (отвергнутые альтернативы): не переносим весь judge до build (ломает промоушен-гейт и требует LLM внутри build); не дублируем измерение в отдельную стадию — переиспользуем существующий reconcile как источник правды.
+- Ожидаемый эффект и метрика проверки: `visible_contract_report.lead_visible`/`html_section_counts` совпадают с реально отправленным `current_digest.html` (перепрогон `_html_section_counts` на файле == отчёт).
+- Файлы/места: `pre_send_quality_judge.py:evaluate_pre_send_quality` (после hygiene-блока); `release_reconcile.py:reconcile_visible_html`.
+- ПРОВЕРКА: на реальном `current_digest.html` 09.07 — устаревший отчёт `lead_visible=false, Свежие=5`; рефреш на том же файле даёт `lead_visible=true, Свежие=2` (честно ниже floor). Полный набор 837/0.
+
+### 0082 — Repair не стрипает секцию ниже floor в пустоту (FIX-2) — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА на реальных данных 09.07 + новый тест.
+- Проблема: repair-executor 09.07 снял 3 строки «Свежих» (`stripped: 3`) → секция 5→2 при floor 6, три пустые строки в HTML. Две сняты как «дубль M62/M6», хотя судья в тех же warnings написал «разные дороги, не критично».
+- Причина (корень): в `_apply_repair_executor` (`pre_send_quality_judge.py`) при отсутствии model/deterministic/reserve-замены строка безусловно обнулялась (`html_lines[raw_index] = ""` → `stripped_honest_shortfall`), без учёта floor секции.
+- Решение: floor-guard перед strip — если секция уже на минимуме/ниже (`_html_lines_for_section` vs `SECTION_MIN_ITEMS`) и замены нет, оригинальная (уже прошедшая writer/editor/release) строка сохраняется (`kept_below_floor_no_reserve`). Исключение — fact-integrity риск (unsupported/fabricat/hallucin/не подтвержд/выдум/не соответствует источнику): целостность важнее floor, такую строку всё равно снимаем.
+- Почему так (отвергнутые альтернативы): не сужаем сам семантический дедуп (dedupe_dropped=422 — невидимый pool-churn, риск широкой регрессии); чиним именно видимый вред — schlop секции в пустые строки; не оставляем галлюцинацию ради floor.
+- Ожидаемый эффект и метрика проверки: `repair_executor.kept_below_floor` > 0 вместо `stripped`, когда strip уронил бы секцию ниже минимума без резерва; «Свежие» не схлопывается 5→2 пустыми строками.
+- Файлы/места: `pre_send_quality_judge.py:_apply_repair_executor` (floor-guard), init `kept_below_floor`; тест `tests/test_pre_send_repair_executor.py:test_strip_below_floor_keeps_original_but_still_drops_unsupported_fact`.
+- ПРОВЕРКА: новый тест зелёный — дубль-strip ниже floor сохраняет строку (`kept_below_floor=1`), непроверенный факт всё равно снят (`stripped=1`). Полный набор 837/0.
+
+### 0083 — Шаблонные концовки чистятся на финальном HTML, регекс расширен (FIX-3) — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА на реальном выпуске 09.07 + новый тест.
+- Проблема: в отправленном 09.07 живьём остались «сверьте детали и условия перед поездкой» (Выходные), «Сверьте часы и условия перед поездкой», «Проверьте часы работы…», «Сроки и объёмы работ уточняйте на странице перевозчика» (Transport) — 0041/0044 не сработали в проде.
+- Причина (корень): (а) `_EMPTY_ENDING_RE` (`editor.py`) не ловил «часы/время» и «уточняйте … на странице/перевозчика»; (б) даже пойманные строки уходили в HTML, т.к. `_apply_empty_ending_post_check` видит только `polished`, а weekend/transport/reserve-backfill строки приходят другими путями и не проходят через post-check; (в) `<55c` guard оставлял короткие transport-заглушки только в отчёте.
+- Решение: (1) расширил регекс (свер/проверьте + часы|время; отдельные альтернативы для «сроки и объёмы работ уточняйте…» и «уточн(ите|яйте) … на странице|перевозчика»); (2) `_strip_empty_editor_ending(strip_short=True)` — на этапе отправки короткие строки чистятся (пол 20c), а не только репортятся; (3) новый `_strip_empty_endings_in_html` в pre-send hygiene проходит по каждому буллету ФИНАЛЬНОГО HTML, независимо от стадии-источника.
+- Почему так (отвергнутые альтернативы): не трогаем `<55c` guard на editor-стадии (там enrichment ещё возможен) — strip_short только для ship-time last-resort; не переписываем регекс целиком, а дописываю альтернативы; конкретные действия («проверьте страницу статуса TfGM», «проверьте карту дорог») остаются нетронутыми.
+- Ожидаемый эффект и метрика проверки: в `current_digest.html` нет «сверьте/проверьте … условия перед поездкой» и «уточняйте на странице перевозчика»; `repair_executor.empty_endings_stripped_at_ship` считает снятые.
+- Файлы/места: `editor.py:_EMPTY_ENDING_RE`, `_strip_empty_editor_ending` (strip_short); `pre_send_quality_judge.py:_strip_empty_endings_in_html`, вызов в hygiene-блоке; тест `tests/test_editor_pacing.py:test_ship_time_pass_strips_broadened_and_short_boilerplate_endings`.
+- ПРОВЕРКА: на реальном `current_digest.html` 09.07 — `_strip_empty_endings_in_html` снял 5 концовок (Выходные×3, Transport×2), ссылки целы, контент сохранён. Новый тест зелёный; полный набор 837/0.

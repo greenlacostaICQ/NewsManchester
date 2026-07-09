@@ -188,6 +188,44 @@ class PreSendRepairExecutorTest(unittest.TestCase):
         self.assertEqual(report["fact_lock_rejected"], 1)
         self.assertEqual(report["reserve_replacement_used"], 1)
 
+    def test_strip_below_floor_keeps_original_but_still_drops_unsupported_fact(self) -> None:
+        # «Свежие новости» floor is 6. When no reserve is available, a strip that
+        # would push a section below its floor keeps the real (vetted) line rather
+        # than leaving a blank slot — this is the 5→2 collapse fix. A fact-integrity
+        # strip (unsupported date) still removes the line: integrity outranks floor.
+        bullets = "".join(
+            f'• Новость номер {i} про Большой Манчестер сегодня. <a href="https://example.test/{i}">MEN</a>\n'
+            for i in range(1, 7)
+        )
+        digest_html = (
+            "<b>Greater Manchester Brief — 2026-07-09, 08:00</b>\n\n"
+            "<b>Свежие новости</b>\n" + bullets
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            (state_dir / "candidates.json").write_text(json.dumps({"candidates": []}), encoding="utf-8")
+            repaired, report = _apply_repair_executor(
+                project_root=root,
+                digest_html=digest_html,
+                actions=[],
+                critical_errors=[
+                    {"line_index": 2, "section": "Свежие новости", "risk": "duplicate",
+                     "problem": "Дублирование информации о дорожных ограничениях M62 и M6.",
+                     "suggested_action": "strip"},
+                    {"line_index": 3, "section": "Свежие новости", "risk": "date",
+                     "problem": "Дата 9 августа не подтверждена источником.",
+                     "suggested_action": "strip"},
+                ],
+                deterministic_post_check={"errors": []},
+                dry_run=False,
+            )
+        self.assertIn("Новость номер 2", repaired)  # duplicate strip below floor kept
+        self.assertEqual(report["kept_below_floor"], 1)
+        self.assertNotIn("Новость номер 3", repaired)  # unsupported fact still stripped
+        self.assertEqual(report["stripped"], 1)
+
     @mock.patch("news_digest.pipeline.collector.extract._fetch_text")
     def test_deep_event_enrichment_fetches_child_page_facts_for_home(self, fetch_text: mock.Mock) -> None:
         source = SourceDef(
