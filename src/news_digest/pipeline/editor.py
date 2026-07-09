@@ -1289,6 +1289,12 @@ def _apply_editor_line_actions(
                     "kept the row for deterministic transport recovery."
                 )
                 continue
+            if section_name == "Выходные в GM":
+                warnings.append(
+                    "Final editor requested Weekend removal, but no replacement was available; "
+                    "kept the row so Weekend Inventory does not silently lose a collected event."
+                )
+                continue
             del section_lines[pos]
             stats["model_requested_stripped"] = int(stats["model_requested_stripped"] or 0) + 1
             warnings.append(f"Final editor requested removal in «{section_name}», but no replacement was available.")

@@ -504,6 +504,16 @@ _JS_DISABLED_RE = re.compile(
     r"this website makes extensive use of javascript.*?browser settings\.?",
     re.IGNORECASE | re.DOTALL,
 )
+_BOT_CHALLENGE_RE = re.compile(
+    r"\b(?:one moment,\s*please|please wait while your request is being verified|"
+    r"checking your browser|enable javascript and cookies to continue|"
+    r"cf-chl-|cf-mitigated|cloudflare ray id)\b",
+    re.IGNORECASE,
+)
+
+
+def _looks_like_bot_challenge_page(html_text: str) -> bool:
+    return bool(_BOT_CHALLENGE_RE.search(str(html_text or "")[:12000]))
 
 
 def _strip_evidence_chrome(text: str) -> str:
@@ -618,6 +628,9 @@ def _extract_html_page_event(source: SourceDef, body: str) -> list[ExtractedItem
     This parser turns that page into one candidate and keeps visible page text as
     evidence so later gates can see date/place/free/booking details.
     """
+
+    if _looks_like_bot_challenge_page(body):
+        return []
 
     title = ""
     for candidate_title in (_extract_jsonld_title(body), _extract_page_title(body), _extract_h1_title(body)):

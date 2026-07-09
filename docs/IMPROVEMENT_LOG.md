@@ -901,3 +901,13 @@
 - Ожидаемый эффект и метрика проверки: в `current_digest.html` нет «сверьте/проверьте … условия перед поездкой» и «уточняйте на странице перевозчика»; `repair_executor.empty_endings_stripped_at_ship` считает снятые.
 - Файлы/места: `editor.py:_EMPTY_ENDING_RE`, `_strip_empty_editor_ending` (strip_short); `pre_send_quality_judge.py:_strip_empty_endings_in_html`, вызов в hygiene-блоке; тест `tests/test_editor_pacing.py:test_ship_time_pass_strips_broadened_and_short_boilerplate_endings`.
 - ПРОВЕРКА: на реальном `current_digest.html` 09.07 — `_strip_empty_endings_in_html` снял 5 концовок (Выходные×3, Transport×2), ссылки целы, контент сохранён. Новый тест зелёный; полный набор 837/0.
+
+### 0084 — July Weekend direct-source recovery — 2026-07-09
+- Статус: внедрено; ПРОВЕРКА offline.
+- Проблема: `Выходные в GM` не мог дать полный список 11–12 июля: часть user-visible событий не была в registry, Pedddle challenge pages превращались в no-date кандидатов, а editor мог снять weekend строку без замены.
+- Причина (корень): broad guides (`Visit Manchester`, Secret/Finest) не заменяют прямые pages для рынков/фестивалей; `html_page_event` принимал bot-challenge HTML как страницу события; `_apply_editor_line_actions` сохранял безрезервные removal-запросы только для транспорта, но не для Weekend Inventory.
+- Решение: добавлены прямые weekend sources `Manchester Brick Festival`, `Foodies Festival Tatton Park`, `Festwich`, `Prestwich Makers Market`; `html_page_event` теперь возвращает 0 items для bot-challenge shells; final editor держит weekend row, если requested removal не имеет same-section replacement.
+- Почему так: reader получает больше реальных weekend-вариантов из прямых страниц, а сломанная страница становится видимой source-health проблемой вместо фальшивого no-date события.
+- Ожидаемый эффект и метрика проверки: новые direct sources дают candidates для weekend funnel; Pedddle challenge не попадает в candidates; `writer_report.weekend_inventory_loss_trace.counts.missing` не растёт из-за editor strip без резерва.
+- Файлы/места: `data/sources.toml`; `collector/extract.py:_extract_html_page_event`; `editor.py:_apply_editor_line_actions`; тесты `tests/test_source_parser_resilience.py`, `tests/test_editor_pacing.py`, `tests/test_digest_quality_guardrails.py`.
+- ПРОВЕРКА: offline — targeted tests/source probes; prod-proof после следующего weekend collect.

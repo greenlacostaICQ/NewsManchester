@@ -488,6 +488,22 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(any("visitmanchester.com" in source.url for source in sources))
         self.assertTrue(any("cityco.com" in source.url for source in sources))
 
+    def test_july_weekend_audit_sources_are_direct_weekend_pages(self) -> None:
+        required = {
+            "Manchester Brick Festival",
+            "Foodies Festival Tatton Park",
+            "Festwich",
+            "Prestwich Makers Market",
+        }
+        by_name = {source.name: source for source in SOURCES}
+
+        self.assertTrue(required.issubset(by_name))
+        for name in required:
+            source = by_name[name]
+            self.assertEqual(source.primary_block, "weekend_activities")
+            self.assertEqual(source.source_type, "html_page_event")
+            self.assertEqual(source.max_candidates, 1)
+
     def test_flower_festival_does_not_collapse_into_unrelated_festival(self) -> None:
         candidates = [
             {

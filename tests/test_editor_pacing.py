@@ -21,6 +21,30 @@ class EditorPacingTest(unittest.TestCase):
             limiter.acquire(1000)  # reuses the rewrite-stage bucket; no import cycle
         self.assertGreaterEqual(editor.PRE_SEND_EDITOR_MAX_WORKERS, 2)
 
+    def test_weekend_replace_needed_without_reserve_keeps_row(self):
+        line = (
+            '• Stockport Makers Market: в субботу на Market Place будут независимые '
+            'продавцы и еда; держите в планах. '
+            '<a href="https://pedddle.com/market/stockport-makers-market/">Pedddle</a>'
+        )
+        warnings: list[str] = []
+
+        polished, stats = editor._apply_editor_line_actions(
+            {"Выходные в GM": [line]},
+            items=[{"index": 0, "section": "Выходные в GM", "line": line}],
+            model_fixes={},
+            model_report={"status": "ok", "actions": [{"index": 0, "action": "replace_needed"}]},
+            candidates=[],
+            rendered_urls=set(),
+            rendered_story_keys=set(),
+            warnings=warnings,
+            round_no=1,
+        )
+
+        self.assertEqual(polished["Выходные в GM"], [line])
+        self.assertEqual(stats["model_requested_stripped"], 0)
+        self.assertIn("Weekend removal", warnings[0])
+
     def test_empty_ending_post_check_strips_generic_filler_and_keeps_link(self):
         line = (
             '• HOME: билеты на серию показов поступят в продажу 5 июля, '

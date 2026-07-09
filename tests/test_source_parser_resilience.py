@@ -8,6 +8,26 @@ from news_digest.pipeline.collector.sources import SourceDef
 
 
 class SourceParserResilienceTest(unittest.TestCase):
+    def test_html_page_event_ignores_bot_challenge_shell(self) -> None:
+        source = SourceDef(
+            name="Northern Quarter Makers Market",
+            report_category="culture_weekly",
+            candidate_category="culture_weekly",
+            url="https://pedddle.com/market/northern-quarter-makers-market/",
+            primary_block="weekend_activities",
+            source_type="html_page_event",
+            allowed_hosts=("pedddle.com",),
+            max_candidates=1,
+        )
+        html = """
+        <html>
+          <head><title>One moment, please...</title></head>
+          <body>Please wait while your request is being verified.</body>
+        </html>
+        """
+
+        self.assertEqual(_extract_source_candidates(source, html), [])
+
     def test_designmynight_subdomain_cards_survive_source_filter(self) -> None:
         source = SourceDef(
             name="DesignMyNight Manchester",
