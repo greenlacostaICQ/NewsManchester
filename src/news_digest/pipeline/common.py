@@ -138,7 +138,9 @@ def is_recoverable_reserve(candidate: dict) -> bool:
         return False
     if candidate.get("recoverable_reserve"):
         return True
-    return bool(candidate.get("public_reserve") and not candidate.get("backup_pool_only"))
+    if candidate.get("public_reserve") and not candidate.get("backup_pool_only"):
+        return True
+    return bool(candidate.get("backup_candidate") and recoverable_reserve_eligible(candidate))
 
 VAGUE_PRACTICAL_ANGLES = {
     "Оценить городскую значимость перед выпуском.",

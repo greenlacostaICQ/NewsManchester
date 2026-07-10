@@ -2573,6 +2573,17 @@ def _ticket_watch_decision(candidate: dict) -> dict[str, object]:
     elif block == "ticket_radar":
         if not active_reason and ticket_type in {"old_onsale", "old_public_sale"} and tier_upper not in {"A", "PROTECTED"}:
             decision = "hide"
+        venue = _ticket_venue(candidate)
+        if (
+            decision == "hide"
+            and ticket_type == "major_upcoming"
+            and _parse_ticket_datetime(candidate) is not None
+            and (
+                _TICKET_MAJOR_VENUE_RE.search(venue)
+                or _TICKET_MAJOR_VENUE_RE.search(str(candidate.get("source_label") or ""))
+            )
+        ):
+            decision = "show"
     reasons = [part.strip() for part in _ticket_watch_reason(candidate).split(";") if part.strip()]
     if not reasons and decision == "hide":
         reasons = ["недостаточный notability-сигнал"]
@@ -2837,6 +2848,14 @@ def _build_transport_fallback_line(candidate: dict) -> str:
     from news_digest.pipeline.transport_card import _translate_reason  # noqa: PLC0415
 
     title = re.sub(r"\s+", " ", str(candidate.get("title") or "")).strip()
+    summary = re.sub(r"\s+", " ", str(candidate.get("summary") or "")).strip()
+    passenger_blob = f"{title} {summary}".lower()
+    passenger_effect = re.search(
+        r"\b(?:bus|buses|service|services|tram|metrolink|train|rail|station|stop|diversion|diverted|closed|closure|delay|delays|cancelled)\b",
+        passenger_blob,
+    )
+    if not passenger_effect:
+        return ""
     url = str(candidate.get("source_url") or "")
     location = _location_from_tfgm_slug(url)
     if not location:
@@ -2858,9 +2877,14 @@ def _build_transport_fallback_line(candidate: dict) -> str:
             f"• {operator}: на остановке {location} идут работы. "
             "Если едете через неё сегодня, проверьте страницу TfGM перед выходом."
         )
+    if "diversion" in passenger_blob or "diverted" in passenger_blob:
+        return (
+            f"• {operator}: на {location} автобусы идут в объезд из-за работ. "
+            "Если едете через этот участок сегодня, проверьте маршрут перед выходом."
+        )
     return (
         f"• {operator}: {reason} — {location}. "
-        "Сроки и объёмы работ уточняйте на странице перевозчика."
+        "Проверьте маршрут и время отправления перед выходом."
     )
 
 
@@ -4068,6 +4092,7 @@ _FALLBACK_BUILDER_BY_CATEGORY: dict[str, str] = {
     "russian_speaking_events": "event",
     "diaspora_events": "event",
     "professional_events": "event",
+    "food_openings": "event",
     "public_services": "public_services",
 }
 
@@ -4856,7 +4881,7 @@ def _final_replacement_line(candidate: dict) -> str:
         return _build_ticket_fallback_line(candidate)
     if category == "football":
         return _build_football_fallback_line(candidate)
-    if category in {"culture_weekly", "russian_speaking_events", "diaspora_events"} or block in {"weekend_activities", "next_7_days", "russian_events"}:
+    if category in {"culture_weekly", "russian_speaking_events", "diaspora_events", "food_openings"} or block in {"weekend_activities", "next_7_days", "russian_events", "openings"}:
         return _build_event_fallback_line(candidate)
     if category == "public_services":
         return _build_public_service_fallback_line(candidate)
@@ -6439,7 +6464,6 @@ def write_digest(project_root: Path) -> StageResult:
         "short_but_complete": 0,
         "held_thin_evidence": 0,
     }
-
     for index, candidate in enumerate(candidates, start=1):
         if not isinstance(candidate, dict) or not candidate.get("include"):
             continue

@@ -3712,16 +3712,22 @@ def _summarise_inventory_morning_effect(state_dir: Path) -> dict[str, object]:
                 last_wave_at = run_at
                 last_wave = str(row.get("wave") or "")
     collect_intake_report = _load_optional_json(state_dir / "morning_inventory_intake_report.json")
+    collect_intake = collect_intake_report if isinstance(collect_intake_report, dict) else {}
+    actual_intake = collect_intake.get("actual_intake") if isinstance(collect_intake.get("actual_intake"), dict) else {}
+    mode = str(collect_intake.get("mode") or "")
+    consumed = bool(mode in {"assist", "on"} and actual_intake)
+    reason = (
+        f"Morning inventory mode={mode}; actual intake inserted "
+        f"{int(actual_intake.get('inserted_candidates') or 0)} candidate(s)."
+        if consumed
+        else "Night inventory is collected, but no morning inventory intake report was available for this build."
+    )
 
     return {
         "schema_version": 1,
         "enabled": True,
-        "morning_consumed": False,
-        "reason": (
-            "Night inventory is collected into data/state/inventory/*.jsonl, "
-            "but the 08:00 digest still uses live collect; inventory-first "
-            "morning re-entry has not been enabled."
-        ),
+        "morning_consumed": consumed,
+        "reason": reason,
         "inventory_files": len(files),
         "total_records": total_records,
         "fact_ready_records": fact_ready_records,
@@ -3733,7 +3739,7 @@ def _summarise_inventory_morning_effect(state_dir: Path) -> dict[str, object]:
         "last_wave_at": last_wave_at,
         "by_category": by_category,
         "report_only_intake": summarise_morning_intake(all_rows),
-        "collect_intake": collect_intake_report if isinstance(collect_intake_report, dict) else {},
+        "collect_intake": collect_intake,
     }
 
 

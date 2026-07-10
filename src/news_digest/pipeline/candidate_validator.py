@@ -2538,6 +2538,18 @@ def _exclude_cross_day_rehash(candidate: dict, state_dir: Path) -> bool:
             # occurrence is the next weekend instance; keep it eligible across
             # the planning week and let writer caps/budget decide visibility.
             return False
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    event_day_str = str(event.get("date_start") or event.get("date") or "").strip()
+    if block in {"openings", "weekend_activities", "next_7_days"} and event_day_str:
+        try:
+            event_day = datetime.strptime(event_day_str[:10], "%Y-%m-%d").date()
+        except ValueError:
+            event_day = None
+        if event_day == now_london().date():
+            # Same URL can be announced earlier and become actionable again on
+            # the actual event day. Treat that as the existing dated-event
+            # repeat exception, not as a stale article rehash.
+            return False
 
     policy = contract.get("section_policy") if isinstance(contract.get("section_policy"), dict) else {}
     try:

@@ -26,8 +26,9 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import time
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 from news_digest.pipeline.common import PRIMARY_BLOCKS, now_london, today_london, write_json_atomic
@@ -401,6 +402,20 @@ INVENTORY_INTAKE_CAPS = {
     "ticket_radar": 20,
     "openings": 10,
 }
+_RU_MONTHS = {
+    "января": 1,
+    "февраля": 2,
+    "марта": 3,
+    "апреля": 4,
+    "мая": 5,
+    "июня": 6,
+    "июля": 7,
+    "августа": 8,
+    "сентября": 9,
+    "октября": 10,
+    "ноября": 11,
+    "декабря": 12,
+}
 
 
 def _is_expired(record: dict, today: str) -> bool:
@@ -444,6 +459,32 @@ def passes_ttl_contract(record: dict, *, now: datetime | None = None) -> tuple[b
     return True, "ttl_ok"
 
 
+def _draft_line_future_date_conflicts_with_fact(record: dict, *, today: str) -> bool:
+    fact = record.get("fact_card") if isinstance(record.get("fact_card"), dict) else {}
+    fact_raw = str(fact.get("date_start") or "").strip()[:10]
+    line = str(record.get("draft_line") or "")
+    if not fact_raw or not line:
+        return False
+    try:
+        fact_day = date.fromisoformat(fact_raw)
+        today_day = date.fromisoformat(today)
+    except ValueError:
+        return False
+    if fact_day >= today_day:
+        return False
+    for day_raw, month_raw in re.findall(r"\b([0-3]?\d)\s+([а-яё]+)\b", line.lower()):
+        month = _RU_MONTHS.get(month_raw)
+        if not month:
+            continue
+        try:
+            mentioned = date(today_day.year, month, int(day_raw))
+        except ValueError:
+            continue
+        if mentioned >= today_day and mentioned > fact_day:
+            return True
+    return False
+
+
 def inventory_fact_ready(record: dict) -> bool:
     if record.get("render_ready"):
         return True
@@ -477,6 +518,8 @@ def passes_morning_contract(record: dict, *, today: str | None = None) -> tuple[
     ttl_ok, ttl_reason = passes_ttl_contract(record)
     if not ttl_ok:
         return False, ttl_reason
+    if _draft_line_future_date_conflicts_with_fact(record, today=today):
+        return False, "draft_line_date_conflicts_with_fact"
     block = str(record.get("primary_block") or "")
     if block == "transport" and not record.get("render_ready"):
         return False, "needs_live_refetch"
