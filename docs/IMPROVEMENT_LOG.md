@@ -971,3 +971,13 @@
 - Ожидаемый эффект и метрика проверки: unittest discover зелёный (846 тестов, 3 падения — pre-existing в свежих test_inventory/test_public_output_contracts, воспроизводятся на чистом HEAD до этой правки); `run_local_digest.py --help` работает.
 - Файлы/места: scripts/run_local_digest.py, src/news_digest/state/store.py:23, src/news_digest/config/settings.py:26, .gitignore
 - ПРОВЕРКА (после прогона): 2026-07-10, CI-командой `PYTHONPATH=src python3 -m unittest discover -s tests`: 846 ran, те же 3 pre-existing failures до и после (diff пустой).
+
+### 0091 — Удалены обработчики source_type, которых никогда не было в конфиге — 2026-07-10
+- Статус: внедрено
+- Проблема: в диспетчере `_extract_source_candidates` жили ветки под source_type, которые не встречаются в `data/sources.toml` за всю git-историю (`git log -S` пусто): `json_wp_rest`, `markdown_links`; плюс ветка `json_national_rail` — тип убран из toml 2026-06-08 (e9567b0, замена на NRE Incidents).
+- Причина (корень): обработчики писались "на вырост" под источники, которые так и не завели; national_rail-тип пережил замену источника.
+- Решение: удалены `_extract_wp_rest_items`, `_extract_markdown_link_items` (по 20 строк) и три мёртвые ветки диспетчера. `_extract_national_rail` СОХРАНЁН — он живой fallback внутри NRE-экстрактора (extract.py, `return items or _extract_national_rail(...)`).
+- Почему так (отвергли): удалить также `html_eventbrite` + `_extract_eventbrite_markets` — отвергнуто: единственный источник этого типа (Eventbrite Manchester Markets) выключен из-за WAF 405 на GH-раннере с документированной заметкой, это чинимый источник (curl_cffi-каскад), а не мёртвый код.
+- Ожидаемый эффект и метрика проверки: unittest discover без новых падений; поведение пайплайна не меняется (ветки недостижимы по конфигу).
+- Файлы/места: src/news_digest/pipeline/collector/extract.py
+- ПРОВЕРКА (после прогона): 2026-07-10, `PYTHONPATH=src python3 -m unittest discover -s tests`: 846 ran, те же 3 pre-existing failures (test_inventory / test_public_output_contracts), новых нет.

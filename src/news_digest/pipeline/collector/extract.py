@@ -2983,50 +2983,6 @@ def _is_outside_gm_ticket_source(source: SourceDef) -> bool:
     )
 
 
-def _extract_wp_rest_items(body: str) -> list[ExtractedItem]:
-    payload = json.loads(body)
-    if not isinstance(payload, list):
-        return []
-    items: list[ExtractedItem] = []
-    for entry in payload:
-        title = _clean_title_text(str(((entry.get("title") or {}).get("rendered")) or "").strip())
-        url = str(entry.get("link") or "").strip()
-        summary = _clean_snippet(str(((entry.get("excerpt") or {}).get("rendered")) or ""))
-        published_at = _parse_datetime_value_flexible(str(entry.get("date") or "").strip())
-        if title and url and _looks_like_candidate_title(title):
-            items.append(
-                ExtractedItem(
-                    title=title,
-                    url=url,
-                    published_at=published_at,
-                    summary=summary,
-                )
-            )
-    return items
-
-
-def _extract_markdown_link_items(body: str) -> list[ExtractedItem]:
-    items: list[ExtractedItem] = []
-    seen: set[str] = set()
-    for anchor_text, absolute in re.findall(r"\[(.*?)\]\((https?://[^)]+)\)", body, flags=re.DOTALL):
-        if absolute in seen:
-            continue
-        seen.add(absolute)
-        title_match = re.search(r"###\s*(.*?)\s*Category:", anchor_text, flags=re.DOTALL)
-        title = title_match.group(1).strip() if title_match else ""
-        if not title:
-            continue
-        title = _clean_title_text(re.sub(r"\s+", " ", title))
-        summary = anchor_text
-        if title_match:
-            summary = anchor_text[title_match.end():]
-        summary = re.sub(r"!\[[^\]]*\]\([^)]+\)", " ", summary)
-        summary = _clean_snippet(re.sub(r"\s+", " ", summary))
-        if _looks_like_candidate_title(title):
-            items.append(ExtractedItem(title=title, url=absolute, summary=summary))
-    return items
-
-
 def _extract_sitemap_items(base_url: str, body: str) -> list[ExtractedItem]:
     items: list[ExtractedItem] = []
     seen: set[str] = set()
@@ -3136,16 +3092,10 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_ticketmaster_items(source, body)
     elif source.source_type == "json_skiddle":
         links = _extract_skiddle_api_items(source, body)
-    elif source.source_type == "json_wp_rest":
-        links = _extract_wp_rest_items(body)
-    elif source.source_type == "markdown_links":
-        links = _extract_markdown_link_items(body)
     elif source.source_type == "html_tfgm_alerts":
         links = _extract_tfgm_alerts(source, body)
     elif source.source_type == "json_nre_incidents":
         links = _extract_nre_incidents(source, body)
-    elif source.source_type == "json_national_rail":
-        links = _extract_national_rail(source, body)
     elif source.source_type == "html_eventbrite":
         links = _extract_eventbrite_markets(source, body)
     elif source.source_type == "html_eventbrite_events":
