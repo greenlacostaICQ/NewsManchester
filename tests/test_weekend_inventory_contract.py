@@ -17,6 +17,7 @@ from news_digest.pipeline.writer import (
     _collapse_weekend_duplicate_events,
     _is_outside_current_weekend_candidate,
     _line_has_conflicting_event_date,
+    _rescue_misrouted_weekend_markets,
     _slice_counting_only_non_exempt,
     _weekend_inventory_loss_trace,
 )
@@ -220,6 +221,45 @@ class WeekendInventoryContractTests(unittest.TestCase):
         self.assertEqual(lines, ["• Hubble Bubble Sound Bazar Festival at The Yard MCR."])
         self.assertEqual(fps, [hubble_fp])
         self.assertEqual(dropped[0]["fingerprint"], sound_fp)
+
+    def test_misrouted_food_opening_market_is_rescued_to_weekend(self) -> None:
+        today = now_london().date()
+        candidate = {
+            "include": False,
+            "fingerprint": "asian-food-night-market",
+            "category": "food_openings",
+            "primary_block": "openings",
+            "title": "The SK Lowdown",
+            "summary": "Stockport's Asian Food Night Market returns every second Friday of the month.",
+            "lead": "Asian Food Night Market returns in July.",
+            "evidence_text": (
+                "Asian Food Night Market - Eat Good West UK. Friday 10 July 2026 "
+                "17:00 22:00 Churchgate Stockport. Authentic Asian cuisine, "
+                "street food and live music. FREE entry."
+            ),
+            "source_label": "SK Lowdown Markets",
+            "source_url": "https://sklowdown.co.uk/whats-on-stockport/asian-food-night-market-july",
+            "reason": "Validator: cross-day rehash — fingerprint already shipped on 2026-07-07.",
+            "publish_plan_status": "drop",
+            "rubric_contract": {"rubric": "weekend_market"},
+            "event": {
+                "is_event": True,
+                "event_name": "Stockport's Asian Food Night Market is back in July",
+                "venue": "Churchgate Stockport",
+                "date_start": today.isoformat(),
+                "date": today.isoformat(),
+            },
+        }
+        warnings: list[str] = []
+
+        report = _rescue_misrouted_weekend_markets([candidate], warnings)
+
+        self.assertEqual(report["count"], 1)
+        self.assertTrue(candidate["include"])
+        self.assertEqual(candidate["category"], "culture_weekly")
+        self.assertEqual(candidate["primary_block"], "weekend_activities")
+        self.assertEqual(candidate["publish_plan_status"], "show")
+        self.assertTrue(warnings)
 
     def test_inventory_scope_excludes_ordinary_afisha_but_keeps_special_weekend_activity(self) -> None:
         event_day = date(2026, 7, 4)

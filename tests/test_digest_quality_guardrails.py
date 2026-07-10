@@ -505,6 +505,13 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             self.assertEqual(source.source_type, "html_page_event")
             self.assertEqual(source.max_candidates, 1)
 
+    def test_sk_lowdown_markets_source_routes_to_weekend_inventory(self) -> None:
+        source = next(source for source in SOURCES if source.name == "SK Lowdown Markets")
+
+        self.assertEqual(source.report_category, "culture_weekly")
+        self.assertEqual(source.candidate_category, "culture_weekly")
+        self.assertEqual(source.primary_block, "weekend_activities")
+
     def test_flower_festival_does_not_collapse_into_unrelated_festival(self) -> None:
         candidates = [
             {

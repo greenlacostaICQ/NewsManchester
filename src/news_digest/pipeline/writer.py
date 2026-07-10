@@ -3663,6 +3663,91 @@ def _weekend_occurrence_datetime(candidate: dict) -> datetime | None:
     return structured
 
 
+_MISROUTED_WEEKEND_MARKET_RE = re.compile(
+    r"\b(?:asian\s+food\s+night\s+market|night\s+market|makers?\s+market|"
+    r"food\s+market|street\s+food|flea\s+market|vintage\s+market|car\s*boot|"
+    r"fair|fayre|festival)\b",
+    re.IGNORECASE,
+)
+
+
+def _event_day_for_weekend_rescue(candidate: dict) -> date | None:
+    event_dt = _event_structured_datetime(candidate) or _parse_ticket_datetime(candidate)
+    return event_dt.date() if event_dt else None
+
+
+def _is_misrouted_weekend_market_rescue(candidate: dict) -> bool:
+    if not isinstance(candidate, dict) or candidate.get("include"):
+        return False
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    if block != "openings" and category != "food_openings":
+        return False
+    reason = str(candidate.get("reason") or "")
+    if not re.search(
+        r"cross-day rehash|fingerprint already shipped|already shipped|Без новых фактов",
+        reason,
+        re.IGNORECASE,
+    ):
+        return False
+    event_day = _event_day_for_weekend_rescue(candidate)
+    if not event_day:
+        return False
+    weekend_start, weekend_end = current_weekend_window()
+    if not (weekend_start <= event_day <= weekend_end):
+        return False
+    rubric = candidate.get("rubric_contract") if isinstance(candidate.get("rubric_contract"), dict) else {}
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    blob = " ".join(
+        str(value or "")
+        for value in (
+            candidate.get("title"),
+            candidate.get("summary"),
+            candidate.get("lead"),
+            candidate.get("evidence_text"),
+            candidate.get("source_label"),
+            candidate.get("source_url"),
+            event.get("event_name"),
+        )
+    )
+    if str(rubric.get("rubric") or "") == "weekend_market":
+        return True
+    return bool(_MISROUTED_WEEKEND_MARKET_RE.search(blob))
+
+
+def _rescue_misrouted_weekend_markets(candidates: list[dict], warnings: list[str]) -> dict[str, object]:
+    rescued: list[dict[str, object]] = []
+    for candidate in candidates:
+        if not _is_misrouted_weekend_market_rescue(candidate):
+            continue
+        previous_block = str(candidate.get("primary_block") or "")
+        previous_category = str(candidate.get("category") or "")
+        candidate["include"] = True
+        candidate["primary_block"] = "weekend_activities"
+        candidate["category"] = "culture_weekly"
+        candidate["publish_plan_status"] = "show"
+        candidate["writer_rescued_weekend_market"] = True
+        candidate["reason"] = (
+            f"{candidate.get('reason') or ''} | Writer rescue: event-like market "
+            "belongs in current weekend inventory."
+        ).strip()
+        attach_editorial_contract(candidate)
+        rescued.append(
+            {
+                "fingerprint": candidate.get("fingerprint"),
+                "title": candidate.get("title"),
+                "source_label": candidate.get("source_label"),
+                "from_block": previous_block,
+                "from_category": previous_category,
+                "to_block": "weekend_activities",
+                "event_date": str(_event_day_for_weekend_rescue(candidate) or ""),
+            }
+        )
+    if rescued:
+        warnings.append(f"Writer rescued {len(rescued)} misrouted current-weekend market item(s).")
+    return {"count": len(rescued), "items": rescued}
+
+
 def _format_event_time(raw_hour: str, raw_minute: str = "", meridiem: str = "") -> str:
     try:
         hour = int(raw_hour)
@@ -6464,6 +6549,9 @@ def write_digest(project_root: Path) -> StageResult:
         "short_but_complete": 0,
         "held_thin_evidence": 0,
     }
+    misrouted_weekend_market_rescue = _rescue_misrouted_weekend_markets(candidates, warnings)
+    if int(misrouted_weekend_market_rescue.get("count") or 0) > 0:
+        write_json(candidates_path, payload)
     for index, candidate in enumerate(candidates, start=1):
         if not isinstance(candidate, dict) or not candidate.get("include"):
             continue
@@ -7676,6 +7764,7 @@ def write_digest(project_root: Path) -> StageResult:
             "publish_plan_contract": publish_plan_contract,
             "block_contract_report": block_contract_report,
             "controlled_enrichment": controlled_enrichment_report,
+            "misrouted_weekend_market_rescue": misrouted_weekend_market_rescue,
             "recovery_controller": recovery_controller,
             "backfilled_today_focus": backfilled_today_focus,
             "today_focus_board": today_focus_board,
