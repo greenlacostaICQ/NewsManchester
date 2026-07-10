@@ -991,3 +991,13 @@
 - Ожидаемый эффект и метрика проверки: unittest discover без новых падений; `--help` и `digest-status` работают; завтрашний daily-digest прогон зелёный (send-file берёт получателей из bot_state.json как раньше).
 - Файлы/места: scripts/run_local_digest.py, src/news_digest/state/store.py, src/news_digest/delivery/telegram.py:225, AGENTS.md (регенерирован)
 - ПРОВЕРКА (после прогона): 2026-07-10 локально: 846 ran, те же 3 pre-existing failures. Прод-подтверждение — после прогона daily-digest 2026-07-11.
+
+### 0093 — Sitemap-экстрактор читает lastmod; Albert Hall переведён с архивного sitemap на /whats-on/ — 2026-07-10
+- Статус: внедрено
+- Проблема: Albert Hall Manchester за 36 прогонов (03.06–09.07): raw=180, curated=0. В кандидатах — события 2018 года (TOKIO MYERS, published 2018-04-16).
+- Причина (корень): `_extract_sitemap_items` (extract.py) брал `<loc>` в документном порядке и игнорировал `<lastmod>`; event-sitemap.xml — замороженный Yoast-архив на 1000 записей (свежайший lastmod 2022), первые записи — 2018. Коллектор вечно брал топ-5 из 2018-го.
+- Решение: (1) экстрактор парсит по `<url>`-блокам, прикрепляет lastmod как published_at и сортирует свежие первыми — проверено на живых sitemap: MEN map_news.xml отдаёт сегодняшние статьи первыми с датами (2026-07-10T13:17), архивы честно датируются и отсеются как stale; (2) Albert Hall: url → /whats-on/, source_type → default html — на живой странице даёт 3 актуальных события с датами (GK Barry 2026-06-02, Danny Beard, Adam F).
+- Почему так (отвергли): чинить только URL без экстрактора — отвергнуто: у MEN дата из sitemap тоже полезна, а любой будущий архивный sitemap воспроизвёл бы ту же болезнь.
+- Ожидаемый эффект и метрика проверки: в source_health_history Albert Hall curated>0 в течение недели; кандидаты Albert Hall в candidates.json датированы 2026.
+- Файлы/места: src/news_digest/pipeline/collector/extract.py (_extract_sitemap_items), data/sources.toml:554, tests/test_source_parser_resilience.py (golden-тест на реальной форме Yoast-sitemap)
+- ПРОВЕРКА (после прогона): 2026-07-10 локально на живых артефактах (см. Решение); прод-числа — после прогонов 11–14.07.

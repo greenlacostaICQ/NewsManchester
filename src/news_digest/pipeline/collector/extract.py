@@ -2984,17 +2984,32 @@ def _is_outside_gm_ticket_source(source: SourceDef) -> bool:
 
 
 def _extract_sitemap_items(base_url: str, body: str) -> list[ExtractedItem]:
+    # Read per-<url> blocks so <lastmod> can be attached as published_at and
+    # newest entries surface first. Archival sitemaps (e.g. a venue's full
+    # event history) otherwise feed the collector their oldest entries forever.
     items: list[ExtractedItem] = []
     seen: set[str] = set()
-    for match in re.finditer(r"<loc>([^<]+)</loc>", body):
-        url = match.group(1).strip()
+    for block_match in re.finditer(r"<url>(.*?)</url>", body, flags=re.DOTALL):
+        block = block_match.group(1)
+        loc_match = re.search(r"<loc>([^<]+)</loc>", block)
+        if not loc_match:
+            continue
+        url = loc_match.group(1).strip()
         if url in seen:
             continue
         seen.add(url)
         slug = url.rstrip("/").split("/")[-1].replace("-", " ")
         title = _clean_title_text(slug.title())
-        if title and _looks_like_candidate_title(title):
-            items.append(ExtractedItem(title=title, url=url))
+        if not title or not _looks_like_candidate_title(title):
+            continue
+        lastmod_match = re.search(r"<lastmod>([^<]+)</lastmod>", block)
+        published_at = (
+            _parse_datetime_value_flexible(lastmod_match.group(1).strip()) if lastmod_match else None
+        )
+        items.append(ExtractedItem(title=title, url=url, published_at=published_at))
+    if any(item.published_at for item in items):
+        # published_at is an ISO-8601 string; the date prefix sorts lexicographically.
+        items.sort(key=lambda item: item.published_at or "", reverse=True)
     return items
 
 

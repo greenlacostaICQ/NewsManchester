@@ -28,6 +28,42 @@ class SourceParserResilienceTest(unittest.TestCase):
 
         self.assertEqual(_extract_source_candidates(source, html), [])
 
+    @mock.patch("news_digest.pipeline.collector.extract._fetch_text", return_value="")
+    def test_sitemap_orders_by_lastmod_and_attaches_published_at(self, fetch_text: mock.Mock) -> None:
+        # Mirrors the real alberthallmanchester.com/event-sitemap.xml shape (Yoast):
+        # archival entries sit first in document order, newest lastmod last.
+        source = SourceDef(
+            name="Albert Hall Manchester",
+            report_category="venues_tickets",
+            candidate_category="venues_tickets",
+            url="https://alberthallmanchester.com/event-sitemap.xml",
+            primary_block="next_7_days",
+            source_type="xml_sitemap",
+            allowed_hosts=("alberthallmanchester.com",),
+        )
+        body = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+\t<url>
+\t\t<loc>https://alberthallmanchester.com/event/tokio-myers-seated/</loc>
+\t\t<lastmod>2018-04-14T06:11:13+00:00</lastmod>
+\t\t<image:image>
+\t\t\t<image:loc>https://alberthallmanchester.com/app/uploads/imported-images/tokio-myers/banner.png</image:loc>
+\t\t</image:image>
+\t</url>
+\t<url>
+\t\t<loc>https://alberthallmanchester.com/event/sleep-token-arrival/</loc>
+\t\t<lastmod>2022-09-26T09:00:06+00:00</lastmod>
+\t</url>
+</urlset>
+"""
+        items = _extract_source_candidates(source, body)
+        self.assertEqual(len(items), 2)
+        first = items[0]
+        title = first["title"] if isinstance(first, dict) else first.title
+        published_at = first["published_at"] if isinstance(first, dict) else first.published_at
+        self.assertIn("Sleep Token", title)
+        self.assertTrue(str(published_at).startswith("2022-09-26"))
+
     def test_designmynight_subdomain_cards_survive_source_filter(self) -> None:
         source = SourceDef(
             name="DesignMyNight Manchester",
