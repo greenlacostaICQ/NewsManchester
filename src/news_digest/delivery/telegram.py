@@ -221,9 +221,3 @@ class TelegramClient:
 
     def get_me(self) -> dict[str, Any]:
         return self._get("getMe")
-
-    def get_updates(self, offset: int | None = None) -> dict[str, Any]:
-        params: dict[str, Any] = {"timeout": 1}
-        if offset is not None:
-            params["offset"] = offset
-        return self._get("getUpdates", params)

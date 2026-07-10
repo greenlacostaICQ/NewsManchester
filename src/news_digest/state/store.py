@@ -24,7 +24,6 @@ class StateStore:
         self.state_dir = state_dir
         self.bot_state_path = state_dir / "bot_state.json"
         self.delivery_state_path = state_dir / "delivery_state.json"
-        self.feedback_path = state_dir / "personalization_feedback.json"
 
     def _load_bot_state(self) -> dict:
         payload = _read_json(
@@ -37,85 +36,9 @@ class StateStore:
         payload["subscribers"] = [str(chat_id) for chat_id in subscribers]
         return payload
 
-    def _save_bot_state(self, payload: dict) -> None:
-        subscribers = payload.get("subscribers", [])
-        payload["subscribers"] = sorted({str(chat_id) for chat_id in subscribers})
-        _write_json(self.bot_state_path, payload)
-
-    def get_last_update_id(self) -> int | None:
-        payload = self._load_bot_state()
-        value = payload.get("last_update_id")
-        if value is None:
-            return None
-        return int(value)
-
-    def set_last_update_id(self, update_id: int) -> None:
-        payload = self._load_bot_state()
-        payload["last_update_id"] = int(update_id)
-        self._save_bot_state(payload)
-
     def list_subscribers(self) -> list[str]:
         payload = self._load_bot_state()
         return list(payload["subscribers"])
-
-    def add_subscriber(self, chat_id: str) -> bool:
-        payload = self._load_bot_state()
-        chat_id = str(chat_id)
-        if chat_id in payload["subscribers"]:
-            return False
-        payload["subscribers"].append(chat_id)
-        self._save_bot_state(payload)
-        return True
-
-    def remove_subscriber(self, chat_id: str) -> bool:
-        payload = self._load_bot_state()
-        chat_id = str(chat_id)
-        if chat_id not in payload["subscribers"]:
-            return False
-        payload["subscribers"] = [item for item in payload["subscribers"] if item != chat_id]
-        self._save_bot_state(payload)
-        return True
-
-    def record_item_feedback(self, *, fingerprint: str, reaction: str, chat_id: str) -> bool:
-        fingerprint = str(fingerprint or "").strip()
-        reaction = str(reaction or "").strip()
-        if not fingerprint or reaction not in {"useful", "not_useful"}:
-            return False
-        payload = _read_json(self.feedback_path, {"schema_version": 1, "items": []})
-        items = payload.get("items")
-        if not isinstance(items, list):
-            items = []
-        now = datetime.now(LONDON_TZ).isoformat()
-        matched = False
-        for item in items:
-            if not isinstance(item, dict):
-                continue
-            if str(item.get("fingerprint") or "") != fingerprint:
-                continue
-            item["reaction"] = reaction
-            item["reaction_source"] = f"telegram:{chat_id}"
-            item["reaction_at_london"] = now
-            matched = True
-            break
-        if not matched:
-            items.append(
-                {
-                    "date": datetime.now(LONDON_TZ).strftime("%Y-%m-%d"),
-                    "fingerprint": fingerprint,
-                    "reaction": reaction,
-                    "reaction_source": f"telegram:{chat_id}",
-                    "reaction_at_london": now,
-                    "title": "",
-                    "source_label": "",
-                    "category": "",
-                    "primary_block": "",
-                    "scoring_trace": {},
-                }
-            )
-        payload["schema_version"] = 1
-        payload["items"] = items[-1000:]
-        _write_json(self.feedback_path, payload)
-        return True
 
     def get_last_delivery(self) -> dict:
         return _read_json(

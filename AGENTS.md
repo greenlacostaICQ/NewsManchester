@@ -301,24 +301,24 @@ line numbers. Symbol names below are stable; line numbers are not.
 ### `src/news_digest/pipeline/candidate_validator.py`
 
 - classes: `StageResult`
-- defs: `validate_candidates`
+- defs: `resolve_venue_scope`, `classify_russian_evidence`, `transport_movement_impact`, `validate_candidates`
 
 ### `src/news_digest/pipeline/writer.py`
 
-- classes: `StageResult`
-- defs: `write_digest`
-- constants: `MODEL_WRITTEN_CATEGORIES`, `REQUIRE_DRAFT_LINE_CATEGORIES`, `LONG_FORMAT_CATEGORIES`, `LONG_FORMAT_MIN_CHARS`, `LONG_FORMAT_MIN_SENTENCES`, `SHORT_TICKET_BLOCKS`, `SHORT_EVENT_BLOCKS`, `EVENT_BLOCKS_RELAXABLE`, `EVENT_RELAX_EVIDENCE_THRESHOLD`, `TODAY_FOCUS_SECTION`, `TODAY_FOCUS_BACKFILL_SECTIONS`, `TODAY_FOCUS_BACKFILL_TARGET`, `TODAY_FOCUS_MIN_SOURCE_REMAINING`
+- classes: `StageResult`, `_SectionRow`
+- defs: `fresh_dedupe_evidence`, `write_digest`
+- constants: `MODEL_WRITTEN_CATEGORIES`, `REQUIRE_DRAFT_LINE_CATEGORIES`, `LONG_FORMAT_CATEGORIES`, `LONG_FORMAT_MIN_CHARS`, `DATED_EVENT_MIN_CHARS`, `LONG_FORMAT_MIN_SENTENCES`, `SHORT_TICKET_BLOCKS`, `SHORT_EVENT_BLOCKS`, `EVENT_BLOCKS_RELAXABLE`, `EVENT_RELAX_EVIDENCE_THRESHOLD`, `TODAY_FOCUS_SECTION`, `TODAY_FOCUS_BACKFILL_SECTIONS`, `TODAY_FOCUS_BACKFILL_TARGET`, `TODAY_FOCUS_BACKFILL_MIN_SCORE`, `TODAY_FOCUS_MIN_SOURCE_REMAINING`, `FRESH_NEWS_TARGET_ITEMS`, `TODAY_FOCUS_TARGET_ITEMS`, `CORE_EMERGENCY_FLOORS`, `CORE_UNDERFLOW_TICKET_CAPS`, `DEGRADED_LLM_SECTION_MAX_ITEMS`, `PUBLIC_DIGEST_MAX_VISIBLE_ITEMS`, `PUBLIC_DIGEST_HARD_RENDERED_ITEMS`, `PUBLIC_SECTION_RESERVED_MIN`, `PROTECTED_RECOVERY_SECTIONS`
 
 ### `src/news_digest/pipeline/editor.py`
 
-- classes: `StageResult`
+- classes: `StageResult`, `_PrevalidatedReserveEntry`, `_PrevalidatedReservePool`
 - defs: `edit_digest`
-- constants: `MIN_CITY_PRACTICAL_ANGLE_LENGTH`, `MAX_WEAK_CITY_CANDIDATE_SHARE`
+- constants: `MIN_CITY_PRACTICAL_ANGLE_LENGTH`, `MAX_WEAK_CITY_CANDIDATE_SHARE`, `PRE_SEND_RUSSIAN_EDITOR_MODEL`, `PRE_SEND_THIN_EVIDENCE_CHARS`, `PRE_SEND_EVIDENCE_MODEL_MAX_CHARS`, `PRE_SEND_EVIDENCE_ROUTINE_MAX_CHARS`, `PRE_SEND_EDITOR_BATCH_CHAR_BUDGET`, `PRE_SEND_EDITOR_MAX_WORKERS`, `PRE_SEND_EDITOR_MAX_TPM`, `PRE_SEND_EDITOR_MAX_ROUNDS`, `PRE_SEND_EDITOR_MAX_RETRIES`, `PRE_SEND_EDITOR_RETRY_CAP_SECONDS`, `PRE_SEND_RUSSIAN_EDITOR_PROMPT`
 
 ### `src/news_digest/pipeline/release.py`
 
 - classes: `ReleaseResult`
-- defs: `initialize_release_inputs`, `build_release`
+- defs: `initialize_release_inputs`, `public_html_contract_errors`, `flush_stage_observability`, `build_release`
 - constants: `BANNED_PLACEHOLDER_MARKERS`, `BANNED_AUTHOR_VOICE`, `BAD_EDITORIAL_PROSE`, `ENGLISH_PROSE_PATTERN`, `FAIL_CLOSED_SUMMARY`, `RELEASE_GATE_VERSION`
 
 ### `src/news_digest/pipeline/history.py`
@@ -327,12 +327,12 @@ line numbers. Symbol names below are stable; line numbers are not.
 
 ### `src/news_digest/pipeline/common.py`
 
-- defs: `now_london`, `today_london`, `new_pipeline_run_id`, `pipeline_run_id_from`, `read_json`, `write_json`, `clean_url`, `canonical_url_identity`, `normalize_title`, `fingerprint_for_candidate`, `is_placeholder_practical_angle`, `extract_sections`
+- defs: `recoverable_reserve_eligible`, `is_recoverable_reserve`, `now_london`, `today_london`, `new_pipeline_run_id`, `pipeline_run_id_from`, `read_json`, `write_json`, `write_json_atomic`, `clean_url`, `valid_http_url`, `first_valid_http_url`, `canonical_url_identity`, `normalize_title`, `fingerprint_for_candidate`, `is_placeholder_practical_angle`, `extract_sections`
 - constants: `LONDON_TZ`, `REQUIRED_SCAN_CATEGORIES`, `REQUIRED_BLOCKS`, `LOW_SIGNAL_BLOCKS`, `SECTION_MAX_ITEMS`, `SECTION_MIN_ITEMS`, `SECTION_MAX_PER_SOURCE`, `VAGUE_PRACTICAL_ANGLES`, `PRIMARY_BLOCKS`
 
 ### `scripts/run_local_digest.py`
 
-- defs: `cmd_bot_info`, `cmd_get_updates`, `cmd_process_updates`, `cmd_poll_updates`, `cmd_render_demo`, `cmd_send_demo`, `cmd_send_file`, `cmd_send_warnings`, `cmd_send_weekly_cost`, `cmd_weekly_city_rollup`, `cmd_send_weekly_city_rollup`, `cmd_delivered_today`, `cmd_digest_status`, `cmd_build_digest`, `cmd_mark_pipeline_failed`, `cmd_init_build_state`, `cmd_collect_digest`, `cmd_dedupe_digest`, `cmd_validate_candidates`, `cmd_curator_pass`, `cmd_transport_fill`, `cmd_llm_rewrite`, `cmd_prompt_versions`, `cmd_model_routing`, `cmd_cost_summary`, `cmd_reader_value_validation`, `cmd_write_digest`, `cmd_edit_digest`, `build_parser`, `main`
+- defs: `cmd_bot_info`, `cmd_send_file`, `cmd_send_warnings`, `cmd_send_weekly_quality`, `cmd_send_weekly_cost`, `cmd_weekly_city_rollup`, `cmd_send_weekly_city_rollup`, `cmd_post_publish_judge`, `cmd_pre_send_quality_judge`, `cmd_delivered_today`, `cmd_digest_status`, `cmd_build_digest`, `cmd_mark_pipeline_failed`, `cmd_init_build_state`, `cmd_collect_digest`, `cmd_build_inventory`, `cmd_collect_inventory`, `cmd_dedupe_digest`, `cmd_validate_candidates`, `cmd_curator_pass`, `cmd_transport_fill`, `cmd_llm_rewrite`, `cmd_prompt_versions`, `cmd_model_routing`, `cmd_pipeline_config`, `cmd_cost_summary`, `cmd_reader_value_validation`, `cmd_write_digest`, `cmd_edit_digest`, `cmd_discover_sources`, `cmd_repair_dead_parsers`, `build_parser`, `main`
 - constants: `PROJECT_ROOT`, `SRC_DIR`, `LONDON_TZ`, `REQUIRED_RELEASE_GATE_VERSION`
 
 _Anchors above are stable symbol names. Use `rg -n '^def NAME|^class NAME|^NAME ?='` to jump there._

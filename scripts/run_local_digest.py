@@ -29,10 +29,8 @@ def _load_env_file(path: Path) -> None:
 
 _load_env_file(PROJECT_ROOT / ".env.local")
 
-from news_digest.bot.service import DigestBotService
 from news_digest.config.settings import load_settings
 from news_digest.delivery.telegram import TelegramClient
-from news_digest.delivery.telegram import TelegramTransportError
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector import collect_digest, initialize_collector_state
 from news_digest.pipeline.common import SECTION_MAX_ITEMS, SECTION_MIN_ITEMS, read_json, today_london, write_json
@@ -146,81 +144,6 @@ def cmd_bot_info() -> int:
     result = client.get_me()
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
-
-
-def cmd_get_updates() -> int:
-    settings, client, store = _load_store_and_client()
-    offset = store.get_last_update_id()
-    try:
-        result = client.get_updates(offset=None if offset is None else offset + 1)
-    except TelegramTransportError as exc:
-        result = {
-            "ok": False,
-            "status": "deferred",
-            "reason": "telegram_transport_unavailable",
-            "error": str(exc),
-        }
-    print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0 if result.get("ok", True) is not False else 0
-
-
-def cmd_process_updates() -> int:
-    settings, client, store = _load_store_and_client()
-    try:
-        result = _process_pending_updates(settings, client, store)
-    except TelegramTransportError as exc:
-        result = {
-            "processed_updates": 0,
-            "handled_messages": 0,
-            "replies_sent": 0,
-            "subscribers": store.list_subscribers(),
-            "status": "deferred",
-            "reason": "telegram_transport_unavailable",
-            "error": str(exc),
-        }
-    print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0
-
-
-def _process_pending_updates(settings, client, store) -> dict[str, object]:
-    offset = store.get_last_update_id()
-    updates = client.get_updates(offset=None if offset is None else offset + 1)
-    latest_digest_path = settings.project_root / "data" / "outgoing" / "current_digest.html"
-    service = DigestBotService(client, store, latest_digest_path)
-    result = service.process_updates(updates)
-    return {
-        "processed_updates": result.processed_updates,
-        "handled_messages": result.handled_messages,
-        "replies_sent": result.replies_sent,
-        "subscribers": store.list_subscribers(),
-    }
-
-
-def cmd_poll_updates(interval_seconds: int) -> int:
-    settings, client, store = _load_store_and_client()
-    print(
-        f"Starting Telegram polling loop with interval {interval_seconds}s. Press Ctrl+C to stop.",
-        flush=True,
-    )
-    try:
-        while True:
-            try:
-                result = _process_pending_updates(settings, client, store)
-            except TelegramTransportError as exc:
-                result = {
-                    "processed_updates": 0,
-                    "handled_messages": 0,
-                    "replies_sent": 0,
-                    "subscribers": store.list_subscribers(),
-                    "status": "deferred",
-                    "reason": "telegram_transport_unavailable",
-                    "error": str(exc),
-                }
-            print(json.dumps(result, ensure_ascii=False), flush=True)
-            time.sleep(interval_seconds)
-    except KeyboardInterrupt:
-        print("Stopped Telegram polling loop.", flush=True)
-        return 0
 
 
 def _rendered_candidates_for_delivery() -> list[dict]:
@@ -2619,14 +2542,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("bot-info", help="Check that the bot token works.")
     subparsers.add_parser(
-        "get-updates",
-        help="Show raw Telegram updates. Useful for discovering the target chat id after starting the bot.",
-    )
-    subparsers.add_parser(
-        "process-updates",
-        help="Process pending Telegram commands like /start, /latest and /subscribe.",
-    )
-    subparsers.add_parser(
         "delivered-today",
         help="Exit 0 if a digest was already delivered today in Europe/London.",
     )
@@ -2748,16 +2663,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Replace existing staged files with fresh templates for today.",
     )
-    poll_parser = subparsers.add_parser(
-        "poll-updates",
-        help="Keep polling Telegram for bot commands in a loop.",
-    )
-    poll_parser.add_argument(
-        "--interval-seconds",
-        type=int,
-        default=15,
-        help="How often to poll Telegram for new updates.",
-    )
     send_file_parser = subparsers.add_parser(
         "send-file",
         help="Send a prepared digest file to Telegram.",
@@ -2815,10 +2720,6 @@ def main() -> int:
 
     if args.command == "bot-info":
         return cmd_bot_info()
-    if args.command == "get-updates":
-        return cmd_get_updates()
-    if args.command == "process-updates":
-        return cmd_process_updates()
     if args.command == "delivered-today":
         return cmd_delivered_today()
     if args.command == "digest-status":
@@ -2865,8 +2766,6 @@ def main() -> int:
         return cmd_mark_pipeline_failed(args.stage)
     if args.command == "init-build-state":
         return cmd_init_build_state(args.overwrite)
-    if args.command == "poll-updates":
-        return cmd_poll_updates(args.interval_seconds)
     if args.command == "send-file":
         return cmd_send_file(args.file_path, args.parse_mode, args.force)
     if args.command == "send-warnings":

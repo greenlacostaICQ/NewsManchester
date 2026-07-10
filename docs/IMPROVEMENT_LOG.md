@@ -981,3 +981,13 @@
 - Ожидаемый эффект и метрика проверки: unittest discover без новых падений; поведение пайплайна не меняется (ветки недостижимы по конфигу).
 - Файлы/места: src/news_digest/pipeline/collector/extract.py
 - ПРОВЕРКА (после прогона): 2026-07-10, `PYTHONPATH=src python3 -m unittest discover -s tests`: 846 ran, те же 3 pre-existing failures (test_inventory / test_public_output_contracts), новых нет.
+
+### 0092 — Удалён launchd-контур и мёртвый приём Telegram-реакций — 2026-07-10
+- Статус: внедрено
+- Проблема: прод — GitHub Actions (см. 0053+, daily-digest.yml via cron-job.org); launchd-контур мёртв с 2026-05-16 (mtime launchd.std*.log). Вместе с ним де-факто умер приём реакций читателей: `process-updates` звался ТОЛЬКО из launchd-plist → входящих реакций нет с 16 мая (bot_state.json без изменений с 27 апреля; personalization_feedback.json меняется только decay-логикой release.py). Owner решил: признать бот-приём мёртвым, удалить (вариант «а» из разбора 2026-07-10).
+- Причина (корень): миграция прод-пути на GH Actions не сопровождалась переносом/похоронами bot-updates контура.
+- Решение: удалены ops/launchd/ (2 plist), scripts/{install,uninstall}_launchd_job.sh, run_daily_digest.sh, run_pipeline_collect.sh (не ссылался никто), run_pipeline_publish.sh, sync_runtime_bundle.sh, process_bot_updates.sh, docs/local-scheduler.md, пакет `news_digest.bot`, команды `get-updates`/`process-updates`/`poll-updates`, `TelegramClient.get_updates`, методы StateStore: get/set_last_update_id, add/remove_subscriber, record_item_feedback, _save_bot_state. СОХРАНЕНО: `bot-info` (проверка токена), `list_subscribers` + bot_state.json (список получателей читается при доставке), decay-логика personalization_feedback в release.py. Локально удалены launchd.std*.log, auto_editor_report.json (писатель удалён из кода ранее, файл от 15 мая).
+- Почему так (отвергли): перенос process-updates в GH Actions cron — отвергнут owner'ом («1 удаляй»); подписка/отписка теперь только правкой bot_state.json руками.
+- Ожидаемый эффект и метрика проверки: unittest discover без новых падений; `--help` и `digest-status` работают; завтрашний daily-digest прогон зелёный (send-file берёт получателей из bot_state.json как раньше).
+- Файлы/места: scripts/run_local_digest.py, src/news_digest/state/store.py, src/news_digest/delivery/telegram.py:225, AGENTS.md (регенерирован)
+- ПРОВЕРКА (после прогона): 2026-07-10 локально: 846 ran, те же 3 pre-existing failures. Прод-подтверждение — после прогона daily-digest 2026-07-11.
