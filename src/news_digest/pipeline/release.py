@@ -44,12 +44,10 @@ from news_digest.pipeline.inventory import (
     verify_collect_conservation,
     verify_dispositions,
 )
-from news_digest.pipeline.reader_value import validate_reader_value_labels
 from news_digest.pipeline.repeat_policy import visible_repeat_verdict
 from news_digest.pipeline.story_intelligence import (
     AUDIT_TRAIL_SCHEMA_VERSION,
     COST_LATENCY_BUDGETS,
-    MODEL_BAKEOFF_SPEC,
     apply_story_intelligence,
     backup_pool_record,
 )
@@ -1882,95 +1880,6 @@ def _borderline_queue(candidates_report: dict | None, writer_report: dict | None
     }
 
 
-def _quality_scorecard(
-    *,
-    state_dir: Path,
-    current_day_london: str,
-    candidates_report: dict | None,
-    writer_report: dict | None,
-    rendered_fingerprints: set[str],
-    source_status: dict,
-    published_review: dict,
-    transport_coverage: dict,
-) -> dict[str, object]:
-    candidates = [c for c in (candidates_report or {}).get("candidates") or [] if isinstance(c, dict)]
-    rendered = [c for c in candidates if str(c.get("fingerprint") or "") in rendered_fingerprints]
-    full_count = len(candidates)
-    visible_count = len(rendered)
-    source_counts = Counter(str(c.get("source_label") or "") for c in rendered if c.get("source_label"))
-    top_sources = [
-        {"source_label": name, "count": count, "share": round(count / visible_count, 3) if visible_count else 0}
-        for name, count in source_counts.most_common(3)
-    ]
-    stale_or_bad = int((published_review.get("counts") or {}).get("suspiciously_published") or 0)
-    unclear_visible = sum(
-        1 for c in rendered
-        if c.get("editorial_status") == "borderline"
-        or any(str(w).startswith(("crime_borderline", "property_borderline")) for w in c.get("quality_warnings") or [])
-    )
-    repeat_visible = sum(1 for c in rendered if str(c.get("change_type") or "") in {"no_change", "same_story_rehash"})
-    tickets = [c for c in candidates if str(c.get("primary_block") or "") in {"ticket_radar", "future_announcements", "next_7_days"} and str(c.get("category") or "") == "venues_tickets"]
-    rendered_ticket_fps = {str(c.get("fingerprint") or "") for c in rendered if str(c.get("category") or "") == "venues_tickets"}
-    from news_digest.pipeline.editorial_contracts import classify_ticket_type  # noqa: PLC0415
-
-    ticket_types: dict[str, dict[str, int]] = {}
-    for c in tickets:
-        # ticket_type is only stamped on include=True candidates (the validator
-        # runs _ensure_default_ticket_type behind the include gate). Deduped /
-        # rejected repeats (e.g. "6LACK", "Jamie Webster" already seen) reach
-        # the funnel with no ticket_type and used to pile into a misleading
-        # "unknown" bucket (11 on 2026-06-01 — all just dedup losers, not a
-        # classifier failure). Classify them on the fly so the funnel reads true.
-        t = str(c.get("ticket_type") or "").strip() or classify_ticket_type(c)
-        row = ticket_types.setdefault(t, {"fetched": 0, "published": 0})
-        row["fetched"] += 1
-        if str(c.get("fingerprint") or "") in rendered_ticket_fps:
-            row["published"] += 1
-    metric_design = [
-        "top_size_vs_full_feed",
-        "published_stale_unclear_repeat_share",
-        "top_3_source_diversity",
-        "ticket_funnel_by_type",
-        "transport_checked_vs_rendered",
-        "seven_day_trend",
-    ]
-    history_path = state_dir / "quality_scorecard_history.json"
-    history = read_json(history_path, {"days": []}) if history_path.exists() else {"days": []}
-    days = [d for d in history.get("days") or [] if isinstance(d, dict) and d.get("date") != current_day_london]
-    today_row = {
-        "date": current_day_london,
-        "visible_count": visible_count,
-        "full_count": full_count,
-        "suspicious_published": stale_or_bad,
-        "unclear_visible": unclear_visible,
-        "repeat_visible": repeat_visible,
-    }
-    days.append(today_row)
-    days = days[-14:]
-    write_json(history_path, {"days": days})
-    week = days[-7:]
-    avg_visible = round(sum(int(d.get("visible_count") or 0) for d in week) / len(week), 2) if week else 0
-    return {
-        "metric_design": metric_design,
-        "today": {
-            "visible_count": visible_count,
-            "full_count": full_count,
-            "top_size_vs_full_feed": round(visible_count / full_count, 3) if full_count else 0,
-            "suspicious_published": stale_or_bad,
-            "unclear_visible": unclear_visible,
-            "repeat_visible": repeat_visible,
-            "top_sources": top_sources,
-            "ticket_types": ticket_types,
-            "transport": transport_coverage,
-            "source_zero_yield": int((source_status.get("counts") or {}).get("zero_yield") or 0),
-        },
-        "seven_day_trend": {
-            "days": week,
-            "avg_visible_count": avg_visible,
-        },
-    }
-
-
 def _update_feedback_items(
     state_dir: Path,
     current_day_london: str,
@@ -2092,32 +2001,6 @@ def _event_days(candidate: dict) -> list[date]:
     return days
 
 
-_EVENT_MISS_BLOCKS = frozenset({
-    "weekend_activities",
-    "next_7_days",
-    "future_announcements",
-    "ticket_radar",
-    "outside_gm_tickets",
-    "russian_events",
-})
-_EVENT_MISS_CATEGORIES = frozenset({
-    "culture_weekly",
-    "venues_tickets",
-    "russian_speaking_events",
-    "diaspora_events",
-})
-_HIGH_VALUE_EVENT_RE = re.compile(
-    r"\b(?:festival|exhibition|concert|gig|market|makers?|fair|trail|"
-    r"theatre|play|comedy|stand-?up|workshop|talk|bank holiday|free)\b",
-    re.IGNORECASE,
-)
-_LOW_VALUE_TICKET_TYPE = frozenset({"old_public_sale", "regular_upcoming"})
-_EVENT_TITLE_STOPWORDS = frozenset({
-    "the", "and", "for", "with", "from", "this", "that", "manchester",
-    "festival", "event", "events", "show", "tickets", "ticket", "returns",
-})
-
-
 def _dedupe_drop_map(dedupe_memory: dict | None) -> dict[str, dict]:
     if not isinstance(dedupe_memory, dict):
         return {}
@@ -2129,190 +2012,6 @@ def _dedupe_drop_map(dedupe_memory: dict | None) -> dict[str, dict]:
         if fp:
             drops[fp] = drop
     return drops
-
-
-def _event_titles_look_same(first: str, second: str) -> bool:
-    first_tokens = {
-        token for token in re.findall(r"[a-zA-Z][a-zA-Z'-]{2,}", str(first or "").lower())
-        if token not in _EVENT_TITLE_STOPWORDS
-    }
-    second_tokens = {
-        token for token in re.findall(r"[a-zA-Z][a-zA-Z'-]{2,}", str(second or "").lower())
-        if token not in _EVENT_TITLE_STOPWORDS
-    }
-    if not first_tokens or not second_tokens:
-        return False
-    return bool(first_tokens & second_tokens)
-
-
-def _event_miss_score(candidate: dict, today: date) -> tuple[int, int | None]:
-    block = str(candidate.get("primary_block") or "")
-    category = str(candidate.get("category") or "")
-    if block not in _EVENT_MISS_BLOCKS and category not in _EVENT_MISS_CATEGORIES:
-        return 0, None
-
-    blob = " ".join(
-        str(candidate.get(field) or "")
-        for field in ("source_label", "title", "summary", "lead", "evidence_text")
-    )
-    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    days = sorted(day for day in _event_days(candidate) if day >= today - timedelta(days=1))
-    days_out = (days[0] - today).days if days else None
-
-    score = 0
-    if days_out is not None:
-        if 0 <= days_out <= 3:
-            score += 5
-        elif days_out <= 7:
-            score += 4
-        elif days_out <= 30:
-            score += 1
-        else:
-            score -= 3
-    if _HIGH_VALUE_EVENT_RE.search(blob):
-        score += 2
-    if str(event.get("price") or "").strip() or re.search(r"\bfree\b|£\s*\d", blob, re.IGNORECASE):
-        score += 1
-    if str(event.get("date_text") or "").strip() and re.search(r"\d{1,2}\s*[–—-]\s*\d{1,2}", str(event.get("date_text") or "")):
-        score += 1
-    if str(event.get("borough") or "").strip():
-        score += 1
-
-    source_label = str(candidate.get("source_label") or "")
-    try:
-        from news_digest.pipeline.source_selection import source_tier
-
-        if source_tier(source_label) <= 2:
-            score += 2
-    except Exception:  # noqa: BLE001 - diagnostics must not break release
-        pass
-
-    ticket_type = str(candidate.get("ticket_type") or "")
-    if category == "venues_tickets" and ticket_type in _LOW_VALUE_TICKET_TYPE:
-        score -= 4
-    if re.search(r"\b(?:weekly|every)\b", blob, re.IGNORECASE) and (days_out is None or days_out > 7):
-        score -= 3
-    return score, days_out
-
-
-def _event_miss_review(
-    candidates_report: dict | None,
-    writer_report: dict | None,
-    rendered_fingerprints: set[str],
-    current_day_london: str,
-    dedupe_memory: dict | None = None,
-) -> dict[str, object]:
-    """Find high-value events/tickets that were collected but not published.
-
-    This is the firewall for the Flower Festival class of failure: source
-    coverage succeeded, but a later stage silently removed a useful event.
-    """
-    try:
-        today = datetime.strptime(current_day_london, "%Y-%m-%d").date()
-    except ValueError:
-        today = datetime.strptime(today_london(), "%Y-%m-%d").date()
-
-    rendered_set = {str(fp) for fp in rendered_fingerprints if fp}
-    writer_drops = {
-        str(item.get("fingerprint") or ""): item
-        for item in ((writer_report or {}).get("dropped_candidates") or [])
-        if isinstance(item, dict)
-    }
-    dedupe_drops = _dedupe_drop_map(dedupe_memory)
-    candidates_by_fp = {
-        str(candidate.get("fingerprint") or ""): candidate
-        for candidate in (candidates_report or {}).get("candidates") or []
-        if isinstance(candidate, dict)
-    }
-
-    items: list[dict[str, object]] = []
-    critical: list[dict[str, object]] = []
-    counts = Counter()
-    for candidate in (candidates_report or {}).get("candidates") or []:
-        if not isinstance(candidate, dict):
-            continue
-        fp = str(candidate.get("fingerprint") or "")
-        if not fp or fp in rendered_set:
-            continue
-        score, days_out = _event_miss_score(candidate, today)
-        if score < 7:
-            continue
-
-        reason = str(candidate.get("reason") or "")
-        drop = writer_drops.get(fp)
-        dedupe_drop = dedupe_drops.get(fp, {})
-        kept_fp = str(dedupe_drop.get("kept_fingerprint") or "")
-        kept_candidate = candidates_by_fp.get(kept_fp) or {}
-        kept_title = str(dedupe_drop.get("kept_title") or kept_candidate.get("title") or "")
-        covered_by_rendered_duplicate = bool(
-            kept_fp
-            and kept_fp in rendered_set
-            and _event_titles_look_same(str(candidate.get("title") or ""), kept_title)
-        )
-
-        if covered_by_rendered_duplicate:
-            verdict = "covered_by_rendered_duplicate"
-        elif dedupe_drop:
-            verdict = "dedupe_lost_event"
-        elif fp in writer_drops:
-            verdict = "writer_dropped_event"
-            reason = "; ".join(str(r) for r in (drop.get("reasons") or [])) or reason
-        elif candidate.get("include"):
-            verdict = "selected_but_not_published"
-        else:
-            verdict = "rejected_high_value_event"
-        reason_text = reason or "; ".join(str(r) for r in (candidate.get("reject_reasons") or []))
-        reason_l = reason_text.lower()
-        if verdict == "covered_by_rendered_duplicate":
-            alert_class = "duplicate_or_covered"
-        elif verdict == "dedupe_lost_event" and kept_fp:
-            alert_class = "possible_miss"
-        elif "ticket not selected" in reason_l or "not selected" in reason_l:
-            alert_class = "not_selected_by_design"
-        elif "outside global translation board" in reason_l:
-            alert_class = "not_selected_capacity"
-        elif "held for manual review" in reason_l or "borderline editorial status" in reason_l:
-            alert_class = "manual_review"
-        elif "past" in reason_l or "expired" in reason_l or "all event dates are in the past" in reason_l:
-            alert_class = "stale_or_expired"
-        elif verdict in {"writer_dropped_event", "selected_but_not_published"}:
-            alert_class = "possible_miss"
-        else:
-            alert_class = "review_only"
-
-        record = {
-            "fingerprint": fp,
-            "title": candidate.get("title") or "",
-            "source_label": candidate.get("source_label") or "",
-            "primary_block": candidate.get("primary_block") or "",
-            "category": candidate.get("category") or "",
-            "score": score,
-            "days_out": days_out,
-            "verdict": verdict,
-            "alert_class": alert_class,
-            "reason": reason_text,
-            "kept_fingerprint": kept_fp,
-            "kept_title": kept_title,
-            "kept_source_label": dedupe_drop.get("kept_source_label") or "",
-        }
-        items.append(record)
-        counts[verdict] += 1
-        counts[f"alert_{alert_class}"] += 1
-        # Conservative fail condition: a high-confidence event in the
-        # next week disappeared without a rendered duplicate covering it.
-        if alert_class == "possible_miss" and days_out is not None and 0 <= days_out <= 7:
-            critical.append(record)
-
-    items = sorted(items, key=lambda item: (int(item.get("days_out") if item.get("days_out") is not None else 999), -int(item.get("score") or 0), str(item.get("title") or "")))
-    return {
-        "counts": {
-            "high_value_not_published": len(items),
-            "critical_misses": len(critical),
-            **dict(counts),
-        },
-        "critical_misses": critical[:20],
-        "items": items[:50],
-    }
 
 
 def _disposition_for_candidate(
@@ -3090,7 +2789,6 @@ def _build_after_run_summary(
     semantic_dedup: dict | None = None,
     city_intelligence: dict | None = None,
     trend_detection: dict | None = None,
-    event_miss_review: dict | None = None,
 ) -> dict[str, object]:
     """R3: compact post-run dashboard. One block, query-once."""
     rendered = int(((writer_report or {}).get("quality_counts") or {}).get("rendered_candidates") or 0)
@@ -3102,8 +2800,6 @@ def _build_after_run_summary(
     dominant = borough_coverage.get("dominant_borough") or {}
     skew_flags = borough_coverage.get("skew_flags") or []
     td = trend_detection or {}
-    em = event_miss_review or {}
-    em_counts = em.get("counts") or {}
     rising_topics = td.get("rising_topics") or []
     rising_entities = td.get("rising_entities") or []
     return {
@@ -3129,8 +2825,6 @@ def _build_after_run_summary(
         "borough_skew_flags": len(skew_flags) if isinstance(skew_flags, list) else 0,
         "rising_topics_7d": len(rising_topics) if isinstance(rising_topics, list) else 0,
         "rising_entities_7d": len(rising_entities) if isinstance(rising_entities, list) else 0,
-        "critical_event_misses": int(em_counts.get("critical_misses") or 0),
-        "high_value_events_not_published": int(em_counts.get("high_value_not_published") or 0),
         "lost_leads": len(lost_leads or []),
         "section_underflow": len(section_underflow or []),
     }
@@ -4059,33 +3753,6 @@ def flush_stage_observability(project_root: Path, stage: str) -> dict[str, objec
     return result
 
 
-def _model_bakeoff_readiness(project_root: Path) -> dict[str, object]:
-    labels_path = project_root / "data" / "validation" / "reader_value_labels.json"
-    label_count = 0
-    label_errors: list[str] = []
-    if labels_path.exists():
-        try:
-            labels_payload = read_json(labels_path, {"labels": []})
-            labels = labels_payload.get("labels") if isinstance(labels_payload, dict) else []
-            label_count = len(labels) if isinstance(labels, list) else 0
-            label_errors = validate_reader_value_labels(labels_payload)
-        except Exception as exc:  # noqa: BLE001
-            label_errors = [f"reader_value_labels unreadable: {exc}"]
-    else:
-        label_errors = ["reader_value_labels.json missing"]
-    ready = label_count >= 30 and not label_errors
-    return {
-        **MODEL_BAKEOFF_SPEC,
-        "validation_set": {
-            "path": str(labels_path),
-            "label_count": label_count,
-            "ready": ready,
-            "errors": label_errors,
-        },
-        "status": "ready" if ready else "needs_labels",
-    }
-
-
 def _append_cost_history(
     state_dir: Path,
     current_day_london: str,
@@ -4318,13 +3985,6 @@ def build_release(project_root: Path) -> ReleaseResult:
             "Cost/latency budget: warning threshold breached — "
             f"{', '.join(cost_latency_budget.get('breaches') or [])}; see release_report.cost_latency_budget."
         )
-    model_bakeoff = _model_bakeoff_readiness(project_root)
-    if model_bakeoff["status"] != "ready":
-        warnings.append(
-            "Model bake-off: validation set is not ready for a safe model switch — "
-            "see release_report.model_bakeoff."
-        )
-
     _validate_draft(
         draft_path=draft_path,
         scan_report=scan_report,
@@ -4571,31 +4231,15 @@ def build_release(project_root: Path) -> ReleaseResult:
             "digest continues (degradation, not block). See release_report.rendered_html_review."
         )
     dedupe_memory = read_json(state_dir / "dedupe_memory.json", {}) if (state_dir / "dedupe_memory.json").exists() else {}
-    event_miss_review = _event_miss_review(
-        candidates_report=candidates_report,
-        writer_report=writer_report,
-        rendered_fingerprints=rendered_fingerprints,
-        current_day_london=current_day_london,
-        dedupe_memory=dedupe_memory,
-    )
-    critical_event_misses = int((event_miss_review.get("counts") or {}).get("critical_misses") or 0)
-    if critical_event_misses:
-        warnings.append(
-            f"Event miss review: {critical_event_misses} event/ticket candidate(s) look like possible real misses "
-            "after excluding deliberate skips, duplicates, stale items and manual-review holds — see release_report.event_miss_review."
-        )
+    # Retired daily reports (owner 2026-07-10): the "N possible real misses"
+    # warnings and their release_report payloads were write-only noise. The
+    # loss scan itself stays — it is the input that fills the backup pool.
     final_loss_check = _final_loss_check(
         candidates_report=candidates_report,
         writer_report=writer_report,
         rendered_fingerprints=rendered_fingerprints,
         dedupe_memory=dedupe_memory,
     )
-    critical_losses = int((final_loss_check.get("counts") or {}).get("critical_losses") or 0)
-    if critical_losses:
-        warnings.append(
-            f"Final loss check: {critical_losses} protected/high-value candidate(s) look like possible real misses "
-            "after excluding deliberate ticket skips, duplicates and manual-review holds — see release_report.final_loss_check."
-        )
     backup_pool = _write_backup_pool(
         state_dir=state_dir,
         current_day_london=current_day_london,
@@ -4633,16 +4277,6 @@ def build_release(project_root: Path) -> ReleaseResult:
         candidates=candidates_report.get("candidates", []) if isinstance(candidates_report, dict) else [],
         rendered_fingerprints=rendered_fingerprints,
     )
-    quality_scorecard = _quality_scorecard(
-        state_dir=state_dir,
-        current_day_london=current_day_london,
-        candidates_report=candidates_report,
-        writer_report=writer_report,
-        rendered_fingerprints=rendered_fingerprints,
-        source_status=source_status,
-        published_review=published_review,
-        transport_coverage=transport_coverage,
-    )
     feedback_capture = _update_feedback_items(
         state_dir=state_dir,
         current_day_london=current_day_london,
@@ -4662,7 +4296,6 @@ def build_release(project_root: Path) -> ReleaseResult:
         semantic_dedup=semantic_dedup_counts,
         city_intelligence=city_intelligence,
         trend_detection=trend_detection,
-        event_miss_review=event_miss_review,
     )
     speed_report = _build_speed_report(
         state_dir=state_dir,
@@ -4794,7 +4427,6 @@ def build_release(project_root: Path) -> ReleaseResult:
         },
         "cost_latency_budget": cost_latency_budget,
         "inventory_morning_effect": inventory_morning_effect,
-        "model_bakeoff": model_bakeoff,
         "change_type_summary": change_type_summary,
         "cross_day_recurrence": cross_day_recurrence,
         "event_completeness": event_completeness,
@@ -4812,11 +4444,8 @@ def build_release(project_root: Path) -> ReleaseResult:
         "repeat_policy_report": repeat_policy_report,
         "rendered_html_review": rendered_html_review,
         "rendered_html_quarantine": rendered_html_quarantine,
-        "event_miss_review": event_miss_review,
-        "final_loss_check": final_loss_check,
         "backup_pool": backup_pool,
         "borderline_queue": borderline_queue,
-        "quality_scorecard": quality_scorecard,
         "feedback_capture": feedback_capture,
         "speed_report": speed_report,
         "synthetic_freshness": synthetic_freshness,

@@ -16,7 +16,6 @@ from news_digest.pipeline.editor import edit_digest
 from news_digest.pipeline.collector.routing import _TICKET_HORIZON_DAYS
 from news_digest.pipeline.dedupe import _apply_semantic_drop_guard
 from news_digest.pipeline.history import write_daily_index_snapshot
-from news_digest.pipeline.model_bakeoff import run_model_bakeoff
 from news_digest.pipeline.story_intelligence import (
     apply_cheap_dedup_before_enrich,
     apply_story_intelligence,
@@ -30,9 +29,7 @@ from news_digest.pipeline.release import (
     build_release,
     _classify_published_candidates,
     _classify_rendered_html_quality,
-    _event_miss_review,
     _final_loss_check,
-    _quality_scorecard,
     _borderline_queue,
     _summarise_diaspora_diagnostics,
     _summarise_source_health,
@@ -1441,7 +1438,7 @@ class SourceFunnelDiagnosticsTest(unittest.TestCase):
         self.assertEqual(queue["counts"]["borderline"], 1)
         self.assertIn("force_include", queue["items"][0]["manual_include_hint"])
 
-    def test_quality_scorecard_and_feedback_snapshot_are_rendered_only(self) -> None:
+    def test_feedback_snapshot_is_rendered_only(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             state_dir = Path(tmp)
             candidates_report = {
@@ -1464,21 +1461,8 @@ class SourceFunnelDiagnosticsTest(unittest.TestCase):
                     },
                 ]
             }
-            scorecard = _quality_scorecard(
-                state_dir=state_dir,
-                current_day_london="2026-05-20",
-                candidates_report=candidates_report,
-                writer_report={},
-                rendered_fingerprints={"shown"},
-                source_status={"counts": {"zero_yield": 0}},
-                published_review={"counts": {"suspiciously_published": 0}},
-                transport_coverage={"verdict": "checked_no_disruptions"},
-            )
             feedback = _update_feedback_items(state_dir, "2026-05-20", candidates_report, {"shown"})
 
-            self.assertEqual(scorecard["today"]["visible_count"], 1)
-            self.assertEqual(scorecard["today"]["full_count"], 2)
-            self.assertEqual(scorecard["today"]["ticket_types"]["major_upcoming"]["published"], 1)
             self.assertEqual(feedback["rendered_items_recorded_today"], 1)
             payload = json.loads((state_dir / "personalization_feedback.json").read_text(encoding="utf-8"))
             self.assertEqual(payload["items"][0]["fingerprint"], "shown")
@@ -1549,7 +1533,6 @@ class AdminAlertCopyTest(unittest.TestCase):
             health_signals=[],
             writer_report={},
             transport_coverage={"metrolink_checked": False},
-            quality_scorecard={"today": {"ticket_types": {"unknown": {"fetched": 47, "published": 6}}}},
             source_status={"counts": {"failed": 1}},
             synthetic_freshness={"stale_count": 0},
             prompt_drift=[],
@@ -1567,57 +1550,12 @@ class AdminAlertCopyTest(unittest.TestCase):
         for phrase in forbidden:
             self.assertNotIn(phrase, joined)
 
-        event_issues = _support_top_issues(
-            rendered=18,
-            health_level="healthy",
-            health_signals=[],
-            writer_report={},
-            transport_coverage={"metrolink_checked": True},
-            quality_scorecard={"today": {"ticket_types": {}}},
-            source_status={"counts": {"failed": 0}},
-            synthetic_freshness={"stale_count": 0},
-            prompt_drift=[],
-            cost_summary={"unknown_priced_models": []},
-            warnings=[],
-            suspicious_rejects=[],
-            suspicious_published=[],
-            borderline_queue={"counts": {"borderline": 0}},
-            event_miss_review={"counts": {"critical_misses": 2}},
-        )
-        self.assertIn("Под подозрением на потерю", event_issues[0][0])
-
     def test_product_support_report_is_human_sized_and_hides_technical_dump(self) -> None:
         report = {
             "run_date_london": "2026-05-23",
             "release_decision": "pass",
             "warnings": ["LLM rewrite was degraded; writer/release quality gates handled the remaining candidates."],
             "digest_health": {"risk_level": "at_risk", "signals": []},
-            "quality_scorecard": {
-                "today": {
-                    "ticket_types": {
-                        "old_public_sale": {"fetched": 28, "published": 5},
-                        "unknown": {"fetched": 18, "published": 1},
-                    }
-                }
-            },
-            "event_miss_review": {
-                "counts": {"critical_misses": 2},
-                "critical_misses": [
-                    {
-                        "title": "Sasha & John Digweed Manchester 2026",
-                        "verdict": "dedupe_lost_event",
-                        "kept_title": "Bulletin of the John Rylands Library",
-                        "days_out": 1,
-                        "score": 9,
-                    },
-                    {
-                        "title": "Neddy Goes To Glasto",
-                        "verdict": "writer_dropped_event",
-                        "days_out": 0,
-                        "score": 8,
-                    },
-                ],
-            },
             "borderline_queue": {
                 "counts": {"borderline": 52},
                 "items": [
@@ -1656,8 +1594,6 @@ class AdminAlertCopyTest(unittest.TestCase):
         text = _build_product_support_text(report, writer)
 
         self.assertIn("опубликовано 47 пунктов", text)
-        self.assertIn("Возможные пропуски", text)
-        self.assertIn("ложный дубль", text)
         self.assertIn("Metrolink: не проверен отдельно", text)
         self.assertIn("Осторожный режим: удержано 7", text)
         self.assertIn("полный список скрыт из Telegram", text)
@@ -1666,94 +1602,7 @@ class AdminAlertCopyTest(unittest.TestCase):
 
 
 class PublishedReviewTest(unittest.TestCase):
-    def test_event_miss_review_flags_false_duplicate_weekend_event(self) -> None:
-        candidates = [
-            {
-                "fingerprint": "flower",
-                "title": "The Manchester Flower Festival",
-                "source_label": "Manchester Flower Festival CityCo News",
-                "category": "culture_weekly",
-                "primary_block": "weekend_activities",
-                "include": False,
-                "reason": "Intra-batch topic duplicate — same story kept from stronger source.",
-                "summary": "Free festival at St Ann's Square and King Street.",
-                "event": {
-                    "date_start": "2026-05-23",
-                    "date_text": "23-25 May 2026",
-                    "price": "free",
-                    "borough": "Manchester",
-                },
-            },
-            {
-                "fingerprint": "germaine",
-                "title": "A Possibility | Germaine Kruip | Manchester International Festival 2025",
-                "source_label": "Factory International",
-                "category": "culture_weekly",
-                "primary_block": "next_7_days",
-                "include": True,
-                "event": {"date_start": "2026-05-24"},
-            },
-        ]
-
-        review = _event_miss_review(
-            {"candidates": candidates},
-            {},
-            rendered_fingerprints={"germaine"},
-            current_day_london="2026-05-22",
-            dedupe_memory={
-                "intra_batch_dedup_drops": [
-                    {
-                        "fingerprint": "flower",
-                        "kept_fingerprint": "germaine",
-                        "kept_title": "A Possibility | Germaine Kruip | Manchester International Festival 2025",
-                        "kept_source_label": "Factory International",
-                    }
-                ]
-            },
-        )
-
-        self.assertEqual(review["counts"]["critical_misses"], 1)
-        self.assertEqual(review["critical_misses"][0]["verdict"], "dedupe_lost_event")
-
-    def test_event_miss_review_ignores_duplicate_covered_by_rendered_item(self) -> None:
-        candidates = [
-            {
-                "fingerprint": "flower-duplicate",
-                "title": "The Manchester Flower Festival",
-                "source_label": "Manchester Flower Festival",
-                "category": "culture_weekly",
-                "primary_block": "weekend_activities",
-                "include": False,
-                "summary": "Free festival at St Ann's Square and King Street.",
-                "event": {"date_start": "2026-05-23", "date_text": "23-25 May 2026", "price": "free", "borough": "Manchester"},
-            },
-            {
-                "fingerprint": "flower-winner",
-                "title": "The Manchester Flower Festival returns for 2026",
-                "source_label": "Manchester Flower Festival CityCo News",
-                "category": "culture_weekly",
-                "primary_block": "weekend_activities",
-                "include": True,
-                "event": {"date_start": "2026-05-23"},
-            },
-        ]
-
-        review = _event_miss_review(
-            {"candidates": candidates},
-            {},
-            rendered_fingerprints={"flower-winner"},
-            current_day_london="2026-05-22",
-            dedupe_memory={
-                "intra_batch_dedup_drops": [
-                    {"fingerprint": "flower-duplicate", "kept_fingerprint": "flower-winner"}
-                ]
-            },
-        )
-
-        self.assertEqual(review["counts"]["critical_misses"], 0)
-        self.assertEqual(review["items"][0]["verdict"], "covered_by_rendered_duplicate")
-
-    def test_event_miss_warning_does_not_block_release(self) -> None:
+    def test_lost_event_ships_degraded_without_possible_misses_noise(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             state_dir = root / "data" / "state"
@@ -1880,8 +1729,14 @@ class PublishedReviewTest(unittest.TestCase):
             self.assertEqual(report["release_decision"], "ship_degraded")
             self.assertTrue((state_dir / "visible_contract_report.json").exists())
             self.assertEqual(report["errors"], [])
-            self.assertEqual(report["event_miss_review"]["counts"]["critical_misses"], 1)
-            self.assertTrue(any("Event miss review" in warning for warning in report["warnings"]))
+            # Retired 2026-07-10: the daily "possible real misses" reports were
+            # write-only noise. The lost event must NOT resurface as a warning
+            # or a release_report payload.
+            self.assertNotIn("event_miss_review", report)
+            self.assertNotIn("final_loss_check", report)
+            self.assertNotIn("quality_scorecard", report)
+            self.assertNotIn("model_bakeoff", report)
+            self.assertFalse(any("possible real misses" in warning for warning in report["warnings"]))
 
     def test_empty_today_focus_with_no_eligible_writer_rows_warns_not_blocks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -2606,21 +2461,6 @@ class StoryIntelligenceTest(unittest.TestCase):
         self.assertEqual(review["counts"]["critical_losses"], 1)
         self.assertEqual(review["critical_losses"][0]["disposition"], "writer_dropped")
         self.assertIn("russian_event", review["critical_losses"][0]["protected_lanes"])
-
-    def test_model_bakeoff_dry_run_uses_validation_set_without_model_calls(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            validation_dir = root / "data" / "validation"
-            validation_dir.mkdir(parents=True)
-            source = Path("data/validation/reader_value_labels.json")
-            (validation_dir / "reader_value_labels.json").write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
-
-            report = run_model_bakeoff(root, dry_run=True, limit=6)
-
-            self.assertEqual(report["validation_set"]["label_count"], 6)
-            self.assertEqual(report["models"][0]["model"], "deterministic_stub")
-            self.assertEqual(report["models"][1]["status"], "dry_run_not_called")
-            self.assertTrue((root / "data" / "state" / "model_bakeoff_report.json").exists())
 
 
 class TelegramBacklog20260527Test(unittest.TestCase):

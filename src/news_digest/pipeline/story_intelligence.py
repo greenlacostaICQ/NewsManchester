@@ -23,28 +23,6 @@ ENGLISH_JUDGE_SCHEMA_VERSION = 1
 BACKUP_POOL_SCHEMA_VERSION = 1
 AUDIT_TRAIL_SCHEMA_VERSION = 1
 
-MODEL_BAKEOFF_SPEC: dict[str, object] = {
-    "schema_version": 1,
-    "mode": "offline_contract",
-    "daily_run_policy": "no extra model calls in the morning pipeline",
-    "candidate_models": [
-        {"provider": "deepseek", "model": "deepseek-v4-flash", "role": "cheap_prefilter_or_baseline"},
-        {"provider": "deepseek", "model": "deepseek-v4-pro", "role": "english_fact_reader_candidate"},
-        {"provider": "openai", "model": "gpt-4o-mini", "role": "quality_judge_candidate"},
-    ],
-    "required_metrics": [
-        "false_negative_rate_on_useful",
-        "false_positive_rate_on_should_not_include",
-        "json_validity",
-        "p95_latency_seconds",
-        "estimated_cost_usd_per_run",
-    ],
-    "promotion_rule": (
-        "A model can become judge-primary only if it improves useful false negatives "
-        "without increasing should_not_include false positives or breaking the run budget."
-    ),
-}
-
 COST_LATENCY_BUDGETS: dict[str, object] = {
     "schema_version": 1,
     "warning_only": True,

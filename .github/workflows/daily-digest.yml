@@ -136,6 +136,17 @@ jobs:
         run: |
           python3 scripts/run_local_digest.py send-warnings
 
+      - name: Send weekly quality panel summary (Sundays only)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
+          TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
+        run: |
+          if [ "$(TZ=Europe/London date +%u)" = "7" ]; then
+            python3 scripts/run_local_digest.py send-weekly-quality
+          else
+            echo "Not Sunday in Europe/London — skipping weekly quality summary."
+          fi
+
       - name: Send weekly cost summary (Sundays only)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
@@ -223,7 +234,7 @@ jobs:
           git add -f data/state/fetch_cache.json || true
           git add -f data/state/cost_history.json || true
           git add -f data/state/city_intelligence_history.json || true
-          git add -f data/state/quality_scorecard_history.json || true
+          git add -f data/state/quality_panel_history.json || true
           git add -f data/state/personalization_feedback.json || true
           git add -f data/state/weekly_city_rollup.json || true
           git add -f data/state/daily_index/*.jsonl || true

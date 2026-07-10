@@ -312,6 +312,17 @@ def cmd_send_file(file_path: str, parse_mode: str | None, force: bool) -> int:
             targets, str(resolved_path), message_ids=message_ids
         )
     record_delivery_artifacts(PROJECT_ROOT, resolved_path, _rendered_candidates_for_delivery())
+    if resolved_path.name == "current_digest.html":
+        # Quality panel: 5 editorial indicators per SENT issue, one row/day.
+        from news_digest.pipeline.quality_panel import (  # noqa: PLC0415
+            append_panel_row,
+            build_panel_row,
+            panel_row_line,
+        )
+
+        row = build_panel_row(text, today_london())
+        append_panel_row(PROJECT_ROOT / "data" / "state", row)
+        print(f"Quality panel: {panel_row_line(row)}")
     print(f"Sent file {file_path} to {len(targets)} target(s): {', '.join(targets)}.")
     return 0
 
@@ -576,7 +587,6 @@ def _support_top_issues(
     health_signals: list,
     writer_report: dict,
     transport_coverage: dict,
-    quality_scorecard: dict,
     source_status: dict,
     synthetic_freshness: dict,
     prompt_drift: list,
@@ -585,19 +595,10 @@ def _support_top_issues(
     suspicious_rejects: list,
     suspicious_published: list,
     borderline_queue: dict,
-    event_miss_review: dict | None = None,
     source_anomalies: list | None = None,
     dead_parsers: list | None = None,
 ) -> list[tuple[str, str]]:
     issues: list[tuple[int, str, str]] = []
-    event_miss_counts = ((event_miss_review or {}).get("counts") or {})
-    critical_event_misses = int(event_miss_counts.get("critical_misses") or 0)
-    if critical_event_misses:
-        issues.append((
-            110,
-            f"Под подозрением на потерю при отборе/сборке: {critical_event_misses} событий (метрика для авторазбора, не для ручного чтения утром).",
-            "Это НЕ опубликованные пункты и не подтверждённые потери — это кандидаты в дедупе/писателе, которые стоит перепроверить автоматически.",
-        ))
     if rendered > 45:
         issues.append((
             100,
@@ -615,14 +616,6 @@ def _support_top_issues(
             90,
             "Metrolink не проверен как отдельный источник.",
             "Автобусы/TfGM и rail проверены, но по трамваям нет отдельного подтверждения.",
-        ))
-    ticket_types = ((quality_scorecard.get("today") or {}).get("ticket_types") or {})
-    unknown_tickets = int((ticket_types.get("unknown") or {}).get("fetched") or 0)
-    if unknown_tickets:
-        issues.append((
-            85,
-            f"Билетный блок плохо классифицирует события: {unknown_tickets} материалов с типом «не распознан».",
-            "Починить определение типа билета: старт продаж, пресейл, новый анонс или обычный календарь.",
         ))
     if int((synthetic_freshness or {}).get("stale_count") or 0) > 0:
         issues.append((
@@ -698,64 +691,6 @@ def _diaspora_verdict_human(verdict: str) -> str:
         "rendered": "русскоязычные события опубликованы",
         "not_checked": "источники не были проверены",
     }.get(str(verdict or ""), str(verdict or "неизвестно"))
-
-
-def _event_miss_bucket(item: dict) -> str:
-    verdict = str(item.get("verdict") or "")
-    reason = str(item.get("reason") or "").lower()
-    if verdict == "dedupe_lost_event":
-        return "вероятная ошибка дедупликации"
-    if verdict == "writer_dropped_event":
-        return "ошибка генерации текста"
-    if "без новых фактов" in reason or "no new facts" in reason or "no_change" in reason:
-        return "вероятно корректно отклонено"
-    if verdict in {"selected_but_not_published", "rejected_high_value_event"}:
-        return "нужно продуктово решить"
-    if verdict == "covered_by_rendered_duplicate":
-        return "покрыто другим опубликованным пунктом"
-    return "требует проверки"
-
-
-def _event_miss_plain_reason(item: dict) -> str:
-    verdict = str(item.get("verdict") or "")
-    kept = str(item.get("kept_title") or "").strip()
-    if verdict == "dedupe_lost_event":
-        if kept:
-            return f"похоже на ложный дубль с «{kept[:70]}»"
-        return "дедупликация сняла событие как дубль"
-    if verdict == "writer_dropped_event":
-        return "событие было найдено, но финальный текст не прошёл проверку"
-    if verdict == "selected_but_not_published":
-        return "событие прошло отбор, но не вошло в финальный выпуск"
-    reason = str(item.get("reason") or "").strip()
-    return _humanize_source_reason(reason) if reason else "точная причина в JSON-отчёте"
-
-
-def _event_miss_summary(event_miss_review: dict) -> dict[str, object]:
-    items = list(event_miss_review.get("critical_misses") or [])
-    counts = event_miss_review.get("counts") or {}
-    total = int(counts.get("critical_misses") or len(items))
-    buckets: dict[str, int] = {}
-    for item in items:
-        bucket = _event_miss_bucket(item if isinstance(item, dict) else {})
-        buckets[bucket] = buckets.get(bucket, 0) + 1
-    priority = {
-        "вероятная ошибка дедупликации": 0,
-        "ошибка генерации текста": 1,
-        "нужно продуктово решить": 2,
-        "требует проверки": 3,
-        "вероятно корректно отклонено": 4,
-        "покрыто другим опубликованным пунктом": 5,
-    }
-    top = sorted(
-        [item for item in items if isinstance(item, dict)],
-        key=lambda item: (
-            priority.get(_event_miss_bucket(item), 99),
-            int(item.get("days_out") if item.get("days_out") is not None else 999),
-            -int(item.get("score") or 0),
-        ),
-    )[:3]
-    return {"total": total, "shown_total": len(items), "buckets": buckets, "top": top}
 
 
 def _russian_counted_phrase(count: int, one: str, few: str, many: str) -> str:
@@ -850,23 +785,12 @@ def _humanize_llm_warning(warning: str) -> str:
 def _support_actions(
     *,
     rendered: int,
-    event_summary: dict,
     transport_coverage: dict,
-    ticket_types: dict,
     writer_report: dict,
     warnings: list[str],
     borderline_count: int,
 ) -> list[str]:
     actions: list[str] = []
-    buckets = event_summary.get("buckets") or {}
-    if int(buckets.get("вероятная ошибка дедупликации") or 0):
-        actions.append("Авторазбор: проверить ложные дубли событий, потому что они могут скрывать концерты и weekend events.")
-    if int(buckets.get("ошибка генерации текста") or 0):
-        actions.append("Авторазбор: проверить события, снятые writer; возможно, факты были, но текст не собрался.")
-    if int((ticket_types.get("unknown") or {}).get("fetched") or 0):
-        actions.append("Разобрать билетные карточки с нераспознанным типом; такие не должны публиковаться автоматически.")
-    if int((ticket_types.get("old_public_sale") or {}).get("published") or 0):
-        actions.append("Убрать старые продажи из Ticket Radar, если нет нового повода для читателя.")
     if not transport_coverage.get("metrolink_checked"):
         actions.append("Сделать Metrolink отдельной проверкой, не прятать его внутри TfGM.")
     degraded = any(str(w).lower().startswith("llm rewrite was degraded") for w in warnings)
@@ -937,10 +861,6 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
     warnings = [str(w) for w in (report.get("warnings") or [])]
     source_status = report.get("source_status") or {}
     transport_coverage = report.get("transport_coverage") or {}
-    quality_scorecard = report.get("quality_scorecard") or {}
-    today_quality = (quality_scorecard.get("today") or {}) if isinstance(quality_scorecard, dict) else {}
-    ticket_types = today_quality.get("ticket_types") or {}
-    event_summary = _event_miss_summary(report.get("event_miss_review") or {})
     borderline_queue = report.get("borderline_queue") or {}
     borderline_count = int((borderline_queue.get("counts") or {}).get("borderline") or 0)
     llm_report = read_json(PROJECT_ROOT / "data" / "state" / "llm_rewrite_report.json", {})
@@ -961,8 +881,6 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
         lines.append("Выпуск слишком длинный: читателю трудно отделить важное от второстепенного.")
     elif degraded:
         lines.append("Объём выпуска нормальный, но есть риск качества: генерация текста работала нестабильно.")
-    elif int(event_summary.get("total") or 0):
-        lines.append("Выпуск отправлен, но есть возможные пропуски событий или билетов.")
     else:
         lines.append("Критичных продуктовых проблем не найдено.")
     lines.append(f"Опубликовано: {rendered}; прошло первичный редакционный отбор: {included}.")
@@ -992,7 +910,6 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
         lines.append(f"• Модель решила пропустить (нет/мало фактуры в источнике): {no_text} из {sent_to_text}.")
     if weak_text:
         lines.append(f"• Текст написан, но слабый после ремонта: {weak_text}.")
-    lines.append("Примечание: разбор «дубли / отклонено правилами» считается по всему собранному пулу (~сотни), а не по этому набору — детали в JSON (final_loss_check).")
     lines.append("")
 
     recovery = writer_report.get("recovery_controller") if isinstance(writer_report, dict) else {}
@@ -1029,7 +946,6 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
         health_signals=health.get("signals") or [],
         writer_report=writer_report,
         transport_coverage=transport_coverage,
-        quality_scorecard=quality_scorecard,
         source_status=source_status,
         synthetic_freshness=report.get("synthetic_freshness") or {},
         prompt_drift=report.get("prompt_drift") or [],
@@ -1040,7 +956,6 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
         borderline_queue=borderline_queue,
         source_anomalies=report.get("source_anomalies") or [],
         dead_parsers=report.get("dead_parsers") or [],
-        event_miss_review=report.get("event_miss_review") or {},
     )
     if issues:
         lines.append("🚨 Главное сегодня")
@@ -1063,47 +978,11 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
             lines.append("Объём в норме; проблема сегодня не длина выпуска, а пропуски событий и нестабильная генерация.")
         lines.append("")
 
-    if ticket_types or _ticketmaster_rows(source_status):
+    ticket_rows = _ticketmaster_rows(source_status)
+    if ticket_rows:
         lines.append("🎟️ Билеты и события")
-        total_ticket_found = 0
-        total_ticket_published = 0
-        if ticket_types:
-            for ticket_type in ("event_this_week", "on_sale_now", "presale_soon", "newly_listed", "major_upcoming", "regular_upcoming", "old_public_sale", "old_onsale", "unknown"):
-                counts = ticket_types.get(ticket_type)
-                if not counts:
-                    continue
-                total_ticket_found += int(counts.get("fetched") or 0)
-                total_ticket_published += int(counts.get("published") or 0)
-                lines.append(
-                    f"• {_ticket_type_human(ticket_type)}: найдено {counts.get('fetched', 0)}, "
-                    f"опубликовано {counts.get('published', 0)}."
-                )
-        if total_ticket_found and not total_ticket_published:
-            lines.append("Итог: билетный блок пустой не потому, что ничего не найдено; фильтры/проверки не дали ни одной карточке пройти в выпуск.")
-        ticket_rows = _ticketmaster_rows(source_status)
-        if ticket_rows:
-            zero_published = sum(1 for row in ticket_rows if int(row.get("raw_count") or 0) and not int(row.get("rendered_count") or 0))
-            lines.append(f"• Ticketmaster-источников без публикаций: {zero_published}; детали по каждому источнику в JSON.")
-        lines.append("")
-
-    if int(event_summary.get("total") or 0):
-        lines.append("⚠️ Возможные пропуски событий")
-        buckets = event_summary.get("buckets") or {}
-        bucket_text = ", ".join(f"{name}: {count}" for name, count in sorted(buckets.items()))
-        shown_total = int(event_summary.get("shown_total") or 0)
-        shown_tail = f"; в Telegram показан топ-{min(shown_total, 3)}" if shown_total else ""
-        lines.append(
-            f"Система пометила {_russian_counted_phrase(int(event_summary.get('total') or 0), 'возможный пропуск', 'возможных пропуска', 'возможных пропусков')}{shown_tail}. "
-            "Это не значит, что все они точно должны были выйти."
-        )
-        if bucket_text:
-            lines.append(f"В первых {shown_total} примерах из JSON: {bucket_text}.")
-        for item in event_summary.get("top") or []:
-            days_out = item.get("days_out")
-            when = "сегодня" if days_out == 0 else f"через {days_out} дн." if isinstance(days_out, int) else "дата рядом"
-            lines.append(f"• {str(item.get('title') or '')[:80]} ({when})")
-            lines.append(f"  Вердикт: {_event_miss_bucket(item)} — {_event_miss_plain_reason(item)}.")
-        lines.append("Вывод: это автозадача для event-dedupe/writer, а не список для ручного чтения утром.")
+        zero_published = sum(1 for row in ticket_rows if int(row.get("raw_count") or 0) and not int(row.get("rendered_count") or 0))
+        lines.append(f"• Ticketmaster-источников без публикаций: {zero_published}; детали по каждому источнику в JSON.")
         lines.append("")
 
     backup_pool = report.get("backup_pool") or {}
@@ -1217,9 +1096,7 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
 
     actions = _support_actions(
         rendered=rendered,
-        event_summary=event_summary,
         transport_coverage=transport_coverage,
-        ticket_types=ticket_types,
         writer_report=writer_report,
         warnings=warnings,
         borderline_count=borderline_count,
@@ -1484,8 +1361,6 @@ def cmd_send_warnings() -> int:
     transport_coverage = report.get("transport_coverage") or {}
     diaspora_diagnostics = report.get("diaspora_diagnostics") or {}
     borderline_queue = report.get("borderline_queue") or {}
-    quality_scorecard = report.get("quality_scorecard") or {}
-    feedback_capture = report.get("feedback_capture") or {}
     synthetic_freshness = report.get("synthetic_freshness") or {}
     cost_summary = report.get("cost_summary") or {}
     llm_report = read_json(PROJECT_ROOT / "data" / "state" / "llm_rewrite_report.json", {})
@@ -1495,7 +1370,6 @@ def cmd_send_warnings() -> int:
     reject_review = report.get("reject_review") or {}
     published_review = report.get("published_review") or {}
     city_intelligence = report.get("city_intelligence") or {}
-    event_miss_review = report.get("event_miss_review") or {}
     cross_day_recurrence = report.get("cross_day_recurrence") or {}
     event_completeness = report.get("event_completeness") or {}
     news_lead_quality = report.get("news_lead_quality") or {}
@@ -1530,7 +1404,6 @@ def cmd_send_warnings() -> int:
         or transport_coverage.get("verdict") in {"found_not_rendered", "not_checked", "partially_checked"}
         or diaspora_diagnostics.get("verdict") in {"checked_empty", "fetched_but_filtered", "accepted_not_rendered"}
         or bool((borderline_queue.get("items") or []))
-        or int(((event_miss_review.get("counts") or {}).get("critical_misses") or 0)) > 0
         or bool(failed_sources)
         or int((synthetic_freshness or {}).get("stale_count") or 0) > 0
         or bool(prompt_drift)
@@ -1598,7 +1471,6 @@ def cmd_send_warnings() -> int:
         health_signals=health_signals,
         writer_report=writer_report,
         transport_coverage=transport_coverage,
-        quality_scorecard=quality_scorecard,
         source_status=source_status,
         synthetic_freshness=synthetic_freshness,
         prompt_drift=prompt_drift,
@@ -1609,7 +1481,6 @@ def cmd_send_warnings() -> int:
         borderline_queue=borderline_queue,
         source_anomalies=report.get("source_anomalies") or [],
         dead_parsers=report.get("dead_parsers") or [],
-        event_miss_review=event_miss_review,
     )
     if top_issues:
         lines.append("🚨 ГЛАВНОЕ СЕГОДНЯ")
@@ -1631,17 +1502,9 @@ def cmd_send_warnings() -> int:
             lines.append(f"  • {_section_name_human(str(row['section']))}: {actual} ({min_part}, {max_part}) — {row['status']}.")
         lines.append("")
 
-    today_quality = (quality_scorecard.get("today") or {}) if isinstance(quality_scorecard, dict) else {}
-    ticket_types = today_quality.get("ticket_types") or {}
     ticket_rows = _ticketmaster_rows(source_status)
-    if ticket_types or ticket_rows:
+    if ticket_rows:
         lines.append("🎟️ БИЛЕТЫ И КОНЦЕРТЫ")
-        if ticket_types:
-            for ticket_type, counts in sorted(ticket_types.items()):
-                lines.append(
-                    f"  • {_ticket_type_human(ticket_type)}: найдено {counts.get('fetched', 0)}, "
-                    f"опубликовано {counts.get('published', 0)}."
-                )
         if ticket_rows:
             lines.append("  Источники билетов:")
             for row in ticket_rows[:6]:
@@ -1651,33 +1514,6 @@ def cmd_send_warnings() -> int:
                     reason, count = sorted(reasons.items(), key=lambda kv: -int(kv[1]))[0]
                     reason_txt = f"; причина: {_humanize_source_reason(reason)} ({count})"
                 lines.append(f"    • {_source_name_human(str(row.get('name') or ''))}: {_source_counts_phrase(row)}{reason_txt}.")
-        lines.append("")
-
-    event_miss_items = event_miss_review.get("critical_misses") or []
-    if event_miss_items:
-        lines.append("🎭 ВАЖНЫЕ СОБЫТИЯ, КОТОРЫЕ НЕ ДОШЛИ")
-        lines.append("Система нашла событие/билет с датой в ближайшие дни, но оно не попало к читателю:")
-        for item in event_miss_items[:8]:
-            title = str(item.get("title") or "").strip() or "(без заголовка)"
-            source = str(item.get("source_label") or "").strip()
-            verdict = str(item.get("verdict") or "")
-            days_out = item.get("days_out")
-            when = "сегодня" if days_out == 0 else f"через {days_out} дн." if isinstance(days_out, int) else "дата рядом"
-            kept = str(item.get("kept_title") or "").strip()
-            source_tail = f" — {source}" if source else ""
-            lines.append(f"  • {title[:90]}{source_tail} ({when})")
-            if verdict == "dedupe_lost_event" and kept:
-                lines.append(f"    Что случилось: дедупликация сочла дублем другого материала: {kept[:100]}.")
-            elif verdict == "selected_but_not_published":
-                lines.append("    Что случилось: материал прошёл отбор, но выпал на финальных лимитах секции.")
-            elif verdict == "writer_dropped_event":
-                lines.append("    Что случилось: материал снял writer на финальной проверке текста.")
-            else:
-                reason = str(item.get("reason") or "").strip()
-                lines.append(f"    Что случилось: {reason[:140] if reason else 'точная причина в release_report.event_miss_review'}.")
-        if len(event_miss_items) > 8:
-            lines.append(f"  …и ещё {len(event_miss_items) - 8}.")
-        lines.append("  Это критический сигнал: выпуск отправлен, но эти причины нужно разобрать до следующего запуска.")
         lines.append("")
 
     # ── Что могли пропустить (главное для редактора) ──────────────
@@ -1870,31 +1706,6 @@ def cmd_send_warnings() -> int:
             "дата суда, цифра ущерба) — значит детектор недо-увидел "
             "новый факт; напиши пример, добавим в тест."
         )
-        lines.append("")
-
-    if quality_scorecard.get("today"):
-        today_q = quality_scorecard.get("today") or {}
-        lines.append("📊 КОНТРОЛЬ КАЧЕСТВА")
-        lines.append(
-            f"  • Система просмотрела {today_q.get('full_count', 0)} материалов; "
-            f"в выпуск попали {today_q.get('visible_count', 0)}."
-        )
-        lines.append(
-            f"  • После финальной самопроверки: устаревших/неуместных — {today_q.get('suspicious_published', 0)}, "
-            f"непонятных — {today_q.get('unclear_visible', 0)}, повторов — {today_q.get('repeat_visible', 0)}."
-        )
-        top_sources = today_q.get("top_sources") or []
-        if top_sources:
-            compact = ", ".join(
-                f"{row.get('source_label')} {int(float(row.get('share') or 0) * 100)}%"
-                for row in top_sources[:3]
-            )
-            lines.append(f"  • Топ источников: {compact}.")
-        if feedback_capture:
-            lines.append(
-                f"  • Ручная оценка пользы: {feedback_capture.get('labelled_items', 0)} пунктов оценено; "
-                f"{feedback_capture.get('pending_items', 0)} можно оценить позже для будущей персонализации."
-            )
         lines.append("")
 
     if lost_leads:
@@ -2153,6 +1964,25 @@ def cmd_send_warnings() -> int:
     for target in targets:
         client.send_text_in_chunks(target, text, parse_mode=None)
     print(f"Sent warnings to {len(targets)} target(s).")
+    return 0
+
+
+def cmd_send_weekly_quality() -> int:
+    """Send the 7-day quality panel summary to Telegram. Sundays in CI."""
+    from news_digest.pipeline.quality_panel import weekly_panel_summary  # noqa: PLC0415
+
+    text = weekly_panel_summary(PROJECT_ROOT / "data" / "state")
+    if not text:
+        print("No quality_panel_history.json rows yet. Nothing to summarise.")
+        return 0
+    settings, client, store = _load_store_and_client()
+    targets = _effective_targets(settings.telegram_target, store.list_subscribers())
+    if not targets:
+        print("No Telegram targets. Skipping weekly quality summary.")
+        return 0
+    for target in targets:
+        client.send_text_in_chunks(target, text, parse_mode=None)
+    print(f"Sent weekly quality summary to {len(targets)} target(s).")
     return 0
 
 
@@ -2729,34 +2559,6 @@ def cmd_reader_value_validation() -> int:
     return 0 if not payload["errors"] else 1
 
 
-def cmd_model_bakeoff(dry_run: bool, limit: int | None) -> int:
-    from news_digest.pipeline.model_bakeoff import run_model_bakeoff  # noqa: PLC0415
-
-    report = run_model_bakeoff(PROJECT_ROOT, dry_run=dry_run, limit=limit)
-    payload = {
-        "report_path": report.get("report_path"),
-        "dry_run": report.get("dry_run"),
-        "validation_errors": report.get("validation_errors") or [],
-        "validation_set": report.get("validation_set") or {},
-        "models": [
-            {
-                "provider": model.get("provider"),
-                "model": model.get("model"),
-                "status": model.get("status"),
-                "metrics": model.get("metrics") or {},
-                "diagnostic": model.get("diagnostic") or {},
-            }
-            for model in report.get("models") or []
-        ],
-        "promotion_recommendation": report.get("promotion_recommendation") or {},
-    }
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
-    failed = bool(payload["validation_errors"]) or any(
-        str(model.get("status") or "") == "failed" for model in payload["models"]
-    )
-    return 1 if failed else 0
-
-
 def cmd_write_digest() -> int:
     os.environ.setdefault("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "1")
     result = write_digest(PROJECT_ROOT)
@@ -2915,25 +2717,6 @@ def build_parser() -> argparse.ArgumentParser:
         "reader-value-validation",
         help="Validate reader-value scoring against the manual historical label set.",
     )
-    bakeoff_parser = subparsers.add_parser(
-        "model-bakeoff",
-        help=(
-            "Offline English judge bake-off on manual labels. Not part of "
-            "the morning pipeline; compares deterministic stub plus configured "
-            "DeepSeek/OpenAI routes when API keys are present."
-        ),
-    )
-    bakeoff_parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Do not call model APIs; validate labels and print configured routes.",
-    )
-    bakeoff_parser.add_argument(
-        "--limit",
-        type=int,
-        default=None,
-        help="Optional number of validation labels to evaluate.",
-    )
     subparsers.add_parser(
         "write-digest",
         help="Write staged draft_digest.html from include=true validated candidates.",
@@ -3022,6 +2805,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Send a 7-day LLM cost summary to Telegram from cost_history.json.",
     )
     subparsers.add_parser(
+        "send-weekly-quality",
+        help="Send the 7-day quality panel summary to Telegram from quality_panel_history.json.",
+    )
+    subparsers.add_parser(
         "weekly-city-rollup",
         help="Build and print the 7-day city intelligence rollup.",
     )
@@ -3083,8 +2870,6 @@ def main() -> int:
         return cmd_cost_summary()
     if args.command == "reader-value-validation":
         return cmd_reader_value_validation()
-    if args.command == "model-bakeoff":
-        return cmd_model_bakeoff(args.dry_run, args.limit)
     if args.command == "write-digest":
         return cmd_write_digest()
     if args.command == "edit-digest":
@@ -3111,6 +2896,8 @@ def main() -> int:
         return cmd_send_warnings()
     if args.command == "send-weekly-cost":
         return cmd_send_weekly_cost()
+    if args.command == "send-weekly-quality":
+        return cmd_send_weekly_quality()
     if args.command == "weekly-city-rollup":
         return cmd_weekly_city_rollup()
     if args.command == "send-weekly-city-rollup":
