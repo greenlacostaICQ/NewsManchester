@@ -23,7 +23,6 @@ class Settings:
     telegram_bot_token: str
     telegram_target: str | None
     project_root: Path
-    archive_dir: Path
     state_dir: Path
 
 
@@ -39,15 +38,12 @@ def load_settings(project_root: Path | None = None) -> Settings:
             "TELEGRAM_BOT_TOKEN is not set. Put it into .env.local or export it in the shell."
         )
 
-    archive_dir = root / "data" / "archive"
     state_dir = root / "data" / "state"
-    archive_dir.mkdir(parents=True, exist_ok=True)
     state_dir.mkdir(parents=True, exist_ok=True)
 
     return Settings(
         telegram_bot_token=token,
         telegram_target=target,
         project_root=root,
-        archive_dir=archive_dir,
         state_dir=state_dir,
     )

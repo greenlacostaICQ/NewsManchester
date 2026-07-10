@@ -20,10 +20,8 @@ def _write_json(path: Path, payload: dict) -> None:
 
 
 class StateStore:
-    def __init__(self, state_dir: Path, archive_dir: Path) -> None:
+    def __init__(self, state_dir: Path) -> None:
         self.state_dir = state_dir
-        self.archive_dir = archive_dir
-        self.run_state_path = state_dir / "run_state.json"
         self.bot_state_path = state_dir / "bot_state.json"
         self.delivery_state_path = state_dir / "delivery_state.json"
         self.feedback_path = state_dir / "personalization_feedback.json"
@@ -144,18 +142,3 @@ class StateStore:
             "chunk_count": len(message_ids or []),
         }
         _write_json(self.delivery_state_path, payload)
-
-    def mark_demo_run(self, issue_text: str) -> Path:
-        now = datetime.now(LONDON_TZ)
-        payload = _read_json(self.run_state_path, {"runs": []})
-        payload["runs"].append(
-            {
-                "timestamp": now.isoformat(),
-                "type": "demo_send",
-            }
-        )
-        _write_json(self.run_state_path, payload)
-
-        archive_path = self.archive_dir / f"{now.strftime('%Y-%m-%d')}-demo.md"
-        archive_path.write_text(issue_text, encoding="utf-8")
-        return archive_path

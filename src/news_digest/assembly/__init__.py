@@ -1,2 +1,0 @@
-"""Digest assembly helpers."""
-

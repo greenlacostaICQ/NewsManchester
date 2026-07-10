@@ -29,12 +29,10 @@ def _load_env_file(path: Path) -> None:
 
 _load_env_file(PROJECT_ROOT / ".env.local")
 
-from news_digest.assembly.demo_digest import build_demo_digest
 from news_digest.bot.service import DigestBotService
 from news_digest.config.settings import load_settings
 from news_digest.delivery.telegram import TelegramClient
 from news_digest.delivery.telegram import TelegramTransportError
-from news_digest.jobs.send_demo_digest import send_demo_digest
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector import collect_digest, initialize_collector_state
 from news_digest.pipeline.common import SECTION_MAX_ITEMS, SECTION_MIN_ITEMS, read_json, today_london, write_json
@@ -89,7 +87,7 @@ def _delivered_today_payload(settings) -> dict | None:
 def _load_store_and_client() -> tuple:
     settings = load_settings(PROJECT_ROOT)
     client = TelegramClient(settings.telegram_bot_token)
-    store = StateStore(settings.state_dir, settings.archive_dir)
+    store = StateStore(settings.state_dir)
     return settings, client, store
 
 
@@ -225,21 +223,6 @@ def cmd_poll_updates(interval_seconds: int) -> int:
         return 0
 
 
-def cmd_render_demo() -> int:
-    issue = build_demo_digest()
-    print(issue.render_text())
-    return 0
-
-
-def cmd_send_demo() -> int:
-    settings = load_settings(PROJECT_ROOT)
-    result = send_demo_digest(settings)
-    print(
-        f"Demo digest sent to {result['target']}. Archived to {result['archive_path']}.",
-    )
-    return 0
-
-
 def _rendered_candidates_for_delivery() -> list[dict]:
     state_dir = PROJECT_ROOT / "data" / "state"
     writer_report = read_json(state_dir / "writer_report.json", {})
@@ -308,7 +291,7 @@ def cmd_send_file(file_path: str, parse_mode: str | None, force: bool) -> int:
     store.mark_delivery(targets, str(resolved_path), message_ids=message_ids)
     runtime_state_dir = _runtime_state_dir()
     if runtime_state_dir != settings.state_dir and runtime_state_dir.exists():
-        StateStore(runtime_state_dir, settings.archive_dir).mark_delivery(
+        StateStore(runtime_state_dir).mark_delivery(
             targets, str(resolved_path), message_ids=message_ids
         )
     record_delivery_artifacts(PROJECT_ROOT, resolved_path, _rendered_candidates_for_delivery())
@@ -2775,8 +2758,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=15,
         help="How often to poll Telegram for new updates.",
     )
-    subparsers.add_parser("render-demo", help="Render the demo digest to stdout.")
-    subparsers.add_parser("send-demo", help="Send the demo digest to Telegram.")
     send_file_parser = subparsers.add_parser(
         "send-file",
         help="Send a prepared digest file to Telegram.",
@@ -2886,10 +2867,6 @@ def main() -> int:
         return cmd_init_build_state(args.overwrite)
     if args.command == "poll-updates":
         return cmd_poll_updates(args.interval_seconds)
-    if args.command == "render-demo":
-        return cmd_render_demo()
-    if args.command == "send-demo":
-        return cmd_send_demo()
     if args.command == "send-file":
         return cmd_send_file(args.file_path, args.parse_mode, args.force)
     if args.command == "send-warnings":

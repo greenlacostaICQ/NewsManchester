@@ -961,3 +961,13 @@
 - Ожидаемый эффект и метрика проверки: одна строка в день отвечает «растёт ли качество»; за 06-25…07-10 (16 реальных выпусков): 5 OK-дней из 16, пустые секции 6 дней, пустой лид 07-07, повторы 06-25/06-28, заглушки 5→0 к июлю.
 - Файлы/места: `src/news_digest/pipeline/quality_panel.py` (новый); `scripts/run_local_digest.py:cmd_send_file`, `cmd_send_weekly_quality`; `release.py` (удаления); `.github/workflows/daily-digest.yml`; `tests/test_quality_panel.py`.
 - ПРОВЕРКА: A/B на копии реального state 2026-07-10 — старый код: 50 ключей report, warnings «75/204 possible real misses», scorecard пишется; новый код: 46 ключей, шумовых warnings НОЛЬ, scorecard не пишется, backup_pool=1155 не сломан. Панель по git-истории реальных отправленных выпусков поймала все три задокументированных дефекта (повтор 06-25, заглушка 06-28, пустой лид 07-07). Admin-текст рендерится (83 строки) без удалённых секций. `unittest discover`: 846 тестов, 3 падения — те же, что на чистом дереве (чужой WIP weekend-rescue), новых нет.
+
+### 0090 — Удалён мёртвый демо-путь (render-demo/send-demo) — 2026-07-10
+- Статус: внедрено
+- Проблема: демо-контур не запускался с 2026-04-21 (mtime `run_state.json`, единственный писатель — `mark_demo_run`; единственный артефакт — `data/archive/2026-04-21-demo.md`). Ни один workflow/скрипт его не звал.
+- Причина (корень): демо-выпуск был нужен до запуска прод-пайплайна; после перехода на GH Actions (0053+) путь остался без вызывающих.
+- Решение: удалены пакеты `assembly/`, `jobs/`, `models/` (models импортировался только демо), команды `render-demo`/`send-demo` и их cmd_-функции, `StateStore.mark_demo_run` + `run_state_path` + `archive_dir` (в т.ч. из Settings), локальные `run_state.json`, `data/archive/`.
+- Почему так (отвергли): оставить как ручной инструмент — отвергнуто, демо рендерит из mock-моделей и давно не отражает реальный формат выпуска.
+- Ожидаемый эффект и метрика проверки: unittest discover зелёный (846 тестов, 3 падения — pre-existing в свежих test_inventory/test_public_output_contracts, воспроизводятся на чистом HEAD до этой правки); `run_local_digest.py --help` работает.
+- Файлы/места: scripts/run_local_digest.py, src/news_digest/state/store.py:23, src/news_digest/config/settings.py:26, .gitignore
+- ПРОВЕРКА (после прогона): 2026-07-10, CI-командой `PYTHONPATH=src python3 -m unittest discover -s tests`: 846 ran, те же 3 pre-existing failures до и после (diff пустой).
