@@ -1005,6 +1005,13 @@ class PublicOutputContractTests(unittest.TestCase):
         errors = public_html_contract_errors(html)
         self.assertFalse(any("metrolink_written_as_metro" in error for error in errors))
 
+    def test_public_html_allows_more_than_fifteen_ticket_lines(self) -> None:
+        html = "<b>Билеты / Ticket Radar</b>\n" + "\n".join(
+            f"• A-tier artist {idx}." for idx in range(16)
+        )
+
+        self.assertFalse(any("ticket_radar_over_cap" in error for error in public_html_contract_errors(html)))
+
     def test_transport_language_repair_fixes_today_metrolink_copy(self) -> None:
         line = (
             "• Metrolink: ведутся работы по улучшению на остановке трамваев Метролинк "

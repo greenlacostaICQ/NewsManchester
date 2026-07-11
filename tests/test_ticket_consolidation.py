@@ -110,11 +110,7 @@ class TicketConsolidationTest(unittest.TestCase):
 
 
 class ATierBudgetExemptionTest(unittest.TestCase):
-    """W2 / RC4: outside-GM A-tier is capped in the morning digest (excess →
-    ticket inventory); only GM/nearby A-tier stays cap-exempt. This supersedes
-    the old 'A-tier never trimmed' rule for outside-GM venues — the rule that
-    made every cap idle when the outside-GM pool was entirely A-tier
-    (owner 2026-06-27 / #0011)."""
+    """A-tier tickets are never cut from the visible digest by ticket caps."""
 
     def _kept(self, cand: dict, fps: list[str], section: str, cap: int) -> list[str]:
         from news_digest.pipeline.writer import _slice_counting_only_non_exempt
@@ -125,7 +121,7 @@ class ATierBudgetExemptionTest(unittest.TestCase):
             counted_limit=cap, ignore_section_exemption=True,
         )[2]
 
-    def test_outside_gm_a_tier_is_capped(self) -> None:
+    def test_outside_gm_a_tier_stays_exempt(self) -> None:
         cand: dict = {}
         fps: list[str] = []
         for i in range(8):  # 8 outside-GM A-tier, cap 6
@@ -134,7 +130,7 @@ class ATierBudgetExemptionTest(unittest.TestCase):
             cand[fp] = {"primary_block": "outside_gm_tickets", "venue_scope": "outside",
                         "ticket_notability": {"tier": "A"}}
         kept = self._kept(cand, fps, "Крупные концерты вне GM", 6)
-        self.assertEqual(sum(1 for f in kept if f.startswith("a")), 6)  # capped, not 8
+        self.assertEqual(sum(1 for f in kept if f.startswith("a")), 8)
 
     def test_gm_a_tier_stays_exempt(self) -> None:
         cand: dict = {}
@@ -157,24 +153,6 @@ class ATierBudgetExemptionTest(unittest.TestCase):
                         "ticket_notability": {"tier": "A"}}
         kept = self._kept(cand, fps, "Крупные концерты вне GM", 6)
         self.assertEqual(sum(1 for f in kept if f.startswith("n")), 8)  # nearby A-tier kept
-
-    def test_global_cap_dropped_a_tier_goes_to_inventory(self) -> None:
-        # P1 / RC4: outside-GM A-tier dropped by the GLOBAL budget cap (not just
-        # the section cap) must land in the ticket inventory, not vanish.
-        from news_digest.pipeline.writer import _hold_global_capped_a_tier
-        outside = {"primary_block": "outside_gm_tickets", "venue_scope": "outside",
-                   "ticket_notability": {"tier": "A"}}
-        gm = {"primary_block": "ticket_radar", "venue_scope": "gm",
-              "ticket_notability": {"tier": "A"}}
-        candidate_by_fp = {"o1": outside, "g1": gm}
-        dropped = [
-            {"fingerprint": "o1", "title": "Outside A", "section": "X"},
-            {"fingerprint": "g1", "title": "GM A", "section": "X"},  # exempt — ignored
-        ]
-        held: list[dict] = []
-        _hold_global_capped_a_tier(dropped, candidate_by_fp, held)
-        self.assertEqual([h["fingerprint"] for h in held], ["o1"])
-        self.assertTrue(outside["ticket_inventory_held"])
 
     def test_future_announcement_a_tier_is_recognised(self) -> None:
         # Backlog item 7: a future A-tier announcement (e.g. The Weeknd, The

@@ -666,12 +666,6 @@ def public_html_contract_errors(html_text: str) -> list[str]:
     for line in sections.get("Общественный транспорт сегодня", []):
         for issue in transport_public_contract_errors(line):
             errors.append(f"Rendered HTML violates public contract: {issue}.")
-    ticket_lines = [
-        line for line in sections.get("Билеты / Ticket Radar", [])
-        if line.strip() and line.strip() != "•"
-    ]
-    if len(ticket_lines) > 15:
-        errors.append(f"Rendered HTML violates public contract: ticket_radar_over_cap ({len(ticket_lines)} > 15).")
     return errors
 
 

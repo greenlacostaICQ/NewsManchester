@@ -32,6 +32,17 @@
 
 # Записи
 
+### 0094 — A-tier билеты не режутся лимитами выпуска — 2026-07-11
+- Статус: внедрено
+- Проблема: A-tier концерты outside-GM/unknown после шестого в своей секции и после лимита Ticket Radar=15 не попадали в видимый выпуск; они уходили только в служебный ticket inventory. Это расходилось с правилом: все A-tier билеты должны быть показаны.
+- Причина (корень): `_is_budget_exempt_a_tier` (`writer.py`) освобождал от лимитов только GM/nearby; per-section/global/hard caps резали outside/unknown A-tier, а `public_html_contract_errors` (`release.py`) блокировал выпуск при 16-й строке Ticket Radar.
+- Решение: любой распознанный A-tier билет освобождён от лимита секции и обоих лимитов выпуска независимо от venue_scope; release больше не считает 16+ строк Ticket Radar ошибкой. Обычные не-A-tier билеты остаются под прежними лимитами.
+- Почему так (отвергнуто): оставлять excess в инвентаре означает всё ещё скрывать интересующий читателя билет; отдельный новый билетный выпуск не нужен, потому что существующий рендер уже умеет показать все строки.
+- Ожидаемый эффект и метрика проверки: при 8 outside-GM A-tier и cap=6 отрисовываются все 8; HTML с 16 билетными строками проходит public-output contract; `ticket_inventory.outside_gm_a_tier_held_count=0`.
+- Файлы/места: `writer.py:_is_budget_exempt_a_tier`, `writer.py:_slice_counting_only_non_exempt`, `release.py:public_html_contract_errors`; тесты `test_ticket_consolidation.py`, `test_publish_plan_contract.py`, `test_public_output_contracts.py`.
+- ПРОВЕРКА (после прогона): replay 2026-07-09 до/после: A-tier trace `rendered` 3→16, `not_rendered` 29→16; «Крупные концерты вне GM» в draft 0→12 строк; `ticket_inventory.outside_gm_a_tier_held_count` 13→0. Точечные тесты: 6 OK (`ATierBudgetExemptionTest`, outside-GM global-budget regression, HTML с 16 билетными строками).
+- Где была ошибка: старое ограничение scope и release-gate противоречили правилу видимости A-tier.
+
 ### 0001 — Бэкфилл новостных блоков не видит выброшенные новости (два разных пула резерва) — 2026-06-27
 - Статус: предложено
 - Проблема: «Свежие новости» вышли 3 при минимуме 6; «Городской радар» 3 при 5. В резерве лежали сильные новости (Burnham — оценка 185, взрыв в Cheetham Hill — 140, Galloway в мэры — 157), но в выпуск не попали. Бэкфилл переделывался 5-8 раз и не помогал.

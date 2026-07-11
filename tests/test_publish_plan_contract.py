@@ -194,6 +194,16 @@ class SourceHealthAndPublishPlanTests(unittest.TestCase):
         self.assertFalse(_is_public_budget_exempt("Крупные концерты вне GM", outside))
         self.assertTrue(_is_public_budget_exempt("Русскоязычные концерты и стендап UK", russian))
 
+    def test_outside_gm_a_tier_is_budget_exempt(self) -> None:
+        outside_a_tier = {
+            "fingerprint": "outside-a-tier",
+            "primary_block": "outside_gm_tickets",
+            "venue_scope": "outside",
+            "ticket_notability": {"tier": "A"},
+        }
+
+        self.assertTrue(_is_public_budget_exempt("Крупные концерты вне GM", outside_a_tier))
+
     def test_dated_weekend_event_is_budget_exempt(self) -> None:
         # E4 (2026-06-30): «Выходные в GM» has no cap — a weekend event
         # confirmed by a trustworthy date survives the global budget; undated
