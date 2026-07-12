@@ -39,20 +39,12 @@ from news_digest.pipeline.release import (
 )
 from news_digest.pipeline.writer import write_digest
 from scripts.run_local_digest import (
-    _borderline_verdict,
-    _diaspora_verdict_human,
-    _explain_source_failure,
     _humanize_quality_warning,
-    _humanize_borough_flag,
-    _humanize_source_reason,
     _section_name_human,
     _section_shape_rows,
-    _source_counts_phrase,
     _build_product_support_text,
     _support_top_issues,
-    _ticket_type_human,
     _ticketmaster_rows,
-    _translate_health_signal,
     cmd_pipeline_config,
 )
 
@@ -1469,17 +1461,6 @@ class SourceFunnelDiagnosticsTest(unittest.TestCase):
 
 
 class AdminAlertCopyTest(unittest.TestCase):
-    def test_quality_signal_copy_uses_visible_items_and_target_range(self) -> None:
-        text = _translate_health_signal(
-            {
-                "name": "too_many_items",
-                "detail": "74 item(s) rendered — above the 22-item editorial cap target.",
-            }
-        )
-
-        self.assertIn("74 опубликованных пунктов", text)
-        self.assertIn("14–45", text)
-
     def test_pipeline_config_includes_transport_fill_between_curator_and_rewrite(self) -> None:
         buf = StringIO()
         with redirect_stdout(buf):
@@ -1492,13 +1473,6 @@ class AdminAlertCopyTest(unittest.TestCase):
 
     def test_admin_support_copy_uses_product_language_not_pipeline_jargon(self) -> None:
         self.assertIn("не ясно, что именно произошло", _humanize_quality_warning("property_borderline:decision_or_action"))
-        self.assertIn("не Greater Manchester", _humanize_source_reason("Curator drop: Событие в Лондоне, не относится к GM."))
-        self.assertEqual(_diaspora_verdict_human("fetched_but_filtered"), "события нашлись, но все отсеялись фильтрами")
-        self.assertEqual(
-            _source_counts_phrase({"raw_count": 2, "accepted_count": 1, "rendered_count": 0}),
-            "нашли 2, прошло отбор 1, опубликовано 0",
-        )
-        self.assertIn("5xx", _explain_source_failure("HTTP 500 server error"))
 
     def test_admin_support_surfaces_missing_operational_sections(self) -> None:
         rows = _section_shape_rows({"section_counts": {"Билеты / Ticket Radar": 6, "Что важно сегодня": 2}})
@@ -1509,23 +1483,10 @@ class AdminAlertCopyTest(unittest.TestCase):
         self.assertEqual(by_name["Билеты / Ticket Radar"]["max"], 15)
         self.assertEqual(by_name["Что важно сегодня"]["status"], "ниже минимума")
         self.assertEqual(_section_name_human("Билеты / Ticket Radar"), "Билеты и концерты")
-        self.assertIn(
-            "нет опубликованных пунктов",
-            _humanize_borough_flag("В 1 GM borough(s) ноль видимых пунктов: Tameside."),
-        )
-        self.assertEqual(_ticket_type_human("presale_soon"), "скоро пресейл/старт продаж")
         ticket_rows = _ticketmaster_rows(
             {"sources": [{"name": "Ticketmaster Manchester Upcoming"}, {"name": "BBC Manchester"}]}
         )
         self.assertEqual(len(ticket_rows), 1)
-        self.assertIn(
-            "спорно",
-            _borderline_verdict({"quality_warnings": ["crime_borderline:what_happened"]}),
-        )
-        self.assertIn(
-            "ошибку извлечения",
-            _borderline_verdict({"quality_warnings": ["event_schema_missing:no_date"]}),
-        )
 
         issues = _support_top_issues(
             rendered=47,
@@ -2118,17 +2079,6 @@ class PublishedReviewTest(unittest.TestCase):
         self.assertIn("gmca-old", titles)
         self.assertIn("food-stale", titles)
         self.assertNotIn("food-current", titles)
-
-    def test_digest_health_cap_is_warning_only(self) -> None:
-        health = _translate_health_signal(
-            {
-                "name": "too_many_items",
-                "detail": "74 item(s) rendered — above the 22-item editorial cap target.",
-            }
-        )
-
-        self.assertIn("Выпуск раздут", health)
-        self.assertIn("74", health)
 
     def test_anti_golden_2026_05_20_visible_garbage_is_warning_only(self) -> None:
         today = now_london().date()

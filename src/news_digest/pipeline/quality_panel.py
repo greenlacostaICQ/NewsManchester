@@ -157,4 +157,25 @@ def weekly_panel_summary(state_dir: Path, *, days: int = 7) -> str | None:
     lines = [f"📋 Качество выпусков за неделю: {ok_days} из {len(week)} дней без замечаний"]
     for r in week:
         lines.append(f"• {panel_row_line(r)}")
+    cost_line = _weekly_cost_line(state_dir, days=days)
+    if cost_line:
+        lines.append(cost_line)
     return "\n".join(lines)
+
+
+def _weekly_cost_line(state_dir: Path, *, days: int = 7) -> str | None:
+    """One line of LLM spend — replaces the separate weekly cost message."""
+    path = state_dir / "cost_history.json"
+    if not path.exists():
+        return None
+    try:
+        import json  # noqa: PLC0415
+
+        history = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return None
+    if not isinstance(history, list) or not history:
+        return None
+    week = history[-days:]
+    total = sum(float(e.get("total_cost_usd") or 0.0) for e in week if isinstance(e, dict))
+    return f"💰 Расходы за {len(week)} дн.: ${total:.2f} (≈${total / len(week):.2f}/день)"
