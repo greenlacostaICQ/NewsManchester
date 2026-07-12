@@ -1,570 +1,488 @@
 {
-  "status": "partial",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 8 repair(s); issue ships with honest degradation report",
+  "reason": "pre-send repair executor applied 5 repair(s); issue ships with honest degradation report",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
-  "run_date_london": "2026-07-10",
-  "pipeline_run_id": "20260710T080155+0100",
-  "digest_sha256": "a8c44c5276f99b720953abbd53c3cc9eb6473eca5a06fdd3d3bc94d7e68eb9c6",
-  "duration_seconds": 107.663,
-  "confidence": 0.9,
+  "run_date_london": "2026-07-12",
+  "pipeline_run_id": "20260712T080157+0100",
+  "digest_sha256": "de1f6a1d6bf866e4e51a76946b06e4cf15a98c88ae2ecd74df557d64c859cd21",
+  "duration_seconds": 111.958,
+  "confidence": 0.85,
   "critical_errors": [
     {
-      "line_index": 11,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Неправильные даты указаны для субботы и воскресенья.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 31,
+      "line_index": 22,
       "section": "Выходные в GM",
       "problem": "Дата мероприятия указана неверно.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 35,
-      "section": "Городской радар",
-      "problem": "Неправильное указание роли мужчины в инциденте.",
-      "risk": "factual",
+      "line_index": 25,
+      "section": "Выходные в GM",
+      "problem": "Географическая ошибка: Stockport не является частью Манчестера.",
+      "risk": "geo",
       "suggested_action": "repair"
     },
     {
-      "line_index": 40,
-      "section": "Что важно в ближайшие 7 дней",
-      "problem": "Неправильное место проведения мероприятия.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 42,
-      "section": "Что важно в ближайшие 7 дней",
-      "problem": "Неправильный формат мероприятия.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 46,
-      "section": "Business/tech события для тебя",
-      "problem": "Некорректная информация о стоимости участия в мероприятии.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 4,
+      "line_index": 8,
       "section": "Свежие новости",
       "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'stab' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "weapon_violence"
-    },
-    {
-      "line_index": 38,
-      "section": "Городской радар",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'killed' (death/who/what) has no Russian rendering in the shipped line",
+      "problem": "critical source fact dropped in translation: 'died' (death/who/what) has no Russian rendering in the shipped line",
       "suggested_action": "repair",
       "completeness_concept": "death"
     }
   ],
   "actions": [
     {
-      "line_index": 11,
-      "section": "Общественный транспорт сегодня",
-      "action": "patch",
-      "replacement_text": "• National Rail: В субботу 11 и воскресенье 12 июля 2026 года не будет поездов Northern до/из Salford Центрального. Пассажирам рекомендуется планировать альтернативные маршруты. National Rail Enquiries",
-      "reason": "Указаны неверные даты для 2026 года.",
-      "risk": "date"
+      "line_index": 18,
+      "section": "Футбол",
+      "action": "keep",
+      "reason": "Информация о трансфере Джереми Монги соответствует источнику и не содержит ошибок.",
+      "risk": "factual",
+      "replacement_text": ""
     },
     {
-      "line_index": 31,
+      "line_index": 19,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• В 22:00 по британскому времени сегодня пройдет четвертьфинал Кубка мира между Англией и Норвегией на стадионе в Майами. Гарри Кейн похвалил Эрлинга Холанда, назвав его \"невероятным\". Manchester City",
+      "reason": "Добавлено место проведения матча для большей ясности.",
+      "risk": "geo"
+    },
+    {
+      "line_index": 22,
       "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• 5 июля — автомобильная барахолка Burnage RFC Car Boot Sale в Burnage RFC, Varley Park, Stockport. Burnage RFC Car Boot Sale",
-      "reason": "Дата мероприятия должна быть 5 июля 2026 года, согласно источнику.",
+      "replacement_text": "• 5 июля в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — автомобильная барахолка Burnage RFC. Burnage RFC Car Boot Sale",
+      "reason": "Дата мероприятия должна быть 5 июля, а не 12 июля.",
       "risk": "date"
     },
     {
-      "line_index": 35,
+      "line_index": 25,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• В это воскресенье, 12 июля 2026 года, с 11:00 до 16:00 в Викторианском рынке Stockport пройдет Stockport Vintage Spectacular, где можно будет насладиться винтажной торговлей, живой свинг-музыкой, магией и автобусными поездками; билеты стоят от £0 до £3. Stockport Vintage Spectacular",
+      "reason": "Stockport не является частью Манчестера, необходимо исправить географическую привязку.",
+      "risk": "geo"
+    },
+    {
+      "line_index": 28,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• 72-летний мужчина был госпитализирован в критическом состоянии после ножевого ранения в переулке на Heather Walk, Партингтон, в 18:05 BST во вторник. Полиция прибыла на место происшествия и обнаружила пенсионера с ножевыми ранениями. Женщина была арестована по подозрению в причинении тяжкого вреда здоровью. Полиция заявила, что инцидент был изолированным и не представляет угрозы для общественности. BBC Manchester",
-      "reason": "Указание роли мужчины как содействующего преступнику не соответствует источнику.",
-      "risk": "factual"
+      "replacement_text": "• TfGM: ремонтные работы — значительные. Проверьте маршрут и время отправления перед выходом. TfGM",
+      "reason": "Уточнение перевода слова 'Major' для ясности.",
+      "risk": "translation"
     },
     {
-      "line_index": 40,
-      "section": "Что важно в ближайшие 7 дней",
-      "action": "patch",
-      "replacement_text": "• 17 июля в Platt Fields Market Garden — Beers In The Garden Festival. Билеты £15. Manchester's Finest Events",
-      "reason": "Указано неверное место проведения мероприятия.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 42,
-      "section": "Что важно в ближайшие 7 дней",
-      "action": "patch",
-      "replacement_text": "• 10 июля в HOME — Toy Story 5 (PG). Формат: фильм. HOME",
-      "reason": "Указан неверный формат мероприятия.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 46,
-      "section": "Business/tech события для тебя",
-      "action": "patch",
-      "replacement_text": "• 14 июля 2026 года с 9:00 до 11:00 в The Wellsprings Bolton пройдет бизнес-нетворкинг с выступлением о новом законе о данных. Участие бесплатное для членов GM Chamber, £22 для остальных. GM Chamber Events",
-      "reason": "Уточнение стоимости участия в соответствии с источником.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 52,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Alexandra Savior — 10 июля, Manchester Academy (Фестивальный состав, не один артист); цена £20.00. Manchester Academy",
-      "reason": "Уточнение, что это фестивальный состав, должно быть в скобках, чтобы не путать читателя.",
-      "risk": "format"
-    },
-    {
-      "line_index": 60,
+      "line_index": 67,
       "section": "Русскоязычные концерты и стендап UK",
       "action": "patch",
-      "replacement_text": "• В это воскресенье, в Лондоне, в 20:30, пройдет концерт Горана Бреговича. Билеты стоят от 54 до 84 фунтов стерлингов, их можно приобрести на официальной странице мероприятия. Не упустите возможность насладиться живым выступлением известного музыканта!",
-      "reason": "Удаление упоминания 'Kontramarka UK', так как это может быть воспринято как реклама.",
-      "risk": "format"
+      "replacement_text": "• С 26 июня по 12 июля в The Grange Festival в Хэмпшире проходит опера Чайковского \"Евгений Онегин\". Afisha London",
+      "reason": "Уточнить, что Хэмпшир не является частью Greater Manchester.",
+      "risk": "geo"
     }
   ],
   "warnings": [
-    "Выпуск содержит много новостей о преступлениях и происшествиях, что может создать впечатление однобокости. Рекомендуется добавить разнообразие в темы.",
-    "В разделе 'Футбол' доминируют новости о клубах, что может повлиять на баланс выпуска.",
-    "В разделе 'Выходные в GM' все события относятся к рынкам и ярмаркам, что может создать впечатление однобокости. Рассмотрите возможность добавления разнообразных мероприятий.",
-    "Форматирование информации о фестивальном составе в строке 52 может быть улучшено для ясности.",
-    "Секция 'Крупные концерты вне GM' содержит информацию о концертах, которые проходят за пределами Greater Manchester. Это может быть неинтересно основной аудитории, но не является критической ошибкой.",
-    "Упоминание 'Kontramarka UK' может быть воспринято как реклама, что не всегда уместно в новостных дайджестах.",
-    "judge reduce failed: parse_failed no parseable JSON",
-    "line 1 drops source number/date fact(s): 19 june, 21:50",
-    "line 3 drops source number/date fact(s): 09 jul 2026, 22:12",
-    "line 38 drops source number/date fact(s): 09 jul 2026, 17:49"
+    "Выпуск содержит много новостей, связанных с общественной безопасностью, но это не критично для отправки.",
+    "Выпуск содержит много информации о транспортных сбоях, что может перегрузить читателя. Рекомендуется сбалансировать с другими новостями.",
+    "Добавлено место проведения матча в строке 19 для большей ясности.",
+    "Перевод слова 'Major' в строке 28 может быть уточнен для большей ясности.",
+    "В выпуске доминируют события и билеты, что может снизить баланс core news.",
+    "В разделе 'Еда, открытия и рынки' упоминается несколько событий, но нет явного указания на то, что они происходят в разные дни. Это может вызвать путаницу у читателей.",
+    "В блоке 'Дальние анонсы' отсутствует информация о продолжительности спектакля 'Шпион, который пришел с холода', что может быть полезно для читателей.",
+    "Некоторые строки содержат информацию о фестивальном составе, но это не критично для понимания.",
+    "Секция 'Крупные концерты вне GM' содержит много информации о концертах за пределами Greater Manchester, что может не соответствовать интересам всех читателей.",
+    "Событие в Хэмпшире не относится к Greater Manchester, но может быть интересно русскоязычной аудитории.",
+    "ticket dominance: 30 ticket/concert item(s) vs 23 core item(s)",
+    "low writer yield: 71/339 included candidates rendered",
+    "line 7 drops source number/date fact(s): 11 jul 2026, 16:48",
+    "line 8 drops source number/date fact(s): 11 jul 2026, 16:47, 57"
   ],
   "product_completeness": {
     "section_counts": {
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 6,
-      "Общественный транспорт сегодня": 6,
-      "Что важно сегодня": 3,
+      "Общественный транспорт сегодня": 7,
+      "Что важно сегодня": 2,
       "Футбол": 2,
-      "Выходные в GM": 15,
-      "Городской радар": 5,
+      "Выходные в GM": 6,
+      "Городской радар": 3,
       "Что важно в ближайшие 7 дней": 3,
-      "IT и бизнес": 1,
-      "Business/tech события для тебя": 3,
-      "Дальние анонсы": 2,
-      "Билеты / Ticket Radar": 5,
-      "Крупные концерты вне GM": 6,
+      "Еда, открытия и рынки": 3,
+      "Дальние анонсы": 3,
+      "Билеты / Ticket Radar": 16,
+      "Крупные концерты вне GM": 11,
       "Русскоязычные концерты и стендап UK": 3
     },
     "core_counts": {
       "Свежие новости": 6,
       "Футбол": 2,
-      "Что важно сегодня": 3,
-      "Общественный транспорт сегодня": 6,
-      "Выходные в GM": 15
+      "Что важно сегодня": 2,
+      "Общественный транспорт сегодня": 7,
+      "Выходные в GM": 6
     },
-    "ticket_items": 14,
-    "core_items": 32,
+    "ticket_items": 30,
+    "core_items": 23,
     "writer_quality_counts": {
-      "included_candidates": 353,
-      "rendered_candidates": 61,
+      "included_candidates": 339,
+      "rendered_candidates": 71,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
-      "dropped_missing_draft_line": 6,
-      "dropped_ticket_not_selected": 228,
+      "dropped_missing_draft_line": 2,
+      "dropped_ticket_not_selected": 203,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 63
+      "dropped_low_quality": 69
     },
-    "section_underflow": [],
+    "section_underflow": [
+      {
+        "section": "Городской радар",
+        "actual": 2,
+        "minimum": 5,
+        "dropped_by_writer": 1
+      }
+    ],
     "source_health_counts": {
-      "ok": 109,
+      "ok": 101,
       "partial": 2,
-      "stale": 10,
-      "empty": 4,
-      "failed": 4,
-      "zero_yield": 85,
+      "stale": 13,
+      "empty": 3,
+      "failed": 11,
+      "zero_yield": 77,
       "no_contribution_breakdown": {
-        "fetch_failed": 2,
-        "all_rejected": 85,
-        "idle_no_items": 11
+        "fetch_failed": 8,
+        "all_rejected": 77,
+        "idle_no_items": 14
       },
       "zero_contribution_by_stage": {
-        "written": 17,
-        "selected": 68,
-        "parsed": 11,
-        "fetched": 2
+        "written": 15,
+        "selected": 62,
+        "parsed": 14,
+        "fetched": 8
       },
-      "weekend_source_coverage_incidents": 36
+      "weekend_source_coverage_incidents": 40
     },
     "alerts": [
-      "low writer yield: 61/353 included candidates rendered",
-      "source failures: 4"
+      "ticket dominance: 30 ticket/concert item(s) vs 23 core item(s)",
+      "low writer yield: 71/339 included candidates rendered",
+      "source failures: 11"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 46 has unchecked number/date token(s): 11:00, 9:00"
+      "patch for line 25 has unchecked number/date token(s): 11:00, 16:00"
     ],
     "can_apply_actions": true,
-    "action_count": 8
+    "action_count": 6
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 58,
-    "matched_lines": 58,
-    "applicable_lines": 6,
-    "unmatched_lines": 4,
-    "critical_omission_count": 2,
+    "checked_lines": 62,
+    "matched_lines": 62,
+    "applicable_lines": 2,
+    "unmatched_lines": 5,
+    "critical_omission_count": 1,
     "critical_omissions": [
       {
-        "line_index": 4,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/mum-killed-rochdale-farm-fire-34264313",
-        "concept": "weapon_violence",
-        "obligation": "who/what",
-        "source_hit": "stab"
-      },
-      {
-        "line_index": 38,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/shameless-hit-run-drivers-texts-34258238",
+        "line_index": 8,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/created-app-after-husband-died-34274093",
         "concept": "death",
         "obligation": "who/what",
-        "source_hit": "killed"
+        "source_hit": "died"
       }
     ],
     "noncritical_omissions": [
       {
-        "line_index": 1,
+        "line_index": 7,
         "dropped": [
-          "19 june",
-          "21:50"
+          "11 jul 2026",
+          "16:48"
         ]
       },
       {
-        "line_index": 3,
+        "line_index": 8,
         "dropped": [
-          "09 jul 2026",
-          "22:12"
-        ]
-      },
-      {
-        "line_index": 38,
-        "dropped": [
-          "09 jul 2026",
-          "17:49"
+          "11 jul 2026",
+          "16:47",
+          "57"
         ]
       }
     ],
     "recovered": 0,
     "pulled_for_rework": 0,
-    "still_missing": 2
+    "still_missing": 1
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 10,
-    "attempted": 10,
-    "applied": 8,
-    "model_patch_applied": 3,
-    "deterministic_rewrite_used": 2,
-    "reserve_replacement_used": 2,
-    "stripped": 1,
-    "kept_below_floor": 2,
+    "requested": 7,
+    "attempted": 6,
+    "applied": 5,
+    "model_patch_applied": 4,
+    "deterministic_rewrite_used": 1,
+    "reserve_replacement_used": 0,
+    "stripped": 0,
+    "kept_below_floor": 1,
     "unresolved": 0,
-    "fact_lock_rejected": 5,
-    "enrich_attempted": 7,
+    "fact_lock_rejected": 1,
+    "enrich_attempted": 2,
     "post_check_errors": [],
     "actions": [
       {
-        "line_index": 11,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "patch",
-        "reason": "Указаны неверные даты для 2026 года.",
-        "outcome": "reserve_replacement",
-        "model_replacement_rejected": "fact_lock: 12 июля 2026, national rail"
+        "line_index": 18,
+        "section": "Футбол",
+        "requested_action": "keep",
+        "reason": "Информация о трансфере Джереми Монги соответствует источнику и не содержит ошибок.",
+        "outcome": "kept"
       },
       {
-        "line_index": 31,
+        "line_index": 19,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Добавлено место проведения матча для большей ясности.",
+        "outcome": "model_patch_applied"
+      },
+      {
+        "line_index": 22,
         "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Дата мероприятия должна быть 5 июля 2026 года, согласно источнику.",
+        "reason": "Дата мероприятия должна быть 5 июля, а не 12 июля.",
         "outcome": "deterministic_rewrite",
-        "model_replacement_rejected": "fact_lock: 5 июля, stockport. burnage rfc car boot sale"
+        "model_replacement_rejected": "fact_lock: 5 июля, burnage rfc. burnage rfc car boot sale"
       },
       {
-        "line_index": 35,
+        "line_index": 25,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Stockport не является частью Манчестера, необходимо исправить географическую привязку.",
+        "outcome": "model_patch_applied"
+      },
+      {
+        "line_index": 28,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Указание роли мужчины как содействующего преступнику не соответствует источнику.",
+        "reason": "Уточнение перевода слова 'Major' для ясности.",
         "outcome": "model_patch_applied"
       },
       {
-        "line_index": 40,
-        "section": "Что важно в ближайшие 7 дней",
-        "requested_action": "patch",
-        "reason": "Указано неверное место проведения мероприятия.",
-        "outcome": "reserve_replacement",
-        "model_replacement_rejected": "fact_lock: finest events, manchester&"
-      },
-      {
-        "line_index": 42,
-        "section": "Что важно в ближайшие 7 дней",
-        "requested_action": "patch",
-        "reason": "Указан неверный формат мероприятия.",
-        "outcome": "model_patch_applied"
-      },
-      {
-        "line_index": 46,
-        "section": "Business/tech события для тебя",
-        "requested_action": "patch",
-        "reason": "Уточнение стоимости участия в соответствии с источником.",
-        "outcome": "stripped_honest_shortfall",
-        "model_replacement_rejected": "fact_lock: gm chamber"
-      },
-      {
-        "line_index": 52,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Уточнение, что это фестивальный состав, должно быть в скобках, чтобы не путать читателя.",
-        "outcome": "model_patch_applied"
-      },
-      {
-        "line_index": 60,
+        "line_index": 67,
         "section": "Русскоязычные концерты и стендап UK",
         "requested_action": "patch",
-        "reason": "Удаление упоминания 'Kontramarka UK', так как это может быть воспринято как реклама.",
-        "outcome": "deterministic_rewrite",
-        "model_replacement_rejected": "fact_lock: 54, 84"
+        "reason": "Уточнить, что Хэмпшир не является частью Greater Manchester.",
+        "outcome": "model_patch_applied"
       },
       {
-        "line_index": 4,
+        "line_index": 8,
         "section": "Свежие новости",
         "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'stab' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-        "outcome": "kept_below_floor_no_reserve"
-      },
-      {
-        "line_index": 38,
-        "section": "Городской радар",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'killed' (death/who/what) has no Russian rendering in the shipped line",
+        "reason": "critical source fact dropped in translation: 'died' (death/who/what) has no Russian rendering in the shipped line",
         "outcome": "kept_below_floor_no_reserve"
       }
     ],
     "refetch": {
-      "attempted": 2,
+      "attempted": 0,
       "improved": 0,
-      "failed": 1,
-      "empty_or_not_better": 1,
-      "skipped": 0,
-      "reports": [
+      "failed": 0,
+      "empty_or_not_better": 0,
+      "skipped": 0
+    },
+    "enrich_improved": 2,
+    "deterministic_rewrite_built": 1,
+    "deterministic_rewrite_rejected": 1,
+    "reserve_stats": {
+      "enriched_rewrite_attempts": 14,
+      "enriched_rewrite_used": 0,
+      "refetch": {
+        "attempted": 0,
+        "improved": 0,
+        "failed": 0,
+        "empty_or_not_better": 0,
+        "skipped": 0
+      },
+      "enriched_rewrite_empty": 14
+    },
+    "status": "applied",
+    "post_repair_section_recovery": {
+      "enabled": true,
+      "insert_cap": 8,
+      "attempted_sections": [
         {
-          "fingerprint": "transport-national-rail-enquiries-nationalrail-co-uk-status-and-disruptions-northern-no-trains-to-from-salford-central-on-saturday-11-and-sunday-12-july",
-          "title": "Northern: No trains to / from Salford Central on Saturday 11 and Sunday 12 July",
-          "status": "failed",
-          "url": "https://nationalrail.co.uk/status-and-disruptions/northern-no-trains-to-from-salford-central-on-saturday-11-and-sunday-12-july",
-          "error": "RuntimeError: HTTP 404"
+          "section": "Что важно сегодня",
+          "from": 2,
+          "minimum": 3,
+          "added": 0
         },
         {
-          "fingerprint": "russian-speaking-events-kontramarka-uk-widget-kontramarka-uk-en-widget477site12348-widget-event-166656",
-          "title": "Goran Bregovic (London)",
-          "status": "empty",
-          "url": "https://widget.kontramarka.uk/en/widget477site12348/widget/event/166656",
-          "chars": 0
+          "section": "Городской радар",
+          "from": 3,
+          "minimum": 5,
+          "added": 0
         }
-      ]
-    },
-    "enrich_improved": 7,
-    "deterministic_fact_lock_rejected": 2,
-    "reserve_stats": {
-      "enriched_rewrite_attempts": 30,
-      "enriched_rewrite_used": 4,
-      "refetch": {
-        "attempted": 3,
-        "improved": 1,
-        "failed": 2,
-        "empty_or_not_better": 0,
-        "skipped": 1,
-        "reports": [
-          {
-            "fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-brooklands-road-sale-roadworks",
-            "title": "Brooklands Road, Sale - Roadworks",
-            "status": "skipped",
-            "reason": "tfgm_ephemeral_alert",
-            "url": "https://tfgm.com/travel-updates/travel-alerts/brooklands-road-sale-roadworks",
-            "candidate_evidence_chars": 607
-          },
-          {
-            "fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-investing-in-jobs-how-councils-3m-plan-will-help-mancunians-to-share-in-success",
-            "title": "Investing in jobs - how Council's £3m plan will help Mancunians to share in success",
-            "status": "ok",
-            "url": "https://manchester.gov.uk/news-stories/2026/investing-in-jobs-how-councils-3m-plan-will-help-mancunians-to-share-in-success",
-            "chars": 2792
-          },
-          {
-            "fingerprint": "council-stockport-council-stockport-gov-uk-news-stockport-local-election-2026-results",
-            "title": "8 May 2026 Stockport local election 2026 results Results from 7 May 2026",
-            "status": "failed",
-            "url": "https://stockport.gov.uk/news/stockport-local-election-2026-results",
-            "error": "RuntimeError: Failed to perform, curl: (7) Failed to connect to stockport.gov.uk port 443 after 398 ms: Could not connect to server. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
-          },
-          {
-            "fingerprint": "council-stockport-council-stockport-gov-uk-news-state-of-the-art-send-school-shortlisted-for-two-national-awards",
-            "title": "10 October 2025 State of the Art SEND School shortlisted for two national awards Lisburne School has been shortlisted in the Education Estate Awards.",
-            "status": "failed",
-            "url": "https://stockport.gov.uk/news/state-of-the-art-send-school-shortlisted-for-two-national-awards",
-            "error": "RuntimeError: Failed to perform, curl: (7) Failed to connect to stockport.gov.uk port 443 after 386 ms: Could not connect to server. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
-          }
-        ]
+      ],
+      "inserted_total": 0,
+      "still_under_minimum": [
+        {
+          "section": "Что важно сегодня",
+          "actual": 2,
+          "minimum": 3,
+          "reason": "no_visible_section_or_no_recoverable_reserve"
+        },
+        {
+          "section": "Городской радар",
+          "actual": 3,
+          "minimum": 5,
+          "reason": "no_visible_section_or_no_recoverable_reserve"
+        }
+      ],
+      "reserve_stats": {
+        "enriched_rewrite_attempts": 14,
+        "enriched_rewrite_used": 1,
+        "refetch": {
+          "attempted": 4,
+          "improved": 1,
+          "failed": 3,
+          "empty_or_not_better": 0,
+          "skipped": 1,
+          "reports": [
+            {
+              "fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-major-tram-works-13-july-2-august",
+              "title": "Major tram works [13 July - 2 August]",
+              "status": "skipped",
+              "reason": "tfgm_ephemeral_alert",
+              "url": "https://tfgm.com/travel-updates/travel-alerts/major-tram-works-13-july-2-august",
+              "candidate_evidence_chars": 75
+            },
+            {
+              "fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-eco-schools-celebrate-green-flag-success-in-making-the-planet-greener2",
+              "title": "Eco-schools celebrate Green Flag success in making the planet greener",
+              "status": "ok",
+              "url": "https://manchester.gov.uk/news-stories/2026/eco-schools-celebrate-green-flag-success-in-making-the-planet-greener2",
+              "chars": 3759
+            },
+            {
+              "fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-investing-in-jobs-how-councils-3m-plan-will-help-mancunians-to-share-in-success",
+              "title": "Investing in jobs - how Council's £3m plan will help Mancunians to share in success",
+              "status": "failed",
+              "url": "https://manchester.gov.uk/news-stories/2026/investing-in-jobs-how-councils-3m-plan-will-help-mancunians-to-share-in-success",
+              "error": "RuntimeError: HTTP 403"
+            },
+            {
+              "fingerprint": "council-stockport-council-stockport-gov-uk-news-stockport-local-election-2026-results",
+              "title": "8 May 2026 Stockport local election 2026 results Results from 7 May 2026",
+              "status": "failed",
+              "url": "https://stockport.gov.uk/news/stockport-local-election-2026-results",
+              "error": "RuntimeError: Failed to perform, curl: (7) Failed to connect to stockport.gov.uk port 443 after 629 ms: Could not connect to server. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
+            },
+            {
+              "fingerprint": "council-stockport-council-stockport-gov-uk-news-state-of-the-art-send-school-shortlisted-for-two-national-awards",
+              "title": "10 October 2025 State of the Art SEND School shortlisted for two national awards Lisburne School has been shortlisted in the Education Estate Awards.",
+              "status": "failed",
+              "url": "https://stockport.gov.uk/news/state-of-the-art-send-school-shortlisted-for-two-national-awards",
+              "error": "RuntimeError: Failed to perform, curl: (7) Failed to connect to stockport.gov.uk port 443 after 128 ms: Could not connect to server. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
+            }
+          ]
+        },
+        "enriched_rewrite_empty": 13
       },
-      "reserve_replacement_used": 2,
-      "enriched_rewrite_empty": 26
+      "status": "no_recoverable_shortfall"
     },
-    "deterministic_rewrite_built": 2,
-    "deterministic_rewrite_rejected": 3,
-    "status": "applied",
-    "empty_endings_stripped_at_ship": 3
+    "empty_endings_stripped_at_ship": 1
   },
-  "notes": "Текст корректно передает информацию о расследовании убийства и освобождении подозреваемых под залог. Нет фактических ошибок.; Прогноз погоды корректен и полезен для читателей.; Все новости корректны, но выпуск может показаться слишком сосредоточенным на криминальных событиях.; Исправлены даты в строке о поездах Norther",
+  "notes": "Текст корректно передает информацию о вмешательстве правительства в дела Совета Stockport и не содержит фактических ошибок.; Прогноз погоды корректен и безопасен для публикации.; Все новости корректны, но выпуск может быть воспринят как перегруженный событиями, связанными с безопасностью.; Все строки корректны, но стои",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.9,
+    "confidence": 0.85,
     "critical_errors": [
       {
-        "line_index": 11,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Неправильные даты указаны для субботы и воскресенья.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 31,
+        "line_index": 22,
         "section": "Выходные в GM",
         "problem": "Дата мероприятия указана неверно.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 35,
-        "section": "Городской радар",
-        "problem": "Неправильное указание роли мужчины в инциденте.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 40,
-        "section": "Что важно в ближайшие 7 дней",
-        "problem": "Неправильное место проведения мероприятия.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 42,
-        "section": "Что важно в ближайшие 7 дней",
-        "problem": "Неправильный формат мероприятия.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 46,
-        "section": "Business/tech события для тебя",
-        "problem": "Некорректная информация о стоимости участия в мероприятии.",
-        "risk": "factual",
+        "line_index": 25,
+        "section": "Выходные в GM",
+        "problem": "Географическая ошибка: Stockport не является частью Манчестера.",
+        "risk": "geo",
         "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 11,
-        "section": "Общественный транспорт сегодня",
-        "action": "patch",
-        "replacement_text": "• National Rail: В субботу 11 и воскресенье 12 июля 2026 года не будет поездов Northern до/из Salford Центрального. Пассажирам рекомендуется планировать альтернативные маршруты. National Rail Enquiries",
-        "reason": "Указаны неверные даты для 2026 года.",
-        "risk": "date"
+        "line_index": 18,
+        "section": "Футбол",
+        "action": "keep",
+        "reason": "Информация о трансфере Джереми Монги соответствует источнику и не содержит ошибок.",
+        "risk": "factual"
       },
       {
-        "line_index": 31,
+        "line_index": 19,
+        "section": "Футбол",
+        "action": "patch",
+        "replacement_text": "• В 22:00 по британскому времени сегодня пройдет четвертьфинал Кубка мира между Англией и Норвегией на стадионе в Майами. Гарри Кейн похвалил Эрлинга Холанда, назвав его \"невероятным\". Manchester City",
+        "reason": "Добавлено место проведения матча для большей ясности.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 22,
         "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• 5 июля — автомобильная барахолка Burnage RFC Car Boot Sale в Burnage RFC, Varley Park, Stockport. Burnage RFC Car Boot Sale",
-        "reason": "Дата мероприятия должна быть 5 июля 2026 года, согласно источнику.",
+        "replacement_text": "• 5 июля в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — автомобильная барахолка Burnage RFC. Burnage RFC Car Boot Sale",
+        "reason": "Дата мероприятия должна быть 5 июля, а не 12 июля.",
         "risk": "date"
       },
       {
-        "line_index": 35,
+        "line_index": 25,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• В это воскресенье, 12 июля 2026 года, с 11:00 до 16:00 в Викторианском рынке Stockport пройдет Stockport Vintage Spectacular, где можно будет насладиться винтажной торговлей, живой свинг-музыкой, магией и автобусными поездками; билеты стоят от £0 до £3. Stockport Vintage Spectacular",
+        "reason": "Stockport не является частью Манчестера, необходимо исправить географическую привязку.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 28,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• 72-летний мужчина был госпитализирован в критическом состоянии после ножевого ранения в переулке на Heather Walk, Партингтон, в 18:05 BST во вторник. Полиция прибыла на место происшествия и обнаружила пенсионера с ножевыми ранениями. Женщина была арестована по подозрению в причинении тяжкого вреда здоровью. Полиция заявила, что инцидент был изолированным и не представляет угрозы для общественности. BBC Manchester",
-        "reason": "Указание роли мужчины как содействующего преступнику не соответствует источнику.",
-        "risk": "factual"
+        "replacement_text": "• TfGM: ремонтные работы — значительные. Проверьте маршрут и время отправления перед выходом. TfGM",
+        "reason": "Уточнение перевода слова 'Major' для ясности.",
+        "risk": "translation"
       },
       {
-        "line_index": 40,
-        "section": "Что важно в ближайшие 7 дней",
-        "action": "patch",
-        "replacement_text": "• 17 июля в Platt Fields Market Garden — Beers In The Garden Festival. Билеты £15. Manchester's Finest Events",
-        "reason": "Указано неверное место проведения мероприятия.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 42,
-        "section": "Что важно в ближайшие 7 дней",
-        "action": "patch",
-        "replacement_text": "• 10 июля в HOME — Toy Story 5 (PG). Формат: фильм. HOME",
-        "reason": "Указан неверный формат мероприятия.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 46,
-        "section": "Business/tech события для тебя",
-        "action": "patch",
-        "replacement_text": "• 14 июля 2026 года с 9:00 до 11:00 в The Wellsprings Bolton пройдет бизнес-нетворкинг с выступлением о новом законе о данных. Участие бесплатное для членов GM Chamber, £22 для остальных. GM Chamber Events",
-        "reason": "Уточнение стоимости участия в соответствии с источником.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 52,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Alexandra Savior — 10 июля, Manchester Academy (Фестивальный состав, не один артист); цена £20.00. Manchester Academy",
-        "reason": "Уточнение, что это фестивальный состав, должно быть в скобках, чтобы не путать читателя.",
-        "risk": "format"
-      },
-      {
-        "line_index": 60,
+        "line_index": 67,
         "section": "Русскоязычные концерты и стендап UK",
         "action": "patch",
-        "replacement_text": "• В это воскресенье, в Лондоне, в 20:30, пройдет концерт Горана Бреговича. Билеты стоят от 54 до 84 фунтов стерлингов, их можно приобрести на официальной странице мероприятия. Не упустите возможность насладиться живым выступлением известного музыканта!",
-        "reason": "Удаление упоминания 'Kontramarka UK', так как это может быть воспринято как реклама.",
-        "risk": "format"
+        "replacement_text": "• С 26 июня по 12 июля в The Grange Festival в Хэмпшире проходит опера Чайковского \"Евгений Онегин\". Afisha London",
+        "reason": "Уточнить, что Хэмпшир не является частью Greater Manchester.",
+        "risk": "geo"
       }
     ],
     "warnings": [
-      "Выпуск содержит много новостей о преступлениях и происшествиях, что может создать впечатление однобокости. Рекомендуется добавить разнообразие в темы.",
-      "В разделе 'Футбол' доминируют новости о клубах, что может повлиять на баланс выпуска.",
-      "В разделе 'Выходные в GM' все события относятся к рынкам и ярмаркам, что может создать впечатление однобокости. Рассмотрите возможность добавления разнообразных мероприятий.",
-      "Форматирование информации о фестивальном составе в строке 52 может быть улучшено для ясности.",
-      "Секция 'Крупные концерты вне GM' содержит информацию о концертах, которые проходят за пределами Greater Manchester. Это может быть неинтересно основной аудитории, но не является критической ошибкой.",
-      "Упоминание 'Kontramarka UK' может быть воспринято как реклама, что не всегда уместно в новостных дайджестах.",
-      "judge reduce failed: parse_failed no parseable JSON"
+      "Выпуск содержит много новостей, связанных с общественной безопасностью, но это не критично для отправки.",
+      "Выпуск содержит много информации о транспортных сбоях, что может перегрузить читателя. Рекомендуется сбалансировать с другими новостями.",
+      "Добавлено место проведения матча в строке 19 для большей ясности.",
+      "Перевод слова 'Major' в строке 28 может быть уточнен для большей ясности.",
+      "В выпуске доминируют события и билеты, что может снизить баланс core news.",
+      "В разделе 'Еда, открытия и рынки' упоминается несколько событий, но нет явного указания на то, что они происходят в разные дни. Это может вызвать путаницу у читателей.",
+      "В блоке 'Дальние анонсы' отсутствует информация о продолжительности спектакля 'Шпион, который пришел с холода', что может быть полезно для читателей.",
+      "Некоторые строки содержат информацию о фестивальном составе, но это не критично для понимания.",
+      "Секция 'Крупные концерты вне GM' содержит много информации о концертах за пределами Greater Manchester, что может не соответствовать интересам всех читателей.",
+      "Событие в Хэмпшире не относится к Greater Manchester, но может быть интересно русскоязычной аудитории.",
+      "ticket dominance: 30 ticket/concert item(s) vs 23 core item(s)",
+      "low writer yield: 71/339 included candidates rendered",
+      "source failures: 11",
+      "section underflow: Городской радар has only 2 items, minimum is 5"
     ],
-    "notes": "Текст корректно передает информацию о расследовании убийства и освобождении подозреваемых под залог. Нет фактических ошибок.; Прогноз погоды корректен и полезен для читателей.; Все новости корректны, но выпуск может показаться слишком сосредоточенным на криминальных событиях.; Исправлены даты в строке о поездах Norther",
+    "notes": "Текст корректно передает информацию о вмешательстве правительства в дела Совета Stockport и не содержит фактических ошибок.; Прогноз погоды корректен и безопасен для публикации.; Все новости корректны, но выпуск может быть воспринят как перегруженный событиями, связанными с безопасностью.; Все строки корректны, но стои",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "partial",
-      "chunk_count": 16,
+      "status": "ok",
+      "chunk_count": 15,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -582,8 +500,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2169,
-          "duration_seconds": 1.724
+          "estimated_tokens": 2233,
+          "duration_seconds": 1.239
         },
         {
           "chunk_id": "chunk-02",
@@ -600,8 +518,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 1984,
-          "duration_seconds": 1.384
+          "estimated_tokens": 1968,
+          "duration_seconds": 1.127
         },
         {
           "chunk_id": "chunk-03",
@@ -618,32 +536,32 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 4125,
-          "duration_seconds": 2.004
+          "estimated_tokens": 4184,
+          "duration_seconds": 1.48
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             9,
-            14
+            15
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
           "error": "",
-          "estimated_tokens": 3868,
-          "duration_seconds": 3.04
+          "estimated_tokens": 4220,
+          "duration_seconds": 1.236
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            15,
+            16,
             17
           ],
           "sections": [
@@ -654,8 +572,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2966,
-          "duration_seconds": 1.448
+          "estimated_tokens": 2607,
+          "duration_seconds": 0.767
         },
         {
           "chunk_id": "chunk-06",
@@ -669,162 +587,144 @@
           ],
           "decision": "warn",
           "critical_error_count": 0,
-          "action_count": 0,
+          "action_count": 2,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2621,
-          "duration_seconds": 1.604
+          "estimated_tokens": 2456,
+          "duration_seconds": 2.334
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
             20,
-            31
+            25
           ],
           "sections": [
             "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 6996,
-          "duration_seconds": 4.759
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            32,
-            34
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 3069,
-          "duration_seconds": 1.692
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            35,
-            39
-          ],
-          "sections": [
-            "Городской радар"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3299,
-          "duration_seconds": 31.018
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            40,
-            42
-          ],
-          "sections": [
-            "Что важно в ближайшие 7 дней"
           ],
           "decision": "repair_required",
           "critical_error_count": 2,
           "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2671,
-          "duration_seconds": 5.774
+          "estimated_tokens": 4406,
+          "duration_seconds": 4.514
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            43,
-            43
+            26,
+            28
           ],
           "sections": [
-            "IT и бизнес"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2157,
-          "duration_seconds": 5.496
-        },
-        {
-          "chunk_id": "chunk-12",
-          "status": "ok",
-          "line_range": [
-            44,
-            46
-          ],
-          "sections": [
-            "Business/tech события для тебя"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3148,
-          "duration_seconds": 16.978
-        },
-        {
-          "chunk_id": "chunk-13",
-          "status": "ok",
-          "line_range": [
-            47,
-            48
-          ],
-          "sections": [
-            "Дальние анонсы"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2649,
-          "duration_seconds": 6.072
-        },
-        {
-          "chunk_id": "chunk-14",
-          "status": "ok",
-          "line_range": [
-            49,
-            53
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
+            "Городской радар"
           ],
           "decision": "warn",
           "critical_error_count": 0,
           "action_count": 1,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 3925,
-          "duration_seconds": 29.17
+          "estimated_tokens": 2635,
+          "duration_seconds": 1.992
         },
         {
-          "chunk_id": "chunk-15",
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            29,
+            31
+          ],
+          "sections": [
+            "Что важно в ближайшие 7 дней"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 3115,
+          "duration_seconds": 1.449
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            32,
+            34
+          ],
+          "sections": [
+            "Еда, открытия и рынки"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 2310,
+          "duration_seconds": 3.945
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            35,
+            37
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 3186,
+          "duration_seconds": 10.056
+        },
+        {
+          "chunk_id": "chunk-12",
+          "status": "ok",
+          "line_range": [
+            38,
+            49
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 6689,
+          "duration_seconds": 50.484
+        },
+        {
+          "chunk_id": "chunk-13",
+          "status": "ok",
+          "line_range": [
+            50,
+            53
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3281,
+          "duration_seconds": 13.881
+        },
+        {
+          "chunk_id": "chunk-14",
           "status": "ok",
           "line_range": [
             54,
-            59
+            64
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -834,15 +734,15 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 4300,
-          "duration_seconds": 30.064
+          "estimated_tokens": 6297,
+          "duration_seconds": 26.97
         },
         {
-          "chunk_id": "chunk-16",
+          "chunk_id": "chunk-15",
           "status": "ok",
           "line_range": [
-            60,
-            62
+            65,
+            67
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
@@ -852,22 +752,22 @@
           "action_count": 1,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2301,
-          "duration_seconds": 4.873
+          "estimated_tokens": 2375,
+          "duration_seconds": 6.15
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
+        "decision": "warn",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 12034,
-        "duration_seconds": 30.668
+        "warning_count": 4,
+        "error": "",
+        "estimated_tokens": 12017,
+        "duration_seconds": 26.781
       },
       "max_workers": 3,
       "chunk_line_target": 12,
