@@ -464,7 +464,8 @@ INVENTORY_INTAKE_CAPS = {
     "openings": 10,
 }
 NIGHT_PREWRITE_CAPS = {
-    **INVENTORY_INTAKE_CAPS,
+    "weekend_activities": 18,
+    "ticket_radar": 20,
     "next_7_days": 18,
     "professional_events": 10,
     "russian_events": 10,

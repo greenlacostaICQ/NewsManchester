@@ -22,6 +22,7 @@ from news_digest.pipeline.inventory import (
     inventory_record_to_candidate,
     inventory_source_replacement_plan,
     latest_night_category_health,
+    NIGHT_PREWRITE_CAPS,
     passes_morning_contract,
     prewrite_stable_inventory_candidate,
     read_inventory,
@@ -585,7 +586,11 @@ class NightWaveTest(unittest.TestCase):
         night_prompt = call.call_args.args[1]
         self.assertIn("Не описывай прошедшую дату как будущую", night_prompt)
         self.assertIn("Пиши нейтрально и фактологично", night_prompt)
+        self.assertIn("следите за обновлениями", night_prompt)
         self.assertEqual(call.call_args.kwargs["prompt_name"], "night_inventory_events")
+
+    def test_food_is_not_precomputed_at_night(self) -> None:
+        self.assertNotIn("openings", NIGHT_PREWRITE_CAPS)
 
     def test_release_reports_inventory_as_not_yet_morning_consumed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
