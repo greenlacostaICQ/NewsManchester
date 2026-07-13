@@ -1154,43 +1154,43 @@
 - Удалено: прежняя узкая identity `name+date_start+venue`.
 
 ### 0107 — Полная provenance и жизненный цикл карточки — 2026-07-13
-- Статус: внедрено; production-wave pending после push.
+- Статус: внедрено и подтверждено production-wave; режим остаётся `assist`.
 - Проблема: source report category терялась после routing; provider/model/time не сохранялись; нельзя было отличить первое появление от обновления фактов.
 - Решение: collector штампует `source_report_category`; record хранит candidate category, run/wave/source, provider/model/written_at, first_seen/last_seen/last_changed. Deterministic night text помечается `night_inventory_deterministic`, а не двусмысленным prewrite-label. Merge сохраняет first_seen и меняет last_changed только при новом evidence hash.
-- ПРОВЕРКА: реальная сетевая `pro_food_russian` wave: 75 found, 68 unique merged records; 68/68 имели полный provenance и retention. Offline merge regression подтверждает unchanged/changed timestamps.
+- ПРОВЕРКА: GitHub production run `29266787848`, run_id `20260713T173233+0100`: 75 found, 68 unique observed; 68/68 имели полный provenance, observation и retention. Deterministic provider 5/5=`night_inventory_deterministic`, старый label=0. Offline merge regression подтверждает unchanged/changed timestamps.
 - Удалено: утреннее связывание inventory с report по routed candidate category.
 
 ### 0108 — Единственный operational health только по текущей ночной волне — 2026-07-13
-- Статус: внедрено; production-wave pending после push.
+- Статус: внедрено и подтверждено production-wave; replacement не включён.
 - Проблема: старый зелёный прогон мог разрешить source skip через несколько дней; причины source errors терялись.
 - Решение: `operational_night_category_health` выбирает последний run_id категории, требует текущую London-date, checked==expected и 0 errors, хранит source+reason. Исторический rollup остаётся только отчётной статистикой и не участвует в replacement.
-- ПРОВЕРКА: реальная повторная wave выбрала run `20260713T171310+0100`: Food 3/3, Pro 6/6, Diaspora 6/6, errors=0; предыдущий неуспешный run не управлял решением. Старый healthy run в regression получает `stale`.
+- ПРОВЕРКА: production run `20260713T173233+0100`: Food 3/3, Pro 6/6, Diaspora 6/6, errors=0; health каждого блока ссылается только на этот latest category run. Старый healthy run в regression получает `stale`.
 - Удалено: `latest_night_category_health`, допускавший зелёный run без проверки даты.
 
 ### 0109 — Observation, action liveness, serving TTL и retention разделены — 2026-07-13
 - Статус: внедрено; action URL остаётся честно `unknown`, пока сам URL не проверен.
 - Проблема: успешный list fetch выдавался за liveness карточки; `expires_at` смешивал утреннюю свежесть и удаление будущих событий.
 - Решение: отдельные `observed_in_wave/observed_run_id`, `action_url_liveness/action_url_checked_at`, `serving_ttl_hours/serving_expires_at`, `retention_until`. Future/Ticket retention строится от даты события и не сокращается serving TTL.
-- ПРОВЕРКА: реальная wave — 68/68 observed, 68/68 retention, liveness 68 unknown (список не выдаётся за проверку action URL). Offline record schema regression OK.
+- ПРОВЕРКА: production run `20260713T173233+0100` — 68/68 observed, 68/68 retention, liveness 68 unknown (список не выдаётся за проверку action URL). Offline record schema regression OK.
 - Удалено: запись нового общего `expires_at/liveness_status`; legacy read остаётся только для старых records.
 
 ### 0110 — Scan completeness и достаточность блока больше не смешиваются — 2026-07-13
 - Статус: внедрено; source replacement не включён.
 - Проблема: count+text floor одновременно изображал здоровье источников и полноту блока; Weekend/A-tier терялись по intake cap; optional zero считался поломкой; слабые карточки принимали leisure Next7 и deterministic Pro.
 - Решение: `scan_complete` считается по current run/source errors, `block_sufficient` — по post-card facts/floor/source diversity до visibility schedule/cap. Weekend и A-tier cap-exempt; Future/Outside honest-zero. Карты требуют Weekend activity+GM, Next7 non-leisure, Ticket scope+why-now, Outside A, Food meaning, Pro governing LLM CV+access, Russian geography. Если extracted и LLM access спорят между `free` и `paid`, итог хранится единообразно как conditional/booking-required, без взаимоисключающих полей.
-- ПРОВЕРКА: реальный current pool: 7/7 visible-candidate Next7 leisure rerouted, после правила 0 остаётся в Next7; real wave: Food scan complete=true/block sufficient=false (1<3), Russian true/true (2), Pro true/false. Старые 2 false-ready Pro стали 0. Offline 25 A-tier → 25 intake, held=0.
+- ПРОВЕРКА: реальный current pool: 7/7 visible-candidate Next7 leisure rerouted, после правила 0 остаётся в Next7; production run `20260713T173233+0100`: Food scan complete=true/block sufficient=false (1<3), Russian true/true (2), Pro true/true (2). До правки Bolton networking хранил free+paid одновременно; после — `booking_required/conditional`. Offline 25 A-tier → 25 intake, held=0.
 - Удалено: text как обязательная часть Food completeness и cap для protected Weekend/A-tier.
 
 ### 0111 — Удалён ночной model text prewrite, Pro CV сохранён — 2026-07-13
-- Статус: внедрено; GitHub production CV proof после push.
+- Статус: внедрено и подтверждено GitHub production CV.
 - Проблема: model prewrite пропустил рекламную diaspora-концовку; новый смысловой gate был бы вторым слабым редактором.
 - Решение: удалены model text function/prompt/route/tests. Ночью остаётся deterministic writer; Pro запускает существующий `apply_professional_event_llm_matches` после per-card enrichment, но модель решает только fit/access.
-- ПРОВЕРКА: реальная wave: model-text providers=0, deterministic providers=5; локальный CV честно held все Pro при отсутствующем пакете OpenAI. Workflow устанавливает OpenAI; production proof pending.
+- ПРОВЕРКА: production run `29266787848`: model-text providers=0, deterministic providers=5; Pro CV `status=ok`, 8 eligible/8 sent, 4 applied/4 skipped, provider OpenAI, model `gpt-4o-mini`.
 - Удалено: `prewrite_inventory_candidates`, `NIGHT_INVENTORY_PREWRITE_RULES`, model prewrite pool/caps/report/tests.
 
 ### 0112 — Командный файл, продуктовые правила и расписание приведены к production truth — 2026-07-13
-- Статус: внедрено; workflow proof после push.
+- Статус: внедрено; workflow production proof получен.
 - Проблема: AGENTS требовал удалённый runtime sync и утверждал, что Python не вызывает модели; Ticket/Outside docs спорили с A-tier; District выглядел активным; 0104-plan ссылался на удалённый model prewrite.
 - Решение: AGENTS описывает GitHub deployment и Python model runtime; Product Contracts фиксирует A-tier, night inventory и retired District; workflow документирует cron-job.org Europe/London 00:31/02:07/03:37/06:17/07:31; план 0104 заменён планом после 0112.
-- ПРОВЕРКА: docs/code anchors сверены; `rg` не находит удалённые runtime/prewrite symbols в active code/tests. Replay 13.07 old/new: оба 12 sections, 23 bullets, lead ok, max blank 1; rebuilt HTML SHA-1 идентичен. Production schedule не менялся, только зафиксирован без UTC/BST двусмысленности.
+- ПРОВЕРКА: docs/code anchors сверены; `rg` не находит удалённые model-prewrite symbols в active code/tests. Replay 13.07 old/new: оба 12 sections, 23 bullets, lead ok, max blank 1; rebuilt HTML SHA-1 идентичен. Workflow run `29266787848` завершён за 2m31s и отправил production state/уведомление; schedule не менялся, только зафиксирован без UTC/BST двусмысленности.
 - Удалено: устаревшие команды `sync_runtime_bundle.sh`/`run_daily_digest.sh` из AGENTS; District из active purpose classes, writer order, editor trim, pre-send judge и low-signal sections.
