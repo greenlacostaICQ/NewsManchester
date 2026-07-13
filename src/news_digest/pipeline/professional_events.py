@@ -631,6 +631,9 @@ def _run_professional_cv_match(
             access_label = str(row.get("access_label") or "").strip().lower()
             if access_label not in {"free", "paid", "unknown", "booking_required"}:
                 access_label = base_access if base_access != "sold_out" else "unknown"
+            access_conflict = {base_access, access_label} == {"free", "paid"}
+            if access_conflict:
+                access_label = "booking_required"
             llm_match = {
                 "model": LLM_MATCH_MODEL_VERSION,
                 "provider": route.provider_label,
@@ -640,7 +643,7 @@ def _run_professional_cv_match(
                 "why": str(row.get("why") or row.get("reason") or "").strip(),
                 "action": str(row.get("action") or ("register" if fit == "go" else fit)).strip(),
                 "access_label": access_label,
-                "free_access": access_label == "free" or bool(row.get("free_access")),
+                "free_access": access_label == "free",
                 "reason": str(row.get("reason") or "").strip(),
             }
             candidate["professional_llm_match"] = llm_match
@@ -657,6 +660,22 @@ def _run_professional_cv_match(
                 "fit_score": score,
                 "llm_fit": fit,
                 "access_label": access_label,
+                "free_access_status": {
+                    "free": "free",
+                    "paid": "paid",
+                    "booking_required": "conditional",
+                    "unknown": "unknown",
+                }[access_label],
+                "free_access_reason": (
+                    "условия доступа требуют проверки"
+                    if access_conflict
+                    else {
+                        "free": "бесплатный доступ подтверждён",
+                        "paid": "платный доступ",
+                        "booking_required": "условия регистрации нужно проверить",
+                        "unknown": "стоимость не подтверждена",
+                    }[access_label]
+                ),
                 # D2/0047: the model's per-event `reason` is genuinely specific
                 # ("Событие по AI с акцентом на возможности для молодёжи"), while
                 # `why` came back as a generic template identical across events.

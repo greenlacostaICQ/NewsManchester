@@ -1027,7 +1027,7 @@ def prewrite_stable_inventory_candidate(candidate: dict) -> bool:
     except Exception:
         return False
     candidate["draft_line"] = line
-    candidate["draft_line_provider"] = "night_inventory_prewrite"
+    candidate["draft_line_provider"] = "night_inventory_deterministic"
     candidate["draft_line_model"] = "deterministic_writer_fallback"
     candidate["draft_line_written_at"] = now_london().isoformat()
     return True

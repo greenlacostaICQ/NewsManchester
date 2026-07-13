@@ -604,7 +604,7 @@ class BuildRecordTest(unittest.TestCase):
         }
         self.assertTrue(prewrite_stable_inventory_candidate(candidate))
         self.assertTrue(str(candidate.get("draft_line") or "").startswith("• "))
-        self.assertEqual(candidate["draft_line_provider"], "night_inventory_prewrite")
+        self.assertEqual(candidate["draft_line_provider"], "night_inventory_deterministic")
 
     def test_food_and_russian_do_not_use_generic_deterministic_prewrite(self) -> None:
         for category, block in (("food_openings", "openings"), ("diaspora_events", "russian_events")):

@@ -1156,7 +1156,7 @@
 ### 0107 — Полная provenance и жизненный цикл карточки — 2026-07-13
 - Статус: внедрено; production-wave pending после push.
 - Проблема: source report category терялась после routing; provider/model/time не сохранялись; нельзя было отличить первое появление от обновления фактов.
-- Решение: collector штампует `source_report_category`; record хранит candidate category, run/wave/source, provider/model/written_at, first_seen/last_seen/last_changed. Merge сохраняет first_seen и меняет last_changed только при новом evidence hash.
+- Решение: collector штампует `source_report_category`; record хранит candidate category, run/wave/source, provider/model/written_at, first_seen/last_seen/last_changed. Deterministic night text помечается `night_inventory_deterministic`, а не двусмысленным prewrite-label. Merge сохраняет first_seen и меняет last_changed только при новом evidence hash.
 - ПРОВЕРКА: реальная сетевая `pro_food_russian` wave: 75 found, 68 unique merged records; 68/68 имели полный provenance и retention. Offline merge regression подтверждает unchanged/changed timestamps.
 - Удалено: утреннее связывание inventory с report по routed candidate category.
 
@@ -1177,7 +1177,7 @@
 ### 0110 — Scan completeness и достаточность блока больше не смешиваются — 2026-07-13
 - Статус: внедрено; source replacement не включён.
 - Проблема: count+text floor одновременно изображал здоровье источников и полноту блока; Weekend/A-tier терялись по intake cap; optional zero считался поломкой; слабые карточки принимали leisure Next7 и deterministic Pro.
-- Решение: `scan_complete` считается по current run/source errors, `block_sufficient` — по post-card facts/floor/source diversity до visibility schedule/cap. Weekend и A-tier cap-exempt; Future/Outside honest-zero. Карты требуют Weekend activity+GM, Next7 non-leisure, Ticket scope+why-now, Outside A, Food meaning, Pro governing LLM CV+access, Russian geography.
+- Решение: `scan_complete` считается по current run/source errors, `block_sufficient` — по post-card facts/floor/source diversity до visibility schedule/cap. Weekend и A-tier cap-exempt; Future/Outside honest-zero. Карты требуют Weekend activity+GM, Next7 non-leisure, Ticket scope+why-now, Outside A, Food meaning, Pro governing LLM CV+access, Russian geography. Если extracted и LLM access спорят между `free` и `paid`, итог хранится единообразно как conditional/booking-required, без взаимоисключающих полей.
 - ПРОВЕРКА: реальный current pool: 7/7 visible-candidate Next7 leisure rerouted, после правила 0 остаётся в Next7; real wave: Food scan complete=true/block sufficient=false (1<3), Russian true/true (2), Pro true/false. Старые 2 false-ready Pro стали 0. Offline 25 A-tier → 25 intake, held=0.
 - Удалено: text как обязательная часть Food completeness и cap для protected Weekend/A-tier.
 

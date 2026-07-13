@@ -195,9 +195,42 @@ class ProfessionalEventsTest(unittest.TestCase):
         self.assertTrue(c["include"])
         self.assertEqual(report["applied"], 1)
         self.assertEqual(c["professional_event_match"]["access_label"], "paid")
+        self.assertEqual(c["professional_event_match"]["free_access_status"], "paid")
         self.assertEqual(c["score_source"], "model")
         self.assertEqual(c["score_verdict"], "go")
         self.assertNotIn("english_editorial_score", c)
+
+    def test_llm_and_extracted_access_conflict_is_stored_as_conditional(self) -> None:
+        from news_digest.pipeline.professional_events import apply_professional_event_llm_matches
+
+        c = self._candidate(
+            "Manchester member networking",
+            "Free for members or £22 for non-members. Networking for business leaders.",
+            venue="Manchester Hall",
+        )
+        c["include"] = True
+        apply_professional_event_match(c)
+        self.assertEqual(c["professional_event_match"]["access_label"], "free")
+        rows = [{
+            "id": c["source_url"],
+            "fit": "consider",
+            "score": 78,
+            "access_label": "paid",
+            "reason": "Useful networking, with paid access for some attendees.",
+            "action": "consider",
+        }]
+
+        with _fake_openai(rows), patch(
+            "news_digest.pipeline.model_routing.resolve_model_route",
+            return_value=[_fake_route()],
+        ):
+            apply_professional_event_llm_matches([c])
+
+        match = c["professional_event_match"]
+        self.assertEqual(match["access_label"], "booking_required")
+        self.assertEqual(match["free_access_status"], "conditional")
+        self.assertEqual(match["free_access_reason"], "условия доступа требуют проверки")
+        self.assertFalse(c["professional_llm_match"]["free_access"])
 
     def test_llm_unknown_access_needs_strong_fit_and_full_place(self) -> None:
         from news_digest.pipeline.professional_events import apply_professional_event_llm_matches
