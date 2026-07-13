@@ -1218,7 +1218,7 @@ def cmd_collect_inventory(wave: str) -> int:
     from news_digest.pipeline.collector.core import SOURCES, _collect_single_source  # noqa: PLC0415
     from news_digest.pipeline.inventory import (  # noqa: PLC0415
         BREAKING_CHECK_CATEGORIES,
-        INVENTORY_INTAKE_CAPS,
+        NIGHT_PREWRITE_CAPS,
         NIGHT_WAVES,
         build_inventory_record,
         evaluate_card,
@@ -1328,7 +1328,7 @@ def cmd_collect_inventory(wave: str) -> int:
             if not passes_morning_contract(probe_record)[0]:
                 continue
             block = str(candidate.get("primary_block") or "")
-            cap = int(INVENTORY_INTAKE_CAPS.get(block, 0))
+            cap = int(NIGHT_PREWRITE_CAPS.get(block, 0))
             if not cap or kept_by_block.get(block, 0) >= cap:
                 continue
             model_prewrite_pool.append(candidate)
@@ -1352,6 +1352,7 @@ def cmd_collect_inventory(wave: str) -> int:
         )
         run_row["prewritten"] = int(run_row.get("deterministic_prewritten") or 0) + int(run_row["model_prewritten"])
         run_row["render_ready"] = sum(1 for record in records if record.get("render_ready"))
+        run_row["morning_eligible"] = sum(1 for record in records if passes_morning_contract(record)[0])
     merged: dict[str, int] = {}
     for category, records in per_category.items():
         merged[category] = merge_inventory(state_dir, category, records)
@@ -1371,6 +1372,7 @@ def cmd_collect_inventory(wave: str) -> int:
         "source_errors": sum(int(row.get("errors") or 0) for row in run_log),
         "fact_ready_this_run": sum(int(row.get("fact_ready") or 0) for row in run_log),
         "render_ready_this_run": sum(int(row.get("render_ready") or 0) for row in run_log),
+        "morning_eligible_this_run": sum(int(row.get("morning_eligible") or 0) for row in run_log),
         "model_prewrite": model_prewrite,
         "duration_seconds": round(time.monotonic() - started, 2),
     }

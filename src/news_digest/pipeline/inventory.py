@@ -463,6 +463,12 @@ INVENTORY_INTAKE_CAPS = {
     "ticket_radar": 20,
     "openings": 10,
 }
+NIGHT_PREWRITE_CAPS = {
+    **INVENTORY_INTAKE_CAPS,
+    "next_7_days": 18,
+    "professional_events": 10,
+    "russian_events": 10,
+}
 _RU_MONTHS = {
     "января": 1,
     "февраля": 2,
@@ -725,7 +731,7 @@ def prewrite_stable_inventory_candidate(candidate: dict) -> bool:
         line = _build_ticket_fallback_line(candidate)
     elif category == "professional_events" or block == "professional_events":
         line = _build_professional_event_fallback_line(candidate)
-    elif category in {"culture_weekly", "russian_speaking_events", "diaspora_events", "food_openings"}:
+    elif category == "culture_weekly":
         line = _build_event_fallback_line(candidate)
     if not line:
         return False

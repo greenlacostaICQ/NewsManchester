@@ -481,6 +481,18 @@ class BuildRecordTest(unittest.TestCase):
         self.assertTrue(str(candidate.get("draft_line") or "").startswith("• "))
         self.assertEqual(candidate["draft_line_provider"], "night_inventory_prewrite")
 
+    def test_food_and_russian_do_not_use_generic_deterministic_prewrite(self) -> None:
+        for category, block in (("food_openings", "openings"), ("diaspora_events", "russian_events")):
+            candidate = {
+                "category": category,
+                "primary_block": block,
+                "title": "Named event",
+                "source_url": "https://example.test/event",
+                "event": {"event_name": "Named event", "venue": "Named Venue", "date_start": "2026-08-01"},
+            }
+            self.assertFalse(prewrite_stable_inventory_candidate(candidate))
+            self.assertNotIn("draft_line", candidate)
+
 
 class NightWaveTest(unittest.TestCase):
     def test_wave_writes_inventory_only_never_candidates(self) -> None:
