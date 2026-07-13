@@ -303,9 +303,15 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertNotIn("Bolton Car Boot Sale — Bolton Car Boot Sale", line)
         self.assertNotIn("Проверьте наличие мест", line)
 
+    @patch("news_digest.pipeline.weekend_inventory.now_london")
     @patch("news_digest.pipeline.writer.now_london")
-    def test_weekend_car_boot_fallback_uses_nearest_source_date_and_own_venue(self, mock_now) -> None:
-        mock_now.return_value = datetime.fromisoformat("2026-06-12T09:00:00+01:00")
+    def test_weekend_car_boot_fallback_uses_nearest_source_date_and_own_venue(self, mock_now, mock_weekend_now) -> None:
+        fixed_now = datetime.fromisoformat("2026-06-12T09:00:00+01:00")
+        mock_now.return_value = fixed_now
+        # The weekend occurrence date is computed in weekend_inventory, which
+        # keeps its own now_london — patch it too or the "next Saturday" falls
+        # on the real wall-clock date instead of the mocked one.
+        mock_weekend_now.return_value = fixed_now
         candidate = {
             "category": "culture_weekly",
             "primary_block": "weekend_activities",

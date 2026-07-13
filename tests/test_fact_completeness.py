@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from news_digest.pipeline.fact_completeness import (
+    critical_fact_obligations,
     line_satisfies_concept,
     translation_completeness_review,
 )
@@ -34,6 +35,15 @@ class TranslationCompletenessTests(unittest.TestCase):
         self.assertTrue(review["applies"])
         self.assertEqual(review["missing_critical"], [])
         self.assertTrue(line_satisfies_concept("sexual_offence", self.FAITHFUL))
+
+    def test_critical_fact_obligations_derives_classes_from_source(self) -> None:
+        # The obligation list the review reports is now derived from this helper;
+        # grave source concepts map to their obligation classes, benign copy to none.
+        self.assertEqual(
+            critical_fact_obligations("A man died after a stabbing outside the pub."),
+            ["who/what"],
+        )
+        self.assertEqual(critical_fact_obligations("Jazz festival at Albert Hall, tickets £12"), [])
 
     def test_benign_event_line_does_not_apply(self) -> None:
         review = translation_completeness_review(

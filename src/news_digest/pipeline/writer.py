@@ -3548,7 +3548,14 @@ def _is_weekend_seller_admin_page(candidate: dict) -> bool:
     if str(candidate.get("primary_block") or "") != "weekend_activities":
         return False
     blob = _event_source_blob(candidate)
-    return bool(_WEEKEND_SELLER_ADMIN_RE.search(blob) and not _WEEKEND_VISITOR_RE.search(blob))
+    if not _WEEKEND_SELLER_ADMIN_RE.search(blob):
+        return False
+    # Seller-admin phrases ("apply for a stall") legitimately contain visitor
+    # words like "stall". Strip the matched seller phrases before testing for a
+    # genuine visitor signal, so a bare seller page is not misread as a visitor
+    # activity just because it says "stall".
+    residual = _WEEKEND_SELLER_ADMIN_RE.sub(" ", blob)
+    return not _WEEKEND_VISITOR_RE.search(residual)
 
 
 def _event_venue(candidate: dict) -> str:

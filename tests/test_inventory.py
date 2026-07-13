@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
+from unittest.mock import patch
 
 from news_digest.pipeline.inventory import (
     InventoryLock,
@@ -156,7 +158,11 @@ class MorningContractTest(unittest.TestCase):
             "last_seen_at": "2026-07-09T08:00:00+01:00",
             "fact_card": {"event_name": "Market", "venue": "Stockport", "date_start": "2026-07-11"},
         }
-        ok, reason = passes_morning_contract(record, today="2026-07-09")
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-09T08:00:00+01:00"),
+        ):
+            ok, reason = passes_morning_contract(record, today="2026-07-09")
         self.assertTrue(ok)
         self.assertEqual(reason, "morning_relevant_needs_text")
 
@@ -274,7 +280,14 @@ class BuildRecordTest(unittest.TestCase):
                 "last_seen_at": "2026-07-09T01:00:00+01:00",
             },
         ]
-        report = summarise_morning_intake(records, today="2026-07-09")
+        # Pin the clock: eligibility runs the TTL contract against now_london(),
+        # so a record seen at 01:00 on the test's "today" must be measured from
+        # that same day, not the real wall-clock date.
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-09T08:00:00+01:00"),
+        ):
+            report = summarise_morning_intake(records, today="2026-07-09")
         self.assertEqual(report["mode"], "report_only")
         self.assertEqual(report["totals"]["records"], 2)
         self.assertEqual(report["totals"]["fact_ready"], 1)
@@ -304,7 +317,14 @@ class BuildRecordTest(unittest.TestCase):
                 "fact_card": {"what_happened": "x", "why_now": "today"},
             },
         ]
-        candidates, report = build_morning_inventory_intake(records, mode="assist", today="2026-07-09")
+        # The TTL contract measures record age against now_london(); pin it to
+        # the test's "today" so a record seen at 01:00 that day stays within TTL
+        # regardless of the real wall-clock date the suite runs on.
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-09T08:00:00+01:00"),
+        ):
+            candidates, report = build_morning_inventory_intake(records, mode="assist", today="2026-07-09")
         self.assertEqual([candidate["fingerprint"] for candidate in candidates], ["weekend-1"])
         self.assertEqual(report["inserted_candidates"], 1)
         self.assertIn("morning_relevant_needs_text", report["hybrid_signals"])

@@ -1022,3 +1022,19 @@
 - Ожидаемый эффект и метрика проверки: будни — 1 сообщение (выпуск), воскресенье — 2 (выпуск + сводка), провал — выпускa нет, но есть ⛔ алерт. Было в вс: 5.
 - Файлы/места: `scripts/run_local_digest.py:cmd_send_warnings`; `quality_panel.py:_weekly_cost_line`; `.github/workflows/daily-digest.yml`; `city_trends.py`; тесты `test_send_warnings_delivery_guard.py` (контракт в обе стороны).
 - ПРОВЕРКА: реальный state 07-12 (доставлен, ship_degraded, 20 warnings) → 0 отправок в Telegram, отчёт 4803 символа в stdout; реальный state 07-11 (fail, не доставлен) → ровно 1 алерт: «⛔ Выпуск 2026-07-11 НЕ дошёл… Причина: ticket_radar_over_cap (17 > 15)» — старый код в этой ситуации молчал. Недельная сводка на реальной истории: 7 дней + «💰 Расходы за 7 дн.: $2.21 (≈$0.32/день)». `unittest discover`: 845 тестов, 4 падения — те же на чистом HEAD (weekend/inventory WIP параллельной сессии), новых нет.
+
+### 0095 — Зелёный CI: fix seller-page регрессии + 5 time-fragile тестов; подключён critical_fact_obligations — 2026-07-10
+- Статус: внедрено
+- Проблема: `unittest discover` падал (6 тестов на разных прогонах). Плюс helper `critical_fact_obligations` (fact_completeness.py) не имел вызовов.
+- Причина (корень):
+  - **Реальная регрессия (test 2, seller-page):** коммит 2651af8 ослабил guard weekend-карточки с `if not detail_text` на `if not detail_text and not day_month` (owner: публиковать по дате+месту+типу). Это обнажило дыру в `_is_weekend_seller_admin_page`: слово "stall" внутри *продавецкой* фразы "apply for a stall" триггерило *визитёрский* `_WEEKEND_VISITOR_RE`, из-за чего seller-страница не отсекалась и, получив вычисленную дату, протекала строкой в выпуск.
+  - **Time-fragile (5 тестов):** `passes_ttl_contract`/`current_weekend_window` меряют возраст/окно по настенным `now_london()`, а тесты передавали фиксированный `today=`/`last_seen_at`. Писались 2026-06-13…07-09, проходили в тот день, ломались при дрейфе даты (сегодня записи «старше» TTL 96ч, событие-дата вне weekend-окна).
+  - **critical_fact_obligations:** guard `translation_completeness_review` подключён и работает (pre_send_quality_judge.py:601), но список obligations он собирал ИНЛАЙНОМ, дублируя helper — helper остался без вызовов.
+- Решение:
+  - writer.py `_is_weekend_seller_admin_page`: вырезать matched seller-фразы из blob перед проверкой visitor-сигнала (детектор — правильное место гейта, не откат owner-правки 2651af8).
+  - Тесты: замокать `now_london` в нужном модуле (weekend_inventory для occurrence-даты, inventory для TTL) — конвенция уже была в test_public_output. test_misrouted: пин на субботу + мок окна.
+  - fact_completeness.py: `translation_completeness_review` теперь строит obligations через `critical_fact_obligations(source)` (DRY, поведение идентично — та же итерация/порядок).
+- Почему так (отвергли): откат guard'а 2651af8 — нет, это owner-правка; треды `now`/`today` в прод-сигнатуры — нет, ломает тонкие TTL (transport 1ч, last_24h 6ч) и рискует конфликтом с параллельной сессией в inventory.
+- Ожидаемый эффект и метрика проверки: `PYTHONPATH=src python3 -m unittest discover -s tests` — 846 ran, OK.
+- Файлы/места: src/news_digest/pipeline/writer.py:3547, src/news_digest/pipeline/fact_completeness.py:95, tests/{test_public_output_contracts,test_inventory,test_weekend_inventory_contract,test_fact_completeness}.py
+- ПРОВЕРКА (после прогона): 2026-07-10, `unittest discover`: **846 ran, OK** (было 6 разных падений).

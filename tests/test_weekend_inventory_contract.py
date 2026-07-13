@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 import unittest
 from unittest import mock
 
@@ -223,7 +223,10 @@ class WeekendInventoryContractTests(unittest.TestCase):
         self.assertEqual(dropped[0]["fingerprint"], sound_fp)
 
     def test_misrouted_food_opening_market_is_rescued_to_weekend(self) -> None:
-        today = now_london().date()
+        # Pin to a Saturday so the event date lands inside the current-weekend
+        # window on any day the suite runs — the rescue only fires when the
+        # event day is within current_weekend_window().
+        today = date(2026, 7, 11)
         candidate = {
             "include": False,
             "fingerprint": "asian-food-night-market",
@@ -252,7 +255,11 @@ class WeekendInventoryContractTests(unittest.TestCase):
         }
         warnings: list[str] = []
 
-        report = _rescue_misrouted_weekend_markets([candidate], warnings)
+        with mock.patch(
+            "news_digest.pipeline.weekend_inventory.now_london",
+            return_value=datetime(2026, 7, 11, 12, 0),
+        ):
+            report = _rescue_misrouted_weekend_markets([candidate], warnings)
 
         self.assertEqual(report["count"], 1)
         self.assertTrue(candidate["include"])

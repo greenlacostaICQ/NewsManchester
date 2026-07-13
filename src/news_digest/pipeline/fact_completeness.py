@@ -103,17 +103,15 @@ def translation_completeness_review(source_text: str, output_line: str) -> dict[
     source = source_text or ""
     out = output_line or ""
     missing_critical: list[dict[str, str]] = []
-    obligations: list[str] = []
     for concept, obligation, en, ru in _SEVERITY_CONCEPTS:
         hit = re.search(en, source, re.IGNORECASE)
         if not hit:
             continue
-        if obligation not in obligations:
-            obligations.append(obligation)
         if not re.search(ru, out, re.IGNORECASE):
             missing_critical.append(
                 {"concept": concept, "obligation": obligation, "source_hit": hit.group(0).strip()[:60]}
             )
+    obligations = critical_fact_obligations(source)
     # Non-critical: scalar facts (money, %, times, dates, big numbers) the source
     # carried but the line dropped. The digest is allowed to compress, so this is
     # warning-only — but a silently dropped sentence length or amount is worth a
