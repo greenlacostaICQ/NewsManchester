@@ -1062,6 +1062,34 @@ class EventQualityPipelineTest(unittest.TestCase):
         self.assertIn("stale_opening", stale["reject_reasons"])
         self.assertIn("future_opening_too_early", future["reject_reasons"])
 
+    def test_validator_drops_past_dated_food_event_inside_opening_grace(self) -> None:
+        # A dated market is an EVENT: two days past it cannot be attended, so
+        # the 3-day opening-news grace must not apply (07-12 shipped 10-11 July
+        # markets in «Еда» as things to visit). As in the shipped case, the
+        # date lives only in the carried draft_line head — extraction finds no
+        # date in the blob.
+        frozen = datetime(2026, 7, 12, 12, 0, tzinfo=now_london().tzinfo)
+        with mock.patch("news_digest.pipeline.candidate_validator.now_london", return_value=frozen):
+            rejected = self._validate_one(
+                {
+                    "include": True,
+                    "fingerprint": "night-market",
+                    "category": "food_openings",
+                    "primary_block": "openings",
+                    "title": "Asian Food Night Market returns to Stockport",
+                    "summary": "Street food night market with local traders.",
+                    "lead": "",
+                    "evidence_text": "Street food night market with local traders.",
+                    "published_at": "2026-07-09T09:00:00+01:00",
+                    "source_label": "SK Lowdown Markets",
+                    "source_url": "https://example.test/night-market",
+                    "dedupe_decision": "new",
+                    "draft_line": "• 10 июля в Churchgate Stockport — ночной рынок уличной еды.",
+                }
+            )
+
+        self.assertIn("stale_opening", rejected["reject_reasons"])
+
     def test_validator_keeps_today_food_opening(self) -> None:
         today = now_london().date()
         date_text = f"{today.day} {today.strftime('%B')}"

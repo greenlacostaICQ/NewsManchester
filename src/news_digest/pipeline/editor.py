@@ -304,6 +304,8 @@ _EMPTY_ENDING_RE = re.compile(
     r"перед\s+планами[^.]*проверьте\s+(?:детали|обновления)[^.]*|"
     r"не\s+откладывайте\s+проверку[^.]*|"
     r"свер(?:ьте|яйте)\s+(?:обновления|ограничения|детали|часы|время)[^.]*|"
+    r"новое\s+место\s+или\s+запуск\s+стоит\s+проверить[^.]*|"
+    r"проверьте\s+маршрут\s+и\s+время\s+отправления[^.]*|"
     r"сроки\s+и\s+объ[её]мы\s+работ\s+уточн(?:ите|яйте)[^.]*|"
     r"уточн(?:ите|яйте)\s+(?:дату,\s*)?(?:время\s+и\s+)?(?:детали|доступность|доступность\s+мест)[^.]*|"
     r"уточн(?:ите|яйте)[^.]*(?:на\s+странице|перевозчика)[^.]*|"
@@ -329,7 +331,15 @@ def _strip_empty_editor_ending(line: str, *, strip_short: bool = False) -> tuple
     if not raw:
         return raw, ""
     link = ""
-    link_match = re.search(r"\s*(<a\s+[^>]*href=\"[^\"]+\"[^>]*>.*?</a>)\s*$", raw, flags=re.IGNORECASE | re.DOTALL)
+    # An optional dangling latin source label before the anchor («…перед
+    # выходом. TfGM <a>TfGM</a>») is leaked chrome — consume it with the link
+    # so the ending pattern can anchor to the real end of the sentence. The
+    # label text is not re-appended: it duplicates the anchor text anyway.
+    link_match = re.search(
+        r"\s*(?:[A-Za-z][A-Za-z&'’.\- ]{0,39}\s+)?(<a\s+[^>]*href=\"[^\"]+\"[^>]*>.*?</a>)\s*$",
+        raw,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
     body = raw
     if link_match:
         link = link_match.group(1)

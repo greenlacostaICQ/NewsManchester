@@ -209,6 +209,38 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertIn("6 июля", line)
         self.assertNotIn("2 июля", line)
 
+    def test_event_fallback_refuses_source_name_title_and_strips_chrome(self) -> None:
+        # «The SK Lowdown» (the site, label «SK Lowdown Markets») carries zero
+        # event facts — no card beats «• The SK Lowdown.» (0030 show=renderable).
+        sourceish = {
+            "category": "food_openings",
+            "primary_block": "openings",
+            "title": "The SK Lowdown",
+            "source_label": "SK Lowdown Markets",
+            "event": {"is_event": True, "event_name": "The SK Lowdown"},
+        }
+        self.assertEqual(_build_event_fallback_line(sourceish), "")
+        # A real event title with trailing site chrome sheds the chrome and the
+        # venue sheds its «, England, SK1 1YG United Kingdom» address tail.
+        real = {
+            "category": "food_openings",
+            "primary_block": "openings",
+            "title": "Stockport's Asian Food Night Market is back — The SK Lowdown",
+            "source_label": "SK Lowdown Markets",
+            "practical_angle": "",
+            "event": {
+                "is_event": True,
+                "event_name": "Stockport's Asian Food Night Market is back — The SK Lowdown",
+                "venue": "Churchgate Stockport, England, SK1 1YG United Kingdom",
+                "date_start": "2026-07-10T18:00:00+01:00",
+            },
+        }
+        line = _build_event_fallback_line(real)
+        self.assertIn("Asian Food Night Market", line)
+        self.assertNotIn("SK Lowdown", line)
+        self.assertIn("Churchgate Stockport", line)
+        self.assertNotIn("United Kingdom", line)
+
     def test_event_fallback_repairs_generic_availability_cta(self) -> None:
         candidate = {
             "category": "culture_weekly",

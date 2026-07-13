@@ -142,7 +142,9 @@ def cmd_bot_info() -> int:
     return 0
 
 
-def _rendered_candidates_for_delivery() -> list[dict]:
+def _rendered_candidates_for_delivery(sent_path: Path | None = None) -> list[dict]:
+    from news_digest.pipeline.common import canonical_url_identity  # noqa: PLC0415
+
     state_dir = PROJECT_ROOT / "data" / "state"
     writer_report = read_json(state_dir / "writer_report.json", {})
     rendered_fingerprints = {
@@ -150,7 +152,21 @@ def _rendered_candidates_for_delivery() -> list[dict]:
         for item in writer_report.get("rendered_candidate_fingerprints", [])
         if str(item).strip()
     }
-    if not rendered_fingerprints:
+    # Publication history must reflect what the READER saw. Lines inserted
+    # after the writer (release-reconcile must_show recovery, pre-send section
+    # top-ups) are missing from rendered_candidate_fingerprints — without
+    # matching the sent HTML they never reach published_facts, repeat policy
+    # sees «no_previous_match», and the same diaspora/reserve line repeats
+    # daily («Скамейка» shipped 3+ issues without one history record).
+    sent_idents: set[str] = set()
+    if sent_path is not None and sent_path.exists():
+        sent_html = sent_path.read_text(encoding="utf-8")
+        sent_idents = {
+            canonical_url_identity(url)
+            for url in re.findall(r'<a\b[^>]*href=["\']([^"\']+)["\']', sent_html, flags=re.IGNORECASE)
+        }
+        sent_idents.discard("")
+    if not rendered_fingerprints and not sent_idents:
         print(
             "Warning: writer_report has no rendered_candidate_fingerprints; "
             "published_facts.json was not updated.",
@@ -159,13 +175,23 @@ def _rendered_candidates_for_delivery() -> list[dict]:
         return []
 
     candidates_payload = read_json(state_dir / "candidates.json", {"candidates": []})
+
+    def _visible_in_sent(candidate: dict) -> bool:
+        url = str(candidate.get("source_url") or "").strip()
+        return bool(url) and canonical_url_identity(url) in sent_idents
+
     rendered_candidates = [
         candidate
         for candidate in candidates_payload.get("candidates", [])
         if isinstance(candidate, dict)
-        and candidate.get("include")
-        and not candidate.get("validation_errors")
-        and str(candidate.get("fingerprint") or "").strip() in rendered_fingerprints
+        and (
+            (
+                candidate.get("include")
+                and not candidate.get("validation_errors")
+                and str(candidate.get("fingerprint") or "").strip() in rendered_fingerprints
+            )
+            or _visible_in_sent(candidate)
+        )
     ]
     if not rendered_candidates:
         print(
@@ -213,7 +239,7 @@ def cmd_send_file(file_path: str, parse_mode: str | None, force: bool) -> int:
         StateStore(runtime_state_dir).mark_delivery(
             targets, str(resolved_path), message_ids=message_ids
         )
-    record_delivery_artifacts(PROJECT_ROOT, resolved_path, _rendered_candidates_for_delivery())
+    record_delivery_artifacts(PROJECT_ROOT, resolved_path, _rendered_candidates_for_delivery(resolved_path))
     if resolved_path.name == "current_digest.html":
         # Quality panel: 5 editorial indicators per SENT issue, one row/day.
         from news_digest.pipeline.quality_panel import (  # noqa: PLC0415

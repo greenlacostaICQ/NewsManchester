@@ -3525,6 +3525,14 @@ def _clean_event_venue_name(value: str) -> str:
         venue,
         flags=re.IGNORECASE,
     ).strip(" .,-–—|")
+    # Address chrome from listing pages («Churchgate Stockport, England,
+    # SK1 1YG United Kingdom») is not a venue name — keep the local part.
+    venue = re.sub(
+        r",?\s*England\b(?:,?\s*[A-Z]{1,2}\d[\dA-Z]?(?:\s*\d[A-Z]{2})?)?(?:\s+United\s+Kingdom)?\s*$",
+        "",
+        venue,
+        flags=re.IGNORECASE,
+    ).strip(" .,-–—|")
     return venue[:90]
 
 
@@ -4768,7 +4776,22 @@ def _build_event_fallback_line(candidate: dict) -> str:
     if "—" in title and len(title) > 70:
         title = title.split("—", 1)[0].strip()
     title = re.sub(r"\s*\|\s*The(?:\s+Bridgewater\s+Hall)?\s*$", "", title, flags=re.IGNORECASE).strip()
+    # A trailing «— The SK Lowdown» / «- About Manchester» is listing-site
+    # chrome, not the event name — drop it when its words are already covered
+    # by the source label.
+    label_tokens = set(re.findall(r"[a-zа-яё\d]+", str(candidate.get("source_label") or "").lower()))
+    chrome = re.search(r"\s+[—–-]\s+([^—–-]+)$", title)
+    if chrome:
+        tail_tokens = {t for t in re.findall(r"[a-zа-яё\d]+", chrome.group(1).lower()) if t not in {"the", "a", "an"}}
+        if tail_tokens and tail_tokens <= label_tokens:
+            title = title[: chrome.start()].rstrip(" .-–—")
     title = title[:120].rstrip(" .-–—")
+    # A title that is just the SITE name («The SK Lowdown» with label «SK
+    # Lowdown Markets») carries zero event facts — an honest shortfall beats
+    # shipping «• The SK Lowdown.» as an event card (0030: show = renderable).
+    title_tokens = {t for t in re.findall(r"[a-zа-яё\d]+", title.lower()) if t not in {"the", "a", "an"}}
+    if not title_tokens or title_tokens <= label_tokens:
+        return ""
     venue = _event_venue(candidate)
     event_dt = _event_structured_datetime(candidate) or _parse_ticket_datetime(candidate)
     day_month = _format_ru_day_month(event_dt) if event_dt else ""

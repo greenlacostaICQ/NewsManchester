@@ -35,6 +35,42 @@ class SendWarningsDeliveryGuardTests(unittest.TestCase):
             encoding="utf-8",
         )
 
+    def test_delivery_history_includes_reconciler_inserted_lines(self) -> None:
+        """Publication history must reflect the SENT HTML: a line inserted
+        after the writer (must_show recovery) is not in
+        rendered_candidate_fingerprints, but repeat policy needs it recorded —
+        «Скамейка» shipped 3+ issues with zero history entries."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state = root / "data" / "state"
+            state.mkdir(parents=True)
+            (state / "writer_report.json").write_text(
+                json.dumps({"rendered_candidate_fingerprints": ["writer-1"]}),
+                encoding="utf-8",
+            )
+            (state / "candidates.json").write_text(
+                json.dumps(
+                    {
+                        "candidates": [
+                            {"fingerprint": "writer-1", "include": True, "source_url": "https://example.test/a"},
+                            {"fingerprint": "recovered-2", "include": False, "source_url": "https://example.test/skameika"},
+                            {"fingerprint": "invisible-3", "include": False, "source_url": "https://example.test/unused"},
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            sent = root / "current_digest.html"
+            sent.write_text(
+                '• Строка writer. <a href="https://example.test/a">A</a>\n'
+                '• Восстановленная строка. <a href="https://example.test/skameika">B</a>\n',
+                encoding="utf-8",
+            )
+            with mock.patch.object(cli, "PROJECT_ROOT", root):
+                fps = {c["fingerprint"] for c in cli._rendered_candidates_for_delivery(sent)}
+
+        self.assertEqual(fps, {"writer-1", "recovered-2"})
+
     def test_delivered_issue_sends_nothing_to_telegram(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

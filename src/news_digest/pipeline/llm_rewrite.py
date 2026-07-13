@@ -35,7 +35,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Callable
 
-from news_digest.pipeline.common import PRIMARY_BLOCKS, now_london, pipeline_run_id_from, read_json, recoverable_reserve_eligible, today_london, write_json
+from news_digest.pipeline.common import PRIMARY_BLOCKS, is_recoverable_reserve, now_london, pipeline_run_id_from, read_json, recoverable_reserve_eligible, today_london, write_json
 from news_digest.pipeline.model_routing import (
     DEEPSEEK_BASE_URL,
     DEEPSEEK_MODEL,
@@ -107,6 +107,12 @@ REWRITE_RANKING_BOARD_MAX = 90
 # floors do the shaping; the global cap only needs to be wide enough not to fight
 # them.
 REWRITE_TRANSLATION_BOARD_MAX = 50
+
+# 0001-class reserve pre-write: sections that keep shipping under floor with
+# `no_recoverable_reserve_with_facts` get a bounded rewrite quota for their
+# recoverable reserve, so recovery has renderable lines (~8 extra lines/day).
+RESERVE_PREWRITE_BLOCKS = frozenset({"city_watch", "last_24h", "today_focus", "openings"})
+RESERVE_PREWRITE_PER_SECTION = 2
 REPAIR_DRAFT_MAX_ITEMS_DEFAULT = 8
 TRANSLATION_MEMORY_VERSION = 1
 TRANSLATION_MEMORY_MAX_ENTRIES = 2500
@@ -3333,9 +3339,21 @@ _PUBLISH_PLAN_BUDGET_BUCKETS = {
 }
 
 
-def _publish_plan_must_show(candidate: dict) -> bool:
+def _publish_plan_must_show(candidate: dict, previous_by_fp: dict[str, dict] | None = None) -> bool:
     block = str(candidate.get("primary_block") or "")
-    if candidate.get("is_lead") or block in {"transport", "russian_events"}:
+    if candidate.get("is_lead") or block == "transport":
+        return True
+    if block == "russian_events":
+        # A diaspora event repeats daily unless gated: must_show bypasses every
+        # cap and the reconciler re-inserts it into the shipped HTML (Онегин /
+        # «Скамейка» ran 3+ issues in a row). Force-show only while repeat
+        # policy still sees a reader moment; a blocked repeat competes normally.
+        prev = (previous_by_fp or {}).get(str(candidate.get("fingerprint") or ""))
+        if prev:
+            from news_digest.pipeline.repeat_policy import visible_repeat_verdict  # noqa: PLC0415
+
+            if not visible_repeat_verdict(candidate, prev).allow:
+                return False
         return True
     if block == "professional_events":
         # W6: only a CV go/consider earns the protected slot. The keyword scorer
@@ -3346,9 +3364,9 @@ def _publish_plan_must_show(candidate: dict) -> bool:
     return False
 
 
-def _publish_plan_protected_budget(candidate: dict) -> bool:
+def _publish_plan_protected_budget(candidate: dict, previous_by_fp: dict[str, dict] | None = None) -> bool:
     block = str(candidate.get("primary_block") or "")
-    if _publish_plan_must_show(candidate):
+    if _publish_plan_must_show(candidate, previous_by_fp):
         return True
     return block in {
         "last_24h",
@@ -3362,19 +3380,25 @@ def _publish_plan_protected_budget(candidate: dict) -> bool:
     }
 
 
-def _publish_plan_status(candidate: dict) -> str:
+def _publish_plan_status(candidate: dict, previous_by_fp: dict[str, dict] | None = None) -> str:
     verdict = str(candidate.get("digest_selection_verdict") or "").strip()
     if verdict == "selected":
         draft_line = str(candidate.get("draft_line") or "").strip()
         if not draft_line and not _uses_deterministic_writer(candidate):
             return "needs_enrichment"
-        return "must_show" if _publish_plan_must_show(candidate) else "show"
+        return "must_show" if _publish_plan_must_show(candidate, previous_by_fp) else "show"
     if verdict in {"reserve", "needs_enrichment", "drop"}:
         return verdict
     return "drop"
 
 
-def _build_publish_plan(candidates: list[dict]) -> dict[str, object]:
+def _build_publish_plan(candidates: list[dict], published_facts: dict | None = None) -> dict[str, object]:
+    # Publication history feeds the russian_events must_show repeat gate.
+    previous_by_fp = {
+        str(fact.get("fingerprint") or ""): fact
+        for fact in (published_facts or {}).get("facts") or []
+        if isinstance(fact, dict) and fact.get("fingerprint")
+    }
     sections: dict[str, dict[str, object]] = {}
     totals = {"must_show": 0, "show": 0, "reserve": 0, "needs_enrichment": 0, "drop": 0}
     items: list[dict[str, object]] = []
@@ -3382,7 +3406,7 @@ def _build_publish_plan(candidates: list[dict]) -> dict[str, object]:
         if not isinstance(candidate, dict):
             continue
         block = str(candidate.get("primary_block") or "unknown")
-        status = _publish_plan_status(candidate)
+        status = _publish_plan_status(candidate, previous_by_fp)
         if status not in totals:
             status = "drop"
         totals[status] += 1
@@ -3413,7 +3437,7 @@ def _build_publish_plan(candidates: list[dict]) -> dict[str, object]:
             "reason": candidate.get("digest_selection_reason") or candidate.get("reason") or "",
             "is_lead": bool(candidate.get("is_lead")),
             "protected_lane": candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {},
-            "protected_budget": _publish_plan_protected_budget(candidate),
+            "protected_budget": _publish_plan_protected_budget(candidate, previous_by_fp),
             "include": bool(candidate.get("include")),
             "backup_candidate": bool(candidate.get("backup_candidate")),
         }
@@ -4064,6 +4088,33 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         1 for c in candidates
         if isinstance(c, dict) and c.get("include") and _skip_llm_for_manual_review(c)
     )
+    # 0001-class: thin-prone core sections keep hitting
+    # `no_recoverable_reserve_with_facts` because the recoverable reserve exists
+    # but was never rewritten (07-12: city_watch had 14 recoverable candidates,
+    # 0 with a draft_line). Pre-write a bounded quota per section so pre-send
+    # recovery has renderable same-section lines. Reserve verdicts/include are
+    # untouched — these lines render only if recovery pulls them.
+    reserve_prewrite: list[dict] = []
+    _prewrite_seen: dict[str, int] = {}
+    for c in sorted(
+        (
+            c for c in candidates
+            if isinstance(c, dict) and not c.get("include")
+            and str(c.get("primary_block") or "") in RESERVE_PREWRITE_BLOCKS
+            and is_recoverable_reserve(c)
+            and not str(c.get("draft_line") or "").strip()
+            and not _skip_llm_for_manual_review(c)
+            and not _uses_deterministic_writer(c)
+        ),
+        key=lambda c: -(float(c.get("section_board_score") or c.get("reader_value_score") or 0)),
+    ):
+        block = str(c.get("primary_block") or "")
+        if _prewrite_seen.get(block, 0) >= RESERVE_PREWRITE_PER_SECTION:
+            continue
+        _prewrite_seen[block] = _prewrite_seen.get(block, 0) + 1
+        c["rewrite_shortlist_status"] = "reserve_prewrite"
+        reserve_prewrite.append(c)
+    to_rewrite.extend(reserve_prewrite)
     provider_override = os.environ.get("LLM_PROVIDER", "").lower().strip()
     model_override = os.environ.get("LLM_MODEL", "").strip()
     base_url_override = os.environ.get("LLM_BASE_URL", "").strip()
@@ -4082,6 +4133,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         "input_candidates": len(to_rewrite),
         "selected_for_rewrite": len(to_rewrite),
         "held_for_backup": 0,
+        "reserve_prewrite": len(reserve_prewrite),
     }
     prewrite_enrichment_report: dict[str, object] = {
         "attempted": 0,
@@ -4569,7 +4621,10 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     translation_memory_updated = _update_translation_memory(candidates, translation_memory)
     write_json(_translation_memory_path(project_root), translation_memory)
     section_selection_report = _finalize_digest_selection_verdicts(candidates)
-    publish_plan = _build_publish_plan(candidates)
+    publish_plan = _build_publish_plan(
+        candidates,
+        read_json(project_root / "data" / "state" / "published_facts.json", {}),
+    )
     write_json(_section_selection_report_path(project_root), section_selection_report)
     write_json(_enrichment_report_path(project_root), _build_enrichment_report(candidates, enrichment_action))
     write_json(

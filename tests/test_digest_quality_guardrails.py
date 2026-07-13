@@ -1513,6 +1513,36 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(lifecycle["repeat"], lifecycle)
         self.assertEqual(review["reason"], "same_calendar_item_without_new_reader_moment")
 
+    def test_truncated_date_text_is_not_a_material_change(self) -> None:
+        """Source-page decay («26 June – 12 July» → «26 June» once the run
+        ended) must not re-authorise a daily repeat: Онегин ran 3+ issues on
+        exactly this artefact."""
+        event_day = (now_london().date() + timedelta(days=350)).isoformat()
+        candidate = {
+            "include": True,
+            "dedupe_decision": "repeat",
+            "category": "russian_speaking_events",
+            "primary_block": "russian_events",
+            "title": "Eugene Onegin at the Grange Festival",
+            "summary": "Opera by Tchaikovsky at the Grange Festival.",
+            "event": {
+                "is_event": True,
+                "event_name": "Eugene Onegin",
+                "date_start": event_day,
+                "date_text": "26 June",
+            },
+        }
+        previous = dict(candidate)
+        previous["event"] = {**candidate["event"], "date_text": "26 June – 12 July"}
+        previous["last_published_day_london"] = (now_london().date() - timedelta(days=1)).isoformat()
+        previous["first_published_day_london"] = previous["last_published_day_london"]
+        previous["editorial_contract"] = build_editorial_contract(previous)
+
+        review = calendar_repeat_review(candidate, previous)
+
+        self.assertFalse(review["allow"], review)
+        self.assertEqual(review["reason"], "same_calendar_item_without_new_reader_moment")
+
     def test_multi_day_festival_in_progress_is_not_a_passed_repeat(self) -> None:
         """W1 / RC3 (Didsbury Arts): a multi-day festival that started yesterday
         and ends next week is still running today — not a stale "already passed"

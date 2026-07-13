@@ -1038,3 +1038,41 @@
 - Ожидаемый эффект и метрика проверки: `PYTHONPATH=src python3 -m unittest discover -s tests` — 846 ran, OK.
 - Файлы/места: src/news_digest/pipeline/writer.py:3547, src/news_digest/pipeline/fact_completeness.py:95, tests/{test_public_output_contracts,test_inventory,test_weekend_inventory_contract,test_fact_completeness}.py
 - ПРОВЕРКА (после прогона): 2026-07-10, `unittest discover`: **846 ran, OK** (было 6 разных падений).
+
+### 0095 — Рус-блок: повторы Онегина/Скамейки — история видит отправленный HTML, must_show уважает repeat-policy — 2026-07-13
+- Статус: внедрено; ПРОВЕРКА на реальных данных 07-12 + 852/0 + replay 07-12 (diff=0).
+- Проблема: «Скамейка» (29 ноября) и «Евгений Онегин» (Хэмпшир, «до 12 июля») выходили 3+ выпуска подряд (07-02…07-12). Судья 07-12 даже патчил строку «Хэмпшир не является частью GM» — но строка возвращалась каждый день.
+- Причина (корень), три слоя: (1) `_rendered_candidates_for_delivery` (run_local_digest.py) брала только `writer_report.rendered_candidate_fingerprints` — строки, вставленные ПОСЛЕ writer'а (must_show-recovery в release_reconcile / pre-send top-up), никогда не попадали в `published_facts.json` → у Скамейки `prev=None` → repeat-политика видела «no_previous_match» вечно; (2) `_publish_plan_must_show` (llm_rewrite.py:3338) давал must_show ЛЮБОМУ selected `russian_events` — обходя все caps и кварантин; (3) у Онегина усечение date_text «26 June – 12 July»→«26 June» (сайт убрал прошедший диапазон; date_start откатился на 2027) считалось `event_date_text_changed` = материальное изменение → повтор разрешён.
+- Решение: (A1) delivery-история дополнительно матчит kandidat'ов по canonical URL против href'ов РЕАЛЬНО отправленного HTML; (A2) russian_events must_show только при `visible_repeat_verdict(...).allow` (published_facts прокинуты в `_build_publish_plan`); (A3) subset/усечение date_text не считается материальным изменением.
+- Почему так (отвергнуто): чинить только кварантин на release — не помогает: reconcile/pre-send re-insert возвращали must_show строку после кварантина (пинг-понг); глушить рус-блок целиком — ломает продукт (свежие события, как Тимошенко «сегодня», обязаны показываться — проверено: у него must_show остаётся, блокируется только после прохождения даты как `event_already_passed`).
+- Ожидаемый эффект и метрика проверки: `visible_repeat_review.bad_visible_repeats` начинает ловить диаспорные повторы (раньше 10/10 allowed); Скамейка получает запись в published_facts с первого же выпуска; далёкое событие без нового reader-момента не re-must_show'ится.
+- Файлы/места: `scripts/run_local_digest.py:_rendered_candidates_for_delivery`; `llm_rewrite.py:_publish_plan_must_show/_publish_plan_status/_build_publish_plan`; `editorial_contracts.py:_event_material_change`; тесты `tests/test_send_warnings_delivery_guard.py`, `tests/test_dedupe_and_show.py`, `tests/test_digest_quality_guardrails.py`.
+- ПРОВЕРКА: на реальных candidates/published_facts 07-12 — Онегин: verdict `allow=False / same_calendar_item_without_new_reader_moment` (был `allow=True / event_date_text_changed`), must_show False; Тимошенко (прошёл вчера): `event_already_passed`, не форсится; Скамейка: пока True (prev появится после первой A1-доставки). Полный набор 852/0; replay 07-12 до/после — байт-в-байт.
+
+### 0096 — Еда: прошедшие датированные события не публикуются, билдер не отдаёт site-chrome и адресные хвосты — 2026-07-13
+- Статус: внедрено; ПРОВЕРКА на реальных кандидатах 07-12 + 852/0.
+- Проблема: выпуск 07-12 в «Еда, открытия и рынки» отдал 3 строки: рынки 10–11 июля (посетить нельзя — прошли), сырые английские заголовки с хвостом источника («…is back in July — The SK Lowdown»), адресный блоб («Churchgate Stockport, England, SK1 1YG United Kingdom») и шаблон «Новое место или запуск стоит проверить перед визитом».
+- Причина (корень): (1) `_exclude_bad_food_opening_timing` давал 3-дневный grace ВСЕМ food/openings — правильно для новостей об открытии, неправильно для датированных СОБЫТИЙ; при этом дата жила только в голове draft_line («10 июля…»), structured event был пуст — blob-даты её не видели; (2) `_build_event_fallback_line` строил карточку из title=«The SK Lowdown» (имя сайта) — ноль фактов события; (3) `_clean_event_venue_name` не резал «, England, SK1 1YG United Kingdom».
+- Решение: (B1) датированное market/fair/festival/car boot/night market событие с прошедшей датой (structured event ∪ blob ∪ RU-дата в голове draft_line ≤45 дней назад) → `stale_opening` без grace; opening-новости grace сохраняют (Joe & The Juice проверено — не режется); (B2) title, чьи токены ⊆ токенов source_label → билдер возвращает "" (0030 show=renderable), хвост «— {источник}» срезается, venue теряет адресный хвост.
+- Почему так (отвергнуто): переводить/обогащать такие карточки на лету — LLM на pre-send пути; RU-дата старше 45 дней игнорируется (могла означать следующий год — «5 января» в июле).
+- Ожидаемый эффект и метрика проверки: в «Еде» нет прошедших дат и сырых «— The SK Lowdown»; reject_reasons получают `stale_opening` для прошедших рынков.
+- Файлы/места: `candidate_validator.py:_exclude_bad_food_opening_timing`, `_ru_date_from_draft_line_head`; `writer.py:_build_event_fallback_line`, `_clean_event_venue_name`; тесты `tests/test_backlog_remediation.py`, `tests/test_public_output_contracts.py`.
+- ПРОВЕРКА: на реальном кандидате Asian Food Night Market (07-12): excluded=True/stale_opening (13.07); билдер по source-ish title → ''; на реальном названии с хвостом — «SK Lowdown» и «United Kingdom» исчезают, «Asian Food Night Market» и «Churchgate Stockport» остаются. 852/0.
+
+### 0097 — Штампы: «Новое место…»/«Проверьте маршрут…» в регексе, болтающийся лейбл перед ссылкой не прячет концовку — 2026-07-13
+- Статус: внедрено; ПРОВЕРКА на реальном HTML 07-12 + 852/0.
+- Проблема: 07-12 отдал «Новое место или запуск стоит проверить перед визитом» (Еда ×2) и «TfGM: ремонтные работы — значительные. Проверьте маршрут и время отправления перед выходом. TfGM <a>…</a>» (Радар) — 0083-регекс их не покрывал, а у TfGM-строки утёкший лейбл «TfGM» между концовкой и ссылкой ломал якорь `$`.
+- Решение: два новых паттерна в `_EMPTY_ENDING_RE`; link-захват в `_strip_empty_editor_ending` опционально поглощает короткий латинский лейбл (≤40c) перед `<a>` (не ре-аппендится — дублирует текст якоря).
+- Ожидаемый эффект и метрика проверки: `_strip_empty_endings_in_html` на HTML 07-12 снимает 4 концовки (было 0 покрытия этих паттернов), 67/67 href целы.
+- Файлы/места: `editor.py:_EMPTY_ENDING_RE`, `_strip_empty_editor_ending`; тест `tests/test_editor_pacing.py`.
+- ПРОВЕРКА: реальный HTML 07-12 — 4 снято, оба паттерна исчезают, ссылки целы. 852/0.
+
+### 0098 — Reserve prewrite: тонкие секции получают написанный резерв — 2026-07-13
+- Статус: внедрено; ПРОВЕРКА offline (852/0); prod-числа после следующего build.
+- Проблема: «Что важно сегодня» 2/3 и «Городской радар» 3/5 на 07-12 с `no_recoverable_reserve_with_facts` — при этом у city_watch было 14 recoverable-кандидатов, но 0 с draft_line: `to_rewrite` фильтрует по `include`, резерв не переводится вообще.
+- Причина (корень): 0001-класс — резерв существует, но никогда не проходит rewrite → recovery нечего вставлять.
+- Решение: bounded-квота `RESERVE_PREWRITE_PER_SECTION=2` для `RESERVE_PREWRITE_BLOCKS={city_watch,last_24h,today_focus,openings}`: топ-резерв по section_board_score добавляется в rewrite-борд (verdict/include не трогаются — строки рендерятся только если recovery их вытащит). ~8 строк/день доп. стоимости.
+- Почему так (отвергнуто): full enrich-and-rewrite на pre-send — LLM в критическом пути отправки; расширять include — риск сломать баланс доски.
+- Ожидаемый эффект и метрика проверки: `section_ranking_report.reserve_prewrite` > 0; `still_under_minimum` для Радара/Что важно уходит или reason меняется с `no_recoverable_reserve_with_facts` на реальную вставку.
+- Файлы/места: `llm_rewrite.py:RESERVE_PREWRITE_BLOCKS`, `run_llm_rewrite` (quota block), `rewrite_shortlist.reserve_prewrite`.
+- ПРОВЕРКА: offline — py_compile, 852/0; прод-эффект проверить на следующем утреннем прогоне (reserve_prewrite и floor'ы секций).

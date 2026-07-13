@@ -88,6 +88,21 @@ class EditorPacingTest(unittest.TestCase):
         self.assertIn("Final editor post-check stripped 1", warnings[0])
         self.assertNotIn("Проверьте сроки и детали", polished["Свежие новости"][0])
 
+    def test_ending_with_dangling_source_label_before_anchor_is_stripped(self):
+        # 07-12 shipped «…перед выходом. TfGM <a>TfGM</a>» — the leaked label
+        # between the ending and the anchor hid the boilerplate from the regex.
+        line = (
+            '• TfGM: ремонтные работы — значительные. Проверьте маршрут и время '
+            'отправления перед выходом. TfGM <a href="https://tfgm.com/x">TfGM</a>'
+        )
+
+        fixed, reason = editor._strip_empty_editor_ending(line, strip_short=True)
+
+        self.assertEqual(reason, "empty_ending_stripped_short_line")
+        self.assertNotIn("маршрут и время отправления", fixed)
+        self.assertIn("ремонтные работы", fixed)
+        self.assertTrue(fixed.endswith('<a href="https://tfgm.com/x">TfGM</a>'))
+
     def test_ship_time_pass_strips_broadened_and_short_boilerplate_endings(self):
         # Weekend/transport lines bypass the editor post-check, so the ship-time
         # pass over the shipped HTML must catch broadened patterns ("Сверьте

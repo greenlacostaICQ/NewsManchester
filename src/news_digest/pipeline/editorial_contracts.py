@@ -1490,6 +1490,11 @@ def _event_material_change(candidate: dict, previous: dict) -> str:
         current = str(current_event.get(key) or "").strip().lower()
         old = str(previous_event.get(key) or "").strip().lower()
         if current and old and current != old:
+            # A truncated date_text is source-page decay, not a new reader
+            # moment: «26 June – 12 July» → «26 June» (the site dropped the
+            # finished range) kept re-authorising the Онегин repeat for weeks.
+            if key == "date_text" and (current in old or old in current):
+                continue
             return f"event_{key}_changed"
     current_ticket_type = str(candidate.get("ticket_type") or "").strip().lower()
     previous_ticket_type = str(previous.get("ticket_type") or "").strip().lower()

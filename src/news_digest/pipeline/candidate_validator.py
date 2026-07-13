@@ -1559,6 +1559,29 @@ def _exclude_stale_news_without_new_phase(candidate: dict) -> bool:
     return True
 
 
+_RU_GENITIVE_MONTHS = {
+    "января": 1, "февраля": 2, "марта": 3, "апреля": 4, "мая": 5, "июня": 6,
+    "июля": 7, "августа": 8, "сентября": 9, "октября": 10, "ноября": 11, "декабря": 12,
+}
+
+
+def _ru_date_from_draft_line_head(candidate: dict, today: date) -> date | None:
+    """The «10 июля …» date a carried draft_line leads with, when it is a
+    recent past date (≤45 days back). Older matches are ambiguous (could be
+    next year's occurrence) and are ignored."""
+    head = str(candidate.get("draft_line") or "").strip().lstrip("• ")[:40]
+    m = re.match(r"(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\b", head, flags=re.IGNORECASE)
+    if not m:
+        return None
+    try:
+        parsed = date(today.year, _RU_GENITIVE_MONTHS[m.group(2).lower()], int(m.group(1)))
+    except ValueError:
+        return None
+    if 0 < (today - parsed).days <= 45:
+        return parsed
+    return None
+
+
 def _exclude_bad_food_opening_timing(candidate: dict) -> bool:
     """Food/openings are daily-value only: recent openings or this-week promos."""
     if not candidate.get("include"):
@@ -1567,6 +1590,33 @@ def _exclude_bad_food_opening_timing(candidate: dict) -> bool:
         return False
     today = now_london().date()
     explicit_dates = _explicit_dates_from_blob(candidate)
+    # A dated market/fair/festival is an EVENT: once its latest known date has
+    # passed the reader can no longer attend, so the 3-day opening-news grace
+    # below must not apply (07-12 shipped 10-11 July markets in «Еда» as
+    # things to visit). The date may live only in structured event facts or in
+    # the carried draft_line head — blob dates alone missed the shipped case.
+    event_days = list(explicit_dates)
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    for key in ("date_start", "date", "date_end"):
+        raw = str(event.get(key) or "").strip()[:10]
+        try:
+            event_days.append(datetime.strptime(raw, "%Y-%m-%d").date())
+        except ValueError:
+            continue
+    ru_day = _ru_date_from_draft_line_head(candidate, today)
+    if ru_day is not None:
+        event_days.append(ru_day)
+    if event_days and max(event_days) < today and re.search(
+        r"\b(?:market|fair|festival|car\s+boot|street\s+food|night\s+market|feast|supper\s+club|dining\s+club|tasting)\b",
+        _candidate_blob(candidate),
+        flags=re.IGNORECASE,
+    ):
+        _append_reject(
+            candidate,
+            "stale_opening",
+            f"Validator: dated food event {max(event_days).isoformat()} has already passed.",
+        )
+        return True
     if explicit_dates:
         latest = max(explicit_dates)
         earliest = min(explicit_dates)

@@ -111,6 +111,29 @@ class PublicFreshDedupeTest(unittest.TestCase):
 
 
 class ShowRenderableContractTest(unittest.TestCase):
+    def test_russian_event_must_show_respects_repeat_policy(self) -> None:
+        """A diaspora event whose repeat is blocked competes normally («show»)
+        instead of being force-reinserted daily via must_show; a fresh one is
+        still protected."""
+        from datetime import timedelta
+
+        from news_digest.pipeline.common import now_london
+
+        yesterday = (now_london().date() - timedelta(days=1)).isoformat()
+        candidate = {
+            "digest_selection_verdict": "selected",
+            "draft_line": "• Концерт в Лондоне.",
+            "primary_block": "russian_events",
+            "category": "russian_speaking_events",
+            "fingerprint": "ru-repeat-1",
+            "title": "Концерт",
+            "event": {"is_event": True, "date_start": yesterday},
+        }
+        previous = {**candidate, "last_published_day_london": yesterday, "first_published_day_london": yesterday}
+
+        self.assertEqual(_publish_plan_status(candidate, {"ru-repeat-1": previous}), "show")
+        self.assertEqual(_publish_plan_status(candidate, {}), "must_show")
+
     def test_publish_plan_status_requires_text_or_explicit_deterministic_ready_fields(self) -> None:
         self.assertEqual(_publish_plan_status({"digest_selection_verdict": "selected"}), "needs_enrichment")
         self.assertIn(
