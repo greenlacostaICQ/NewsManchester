@@ -488,6 +488,18 @@ PROMPT_FOOTBALL = (
     + _PROMPT_FOOTER
 )
 
+
+NIGHT_INVENTORY_PREWRITE_RULES = (
+    "\n\nНОЧНОЙ ЧЕРНОВИК ДЛЯ УТРЕННЕГО ВЫПУСКА:\n"
+    "- TODAY_DATE — дата, относительно которой написан текст. Не описывай прошедшую дату как будущую: "
+    "если открытие уже состоялось, пиши «открылся» или «уже работает».\n"
+    "- Пиши нейтрально и фактологично. Запрещены рекламные оценки и призывы: «уникальная возможность», "
+    "«отличная возможность», «не забудьте приобрести билеты», «билеты уже в продаже!».\n"
+    "- Последнее предложение должно давать конкретное действие читателю и оканчиваться одним из глаголов: "
+    "проверьте, закладывайте, сверьте, уточните, не откладывайте, убедитесь, следите, держите в планах.\n"
+    "- Не добавляй преимущества, популярность или срочность, которых нет в evidence."
+)
+
 _CATEGORY_TO_PROMPT: dict[str, str] = {
     "transport": PROMPT_TRANSPORT,
     "gmp": PROMPT_CITY_NEWS,
@@ -3933,14 +3945,15 @@ def prewrite_inventory_candidates(candidates: list[dict]) -> dict[str, object]:
     today = today_london()
     for prompt, group in groups.items():
         route_name = "events_rewrite" if prompt in {PROMPT_EVENTS, PROMPT_DIASPORA_EVENTS} else "rewrite"
+        night_prompt = prompt + NIGHT_INVENTORY_PREWRITE_RULES
         mapping.update(
             _call_with_fallback(
                 group,
-                prompt,
+                night_prompt,
                 provider_override,
                 base_url_override,
                 model_override,
-                prompt_name=prompt_name_for(prompt),
+                prompt_name=f"night_inventory_{prompt_name_for(prompt)}",
                 route_name=route_name,
                 today_date=today if prompt in {PROMPT_BUSINESS, PROMPT_EVENTS, PROMPT_DIASPORA_EVENTS} else "",
             )

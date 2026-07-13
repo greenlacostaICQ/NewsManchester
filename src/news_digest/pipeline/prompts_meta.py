@@ -21,7 +21,7 @@ from news_digest.pipeline import editor as _ed
 from news_digest.pipeline import post_publish_judge as _ppj
 from news_digest.pipeline import pre_send_quality_judge as _psq
 
-PROMPT_REGISTRY_VERSION = 1
+PROMPT_REGISTRY_VERSION = 2
 
 
 def _h(text: str) -> str:

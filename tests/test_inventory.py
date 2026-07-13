@@ -576,12 +576,16 @@ class NightWaveTest(unittest.TestCase):
             "good": ("• 1 августа в Co-op Live выступит Artist. Проверьте билеты на официальной странице.", "openai", "model"),
             "bad": ("• Other Artist at AO Arena on 2 August.", "openai", "model"),
         }
-        with patch("news_digest.pipeline.llm_rewrite._call_with_fallback", return_value=mapping):
+        with patch("news_digest.pipeline.llm_rewrite._call_with_fallback", return_value=mapping) as call:
             report = prewrite_inventory_candidates(candidates)
         self.assertEqual(report["written"], 1)
         self.assertEqual(report["rejected_quality"], 1)
         self.assertTrue(candidates[0]["draft_line"].startswith("• "))
         self.assertNotIn("draft_line", candidates[1])
+        night_prompt = call.call_args.args[1]
+        self.assertIn("Не описывай прошедшую дату как будущую", night_prompt)
+        self.assertIn("Пиши нейтрально и фактологично", night_prompt)
+        self.assertEqual(call.call_args.kwargs["prompt_name"], "night_inventory_events")
 
     def test_release_reports_inventory_as_not_yet_morning_consumed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
