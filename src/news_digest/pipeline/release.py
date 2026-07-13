@@ -45,6 +45,7 @@ from news_digest.pipeline.inventory import (
     verify_dispositions,
 )
 from news_digest.pipeline.repeat_policy import visible_repeat_verdict
+from news_digest.pipeline.prompts_meta import PROMPT_REGISTRY_VERSION
 from news_digest.pipeline.story_intelligence import (
     AUDIT_TRAIL_SCHEMA_VERSION,
     COST_LATENCY_BUDGETS,
@@ -3403,13 +3404,109 @@ def _summarise_inventory_morning_effect(state_dir: Path) -> dict[str, object]:
     collect_intake = collect_intake_report if isinstance(collect_intake_report, dict) else {}
     actual_intake = collect_intake.get("actual_intake") if isinstance(collect_intake.get("actual_intake"), dict) else {}
     mode = str(collect_intake.get("mode") or "")
-    consumed = bool(mode in {"assist", "on"} and actual_intake)
+    inserted_count = int(actual_intake.get("inserted_candidates") or 0)
+    consumed = bool(mode in {"assist", "on"} and inserted_count > 0)
     reason = (
         f"Morning inventory mode={mode}; actual intake inserted "
-        f"{int(actual_intake.get('inserted_candidates') or 0)} candidate(s)."
+        f"{inserted_count} candidate(s)."
         if consumed
-        else "Night inventory is collected, but no morning inventory intake report was available for this build."
+        else (
+            f"Morning inventory mode={mode}; no night candidate survived the checked intake."
+            if actual_intake else "Night inventory is collected, but no morning inventory intake report was available for this build."
+        )
     )
+
+    candidates_payload = read_json(state_dir / "candidates.json", {"candidates": []})
+    inventory_candidates = [
+        candidate
+        for candidate in candidates_payload.get("candidates", [])
+        if isinstance(candidate, dict) and candidate.get("inventory_source") == "night_inventory"
+    ]
+    writer_report = _load_optional_json(state_dir / "writer_report.json") or {}
+    validation_report = _load_optional_json(state_dir / "candidate_validation_report.json") or {}
+    validation_by_fp = {
+        str(item.get("fingerprint") or ""): item
+        for item in validation_report.get("items", [])
+        if isinstance(item, dict) and item.get("fingerprint")
+    }
+    rendered_fps = {
+        str(value)
+        for value in writer_report.get("rendered_candidate_fingerprints", [])
+        if str(value)
+    }
+    output_path = state_dir.parent / "outgoing" / "current_digest.html"
+    output_html = output_path.read_text(encoding="utf-8") if output_path.exists() else ""
+    visible_urls = {
+        canonical_url_identity(match)
+        for match in re.findall(r'href=["\']([^"\']+)', output_html, flags=re.IGNORECASE)
+        if canonical_url_identity(match)
+    }
+    final_by_block: dict[str, Counter] = defaultdict(Counter)
+    lineage: list[dict[str, object]] = []
+    for candidate in inventory_candidates:
+        block = str(candidate.get("primary_block") or "unknown")
+        fp = str(candidate.get("fingerprint") or "")
+        visible = canonical_url_identity(str(candidate.get("source_url") or "")) in visible_urls
+        validation = validation_by_fp.get(fp, {})
+        validated = bool(validation.get("validated", candidate.get("validated")))
+        accepted = bool(
+            validated
+            and not validation.get("validation_errors")
+            and not validation.get("reject_reasons")
+        )
+        selected = str(candidate.get("publish_plan_status") or "") in {"show", "must_show"} or str(
+            candidate.get("digest_selection_verdict") or ""
+        ) == "selected"
+        status = (
+            "visible_html" if visible
+            else "writer_rendered_not_visible" if fp in rendered_fps
+            else "selected_not_rendered" if selected
+            else "validated_not_selected" if accepted
+            else "rejected_by_validation" if validated
+            else "not_validated"
+        )
+        final_by_block[block][status] += 1
+        if len(lineage) < 80:
+            lineage.append(
+                {
+                    "fingerprint": fp,
+                    "title": str(candidate.get("title") or ""),
+                    "primary_block": block,
+                    "final_status": status,
+                }
+            )
+    final_funnel = {
+        "inserted_after_live_dedupe_and_cap": inserted_count,
+        "present_after_pipeline": len(inventory_candidates),
+        "validated": sum(
+            1
+            for candidate in inventory_candidates
+            if validation_by_fp.get(str(candidate.get("fingerprint") or ""), {}).get(
+                "validated", candidate.get("validated")
+            )
+        ),
+        "accepted_after_validation": sum(
+            1
+            for candidate in inventory_candidates
+            if (
+                validation_by_fp.get(str(candidate.get("fingerprint") or ""), {}).get(
+                    "validated", candidate.get("validated")
+                )
+                and not validation_by_fp.get(str(candidate.get("fingerprint") or ""), {}).get("validation_errors")
+                and not validation_by_fp.get(str(candidate.get("fingerprint") or ""), {}).get("reject_reasons")
+            )
+        ),
+        "writer_rendered": sum(
+            1 for candidate in inventory_candidates if str(candidate.get("fingerprint") or "") in rendered_fps
+        ),
+        "visible_in_final_html": sum(
+            1
+            for candidate in inventory_candidates
+            if canonical_url_identity(str(candidate.get("source_url") or "")) in visible_urls
+        ),
+        "by_block": {block: dict(counts) for block, counts in sorted(final_by_block.items())},
+        "lineage_examples": lineage,
+    }
 
     return {
         "schema_version": 1,
@@ -3426,8 +3523,9 @@ def _summarise_inventory_morning_effect(state_dir: Path) -> dict[str, object]:
         "last_wave": last_wave,
         "last_wave_at": last_wave_at,
         "by_category": by_category,
-        "report_only_intake": summarise_morning_intake(all_rows),
+        "report_only_intake": summarise_morning_intake(all_rows, prompt_version=PROMPT_REGISTRY_VERSION),
         "collect_intake": collect_intake,
+        "final_funnel": final_funnel,
     }
 
 

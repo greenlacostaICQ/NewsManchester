@@ -6,6 +6,8 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
+from news_digest.pipeline.common import is_recoverable_reserve
+from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.inventory import (
     InventoryLock,
     aggregate_category_health,
@@ -18,6 +20,8 @@ from news_digest.pipeline.inventory import (
     evaluate_card,
     inventory_stable_block_completeness,
     inventory_record_to_candidate,
+    inventory_source_replacement_plan,
+    latest_night_category_health,
     passes_morning_contract,
     prewrite_stable_inventory_candidate,
     read_inventory,
@@ -28,7 +32,7 @@ from news_digest.pipeline.inventory import (
     verify_dispositions,
     write_inventory,
 )
-from news_digest.pipeline.llm_rewrite import _candidate_content_hash
+from news_digest.pipeline.llm_rewrite import _candidate_content_hash, prewrite_inventory_candidates
 from news_digest.pipeline.release import _summarise_inventory_morning_effect
 
 
@@ -104,6 +108,7 @@ class CardRulesTest(unittest.TestCase):
     def test_complete_event_with_text_is_ready(self) -> None:
         cand = {
             "primary_block": "next_7_days",
+            "source_url": "https://example.test/event",
             "event": {"event_name": "X", "venue": "HOME", "date_start": "2026-07-05"},
             "draft_line": "• Концерт X в HOME 5 июля.",
         }
@@ -114,10 +119,23 @@ class CardRulesTest(unittest.TestCase):
     def test_fields_present_but_no_text_is_needs_text(self) -> None:
         cand = {
             "primary_block": "next_7_days",
+            "source_url": "https://example.test/event",
             "event": {"event_name": "X", "venue": "HOME", "date_start": "2026-07-05"},
         }
         status, ready, missing = evaluate_card(cand)
         self.assertEqual((status, ready, missing), ("needs_text", False, ["draft_line"]))
+
+    def test_opening_needs_specific_subject_and_phase_or_date(self) -> None:
+        candidate = {
+            "primary_block": "openings",
+            "title": "New cafe",
+            "source_url": "https://example.test/cafe",
+            "event": {"event_name": "New cafe"},
+            "draft_line": "• В Стокпорте открылось новое кафе.",
+        }
+        status, _, missing = evaluate_card(candidate)
+        self.assertEqual(status, "missing_facts")
+        self.assertIn("opening_phase_or_date", missing)
 
 
 class MorningContractTest(unittest.TestCase):
@@ -151,7 +169,7 @@ class MorningContractTest(unittest.TestCase):
 
     def test_fact_ready_without_text_reaches_morning_as_needs_text(self) -> None:
         record = {
-            "primary_block": "weekend_activities",
+            "primary_block": "next_7_days",
             "quality_status": "needs_text",
             "missing_facts": ["draft_line"],
             "render_ready": False,
@@ -188,6 +206,61 @@ class MorningContractTest(unittest.TestCase):
         ok, reason = passes_morning_contract(record, today="2026-07-09")
         self.assertFalse(ok)
         self.assertEqual(reason, "needs_live_refetch")
+
+    def test_ongoing_event_uses_date_end_but_past_one_day_event_expires(self) -> None:
+        base = {
+            "primary_block": "next_7_days",
+            "quality_status": "ready",
+            "render_ready": True,
+            "last_seen_at": "2099-07-13T01:00:00+01:00",
+        }
+        ongoing = {**base, "fact_card": {"date_start": "2026-07-10", "date_end": "2026-07-20"}}
+        expired = {**base, "fact_card": {"date_start": "2026-07-10", "date_end": "2026-07-10"}}
+        self.assertTrue(passes_morning_contract(ongoing, today="2026-07-13")[0])
+        self.assertEqual(passes_morning_contract(expired, today="2026-07-13"), (False, "event_expired"))
+
+
+class ReplacementPlanTest(unittest.TestCase):
+    def test_mixed_ticket_category_never_skips_when_only_ticket_radar_is_restored(self) -> None:
+        report = {"completeness": {"blocks": {"ticket_radar": {"complete": True}, "openings": {"complete": True}}}}
+        health = {
+            "venues_tickets": {"status": "ok"},
+            "food_openings": {"status": "ok"},
+        }
+        plan = inventory_source_replacement_plan(report, health)
+        self.assertFalse(plan["venues_tickets"]["safe_to_skip"])
+        self.assertEqual(plan["venues_tickets"]["reason"], "mixed_output_blocks_not_restored")
+        self.assertTrue(plan["food_openings"]["safe_to_skip"])
+
+    def test_latest_night_health_exposes_source_errors(self) -> None:
+        rows = [
+            {"run_id": "r1", "run_at_london": "2026-07-13T03:30:00+01:00", "category": "food_openings", "checked": True, "found": 2, "errors": 0, "expected_sources": 2},
+            {"run_id": "r1", "run_at_london": "2026-07-13T03:30:01+01:00", "category": "food_openings", "checked": True, "found": 0, "errors": 1, "expected_sources": 2},
+        ]
+        health = latest_night_category_health(rows)["food_openings"]
+        self.assertEqual(health["status"], "degraded")
+        self.assertEqual(health["source_errors"], 1)
+
+
+class InventoryFactPreservationTest(unittest.TestCase):
+    def test_empty_morning_extraction_does_not_erase_night_range(self) -> None:
+        candidate = {
+            "inventory_source": "night_inventory",
+            "event": {
+                "event_name": "Exhibition",
+                "venue": "HOME",
+                "date_start": "2026-07-10",
+                "date_end": "2026-07-20",
+                "is_recurring": True,
+            }
+        }
+        with patch("news_digest.pipeline.event_extraction.extract_event", return_value={"event_name": "", "venue": "", "date_start": ""}):
+            enrich_candidate_event(candidate)
+        self.assertEqual(candidate["event"]["venue"], "HOME")
+        self.assertEqual(candidate["event"]["date_end"], "2026-07-20")
+
+    def test_explicit_reserve_flag_is_not_trusted_before_validation(self) -> None:
+        self.assertFalse(is_recoverable_reserve({"recoverable_reserve": True, "validated": False}))
 
 
 class ReentryTest(unittest.TestCase):
@@ -230,6 +303,7 @@ class BuildRecordTest(unittest.TestCase):
             "source_url": "https://x/t",
             "venue_scope": "gm",
             "ticket_type": "on_sale_now",
+            "ticket_notability": {"tier": "A"},
             "event": {"event_name": "Artist", "venue": "Co-op Live", "date_start": "2026-08-01"},
             "draft_line": "• Artist в Co-op Live 1 августа.",
         }
@@ -266,6 +340,7 @@ class BuildRecordTest(unittest.TestCase):
             {
                 "fingerprint": "fp1",
                 "title": "Market",
+                "source_url": "https://example.test/market",
                 "primary_block": "weekend_activities",
                 "quality_status": "needs_text",
                 "missing_facts": ["draft_line"],
@@ -299,6 +374,7 @@ class BuildRecordTest(unittest.TestCase):
             {
                 "fingerprint": "weekend-1",
                 "title": "Stockport Makers Market",
+                "source_url": "https://example.test/weekend",
                 "primary_block": "weekend_activities",
                 "category": "culture_weekly",
                 "quality_status": "needs_text",
@@ -326,6 +402,8 @@ class BuildRecordTest(unittest.TestCase):
         ):
             candidates, report = build_morning_inventory_intake(records, mode="assist", today="2026-07-09")
         self.assertEqual([candidate["fingerprint"] for candidate in candidates], ["weekend-1"])
+        self.assertNotIn("recoverable_reserve", candidates[0])
+        self.assertNotIn("public_reserve", candidates[0])
         self.assertEqual(report["inserted_candidates"], 1)
         self.assertIn("morning_relevant_needs_text", report["hybrid_signals"])
 
@@ -345,6 +423,7 @@ class BuildRecordTest(unittest.TestCase):
             {
                 "fingerprint": f"ticket-{idx}",
                 "title": f"A-tier show {idx}",
+                "source_url": f"https://example.test/ticket-{idx}",
                 "primary_block": "ticket_radar",
                 "category": "venues_tickets",
                 "quality_status": "needs_text",
@@ -363,6 +442,30 @@ class BuildRecordTest(unittest.TestCase):
         candidates, report = build_morning_inventory_intake(records, mode="assist", today="2026-07-09")
         self.assertEqual(len(candidates), 20)
         self.assertEqual(report["held_by_cap"], 5)
+
+    def test_changed_facts_invalidate_cached_night_line(self) -> None:
+        candidate = {
+            "fingerprint": "event-1",
+            "title": "Market",
+            "source_url": "https://example.test/market",
+            "source_label": "Official market",
+            "primary_block": "weekend_activities",
+            "category": "culture_weekly",
+            "event": {"event_name": "Market", "venue": "Stockport", "date_start": "2026-07-11"},
+            "draft_line": "• 11 июля в Стокпорте пройдёт рынок.",
+        }
+        record = {"schema_version": 1, **build_inventory_record(candidate, prompt_version=7)}
+        record["title"] = "Market date changed"
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-09T08:00:00+01:00"),
+        ):
+            candidates, report = build_morning_inventory_intake(
+                [record], today="2026-07-09", prompt_version=7
+            )
+        self.assertEqual(report["invalidated_prewrite"], 1)
+        self.assertEqual(candidates[0]["draft_line"], "")
+        self.assertTrue(candidates[0]["inventory_needs_text"])
 
     def test_prewrite_uses_ticket_deterministic_writer(self) -> None:
         candidate = {
@@ -430,9 +533,43 @@ class NightWaveTest(unittest.TestCase):
             self.assertEqual([r["fingerprint"] for r in read_inventory(root / "data" / "state", "media_layer")], ["BBC Manchester-1"])
             self.assertEqual([r["fingerprint"] for r in read_inventory(root / "data" / "state", "gmp")], ["GMP-1"])
             self.assertEqual(read_inventory(root / "data" / "state", "media_layer")[0]["fact_card"]["venue"], "HOME")
-            self.assertEqual(read_inventory(root / "data" / "state", "media_layer")[0]["quality_status"], "needs_text")
+            self.assertEqual(read_inventory(root / "data" / "state", "media_layer")[0]["quality_status"], "missing_facts")
             # the ticket source is outside the live_news wave — not collected
             self.assertEqual(read_inventory(root / "data" / "state", "venues_tickets"), [])
+
+    def test_night_model_prewrite_keeps_only_normal_writer_quality(self) -> None:
+        candidates = [
+            {
+                "fingerprint": "good",
+                "include": True,
+                "category": "venues_tickets",
+                "primary_block": "ticket_radar",
+                "title": "Artist at Co-op Live",
+                "summary": "Artist plays Co-op Live on 1 August 2026.",
+                "source_url": "https://example.test/good",
+                "event": {"event_name": "Artist", "venue": "Co-op Live", "date_start": "2026-08-01"},
+            },
+            {
+                "fingerprint": "bad",
+                "include": True,
+                "category": "venues_tickets",
+                "primary_block": "ticket_radar",
+                "title": "Other Artist",
+                "summary": "Other Artist plays on 2 August 2026.",
+                "source_url": "https://example.test/bad",
+                "event": {"event_name": "Other Artist", "venue": "AO Arena", "date_start": "2026-08-02"},
+            },
+        ]
+        mapping = {
+            "good": ("• 1 августа в Co-op Live выступит Artist. Проверьте билеты на официальной странице.", "openai", "model"),
+            "bad": ("• Other Artist at AO Arena on 2 August.", "openai", "model"),
+        }
+        with patch("news_digest.pipeline.llm_rewrite._call_with_fallback", return_value=mapping):
+            report = prewrite_inventory_candidates(candidates)
+        self.assertEqual(report["written"], 1)
+        self.assertEqual(report["rejected_quality"], 1)
+        self.assertTrue(candidates[0]["draft_line"].startswith("• "))
+        self.assertNotIn("draft_line", candidates[1])
 
     def test_release_reports_inventory_as_not_yet_morning_consumed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

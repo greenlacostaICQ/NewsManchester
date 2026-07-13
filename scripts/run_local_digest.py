@@ -1218,15 +1218,23 @@ def cmd_collect_inventory(wave: str) -> int:
     from news_digest.pipeline.collector.core import SOURCES, _collect_single_source  # noqa: PLC0415
     from news_digest.pipeline.inventory import (  # noqa: PLC0415
         BREAKING_CHECK_CATEGORIES,
+        INVENTORY_INTAKE_CAPS,
         NIGHT_WAVES,
         build_inventory_record,
+        evaluate_card,
         merge_inventory,
+        passes_morning_contract,
         prewrite_stable_inventory_candidate,
     )
     from news_digest.pipeline.entity_extraction import enrich_candidates_entities  # noqa: PLC0415
     from news_digest.pipeline.event_extraction import enrich_candidates_events  # noqa: PLC0415
+    from news_digest.pipeline.change_classifier import attach_change_phase  # noqa: PLC0415
+    from news_digest.pipeline.candidate_validator import classify_russian_evidence, resolve_venue_scope  # noqa: PLC0415
+    from news_digest.pipeline.professional_events import apply_professional_event_match  # noqa: PLC0415
+    from news_digest.pipeline.ticket_notability import enrich_ticket_notability  # noqa: PLC0415
+    from news_digest.pipeline.llm_rewrite import prewrite_inventory_candidates  # noqa: PLC0415
     from news_digest.pipeline.prompts_meta import PROMPT_REGISTRY_VERSION  # noqa: PLC0415
-    from news_digest.pipeline.common import write_json_atomic  # noqa: PLC0415
+    from news_digest.pipeline.common import new_pipeline_run_id, write_json_atomic  # noqa: PLC0415
 
     if wave == "breaking":
         categories = BREAKING_CHECK_CATEGORIES
@@ -1240,12 +1248,29 @@ def cmd_collect_inventory(wave: str) -> int:
     sources = [s for s in SOURCES if s.report_category in categories]
     per_category: dict[str, list[dict]] = {}
     run_log: list[dict] = []
+    collected_sources: list[tuple[dict, list[dict]]] = []
     started = time.monotonic()
+    run_id = new_pipeline_run_id()
+    expected_by_category = {
+        category: sum(1 for source in sources if source.report_category == category)
+        for category in categories
+    }
     for source in sources:
         try:
             health, source_candidates = _collect_single_source(source)
         except Exception as exc:  # noqa: BLE001
-            run_log.append({"wave": wave, "source": source.name, "category": source.report_category, "error": str(exc), "found": 0})
+            run_log.append({
+                "run_id": run_id,
+                "wave": wave,
+                "source": source.name,
+                "category": source.report_category,
+                "checked": False,
+                "fetched": False,
+                "error": str(exc),
+                "errors": 1,
+                "found": 0,
+                "expected_sources": expected_by_category.get(source.report_category, 0),
+            })
             continue
         # 0066a: per-card night enrichment only. Corpus-level dedupe/clusters
         # stay in the morning path because a single wave is not the whole corpus.
@@ -1253,11 +1278,29 @@ def cmd_collect_inventory(wave: str) -> int:
         enrich_candidates_events(source_candidates)
         prewritten = 0
         for candidate in source_candidates:
-            if isinstance(candidate, dict) and prewrite_stable_inventory_candidate(candidate):
+            if not isinstance(candidate, dict):
+                continue
+            attach_change_phase(candidate)
+            scope, city = resolve_venue_scope(candidate)
+            candidate["venue_scope"] = scope
+            candidate["venue_city"] = city
+            if str(candidate.get("category") or "") == "professional_events":
+                apply_professional_event_match(candidate, PROJECT_ROOT)
+            if str(candidate.get("primary_block") or "") == "russian_events":
+                candidate["russian_evidence"] = classify_russian_evidence(candidate)
+            if str(candidate.get("category") or "") == "venues_tickets":
+                notability = enrich_ticket_notability(candidate, state_dir / "ticket_notability_cache.json")
+                candidate["ticket_notability"] = {
+                    "artist": notability.artist,
+                    "kind": notability.kind,
+                    "tier": notability.tier,
+                    "confidence": notability.confidence,
+                    "signal": notability.signal,
+                }
+            if prewrite_stable_inventory_candidate(candidate):
                 prewritten += 1
-        records = [build_inventory_record(c, prompt_version=PROMPT_REGISTRY_VERSION) for c in source_candidates if isinstance(c, dict)]
-        per_category.setdefault(source.report_category, []).extend(records)
-        run_log.append({
+        run_row = {
+            "run_id": run_id,
             "wave": wave,
             "source": source.name,
             "category": source.report_category,
@@ -1266,10 +1309,49 @@ def cmd_collect_inventory(wave: str) -> int:
             "found": len(source_candidates),
             "enriched": sum(1 for c in source_candidates if isinstance(c, dict) and c.get("include")),
             "errors": len(health.get("errors") or []),
-            "fact_ready": sum(1 for r in records if str(r.get("quality_status") or "") in {"ready", "needs_text"}),
-            "prewritten": prewritten,
-            "render_ready": sum(1 for r in records if r.get("render_ready")),
-        })
+            "expected_sources": expected_by_category.get(source.report_category, 0),
+            "deterministic_prewritten": prewritten,
+        }
+        run_log.append(run_row)
+        collected_sources.append((run_row, source_candidates))
+
+    model_prewrite_pool: list[dict] = []
+    kept_by_block: dict[str, int] = {}
+    for _, source_candidates in collected_sources:
+        for candidate in source_candidates:
+            if not isinstance(candidate, dict) or str(candidate.get("draft_line") or "").strip():
+                continue
+            status, _, _ = evaluate_card(candidate)
+            if status != "needs_text":
+                continue
+            probe_record = build_inventory_record(candidate, prompt_version=PROMPT_REGISTRY_VERSION)
+            if not passes_morning_contract(probe_record)[0]:
+                continue
+            block = str(candidate.get("primary_block") or "")
+            cap = int(INVENTORY_INTAKE_CAPS.get(block, 0))
+            if not cap or kept_by_block.get(block, 0) >= cap:
+                continue
+            model_prewrite_pool.append(candidate)
+            kept_by_block[block] = kept_by_block.get(block, 0) + 1
+    model_prewrite = prewrite_inventory_candidates(model_prewrite_pool)
+
+    for run_row, source_candidates in collected_sources:
+        records = [
+            build_inventory_record(candidate, prompt_version=PROMPT_REGISTRY_VERSION)
+            for candidate in source_candidates
+            if isinstance(candidate, dict)
+        ]
+        per_category.setdefault(str(run_row.get("category") or "unknown"), []).extend(records)
+        run_row["fact_ready"] = sum(
+            1 for record in records if str(record.get("quality_status") or "") in {"ready", "needs_text"}
+        )
+        run_row["model_prewritten"] = sum(
+            1
+            for candidate in source_candidates
+            if str(candidate.get("draft_line_provider") or "").startswith("night_inventory:")
+        )
+        run_row["prewritten"] = int(run_row.get("deterministic_prewritten") or 0) + int(run_row["model_prewritten"])
+        run_row["render_ready"] = sum(1 for record in records if record.get("render_ready"))
     merged: dict[str, int] = {}
     for category, records in per_category.items():
         merged[category] = merge_inventory(state_dir, category, records)
@@ -1278,15 +1360,22 @@ def cmd_collect_inventory(wave: str) -> int:
         for row in run_log:
             handle.write(json.dumps({**row, "run_at_london": datetime.now(LONDON_TZ).isoformat()}, ensure_ascii=False) + "\n")
     summary = {
-        "ok": True,
+        "ok": not any(int(row.get("errors") or 0) or not row.get("checked") for row in run_log),
+        "health": "degraded" if any(int(row.get("errors") or 0) or not row.get("checked") for row in run_log) else "ok",
+        "run_id": run_id,
         "wave": wave,
         "categories": sorted(categories),
         "sources_polled": len(sources),
         "merged_totals": merged,
+        "found_this_run": sum(int(row.get("found") or 0) for row in run_log),
+        "source_errors": sum(int(row.get("errors") or 0) for row in run_log),
+        "fact_ready_this_run": sum(int(row.get("fact_ready") or 0) for row in run_log),
+        "render_ready_this_run": sum(int(row.get("render_ready") or 0) for row in run_log),
+        "model_prewrite": model_prewrite,
         "duration_seconds": round(time.monotonic() - started, 2),
     }
     print(json.dumps(summary, ensure_ascii=False, indent=2))
-    return 0
+    return 0 if summary["ok"] else 1
 
 
 def cmd_dedupe_digest() -> int:

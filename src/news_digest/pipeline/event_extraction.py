@@ -770,11 +770,33 @@ def event_date_is_trustworthy(candidate_or_event: dict) -> bool:
 
 
 def enrich_candidate_event(candidate: dict) -> dict:
-    """Idempotent — overwrites any prior ``event`` block with a fresh
-    extraction. Safe to call from the collector AND from dedupe when
-    a pipeline resumes with an existing candidates.json."""
+    """Idempotent enrichment that never erases already structured facts.
+
+    Inventory intake restores a fact card before this function runs. A fresh
+    extraction may add or refresh facts, but an empty extraction must not wipe
+    the restored date, venue, recurrence range, or booking URL.
+    """
     if isinstance(candidate, dict):
-        candidate["event"] = extract_event(candidate, candidate.get("entities") or {})
+        existing = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        extracted = extract_event(candidate, candidate.get("entities") or {})
+        if candidate.get("inventory_source") != "night_inventory":
+            candidate["event"] = extracted
+            return candidate
+        merged = dict(existing)
+        for key, value in extracted.items():
+            if (
+                key in {"event_name", "name"}
+                and str(existing.get("event_name") or existing.get("name") or "").strip()
+                and str(value or "").strip() == str(candidate.get("title") or "").strip()
+                and str(value or "").strip()
+                != str(existing.get("event_name") or existing.get("name") or "").strip()
+            ):
+                continue
+            if value not in (None, "", [], {}):
+                merged[key] = value
+            elif key not in merged:
+                merged[key] = value
+        candidate["event"] = merged
     return candidate
 
 

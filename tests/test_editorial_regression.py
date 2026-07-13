@@ -792,6 +792,7 @@ class FinalEditorNetTest(unittest.TestCase):
         candidates = [
             {
                 "primary_block": "today_focus",
+                "validated": True,
                 "public_reserve": True,
                 "backup_pool_only": False,
                 "story_identity_key": "story:green|civic|manchester",
@@ -801,6 +802,7 @@ class FinalEditorNetTest(unittest.TestCase):
             },
             {
                 "primary_block": "today_focus",
+                "validated": True,
                 "public_reserve": True,
                 "backup_pool_only": False,
                 "story_identity_key": "story:parks|civic|salford",
@@ -822,6 +824,7 @@ class FinalEditorNetTest(unittest.TestCase):
             {
                 "primary_block": "ticket_radar",
                 "category": "venues_tickets",
+                "validated": True,
                 "public_reserve": True,
                 "backup_pool_only": False,
                 "title": "Example Artist — event 2026-07-20",

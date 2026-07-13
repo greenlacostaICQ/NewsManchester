@@ -5,8 +5,8 @@ name: GM Night Inventory
 # data/state/inventory/*.jsonl and commits it back to the repo, so the 08:00
 # morning run (which checks out main) can read it. A wave never writes
 # candidates.json, so it can't block/corrupt the morning release. The morning
-# build does not yet consume inventory — that is the gradual next step (item 15)
-# after several clean nights.
+# build consumes only fact-ready stable cards and keeps ordinary live collection
+# for every category the latest healthy night wave did not fully replace.
 
 on:
   workflow_dispatch:
@@ -118,13 +118,18 @@ jobs:
 
           wave = summary.get("wave", "?")
           polled = summary.get("sources_polled", 0)
-          merged = summary.get("merged_totals", {}) or {}
-          cards = sum(int(v) for v in merged.values())
+          found = int(summary.get("found_this_run", 0) or 0)
+          ready = int(summary.get("render_ready_this_run", 0) or 0)
+          errors = int(summary.get("source_errors", 0) or 0)
+          health = summary.get("health", "unknown")
           dur = summary.get("duration_seconds", 0)
           text = (
               f"🌙 Инвентарь · волна {wave}\n"
               f"источников опрошено: {polled}\n"
-              f"карточек в инвентаре: {cards}\n"
+              f"найдено в этом прогоне: {found}\n"
+              f"готово к выпуску: {ready}\n"
+              f"ошибок источников: {errors}\n"
+              f"статус: {health}\n"
               f"время: {dur}s"
           )
 

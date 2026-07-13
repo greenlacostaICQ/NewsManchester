@@ -137,9 +137,9 @@ def is_recoverable_reserve(candidate: dict) -> bool:
     if not isinstance(candidate, dict):
         return False
     if candidate.get("recoverable_reserve"):
-        return True
+        return recoverable_reserve_eligible(candidate)
     if candidate.get("public_reserve") and not candidate.get("backup_pool_only"):
-        return True
+        return recoverable_reserve_eligible(candidate)
     return bool(candidate.get("backup_candidate") and recoverable_reserve_eligible(candidate))
 
 VAGUE_PRACTICAL_ANGLES = {

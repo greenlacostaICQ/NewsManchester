@@ -3904,6 +3904,66 @@ def _call_with_fallback(
     return mapping
 
 
+def prewrite_inventory_candidates(candidates: list[dict]) -> dict[str, object]:
+    """Write selected fact-complete night cards through the existing rewrite route.
+
+    This is the same category prompt and provider chain used in the morning; it
+    does not introduce a second writer or a weaker fallback. Only lines that
+    pass the normal writer quality contract are retained.
+    """
+    pending = [
+        candidate
+        for candidate in candidates
+        if isinstance(candidate, dict)
+        and candidate.get("include")
+        and not str(candidate.get("draft_line") or "").strip()
+    ]
+    if not pending:
+        return {"requested": 0, "written": 0, "rejected_quality": 0}
+    provider_override = os.environ.get("LLM_PROVIDER", "").lower().strip()
+    model_override = os.environ.get("LLM_MODEL", "").strip()
+    base_url_override = os.environ.get("LLM_BASE_URL", "").strip()
+    from news_digest.pipeline.prompts_meta import prompt_name_for  # noqa: PLC0415
+
+    groups: dict[str, list[dict]] = {}
+    for candidate in pending:
+        prompt = _CATEGORY_TO_PROMPT.get(str(candidate.get("category") or ""), PROMPT_CITY_NEWS)
+        groups.setdefault(prompt, []).append(candidate)
+    mapping: ProviderMapping = {}
+    today = today_london()
+    for prompt, group in groups.items():
+        route_name = "events_rewrite" if prompt in {PROMPT_EVENTS, PROMPT_DIASPORA_EVENTS} else "rewrite"
+        mapping.update(
+            _call_with_fallback(
+                group,
+                prompt,
+                provider_override,
+                base_url_override,
+                model_override,
+                prompt_name=prompt_name_for(prompt),
+                route_name=route_name,
+                today_date=today if prompt in {PROMPT_BUSINESS, PROMPT_EVENTS, PROMPT_DIASPORA_EVENTS} else "",
+            )
+        )
+    written = 0
+    rejected_quality = 0
+    now_iso = now_london().isoformat()
+    for candidate in pending:
+        result = mapping.get(str(candidate.get("fingerprint") or ""))
+        if not result:
+            continue
+        line, provider, model = result
+        if _writer_quality_errors(candidate, line):
+            rejected_quality += 1
+            continue
+        candidate["draft_line"] = line
+        candidate["draft_line_provider"] = f"night_inventory:{provider}"
+        candidate["draft_line_model"] = model
+        candidate["draft_line_written_at"] = now_iso
+        written += 1
+    return {"requested": len(pending), "written": written, "rejected_quality": rejected_quality}
+
+
 # ---------------------------------------------------------------------------
 # Recurring-event date enrichment
 # ---------------------------------------------------------------------------

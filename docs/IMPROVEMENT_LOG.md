@@ -1083,3 +1083,60 @@
 - Файлы/места: `llm_rewrite.py:RESERVE_PREWRITE_BLOCKS`, `run_llm_rewrite` (quota block), `rewrite_shortlist.reserve_prewrite`.
 - ПРОВЕРКА: offline — py_compile, 852/0; прод-эффект проверить на следующем утреннем прогоне (reserve_prewrite и floor'ы секций).
 - Удалено: ничего — enrich-rewrite fallback в `_same_section_reserve_line` покрывает секции вне квоты и промахи prewrite.
+
+### 0099 — Безопасная замена утренних источников ночным инвентарём — 2026-07-13
+- Статус: внедрено; режим production остаётся `assist` до проверки новых ночных волн.
+- Проблема: `MORNING_INVENTORY_MODE=on` мог отключить всю категорию `venues_tickets`, если только Ticket Radar набрал floor. Эти же 15 источников кормят `next_7_days`, `future_announcements` и `outside_gm_tickets`, но intake их не восстанавливал.
+- Причина (корень): старый `_INVENTORY_SKIP_CATEGORIES` связывал категорию с одним блоком и принимал решение по предварительной полноте до live-дедупа.
+- Решение: категория описывает все публичные блоки, которые она кормит. Broad scan можно заменить только для single-output категории или когда inventory восстанавливает весь набор блоков, последняя night-wave здорова и проверенная полнота выполнена. Ticket/Culture пока всегда остаются live; Food может быть заменён после доказательства.
+- Почему решает класс: новый ticket/venue source не сможет потерять соседний блок из-за floor другого блока.
+- ПРОВЕРКА: реальные состояния 10–13.07 — `venues_tickets safe_to_skip=false` во все четыре дня; на 13.07 старый preview считал Ticket complete (6), после live-дедупа было 1, новый контракт допускает 0 и не отключает источники.
+- Удалено: `_INVENTORY_SKIP_CATEGORIES` — старое одно-блочное решение стало опасным и больше не используется.
+
+### 0100 — Требования ночной карточки зависят от публичного блока — 2026-07-13
+- Статус: внедрено; ПРОВЕРКА на реальных inventory snapshots 10–13.07.
+- Проблема: одинаковое правило `event/date/venue` объявляло готовыми календарные страницы, `Next page`, события 2027 года, Food без конкретного места, Ticket без тира и прошедшие однодневные рынки.
+- Решение: Weekend/7 days требуют конкретное событие, место, актуальную дату и action URL; Ticket — событие, дата, venue, ticket trigger и tier; Food — конкретный объект и venue плюс opening phase или дата; Pro — deterministic/CV match; Russian — positive language evidence. Хранятся `date_end`, recurrence, next occurrence и event status. Понедельник–среда Weekend не вставляется в утро; в остальные дни дата должна пересекать текущее weekend-окно.
+- Почему решает класс: readiness теперь означает «эту карточку можно безопасно показать в её блоке», а не просто «у неё заполнены три поля».
+- ПРОВЕРКА: replay intake 13.07 — 44 Weekend-карточки стали `weekend_hidden_by_schedule`, 32 прошедшие карточки `event_expired`, Ticket 6→0 без тира; Asian Food Night Market 10.07 и Makers Market 11.07 не проходят 13.07.
+- Удалено: ничего — общий `evaluate_card` сохранён как одна точка решения, заменены только его слишком слабые требования.
+
+### 0101 — Ночные факты сохраняются, резерв становится доступен только после validation — 2026-07-13
+- Статус: внедрено; ПРОВЕРКА на реальном Asian Food record и replay 13.07.
+- Проблема: утренний event enrichment мог заменить полный ночной `event` пустым результатом; inventory intake заранее ставил `recoverable_reserve/public_reserve`, а `is_recoverable_reserve` доверял этим флагам без validation.
+- Решение: для `inventory_source=night_inventory` утреннее enrichment дополняет существующую карточку и не стирает date/venue/range; generic title не заменяет более конкретное night event name. Intake больше не ставит reserve-флаги. Любой explicit reserve проходит существующий `recoverable_reserve_eligible`.
+- Почему решает класс: потеря поля на повторном extraction не разрушает карточку, а rejected/stale/non-GM запись нельзя вернуть одним старым флагом.
+- ПРОВЕРКА: реальный Asian Food record — standalone morning extraction давал `The SK Lowdown`, пустые venue/date; после merge сохранены `Stockport's Asian Food Night Market`, Churchgate и 2026-07-10. Replay 13.07: три rejected/stale Food reserve строки исчезли; 24→23 видимых пункта без пустого обязательного блока.
+- Удалено: прежняя безусловная выдача reserve по `recoverable_reserve/public_reserve`; отдельного старого пула не осталось.
+
+### 0102 — Полнота считается после карточного контракта; иначе остаётся live-сбор — 2026-07-13
+- Статус: внедрено; default `assist`, production skip ещё не включён.
+- Проблема: `complete=true` считался по числу предварительных кандидатов до проверки и cap; `by_block.inserted` считался до cap. Утро могло пропустить источники по карточкам, которые затем исчезали.
+- Решение: полнота требует post-contract candidates, готовый текст не ниже floor и минимум два источника. Если любое условие или health последней волны не выполнено, существующий обычный live-сбор категории остаётся включённым; нового fallback/recovery пути нет.
+- Почему решает класс: тихая потеря превращается в обычный live collect, а не в пустой блок после ошибочного skip.
+- ПРОВЕРКА: реальные snapshots 10/11/12/13.07 — новый intake W/T/F: `3/0/1`, `5/0/2`, `5/0/1`, `0/0/1`; ни в один день категория не признана безопасной для skip. Старые вставки: 16/23/25 на 11–13.07; новые: 7/6/1.
+- Удалено: отдельный targeted fallback не добавлялся; используется существующий live collect, когда replacement не доказан.
+
+### 0103 — Честная night→morning→HTML воронка — 2026-07-13
+- Статус: внедрено; ПРОВЕРКА на state 13.07 и 860/0.
+- Проблема: green night workflow скрывал source errors; Telegram показывал общий размер склада вместо найденного за волну; `morning_consumed=true` мог означать только наличие report; inserted по блокам не учитывал cap; не было связи с final HTML.
+- Решение: night row получает `run_id`, expected/checked/errors/found/fact-ready/render-ready; source error делает wave `degraded` и command non-zero, но partial inventory всё равно коммитится. Morning report показывает records→card-ready→eligible→after live dedupe→after cap, причины live collect/skip. Release связывает inventory fingerprints с validation, writer и URL финального HTML.
+- Почему решает класс: по одному отчёту видно не размер склада, а где именно потерялась карточка и была ли строка видна читателю.
+- ПРОВЕРКА: старый state 13.07 теперь читается как 25 inserted → 25 present → 25 validated → 2 writer rendered → 2 visible HTML; причины остальных разложены по блокам. Полный набор: 860 tests, OK.
+- Удалено: ложное правило `morning_consumed = mode + report exists`; теперь consumed только при `inserted_candidates>0`.
+
+### 0104 — Ночной текст пишется обычным writer и принимается только после его quality contract — 2026-07-13
+- Статус: внедрено; offline и real-data replay готовы, production proof требуется на новой night-wave после push.
+- Проблема: deterministic prewrite объявлял render-ready английские заголовки с шаблонными концовками; на складе 13.07 было 149 render-ready, но повторная проверка старых строк оставила только 1 Weekend и 2 Pro безопасных deterministic строки.
+- Решение: сначала используется существующий deterministic writer; строка проходит существующие strip/quality checks. Fact-complete карточки без безопасной строки ограничиваются существующими block caps и ночью идут через тот же category prompt/provider fallback, что утром. Результат сохраняется только после обычного `_draft_line_quality_errors`; evidence hash, prompt version и schema version проверяются при intake, изменившаяся карточка возвращается в `needs_text`.
+- Почему решает класс: ночь не создаёт второй слабый writer; утро получает строку того же качества и переписывает только выбранные `needs_text`.
+- ПРОВЕРКА: реальные inventory records 13.07 — старые `old_render_ready`: Weekend 75, Ticket 29, Food 7; после текущего deterministic quality contract: 1/0/0. Unit proof existing provider route: валидная русская строка принята, English-only отклонена. Production model proof — manual `pro_food_russian` wave после delivery commit.
+- Удалено: доверие к любой непустой deterministic строке как к `render_ready`; отдельный новый текстовый fallback не добавлялся.
+
+#### План включения после 0104
+- 13.07 сразу после push: вручную запустить `pro_food_russian`, проверить `health`, `found_this_run`, `model_prewrite.written`, `render_ready_this_run` и сохранённые строки.
+- 14.07 утром: проверить новую `final_funnel` и убедиться, что live Food остался включён при incomplete night inventory; режим всё ещё `assist`.
+- 14–16.07: требовать три последовательные здоровые Food-волны без stale/generic карточек и с минимум двумя источниками.
+- Не раньше 17.07: включить `MORNING_INVENTORY_MODE=on`; текущий replacement plan позволит skip только Food, Ticket/Culture останутся live.
+- 17–23.07: семь утренних выпусков сравнить с предыдущими семью по visible Food quality, потерянным live-кандидатам, collect/rewrite/total time. При любой потере вернуть `assist`.
+- 24.07: решить, оставлять ли Food `on`; только после этого отдельным пакетом готовить whole-output Ticket (`ticket_radar + next_7_days + future + outside GM`).

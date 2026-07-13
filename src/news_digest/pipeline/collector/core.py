@@ -32,9 +32,12 @@ from news_digest.pipeline.event_extraction import enrich_candidates_events
 from news_digest.pipeline.history import ensure_history_files
 from news_digest.pipeline.inventory import (
     build_morning_inventory_intake,
+    inventory_source_replacement_plan,
+    latest_night_category_health,
     read_all_inventory,
     summarise_morning_intake,
 )
+from news_digest.pipeline.prompts_meta import PROMPT_REGISTRY_VERSION
 from news_digest.pipeline.story_intelligence import (
     apply_cheap_dedup_before_enrich,
     attach_story_clusters,
@@ -66,10 +69,6 @@ class StageResult:
 # inside _fetch_source_body, so per-source resilience is unchanged.
 _COLLECTOR_MAX_WORKERS = 12
 _MORNING_INVENTORY_DEFAULT_MODE = "assist"
-_INVENTORY_SKIP_CATEGORIES = {
-    "venues_tickets": "ticket_radar",
-    "food_openings": "openings",
-}
 _SENSITIVE_QUERY_KEYS = {"apikey", "api_key", "key", "token", "access_token"}
 _HARD_NEWS_SOURCES = {
     "BBC Manchester",
@@ -632,21 +631,51 @@ def collect_digest(project_root: Path) -> StageResult:
         inventory_records,
         existing_fingerprints=set(),
         mode=inventory_mode,
+        prompt_version=PROMPT_REGISTRY_VERSION,
     )
+    inventory_run_rows: list[dict] = []
+    inventory_run_log = state_dir / "inventory_run_log.jsonl"
+    if inventory_run_log.exists():
+        for line in inventory_run_log.read_text(encoding="utf-8").splitlines():
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(row, dict):
+                inventory_run_rows.append(row)
+    night_category_health = latest_night_category_health(inventory_run_rows)
+    replacement_plan = inventory_source_replacement_plan(inventory_preview_report, night_category_health)
     inventory_report: dict[str, object] = {
-        **summarise_morning_intake(inventory_records),
+        **summarise_morning_intake(inventory_records, prompt_version=PROMPT_REGISTRY_VERSION),
         "mode": inventory_mode,
         "assist_blocks": ["weekend_activities", "ticket_radar", "openings"],
         "preview": inventory_preview_report,
+        "night_category_health": night_category_health,
+        "source_replacement_plan": replacement_plan,
     }
     skip_categories: dict[str, dict[str, object]] = {}
     if inventory_mode == "on":
-        completeness = inventory_preview_report.get("completeness") if isinstance(inventory_preview_report, dict) else {}
-        blocks = completeness.get("blocks") if isinstance(completeness, dict) else {}
-        for category, block in _INVENTORY_SKIP_CATEGORIES.items():
-            row = blocks.get(block) if isinstance(blocks, dict) else None
-            if isinstance(row, dict) and row.get("complete"):
-                skip_categories[category] = {"block": block, "available": int(row.get("candidate_count") or 0)}
+        for category, row in replacement_plan.items():
+            if not isinstance(row, dict) or not row.get("safe_to_skip"):
+                continue
+            output_blocks = row.get("output_blocks") if isinstance(row.get("output_blocks"), list) else []
+            block = str(output_blocks[0] if len(output_blocks) == 1 else "all_routed_blocks")
+            complete_row = (
+                inventory_preview_report.get("completeness", {}).get("blocks", {}).get(block, {})
+                if isinstance(inventory_preview_report, dict) else {}
+            )
+            skip_categories[category] = {
+                "block": block,
+                "available": int(complete_row.get("candidate_count") or 0),
+            }
+    inventory_report["live_collection"] = {
+        category: {
+            "collected_live": category not in skip_categories,
+            "reason": "night_inventory_replaced_broad_scan"
+            if category in skip_categories else str(row.get("reason") or "live_collection_required"),
+        }
+        for category, row in replacement_plan.items()
+    }
     for source in SOURCES:
         report["categories"][source.report_category]["sources"].append(source.name)
 
@@ -712,6 +741,7 @@ def collect_digest(project_root: Path) -> StageResult:
             inventory_records,
             existing_fingerprints=existing_fps,
             mode=inventory_mode,
+            prompt_version=PROMPT_REGISTRY_VERSION,
         )
         candidates.extend(inventory_candidates)
         inventory_report["actual_intake"] = intake_report
