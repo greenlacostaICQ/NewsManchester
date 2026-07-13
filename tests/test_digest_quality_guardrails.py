@@ -1074,7 +1074,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(updated.get("include"))
         self.assertEqual(updated.get("primary_block"), "weekend_activities")
 
-    def test_annual_food_festival_in_next_7_stays_next_7(self) -> None:
+    def test_annual_food_festival_in_next_7_moves_to_weekend(self) -> None:
         event_day = now_london().date() + timedelta(days=5)
         updated = self._validate_one(
             {
@@ -1099,9 +1099,9 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         )
 
         self.assertTrue(updated.get("include"))
-        self.assertEqual(updated.get("primary_block"), "next_7_days")
+        self.assertEqual(updated.get("primary_block"), "weekend_activities")
 
-    def test_annual_food_festival_from_weekend_source_can_move_to_next_7(self) -> None:
+    def test_annual_food_festival_from_weekend_source_stays_in_leisure(self) -> None:
         event_day = now_london().date() + timedelta(days=5)
         updated = self._validate_one(
             {
@@ -1126,7 +1126,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         )
 
         self.assertTrue(updated.get("include"))
-        self.assertEqual(updated.get("primary_block"), "next_7_days")
+        self.assertEqual(updated.get("primary_block"), "weekend_activities")
 
     def test_annual_food_festival_in_current_weekend_stays_weekend(self) -> None:
         event_day = now_london().date() + timedelta(days=2)

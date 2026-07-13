@@ -66,10 +66,10 @@ Broaden one step at a time only when the touched surface requires it: shared
 schema/interface, stage boundary, release/send behavior, workflow/shell
 orchestration, model routing, state migration, external I/O, or evidence that
 the narrow fix does not cover the failure. The escalation ladder is: targeted
-test -> affected stage/probe -> broader tests -> runtime sync -> commit/push
+test -> affected stage/probe -> broader tests -> commit/push
 -> GitHub Actions. Do not jump to the end of that ladder by default.
 
-Commit, push, runtime sync, and CI are delivery actions, not default proof for
+Commit, push, and CI are delivery actions, not default proof for
 every small patch. Use them when the user asks to ship/commit/push/deploy,
 when fixing a current CI/production automation failure, or when the relevant
 project rule below explicitly says the change is not finished without them.
@@ -177,29 +177,14 @@ One pass per stage; if uncertain, leave Python output as-is.
 
 ## Deploy Rule
 
-Any change in `src/`, `scripts/`, or `data/state/` is not considered
-finished until the runtime bundle is synced:
-
-```
-bash scripts/sync_runtime_bundle.sh
-```
-
-After sync, verify that critical runtime files match the workspace copy.
-At minimum, this diff must be empty:
-
-```
-diff ~/.mnewsdigest/src/news_digest/pipeline/collector/sources.py \
-     ~/Documents/News\ project/src/news_digest/pipeline/collector/sources.py
-```
-
-Do not claim the automation is ready, fixed, or deployed until this
-runtime parity check is clean.
+Production runs from GitHub Actions on the repository checkout. The old local
+`~/.mnewsdigest` runtime bundle and `scripts/sync_runtime_bundle.sh` were
+removed in improvement 0089 and must not be used as deployment truth.
 
 Local-only changes are not product changes. A digest-quality fix counts as
-done only after it is committed to `main`, pushed to GitHub, and the
-runtime copy is synced when local automation uses it. If code only exists in
-the working tree, an unpushed branch, or `~/.mnewsdigest`, describe it as a
-local experiment, not as a completed improvement.
+deployed only after it is logged, committed to `main`, pushed to GitHub and,
+when operational behaviour changed, exercised by the relevant GitHub Actions
+workflow. Until then describe it as an offline/local verification.
 
 ## Improvement Log Rule
 
@@ -210,8 +195,8 @@ with a unique sequential id (NNNN). No "too small to log" exception: the log
 exists because the same fixes were reworked 5–8 times, and an unlogged change
 cannot be diagnosed a month later.
 
-Definition of done for this project = committed to `main` + runtime-synced
-(Deploy Rule above) + **logged in `docs/IMPROVEMENT_LOG.md`**. The `ПРОВЕРКА`
+Definition of done for this project = committed to `main`, pushed to GitHub,
+and logged in `docs/IMPROVEMENT_LOG.md`. The `ПРОВЕРКА`
 field is filled only from a real run with numbers; offline/unit verification is
 labelled as such until the next prod run confirms it.
 
@@ -258,8 +243,8 @@ Task is about ... open ...
   `src/news_digest/pipeline/source_selection.py`
 - writes/reads of `published_facts.json` and `last_sent_digest.html`:
   `src/news_digest/pipeline/history.py`
-- CLI / orchestration: `scripts/run_local_digest.py`,
-  `scripts/run_daily_digest.sh`
+- CLI / orchestration: `scripts/run_local_digest.py`; production orchestration:
+  `.github/workflows/daily-digest.yml` and `.github/workflows/night-inventory.yml`
 
 ## How to find the right anchor
 
@@ -332,7 +317,7 @@ line numbers. Symbol names below are stable; line numbers are not.
 
 ### `scripts/run_local_digest.py`
 
-- defs: `cmd_bot_info`, `cmd_send_file`, `cmd_send_warnings`, `cmd_send_weekly_quality`, `cmd_send_weekly_cost`, `cmd_weekly_city_rollup`, `cmd_send_weekly_city_rollup`, `cmd_post_publish_judge`, `cmd_pre_send_quality_judge`, `cmd_delivered_today`, `cmd_digest_status`, `cmd_build_digest`, `cmd_mark_pipeline_failed`, `cmd_init_build_state`, `cmd_collect_digest`, `cmd_build_inventory`, `cmd_collect_inventory`, `cmd_dedupe_digest`, `cmd_validate_candidates`, `cmd_curator_pass`, `cmd_transport_fill`, `cmd_llm_rewrite`, `cmd_prompt_versions`, `cmd_model_routing`, `cmd_pipeline_config`, `cmd_cost_summary`, `cmd_reader_value_validation`, `cmd_write_digest`, `cmd_edit_digest`, `cmd_discover_sources`, `cmd_repair_dead_parsers`, `build_parser`, `main`
+- defs: `cmd_bot_info`, `cmd_send_file`, `cmd_send_warnings`, `cmd_send_weekly_quality`, `cmd_post_publish_judge`, `cmd_pre_send_quality_judge`, `cmd_delivered_today`, `cmd_digest_status`, `cmd_build_digest`, `cmd_mark_pipeline_failed`, `cmd_init_build_state`, `cmd_collect_digest`, `cmd_build_inventory`, `cmd_collect_inventory`, `cmd_dedupe_digest`, `cmd_validate_candidates`, `cmd_curator_pass`, `cmd_transport_fill`, `cmd_llm_rewrite`, `cmd_prompt_versions`, `cmd_model_routing`, `cmd_pipeline_config`, `cmd_cost_summary`, `cmd_reader_value_validation`, `cmd_write_digest`, `cmd_edit_digest`, `cmd_discover_sources`, `cmd_repair_dead_parsers`, `build_parser`, `main`
 - constants: `PROJECT_ROOT`, `SRC_DIR`, `LONDON_TZ`, `REQUIRED_RELEASE_GATE_VERSION`
 
 _Anchors above are stable symbol names. Use `rg -n '^def NAME|^class NAME|^NAME ?='` to jump there._
@@ -348,9 +333,6 @@ python3 scripts/run_local_digest.py validate-candidates
 python3 scripts/run_local_digest.py write-digest
 python3 scripts/run_local_digest.py edit-digest
 python3 scripts/run_local_digest.py build-digest
-
-# Full daily run + Telegram send (requires .env.local):
-bash scripts/run_daily_digest.sh
 
 # Diagnostics:
 python3 scripts/run_local_digest.py pipeline-config
@@ -424,18 +406,19 @@ blockers.
   public RSS surface returns affiliate/recommended commerce items rather
   than usable local-news coverage. Both are intentionally commented out in
   `collector/sources.py`.
-- **LLM rewrite is external operational policy, not Python runtime.**
-  Python stages never call model APIs. After `validate-candidates`, the
-  agent must write Russian `draft_line` values for every
-  `include=true` candidate before `write-digest`; the digest should not
-  rely on generic writer fallback prose for included items.
-- **`food_openings` can legitimately be empty.** `Manchester's Finest`
-  often serves listicles and monthly roundups; `_is_listicle_opening`
-  correctly drops them. `0 publishable` on a given day is not itself a
-  failure.
-- **`Ticket Radar` is low-signal and optional when empty.** If the scan
-  produces no new official ticket trigger, the block should be hidden
-  rather than causing a release failure.
+- **Model calls are part of Python runtime.** Curator, professional CV match,
+  rewrite and final editing use the configured provider routes. Night inventory
+  runs professional CV matching but never model-writes public Russian text.
+- **A quiet Food source is possible, but Food readiness is fact-based.** A
+  successful full scan may find zero genuine openings; that is `scan_complete`
+  with an insufficient block, not permission to call the block complete or to
+  skip live collection.
+- **Ticket Radar may be empty only when there is no eligible trigger.** Ordinary
+  tickets remain capped; every recognised A-tier ticket bypasses inventory and
+  public section caps.
+- **District Radar is retired.** `district_radar` remains only as a legacy
+  identifier in the 17-row inventory registry and has no producer or public
+  section. Do not route new candidates into it.
 - **Source expansion scope is frozen.** Do not re-add Royal Exchange,
   Science and Industry Museum, or Manchester Art Gallery unless the user
   explicitly reopens source expansion. Current work is final digest
@@ -466,6 +449,11 @@ blockers.
 ## State files (in `data/state/`)
 
 - `collector_report.json` — per-category broad scan health
+- `inventory/*.jsonl` — night facts with separate source/candidate categories,
+  provenance, action-URL liveness, serving TTL and retention horizon
+- `inventory_run_log.jsonl` — per-source night rows keyed by run_id/wave
+- `morning_inventory_intake_report.json` — all-block intake, scan completeness,
+  block sufficiency and source-replacement decisions
 - `candidates.json` — current scan output, mutated by dedupe/validator
 - `dedupe_memory.json` — today's dedupe decisions, including
   `semantic_dedup_summary` (I1: model name, embedded/cache hit counts,

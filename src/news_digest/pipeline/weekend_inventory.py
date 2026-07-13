@@ -192,16 +192,24 @@ def has_current_weekend_occurrence(candidate: dict, *, today: date | None = None
     return bool(_THIS_WEEKEND_RE.search(_blob(candidate)))
 
 
+def weekend_activity_type(candidate: dict | None) -> str:
+    """Return the concrete protected-inventory activity family, if any."""
+    if not isinstance(candidate, dict):
+        return ""
+    text = _blob(candidate)
+    match = _INVENTORY_TYPE_RE.search(text)
+    if not match or _SELLER_ADMIN_RE.search(text):
+        return ""
+    if _ORDINARY_AFISHA_RE.search(text) and not re.search(r"\bfestival|fair|market|pride|heritage\b", text, re.IGNORECASE):
+        return ""
+    return re.sub(r"\s+", "_", match.group(0).strip().lower())
+
+
 def is_weekend_inventory_candidate(candidate: dict | None, *, today: date | None = None) -> bool:
     if not isinstance(candidate, dict):
         return False
     if str(candidate.get("primary_block") or "") != "weekend_activities":
         return False
-    text = _blob(candidate)
-    if not _INVENTORY_TYPE_RE.search(text):
-        return False
-    if _SELLER_ADMIN_RE.search(text):
-        return False
-    if _ORDINARY_AFISHA_RE.search(text) and not re.search(r"\bfestival|fair|market|pride|heritage\b", text, re.IGNORECASE):
+    if not weekend_activity_type(candidate):
         return False
     return has_current_weekend_occurrence(candidate, today=today)

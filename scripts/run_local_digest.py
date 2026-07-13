@@ -1191,9 +1191,13 @@ def cmd_build_inventory() -> int:
     candidates = [c for c in payload.get("candidates", []) if isinstance(c, dict)]
     by_category: dict[str, list[dict]] = {}
     for candidate in candidates:
-        category = str(candidate.get("category") or "unknown")
+        category = str(candidate.get("source_report_category") or candidate.get("category") or "unknown")
         by_category.setdefault(category, []).append(
-            build_inventory_record(candidate, prompt_version=PROMPT_REGISTRY_VERSION)
+            build_inventory_record(
+                candidate,
+                prompt_version=PROMPT_REGISTRY_VERSION,
+                source_report_category=category,
+            )
         )
     written: dict[str, dict[str, int]] = {}
     for category, records in by_category.items():
@@ -1218,10 +1222,8 @@ def cmd_collect_inventory(wave: str) -> int:
     from news_digest.pipeline.collector.core import SOURCES, _collect_single_source  # noqa: PLC0415
     from news_digest.pipeline.inventory import (  # noqa: PLC0415
         BREAKING_CHECK_CATEGORIES,
-        NIGHT_PREWRITE_CAPS,
         NIGHT_WAVES,
         build_inventory_record,
-        evaluate_card,
         merge_inventory,
         passes_morning_contract,
         prewrite_stable_inventory_candidate,
@@ -1229,10 +1231,17 @@ def cmd_collect_inventory(wave: str) -> int:
     from news_digest.pipeline.entity_extraction import enrich_candidates_entities  # noqa: PLC0415
     from news_digest.pipeline.event_extraction import enrich_candidates_events  # noqa: PLC0415
     from news_digest.pipeline.change_classifier import attach_change_phase  # noqa: PLC0415
-    from news_digest.pipeline.candidate_validator import classify_russian_evidence, resolve_venue_scope  # noqa: PLC0415
-    from news_digest.pipeline.professional_events import apply_professional_event_match  # noqa: PLC0415
+    from news_digest.pipeline.candidate_validator import (  # noqa: PLC0415
+        _enforce_leisure_routing_contract,
+        _reroute_market_planning_to_weekend,
+        classify_russian_evidence,
+        resolve_venue_scope,
+    )
+    from news_digest.pipeline.professional_events import (  # noqa: PLC0415
+        apply_professional_event_llm_matches,
+        apply_professional_event_match,
+    )
     from news_digest.pipeline.ticket_notability import enrich_ticket_notability  # noqa: PLC0415
-    from news_digest.pipeline.llm_rewrite import prewrite_inventory_candidates  # noqa: PLC0415
     from news_digest.pipeline.prompts_meta import PROMPT_REGISTRY_VERSION  # noqa: PLC0415
     from news_digest.pipeline.common import new_pipeline_run_id, write_json_atomic  # noqa: PLC0415
 
@@ -1284,6 +1293,8 @@ def cmd_collect_inventory(wave: str) -> int:
             scope, city = resolve_venue_scope(candidate)
             candidate["venue_scope"] = scope
             candidate["venue_city"] = city
+            _reroute_market_planning_to_weekend(candidate)
+            _enforce_leisure_routing_contract(candidate)
             if str(candidate.get("category") or "") == "professional_events":
                 apply_professional_event_match(candidate, PROJECT_ROOT)
             if str(candidate.get("primary_block") or "") == "russian_events":
@@ -1309,35 +1320,34 @@ def cmd_collect_inventory(wave: str) -> int:
             "found": len(source_candidates),
             "enriched": sum(1 for c in source_candidates if isinstance(c, dict) and c.get("include")),
             "errors": len(health.get("errors") or []),
+            "error": str((health.get("errors") or [""])[0]),
             "expected_sources": expected_by_category.get(source.report_category, 0),
             "deterministic_prewritten": prewritten,
         }
         run_log.append(run_row)
         collected_sources.append((run_row, source_candidates))
 
-    model_prewrite_pool: list[dict] = []
-    kept_by_block: dict[str, int] = {}
-    for _, source_candidates in collected_sources:
-        for candidate in source_candidates:
-            if not isinstance(candidate, dict) or str(candidate.get("draft_line") or "").strip():
-                continue
-            status, _, _ = evaluate_card(candidate)
-            if status != "needs_text":
-                continue
-            probe_record = build_inventory_record(candidate, prompt_version=PROMPT_REGISTRY_VERSION)
-            if not passes_morning_contract(probe_record)[0]:
-                continue
-            block = str(candidate.get("primary_block") or "")
-            cap = int(NIGHT_PREWRITE_CAPS.get(block, 0))
-            if not cap or kept_by_block.get(block, 0) >= cap:
-                continue
-            model_prewrite_pool.append(candidate)
-            kept_by_block[block] = kept_by_block.get(block, 0) + 1
-    model_prewrite = prewrite_inventory_candidates(model_prewrite_pool)
+    professional_candidates = [
+        candidate
+        for _, source_candidates in collected_sources
+        for candidate in source_candidates
+        if isinstance(candidate, dict) and str(candidate.get("category") or "") == "professional_events"
+    ]
+    professional_cv_match = apply_professional_event_llm_matches(
+        professional_candidates,
+        PROJECT_ROOT,
+    ) if professional_candidates else {"status": "skipped_no_candidates", "eligible": 0, "applied": 0}
 
     for run_row, source_candidates in collected_sources:
         records = [
-            build_inventory_record(candidate, prompt_version=PROMPT_REGISTRY_VERSION)
+            build_inventory_record(
+                candidate,
+                prompt_version=PROMPT_REGISTRY_VERSION,
+                run_id=run_id,
+                wave=wave,
+                source_name=str(run_row.get("source") or ""),
+                source_report_category=str(run_row.get("category") or ""),
+            )
             for candidate in source_candidates
             if isinstance(candidate, dict)
         ]
@@ -1345,12 +1355,7 @@ def cmd_collect_inventory(wave: str) -> int:
         run_row["fact_ready"] = sum(
             1 for record in records if str(record.get("quality_status") or "") in {"ready", "needs_text"}
         )
-        run_row["model_prewritten"] = sum(
-            1
-            for candidate in source_candidates
-            if str(candidate.get("draft_line_provider") or "").startswith("night_inventory:")
-        )
-        run_row["prewritten"] = int(run_row.get("deterministic_prewritten") or 0) + int(run_row["model_prewritten"])
+        run_row["prewritten"] = int(run_row.get("deterministic_prewritten") or 0)
         run_row["render_ready"] = sum(1 for record in records if record.get("render_ready"))
         run_row["morning_eligible"] = sum(1 for record in records if passes_morning_contract(record)[0])
     merged: dict[str, int] = {}
@@ -1373,7 +1378,7 @@ def cmd_collect_inventory(wave: str) -> int:
         "fact_ready_this_run": sum(int(row.get("fact_ready") or 0) for row in run_log),
         "render_ready_this_run": sum(int(row.get("render_ready") or 0) for row in run_log),
         "morning_eligible_this_run": sum(int(row.get("morning_eligible") or 0) for row in run_log),
-        "model_prewrite": model_prewrite,
+        "professional_cv_match": professional_cv_match,
         "duration_seconds": round(time.monotonic() - started, 2),
     }
     print(json.dumps(summary, ensure_ascii=False, indent=2))

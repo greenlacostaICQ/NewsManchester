@@ -41,7 +41,7 @@ Purpose classes and their blocks:
 
 - **News** — what happened, matters now: `lead_story` (Главная история дня),
   `last_24h` (Свежие новости), `today_focus` (Что важно сегодня),
-  `city_watch` (Городской радар), `district_radar` (Радар по районам).
+  `city_watch` (Городской радар).
 - **Service** — what is disrupted / act today: `transport`
   (Общественный транспорт сегодня), `weather` (Погода).
 - **Leisure / what's-on** — plan your free time: `weekend_activities`
@@ -68,6 +68,8 @@ Rules:
   "it has a date this week".
 - Each item has one primary purpose class; if two could apply, News > Service >
   Planning > Tickets > Leisure decides.
+- `district_radar` is retired: it remains a legacy identifier for old state but
+  has no source, selection target or public section.
 
 Hidden-block spillover map (a conditionally-shown block must declare where its
 items go when it is not rendered — content is held or re-homed **within its own
@@ -329,7 +331,8 @@ Rules:
 - Outside venue cannot use GM wording.
 - A-tier must be evidence-based.
 - Important concerts should be discovered early, not one day before.
-- Ticket volume must be capped before editor, not only reported after render.
+- Ordinary ticket volume must be capped before editor, not only reported after
+  render. Every recognised A-tier ticket bypasses intake, section and issue caps.
 - Ticket Radar is not a general event calendar.
 
 Failure examples:
@@ -347,7 +350,8 @@ Rules:
 
 - Always say the city/venue plainly.
 - Never use "in Greater Manchester" wording for outside venue.
-- Must be capped before writer/editor.
+- Non-A-tier inventory must be capped before writer/editor; every recognised
+  outside-GM A-tier item remains visible with explicit city/venue wording.
 - Must not reduce Fresh, Today, Transport, Weekend or public-service coverage.
 
 Failure examples:
@@ -397,6 +401,8 @@ Rules:
 - UK-wide/London-heavy items must say geography clearly.
 - Generic comedy/music listing cannot be Russian Events without evidence.
 - Positive evidence must be stored on candidate/report before publish selection.
+- City or other UK geography must be stored as a fact, not inferred only by the
+  final Russian sentence.
 
 Failure examples:
 
@@ -418,11 +424,36 @@ Rules:
   menu/concept changed, venue reopened, official confirmation.
 - Markets belong to Weekend when they are weekend activities.
 - Vague "check details" copy is not enough.
+- Night readiness is based on concrete object, place, opening/market phase,
+  current date and local reader meaning. A night Russian line is not required;
+  the normal morning writer creates public text from these facts.
 
 Failure examples:
 
 - "new pie shop at a station" without exact station.
 - Repeating yesterday's opening with no new status.
+
+## Night Inventory Contract
+
+- `INVENTORY_BLOCK_REGISTRY` defines all 17 active/legacy block identifiers and
+  is the only source for collection category, candidate category, output blocks,
+  intake mode, freshness, text policy, completeness and replacement permission.
+- Night collection stores facts and provenance. It may use the existing
+  deterministic writer for supported stable blocks, but never a model text
+  prewrite. Professional CV matching remains a separate factual selection step.
+- Every record stores source report category and routed candidate category,
+  run/wave/source, first/last/change times, canonical evidence hash, observation
+  in the current wave, action-URL liveness, serving TTL and retention horizon.
+- `scan_complete` means today's expected sources were checked without source
+  errors. `block_sufficient` means the post-card inventory meets the block floor
+  and source diversity. Neither value implies the other.
+- Optional Future and Outside-GM blocks may be honestly empty after a complete
+  scan. Weekend never loses eligible current-weekend inventory to an intake cap;
+  A-tier never loses visibility to an intake cap.
+- A broad morning source is skipped only when every block it can feed is restored,
+  today's scan is complete, required blocks are sufficient and source replacement
+  is explicitly enabled for every output block. Otherwise the ordinary live scan
+  remains on.
 
 ## Business/IT Contract
 

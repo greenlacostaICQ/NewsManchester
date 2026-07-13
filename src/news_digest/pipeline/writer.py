@@ -7263,7 +7263,6 @@ def write_digest(project_root: Path) -> StageResult:
         "Билеты / Ticket Radar",
         "Крупные концерты вне GM",
         "Русскоязычные концерты и стендап UK",
-        "Радар по районам",
     ]
     section_counts: dict[str, int] = {}
     rendered_candidate_fingerprints: list[str] = []

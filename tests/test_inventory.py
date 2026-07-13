@@ -6,10 +6,11 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
-from news_digest.pipeline.common import is_recoverable_reserve
+from news_digest.pipeline.common import PRIMARY_BLOCKS, is_recoverable_reserve
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.inventory import (
     InventoryLock,
+    INVENTORY_BLOCK_REGISTRY,
     aggregate_category_health,
     annotate_morning_relevance,
     build_inventory_record,
@@ -18,11 +19,12 @@ from news_digest.pipeline.inventory import (
     classify_category_health,
     classify_disposition,
     evaluate_card,
-    inventory_stable_block_completeness,
+    inventory_block_completeness,
+    inventory_category_output_blocks,
     inventory_record_to_candidate,
     inventory_source_replacement_plan,
-    latest_night_category_health,
-    NIGHT_PREWRITE_CAPS,
+    merge_inventory,
+    operational_night_category_health,
     passes_morning_contract,
     prewrite_stable_inventory_candidate,
     read_inventory,
@@ -33,7 +35,7 @@ from news_digest.pipeline.inventory import (
     verify_dispositions,
     write_inventory,
 )
-from news_digest.pipeline.llm_rewrite import _candidate_content_hash, prewrite_inventory_candidates
+from news_digest.pipeline.llm_rewrite import _candidate_content_hash
 from news_digest.pipeline.release import _summarise_inventory_morning_effect
 
 
@@ -109,9 +111,12 @@ class CardRulesTest(unittest.TestCase):
     def test_complete_event_with_text_is_ready(self) -> None:
         cand = {
             "primary_block": "next_7_days",
+            "category": "public_services",
+            "source_report_category": "public_services",
+            "summary": "A council service closure starts next week.",
             "source_url": "https://example.test/event",
-            "event": {"event_name": "X", "venue": "HOME", "date_start": "2026-07-05"},
-            "draft_line": "• Концерт X в HOME 5 июля.",
+            "event": {"event_name": "Council service closure", "venue": "HOME", "date_start": "2026-07-15"},
+            "draft_line": "• С 15 июля HOME закрывается на ремонт.",
         }
         status, ready, missing = evaluate_card(cand)
         self.assertTrue(ready)
@@ -120,8 +125,11 @@ class CardRulesTest(unittest.TestCase):
     def test_fields_present_but_no_text_is_needs_text(self) -> None:
         cand = {
             "primary_block": "next_7_days",
+            "category": "public_services",
+            "source_report_category": "public_services",
+            "summary": "A council service closure starts next week.",
             "source_url": "https://example.test/event",
-            "event": {"event_name": "X", "venue": "HOME", "date_start": "2026-07-05"},
+            "event": {"event_name": "Council service closure", "venue": "HOME", "date_start": "2026-07-15"},
         }
         status, ready, missing = evaluate_card(cand)
         self.assertEqual((status, ready, missing), ("needs_text", False, ["draft_line"]))
@@ -137,6 +145,46 @@ class CardRulesTest(unittest.TestCase):
         status, _, missing = evaluate_card(candidate)
         self.assertEqual(status, "missing_facts")
         self.assertIn("opening_phase_or_date", missing)
+
+    def test_weekend_requires_public_activity_and_gm_fit(self) -> None:
+        candidate = {
+            "primary_block": "weekend_activities", "category": "culture_weekly",
+            "title": "Generic concert", "source_url": "https://example.test/show",
+            "venue_scope": "outside",
+            "event": {"event_name": "Generic concert", "venue": "London Arena", "date_start": "2026-07-18"},
+            "draft_line": "• Generic concert.",
+        }
+        status, ready, missing = evaluate_card(candidate)
+        self.assertFalse(ready)
+        self.assertEqual(status, "missing_facts")
+        self.assertIn("activity_type", missing)
+        self.assertIn("gm_fit", missing)
+
+    def test_professional_keyword_score_cannot_replace_llm_cv_match(self) -> None:
+        candidate = {
+            "primary_block": "professional_events", "category": "professional_events",
+            "title": "AI founders breakfast", "source_url": "https://example.test/pro",
+            "event": {"event_name": "AI founders breakfast", "venue": "Manchester Central", "date_start": "2026-07-20"},
+            "professional_event_match": {"publish": True, "access_label": "free"},
+            "draft_line": "• AI founders breakfast.",
+        }
+        self.assertIn("professional_llm_cv", evaluate_card(candidate)[2])
+        candidate["professional_event_match"].update({"llm_fit": "go", "publish": True})
+        candidate["professional_match_status"] = "llm_cv_matched"
+        self.assertEqual(evaluate_card(candidate), ("ready", True, []))
+
+    def test_outside_gm_inventory_accepts_only_a_tier(self) -> None:
+        candidate = {
+            "primary_block": "outside_gm_tickets", "category": "venues_tickets",
+            "title": "Artist in London", "source_url": "https://example.test/ticket",
+            "venue_scope": "outside", "ticket_type": "major_upcoming",
+            "ticket_notability": {"tier": "B"},
+            "event": {"event_name": "Artist", "venue": "The O2", "date_start": "2026-09-01"},
+            "draft_line": "• Artist в Лондоне.",
+        }
+        self.assertIn("outside_a_tier", evaluate_card(candidate)[2])
+        candidate["ticket_notability"]["tier"] = "A"
+        self.assertEqual(evaluate_card(candidate), ("ready", True, []))
 
 
 class MorningContractTest(unittest.TestCase):
@@ -222,15 +270,27 @@ class MorningContractTest(unittest.TestCase):
 
 
 class ReplacementPlanTest(unittest.TestCase):
-    def test_mixed_ticket_category_never_skips_when_only_ticket_radar_is_restored(self) -> None:
-        report = {"completeness": {"blocks": {"ticket_radar": {"complete": True}, "openings": {"complete": True}}}}
+    def test_registry_covers_all_blocks_and_derives_mixed_outputs(self) -> None:
+        self.assertEqual(set(INVENTORY_BLOCK_REGISTRY), set(PRIMARY_BLOCKS))
+        self.assertEqual(
+            inventory_category_output_blocks()["venues_tickets"],
+            frozenset({"ticket_radar", "future_announcements", "outside_gm_tickets"}),
+        )
+
+    def test_mixed_ticket_category_never_skips_without_explicit_permission(self) -> None:
+        report = {"completeness": {"blocks": {
+            "ticket_radar": {"block_sufficient": True},
+            "future_announcements": {"block_sufficient": True},
+            "outside_gm_tickets": {"block_sufficient": True},
+            "openings": {"block_sufficient": True},
+        }}}
         health = {
             "venues_tickets": {"status": "ok"},
             "food_openings": {"status": "ok"},
         }
         plan = inventory_source_replacement_plan(report, health)
         self.assertFalse(plan["venues_tickets"]["safe_to_skip"])
-        self.assertEqual(plan["venues_tickets"]["reason"], "mixed_output_blocks_not_restored")
+        self.assertEqual(plan["venues_tickets"]["reason"], "source_replacement_not_enabled")
         self.assertTrue(plan["food_openings"]["safe_to_skip"])
 
     def test_latest_night_health_exposes_source_errors(self) -> None:
@@ -238,9 +298,18 @@ class ReplacementPlanTest(unittest.TestCase):
             {"run_id": "r1", "run_at_london": "2026-07-13T03:30:00+01:00", "category": "food_openings", "checked": True, "found": 2, "errors": 0, "expected_sources": 2},
             {"run_id": "r1", "run_at_london": "2026-07-13T03:30:01+01:00", "category": "food_openings", "checked": True, "found": 0, "errors": 1, "expected_sources": 2},
         ]
-        health = latest_night_category_health(rows)["food_openings"]
+        health = operational_night_category_health(rows, current_day="2026-07-13")["food_openings"]
         self.assertEqual(health["status"], "degraded")
         self.assertEqual(health["source_errors"], 1)
+
+    def test_old_healthy_wave_is_stale_not_operationally_green(self) -> None:
+        rows = [{
+            "run_id": "old", "run_at_london": "2026-07-12T03:30:00+01:00",
+            "category": "food_openings", "source": "Food source", "checked": True,
+            "found": 3, "errors": 0, "expected_sources": 1,
+        }]
+        health = operational_night_category_health(rows, current_day="2026-07-13")["food_openings"]
+        self.assertEqual(health["status"], "stale")
 
 
 class InventoryFactPreservationTest(unittest.TestCase):
@@ -291,6 +360,27 @@ class StateFoundationTest(unittest.TestCase):
             state_dir = Path(tmp)
             with InventoryLock(state_dir, name="t"):
                 pass
+
+    def test_merge_preserves_first_seen_and_changes_last_changed_only_on_new_facts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+            first = {
+                "fingerprint": "e1", "evidence_hash": "h1",
+                "first_seen_at": "2026-07-12T01:00:00+01:00",
+                "last_seen_at": "2026-07-12T01:00:00+01:00",
+                "last_changed_at": "2026-07-12T01:00:00+01:00",
+            }
+            merge_inventory(state_dir, "food_openings", [first])
+            same = {**first, "last_seen_at": "2026-07-13T01:00:00+01:00"}
+            merge_inventory(state_dir, "food_openings", [same])
+            row = read_inventory(state_dir, "food_openings")[0]
+            self.assertEqual(row["first_seen_at"], "2026-07-12T01:00:00+01:00")
+            self.assertEqual(row["last_changed_at"], "2026-07-12T01:00:00+01:00")
+            changed = {**same, "evidence_hash": "h2", "last_seen_at": "2026-07-14T01:00:00+01:00"}
+            merge_inventory(state_dir, "food_openings", [changed])
+            row = read_inventory(state_dir, "food_openings")[0]
+            self.assertEqual(row["last_changed_at"], "2026-07-14T01:00:00+01:00")
+            self.assertEqual(row["source_report_category"], "food_openings")
             # second acquisition after release must succeed
             with InventoryLock(state_dir, name="t"):
                 pass
@@ -302,14 +392,18 @@ class BuildRecordTest(unittest.TestCase):
             "fingerprint": "fp1",
             "primary_block": "ticket_radar",
             "source_url": "https://x/t",
-            "venue_scope": "gm",
+            "venue_scope": "GM",
             "ticket_type": "on_sale_now",
             "ticket_notability": {"tier": "A"},
             "event": {"event_name": "Artist", "venue": "Co-op Live", "date_start": "2026-08-01"},
             "draft_line": "• Artist в Co-op Live 1 августа.",
         }
         rec = build_inventory_record(cand, prompt_version=1)
-        for key in ("fingerprint", "evidence_hash", "prompt_version", "fact_card", "render_ready", "missing_facts", "expires_at"):
+        for key in (
+            "fingerprint", "evidence_hash", "prompt_version", "fact_card", "render_ready",
+            "missing_facts", "first_seen_at", "last_seen_at", "last_changed_at",
+            "observed_in_wave", "action_url_liveness", "serving_expires_at", "retention_until",
+        ):
             self.assertIn(key, rec)
         self.assertTrue(rec["render_ready"])
         self.assertEqual(rec["fact_card"]["ticket_type"], "on_sale_now")
@@ -343,10 +437,15 @@ class BuildRecordTest(unittest.TestCase):
                 "title": "Market",
                 "source_url": "https://example.test/market",
                 "primary_block": "weekend_activities",
+                "category": "culture_weekly",
+                "source_report_category": "culture_weekly",
                 "quality_status": "needs_text",
                 "missing_facts": ["draft_line"],
                 "last_seen_at": "2026-07-09T01:00:00+01:00",
-                "fact_card": {"event_name": "Market", "venue": "Stockport", "date_start": "2026-07-11"},
+                "fact_card": {
+                    "event_name": "Market", "venue": "Stockport", "venue_scope": "GM",
+                    "date_start": "2026-07-11",
+                },
             },
             {
                 "fingerprint": "fp2",
@@ -378,10 +477,14 @@ class BuildRecordTest(unittest.TestCase):
                 "source_url": "https://example.test/weekend",
                 "primary_block": "weekend_activities",
                 "category": "culture_weekly",
+                "source_report_category": "culture_weekly",
                 "quality_status": "needs_text",
                 "missing_facts": ["draft_line"],
                 "last_seen_at": "2026-07-09T01:00:00+01:00",
-                "fact_card": {"event_name": "Stockport Makers Market", "venue": "Stockport", "date_start": "2026-07-11"},
+                "fact_card": {
+                    "event_name": "Stockport Makers Market", "venue": "Stockport",
+                    "venue_scope": "GM", "date_start": "2026-07-11",
+                },
             },
             {
                 "fingerprint": "fresh-1",
@@ -408,18 +511,20 @@ class BuildRecordTest(unittest.TestCase):
         self.assertEqual(report["inserted_candidates"], 1)
         self.assertIn("morning_relevant_needs_text", report["hybrid_signals"])
 
-    def test_stable_block_completeness_has_floors(self) -> None:
+    def test_block_completeness_separates_required_and_optional_blocks(self) -> None:
         candidates = [
             {"primary_block": "weekend_activities", "source_label": f"src{i}", "draft_line": "• line"}
             for i in range(6)
         ] + [
             {"primary_block": "openings", "source_label": "food"}
         ]
-        report = inventory_stable_block_completeness(candidates)
-        self.assertIn("weekend_activities", report["complete_blocks"])
-        self.assertIn("openings", report["incomplete_blocks"])
+        report = inventory_block_completeness(candidates)
+        self.assertIn("weekend_activities", report["sufficient_blocks"])
+        self.assertIn("openings", report["insufficient_blocks"])
+        self.assertTrue(report["blocks"]["future_announcements"]["block_sufficient"])
+        self.assertEqual(report["blocks"]["future_announcements"]["candidate_count"], 0)
 
-    def test_ticket_inventory_intake_is_capped(self) -> None:
+    def test_a_tier_ticket_inventory_bypasses_intake_cap(self) -> None:
         records = [
             {
                 "fingerprint": f"ticket-{idx}",
@@ -436,24 +541,29 @@ class BuildRecordTest(unittest.TestCase):
                     "date_start": "2026-08-01",
                     "ticket_type": "major_upcoming",
                     "tier": "A",
+                    "venue_scope": "GM",
                 },
             }
             for idx in range(25)
         ]
         candidates, report = build_morning_inventory_intake(records, mode="assist", today="2026-07-09")
-        self.assertEqual(len(candidates), 20)
-        self.assertEqual(report["held_by_cap"], 5)
+        self.assertEqual(len(candidates), 25)
+        self.assertEqual(report["held_by_cap"], 0)
 
     def test_changed_facts_invalidate_cached_night_line(self) -> None:
         candidate = {
             "fingerprint": "event-1",
-            "title": "Market",
-            "source_url": "https://example.test/market",
-            "source_label": "Official market",
-            "primary_block": "weekend_activities",
-            "category": "culture_weekly",
-            "event": {"event_name": "Market", "venue": "Stockport", "date_start": "2026-07-11"},
-            "draft_line": "• 11 июля в Стокпорте пройдёт рынок.",
+            "title": "Artist",
+            "source_url": "https://example.test/artist?utm_source=x",
+            "source_label": "Official venue",
+            "primary_block": "ticket_radar",
+            "category": "venues_tickets",
+            "source_report_category": "venues_tickets",
+            "venue_scope": "GM",
+            "ticket_type": "major_upcoming",
+            "ticket_notability": {"tier": "A", "signal": "major artist"},
+            "event": {"event_name": "Artist", "venue": "Co-op Live", "date_start": "2026-08-01"},
+            "draft_line": "• 1 августа в Co-op Live выступит Artist.",
         }
         record = {"schema_version": 1, **build_inventory_record(candidate, prompt_version=7)}
         record["title"] = "Market date changed"
@@ -467,6 +577,20 @@ class BuildRecordTest(unittest.TestCase):
         self.assertEqual(report["invalidated_prewrite"], 1)
         self.assertEqual(candidates[0]["draft_line"], "")
         self.assertTrue(candidates[0]["inventory_needs_text"])
+
+    def test_canonical_tracking_url_does_not_invalidate_but_status_does(self) -> None:
+        candidate = {
+            "primary_block": "ticket_radar", "category": "venues_tickets",
+            "source_report_category": "venues_tickets", "title": "Artist",
+            "source_url": "https://example.test/artist?utm_source=one", "venue_scope": "GM",
+            "ticket_type": "major_upcoming", "ticket_notability": {"tier": "A", "signal": "major"},
+            "event": {"event_name": "Artist", "venue": "Co-op Live", "date_start": "2026-08-01", "event_status": "scheduled"},
+        }
+        first = build_inventory_record(candidate, prompt_version=7)["evidence_hash"]
+        candidate["source_url"] = "https://example.test/artist?utm_source=two"
+        self.assertEqual(first, build_inventory_record(candidate, prompt_version=7)["evidence_hash"])
+        candidate["event"]["event_status"] = "cancelled"
+        self.assertNotEqual(first, build_inventory_record(candidate, prompt_version=7)["evidence_hash"])
 
     def test_prewrite_uses_ticket_deterministic_writer(self) -> None:
         candidate = {
@@ -549,48 +673,6 @@ class NightWaveTest(unittest.TestCase):
             self.assertEqual(read_inventory(root / "data" / "state", "media_layer")[0]["quality_status"], "missing_facts")
             # the ticket source is outside the live_news wave — not collected
             self.assertEqual(read_inventory(root / "data" / "state", "venues_tickets"), [])
-
-    def test_night_model_prewrite_keeps_only_normal_writer_quality(self) -> None:
-        candidates = [
-            {
-                "fingerprint": "good",
-                "include": True,
-                "category": "venues_tickets",
-                "primary_block": "ticket_radar",
-                "title": "Artist at Co-op Live",
-                "summary": "Artist plays Co-op Live on 1 August 2026.",
-                "source_url": "https://example.test/good",
-                "event": {"event_name": "Artist", "venue": "Co-op Live", "date_start": "2026-08-01"},
-            },
-            {
-                "fingerprint": "bad",
-                "include": True,
-                "category": "venues_tickets",
-                "primary_block": "ticket_radar",
-                "title": "Other Artist",
-                "summary": "Other Artist plays on 2 August 2026.",
-                "source_url": "https://example.test/bad",
-                "event": {"event_name": "Other Artist", "venue": "AO Arena", "date_start": "2026-08-02"},
-            },
-        ]
-        mapping = {
-            "good": ("• 1 августа в Co-op Live выступит Artist. Проверьте билеты на официальной странице.", "openai", "model"),
-            "bad": ("• Other Artist at AO Arena on 2 August.", "openai", "model"),
-        }
-        with patch("news_digest.pipeline.llm_rewrite._call_with_fallback", return_value=mapping) as call:
-            report = prewrite_inventory_candidates(candidates)
-        self.assertEqual(report["written"], 1)
-        self.assertEqual(report["rejected_quality"], 1)
-        self.assertTrue(candidates[0]["draft_line"].startswith("• "))
-        self.assertNotIn("draft_line", candidates[1])
-        night_prompt = call.call_args.args[1]
-        self.assertIn("Не описывай прошедшую дату как будущую", night_prompt)
-        self.assertIn("Пиши нейтрально и фактологично", night_prompt)
-        self.assertIn("следите за обновлениями", night_prompt)
-        self.assertEqual(call.call_args.kwargs["prompt_name"], "night_inventory_events")
-
-    def test_food_is_not_precomputed_at_night(self) -> None:
-        self.assertNotIn("openings", NIGHT_PREWRITE_CAPS)
 
     def test_release_reports_inventory_as_not_yet_morning_consumed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

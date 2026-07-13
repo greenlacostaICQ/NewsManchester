@@ -666,7 +666,7 @@ class LeisureRoutingContractTest(unittest.TestCase):
         self.assertEqual(c["primary_block"], "weekend_activities")
         self.assertFalse(_enforce_leisure_routing_contract(c))
 
-    def test_lunchtime_concert_is_dropped_from_next_7_days(self) -> None:
+    def test_lunchtime_concert_moves_from_next_7_days_to_future(self) -> None:
         from news_digest.pipeline.candidate_validator import _enforce_leisure_routing_contract
 
         c = {
@@ -678,8 +678,23 @@ class LeisureRoutingContractTest(unittest.TestCase):
         }
 
         self.assertTrue(_enforce_leisure_routing_contract(c))
-        self.assertFalse(c["include"])
-        self.assertIn("leisure_not_next_7_days", c["reject_reasons"])
+        self.assertTrue(c["include"])
+        self.assertEqual(c["primary_block"], "future_announcements")
+
+    def test_dated_culture_event_still_cannot_remain_in_next_7_days(self) -> None:
+        from news_digest.pipeline.candidate_validator import _enforce_leisure_routing_contract
+
+        c = {
+            "include": True,
+            "category": "culture_weekly",
+            "primary_block": "next_7_days",
+            "title": "Gallery exhibition opens on Wednesday",
+            "summary": "The exhibition opens in Manchester on 15 July.",
+            "event": {"is_event": True, "date_start": "2026-07-15"},
+        }
+
+        self.assertTrue(_enforce_leisure_routing_contract(c))
+        self.assertNotEqual(c["primary_block"], "next_7_days")
 
     def test_ticket_event_moves_from_next_7_days_to_ticket_radar(self) -> None:
         from news_digest.pipeline.candidate_validator import _enforce_leisure_routing_contract

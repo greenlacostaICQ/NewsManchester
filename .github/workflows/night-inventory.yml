@@ -7,6 +7,10 @@ name: GM Night Inventory
 # candidates.json, so it can't block/corrupt the morning release. The morning
 # build consumes only fact-ready stable cards and keeps ordinary live collection
 # for every category the latest healthy night wave did not fully replace.
+# Production dispatch schedule is owned by cron-job.org in Europe/London:
+# 00:31 events, 02:07 tickets, 03:37 pro_food_russian, 06:17 live_news,
+# 07:31 breaking. GitHub Actions is intentionally executor-only to avoid
+# duplicate runs and UTC/BST drift.
 
 on:
   workflow_dispatch:

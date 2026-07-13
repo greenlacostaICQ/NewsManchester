@@ -1905,17 +1905,23 @@ def _enforce_leisure_routing_contract(candidate: dict) -> bool:
         existing = str(candidate.get("reason") or "").strip()
         candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
         return True
-    # A leisure item that carries a concrete upcoming date is a real dated plan
-    # (annual festival, dated workshop, visitor experience) and legitimately
-    # belongs in next_7_days. Only undated routine leisure (a generic lunchtime
-    # concert, an open-ended listing) is dropped from the civic/planning block.
-    if _has_future_or_concrete_date(candidate):
-        return False
-    _append_reject(
-        candidate,
-        "leisure_not_next_7_days",
-        "Validator: undated leisure item is not part of the next_7_days civic/planning contract.",
-    )
+    if category in {"russian_speaking_events", "diaspora_events"}:
+        candidate["primary_block"] = "russian_events"
+        target = "russian_events"
+    else:
+        from news_digest.pipeline.weekend_inventory import is_weekend_inventory_candidate  # noqa: PLC0415
+
+        weekend_probe = dict(candidate)
+        weekend_probe["primary_block"] = "weekend_activities"
+        if is_weekend_inventory_candidate(weekend_probe):
+            candidate["primary_block"] = "weekend_activities"
+            target = "weekend_activities"
+        else:
+            candidate["primary_block"] = "future_announcements"
+            target = "future_announcements"
+    existing = str(candidate.get("reason") or "").strip()
+    note = f"Validator: leisure item belongs in {target}, not next_7_days."
+    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
     return True
 
 

@@ -1126,17 +1126,71 @@
 - Удалено: ложное правило `morning_consumed = mode + report exists`; теперь consumed только при `inserted_candidates>0`.
 
 ### 0104 — Ночной текст пишется обычным writer и принимается только после его quality contract — 2026-07-13
-- Статус: частично внедрено; Food prewrite безопасно удалён, model prewrite остальных блоков не готов к включению без решения owner.
+- Статус: закрыто решением 0111: model text prewrite полностью удалён; ночью остаётся только существующий deterministic writer.
 - Проблема: deterministic prewrite объявлял render-ready английские заголовки с шаблонными концовками; на складе 13.07 было 149 render-ready, но повторная проверка старых строк оставила только 1 Weekend и 2 Pro безопасных deterministic строки.
-- Решение: сначала используется существующий deterministic writer; строка проходит существующие strip/quality checks. Fact-complete карточки без безопасной строки ограничиваются существующими block caps и ночью идут через тот же category prompt/provider fallback, что утром. Для ночного вызова существующий prompt дополнен правилами нейтральности и конкретного действия. Food исключён из ночного написания после двух реальных прогонов: факты по-прежнему собираются и проверяются ночью, но текст пишет существующий утренний путь. Результат остальных стабильных блоков сохраняется только после обычного `_draft_line_quality_errors`; evidence hash, prompt version и schema version проверяются при intake, изменившаяся карточка возвращается в `needs_text`.
+- Решение: ночью используется только существующий deterministic writer для поддержанных стабильных блоков; Food и любые карточки без безопасной deterministic-строки пишет утром обычный rewrite. Model text prewrite, его prompt и ночной provider route удалены. Professional LLM сохранён только как CV-решение, не как автор публичного текста.
 - Почему решает класс: ночь не создаёт второй слабый writer; утро получает строку того же качества и переписывает только выбранные `needs_text`.
 - ПРОВЕРКА: реальные inventory records 13.07 — старые `old_render_ready`: Weekend 75, Ticket 29, Food 7; после текущего deterministic quality contract: 1/0/0. Wave `20260713T124932+0100`: 15 источников, 75 найдено, 0 errors, model 8 requested / 3 written / 5 rejected; ручная проверка нашла future-tense Food и рекламный diaspora-текст. После prompt-правки wave `20260713T125804+0100`: те же 75/0, model 8/5/3; diaspora стал нейтральнее, но Food снова написал прошедшее открытие 10.07 как будущее 13.07. После удаления Food prewrite wave `20260713T130239+0100`: 75/0, 13 fact-ready, 10 morning-eligible, model 7/3/4; Joe & The Juice теперь `needs_text`, `render_ready=false`, `draft_line=''`. Но одна из трёх принятых diaspora-строк закончилась рекламным «Не упустите возможность» вопреки prompt и прошла существующий quality contract. По правилу задачи новый смысловой gate не добавлен; требуется owner-решение: удалить весь model night prewrite или разрешить новый контроль.
 - Удалено: deterministic prewrite для Food/diaspora и затем весь model prewrite для Food; отдельный новый text fallback или date-gate не добавлялся.
 
-#### План включения после 0104
-- 13.07 сразу после push: вручную запустить `pro_food_russian`, проверить `health`, `found_this_run`, `model_prewrite.written`, `render_ready_this_run` и сохранённые строки.
-- 14.07 утром: проверить новую `final_funnel` и убедиться, что live Food остался включён при incomplete night inventory; режим всё ещё `assist`.
-- 14–16.07: требовать три последовательные здоровые Food-волны без stale/generic карточек и с минимум двумя источниками.
-- Не раньше 17.07: включить `MORNING_INVENTORY_MODE=on`; текущий replacement plan позволит skip только Food, Ticket/Culture останутся live.
-- 17–23.07: семь утренних выпусков сравнить с предыдущими семью по visible Food quality, потерянным live-кандидатам, collect/rewrite/total time. При любой потере вернуть `assist`.
-- 24.07: решить, оставлять ли Food `on`; только после этого отдельным пакетом готовить whole-output Ticket (`ticket_radar + next_7_days + future + outside GM`).
+#### План включения после 0112
+- После push: production-wave `pro_food_russian`; проверить source health, CV status и provenance, model text count обязан быть 0.
+- 14–16.07: три утра в `assist`; сравнивать `scan_complete`, `block_sufficient`, inserted/validated/rendered/HTML по всем 17 идентификаторам.
+- Не раньше 17.07: включать `on` только для Food, если три волны подряд дали floor 3 и минимум два источника; Russian/Pro остаются assist до отдельного разрешения в реестре.
+- После трёх успешных Food-canary утр сравнить потерянные live-кандидаты и время. Culture/Ticket не переключать, пока весь их output-набор не восстановлен.
+
+### 0105 — Один реестр ночной политики для всех 17 блоков — 2026-07-13
+- Статус: внедрено; production остаётся `assist`.
+- Проблема: assist, hybrid, completeness, category outputs, intake caps и prewrite жили в пяти списках и одном hardcoded union; Next7/Pro/Russian не доходили до morning intake.
+- Решение: `INVENTORY_BLOCK_REGISTRY` содержит все 17 active/legacy ID и их source/candidate categories, полный output-набор, mode, serving TTL, retention, text policy, floor, cap и отдельное разрешение replacement. Все прежние списки удалены; output-набор выводится из реестра.
+- ПРОВЕРКА: реальный inventory 13.07 строит отчёт по 17 ID; `venues_tickets` выводится как Ticket+Future+Outside, `culture_weekly` как Weekend+Future; registry==PRIMARY_BLOCKS. Offline: целевые тесты OK.
+- Удалено: `INVENTORY_ASSIST_BLOCKS`, `INVENTORY_HYBRID_BLOCKS`, `INVENTORY_COMPLETENESS_*`, `INVENTORY_CATEGORY_OUTPUT_BLOCKS`, `INVENTORY_INTAKE_CAPS`, `NIGHT_PREWRITE_CAPS` и hardcoded prewrite-union.
+
+### 0106 — Evidence hash инвалидирует текст при изменении любого текстового факта — 2026-07-13
+- Статус: внедрено; prod-proof после следующего morning intake.
+- Проблема: смена конца события, recurrence/status, тира, площадки, CV/access или booking URL не меняла hash; старый русский текст мог пережить отмену или новую фазу.
+- Решение: hash включает canonical action URL, дату/диапазон/occurrence/status, venue scope/city, ticket trigger+tier, Food phase, Pro CV/access, Russian evidence/geography и hard-news facts. Изменившаяся fact-complete карточка возвращается в `needs_text`.
+- ПРОВЕРКА: реальный state 3392 records — 276 прежних строк инвалидированы; tracking query не меняет hash, `scheduled→cancelled` меняет. Offline: regression OK.
+- Удалено: прежняя узкая identity `name+date_start+venue`.
+
+### 0107 — Полная provenance и жизненный цикл карточки — 2026-07-13
+- Статус: внедрено; production-wave pending после push.
+- Проблема: source report category терялась после routing; provider/model/time не сохранялись; нельзя было отличить первое появление от обновления фактов.
+- Решение: collector штампует `source_report_category`; record хранит candidate category, run/wave/source, provider/model/written_at, first_seen/last_seen/last_changed. Merge сохраняет first_seen и меняет last_changed только при новом evidence hash.
+- ПРОВЕРКА: реальная сетевая `pro_food_russian` wave: 75 found, 68 unique merged records; 68/68 имели полный provenance и retention. Offline merge regression подтверждает unchanged/changed timestamps.
+- Удалено: утреннее связывание inventory с report по routed candidate category.
+
+### 0108 — Единственный operational health только по текущей ночной волне — 2026-07-13
+- Статус: внедрено; production-wave pending после push.
+- Проблема: старый зелёный прогон мог разрешить source skip через несколько дней; причины source errors терялись.
+- Решение: `operational_night_category_health` выбирает последний run_id категории, требует текущую London-date, checked==expected и 0 errors, хранит source+reason. Исторический rollup остаётся только отчётной статистикой и не участвует в replacement.
+- ПРОВЕРКА: реальная повторная wave выбрала run `20260713T171310+0100`: Food 3/3, Pro 6/6, Diaspora 6/6, errors=0; предыдущий неуспешный run не управлял решением. Старый healthy run в regression получает `stale`.
+- Удалено: `latest_night_category_health`, допускавший зелёный run без проверки даты.
+
+### 0109 — Observation, action liveness, serving TTL и retention разделены — 2026-07-13
+- Статус: внедрено; action URL остаётся честно `unknown`, пока сам URL не проверен.
+- Проблема: успешный list fetch выдавался за liveness карточки; `expires_at` смешивал утреннюю свежесть и удаление будущих событий.
+- Решение: отдельные `observed_in_wave/observed_run_id`, `action_url_liveness/action_url_checked_at`, `serving_ttl_hours/serving_expires_at`, `retention_until`. Future/Ticket retention строится от даты события и не сокращается serving TTL.
+- ПРОВЕРКА: реальная wave — 68/68 observed, 68/68 retention, liveness 68 unknown (список не выдаётся за проверку action URL). Offline record schema regression OK.
+- Удалено: запись нового общего `expires_at/liveness_status`; legacy read остаётся только для старых records.
+
+### 0110 — Scan completeness и достаточность блока больше не смешиваются — 2026-07-13
+- Статус: внедрено; source replacement не включён.
+- Проблема: count+text floor одновременно изображал здоровье источников и полноту блока; Weekend/A-tier терялись по intake cap; optional zero считался поломкой; слабые карточки принимали leisure Next7 и deterministic Pro.
+- Решение: `scan_complete` считается по current run/source errors, `block_sufficient` — по post-card facts/floor/source diversity до visibility schedule/cap. Weekend и A-tier cap-exempt; Future/Outside honest-zero. Карты требуют Weekend activity+GM, Next7 non-leisure, Ticket scope+why-now, Outside A, Food meaning, Pro governing LLM CV+access, Russian geography.
+- ПРОВЕРКА: реальный current pool: 7/7 visible-candidate Next7 leisure rerouted, после правила 0 остаётся в Next7; real wave: Food scan complete=true/block sufficient=false (1<3), Russian true/true (2), Pro true/false. Старые 2 false-ready Pro стали 0. Offline 25 A-tier → 25 intake, held=0.
+- Удалено: text как обязательная часть Food completeness и cap для protected Weekend/A-tier.
+
+### 0111 — Удалён ночной model text prewrite, Pro CV сохранён — 2026-07-13
+- Статус: внедрено; GitHub production CV proof после push.
+- Проблема: model prewrite пропустил рекламную diaspora-концовку; новый смысловой gate был бы вторым слабым редактором.
+- Решение: удалены model text function/prompt/route/tests. Ночью остаётся deterministic writer; Pro запускает существующий `apply_professional_event_llm_matches` после per-card enrichment, но модель решает только fit/access.
+- ПРОВЕРКА: реальная wave: model-text providers=0, deterministic providers=5; локальный CV честно held все Pro при отсутствующем пакете OpenAI. Workflow устанавливает OpenAI; production proof pending.
+- Удалено: `prewrite_inventory_candidates`, `NIGHT_INVENTORY_PREWRITE_RULES`, model prewrite pool/caps/report/tests.
+
+### 0112 — Командный файл, продуктовые правила и расписание приведены к production truth — 2026-07-13
+- Статус: внедрено; workflow proof после push.
+- Проблема: AGENTS требовал удалённый runtime sync и утверждал, что Python не вызывает модели; Ticket/Outside docs спорили с A-tier; District выглядел активным; 0104-plan ссылался на удалённый model prewrite.
+- Решение: AGENTS описывает GitHub deployment и Python model runtime; Product Contracts фиксирует A-tier, night inventory и retired District; workflow документирует cron-job.org Europe/London 00:31/02:07/03:37/06:17/07:31; план 0104 заменён планом после 0112.
+- ПРОВЕРКА: docs/code anchors сверены; `rg` не находит удалённые runtime/prewrite symbols в active code/tests. Replay 13.07 old/new: оба 12 sections, 23 bullets, lead ok, max blank 1; rebuilt HTML SHA-1 идентичен. Production schedule не менялся, только зафиксирован без UTC/BST двусмысленности.
+- Удалено: устаревшие команды `sync_runtime_bundle.sh`/`run_daily_digest.sh` из AGENTS; District из active purpose classes, writer order, editor trim, pre-send judge и low-signal sections.

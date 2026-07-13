@@ -31,9 +31,10 @@ from news_digest.pipeline.entity_extraction import enrich_candidates_entities
 from news_digest.pipeline.event_extraction import enrich_candidates_events
 from news_digest.pipeline.history import ensure_history_files
 from news_digest.pipeline.inventory import (
+    INVENTORY_BLOCK_REGISTRY,
     build_morning_inventory_intake,
     inventory_source_replacement_plan,
-    latest_night_category_health,
+    operational_night_category_health,
     read_all_inventory,
     summarise_morning_intake,
 )
@@ -554,6 +555,9 @@ def _collect_single_source(source) -> tuple[dict, list[dict]]:
 
         extract_started_at = time.perf_counter()
         source_candidates = _extract_source_candidates(source, body)
+        for candidate in source_candidates:
+            if isinstance(candidate, dict):
+                candidate["source_report_category"] = source.report_category
         source_health["extract_duration_seconds"] = round(time.perf_counter() - extract_started_at, 3)
         source_health["checked"] = True
         source_health["fetched"] = True
@@ -643,12 +647,19 @@ def collect_digest(project_root: Path) -> StageResult:
                 continue
             if isinstance(row, dict):
                 inventory_run_rows.append(row)
-    night_category_health = latest_night_category_health(inventory_run_rows)
+    night_category_health = operational_night_category_health(
+        inventory_run_rows,
+        current_day=today_london(),
+    )
     replacement_plan = inventory_source_replacement_plan(inventory_preview_report, night_category_health)
     inventory_report: dict[str, object] = {
         **summarise_morning_intake(inventory_records, prompt_version=PROMPT_REGISTRY_VERSION),
         "mode": inventory_mode,
-        "assist_blocks": ["weekend_activities", "ticket_radar", "openings"],
+        "assist_blocks": [
+            block
+            for block, policy in INVENTORY_BLOCK_REGISTRY.items()
+            if str(policy.get("mode") or "") == "assist"
+        ],
         "preview": inventory_preview_report,
         "night_category_health": night_category_health,
         "source_replacement_plan": replacement_plan,
@@ -746,7 +757,7 @@ def collect_digest(project_root: Path) -> StageResult:
         candidates.extend(inventory_candidates)
         inventory_report["actual_intake"] = intake_report
         for candidate in inventory_candidates:
-            category_key = str(candidate.get("category") or "")
+            category_key = str(candidate.get("source_report_category") or candidate.get("category") or "")
             if category_key not in report["categories"]:
                 continue
             event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
@@ -757,7 +768,8 @@ def collect_digest(project_root: Path) -> StageResult:
         for category_key, category_report in report["categories"].items():
             inserted = [
                 candidate for candidate in inventory_candidates
-                if isinstance(candidate, dict) and str(candidate.get("category") or "") == category_key
+                if isinstance(candidate, dict)
+                and str(candidate.get("source_report_category") or candidate.get("category") or "") == category_key
             ]
             if not inserted:
                 continue

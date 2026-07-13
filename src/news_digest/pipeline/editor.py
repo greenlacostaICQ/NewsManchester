@@ -65,7 +65,6 @@ _EDITOR_TRIMMABLE_SECTIONS = {
     "Крупные концерты вне GM",
     "Дальние анонсы",
     "Городской радар",
-    "Радар по районам",
 }
 
 PRE_SEND_RUSSIAN_EDITOR_PROMPT = """Ты выпускающий редактор русского Telegram-дайджеста Greater Manchester.

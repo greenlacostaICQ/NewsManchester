@@ -40,7 +40,6 @@ LOW_SIGNAL_BLOCKS = [
     "Еда, открытия и рынки",
     "IT и бизнес",
     "Business/tech события для тебя",
-    "Радар по районам",
 ]
 
 SECTION_MAX_ITEMS = {

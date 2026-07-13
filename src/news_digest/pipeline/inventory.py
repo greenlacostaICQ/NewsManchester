@@ -28,12 +28,180 @@ import json
 import os
 import re
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
-from news_digest.pipeline.common import PRIMARY_BLOCKS, now_london, today_london, write_json_atomic
+from news_digest.pipeline.common import (
+    PRIMARY_BLOCKS,
+    canonical_url_identity,
+    now_london,
+    today_london,
+    write_json_atomic,
+)
 
 INVENTORY_SCHEMA_VERSION = 1
+
+
+# One inventory policy for every public/legacy block. All night collection,
+# card evaluation, morning intake, completeness and source replacement derive
+# from this registry; parallel allowlists/caps are intentionally forbidden.
+INVENTORY_BLOCK_REGISTRY: dict[str, dict[str, object]] = {
+    "weather": {
+        "source_report_categories": frozenset({"synthetic"}),
+        "candidate_categories": frozenset({"weather"}),
+        "mode": "live_only", "serving_ttl_hours": 0.5, "retention_days": 2,
+        "text_policy": "morning_live", "source_replacement_allowed": False,
+        "floor": 1, "min_sources": 1, "optional": False, "intake_cap": 0,
+    },
+    "transport": {
+        "source_report_categories": frozenset({"transport"}),
+        "candidate_categories": frozenset({"transport"}),
+        "mode": "hybrid", "serving_ttl_hours": 1.0, "retention_days": 7,
+        "text_policy": "morning_live", "source_replacement_allowed": False,
+        "floor": 0, "min_sources": 1, "optional": True, "intake_cap": 0,
+        "required_fields": ("what_happened", "why_now"),
+    },
+    "today_focus": {
+        "source_report_categories": frozenset({"media_layer", "gmp", "public_services"}),
+        "candidate_categories": frozenset({"media_layer", "gmp", "public_services", "council"}),
+        "mode": "live_only", "serving_ttl_hours": 6.0, "retention_days": 7,
+        "text_policy": "morning_live", "source_replacement_allowed": False,
+        "floor": 3, "min_sources": 2, "optional": False, "intake_cap": 0,
+    },
+    "last_24h": {
+        "source_report_categories": frozenset({"media_layer", "gmp"}),
+        "candidate_categories": frozenset({"media_layer", "gmp", "council"}),
+        "mode": "hybrid", "serving_ttl_hours": 6.0, "retention_days": 14,
+        "text_policy": "morning_live", "source_replacement_allowed": False,
+        "floor": 6, "min_sources": 2, "optional": False, "intake_cap": 0,
+        "required_fields": ("what_happened", "why_now"),
+    },
+    "lead_story": {
+        "source_report_categories": frozenset({"media_layer", "gmp", "public_services"}),
+        "candidate_categories": frozenset({"media_layer", "gmp", "public_services", "council"}),
+        "mode": "live_only", "serving_ttl_hours": 6.0, "retention_days": 14,
+        "text_policy": "morning_live", "source_replacement_allowed": False,
+        "floor": 0, "min_sources": 1, "optional": True, "intake_cap": 0,
+    },
+    "city_watch": {
+        "source_report_categories": frozenset({"media_layer", "gmp", "public_services", "transport", "tech_business"}),
+        "candidate_categories": frozenset({"media_layer", "gmp", "public_services", "council", "transport", "tech_business"}),
+        "mode": "hybrid", "serving_ttl_hours": 24.0, "retention_days": 30,
+        "text_policy": "morning_live", "source_replacement_allowed": False,
+        "floor": 5, "min_sources": 2, "optional": False, "intake_cap": 0,
+        "required_fields": ("what_happened", "why_now"),
+    },
+    "weekend_activities": {
+        "source_report_categories": frozenset({"culture_weekly"}),
+        "candidate_categories": frozenset({"culture_weekly"}),
+        "mode": "assist", "serving_ttl_hours": 96.0, "retention_days": 30,
+        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
+        "floor": 6, "min_sources": 2, "optional": False, "intake_cap": 0,
+        "required_fields": ("event_name", "specific_event", "venue", "date_start", "action_url", "activity_type", "gm_fit"),
+    },
+    "next_7_days": {
+        "source_report_categories": frozenset({"media_layer", "gmp", "public_services", "transport"}),
+        "candidate_categories": frozenset({"media_layer", "gmp", "public_services", "council", "transport"}),
+        "mode": "assist", "serving_ttl_hours": 96.0, "retention_days": 30,
+        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
+        "floor": 3, "min_sources": 2, "optional": False, "intake_cap": 12,
+        "required_fields": ("event_name", "specific_event", "venue", "date_start", "action_url", "non_leisure"),
+    },
+    "future_announcements": {
+        "source_report_categories": frozenset({"culture_weekly", "venues_tickets"}),
+        "candidate_categories": frozenset({"culture_weekly", "venues_tickets"}),
+        "mode": "assist", "serving_ttl_hours": 336.0, "retention_days": 400,
+        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
+        "floor": 0, "min_sources": 1, "optional": True, "intake_cap": 20,
+        "required_fields": ("event_name", "venue", "action_url"),
+    },
+    "ticket_radar": {
+        "source_report_categories": frozenset({"venues_tickets"}),
+        "candidate_categories": frozenset({"venues_tickets"}),
+        "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 400,
+        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
+        "floor": 2, "min_sources": 2, "optional": False, "intake_cap": 20,
+        "required_fields": ("event_name", "date_start", "venue", "action_url", "ticket_type", "tier", "venue_scope", "ticket_why_now"),
+    },
+    "outside_gm_tickets": {
+        "source_report_categories": frozenset({"venues_tickets"}),
+        "candidate_categories": frozenset({"venues_tickets"}),
+        "mode": "assist", "serving_ttl_hours": 336.0, "retention_days": 400,
+        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
+        "floor": 0, "min_sources": 1, "optional": True, "intake_cap": 6,
+        "required_fields": ("event_name", "date_start", "venue", "action_url", "ticket_type", "outside_a_tier"),
+    },
+    "russian_events": {
+        "source_report_categories": frozenset({"diaspora_events"}),
+        "candidate_categories": frozenset({"russian_speaking_events", "diaspora_events"}),
+        "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 400,
+        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
+        "floor": 1, "min_sources": 1, "optional": False, "intake_cap": 10,
+        "required_fields": ("event_name", "specific_event", "date_start", "venue", "russian_evidence", "russian_geography", "action_url"),
+    },
+    "openings": {
+        "source_report_categories": frozenset({"food_openings"}),
+        "candidate_categories": frozenset({"food_openings"}),
+        "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 90,
+        "text_policy": "morning_writer", "source_replacement_allowed": True,
+        "floor": 3, "min_sources": 2, "optional": False, "intake_cap": 10,
+        "required_fields": ("event_name", "specific_event", "venue", "specific_venue", "opening_phase_or_date", "food_meaning", "action_url"),
+    },
+    "tech_business": {
+        "source_report_categories": frozenset({"tech_business"}),
+        "candidate_categories": frozenset({"tech_business"}),
+        "mode": "hybrid", "serving_ttl_hours": 24.0, "retention_days": 30,
+        "text_policy": "morning_live", "source_replacement_allowed": False,
+        "floor": 0, "min_sources": 1, "optional": True, "intake_cap": 0,
+        "required_fields": ("what_happened", "why_now"),
+    },
+    "professional_events": {
+        "source_report_categories": frozenset({"professional_events"}),
+        "candidate_categories": frozenset({"professional_events"}),
+        "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 180,
+        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
+        "floor": 1, "min_sources": 1, "optional": False, "intake_cap": 10,
+        "required_fields": ("event_name", "specific_event", "venue", "date_start", "professional_llm_cv", "professional_access", "action_url"),
+    },
+    "football": {
+        "source_report_categories": frozenset({"football"}),
+        "candidate_categories": frozenset({"football"}),
+        "mode": "hybrid", "serving_ttl_hours": 12.0, "retention_days": 14,
+        "text_policy": "morning_live", "source_replacement_allowed": False,
+        "floor": 2, "min_sources": 1, "optional": False, "intake_cap": 0,
+        "required_fields": ("what_happened", "why_now"),
+    },
+    "district_radar": {
+        "source_report_categories": frozenset(),
+        "candidate_categories": frozenset(),
+        "mode": "retired", "serving_ttl_hours": 0.0, "retention_days": 0,
+        "text_policy": "none", "source_replacement_allowed": False,
+        "floor": 0, "min_sources": 0, "optional": True, "intake_cap": 0,
+    },
+}
+
+if set(INVENTORY_BLOCK_REGISTRY) != set(PRIMARY_BLOCKS):
+    raise RuntimeError("INVENTORY_BLOCK_REGISTRY must define every PRIMARY_BLOCK exactly once")
+
+
+def inventory_category_output_blocks() -> dict[str, frozenset[str]]:
+    outputs: dict[str, set[str]] = {}
+    for block, policy in INVENTORY_BLOCK_REGISTRY.items():
+        if str(policy.get("mode") or "") == "retired":
+            continue
+        for category in policy.get("source_report_categories") or ():
+            outputs.setdefault(str(category), set()).add(block)
+    return {category: frozenset(blocks) for category, blocks in outputs.items()}
+
+
+_registry_category_outputs = inventory_category_output_blocks()
+for _block, _policy in INVENTORY_BLOCK_REGISTRY.items():
+    _policy["output_blocks"] = frozenset(
+        output
+        for category in _policy.get("source_report_categories") or ()
+        for output in _registry_category_outputs.get(str(category), frozenset())
+    )
+del _block, _policy, _registry_category_outputs
 
 
 # ── 8.1 State foundation ──────────────────────────────────────────────────
@@ -132,7 +300,29 @@ def merge_inventory(state_dir: Path, category: str, new_records: list[dict]) -> 
     for record in new_records:
         fingerprint = str(record.get("fingerprint") or "")
         if fingerprint:
-            existing[fingerprint] = record
+            previous = existing.get(fingerprint, {})
+            merged = dict(record)
+            merged["source_report_category"] = str(
+                merged.get("source_report_category") or category
+            )
+            merged["first_seen_at"] = str(
+                previous.get("first_seen_at")
+                or previous.get("last_seen_at")
+                or merged.get("first_seen_at")
+                or merged.get("last_seen_at")
+                or ""
+            )
+            unchanged = bool(
+                previous
+                and str(previous.get("evidence_hash") or "")
+                == str(merged.get("evidence_hash") or "")
+            )
+            merged["last_changed_at"] = str(
+                previous.get("last_changed_at")
+                if unchanged and previous.get("last_changed_at")
+                else merged.get("last_seen_at") or merged.get("last_changed_at") or ""
+            )
+            existing[fingerprint] = merged
     write_inventory(state_dir, category, list(existing.values()))
     return len(existing)
 
@@ -151,6 +341,7 @@ def read_inventory(state_dir: Path, category: str) -> list[dict]:
         except json.JSONDecodeError:
             continue
         if isinstance(row, dict):
+            row.setdefault("source_report_category", category)
             rows.append(row)
     return rows
 
@@ -167,23 +358,19 @@ def read_all_inventory(state_dir: Path) -> list[dict]:
 
 # ── 8.5 Card rules → readiness ────────────────────────────────────────────
 #
-# Required structured fields per block. render_ready is true only when the
-# fields needed to write a public line without guessing are present AND a
-# public text (draft_line or deterministic template) already exists.
+# Required fields live in INVENTORY_BLOCK_REGISTRY beside each block's mode,
+# freshness and replacement policy.
 
-_CARD_REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
-    "next_7_days": ("event_name", "specific_event", "venue", "date_start", "action_url"),
-    "weekend_activities": ("event_name", "specific_event", "venue", "date_start", "action_url"),
-    "ticket_radar": ("event_name", "date_start", "venue", "action_url", "ticket_type", "tier"),
-    "future_announcements": ("event_name", "venue", "action_url", "ticket_type", "tier"),
-    "outside_gm_tickets": ("event_name", "date_start", "venue", "action_url", "ticket_type", "tier"),
-    "openings": ("event_name", "specific_event", "venue", "specific_venue", "opening_phase_or_date", "action_url"),
-    "professional_events": ("event_name", "specific_event", "venue", "date_start", "professional_match", "action_url"),
-    "russian_events": ("event_name", "specific_event", "date_start", "venue", "russian_evidence", "action_url"),
-}
-# Hard-news blocks: structured facts live on the candidate, not the event dict.
-_HARD_NEWS_BLOCKS = frozenset({"last_24h", "today_focus", "city_watch", "tech_business", "football"})
-_HARD_NEWS_REQUIRED = ("what_happened", "why_now")
+_LEISURE_CARD_RE = re.compile(
+    r"\b(?:market|fair|fayre|festival|concert|gig|live\s+music|recital|show|"
+    r"exhibition|screening|workshop|tour|comedy|stand[-\s]?up|car\s*boot)\b",
+    re.IGNORECASE,
+)
+_FOOD_MEANING_RE = re.compile(
+    r"\b(?:restaurant|cafe|coffee|bar|pub|bakery|food|drink|market|deli|"
+    r"greengrocer|opening|opened|opens|launch|reopen|takeover|pop[-\s]?up)\b",
+    re.IGNORECASE,
+)
 
 
 def _card_field_value(candidate: dict, field: str) -> str:
@@ -212,11 +399,14 @@ def _card_field_value(candidate: dict, field: str) -> str:
         if re.search(r"\b(?:open(?:s|ed|ing)?|reopen(?:s|ed|ing)?|launch(?:es|ed|ing)?|set to return)\b", claim, re.IGNORECASE):
             return "opening_claim"
         return str(event.get("date_start") or event.get("date") or "").strip()
-    if field == "professional_match":
+    if field == "professional_llm_cv":
         match = candidate.get("professional_event_match") if isinstance(candidate.get("professional_event_match"), dict) else {}
-        if match.get("publish") or str(match.get("llm_fit") or "") in {"go", "consider"}:
-            return "matched"
-        return ""
+        status = str(candidate.get("professional_match_status") or "")
+        return "matched" if status == "llm_cv_matched" and str(match.get("llm_fit") or "") in {"go", "consider"} and match.get("publish") else ""
+    if field == "professional_access":
+        match = candidate.get("professional_event_match") if isinstance(candidate.get("professional_event_match"), dict) else {}
+        access = str(match.get("access_label") or "").strip().lower()
+        return access if access in {"free", "paid", "booking_required"} else ""
     if field == "russian_evidence":
         evidence = candidate.get("russian_evidence") if isinstance(candidate.get("russian_evidence"), dict) else {}
         return "positive" if evidence.get("has_evidence") else ""
@@ -225,6 +415,50 @@ def _card_field_value(candidate: dict, field: str) -> str:
         return str(notability.get("tier") or "").strip()
     if field == "ticket_type":
         return str(candidate.get("ticket_type") or event.get("ticket_type") or "").strip()
+    if field == "venue_scope":
+        scope = str(candidate.get("venue_scope") or "").strip()
+        if str(candidate.get("primary_block") or "") == "ticket_radar":
+            return scope if scope in {"GM", "nearby"} else ""
+        return scope
+    if field == "ticket_why_now":
+        ticket_type = str(candidate.get("ticket_type") or event.get("ticket_type") or "").strip()
+        notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+        return ticket_type or str(notability.get("signal") or candidate.get("why_now") or "").strip()
+    if field == "outside_a_tier":
+        notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+        scope = str(candidate.get("venue_scope") or "")
+        return "A" if str(notability.get("tier") or "").upper() == "A" and scope in {"outside", "nearby"} else ""
+    if field == "activity_type":
+        from news_digest.pipeline.weekend_inventory import weekend_activity_type  # noqa: PLC0415
+
+        return weekend_activity_type(candidate)
+    if field == "gm_fit":
+        scope = str(candidate.get("venue_scope") or "")
+        borough = str(event.get("borough") or "").lower()
+        return "GM" if scope == "GM" or borough in {
+            "bolton", "bury", "manchester", "oldham", "rochdale", "salford",
+            "stockport", "tameside", "trafford", "wigan",
+        } else ""
+    if field == "non_leisure":
+        category = str(candidate.get("category") or "")
+        source_category = str(candidate.get("source_report_category") or "")
+        blob = " ".join(str(candidate.get(name) or "") for name in ("title", "summary", "lead", "evidence_text"))
+        if category in {"culture_weekly", "venues_tickets", "russian_speaking_events", "diaspora_events"}:
+            return ""
+        if source_category in {"culture_weekly", "venues_tickets", "diaspora_events"} or _LEISURE_CARD_RE.search(blob):
+            return ""
+        return "planning"
+    if field == "food_meaning":
+        blob = " ".join(
+            str(value or "")
+            for value in (
+                candidate.get("title"), candidate.get("summary"), candidate.get("lead"),
+                candidate.get("change_phase"), event.get("event_name"), event.get("venue"),
+            )
+        )
+        return "local_food_change" if _FOOD_MEANING_RE.search(blob) else ""
+    if field == "russian_geography":
+        return str(candidate.get("venue_city") or event.get("borough") or "").strip()
     return str(candidate.get(field) or event.get(field) or "").strip()
 
 
@@ -233,7 +467,8 @@ def evaluate_card(candidate: dict) -> tuple[str, bool, list[str]]:
     its block's card rule. render_ready requires both the structured fields and
     an existing public line — matching the show=renderable contract (0030)."""
     block = str(candidate.get("primary_block") or "")
-    required = _HARD_NEWS_REQUIRED if block in _HARD_NEWS_BLOCKS else _CARD_REQUIRED_FIELDS.get(block, ())
+    policy = INVENTORY_BLOCK_REGISTRY.get(block, {})
+    required = tuple(policy.get("required_fields") or ())
     missing = [field for field in required if not _card_field_value(candidate, field)]
     has_text = bool(str(candidate.get("draft_line") or "").strip())
     if missing:
@@ -263,12 +498,48 @@ def compute_evidence_hash(candidate: dict) -> str:
     a materially changed hard-news fact yields a new hash (the same principle as
     the reuse cache, computed standalone so inventory has no llm_rewrite dep)."""
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    ticket_notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+    professional_match = candidate.get("professional_event_match") if isinstance(candidate.get("professional_event_match"), dict) else {}
+    professional_llm = candidate.get("professional_llm_match") if isinstance(candidate.get("professional_llm_match"), dict) else {}
+    russian_evidence = candidate.get("russian_evidence") if isinstance(candidate.get("russian_evidence"), dict) else {}
+    action_url = str(candidate.get("booking_url") or event.get("booking_url") or candidate.get("source_url") or "")
     payload = {
         "primary_block": str(candidate.get("primary_block") or ""),
+        "source_report_category": str(candidate.get("source_report_category") or ""),
+        "candidate_category": str(candidate.get("category") or ""),
         "title": str(candidate.get("title") or "")[:300],
+        "summary": str(candidate.get("summary") or "")[:600],
+        "lead": str(candidate.get("lead") or "")[:600],
+        "practical_angle": str(candidate.get("practical_angle") or "")[:300],
         "event_name": str(event.get("event_name") or event.get("name") or ""),
-        "event_date": str(event.get("date_start") or event.get("date") or ""),
+        "event_date_start": str(event.get("date_start") or event.get("date") or ""),
+        "event_date_end": str(event.get("date_end") or ""),
+        "next_occurrence": str(event.get("next_occurrence") or ""),
+        "event_status": str(event.get("event_status") or ""),
+        "is_recurring": bool(event.get("is_recurring")),
         "venue": str(event.get("venue") or candidate.get("venue") or ""),
+        "venue_scope": str(candidate.get("venue_scope") or ""),
+        "venue_city": str(candidate.get("venue_city") or ""),
+        "action_url": canonical_url_identity(action_url),
+        "ticket_type": str(candidate.get("ticket_type") or event.get("ticket_type") or ""),
+        "ticket_notability": {
+            "tier": str(ticket_notability.get("tier") or ""),
+            "kind": str(ticket_notability.get("kind") or ""),
+            "signal": str(ticket_notability.get("signal") or ""),
+        },
+        "change_phase": str(candidate.get("change_phase") or ""),
+        "professional_match": {
+            "llm_fit": str(professional_match.get("llm_fit") or ""),
+            "publish": bool(professional_match.get("publish")),
+            "access_label": str(professional_match.get("access_label") or ""),
+            "score": str(professional_match.get("fit_score") or ""),
+            "status": str(candidate.get("professional_match_status") or ""),
+            "provider": str(professional_llm.get("provider") or ""),
+        },
+        "russian_evidence": {
+            "has_evidence": bool(russian_evidence.get("has_evidence")),
+            "strong_signals": sorted(str(item) for item in russian_evidence.get("strong_signals") or []),
+        },
         "story_facts": evidence_cache_extra_fields(candidate),
         "evidence_text": str(candidate.get("evidence_text") or candidate.get("source_evidence") or "")[:1200],
         "schema_version": INVENTORY_SCHEMA_VERSION,
@@ -279,7 +550,29 @@ def compute_evidence_hash(candidate: dict) -> str:
 
 # ── 8.2 Canonical item schema ─────────────────────────────────────────────
 
-def build_inventory_record(candidate: dict, *, prompt_version: int, now_iso: str | None = None) -> dict:
+def _retention_until(candidate: dict, *, now_iso: str) -> str:
+    block = str(candidate.get("primary_block") or "")
+    policy = INVENTORY_BLOCK_REGISTRY.get(block, {})
+    retention_days = max(0, int(policy.get("retention_days") or 0))
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    anchor_raw = str(event.get("date_end") or event.get("date_start") or event.get("date") or "")[:10]
+    try:
+        anchor = date.fromisoformat(anchor_raw) if anchor_raw else datetime.fromisoformat(now_iso).date()
+    except ValueError:
+        anchor = now_london().date()
+    return (anchor + timedelta(days=retention_days)).isoformat() if retention_days else ""
+
+
+def build_inventory_record(
+    candidate: dict,
+    *,
+    prompt_version: int,
+    now_iso: str | None = None,
+    run_id: str = "",
+    wave: str = "",
+    source_name: str = "",
+    source_report_category: str = "",
+) -> dict:
     """Canonical inventory card. Stores English raw/evidence for audit, but the
     working unit is the fact card + readiness, never the raw English text."""
     now_iso = now_iso or now_london().isoformat()
@@ -296,7 +589,10 @@ def build_inventory_record(candidate: dict, *, prompt_version: int, now_iso: str
         "next_occurrence": str(event.get("next_occurrence") or ""),
         "event_status": str(event.get("event_status") or ""),
         "venue_scope": str(candidate.get("venue_scope") or ""),
+        "venue_city": str(candidate.get("venue_city") or ""),
         "ticket_type": str(candidate.get("ticket_type") or ""),
+        "ticket_notability": candidate.get("ticket_notability")
+        if isinstance(candidate.get("ticket_notability"), dict) else {},
         "tier": str((candidate.get("ticket_notability") or {}).get("tier") or "")
         if isinstance(candidate.get("ticket_notability"), dict) else "",
         "what_happened": str(candidate.get("what_happened") or "")[:300],
@@ -305,14 +601,28 @@ def build_inventory_record(candidate: dict, *, prompt_version: int, now_iso: str
         "change_phase": str(candidate.get("change_phase") or ""),
         "professional_event_match": candidate.get("professional_event_match")
         if isinstance(candidate.get("professional_event_match"), dict) else {},
+        "professional_llm_match": candidate.get("professional_llm_match")
+        if isinstance(candidate.get("professional_llm_match"), dict) else {},
+        "professional_match_status": str(candidate.get("professional_match_status") or ""),
         "russian_evidence": candidate.get("russian_evidence")
         if isinstance(candidate.get("russian_evidence"), dict) else {},
     }
+    block_policy = INVENTORY_BLOCK_REGISTRY.get(str(candidate.get("primary_block") or ""), {})
+    serving_ttl = float(block_policy.get("serving_ttl_hours") or 0.0)
     return {
         "fingerprint": str(candidate.get("fingerprint") or ""),
         "evidence_hash": compute_evidence_hash(candidate),
         "prompt_version": prompt_version,
+        "run_id": str(run_id or candidate.get("inventory_run_id") or ""),
+        "wave": str(wave or candidate.get("inventory_wave") or ""),
+        "source_name": str(source_name or candidate.get("source_label") or ""),
+        "source_report_category": str(
+            source_report_category or candidate.get("source_report_category") or ""
+        ),
+        "candidate_category": str(candidate.get("category") or ""),
+        "first_seen_at": now_iso,
         "last_seen_at": now_iso,
+        "last_changed_at": now_iso,
         "title": str(candidate.get("title") or ""),
         "summary": str(candidate.get("summary") or ""),
         "lead": str(candidate.get("lead") or ""),
@@ -320,6 +630,9 @@ def build_inventory_record(candidate: dict, *, prompt_version: int, now_iso: str
         "freshness_status": str(candidate.get("freshness_status") or ""),
         "practical_angle": str(candidate.get("practical_angle") or ""),
         "draft_line": str(candidate.get("draft_line") or ""),
+        "draft_line_provider": str(candidate.get("draft_line_provider") or ""),
+        "draft_line_model": str(candidate.get("draft_line_model") or ""),
+        "draft_line_written_at": str(candidate.get("draft_line_written_at") or ""),
         "source_url": str(candidate.get("source_url") or ""),
         "booking_url": str(candidate.get("booking_url") or event.get("booking_url") or ""),
         "source_label": str(candidate.get("source_label") or ""),
@@ -330,9 +643,16 @@ def build_inventory_record(candidate: dict, *, prompt_version: int, now_iso: str
         "quality_status": quality_status,
         "render_ready": render_ready,
         "missing_facts": missing_facts,
-        "liveness_status": str(candidate.get("liveness_status") or "unknown"),
-        "liveness_checked_at": str(candidate.get("liveness_checked_at") or ""),
-        "expires_at": str(candidate.get("expires_at") or ""),
+        "observed_in_wave": True,
+        "observed_run_id": str(run_id or candidate.get("inventory_run_id") or ""),
+        "action_url_liveness": str(candidate.get("action_url_liveness") or "unknown"),
+        "action_url_checked_at": str(candidate.get("action_url_checked_at") or ""),
+        "serving_ttl_hours": serving_ttl,
+        "serving_expires_at": (
+            datetime.fromisoformat(now_iso).astimezone(now_london().tzinfo)
+            + timedelta(hours=serving_ttl)
+        ).isoformat() if serving_ttl else "",
+        "retention_until": _retention_until(candidate, now_iso=now_iso),
     }
 
 
@@ -420,56 +740,6 @@ def verify_dispositions(candidates: list[dict], rendered_fingerprints: set[str])
 
 _TICKET_BLOCKS = frozenset({"ticket_radar", "outside_gm_tickets", "future_announcements"})
 _TICKET_MORNING_TYPES = frozenset({"on_sale_now", "presale_soon", "newly_listed", "event_this_week", "major_upcoming"})
-_BLOCK_TTL_HOURS: dict[str, float] = {
-    "transport": 1.0,
-    "last_24h": 6.0,
-    "today_focus": 6.0,
-    "city_watch": 24.0,
-    "football": 12.0,
-    "tech_business": 24.0,
-    "weekend_activities": 96.0,
-    "next_7_days": 96.0,
-    "openings": 168.0,
-    "professional_events": 168.0,
-    "russian_events": 168.0,
-    "ticket_radar": 168.0,
-    "future_announcements": 336.0,
-    "outside_gm_tickets": 336.0,
-}
-_DEFAULT_TTL_HOURS = 24.0
-INVENTORY_ASSIST_BLOCKS = frozenset({"weekend_activities", "ticket_radar", "openings"})
-INVENTORY_HYBRID_BLOCKS = frozenset({"transport", "last_24h", "today_focus", "lead_story"})
-INVENTORY_COMPLETENESS_FLOORS = {
-    "weekend_activities": 6,
-    "ticket_radar": 2,
-    "openings": 3,
-}
-INVENTORY_COMPLETENESS_MIN_SOURCES = {
-    "weekend_activities": 2,
-    "ticket_radar": 2,
-    "openings": 2,
-}
-# A source category may feed several public blocks after routing. It is safe to
-# replace its broad morning scan only when every routed block is restored from
-# inventory. The current assisted intake restores only the three stable blocks,
-# so mixed categories stay live until their whole output set is supported.
-INVENTORY_CATEGORY_OUTPUT_BLOCKS = {
-    "venues_tickets": frozenset({"ticket_radar", "next_7_days", "future_announcements", "outside_gm_tickets"}),
-    "food_openings": frozenset({"openings"}),
-    "culture_weekly": frozenset({"weekend_activities", "next_7_days", "future_announcements"}),
-}
-INVENTORY_INTAKE_CAPS = {
-    "weekend_activities": 18,
-    "ticket_radar": 20,
-    "openings": 10,
-}
-NIGHT_PREWRITE_CAPS = {
-    "weekend_activities": 18,
-    "ticket_radar": 20,
-    "next_7_days": 18,
-    "professional_events": 10,
-    "russian_events": 10,
-}
 _RU_MONTHS = {
     "января": 1,
     "февраля": 2,
@@ -487,7 +757,7 @@ _RU_MONTHS = {
 
 
 def _is_expired(record: dict, today: str) -> bool:
-    expires_at = str(record.get("expires_at") or "")
+    expires_at = str(record.get("serving_expires_at") or record.get("expires_at") or "")
     return bool(expires_at) and expires_at < today
 
 
@@ -503,7 +773,8 @@ def _parse_iso_datetime(raw: str) -> datetime | None:
 
 def inventory_ttl_hours(record: dict) -> float:
     block = str(record.get("primary_block") or "")
-    return _BLOCK_TTL_HOURS.get(block, _DEFAULT_TTL_HOURS)
+    policy = INVENTORY_BLOCK_REGISTRY.get(block, {})
+    return float(record.get("serving_ttl_hours") or policy.get("serving_ttl_hours") or 24.0)
 
 
 def inventory_age_hours(record: dict, *, now: datetime | None = None) -> float | None:
@@ -579,7 +850,7 @@ def passes_morning_contract(record: dict, *, today: str | None = None) -> tuple[
     today = today or today_london()
     if not inventory_fact_ready(record):
         return False, "missing_facts"
-    if str(record.get("liveness_status") or "") == "dead":
+    if str(record.get("action_url_liveness") or record.get("liveness_status") or "") == "dead":
         return False, "dead_link"
     if _is_expired(record, today):
         return False, "expired"
@@ -667,11 +938,13 @@ def inventory_record_to_candidate(record: dict) -> dict:
         "source_label": str(record.get("source_label") or ""),
         "primary_block": str(record.get("primary_block") or ""),
         "category": str(record.get("category") or ""),
+        "source_report_category": str(record.get("source_report_category") or ""),
         "evidence_text": str(record.get("raw_evidence") or ""),
         "source_evidence": str(record.get("raw_evidence") or ""),
         "draft_line": str(record.get("draft_line") or ""),
         "event": event,
         "venue_scope": str(fact.get("venue_scope") or ""),
+        "venue_city": str(fact.get("venue_city") or ""),
         "ticket_type": str(fact.get("ticket_type") or ""),
         "what_happened": str(fact.get("what_happened") or ""),
         "why_now": str(fact.get("why_now") or ""),
@@ -679,9 +952,15 @@ def inventory_record_to_candidate(record: dict) -> dict:
         "change_phase": str(fact.get("change_phase") or ""),
         "professional_event_match": fact.get("professional_event_match")
         if isinstance(fact.get("professional_event_match"), dict) else {},
+        "professional_llm_match": fact.get("professional_llm_match")
+        if isinstance(fact.get("professional_llm_match"), dict) else {},
+        "professional_match_status": str(fact.get("professional_match_status") or ""),
         "russian_evidence": fact.get("russian_evidence")
         if isinstance(fact.get("russian_evidence"), dict) else {},
         "inventory_source": "night_inventory",
+        "inventory_run_id": str(record.get("run_id") or ""),
+        "inventory_wave": str(record.get("wave") or ""),
+        "inventory_source_name": str(record.get("source_name") or ""),
         "inventory_last_seen_at": str(record.get("last_seen_at") or ""),
         "inventory_quality_status": str(record.get("quality_status") or ""),
         "inventory_missing_facts": list(record.get("missing_facts") or []),
@@ -690,8 +969,9 @@ def inventory_record_to_candidate(record: dict) -> dict:
         "include": True,
     }
     tier = str(fact.get("tier") or "")
-    if tier:
-        candidate["ticket_notability"] = {"tier": tier}
+    notability = fact.get("ticket_notability") if isinstance(fact.get("ticket_notability"), dict) else {}
+    if tier or notability:
+        candidate["ticket_notability"] = {**notability, "tier": tier or str(notability.get("tier") or "")}
     return candidate
 
 
@@ -717,7 +997,8 @@ def prewrite_stable_inventory_candidate(candidate: dict) -> bool:
         return False
     block = str(candidate.get("primary_block") or "")
     category = str(candidate.get("category") or "")
-    if block not in (INVENTORY_ASSIST_BLOCKS | {"next_7_days", "professional_events", "russian_events"}):
+    policy = INVENTORY_BLOCK_REGISTRY.get(block, {})
+    if str(policy.get("text_policy") or "") != "deterministic_or_morning":
         return False
     try:
         from news_digest.pipeline.writer import (  # noqa: PLC0415
@@ -770,19 +1051,20 @@ def _inventory_candidate_priority(candidate: dict) -> tuple[int, str]:
 
 def _record_with_current_contract(record: dict, *, prompt_version: int | None = None) -> tuple[dict, bool]:
     working = dict(record)
-    restored = inventory_record_to_candidate(working)
-    quality_status, render_ready, missing_facts = evaluate_card(restored)
-    working.update(
-        {"quality_status": quality_status, "render_ready": render_ready, "missing_facts": missing_facts}
-    )
     invalidated = bool(
         str(record.get("draft_line") or "").strip()
         and not inventory_prewrite_is_current(record, prompt_version=prompt_version)
     )
     if invalidated:
-        working.update(
-            {"draft_line": "", "quality_status": "needs_text", "render_ready": False, "missing_facts": ["draft_line"]}
-        )
+        working["draft_line"] = ""
+        working["draft_line_provider"] = ""
+        working["draft_line_model"] = ""
+        working["draft_line_written_at"] = ""
+    restored = inventory_record_to_candidate(working)
+    quality_status, render_ready, missing_facts = evaluate_card(restored)
+    working.update(
+        {"quality_status": quality_status, "render_ready": render_ready, "missing_facts": missing_facts}
+    )
     return working, invalidated
 
 
@@ -794,12 +1076,7 @@ def build_morning_inventory_intake(
     today: str | None = None,
     prompt_version: int | None = None,
 ) -> tuple[list[dict], dict[str, object]]:
-    """Build stable-block candidates from night inventory for the morning path.
-
-    `assist` adds eligible stable candidates without skipping live sources.
-    `on` may be paired by the collector with broad-scan skipping. Fresh/lead/
-    transport remain report/hybrid only here.
-    """
+    """Restore every registry block marked assist into the normal morning path."""
     today = today or today_london()
     mode = str(mode or "assist").lower()
     existing = set(existing_fingerprints or set())
@@ -807,6 +1084,7 @@ def build_morning_inventory_intake(
     rejected: dict[str, int] = {}
     by_block: dict[str, dict[str, int]] = {}
     hybrid_signals: dict[str, int] = {}
+    supply_candidates: list[dict] = []
     invalidated_prewrite = 0
     funnel = {"records": 0, "card_ready": 0, "morning_eligible": 0, "after_live_dedupe": 0, "inserted_after_cap": 0}
     for record in records:
@@ -816,6 +1094,8 @@ def build_morning_inventory_intake(
         if invalidated:
             invalidated_prewrite += 1
         block = str(working_record.get("primary_block") or "")
+        policy = INVENTORY_BLOCK_REGISTRY.get(block, {})
+        block_mode = str(policy.get("mode") or "retired")
         bucket = by_block.setdefault(
             block or "unknown",
             {"records": 0, "card_ready": 0, "eligible": 0, "after_live_dedupe": 0, "inserted": 0, "duplicates": 0},
@@ -826,10 +1106,13 @@ def build_morning_inventory_intake(
             bucket["card_ready"] += 1
             funnel["card_ready"] += 1
         ok, reason = passes_morning_contract(working_record, today=today)
-        if block in INVENTORY_HYBRID_BLOCKS:
+        supply_ok, _ = _passes_block_supply_contract(working_record, today=today)
+        if supply_ok:
+            supply_candidates.append(inventory_record_to_candidate(working_record))
+        if block_mode == "hybrid":
             hybrid_signals[reason] = hybrid_signals.get(reason, 0) + 1
             continue
-        if block not in INVENTORY_ASSIST_BLOCKS:
+        if block_mode != "assist":
             continue
         if not ok:
             rejected[reason] = rejected.get(reason, 0) + 1
@@ -854,9 +1137,13 @@ def build_morning_inventory_intake(
     kept_by_block: dict[str, int] = {}
     for candidate in candidates:
         block = str(candidate.get("primary_block") or "")
-        cap = INVENTORY_INTAKE_CAPS.get(block, 0)
+        policy = INVENTORY_BLOCK_REGISTRY.get(block, {})
+        cap = int(policy.get("intake_cap") or 0)
         kept = kept_by_block.get(block, 0)
-        if cap and kept >= cap:
+        notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+        a_tier = str(notability.get("tier") or "").upper() == "A"
+        protected = block == "weekend_activities" or a_tier
+        if cap and kept >= cap and not protected:
             held_by_cap += 1
             continue
         capped.append(candidate)
@@ -865,12 +1152,17 @@ def build_morning_inventory_intake(
         funnel["inserted_after_cap"] += 1
     if held_by_cap:
         rejected["inventory_block_cap"] = rejected.get("inventory_block_cap", 0) + held_by_cap
-    completeness = inventory_stable_block_completeness(capped)
+    completeness = inventory_block_completeness(supply_candidates)
+    cap_report = {
+        block: int(policy.get("intake_cap") or 0)
+        for block, policy in INVENTORY_BLOCK_REGISTRY.items()
+        if int(policy.get("intake_cap") or 0)
+    }
     report = {
         "schema_version": INVENTORY_SCHEMA_VERSION,
         "mode": mode,
         "inserted_candidates": len(capped),
-        "candidate_cap": INVENTORY_INTAKE_CAPS,
+        "candidate_cap": cap_report,
         "held_by_cap": held_by_cap,
         "invalidated_prewrite": invalidated_prewrite,
         "rejected": rejected,
@@ -878,43 +1170,73 @@ def build_morning_inventory_intake(
         "funnel": funnel,
         "by_block": by_block,
         "completeness": completeness,
-        "policy": "Stable blocks only: weekend_activities, ticket_radar, openings. Transport/fresh/lead stay hybrid/report.",
+        "policy": "All block modes, freshness, completeness and caps come from INVENTORY_BLOCK_REGISTRY.",
     }
     return capped, report
 
 
-def inventory_stable_block_completeness(candidates: list[dict]) -> dict[str, object]:
+def _passes_block_supply_contract(record: dict, *, today: str) -> tuple[bool, str]:
+    ok, reason = passes_morning_contract(record, today=today)
+    if ok:
+        return True, reason
+    if str(record.get("primary_block") or "") != "weekend_activities" or reason != "weekend_hidden_by_schedule":
+        return False, reason
+    fact = record.get("fact_card") if isinstance(record.get("fact_card"), dict) else {}
+    try:
+        from news_digest.pipeline.weekend_inventory import current_weekend_window  # noqa: PLC0415
+
+        window_start, window_end = current_weekend_window(today=date.fromisoformat(today))
+        start = date.fromisoformat(str(fact.get("next_occurrence") or fact.get("date_start") or "")[:10])
+        end = date.fromisoformat(str(fact.get("date_end") or start.isoformat())[:10])
+    except ValueError:
+        return False, "missing_facts"
+    if end < window_start or start > window_end:
+        return False, "outside_current_weekend"
+    ttl_ok, ttl_reason = passes_ttl_contract(record)
+    if not ttl_ok:
+        return False, ttl_reason
+    return True, "weekend_supply_hidden"
+
+
+def inventory_block_completeness(candidates: list[dict]) -> dict[str, object]:
     by_block: dict[str, dict[str, object]] = {}
-    for block, floor in INVENTORY_COMPLETENESS_FLOORS.items():
+    for block, policy in INVENTORY_BLOCK_REGISTRY.items():
+        floor = int(policy.get("floor") or 0)
         rows = [c for c in candidates if isinstance(c, dict) and str(c.get("primary_block") or "") == block]
         sources = {str(c.get("source_label") or "") for c in rows if str(c.get("source_label") or "")}
         with_text = sum(1 for c in rows if str(c.get("draft_line") or "").strip())
-        min_sources = INVENTORY_COMPLETENESS_MIN_SOURCES.get(block, 1)
-        complete = len(rows) >= floor and with_text >= floor and len(sources) >= min_sources
+        min_sources = int(policy.get("min_sources") or 0)
+        optional = bool(policy.get("optional"))
+        block_mode = str(policy.get("mode") or "")
+        applicable = block_mode == "assist"
+        sufficient = None if not applicable else (optional or (len(rows) >= floor and len(sources) >= min_sources))
         by_block[block] = {
             "heading": PRIMARY_BLOCKS.get(block, block),
+            "mode": block_mode,
             "floor": floor,
             "candidate_count": len(rows),
-            "with_prewrite": with_text,
+            "with_text": with_text,
             "source_count": len(sources),
             "min_sources": min_sources,
-            "complete": complete,
-            "completeness_basis": "post_card_contract_and_cap",
+            "optional": optional,
+            "completeness_applicable": applicable,
+            "block_sufficient": sufficient,
+            "completeness_basis": "post_card_contract_before_visibility_schedule_and_intake_cap",
         }
     return {
         "schema_version": INVENTORY_SCHEMA_VERSION,
         "blocks": by_block,
-        "complete_blocks": [block for block, row in by_block.items() if row.get("complete")],
-        "incomplete_blocks": [block for block, row in by_block.items() if not row.get("complete")],
+        "sufficient_blocks": [block for block, row in by_block.items() if row.get("block_sufficient") is True],
+        "insufficient_blocks": [block for block, row in by_block.items() if row.get("block_sufficient") is False],
+        "not_applicable_blocks": [block for block, row in by_block.items() if row.get("block_sufficient") is None],
     }
 
 
-def latest_night_category_health(source_run_log_rows: list[dict]) -> dict[str, dict[str, object]]:
-    """Health of the latest real night run for each category.
-
-    New rows carry run_id. Historical rows are grouped by London date+wave so
-    the 10-13 July production logs remain replayable evidence.
-    """
+def operational_night_category_health(
+    source_run_log_rows: list[dict], *, current_day: str | None = None
+) -> dict[str, dict[str, object]]:
+    """One operational verdict per category, based only on its latest run."""
+    current_day = current_day or today_london()
     grouped: dict[tuple[str, str], list[dict]] = {}
     for row in source_run_log_rows:
         if not isinstance(row, dict):
@@ -936,14 +1258,25 @@ def latest_night_category_health(source_run_log_rows: list[dict]) -> dict[str, d
         checked = sum(1 for row in rows if row.get("checked"))
         errors = sum(int(row.get("errors") or 0) for row in rows)
         found = sum(int(row.get("found") or 0) for row in rows)
-        status = "ok" if checked == expected and errors == 0 else "degraded"
-        if checked == 0:
+        run_day = run_at[:10]
+        status = "ok" if run_day == current_day and checked == expected and errors == 0 else "degraded"
+        if run_day != current_day:
+            status = "stale"
+        elif checked == 0:
             status = "failed"
+        error_reasons = [
+            {"source": str(row.get("source") or ""), "reason": str(row.get("error") or "source_error")}
+            for row in rows
+            if int(row.get("errors") or 0) or not row.get("checked")
+        ]
         out[category] = {
+            "run_id": str(rows[0].get("run_id") or ""),
             "run_at_london": run_at,
+            "current_day": current_day,
             "expected_sources": expected,
             "checked_sources": checked,
             "source_errors": errors,
+            "error_reasons": error_reasons,
             "found_this_run": found,
             "status": status,
         }
@@ -958,25 +1291,39 @@ def inventory_source_replacement_plan(
     completeness = intake_report.get("completeness") if isinstance(intake_report, dict) else {}
     blocks = completeness.get("blocks") if isinstance(completeness, dict) else {}
     plan: dict[str, dict[str, object]] = {}
-    for category, output_blocks in INVENTORY_CATEGORY_OUTPUT_BLOCKS.items():
+    for category, output_blocks in inventory_category_output_blocks().items():
+        if category == "synthetic":
+            continue
         health = category_health.get(category, {})
-        supported = output_blocks <= INVENTORY_ASSIST_BLOCKS
-        complete = supported and all(
-            isinstance(blocks.get(block), dict) and blocks[block].get("complete")
+        supported = all(
+            str(INVENTORY_BLOCK_REGISTRY.get(block, {}).get("mode") or "") == "assist"
             for block in output_blocks
         )
-        health_ok = str(health.get("status") or "") == "ok"
-        safe = bool(supported and complete and health_ok)
+        replacement_allowed = all(
+            bool(INVENTORY_BLOCK_REGISTRY.get(block, {}).get("source_replacement_allowed"))
+            for block in output_blocks
+        )
+        block_sufficient = supported and all(
+            bool(INVENTORY_BLOCK_REGISTRY.get(block, {}).get("optional"))
+            or (isinstance(blocks.get(block), dict) and blocks[block].get("block_sufficient"))
+            for block in output_blocks
+        )
+        scan_complete = str(health.get("status") or "") == "ok"
+        safe = bool(supported and replacement_allowed and block_sufficient and scan_complete)
         reason = (
             "safe_post_contract_replacement" if safe
-            else "mixed_output_blocks_not_restored" if not supported
-            else "latest_night_run_not_healthy" if not health_ok
-            else "post_contract_inventory_incomplete"
+            else "source_replacement_not_enabled" if not replacement_allowed
+            else "output_blocks_not_inventory_assisted" if not supported
+            else "current_night_scan_incomplete" if not scan_complete
+            else "post_contract_block_insufficient"
         )
         plan[category] = {
             "safe_to_skip": safe,
             "reason": reason,
             "output_blocks": sorted(output_blocks),
+            "scan_complete": scan_complete,
+            "block_sufficient": block_sufficient,
+            "source_replacement_allowed": replacement_allowed,
             "night_health": health,
         }
     return plan
@@ -1001,7 +1348,10 @@ def summarise_morning_intake(
         "converted_candidates": 0,
     }
     reasons: dict[str, int] = {}
-    by_block: dict[str, dict[str, int]] = {}
+    by_block: dict[str, dict[str, int]] = {
+        block: {"records": 0, "fact_ready": 0, "eligible": 0, "needs_text": 0, "render_ready": 0}
+        for block in INVENTORY_BLOCK_REGISTRY
+    }
     examples: list[dict[str, object]] = []
     for record in records:
         if not isinstance(record, dict):
