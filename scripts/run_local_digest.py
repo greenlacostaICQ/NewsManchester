@@ -142,60 +142,48 @@ def cmd_bot_info() -> int:
     return 0
 
 
-def _rendered_candidates_for_delivery(sent_path: Path | None = None) -> list[dict]:
+def _rendered_candidates_for_delivery(sent_path: Path) -> list[dict]:
+    """Candidates whose canonical URL is visible in the SENT html.
+
+    Publication history must reflect exactly what the READER saw — nothing
+    more, nothing less. The old writer-fingerprint source had both failure
+    modes on real issues: lines inserted after the writer (must_show recovery,
+    pre-send top-ups) never reached published_facts, so «Скамейка» repeated
+    3+ issues with zero history; and writer-rendered lines later stripped by
+    the editor/judge were recorded as published although they never aired
+    (4 phantom entries on 2026-07-13 alone), teaching repeat policy to block
+    their legitimate first showing. The send flow records right after a
+    successful send of this same file, so the file always exists here.
+    """
     from news_digest.pipeline.common import canonical_url_identity  # noqa: PLC0415
 
     state_dir = PROJECT_ROOT / "data" / "state"
-    writer_report = read_json(state_dir / "writer_report.json", {})
-    rendered_fingerprints = {
-        str(item).strip()
-        for item in writer_report.get("rendered_candidate_fingerprints", [])
-        if str(item).strip()
-    }
-    # Publication history must reflect what the READER saw. Lines inserted
-    # after the writer (release-reconcile must_show recovery, pre-send section
-    # top-ups) are missing from rendered_candidate_fingerprints — without
-    # matching the sent HTML they never reach published_facts, repeat policy
-    # sees «no_previous_match», and the same diaspora/reserve line repeats
-    # daily («Скамейка» shipped 3+ issues without one history record).
     sent_idents: set[str] = set()
-    if sent_path is not None and sent_path.exists():
+    if sent_path.exists():
         sent_html = sent_path.read_text(encoding="utf-8")
         sent_idents = {
             canonical_url_identity(url)
             for url in re.findall(r'<a\b[^>]*href=["\']([^"\']+)["\']', sent_html, flags=re.IGNORECASE)
         }
         sent_idents.discard("")
-    if not rendered_fingerprints and not sent_idents:
+    if not sent_idents:
         print(
-            "Warning: writer_report has no rendered_candidate_fingerprints; "
-            "published_facts.json was not updated.",
+            "Warning: sent digest has no source links; published_facts.json was not updated.",
             file=sys.stderr,
         )
         return []
 
     candidates_payload = read_json(state_dir / "candidates.json", {"candidates": []})
-
-    def _visible_in_sent(candidate: dict) -> bool:
-        url = str(candidate.get("source_url") or "").strip()
-        return bool(url) and canonical_url_identity(url) in sent_idents
-
     rendered_candidates = [
         candidate
         for candidate in candidates_payload.get("candidates", [])
         if isinstance(candidate, dict)
-        and (
-            (
-                candidate.get("include")
-                and not candidate.get("validation_errors")
-                and str(candidate.get("fingerprint") or "").strip() in rendered_fingerprints
-            )
-            or _visible_in_sent(candidate)
-        )
+        and str(candidate.get("source_url") or "").strip()
+        and canonical_url_identity(str(candidate["source_url"])) in sent_idents
     ]
     if not rendered_candidates:
         print(
-            "Warning: no candidates matched rendered_candidate_fingerprints; "
+            "Warning: no candidates matched the sent digest links; "
             "published_facts.json was not updated.",
             file=sys.stderr,
         )

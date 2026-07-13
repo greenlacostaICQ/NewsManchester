@@ -35,26 +35,23 @@ class SendWarningsDeliveryGuardTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-    def test_delivery_history_includes_reconciler_inserted_lines(self) -> None:
-        """Publication history must reflect the SENT HTML: a line inserted
-        after the writer (must_show recovery) is not in
-        rendered_candidate_fingerprints, but repeat policy needs it recorded —
-        «Скамейка» shipped 3+ issues with zero history entries."""
+    def test_delivery_history_is_exactly_the_sent_html(self) -> None:
+        """Publication history = what the reader saw. A line inserted after the
+        writer (must_show recovery) IS recorded — «Скамейка» shipped 3+ issues
+        with zero history entries; a writer-rendered line stripped before send
+        is NOT recorded — 4 phantom entries on 2026-07-13 taught repeat policy
+        to block content that never aired."""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             state = root / "data" / "state"
             state.mkdir(parents=True)
-            (state / "writer_report.json").write_text(
-                json.dumps({"rendered_candidate_fingerprints": ["writer-1"]}),
-                encoding="utf-8",
-            )
             (state / "candidates.json").write_text(
                 json.dumps(
                     {
                         "candidates": [
                             {"fingerprint": "writer-1", "include": True, "source_url": "https://example.test/a"},
                             {"fingerprint": "recovered-2", "include": False, "source_url": "https://example.test/skameika"},
-                            {"fingerprint": "invisible-3", "include": False, "source_url": "https://example.test/unused"},
+                            {"fingerprint": "stripped-3", "include": True, "source_url": "https://example.test/never-aired"},
                         ]
                     }
                 ),

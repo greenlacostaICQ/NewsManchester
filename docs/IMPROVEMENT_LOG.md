@@ -892,6 +892,7 @@
 - Ожидаемый эффект и метрика проверки: `visible_contract_report.lead_visible`/`html_section_counts` совпадают с реально отправленным `current_digest.html` (перепрогон `_html_section_counts` на файле == отчёт).
 - Файлы/места: `pre_send_quality_judge.py:evaluate_pre_send_quality` (после hygiene-блока); `release_reconcile.py:reconcile_visible_html`.
 - ПРОВЕРКА: на реальном `current_digest.html` 09.07 — устаревший отчёт `lead_visible=false, Свежие=5`; рефреш на том же файле даёт `lead_visible=true, Свежие=2` (честно ниже floor). Полный набор 837/0.
+- Удалено: ничего — build-reconcile остаётся release-гейтом и recovery ДО промоушена, pre-send re-run лишь перемеряет финал; поведения не дублируются полностью (re-creation секций живёт в 0062-пути).
 
 ### 0082 — Repair не стрипает секцию ниже floor в пустоту (FIX-2) — 2026-07-09
 - Статус: внедрено; ПРОВЕРКА на реальных данных 09.07 + новый тест.
@@ -902,6 +903,7 @@
 - Ожидаемый эффект и метрика проверки: `repair_executor.kept_below_floor` > 0 вместо `stripped`, когда strip уронил бы секцию ниже минимума без резерва; «Свежие» не схлопывается 5→2 пустыми строками.
 - Файлы/места: `pre_send_quality_judge.py:_apply_repair_executor` (floor-guard), init `kept_below_floor`; тест `tests/test_pre_send_repair_executor.py:test_strip_below_floor_keeps_original_but_still_drops_unsupported_fact`.
 - ПРОВЕРКА: новый тест зелёный — дубль-strip ниже floor сохраняет строку (`kept_below_floor=1`), непроверенный факт всё равно снят (`stripped=1`). Полный набор 837/0.
+- Удалено: ничего — strip-путь остаётся нужным для fact-integrity случаев, guard только сужает его применение.
 
 ### 0083 — Шаблонные концовки чистятся на финальном HTML, регекс расширен (FIX-3) — 2026-07-09
 - Статус: внедрено; ПРОВЕРКА на реальном выпуске 09.07 + новый тест.
@@ -912,6 +914,7 @@
 - Ожидаемый эффект и метрика проверки: в `current_digest.html` нет «сверьте/проверьте … условия перед поездкой» и «уточняйте на странице перевозчика»; `repair_executor.empty_endings_stripped_at_ship` считает снятые.
 - Файлы/места: `editor.py:_EMPTY_ENDING_RE`, `_strip_empty_editor_ending` (strip_short); `pre_send_quality_judge.py:_strip_empty_endings_in_html`, вызов в hygiene-блоке; тест `tests/test_editor_pacing.py:test_ship_time_pass_strips_broadened_and_short_boilerplate_endings`.
 - ПРОВЕРКА: на реальном `current_digest.html` 09.07 — `_strip_empty_endings_in_html` снял 5 концовок (Выходные×3, Transport×2), ссылки целы, контент сохранён. Новый тест зелёный; полный набор 837/0.
+- Удалено: ничего — editor-стадийный post-check чистит строки ДО судьи (меньше ложных repair-действий), ship-time проход — last resort для строк, минующих editor.
 
 ### 0084 — July Weekend direct-source recovery — 2026-07-09
 - Статус: внедрено; ПРОВЕРКА offline.
@@ -1047,6 +1050,7 @@
 - Почему так (отвергнуто): чинить только кварантин на release — не помогает: reconcile/pre-send re-insert возвращали must_show строку после кварантина (пинг-понг); глушить рус-блок целиком — ломает продукт (свежие события, как Тимошенко «сегодня», обязаны показываться — проверено: у него must_show остаётся, блокируется только после прохождения даты как `event_already_passed`).
 - Ожидаемый эффект и метрика проверки: `visible_repeat_review.bad_visible_repeats` начинает ловить диаспорные повторы (раньше 10/10 allowed); Скамейка получает запись в published_facts с первого же выпуска; далёкое событие без нового reader-момента не re-must_show'ится.
 - Файлы/места: `scripts/run_local_digest.py:_rendered_candidates_for_delivery`; `llm_rewrite.py:_publish_plan_must_show/_publish_plan_status/_build_publish_plan`; `editorial_contracts.py:_event_material_change`; тесты `tests/test_send_warnings_delivery_guard.py`, `tests/test_dedupe_and_show.py`, `tests/test_digest_quality_guardrails.py`.
+- Удалено (2026-07-13, вслед): ветка writer-fingerprints в `_rendered_candidates_for_delivery` — после URL-матчинга по sent HTML она не просто лишняя, а вредная: записывала «опубликованными» строки, снятые ПОСЛЕ writer'а и не дошедшие до читателя (на реальном 07-13 — 4 фантома: Manchester Open, Beers In The Garden, Nia Archives, Naming rights), уча repeat-policy блокировать их будущий первый показ. История = ровно отправленный HTML. На реальном 07-13: старая логика 42 записи (Скамейки нет) → новая 68 (Скамейка есть, 4 фантомов нет).
 - ПРОВЕРКА: на реальных candidates/published_facts 07-12 — Онегин: verdict `allow=False / same_calendar_item_without_new_reader_moment` (был `allow=True / event_date_text_changed`), must_show False; Тимошенко (прошёл вчера): `event_already_passed`, не форсится; Скамейка: пока True (prev появится после первой A1-доставки). Полный набор 852/0; replay 07-12 до/после — байт-в-байт.
 
 ### 0096 — Еда: прошедшие датированные события не публикуются, билдер не отдаёт site-chrome и адресные хвосты — 2026-07-13
@@ -1058,6 +1062,7 @@
 - Ожидаемый эффект и метрика проверки: в «Еде» нет прошедших дат и сырых «— The SK Lowdown»; reject_reasons получают `stale_opening` для прошедших рынков.
 - Файлы/места: `candidate_validator.py:_exclude_bad_food_opening_timing`, `_ru_date_from_draft_line_head`; `writer.py:_build_event_fallback_line`, `_clean_event_venue_name`; тесты `tests/test_backlog_remediation.py`, `tests/test_public_output_contracts.py`.
 - ПРОВЕРКА: на реальном кандидате Asian Food Night Market (07-12): excluded=True/stale_opening (13.07); билдер по source-ish title → ''; на реальном названии с хвостом — «SK Lowdown» и «United Kingdom» исчезают, «Asian Food Night Market» и «Churchgate Stockport» остаются. 852/0.
+- Удалено: ничего — 3-дневный grace остаётся правильным для новостей об открытии (Joe & The Juice), новая ветка отрезает только датированные события.
 
 ### 0097 — Штампы: «Новое место…»/«Проверьте маршрут…» в регексе, болтающийся лейбл перед ссылкой не прячет концовку — 2026-07-13
 - Статус: внедрено; ПРОВЕРКА на реальном HTML 07-12 + 852/0.
@@ -1066,6 +1071,7 @@
 - Ожидаемый эффект и метрика проверки: `_strip_empty_endings_in_html` на HTML 07-12 снимает 4 концовки (было 0 покрытия этих паттернов), 67/67 href целы.
 - Файлы/места: `editor.py:_EMPTY_ENDING_RE`, `_strip_empty_editor_ending`; тест `tests/test_editor_pacing.py`.
 - ПРОВЕРКА: реальный HTML 07-12 — 4 снято, оба паттерна исчезают, ссылки целы. 852/0.
+- Удалено: ничего — регекс дополнен альтернативами, существующие паттерны по-прежнему ловят свои случаи.
 
 ### 0098 — Reserve prewrite: тонкие секции получают написанный резерв — 2026-07-13
 - Статус: внедрено; ПРОВЕРКА offline (852/0); prod-числа после следующего build.
@@ -1076,3 +1082,4 @@
 - Ожидаемый эффект и метрика проверки: `section_ranking_report.reserve_prewrite` > 0; `still_under_minimum` для Радара/Что важно уходит или reason меняется с `no_recoverable_reserve_with_facts` на реальную вставку.
 - Файлы/места: `llm_rewrite.py:RESERVE_PREWRITE_BLOCKS`, `run_llm_rewrite` (quota block), `rewrite_shortlist.reserve_prewrite`.
 - ПРОВЕРКА: offline — py_compile, 852/0; прод-эффект проверить на следующем утреннем прогоне (reserve_prewrite и floor'ы секций).
+- Удалено: ничего — enrich-rewrite fallback в `_same_section_reserve_line` покрывает секции вне квоты и промахи prewrite.
