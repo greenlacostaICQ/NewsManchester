@@ -102,23 +102,6 @@ SHORT_EVENT_BLOCKS = SHORT_TICKET_BLOCKS
 EVENT_BLOCKS_RELAXABLE = {"weekend_activities", "next_7_days", "future_announcements", "russian_events"}
 EVENT_RELAX_EVIDENCE_THRESHOLD = 500
 TODAY_FOCUS_SECTION = "Что важно сегодня"
-# Order matters: backfill takes the first non-empty section. We previously
-# pulled from transport FIRST, which dumped bus-stop closures into "Что
-# важно сегодня" (those are not "important news of the day" — they're
-# already shown in the transport block above). Now media news leads;
-# transport is the last-resort fallback only when there's literally nothing
-# else to put up top.
-TODAY_FOCUS_BACKFILL_SECTIONS = (
-    "Свежие новости",
-    "Городской радар",
-)
-TODAY_FOCUS_BACKFILL_TARGET = 2
-TODAY_FOCUS_BACKFILL_MIN_SCORE = 67.5
-TODAY_FOCUS_MIN_SOURCE_REMAINING = {
-    # Don't gut source blocks just to fill today_focus.
-    "Свежие новости": 3,
-    "Городской радар": 4,
-}
 FRESH_NEWS_TARGET_ITEMS = 7
 TODAY_FOCUS_TARGET_ITEMS = 4
 CORE_EMERGENCY_FLOORS = {
@@ -1577,74 +1560,6 @@ def _allocate_fresh_and_today_focus(
             for row in fresh_board_rows[:SECTION_MAX_ITEMS.get("Свежие новости", 9)]
         ],
     }
-
-
-def _backfill_today_focus(
-    sections: dict[str, list[str]],
-    section_sources: dict[str, list[str]],
-    section_scores: dict[str, list[float]],
-    section_fingerprints: dict[str, list[str]],
-    section_titles: dict[str, list[str]],
-    source_sections: tuple[str, ...] = TODAY_FOCUS_BACKFILL_SECTIONS,
-) -> int:
-    if sections.get(TODAY_FOCUS_SECTION):
-        return 0
-
-    moved = 0
-    sections.setdefault(TODAY_FOCUS_SECTION, [])
-    section_sources.setdefault(TODAY_FOCUS_SECTION, [])
-    section_scores.setdefault(TODAY_FOCUS_SECTION, [])
-    section_fingerprints.setdefault(TODAY_FOCUS_SECTION, [])
-    section_titles.setdefault(TODAY_FOCUS_SECTION, [])
-
-    for source_section in source_sections:
-        lines = sections.get(source_section) or []
-        sources = section_sources.get(source_section) or []
-        scores = section_scores.get(source_section) or []
-        fingerprints = section_fingerprints.get(source_section) or []
-        titles = section_titles.get(source_section) or []
-        if scores:
-            ranked = sorted(
-                zip(
-                    lines,
-                    sources + [""] * (len(lines) - len(sources)),
-                    scores + [0.0] * (len(lines) - len(scores)),
-                    fingerprints + [""] * (len(lines) - len(fingerprints)),
-                    titles + [""] * (len(lines) - len(titles)),
-                ),
-                key=lambda item: item[2],
-                reverse=True,
-            )
-            lines = [item[0] for item in ranked]
-            sources = [item[1] for item in ranked]
-            scores = [item[2] for item in ranked]
-            fingerprints = [item[3] for item in ranked]
-            titles = [item[4] for item in ranked]
-        min_remaining = TODAY_FOCUS_MIN_SOURCE_REMAINING.get(source_section, 0)
-        while lines and moved < TODAY_FOCUS_BACKFILL_TARGET and len(lines) > min_remaining:
-            if scores and scores[0] < TODAY_FOCUS_BACKFILL_MIN_SCORE:
-                break
-            sections[TODAY_FOCUS_SECTION].append(lines.pop(0))
-            section_sources[TODAY_FOCUS_SECTION].append(sources.pop(0) if sources else "")
-            section_scores[TODAY_FOCUS_SECTION].append(scores.pop(0) if scores else 0.0)
-            section_fingerprints[TODAY_FOCUS_SECTION].append(fingerprints.pop(0) if fingerprints else "")
-            section_titles[TODAY_FOCUS_SECTION].append(titles.pop(0) if titles else "")
-            moved += 1
-        sections[source_section] = lines
-        section_sources[source_section] = sources
-        section_scores[source_section] = scores
-        section_fingerprints[source_section] = fingerprints
-        section_titles[source_section] = titles
-        if moved >= TODAY_FOCUS_BACKFILL_TARGET:
-            break
-
-    if not sections.get(TODAY_FOCUS_SECTION):
-        sections.pop(TODAY_FOCUS_SECTION, None)
-        section_sources.pop(TODAY_FOCUS_SECTION, None)
-        section_scores.pop(TODAY_FOCUS_SECTION, None)
-        section_fingerprints.pop(TODAY_FOCUS_SECTION, None)
-        section_titles.pop(TODAY_FOCUS_SECTION, None)
-    return moved
 
 
 def _contract_public_drop_reason(candidate: dict) -> str:
@@ -7209,7 +7124,6 @@ def write_digest(project_root: Path) -> StageResult:
         section_titles,
         candidate_by_fp,
     )
-    backfilled_today_focus = 0
     if int(today_focus_board.get("moved_from_fresh") or 0) or int(today_focus_board.get("moved_from_city_watch") or 0):
         warnings.append(
             f"Writer board filled «{TODAY_FOCUS_SECTION}» with "
@@ -7734,7 +7648,6 @@ def write_digest(project_root: Path) -> StageResult:
             "controlled_enrichment": controlled_enrichment_report,
             "misrouted_weekend_market_rescue": misrouted_weekend_market_rescue,
             "recovery_controller": recovery_controller,
-            "backfilled_today_focus": backfilled_today_focus,
             "today_focus_board": today_focus_board,
             "today_focus_loss_trace": today_focus_loss,
             "weekend_inventory_loss_trace": weekend_inventory_loss,

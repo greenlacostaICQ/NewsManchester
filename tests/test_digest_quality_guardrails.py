@@ -450,32 +450,6 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertTrue(updated["include"])
 
-    def test_weekend_backfill_targets_real_section_depth(self) -> None:
-        from news_digest.pipeline import practical_backfill
-
-        candidates = [{"include": True, "primary_block": "weekend_activities", "fingerprint": "seed"}]
-        for idx in range(10):
-            candidates.append(
-                {
-                    "include": True,
-                    "primary_block": "next_7_days",
-                    "category": "culture_weekly",
-                    "fingerprint": f"weekend-{idx}",
-                    "title": f"Weekend event {idx}",
-                    "event": {"date_start": "2026-06-06", "is_event": True},
-                }
-            )
-
-        with mock.patch.object(practical_backfill, "now_london") as fake_now:
-            fake_now.return_value.date.return_value = date(2026, 6, 4)
-            summary = practical_backfill.apply_practical_backfill(candidates)
-
-        self.assertEqual(summary["weekend_activities"], 7)
-        self.assertEqual(
-            sum(1 for c in candidates if c.get("include") and c.get("primary_block") == "weekend_activities"),
-            8,
-        )
-
     def test_flower_festival_has_redundant_weekend_sources(self) -> None:
         sources = [
             source
@@ -1074,7 +1048,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(updated.get("include"))
         self.assertEqual(updated.get("primary_block"), "weekend_activities")
 
-    def test_annual_food_festival_in_next_7_moves_to_weekend(self) -> None:
+    def test_annual_food_festival_outside_current_weekend_stays_future(self) -> None:
         event_day = now_london().date() + timedelta(days=5)
         updated = self._validate_one(
             {
@@ -1099,9 +1073,9 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         )
 
         self.assertTrue(updated.get("include"))
-        self.assertEqual(updated.get("primary_block"), "weekend_activities")
+        self.assertEqual(updated.get("primary_block"), "future_announcements")
 
-    def test_annual_food_festival_from_weekend_source_stays_in_leisure(self) -> None:
+    def test_weekend_source_event_outside_current_weekend_stays_future(self) -> None:
         event_day = now_london().date() + timedelta(days=5)
         updated = self._validate_one(
             {
@@ -1126,7 +1100,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         )
 
         self.assertTrue(updated.get("include"))
-        self.assertEqual(updated.get("primary_block"), "weekend_activities")
+        self.assertEqual(updated.get("primary_block"), "future_announcements")
 
     def test_annual_food_festival_in_current_weekend_stays_weekend(self) -> None:
         event_day = now_london().date() + timedelta(days=2)

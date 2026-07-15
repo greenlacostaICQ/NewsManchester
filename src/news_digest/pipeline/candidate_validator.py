@@ -28,7 +28,6 @@ from news_digest.pipeline.event_extraction import (
     event_is_far_future,
 )
 from news_digest.pipeline.event_quality import event_quality_reject_reasons, event_quality_report
-from news_digest.pipeline.practical_backfill import apply_practical_backfill
 from news_digest.pipeline.professional_events import apply_professional_event_llm_matches, apply_professional_event_match
 from news_digest.pipeline.reader_actions import attach_reader_action
 from news_digest.pipeline.reader_value import attach_reader_value
@@ -2953,16 +2952,6 @@ def validate_candidates(project_root: Path) -> StageResult:
     professional_llm_t0 = time.monotonic()
     professional_llm_match = apply_professional_event_llm_matches(candidates, project_root)
     _mark_timing("professional_llm_match_seconds", professional_llm_t0)
-    practical_t0 = time.monotonic()
-    practical_backfill = apply_practical_backfill(candidates)
-    _mark_timing("practical_backfill_seconds", practical_t0)
-    if practical_backfill:
-        refresh_t0 = time.monotonic()
-        for candidate in candidates:
-            if isinstance(candidate, dict):
-                attach_reader_action(candidate)
-                attach_editorial_contract(candidate)
-        _mark_timing("post_backfill_contract_refresh_seconds", refresh_t0)
     city_t0 = time.monotonic()
     city_intelligence = annotate_city_intelligence(candidates)
     _mark_timing("city_intelligence_seconds", city_t0)
@@ -2985,7 +2974,6 @@ def validate_candidates(project_root: Path) -> StageResult:
             "errors": errors,
             "city_intelligence": city_intelligence,
             "professional_llm_match": professional_llm_match,
-            "practical_backfill": practical_backfill,
             "trial_candidates": sum(1 for c in candidates if isinstance(c, dict) and c.get("source_trial")),
             "items": items,
             "timings": timings,

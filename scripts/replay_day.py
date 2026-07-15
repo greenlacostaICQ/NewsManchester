@@ -38,7 +38,10 @@ if str(SRC_DIR) not in sys.path:
 
 # Days with defects that shipped to readers (expectations measured on the
 # real sent HTML, see --golden) plus ordinary days that shipped clean.
-GOLDEN_DAYS = ["2026-06-27", "2026-07-02", "2026-07-07", "2026-07-09"]
+GOLDEN_DAYS = [
+    "2026-06-27", "2026-07-02", "2026-07-07", "2026-07-09",
+    "2026-07-12", "2026-07-15",
+]
 # 2026-06-30 deliberately excluded: prod itself did not ship that morning
 # (the committed current_digest.html is the stale 06-29 file), so it is not
 # an "ordinary clean day" fixture.
@@ -141,6 +144,12 @@ def block_network() -> None:
     socket.socket.connect = _blocked  # type: ignore[method-assign]
     socket.create_connection = _blocked  # type: ignore[assignment]
     socket.getaddrinfo = _blocked  # type: ignore[assignment]
+    # curl_cffi performs DNS/connect below Python's socket monkeypatch. Patch
+    # the project's single wrapper too, otherwise a reserve refetch can escape
+    # the replay sandbox and wait through real network retries.
+    from news_digest.pipeline.collector import fetch  # noqa: PLC0415
+
+    fetch._fetch_text_curl_cffi = _blocked
 
 
 def run_stages(sandbox: Path) -> list[dict[str, object]]:

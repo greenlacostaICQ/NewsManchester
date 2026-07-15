@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from datetime import date
 import json
 import tempfile
 import unittest
-from unittest import mock
 from pathlib import Path
 
 from news_digest.pipeline.candidate_validator import validate_candidates
@@ -12,7 +10,6 @@ from news_digest.pipeline.change_classifier import classify_change_phase
 from news_digest.pipeline.collector.extract import _extract_source_candidates
 from news_digest.pipeline.collector.sources import SourceDef
 from news_digest.pipeline.dead_parser_repair import build_dead_parser_repair_report
-from news_digest.pipeline.practical_backfill import apply_practical_backfill
 from news_digest.pipeline.reader_actions import classify_reader_action
 from news_digest.pipeline.release import _source_funnel_human
 from news_digest.pipeline.source_anomaly import detect_dead_parsers, detect_source_anomalies
@@ -93,25 +90,6 @@ class ProductBacklogTest(unittest.TestCase):
         self.assertEqual(classify_change_phase(closing), "consultation_closing")
         closing["change_phase"] = "consultation_closing"
         self.assertEqual(classify_reader_action(closing), "note_deadline")
-
-    def test_practical_backfill_promotes_next_week_event_when_7_day_layer_empty(self) -> None:
-        candidates = [
-            {
-                "include": True,
-                "title": "Useful event",
-                "category": "culture_weekly",
-                "primary_block": "future_announcements",
-                "event": {"is_event": True, "date_start": "2026-06-24", "venue": "Test Hall"},
-            }
-        ]
-        # Pin "today" to a fixed weekday (Tue) so the event (Wed) sits inside the
-        # 7-day window but outside the weekend window. On a Sat/Sun run the
-        # weekend backfill would claim the event first, leaving this layer empty.
-        with mock.patch("news_digest.pipeline.practical_backfill.now_london") as fake_now:
-            fake_now.return_value.date.return_value = date(2026, 6, 23)
-            summary = apply_practical_backfill(candidates)
-        self.assertEqual(summary.get("next_7_days"), 1)
-        self.assertEqual(candidates[0]["primary_block"], "next_7_days")
 
     def test_source_discovery_turns_seed_links_into_trial_recommendations(self) -> None:
         def fake_fetcher(url: str) -> str:
