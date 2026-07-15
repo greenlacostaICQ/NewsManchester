@@ -7,6 +7,7 @@ block is not just "business keywords", but "worth Aleksei's time".
 
 from __future__ import annotations
 
+from collections import Counter
 import json
 import os
 from pathlib import Path
@@ -424,6 +425,7 @@ def _drop_pending_llm_candidates(candidates: list[dict[str, Any]], reason: str) 
         if candidate.get("professional_match_status") != "needs_llm_cv_match":
             continue
         candidate["include"] = False
+        candidate["professional_cv_outcome"] = "held_error"
         # cap / model-unavailable / model-failed = the model never ruled on it,
         # so it is held (recoverable next run), not a genuine drop like a model
         # skip. Genuine skip is set on the model-rows path, untouched here.
@@ -439,6 +441,16 @@ def _drop_pending_llm_candidates(candidates: list[dict[str, Any]], reason: str) 
 def _chunks(items: list[dict[str, Any]], size: int) -> list[list[dict[str, Any]]]:
     safe_size = max(1, int(size or 1))
     return [items[index:index + safe_size] for index in range(0, len(items), safe_size)]
+
+
+def _attach_sent_outcomes(report: dict[str, Any], selected: list[dict[str, Any]]) -> None:
+    outcomes = Counter(str(candidate.get("professional_cv_outcome") or "pending") for candidate in selected)
+    report["sent_outcomes"] = dict(sorted(outcomes.items()))
+    report["outcomes_accounted"] = sum(outcomes.values())
+    report["outcomes_conserved"] = (
+        int(report.get("outcomes_accounted") or 0) == int(report.get("sent") or 0)
+        and int(outcomes.get("pending") or 0) == 0
+    )
 
 
 def apply_professional_event_llm_matches(
@@ -523,6 +535,8 @@ def _run_professional_cv_match(
         "skipped": 0,
         "status": "skipped_no_candidates" if not selected else "pending",
     }
+    for candidate in selected:
+        candidate["professional_cv_outcome"] = "pending"
     if not_sent:
         report["dropped_not_sent_pending"] = _drop_pending_llm_candidates(not_sent, "not evaluated inside explicit CV-match override cap")
     if not selected:
@@ -539,12 +553,14 @@ def _run_professional_cv_match(
     except ImportError as exc:
         report["dropped_pending"] = int(report.get("dropped_pending") or 0) + _drop_pending_llm_candidates(selected, "model unavailable")
         report.update({"status": "skipped_import_error", "error": f"{exc.__class__.__name__}: {exc}"})
+        _attach_sent_outcomes(report, selected)
         return report
 
     routes = [route for route in resolve_model_route("professional_cv_match") if route.api_key]
     if not routes:
         report["dropped_pending"] = int(report.get("dropped_pending") or 0) + _drop_pending_llm_candidates(selected, "OPENAI_API_KEY unavailable")
         report.update({"status": "skipped_no_api_key"})
+        _attach_sent_outcomes(report, selected)
         return report
     route = routes[0]
     system_prompt = (
@@ -568,10 +584,16 @@ def _run_professional_cv_match(
     batch_failures = 0
     for batch in _chunks(selected, int(LLM_MATCH_BATCH_SIZE or 1)):
         report["batches"] = int(report.get("batches") or 0) + 1
-        payload = {
-            "profile": profile,
-            "events": [_llm_payload(c) for c in batch],
-        }
+        payload_events: list[dict[str, object]] = []
+        by_id: dict[str, dict[str, Any]] = {}
+        for index, candidate in enumerate(batch, start=1):
+            event_payload = _llm_payload(candidate)
+            base_id = str(event_payload["id"])
+            candidate_id = base_id if base_id not in by_id else f"{base_id}#{index}"
+            event_payload["id"] = candidate_id
+            payload_events.append(event_payload)
+            by_id[candidate_id] = candidate
+        payload = {"profile": profile, "events": payload_events}
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
@@ -611,14 +633,15 @@ def _run_professional_cv_match(
             report["dropped_pending"] = int(report.get("dropped_pending") or 0) + _drop_pending_llm_candidates(batch, "model response could not be parsed")
             report.update({"raw_type": type(parsed).__name__})
             continue
-        by_id = {str(_llm_payload(c)["id"]): c for c in batch}
+        accounted_ids: set[str] = set()
         for row in rows:
             if not isinstance(row, dict):
                 continue
             cid = str(row.get("id") or "")
             candidate = by_id.get(cid)
-            if not candidate:
+            if not candidate or cid in accounted_ids:
                 continue
+            accounted_ids.add(cid)
             fit = str(row.get("fit") or "").strip().lower()
             if fit not in {"go", "consider", "skip"}:
                 fit = "consider" if bool(row.get("free_access")) else "skip"
@@ -647,6 +670,7 @@ def _run_professional_cv_match(
                 "reason": str(row.get("reason") or "").strip(),
             }
             candidate["professional_llm_match"] = llm_match
+            candidate["professional_cv_outcome"] = fit
             match = dict(base_match)
             publish = fit in {"go", "consider"} and _professional_access_allowed(
                 candidate,
@@ -705,8 +729,21 @@ def _run_professional_cv_match(
                 report["skipped"] = int(report.get("skipped") or 0) + 1
             else:
                 report["applied"] = int(report.get("applied") or 0) + 1
+        missing_from_response = [
+            candidate for candidate_id, candidate in by_id.items()
+            if candidate_id not in accounted_ids
+        ]
+        if missing_from_response:
+            batch_failures += 1
+            report["partial_response_batches"] = int(report.get("partial_response_batches") or 0) + 1
+            report["dropped_pending"] = int(report.get("dropped_pending") or 0) + _drop_pending_llm_candidates(
+                missing_from_response,
+                "model response omitted this event",
+            )
+    _attach_sent_outcomes(report, selected)
+    outcomes = Counter(str(candidate.get("professional_cv_outcome") or "pending") for candidate in selected)
     status = "ok"
-    if batch_failures and int(report.get("applied") or 0) + int(report.get("skipped") or 0) > 0:
+    if batch_failures and any(outcome != "held_error" for outcome in outcomes):
         status = "partial_failed"
     elif batch_failures:
         status = "failed"

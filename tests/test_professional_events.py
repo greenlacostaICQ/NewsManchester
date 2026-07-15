@@ -263,6 +263,36 @@ class ProfessionalEventsTest(unittest.TestCase):
         self.assertEqual(report["skipped"], 1)
         self.assertIn("unknown access needs CV go or strong consider", c["reason"])
 
+    def test_partial_model_response_holds_omitted_event_and_is_not_ok(self) -> None:
+        from news_digest.pipeline.professional_events import apply_professional_event_llm_matches
+
+        first = self._candidate("Manchester AI leadership briefing", "Free AI briefing for product leaders.")
+        second = self._candidate("Manchester fintech roundtable", "Free fintech roundtable for banking leaders.")
+        for index, candidate in enumerate((first, second), start=1):
+            candidate["fingerprint"] = f"pro-{index}"
+            candidate["include"] = True
+            apply_professional_event_match(candidate)
+        rows = [{
+            "id": "pro-1",
+            "fit": "go",
+            "score": 90,
+            "access_label": "free",
+            "reason": "Strong AI and product fit.",
+            "action": "register",
+        }]
+
+        with _fake_openai(rows), patch(
+            "news_digest.pipeline.model_routing.resolve_model_route",
+            return_value=[_fake_route()],
+        ):
+            report = apply_professional_event_llm_matches([first, second])
+
+        self.assertEqual(report["status"], "partial_failed")
+        self.assertEqual(report["sent_outcomes"], {"go": 1, "held_error": 1})
+        self.assertTrue(report["outcomes_conserved"])
+        self.assertEqual(second["professional_cv_outcome"], "held_error")
+        self.assertEqual(second["editorial_status"], "held_for_enrichment")
+
     def test_writer_builds_self_contained_russian_card(self) -> None:
         c = self._candidate(
             "CreaTech Connect: Accelerating University-Industry Partnerships",
