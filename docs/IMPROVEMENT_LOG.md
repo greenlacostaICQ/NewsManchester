@@ -1226,25 +1226,25 @@
 - Удалено: вложенное всегда-ложное `report_only_intake.morning_consumed` и логика финальной воронки только по `inventory_source=night_inventory`.
 
 ### 0117 — Action URL и retention реально управляют складом — 2026-07-15
-- Статус: реализовано локально; первая production-wave должна дать URL/cleanup числа.
+- Статус: реализовано и подтверждено production-wave.
 - Проблема: на 15.07 все 1369 observed current-run records имели `action_url_liveness=unknown`, ни одна ссылка не была проверена, 9 записей уже вышли за сохранённый retention, физической очистки не было.
 - Решение: ночью HEAD-проверяются уникальные action URL только fact-ready карточек. 2xx/3xx=alive; 404/410 требуют двух разных run_id; 403/405/429/timeout/network=unknown. Replacement требует достаточного alive-набора. Retention каждый раз пересчитывается из реестра; dead/expired/retired физически удаляются.
 - Почему решает класс: временная блокировка сайта не уничтожает карточку, будущий билет не удаляется по serving TTL, а склад перестаёт расти бесконечно за счёт реально устаревших строк.
-- ПРОВЕРКА: real-state dry run 15.07 на копии склада: 3735→3716, удалено 19 expired (Culture 15, Diaspora 2, Ticket 2), Food 20/20 сохранены, dead 0 до первой URL-волны. Offline contract: 200/302 alive, 404/410 two-run dead, 403/429 unknown; future Ticket 01.12 retained to 31.12, Transport last seen 01.06 removed on 15.07. 877 tests OK; production URL counts pending.
+- ПРОВЕРКА: real-state dry run 15.07 на копии склада: 3735→3716, удалено 19 expired (Culture 15, Diaspora 2, Ticket 2), Food 20/20 сохранены, dead 0 до первой URL-волны. Production run `29418506950`, run_id `20260715T141718+0100`: URL checked 5, alive 5, not_found/unknown 0; cleanup 3741→3722, удалено 19 expired (Culture 15, Diaspora 2, Ticket 2), Food сохранён 20/20. Offline contract: 200/302 alive, 404/410 two-run dead, 403/429 unknown; future Ticket 01.12 retained to 31.12, Transport last seen 01.06 removed on 15.07. 877 tests OK.
 - Удалено: доверие к сохранённому старому `retention_until` при очистке; отдельного fallback/refetch не добавлено.
 
 ### 0118 — Pro CV сохраняет решение для каждой отправленной карточки — 2026-07-15
-- Статус: реализовано локально; production CV proof ожидается.
+- Статус: реализовано и подтверждено production-wave.
 - Проблема: production night 15.07 отправил 8 Pro-карточек, модель вернула 7, но report остался `status=ok`; одна карточка не имела финального CV-исхода.
 - Решение: каждому sent event назначается ровно один outcome: `go`, `consider`, `skip` или `held_error`. Пропущенный/дублированный ID остаётся held и делает batch `partial_failed`; новых model calls/retries нет.
 - Почему решает класс: partial JSON больше нельзя принять за полный CV-отбор, и ни одна карточка не исчезает между `sent` и итогом.
-- ПРОВЕРКА: реальный baseline 15.07 — 8 sent / 7 returned / status ok; regression на частичном ответе — `{go:1, held_error:1}`, `outcomes_conserved=true`, `status=partial_failed`. 18 Pro tests OK; production proof pending.
+- ПРОВЕРКА: реальный baseline 15.07 — 8 sent / 7 returned / status ok; regression на частичном ответе — `{go:1, held_error:1}`, `outcomes_conserved=true`, `status=partial_failed`. Production run `29418506950`: eligible/sent 7/7, outcomes `go=3`, `consider=2`, `skip=2`, accounted 7/7, `outcomes_conserved=true`, status ok. 18 Pro tests OK.
 - Удалено: неявное допущение, что отсутствие ID в parseable model response является успешным результатом.
 
 ### 0119 — Ночная волна различает success, degraded и failed — 2026-07-15
-- Статус: реализовано локально; production-wave proof ожидается.
+- Статус: реализовано и подтверждено production-wave; degraded/failed ждут естественного production-кейса.
 - Проблема: 15.07 events/live_news/breaking собрали 59/37/21 источников, но из-за 3/2/1 source errors workflow стал красным, хотя inventory был сохранён. Частичная проблема сайта выглядела как падение всей ночи.
 - Решение: `success` требует всех expected sources без ошибок; `degraded` означает представленный полный список источников с частичными errors/unchecked и сохраняет данные; `failed` — нет checked результата либо команда не представила все expected sources. Только failed возвращает non-zero. Replacement по-прежнему разрешён лишь при operational health `ok`.
 - Почему решает класс: данные не теряются из-за одного 403/timeout, но частичная волна не получает права отключить live collection.
-- ПРОВЕРКА: реальные run_id 15.07 классифицируются: events 59 checked/3 errors=degraded, tickets 15/0=success, pro-food-russian 15/0=success, live-news 37/2=degraded, breaking 21/1=degraded. Helper regression OK; production workflow proof pending.
+- ПРОВЕРКА: реальные run_id 15.07 классифицируются: events 59 checked/3 errors=degraded, tickets 15/0=success, pro-food-russian 15/0=success, live-news 37/2=degraded, breaking 21/1=degraded. Production run `29418506950`: все 15 источников представлены и checked/fetched, 0 source errors, `health=success`, exit 0, state commit `6e8e9a6`; helper regression отдельно подтверждает degraded/failed границы.
 - Удалено: правило `any source error => command exit 1`; сохранение partial inventory существовало и оставлено.
