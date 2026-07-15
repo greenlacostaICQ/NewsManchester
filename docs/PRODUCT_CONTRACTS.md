@@ -444,6 +444,22 @@ Failure examples:
 - Every record stores source report category and routed candidate category,
   run/wave/source, first/last/change times, canonical evidence hash, observation
   in the current wave, action-URL liveness, serving TTL and retention horizon.
+- When a night card and a live card identify the same standalone article/event,
+  the live card remains primary and receives only facts missing from the live
+  extraction. The night lineage remains visible through validation, selection,
+  writer and final HTML reporting instead of being counted as a dropped duplicate.
+- Action URLs are checked only for fact-ready cards. HTTP 2xx/3xx is alive;
+  404/410 becomes dead only after two different night runs; 403/405/429 and
+  network/timeout failures remain unknown. Unknown is usable in assist but can
+  never authorize source replacement. Confirmed-dead and out-of-retention rows
+  are physically removed; event/ticket retention is event end plus 30 days,
+  Food is 90 days from its dated phase/last observation, and transport is 14
+  days from its last observation.
+- A night wave is `success` only when all expected sources complete without
+  source errors. `degraded` preserves partial inventory and prevents source
+  replacement. `failed` means the command did not produce a complete usable
+  wave. Professional CV reports conserve every sent event as go, consider,
+  skip or held-error; an omitted model row makes the response partial, not OK.
 - `scan_complete` means today's expected sources were checked without source
   errors. `block_sufficient` means the post-card inventory meets the block floor
   and source diversity. Neither value implies the other.
@@ -452,8 +468,8 @@ Failure examples:
   A-tier never loses visibility to an intake cap.
 - A broad morning source is skipped only when every block it can feed is restored,
   today's scan is complete, required blocks are sufficient and source replacement
-  is explicitly enabled for every output block. Otherwise the ordinary live scan
-  remains on.
+  is explicitly enabled for every output block, and enough action URLs are alive.
+  Otherwise the ordinary live scan remains on.
 
 ## Business/IT Contract
 

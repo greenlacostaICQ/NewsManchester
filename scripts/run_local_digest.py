@@ -1215,6 +1215,18 @@ def cmd_build_inventory() -> int:
     return 0
 
 
+def _inventory_wave_status(run_log: list[dict], expected_sources: int) -> str:
+    represented = len(run_log)
+    checked = sum(1 for row in run_log if row.get("checked"))
+    errors = sum(int(row.get("errors") or 0) for row in run_log)
+    unchecked = sum(1 for row in run_log if not row.get("checked"))
+    if expected_sources <= 0 or represented < expected_sources or checked == 0:
+        return "failed"
+    if errors or unchecked:
+        return "degraded"
+    return "success"
+
+
 def cmd_collect_inventory(wave: str) -> int:
     """Backlog 8.4: one night wave collects ONLY into inventory (upsert),
     never candidates.json. The 08:00 build is untouched, so a night job can
@@ -1227,6 +1239,8 @@ def cmd_collect_inventory(wave: str) -> int:
         merge_inventory,
         passes_morning_contract,
         prewrite_stable_inventory_candidate,
+        probe_inventory_action_urls,
+        prune_inventory,
     )
     from news_digest.pipeline.entity_extraction import enrich_candidates_entities  # noqa: PLC0415
     from news_digest.pipeline.event_extraction import enrich_candidates_events  # noqa: PLC0415
@@ -1338,6 +1352,7 @@ def cmd_collect_inventory(wave: str) -> int:
         PROJECT_ROOT,
     ) if professional_candidates else {"status": "skipped_no_candidates", "eligible": 0, "applied": 0}
 
+    probe_records: list[dict] = []
     for run_row, source_candidates in collected_sources:
         records = [
             build_inventory_record(
@@ -1351,6 +1366,8 @@ def cmd_collect_inventory(wave: str) -> int:
             for candidate in source_candidates
             if isinstance(candidate, dict)
         ]
+        probe_records.extend(records)
+        run_row["_inventory_records"] = records
         per_category.setdefault(str(run_row.get("category") or "unknown"), []).extend(records)
         run_row["fact_ready"] = sum(
             1 for record in records if str(record.get("quality_status") or "") in {"ready", "needs_text"}
@@ -1358,16 +1375,29 @@ def cmd_collect_inventory(wave: str) -> int:
         run_row["prewritten"] = int(run_row.get("deterministic_prewritten") or 0)
         run_row["render_ready"] = sum(1 for record in records if record.get("render_ready"))
         run_row["morning_eligible"] = sum(1 for record in records if passes_morning_contract(record)[0])
+    liveness_probe = probe_inventory_action_urls(probe_records, max_workers=20)
+    for run_row in run_log:
+        source_records = run_row.pop("_inventory_records", [])
+        run_row["action_url_probe"] = {
+            "checked": sum(1 for record in source_records if record.get("action_url_checked_at")),
+            "alive": sum(1 for record in source_records if record.get("action_url_probe_result") == "alive"),
+            "not_found": sum(1 for record in source_records if record.get("action_url_probe_result") == "not_found"),
+            "unknown": sum(1 for record in source_records if record.get("action_url_probe_result") == "unknown"),
+        }
     merged: dict[str, int] = {}
     for category, records in per_category.items():
         merged[category] = merge_inventory(state_dir, category, records)
+    retention_cleanup = prune_inventory(state_dir)
+    wave_status = _inventory_wave_status(run_log, len(sources))
+    for row in run_log:
+        row["wave_status"] = wave_status
     # Append this wave's run log (never overwrites earlier waves).
     with (state_dir / "inventory_run_log.jsonl").open("a", encoding="utf-8") as handle:
         for row in run_log:
             handle.write(json.dumps({**row, "run_at_london": datetime.now(LONDON_TZ).isoformat()}, ensure_ascii=False) + "\n")
     summary = {
-        "ok": not any(int(row.get("errors") or 0) or not row.get("checked") for row in run_log),
-        "health": "degraded" if any(int(row.get("errors") or 0) or not row.get("checked") for row in run_log) else "ok",
+        "ok": wave_status != "failed",
+        "health": wave_status,
         "run_id": run_id,
         "wave": wave,
         "categories": sorted(categories),
@@ -1379,10 +1409,12 @@ def cmd_collect_inventory(wave: str) -> int:
         "render_ready_this_run": sum(int(row.get("render_ready") or 0) for row in run_log),
         "morning_eligible_this_run": sum(int(row.get("morning_eligible") or 0) for row in run_log),
         "professional_cv_match": professional_cv_match,
+        "action_url_probe": liveness_probe,
+        "retention_cleanup": retention_cleanup,
         "duration_seconds": round(time.monotonic() - started, 2),
     }
     print(json.dumps(summary, ensure_ascii=False, indent=2))
-    return 0 if summary["ok"] else 1
+    return 0 if wave_status != "failed" else 1
 
 
 def cmd_dedupe_digest() -> int:

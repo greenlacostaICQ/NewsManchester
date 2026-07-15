@@ -23,6 +23,7 @@ this module is the pure data/contract layer they call into.
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import os
@@ -30,12 +31,16 @@ import re
 import time
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from urllib import parse
+from urllib import error as urlerror
+from urllib import request as urlrequest
 
 from news_digest.pipeline.common import (
     PRIMARY_BLOCKS,
     canonical_url_identity,
     now_london,
     today_london,
+    valid_http_url,
     write_json_atomic,
 )
 
@@ -56,7 +61,7 @@ INVENTORY_BLOCK_REGISTRY: dict[str, dict[str, object]] = {
     "transport": {
         "source_report_categories": frozenset({"transport"}),
         "candidate_categories": frozenset({"transport"}),
-        "mode": "hybrid", "serving_ttl_hours": 1.0, "retention_days": 7,
+        "mode": "hybrid", "serving_ttl_hours": 1.0, "retention_days": 14,
         "text_policy": "morning_live", "source_replacement_allowed": False,
         "floor": 0, "min_sources": 1, "optional": True, "intake_cap": 0,
         "required_fields": ("what_happened", "why_now"),
@@ -110,7 +115,7 @@ INVENTORY_BLOCK_REGISTRY: dict[str, dict[str, object]] = {
     "future_announcements": {
         "source_report_categories": frozenset({"culture_weekly", "venues_tickets"}),
         "candidate_categories": frozenset({"culture_weekly", "venues_tickets"}),
-        "mode": "assist", "serving_ttl_hours": 336.0, "retention_days": 400,
+        "mode": "assist", "serving_ttl_hours": 336.0, "retention_days": 30,
         "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
         "floor": 0, "min_sources": 1, "optional": True, "intake_cap": 20,
         "required_fields": ("event_name", "venue", "action_url"),
@@ -118,7 +123,7 @@ INVENTORY_BLOCK_REGISTRY: dict[str, dict[str, object]] = {
     "ticket_radar": {
         "source_report_categories": frozenset({"venues_tickets"}),
         "candidate_categories": frozenset({"venues_tickets"}),
-        "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 400,
+        "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 30,
         "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
         "floor": 2, "min_sources": 2, "optional": False, "intake_cap": 20,
         "required_fields": ("event_name", "date_start", "venue", "action_url", "ticket_type", "tier", "venue_scope", "ticket_why_now"),
@@ -126,7 +131,7 @@ INVENTORY_BLOCK_REGISTRY: dict[str, dict[str, object]] = {
     "outside_gm_tickets": {
         "source_report_categories": frozenset({"venues_tickets"}),
         "candidate_categories": frozenset({"venues_tickets"}),
-        "mode": "assist", "serving_ttl_hours": 336.0, "retention_days": 400,
+        "mode": "assist", "serving_ttl_hours": 336.0, "retention_days": 30,
         "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
         "floor": 0, "min_sources": 1, "optional": True, "intake_cap": 6,
         "required_fields": ("event_name", "date_start", "venue", "action_url", "ticket_type", "outside_a_tier"),
@@ -134,7 +139,7 @@ INVENTORY_BLOCK_REGISTRY: dict[str, dict[str, object]] = {
     "russian_events": {
         "source_report_categories": frozenset({"diaspora_events"}),
         "candidate_categories": frozenset({"russian_speaking_events", "diaspora_events"}),
-        "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 400,
+        "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 30,
         "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
         "floor": 1, "min_sources": 1, "optional": False, "intake_cap": 10,
         "required_fields": ("event_name", "specific_event", "date_start", "venue", "russian_evidence", "russian_geography", "action_url"),
@@ -158,7 +163,7 @@ INVENTORY_BLOCK_REGISTRY: dict[str, dict[str, object]] = {
     "professional_events": {
         "source_report_categories": frozenset({"professional_events"}),
         "candidate_categories": frozenset({"professional_events"}),
-        "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 180,
+        "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 30,
         "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
         "floor": 1, "min_sources": 1, "optional": False, "intake_cap": 10,
         "required_fields": ("event_name", "specific_event", "venue", "date_start", "professional_llm_cv", "professional_access", "action_url"),
@@ -287,6 +292,123 @@ NIGHT_WAVES: dict[str, frozenset[str]] = {
 BREAKING_CHECK_CATEGORIES: frozenset[str] = frozenset({"media_layer", "gmp", "transport"})
 
 
+def action_url_probe_result(http_status: int | None) -> str:
+    if http_status is not None and 200 <= http_status < 400:
+        return "alive"
+    if http_status in {404, 410}:
+        return "not_found"
+    return "unknown"
+
+
+def _probe_action_url(url: str, *, timeout_seconds: float) -> dict[str, object]:
+    checked_at = now_london().isoformat()
+    if not valid_http_url(url):
+        return {"result": "unknown", "checked_at": "", "http_status": None, "reason": "missing_action_url"}
+    req = urlrequest.Request(
+        url,
+        method="HEAD",
+        headers={"User-Agent": "Mozilla/5.0 (compatible; GMNewsDigest/1.0; +https://github.com/)"},
+    )
+    try:
+        with urlrequest.urlopen(req, timeout=timeout_seconds) as response:
+            status = int(getattr(response, "status", 200) or 200)
+        return {
+            "result": action_url_probe_result(status),
+            "checked_at": checked_at,
+            "http_status": status,
+            "reason": "http_status",
+        }
+    except urlerror.HTTPError as exc:
+        status = int(exc.code or 0)
+        return {
+            "result": action_url_probe_result(status),
+            "checked_at": checked_at,
+            "http_status": status,
+            "reason": "http_status",
+        }
+    except (TimeoutError, urlerror.URLError, OSError) as exc:
+        return {
+            "result": "unknown",
+            "checked_at": checked_at,
+            "http_status": None,
+            "reason": exc.__class__.__name__,
+        }
+
+
+def probe_inventory_action_urls(
+    records: list[dict], *, timeout_seconds: float = 8.0, max_workers: int = 12
+) -> dict[str, int]:
+    """Check action URLs only for cards that already have usable facts."""
+    by_identity: dict[str, list[dict]] = {}
+    for record in records:
+        if not isinstance(record, dict) or not inventory_fact_ready(record):
+            continue
+        fact = record.get("fact_card") if isinstance(record.get("fact_card"), dict) else {}
+        url = next(
+            (
+                str(value)
+                for value in (record.get("booking_url"), fact.get("booking_url"), record.get("source_url"))
+                if valid_http_url(str(value or ""))
+            ),
+            "",
+        )
+        identity = canonical_url_identity(url)
+        if not identity or not valid_http_url(url):
+            record["action_url_probe_result"] = "unknown"
+            record["action_url_probe_reason"] = "missing_action_url"
+            continue
+        by_identity.setdefault(identity, []).append(record)
+    urls = [
+        next(
+            (
+                str(value)
+                for value in (rows[0].get("booking_url"), rows[0].get("source_url"))
+                if valid_http_url(str(value or ""))
+            ),
+            "",
+        )
+        for rows in by_identity.values()
+    ]
+    with ThreadPoolExecutor(max_workers=max(1, min(max_workers, len(urls) or 1))) as executor:
+        results = list(executor.map(lambda value: _probe_action_url(value, timeout_seconds=timeout_seconds), urls))
+    counts = {"checked": 0, "alive": 0, "not_found": 0, "unknown": 0}
+    for identity, result in zip(by_identity, results, strict=True):
+        outcome = str(result.get("result") or "unknown")
+        counts["checked"] += 1
+        counts[outcome] = counts.get(outcome, 0) + 1
+        for record in by_identity[identity]:
+            record["action_url_probe_result"] = outcome
+            record["action_url_probe_reason"] = str(result.get("reason") or "")
+            record["action_url_http_status"] = result.get("http_status")
+            record["action_url_checked_at"] = str(result.get("checked_at") or "")
+    return counts
+
+
+def _apply_action_url_probe(previous: dict, merged: dict) -> None:
+    probe_result = str(merged.get("action_url_probe_result") or "")
+    if not probe_result:
+        for field in (
+            "action_url_liveness", "action_url_checked_at", "action_url_http_status",
+            "action_url_failure_run_ids", "action_url_probe_reason",
+        ):
+            if field in previous:
+                merged[field] = previous[field]
+        return
+    failures = [str(value) for value in previous.get("action_url_failure_run_ids") or [] if str(value)]
+    run_id = str(merged.get("run_id") or merged.get("observed_run_id") or "")
+    if probe_result == "alive":
+        merged["action_url_liveness"] = "alive"
+        failures = []
+    elif probe_result == "not_found":
+        if run_id and run_id not in failures:
+            failures.append(run_id)
+        merged["action_url_liveness"] = "dead" if len(failures) >= 2 else "unknown"
+    else:
+        # 403/405/429, timeout and network errors do not prove that the page died.
+        merged["action_url_liveness"] = "unknown"
+    merged["action_url_failure_run_ids"] = failures[-6:]
+
+
 def merge_inventory(state_dir: Path, category: str, new_records: list[dict]) -> int:
     """Upsert new records into a category's inventory by fingerprint (newest
     record wins, refreshing last_seen_at). Returns the resulting record count.
@@ -322,6 +444,7 @@ def merge_inventory(state_dir: Path, category: str, new_records: list[dict]) -> 
                 if unchanged and previous.get("last_changed_at")
                 else merged.get("last_seen_at") or merged.get("last_changed_at") or ""
             )
+            _apply_action_url_probe(previous, merged)
             existing[fingerprint] = merged
     write_inventory(state_dir, category, list(existing.values()))
     return len(existing)
@@ -966,6 +1089,8 @@ def inventory_record_to_candidate(record: dict) -> dict:
         "inventory_missing_facts": list(record.get("missing_facts") or []),
         "inventory_needs_text": str(record.get("quality_status") or "") == "needs_text",
         "inventory_requires_refetch": str(record.get("primary_block") or "") == "transport",
+        "action_url_liveness": str(record.get("action_url_liveness") or "unknown"),
+        "action_url_checked_at": str(record.get("action_url_checked_at") or ""),
         "include": True,
     }
     tier = str(fact.get("tier") or "")
@@ -973,6 +1098,129 @@ def inventory_record_to_candidate(record: dict) -> dict:
     if tier or notability:
         candidate["ticket_notability"] = {**notability, "tier": tier or str(notability.get("tier") or "")}
     return candidate
+
+
+def recalculate_retention_until(record: dict) -> str:
+    """Recompute retention from today's registry, never from a stored old TTL."""
+    block = str(record.get("primary_block") or "")
+    policy = INVENTORY_BLOCK_REGISTRY.get(block, {})
+    if str(policy.get("mode") or "") == "retired":
+        return ""
+    candidate = inventory_record_to_candidate(record)
+    anchor = str(record.get("last_seen_at") or record.get("first_seen_at") or now_london().isoformat())
+    return _retention_until(candidate, now_iso=anchor)
+
+
+def prune_inventory(state_dir: Path, *, today: str | None = None) -> dict[str, object]:
+    """Physically remove confirmed-dead and out-of-retention inventory rows."""
+    today = today or today_london()
+    report: dict[str, object] = {
+        "before": 0,
+        "after": 0,
+        "removed_expired": 0,
+        "removed_dead": 0,
+        "removed_retired": 0,
+        "by_category": {},
+    }
+    inv_dir = inventory_dir(state_dir)
+    if not inv_dir.exists():
+        return report
+    for path in sorted(inv_dir.glob("*.jsonl")):
+        rows = read_inventory(state_dir, path.stem)
+        kept: list[dict] = []
+        removed = {"expired": 0, "dead": 0, "retired": 0}
+        for record in rows:
+            report["before"] = int(report["before"]) + 1
+            block = str(record.get("primary_block") or "")
+            if str(INVENTORY_BLOCK_REGISTRY.get(block, {}).get("mode") or "") == "retired":
+                removed["retired"] += 1
+                continue
+            retention_until = recalculate_retention_until(record)
+            record["retention_until"] = retention_until
+            if str(record.get("action_url_liveness") or "") == "dead":
+                removed["dead"] += 1
+                continue
+            if retention_until and retention_until < today:
+                removed["expired"] += 1
+                continue
+            kept.append(record)
+        write_inventory(state_dir, path.stem, kept)
+        report["after"] = int(report["after"]) + len(kept)
+        report["removed_expired"] = int(report["removed_expired"]) + removed["expired"]
+        report["removed_dead"] = int(report["removed_dead"]) + removed["dead"]
+        report["removed_retired"] = int(report["removed_retired"]) + removed["retired"]
+        report["by_category"][path.stem] = {"before": len(rows), "after": len(kept), **removed}
+    return report
+
+
+_NON_STANDALONE_URL_TAILS = frozenset(
+    {
+        "about", "author", "events", "home", "latest", "news", "programme",
+        "programmes", "search", "tag", "tags", "tickets", "topic", "topics",
+        "what-s-on", "whats-on",
+    }
+)
+
+
+def _standalone_url_identity(item: dict) -> str:
+    """Return a URL identity only when it represents one article or event."""
+    if str(item.get("event_page_type") or "").lower() in {"homepage", "aggregator"}:
+        return ""
+    url = str(item.get("source_url") or item.get("booking_url") or "")
+    identity = canonical_url_identity(url)
+    path = parse.urlsplit(url).path
+    segments = [segment.lower() for segment in path.split("/") if segment]
+    if not identity or not segments or segments[-1] in _NON_STANDALONE_URL_TAILS:
+        return ""
+    if any(segment in {"search", "tag", "tags", "topic", "topics", "author"} for segment in segments):
+        return ""
+    return identity
+
+
+def _merge_missing_mapping(target: dict, source: dict) -> None:
+    for key, value in source.items():
+        current = target.get(key)
+        if isinstance(value, dict):
+            if not isinstance(current, dict):
+                if value:
+                    target[key] = dict(value)
+            else:
+                _merge_missing_mapping(current, value)
+        elif current in (None, "", [], {}) and value not in (None, "", [], {}):
+            target[key] = value
+
+
+def merge_inventory_record_into_live_candidate(live_candidate: dict, record: dict) -> None:
+    """Keep fresh live values and add only facts/provenance missing from live."""
+    night_candidate = inventory_record_to_candidate(record)
+    live_event = live_candidate.get("event")
+    if not isinstance(live_event, dict):
+        live_event = {}
+        live_candidate["event"] = live_event
+    _merge_missing_mapping(live_event, night_candidate.get("event") or {})
+    for field in (
+        "summary", "lead", "practical_angle", "booking_url", "venue_scope",
+        "venue_city", "ticket_type", "ticket_notability", "what_happened",
+        "why_now", "story_type", "change_phase", "professional_event_match",
+        "professional_llm_match", "professional_match_status", "russian_evidence",
+        "evidence_text", "source_evidence",
+    ):
+        current = live_candidate.get(field)
+        night_value = night_candidate.get(field)
+        if current in (None, "", [], {}) and night_value not in (None, "", [], {}):
+            live_candidate[field] = dict(night_value) if isinstance(night_value, dict) else night_value
+    lineage = {
+        "fingerprint": str(record.get("fingerprint") or ""),
+        "run_id": str(record.get("run_id") or ""),
+        "wave": str(record.get("wave") or ""),
+        "source_name": str(record.get("source_name") or ""),
+        "last_seen_at": str(record.get("last_seen_at") or ""),
+        "evidence_hash": str(record.get("evidence_hash") or ""),
+    }
+    lineages = live_candidate.setdefault("inventory_lineages", [])
+    if lineage not in lineages:
+        lineages.append(lineage)
+    live_candidate["inventory_merged_into_live"] = True
 
 
 def inventory_prewrite_is_current(record: dict, *, prompt_version: int | None = None) -> bool:
@@ -1071,7 +1319,7 @@ def _record_with_current_contract(record: dict, *, prompt_version: int | None = 
 def build_morning_inventory_intake(
     records: list[dict],
     *,
-    existing_fingerprints: set[str] | None = None,
+    existing_candidates: list[dict] | None = None,
     mode: str = "assist",
     today: str | None = None,
     prompt_version: int | None = None,
@@ -1079,15 +1327,35 @@ def build_morning_inventory_intake(
     """Restore every registry block marked assist into the normal morning path."""
     today = today or today_london()
     mode = str(mode or "assist").lower()
-    existing = set(existing_fingerprints or set())
+    existing: set[str] = set()
+    live_by_fingerprint: dict[str, dict] = {}
+    live_by_url: dict[str, dict] = {}
+    for live_candidate in existing_candidates or []:
+        if not isinstance(live_candidate, dict):
+            continue
+        live_fp = str(live_candidate.get("fingerprint") or "")
+        if live_fp:
+            existing.add(live_fp)
+            live_by_fingerprint.setdefault(live_fp, live_candidate)
+        live_url = _standalone_url_identity(live_candidate)
+        if live_url:
+            live_by_url.setdefault(live_url, live_candidate)
     candidates: list[dict] = []
     rejected: dict[str, int] = {}
     by_block: dict[str, dict[str, int]] = {}
     hybrid_signals: dict[str, int] = {}
     supply_candidates: list[dict] = []
+    lineages: list[dict[str, object]] = []
     invalidated_prewrite = 0
-    funnel = {"records": 0, "card_ready": 0, "morning_eligible": 0, "after_live_dedupe": 0, "inserted_after_cap": 0}
-    for record in records:
+    funnel = {
+        "records": 0,
+        "card_ready": 0,
+        "morning_eligible": 0,
+        "merged_into_live": 0,
+        "after_live_dedupe": 0,
+        "inserted_after_cap": 0,
+    }
+    for record_index, record in enumerate(records):
         if not isinstance(record, dict):
             continue
         working_record, invalidated = _record_with_current_contract(record, prompt_version=prompt_version)
@@ -1096,6 +1364,22 @@ def build_morning_inventory_intake(
         block = str(working_record.get("primary_block") or "")
         policy = INVENTORY_BLOCK_REGISTRY.get(block, {})
         block_mode = str(policy.get("mode") or "retired")
+        inventory_fp = str(working_record.get("fingerprint") or "")
+        lineage: dict[str, object] = {
+            "lineage_id": f"{record_index}:{inventory_fp}",
+            "inventory_fingerprint": inventory_fp,
+            "candidate_fingerprint": "",
+            "live_fingerprint": "",
+            "source_url": str(working_record.get("source_url") or ""),
+            "title": str(working_record.get("title") or ""),
+            "primary_block": block or "unknown",
+            "source_report_category": str(working_record.get("source_report_category") or ""),
+            "run_id": str(working_record.get("run_id") or ""),
+            "wave": str(working_record.get("wave") or ""),
+            "intake_status": "observed",
+            "reason": "",
+        }
+        lineages.append(lineage)
         bucket = by_block.setdefault(
             block or "unknown",
             {"records": 0, "card_ready": 0, "eligible": 0, "after_live_dedupe": 0, "inserted": 0, "duplicates": 0},
@@ -1111,24 +1395,50 @@ def build_morning_inventory_intake(
             supply_candidates.append(inventory_record_to_candidate(working_record))
         if block_mode == "hybrid":
             hybrid_signals[reason] = hybrid_signals.get(reason, 0) + 1
+            lineage["intake_status"] = "hybrid_signal"
+            lineage["reason"] = reason
             continue
         if block_mode != "assist":
+            lineage["intake_status"] = "not_assist_block"
+            lineage["reason"] = block_mode
             continue
         if not ok:
             rejected[reason] = rejected.get(reason, 0) + 1
+            lineage["intake_status"] = "rejected_before_pipeline"
+            lineage["reason"] = reason
             continue
         bucket["eligible"] += 1
         funnel["morning_eligible"] += 1
         candidate = inventory_record_to_candidate(working_record)
         fp = str(candidate.get("fingerprint") or "")
+        matching_live = live_by_fingerprint.get(fp) if fp else None
+        if matching_live is None:
+            standalone_url = _standalone_url_identity(candidate)
+            matching_live = live_by_url.get(standalone_url) if standalone_url else None
+        if matching_live is not None:
+            merge_inventory_record_into_live_candidate(matching_live, working_record)
+            lineage["live_fingerprint"] = str(matching_live.get("fingerprint") or "")
+            lineage["candidate_fingerprint"] = str(matching_live.get("fingerprint") or "")
+            lineage["intake_status"] = "merged_into_live"
+            lineage["reason"] = "fingerprint" if fp and live_by_fingerprint.get(fp) is matching_live else "canonical_url"
+            bucket["duplicates"] += 1
+            bucket["merged_live"] = bucket.get("merged_live", 0) + 1
+            funnel["merged_into_live"] = funnel.get("merged_into_live", 0) + 1
+            continue
         if fp and fp in existing:
             bucket["duplicates"] += 1
-            rejected["duplicate_live_or_inventory"] = rejected.get("duplicate_live_or_inventory", 0) + 1
+            rejected["duplicate_inventory"] = rejected.get("duplicate_inventory", 0) + 1
+            lineage["intake_status"] = "duplicate_inventory"
+            lineage["reason"] = "fingerprint_already_present"
             continue
         if fp:
             existing.add(fp)
         candidate["inventory_intake_mode"] = mode
+        candidate["inventory_lineage_id"] = str(lineage["lineage_id"])
         candidates.append(candidate)
+        lineage["candidate_fingerprint"] = fp
+        lineage["intake_status"] = "eligible_inventory_candidate"
+        lineage["reason"] = reason
         bucket["after_live_dedupe"] += 1
         funnel["after_live_dedupe"] += 1
     candidates.sort(key=_inventory_candidate_priority, reverse=True)
@@ -1145,11 +1455,22 @@ def build_morning_inventory_intake(
         protected = block == "weekend_activities" or a_tier
         if cap and kept >= cap and not protected:
             held_by_cap += 1
+            lineage_id = str(candidate.get("inventory_lineage_id") or "")
+            for lineage in lineages:
+                if str(lineage.get("lineage_id") or "") == lineage_id:
+                    lineage["intake_status"] = "held_by_intake_cap"
+                    lineage["reason"] = "inventory_block_cap"
+                    break
             continue
         capped.append(candidate)
         kept_by_block[block] = kept + 1
         by_block[block]["inserted"] += 1
         funnel["inserted_after_cap"] += 1
+        lineage_id = str(candidate.get("inventory_lineage_id") or "")
+        for lineage in lineages:
+            if str(lineage.get("lineage_id") or "") == lineage_id:
+                lineage["intake_status"] = "inserted_into_pipeline"
+                break
     if held_by_cap:
         rejected["inventory_block_cap"] = rejected.get("inventory_block_cap", 0) + held_by_cap
     completeness = inventory_block_completeness(supply_candidates)
@@ -1170,6 +1491,13 @@ def build_morning_inventory_intake(
         "funnel": funnel,
         "by_block": by_block,
         "completeness": completeness,
+        "lineage_status_counts": dict(sorted(
+            {
+                status: sum(1 for lineage in lineages if lineage.get("intake_status") == status)
+                for status in {str(lineage.get("intake_status") or "unknown") for lineage in lineages}
+            }.items()
+        )),
+        "lineages": lineages,
         "policy": "All block modes, freshness, completeness and caps come from INVENTORY_BLOCK_REGISTRY.",
     }
     return capped, report
@@ -1204,12 +1532,17 @@ def inventory_block_completeness(candidates: list[dict]) -> dict[str, object]:
         floor = int(policy.get("floor") or 0)
         rows = [c for c in candidates if isinstance(c, dict) and str(c.get("primary_block") or "") == block]
         sources = {str(c.get("source_label") or "") for c in rows if str(c.get("source_label") or "")}
+        live_rows = [c for c in rows if str(c.get("action_url_liveness") or "") == "alive"]
+        live_sources = {str(c.get("source_label") or "") for c in live_rows if str(c.get("source_label") or "")}
         with_text = sum(1 for c in rows if str(c.get("draft_line") or "").strip())
         min_sources = int(policy.get("min_sources") or 0)
         optional = bool(policy.get("optional"))
         block_mode = str(policy.get("mode") or "")
         applicable = block_mode == "assist"
         sufficient = None if not applicable else (optional or (len(rows) >= floor and len(sources) >= min_sources))
+        liveness_sufficient = None if not applicable else (
+            optional or (len(live_rows) >= floor and len(live_sources) >= min_sources)
+        )
         by_block[block] = {
             "heading": PRIMARY_BLOCKS.get(block, block),
             "mode": block_mode,
@@ -1217,10 +1550,13 @@ def inventory_block_completeness(candidates: list[dict]) -> dict[str, object]:
             "candidate_count": len(rows),
             "with_text": with_text,
             "source_count": len(sources),
+            "action_url_alive_count": len(live_rows),
+            "action_url_alive_source_count": len(live_sources),
             "min_sources": min_sources,
             "optional": optional,
             "completeness_applicable": applicable,
             "block_sufficient": sufficient,
+            "liveness_sufficient_for_replacement": liveness_sufficient,
             "completeness_basis": "post_card_contract_before_visibility_schedule_and_intake_cap",
         }
     return {
@@ -1259,7 +1595,15 @@ def operational_night_category_health(
         errors = sum(int(row.get("errors") or 0) for row in rows)
         found = sum(int(row.get("found") or 0) for row in rows)
         run_day = run_at[:10]
-        status = "ok" if run_day == current_day and checked == expected and errors == 0 else "degraded"
+        explicit_wave_statuses = {
+            str(row.get("wave_status") or "") for row in rows if row.get("wave_status")
+        }
+        wave_complete = not explicit_wave_statuses or explicit_wave_statuses == {"success"}
+        status = (
+            "ok"
+            if run_day == current_day and checked == expected and errors == 0 and wave_complete
+            else "degraded"
+        )
         if run_day != current_day:
             status = "stale"
         elif checked == 0:
@@ -1278,6 +1622,7 @@ def operational_night_category_health(
             "source_errors": errors,
             "error_reasons": error_reasons,
             "found_this_run": found,
+            "wave_status": next(iter(explicit_wave_statuses), "legacy_unstamped"),
             "status": status,
         }
     return out
@@ -1308,21 +1653,38 @@ def inventory_source_replacement_plan(
             or (isinstance(blocks.get(block), dict) and blocks[block].get("block_sufficient"))
             for block in output_blocks
         )
-        scan_complete = str(health.get("status") or "") == "ok"
-        safe = bool(supported and replacement_allowed and block_sufficient and scan_complete)
-        reason = (
-            "safe_post_contract_replacement" if safe
-            else "source_replacement_not_enabled" if not replacement_allowed
-            else "output_blocks_not_inventory_assisted" if not supported
-            else "current_night_scan_incomplete" if not scan_complete
-            else "post_contract_block_insufficient"
+        liveness_sufficient = supported and all(
+            bool(INVENTORY_BLOCK_REGISTRY.get(block, {}).get("optional"))
+            or (
+                isinstance(blocks.get(block), dict)
+                and blocks[block].get("liveness_sufficient_for_replacement")
+            )
+            for block in output_blocks
         )
+        scan_complete = str(health.get("status") or "") == "ok"
+        safe = bool(
+            supported and replacement_allowed and block_sufficient
+            and liveness_sufficient and scan_complete
+        )
+        if safe:
+            reason = "safe_post_contract_replacement"
+        elif not replacement_allowed:
+            reason = "source_replacement_not_enabled"
+        elif not supported:
+            reason = "output_blocks_not_inventory_assisted"
+        elif not scan_complete:
+            reason = "current_night_scan_incomplete"
+        elif not block_sufficient:
+            reason = "post_contract_block_insufficient"
+        else:
+            reason = "action_urls_not_verified"
         plan[category] = {
             "safe_to_skip": safe,
             "reason": reason,
             "output_blocks": sorted(output_blocks),
             "scan_complete": scan_complete,
             "block_sufficient": block_sufficient,
+            "liveness_sufficient": liveness_sufficient,
             "source_replacement_allowed": replacement_allowed,
             "night_health": health,
         }
@@ -1390,7 +1752,6 @@ def summarise_morning_intake(
     return {
         "schema_version": INVENTORY_SCHEMA_VERSION,
         "mode": "report_only",
-        "morning_consumed": False,
         "totals": totals,
         "reasons": reasons,
         "by_block": by_block,

@@ -1194,3 +1194,57 @@
 - Решение: AGENTS описывает GitHub deployment и Python model runtime; Product Contracts фиксирует A-tier, night inventory и retired District; workflow документирует cron-job.org Europe/London 00:31/02:07/03:37/06:17/07:31; план 0104 заменён планом после 0112.
 - ПРОВЕРКА: docs/code anchors сверены; `rg` не находит удалённые model-prewrite symbols в active code/tests. Replay 13.07 old/new: оба 12 sections, 23 bullets, lead ok, max blank 1; rebuilt HTML SHA-1 идентичен. Workflow run `29266787848` завершён за 2m31s и отправил production state/уведомление; schedule не менялся, только зафиксирован без UTC/BST двусмысленности.
 - Удалено: устаревшие команды `sync_runtime_bundle.sh`/`run_daily_digest.sh` из AGENTS; District из active purpose classes, writer order, editor trim, pre-send judge и low-signal sections.
+
+### 0113 — Ночная и live-карточка сохраняются как одна редакционная линия — 2026-07-15
+- Статус: реализовано локально; production proof ожидается после push.
+- Проблема: 15.07 из 30 morning-eligible ночных карточек 29 были помечены `duplicate_live_or_inventory` и исчезли из дальнейшей воронки; ночные event/CV/ticket-факты не дополняли утреннюю карточку.
+- Решение: fingerprint остаётся главным identity; canonical URL используется вторично только для отдельной статьи/события. Свежая live-карточка остаётся основной, ночь дополняет только пустые структурированные поля и записывает lineage/provenance.
+- Почему решает класс: повторный утренний fetch больше не уничтожает накопленные ночью факты, но не может заменить свежий live-факт устаревшим значением или склеить записи через index/homepage.
+- ПРОВЕРКА: реальные state 15.07, 3735 inventory records + 1372 final candidates: до — 30 eligible, 29 dropped-as-live-duplicate и 1 inserted; после на том же наборе — 30/30 lineages merged into live, 0 потерянных совпадений. Targeted inventory tests OK; production proof pending.
+- Удалено: отдельный параметр/путь `existing_fingerprints`, который умел только выбрасывать совпадение без доступа к live-карточке.
+
+### 0114 — Зарезервировано: решение финального судьи — отдельный пакет — 2026-07-15
+- Статус: не реализовывалось в этом пакете по решению owner.
+- Граница: pre-send/final judge, его решения и repair loop не менялись; ID сохранён, чтобы следующий пакет не смешивался с night inventory.
+- ПРОВЕРКА: `git diff` текущего пакета не затрагивает `pre_send_quality_judge.py` и judge-функции release.
+- Удалено: ничего — это запись о границе работ, не доработка.
+
+### 0115 — Удалено заполнение блоков контентом другого назначения — 2026-07-15
+- Статус: реализовано локально; historical replay завершён, production morning proof ожидается.
+- Проблема: validator после всех правил переносил кандидатов между Weekend/Next7/Today, поэтому 15.07 отчёт показал 4 переноса в Next7 и 3 в Today независимо от конечного назначения. В writer параллельно лежал никогда не вызываемый `_backfill_today_focus`; отчёт всегда писал `backfilled_today_focus=0`.
+- Решение: удалён весь `practical_backfill` и мёртвый writer-backfill. Существующая `_allocate_fresh_and_today_focus` сохранена: она выбирает только Today-eligible practical items и честно логирует исходный блок.
+- Почему решает класс: раздел нельзя наполнить строкой только ради количества; событие за пределами текущего weekend остаётся Future, а Today получает только элементы, прошедшие его собственный смысловой контракт.
+- ПРОВЕРКА: реальные state 15.07 до — `practical_backfill={next_7_days:4,today_focus:3}`, мёртвый writer count=0. После: 877 tests OK; все 12 replay-дней прошли. 12.07 baseline/replay после одинаковы: 13 sections/44 bullets, lead missing, max blank 1; 15.07 — 13/20, lead ok, max blank 1. Active Today board не изменён.
+- Удалено: `practical_backfill.py`, его validator timing/report/tests; `_backfill_today_focus`, четыре dead constants и всегда-нулевое report field.
+
+### 0116 — Одна конечная воронка для каждой ночной карточки — 2026-07-15
+- Статус: реализовано локально; production HTML proof ожидается.
+- Проблема: отчёт 15.07 показывал только 1 inserted candidate и терял 29 совпавших с live; верхний `morning_consumed=false` спорил с фактическим intake, а synthetic `Night Inventory` имел `fetched=false` и выглядел как failed source.
+- Решение: actual intake хранит lineage всех records и отдельно считает rejected/hybrid/merged/inserted/held-cap. Release связывает каждую активную lineage с validation, selection, writer fingerprint и URL final HTML. Единственный top-level operational truth считает consumed при merge или insert; успешно прочитанный inventory отмечается loaded/fetched.
+- Почему решает класс: count склада, готовность source replacement и судьба публичной строки больше не смешиваются; совпадение с live остаётся измеримым вкладом ночи.
+- ПРОВЕРКА: реальный baseline 15.07 — 3735→138→30→1→0 visible и 29 lineages вне финала; после локального intake те же 30 eligible дают 30 merged lineages. Synthetic merged-live→writer→HTML regression даёт 1→1 visible. Production proof pending.
+- Удалено: вложенное всегда-ложное `report_only_intake.morning_consumed` и логика финальной воронки только по `inventory_source=night_inventory`.
+
+### 0117 — Action URL и retention реально управляют складом — 2026-07-15
+- Статус: реализовано локально; первая production-wave должна дать URL/cleanup числа.
+- Проблема: на 15.07 все 1369 observed current-run records имели `action_url_liveness=unknown`, ни одна ссылка не была проверена, 9 записей уже вышли за сохранённый retention, физической очистки не было.
+- Решение: ночью HEAD-проверяются уникальные action URL только fact-ready карточек. 2xx/3xx=alive; 404/410 требуют двух разных run_id; 403/405/429/timeout/network=unknown. Replacement требует достаточного alive-набора. Retention каждый раз пересчитывается из реестра; dead/expired/retired физически удаляются.
+- Почему решает класс: временная блокировка сайта не уничтожает карточку, будущий билет не удаляется по serving TTL, а склад перестаёт расти бесконечно за счёт реально устаревших строк.
+- ПРОВЕРКА: real-state dry run 15.07 на копии склада: 3735→3716, удалено 19 expired (Culture 15, Diaspora 2, Ticket 2), Food 20/20 сохранены, dead 0 до первой URL-волны. Offline contract: 200/302 alive, 404/410 two-run dead, 403/429 unknown; future Ticket 01.12 retained to 31.12, Transport last seen 01.06 removed on 15.07. 877 tests OK; production URL counts pending.
+- Удалено: доверие к сохранённому старому `retention_until` при очистке; отдельного fallback/refetch не добавлено.
+
+### 0118 — Pro CV сохраняет решение для каждой отправленной карточки — 2026-07-15
+- Статус: реализовано локально; production CV proof ожидается.
+- Проблема: production night 15.07 отправил 8 Pro-карточек, модель вернула 7, но report остался `status=ok`; одна карточка не имела финального CV-исхода.
+- Решение: каждому sent event назначается ровно один outcome: `go`, `consider`, `skip` или `held_error`. Пропущенный/дублированный ID остаётся held и делает batch `partial_failed`; новых model calls/retries нет.
+- Почему решает класс: partial JSON больше нельзя принять за полный CV-отбор, и ни одна карточка не исчезает между `sent` и итогом.
+- ПРОВЕРКА: реальный baseline 15.07 — 8 sent / 7 returned / status ok; regression на частичном ответе — `{go:1, held_error:1}`, `outcomes_conserved=true`, `status=partial_failed`. 18 Pro tests OK; production proof pending.
+- Удалено: неявное допущение, что отсутствие ID в parseable model response является успешным результатом.
+
+### 0119 — Ночная волна различает success, degraded и failed — 2026-07-15
+- Статус: реализовано локально; production-wave proof ожидается.
+- Проблема: 15.07 events/live_news/breaking собрали 59/37/21 источников, но из-за 3/2/1 source errors workflow стал красным, хотя inventory был сохранён. Частичная проблема сайта выглядела как падение всей ночи.
+- Решение: `success` требует всех expected sources без ошибок; `degraded` означает представленный полный список источников с частичными errors/unchecked и сохраняет данные; `failed` — нет checked результата либо команда не представила все expected sources. Только failed возвращает non-zero. Replacement по-прежнему разрешён лишь при operational health `ok`.
+- Почему решает класс: данные не теряются из-за одного 403/timeout, но частичная волна не получает права отключить live collection.
+- ПРОВЕРКА: реальные run_id 15.07 классифицируются: events 59 checked/3 errors=degraded, tickets 15/0=success, pro-food-russian 15/0=success, live-news 37/2=degraded, breaking 21/1=degraded. Helper regression OK; production workflow proof pending.
+- Удалено: правило `any source error => command exit 1`; сохранение partial inventory существовало и оставлено.

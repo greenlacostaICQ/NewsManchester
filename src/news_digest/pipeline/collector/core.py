@@ -633,10 +633,10 @@ def collect_digest(project_root: Path) -> StageResult:
     inventory_records = read_all_inventory(state_dir)
     inventory_preview_candidates, inventory_preview_report = build_morning_inventory_intake(
         inventory_records,
-        existing_fingerprints=set(),
         mode=inventory_mode,
         prompt_version=PROMPT_REGISTRY_VERSION,
     )
+    inventory_preview_report.pop("lineages", None)
     inventory_run_rows: list[dict] = []
     inventory_run_log = state_dir / "inventory_run_log.jsonl"
     if inventory_run_log.exists():
@@ -653,6 +653,7 @@ def collect_digest(project_root: Path) -> StageResult:
     )
     replacement_plan = inventory_source_replacement_plan(inventory_preview_report, night_category_health)
     inventory_report: dict[str, object] = {
+        "pipeline_run_id": pipeline_run_id,
         **summarise_morning_intake(inventory_records, prompt_version=PROMPT_REGISTRY_VERSION),
         "mode": inventory_mode,
         "assist_blocks": [
@@ -743,19 +744,23 @@ def collect_digest(project_root: Path) -> StageResult:
         category_report["checked"] = True
 
     if inventory_mode in {"assist", "on"}:
-        existing_fps = {
-            str(candidate.get("fingerprint") or "")
-            for candidate in candidates
-            if isinstance(candidate, dict) and candidate.get("fingerprint")
-        }
         inventory_candidates, intake_report = build_morning_inventory_intake(
             inventory_records,
-            existing_fingerprints=existing_fps,
+            existing_candidates=candidates,
             mode=inventory_mode,
             prompt_version=PROMPT_REGISTRY_VERSION,
         )
         candidates.extend(inventory_candidates)
         inventory_report["actual_intake"] = intake_report
+        merged_into_live = int((intake_report.get("funnel") or {}).get("merged_into_live") or 0)
+        inserted_from_inventory = int(intake_report.get("inserted_candidates") or 0)
+        inventory_report["morning_consumed"] = bool(merged_into_live or inserted_from_inventory)
+        inventory_report["operational_truth"] = {
+            "records_loaded": int((intake_report.get("funnel") or {}).get("records") or 0),
+            "merged_into_live": merged_into_live,
+            "inserted_into_pipeline": inserted_from_inventory,
+            "status": "consumed" if merged_into_live or inserted_from_inventory else "no_effect",
+        }
         for candidate in inventory_candidates:
             category_key = str(candidate.get("source_report_category") or candidate.get("category") or "")
             if category_key not in report["categories"]:
@@ -781,7 +786,8 @@ def collect_digest(project_root: Path) -> StageResult:
                     "primary_block": "inventory_stable_blocks",
                     "trial": False,
                     "checked": True,
-                    "fetched": False,
+                    "fetched": True,
+                    "inventory_loaded": True,
                     "inventory_intake": True,
                     "candidate_count": len(inserted),
                     "publishable_count": sum(1 for candidate in inserted if candidate.get("include")),
@@ -805,6 +811,13 @@ def collect_digest(project_root: Path) -> StageResult:
             )
     else:
         inventory_report["actual_intake"] = {"mode": inventory_mode, "inserted_candidates": 0}
+        inventory_report["morning_consumed"] = False
+        inventory_report["operational_truth"] = {
+            "records_loaded": len(inventory_records),
+            "merged_into_live": 0,
+            "inserted_into_pipeline": 0,
+            "status": "disabled",
+        }
     report["morning_inventory"] = inventory_report
 
     for category in report["categories"].values():

@@ -3335,7 +3335,9 @@ def _build_speed_report(
     }
 
 
-def _summarise_inventory_morning_effect(state_dir: Path) -> dict[str, object]:
+def _summarise_inventory_morning_effect(
+    state_dir: Path, *, final_html: str | None = None
+) -> dict[str, object]:
     """Observation-only status for the night inventory layer.
 
     Night waves intentionally write inventory side files; the 08:00 hot path
@@ -3405,10 +3407,11 @@ def _summarise_inventory_morning_effect(state_dir: Path) -> dict[str, object]:
     actual_intake = collect_intake.get("actual_intake") if isinstance(collect_intake.get("actual_intake"), dict) else {}
     mode = str(collect_intake.get("mode") or "")
     inserted_count = int(actual_intake.get("inserted_candidates") or 0)
-    consumed = bool(mode in {"assist", "on"} and inserted_count > 0)
+    merged_count = int((actual_intake.get("funnel") or {}).get("merged_into_live") or 0)
+    consumed = bool(mode in {"assist", "on"} and (inserted_count > 0 or merged_count > 0))
     reason = (
-        f"Morning inventory mode={mode}; actual intake inserted "
-        f"{inserted_count} candidate(s)."
+        f"Morning inventory mode={mode}; merged {merged_count} night lineage(s) into live "
+        f"and inserted {inserted_count} standalone candidate(s)."
         if consumed
         else (
             f"Morning inventory mode={mode}; no night candidate survived the checked intake."
@@ -3417,11 +3420,34 @@ def _summarise_inventory_morning_effect(state_dir: Path) -> dict[str, object]:
     )
 
     candidates_payload = read_json(state_dir / "candidates.json", {"candidates": []})
-    inventory_candidates = [
-        candidate
-        for candidate in candidates_payload.get("candidates", [])
-        if isinstance(candidate, dict) and candidate.get("inventory_source") == "night_inventory"
+    all_candidates = [candidate for candidate in candidates_payload.get("candidates", []) if isinstance(candidate, dict)]
+    candidate_by_fp = {
+        str(candidate.get("fingerprint") or ""): candidate
+        for candidate in all_candidates
+        if candidate.get("fingerprint")
+    }
+    lineages = [
+        dict(lineage)
+        for lineage in actual_intake.get("lineages", [])
+        if isinstance(lineage, dict)
     ]
+    if not lineages:
+        # Historical reports predate lineage tracking; keep their observability readable.
+        for candidate in all_candidates:
+            if candidate.get("inventory_source") != "night_inventory":
+                continue
+            fp = str(candidate.get("fingerprint") or "")
+            lineages.append({
+                "lineage_id": f"legacy:{fp}",
+                "inventory_fingerprint": fp,
+                "candidate_fingerprint": fp,
+                "live_fingerprint": "",
+                "source_url": str(candidate.get("source_url") or ""),
+                "title": str(candidate.get("title") or ""),
+                "primary_block": str(candidate.get("primary_block") or "unknown"),
+                "intake_status": "inserted_into_pipeline",
+                "reason": "legacy_report_without_lineage",
+            })
     writer_report = _load_optional_json(state_dir / "writer_report.json") or {}
     validation_report = _load_optional_json(state_dir / "candidate_validation_report.json") or {}
     validation_by_fp = {
@@ -3434,78 +3460,84 @@ def _summarise_inventory_morning_effect(state_dir: Path) -> dict[str, object]:
         for value in writer_report.get("rendered_candidate_fingerprints", [])
         if str(value)
     }
-    output_path = state_dir.parent / "outgoing" / "current_digest.html"
-    output_html = output_path.read_text(encoding="utf-8") if output_path.exists() else ""
+    if final_html is None:
+        output_path = state_dir.parent / "outgoing" / "current_digest.html"
+        output_html = output_path.read_text(encoding="utf-8") if output_path.exists() else ""
+    else:
+        output_html = final_html
     visible_urls = {
         canonical_url_identity(match)
         for match in re.findall(r'href=["\']([^"\']+)', output_html, flags=re.IGNORECASE)
         if canonical_url_identity(match)
     }
     final_by_block: dict[str, Counter] = defaultdict(Counter)
-    lineage: list[dict[str, object]] = []
-    for candidate in inventory_candidates:
-        block = str(candidate.get("primary_block") or "unknown")
-        fp = str(candidate.get("fingerprint") or "")
-        visible = canonical_url_identity(str(candidate.get("source_url") or "")) in visible_urls
+    final_lineages: list[dict[str, object]] = []
+    active_statuses = {"inserted_into_pipeline", "merged_into_live"}
+    present_after_pipeline = 0
+    validated_count = 0
+    accepted_count = 0
+    writer_rendered_count = 0
+    visible_count = 0
+    for lineage in lineages:
+        block = str(lineage.get("primary_block") or "unknown")
+        intake_status = str(lineage.get("intake_status") or "unknown")
+        fp = str(
+            lineage.get("live_fingerprint")
+            or lineage.get("candidate_fingerprint")
+            or lineage.get("inventory_fingerprint")
+            or ""
+        )
+        candidate = candidate_by_fp.get(fp)
+        candidate_url = str((candidate or {}).get("source_url") or lineage.get("source_url") or "")
+        visible = canonical_url_identity(candidate_url) in visible_urls
         validation = validation_by_fp.get(fp, {})
-        validated = bool(validation.get("validated", candidate.get("validated")))
+        validated = bool(validation.get("validated", (candidate or {}).get("validated")))
         accepted = bool(
             validated
             and not validation.get("validation_errors")
             and not validation.get("reject_reasons")
         )
-        selected = str(candidate.get("publish_plan_status") or "") in {"show", "must_show"} or str(
-            candidate.get("digest_selection_verdict") or ""
+        selected = str((candidate or {}).get("publish_plan_status") or "") in {"show", "must_show"} or str(
+            (candidate or {}).get("digest_selection_verdict") or ""
         ) == "selected"
-        status = (
-            "visible_html" if visible
-            else "writer_rendered_not_visible" if fp in rendered_fps
-            else "selected_not_rendered" if selected
-            else "validated_not_selected" if accepted
-            else "rejected_by_validation" if validated
-            else "not_validated"
-        )
+        if intake_status not in active_statuses:
+            status = intake_status
+        elif candidate is None:
+            status = "missing_after_pipeline"
+        else:
+            present_after_pipeline += 1
+            validated_count += int(validated)
+            accepted_count += int(accepted)
+            writer_rendered_count += int(fp in rendered_fps)
+            visible_count += int(visible)
+            status = (
+                "visible_html" if visible
+                else "writer_rendered_not_visible" if fp in rendered_fps
+                else "selected_not_rendered" if selected
+                else "validated_not_selected" if accepted
+                else "rejected_by_validation" if validated
+                else "not_validated"
+            )
         final_by_block[block][status] += 1
-        if len(lineage) < 80:
-            lineage.append(
-                {
-                    "fingerprint": fp,
-                    "title": str(candidate.get("title") or ""),
-                    "primary_block": block,
-                    "final_status": status,
-                }
-            )
+        final_lineages.append({
+            **lineage,
+            "candidate_fingerprint": fp,
+            "title": str((candidate or {}).get("title") or lineage.get("title") or ""),
+            "primary_block": block,
+            "final_status": status,
+        })
     final_funnel = {
+        "inventory_lineages": len(lineages),
+        "merged_into_live": merged_count,
         "inserted_after_live_dedupe_and_cap": inserted_count,
-        "present_after_pipeline": len(inventory_candidates),
-        "validated": sum(
-            1
-            for candidate in inventory_candidates
-            if validation_by_fp.get(str(candidate.get("fingerprint") or ""), {}).get(
-                "validated", candidate.get("validated")
-            )
-        ),
-        "accepted_after_validation": sum(
-            1
-            for candidate in inventory_candidates
-            if (
-                validation_by_fp.get(str(candidate.get("fingerprint") or ""), {}).get(
-                    "validated", candidate.get("validated")
-                )
-                and not validation_by_fp.get(str(candidate.get("fingerprint") or ""), {}).get("validation_errors")
-                and not validation_by_fp.get(str(candidate.get("fingerprint") or ""), {}).get("reject_reasons")
-            )
-        ),
-        "writer_rendered": sum(
-            1 for candidate in inventory_candidates if str(candidate.get("fingerprint") or "") in rendered_fps
-        ),
-        "visible_in_final_html": sum(
-            1
-            for candidate in inventory_candidates
-            if canonical_url_identity(str(candidate.get("source_url") or "")) in visible_urls
-        ),
+        "present_after_pipeline": present_after_pipeline,
+        "validated": validated_count,
+        "accepted_after_validation": accepted_count,
+        "writer_rendered": writer_rendered_count,
+        "visible_in_final_html": visible_count,
         "by_block": {block: dict(counts) for block, counts in sorted(final_by_block.items())},
-        "lineage_examples": lineage,
+        "lineage_examples": final_lineages[:80],
+        "lineages": final_lineages,
     }
 
     return {
@@ -4397,7 +4429,6 @@ def build_release(project_root: Path) -> ReleaseResult:
         writer_report=writer_report,
         editor_report=editor_report,
     )
-    inventory_morning_effect = _summarise_inventory_morning_effect(state_dir)
     try:
         write_json(state_dir / "speed_report.json", speed_report)
     except Exception as exc:  # noqa: BLE001
@@ -4467,6 +4498,10 @@ def build_release(project_root: Path) -> ReleaseResult:
         message = f"Release passed. Promoted {draft_path} to {output_path}."
     else:
         message = FAIL_CLOSED_SUMMARY
+    inventory_morning_effect = _summarise_inventory_morning_effect(
+        state_dir,
+        final_html=draft_path.read_text(encoding="utf-8") if ok and draft_path.exists() else "",
+    )
 
     audit_trail_path: str | None = None
     try:

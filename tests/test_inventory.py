@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from datetime import datetime
@@ -12,6 +13,7 @@ from news_digest.pipeline.inventory import (
     InventoryLock,
     INVENTORY_BLOCK_REGISTRY,
     aggregate_category_health,
+    action_url_probe_result,
     annotate_morning_relevance,
     build_inventory_record,
     build_morning_inventory_intake,
@@ -27,6 +29,7 @@ from news_digest.pipeline.inventory import (
     operational_night_category_health,
     passes_morning_contract,
     prewrite_stable_inventory_candidate,
+    prune_inventory,
     read_inventory,
     reentry_candidates,
     summarise_morning_intake,
@@ -279,10 +282,10 @@ class ReplacementPlanTest(unittest.TestCase):
 
     def test_mixed_ticket_category_never_skips_without_explicit_permission(self) -> None:
         report = {"completeness": {"blocks": {
-            "ticket_radar": {"block_sufficient": True},
-            "future_announcements": {"block_sufficient": True},
-            "outside_gm_tickets": {"block_sufficient": True},
-            "openings": {"block_sufficient": True},
+            "ticket_radar": {"block_sufficient": True, "liveness_sufficient_for_replacement": True},
+            "future_announcements": {"block_sufficient": True, "liveness_sufficient_for_replacement": True},
+            "outside_gm_tickets": {"block_sufficient": True, "liveness_sufficient_for_replacement": True},
+            "openings": {"block_sufficient": True, "liveness_sufficient_for_replacement": True},
         }}}
         health = {
             "venues_tickets": {"status": "ok"},
@@ -311,6 +314,22 @@ class ReplacementPlanTest(unittest.TestCase):
         health = operational_night_category_health(rows, current_day="2026-07-13")["food_openings"]
         self.assertEqual(health["status"], "stale")
 
+    def test_degraded_wave_prevents_healthy_sibling_category_replacement(self) -> None:
+        rows = [{
+            "run_id": "partial-wave",
+            "run_at_london": "2026-07-15T03:30:00+01:00",
+            "category": "food_openings",
+            "source": "Food source",
+            "checked": True,
+            "found": 3,
+            "errors": 0,
+            "expected_sources": 1,
+            "wave_status": "degraded",
+        }]
+        health = operational_night_category_health(rows, current_day="2026-07-15")["food_openings"]
+        self.assertEqual(health["status"], "degraded")
+        self.assertEqual(health["wave_status"], "degraded")
+
 
 class InventoryFactPreservationTest(unittest.TestCase):
     def test_empty_morning_extraction_does_not_erase_night_range(self) -> None:
@@ -331,6 +350,81 @@ class InventoryFactPreservationTest(unittest.TestCase):
 
     def test_explicit_reserve_flag_is_not_trusted_before_validation(self) -> None:
         self.assertFalse(is_recoverable_reserve({"recoverable_reserve": True, "validated": False}))
+
+    def test_matching_live_candidate_keeps_live_values_and_gains_night_facts(self) -> None:
+        live = {
+            "fingerprint": "same",
+            "title": "Fresh live title",
+            "summary": "Fresh live summary",
+            "source_url": "https://example.test/events/market?utm_source=morning",
+            "primary_block": "weekend_activities",
+            "category": "culture_weekly",
+            "event": {"event_name": "", "venue": "", "date_start": ""},
+        }
+        record = {
+            "fingerprint": "same",
+            "title": "Night title",
+            "summary": "Night summary",
+            "source_url": "https://example.test/events/market",
+            "primary_block": "weekend_activities",
+            "category": "culture_weekly",
+            "quality_status": "needs_text",
+            "missing_facts": ["draft_line"],
+            "last_seen_at": "2026-07-15T01:00:00+01:00",
+            "run_id": "night-1",
+            "wave": "events",
+            "fact_card": {
+                "event_name": "Stockport Night Market",
+                "venue": "Churchgate",
+                "date_start": "2026-07-18",
+                "venue_scope": "GM",
+            },
+        }
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-16T08:00:00+01:00"),
+        ):
+            inserted, report = build_morning_inventory_intake(
+                [record], existing_candidates=[live], mode="assist", today="2026-07-16"
+            )
+        self.assertEqual(inserted, [])
+        self.assertEqual(live["summary"], "Fresh live summary")
+        self.assertEqual(live["event"]["venue"], "Churchgate")
+        self.assertEqual(live["event"]["date_start"], "2026-07-18")
+        self.assertTrue(live["inventory_merged_into_live"])
+        self.assertEqual(report["funnel"]["merged_into_live"], 1)
+
+    def test_secondary_url_match_rejects_index_page(self) -> None:
+        live = {
+            "fingerprint": "live-index",
+            "source_url": "https://example.test/events",
+            "event": {"venue": ""},
+        }
+        record = {
+            "fingerprint": "night-index",
+            "title": "Stockport Night Market",
+            "source_url": "https://example.test/events",
+            "primary_block": "weekend_activities",
+            "category": "culture_weekly",
+            "quality_status": "needs_text",
+            "missing_facts": ["draft_line"],
+            "last_seen_at": "2026-07-16T01:00:00+01:00",
+            "fact_card": {
+                "event_name": "Stockport Night Market",
+                "venue": "Churchgate",
+                "venue_scope": "GM",
+                "date_start": "2026-07-18",
+            },
+        }
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-16T08:00:00+01:00"),
+        ):
+            inserted, _ = build_morning_inventory_intake(
+                [record], existing_candidates=[live], mode="assist", today="2026-07-16"
+            )
+        self.assertEqual(live["event"]["venue"], "")
+        self.assertEqual([candidate["fingerprint"] for candidate in inserted], ["night-index"])
 
 
 class ReentryTest(unittest.TestCase):
@@ -384,6 +478,83 @@ class StateFoundationTest(unittest.TestCase):
             # second acquisition after release must succeed
             with InventoryLock(state_dir, name="t"):
                 pass
+
+    def test_link_is_dead_only_after_two_not_found_runs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+            base = {
+                "fingerprint": "gone",
+                "primary_block": "ticket_radar",
+                "run_id": "run-1",
+                "last_seen_at": "2026-07-15T01:00:00+01:00",
+                "action_url_probe_result": "not_found",
+            }
+            merge_inventory(state_dir, "venues_tickets", [base])
+            first = read_inventory(state_dir, "venues_tickets")[0]
+            self.assertEqual(first["action_url_liveness"], "unknown")
+            merge_inventory(
+                state_dir,
+                "venues_tickets",
+                [{**base, "run_id": "run-2", "last_seen_at": "2026-07-16T01:00:00+01:00"}],
+            )
+            second = read_inventory(state_dir, "venues_tickets")[0]
+            self.assertEqual(second["action_url_liveness"], "dead")
+            self.assertEqual(second["action_url_failure_run_ids"], ["run-1", "run-2"])
+
+    def test_unprobed_refresh_preserves_previous_alive_status(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+            first = {
+                "fingerprint": "alive",
+                "last_seen_at": "2026-07-15T01:00:00+01:00",
+                "action_url_probe_result": "alive",
+                "action_url_checked_at": "2026-07-15T01:01:00+01:00",
+            }
+            merge_inventory(state_dir, "food_openings", [first])
+            merge_inventory(
+                state_dir,
+                "food_openings",
+                [{"fingerprint": "alive", "last_seen_at": "2026-07-16T01:00:00+01:00"}],
+            )
+            row = read_inventory(state_dir, "food_openings")[0]
+            self.assertEqual(row["action_url_liveness"], "alive")
+            self.assertEqual(row["action_url_checked_at"], "2026-07-15T01:01:00+01:00")
+
+    def test_retention_cleanup_keeps_future_ticket_and_removes_old_transport(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+            write_inventory(
+                state_dir,
+                "mixed",
+                [
+                    {
+                        "fingerprint": "future-ticket",
+                        "primary_block": "ticket_radar",
+                        "last_seen_at": "2026-07-01T01:00:00+01:00",
+                        "serving_expires_at": "2026-07-02T01:00:00+01:00",
+                        "fact_card": {"date_start": "2026-12-01"},
+                    },
+                    {
+                        "fingerprint": "old-transport",
+                        "primary_block": "transport",
+                        "last_seen_at": "2026-06-01T01:00:00+01:00",
+                        "fact_card": {},
+                    },
+                ],
+            )
+            report = prune_inventory(state_dir, today="2026-07-15")
+            rows = read_inventory(state_dir, "mixed")
+            self.assertEqual([row["fingerprint"] for row in rows], ["future-ticket"])
+            self.assertEqual(rows[0]["retention_until"], "2026-12-31")
+            self.assertEqual(report["removed_expired"], 1)
+
+    def test_http_status_contract_keeps_blocking_responses_unknown(self) -> None:
+        self.assertEqual(action_url_probe_result(200), "alive")
+        self.assertEqual(action_url_probe_result(302), "alive")
+        self.assertEqual(action_url_probe_result(404), "not_found")
+        self.assertEqual(action_url_probe_result(410), "not_found")
+        self.assertEqual(action_url_probe_result(403), "unknown")
+        self.assertEqual(action_url_probe_result(429), "unknown")
 
 
 class BuildRecordTest(unittest.TestCase):
@@ -620,6 +791,25 @@ class BuildRecordTest(unittest.TestCase):
 
 
 class NightWaveTest(unittest.TestCase):
+    def test_wave_status_distinguishes_success_degraded_and_failed(self) -> None:
+        from scripts.run_local_digest import _inventory_wave_status
+
+        self.assertEqual(
+            _inventory_wave_status([{"checked": True, "errors": 0}], 1),
+            "success",
+        )
+        self.assertEqual(
+            _inventory_wave_status(
+                [{"checked": True, "errors": 0}, {"checked": True, "errors": 1}],
+                2,
+            ),
+            "degraded",
+        )
+        self.assertEqual(
+            _inventory_wave_status([{"checked": False, "errors": 1}], 1),
+            "failed",
+        )
+
     def test_wave_writes_inventory_only_never_candidates(self) -> None:
         import types
         from unittest import mock
@@ -706,6 +896,64 @@ class NightWaveTest(unittest.TestCase):
         self.assertEqual(summary["total_records"], 2)
         self.assertEqual(summary["render_ready_records"], 1)
         self.assertEqual(summary["last_wave"], "breaking")
+
+    def test_release_funnel_tracks_night_lineage_merged_into_live(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp) / "data" / "state"
+            outgoing_dir = Path(tmp) / "data" / "outgoing"
+            state_dir.mkdir(parents=True)
+            outgoing_dir.mkdir(parents=True)
+            (state_dir / "morning_inventory_intake_report.json").write_text(
+                json.dumps({
+                    "mode": "assist",
+                    "actual_intake": {
+                        "inserted_candidates": 0,
+                        "funnel": {"records": 1, "merged_into_live": 1},
+                        "lineages": [{
+                            "lineage_id": "0:night-1",
+                            "inventory_fingerprint": "night-1",
+                            "candidate_fingerprint": "live-1",
+                            "live_fingerprint": "live-1",
+                            "source_url": "https://example.test/story",
+                            "primary_block": "weekend_activities",
+                            "intake_status": "merged_into_live",
+                        }],
+                    },
+                }),
+                encoding="utf-8",
+            )
+            (state_dir / "candidates.json").write_text(
+                json.dumps({"candidates": [{
+                    "fingerprint": "live-1",
+                    "title": "Live story",
+                    "source_url": "https://example.test/story",
+                    "primary_block": "weekend_activities",
+                    "validated": True,
+                }]}),
+                encoding="utf-8",
+            )
+            (state_dir / "candidate_validation_report.json").write_text(
+                json.dumps({"items": [{"fingerprint": "live-1", "validated": True}]}),
+                encoding="utf-8",
+            )
+            (state_dir / "writer_report.json").write_text(
+                json.dumps({"rendered_candidate_fingerprints": ["live-1"]}),
+                encoding="utf-8",
+            )
+            (outgoing_dir / "current_digest.html").write_text(
+                '<a href="https://example.test/yesterday">old source</a>',
+                encoding="utf-8",
+            )
+
+            summary = _summarise_inventory_morning_effect(
+                state_dir,
+                final_html='<a href="https://example.test/story">current source</a>',
+            )
+
+        self.assertTrue(summary["morning_consumed"])
+        self.assertEqual(summary["final_funnel"]["merged_into_live"], 1)
+        self.assertEqual(summary["final_funnel"]["visible_in_final_html"], 1)
+        self.assertEqual(summary["final_funnel"]["lineages"][0]["final_status"], "visible_html")
 
 
 class EvidenceCacheStructuredFactsTest(unittest.TestCase):
