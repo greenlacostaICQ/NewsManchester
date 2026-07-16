@@ -2,491 +2,497 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 4 repair(s); issue ships with honest degradation report",
+  "reason": "pre-send repair executor applied 14 repair(s); issue ships with honest degradation report",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
-  "run_date_london": "2026-07-15",
-  "pipeline_run_id": "20260715T080201+0100",
-  "digest_sha256": "fbfdb580a66eb7e987d92a3b49b3efd021d0a7005a5fce06290cb1f04778ec26",
-  "duration_seconds": 64.013,
-  "confidence": 0.85,
+  "run_date_london": "2026-07-16",
+  "pipeline_run_id": "20260716T080158+0100",
+  "digest_sha256": "a65727c84d9acf95bb895614c23bbf56c46eff4fc539ba13764ad21d1050dcc4",
+  "duration_seconds": 71.006,
+  "confidence": 0.8,
   "critical_errors": [
     {
-      "line_index": 3,
+      "line_index": 7,
       "section": "Свежие новости",
-      "problem": "Неверная информация о статусе дела: Энн Уиддкомб жива, и это не подозреваемое убийство.",
-      "risk": "factual",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
       "suggested_action": "repair"
-    },
-    {
-      "line_index": 15,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Смешение тем: обсуждение городской политики и критика владельцев Deansgate Locks не относится к общественному транспорту.",
-      "risk": "product",
-      "suggested_action": "strip"
     },
     {
       "line_index": 21,
       "section": "Футбол",
-      "problem": "Неполный перевод и несогласованность текста.",
-      "risk": "translation",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 31,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Некорректное место проведения для события World Cup 2026.",
+      "problem": "Текст утверждает, что Манчестер Юнайтед подтвердил планы по строительству нового стадиона, но источник не подтверждает это.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 7,
+      "line_index": 22,
+      "section": "Футбол",
+      "problem": "Неполный и неясный текст о трансфере Юри Тилеманса.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 23,
+      "section": "Выходные в GM",
+      "problem": "Дата указана неверно: 19 июля — это суббота, а не воскресенье.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 27,
+      "section": "Выходные в GM",
+      "problem": "Дата указана неверно: 19 июля — это суббота, а не воскресенье.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 28,
+      "section": "Выходные в GM",
+      "problem": "Мероприятие указано в Стокпорте, который не является частью Манчестера.",
+      "risk": "geo",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 32,
+      "section": "Городской радар",
+      "problem": "Неправильное указание роли Джорджа Холмса. Он не проректор, а вице-канцлер.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 10,
+      "section": "Свежие новости",
+      "problem": "Дублирование информации о пожарах на болотах Довстоуна и Тинтвистла.",
+      "risk": "factual",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 22,
+      "section": "Футбол",
+      "problem": "Неполная информация о трансфере игрока.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 26,
+      "section": "Выходные в GM",
+      "problem": "Неполный перевод и дата события не соответствует фактам.",
+      "risk": "translation|date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 30,
+      "section": "Выходные в GM",
+      "problem": "Дата события не соответствует фактам.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 33,
+      "section": "Городской радар",
+      "problem": "Неполная информация о ремонтных работах.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 5,
       "section": "Свежие новости",
       "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'dead' (death/who/what) has no Russian rendering in the shipped line",
+      "problem": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "weapon_violence"
+    },
+    {
+      "line_index": 9,
+      "section": "Свежие новости",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'fatal' (death/who/what) has no Russian rendering in the shipped line",
       "suggested_action": "repair",
       "completeness_concept": "death"
     }
   ],
   "actions": [
     {
-      "line_index": 3,
+      "line_index": 7,
       "section": "Свежие новости",
-      "action": "replace",
-      "replacement_text": "• Энди Бернхэм призвал к серьезному пересмотру безопасности депутатов после недавнего инцидента с угрозами в адрес бывшего депутата Энн Уиддкомб. MEN",
-      "reason": "Исправление фактической ошибки о статусе дела.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 15,
-      "section": "Общественный транспорт сегодня",
-      "action": "strip",
-      "reason": "Тема не соответствует разделу 'Общественный транспорт сегодня'.",
-      "risk": "product",
-      "replacement_text": ""
+      "action": "patch",
+      "replacement_text": "• В субботу вечером, 11 июля 2026 года, на M62 в районе Сэддлворт произошла трагедия: Сита Сипепа, известная как активистка и филантроп, погибла в результате столкновения. По данным полиции, её Nissan Juke двигался в неправильном направлении и столкнулся с BMW X5, в котором находились пассажиры, получившие легкие травмы. Друзья и знакомые Ситы вспоминают её как человека с \"добротой, силой и прекрасным духом\". MEN",
+      "reason": "Указана неверная дата события, необходимо уточнить год.",
+      "risk": "date"
     },
     {
       "line_index": 21,
       "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Manchester United: трансферное обновление — Юри Тилеманс подписан из Астон Виллы. Ситуация влияет на состав и планы клуба на сезон. BBC Sport Manchester United",
-      "reason": "Исправление неполного перевода и несогласованности текста.",
-      "risk": "translation"
+      "action": "replace",
+      "replacement_text": "• Манчестер Юнайтед рассматривает планы по строительству нового стадиона на 100,000 мест в 350 метрах от текущего расположения Old Trafford, чтобы избежать сбоев в движении.",
+      "reason": "Уточнение формулировки в соответствии с источником.",
+      "risk": "factual"
     },
     {
-      "line_index": 31,
-      "section": "Билеты / Ticket Radar",
+      "line_index": 22,
+      "section": "Футбол",
       "action": "replace",
-      "replacement_text": "• World Cup 2026 — 15 июля, Co-op Live. Co-op Live: дата на этой неделе. Co-op Live",
-      "reason": "Исправление места проведения на Co-op Live, как указано в источнике.",
+      "replacement_text": "• Manchester United: трансферное обновление — клуб рассматривает возможность подписания Юри Тилеманса из Aston Villa. Это может повлиять на состав и планы клуба на сезон.",
+      "reason": "Уточнение и исправление текста для ясности и полноты.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 23,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• Bolton car boot sale пройдет в субботу, 18 июля, на парковке стадиона Macron, вход £1 с 7:00, более 300 торговых точек и семейные развлечения.",
+      "reason": "Исправление даты на правильную.",
+      "risk": "date"
+    },
+    {
+      "line_index": 27,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 18 июля — Makers Market in Great Northern Square - Great Northern, Manchester: рынок: ремесленные товары, еда.",
+      "reason": "Исправление даты на правильную.",
+      "risk": "date"
+    },
+    {
+      "line_index": 28,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 19 июля в Burnage RFC, Varley Park, Battersea Road, Stockport, SK4 3EA — Burnage RFC car boot sale: автомобильная барахолка. (Обратите внимание, что это мероприятие проходит в Стокпорте, а не в Манчестере.)",
+      "reason": "Уточнение географического положения.",
+      "risk": "geo"
+    },
+    {
+      "line_index": 32,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Трое человек, включая приостановленного вице-канцлера Университета Bolton Джорджа Холмса, были арестованы по подозрению в мошенничестве и отмывании денег, связанных с предполагаемым неправомерным использованием до £1.7 миллиона университетских средств. The Mill",
+      "reason": "Исправление роли Джорджа Холмса на вице-канцлера.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 36,
+      "section": "Что важно в ближайшие 7 дней",
+      "action": "patch",
+      "replacement_text": "• Концерт трибьюта Fleetwood Mac \"Rumours of Fleetwood Mac\" пройдет в театре Lowry в субботу, 18 июля 2026 года, в 19:30; билеты от £44.50. The Lowry",
+      "reason": "Уточнение ценового диапазона билетов для большей ясности.",
+      "risk": "format"
+    },
+    {
+      "line_index": 41,
+      "section": "Билеты / Ticket Radar",
+      "action": "patch",
+      "replacement_text": "• Wolfmother — 30 июля, O2 Ritz Manchester (Rock). Ближайшая дата тура. Ticketmaster",
+      "reason": "Исправление жанра с 'Pop' на 'Rock' для Wolfmother.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 10,
+      "section": "Свежие новости",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации о пожарах на болотах.",
       "risk": "factual"
     }
   ],
   "warnings": [
-    "Строка о Бев Крейг не относится к общественному транспорту и должна быть удалена из этого раздела.",
-    "Выпуск содержит информацию о новых правилах поступления в грамматические школы в Траффорде, что может быть важно для родителей и учеников. Однако, это не критическая ошибка, а скорее продуктовая полнота.",
-    "События в Лондоне не относятся к Greater Manchester, но находятся в разделе 'Русскоязычные концерты и стендап UK', что может быть допустимо в контексте рубрики.",
-    "Низкая продуктивность писателей: 44 из 315 кандидатов включены в выпуск.",
-    "Проблемы с источниками: 4 сбоя.",
-    "Недостаток в разделе 'Городской радар': 3 из 5 минимально необходимых.",
-    "line 1 drops source number/date fact(s): 20",
-    "line 7 drops source number/date fact(s): 14 jul 2026, 19:30"
+    "Некоторые строки содержат информацию, которая может быть устаревшей на момент публикации, например, список задержанных и отмененных рейсов на 15 июля 2026 года. Убедитесь, что информация актуальна для текущей даты выпуска.",
+    "В выпуске отсутствует информация о том, остаётся ли предупреждение мэра Салфорда активным сегодня, что может повлиять на актуальность сообщения.",
+    "Ценовой диапазон билетов на концерт в Lowry не полностью отражен в тексте.",
+    "Жанр для Wolfmother исправлен с 'Pop' на 'Rock'.",
+    "Низкая производительность писателей: 53/318 включенных кандидатов отрендерены.",
+    "Секция 'Билеты / Ticket Radar' доминирует над core news.",
+    "line 4 drops source number/date fact(s): 14:15, 15 jul 2026",
+    "line 5 drops source number/date fact(s): 15 jul 2026, 17:34",
+    "line 9 drops source number/date fact(s): 06:06, 16 jul 2026",
+    "line 18 drops source number/date fact(s): 15 jul 2026, 15:03"
   ],
   "product_completeness": {
     "section_counts": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 6,
-      "Общественный транспорт сегодня": 7,
+      "Свежие новости": 9,
+      "Общественный транспорт сегодня": 5,
       "Что важно сегодня": 4,
       "Футбол": 2,
-      "Городской радар": 3,
+      "Выходные в GM": 8,
+      "Городской радар": 4,
       "Что важно в ближайшие 7 дней": 3,
-      "IT и бизнес": 0,
-      "Дальние анонсы": 0,
-      "Билеты / Ticket Radar": 5,
-      "Крупные концерты вне GM": 4,
-      "Русскоязычные концерты и стендап UK": 2
+      "Business/tech события для тебя": 1,
+      "Билеты / Ticket Radar": 6,
+      "Крупные концерты вне GM": 4
     },
     "core_counts": {
-      "Свежие новости": 6,
+      "Свежие новости": 9,
       "Футбол": 2,
       "Что важно сегодня": 4,
-      "Общественный транспорт сегодня": 7
+      "Общественный транспорт сегодня": 5,
+      "Выходные в GM": 8
     },
-    "ticket_items": 11,
-    "core_items": 19,
+    "ticket_items": 10,
+    "core_items": 28,
     "writer_quality_counts": {
-      "included_candidates": 315,
-      "rendered_candidates": 44,
+      "included_candidates": 318,
+      "rendered_candidates": 53,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
-      "dropped_missing_draft_line": 4,
+      "dropped_missing_draft_line": 5,
       "dropped_ticket_not_selected": 200,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 65
+      "dropped_low_quality": 64
     },
-    "section_underflow": [
-      {
-        "section": "Городской радар",
-        "actual": 3,
-        "minimum": 5,
-        "dropped_by_writer": 2
-      }
-    ],
+    "section_underflow": [],
     "source_health_counts": {
-      "ok": 107,
+      "ok": 108,
       "partial": 2,
-      "stale": 8,
-      "empty": 7,
-      "failed": 4,
-      "zero_yield": 89,
+      "stale": 11,
+      "empty": 5,
+      "failed": 2,
+      "zero_yield": 85,
       "no_contribution_breakdown": {
-        "fetch_failed": 3,
-        "all_rejected": 89,
+        "fetch_failed": 2,
+        "all_rejected": 85,
         "idle_no_items": 14
       },
       "zero_contribution_by_stage": {
-        "written": 22,
-        "selected": 67,
+        "written": 16,
+        "selected": 69,
         "parsed": 14,
-        "fetched": 3
+        "fetched": 2
       },
-      "weekend_source_coverage_incidents": 48
+      "weekend_source_coverage_incidents": 42
     },
     "alerts": [
-      "low writer yield: 44/315 included candidates rendered",
-      "source failures: 4"
+      "low writer yield: 53/318 included candidates rendered"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [],
+    "warnings": [
+      "replace for line 21 has unchecked number/date token(s): 350",
+      "patch for line 23 has unchecked number/date token(s): 7:00",
+      "patch for line 32 has unchecked number/date token(s): 1.7"
+    ],
     "can_apply_actions": true,
-    "action_count": 4
+    "action_count": 10
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 35,
-    "matched_lines": 35,
-    "applicable_lines": 3,
+    "checked_lines": 45,
+    "matched_lines": 45,
+    "applicable_lines": 5,
     "unmatched_lines": 3,
-    "critical_omission_count": 1,
+    "critical_omission_count": 2,
     "critical_omissions": [
       {
-        "line_index": 7,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/no-action-taken-against-man-34291598",
+        "line_index": 5,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/husband-stabbed-wife-death-smirked-34297247",
+        "concept": "weapon_violence",
+        "obligation": "who/what",
+        "source_hit": "stabbed"
+      },
+      {
+        "line_index": 9,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/driver-who-hit-schoolboy-fatal-34296969",
         "concept": "death",
         "obligation": "who/what",
-        "source_hit": "dead"
+        "source_hit": "fatal"
       }
     ],
     "noncritical_omissions": [
       {
-        "line_index": 1,
+        "line_index": 4,
         "dropped": [
-          "20"
+          "14:15",
+          "15 jul 2026"
         ]
       },
       {
-        "line_index": 7,
+        "line_index": 5,
         "dropped": [
-          "14 jul 2026",
-          "19:30"
+          "15 jul 2026",
+          "17:34"
+        ]
+      },
+      {
+        "line_index": 9,
+        "dropped": [
+          "06:06",
+          "16 jul 2026"
+        ]
+      },
+      {
+        "line_index": 18,
+        "dropped": [
+          "15 jul 2026",
+          "15:03"
         ]
       }
     ],
     "recovered": 0,
-    "pulled_for_rework": 0,
-    "still_missing": 1
+    "pulled_for_rework": 2,
+    "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 5,
-    "attempted": 5,
-    "applied": 4,
-    "model_patch_applied": 2,
-    "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 0,
-    "stripped": 2,
+    "requested": 15,
+    "attempted": 15,
+    "applied": 14,
+    "model_patch_applied": 6,
+    "deterministic_rewrite_used": 4,
+    "reserve_replacement_used": 1,
+    "stripped": 3,
     "kept_below_floor": 1,
     "unresolved": 0,
-    "fact_lock_rejected": 1,
-    "enrich_attempted": 2,
+    "fact_lock_rejected": 3,
+    "enrich_attempted": 8,
     "post_check_errors": [],
     "actions": [
       {
-        "line_index": 3,
+        "line_index": 7,
         "section": "Свежие новости",
-        "requested_action": "replace",
-        "reason": "Исправление фактической ошибки о статусе дела.",
-        "outcome": "model_patch_applied"
-      },
-      {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Тема не соответствует разделу 'Общественный транспорт сегодня'.",
-        "outcome": "stripped_honest_shortfall"
+        "requested_action": "patch",
+        "reason": "Указана неверная дата события, необходимо уточнить год.",
+        "outcome": "stripped_honest_shortfall",
+        "model_replacement_rejected": "fact_lock: bmw x5"
       },
       {
         "line_index": 21,
         "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Исправление неполного перевода и несогласованности текста.",
+        "requested_action": "replace",
+        "reason": "Уточнение формулировки в соответствии с источником.",
         "outcome": "model_patch_applied"
       },
       {
-        "line_index": 31,
-        "section": "Билеты / Ticket Radar",
+        "line_index": 22,
+        "section": "Футбол",
         "requested_action": "replace",
-        "reason": "Исправление места проведения на Co-op Live, как указано в источнике.",
-        "outcome": "stripped_honest_shortfall",
-        "model_replacement_rejected": "fact_lock: co-op live, co-op live. co-op live"
+        "reason": "Уточнение и исправление текста для ясности и полноты.",
+        "outcome": "model_patch_applied"
       },
       {
-        "line_index": 7,
+        "line_index": 23,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Исправление даты на правильную.",
+        "outcome": "deterministic_rewrite",
+        "model_replacement_rejected": "fact_lock: 18 июля"
+      },
+      {
+        "line_index": 27,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Исправление даты на правильную.",
+        "outcome": "deterministic_rewrite",
+        "model_replacement_rejected": "fact_lock: 18 июля"
+      },
+      {
+        "line_index": 28,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Уточнение географического положения.",
+        "outcome": "model_patch_applied"
+      },
+      {
+        "line_index": 32,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Исправление роли Джорджа Холмса на вице-канцлера.",
+        "outcome": "model_patch_applied"
+      },
+      {
+        "line_index": 36,
+        "section": "Что важно в ближайшие 7 дней",
+        "requested_action": "patch",
+        "reason": "Уточнение ценового диапазона билетов для большей ясности.",
+        "outcome": "model_patch_applied"
+      },
+      {
+        "line_index": 41,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "patch",
+        "reason": "Исправление жанра с 'Pop' на 'Rock' для Wolfmother.",
+        "outcome": "model_patch_applied"
+      },
+      {
+        "line_index": 10,
+        "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о пожарах на болотах.",
+        "outcome": "stripped_honest_shortfall"
+      },
+      {
+        "line_index": 26,
+        "section": "Выходные в GM",
+        "requested_action": "replace",
+        "reason": "Неполный перевод и дата события не соответствует фактам.",
+        "outcome": "deterministic_rewrite"
+      },
+      {
+        "line_index": 30,
+        "section": "Выходные в GM",
+        "requested_action": "replace",
+        "reason": "Дата события не соответствует фактам.",
+        "outcome": "reserve_replacement"
+      },
+      {
+        "line_index": 33,
+        "section": "Городской радар",
+        "requested_action": "replace",
+        "reason": "Неполная информация о ремонтных работах.",
+        "outcome": "deterministic_rewrite"
+      },
+      {
+        "line_index": 5,
         "section": "Свежие новости",
         "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'dead' (death/who/what) has no Russian rendering in the shipped line",
+        "reason": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+        "outcome": "stripped_honest_shortfall"
+      },
+      {
+        "line_index": 9,
+        "section": "Свежие новости",
+        "requested_action": "replace",
+        "reason": "critical source fact dropped in translation: 'fatal' (death/who/what) has no Russian rendering in the shipped line",
         "outcome": "kept_below_floor_no_reserve"
       }
     ],
-    "reserve_stats": {
-      "enriched_rewrite_attempts": 42,
-      "enriched_rewrite_used": 2,
-      "refetch": {
-        "attempted": 0,
-        "improved": 0,
-        "failed": 0,
-        "empty_or_not_better": 0,
-        "skipped": 26,
-        "reports": [
-          {
-            "fingerprint": "venues-tickets-co-op-live-cooplive-com-events-fifa-world-cup-2026-semi-finals-1zqr",
-            "title": "FIFA World Cup 2026 | Semi Finals England Vs Argentina Wed 15 Jul 2026 20:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://cooplive.com/events/fifa-world-cup-2026-semi-finals-1zqr",
-            "candidate_evidence_chars": 0
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-breaking-benjamin-manchester-16-07-2026-event-3-006390-6163-85",
-            "title": "Breaking Benjamin — event 2026-07-16 — public sale 2025-12-18 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/breaking-benjamin-manchester-16-07-2026/event/3E006390B6163A85",
-            "candidate_evidence_chars": 395
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-boys-like-girls-manchester-17-07-2026-event-1-0063828-513964",
-            "title": "Boys Like Girls — event 2026-07-17 — public sale 2025-12-05 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/boys-like-girls-manchester-17-07-2026/event/1F0063828B513964",
-            "candidate_evidence_chars": 361
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-an-afternoon-of-indie-indie-for-manchester-18-07-2026-event-3-0064-8-1-47",
-            "title": "An Afternoon of Indie - Indie for the over 30s — event 2026-07-18 — public sale 2026-06-10 15:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/an-afternoon-of-indie-indie-for-manchester-18-07-2026/event/3E0064C8BD1A47CF",
-            "candidate_evidence_chars": 367
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-lenny-pearce-manchester-19-07-2026-event-1-006453-83-3",
-            "title": "Lenny Pearce — event 2026-07-19 — public sale 2026-02-27 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/lenny-pearce-manchester-19-07-2026/event/1F006453FAEE83D3",
-            "candidate_evidence_chars": 385
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-steel-panther-manchester-21-07-2026-event-1-00638-4979-1",
-            "title": "Steel Panther — event 2026-07-21 — public sale 2025-12-18 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/steel-panther-manchester-21-07-2026/event/1F00638BEE4979A1",
-            "candidate_evidence_chars": 361
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-charlie-puth-whatevers-clever-world-tour-manchester-22-07-2026-event-1-006391-2-659",
-            "title": "Charlie Puth - Whatever's Clever! World Tour — event 2026-07-22 — public sale 2026-01-16 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/charlie-puth-whatevers-clever-world-tour-manchester-22-07-2026/event/1F006391DC2E659B",
-            "candidate_evidence_chars": 361
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-theo-kandel-manchester-22-07-2026-event-1-0064-8589-1",
-            "title": "Theo Kandel — event 2026-07-22 — public sale 2026-05-27 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/theo-kandel-manchester-22-07-2026/event/1F0064BAEC8589D1",
-            "candidate_evidence_chars": 355
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-westislonely-manchester-23-07-2026-event-1-006496-6915145",
-            "title": "Westislonely — event 2026-07-23 — public sale 2026-05-01 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/westislonely-manchester-23-07-2026/event/1F006496B6915145",
-            "candidate_evidence_chars": 375
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-the-amy-winehouse-experience-manchester-24-07-2026-event-3-00637-06-645",
-            "title": "The Amy Winehouse Experience — event 2026-07-24 — public sale 2025-12-05 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/the-amy-winehouse-experience-manchester-24-07-2026/event/3E00637BEC06A645",
-            "candidate_evidence_chars": 377
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-black-pistol-fire-manchester-24-07-2026-event-1-00646-672949",
-            "title": "Black Pistol Fire — event 2026-07-24 — public sale 2026-03-20 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/black-pistol-fire-manchester-24-07-2026/event/1F00646DF672949E",
-            "candidate_evidence_chars": 367
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-guns-2-roses-wrong-jovi-acdc-manchester-25-07-2026-event-3-006378-00164-1",
-            "title": "Guns 2 Roses + Wrong Jovi + AC/DC Reborn — event 2026-07-25 — public sale 2025-12-03 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/guns-2-roses-wrong-jovi-acdc-manchester-25-07-2026/event/3E006378C00164A1",
-            "candidate_evidence_chars": 377
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-glu-manchester-26-07-2026-event-1-0064829-2306",
-            "title": "GLU — event 2026-07-26 — public sale 2026-04-10 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/glu-manchester-26-07-2026/event/1F0064829BE2306F",
-            "candidate_evidence_chars": 375
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-tkandz-manchester-30-07-2026-event-1-0064-3960-466",
-            "title": "Tkandz — event 2026-07-30 — public sale 2026-06-05 12:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/tkandz-manchester-30-07-2026/event/1F0064C3960A466E",
-            "candidate_evidence_chars": 405
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-radar-festival-friday-thy-art-is-manchester-31-07-2026-event-3-00638-943584",
-            "title": "RADAR Festival: Friday - Thy Art Is Murder + Volumes + SikTh — event 2026-07-31 — public sale 2025-12-19 12:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/radar-festival-friday-thy-art-is-manchester-31-07-2026/event/3E00638CB943584A",
-            "candidate_evidence_chars": 405
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-caylee-hammack-manchester-31-07-2026-event-1-006494-59-6715",
-            "title": "Caylee Hammack — event 2026-07-31 — public sale 2026-04-24 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/caylee-hammack-manchester-31-07-2026/event/1F006494F59C6715",
-            "candidate_evidence_chars": 361
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-rb-only-live-manchester-31-07-2026-event-3-0064-1-3-5-2",
-            "title": "R&B ONLY LIVE — event 2026-07-31 — public sale 2026-07-10 12:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/rb-only-live-manchester-31-07-2026/event/3E0064C1DD3C5B2A",
-            "candidate_evidence_chars": 365
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-solya-manchester-02-08-2026-event-1-00646295-12538",
-            "title": "Solya — event 2026-08-02 — public sale 2026-03-05 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/solya-manchester-02-08-2026/event/1F00646295C12538",
-            "candidate_evidence_chars": 391
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-borderline-manchester-05-08-2026-event-1-0064-1-117-183",
-            "title": "Borderline — event 2026-08-05 — public sale 2026-06-03 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/borderline-manchester-05-08-2026/event/1F0064C1F117B183",
-            "candidate_evidence_chars": 373
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-kittie-manchester-10-08-2026-event-1-00643-9-7-4121",
-            "title": "Kittie — event 2026-08-10 — public sale 2026-02-06 09:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121",
-            "candidate_evidence_chars": 377
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-the-harry-styles-tribute-show-starring-manchester-13-08-2026-event-3-006454-0-670",
-            "title": "The Harry Styles Tribute Show starring Sean Mac — event 2026-08-13 — public sale 2026-03-06 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/the-harry-styles-tribute-show-starring-manchester-13-08-2026/event/3E006454D0B670EE",
-            "candidate_evidence_chars": 369
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-charlie-worsham-manchester-14-08-2026-event-1-00649-93202884",
-            "title": "Charlie Worsham — event 2026-08-14 — public sale 2026-05-15 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/charlie-worsham-manchester-14-08-2026/event/1F00649E93202884",
-            "candidate_evidence_chars": 361
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-randy-houser-manchester-15-08-2026-event-1-006445-6096-7",
-            "title": "Randy Houser — event 2026-08-15 — public sale 2026-02-13 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/randy-houser-manchester-15-08-2026/event/1F006445E6096BF7",
-            "candidate_evidence_chars": 371
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-aaron-lee-tasjan-manchester-16-08-2026-event-1-00648291-62625",
-            "title": "Aaron Lee Tasjan — event 2026-08-16 — public sale 2026-04-15 09:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/aaron-lee-tasjan-manchester-16-08-2026/event/1F00648291A62625",
-            "candidate_evidence_chars": 373
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-primus-manchester-17-08-2026-event-3-006482-35470",
-            "title": "Primus — event 2026-08-17 — public sale 2026-04-10 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/primus-manchester-17-08-2026/event/3E006482BA35470A",
-            "candidate_evidence_chars": 395
-          },
-          {
-            "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-rumours-of-fleetwood-mac-salford-18-07-2026-event-1-006330-92-6876",
-            "title": "Rumours of Fleetwood Mac — event 2026-07-18 — public sale 2025-09-19 10:00",
-            "status": "skipped",
-            "reason": "structured_ticket_candidate",
-            "url": "https://ticketmaster.co.uk/rumours-of-fleetwood-mac-salford-18-07-2026/event/1F006330A92C6876",
-            "candidate_evidence_chars": 347
-          }
-        ]
-      },
-      "enriched_rewrite_empty": 40
-    },
     "refetch": {
       "attempted": 0,
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 0
+      "skipped": 1,
+      "reports": [
+        {
+          "fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-major-tram-works-13-july-2-august",
+          "title": "Major tram works [13 July - 2 August]",
+          "status": "skipped",
+          "reason": "tfgm_ephemeral_alert",
+          "url": "https://tfgm.com/travel-updates/travel-alerts/major-tram-works-13-july-2-august",
+          "candidate_evidence_chars": 75
+        }
+      ]
     },
-    "enrich_improved": 2,
+    "enrich_improved": 8,
+    "deterministic_rewrite_rejected": 3,
+    "reserve_stats": {
+      "enriched_rewrite_attempts": 65,
+      "enriched_rewrite_used": 5,
+      "refetch": {
+        "attempted": 0,
+        "improved": 0,
+        "failed": 0,
+        "empty_or_not_better": 0,
+        "skipped": 0
+      },
+      "enriched_rewrite_empty": 60,
+      "reserve_replacement_used": 1
+    },
+    "deterministic_rewrite_built": 4,
     "deterministic_fact_lock_rejected": 1,
-    "deterministic_rewrite_rejected": 1,
     "status": "applied",
     "post_repair_section_recovery": {
       "enabled": true,
@@ -494,8 +500,14 @@
       "attempted_sections": [
         {
           "section": "Городской радар",
-          "from": 3,
+          "from": 4,
           "minimum": 5,
+          "added": 0
+        },
+        {
+          "section": "Русскоязычные концерты и стендап UK",
+          "from": 0,
+          "minimum": 1,
           "added": 0
         }
       ],
@@ -503,122 +515,275 @@
       "still_under_minimum": [
         {
           "section": "Городской радар",
-          "actual": 3,
+          "actual": 4,
           "minimum": 5,
+          "reason": "no_visible_section_or_no_recoverable_reserve"
+        },
+        {
+          "section": "Русскоязычные концерты и стендап UK",
+          "actual": 0,
+          "minimum": 1,
           "reason": "no_visible_section_or_no_recoverable_reserve"
         }
       ],
       "reserve_stats": {
-        "enriched_rewrite_attempts": 11,
-        "enriched_rewrite_used": 0,
+        "enriched_rewrite_attempts": 14,
+        "enriched_rewrite_used": 2,
         "refetch": {
-          "attempted": 2,
+          "attempted": 1,
           "improved": 0,
-          "failed": 2,
+          "failed": 1,
           "empty_or_not_better": 0,
-          "skipped": 0,
+          "skipped": 2,
           "reports": [
             {
-              "fingerprint": "council-stockport-council-stockport-gov-uk-news-smoke-from-wildfires-affecting-air-quality-in-some-areas",
-              "title": "Yesterday Smoke from wildfires affecting air quality in some areas We're aware that smoke from wildfires is affecting air quality across parts of the region.",
-              "status": "failed",
-              "url": "https://stockport.gov.uk/news/smoke-from-wildfires-affecting-air-quality-in-some-areas",
-              "error": "RuntimeError: Failed to perform, curl: (7) Failed to connect to stockport.gov.uk port 443 after 228 ms: Could not connect to server. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
+              "fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-major-tram-works-13-july-2-august",
+              "title": "Major tram works [13 July - 2 August]",
+              "status": "skipped",
+              "reason": "tfgm_ephemeral_alert",
+              "url": "https://tfgm.com/travel-updates/travel-alerts/major-tram-works-13-july-2-august",
+              "candidate_evidence_chars": 75
             },
             {
-              "fingerprint": "council-stockport-council-stockport-gov-uk-news-stockport-local-election-2026-results",
-              "title": "8 May 2026 Stockport local election 2026 results Results from 7 May 2026",
+              "fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-prestwich-tram-stop-improvement-works",
+              "title": "Prestwich Tram Stop - Improvement Works",
+              "status": "skipped",
+              "reason": "tfgm_ephemeral_alert",
+              "url": "https://tfgm.com/travel-updates/travel-alerts/prestwich-tram-stop-improvement-works",
+              "candidate_evidence_chars": 817
+            },
+            {
+              "fingerprint": "council-stockport-council-stockport-gov-uk-news-smoke-from-wildfires-affecting-air-quality-in-some-areas",
+              "title": "13 July 2026 Smoke from wildfires affecting air quality in some areas We're aware that smoke from wildfires is affecting air quality across parts of the region.",
               "status": "failed",
-              "url": "https://stockport.gov.uk/news/stockport-local-election-2026-results",
-              "error": "RuntimeError: Failed to perform, curl: (7) Failed to connect to stockport.gov.uk port 443 after 121 ms: Could not connect to server. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
+              "url": "https://stockport.gov.uk/news/smoke-from-wildfires-affecting-air-quality-in-some-areas",
+              "error": "RuntimeError: Failed to perform, curl: (7) Failed to connect to stockport.gov.uk port 443 after 485 ms: Could not connect to server. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
             }
           ]
         },
-        "enriched_rewrite_empty": 11
+        "enriched_rewrite_empty": 12
       },
       "status": "no_recoverable_shortfall"
-    }
+    },
+    "empty_endings_stripped_at_ship": 6
   },
-  "notes": "Текст корректно передает информацию об обвинении и предстоящем судебном заседании.; Прогноз погоды корректен и безопасен для публикации.; Ошибка в описании инцидента с Энн Уиддкомб требует исправления перед выпуском.; Строка о Бев Крейг не соответствует тематике раздела и должна быть удалена.; Все строки в этом фрагмен",
+  "notes": "Текст корректно передает информацию о новом офисе Андии Бернхэма и его премьерстве. Нет фактических или юридических ошибок.; Прогноз погоды корректен и безопасен для публикации.; Исправлена дата события в строке 7, чтобы избежать путаницы.; Выпуск содержит актуальные транспортные обновления, но есть риск устаревшей инф",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.85,
+    "confidence": 0.8,
     "critical_errors": [
       {
-        "line_index": 3,
+        "line_index": 7,
         "section": "Свежие новости",
-        "problem": "Неверная информация о статусе дела: Энн Уиддкомб жива, и это не подозреваемое убийство.",
-        "risk": "factual",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
         "suggested_action": "repair"
-      },
-      {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Смешение тем: обсуждение городской политики и критика владельцев Deansgate Locks не относится к общественному транспорту.",
-        "risk": "product",
-        "suggested_action": "strip"
       },
       {
         "line_index": 21,
         "section": "Футбол",
-        "problem": "Неполный перевод и несогласованность текста.",
-        "risk": "translation",
+        "problem": "Текст утверждает, что Манчестер Юнайтед подтвердил планы по строительству нового стадиона, но источник не подтверждает это.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 31,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Некорректное место проведения для события World Cup 2026.",
+        "line_index": 22,
+        "section": "Футбол",
+        "problem": "Неполный и неясный текст о трансфере Юри Тилеманса.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 23,
+        "section": "Выходные в GM",
+        "problem": "Дата указана неверно: 19 июля — это суббота, а не воскресенье.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 27,
+        "section": "Выходные в GM",
+        "problem": "Дата указана неверно: 19 июля — это суббота, а не воскресенье.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 28,
+        "section": "Выходные в GM",
+        "problem": "Мероприятие указано в Стокпорте, который не является частью Манчестера.",
+        "risk": "geo",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 32,
+        "section": "Городской радар",
+        "problem": "Неправильное указание роли Джорджа Холмса. Он не проректор, а вице-канцлер.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 10,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о пожарах на болотах Довстоуна и Тинтвистла.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 22,
+        "section": "Футбол",
+        "problem": "Неполная информация о трансфере игрока.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 26,
+        "section": "Выходные в GM",
+        "problem": "Неполный перевод и дата события не соответствует фактам.",
+        "risk": "translation|date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 30,
+        "section": "Выходные в GM",
+        "problem": "Дата события не соответствует фактам.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 33,
+        "section": "Городской радар",
+        "problem": "Неполная информация о ремонтных работах.",
         "risk": "factual",
         "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 3,
+        "line_index": 7,
         "section": "Свежие новости",
-        "action": "replace",
-        "replacement_text": "• Энди Бернхэм призвал к серьезному пересмотру безопасности депутатов после недавнего инцидента с угрозами в адрес бывшего депутата Энн Уиддкомб. MEN",
-        "reason": "Исправление фактической ошибки о статусе дела.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "action": "strip",
-        "reason": "Тема не соответствует разделу 'Общественный транспорт сегодня'.",
-        "risk": "product"
+        "action": "patch",
+        "replacement_text": "• В субботу вечером, 11 июля 2026 года, на M62 в районе Сэддлворт произошла трагедия: Сита Сипепа, известная как активистка и филантроп, погибла в результате столкновения. По данным полиции, её Nissan Juke двигался в неправильном направлении и столкнулся с BMW X5, в котором находились пассажиры, получившие легкие травмы. Друзья и знакомые Ситы вспоминают её как человека с \"добротой, силой и прекрасным духом\". MEN",
+        "reason": "Указана неверная дата события, необходимо уточнить год.",
+        "risk": "date"
       },
       {
         "line_index": 21,
         "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Manchester United: трансферное обновление — Юри Тилеманс подписан из Астон Виллы. Ситуация влияет на состав и планы клуба на сезон. BBC Sport Manchester United",
-        "reason": "Исправление неполного перевода и несогласованности текста.",
-        "risk": "translation"
+        "action": "replace",
+        "replacement_text": "• Манчестер Юнайтед рассматривает планы по строительству нового стадиона на 100,000 мест в 350 метрах от текущего расположения Old Trafford, чтобы избежать сбоев в движении.",
+        "reason": "Уточнение формулировки в соответствии с источником.",
+        "risk": "factual"
       },
       {
-        "line_index": 31,
-        "section": "Билеты / Ticket Radar",
+        "line_index": 22,
+        "section": "Футбол",
         "action": "replace",
-        "replacement_text": "• World Cup 2026 — 15 июля, Co-op Live. Co-op Live: дата на этой неделе. Co-op Live",
-        "reason": "Исправление места проведения на Co-op Live, как указано в источнике.",
+        "replacement_text": "• Manchester United: трансферное обновление — клуб рассматривает возможность подписания Юри Тилеманса из Aston Villa. Это может повлиять на состав и планы клуба на сезон.",
+        "reason": "Уточнение и исправление текста для ясности и полноты.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 23,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• Bolton car boot sale пройдет в субботу, 18 июля, на парковке стадиона Macron, вход £1 с 7:00, более 300 торговых точек и семейные развлечения.",
+        "reason": "Исправление даты на правильную.",
+        "risk": "date"
+      },
+      {
+        "line_index": 27,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 18 июля — Makers Market in Great Northern Square - Great Northern, Manchester: рынок: ремесленные товары, еда.",
+        "reason": "Исправление даты на правильную.",
+        "risk": "date"
+      },
+      {
+        "line_index": 28,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 19 июля в Burnage RFC, Varley Park, Battersea Road, Stockport, SK4 3EA — Burnage RFC car boot sale: автомобильная барахолка. (Обратите внимание, что это мероприятие проходит в Стокпорте, а не в Манчестере.)",
+        "reason": "Уточнение географического положения.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 32,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Трое человек, включая приостановленного вице-канцлера Университета Bolton Джорджа Холмса, были арестованы по подозрению в мошенничестве и отмывании денег, связанных с предполагаемым неправомерным использованием до £1.7 миллиона университетских средств. The Mill",
+        "reason": "Исправление роли Джорджа Холмса на вице-канцлера.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 36,
+        "section": "Что важно в ближайшие 7 дней",
+        "action": "patch",
+        "replacement_text": "• Концерт трибьюта Fleetwood Mac \"Rumours of Fleetwood Mac\" пройдет в театре Lowry в субботу, 18 июля 2026 года, в 19:30; билеты от £44.50. The Lowry",
+        "reason": "Уточнение ценового диапазона билетов для большей ясности.",
+        "risk": "format"
+      },
+      {
+        "line_index": 41,
+        "section": "Билеты / Ticket Radar",
+        "action": "patch",
+        "replacement_text": "• Wolfmother — 30 июля, O2 Ritz Manchester (Rock). Ближайшая дата тура. Ticketmaster",
+        "reason": "Исправление жанра с 'Pop' на 'Rock' для Wolfmother.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 10,
+        "section": "Свежие новости",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации о пожарах на болотах.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 22,
+        "section": "Футбол",
+        "action": "repair",
+        "replacement_text": "• Manchester United: трансферное обновление — Юри Тилеманс подписал контракт с клубом на пять лет. Это повлияет на состав и планы клуба на сезон. BBC Sport Manchester United",
+        "reason": "Неполная информация о трансфере игрока.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 26,
+        "section": "Выходные в GM",
+        "action": "repair",
+        "replacement_text": "• 17 июля — Трёхдневный фестиваль пива и еды пройдет в Platt Fields Market Garden в эти выходные: рынок, еда, подходит для семьи, живая музыка. Manchester Wire",
+        "reason": "Неполный перевод и дата события не соответствует фактам.",
+        "risk": "translation|date"
+      },
+      {
+        "line_index": 30,
+        "section": "Выходные в GM",
+        "action": "repair",
+        "replacement_text": "• 16 июля в Salford Quays — Beers In The Garden Festival: рынок, еда, подходит для семьи, живая музыка. Manchester's Finest Events",
+        "reason": "Дата события не соответствует фактам.",
+        "risk": "date"
+      },
+      {
+        "line_index": 33,
+        "section": "Городской радар",
+        "action": "repair",
+        "replacement_text": "• TfGM: ремонтные работы — Major. Проверьте маршрут и время отправления перед выходом. TfGM",
+        "reason": "Неполная информация о ремонтных работах.",
         "risk": "factual"
       }
     ],
     "warnings": [
-      "Строка о Бев Крейг не относится к общественному транспорту и должна быть удалена из этого раздела.",
-      "Выпуск содержит информацию о новых правилах поступления в грамматические школы в Траффорде, что может быть важно для родителей и учеников. Однако, это не критическая ошибка, а скорее продуктовая полнота.",
-      "События в Лондоне не относятся к Greater Manchester, но находятся в разделе 'Русскоязычные концерты и стендап UK', что может быть допустимо в контексте рубрики.",
-      "Низкая продуктивность писателей: 44 из 315 кандидатов включены в выпуск.",
-      "Проблемы с источниками: 4 сбоя.",
-      "Недостаток в разделе 'Городской радар': 3 из 5 минимально необходимых."
+      "Некоторые строки содержат информацию, которая может быть устаревшей на момент публикации, например, список задержанных и отмененных рейсов на 15 июля 2026 года. Убедитесь, что информация актуальна для текущей даты выпуска.",
+      "В выпуске отсутствует информация о том, остаётся ли предупреждение мэра Салфорда активным сегодня, что может повлиять на актуальность сообщения.",
+      "Ценовой диапазон билетов на концерт в Lowry не полностью отражен в тексте.",
+      "Жанр для Wolfmother исправлен с 'Pop' на 'Rock'.",
+      "Низкая производительность писателей: 53/318 включенных кандидатов отрендерены.",
+      "Секция 'Билеты / Ticket Radar' доминирует над core news."
     ],
-    "notes": "Текст корректно передает информацию об обвинении и предстоящем судебном заседании.; Прогноз погоды корректен и безопасен для публикации.; Ошибка в описании инцидента с Энн Уиддкомб требует исправления перед выпуском.; Строка о Бев Крейг не соответствует тематике раздела и должна быть удалена.; Все строки в этом фрагмен",
+    "notes": "Текст корректно передает информацию о новом офисе Андии Бернхэма и его премьерстве. Нет фактических или юридических ошибок.; Прогноз погоды корректен и безопасен для публикации.; Исправлена дата события в строке 7, чтобы избежать путаницы.; Выпуск содержит актуальные транспортные обновления, но есть риск устаревшей инф",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 11,
+      "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -636,8 +801,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2114,
-          "duration_seconds": 1.31
+          "estimated_tokens": 2217,
+          "duration_seconds": 1.344
         },
         {
           "chunk_id": "chunk-02",
@@ -655,14 +820,14 @@
           "warning_count": 0,
           "error": "",
           "estimated_tokens": 1968,
-          "duration_seconds": 1.237
+          "duration_seconds": 1.109
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            8
+            11
           ],
           "sections": [
             "Свежие новости"
@@ -672,123 +837,159 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3750,
-          "duration_seconds": 3.779
+          "estimated_tokens": 5128,
+          "duration_seconds": 3.147
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            9,
-            15
+            12,
+            16
           ],
           "sections": [
             "Общественный транспорт сегодня"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 4250,
-          "duration_seconds": 3.092
-        },
-        {
-          "chunk_id": "chunk-05",
-          "status": "ok",
-          "line_range": [
-            16,
-            19
-          ],
-          "sections": [
-            "Что важно сегодня"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3343,
-          "duration_seconds": 1.169
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "ok",
-          "line_range": [
-            20,
-            21
-          ],
-          "sections": [
-            "Футбол"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2230,
-          "duration_seconds": 2.254
-        },
-        {
-          "chunk_id": "chunk-07",
-          "status": "ok",
-          "line_range": [
-            22,
-            24
-          ],
-          "sections": [
-            "Городской радар"
           ],
           "decision": "warn",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2978,
-          "duration_seconds": 1.384
+          "estimated_tokens": 3651,
+          "duration_seconds": 1.918
+        },
+        {
+          "chunk_id": "chunk-05",
+          "status": "ok",
+          "line_range": [
+            17,
+            20
+          ],
+          "sections": [
+            "Что важно сегодня"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 3224,
+          "duration_seconds": 1.445
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "ok",
+          "line_range": [
+            21,
+            22
+          ],
+          "sections": [
+            "Футбол"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2230,
+          "duration_seconds": 3.368
+        },
+        {
+          "chunk_id": "chunk-07",
+          "status": "ok",
+          "line_range": [
+            23,
+            30
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 3,
+          "action_count": 3,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 5360,
+          "duration_seconds": 4.793
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            25,
-            27
+            31,
+            34
           ],
           "sections": [
-            "Что важно в ближайшие 7 дней"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3144,
-          "duration_seconds": 0.86
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            28,
-            32
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
+            "Городской радар"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3977,
-          "duration_seconds": 2.233
+          "estimated_tokens": 2631,
+          "duration_seconds": 2.252
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            35,
+            37
+          ],
+          "sections": [
+            "Что важно в ближайшие 7 дней"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 1,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 3126,
+          "duration_seconds": 2.598
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            33,
-            36
+            38,
+            38
+          ],
+          "sections": [
+            "Business/tech события для тебя"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2237,
+          "duration_seconds": 5.263
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            39,
+            44
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 1,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 4129,
+          "duration_seconds": 21.056
+        },
+        {
+          "chunk_id": "chunk-12",
+          "status": "ok",
+          "line_range": [
+            45,
+            48
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -798,26 +999,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3377,
-          "duration_seconds": 10.363
-        },
-        {
-          "chunk_id": "chunk-11",
-          "status": "ok",
-          "line_range": [
-            37,
-            38
-          ],
-          "sections": [
-            "Русскоязычные концерты и стендап UK"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 2302,
-          "duration_seconds": 3.018
+          "estimated_tokens": 3376,
+          "duration_seconds": 11.15
         }
       ],
       "reduce": {
@@ -825,13 +1008,13 @@
         "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "warn",
-        "critical_error_count": 0,
-        "action_count": 0,
-        "warning_count": 3,
+        "decision": "repair_required",
+        "critical_error_count": 5,
+        "action_count": 5,
+        "warning_count": 2,
         "error": "",
-        "estimated_tokens": 9936,
-        "duration_seconds": 23.772
+        "estimated_tokens": 10570,
+        "duration_seconds": 28.367
       },
       "max_workers": 3,
       "chunk_line_target": 12,
