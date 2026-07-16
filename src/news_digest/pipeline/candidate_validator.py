@@ -1320,52 +1320,28 @@ _TRANSPORT_TITLE_IMPACT_RE = re.compile(
     r"road\s+closure|roadworks?)\b",
     re.IGNORECASE,
 )
-# Long-term infrastructure / capital-spend with no today-tomorrow travel impact
-# → City Radar (contract: "Bury Interchange received funding" is not Transport).
-_TRANSPORT_INFRA_RE = re.compile(
-    r"\b(?:funding|funded|investment|invest(?:ing|ed)?|£\s?\d|\d+\s?m(?:illion|n)?\b|"
-    r"boost|upgrade|regeneration|redevelopment|redevelop|revamp|refurbish(?:ment)?|"
-    r"rebuild|new\s+interchange|levelling[\s-]?up|improvement\s+scheme|masterplan|"
-    r"business\s+case|consultation|long[\s-]?term\s+plan|by\s+20\d\d|"
-    r"construction\s+(?:begins|starts|to\s+start)|set\s+to\s+(?:open|be\s+built))\b",
-    re.IGNORECASE,
-)
-# Emergency / incident merely *near* a transport node, with no travel change.
-_TRANSPORT_INCIDENT_RE = re.compile(
-    r"\b(?:police|emergency\s+services?|air\s+ambulance|paramedic|999|"
-    r"incident|cordon|evacuat|fire\s+service|vandalis|mindless|attack|"
-    r"stabb|assault)\b",
-    re.IGNORECASE,
-)
-
-
-def _reroute_non_impact_transport(candidate: dict) -> bool:
+def _exclude_non_impact_transport(candidate: dict) -> bool:
     """Strict positive passenger-impact contract for the transport block.
 
     Transport is for reader travel impact: cancellations, closures, delays,
     diversions, replacement travel, amended timetables, or active roadworks.
-    Capital-spend, app launches, policy, policing near a station, and completed
-    works may still be local news, but they are not a passenger-status card.
+    Capital-spend, app launches, policy, policing near a station, completed
+    works and generic airport advice are not moved into another public block.
     """
     if not candidate.get("include"):
         return False
     if str(candidate.get("primary_block") or "") != "transport" and str(candidate.get("category") or "") != "transport":
         return False
     title = str(candidate.get("title") or "")
-    blob = _candidate_blob(candidate)
     if _TRANSPORT_TITLE_IMPACT_RE.search(title) or transport_movement_impact(candidate):
         return False
-    if not (_TRANSPORT_INFRA_RE.search(blob) or _TRANSPORT_INCIDENT_RE.search(blob) or "tfgm" in blob.lower()):
-        return False
-    candidate["primary_block"] = "city_watch"
-    candidate["section_routing_reason"] = "non_impact_transport_to_city_watch"
     candidate["transport_impact_contract"] = "no_passenger_movement_impact"
-    existing = str(candidate.get("reason") or "").strip()
-    note = (
-        "Validator: transport item has no passenger movement impact; routed to "
-        "city_watch instead of the transport status block."
+    _append_reject(
+        candidate,
+        "transport_no_passenger_movement_impact",
+        "Validator: transport item has no passenger movement impact and cannot "
+        "be shown in Transport or borrowed by another public block.",
     )
-    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
     return True
 
 
@@ -2814,7 +2790,7 @@ def validate_candidates(project_root: Path) -> StageResult:
         if candidate.get("include") and manual != "force_include":
             _time_gate("transport_accessibility_only", lambda: _exclude_transport_accessibility_only(candidate))
         if candidate.get("include") and manual != "force_include":
-            _time_gate("non_impact_transport", lambda: _reroute_non_impact_transport(candidate))
+            _time_gate("non_impact_transport", lambda: _exclude_non_impact_transport(candidate))
         if candidate.get("include"):
             _time_gate("assign_venue_scope", lambda: _assign_venue_scope(candidate))
         if candidate.get("include"):

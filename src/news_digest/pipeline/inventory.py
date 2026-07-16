@@ -1591,6 +1591,7 @@ def operational_night_category_health(
     out: dict[str, dict[str, object]] = {}
     for category, (run_at, rows) in latest.items():
         expected = max((int(row.get("expected_sources") or 0) for row in rows), default=0) or len(rows)
+        represented = len(rows)
         checked = sum(1 for row in rows if row.get("checked"))
         errors = sum(int(row.get("errors") or 0) for row in rows)
         found = sum(int(row.get("found") or 0) for row in rows)
@@ -1598,16 +1599,22 @@ def operational_night_category_health(
         explicit_wave_statuses = {
             str(row.get("wave_status") or "") for row in rows if row.get("wave_status")
         }
-        wave_complete = not explicit_wave_statuses or explicit_wave_statuses == {"success"}
-        status = (
-            "ok"
-            if run_day == current_day and checked == expected and errors == 0 and wave_complete
-            else "degraded"
-        )
+        explicit_category_statuses = {
+            str(row.get("category_status") or "") for row in rows if row.get("category_status")
+        }
+        if len(explicit_category_statuses) == 1:
+            category_status = next(iter(explicit_category_statuses))
+        elif len(explicit_category_statuses) > 1:
+            category_status = "degraded"
+        elif represented < expected or checked == 0:
+            category_status = "failed"
+        elif checked < expected or errors:
+            category_status = "degraded"
+        else:
+            category_status = "success"
+        status = "ok" if category_status == "success" else category_status
         if run_day != current_day:
             status = "stale"
-        elif checked == 0:
-            status = "failed"
         error_reasons = [
             {"source": str(row.get("source") or ""), "reason": str(row.get("error") or "source_error")}
             for row in rows
@@ -1622,7 +1629,8 @@ def operational_night_category_health(
             "source_errors": errors,
             "error_reasons": error_reasons,
             "found_this_run": found,
-            "wave_status": next(iter(explicit_wave_statuses), "legacy_unstamped"),
+            "category_status": category_status,
+            "wave_status": sorted(explicit_wave_statuses)[0] if explicit_wave_statuses else "legacy_unstamped",
             "status": status,
         }
     return out

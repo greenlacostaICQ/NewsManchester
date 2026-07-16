@@ -314,7 +314,7 @@ class ReplacementPlanTest(unittest.TestCase):
         health = operational_night_category_health(rows, current_day="2026-07-13")["food_openings"]
         self.assertEqual(health["status"], "stale")
 
-    def test_degraded_wave_prevents_healthy_sibling_category_replacement(self) -> None:
+    def test_degraded_wave_does_not_poison_healthy_sibling_category(self) -> None:
         rows = [{
             "run_id": "partial-wave",
             "run_at_london": "2026-07-15T03:30:00+01:00",
@@ -327,7 +327,8 @@ class ReplacementPlanTest(unittest.TestCase):
             "wave_status": "degraded",
         }]
         health = operational_night_category_health(rows, current_day="2026-07-15")["food_openings"]
-        self.assertEqual(health["status"], "degraded")
+        self.assertEqual(health["status"], "ok")
+        self.assertEqual(health["category_status"], "success")
         self.assertEqual(health["wave_status"], "degraded")
 
 
@@ -809,6 +810,18 @@ class NightWaveTest(unittest.TestCase):
             _inventory_wave_status([{"checked": False, "errors": 1}], 1),
             "failed",
         )
+        mixed_wave = [
+            {"category": "media_layer", "checked": True, "errors": 1},
+            {"category": "transport", "checked": True, "errors": 0},
+        ]
+        self.assertEqual(_inventory_wave_status(mixed_wave, 2), "degraded")
+        self.assertEqual(
+            _inventory_wave_status(
+                [row for row in mixed_wave if row["category"] == "transport"],
+                1,
+            ),
+            "success",
+        )
 
     def test_wave_writes_inventory_only_never_candidates(self) -> None:
         import types
@@ -911,9 +924,9 @@ class NightWaveTest(unittest.TestCase):
                         "funnel": {"records": 1, "merged_into_live": 1},
                         "lineages": [{
                             "lineage_id": "0:night-1",
-                            "inventory_fingerprint": "night-1",
-                            "candidate_fingerprint": "live-1",
-                            "live_fingerprint": "live-1",
+                            "inventory_fingerprint": "night-1-with-evidence",
+                            "candidate_fingerprint": "night-1-with-evidence",
+                            "live_fingerprint": "night-1-with-evidence",
                             "source_url": "https://example.test/story",
                             "primary_block": "weekend_activities",
                             "intake_status": "merged_into_live",
@@ -929,6 +942,8 @@ class NightWaveTest(unittest.TestCase):
                     "source_url": "https://example.test/story",
                     "primary_block": "weekend_activities",
                     "validated": True,
+                    "include": True,
+                    "inventory_lineages": [{"fingerprint": "night-1-with-evidence"}],
                 }]}),
                 encoding="utf-8",
             )
@@ -954,6 +969,7 @@ class NightWaveTest(unittest.TestCase):
         self.assertEqual(summary["final_funnel"]["merged_into_live"], 1)
         self.assertEqual(summary["final_funnel"]["visible_in_final_html"], 1)
         self.assertEqual(summary["final_funnel"]["lineages"][0]["final_status"], "visible_html")
+        self.assertEqual(summary["final_funnel"]["lineages"][0]["candidate_fingerprint"], "live-1")
 
 
 class EvidenceCacheStructuredFactsTest(unittest.TestCase):

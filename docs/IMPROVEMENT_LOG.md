@@ -1210,20 +1210,28 @@
 - Удалено: ничего — это запись о границе работ, не доработка.
 
 ### 0115 — Удалено заполнение блоков контентом другого назначения — 2026-07-15
-- Статус: реализовано локально; historical replay завершён, production morning proof ожидается.
+- Статус: внедрено; повторно исправлено по production-proof 16.07, новый morning proof ожидается.
 - Проблема: validator после всех правил переносил кандидатов между Weekend/Next7/Today, поэтому 15.07 отчёт показал 4 переноса в Next7 и 3 в Today независимо от конечного назначения. В writer параллельно лежал никогда не вызываемый `_backfill_today_focus`; отчёт всегда писал `backfilled_today_focus=0`.
 - Решение: удалён весь `practical_backfill` и мёртвый writer-backfill. Существующая `_allocate_fresh_and_today_focus` сохранена: она выбирает только Today-eligible practical items и честно логирует исходный блок.
 - Почему решает класс: раздел нельзя наполнить строкой только ради количества; событие за пределами текущего weekend остаётся Future, а Today получает только элементы, прошедшие его собственный смысловой контракт.
-- ПРОВЕРКА: реальные state 15.07 до — `practical_backfill={next_7_days:4,today_focus:3}`, мёртвый writer count=0. После: 877 tests OK; все 12 replay-дней прошли. 12.07 baseline/replay после одинаковы: 13 sections/44 bullets, lead missing, max blank 1; 15.07 — 13/20, lead ok, max blank 1. Active Today board не изменён.
+- ПРОВЕРКА: реальные state 15.07 до — `practical_backfill={next_7_days:4,today_focus:3}`, мёртвый writer count=0. После: 877/880 tests OK; три оставшихся падения — существующие calendar-sensitive Ticket fixtures с `last_seen_at=2026-07-09`, которые 16.07 дают `ttl_expired`; этот пакет TTL не меняет. Все 12 replay-дней прошли. 12.07 baseline/replay после одинаковы: 13 sections/44 bullets, lead missing, max blank 1; 15.07 — 13/20, lead ok, max blank 1. Active Today board не изменён.
 - Удалено: `practical_backfill.py`, его validator timing/report/tests; `_backfill_today_focus`, четыре dead constants и всегда-нулевое report field.
+- Повторная production-проверка 16.07: первоначальное решение оказалось неполным. Writer снова переносил три `culture_weekly` карточки из `future_announcements` в `next_7_days`, validator переносил два transport-no-impact кандидата (`Major tram works`, `Prestwich Tram Stop works`) в City Radar, а Today выбрал две жилищные истории без действия сегодня.
+- Дополнительное решение 16.07: non-impact transport теперь удерживается своим существующим passenger-impact контрактом и не переезжает в City; leisure из Today/Future возвращается только в Weekend/Tickets/Russian/Future своего purpose-класса; любое Today-событие обязано иметь явное текущее действие, предупреждение, закрытие или срок.
+- ПРОВЕРКА 16.07 на реальном state: writer replay `next_7_days 3→0`, `future_announcements 3→6`; финальный Today вместо жилья/старого суда оставил два действующих предупреждения. Реальные карточки `Major tram works` и `Prestwich Tram Stop works` на повторном validator-probe получили `transport_no_passenger_movement_impact`, `include=false`, не меняя block на City. Production morning proof нового validator ожидается 17.07.
+- Дополнительно удалено: `_reroute_non_impact_transport`, его infra/incident routing regex и мёртвый `_complete_next_7_rescue_candidate`; отдельного recovery/fallback не добавлено.
 
 ### 0116 — Одна конечная воронка для каждой ночной карточки — 2026-07-15
-- Статус: реализовано локально; production HTML proof ожидается.
+- Статус: внедрено; исправлено по production-proof 16.07, новый morning proof ожидается.
 - Проблема: отчёт 15.07 показывал только 1 inserted candidate и терял 29 совпавших с live; верхний `morning_consumed=false` спорил с фактическим intake, а synthetic `Night Inventory` имел `fetched=false` и выглядел как failed source.
 - Решение: actual intake хранит lineage всех records и отдельно считает rejected/hybrid/merged/inserted/held-cap. Release связывает каждую активную lineage с validation, selection, writer fingerprint и URL final HTML. Единственный top-level operational truth считает consumed при merge или insert; успешно прочитанный inventory отмечается loaded/fetched.
 - Почему решает класс: count склада, готовность source replacement и судьба публичной строки больше не смешиваются; совпадение с live остаётся измеримым вкладом ночи.
 - ПРОВЕРКА: реальный baseline 15.07 — 3735→138→30→1→0 visible и 29 lineages вне финала; после локального intake те же 30 eligible дают 30 merged lineages. Synthetic merged-live→writer→HTML regression даёт 1→1 visible. Production proof pending.
 - Удалено: вложенное всегда-ложное `report_only_intake.morning_consumed` и логика финальной воронки только по `inventory_source=night_inventory`.
+- Повторная production-проверка 16.07: 4 активные lineage были ложно помечены `missing_after_pipeline`, включая видимый в HTML `Chorlton Makers' Market`. После merge evidence-suffix оставался в `inventory_lineages[].fingerprint`, а финальный candidate использовал нормальный fingerprint без suffix; release искал только прямое равенство.
+- Дополнительное решение 16.07: release строит обратный индекс по сохранённым `inventory_lineages`, после разрешения кандидата использует его настоящий fingerprint для validation/writer и сохраняет `final_reason`.
+- ПРОВЕРКА 16.07 на реальном state/HTML: активные `missing_after_pipeline 4→0`; `present_after_pipeline 28→32`; Chorlton стал `visible_html`, Monatik — `rejected_by_validation` с сохранённой причиной старой даты; итоговая воронка 3871 lineage → 32 present → 32 validated → 29 accepted → 7 writer-rendered → 5 visible.
+- Дополнительно удалено: ничего — прямой lookup по candidate fingerprint нужен для inserted и неизменённых карточек; добавлен только отсутствовавший lineage identity.
 
 ### 0117 — Action URL и retention реально управляют складом — 2026-07-15
 - Статус: реализовано и подтверждено production-wave.
@@ -1242,9 +1250,13 @@
 - Удалено: неявное допущение, что отсутствие ID в parseable model response является успешным результатом.
 
 ### 0119 — Ночная волна различает success, degraded и failed — 2026-07-15
-- Статус: реализовано и подтверждено production-wave; degraded/failed ждут естественного production-кейса.
+- Статус: внедрено; естественный degraded-кейс 16.07 выявил и исправил ошибку уровня агрегации, новый night proof ожидается.
 - Проблема: 15.07 events/live_news/breaking собрали 59/37/21 источников, но из-за 3/2/1 source errors workflow стал красным, хотя inventory был сохранён. Частичная проблема сайта выглядела как падение всей ночи.
 - Решение: `success` требует всех expected sources без ошибок; `degraded` означает представленный полный список источников с частичными errors/unchecked и сохраняет данные; `failed` — нет checked результата либо команда не представила все expected sources. Только failed возвращает non-zero. Replacement по-прежнему разрешён лишь при operational health `ok`.
 - Почему решает класс: данные не теряются из-за одного 403/timeout, но частичная волна не получает права отключить live collection.
 - ПРОВЕРКА: реальные run_id 15.07 классифицируются: events 59 checked/3 errors=degraded, tickets 15/0=success, pro-food-russian 15/0=success, live-news 37/2=degraded, breaking 21/1=degraded. Production run `29418506950`: все 15 источников представлены и checked/fetched, 0 source errors, `health=success`, exit 0, state commit `6e8e9a6`; helper regression отдельно подтверждает degraded/failed границы.
 - Удалено: правило `any source error => command exit 1`; сохранение partial inventory существовало и оставлено.
+- Повторная production-проверка 16.07: `wave_status=degraded` записывался в каждую строку и затем использовался как operational verdict категории. Поэтому здоровые `transport 2/2/0 errors`, `gmp 1/1/0`, `public_services 1/1/0`, `tech_business 6/6/0` ошибочно считались degraded из-за ошибок Media/Football той же волны.
+- Дополнительное решение 16.07: night run сохраняет отдельный `category_status`; `wave_status` остаётся только сводкой. Source replacement принимает решение только по expected/checked/errors собственной категории и по-прежнему требует status=ok.
+- ПРОВЕРКА 16.07 на реальном `inventory_run_log.jsonl`: `transport/gmp/public_services/tech_business degraded→ok`; `media_layer` и `football` остались degraded; все перечисленные категории по-прежнему имеют `safe_to_skip=false`, потому что source replacement для них не разрешён.
+- Дополнительно удалено: использование общего `wave_status` как блокирующего условия категории; само поле оставлено для сводного состояния workflow.

@@ -410,43 +410,46 @@ class CancelProofObservabilityTest(unittest.TestCase):
 
 
 class TransportPassengerImpactContractTest(unittest.TestCase):
-    """Transport reroute is disabled (ADR 0025, 2026-06-29): nothing is pushed
-    to City Radar. Every transport-tagged item stays in the transport block and
-    is enriched there — the prior over-eager reroute was emptying the block."""
+    """Only passenger-impact cards stay public; non-impact transport is held
+    instead of being hidden in City Radar."""
 
     def _t(self, title: str) -> dict:
         return {"include": True, "category": "transport", "primary_block": "transport",
                 "title": title, "summary": title}
 
-    def _reroute(self, candidate: dict) -> bool:
-        from news_digest.pipeline.candidate_validator import _reroute_non_impact_transport
-        return _reroute_non_impact_transport(candidate)
+    def _exclude(self, candidate: dict) -> bool:
+        from news_digest.pipeline.candidate_validator import _exclude_non_impact_transport
+        return _exclude_non_impact_transport(candidate)
 
-    def test_interchange_funding_moves_to_city_watch(self) -> None:
+    def test_interchange_funding_is_not_borrowed_by_city_watch(self) -> None:
         c = self._t("Bury's tram and bus interchange revamp gets £25m boost")
-        self.assertTrue(self._reroute(c))
-        self.assertEqual(c["primary_block"], "city_watch")
+        self.assertTrue(self._exclude(c))
+        self.assertFalse(c["include"])
+        self.assertEqual(c["primary_block"], "transport")
         self.assertEqual(c["transport_impact_contract"], "no_passenger_movement_impact")
+        self.assertIn("transport_no_passenger_movement_impact", c["reject_reasons"])
 
-    def test_incident_near_node_moves_to_city_watch(self) -> None:
+    def test_incident_near_node_is_not_borrowed_by_city_watch(self) -> None:
         c = self._t("Rawtenstall incident as police and air ambulance called")
-        self.assertTrue(self._reroute(c))
-        self.assertEqual(c["primary_block"], "city_watch")
+        self.assertTrue(self._exclude(c))
+        self.assertFalse(c["include"])
+        self.assertEqual(c["primary_block"], "transport")
 
     def test_concrete_no_trains_disruption_stays(self) -> None:
         c = self._t("Northern: No trains to / from Salford Central on Saturday")
-        self.assertFalse(self._reroute(c))
+        self.assertFalse(self._exclude(c))
         self.assertEqual(c["primary_block"], "transport")
 
     def test_bus_stop_closure_stays(self) -> None:
         c = self._t("Whitworth Street, Manchester - Bus Stop Closure")
-        self.assertFalse(self._reroute(c))
+        self.assertFalse(self._exclude(c))
         self.assertEqual(c["primary_block"], "transport")
 
-    def test_ambiguous_transport_item_moves_to_city_watch(self) -> None:
+    def test_ambiguous_transport_item_is_held(self) -> None:
         c = self._t("TfGM unveils new Bee Network ticketing app")
-        self.assertTrue(self._reroute(c))
-        self.assertEqual(c["primary_block"], "city_watch")
+        self.assertTrue(self._exclude(c))
+        self.assertFalse(c["include"])
+        self.assertEqual(c["primary_block"], "transport")
 
     def test_lift_without_movement_impact_is_dropped(self) -> None:
         from news_digest.pipeline.candidate_validator import _exclude_transport_accessibility_only

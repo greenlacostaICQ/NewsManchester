@@ -1389,8 +1389,16 @@ def cmd_collect_inventory(wave: str) -> int:
         merged[category] = merge_inventory(state_dir, category, records)
     retention_cleanup = prune_inventory(state_dir)
     wave_status = _inventory_wave_status(run_log, len(sources))
+    category_statuses = {
+        category: _inventory_wave_status(
+            [row for row in run_log if str(row.get("category") or "") == category],
+            expected_by_category.get(category, 0),
+        )
+        for category in categories
+    }
     for row in run_log:
         row["wave_status"] = wave_status
+        row["category_status"] = category_statuses.get(str(row.get("category") or ""), "failed")
     # Append this wave's run log (never overwrites earlier waves).
     with (state_dir / "inventory_run_log.jsonl").open("a", encoding="utf-8") as handle:
         for row in run_log:
@@ -1398,6 +1406,7 @@ def cmd_collect_inventory(wave: str) -> int:
     summary = {
         "ok": wave_status != "failed",
         "health": wave_status,
+        "category_health": category_statuses,
         "run_id": run_id,
         "wave": wave,
         "categories": sorted(categories),

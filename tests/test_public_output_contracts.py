@@ -35,6 +35,7 @@ from news_digest.pipeline.writer import (
     _weekend_activity_score,
     _today_focus_candidate_is_eligible,
     _transport_line_priority,
+    _future_announcement_decision,
     _next_7_event_decision,
     _append_recovery_step,
     _apply_section_min_floor_pull_back,
@@ -278,6 +279,38 @@ class PublicOutputContractTests(unittest.TestCase):
             fake_now.return_value = datetime(2026, 6, 11)
             self.assertFalse(_today_focus_candidate_is_eligible(candidate, "• Prestwich: библиотека закроется 14 июня."))
 
+    def test_today_focus_generic_housing_update_is_not_actionable_today(self) -> None:
+        candidate = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "Plans submitted for 500 homes in Stockport",
+            "summary": "A planning application was submitted yesterday.",
+            "practical_angle": "Есть новый городской контекст для Greater Manchester.",
+            "editorial_contract": {
+                "story_type": "service_accountability",
+                "publish_tier": "strong",
+                "event_shape": "none",
+                "story_frame": {"why_now": "new_today"},
+            },
+        }
+        self.assertFalse(_today_focus_candidate_is_eligible(candidate))
+
+    def test_today_focus_past_road_case_is_not_actionable_today(self) -> None:
+        candidate = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "Speeding driver avoids jail after old A580 crash",
+            "summary": "A court heard the driver had hit a pedestrian last year.",
+            "practical_angle": "Учтите новый судебный итог.",
+            "editorial_contract": {
+                "story_type": "incident",
+                "publish_tier": "strong",
+                "event_shape": "none",
+                "story_frame": {"why_now": "new_today"},
+            },
+        }
+        self.assertFalse(_today_focus_candidate_is_eligible(candidate))
+
     def test_next_7_final_date_gate_moves_far_event(self) -> None:
         candidate = {
             "category": "culture_weekly",
@@ -295,7 +328,7 @@ class PublicOutputContractTests(unittest.TestCase):
             fake_now.return_value = datetime(2026, 6, 11)
             decision, reason = _next_7_event_decision(candidate)
         self.assertEqual(decision, "move_future")
-        self.assertIn("16 day", reason)
+        self.assertIn("leisure item", reason)
 
     def test_city_watch_clear_short_story_does_not_fail_length_only(self) -> None:
         candidate = {
@@ -727,7 +760,7 @@ class PublicOutputContractTests(unittest.TestCase):
                     "date_text": "18 December",
                 },
             }
-            self.assertEqual(_next_7_event_decision(bridgewater)[0], "keep")
+            self.assertEqual(_next_7_event_decision(bridgewater)[0], "move_future")
             line = _build_ticket_fallback_line(bridgewater)
             self.assertIn("12 июня", line)
             self.assertNotIn("00:00", line)
@@ -762,6 +795,27 @@ class PublicOutputContractTests(unittest.TestCase):
                 },
             }
             self.assertEqual(_next_7_event_decision(no_venue), ("hold", "event has no usable venue"))
+
+    def test_near_term_leisure_stays_out_of_next_7(self) -> None:
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "future_announcements",
+            "source_label": "HOME",
+            "title": "Thespians musical",
+            "summary": "A musical at HOME on 18 July 2026.",
+            "event": {
+                "is_event": True,
+                "event_name": "Thespians",
+                "venue": "HOME",
+                "date_start": "2026-07-18",
+            },
+        }
+        with patch("news_digest.pipeline.writer.now_london") as fake_now:
+            fake_now.return_value = datetime(2026, 7, 16)
+            self.assertEqual(
+                _future_announcement_decision(candidate),
+                ("keep", "near-term leisure remains in its leisure block"),
+            )
 
     def test_ticket_decision_explains_show_and_hide(self) -> None:
         show = {

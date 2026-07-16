@@ -493,7 +493,8 @@ _TODAY_FOCUS_HARD_ACTION_RE = re.compile(
     r"diversion|warning|unsafe|danger|inspection|cqc|ofsted|"
     r"requires\s+improvement|inadequate|safeguarding|appeal|witness|cctv|"
     r"service\s+change|strike|vote|voters?\s+head\s+to\s+the\s+polls|"
-    r"polls?\s+open|polling\s+station|by-election|election\s+day)\b",
+    r"polls?\s+open|polling\s+station|by-election|election\s+day|avoid|check|"
+    r"проверь\w*|избег\w*|предупрежд\w*|закрыт\w*)\b",
     re.IGNORECASE,
 )
 _FRESH_COMMERCIAL_PR_RE = re.compile(
@@ -646,6 +647,8 @@ def _today_focus_candidate_is_eligible(candidate: dict | None, line: str = "") -
     if line:
         text = f"{text} {line}"
     if tier == "reject":
+        return False
+    if not _TODAY_FOCUS_HARD_ACTION_RE.search(text):
         return False
     # Past retrospective / old-conviction commentary without a current hook is
     # not a practical "today" item (neighbour-of-a-murderer piece, «24 years
@@ -1272,10 +1275,16 @@ def _reroute_today_focus_row(row: _SectionRow) -> str:
     c = row.candidate or {}
     category = str(c.get("category") or "")
     if category == "football":
-        return "Футбол"
-    if category in {"venues_tickets", "culture_weekly", "russian_speaking_events", "diaspora_events"}:
-        return "Что важно в ближайшие 7 дней"
-    return "Городской радар"
+        return PRIMARY_BLOCKS["football"]
+    if category == "venues_tickets":
+        return PRIMARY_BLOCKS["ticket_radar"]
+    if category in {"russian_speaking_events", "diaspora_events"}:
+        return PRIMARY_BLOCKS["russian_events"]
+    if category == "culture_weekly":
+        return PRIMARY_BLOCKS["future_announcements"]
+    if category == "food_openings":
+        return PRIMARY_BLOCKS["openings"]
+    return PRIMARY_BLOCKS["city_watch"]
 
 
 def _append_section_row(
@@ -4935,10 +4944,33 @@ def _is_routine_market_future_fill(candidate: dict) -> bool:
     )
 
 
+def _is_leisure_candidate(candidate: dict) -> bool:
+    category = str(candidate.get("category") or "")
+    if category in {
+        "culture_weekly",
+        "venues_tickets",
+        "russian_speaking_events",
+        "diaspora_events",
+        "food_openings",
+    }:
+        return True
+    return _candidate_story_type(candidate) in {
+        "event",
+        "ticket",
+        "day_out_guide",
+        "opening",
+        "old_existing_food",
+    }
+
+
 def _next_7_event_decision(candidate: dict) -> tuple[str, str]:
     today = now_london().date()
     if not _event_venue(candidate):
         return "hold", "event has no usable venue"
+    if _is_leisure_candidate(candidate):
+        if _is_long_running_exhibition_without_week_hook(candidate):
+            return "hold", "long-running exhibition without opening/closing hook this week"
+        return "move_future", "leisure item belongs in Weekend, Tickets or future announcements"
     dates = _event_candidate_dates(candidate)
     future_dates = [day for day in dates if day >= today]
     if any(today <= day <= today + timedelta(days=7) for day in future_dates):
@@ -4965,6 +4997,8 @@ def _future_announcement_decision(candidate: dict) -> tuple[str, str]:
     nearest = future_dates[0]
     days_out = (nearest - today).days
     if days_out <= 7:
+        if _is_leisure_candidate(candidate):
+            return "keep", "near-term leisure remains in its leisure block"
         return "move_next_7", f"nearest dated occurrence is {days_out} day(s) away"
     if _is_long_running_exhibition_without_week_hook(candidate):
         return "hold", "long-running exhibition without a near-term hook"
@@ -4982,29 +5016,6 @@ def _section_event_timing_decision(candidate: dict) -> tuple[str, str]:
     if block == "future_announcements":
         return _future_announcement_decision(candidate)
     return "keep", ""
-
-
-def _complete_next_7_rescue_candidate(candidate: dict, section_name: str) -> bool:
-    if section_name != "Что важно в ближайшие 7 дней":
-        return False
-    if str(candidate.get("primary_block") or "") != "next_7_days":
-        return False
-    if candidate.get("include"):
-        return False
-    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    if not event.get("is_event"):
-        return False
-    if _next_7_event_decision(candidate)[0] != "keep":
-        return False
-    if not str(event.get("event_name") or candidate.get("title") or "").strip():
-        return False
-    source = str(candidate.get("source_label") or "")
-    if not re.search(r"\b(?:HOME|Lowry|People's History Museum|Manchester's Finest|Stockport Events|Whitworth|Band on the Wall|Bridgewater|Manchester Wire|Makers Market)\b", source, re.IGNORECASE):
-        return False
-    reason = str(candidate.get("reason") or "")
-    if re.search(r"\b(?:non-GM|not GM|expired|past|duplicate|paywall|full text not accessible|stub)\b", reason, re.IGNORECASE):
-        return False
-    return True
 
 
 def _move_row_to_section(
