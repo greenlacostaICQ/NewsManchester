@@ -301,10 +301,13 @@ def _today_focus_allocation(
     Радара, не оголяя доноров. После фиксации плана никто ничего не двигает.
     """
     from news_digest.pipeline.writer import (  # noqa: PLC0415
-        TODAY_FOCUS_MIN_SOURCE_REMAINING,
         TODAY_FOCUS_TARGET_ITEMS,
         _today_focus_candidate_is_eligible,
     )
+
+    # Доноров не оголяем (семантика удалённого writer-бэкфилла 1cf72f7:
+    # решение переехало на планёрку, защита доноров сохранена).
+    donor_keep_min = {"Свежие новости": 3, "Городской радар": 4}
 
     today = pools.get("Что важно сегодня") or []
     moved = {"from_fresh": 0, "from_city_watch": 0}
@@ -316,7 +319,7 @@ def _today_focus_allocation(
         if len(today) >= TODAY_FOCUS_TARGET_ITEMS:
             break
         donor_pool = pools.get(donor_section) or []
-        keep_min = TODAY_FOCUS_MIN_SOURCE_REMAINING.get(donor_section, 0)
+        keep_min = donor_keep_min.get(donor_section, 0)
         for candidate in list(donor_pool):
             if len(today) >= TODAY_FOCUS_TARGET_ITEMS or len(donor_pool) <= keep_min:
                 break
@@ -377,13 +380,72 @@ def run_plan_digest(project_root: Path) -> StageResult:
     show_weekend = london_now.weekday() >= 3
 
     published_facts = read_json(state_dir / "published_facts.json", {})
-    previous_by_fp = {
-        str(fact.get("fingerprint") or ""): fact
-        for fact in (published_facts.get("facts") or [])
-        if isinstance(fact, dict) and fact.get("fingerprint")
-    }
+
+    def _pre_send_previous(fact: dict) -> dict | None:
+        """Вид факта ДО сегодняшней отправки.
+
+        В проде планёрка работает до send и сегодняшних фактов в истории нет.
+        Replay-снапшоты коммитятся ПОСЛЕ отправки — сегодняшняя запись там уже
+        есть, и без этой поправки план блокировал бы собственный выпуск как
+        «повтор». Если last_published == сегодня: откатываем к first_published
+        (было раньше — обычный повтор), либо факт вовсе не существовал.
+        """
+        today = today_london()
+        last = str(fact.get("last_published_day_london") or "")
+        if last != today:
+            return fact
+        first = str(fact.get("first_published_day_london") or "")
+        if first and first < today:
+            rolled = dict(fact)
+            rolled["last_published_day_london"] = first
+            count = int(fact.get("published_count") or 1)
+            rolled["published_count"] = max(1, count - 1)
+            return rolled
+        return None
+
+    previous_by_fp: dict[str, dict] = {}
+    for fact in published_facts.get("facts") or []:
+        if not isinstance(fact, dict) or not fact.get("fingerprint"):
+            continue
+        rolled = _pre_send_previous(fact)
+        if rolled is not None:
+            previous_by_fp[str(fact.get("fingerprint") or "")] = rolled
 
     _rescue_misrouted_weekend_markets(candidates, warnings)
+
+    # Страховка для offline-replay и деградаций rank-этапа: если у билетного
+    # кандидата нет notability-штампа, добираем его из локального кэша.
+    # Сетевые промахи глотаем: в replay сеть закрыта на уровне сокета.
+    notability_cache = state_dir / "ticket_notability_cache.json"
+    if notability_cache.exists():
+        from news_digest.pipeline.ticket_notability import enrich_ticket_notability  # noqa: PLC0415
+
+        for candidate in candidates:
+            if not isinstance(candidate, dict) or not candidate.get("include"):
+                continue
+            if isinstance(candidate.get("ticket_notability"), dict) and candidate["ticket_notability"].get("tier"):
+                continue
+            if str(candidate.get("category") or "") != "venues_tickets" and str(candidate.get("primary_block") or "") not in {
+                "ticket_radar",
+                "outside_gm_tickets",
+                "russian_events",
+            }:
+                continue
+            try:
+                notability = enrich_ticket_notability(candidate, notability_cache)
+            except Exception:  # noqa: BLE001 — offline replay: сеть закрыта
+                continue
+            candidate["ticket_notability"] = {
+                "artist": notability.artist,
+                "kind": notability.kind,
+                "tier": notability.tier,
+                "confidence": notability.confidence,
+                "signal": notability.signal,
+                "wikidata_id": notability.wikidata_id,
+                "sitelinks": notability.sitelinks,
+                "headliners": list(notability.headliners),
+                "signals": notability.signals or {},
+            }
 
     # --- Допуск и роутинг --------------------------------------------------
     out_rows: list[dict] = []
@@ -658,6 +720,27 @@ def run_plan_digest(project_root: Path) -> StageResult:
             if str(c.get("fingerprint") or "") not in used_backup_fps
             and _story_key(c) not in seen_story_keys
         ]
+        # Недобор до минимума закрывает сама планёрка: повышаем сильнейших
+        # пригодных запасных в основные слоты. Это НЕ ремонт после вёрстки —
+        # это нормальное решение состава до написания текстов.
+        minimum_floor = SECTION_MIN_ITEMS.get(section, 0)
+        promoted_here = 0
+        while minimum_floor and len(pool) < minimum_floor and queue and section not in SYNTHETIC_SECTIONS:
+            promoted = queue.pop(0)
+            promoted_fp = str(promoted.get("fingerprint") or "")
+            if not promoted_fp or promoted_fp in used_backup_fps:
+                continue
+            key = _story_key(promoted)
+            if key and key in seen_story_keys:
+                continue
+            used_backup_fps.add(promoted_fp)
+            if key:
+                seen_story_keys.add(key)
+            promoted["publish_plan_reason"] = "Повышен планёркой из резерва: недобор раздела до минимума."
+            pool.append(promoted)
+            promoted_here += 1
+        if promoted_here:
+            warnings.append(f"Планёрка повысила {promoted_here} запасных в «{section}» до минимума {minimum_floor}.")
         section_slots: list[str] = []
         for position, candidate in enumerate(pool, start=1):
             fp = str(candidate.get("fingerprint") or "")
