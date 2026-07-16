@@ -3990,6 +3990,216 @@ def _enrich_recurring_events(candidates: list[dict]) -> None:
             logger.debug("Enriched recurring event '%s' with next date: %s", c.get("title", ""), next_date)
 
 
+def _rank_report_path(project_root: Path) -> Path:
+    return project_root / "data" / "state" / "rank_digest_report.json"
+
+
+def run_rank_digest(project_root: Path) -> StageResult:
+    """Этап 3: рейтинговая половина старого llm-rewrite, отдельной стадией.
+
+    Runs the source-language boards (DeepSeek english cards), assigns
+    ``digest_selection_verdict`` per candidate, warms the ticket notability
+    cache, and persists everything into candidates.json. Writes NO Russian
+    text and makes NO slot decisions: plan-digest owns composition, the
+    writing half of llm-rewrite owns prose.
+    """
+    report_path = _rank_report_path(project_root)
+    candidates_path = project_root / "data" / "state" / "candidates.json"
+    _stage_t0 = time.monotonic()
+    global _ACTIVE_TRANSLATION_GLOSSARY, _ACTIVE_TOKEN_BUDGET_HISTORY
+    _ACTIVE_TRANSLATION_GLOSSARY = _load_translation_glossary(project_root)
+    _ACTIVE_TOKEN_BUDGET_HISTORY = _load_token_budget_history(project_root)
+
+    if not candidates_path.exists():
+        write_json(
+            report_path,
+            {
+                "pipeline_run_id": "",
+                "run_at_london": now_london().isoformat(),
+                "run_date_london": today_london(),
+                "stage_status": "failed",
+                "errors": ["Missing data/state/candidates.json."],
+                "warnings": [],
+            },
+        )
+        return StageResult(False, "Missing candidates.json.", report_path)
+
+    payload = json.loads(candidates_path.read_text(encoding="utf-8"))
+    pipeline_run_id = pipeline_run_id_from(payload)
+    candidates = payload.get("candidates", [])
+    provider_override = os.environ.get("LLM_PROVIDER", "").lower().strip()
+    model_override = os.environ.get("LLM_MODEL", "").strip()
+    base_url_override = os.environ.get("LLM_BASE_URL", "").strip()
+    errors: list[str] = []
+    warnings: list[str] = []
+    provider_batch_diagnostics: list[dict] = []
+
+    _enrich_recurring_events(candidates)
+
+    def _already_deterministic(c: dict) -> bool:
+        line = str(c.get("draft_line") or "").strip()
+        prov = str(c.get("draft_line_provider") or "")
+        return bool(line and prov == "transport_fill")
+
+    deterministic_writer_items: list[dict[str, object]] = []
+    for c in candidates:
+        if (
+            isinstance(c, dict)
+            and c.get("include")
+            and str(c.get("category") or "") != "weather"
+            and not _already_deterministic(c)
+            and not _skip_llm_for_manual_review(c)
+            and _uses_deterministic_writer(c)
+        ):
+            c["draft_line"] = ""
+            c["draft_line_provider"] = "writer_deterministic_pending"
+            c["draft_line_model"] = ""
+            c["rewrite_shortlist_status"] = "writer_deterministic"
+            _set_digest_selection_verdict(
+                c,
+                "selected",
+                "Structured writer template will produce the visible line.",
+            )
+            deterministic_writer_items.append(
+                {
+                    "fingerprint": c.get("fingerprint") or "",
+                    "title": c.get("title") or "",
+                    "category": c.get("category") or "",
+                    "primary_block": c.get("primary_block") or "",
+                }
+            )
+
+    to_rank = [
+        c for c in candidates
+        if isinstance(c, dict) and c.get("include")
+        and str(c.get("category") or "") != "weather"
+        and not _already_deterministic(c)
+        and not _skip_llm_for_manual_review(c)
+        and not _uses_deterministic_writer(c)
+    ]
+    skipped_manual_review = sum(
+        1 for c in candidates
+        if isinstance(c, dict) and c.get("include") and _skip_llm_for_manual_review(c)
+    )
+
+    enrichment_action: dict[str, object] = {}
+    cost_after_quality_guard: dict[str, object] = {
+        "schema_version": 1,
+        "enabled": False,
+        "input_candidates": len(to_rank),
+        "selected_for_model": len(to_rank),
+        "held_before_model": 0,
+        "held_examples": [],
+    }
+    rewrite_shortlist: dict[str, object] = {
+        "schema_version": REWRITE_SHORTLIST_VERSION,
+        "enabled": False,
+        "input_candidates": len(to_rank),
+        "selected_for_rewrite": len(to_rank),
+        "held_for_backup": 0,
+    }
+    prewrite_enrichment_report: dict[str, object] = {"attempted": 0, "enriched": 0, "skipped": 0, "failed": 0}
+    english_cards_applied = 0
+    english_card_memory_reused: list[dict] = []
+    english_card_memory = _load_english_card_memory(project_root)
+
+    if provider_override == "none":
+        warnings.append("LLM_PROVIDER=none — ranking boards skipped; verdicts finalized deterministically.")
+    elif to_rank:
+        enrichment_action = _enrich_thin_candidates_inplace(to_rank)
+        to_rank, cost_after_quality_guard = _apply_cost_after_quality_guard(to_rank)
+        to_rank, rewrite_shortlist = _apply_rewrite_shortlist(candidates, to_rank)
+        prewrite_enrichment_report = _enrich_before_board(to_rank)
+        english_card_memory_reused = _apply_english_card_memory(to_rank, english_card_memory)
+        english_card_request = [c for c in to_rank if not str(c.get("english_reader_card") or "").strip()]
+        english_card_mapping = _call_english_cards_with_fallback(
+            english_card_request,
+            provider_override,
+            base_url_override,
+            model_override,
+            diagnostics=provider_batch_diagnostics,
+        )
+        english_cards_applied = _apply_english_cards_to_candidates(candidates, english_card_mapping, now_london().isoformat())
+        candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    # Ticket notability warm (moved out of writer): plan-digest needs the
+    # scores to make watch/public decisions before any prose exists.
+    from news_digest.pipeline.ticket_notability import enrich_ticket_notability, prefetch_notability  # noqa: PLC0415
+
+    ticket_notability_cache = project_root / "data" / "state" / "ticket_notability_cache.json"
+    notability_prefetch = prefetch_notability(candidates, ticket_notability_cache)
+    notability_scored = 0
+    for candidate in candidates:
+        if not isinstance(candidate, dict) or not candidate.get("include"):
+            continue
+        if str(candidate.get("category") or "") != "venues_tickets" and str(candidate.get("primary_block") or "") not in {
+            "ticket_radar",
+            "outside_gm_tickets",
+            "russian_events",
+        }:
+            continue
+        notability = enrich_ticket_notability(candidate, ticket_notability_cache)
+        candidate["ticket_notability"] = {
+            "artist": notability.artist,
+            "kind": notability.kind,
+            "tier": notability.tier,
+            "confidence": notability.confidence,
+            "signal": notability.signal,
+            "wikidata_id": notability.wikidata_id,
+            "sitelinks": notability.sitelinks,
+            "headliners": list(notability.headliners),
+            "signals": notability.signals or {},
+        }
+        notability_scored += 1
+
+    section_selection_report = _finalize_digest_selection_verdicts(candidates)
+    write_json(_section_selection_report_path(project_root), section_selection_report)
+    write_json(_enrichment_report_path(project_root), _build_enrichment_report(candidates, enrichment_action))
+    write_json(
+        _section_ranking_report_path(project_root),
+        {"run_date_london": today_london(), **rewrite_shortlist},
+    )
+    candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    from news_digest.pipeline.cost_tracker import dump_stage, snapshot, summarise  # noqa: PLC0415
+
+    dump_stage(project_root / "data" / "state", "rank_digest")
+    write_json(
+        report_path,
+        {
+            "pipeline_run_id": pipeline_run_id,
+            "run_at_london": now_london().isoformat(),
+            "run_date_london": today_london(),
+            "stage_status": "complete" if not errors else "degraded",
+            "errors": errors,
+            "warnings": warnings,
+            "ranked_pool": len(to_rank),
+            "skipped_manual_review": skipped_manual_review,
+            "deterministic_writer_items": {
+                "count": len(deterministic_writer_items),
+                "examples": deterministic_writer_items[:40],
+            },
+            "cost_after_quality_guard": cost_after_quality_guard,
+            "rewrite_shortlist": rewrite_shortlist,
+            "prewrite_enrichment": prewrite_enrichment_report,
+            "english_cards": {
+                "applied": english_cards_applied,
+                "reused_from_content_cache": len(english_card_memory_reused),
+            },
+            "ticket_notability": {
+                "prefetched": notability_prefetch if isinstance(notability_prefetch, (int, dict)) else {},
+                "scored": notability_scored,
+            },
+            "selection_totals": section_selection_report.get("totals", {}),
+            "rank_seconds": round(time.monotonic() - _stage_t0, 2),
+            "cost_summary": summarise(snapshot(stage="rank_digest")),
+            "english_card_route": route_snapshot().get("english_cards", []),
+            "provider_batch_diagnostics": provider_batch_diagnostics,
+        },
+    )
+    return StageResult(True, "Rank digest completed.", report_path)
+
+
 def run_llm_rewrite(project_root: Path) -> StageResult:
     """Read candidates.json, fill Russian draft_lines for included candidates."""
     report_path = project_root / "data" / "state" / "llm_rewrite_report.json"
@@ -4029,93 +4239,68 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     pipeline_run_id = pipeline_run_id_from(payload)
     candidates = payload.get("candidates", [])
 
-    # Rewrite EVERY included candidate each run, not only ones missing a
-    # draft_line. Caching draft_lines between runs meant a one-time fallback
-    # to Gemini/Groq Llama (during an OpenAI timeout, say) would freeze a
-    # weak draft_line into state forever — and later runs with healthy
-    # OpenAI quietly skipped them. With ~50-80 candidates/day this costs
-    # roughly $0.02/day on gpt-4o-mini but guarantees today's text actually
-    # came from today's primary model.
-    _enrich_recurring_events(candidates)
-
-    # Don't overwrite draft_lines that the deterministic transport_fill
-    # stage already produced (provider="transport_fill"). LLM tier-3 only
-    # fires for transport candidates the extractor couldn't handle —
-    # those leave draft_line empty so the filter below still grabs them.
+    # Этап 3: состав решён планёркой (plan-digest). Пишущая половина даёт
+    # прозу ровно основным и запасным из release_plan.json и никого не
+    # переотбирает. Rank-digest уже проставил вердикты и доски.
     def _already_deterministic(c: dict) -> bool:
         line = str(c.get("draft_line") or "").strip()
         prov = str(c.get("draft_line_provider") or "")
         return bool(line and prov == "transport_fill")
 
-    deterministic_writer_items: list[dict[str, object]] = []
-    for c in candidates:
-        if (
-            isinstance(c, dict)
-            and c.get("include")
-            and str(c.get("category") or "") != "weather"
-            and not _already_deterministic(c)
-            and not _skip_llm_for_manual_review(c)
-            and _uses_deterministic_writer(c)
-        ):
-            c["draft_line"] = ""
-            c["draft_line_provider"] = "writer_deterministic_pending"
-            c["draft_line_model"] = ""
-            c["rewrite_shortlist_status"] = "writer_deterministic"
-            _set_digest_selection_verdict(
-                c,
-                "selected",
-                "Structured writer template will produce the visible line.",
-            )
-            deterministic_writer_items.append(
-                {
-                    "fingerprint": c.get("fingerprint") or "",
-                    "title": c.get("title") or "",
-                    "source_label": c.get("source_label") or "",
-                    "category": c.get("category") or "",
-                    "primary_block": c.get("primary_block") or "",
-                    "reason": "Structured ticket/market/event template; skipped LLM rewrite for speed and consistency.",
-                }
-            )
+    release_plan = read_json(project_root / "data" / "state" / "release_plan.json", {})
+    plan_write_fps: set[str] = set()
+    for slot in release_plan.get("slots") or []:
+        if not isinstance(slot, dict):
+            continue
+        fp = str(slot.get("primary_fingerprint") or "").strip()
+        if fp:
+            plan_write_fps.add(fp)
+        for backup_fp in slot.get("backup_fingerprints") or []:
+            if str(backup_fp or "").strip():
+                plan_write_fps.add(str(backup_fp).strip())
+    _lead_plan = release_plan.get("lead") if isinstance(release_plan.get("lead"), dict) else {}
+    for fp in [_lead_plan.get("primary_fingerprint"), *(_lead_plan.get("understudy_fingerprints") or [])]:
+        if str(fp or "").strip():
+            plan_write_fps.add(str(fp).strip())
 
-    to_rewrite = [
-        c for c in candidates
-        if isinstance(c, dict) and c.get("include")
-        and str(c.get("category") or "") != "weather"  # handcrafted line, no LLM needed
-        and not _already_deterministic(c)
-        and not _skip_llm_for_manual_review(c)
-        and not _uses_deterministic_writer(c)
+    deterministic_writer_items = [
+        {
+            "fingerprint": c.get("fingerprint") or "",
+            "title": c.get("title") or "",
+            "category": c.get("category") or "",
+            "primary_block": c.get("primary_block") or "",
+        }
+        for c in candidates
+        if isinstance(c, dict) and str(c.get("rewrite_shortlist_status") or "") == "writer_deterministic"
     ]
     skipped_manual_review = sum(
         1 for c in candidates
         if isinstance(c, dict) and c.get("include") and _skip_llm_for_manual_review(c)
     )
-    # 0001-class: thin-prone core sections keep hitting
-    # `no_recoverable_reserve_with_facts` because the recoverable reserve exists
-    # but was never rewritten (07-12: city_watch had 14 recoverable candidates,
-    # 0 with a draft_line). Pre-write a bounded quota per section so pre-send
-    # recovery has renderable same-section lines. Reserve verdicts/include are
-    # untouched — these lines render only if recovery pulls them.
-    reserve_prewrite: list[dict] = []
-    _prewrite_seen: dict[str, int] = {}
-    for c in sorted(
-        (
+    if plan_write_fps:
+        to_rewrite = [
             c for c in candidates
-            if isinstance(c, dict) and not c.get("include")
-            and str(c.get("primary_block") or "") in RESERVE_PREWRITE_BLOCKS
-            and is_recoverable_reserve(c)
-            and not str(c.get("draft_line") or "").strip()
+            if isinstance(c, dict)
+            and str(c.get("fingerprint") or "") in plan_write_fps
+            and str(c.get("category") or "") != "weather"
+            and not _already_deterministic(c)
             and not _skip_llm_for_manual_review(c)
             and not _uses_deterministic_writer(c)
-        ),
-        key=lambda c: -(float(c.get("section_board_score") or c.get("reader_value_score") or 0)),
-    ):
-        block = str(c.get("primary_block") or "")
-        if _prewrite_seen.get(block, 0) >= RESERVE_PREWRITE_PER_SECTION:
-            continue
-        _prewrite_seen[block] = _prewrite_seen.get(block, 0) + 1
-        c["rewrite_shortlist_status"] = "reserve_prewrite"
-        reserve_prewrite.append(c)
-    to_rewrite.extend(reserve_prewrite)
+        ]
+    else:
+        # Fail-soft (never-block): отсутствие плана — это ошибка порядка
+        # стадий, а не причина не выпустить утренний дайджест. Пишем всем
+        # selected-вердиктам, verify-digest-plan отчитается о расхождении.
+        to_rewrite = [
+            c for c in candidates
+            if isinstance(c, dict) and c.get("include")
+            and str(c.get("digest_selection_verdict") or "") == "selected"
+            and str(c.get("category") or "") != "weather"
+            and not _already_deterministic(c)
+            and not _skip_llm_for_manual_review(c)
+            and not _uses_deterministic_writer(c)
+        ]
+    reserve_prewrite: list[dict] = []
     provider_override = os.environ.get("LLM_PROVIDER", "").lower().strip()
     model_override = os.environ.get("LLM_MODEL", "").strip()
     base_url_override = os.environ.get("LLM_BASE_URL", "").strip()
@@ -4216,83 +4401,15 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         logger.info("LLM rewrite: all included candidates already have draft_lines.")
     else:
         original_rewrite_count = len(to_rewrite)
-        # Phase 6 action: pull full article text for thin selected candidates
-        # BEFORE writing, so the writer works from real facts, not a headline.
+        # Обогащение тонких кандидатов перед письмом остаётся (правило
+        # «сначала обогати»): писать из реальных фактов, не из заголовка.
         enrichment_action = _enrich_thin_candidates_inplace(to_rewrite)
         if int(enrichment_action.get("enriched") or 0):
             logger.info("Enrichment: pulled full text for %d thin candidate(s).", enrichment_action["enriched"])
         run_iso = now_london().isoformat()
-        to_rewrite, cost_after_quality_guard = _apply_cost_after_quality_guard(to_rewrite)
-        if cost_after_quality_guard.get("held_before_model"):
-            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-            soft_warnings.append(
-                "Cost-after-quality guard: "
-                f"{cost_after_quality_guard['held_before_model']} candidate(s) held before model calls."
-            )
-            logger.info(
-                "Cost-after-quality guard: %d/%d candidates still eligible for model calls; %d held.",
-                cost_after_quality_guard.get("selected_for_model"),
-                cost_after_quality_guard.get("input_candidates"),
-                cost_after_quality_guard.get("held_before_model"),
-            )
-        to_rewrite, rewrite_shortlist = _apply_rewrite_shortlist(candidates, to_rewrite)
-        if rewrite_shortlist["held_for_backup"]:
-            # Pre-board before any model call: mini should judge the real
-            # possible issue, not every low-priority overflow item from the
-            # broad scan. Held items stay recoverable in backup_pool.
-            soft_warnings.append(
-                "Rewrite pre-board: "
-                f"{rewrite_shortlist['held_for_backup']} candidate(s) held in backup before Board Judge."
-            )
-            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         logger.info(
-            "LLM pre-board: %d/%d candidates sent to Board Judge; %d held in backup.",
+            "LLM rewrite (plan-driven): %d prose target(s) from release_plan.",
             len(to_rewrite),
-            original_rewrite_count,
-            rewrite_shortlist["held_for_backup"],
-        )
-
-        prewrite_enrichment_report = _enrich_before_board(to_rewrite)
-        if prewrite_enrichment_report.get("enriched"):
-            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-            logger.info(
-                "Pre-write enrichment: refetched evidence for %s candidate(s) before Board Judge.",
-                prewrite_enrichment_report.get("enriched"),
-            )
-
-        english_card_memory_reused = _apply_english_card_memory(to_rewrite, english_card_memory)
-        english_card_request = [c for c in to_rewrite if not str(c.get("english_reader_card") or "").strip()]
-        english_card_mapping = _call_english_cards_with_fallback(
-            english_card_request,
-            provider_override,
-            base_url_override,
-            model_override,
-            diagnostics=provider_batch_diagnostics,
-        )
-        english_cards_applied = _apply_english_cards_to_candidates(candidates, english_card_mapping, run_iso)
-        if english_cards_applied or english_card_memory_reused:
-            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-            logger.info(
-                "Board Judge: applied %d English reader cards before shortlist; reused %d from content cache.",
-                english_cards_applied,
-                len(english_card_memory_reused),
-            )
-
-        to_rewrite, post_board_translation_cut = _apply_post_board_translation_cut(candidates, to_rewrite)
-        if post_board_translation_cut.get("held_for_backup"):
-            candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-            logger.info(
-                "Post-board Russian writing cut: %d/%d selected; %d held after DeepSeek ranking.",
-                post_board_translation_cut.get("selected_for_russian"),
-                post_board_translation_cut.get("input_candidates"),
-                post_board_translation_cut.get("held_for_backup"),
-            )
-
-        logger.info(
-            "LLM rewrite: %d/%d candidates selected for GPT rewrite; %d held in backup.",
-            len(to_rewrite),
-            original_rewrite_count,
-            rewrite_shortlist["held_for_backup"],
         )
         translation_memory_reused = _apply_translation_memory(to_rewrite, translation_memory)
         if translation_memory_reused:
@@ -4621,18 +4738,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     write_json(_english_card_memory_path(project_root), english_card_memory)
     translation_memory_updated = _update_translation_memory(candidates, translation_memory)
     write_json(_translation_memory_path(project_root), translation_memory)
-    section_selection_report = _finalize_digest_selection_verdicts(candidates)
-    publish_plan = _build_publish_plan(
-        candidates,
-        read_json(project_root / "data" / "state" / "published_facts.json", {}),
-    )
-    write_json(_section_selection_report_path(project_root), section_selection_report)
     write_json(_enrichment_report_path(project_root), _build_enrichment_report(candidates, enrichment_action))
-    write_json(
-        _section_ranking_report_path(project_root),
-        {"run_date_london": today_london(), **rewrite_shortlist},
-    )
-    write_json(_publish_plan_path(project_root), publish_plan)
     candidates_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     rewrite_inventory = _build_rewrite_inventory(candidates)
     write_json(_rewrite_inventory_path(project_root), rewrite_inventory)
@@ -4702,13 +4808,9 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
                 "path": str(_rewrite_inventory_path(project_root).relative_to(project_root)),
                 "totals": rewrite_inventory.get("totals", {}),
             },
-            "section_selection_report": {
-                "path": str(_section_selection_report_path(project_root).relative_to(project_root)),
-                "totals": section_selection_report.get("totals", {}),
-            },
-            "publish_plan": {
-                "path": str(_publish_plan_path(project_root).relative_to(project_root)),
-                "totals": publish_plan.get("totals", {}),
+            "release_plan_targets": {
+                "plan_loaded": bool(plan_write_fps),
+                "prose_targets": len(to_rewrite),
             },
             "applied": applied,
             "fixed": fixed,
