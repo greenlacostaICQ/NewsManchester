@@ -6349,88 +6349,303 @@ def _weekend_empty_reason(candidates: list[dict], *, show_weekend: bool, weekend
     )
 
 
+def _produce_slot_line(
+    candidate: dict,
+    section_name: str,
+    *,
+    warnings: list[str],
+    quality_counts: dict[str, int],
+    controlled_enrichment_report: dict[str, object],
+    execution: dict[str, object],
+    stage: str = "writer",
+) -> tuple[str, list[str]]:
+    """Произвести строку для планового слота (Этап 3).
+
+    Это бывшая line-production часть цикла write_digest: категория-специфичные
+    детерминированные карточки → ремонты → лестница качества (обогащение и
+    model-recovery в пределах ОБЩЕГО бюджета попыток из plan_execution).
+    Возвращает (line, errors): пустые errors = строка готова к публикации.
+    Никаких решений о составе здесь нет — только текст для уже решённого слота.
+    """
+    from news_digest.pipeline.plan_execution import consume_repair_attempt  # noqa: PLC0415
+
+    block_key = str(candidate.get("primary_block") or "").strip()
+    line = str(candidate.get("draft_line") or "").strip()
+    title = str(candidate.get("title") or "").strip()
+    lead = str(candidate.get("lead") or "").strip()
+    summary = str(candidate.get("summary") or "").strip()
+    category = str(candidate.get("category") or "").strip()
+
+    if _normalize_text_key(lead) and _normalize_text_key(lead) == _normalize_text_key(summary):
+        summary = ""
+
+    english_detected = False
+    if category in {"media_layer", "gmp", "public_services", "city_news", "council", "transport", "venues_tickets", "russian_speaking_events", "culture_weekly", "football", "tech_business", "food_openings", "professional_events"}:
+        english_fields = [field for field in (lead, summary, title) if _looks_like_untranslated_english(field)]
+        if english_fields:
+            english_detected = True
+
+    if not line and category == "transport":
+        _append_recovery_step(candidate, "transport_card_recovery", "attempted", missing=(candidate.get("story_frame") or {}).get("missing_facts") or [])
+        line = _build_transport_fallback_line(candidate)
+        if line:
+            _append_recovery_step(candidate, "transport_card_recovery", "recovered")
+        else:
+            _append_recovery_step(candidate, "transport_card_recovery", "held", missing=["transport_impact"])
+
+    if not line and category == "venues_tickets":
+        _append_recovery_step(candidate, "ticket_structured_recovery", "attempted", missing=(candidate.get("story_frame") or {}).get("missing_facts") or [])
+        line = _build_ticket_fallback_line(candidate)
+        if line:
+            _append_recovery_step(candidate, "ticket_structured_recovery", "recovered")
+        else:
+            _append_recovery_step(candidate, "ticket_structured_recovery", "held", missing=["artist_or_date_or_venue_or_notability"])
+
+    if not line and category == "public_services":
+        _append_recovery_step(candidate, "public_service_recovery", "attempted")
+        line = _build_public_service_fallback_line(candidate)
+        _append_recovery_step(candidate, "public_service_recovery", "recovered")
+
+    if not line and category == "professional_events":
+        _append_recovery_step(candidate, "professional_event_card", "attempted")
+        line = _build_professional_event_fallback_line(candidate)
+        if line:
+            _append_recovery_step(candidate, "professional_event_card", "recovered")
+        else:
+            _append_recovery_step(candidate, "professional_event_card", "held", missing=["fit_or_free_access_or_date"])
+
+    if not line and category in {"culture_weekly", "russian_speaking_events", "diaspora_events"}:
+        protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
+        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        if (
+            (protected.get("protected") or block_key in {"weekend_activities", "next_7_days", "russian_events"})
+            and event.get("is_event")
+            and str(event.get("event_name") or candidate.get("title") or "").strip()
+        ):
+            _append_recovery_step(candidate, "event_structured_recovery", "attempted", missing=(candidate.get("story_frame") or {}).get("missing_facts") or [])
+            line = _build_event_fallback_line(candidate)
+            if line:
+                _append_recovery_step(candidate, "event_structured_recovery", "recovered")
+            else:
+                _append_recovery_step(candidate, "event_structured_recovery", "held", missing=(candidate.get("story_frame") or {}).get("missing_facts") or [])
+
+    if not line:
+        _append_recovery_step(candidate, "official_football_recovery", "attempted")
+        line = _build_football_fallback_line(candidate)
+        if line:
+            _append_recovery_step(candidate, "official_football_recovery", "recovered")
+
+    if not line:
+        _append_recovery_step(candidate, "hard_news_recovery", "attempted")
+        recovery_line = _hard_news_recovery_line(candidate)
+        if recovery_line:
+            line = recovery_line
+            candidate["draft_line_provider"] = "writer_hard_news_recovery"
+            candidate["draft_line_model"] = "deterministic_hard_news_recovery"
+            _append_recovery_step(candidate, "hard_news_recovery", "recovered")
+
+    if not line:
+        if category in REQUIRE_DRAFT_LINE_CATEGORIES:
+            quality_counts["dropped_missing_draft_line"] += 1
+            return "", ["missing_required_facts"]
+        if _headline_fallback_forbidden(candidate):
+            quality_counts["dropped_missing_draft_line"] += 1
+            return "", ["missing_required_facts"]
+        if english_detected:
+            quality_counts["dropped_english_passthrough"] += 1
+            return "", ["unrenderable_line"]
+        headline = lead or title or summary
+        rendered_parts: list[str] = []
+        if headline:
+            rendered_parts.append(html.escape(headline.rstrip(".")) + ".")
+        if _summary_is_useful(summary, headline):
+            rendered_parts.append(html.escape(summary.rstrip(".")) + ".")
+        line = "• " + " ".join(rendered_parts).strip()
+
+    scrubbed_line, removed_vague_endings = scrub_vague_ending(line)
+    if removed_vague_endings:
+        line = scrubbed_line
+    if _line_claims_future_ticket_sale(candidate, line):
+        line = _build_ticket_fallback_line(candidate)
+        if not line:
+            return "", ["expired_after_plan"]
+    line, _repair_reasons = _repair_editorial_contract_line(candidate, line)
+
+    draft_line_errors = _draft_line_quality_errors(candidate, line)
+    if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
+        numeric_errors = [err for err in draft_line_errors if err.startswith("draft_line contains number(s) not present")]
+        if numeric_errors:
+            stripped_line, strip_repairs = _strip_unsupported_number_phrases(candidate, line)
+            if strip_repairs and stripped_line != line:
+                stripped_errors = _draft_line_quality_errors(candidate, stripped_line)
+                if not stripped_errors:
+                    line = stripped_line
+                    draft_line_errors = []
+                    _append_recovery_step(candidate, "draft_line_quality_repair", "recovered", missing=strip_repairs)
+                else:
+                    draft_line_errors = stripped_errors
+    if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
+        _append_recovery_step(candidate, "final_replacement", "attempted", missing=draft_line_errors)
+        replacement = _final_replacement_line(candidate)
+        if replacement and replacement != line:
+            replacement, _rr = _repair_editorial_contract_line(candidate, replacement)
+            replacement_errors = _draft_line_quality_errors(candidate, replacement)
+            if not replacement_errors:
+                line = replacement
+                draft_line_errors = []
+                _append_recovery_step(candidate, "final_replacement", "recovered")
+            else:
+                _append_recovery_step(candidate, "final_replacement", "held", missing=replacement_errors)
+    skip_model_recovery = False
+    if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
+        recovered_line, recovered_reasons = _recover_soft_draft_line(candidate, line, draft_line_errors)
+        if recovered_line:
+            recovered_line, _rp = _repair_editorial_contract_line(candidate, recovered_line)
+            recovered_errors = [] if {"short_but_complete", "held_thin_evidence"} & set(recovered_reasons) else _draft_line_quality_errors(candidate, recovered_line)
+            if not recovered_errors:
+                line = recovered_line
+                draft_line_errors = []
+                if "short_but_complete" in recovered_reasons:
+                    controlled_enrichment_report["short_but_complete"] = int(controlled_enrichment_report.get("short_but_complete") or 0) + 1
+                    candidate["draft_line_provider"] = "writer_short_but_complete"
+                elif "held_thin_evidence" in recovered_reasons:
+                    controlled_enrichment_report["held_thin_evidence"] = int(controlled_enrichment_report.get("held_thin_evidence") or 0) + 1
+                    candidate["draft_line_provider"] = "writer_thin_evidence_short"
+                else:
+                    candidate["draft_line_provider"] = "writer_soft_line_recovery"
+                _append_recovery_step(candidate, "draft_line_quality_repair", "recovered", missing=recovered_reasons)
+        elif recovered_reasons:
+            if "held_thin_evidence" in recovered_reasons:
+                skip_model_recovery = True
+                controlled_enrichment_report["held_thin_evidence"] = int(controlled_enrichment_report.get("held_thin_evidence") or 0) + 1
+    if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors and not skip_model_recovery:
+        # Обогатить-и-переписать моделью — в пределах ОБЩЕГО бюджета выпуска
+        # (писатель + редактор + судья делят SHARED_REPAIR_BUDGET_PER_RUN).
+        _append_recovery_step(candidate, "must_show_model_recovery", "attempted", missing=draft_line_errors)
+        if not consume_repair_attempt(execution):
+            model_line, model_recovery_report = "", {"status": "skipped_shared_budget", "attempted": False}
+        else:
+            controlled_enrichment_report["model_attempts"] = int(controlled_enrichment_report.get("model_attempts") or 0) + 1
+            model_line, model_recovery_report = _model_recover_section_line(candidate, section_name, draft_line_errors)
+        if model_line:
+            model_line, _mr = _repair_editorial_contract_line(candidate, model_line)
+            model_errors = _draft_line_quality_errors(candidate, model_line)
+            if not model_errors:
+                line = model_line
+                draft_line_errors = []
+                controlled_enrichment_report["model_enriched"] = int(controlled_enrichment_report.get("model_enriched") or 0) + 1
+                candidate["draft_line"] = model_line
+                candidate["draft_line_provider"] = "writer_must_show_model_recovery"
+                candidate["draft_line_model"] = "gpt-4o-mini"
+                _append_recovery_step(candidate, "must_show_model_recovery", "recovered")
+            else:
+                _append_recovery_step(candidate, "must_show_model_recovery", "held", missing=model_errors)
+        else:
+            _append_recovery_step(
+                candidate,
+                "must_show_model_recovery",
+                "held",
+                missing=[str(model_recovery_report.get("status") or "model_recovery_failed")],
+            )
+    if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
+        kept_line, kept_reasons = _keep_core_card_short(candidate, line)
+        if kept_line:
+            line = kept_line
+            draft_line_errors = []
+            controlled_enrichment_report["held_thin_evidence"] = int(controlled_enrichment_report.get("held_thin_evidence") or 0) + 1
+            candidate["draft_line"] = kept_line
+            candidate["draft_line_provider"] = "writer_core_kept_short"
+            _append_recovery_step(candidate, "core_kept_short", "recovered", missing=kept_reasons)
+    if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
+        quality_counts["dropped_low_quality"] += 1
+        return "", draft_line_errors
+
+    line = re.sub(r",\s*(?:жанр\s+не\s+указан|другой\s+жанр|жанр\s+не\s+определ[её]н|жанр\s+неизвестен)\s*(?=[.!?]|$)", "", line, flags=re.IGNORECASE)
+    line = restore_english_toponyms(line)
+    if section_name == "Погода":
+        line = _repair_weather_line(line)
+    return line, []
+
+
+_REMOVAL_REASON_BY_ERROR_PREFIX = (
+    ("draft_line contains number(s) not present", "unsupported_fact"),
+    ("missing_required_facts", "missing_required_facts"),
+    ("expired", "expired_after_plan"),
+    ("stale", "expired_after_plan"),
+)
+
+
+def _removal_reason_from_errors(errors: list[str]) -> str:
+    for error in errors:
+        text = str(error)
+        for prefix, code in _REMOVAL_REASON_BY_ERROR_PREFIX:
+            if text.startswith(prefix) or code == text:
+                return code
+    return "unrenderable_line"
+
+
+def _render_lead_line(line: str, source_url: str, source_label: str) -> str:
+    line = line.lstrip("• ").strip()
+    sentences = re.split(r"(?<=[.!?])\s+", line, maxsplit=1)
+    if len(sentences) == 2:
+        line = f"<b>{sentences[0]}</b> {sentences[1]}"
+    else:
+        line = f"<b>{line}</b>"
+    line = preserve_place_names(line)
+    return _attach_source_anchor(line, source_url, source_label)
+
+
 def write_digest(project_root: Path) -> StageResult:
+    """Этап 3: писатель рендерит строго по release_plan.json.
+
+    Состав решён планёркой. Здесь: произвести текст каждого слота; если
+    строка бракованная — лестница (обогатить → пересобрать → заменить
+    запасным ИЗ ПЛАНА → снять по кодифицированной причине). Результаты
+    исполнения — в plan_execution_report.json; сам план не мутируется.
+    """
     stage_started = time.monotonic()
     state_dir = project_root / "data" / "state"
     candidates_path = state_dir / "candidates.json"
     draft_path = state_dir / "draft_digest.html"
     report_path = state_dir / "writer_report.json"
 
+    from news_digest.pipeline.plan_execution import (  # noqa: PLC0415
+        init_execution,
+        load_plan,
+        next_backup,
+        normalize_removal_reason,
+        plan_slots,
+        record_outcome,
+        save_execution,
+    )
+
     payload = read_json(candidates_path, {"candidates": []})
     pipeline_run_id = pipeline_run_id_from(payload)
     candidates = payload.get("candidates", [])
-    publish_plan = _load_publish_plan(state_dir)
-    publish_plan_application = _apply_publish_plan_to_candidates(candidates, publish_plan)
     candidate_by_fp = {
         str(candidate.get("fingerprint") or ""): candidate
         for candidate in candidates
         if isinstance(candidate, dict)
     }
-    ticket_notability_report: list[dict[str, object]] = []
-    ticket_notability_cache = state_dir / "ticket_notability_cache.json"
-    # Warm the notability cache in parallel BEFORE the render loop so the loop
-    # only reads it (no per-ticket network on the critical render path). This is
-    # what kept the writer at ~6min on 2026-06-11: ~100 serial artist lookups.
-    notability_prefetch = prefetch_notability(candidates, ticket_notability_cache)
-    for candidate in candidates:
-        if not isinstance(candidate, dict) or not candidate.get("include"):
-            continue
-        if str(candidate.get("category") or "") != "venues_tickets" and str(candidate.get("primary_block") or "") not in {
-            "ticket_radar",
-            "outside_gm_tickets",
-            "russian_events",
-        }:
-            continue
-        notability = enrich_ticket_notability(candidate, ticket_notability_cache)
-        candidate["ticket_notability"] = {
-            "artist": notability.artist,
-            "kind": notability.kind,
-            "tier": notability.tier,
-            "confidence": notability.confidence,
-            "signal": notability.signal,
-            "wikidata_id": notability.wikidata_id,
-            "sitelinks": notability.sitelinks,
-            "headliners": list(notability.headliners),
-            "signals": notability.signals or {},
-        }
-        _append_recovery_step(candidate, "ticket_notability", "scored")
-        decision = _ticket_watch_decision(candidate)
-        ticket_notability_report.append(
-            {
-                "fingerprint": candidate.get("fingerprint"),
-                "title": candidate.get("title"),
-                "source_label": candidate.get("source_label"),
-                "primary_block": candidate.get("primary_block"),
-                "artist": notability.artist,
-                "kind": notability.kind,
-                "tier": notability.tier,
-                "confidence": notability.confidence,
-                "signal": notability.signal,
-                "headliners": list(notability.headliners),
-                "signals": notability.signals or {},
-                "score": decision["score"],
-                "decision": decision["decision"],
-                "threshold": decision["threshold"],
-                "ticket_type": decision["ticket_type"],
-                "reasons": decision["reasons"],
-            }
-        )
-    llm_degraded, llm_rewrite_report = _llm_rewrite_is_degraded(state_dir)
-    sections = {heading: [] for heading in PRIMARY_BLOCKS.values()}
-    # Parallel list of source_labels per section (same indices as sections[*]).
-    # Used to apply SECTION_MAX_PER_SOURCE caps at render time.
-    section_sources: dict[str, list[str]] = {h: [] for h in PRIMARY_BLOCKS.values()}
-    # Parallel list of candidate fingerprints per section. This is written
-    # after all caps/filtering so published_facts only records items that
-    # actually reached the Telegram HTML.
-    section_fingerprints: dict[str, list[str]] = {h: [] for h in PRIMARY_BLOCKS.values()}
-    # Editorial priority score per line — populated only for «Городской радар»
-    # where we re-sort candidates before truncation so the cap drops the
-    # weakest items (PR releases) rather than whatever happened to come last.
-    section_scores: dict[str, list[float]] = {h: [] for h in PRIMARY_BLOCKS.values()}
-    section_titles: dict[str, list[str]] = {h: [] for h in PRIMARY_BLOCKS.values()}
+    plan = load_plan(state_dir)
     errors: list[str] = []
     warnings: list[str] = []
+    if not plan or not plan_slots(plan):
+        errors.append("release_plan.json is missing or has no slots — run plan-digest before write-digest.")
+        write_json(report_path, {
+            "pipeline_run_id": pipeline_run_id,
+            "run_at_london": now_london().isoformat(),
+            "run_date_london": today_london(),
+            "stage_status": "failed",
+            "errors": errors,
+            "warnings": warnings,
+            "quality_counts": {},
+            "section_counts": {},
+            "rendered_candidate_fingerprints": [],
+        })
+        return StageResult(False, "No release plan.", report_path, draft_path)
+
+    execution = init_execution(state_dir, plan)
     quality_counts = {
         "included_candidates": 0,
         "rendered_candidates": 0,
@@ -6440,1191 +6655,212 @@ def write_digest(project_root: Path) -> StageResult:
         "dropped_ticket_not_selected": 0,
         "dropped_english_passthrough": 0,
         "dropped_low_quality": 0,
-    }
-    dropped_candidates: list[dict[str, object]] = []
-    degraded_shrink_dropped: list[dict[str, object]] = []
-    ticket_inventory_held: list[dict[str, object]] = []
-    global_budget_dropped: list[dict[str, object]] = []
-    block_contract_report: dict[str, object] = {
-        "version": 1,
-        "checked": 0,
-        "rerouted": 0,
-        "held": 0,
-        "items": [],
+        "replaced_from_plan_backup": 0,
+        "removed_with_reason": 0,
     }
     controlled_enrichment_report: dict[str, object] = {
         "model_enriched": 0,
         "model_attempts": 0,
-        "model_cap": _CONTROLLED_ENRICHMENT_MAX_PER_RUN,
+        "model_cap": "shared_plan_execution_budget",
         "short_but_complete": 0,
         "held_thin_evidence": 0,
     }
-    misrouted_weekend_market_rescue = _rescue_misrouted_weekend_markets(candidates, warnings)
-    if int(misrouted_weekend_market_rescue.get("count") or 0) > 0:
-        write_json(candidates_path, payload)
-    for index, candidate in enumerate(candidates, start=1):
-        if not isinstance(candidate, dict) or not candidate.get("include"):
-            continue
+    dropped_candidates: list[dict[str, object]] = []
 
-        plan_status = candidate.get("publish_plan_status")
-        if plan_status and plan_status not in {"show", "must_show"}:
-            warnings.append(f"Candidate #{index} dropped: publish_plan_status is {plan_status}.")
-            quality_counts["dropped_missing_draft_line"] += 1
-            candidate["include"] = False
-            candidate["publish_plan_contract_status"] = "not_render_ready"
-            candidate["recoverable_reserve"] = False
-            dropped_candidates.append(
-                {
-                    "fingerprint": candidate.get("fingerprint"),
-                    "title": str(candidate.get("title") or ""),
-                    "category": str(candidate.get("category") or ""),
-                    "primary_block": str(candidate.get("primary_block") or ""),
-                    "is_lead": bool(candidate.get("is_lead")),
-                    "reasons": [f"Status: {plan_status}"],
-                    "story_frame": candidate.get("story_frame") or {},
-                    "recovery_trace": candidate.get("recovery_trace") or [],
-                }
-            )
-            continue
+    ordered_sections = [str(s) for s in plan.get("ordered_sections") or []]
+    slots_by_section: dict[str, list[dict]] = {}
+    for slot in plan_slots(plan):
+        slots_by_section.setdefault(str(slot.get("section") or ""), []).append(slot)
+    for section in slots_by_section:
+        slots_by_section[section].sort(key=lambda s: int(s.get("position") or 0))
 
-        attach_editorial_contract(candidate)
-        _append_recovery_step(
-            candidate,
-            "story_frame",
-            "attached",
-            missing=(candidate.get("story_frame") or {}).get("missing_facts") or [],
-        )
-        quality_counts["included_candidates"] += 1
-        contract_drop_reason = _contract_public_drop_reason(candidate)
-        if contract_drop_reason and candidate.get("manual_override") != "force_include":
-            warnings.append(f"Candidate #{index} dropped by editorial contract: {contract_drop_reason}.")
-            quality_counts["dropped_low_quality"] += 1
-            candidate["include"] = False
-            candidate["publish_plan_contract_status"] = "contract_drop"
-            candidate["recoverable_reserve"] = False
-            dropped_candidates.append(
-                {
-                    "fingerprint": candidate.get("fingerprint"),
-                    "title": str(candidate.get("title") or ""),
-                    "category": str(candidate.get("category") or ""),
-                    "primary_block": str(candidate.get("primary_block") or ""),
-                    "is_lead": bool(candidate.get("is_lead")),
-                    "reasons": [contract_drop_reason],
-                    "recoverable_reserve": False,
-                    "story_frame": candidate.get("story_frame") or {},
-                    "recovery_trace": candidate.get("recovery_trace") or [],
-                }
-            )
-            continue
-        # Borderline candidates are no longer silently dropped; they are kept and ranked normally.
-        if candidate.get("validation_errors"):
-            errors.append(f"Candidate #{index} is include=true but still has validation_errors.")
-            quality_counts["blocked_for_quality"] += 1
-            continue
-        if not candidate.get("source_url") or not candidate.get("source_label"):
-            errors.append(f"Candidate #{index} is include=true but missing source reference.")
-            quality_counts["blocked_for_quality"] += 1
-            continue
-        # practical_angle is no longer a hard gate: the new long-format prompts
-        # derive the "so what" sentence directly from evidence_text, so an
-        # empty / placeholder practical_angle should not block rendering.
-        practical_angle = str(candidate.get("practical_angle") or "").strip()
-        if not practical_angle:
-            warnings.append(f"Candidate #{index}: empty practical_angle (kept).")
-        elif is_placeholder_practical_angle(practical_angle):
-            warnings.append(f"Candidate #{index}: placeholder practical_angle (kept).")
-        if str(candidate.get("primary_block") or "") == "last_24h" and not str(candidate.get("published_at") or "").strip():
-            errors.append(f"Candidate #{index} is in last_24h without published_at.")
-            quality_counts["blocked_for_quality"] += 1
-            continue
-        if _is_outside_current_weekend_candidate(candidate):
-            warnings.append(f"Candidate #{index} dropped: outside current weekend window.")
-            quality_counts["dropped_low_quality"] += 1
-            dropped_candidates.append(
-                {
-                    "fingerprint": candidate.get("fingerprint"),
-                    "title": str(candidate.get("title") or ""),
-                    "category": str(candidate.get("category") or ""),
-                    "primary_block": str(candidate.get("primary_block") or ""),
-                    "is_lead": bool(candidate.get("is_lead")),
-                    "reasons": ["Outside current weekend window."],
-                    "story_frame": candidate.get("story_frame") or {},
-                    "recovery_trace": candidate.get("recovery_trace") or [],
-                }
-            )
-            continue
-        if _is_expired_event_candidate(candidate, str(candidate.get("draft_line") or "")):
-            warnings.append(f"Candidate #{index} dropped: expired event date.")
-            quality_counts["dropped_low_quality"] += 1
-            dropped_candidates.append(
-                {
-                    "fingerprint": candidate.get("fingerprint"),
-                    "title": str(candidate.get("title") or ""),
-                    "category": str(candidate.get("category") or ""),
-                    "primary_block": str(candidate.get("primary_block") or ""),
-                    "is_lead": bool(candidate.get("is_lead")),
-                    "reasons": ["Expired event date."],
-                    "story_frame": candidate.get("story_frame") or {},
-                    "recovery_trace": candidate.get("recovery_trace") or [],
-                }
-            )
-            continue
-
-        if _football_should_route_to_soft(candidate):
-            candidate["primary_block"] = "city_watch"
-            candidate["football_soft_routed"] = True
-            warnings.append(
-                f"Candidate #{index}: football soft item routed to «Городской радар»; it does not count toward football minimum."
-            )
-        top_news_route = _top_news_route_or_drop(candidate)
-        if top_news_route == "city_watch":
-            candidate["primary_block"] = "city_watch"
-            warnings.append(
-                f"Candidate #{index}: soft/top-news item routed to «Городской радар» instead of top news."
-            )
-        if _next_7_market_belongs_in_weekend(candidate):
-            candidate["primary_block"] = "weekend_activities"
-            warnings.append(
-                f"Candidate #{index}: recurring market routed from «Что важно в ближайшие 7 дней» to «Выходные в GM»."
-            )
-        elif top_news_route == "drop_non_gm_regional" and candidate.get("manual_override") != "force_include":
-            warnings.append(f"Candidate #{index} dropped: regional story is outside Greater Manchester.")
-            quality_counts["dropped_low_quality"] += 1
-            dropped_candidates.append(
-                {
-                    "fingerprint": candidate.get("fingerprint"),
-                    "title": str(candidate.get("title") or ""),
-                    "category": str(candidate.get("category") or ""),
-                    "primary_block": str(candidate.get("primary_block") or ""),
-                    "is_lead": bool(candidate.get("is_lead")),
-                    "reasons": ["regional story outside Greater Manchester."],
-                    "story_frame": candidate.get("story_frame") or {},
-                    "recovery_trace": candidate.get("recovery_trace") or [],
-                }
-            )
-            continue
-
-        block_key = str(candidate.get("primary_block") or "").strip()
-        section_name = PRIMARY_BLOCKS.get(block_key)
-        if not section_name:
-            errors.append(f"Candidate #{index} has unknown primary_block: {block_key!r}.")
-            quality_counts["blocked_for_quality"] += 1
-            continue
-
-        line = str(candidate.get("draft_line") or "").strip()
-        title = str(candidate.get("title") or "").strip()
-        lead = str(candidate.get("lead") or "").strip()
-        summary = str(candidate.get("summary") or "").strip()
-        source_label = str(candidate.get("source_label") or "").strip()
-        source_url = str(candidate.get("source_url") or "").strip()
-        category = str(candidate.get("category") or "").strip()
-
-        timing_decision, timing_reason = _section_event_timing_decision(candidate)
-        if timing_decision == "move_future":
-            candidate["primary_block"] = "future_announcements"
-            block_key = "future_announcements"
-            section_name = PRIMARY_BLOCKS.get(block_key) or section_name
-            warnings.append(
-                f"Candidate #{index}: moved from «Что важно в ближайшие 7 дней» "
-                f"to «Дальние анонсы» ({timing_reason})."
-            )
-        elif timing_decision == "move_next_7":
-            candidate["primary_block"] = "next_7_days"
-            block_key = "next_7_days"
-            section_name = PRIMARY_BLOCKS.get(block_key) or section_name
-            warnings.append(
-                f"Candidate #{index}: moved from «Дальние анонсы» "
-                f"to «Что важно в ближайшие 7 дней» ({timing_reason})."
-            )
-        elif timing_decision == "hold":
-            warnings.append(
-                f"Candidate #{index} held: event timing is not suitable for «{section_name}» ({timing_reason})."
-            )
-            quality_counts["dropped_low_quality"] += 1
-            dropped_candidates.append(
-                {
-                    "fingerprint": candidate.get("fingerprint"),
-                    "title": title,
-                    "category": category,
-                    "primary_block": block_key,
-                    "is_lead": bool(candidate.get("is_lead")),
-                    "reasons": [f"Event timing unsuitable for section: {timing_reason}."],
-                    "story_frame": candidate.get("story_frame") or {},
-                    "recovery_trace": candidate.get("recovery_trace") or [],
-                    "recovery_plan": candidate.get("recovery_plan") or {},
-                }
-            )
-            continue
-
-        if _normalize_text_key(lead) and _normalize_text_key(lead) == _normalize_text_key(summary):
-            summary = ""
-
-        english_detected = False
-        if category in {"media_layer", "gmp", "public_services", "city_news", "council", "transport", "venues_tickets", "russian_speaking_events", "culture_weekly", "football", "tech_business", "food_openings", "professional_events"}:
-            english_fields = [field for field in (lead, summary, title) if _looks_like_untranslated_english(field)]
-            if english_fields:
-                english_detected = True
-
-        if not line and category == "transport":
-            _append_recovery_step(candidate, "transport_card_recovery", "attempted", missing=(candidate.get("story_frame") or {}).get("missing_facts") or [])
-            line = _build_transport_fallback_line(candidate)
-            if line:
-                _append_recovery_step(candidate, "transport_card_recovery", "recovered")
-                warnings.append(f"Candidate #{index}: transport location recovered from URL/title (no LLM draft_line).")
-                logger.info("TRANSPORT location recovery | %s | %s", block_key, title[:80])
-            else:
-                _append_recovery_step(candidate, "transport_card_recovery", "held", missing=["transport_impact"])
-                warnings.append(f"Candidate #{index}: transport item held — no location recoverable from URL/title.")
-                logger.info("HOLD transport_no_usable_card | %s | %s", block_key, title[:80])
-
-        if not line and category == "venues_tickets":
-            _append_recovery_step(candidate, "ticket_structured_recovery", "attempted", missing=(candidate.get("story_frame") or {}).get("missing_facts") or [])
-            line = _build_ticket_fallback_line(candidate)
-            if line:
-                _append_recovery_step(candidate, "ticket_structured_recovery", "recovered")
-                warnings.append(f"Candidate #{index}: ticket structured fallback used (no LLM draft_line).")
-                logger.info("TICKET structured fallback | %s | %s", block_key, title[:80])
-            else:
-                _append_recovery_step(candidate, "ticket_structured_recovery", "held", missing=["artist_or_date_or_venue_or_notability"])
-                warnings.append(f"Candidate #{index}: ticket held because structured fields were incomplete or dirty.")
-                logger.info("HOLD ticket_dirty_or_incomplete | %s | %s", block_key, title[:80])
-
-        if not line and category == "public_services":
-            _append_recovery_step(candidate, "public_service_recovery", "attempted")
-            line = _build_public_service_fallback_line(candidate)
-            _append_recovery_step(candidate, "public_service_recovery", "recovered")
-            warnings.append(f"Candidate #{index}: public-services fallback stub used (no LLM draft_line).")
-            logger.info("TIER4 public_services stub | %s | %s", block_key, title[:80])
-
-        if not line and category == "professional_events":
-            _append_recovery_step(candidate, "professional_event_card", "attempted")
-            line = _build_professional_event_fallback_line(candidate)
-            if line:
-                _append_recovery_step(candidate, "professional_event_card", "recovered")
-                warnings.append(f"Candidate #{index}: professional event card used (profile match).")
-                logger.info("PROFESSIONAL event card | %s | %s", block_key, title[:80])
-            else:
-                _append_recovery_step(candidate, "professional_event_card", "held", missing=["fit_or_free_access_or_date"])
-
-        # Protected weekend events / culture_weekly fallback: when the
-        # LLM did not write a draft_line and the item is in a protected
-        # lane (weekend_market / russian_event) with structured event
-        # fields, do not drop — assemble a deterministic card.
-        if not line and category in {"culture_weekly", "russian_speaking_events", "diaspora_events"}:
-            protected = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
-            event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-            if (
-                (protected.get("protected") or block_key in {"weekend_activities", "next_7_days", "russian_events"})
-                and event.get("is_event")
-                and str(event.get("event_name") or candidate.get("title") or "").strip()
-            ):
-                _append_recovery_step(candidate, "event_structured_recovery", "attempted", missing=(candidate.get("story_frame") or {}).get("missing_facts") or [])
-                line = _build_event_fallback_line(candidate)
-                if line:
-                    _append_recovery_step(candidate, "event_structured_recovery", "recovered")
-                    warnings.append(f"Candidate #{index}: event fallback stub used (no LLM draft_line).")
-                    logger.info("TIER4 event stub | %s | %s", block_key, title[:80])
-                else:
-                    _append_recovery_step(candidate, "event_structured_recovery", "held", missing=(candidate.get("story_frame") or {}).get("missing_facts") or [])
-
-        if not line:
-            _append_recovery_step(candidate, "official_football_recovery", "attempted")
-            line = _build_football_fallback_line(candidate)
-            if line:
-                _append_recovery_step(candidate, "official_football_recovery", "recovered")
-                warnings.append(f"Candidate #{index}: official football fallback used after missing model draft_line.")
-
-        if not line:
-            _append_recovery_step(candidate, "hard_news_recovery", "attempted")
-            recovery_line = _hard_news_recovery_line(candidate)
-            if recovery_line:
-                line = recovery_line
-                candidate["draft_line_provider"] = "writer_hard_news_recovery"
-                candidate["draft_line_model"] = "deterministic_hard_news_recovery"
-                _append_recovery_step(candidate, "hard_news_recovery", "recovered")
-                warnings.append(f"Candidate #{index}: hard-news recovery line used after missing model draft_line.")
-                logger.info("RECOVER hard_news | %s | %s", block_key, title[:80])
-
-        if not line:
-            if category == "venues_tickets":
-                decision = _ticket_watch_decision(candidate)
-                reasons = [str(reason) for reason in decision.get("reasons") or [] if str(reason).strip()]
-                if not reasons:
-                    reasons = ["ticket did not meet public radar criteria"]
-                _append_recovery_step(candidate, "ticket_public_selection", "held", missing=reasons)
-                warnings.append(
-                    f"Candidate #{index}: ticket not selected for public radar ({'; '.join(reasons)})."
-                )
-                logger.info("HOLD ticket_not_selected | %s | %s | %s", block_key, title[:80], "; ".join(reasons))
-                quality_counts["dropped_ticket_not_selected"] += 1
-                candidate["include"] = False
-                candidate["publish_plan_contract_status"] = "not_render_ready"
-                candidate["recoverable_reserve"] = False
-                dropped_candidates.append(
-                    {
-                        "fingerprint": candidate.get("fingerprint"),
-                        "title": title,
-                        "category": category,
-                        "primary_block": block_key,
-                        "is_lead": bool(candidate.get("is_lead")),
-                        "reasons": [f"Ticket not selected: {reason}" for reason in reasons],
-                        "recoverable_reserve": False,
-                        "ticket_watch": decision,
-                        "story_frame": candidate.get("story_frame") or {},
-                        "recovery_trace": candidate.get("recovery_trace") or [],
-                        "recovery_plan": candidate.get("recovery_plan") or {},
-                    }
-                )
-                continue
-            if category in REQUIRE_DRAFT_LINE_CATEGORIES:
-                _append_recovery_step(candidate, "final_hold", "held", missing=(candidate.get("story_frame") or {}).get("missing_facts") or ["draft_line"])
-                warnings.append(f"Candidate #{index} dropped: no model draft_line for {category!r}.")
-                logger.info("DROP no_draft_line | %s | %s | %s", category, block_key, title[:80])
-                quality_counts["dropped_missing_draft_line"] += 1
-                candidate["include"] = False
-                candidate["publish_plan_contract_status"] = "not_render_ready"
-                candidate["recoverable_reserve"] = False
-                dropped_candidates.append(
-                    {
-                        "fingerprint": candidate.get("fingerprint"),
-                        "title": title,
-                        "category": category,
-                        "primary_block": block_key,
-                        "is_lead": bool(candidate.get("is_lead")),
-                        "reasons": ["Missing draft_line."],
-                        "recoverable_reserve": False,
-                        "story_frame": candidate.get("story_frame") or {},
-                        "recovery_trace": candidate.get("recovery_trace") or [],
-                        "recovery_plan": candidate.get("recovery_plan") or {},
-                    }
-                )
-                continue
-            if _headline_fallback_forbidden(candidate):
-                _append_recovery_step(
-                    candidate,
-                    "headline_fallback_guard",
-                    "held",
-                    missing=(candidate.get("story_frame") or {}).get("missing_facts") or ["render_ready_text"],
-                )
-                warnings.append(
-                    f"Candidate #{index} dropped: no render-ready line for hard news/event/ticket; "
-                    "headline-only fallback is forbidden."
-                )
-                logger.info("DROP headline_only_forbidden | %s | %s | %s", category, block_key, title[:80])
-                quality_counts["dropped_missing_draft_line"] += 1
-                candidate["include"] = False
-                candidate["publish_plan_contract_status"] = "not_render_ready"
-                candidate["recoverable_reserve"] = False
-                dropped_candidates.append(
-                    {
-                        "fingerprint": candidate.get("fingerprint"),
-                        "title": title,
-                        "category": category,
-                        "primary_block": block_key,
-                        "is_lead": bool(candidate.get("is_lead")),
-                        "reasons": ["Headline-only fallback forbidden."],
-                        "recoverable_reserve": False,
-                        "story_frame": candidate.get("story_frame") or {},
-                        "recovery_trace": candidate.get("recovery_trace") or [],
-                        "recovery_plan": candidate.get("recovery_plan") or {},
-                    }
-                )
-                continue
-            if english_detected:
-                warnings.append(f"Candidate #{index} dropped: English passthrough without translation.")
-                logger.info("DROP english_passthrough | %s | %s | %s", category, block_key, title[:80])
-                quality_counts["dropped_english_passthrough"] += 1
-                dropped_candidates.append(
-                    {
-                        "fingerprint": candidate.get("fingerprint"),
-                        "title": title,
-                        "category": category,
-                        "primary_block": block_key,
-                        "is_lead": bool(candidate.get("is_lead")),
-                        "reasons": ["Untranslated English."],
-                        "story_frame": candidate.get("story_frame") or {},
-                        "recovery_trace": candidate.get("recovery_trace") or [],
-                        "recovery_plan": candidate.get("recovery_plan") or {},
-                    }
-                )
-                continue
-            headline = lead or title or summary
-            rendered_parts: list[str] = []
-            if headline:
-                rendered_parts.append(html.escape(headline.rstrip(".")) + ".")
-            if _summary_is_useful(summary, headline):
-                rendered_parts.append(html.escape(summary.rstrip(".")) + ".")
-            line = "• " + " ".join(rendered_parts).strip()
-
-        scrubbed_line, removed_vague_endings = scrub_vague_ending(line)
-        if removed_vague_endings:
-            warnings.append(
-                f"Candidate #{index}: removed vague ending(s): {', '.join(removed_vague_endings)}."
-            )
-            line = scrubbed_line
-        if _line_claims_future_ticket_sale(candidate, line):
-            line = _build_ticket_fallback_line(candidate)
-            warnings.append(
-                f"Candidate #{index}: replaced stale ticket-sale wording with deterministic ticket line."
-            )
-        line, repair_reasons = _repair_editorial_contract_line(candidate, line)
-        if repair_reasons:
-            warnings.append(
-                f"Candidate #{index}: editorial contract repaired line ({', '.join(repair_reasons)})."
-            )
-
-        block_contract = _block_contract_action(candidate, line)
-        block_contract_report["checked"] = int(block_contract_report.get("checked") or 0) + 1
-        if block_contract.get("action") == "reroute":
-            target_block = str(block_contract.get("target_block") or "")
-            target_section = PRIMARY_BLOCKS.get(target_block)
-            if target_section:
-                previous_block = block_key
-                candidate["primary_block"] = target_block
-                block_key = target_block
-                section_name = target_section
-                block_contract_report["rerouted"] = int(block_contract_report.get("rerouted") or 0) + 1
-                items = block_contract_report.get("items")
-                if isinstance(items, list):
-                    items.append(
-                        {
-                            "fingerprint": candidate.get("fingerprint"),
-                            "title": title,
-                            "action": "reroute",
-                            "from_block": previous_block,
-                            "to_block": target_block,
-                            "reason": block_contract.get("reason") or "",
-                        }
-                    )
-                warnings.append(
-                    f"Candidate #{index}: block contract rerouted {previous_block} → {target_block} "
-                    f"({block_contract.get('reason')})."
-                )
-        elif block_contract.get("action") == "hold" and candidate.get("manual_override") != "force_include":
-            reason = str(block_contract.get("reason") or "block_contract:held")
-            block_contract_report["held"] = int(block_contract_report.get("held") or 0) + 1
-            items = block_contract_report.get("items")
-            if isinstance(items, list):
-                items.append(
-                    {
-                        "fingerprint": candidate.get("fingerprint"),
-                        "title": title,
-                        "action": "hold",
-                        "block": block_key,
-                        "reason": reason,
-                    }
-                )
-            _append_recovery_step(candidate, "block_contract", "held", missing=[reason])
-            warnings.append(f"Candidate #{index} held by block contract: {reason}.")
-            quality_counts["dropped_low_quality"] += 1
-            dropped_candidates.append(
-                {
-                    "fingerprint": candidate.get("fingerprint"),
-                    "title": title,
-                    "category": category,
-                    "primary_block": block_key,
-                    "is_lead": bool(candidate.get("is_lead")),
-                    "reasons": [reason],
-                    "story_frame": candidate.get("story_frame") or {},
-                    "recovery_trace": candidate.get("recovery_trace") or [],
-                    "recovery_plan": candidate.get("recovery_plan") or {},
-                }
-            )
-            continue
-
-        draft_line_errors = _draft_line_quality_errors(candidate, line)
-        if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
-            numeric_errors = [err for err in draft_line_errors if err.startswith("draft_line contains number(s) not present")]
-            if numeric_errors:
-                stripped_line, strip_repairs = _strip_unsupported_number_phrases(candidate, line)
-                if strip_repairs and stripped_line != line:
-                    stripped_errors = _draft_line_quality_errors(candidate, stripped_line)
-                    if not stripped_errors:
-                        line = stripped_line
-                        draft_line_errors = []
-                        _append_recovery_step(candidate, "draft_line_quality_repair", "recovered", missing=strip_repairs)
-                        warnings.append(
-                            f"Candidate #{index}: removed unsupported numeric claim(s) instead of dropping ({', '.join(strip_repairs)})."
-                        )
-                    else:
-                        _append_recovery_step(candidate, "draft_line_quality_repair", "attempted", missing=strip_repairs + stripped_errors)
-                        draft_line_errors = stripped_errors
-        if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
-            _append_recovery_step(candidate, "final_replacement", "attempted", missing=(candidate.get("story_frame") or {}).get("missing_facts") or draft_line_errors)
-            replacement = _final_replacement_line(candidate)
-            if replacement and replacement != line:
-                replacement, replacement_repairs = _repair_editorial_contract_line(candidate, replacement)
-                replacement_errors = _draft_line_quality_errors(candidate, replacement)
-                if not replacement_errors:
-                    line = replacement
-                    draft_line_errors = []
-                    _append_recovery_step(candidate, "final_replacement", "recovered")
-                    warnings.append(
-                        f"Candidate #{index}: final quality check replaced bad public line ({', '.join(replacement_repairs) or 'deterministic fallback'})."
-                    )
-                else:
-                    _append_recovery_step(candidate, "final_replacement", "held", missing=replacement_errors)
-        if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
-            skip_model_recovery = False
-            recovered_line, recovered_reasons = _recover_soft_draft_line(candidate, line, draft_line_errors)
-            if recovered_line:
-                recovered_line, recovered_repairs = _repair_editorial_contract_line(candidate, recovered_line)
-                recovered_errors = [] if {"short_but_complete", "held_thin_evidence"} & set(recovered_reasons) else _draft_line_quality_errors(candidate, recovered_line)
-                if not recovered_errors:
-                    line = recovered_line
-                    draft_line_errors = []
-                    if "short_but_complete" in recovered_reasons:
-                        controlled_enrichment_report["short_but_complete"] = int(controlled_enrichment_report.get("short_but_complete") or 0) + 1
-                        candidate["draft_line_provider"] = "writer_short_but_complete"
-                        candidate["draft_line_model"] = "deterministic_short_but_complete"
-                    elif "held_thin_evidence" in recovered_reasons:
-                        controlled_enrichment_report["held_thin_evidence"] = int(controlled_enrichment_report.get("held_thin_evidence") or 0) + 1
-                        candidate["draft_line_provider"] = "writer_thin_evidence_short"
-                        candidate["draft_line_model"] = "deterministic_thin_evidence_short"
-                    else:
-                        candidate["draft_line_provider"] = "writer_soft_line_recovery"
-                        candidate["draft_line_model"] = "deterministic_soft_line_recovery"
-                    _append_recovery_step(candidate, "draft_line_quality_repair", "recovered", missing=recovered_reasons)
-                    warnings.append(
-                        f"Candidate #{index}: recovered compact core card instead of dropping "
-                        f"({', '.join(recovered_reasons + recovered_repairs)})."
-                    )
-                else:
-                    _append_recovery_step(candidate, "draft_line_quality_repair", "attempted", missing=recovered_errors)
-            elif recovered_reasons:
-                _append_recovery_step(candidate, "draft_line_quality_repair", "attempted", missing=recovered_reasons)
-                if "held_thin_evidence" in recovered_reasons:
-                    skip_model_recovery = True
-                    controlled_enrichment_report["held_thin_evidence"] = int(controlled_enrichment_report.get("held_thin_evidence") or 0) + 1
-        if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors and not skip_model_recovery:
-            _append_recovery_step(candidate, "must_show_model_recovery", "attempted", missing=draft_line_errors)
-            if int(controlled_enrichment_report.get("model_attempts") or 0) >= _CONTROLLED_ENRICHMENT_MAX_PER_RUN:
-                model_line, model_recovery_report = "", {"status": "skipped_run_cap", "attempted": False}
-            else:
-                controlled_enrichment_report["model_attempts"] = int(controlled_enrichment_report.get("model_attempts") or 0) + 1
-                model_line, model_recovery_report = _model_recover_section_line(candidate, section_name, draft_line_errors)
-            if model_line:
-                model_line, model_repairs = _repair_editorial_contract_line(candidate, model_line)
-                model_errors = _draft_line_quality_errors(candidate, model_line)
-                if not model_errors:
-                    line = model_line
-                    draft_line_errors = []
-                    controlled_enrichment_report["model_enriched"] = int(controlled_enrichment_report.get("model_enriched") or 0) + 1
-                    candidate["draft_line"] = model_line
-                    candidate["draft_line_provider"] = "writer_must_show_model_recovery"
-                    candidate["draft_line_model"] = "gpt-4o-mini"
-                    candidate["publish_plan_contract_status"] = "repaired"
-                    _append_recovery_step(candidate, "must_show_model_recovery", "recovered")
-                    warnings.append(
-                        f"Candidate #{index}: item recovered before drop via model rewrite "
-                        f"({', '.join(model_repairs) or 'model rewrite'})."
-                    )
-                else:
-                    candidate["publish_plan_contract_status"] = "unrecoverable_no_facts"
-                    _append_recovery_step(candidate, "must_show_model_recovery", "held", missing=model_errors)
-                    warnings.append(
-                        f"Candidate #{index}: model recovery still failed "
-                        f"({'; '.join(model_errors)})."
-                    )
-            else:
-                candidate["publish_plan_contract_status"] = "unrecoverable_no_facts"
-                _append_recovery_step(
-                    candidate,
-                    "must_show_model_recovery",
-                    "held",
-                    missing=[str(model_recovery_report.get("status") or "model_recovery_failed")],
-                )
-                warnings.append(
-                    f"Candidate #{index}: model recovery unavailable "
-                    f"({model_recovery_report.get('status') or 'failed'})."
-                )
-        if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
-            kept_line, kept_reasons = _keep_core_card_short(candidate, line)
-            if kept_line:
-                line = kept_line
-                draft_line_errors = []
-                controlled_enrichment_report["held_thin_evidence"] = int(controlled_enrichment_report.get("held_thin_evidence") or 0) + 1
-                candidate["draft_line"] = kept_line
-                candidate["draft_line_provider"] = "writer_core_kept_short"
-                candidate["draft_line_model"] = "deterministic_core_kept_short"
-                candidate["publish_plan_contract_status"] = "kept_short"
-                _append_recovery_step(candidate, "core_kept_short", "recovered", missing=kept_reasons)
-                warnings.append(
-                    f"Candidate #{index}: core card kept honestly short after model enrichment unavailable."
-                )
-        if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
-            _append_recovery_step(candidate, "draft_line_quality_repair", "held", missing=(candidate.get("story_frame") or {}).get("missing_facts") or draft_line_errors)
-            warnings.append(
-                f"Candidate #{index} dropped: draft_line quality issues ({'; '.join(draft_line_errors)})."
-            )
-            logger.info("DROP low_quality | %s | %s | %s | %s", category, block_key, title[:80], "; ".join(draft_line_errors))
-            quality_counts["dropped_low_quality"] += 1
-            candidate["include"] = False
-            candidate["publish_plan_contract_status"] = "not_render_ready"
-            candidate["recoverable_reserve"] = False
-            dropped_candidates.append(
-                {
-                    "fingerprint": candidate.get("fingerprint"),
-                    "title": title,
-                    "category": category,
-                    "primary_block": block_key,
-                    "is_lead": bool(candidate.get("is_lead")),
-                    "reasons": draft_line_errors,
-                    "recoverable_reserve": False,
-                    "story_frame": candidate.get("story_frame") or {},
-                    "recovery_trace": candidate.get("recovery_trace") or [],
-                    "recovery_plan": candidate.get("recovery_plan") or {},
-                }
-            )
-            continue
-
-        # Scrub LLM placeholder genres like "Madison Beer, жанр не указан" /
-        # "Avatar, другой жанр" — the rewrite prompt says "не выдумывай жанр"
-        # but gpt-4o-mini still tacks these phrases on. Strip them post-hoc.
-        line = re.sub(r",\s*(?:жанр\s+не\s+указан|другой\s+жанр|жанр\s+не\s+определ[её]н|жанр\s+неизвестен)\s*(?=[.!?]|$)", "", line, flags=re.IGNORECASE)
-        # Restore English spellings for GM toponyms (Altrincham, Bury, Wigan, ...).
-        line = restore_english_toponyms(line)
-        if candidate.get("is_lead"):
-            # Lead story: no bullet, bold first sentence, placed in main_story block
-            line = line.lstrip("• ").strip()
-            sentences = re.split(r"(?<=[.!?])\s+", line, maxsplit=1)
-            if len(sentences) == 2:
-                line = f"<b>{sentences[0]}</b> {sentences[1]}"
-            else:
-                line = f"<b>{line}</b>"
-            line = preserve_place_names(line)
-            line = _attach_source_anchor(line, source_url, source_label)
-            sections.setdefault("Главная история дня", []).insert(0, line)
-            section_sources.setdefault("Главная история дня", []).insert(0, source_label)
-            section_scores.setdefault("Главная история дня", []).insert(0, 0.0)
-            section_fingerprints.setdefault("Главная история дня", []).insert(0, str(candidate.get("fingerprint") or "").strip())
-            section_titles.setdefault("Главная история дня", []).insert(0, title)
-        else:
-            if not line.startswith("• "):
-                line = f"• {line}"
-            line = preserve_place_names(line)
-            line = _attach_source_anchor(line, source_url, source_label)
-            sections[section_name].append(line)
-            section_sources[section_name].append(source_label)
-            section_fingerprints[section_name].append(str(candidate.get("fingerprint") or "").strip())
-            section_scores[section_name].append(_section_priority_score(candidate, section_name, line))
-            section_titles[section_name].append(title)
-
-    missing_draft_count = quality_counts["dropped_missing_draft_line"]
-    if missing_draft_count:
-        warnings.append(
-            f"Writer dropped {missing_draft_count} included candidate(s) with missing draft_line — digest continues."
-        )
-
-    today_focus_board = _allocate_fresh_and_today_focus(
-        sections,
-        section_sources,
-        section_scores,
-        section_fingerprints,
-        section_titles,
-        candidate_by_fp,
-    )
-    if int(today_focus_board.get("moved_from_fresh") or 0) or int(today_focus_board.get("moved_from_city_watch") or 0):
-        warnings.append(
-            f"Writer board filled «{TODAY_FOCUS_SECTION}» with "
-            f"{today_focus_board.get('rendered_candidates')} practical item(s) "
-            f"(moved from Fresh: {today_focus_board.get('moved_from_fresh')}, "
-            f"from City Radar: {today_focus_board.get('moved_from_city_watch')})."
-        )
-    if not sections.get("Общественный транспорт сегодня"):
-        sections["Общественный транспорт сегодня"] = [_transport_empty_line(project_root)]
-        section_sources["Общественный транспорт сегодня"] = ["TfGM"]
-        section_scores["Общественный транспорт сегодня"] = [0.0]
-        section_fingerprints["Общественный транспорт сегодня"] = [""]
-        section_titles["Общественный транспорт сегодня"] = ["Транспорт проверен"]
-        warnings.append("Writer added honest empty-transport coverage line.")
-    final_section_routing = _apply_final_section_role_routing(
-        sections,
-        section_sources,
-        section_scores,
-        section_fingerprints,
-        section_titles,
-        candidate_by_fp,
-        warnings,
-    )
-
-    rendered: list[str] = [_title_line(), ""]
-
-    # "Выходные в GM" показываем только с четверга (weekday >= 3)
-    london_weekday = now_london().weekday()  # 0=Пн … 6=Вс
-    show_weekend = london_weekday >= 3
-
-    weekend_empty_reason = _weekend_empty_reason(
-        candidates, show_weekend=show_weekend, weekend_lines=sections.get("Выходные в GM") or []
-    )
-    if weekend_empty_reason:
-        warnings.append(f"Writer: {weekend_empty_reason}")
-
-    ordered_sections = [
-        "Погода",
-        "Главная история дня",
-        "Свежие новости",
-        "Общественный транспорт сегодня",
-        "Что важно сегодня",
-        "Футбол",
-        *(["Выходные в GM"] if show_weekend else []),
-        "Городской радар",
-        "Что важно в ближайшие 7 дней",
-        "Еда, открытия и рынки",
-        "IT и бизнес",
-        "Business/tech события для тебя",
-        "Дальние анонсы",
-        "Билеты / Ticket Radar",
-        "Крупные концерты вне GM",
-        "Русскоязычные концерты и стендап UK",
-    ]
-    section_counts: dict[str, int] = {}
+    used_fingerprints: set[str] = set()
+    sections_out: dict[str, list[str]] = {}
+    section_sources: dict[str, list[str]] = {}
+    section_fingerprints: dict[str, list[str]] = {}
     rendered_candidate_fingerprints: list[str] = []
     rendered_section_by_fp: dict[str, str] = {}
-    visible_item_count = 0
-    recovery_controller: dict[str, object] = {"sections": {}, "totals": {}}
-    for section_index, section_name in enumerate(ordered_sections):
-        lines = sections.get(section_name, [])
-        if not lines:
-            if section_name not in PROTECTED_RECOVERY_SECTIONS or not SECTION_MIN_ITEMS.get(section_name, 0):
-                continue
-        srcs = section_sources.get(section_name, [])
-        scores = section_scores.get(section_name, [])
-        fps = section_fingerprints.get(section_name, [])
-        titles = section_titles.get(section_name, [])
-        # Re-rank capped sections so the cap keeps practical local value,
-        # rather than whichever source happened to run first.
-        if (section_name in SECTION_MAX_ITEMS or section_name == "Выходные в GM") and scores:
-            triples = sorted(
-                zip(lines, srcs + [""] * (len(lines) - len(srcs)),
-                    scores + [0.0] * (len(lines) - len(scores)),
-                    fps + [""] * (len(lines) - len(fps)),
-                    titles + [""] * (len(lines) - len(titles))),
-                key=lambda triple: triple[2],
-                reverse=True,
-            )
-            lines = [t[0] for t in triples]
-            srcs = [t[1] for t in triples]
-            fps = [t[3] for t in triples]
-            scores = [t[2] for t in triples]
-            titles = [t[4] for t in triples]
-        per_source_cap = SECTION_MAX_PER_SOURCE.get(section_name)
-        if per_source_cap:
-            src_counts: dict[str, int] = {}
-            filtered: list[str] = []
-            filtered_srcs: list[str] = []
-            filtered_fps: list[str] = []
-            filtered_scores: list[float] = []
-            filtered_titles: list[str] = []
-            for idx, ln in enumerate(lines):
-                src = srcs[idx] if idx < len(srcs) else ""
-                fp = fps[idx] if idx < len(fps) else ""
-                if (
-                    src_counts.get(src, 0) >= per_source_cap
-                    and not _is_public_budget_exempt(section_name, candidate_by_fp.get(str(fp or "")))
-                    and not (
-                        section_name == "Свежие новости"
-                        and _fresh_hard_news_can_bypass_source_cap(candidate_by_fp.get(str(fp or "")), ln)
+
+    def _finalize_bullet(candidate: dict, line: str) -> str:
+        if not line.startswith("• "):
+            line = f"• {line}"
+        line = preserve_place_names(line)
+        line = _attach_source_anchor(
+            line,
+            str(candidate.get("source_url") or ""),
+            str(candidate.get("source_label") or ""),
+        )
+        return line
+
+    def _try_slot(slot: dict, section_name: str) -> tuple[dict | None, str, str]:
+        """Произвести строку слота: основной → цепочка запасных.
+
+        Возвращает (candidate, line, status): status ∈ {shown, replaced, removed}.
+        """
+        slot_id = str(slot.get("slot_id") or "")
+        primary_fp = str(slot.get("primary_fingerprint") or "")
+        attempts: list[tuple[str, dict | None]] = [(primary_fp, candidate_by_fp.get(primary_fp))]
+        first_errors: list[str] = []
+        tried_backup = False
+        while attempts:
+            fp, candidate = attempts.pop(0)
+            if candidate is None or fp in used_fingerprints:
+                record_outcome(execution, slot_id, status="", failed_fingerprint=fp, reason="candidate_missing_or_used", stage="writer")
+            else:
+                quality_counts["included_candidates"] += 1
+                line, line_errors = _produce_slot_line(
+                    candidate,
+                    section_name,
+                    warnings=warnings,
+                    quality_counts=quality_counts,
+                    controlled_enrichment_report=controlled_enrichment_report,
+                    execution=execution,
+                )
+                if line_errors and slot_id == "lead":
+                    # Lead-слот не умирает от мягких ошибок формата: главная
+                    # история наверху важнее правила «≥150 знаков». Фактовые
+                    # ошибки (числа без опоры) послабления не получают —
+                    # пересобираем детерминированно из title/lead-фактов.
+                    soft_only = all(err.startswith("draft_line for long-format category needs") for err in line_errors)
+                    if not soft_only:
+                        rebuilt = _hard_news_recovery_line(candidate)
+                        if rebuilt:
+                            rebuilt_errors = [
+                                err for err in _draft_line_quality_errors(candidate, rebuilt)
+                                if not err.startswith("draft_line for long-format category needs")
+                            ]
+                            if not rebuilt_errors:
+                                line, line_errors = rebuilt, []
+                                candidate["draft_line_provider"] = "writer_lead_deterministic_rebuild"
+                    elif line:
+                        line_errors = []
+                if line and not line_errors:
+                    status = "replaced" if tried_backup else "shown"
+                    if tried_backup:
+                        quality_counts["replaced_from_plan_backup"] += 1
+                    record_outcome(
+                        execution,
+                        slot_id,
+                        status=status,
+                        final_fingerprint=fp,
+                        reason="" if not tried_backup else f"primary_failed:{';'.join(first_errors)[:160]}",
+                        stage="writer",
                     )
-                ):
-                    continue
-                src_counts[src] = src_counts.get(src, 0) + 1
-                filtered.append(ln)
-                filtered_srcs.append(src)
-                filtered_fps.append(fps[idx] if idx < len(fps) else "")
-                filtered_scores.append(scores[idx] if idx < len(scores) else 0.0)
-                filtered_titles.append(titles[idx] if idx < len(titles) else "")
-            min_items = SECTION_MIN_ITEMS.get(section_name, 0)
-            if not min_items or len(filtered) >= min_items or len(lines) < min_items:
-                lines = filtered
-                srcs = filtered_srcs
-                fps = filtered_fps
-                scores = filtered_scores
-                titles = filtered_titles
-        if section_name == "Выходные в GM":
-            lines, srcs, fps, scores, titles, weekend_duplicate_drops = _collapse_weekend_duplicate_events(
-                lines,
-                srcs,
-                fps,
-                scores,
-                titles,
+                    used_fingerprints.add(fp)
+                    return candidate, line, status
+                if not first_errors:
+                    first_errors = list(line_errors) or ["unrenderable_line"]
+                record_outcome(
+                    execution,
+                    slot_id,
+                    status="",
+                    failed_fingerprint=fp,
+                    reason="; ".join(line_errors)[:200] or "empty_line",
+                    stage="writer",
+                )
+                dropped_candidates.append(
+                    {
+                        "fingerprint": fp,
+                        "title": str(candidate.get("title") or ""),
+                        "category": str(candidate.get("category") or ""),
+                        "primary_block": str(candidate.get("primary_block") or ""),
+                        "is_lead": bool(candidate.get("is_lead")),
+                        "reasons": line_errors or ["empty_line"],
+                        "slot_id": slot_id,
+                        "recovery_trace": candidate.get("recovery_trace") or [],
+                    }
+                )
+            backup, backup_fp = next_backup(plan, execution, slot_id, candidate_by_fp, used_fingerprints)
+            if backup is None:
+                break
+            tried_backup = True
+            attempts.append((backup_fp, backup))
+        removal = normalize_removal_reason(_removal_reason_from_errors(first_errors))
+        quality_counts["removed_with_reason"] += 1
+        record_outcome(execution, slot_id, status="removed", reason=removal, stage="writer")
+        return None, "", "removed"
+
+    # --- Lead ----------------------------------------------------------------
+    lead_plan = plan.get("lead") if isinstance(plan.get("lead"), dict) else {}
+    lead_line = ""
+    if str(lead_plan.get("primary_fingerprint") or ""):
+        lead_slot = {
+            "slot_id": "lead",
+            "primary_fingerprint": str(lead_plan.get("primary_fingerprint") or ""),
+            "backup_fingerprints": [str(fp) for fp in lead_plan.get("understudy_fingerprints") or []],
+        }
+        lead_candidate, lead_raw, lead_status = _try_slot(lead_slot, "Главная история дня")
+        if lead_candidate is not None and lead_raw:
+            lead_line = _render_lead_line(
+                lead_raw,
+                str(lead_candidate.get("source_url") or ""),
+                str(lead_candidate.get("source_label") or ""),
+            )
+            fp = str(lead_candidate.get("fingerprint") or "")
+            rendered_candidate_fingerprints.append(fp)
+            rendered_section_by_fp[fp] = "Главная история дня"
+            sections_out["Главная история дня"] = [lead_line]
+            section_sources["Главная история дня"] = [str(lead_candidate.get("source_label") or "")]
+            section_fingerprints["Главная история дня"] = [fp]
+        else:
+            warnings.append("Lead slot could not be rendered — plan understudies exhausted; см. plan_execution_report.")
+
+    # --- Обычные слоты в порядке плана ---------------------------------------
+    for section_name in ordered_sections:
+        if section_name == "Главная история дня":
+            continue
+        for slot in slots_by_section.get(section_name, []):
+            candidate, line, status = _try_slot(slot, section_name)
+            if candidate is None or not line:
+                continue
+            if section_name == "Общественный транспорт сегодня":
+                line = _ensure_transport_mode_prefix(line, candidate)
+            bullet = _finalize_bullet(candidate, line)
+            bullet = _ensure_source_anchor_for_rendered_line(
+                bullet,
+                str(candidate.get("fingerprint") or ""),
+                str(candidate.get("source_label") or ""),
                 candidate_by_fp,
             )
-            if weekend_duplicate_drops:
-                dropped_candidates.extend(weekend_duplicate_drops)
-                warnings.append(
-                    f"Weekend dedupe: held {len(weekend_duplicate_drops)} duplicate event row(s)."
-                )
-        if section_name == "Общественный транспорт сегодня":
-            lines, srcs, fps, scores, titles, minor_bus_dropped = _cap_minor_bus_stop_lines(lines, srcs, fps, scores, titles)
-            lines = [
-                _ensure_transport_mode_prefix(
-                    ln, candidate_by_fp.get(str(fps[i] or "")) if i < len(fps) else None
-                )
-                for i, ln in enumerate(lines)
-            ]
-            if minor_bus_dropped:
-                warnings.append(
-                    f"Transport impact contract: held {len(minor_bus_dropped)} minor bus-stop closure(s) after top 3."
-                )
-        normal_cap = SECTION_MAX_ITEMS.get(section_name)
-        degraded_cap = DEGRADED_LLM_SECTION_MAX_ITEMS.get(section_name) if llm_degraded else None
-        cap = normal_cap
-        if degraded_cap is not None:
-            cap = min(cap, degraded_cap) if cap else degraded_cap
-        ticket_throttle_reasons: list[str] = []
-        if section_name in CORE_UNDERFLOW_TICKET_CAPS:
-            ticket_throttle_reasons = _core_underflow_sections_for_ticket_throttle(
-                section_counts,
-                show_weekend=show_weekend,
-            )
-            if ticket_throttle_reasons:
-                throttle_cap = CORE_UNDERFLOW_TICKET_CAPS[section_name]
-                cap = min(cap, throttle_cap) if cap else throttle_cap
-                warnings.append(
-                    f"Ticket balance guard: capped «{section_name}» at {throttle_cap} "
-                    f"because core section(s) are still thin: {', '.join(ticket_throttle_reasons)}."
-                )
-        if cap:
-            if llm_degraded and degraded_cap is not None and len(lines) > cap:
-                normal_cutoff = normal_cap if normal_cap is not None else len(lines)
-                for idx in range(cap, min(len(lines), normal_cutoff)):
-                    held_fp = str(fps[idx] if idx < len(fps) else "")
-                    held_candidate = candidate_by_fp.get(held_fp)
-                    if _is_public_budget_exempt(section_name, held_candidate):
-                        continue
-                    if isinstance(held_candidate, dict):
-                        held_candidate["writer_degraded_shrink_held"] = True
-                    degraded_shrink_dropped.append(
-                        {
-                            "section": section_name,
-                            "fingerprint": held_fp,
-                            "title": titles[idx] if idx < len(titles) else re.sub(r"<[^>]+>", "", lines[idx])[:120],
-                            "source_label": srcs[idx] if idx < len(srcs) else "",
-                            "reader_value_score": scores[idx] if idx < len(scores) else 0.0,
-                            "reason": "LLM rewrite was degraded; held lower-priority item for review.",
-                        }
-                    )
-            lines, srcs, fps, scores, titles, _cap_dropped_idx, _ = _slice_counting_only_non_exempt(
-                lines=lines,
-                srcs=srcs,
-                fps=fps,
-                scores=scores,
-                titles=titles,
-                candidate_by_fp=candidate_by_fp,
-                section_name=section_name,
-                counted_limit=cap,
-                ignore_section_exemption=True,
-            )
-        # Section min-floor pull-back. On 2026-05-27 «Главная история
-        # дня»=1 and «Что важно сегодня»=2 while score-10 candidates
-        # sat with include=True but never made it through the writer
-        # (no draft_line, dropped by section cap elsewhere, etc.).
-        # Closes A2 + C3: if we're still below the editorial floor for
-        # this section, top up from not-yet-rendered included
-        # candidates that targeted this block, sorted by reader_value.
-        min_floor = SECTION_MIN_ITEMS.get(section_name, 0)
-        target_floor = FRESH_NEWS_TARGET_ITEMS if section_name == "Свежие новости" else min_floor
-        if target_floor and len(lines) < target_floor:
-            queued_fps = {
-                queued_fp
-                for section_fp_list in section_fingerprints.values()
-                for queued_fp in section_fp_list
-                if queued_fp
-            }
-            rendered_fps_so_far = set(rendered_candidate_fingerprints) | queued_fps | {fp for fp in fps if fp}
-            section_recovery_metrics: dict[str, object] = {}
-            lines, fps, scores, titles, srcs = _apply_section_min_floor_pull_back(
-                section_name, lines, fps, scores, titles, srcs,
-                candidates, rendered_fps_so_far, target_floor, warnings,
-                include_backup=section_name in PROTECTED_RECOVERY_SECTIONS,
-                recovery_metrics=section_recovery_metrics,
-            )
-            if section_recovery_metrics:
-                sections_report = recovery_controller.setdefault("sections", {})
-                if isinstance(sections_report, dict):
-                    sections_report[section_name] = section_recovery_metrics
-        reserved_later_budget = _reserved_later_budget(ordered_sections, section_index, sections)
-        remaining_budget = PUBLIC_DIGEST_MAX_VISIBLE_ITEMS - visible_item_count - reserved_later_budget
-        if section_name in PUBLIC_SECTION_RESERVED_MIN:
-            remaining_budget += min(
-                PUBLIC_SECTION_RESERVED_MIN[section_name],
-                len(lines),
-            )
-        if remaining_budget <= 0:
-            next_lines, next_srcs, next_fps, next_scores, next_titles, dropped_idx, counted_kept = _slice_counting_only_non_exempt(
-                lines=lines,
-                srcs=srcs,
-                fps=fps,
-                scores=scores,
-                titles=titles,
-                candidate_by_fp=candidate_by_fp,
-                section_name=section_name,
-                counted_limit=0,
-            )
-            for idx in dropped_idx:
-                ln = lines[idx]
-                global_budget_dropped.append(
-                    {
-                        "section": section_name,
-                        "fingerprint": fps[idx] if idx < len(fps) else "",
-                        "title": titles[idx] if idx < len(titles) else re.sub(r"<[^>]+>", "", ln)[:120],
-                        "source_label": srcs[idx] if idx < len(srcs) else "",
-                        "reader_value_score": scores[idx] if idx < len(scores) else 0.0,
-                            "reason": (
-                                f"Public digest budget cap {PUBLIC_DIGEST_MAX_VISIBLE_ITEMS} reached "
-                                f"(reserved later event/ticket budget: {reserved_later_budget})."
-                            ),
-                    }
-                )
-            lines, srcs, fps, scores, titles = next_lines, next_srcs, next_fps, next_scores, next_titles
-            if not lines:
-                section_counts[section_name] = 0
-                continue
-        if remaining_budget > 0:
-            next_lines, next_srcs, next_fps, next_scores, next_titles, dropped_idx, counted_kept = _slice_counting_only_non_exempt(
-                lines=lines,
-                srcs=srcs,
-                fps=fps,
-                scores=scores,
-                titles=titles,
-                candidate_by_fp=candidate_by_fp,
-                section_name=section_name,
-                counted_limit=remaining_budget,
-            )
-            for idx in dropped_idx:
-                global_budget_dropped.append(
-                    {
-                        "section": section_name,
-                        "fingerprint": fps[idx] if idx < len(fps) else "",
-                        "title": titles[idx] if idx < len(titles) else re.sub(r"<[^>]+>", "", lines[idx])[:120],
-                        "source_label": srcs[idx] if idx < len(srcs) else "",
-                        "reader_value_score": scores[idx] if idx < len(scores) else 0.0,
-                        "reason": (
-                            f"Public digest budget cap {PUBLIC_DIGEST_MAX_VISIBLE_ITEMS} reached "
-                            f"(reserved later event/ticket budget: {reserved_later_budget})."
-                        ),
-                    }
-                )
-            lines, srcs, fps, scores, titles = next_lines, next_srcs, next_fps, next_scores, next_titles
-        hard_counted_so_far = 0
-        for rendered_fp in rendered_candidate_fingerprints:
-            rendered_candidate = candidate_by_fp.get(str(rendered_fp or ""))
-            rendered_section = PRIMARY_BLOCKS.get(str((rendered_candidate or {}).get("primary_block") or ""), "")
-            if not _is_public_budget_exempt(rendered_section, rendered_candidate):
-                hard_counted_so_far += 1
-        hard_remaining = PUBLIC_DIGEST_HARD_RENDERED_ITEMS - hard_counted_so_far
-        if hard_remaining <= 0:
-            next_lines, next_srcs, next_fps, next_scores, next_titles, dropped_idx, _ = _slice_counting_only_non_exempt(
-                lines=lines,
-                srcs=srcs,
-                fps=fps,
-                scores=scores,
-                titles=titles,
-                candidate_by_fp=candidate_by_fp,
-                section_name=section_name,
-                counted_limit=0,
-            )
-            for idx in dropped_idx:
-                ln = lines[idx]
-                global_budget_dropped.append(
-                    {
-                        "section": section_name,
-                        "fingerprint": fps[idx] if idx < len(fps) else "",
-                        "title": titles[idx] if idx < len(titles) else re.sub(r"<[^>]+>", "", ln)[:120],
-                        "source_label": srcs[idx] if idx < len(srcs) else "",
-                        "reader_value_score": scores[idx] if idx < len(scores) else 0.0,
-                        "reason": f"Hard rendered-item cap {PUBLIC_DIGEST_HARD_RENDERED_ITEMS} reached.",
-                    }
-                )
-            lines, srcs, fps, scores, titles = next_lines, next_srcs, next_fps, next_scores, next_titles
-        else:
-            next_lines, next_srcs, next_fps, next_scores, next_titles, dropped_idx, _ = _slice_counting_only_non_exempt(
-                lines=lines,
-                srcs=srcs,
-                fps=fps,
-                scores=scores,
-                titles=titles,
-                candidate_by_fp=candidate_by_fp,
-                section_name=section_name,
-                counted_limit=hard_remaining,
-            )
-            for idx in dropped_idx:
-                ln = lines[idx]
-                global_budget_dropped.append(
-                    {
-                        "section": section_name,
-                        "fingerprint": fps[idx] if idx < len(fps) else "",
-                        "title": titles[idx] if idx < len(titles) else re.sub(r"<[^>]+>", "", ln)[:120],
-                        "source_label": srcs[idx] if idx < len(srcs) else "",
-                        "reader_value_score": scores[idx] if idx < len(scores) else 0.0,
-                        "reason": f"Hard rendered-item cap {PUBLIC_DIGEST_HARD_RENDERED_ITEMS} reached.",
-                    }
-                )
-            lines, srcs, fps, scores, titles = next_lines, next_srcs, next_fps, next_scores, next_titles
-        if target_floor and len(lines) < target_floor:
-            queued_fps = {
-                queued_fp
-                for section_fp_list in section_fingerprints.values()
-                for queued_fp in section_fp_list
-                if queued_fp
-            }
-            rendered_fps_so_far = set(rendered_candidate_fingerprints) | queued_fps | {fp for fp in fps if fp}
-            post_budget_recovery_metrics: dict[str, object] = {}
-            lines, fps, scores, titles, srcs = _apply_section_min_floor_pull_back(
-                section_name, lines, fps, scores, titles, srcs,
-                candidates, rendered_fps_so_far, target_floor, warnings,
-                include_backup=(
-                    section_name in PROTECTED_RECOVERY_SECTIONS
-                    or section_name in _PUBLIC_BUDGET_EXEMPT_SECTIONS
-                ),
-                recovery_metrics=post_budget_recovery_metrics,
-            )
-            if post_budget_recovery_metrics:
-                post_budget_recovery_metrics["pass"] = "post_budget_and_hard_cap"
-                sections_report = recovery_controller.setdefault("sections", {})
-                if isinstance(sections_report, dict):
-                    existing = sections_report.get(section_name)
-                    if isinstance(existing, dict):
-                        existing["post_budget_recovery"] = post_budget_recovery_metrics
-                    else:
-                        sections_report[section_name] = post_budget_recovery_metrics
-        # Per-source / per-section caps can filter every remaining line —
-        # don't emit a bare section header in that case, the release gate
-        # rejects empty low-signal blocks.
+            sections_out.setdefault(section_name, []).append(bullet)
+            section_sources.setdefault(section_name, []).append(str(candidate.get("source_label") or ""))
+            fp = str(candidate.get("fingerprint") or "")
+            section_fingerprints.setdefault(section_name, []).append(fp)
+            rendered_candidate_fingerprints.append(fp)
+            rendered_section_by_fp[fp] = section_name
+
+    if not sections_out.get("Общественный транспорт сегодня"):
+        sections_out["Общественный транспорт сегодня"] = [_transport_empty_line(project_root)]
+        section_sources["Общественный транспорт сегодня"] = ["TfGM"]
+        section_fingerprints["Общественный транспорт сегодня"] = [""]
+        warnings.append("Writer added honest empty-transport coverage line.")
+
+    # --- Сборка HTML в порядке плана -----------------------------------------
+    rendered: list[str] = [_title_line(), ""]
+    section_counts: dict[str, int] = {}
+    for section_name in ordered_sections:
+        lines = sections_out.get(section_name) or []
         if not lines:
             section_counts[section_name] = 0
             continue
-        lines = [
-            _ensure_source_anchor_for_rendered_line(
-                ln,
-                fps[idx] if idx < len(fps) else "",
-                srcs[idx] if idx < len(srcs) else "",
-                candidate_by_fp,
-            )
-            for idx, ln in enumerate(lines)
-        ]
         section_counts[section_name] = len(lines)
-        for fp in fps:
-            if fp:
-                rendered_section_by_fp[str(fp)] = section_name
-        visible_item_count += sum(
-            0 if _is_public_budget_exempt(section_name, candidate_by_fp.get(str(fp or ""))) else 1
-            for fp in fps
-        )
-        rendered_candidate_fingerprints.extend(fp for fp in fps if fp)
         rendered.append(f"<b>{section_name}</b>")
         rendered.extend(lines)
         rendered.append("")
 
     quality_counts["rendered_candidates"] = len(rendered_candidate_fingerprints)
     rendered_fp_set = set(rendered_candidate_fingerprints)
-    dropped_candidates, rendered_after_drop_reconciled = _reconcile_rendered_dropped_candidates(
-        dropped_candidates,
-        quality_counts,
-        rendered_fp_set,
-    )
-    publish_plan_contract = _build_publish_plan_contract_report(
-        candidates=candidates,
-        rendered_fp_set=rendered_fp_set,
-        dropped_candidates=dropped_candidates,
-        global_budget_dropped=global_budget_dropped,
-        degraded_shrink_dropped=degraded_shrink_dropped,
-        publish_plan_application=publish_plan_application,
-    )
-    missing_must_show = int((publish_plan_contract.get("counts") or {}).get("must_show_missing") or 0)
-    if missing_must_show:
-        warnings.append(
-            f"Publish plan contract: {missing_must_show} must-show item(s) did not render — "
-            "see writer_report.publish_plan_contract.missing_must_show."
-        )
-    fresh_candidates = [
-        c for c in candidates
-        if isinstance(c, dict) and str(c.get("primary_block") or "") == "last_24h"
-    ]
-    fresh_report = {
-        "target_items": FRESH_NEWS_TARGET_ITEMS,
-        "hard_floor": SECTION_MIN_ITEMS.get("Свежие новости", 0),
-        "input_candidates": len(fresh_candidates),
-        "included_candidates": sum(1 for c in fresh_candidates if c.get("include")),
-        "backup_candidates": sum(1 for c in fresh_candidates if c.get("backup_candidate")),
-        "rendered_candidates": sum(1 for c in fresh_candidates if str(c.get("fingerprint") or "") in rendered_fp_set),
-        "dropped_in_writer": sum(1 for c in dropped_candidates if str(c.get("primary_block") or "") == "last_24h"),
-    }
-    if degraded_shrink_dropped:
-        warnings.append(
-            "LLM degraded shrink held "
-            f"{len(degraded_shrink_dropped)} lower-priority item(s) out of the digest."
-        )
-    if global_budget_dropped:
-        warnings.append(
-            "Public issue budget held "
-            f"{len(global_budget_dropped)} lower-priority item(s) out of the digest."
-        )
-    if ticket_inventory_held:
-        warnings.append(
-            f"Ticket inventory: held {len(ticket_inventory_held)} outside-GM A-tier "
-            "concert(s) over the morning cap (tracked, not dropped)."
-        )
-    today_focus_board["rendered_after_recovery"] = int(section_counts.get(TODAY_FOCUS_SECTION) or 0)
-    today_focus_board["recovery_inserted"] = int(
-        ((recovery_controller.get("sections") or {}).get(TODAY_FOCUS_SECTION) or {}).get("replacements_inserted") or 0
-    ) if isinstance(recovery_controller.get("sections"), dict) else 0
-    if today_focus_board["rendered_after_recovery"] >= SECTION_MIN_ITEMS.get(TODAY_FOCUS_SECTION, 3):
-        today_focus_board["underflow_reason"] = ""
-    today_focus_loss = _today_focus_loss_trace(candidates, rendered_section_by_fp, dropped_candidates)
-    weekend_inventory_loss = _weekend_inventory_loss_trace(
-        candidates,
-        rendered_section_by_fp,
-        dropped_candidates,
-        show_weekend=show_weekend,
-    )
-
-    drop_breakdown = {"failure": 0, "quarantine": 0, "reserve": 0}
-    for _item in dropped_candidates:
-        drop_breakdown[_classify_drop_bucket(_item)] += 1
-    # Degrade-shrink and global-budget trims are good items held back for
-    # capacity, not faults — they belong in the reserve pool.
-    drop_breakdown["reserve"] += len(degraded_shrink_dropped) + len(global_budget_dropped)
-    recovery_sections = recovery_controller.get("sections") if isinstance(recovery_controller.get("sections"), dict) else {}
-    recovery_controller["totals"] = {
-        "section_below_floor": len(recovery_sections),
-        "reserve_available": sum(int((row or {}).get("reserve_available") or 0) for row in recovery_sections.values()),
-        "repair_attempts": sum(int((row or {}).get("repair_attempts") or 0) for row in recovery_sections.values()),
-        "model_recovery_attempts": sum(int((row or {}).get("model_recovery_attempts") or 0) for row in recovery_sections.values()),
-        "model_recovery_inserted": sum(int((row or {}).get("model_recovery_inserted") or 0) for row in recovery_sections.values()),
-        "model_recovery_failed": sum(int((row or {}).get("model_recovery_failed") or 0) for row in recovery_sections.values()),
-        "short_but_complete": sum(int((row or {}).get("short_but_complete") or 0) for row in recovery_sections.values()),
-        "held_thin_evidence": sum(int((row or {}).get("held_thin_evidence") or 0) for row in recovery_sections.values()),
-        "replacements_inserted": sum(int((row or {}).get("replacements_inserted") or 0) for row in recovery_sections.values()),
-        "still_underflow": sum(1 for row in recovery_sections.values() if str((row or {}).get("still_underflow_reason") or "")),
-    }
     a_tier_ticket_trace = _a_tier_ticket_trace(candidates, rendered_fp_set, dropped_candidates)
 
-    # Phase 7: emit recovery as its own report so attempted/inserted/replaced/
-    # unrecoverable per block is visible without digging through writer_report.
-    write_json(
-        state_dir / "recovery_report.json",
-        {
-            "pipeline_run_id": pipeline_run_id,
-            "run_at_london": now_london().isoformat(),
-            "run_date_london": today_london(),
-            "sections": recovery_controller.get("sections", {}),
-            "totals": recovery_controller.get("totals", {}),
-        },
-    )
-    block_contract_report["items"] = (block_contract_report.get("items") or [])[:120]
-    write_json(
-        state_dir / "block_contract_report.json",
-        {
-            "pipeline_run_id": pipeline_run_id,
-            "run_at_london": now_london().isoformat(),
-            "run_date_london": today_london(),
-            **block_contract_report,
-        },
-    )
-
+    save_execution(state_dir, execution)
     draft_path.write_text("\n".join(rendered).strip() + "\n", encoding="utf-8")
+    write_json(candidates_path, payload)
+
+    slot_statuses = [str((row or {}).get("status") or "") for row in (execution.get("slots") or {}).values()]
+    removed_slots = sum(1 for s in slot_statuses if s == "removed")
+    if removed_slots:
+        warnings.append(f"{removed_slots} plan slot(s) removed with coded reason — см. plan_execution_report.json.")
+
     write_json(
         report_path,
         {
@@ -7636,51 +6872,25 @@ def write_digest(project_root: Path) -> StageResult:
             "warnings": warnings,
             "quality_counts": quality_counts,
             "section_counts": section_counts,
-            "visible_item_count": visible_item_count,
-            "public_digest_budget": {
-                "max_visible_items": PUBLIC_DIGEST_MAX_VISIBLE_ITEMS,
-                "hard_rendered_items": PUBLIC_DIGEST_HARD_RENDERED_ITEMS,
-                "dropped_count": len(global_budget_dropped),
-                "dropped_items": global_budget_dropped[:80],
+            "visible_item_count": len(rendered_candidate_fingerprints),
+            "plan_execution": {
+                "slots_total": len(plan_slots(plan)) + (1 if lead_plan.get("primary_fingerprint") else 0),
+                "shown": sum(1 for s in slot_statuses if s == "shown"),
+                "replaced": sum(1 for s in slot_statuses if s == "replaced"),
+                "removed": removed_slots,
+                "repair_attempts_used": int(execution.get("repair_attempts_used") or 0),
             },
-            "publish_plan_contract": publish_plan_contract,
-            "block_contract_report": block_contract_report,
             "controlled_enrichment": controlled_enrichment_report,
-            "misrouted_weekend_market_rescue": misrouted_weekend_market_rescue,
-            "recovery_controller": recovery_controller,
-            "today_focus_board": today_focus_board,
-            "today_focus_loss_trace": today_focus_loss,
-            "weekend_inventory_loss_trace": weekend_inventory_loss,
-            "final_section_routing": final_section_routing,
-            "degraded_shrink": {
-                "enabled": bool(llm_degraded),
-                "llm_stage_status": str(llm_rewrite_report.get("stage_status") or "") if llm_rewrite_report else "",
-                "caps": DEGRADED_LLM_SECTION_MAX_ITEMS if llm_degraded else {},
-                "dropped_count": len(degraded_shrink_dropped),
-                "dropped_items": degraded_shrink_dropped[:50],
-            },
-            "ticket_notability": {
-                "lookup_enabled": bool(os.environ.get("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "").strip() == "1"),
-                "prefetch": notability_prefetch,
-                "items": ticket_notability_report[:120],
-            },
-            "ticket_inventory": {
-                "outside_gm_a_tier_held_count": len(ticket_inventory_held),
-                "items": ticket_inventory_held[:80],
-            },
             "a_tier_ticket_trace": a_tier_ticket_trace,
-            "fresh_news_board": fresh_report,
-            "drop_breakdown": drop_breakdown,
-            "rendered_after_drop_reconciled": rendered_after_drop_reconciled[:50],
+            "dropped_candidates": dropped_candidates[:120],
             "rendered_candidate_fingerprints": rendered_candidate_fingerprints,
-            "dropped_candidates": dropped_candidates,
-            "duration_seconds": round(time.monotonic() - stage_started, 3),
-            "draft_path": str(draft_path.resolve()),
+            "rendered_section_by_fingerprint": rendered_section_by_fp,
+            "lead": {
+                "planned_fingerprint": str(lead_plan.get("primary_fingerprint") or ""),
+                "rendered": bool(lead_line),
+            },
+            "writer_seconds": round(time.monotonic() - stage_started, 2),
         },
     )
-    return StageResult(
-        not errors,
-        "Writer stage completed." if not errors else "Writer stage found blocking issues.",
-        report_path,
-        draft_path,
-    )
+    message = f"Draft written by plan: {len(rendered_candidate_fingerprints)} lines, {removed_slots} slot(s) removed."
+    return StageResult(not errors, message, report_path, draft_path)
