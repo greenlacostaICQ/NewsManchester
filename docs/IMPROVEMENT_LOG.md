@@ -1250,7 +1250,7 @@
 - Удалено: неявное допущение, что отсутствие ID в parseable model response является успешным результатом.
 
 ### 0119 — Ночная волна различает success, degraded и failed — 2026-07-15
-- Статус: внедрено; естественный degraded-кейс 16.07 выявил и исправил ошибку уровня агрегации, новый night proof ожидается.
+- Статус: внедрено и подтверждено повторной production-wave 16.07.
 - Проблема: 15.07 events/live_news/breaking собрали 59/37/21 источников, но из-за 3/2/1 source errors workflow стал красным, хотя inventory был сохранён. Частичная проблема сайта выглядела как падение всей ночи.
 - Решение: `success` требует всех expected sources без ошибок; `degraded` означает представленный полный список источников с частичными errors/unchecked и сохраняет данные; `failed` — нет checked результата либо команда не представила все expected sources. Только failed возвращает non-zero. Replacement по-прежнему разрешён лишь при operational health `ok`.
 - Почему решает класс: данные не теряются из-за одного 403/timeout, но частичная волна не получает права отключить live collection.
@@ -1259,4 +1259,5 @@
 - Повторная production-проверка 16.07: `wave_status=degraded` записывался в каждую строку и затем использовался как operational verdict категории. Поэтому здоровые `transport 2/2/0 errors`, `gmp 1/1/0`, `public_services 1/1/0`, `tech_business 6/6/0` ошибочно считались degraded из-за ошибок Media/Football той же волны.
 - Дополнительное решение 16.07: night run сохраняет отдельный `category_status`; `wave_status` остаётся только сводкой. Source replacement принимает решение только по expected/checked/errors собственной категории и по-прежнему требует status=ok.
 - ПРОВЕРКА 16.07 на реальном `inventory_run_log.jsonl`: `transport/gmp/public_services/tech_business degraded→ok`; `media_layer` и `football` остались degraded; все перечисленные категории по-прежнему имеют `safe_to_skip=false`, потому что source replacement для них не разрешён.
+- Production-proof после доставки: GitHub run `29493494104`, run_id `20260716T121147+0100`, 37/37 источников представлены и checked, одна ошибка Football. Общая волна корректно осталась `degraded`; категории получили независимые статусы: `football=degraded`, `media_layer/transport/tech_business/public_services/gmp=success`. State commit `8700e3a`; operational health после чтения сохранённых строк: Football `degraded`, остальные пять категорий `ok`.
 - Дополнительно удалено: использование общего `wave_status` как блокирующего условия категории; само поле оставлено для сводного состояния workflow.
