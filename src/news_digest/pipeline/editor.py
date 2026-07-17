@@ -1181,6 +1181,23 @@ def _transport_status_fallback_line() -> str:
     )
 
 
+_EDITOR_STATE_DIR: dict[str, object] = {"path": None}
+
+
+def _plan_substitute_for_line(line: str, section_name: str, candidates: list[dict]) -> str:
+    """Замена безнадёжной строки ТОЛЬКО запасным её планового слота."""
+    state_dir = _EDITOR_STATE_DIR.get("path")
+    if state_dir is None:
+        return ""
+    candidate = _candidate_index(candidates).get(_line_url_identity(line))
+    slot_id = str((candidate or {}).get("plan_slot_id") or "")
+    if not slot_id:
+        return ""
+    from news_digest.pipeline.writer import produce_replacement_for_slot  # noqa: PLC0415
+
+    return produce_replacement_for_slot(state_dir, slot_id, stage="editor")
+
+
 def _apply_editor_line_actions(
     polished: dict[str, list[str]],
     *,
@@ -1263,14 +1280,7 @@ def _apply_editor_line_actions(
         original = str(item.get("line") or "")
         if section_name not in polished or not original:
             continue
-        replacement = _same_section_reserve_line(
-            section_name,
-            candidates,
-            rendered_urls,
-            rendered_story_keys,
-            stats["reserve_replacement"] if isinstance(stats.get("reserve_replacement"), dict) else None,
-            reserve_pool,
-        )
+        replacement = _plan_substitute_for_line(original, section_name, candidates)
         section_lines = polished.get(section_name) or []
         try:
             pos = section_lines.index(original)
@@ -1292,21 +1302,11 @@ def _apply_editor_line_actions(
                     }
                 )
         else:
-            if section_name == "Общественный транспорт сегодня":
-                warnings.append(
-                    "Final editor requested transport removal, but no replacement was available; "
-                    "kept the row for deterministic transport recovery."
-                )
-                continue
-            if section_name == "Выходные в GM":
-                warnings.append(
-                    "Final editor requested Weekend removal, but no replacement was available; "
-                    "kept the row so Weekend Inventory does not silently lose a collected event."
-                )
-                continue
-            del section_lines[pos]
-            stats["model_requested_stripped"] = int(stats["model_requested_stripped"] or 0) + 1
-            warnings.append(f"Final editor requested removal in «{section_name}», but no replacement was available.")
+            # Этап 3: состав неизменен. Нет планового запасного — строка
+            # остаётся в выпуске с предупреждением; судья пометит её словами.
+            warnings.append(
+                f"Final editor хотел убрать строку в «{section_name}», но планового запасного нет — строка сохранена."
+            )
     return polished, stats
 
 
@@ -1318,67 +1318,15 @@ def _apply_editor_block_actions(
     rendered_urls: set[str],
     rendered_story_keys: set[str],
     warnings: list[str],
-    reserve_pool: _PrevalidatedReservePool | None = None,
+    reserve_pool: object | None = None,
 ) -> tuple[dict[str, list[str]], dict[str, object]]:
-    report: dict[str, object] = {"requested": len(block_actions), "applied": 0, "actions": []}
-    rows = report["actions"]
-    if not isinstance(rows, list):
-        return polished, report
-    for raw in block_actions:
-        if not isinstance(raw, dict):
-            continue
-        action = str(raw.get("action") or "").strip()
-        section = str(raw.get("section") or "").strip()
-        count_raw = raw.get("count")
-        try:
-            count = max(1, min(8, int(count_raw or 1)))
-        except (TypeError, ValueError):
-            count = 1
-        entry = {"action": action, "section": section, "count": count, "reason": str(raw.get("reason") or ""), "applied": 0, "status": ""}
-        if action == "recover_lead":
-            section = section or "Главная история дня"
-            for _ in range(count):
-                replacement = _same_section_reserve_line(section, candidates, rendered_urls, rendered_story_keys, reserve_pool=reserve_pool)
-                if not replacement and section == "Главная история дня":
-                    replacement = _same_section_reserve_line("Свежие новости", candidates, rendered_urls, rendered_story_keys, reserve_pool=reserve_pool)
-                if not replacement:
-                    break
-                polished.setdefault(section, []).insert(0, replacement)
-                entry["applied"] = int(entry["applied"] or 0) + 1
-        elif action == "backfill":
-            if not section:
-                entry["status"] = "skipped_no_section"
-            else:
-                for _ in range(count):
-                    replacement = _same_section_reserve_line(section, candidates, rendered_urls, rendered_story_keys, reserve_pool=reserve_pool)
-                    if not replacement:
-                        break
-                    polished.setdefault(section, []).append(replacement)
-                    entry["applied"] = int(entry["applied"] or 0) + 1
-        elif action in {"trim", "move_outside_gm_to_chunk"}:
-            if action == "move_outside_gm_to_chunk" and not section:
-                section = "Крупные концерты вне GM"
-            if section not in _EDITOR_TRIMMABLE_SECTIONS:
-                entry["status"] = "skipped_protected_or_unknown_section"
-            else:
-                lines = polished.get(section) or []
-                floor = 1 if section == "Городской радар" else 0
-                removable = max(0, len(lines) - floor)
-                take = min(count, removable)
-                if take:
-                    del lines[-take:]
-                    entry["applied"] = take
-                    entry["status"] = "trimmed_optional"
-        else:
-            entry["status"] = "unsupported_action"
-        if not entry["status"]:
-            entry["status"] = "applied" if int(entry["applied"] or 0) else "no_replacement_available"
-        if int(entry["applied"] or 0):
-            report["applied"] = int(report["applied"] or 0) + int(entry["applied"] or 0)
-        elif action in {"recover_lead", "backfill"}:
-            warnings.append(f"Final editor requested {action} for «{section}», but no clean reserve was available.")
-        rows.append(entry)
-    return polished, report
+    """Этап 3: блок-команды модели игнорируются — состав решён планом."""
+    ignored = [str((row or {}).get("action") or "") for row in block_actions if isinstance(row, dict)]
+    if ignored:
+        warnings.append(
+            "Final editor block actions ignored (план неизменяем): " + ", ".join(sorted(set(ignored)))[:120]
+        )
+    return polished, {"requested": len(ignored), "applied": 0, "status": "ignored_plan_locked", "actions": []}
 
 
 def _pre_send_polish_sections(
@@ -1433,7 +1381,7 @@ def _pre_send_polish_sections(
         if line.strip()
     }
     rendered_story_keys.discard("")
-    reserve_pool = _PrevalidatedReservePool.build(candidates or [], rendered_urls, rendered_story_keys)
+    reserve_pool = None  # Этап 3: единственный источник замен — план
     round_reports: list[dict[str, object]] = []
     block_action_reports: list[dict[str, object]] = []
     model_changes: list[dict[str, object]] = []
@@ -1479,9 +1427,7 @@ def _pre_send_polish_sections(
             if not line.strip() or not _line_needs_russian_editor(line):
                 out.append(line)
                 continue
-            replacement = _same_section_reserve_line(section_name, candidates or [], rendered_urls, rendered_story_keys, reserve_pool=reserve_pool)
-            if not replacement and section_name == "Общественный транспорт сегодня":
-                replacement = _transport_replacement_for_line(line, candidates_by_key, rendered_urls)
+            replacement = _plan_substitute_for_line(line, section_name, candidates or [])
             if replacement:
                 out.append(replacement)
                 replaced += 1
@@ -1492,8 +1438,8 @@ def _pre_send_polish_sections(
                 # fallback is forbidden when concrete disruption exists). The
                 # concrete location-bearing recovery already ran above
                 # (_transport_replacement_for_line).
-                stripped += 1
-                warnings.append(f"Degradation: stripped an unrepairable line in «{section_name}».")
+                out.append(line)
+                warnings.append(f"Известно-слабая строка сохранена в «{section_name}» (планового запасного нет); судья пометит.")
         polished[section_name] = out
     transport_lines = [
         line for line in polished.get("Общественный транспорт сегодня", [])
@@ -1590,9 +1536,7 @@ def _pre_send_polish_sections(
             if not line.strip() or not _line_needs_russian_editor(line):
                 out.append(line)
                 continue
-            replacement = _same_section_reserve_line(section_name, candidates or [], rendered_urls, rendered_story_keys, reserve_pool=reserve_pool)
-            if not replacement and section_name == "Общественный транспорт сегодня":
-                replacement = _transport_replacement_for_line(line, candidates_by_key, rendered_urls)
+            replacement = _plan_substitute_for_line(line, section_name, candidates or [])
             if replacement:
                 out.append(replacement)
                 replaced += 1

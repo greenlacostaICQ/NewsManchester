@@ -6617,6 +6617,67 @@ def _render_lead_line(line: str, source_url: str, source_label: str) -> str:
     return _attach_source_anchor(line, source_url, source_label)
 
 
+def produce_replacement_for_slot(state_dir: Path, slot_id: str, *, stage: str = "editor") -> str:
+    """Одна попытка замены строки слота запасным ИЗ ПЛАНА (для редактора/судьи).
+
+    Возвращает готовую строку-буллет с якорем источника или "" — если цепочка
+    запасных слота исчерпана/непригодна. Результат фиксируется в
+    plan_execution_report.json; план не мутируется.
+    """
+    from news_digest.pipeline.plan_execution import (  # noqa: PLC0415
+        load_execution,
+        load_plan,
+        next_backup,
+        plan_slots,
+        record_outcome,
+        save_execution,
+    )
+
+    plan = load_plan(state_dir)
+    if not plan:
+        return ""
+    execution = load_execution(state_dir)
+    payload = read_json(state_dir / "candidates.json", {"candidates": []})
+    candidates = payload.get("candidates", [])
+    by_fp = {str(c.get("fingerprint") or ""): c for c in candidates if isinstance(c, dict)}
+    used = {
+        str((row or {}).get("final_fingerprint") or "")
+        for row in (execution.get("slots") or {}).values()
+        if (row or {}).get("final_fingerprint")
+    }
+    slot = next((sl for sl in plan_slots(plan) if str(sl.get("slot_id") or "") == str(slot_id)), None)
+    section_name = str((slot or {}).get("section") or "")
+    backup, backup_fp = next_backup(plan, execution, slot_id, by_fp, used)
+    if backup is None:
+        record_outcome(execution, slot_id, status="", failed_fingerprint="", reason="backup_chain_exhausted", stage=stage)
+        save_execution(state_dir, execution)
+        return ""
+    warnings: list[str] = []
+    quality_counts = {
+        "included_candidates": 0, "rendered_candidates": 0, "blocked_for_quality": 0,
+        "held_for_editorial_quality": 0, "dropped_missing_draft_line": 0,
+        "dropped_ticket_not_selected": 0, "dropped_english_passthrough": 0, "dropped_low_quality": 0,
+    }
+    enrichment_ctx: dict[str, object] = {"model_enriched": 0, "model_attempts": 0, "short_but_complete": 0, "held_thin_evidence": 0}
+    line, line_errors = _produce_slot_line(
+        backup, section_name or "Свежие новости",
+        warnings=warnings, quality_counts=quality_counts,
+        controlled_enrichment_report=enrichment_ctx, execution=execution,
+    )
+    if not line or line_errors:
+        record_outcome(execution, slot_id, status="", failed_fingerprint=backup_fp, reason="; ".join(line_errors)[:200] or "empty_line", stage=stage)
+        save_execution(state_dir, execution)
+        return ""
+    if not line.startswith("• "):
+        line = f"• {line}"
+    line = preserve_place_names(line)
+    line = _attach_source_anchor(line, str(backup.get("source_url") or ""), str(backup.get("source_label") or ""))
+    record_outcome(execution, slot_id, status="replaced", final_fingerprint=backup_fp, reason=f"{stage}_requested_replacement", stage=stage)
+    save_execution(state_dir, execution)
+    write_json(state_dir / "candidates.json", payload)
+    return line
+
+
 def write_digest(project_root: Path) -> StageResult:
     """Этап 3: писатель рендерит строго по release_plan.json.
 
