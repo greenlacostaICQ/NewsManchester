@@ -1125,15 +1125,13 @@ def _apply_repair_executor(
             if replacement:
                 action_record["outcome"] = "deterministic_rewrite"
 
-        if not replacement:
-            reserve_stats = report.setdefault("reserve_stats", {"enriched_rewrite_attempts": 0, "enriched_rewrite_used": 0})
-            replacement = _reserve_replacement_line(
-                section_name,
-                candidates,
-                rendered_urls,
-                rendered_story_keys,
-                reserve_stats if isinstance(reserve_stats, dict) else {},
-            )
+        if not replacement and action_name != "strip":
+            # Этап 3: единственный источник замен — цепочка запасных слота.
+            plan_slot_id = str((candidate or {}).get("plan_slot_id") or "")
+            if plan_slot_id:
+                from news_digest.pipeline.writer import produce_replacement_for_slot  # noqa: PLC0415
+
+                replacement = produce_replacement_for_slot(state_dir, plan_slot_id, stage="judge")
             if replacement:
                 action_record["outcome"] = "reserve_replacement"
 
@@ -1154,22 +1152,37 @@ def _apply_repair_executor(
         # risk (unsupported/fabricated fact), where integrity outranks the floor.
         # Duplicate / topic / translation-omission strips keep the real line, so
         # a thin "Свежие" no longer collapses 5→2 into blank lines.
-        minimum = int(SECTION_MIN_ITEMS.get(section_name, 0) or 0)
-        current_count = len(_html_lines_for_section(html_lines, section_name))
         risk_blob = f"{row.get('risk') or ''} {row.get('reason') or ''}".lower()
         integrity_strip = any(
             kw in risk_blob
             for kw in ("unsupported", "fabricat", "hallucin", "не подтвержд", "выдум", "не соответствует источник")
         )
-        if minimum and current_count <= minimum and not integrity_strip:
-            action_record["outcome"] = "kept_below_floor_no_reserve"
+        if not integrity_strip:
+            # Этап 3: стилистическое «убрать» запрещено — состав неизменяем.
+            action_record["outcome"] = "kept_style_issue_plan_locked"
             report["kept_below_floor"] = int(report.get("kept_below_floor") or 0) + 1
             report["actions"].append(action_record)
             continue
 
+        # Фактовая целостность выше минимума раздела: снятие разрешено и
+        # фиксируется в исполнении плана кодированной причиной.
         if not dry_run:
             html_lines[raw_index] = ""
-        action_record["outcome"] = "stripped_honest_shortfall"
+            try:
+                from news_digest.pipeline.plan_execution import (  # noqa: PLC0415
+                    load_execution,
+                    record_outcome,
+                    save_execution,
+                )
+
+                _exec = load_execution(state_dir)
+                _sid = str((candidate or {}).get("plan_slot_id") or "")
+                if _sid:
+                    record_outcome(_exec, _sid, status="removed", reason="fact_lock_failed", stage="judge")
+                    save_execution(state_dir, _exec)
+            except Exception:  # noqa: BLE001
+                pass
+        action_record["outcome"] = "removed_fact_integrity"
         report["stripped"] = int(report.get("stripped") or 0) + 1
         report["applied"] = int(report.get("applied") or 0) + 1
         report["actions"].append(action_record)
@@ -1939,35 +1952,11 @@ def evaluate_pre_send_quality(
             decision = "warn"
             can_send = True
             reason = "pre-send judge found issues, but no executable repair was available; shipping degraded with report"
-    # Final reader-facing hygiene: guarantee a lead (promote top news if the repair
-    # stripped it), then never ship a bare section heading. Runs regardless of repairs.
+    # Этап 3: пост-ремонтная «гигиена» больше не меняет состав. Разрешены
+    # только словесные правки: срез пустых хвостов внутри строки и снятие
+    # шапки секции, оставшейся без строк после fact-integrity снятий.
     if not dry_run:
-        hygiene_html = _ensure_lead_present(digest_html)
-        hygiene_html, section_recovery = _recover_section_minimums_after_repair(
-            project_root=project_root,
-            html_text=hygiene_html,
-        )
-        if section_recovery.get("attempted_sections") or int(section_recovery.get("inserted_total") or 0):
-            if repair_executor is None:
-                repair_executor = {
-                    "enabled": True,
-                    "dry_run": False,
-                    "status": "post_repair_section_recovery",
-                    "requested": 0,
-                    "attempted": 0,
-                    "applied": 0,
-                    "actions": [],
-                }
-            repair_executor["post_repair_section_recovery"] = section_recovery
-            inserted = int(section_recovery.get("inserted_total") or 0)
-            if inserted:
-                repair_executor["applied"] = int(repair_executor.get("applied") or 0) + inserted
-                repair_executor["reserve_replacement_used"] = int(repair_executor.get("reserve_replacement_used") or 0) + inserted
-                if decision not in BLOCKING_DECISIONS:
-                    decision = "warn"
-                    can_send = True
-                    reason = f"pre-send section recovery inserted {inserted} reserve line(s) after final judge repair"
-        hygiene_html, endings_stripped = _strip_empty_endings_in_html(hygiene_html)
+        hygiene_html, endings_stripped = _strip_empty_endings_in_html(digest_html)
         if endings_stripped and repair_executor is not None:
             repair_executor["empty_endings_stripped_at_ship"] = int(
                 repair_executor.get("empty_endings_stripped_at_ship") or 0
@@ -1979,30 +1968,6 @@ def evaluate_pre_send_quality(
             final_sha = digest_hash(digest_html)
             digest_lines = digest_lines_from_html(digest_html)
             product_completeness = _product_completeness_context(project_root, digest_lines)
-
-        # RC1 refresh: the release-gate visible contract was measured on the
-        # pre-judge draft, but the repair executor + hygiene above edit the
-        # shipped HTML afterwards. Re-run the reconciler on the FINAL shipped
-        # file so visible_contract_report.json describes what actually ships
-        # (lead visibility + section counts) and a last reserve top-up runs on
-        # the real HTML instead of a stale snapshot. Guarded — never block.
-        try:
-            from news_digest.pipeline.release_reconcile import reconcile_visible_html  # noqa: PLC0415
-
-            cand_payload = read_json(state_dir / "candidates.json", {"candidates": []})
-            writer_report = read_json(state_dir / "writer_report.json", {})
-            refreshed_contract = reconcile_visible_html(
-                digest_path,
-                [c for c in cand_payload.get("candidates") or [] if isinstance(c, dict)],
-                (writer_report or {}).get("section_counts") or {},
-            )
-            write_json(state_dir / "visible_contract_report.json", refreshed_contract)
-            digest_html = digest_path.read_text(encoding="utf-8")
-            final_sha = digest_hash(digest_html)
-            digest_lines = digest_lines_from_html(digest_html)
-            product_completeness = _product_completeness_context(project_root, digest_lines)
-        except Exception as exc:  # noqa: BLE001
-            warnings.append(f"post-repair visible-contract refresh failed: {exc}")
     result = PreSendQualityResult(
         status=judge_status,
         decision=decision,
