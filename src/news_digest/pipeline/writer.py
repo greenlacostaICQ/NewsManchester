@@ -6578,7 +6578,9 @@ def _produce_slot_line(
             _append_recovery_step(candidate, "core_kept_short", "recovered", missing=kept_reasons)
     if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
         quality_counts["dropped_low_quality"] += 1
-        return "", draft_line_errors
+        # Строку возвращаем вместе с ошибками: lead-ветка _try_slot может
+        # спасти её мягким принятием после вычистки фактовых токенов.
+        return line, draft_line_errors
 
     line = re.sub(r",\s*(?:жанр\s+не\s+указан|другой\s+жанр|жанр\s+не\s+определ[её]н|жанр\s+неизвестен)\s*(?=[.!?]|$)", "", line, flags=re.IGNORECASE)
     line = restore_english_toponyms(line)
