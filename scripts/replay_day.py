@@ -158,7 +158,9 @@ def run_stages(sandbox: Path) -> list[dict[str, object]]:
     from news_digest.pipeline.writer import write_digest
 
     results: list[dict[str, object]] = []
-    for name, fn in (("write-digest", write_digest), ("edit-digest", edit_digest), ("build-digest", build_release)):
+    from news_digest.pipeline.plan_digest import run_plan_digest  # noqa: PLC0415
+
+    for name, fn in (("plan-digest", run_plan_digest), ("write-digest", write_digest), ("edit-digest", edit_digest), ("build-digest", build_release)):
         started = time.monotonic()
         try:
             result = fn(sandbox)

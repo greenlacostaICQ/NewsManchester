@@ -38,6 +38,9 @@ from news_digest.pipeline.dedupe import dedupe_candidates, initialize_candidates
 from news_digest.pipeline.editor import edit_digest
 from news_digest.pipeline.history import ensure_history_files, record_delivery_artifacts
 from news_digest.pipeline.llm_rewrite import run_llm_rewrite
+from news_digest.pipeline.llm_rewrite import run_rank_digest
+from news_digest.pipeline.plan_digest import run_plan_digest
+from news_digest.pipeline.verify_digest_plan import run_verify_digest_plan
 from news_digest.pipeline.release import build_release, flush_stage_observability, initialize_release_inputs
 from news_digest.pipeline.writer import write_digest
 from news_digest.state.store import StateStore
@@ -1453,6 +1456,29 @@ def cmd_transport_fill() -> int:
     return 0 if result.ok else 1
 
 
+def cmd_rank_digest() -> int:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    os.environ.setdefault("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "1")
+    result = run_rank_digest(PROJECT_ROOT)
+    print(json.dumps(_stage_payload(result), ensure_ascii=False))
+    _flush_obs("rank_digest")
+    return 0 if result.ok else 1
+
+
+def cmd_plan_digest() -> int:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    result = run_plan_digest(PROJECT_ROOT)
+    print(json.dumps({"ok": result.ok, "message": result.message, "report": str(result.report_path)}, ensure_ascii=False))
+    _flush_obs("plan_digest")
+    return 0 if result.ok else 1
+
+
+def cmd_verify_digest_plan() -> int:
+    result = run_verify_digest_plan(PROJECT_ROOT)
+    print(json.dumps({"ok": result.ok, "message": result.message, "report": str(result.report_path)}, ensure_ascii=False))
+    return 0 if result.ok else 1
+
+
 def cmd_llm_rewrite() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     result = run_llm_rewrite(PROJECT_ROOT)
@@ -1508,7 +1534,11 @@ def cmd_pipeline_config() -> int:
                     "validate-candidates",
                     "curator-pass",
                     "transport-fill",
-                    "llm-rewrite",
+                    "rank-digest",
+                    "plan-digest",
+                    "rank-digest",
+        "plan-digest",
+        "llm-rewrite",
                     "write-digest",
                     "edit-digest",
                     "build-digest",
@@ -1686,6 +1716,9 @@ def build_parser() -> argparse.ArgumentParser:
         "llm-rewrite",
         help="Write Russian draft_lines via quality rewrite route with resilient fallback.",
     )
+    subparsers.add_parser("rank-digest", help="Этап 3: доски/вердикты/notability (рейтинговая половина rewrite).")
+    subparsers.add_parser("plan-digest", help="Этап 3: планёрка — неизменяемый слот-план выпуска.")
+    subparsers.add_parser("verify-digest-plan", help="Этап 3: финальная сверка отправляемого HTML с планом.")
     subparsers.add_parser(
         "prompt-versions",
         help="Print registered prompt versions and content hashes.",
@@ -1819,6 +1852,12 @@ def main() -> int:
         return cmd_curator_pass()
     if args.command == "transport-fill":
         return cmd_transport_fill()
+    if args.command == "rank-digest":
+        return cmd_rank_digest()
+    if args.command == "plan-digest":
+        return cmd_plan_digest()
+    if args.command == "verify-digest-plan":
+        return cmd_verify_digest_plan()
     if args.command == "llm-rewrite":
         return cmd_llm_rewrite()
     if args.command == "prompt-versions":

@@ -67,7 +67,23 @@ jobs:
       - name: Transport fill — deterministic templates + Metrolink reminders
         run: python3 scripts/run_local_digest.py transport-fill
 
-      - name: LLM rewrite — DeepSeek board → direct Russian writer → hard repair only
+      - name: Rank digest — доски DeepSeek + вердикты + notability (Этап 3)
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI }}
+          GROQ_API_KEY: ${{ secrets.GROGAPIKEY }}
+          TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+          SKIDDLE_API_KEY: ${{ secrets.SKIDDLE_APIKEY }}
+          NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP: "1"
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+          LASTFM_API: ${{ secrets.LASTFM_API }}
+        run: python3 scripts/run_local_digest.py rank-digest
+
+      - name: Plan digest — планёрка, неизменяемый слот-план (Этап 3)
+        run: python3 scripts/run_local_digest.py plan-digest
+
+      - name: LLM rewrite — проза строго слотам и запасным плана
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
@@ -104,6 +120,11 @@ jobs:
         run: |
           python3 scripts/run_local_digest.py pre-send-quality-judge || \
             python3 scripts/run_local_digest.py pre-send-quality-judge --dry-run || true
+
+      - name: Verify digest vs plan — финальная сверка (Этап 3)
+        # Контентные расхождения — warnings (выпуск идёт); блокирует отправку
+        # только технически негодный артефакт (нет плана/чужой run/стухшая дата).
+        run: python3 scripts/run_local_digest.py verify-digest-plan
 
       - name: Send digest to Telegram
         env:
