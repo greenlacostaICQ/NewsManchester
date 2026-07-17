@@ -14,6 +14,7 @@ from news_digest.pipeline.common import is_recoverable_reserve, recoverable_rese
 
 def _capacity_cut(**over):
     candidate = {
+        "include": True,
         "validated": True,
         "digest_selection_verdict": "reserve",
         "primary_block": "last_24h",

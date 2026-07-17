@@ -1202,6 +1202,7 @@
 - Почему решает класс: повторный утренний fetch больше не уничтожает накопленные ночью факты, но не может заменить свежий live-факт устаревшим значением или склеить записи через index/homepage.
 - ПРОВЕРКА: реальные state 15.07, 3735 inventory records + 1372 final candidates: до — 30 eligible, 29 dropped-as-live-duplicate и 1 inserted; после на том же наборе — 30/30 lineages merged into live, 0 потерянных совпадений. Targeted inventory tests OK; production proof pending.
 - Удалено: отдельный параметр/путь `existing_fingerprints`, который умел только выбрасывать совпадение без доступа к live-карточке.
+- Production-proof 17.07: из 31 активной ночной линии 30 объединены с live-карточками и 1 добавлена после live-дедупа; все 31 найдены в конечном pipeline, `missing_after_pipeline=0`. Режим source replacement не включался.
 
 ### 0114 — Зарезервировано: решение финального судьи — отдельный пакет — 2026-07-15
 - Статус: не реализовывалось в этом пакете по решению owner.
@@ -1220,6 +1221,9 @@
 - Дополнительное решение 16.07: non-impact transport теперь удерживается своим существующим passenger-impact контрактом и не переезжает в City; leisure из Today/Future возвращается только в Weekend/Tickets/Russian/Future своего purpose-класса; любое Today-событие обязано иметь явное текущее действие, предупреждение, закрытие или срок.
 - ПРОВЕРКА 16.07 на реальном state: writer replay `next_7_days 3→0`, `future_announcements 3→6`; финальный Today вместо жилья/старого суда оставил два действующих предупреждения. Реальные карточки `Major tram works` и `Prestwich Tram Stop works` на повторном validator-probe получили `transport_no_passenger_movement_impact`, `include=false`, не меняя block на City. Production morning proof нового validator ожидается 17.07.
 - Дополнительно удалено: `_reroute_non_impact_transport`, его infra/incident routing regex и мёртвый `_complete_next_7_rescue_candidate`; отдельного recovery/fallback не добавлено.
+- Дополнение 17.07: release больше не дописывает обычные строки после writer/editor ради minimum или `must_show`; он только сообщает недобор. Сохранён единственный временный curator-lead guard до отдельной 0114, потому что A/B replay выявил потерю уже выбранного лида в 5 из 12 исторических дней. Удалены Football→City soft-route и связанные predicates: несодержательный football теперь отклоняет validator, а спортивная карточка остаётся только в Football. Today проверяет исходные факты, поэтому сгенерированная practical-фраза не может превратить ретроспективу в действие на сегодня; leisure ближайших 7 дней больше не остаётся в Future.
+- ПРОВЕРКА 17.07: в replay teacher/coroner retrospective исчез из Today, карточка Manchester City вернулась из City в Football, near-term HOME film исчез из Future; обычных поздних вставок release `0`. На реальной Russian-карточке `Скамейка` частично распроданные ценовые категории больше не считаются полным sold-out, строка стала видимой. После возврата только lead guard replay 29.06 сохранил 43 bullets/13 sections/lead ok, 02.07 — 60/13/lead ok против baseline 62/13/ok, 09.07 — 70/15/lead ok против 74/14/ok. Остальные широкие replay остановлены как избыточные; 155 узких тестов проходят.
+- Дополнительно удалено 17.07: late ordinary section recovery, non-lead `must_show` insertion, Football→City routing и его regex/helpers. Editor same-block reserve и final-judge repair не удалялись: первый остаётся владельцем восстановления внутри того же блока, второй относится к исключённой из пакета 0114.
 
 ### 0116 — Одна конечная воронка для каждой ночной карточки — 2026-07-15
 - Статус: внедрено; исправлено по production-proof 16.07, новый morning proof ожидается.
@@ -1232,6 +1236,9 @@
 - Дополнительное решение 16.07: release строит обратный индекс по сохранённым `inventory_lineages`, после разрешения кандидата использует его настоящий fingerprint для validation/writer и сохраняет `final_reason`.
 - ПРОВЕРКА 16.07 на реальном state/HTML: активные `missing_after_pipeline 4→0`; `present_after_pipeline 28→32`; Chorlton стал `visible_html`, Monatik — `rejected_by_validation` с сохранённой причиной старой даты; итоговая воронка 3871 lineage → 32 present → 32 validated → 29 accepted → 7 writer-rendered → 5 visible.
 - Дополнительно удалено: ничего — прямой lookup по candidate fingerprint нужен для inserted и неизменённых карточек; добавлен только отсутствовавший lineage identity.
+- Дополнение 17.07: итоговый отчёт отделяет исторические записи без доказанного текущего происхождения от operational lineages и отдельно показывает active-current судьбы по блокам. Карточка, снятая repeat/rendered quarantine, получает конечную причину и не считается потерянным `must_show`. Термин `silent_loss` заменён на точный `selected_not_rendered`.
+- ПРОВЕРКА 17.07: реальная цепочка `3917 stored → 140 fact-ready → 31 morning-eligible → 30 merged + 1 inserted → 31 present → 28 validation-accepted → 8 writer-rendered → 6 visible`; активных `missing_after_pipeline=0`. Replay harness восстановлен на pre-send `published_facts`, иначе post-send snapshot дедупил выпуск сам с собой; sent HTML теперь контекст, а продуктовый regression — replay-before/replay-after согласно AGENTS.
+- Дополнительно удалено 17.07: блокирующее сравнение current replay с post-send sent HTML и ложное смешение legacy inventory с текущей operational-воронкой.
 
 ### 0117 — Action URL и retention реально управляют складом — 2026-07-15
 - Статус: реализовано и подтверждено production-wave.
@@ -1240,6 +1247,8 @@
 - Почему решает класс: временная блокировка сайта не уничтожает карточку, будущий билет не удаляется по serving TTL, а склад перестаёт расти бесконечно за счёт реально устаревших строк.
 - ПРОВЕРКА: real-state dry run 15.07 на копии склада: 3735→3716, удалено 19 expired (Culture 15, Diaspora 2, Ticket 2), Food 20/20 сохранены, dead 0 до первой URL-волны. Production run `29418506950`, run_id `20260715T141718+0100`: URL checked 5, alive 5, not_found/unknown 0; cleanup 3741→3722, удалено 19 expired (Culture 15, Diaspora 2, Ticket 2), Food сохранён 20/20. Offline contract: 200/302 alive, 404/410 two-run dead, 403/429 unknown; future Ticket 01.12 retained to 31.12, Transport last seen 01.06 removed on 15.07. 877 tests OK.
 - Удалено: доверие к сохранённому старому `retention_until` при очистке; отдельного fallback/refetch не добавлено.
+- Дополнение 17.07: recurring-события получают вычисленный `next_occurrence`, а retention считается от следующей реальной даты, не от устаревшей structured date. При этом past one-off с явной датой нельзя оживить случайным словом из описания; Friday добавлен в поддерживаемую recurring-сетку Weekend.
+- ПРОВЕРКА 17.07 на реальной карточке `The Asian Food Night Market Stockport`: до — `date_start=2026-07-10`, `next_occurrence` пуст, retention `2026-08-09`; после перестроения той же карточки — `next_occurrence=2026-08-14`, fact/render ready, retention `2026-09-13`. В текущем operational inventory: 1849 записей, URL `alive=76`, `unknown=1773`; unknown не считается dead и не разрешает replacement. Expired retention rows текущего run: `0`.
 
 ### 0118 — Pro CV сохраняет решение для каждой отправленной карточки — 2026-07-15
 - Статус: реализовано и подтверждено production-wave.

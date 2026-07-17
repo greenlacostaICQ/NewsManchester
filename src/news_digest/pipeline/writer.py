@@ -522,7 +522,8 @@ _HARD_SERVICE_ACCOUNTABILITY_RE = re.compile(
 _TODAY_FOCUS_RETROSPECTIVE_RE = re.compile(
     r"\b(?:\d{1,3}\s+years?\s+ago|decades?\s+ago|back\s+in\s+(?:19|20)\d\d|"
     r"serving\s+(?:a\s+)?life|sentenced\s+to\s+life|jailed\s+for\s+life|"
-    r"years?\s+later|murderer|killer)\b",
+    r"years?\s+later|murderer|killer|tragic\s+death|found\s+dead|"
+    r"(?:coroner(?:'s)?|inquest)\s+(?:court|hearing|found|heard)|died\s+(?:after|from|in))\b",
     re.IGNORECASE,
 )
 _TODAY_FOCUS_CURRENT_HOOK_RE = re.compile(
@@ -640,12 +641,12 @@ def _today_focus_candidate_is_eligible(candidate: dict | None, line: str = "") -
         return False
     if _candidate_future_only_dates(candidate, line):
         return False
-    text = " ".join(
+    source_text = " ".join(
         str(candidate.get(field) or "")
-        for field in ("title", "summary", "lead", "practical_angle")
+        for field in ("title", "summary", "lead")
     )
-    if line:
-        text = f"{text} {line}"
+    action_text = " ".join((str(candidate.get("practical_angle") or ""), line))
+    text = f"{source_text} {action_text}"
     if tier == "reject":
         return False
     if not _TODAY_FOCUS_HARD_ACTION_RE.search(text):
@@ -653,7 +654,7 @@ def _today_focus_candidate_is_eligible(candidate: dict | None, line: str = "") -
     # Past retrospective / old-conviction commentary without a current hook is
     # not a practical "today" item (neighbour-of-a-murderer piece, «24 years
     # ago…» heritage feature) — keep it out of the morning practical block.
-    if _TODAY_FOCUS_RETROSPECTIVE_RE.search(text) and not _TODAY_FOCUS_CURRENT_HOOK_RE.search(text):
+    if _TODAY_FOCUS_RETROSPECTIVE_RE.search(source_text) and not _TODAY_FOCUS_CURRENT_HOOK_RE.search(source_text):
         return False
     story_frame = contract.get("story_frame") if isinstance(contract.get("story_frame"), dict) else {}
     why_now = str(story_frame.get("why_now") or "")
@@ -1634,8 +1635,6 @@ def _block_contract_action(candidate: dict, line: str) -> dict[str, str]:
         return {"action": "reroute", "target_block": "ticket_radar", "reason": "block_contract:weekend_solo_gig_to_ticket_radar"}
     if block == "outside_gm_tickets" and not _is_a_tier_ticket(candidate):
         return {"action": "hold", "reason": "block_contract:outside_gm_non_a_tier"}
-    if block == "football" and _football_should_route_to_soft(candidate):
-        return {"action": "reroute", "target_block": "city_watch", "reason": "block_contract:football_soft_to_city_watch"}
     if block == "tech_business" and category == "tech_business" and not _BUSINESS_CONCRETE_RE.search(text):
         return {"action": "hold", "reason": "block_contract:business_no_concrete_city_impact"}
     if block == "food_openings" and not _FOOD_CONCRETE_RE.search(text):
@@ -1731,11 +1730,6 @@ _RARE_MARKET_OR_FESTIVAL_RE = re.compile(
     r"festival|food\s+festival|bbq|barbecue|beer\s+festival|street\s+food|"
     r"music|live\s+music|artists?|performance|special|launch|anniversary|"
     r"ежегодн|раз\s+в\s+год|фестиваль|барбекю|уличн\w+\s+ед|живая\s+музык)\b",
-    re.IGNORECASE,
-)
-_SOLD_OUT_EVENT_RE = re.compile(
-    r"\b(?:sold\s*out|fully\s*booked|no\s+(?:tickets|spaces|places)\s+(?:left|available)|"
-    r"tickets?\s+(?:are\s+)?(?:sold\s*out|unavailable)|распродан[оаы]?|мест\s+нет)\b",
     re.IGNORECASE,
 )
 _SOLO_GIG_RE = re.compile(
@@ -4998,7 +4992,7 @@ def _future_announcement_decision(candidate: dict) -> tuple[str, str]:
     days_out = (nearest - today).days
     if days_out <= 7:
         if _is_leisure_candidate(candidate):
-            return "keep", "near-term leisure remains in its leisure block"
+            return "hold", "near-term leisure is not a future announcement"
         return "move_next_7", f"nearest dated occurrence is {days_out} day(s) away"
     if _is_long_running_exhibition_without_week_hook(candidate):
         return "hold", "long-running exhibition without a near-term hook"
@@ -5860,19 +5854,11 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     #     280-char teaser, accept whatever LLM produced rather than
     #     dropping a real event for being a sentence too short.
     is_transport_block = block_key == "transport"
-    if block_key in _EVENT_BLOCKS and _SOLD_OUT_EVENT_RE.search(
-        " ".join(
-            str(value or "")
-            for value in (
-                text,
-                candidate.get("title"),
-                candidate.get("summary"),
-                candidate.get("lead"),
-                candidate.get("evidence_text"),
-            )
-        )
-    ):
-        errors.append("sold-out event must not be published.")
+    if block_key in _EVENT_BLOCKS:
+        from news_digest.pipeline.candidate_validator import event_is_fully_sold_out  # noqa: PLC0415
+
+        if event_is_fully_sold_out(candidate, text):
+            errors.append("sold-out event must not be published.")
     if block_key == "weather" and re.search(r"\b(?:локальн\w+\s+)?радар\b", text, re.IGNORECASE):
         errors.append("weather line must not tell the reader to check a radar.")
     if is_transport_block:
@@ -6022,22 +6008,6 @@ _FOOTBALL_SPORT_RE = re.compile(
     r"call[- ]?up|debut|suspension|ban|training return|ruled out|available)\b",
     re.IGNORECASE,
 )
-_FOOTBALL_SOFT_RE = re.compile(
-    r"\b(?:birthday|break[- ]?up|girlfriend|boyfriend|maya jama|personal life|"
-    r"fan reaction|fans react|social media|instagram|party|gossip|rumour|"
-    r"speculation|shirt launch|kit launch|award|charity|community|documentary|"
-    r"amazon|prime video|behind[- ]the[- ]scenes|poll|vote|supporters?|fans?)\b",
-    re.IGNORECASE,
-)
-_FOOTBALL_HARD_NEWS_RE = re.compile(
-    r"\b(?:match|fixture|result|score|goal|injur|fitness|transfer|sign(?:s|ed|ing)?|"
-    r"contract|loan|squad|line[- ]?up|team news|appoint(?:s|ed|ment)?|"
-    r"negotiat(?:e|es|ed|ions?)|bid|rejected|accepted|available|ruled out|"
-    r"debut|call[- ]?up|suspension|ban|training return)\b",
-    re.IGNORECASE,
-)
-
-
 def _football_is_sport_news(candidate: dict) -> bool:
     if str(candidate.get("primary_block") or "") != "football":
         return False
@@ -6046,19 +6016,6 @@ def _football_is_sport_news(candidate: dict) -> bool:
         for field in ("title", "summary", "lead", "evidence_text", "source_url")
     )
     return bool(_FOOTBALL_SPORT_RE.search(blob))
-
-
-def _football_should_route_to_soft(candidate: dict) -> bool:
-    if str(candidate.get("primary_block") or "") != "football":
-        return False
-    if not _football_is_sport_news(candidate):
-        return True
-    blob = " ".join(
-        str(candidate.get(field) or "")
-        for field in ("title", "summary", "lead", "evidence_text", "source_url")
-    )
-    return bool(_FOOTBALL_SOFT_RE.search(blob) and not _FOOTBALL_HARD_NEWS_RE.search(blob))
-
 
 _NON_GM_REGIONAL_RE = re.compile(
     r"\b(?:southport|liverpool|lancashire|cheshire|yorkshire|cumbria|london|devon|north-west|north west)\b",
@@ -6581,12 +6538,6 @@ def write_digest(project_root: Path) -> StageResult:
             )
             continue
 
-        if _football_should_route_to_soft(candidate):
-            candidate["primary_block"] = "city_watch"
-            candidate["football_soft_routed"] = True
-            warnings.append(
-                f"Candidate #{index}: football soft item routed to «Городской радар»; it does not count toward football minimum."
-            )
         top_news_route = _top_news_route_or_drop(candidate)
         if top_news_route == "city_watch":
             candidate["primary_block"] = "city_watch"

@@ -357,6 +357,8 @@ _TRANSPORT_MOVEMENT_IMPACT_RE = re.compile(
     r"\b(?:cancel(?:led|ling|lation)?|delay(?:ed|s)?|disruption|disrupted|"
     r"no\s+service|no\s+trains?|not\s+running|replacement\s+bus(?:es)?|"
     r"buses\s+replace|rail\s+replacement|closure|closed|diversion|diverted|"
+    r"amended(?:\s+[\w/-]+){0,8}\s+(?:service|services|timetable)|"
+    r"service\s+changes?|services?\s+affected|"
     r"suspend(?:ed|ed)?|strike|industrial\s+action|part[\s-]?suspended|"
     r"line\s+closed|stop\s+closure|station\s+closure|severe\s+delays?|"
     r"minor\s+delays?|"
@@ -966,7 +968,9 @@ _LOW_VALUE_FOOTBALL_RE = re.compile(
     r"\b("
     r"connection\s+with\s+our\s+fans|farewell\s+interview|"
     r"fan\s+of\s+the\s+club\s+for\s+the\s+rest\s+of\s+my\s+life|"
-    r"bespoke\s+shirts?|programme\s+cover|training\s+gallery"
+    r"bespoke\s+shirts?|programme\s+cover|training\s+gallery|"
+    r"personal\s+life|girlfriend|boyfriend|break[- ]?up|gossip|"
+    r"behind[- ]the[- ]scenes|documentary|prime\s+video|amazon\s+(?:prime|documentary)"
     r")\b",
     re.IGNORECASE,
 )
@@ -1279,6 +1283,8 @@ def _exclude_road_only_transport(candidate: dict) -> bool:
         return False
     if str(candidate.get("transport_mode") or "") != "road":
         return False
+    if transport_movement_impact(candidate):
+        return False
     _append_reject(
         candidate,
         "road_only_transport",
@@ -1289,6 +1295,59 @@ def _exclude_road_only_transport(candidate: dict) -> bool:
 
 def transport_movement_impact(candidate: dict) -> bool:
     return bool(_TRANSPORT_MOVEMENT_IMPACT_RE.search(_candidate_blob(candidate)))
+
+
+_TRANSPORT_RELATIVE_TODAY_RE = re.compile(r"\b(?:today|tonight|this\s+morning)\b", re.IGNORECASE)
+_TRANSPORT_MONTHS = {
+    name: month
+    for month, name in enumerate(
+        (
+            "january", "february", "march", "april", "may", "june",
+            "july", "august", "september", "october", "november", "december",
+        ),
+        start=1,
+    )
+}
+_TRANSPORT_MONTH_DAY_RE = re.compile(
+    r"\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)?\s*"
+    r"(" + "|".join(_TRANSPORT_MONTHS) + r")\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+(20\d{2}))?\b",
+    re.IGNORECASE,
+)
+_TRANSPORT_DAY_MONTH_RE = re.compile(
+    r"\b(\d{1,2})(?:st|nd|rd|th)?\s+(" + "|".join(_TRANSPORT_MONTHS) + r")(?:\s+(20\d{2}))?\b",
+    re.IGNORECASE,
+)
+
+
+def _exclude_past_relative_day_transport(candidate: dict) -> bool:
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("primary_block") or "") != "transport" and str(candidate.get("category") or "") != "transport":
+        return False
+    title = str(candidate.get("title") or "")
+    if not _TRANSPORT_RELATIVE_TODAY_RE.search(title):
+        return False
+    match = _TRANSPORT_MONTH_DAY_RE.search(title)
+    if match:
+        month_name, day_raw, year_raw = match.groups()
+    else:
+        reverse = _TRANSPORT_DAY_MONTH_RE.search(title)
+        if not reverse:
+            return False
+        day_raw, month_name, year_raw = reverse.groups()
+    today = now_london().date()
+    try:
+        stated_day = date(int(year_raw or today.year), _TRANSPORT_MONTHS[month_name.lower()], int(day_raw))
+    except (KeyError, ValueError):
+        return False
+    if stated_day >= today:
+        return False
+    _append_reject(
+        candidate,
+        "transport_relative_today_is_past",
+        f"Validator: transport headline says today for {stated_day.isoformat()}, not {today.isoformat()}.",
+    )
+    return True
 
 
 def _exclude_transport_accessibility_only(candidate: dict) -> bool:
@@ -1749,35 +1808,11 @@ def _exclude_pr_only_tech_business(candidate: dict) -> bool:
     return True
 
 
-_SOLD_OUT_RE = re.compile(
-    r"\b(?:sold[\s-]?out|распродан\w*|билеты\s+(?:уже\s+)?распродан\w*)\b", re.IGNORECASE
-)
 _RESALE_RE = re.compile(
     r"\b(?:resale|re-?sale|waiting\s+list|returns?\b|перепродаж\w*|лист\s+ожидани\w*|"
     r"возврат\w*|освобод\w*\s+мест)\b",
     re.IGNORECASE,
 )
-
-
-def _exclude_sold_out_event(candidate: dict) -> bool:
-    """A sold-out event with no resale/returns/waiting-list is not actionable —
-    do not publish it as an upcoming pick (owner 2026-06-15: Lowry «Babies
-    Playtime — билеты сейчас распроданы» in the next-7-days afisha)."""
-    if not candidate.get("include"):
-        return False
-    if str(candidate.get("primary_block") or "") not in {
-        "weekend_activities", "next_7_days", "future_announcements", "russian_events"
-    }:
-        return False
-    blob = _candidate_blob(candidate)
-    if _SOLD_OUT_RE.search(blob) and not _RESALE_RE.search(blob):
-        _append_reject(
-            candidate,
-            "event_sold_out",
-            "Validator: event is sold out with no resale/returns — no reader action.",
-        )
-        return True
-    return False
 
 
 def _is_market_fair_weekend_candidate(candidate: dict) -> bool:
@@ -1900,6 +1935,43 @@ def _enforce_leisure_routing_contract(candidate: dict) -> bool:
     return True
 
 
+_GLOBAL_SOLD_OUT_EVIDENCE_RE = re.compile(
+    r"\b(?:this\s+event\s+is\s+sold\s*out|tickets?\s+(?:are\s+)?sold\s*out|"
+    r"fully\s*booked|no\s+(?:tickets|spaces|places)\s+(?:left|available)|"
+    r"билеты\s+(?:уже\s+)?распродан\w*|мест\s+нет)\b",
+    re.IGNORECASE,
+)
+_POSITIVE_TICKET_AVAILABILITY_RE = re.compile(
+    r"\b(?:tickets?\s+available|spaces?\s+available|book\s+now|buy\s+tickets?|select)\b",
+    re.IGNORECASE,
+)
+
+
+def event_is_fully_sold_out(candidate: dict, line: str = "") -> bool:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    status = str(candidate.get("event_status") or event.get("status") or "").strip().lower().replace("-", "_").replace(" ", "_")
+    if status in {"sold_out", "fully_booked", "no_tickets", "unavailable"}:
+        return True
+    public_blob = " ".join(
+        str(value or "")
+        for value in (
+            line,
+            candidate.get("title"),
+            candidate.get("summary"),
+            candidate.get("lead"),
+            candidate.get("practical_angle"),
+        )
+    )
+    if _SOLD_OUT_EVENT_RE.search(public_blob) and not _RESALE_RE.search(public_blob):
+        return True
+    evidence = str(candidate.get("evidence_text") or "")
+    return bool(
+        _GLOBAL_SOLD_OUT_EVIDENCE_RE.search(evidence)
+        and not _POSITIVE_TICKET_AVAILABILITY_RE.search(evidence)
+        and not _RESALE_RE.search(evidence)
+    )
+
+
 def _exclude_sold_out_event(candidate: dict) -> bool:
     if not candidate.get("include"):
         return False
@@ -1907,7 +1979,7 @@ def _exclude_sold_out_event(candidate: dict) -> bool:
     block = str(candidate.get("primary_block") or "")
     if category not in {"culture_weekly", "venues_tickets", "russian_speaking_events"} and block not in _EVENT_BLOCKS:
         return False
-    if not _SOLD_OUT_EVENT_RE.search(_candidate_blob(candidate)):
+    if not event_is_fully_sold_out(candidate):
         return False
     _append_reject(
         candidate,
@@ -2785,6 +2857,8 @@ def validate_candidates(project_root: Path) -> StageResult:
         manual = _time_gate("manual_override", lambda: _manual_override(candidate, state_dir))
         if candidate.get("include") and manual != "force_include":
             _time_gate("cross_day_rehash", lambda: _exclude_cross_day_rehash(candidate, state_dir))
+        if candidate.get("include") and manual != "force_include":
+            _time_gate("past_relative_day_transport", lambda: _exclude_past_relative_day_transport(candidate))
         if candidate.get("include") and manual != "force_include":
             _time_gate("road_only_transport", lambda: _exclude_road_only_transport(candidate))
         if candidate.get("include") and manual != "force_include":

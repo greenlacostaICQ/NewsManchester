@@ -23,7 +23,9 @@ from __future__ import annotations
 import argparse
 import difflib
 import json
+import os
 import re
+import shutil
 import socket
 import subprocess
 import sys
@@ -32,7 +34,8 @@ import time
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-SRC_DIR = PROJECT_ROOT / "src"
+CODE_ROOT = Path(os.environ.get("NEWS_DIGEST_REPLAY_CODE_ROOT", PROJECT_ROOT))
+SRC_DIR = CODE_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
@@ -91,9 +94,27 @@ def find_state_commit(day: str) -> str:
     return sha
 
 
-def extract_snapshot(sha: str, sandbox: Path) -> str:
+def _restore_pre_send_history(sha: str, sandbox: Path) -> str:
+    """Use publication history from immediately before the replayed send.
+
+    Daily state commits are written after Telegram delivery, so their
+    ``published_facts.json`` already contains the issue being replayed. Feeding
+    that file back into write/edit/build makes the issue dedupe against itself
+    and turns a product replay into a false 30-line mini-issue.
+    """
+    parent = _git("rev-parse", f"{sha}^").strip()
+    history_path = sandbox / "data" / "state" / "published_facts.json"
+    try:
+        history = _git("show", f"{parent}:data/state/published_facts.json")
+    except subprocess.CalledProcessError:
+        history = json.dumps({"last_updated_london": None, "facts": []})
+    history_path.write_text(history, encoding="utf-8")
+    return parent
+
+
+def extract_snapshot(sha: str, sandbox: Path) -> tuple[str, str]:
     """Materialize the day's data/state (+ data/validation if present) into
-    the sandbox and return the sent digest HTML."""
+    the sandbox and return the sent HTML plus the pre-send history commit."""
     paths = ["data/state"]
     if _git("ls-tree", "-d", sha, "data/validation").strip():
         paths.append("data/validation")
@@ -105,13 +126,14 @@ def extract_snapshot(sha: str, sandbox: Path) -> str:
     subprocess.run(["tar", "-x", "-C", str(sandbox)], input=archive, check=True)
     if not (sandbox / "data" / "state" / "candidates.json").exists():
         raise SystemExit(f"Snapshot {sha[:8]} has no data/state/candidates.json — cannot replay.")
+    history_sha = _restore_pre_send_history(sha, sandbox)
     (sandbox / "data" / "outgoing").mkdir(parents=True, exist_ok=True)
     try:
         sent = _git("show", f"{sha}:data/outgoing/current_digest.html")
     except subprocess.CalledProcessError:
         raise SystemExit(f"Snapshot {sha[:8]} has no sent current_digest.html — nothing to compare against.")
     (sandbox / "sent_digest.html").write_text(sent, encoding="utf-8")
-    return sent
+    return sent, history_sha
 
 
 def freeze_environment(day: str, sent_html: str, sha: str) -> str:
@@ -167,6 +189,10 @@ def run_stages(sandbox: Path) -> list[dict[str, object]]:
             row = {"stage": name, "ok": False, "message": f"{exc.__class__.__name__}: {exc}"}
         row["seconds"] = round(time.monotonic() - started, 1)
         results.append(row)
+        draft_path = sandbox / "data" / "state" / "draft_digest.html"
+        if row["ok"] and draft_path.exists():
+            artifact_name = name.replace("-", "_")
+            shutil.copy2(draft_path, sandbox / f"replay_after_{artifact_name}.html")
         if not row["ok"]:
             break
     return results
@@ -266,6 +292,30 @@ def check_golden_expectations(day: str, sent_metrics: dict[str, object]) -> list
     return failures
 
 
+def describe_sent_context_drift(
+    sent_metrics: dict[str, object], replay_metrics: dict[str, object] | None
+) -> list[str]:
+    """Describe sent-vs-replay drift without treating it as a regression.
+
+    Daily snapshots contain post-send mutations, while replay executes current
+    code. The project regression signal is baseline-replay versus changed-code
+    replay; the sent artifact is context and golden-defect evidence only.
+    """
+    if not replay_metrics:
+        return ["replayed HTML is missing"]
+    sent_bullets = int(sent_metrics.get("bullet_total") or 0)
+    replay_bullets = int(replay_metrics.get("bullet_total") or 0)
+    allowed_gap = max(3, round(sent_bullets * 0.15))
+    failures: list[str] = []
+    if abs(sent_bullets - replay_bullets) > allowed_gap:
+        failures.append(
+            f"bullet_total drift {sent_bullets}->{replay_bullets} exceeds {allowed_gap}"
+        )
+    if sent_metrics.get("lead_status") == "ok" and replay_metrics.get("lead_status") != "ok":
+        failures.append("sent lead was visible but replay lead is missing/empty")
+    return failures
+
+
 def replay_one(day: str, sandbox_root: Path | None) -> dict[str, object]:
     sha = find_state_commit(day)
     if sandbox_root is not None:
@@ -274,7 +324,7 @@ def replay_one(day: str, sandbox_root: Path | None) -> dict[str, object]:
     else:
         sandbox = Path(tempfile.mkdtemp(prefix=f"replay_{day}_"))
 
-    sent_html = extract_snapshot(sha, sandbox)
+    sent_html, history_sha = extract_snapshot(sha, sandbox)
     fake_now = freeze_environment(day, sent_html, sha)
     block_network()
 
@@ -288,6 +338,7 @@ def replay_one(day: str, sandbox_root: Path | None) -> dict[str, object]:
     report: dict[str, object] = {
         "day": day,
         "commit": sha,
+        "history_commit": history_sha,
         "frozen_now": fake_now,
         "sandbox": str(sandbox),
         "stages": stages,
@@ -298,6 +349,9 @@ def replay_one(day: str, sandbox_root: Path | None) -> dict[str, object]:
         "diff": diff_digests(sent_html, replayed_html, sandbox) if replayed_html else None,
     }
     report["golden_failures"] = check_golden_expectations(day, report["sent_metrics"])
+    report["sent_context_drift"] = describe_sent_context_drift(
+        report["sent_metrics"], report["replay_metrics"]
+    )
     (sandbox / "replay_report.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
     )
@@ -331,6 +385,8 @@ def print_report(report: dict[str, object]) -> None:
         print(f"  GOLDEN CHECK FAILED: {'; '.join(report['golden_failures'])}")
     elif report["day"] in GOLDEN_EXPECTATIONS:
         print("  golden check: known defects confirmed in sent artifact")
+    if report["sent_context_drift"]:
+        print(f"  sent context drift: {'; '.join(report['sent_context_drift'])}")
 
 
 def main() -> int:
@@ -338,6 +394,7 @@ def main() -> int:
     parser.add_argument("day", nargs="?", help="Date to replay, YYYY-MM-DD")
     parser.add_argument("--golden", action="store_true", help="Replay all golden + ordinary days")
     parser.add_argument("--sandbox", type=Path, default=None, help="Directory for sandboxes (default: system temp)")
+    parser.add_argument("--keep", action="store_true", help="Keep temporary golden sandboxes for inspection")
     args = parser.parse_args()
 
     if not args.golden and not args.day:
@@ -354,13 +411,15 @@ def main() -> int:
             failures.append(f"{day}: golden expectations not met")
         if report["total_seconds"] > 300:
             failures.append(f"{day}: replay took {report['total_seconds']}s (> 5 min budget)")
+        if args.golden and args.sandbox is None and not args.keep:
+            shutil.rmtree(str(report["sandbox"]), ignore_errors=True)
 
     if failures:
         print("\nFAILURES:")
         for failure in failures:
             print(f"  - {failure}")
         return 1
-    print(f"\nAll {len(days)} day(s) replayed OK.")
+    print(f"\nAll {len(days)} day(s) replayed with pre-send history restored.")
     return 0
 
 

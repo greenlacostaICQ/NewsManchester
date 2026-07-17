@@ -1,8 +1,4 @@
-"""Wave 1 / S4: the shipped HTML is the source of truth. The reconciler measures
-the draft (not writer_report), flags the writer-vs-HTML divergence, recovers
-thin sections from the unified recoverable reserve, and (P0-2) enforces the
-must_show contract — all before promotion.
-"""
+"""The shipped HTML is the source of truth and release never mutates it."""
 import tempfile
 import unittest
 from pathlib import Path
@@ -65,18 +61,18 @@ class VisibleContractTest(unittest.TestCase):
         report = rr.reconcile_visible_html(self.draft, candidates=[], writer_section_counts={})
         self.assertTrue(report["lead_visible"])
 
-    def test_bounded_recovery_fills_thin_section_from_reserve(self):
+    def test_thin_section_is_reported_without_late_recovery(self):
         self.draft.write_text(_draft(1), encoding="utf-8")  # Свежие новости = 1, min = 6
+        before = self.draft.read_text(encoding="utf-8")
         report = rr.reconcile_visible_html(
             self.draft, candidates=[_reserve(i) for i in range(5)], writer_section_counts={"Свежие новости": 1}
         )
-        self.assertEqual(report["html_section_counts"]["Свежие новости"], 6)
-        self.assertEqual(report["inserted_total"], 5)
-        self.assertEqual(self.draft.read_text(encoding="utf-8").count("новое решение номер"), 5)
-        self.assertNotIn("Свежие новости", {s["section"] for s in report["still_under_minimum"]})
+        self.assertEqual(report["html_section_counts"]["Свежие новости"], 1)
+        self.assertEqual(report["inserted_total"], 0)
+        self.assertEqual(self.draft.read_text(encoding="utf-8"), before)
+        self.assertIn("Свежие новости", {s["section"] for s in report["still_under_minimum"]})
 
-    def test_must_show_missing_item_is_recovered(self):
-        # P0-2: a must_show item absent from the HTML must be recovered or reported.
+    def test_must_show_missing_item_is_reported_not_recovered(self):
         self.draft.write_text(_draft(6), encoding="utf-8")  # Fresh already at floor
         must = {
             "validated": True,
@@ -86,14 +82,31 @@ class VisibleContractTest(unittest.TestCase):
             "source_label": "MEN",
             "draft_line": '• Обязательная к показу новость дня. <a href="https://must.show/item">MEN</a>',
         }
+        before = self.draft.read_text(encoding="utf-8")
         report = rr.reconcile_visible_html(self.draft, candidates=[must], writer_section_counts={})
-        self.assertEqual(report["must_show_recovered"], 1)
-        self.assertIn("Обязательная к показу", self.draft.read_text(encoding="utf-8"))
+        self.assertEqual(report["must_show_recovered"], 0)
+        self.assertEqual(len(report["must_show_missing"]), 1)
+        self.assertEqual(self.draft.read_text(encoding="utf-8"), before)
+
+    def test_existing_lead_guard_is_preserved_until_0114(self):
+        self.draft.write_text(_draft(6), encoding="utf-8")
+        lead = {
+            "fingerprint": "lead-fp",
+            "is_lead": True,
+            "publish_plan_must_show": True,
+            "primary_block": "last_24h",
+            "source_url": "https://lead/item",
+            "source_label": "MEN",
+            "draft_line": "• Главная проверенная история дня. Подробности подтверждены.",
+        }
+        report = rr.reconcile_visible_html(self.draft, candidates=[lead], writer_section_counts={})
+
+        self.assertEqual(report["lead_guard_recovered"], 1)
+        self.assertTrue(report["lead_visible"])
+        self.assertIn("Главная проверенная история", self.draft.read_text(encoding="utf-8"))
 
     def test_report_invariants_recomputed_on_final_html(self):
-        # P1 reviewer repro: writer said Свежие=6 and the HTML started at 6 (no
-        # divergence), then a must_show recovery inserts a 7th line. The report
-        # must reflect the FINAL HTML, not the pre-recovery snapshot.
+        # Missing must_show is reported, but final counts stay tied to the HTML.
         self.draft.write_text(_draft(6, lead=True), encoding="utf-8")
         must = {
             "validated": True, "publish_plan_must_show": True, "primary_block": "last_24h",
@@ -101,17 +114,32 @@ class VisibleContractTest(unittest.TestCase):
             "draft_line": '• Обязательная новость дня. <a href="https://must/x">MEN</a>',
         }
         report = rr.reconcile_visible_html(self.draft, candidates=[must], writer_section_counts={"Свежие новости": 6})
-        self.assertEqual(report["html_section_counts"]["Свежие новости"], 7)
+        self.assertEqual(report["html_section_counts"]["Свежие новости"], 6)
         diverged = {d["section"]: d["html"] for d in report["control_assertion"]["writer_vs_html_divergent_sections"]}
-        self.assertEqual(diverged.get("Свежие новости"), 7)  # recomputed, not stale 6
-        self.assertTrue(report["lead_visible"])  # recomputed on final HTML
+        self.assertNotIn("Свежие новости", diverged)
+        self.assertTrue(report["lead_visible"])
 
-    def test_recovery_is_bounded_by_cap(self):
-        self.draft.write_text(_draft(0), encoding="utf-8")
+    def test_resolved_quarantine_is_not_reported_as_silent_must_show_loss(self):
+        self.draft.write_text(_draft(6, lead=True), encoding="utf-8")
+        must = {
+            "fingerprint": "repeat-fp",
+            "publish_plan_must_show": True,
+            "primary_block": "professional_events",
+            "source_url": "https://must/repeat",
+            "title": "Already published event",
+        }
         report = rr.reconcile_visible_html(
-            self.draft, candidates=[_reserve(i) for i in range(50)], writer_section_counts={}, insert_cap=3
+            self.draft,
+            candidates=[must],
+            writer_section_counts={},
+            resolved_dispositions={"repeat-fp": "repeat_quarantine"},
         )
-        self.assertEqual(report["inserted_total"], 3)
+
+        self.assertEqual(report["must_show_missing"], [])
+        self.assertEqual(
+            report["must_show_resolved_before_contract"][0]["disposition"],
+            "repeat_quarantine",
+        )
 
 
 if __name__ == "__main__":

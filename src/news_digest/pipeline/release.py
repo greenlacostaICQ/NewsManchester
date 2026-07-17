@@ -3482,8 +3482,12 @@ def _summarise_inventory_morning_effect(
         if canonical_url_identity(match)
     }
     final_by_block: dict[str, Counter] = defaultdict(Counter)
+    active_by_block: dict[str, Counter] = defaultdict(Counter)
     final_lineages: list[dict[str, object]] = []
     active_statuses = {"inserted_into_pipeline", "merged_into_live"}
+    provenance_counts: Counter = Counter()
+    active_lineages = 0
+    active_current_lineages = 0
     present_after_pipeline = 0
     validated_count = 0
     accepted_count = 0
@@ -3492,6 +3496,12 @@ def _summarise_inventory_morning_effect(
     for lineage in lineages:
         block = str(lineage.get("primary_block") or "unknown")
         intake_status = str(lineage.get("intake_status") or "unknown")
+        provenance = str(lineage.get("operational_provenance") or "legacy_unproven")
+        provenance_counts[provenance] += 1
+        if intake_status in active_statuses:
+            active_lineages += 1
+            if provenance == "current":
+                active_current_lineages += 1
         lineage_fp = str(
             lineage.get("live_fingerprint")
             or lineage.get("candidate_fingerprint")
@@ -3538,6 +3548,8 @@ def _summarise_inventory_morning_effect(
                 else "not_validated"
             )
         final_by_block[block][status] += 1
+        if intake_status in active_statuses:
+            active_by_block[block][status] += 1
         final_lineages.append({
             **lineage,
             "candidate_fingerprint": candidate_fp,
@@ -3548,6 +3560,10 @@ def _summarise_inventory_morning_effect(
         })
     final_funnel = {
         "inventory_lineages": len(lineages),
+        "operational_lineages": int(provenance_counts.get("current") or 0),
+        "legacy_unproven_lineages": int(provenance_counts.get("legacy_unproven") or 0),
+        "active_morning_lineages": active_lineages,
+        "active_current_lineages": active_current_lineages,
         "merged_into_live": merged_count,
         "inserted_after_live_dedupe_and_cap": inserted_count,
         "present_after_pipeline": present_after_pipeline,
@@ -3556,6 +3572,7 @@ def _summarise_inventory_morning_effect(
         "writer_rendered": writer_rendered_count,
         "visible_in_final_html": visible_count,
         "by_block": {block: dict(counts) for block, counts in sorted(final_by_block.items())},
+        "active_by_block": {block: dict(counts) for block, counts in sorted(active_by_block.items())},
         "lineage_examples": final_lineages[:80],
         "lineages": final_lineages,
     }
@@ -4454,19 +4471,29 @@ def build_release(project_root: Path) -> ReleaseResult:
     except Exception as exc:  # noqa: BLE001
         logger.warning("speed report snapshot failed: %s", exc)
 
-    # S4: visible-HTML contract. Reconcile the shipped draft against the
-    # per-section minimums + lead contract and run bounded recovery BEFORE
-    # promotion (owner refinement #3: validate the draft, not the already-
-    # promoted outgoing). Guarded — a reconciler error must never abort the
-    # issue (never-block); the issue still ships.
+    # Final visible-HTML contract: measure the draft after all content-owning
+    # stages. This pass is report-only and cannot resurrect rejected content.
     visible_contract: dict[str, object] = {"enabled": False}
     try:
         from news_digest.pipeline.release_reconcile import reconcile_visible_html  # noqa: PLC0415
 
+        resolved_dispositions = {
+            str(fp): "repeat_quarantine"
+            for fp in (visible_repeat_quarantine.get("bad_fingerprints") or [])
+            if str(fp)
+        }
+        resolved_dispositions.update(
+            {
+                str(fp): "rendered_quality_quarantine"
+                for fp in (rendered_html_quarantine.get("bad_fingerprints") or [])
+                if str(fp)
+            }
+        )
         visible_contract = reconcile_visible_html(
             draft_path,
             [c for c in (candidates_report.get("candidates") or []) if isinstance(c, dict)],
             (writer_report or {}).get("section_counts") or {},
+            resolved_dispositions=resolved_dispositions,
         )
         write_json(state_dir / "visible_contract_report.json", visible_contract)
         if not (visible_contract.get("control_assertion") or {}).get("ok", True):
@@ -4476,11 +4503,8 @@ def build_release(project_root: Path) -> ReleaseResult:
             )
         if not visible_contract.get("lead_visible", True):
             warnings.append("Visible contract: lead block «Главная история дня» is not visible in the shipped HTML.")
-        if visible_contract.get("inserted_total"):
-            warnings.append(
-                f"Visible contract: recovered {visible_contract['inserted_total']} line(s) into thin section(s) "
-                "from the recoverable reserve before promotion."
-            )
+        if visible_contract.get("lead_guard_recovered"):
+            warnings.append("Visible contract: temporary curator-lead guard restored the lead pending improvement 0114.")
         for short in visible_contract.get("still_under_minimum") or []:
             warnings.append(
                 f"Visible contract: «{short['section']}» shipped {short['actual']}/{short['minimum']} "

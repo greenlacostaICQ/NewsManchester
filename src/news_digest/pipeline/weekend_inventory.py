@@ -26,6 +26,8 @@ _ORDINALS = {
     "last": -1,
 }
 _WEEKDAYS = {
+    "friday": 4,
+    "fridays": 4,
     "saturday": 5,
     "saturdays": 5,
     "sunday": 6,
@@ -61,17 +63,17 @@ _SELLER_ADMIN_RE = re.compile(
 
 _WEEKLY_RE = re.compile(
     r"(?:"
-    r"dates?:\s*(?:from\s+|every\s+)?(saturdays?|sundays?)(?:\s+and\s+bank\s+holiday\s+mondays?)?|"
-    r"(?:every|each|all|most|weekly)\s+(saturdays?|sundays?)|"
-    r"(saturdays?|sundays?)\s+(?:weekly|every\s+week)|"
-    r"runs?\s+(?:on\s+)?(saturdays?|sundays?)|"
-    r"open(?:ing)?\s+(?:hours?\s+)?(?:on\s+)?(saturdays?|sundays?)"
+    r"dates?:\s*(?:from\s+|every\s+)?(fridays?|saturdays?|sundays?)(?:\s+and\s+bank\s+holiday\s+mondays?)?|"
+    r"(?:every|each|all|most|weekly)\s+(fridays?|saturdays?|sundays?)|"
+    r"(fridays?|saturdays?|sundays?)\s+(?:weekly|every\s+week)|"
+    r"runs?\s+(?:on\s+)?(fridays?|saturdays?|sundays?)|"
+    r"open(?:ing)?\s+(?:hours?\s+)?(?:on\s+)?(fridays?|saturdays?|sundays?)"
     r")",
     re.IGNORECASE,
 )
 _MONTHLY_RE = re.compile(
     r"\b(first|1st|second|2nd|third|3rd|fourth|4th|last)\s+"
-    r"(saturdays?|sundays?)\s+(?:of\s+)?(?:each|every|the)?\s*month\b",
+    r"(fridays?|saturdays?|sundays?)\s+(?:of\s+)?(?:each|every|the)?\s*month\b",
     re.IGNORECASE,
 )
 _THIS_WEEKEND_RE = re.compile(r"\b(?:this\s+weekend|bank\s+holiday\s+weekend)\b", re.IGNORECASE)
@@ -90,6 +92,22 @@ def _blob(candidate: dict) -> str:
             candidate.get("source_url"),
             event.get("event_name"),
             event.get("venue"),
+            event.get("date_text"),
+        )
+    )
+
+
+def _activity_blob(candidate: dict) -> str:
+    """Short identity text only; long evidence contains incidental type words."""
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    return " ".join(
+        str(value or "")
+        for value in (
+            candidate.get("source_label"),
+            candidate.get("title"),
+            str(candidate.get("summary") or "")[:500],
+            str(candidate.get("lead") or "")[:300],
+            event.get("event_name"),
             event.get("date_text"),
         )
     )
@@ -149,6 +167,10 @@ def recurring_occurrence_date(text: str, *, today: date | None = None) -> date |
     return None
 
 
+def candidate_recurring_occurrence_date(candidate: dict, *, today: date | None = None) -> date | None:
+    return recurring_occurrence_date(_blob(candidate), today=today)
+
+
 def _contract_occurrence_date(candidate: dict) -> date | None:
     contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
     occurrence = contract.get("occurrence") if isinstance(contract.get("occurrence"), dict) else {}
@@ -171,10 +193,7 @@ def weekend_occurrence_date(candidate: dict, *, today: date | None = None) -> da
     """
     today = today or now_london().date()
     start, end = current_weekend_window(today=today)
-    contract_day = _contract_occurrence_date(candidate)
-    if contract_day and start <= contract_day <= end:
-        return contract_day
-    rec_date = recurring_occurrence_date(_blob(candidate), today=today)
+    rec_date = candidate_recurring_occurrence_date(candidate, today=today)
     if rec_date and start <= rec_date <= end:
         return rec_date
     event_start = event_start_date(candidate)
@@ -182,6 +201,11 @@ def weekend_occurrence_date(candidate: dict, *, today: date | None = None) -> da
         event_end = event_end_date(candidate) or event_start
         if event_start <= end and event_end >= start:
             return max(event_start, start)
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    confidence = str(event.get("date_confidence") or "")
+    contract_day = _contract_occurrence_date(candidate)
+    if (not event_start or confidence in {"", "none", "low"}) and contract_day and start <= contract_day <= end:
+        return contract_day
     return None
 
 
@@ -189,6 +213,8 @@ def has_current_weekend_occurrence(candidate: dict, *, today: date | None = None
     today = today or now_london().date()
     if weekend_occurrence_date(candidate, today=today):
         return True
+    if event_start_date(candidate):
+        return False
     return bool(_THIS_WEEKEND_RE.search(_blob(candidate)))
 
 
@@ -196,7 +222,7 @@ def weekend_activity_type(candidate: dict | None) -> str:
     """Return the concrete protected-inventory activity family, if any."""
     if not isinstance(candidate, dict):
         return ""
-    text = _blob(candidate)
+    text = _activity_blob(candidate)
     match = _INVENTORY_TYPE_RE.search(text)
     if not match or _SELLER_ADMIN_RE.search(text):
         return ""

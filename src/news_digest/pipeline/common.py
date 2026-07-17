@@ -106,6 +106,8 @@ def recoverable_reserve_eligible(candidate: dict) -> bool:
     """
     if not isinstance(candidate, dict):
         return False
+    if candidate.get("include") is not True:
+        return False
     if not candidate.get("validated", False):
         return False
     if str(candidate.get("digest_selection_verdict") or "") == "drop":

@@ -475,6 +475,31 @@ class TransportPassengerImpactContractTest(unittest.TestCase):
             self.assertFalse(_exclude_transport_accessibility_only(c))
             self.assertTrue(c["include"])
 
+    def test_amended_service_and_bus_diversion_are_passenger_impact(self) -> None:
+        from news_digest.pipeline.candidate_validator import _exclude_road_only_transport, transport_movement_impact
+
+        amended = self._t("Northern amended service between Manchester Airport and Blackpool")
+        self.assertTrue(transport_movement_impact(amended))
+
+        diversion = self._t("Bridgewater Avenue roadworks")
+        diversion["transport_mode"] = "road"
+        diversion["summary"] = "Bus services 11 and 41 are diverted during the roadworks."
+        self.assertTrue(transport_movement_impact(diversion))
+        self.assertFalse(_exclude_road_only_transport(diversion))
+        self.assertTrue(diversion["include"])
+
+    def test_relative_today_transport_for_past_date_is_rejected(self) -> None:
+        from news_digest.pipeline.candidate_validator import _exclude_past_relative_day_transport
+
+        candidate = self._t(
+            "Full list of Manchester Airport delayed flights today, Thursday July 16"
+        )
+        with mock.patch("news_digest.pipeline.candidate_validator.now_london") as fake_now:
+            fake_now.return_value = datetime.fromisoformat("2026-07-17T08:00:00+01:00")
+            self.assertTrue(_exclude_past_relative_day_transport(candidate))
+        self.assertFalse(candidate["include"])
+        self.assertIn("transport_relative_today_is_past", candidate["reject_reasons"])
+
     def test_degraded_llm_shrink_holds_lower_priority_soft_section_items(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -3153,6 +3178,7 @@ class ReserveAndRecoveryContractTest(unittest.TestCase):
 
     def _clean_reserve_base(self) -> dict:
         return {
+            "include": True,
             "validated": True,
             "recoverable_reserve": True,
             "title": "Manchester council confirms update",
@@ -3188,6 +3214,39 @@ class ReserveAndRecoveryContractTest(unittest.TestCase):
         from news_digest.pipeline.editor import _reserve_insert_allowed
 
         self.assertTrue(_reserve_insert_allowed("Свежие новости", {"event": {}}))
+
+
+class EventAvailabilityContractTest(unittest.TestCase):
+    def test_partial_sold_out_price_tiers_do_not_mean_event_sold_out(self) -> None:
+        from news_digest.pipeline.candidate_validator import event_is_fully_sold_out
+        from news_digest.pipeline.writer import _draft_line_quality_errors
+
+        candidate = {
+            "include": True,
+            "category": "russian_speaking_events",
+            "primary_block": "russian_events",
+            "title": 'Спектакль "Скамейка"',
+            "summary": "29 ноября в Logan Hall; билеты от £30.",
+            "evidence_text": (
+                "Logan Hall £55.00 Select Logan Hall £60.00 Select "
+                "Logan Hall £65.00 Sold Out Logan Hall £70.00 Select"
+            ),
+            "event": {"is_event": True, "date_start": "2026-11-29", "venue": "Logan Hall"},
+        }
+        line = '• Спектакль "Скамейка" пройдет 29 ноября 2026 года в Logan Hall, Лондон. Билеты от £30.'
+
+        self.assertFalse(event_is_fully_sold_out(candidate, line))
+        self.assertNotIn("sold-out event must not be published.", _draft_line_quality_errors(candidate, line))
+
+    def test_explicit_full_sellout_remains_rejected(self) -> None:
+        from news_digest.pipeline.candidate_validator import event_is_fully_sold_out
+
+        candidate = {
+            "title": "Babies Playtime",
+            "summary": "Tickets are sold out with no places available.",
+            "evidence_text": "The event page confirms the same status.",
+        }
+        self.assertTrue(event_is_fully_sold_out(candidate))
 
 
 if __name__ == "__main__":
