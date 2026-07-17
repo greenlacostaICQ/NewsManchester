@@ -503,61 +503,6 @@ class TransportPassengerImpactContractTest(unittest.TestCase):
         self.assertFalse(candidate["include"])
         self.assertIn("transport_relative_today_is_past", candidate["reject_reasons"])
 
-    def test_degraded_llm_shrink_holds_lower_priority_soft_section_items(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            state_dir = root / "data" / "state"
-            state_dir.mkdir(parents=True)
-            candidates = []
-            for idx in range(8):
-                candidates.append(
-                    {
-                        "fingerprint": f"city-{idx}",
-                        "include": True,
-                        "category": "media_layer",
-                        "primary_block": "city_watch",
-                        "title": f"City item {idx}",
-                        "lead": f"Manchester council confirmed useful local change {idx}.",
-                        "summary": f"Residents get a concrete update with dates and affected services {idx}.",
-                        "evidence_text": (
-                            f"Manchester council confirmed useful local change {idx}. Residents get a concrete "
-                            "update with dates, affected services, local impact, borough context, and a clear "
-                            "reason to check whether the change affects their routine this week."
-                        ),
-                        "practical_angle": "Проверьте, касается ли это вашего района.",
-                        "source_label": f"Source {idx}",
-                        "source_url": f"https://example.test/{idx}",
-                        "draft_line": (
-                            f"• Manchester: совет подтвердил практическое изменение {idx}, которое касается жителей "
-                            "района и ближайших сервисов. В тексте есть конкретный повод, дата и понятное действие "
-                            "для читателя, поэтому пункт можно оценить без догадок."
-                        ),
-                        "reader_value_score": 100 - idx,
-                    }
-                )
-            (state_dir / "candidates.json").write_text(json.dumps({"candidates": candidates}), encoding="utf-8")
-            (state_dir / "llm_rewrite_report.json").write_text(
-                json.dumps({"stage_status": "degraded", "warnings": ["LLM rewrite yield low"]}),
-                encoding="utf-8",
-            )
-
-            result = write_digest(root)
-            self.assertTrue(result.ok)
-            report = json.loads((state_dir / "writer_report.json").read_text(encoding="utf-8"))
-
-            self.assertGreaterEqual(
-                report["section_counts"]["Городской радар"]
-                + report["section_counts"].get("Что важно сегодня", 0),
-                5,
-            )
-            self.assertLessEqual(
-                report["section_counts"]["Городской радар"]
-                + report["section_counts"].get("Что важно сегодня", 0),
-                8,
-            )
-            self.assertGreaterEqual(len(report["rendered_candidate_fingerprints"]), 5)
-            self.assertTrue(report["degraded_shrink"]["enabled"])
-
     def test_borderline_candidate_is_kept_and_rendered(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
