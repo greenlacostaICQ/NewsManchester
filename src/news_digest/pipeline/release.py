@@ -1585,13 +1585,8 @@ def _classify_rendered_html_quality(html_text: str, candidates_report: dict | No
                 reasons.append("borderline_visible")
             if candidate.get("reject_reasons") and not candidate.get("include"):
                 reasons.append("rejected_candidate_visible")
-            if candidate.get("quality_warnings") and any(
-                str(w).startswith(("crime_borderline", "property_borderline"))
-                for w in candidate.get("quality_warnings") or []
-            ):
-                visible_text = str(row["visible_text"] or "")
-                if _visible_line_still_unclear_after_repair(visible_text):
-                    reasons.append("unclear_candidate_visible")
+            # Этап 3: borderline-строки лечатся лестницей у писателя/судьи;
+            # здесь review только помечает rejected-видимость, не «неясность».
             if reasons:
                 bad.append(
                     {
