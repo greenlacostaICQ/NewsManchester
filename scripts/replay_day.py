@@ -10,7 +10,8 @@ one readers actually received.
 
 Usage:
     python3 scripts/replay_day.py 2026-07-09
-    python3 scripts/replay_day.py 2026-07-09 --sandbox /tmp/replay --keep
+    python3 scripts/replay_day.py 2026-07-09 --keep
+    python3 scripts/replay_day.py 2026-07-09 --sandbox /tmp/replay
     python3 scripts/replay_day.py --golden          # all golden + ordinary days
 
 Workflow this enables: fix a bug → replay the day it shipped on → see the
@@ -21,6 +22,7 @@ replay a few ordinary days to confirm nothing else moved.
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import difflib
 import json
 import os
@@ -76,6 +78,9 @@ NETWORK_ENV_KEYS = [
 MASTHEAD_RE = re.compile(r"^<b>Greater Manchester Brief — (\d{4}-\d{2}-\d{2}), (\d{2}:\d{2})</b>$")
 HEADER_RE = re.compile(r"^<b>([^<>]+)</b>$")
 LEAD_TITLE = "Главная история дня"
+REPLAY_SANDBOX_MARKER = ".news_digest_replay_sandbox"
+STALE_REPLAY_SECONDS = 24 * 60 * 60
+REPLAY_TEMP_NAME_RE = re.compile(r"^replay_\d{4}-\d{2}-\d{2}_[A-Za-z0-9_-]+$")
 
 
 def _git(*args: str) -> str:
@@ -316,13 +321,46 @@ def describe_sent_context_drift(
     return failures
 
 
-def replay_one(day: str, sandbox_root: Path | None) -> dict[str, object]:
-    sha = find_state_commit(day)
+@contextmanager
+def replay_sandbox(day: str, sandbox_root: Path | None, keep: bool):
+    """Yield a replay sandbox and clean up temporary runs by default."""
     if sandbox_root is not None:
         sandbox = sandbox_root / day
         sandbox.mkdir(parents=True, exist_ok=True)
-    else:
+        yield sandbox
+        return
+    if keep:
         sandbox = Path(tempfile.mkdtemp(prefix=f"replay_{day}_"))
+        yield sandbox
+        return
+    with tempfile.TemporaryDirectory(prefix=f"replay_{day}_") as temp_dir:
+        sandbox = Path(temp_dir)
+        (sandbox / REPLAY_SANDBOX_MARKER).write_text(str(PROJECT_ROOT), encoding="utf-8")
+        yield sandbox
+
+
+def cleanup_stale_replay_sandboxes(*, now: float | None = None) -> int:
+    """Remove only abandoned, script-owned default sandboxes older than 24h."""
+    cutoff = (time.time() if now is None else now) - STALE_REPLAY_SECONDS
+    removed = 0
+    for path in Path(tempfile.gettempdir()).iterdir():
+        if not path.is_dir() or REPLAY_TEMP_NAME_RE.fullmatch(path.name) is None:
+            continue
+        marker = path / REPLAY_SANDBOX_MARKER
+        try:
+            owned = marker.read_text(encoding="utf-8") == str(PROJECT_ROOT)
+            stale = max(path.stat().st_mtime, marker.stat().st_mtime) < cutoff
+        except OSError:
+            continue
+        if owned and stale:
+            shutil.rmtree(path, ignore_errors=True)
+            if not path.exists():
+                removed += 1
+    return removed
+
+
+def replay_one(day: str, sandbox: Path) -> dict[str, object]:
+    sha = find_state_commit(day)
 
     sent_html, history_sha = extract_snapshot(sha, sandbox)
     fake_now = freeze_environment(day, sent_html, sha)
@@ -394,25 +432,29 @@ def main() -> int:
     parser.add_argument("day", nargs="?", help="Date to replay, YYYY-MM-DD")
     parser.add_argument("--golden", action="store_true", help="Replay all golden + ordinary days")
     parser.add_argument("--sandbox", type=Path, default=None, help="Directory for sandboxes (default: system temp)")
-    parser.add_argument("--keep", action="store_true", help="Keep temporary golden sandboxes for inspection")
+    parser.add_argument("--keep", action="store_true", help="Keep temporary sandboxes for inspection")
     args = parser.parse_args()
 
     if not args.golden and not args.day:
         parser.error("pass a date (YYYY-MM-DD) or --golden")
 
+    if args.sandbox is None:
+        stale_removed = cleanup_stale_replay_sandboxes()
+        if stale_removed:
+            print(f"Removed {stale_removed} abandoned replay sandbox(es) older than 24h.")
+
     days = GOLDEN_DAYS + ORDINARY_DAYS if args.golden else [args.day]
     failures: list[str] = []
     for day in days:
-        report = replay_one(day, args.sandbox)
-        print_report(report)
-        if not report["stages_ok"]:
-            failures.append(f"{day}: stage failure")
-        if report["golden_failures"]:
-            failures.append(f"{day}: golden expectations not met")
-        if report["total_seconds"] > 300:
-            failures.append(f"{day}: replay took {report['total_seconds']}s (> 5 min budget)")
-        if args.golden and args.sandbox is None and not args.keep:
-            shutil.rmtree(str(report["sandbox"]), ignore_errors=True)
+        with replay_sandbox(day, args.sandbox, args.keep) as sandbox:
+            report = replay_one(day, sandbox)
+            print_report(report)
+            if not report["stages_ok"]:
+                failures.append(f"{day}: stage failure")
+            if report["golden_failures"]:
+                failures.append(f"{day}: golden expectations not met")
+            if report["total_seconds"] > 300:
+                failures.append(f"{day}: replay took {report['total_seconds']}s (> 5 min budget)")
 
     if failures:
         print("\nFAILURES:")
