@@ -410,43 +410,46 @@ class CancelProofObservabilityTest(unittest.TestCase):
 
 
 class TransportPassengerImpactContractTest(unittest.TestCase):
-    """Transport reroute is disabled (ADR 0025, 2026-06-29): nothing is pushed
-    to City Radar. Every transport-tagged item stays in the transport block and
-    is enriched there — the prior over-eager reroute was emptying the block."""
+    """Only passenger-impact cards stay public; non-impact transport is held
+    instead of being hidden in City Radar."""
 
     def _t(self, title: str) -> dict:
         return {"include": True, "category": "transport", "primary_block": "transport",
                 "title": title, "summary": title}
 
-    def _reroute(self, candidate: dict) -> bool:
-        from news_digest.pipeline.candidate_validator import _reroute_non_impact_transport
-        return _reroute_non_impact_transport(candidate)
+    def _exclude(self, candidate: dict) -> bool:
+        from news_digest.pipeline.candidate_validator import _exclude_non_impact_transport
+        return _exclude_non_impact_transport(candidate)
 
-    def test_interchange_funding_moves_to_city_watch(self) -> None:
+    def test_interchange_funding_is_not_borrowed_by_city_watch(self) -> None:
         c = self._t("Bury's tram and bus interchange revamp gets £25m boost")
-        self.assertTrue(self._reroute(c))
-        self.assertEqual(c["primary_block"], "city_watch")
+        self.assertTrue(self._exclude(c))
+        self.assertFalse(c["include"])
+        self.assertEqual(c["primary_block"], "transport")
         self.assertEqual(c["transport_impact_contract"], "no_passenger_movement_impact")
+        self.assertIn("transport_no_passenger_movement_impact", c["reject_reasons"])
 
-    def test_incident_near_node_moves_to_city_watch(self) -> None:
+    def test_incident_near_node_is_not_borrowed_by_city_watch(self) -> None:
         c = self._t("Rawtenstall incident as police and air ambulance called")
-        self.assertTrue(self._reroute(c))
-        self.assertEqual(c["primary_block"], "city_watch")
+        self.assertTrue(self._exclude(c))
+        self.assertFalse(c["include"])
+        self.assertEqual(c["primary_block"], "transport")
 
     def test_concrete_no_trains_disruption_stays(self) -> None:
         c = self._t("Northern: No trains to / from Salford Central on Saturday")
-        self.assertFalse(self._reroute(c))
+        self.assertFalse(self._exclude(c))
         self.assertEqual(c["primary_block"], "transport")
 
     def test_bus_stop_closure_stays(self) -> None:
         c = self._t("Whitworth Street, Manchester - Bus Stop Closure")
-        self.assertFalse(self._reroute(c))
+        self.assertFalse(self._exclude(c))
         self.assertEqual(c["primary_block"], "transport")
 
-    def test_ambiguous_transport_item_moves_to_city_watch(self) -> None:
+    def test_ambiguous_transport_item_is_held(self) -> None:
         c = self._t("TfGM unveils new Bee Network ticketing app")
-        self.assertTrue(self._reroute(c))
-        self.assertEqual(c["primary_block"], "city_watch")
+        self.assertTrue(self._exclude(c))
+        self.assertFalse(c["include"])
+        self.assertEqual(c["primary_block"], "transport")
 
     def test_lift_without_movement_impact_is_dropped(self) -> None:
         from news_digest.pipeline.candidate_validator import _exclude_transport_accessibility_only
@@ -475,6 +478,86 @@ class TransportPassengerImpactContractTest(unittest.TestCase):
     # Этап 3: degraded-shrink удалён вместе с ремонтами состава — при
     # деградации rewrite слот без прозы честно снимается с причиной,
     # а не «утоньшает» секции задним числом.
+    def test_amended_service_and_bus_diversion_are_passenger_impact(self) -> None:
+        from news_digest.pipeline.candidate_validator import _exclude_road_only_transport, transport_movement_impact
+
+        amended = self._t("Northern amended service between Manchester Airport and Blackpool")
+        self.assertTrue(transport_movement_impact(amended))
+
+        diversion = self._t("Bridgewater Avenue roadworks")
+        diversion["transport_mode"] = "road"
+        diversion["summary"] = "Bus services 11 and 41 are diverted during the roadworks."
+        self.assertTrue(transport_movement_impact(diversion))
+        self.assertFalse(_exclude_road_only_transport(diversion))
+        self.assertTrue(diversion["include"])
+
+    def test_relative_today_transport_for_past_date_is_rejected(self) -> None:
+        from news_digest.pipeline.candidate_validator import _exclude_past_relative_day_transport
+
+        candidate = self._t(
+            "Full list of Manchester Airport delayed flights today, Thursday July 16"
+        )
+        with mock.patch("news_digest.pipeline.candidate_validator.now_london") as fake_now:
+            fake_now.return_value = datetime.fromisoformat("2026-07-17T08:00:00+01:00")
+            self.assertTrue(_exclude_past_relative_day_transport(candidate))
+        self.assertFalse(candidate["include"])
+        self.assertIn("transport_relative_today_is_past", candidate["reject_reasons"])
+
+    def test_degraded_llm_shrink_holds_lower_priority_soft_section_items(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            candidates = []
+            for idx in range(8):
+                candidates.append(
+                    {
+                        "fingerprint": f"city-{idx}",
+                        "include": True,
+                        "category": "media_layer",
+                        "primary_block": "city_watch",
+                        "title": f"City item {idx}",
+                        "lead": f"Manchester council confirmed useful local change {idx}.",
+                        "summary": f"Residents get a concrete update with dates and affected services {idx}.",
+                        "evidence_text": (
+                            f"Manchester council confirmed useful local change {idx}. Residents get a concrete "
+                            "update with dates, affected services, local impact, borough context, and a clear "
+                            "reason to check whether the change affects their routine this week."
+                        ),
+                        "practical_angle": "Проверьте, касается ли это вашего района.",
+                        "source_label": f"Source {idx}",
+                        "source_url": f"https://example.test/{idx}",
+                        "draft_line": (
+                            f"• Manchester: совет подтвердил практическое изменение {idx}, которое касается жителей "
+                            "района и ближайших сервисов. В тексте есть конкретный повод, дата и понятное действие "
+                            "для читателя, поэтому пункт можно оценить без догадок."
+                        ),
+                        "reader_value_score": 100 - idx,
+                    }
+                )
+            (state_dir / "candidates.json").write_text(json.dumps({"candidates": candidates}), encoding="utf-8")
+            (state_dir / "llm_rewrite_report.json").write_text(
+                json.dumps({"stage_status": "degraded", "warnings": ["LLM rewrite yield low"]}),
+                encoding="utf-8",
+            )
+
+            result = write_digest(root)
+            self.assertTrue(result.ok)
+            report = json.loads((state_dir / "writer_report.json").read_text(encoding="utf-8"))
+
+            self.assertGreaterEqual(
+                report["section_counts"]["Городской радар"]
+                + report["section_counts"].get("Что важно сегодня", 0),
+                5,
+            )
+            self.assertLessEqual(
+                report["section_counts"]["Городской радар"]
+                + report["section_counts"].get("Что важно сегодня", 0),
+                8,
+            )
+            self.assertGreaterEqual(len(report["rendered_candidate_fingerprints"]), 5)
+            self.assertTrue(report["degraded_shrink"]["enabled"])
+
     def test_borderline_candidate_is_kept_and_rendered(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -3022,6 +3105,7 @@ class ReserveAndRecoveryContractTest(unittest.TestCase):
 
     def _clean_reserve_base(self) -> dict:
         return {
+            "include": True,
             "validated": True,
             "recoverable_reserve": True,
             "title": "Manchester council confirms update",

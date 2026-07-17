@@ -1,6 +1,6 @@
 # NewsManchester Product Contracts
 
-Last reviewed: 2026-07-02.
+Last reviewed: 2026-07-17.
 
 These are product rules, not implementation preferences. If code, prompts,
 reports, or old docs conflict with this file, treat the conflict as a bug or an
@@ -91,6 +91,48 @@ Failure examples:
 - A tribute concert with no ticket data shown in `next_7_days` instead of
   Tickets.
 - A council roundup pulled into Weekend to fill an empty leisure block.
+
+## Lead Contract
+
+- The public issue has exactly one lead story.
+- Supporting sentences may elaborate that same story; a second unrelated story
+  must remain in its own News block.
+- The lead must contain a current verified development and explain why it leads
+  the Greater Manchester issue today.
+- A lead removed by factual or repeat review is reported as missing; release
+  does not resurrect its old text after quarantine.
+
+Failure examples:
+
+- Two unrelated bold stories under the lead heading.
+- A story visible in City or Fresh is inserted again as a second lead.
+
+## City Contract
+
+- City contains consequential GM civic, public-service, planning, safety and
+  local-economy developments that do not belong in Fresh or Today.
+- Football, leisure listings, ticket listings and transport service cards do
+  not move into City merely because their own block is thin or capped.
+- A story already used as lead cannot appear again in City from another source.
+
+Failure examples:
+
+- A Manchester City pre-season article used to fill City.
+- The same escaped-prisoner story shown in Lead and City under different links.
+
+## Future Announcements Contract
+
+- Future contains a genuine advance announcement with a dated occurrence more
+  than seven days away and a current why-now trigger such as a new announcement
+  or newly opened sale.
+- A show, film, exhibition or market happening today or this week belongs in
+  Weekend/Tickets when eligible; otherwise it is held, not used as Future fill.
+- Routine old on-sale listings without a new phase are not Future announcements.
+
+Failure examples:
+
+- A HOME film starting today shown under `Дальние анонсы`.
+- A year-old on-sale ticket shown only because its event date is months away.
 
 ## Weather Contract
 

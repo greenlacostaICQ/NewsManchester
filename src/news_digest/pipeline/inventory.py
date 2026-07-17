@@ -86,7 +86,8 @@ INVENTORY_BLOCK_REGISTRY: dict[str, dict[str, object]] = {
         "candidate_categories": frozenset({"media_layer", "gmp", "public_services", "council"}),
         "mode": "live_only", "serving_ttl_hours": 6.0, "retention_days": 14,
         "text_policy": "morning_live", "source_replacement_allowed": False,
-        "floor": 0, "min_sources": 1, "optional": True, "intake_cap": 0,
+        "floor": 1, "min_sources": 1, "optional": False, "intake_cap": 0,
+        "required_fields": ("what_happened", "why_now"),
     },
     "city_watch": {
         "source_report_categories": frozenset({"media_layer", "gmp", "public_services", "transport", "tech_business"}),
@@ -678,12 +679,26 @@ def _retention_until(candidate: dict, *, now_iso: str) -> str:
     policy = INVENTORY_BLOCK_REGISTRY.get(block, {})
     retention_days = max(0, int(policy.get("retention_days") or 0))
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    anchor_raw = str(event.get("date_end") or event.get("date_start") or event.get("date") or "")[:10]
+    anchor_raw = str(event.get("next_occurrence") or event.get("date_end") or event.get("date_start") or event.get("date") or "")[:10]
     try:
         anchor = date.fromisoformat(anchor_raw) if anchor_raw else datetime.fromisoformat(now_iso).date()
     except ValueError:
         anchor = now_london().date()
     return (anchor + timedelta(days=retention_days)).isoformat() if retention_days else ""
+
+
+def _attach_recurring_occurrence(candidate: dict) -> None:
+    if str(candidate.get("primary_block") or "") not in {"weekend_activities", "openings"}:
+        return
+    from news_digest.pipeline.weekend_inventory import candidate_recurring_occurrence_date  # noqa: PLC0415
+
+    next_occurrence = candidate_recurring_occurrence_date(candidate)
+    if not next_occurrence:
+        return
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    event["is_recurring"] = True
+    event["next_occurrence"] = next_occurrence.isoformat()
+    candidate["event"] = event
 
 
 def build_inventory_record(
@@ -699,6 +714,7 @@ def build_inventory_record(
     """Canonical inventory card. Stores English raw/evidence for audit, but the
     working unit is the fact card + readiness, never the raw English text."""
     now_iso = now_iso or now_london().isoformat()
+    _attach_recurring_occurrence(candidate)
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     quality_status, render_ready, missing_facts = evaluate_card(candidate)
     fact_card = {
@@ -854,7 +870,7 @@ def verify_dispositions(candidates: list[dict], rendered_fingerprints: set[str])
         "accounted": accounted,
         "conserved": accounted == captured and not violations,
         "totals": totals,
-        "silent_loss": int(totals.get("not_render_ready", 0)),
+        "selected_not_rendered": int(totals.get("not_render_ready", 0)),
         "violations": violations[:50],
     }
 
@@ -1248,6 +1264,7 @@ def prewrite_stable_inventory_candidate(candidate: dict) -> bool:
     policy = INVENTORY_BLOCK_REGISTRY.get(block, {})
     if str(policy.get("text_policy") or "") != "deterministic_or_morning":
         return False
+    _attach_recurring_occurrence(candidate)
     try:
         from news_digest.pipeline.writer import (  # noqa: PLC0415
             _build_event_fallback_line,
@@ -1349,6 +1366,8 @@ def build_morning_inventory_intake(
     invalidated_prewrite = 0
     funnel = {
         "records": 0,
+        "operational_records": 0,
+        "legacy_unproven_records": 0,
         "card_ready": 0,
         "morning_eligible": 0,
         "merged_into_live": 0,
@@ -1379,6 +1398,14 @@ def build_morning_inventory_intake(
             "intake_status": "observed",
             "reason": "",
         }
+        operational_provenance = bool(
+            working_record.get("run_id")
+            and working_record.get("wave")
+            and working_record.get("source_name")
+            and working_record.get("observed_in_wave")
+        )
+        lineage["operational_provenance"] = "current" if operational_provenance else "legacy_unproven"
+        funnel["operational_records" if operational_provenance else "legacy_unproven_records"] += 1
         lineages.append(lineage)
         bucket = by_block.setdefault(
             block or "unknown",
@@ -1391,7 +1418,7 @@ def build_morning_inventory_intake(
             funnel["card_ready"] += 1
         ok, reason = passes_morning_contract(working_record, today=today)
         supply_ok, _ = _passes_block_supply_contract(working_record, today=today)
-        if supply_ok:
+        if supply_ok and operational_provenance:
             supply_candidates.append(inventory_record_to_candidate(working_record))
         if block_mode == "hybrid":
             hybrid_signals[reason] = hybrid_signals.get(reason, 0) + 1
@@ -1499,6 +1526,7 @@ def build_morning_inventory_intake(
         )),
         "lineages": lineages,
         "policy": "All block modes, freshness, completeness and caps come from INVENTORY_BLOCK_REGISTRY.",
+        "operational_policy": "Only records with run_id/wave/source and observed_in_wave count toward source replacement completeness.",
     }
     return capped, report
 
@@ -1557,7 +1585,7 @@ def inventory_block_completeness(candidates: list[dict]) -> dict[str, object]:
             "completeness_applicable": applicable,
             "block_sufficient": sufficient,
             "liveness_sufficient_for_replacement": liveness_sufficient,
-            "completeness_basis": "post_card_contract_before_visibility_schedule_and_intake_cap",
+            "completeness_basis": "current_provenance_post_card_contract_before_visibility_schedule_and_intake_cap",
         }
     return {
         "schema_version": INVENTORY_SCHEMA_VERSION,
@@ -1591,6 +1619,7 @@ def operational_night_category_health(
     out: dict[str, dict[str, object]] = {}
     for category, (run_at, rows) in latest.items():
         expected = max((int(row.get("expected_sources") or 0) for row in rows), default=0) or len(rows)
+        represented = len(rows)
         checked = sum(1 for row in rows if row.get("checked"))
         errors = sum(int(row.get("errors") or 0) for row in rows)
         found = sum(int(row.get("found") or 0) for row in rows)
@@ -1598,16 +1627,22 @@ def operational_night_category_health(
         explicit_wave_statuses = {
             str(row.get("wave_status") or "") for row in rows if row.get("wave_status")
         }
-        wave_complete = not explicit_wave_statuses or explicit_wave_statuses == {"success"}
-        status = (
-            "ok"
-            if run_day == current_day and checked == expected and errors == 0 and wave_complete
-            else "degraded"
-        )
+        explicit_category_statuses = {
+            str(row.get("category_status") or "") for row in rows if row.get("category_status")
+        }
+        if len(explicit_category_statuses) == 1:
+            category_status = next(iter(explicit_category_statuses))
+        elif len(explicit_category_statuses) > 1:
+            category_status = "degraded"
+        elif represented < expected or checked == 0:
+            category_status = "failed"
+        elif checked < expected or errors:
+            category_status = "degraded"
+        else:
+            category_status = "success"
+        status = "ok" if category_status == "success" else category_status
         if run_day != current_day:
             status = "stale"
-        elif checked == 0:
-            status = "failed"
         error_reasons = [
             {"source": str(row.get("source") or ""), "reason": str(row.get("error") or "source_error")}
             for row in rows
@@ -1622,7 +1657,8 @@ def operational_night_category_health(
             "source_errors": errors,
             "error_reasons": error_reasons,
             "found_this_run": found,
-            "wave_status": next(iter(explicit_wave_statuses), "legacy_unstamped"),
+            "category_status": category_status,
+            "wave_status": sorted(explicit_wave_statuses)[0] if explicit_wave_statuses else "legacy_unstamped",
             "status": status,
         }
     return out
@@ -1703,6 +1739,8 @@ def summarise_morning_intake(
     today = today or today_london()
     totals = {
         "records": 0,
+        "operational_records": 0,
+        "legacy_unproven_records": 0,
         "fact_ready": 0,
         "render_ready": 0,
         "needs_text": 0,
@@ -1722,6 +1760,13 @@ def summarise_morning_intake(
         block = str(record.get("primary_block") or "unknown")
         bucket = by_block.setdefault(block, {"records": 0, "fact_ready": 0, "eligible": 0, "needs_text": 0, "render_ready": 0})
         totals["records"] += 1
+        operational_provenance = bool(
+            record.get("run_id")
+            and record.get("wave")
+            and record.get("source_name")
+            and record.get("observed_in_wave")
+        )
+        totals["operational_records" if operational_provenance else "legacy_unproven_records"] += 1
         bucket["records"] += 1
         if inventory_fact_ready(record):
             totals["fact_ready"] += 1

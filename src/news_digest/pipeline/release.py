@@ -3124,6 +3124,17 @@ def _summarise_inventory_morning_effect(
         for candidate in all_candidates
         if candidate.get("fingerprint")
     }
+    candidate_by_inventory_fp: dict[str, dict] = {}
+    for candidate in all_candidates:
+        inventory_lineages = candidate.get("inventory_lineages")
+        if not isinstance(inventory_lineages, list):
+            continue
+        for inventory_lineage in inventory_lineages:
+            if not isinstance(inventory_lineage, dict):
+                continue
+            inventory_fp = str(inventory_lineage.get("fingerprint") or "")
+            if inventory_fp:
+                candidate_by_inventory_fp[inventory_fp] = candidate
     lineages = [
         dict(lineage)
         for lineage in actual_intake.get("lineages", [])
@@ -3169,8 +3180,12 @@ def _summarise_inventory_morning_effect(
         if canonical_url_identity(match)
     }
     final_by_block: dict[str, Counter] = defaultdict(Counter)
+    active_by_block: dict[str, Counter] = defaultdict(Counter)
     final_lineages: list[dict[str, object]] = []
     active_statuses = {"inserted_into_pipeline", "merged_into_live"}
+    provenance_counts: Counter = Counter()
+    active_lineages = 0
+    active_current_lineages = 0
     present_after_pipeline = 0
     validated_count = 0
     accepted_count = 0
@@ -3179,21 +3194,34 @@ def _summarise_inventory_morning_effect(
     for lineage in lineages:
         block = str(lineage.get("primary_block") or "unknown")
         intake_status = str(lineage.get("intake_status") or "unknown")
-        fp = str(
+        provenance = str(lineage.get("operational_provenance") or "legacy_unproven")
+        provenance_counts[provenance] += 1
+        if intake_status in active_statuses:
+            active_lineages += 1
+            if provenance == "current":
+                active_current_lineages += 1
+        lineage_fp = str(
             lineage.get("live_fingerprint")
             or lineage.get("candidate_fingerprint")
             or lineage.get("inventory_fingerprint")
             or ""
         )
-        candidate = candidate_by_fp.get(fp)
+        inventory_fp = str(lineage.get("inventory_fingerprint") or "")
+        candidate = candidate_by_fp.get(lineage_fp) or candidate_by_inventory_fp.get(inventory_fp)
+        candidate_fp = str((candidate or {}).get("fingerprint") or lineage_fp)
         candidate_url = str((candidate or {}).get("source_url") or lineage.get("source_url") or "")
         visible = canonical_url_identity(candidate_url) in visible_urls
-        validation = validation_by_fp.get(fp, {})
+        validation = validation_by_fp.get(candidate_fp, {})
         validated = bool(validation.get("validated", (candidate or {}).get("validated")))
+        candidate_reason = str((candidate or {}).get("reason") or "")
+        validation_rejected = bool(
+            validation.get("validation_errors")
+            or validation.get("reject_reasons")
+            or (not (candidate or {}).get("include") and "validator:" in candidate_reason.lower())
+        )
         accepted = bool(
             validated
-            and not validation.get("validation_errors")
-            and not validation.get("reject_reasons")
+            and not validation_rejected
         )
         selected = str((candidate or {}).get("publish_plan_status") or "") in {"show", "must_show"} or str(
             (candidate or {}).get("digest_selection_verdict") or ""
@@ -3206,26 +3234,34 @@ def _summarise_inventory_morning_effect(
             present_after_pipeline += 1
             validated_count += int(validated)
             accepted_count += int(accepted)
-            writer_rendered_count += int(fp in rendered_fps)
+            writer_rendered_count += int(candidate_fp in rendered_fps)
             visible_count += int(visible)
             status = (
                 "visible_html" if visible
-                else "writer_rendered_not_visible" if fp in rendered_fps
+                else "writer_rendered_not_visible" if candidate_fp in rendered_fps
                 else "selected_not_rendered" if selected
+                else "rejected_by_validation" if validation_rejected
                 else "validated_not_selected" if accepted
-                else "rejected_by_validation" if validated
+                else "held_after_pipeline" if validated
                 else "not_validated"
             )
         final_by_block[block][status] += 1
+        if intake_status in active_statuses:
+            active_by_block[block][status] += 1
         final_lineages.append({
             **lineage,
-            "candidate_fingerprint": fp,
+            "candidate_fingerprint": candidate_fp,
             "title": str((candidate or {}).get("title") or lineage.get("title") or ""),
             "primary_block": block,
             "final_status": status,
+            "final_reason": candidate_reason or str(lineage.get("reason") or ""),
         })
     final_funnel = {
         "inventory_lineages": len(lineages),
+        "operational_lineages": int(provenance_counts.get("current") or 0),
+        "legacy_unproven_lineages": int(provenance_counts.get("legacy_unproven") or 0),
+        "active_morning_lineages": active_lineages,
+        "active_current_lineages": active_current_lineages,
         "merged_into_live": merged_count,
         "inserted_after_live_dedupe_and_cap": inserted_count,
         "present_after_pipeline": present_after_pipeline,
@@ -3234,6 +3270,7 @@ def _summarise_inventory_morning_effect(
         "writer_rendered": writer_rendered_count,
         "visible_in_final_html": visible_count,
         "by_block": {block: dict(counts) for block, counts in sorted(final_by_block.items())},
+        "active_by_block": {block: dict(counts) for block, counts in sorted(active_by_block.items())},
         "lineage_examples": final_lineages[:80],
         "lineages": final_lineages,
     }

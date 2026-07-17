@@ -233,15 +233,11 @@ def _apply_routing(candidate: dict, warnings: list[str]) -> str:
     Возвращает "" или причину out.
     """
     from news_digest.pipeline.writer import (  # noqa: PLC0415
-        _football_should_route_to_soft,
         _next_7_market_belongs_in_weekend,
         _section_event_timing_decision,
         _top_news_route_or_drop,
     )
 
-    if _football_should_route_to_soft(candidate):
-        candidate["primary_block"] = "city_watch"
-        candidate["football_soft_routed"] = True
     top_news_route = _top_news_route_or_drop(candidate)
     if top_news_route == "city_watch":
         candidate["primary_block"] = "city_watch"

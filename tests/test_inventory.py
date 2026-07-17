@@ -81,7 +81,7 @@ class CollectConservationTest(unittest.TestCase):
 
 
 class DispositionTest(unittest.TestCase):
-    def test_selected_but_not_rendered_is_flagged_silent_loss(self) -> None:
+    def test_selected_but_not_rendered_is_reported_explicitly(self) -> None:
         # The load-bearing bucket: chosen but absent from the rendered set.
         cand = {"fingerprint": "x1", "publish_plan_status": "show"}
         self.assertEqual(classify_disposition(cand, rendered_fingerprints=set()), "not_render_ready")
@@ -100,7 +100,7 @@ class DispositionTest(unittest.TestCase):
         self.assertEqual(result["accounted"], result["captured"])
         self.assertEqual(result["captured"], 6)
         self.assertEqual(result["totals"]["shown"], 1)
-        self.assertEqual(result["silent_loss"], 1)  # lost1
+        self.assertEqual(result["selected_not_rendered"], 1)  # lost1
         self.assertEqual(result["violations"], [])
 
 
@@ -199,7 +199,11 @@ class MorningContractTest(unittest.TestCase):
             "last_seen_at": "2026-07-09T08:00:00+01:00",
             "fact_card": {"ticket_type": "regular_upcoming", "tier": "C"},
         }
-        ok, reason = passes_morning_contract(record, today="2026-07-01")
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-09T09:00:00+01:00"),
+        ):
+            ok, reason = passes_morning_contract(record, today="2026-07-09")
         self.assertFalse(ok)
         self.assertEqual(reason, "inventory_only")
 
@@ -211,7 +215,11 @@ class MorningContractTest(unittest.TestCase):
             "fact_card": {"tier": "A", "ticket_type": "regular_upcoming"},
         }
         self.assertTrue(ticket_reaches_morning(record))
-        ok, reason = passes_morning_contract(record, today="2026-07-01")
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-09T09:00:00+01:00"),
+        ):
+            ok, reason = passes_morning_contract(record, today="2026-07-09")
         self.assertTrue(ok)
 
     def test_expired_never_passes_as_fresh(self) -> None:
@@ -315,7 +323,7 @@ class ReplacementPlanTest(unittest.TestCase):
         health = operational_night_category_health(rows, current_day="2026-07-13")["food_openings"]
         self.assertEqual(health["status"], "stale")
 
-    def test_degraded_wave_prevents_healthy_sibling_category_replacement(self) -> None:
+    def test_degraded_wave_does_not_poison_healthy_sibling_category(self) -> None:
         rows = [{
             "run_id": "partial-wave",
             "run_at_london": "2026-07-15T03:30:00+01:00",
@@ -328,7 +336,8 @@ class ReplacementPlanTest(unittest.TestCase):
             "wave_status": "degraded",
         }]
         health = operational_night_category_health(rows, current_day="2026-07-15")["food_openings"]
-        self.assertEqual(health["status"], "degraded")
+        self.assertEqual(health["status"], "ok")
+        self.assertEqual(health["category_status"], "success")
         self.assertEqual(health["wave_status"], "degraded")
 
 
@@ -715,7 +724,11 @@ class BuildRecordTest(unittest.TestCase):
             }
             for idx in range(25)
         ]
-        candidates, report = build_morning_inventory_intake(records, mode="assist", today="2026-07-09")
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-09T08:00:00+01:00"),
+        ):
+            candidates, report = build_morning_inventory_intake(records, mode="assist", today="2026-07-09")
         self.assertEqual(len(candidates), 25)
         self.assertEqual(report["held_by_cap"], 0)
 
@@ -806,6 +819,18 @@ class NightWaveTest(unittest.TestCase):
         self.assertEqual(
             _inventory_wave_status([{"checked": False, "errors": 1}], 1),
             "failed",
+        )
+        mixed_wave = [
+            {"category": "media_layer", "checked": True, "errors": 1},
+            {"category": "transport", "checked": True, "errors": 0},
+        ]
+        self.assertEqual(_inventory_wave_status(mixed_wave, 2), "degraded")
+        self.assertEqual(
+            _inventory_wave_status(
+                [row for row in mixed_wave if row["category"] == "transport"],
+                1,
+            ),
+            "success",
         )
 
     def test_wave_writes_inventory_only_never_candidates(self) -> None:
@@ -909,12 +934,13 @@ class NightWaveTest(unittest.TestCase):
                         "funnel": {"records": 1, "merged_into_live": 1},
                         "lineages": [{
                             "lineage_id": "0:night-1",
-                            "inventory_fingerprint": "night-1",
-                            "candidate_fingerprint": "live-1",
-                            "live_fingerprint": "live-1",
+                            "inventory_fingerprint": "night-1-with-evidence",
+                            "candidate_fingerprint": "night-1-with-evidence",
+                            "live_fingerprint": "night-1-with-evidence",
                             "source_url": "https://example.test/story",
                             "primary_block": "weekend_activities",
                             "intake_status": "merged_into_live",
+                            "operational_provenance": "current",
                         }],
                     },
                 }),
@@ -927,6 +953,8 @@ class NightWaveTest(unittest.TestCase):
                     "source_url": "https://example.test/story",
                     "primary_block": "weekend_activities",
                     "validated": True,
+                    "include": True,
+                    "inventory_lineages": [{"fingerprint": "night-1-with-evidence"}],
                 }]}),
                 encoding="utf-8",
             )
@@ -950,8 +978,12 @@ class NightWaveTest(unittest.TestCase):
 
         self.assertTrue(summary["morning_consumed"])
         self.assertEqual(summary["final_funnel"]["merged_into_live"], 1)
+        self.assertEqual(summary["final_funnel"]["operational_lineages"], 1)
+        self.assertEqual(summary["final_funnel"]["active_morning_lineages"], 1)
+        self.assertEqual(summary["final_funnel"]["active_current_lineages"], 1)
         self.assertEqual(summary["final_funnel"]["visible_in_final_html"], 1)
         self.assertEqual(summary["final_funnel"]["lineages"][0]["final_status"], "visible_html")
+        self.assertEqual(summary["final_funnel"]["lineages"][0]["candidate_fingerprint"], "live-1")
 
 
 class EvidenceCacheStructuredFactsTest(unittest.TestCase):

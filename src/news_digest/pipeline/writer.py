@@ -327,7 +327,8 @@ _TODAY_FOCUS_HARD_ACTION_RE = re.compile(
     r"diversion|warning|unsafe|danger|inspection|cqc|ofsted|"
     r"requires\s+improvement|inadequate|safeguarding|appeal|witness|cctv|"
     r"service\s+change|strike|vote|voters?\s+head\s+to\s+the\s+polls|"
-    r"polls?\s+open|polling\s+station|by-election|election\s+day)\b",
+    r"polls?\s+open|polling\s+station|by-election|election\s+day|avoid|check|"
+    r"проверь\w*|избег\w*|предупрежд\w*|закрыт\w*)\b",
     re.IGNORECASE,
 )
 _FRESH_COMMERCIAL_PR_RE = re.compile(
@@ -355,7 +356,8 @@ _HARD_SERVICE_ACCOUNTABILITY_RE = re.compile(
 _TODAY_FOCUS_RETROSPECTIVE_RE = re.compile(
     r"\b(?:\d{1,3}\s+years?\s+ago|decades?\s+ago|back\s+in\s+(?:19|20)\d\d|"
     r"serving\s+(?:a\s+)?life|sentenced\s+to\s+life|jailed\s+for\s+life|"
-    r"years?\s+later|murderer|killer)\b",
+    r"years?\s+later|murderer|killer|tragic\s+death|found\s+dead|"
+    r"(?:coroner(?:'s)?|inquest)\s+(?:court|hearing|found|heard)|died\s+(?:after|from|in))\b",
     re.IGNORECASE,
 )
 _TODAY_FOCUS_CURRENT_HOOK_RE = re.compile(
@@ -473,18 +475,20 @@ def _today_focus_candidate_is_eligible(candidate: dict | None, line: str = "") -
         return False
     if _candidate_future_only_dates(candidate, line):
         return False
-    text = " ".join(
+    source_text = " ".join(
         str(candidate.get(field) or "")
-        for field in ("title", "summary", "lead", "practical_angle")
+        for field in ("title", "summary", "lead")
     )
-    if line:
-        text = f"{text} {line}"
+    action_text = " ".join((str(candidate.get("practical_angle") or ""), line))
+    text = f"{source_text} {action_text}"
     if tier == "reject":
+        return False
+    if not _TODAY_FOCUS_HARD_ACTION_RE.search(text):
         return False
     # Past retrospective / old-conviction commentary without a current hook is
     # not a practical "today" item (neighbour-of-a-murderer piece, «24 years
     # ago…» heritage feature) — keep it out of the morning practical block.
-    if _TODAY_FOCUS_RETROSPECTIVE_RE.search(text) and not _TODAY_FOCUS_CURRENT_HOOK_RE.search(text):
+    if _TODAY_FOCUS_RETROSPECTIVE_RE.search(source_text) and not _TODAY_FOCUS_CURRENT_HOOK_RE.search(source_text):
         return False
     story_frame = contract.get("story_frame") if isinstance(contract.get("story_frame"), dict) else {}
     why_now = str(story_frame.get("why_now") or "")
@@ -1118,8 +1122,6 @@ def _block_contract_action(candidate: dict, line: str) -> dict[str, str]:
         return {"action": "reroute", "target_block": "ticket_radar", "reason": "block_contract:weekend_solo_gig_to_ticket_radar"}
     if block == "outside_gm_tickets" and not _is_a_tier_ticket(candidate):
         return {"action": "hold", "reason": "block_contract:outside_gm_non_a_tier"}
-    if block == "football" and _football_should_route_to_soft(candidate):
-        return {"action": "reroute", "target_block": "city_watch", "reason": "block_contract:football_soft_to_city_watch"}
     if block == "tech_business" and category == "tech_business" and not _BUSINESS_CONCRETE_RE.search(text):
         return {"action": "hold", "reason": "block_contract:business_no_concrete_city_impact"}
     if block == "food_openings" and not _FOOD_CONCRETE_RE.search(text):
@@ -1215,11 +1217,6 @@ _RARE_MARKET_OR_FESTIVAL_RE = re.compile(
     r"festival|food\s+festival|bbq|barbecue|beer\s+festival|street\s+food|"
     r"music|live\s+music|artists?|performance|special|launch|anniversary|"
     r"ежегодн|раз\s+в\s+год|фестиваль|барбекю|уличн\w+\s+ед|живая\s+музык)\b",
-    re.IGNORECASE,
-)
-_SOLD_OUT_EVENT_RE = re.compile(
-    r"\b(?:sold\s*out|fully\s*booked|no\s+(?:tickets|spaces|places)\s+(?:left|available)|"
-    r"tickets?\s+(?:are\s+)?(?:sold\s*out|unavailable)|распродан[оаы]?|мест\s+нет)\b",
     re.IGNORECASE,
 )
 _SOLO_GIG_RE = re.compile(
@@ -2949,6 +2946,7 @@ def _weekend_occurrence_datetime(candidate: dict) -> datetime | None:
             event.get("date_text"),
             event.get("date_start"),
             event.get("date_end"),
+            event.get("next_occurrence"),
             candidate.get("source_url"),
         )
     )
@@ -3283,6 +3281,23 @@ def _build_weekend_event_fallback_line(candidate: dict) -> str:
     title = re.sub(r"\s+[—–-]\s+(?:event|public\s+sale).*$", "", title, flags=re.IGNORECASE).strip()
     title = re.sub(r"\s*\|\s*The(?:\s+Bridgewater\s+Hall)?\s*$", "", title, flags=re.IGNORECASE).strip()
     title = _clean_weekend_event_title(title)
+    if event.get("next_occurrence"):
+        title = re.sub(
+            r"\s+(?:is\s+)?back\s+in\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\b",
+            "",
+            title,
+            flags=re.IGNORECASE,
+        ).strip(" .-–—")
+        source_tokens = set(re.findall(r"[a-zа-яё\d]+", str(candidate.get("source_label") or "").lower()))
+        suffix = re.search(r"\s+[—–-]\s+([^—–-]+)$", title)
+        if suffix:
+            suffix_tokens = {
+                token
+                for token in re.findall(r"[a-zа-яё\d]+", suffix.group(1).lower())
+                if token not in {"the", "a", "an"}
+            }
+            if suffix_tokens and suffix_tokens <= source_tokens:
+                title = title[: suffix.start()].rstrip(" .-–—")
     if not title or _looks_like_source_chrome(title):
         return ""
     venue = _event_venue(candidate)
@@ -3310,6 +3325,9 @@ def _build_weekend_event_fallback_line(candidate: dict) -> str:
         return ""
     sentence = f"{kind}: {detail_text}" if detail_text else kind
     if prefix:
+        if event.get("next_occurrence"):
+            factual_format = sentence.replace(":", ",", 1)
+            return f"• {prefix} — {title}. На площадке: {factual_format}."
         return f"• {prefix} — {title}: {sentence}. Сверьте часы и условия перед поездкой."
     return f"• {title}: {sentence}. Сверьте часы и условия перед поездкой."
 
@@ -3927,10 +3945,33 @@ def _is_routine_market_future_fill(candidate: dict) -> bool:
     )
 
 
+def _is_leisure_candidate(candidate: dict) -> bool:
+    category = str(candidate.get("category") or "")
+    if category in {
+        "culture_weekly",
+        "venues_tickets",
+        "russian_speaking_events",
+        "diaspora_events",
+        "food_openings",
+    }:
+        return True
+    return _candidate_story_type(candidate) in {
+        "event",
+        "ticket",
+        "day_out_guide",
+        "opening",
+        "old_existing_food",
+    }
+
+
 def _next_7_event_decision(candidate: dict) -> tuple[str, str]:
     today = now_london().date()
     if not _event_venue(candidate):
         return "hold", "event has no usable venue"
+    if _is_leisure_candidate(candidate):
+        if _is_long_running_exhibition_without_week_hook(candidate):
+            return "hold", "long-running exhibition without opening/closing hook this week"
+        return "move_future", "leisure item belongs in Weekend, Tickets or future announcements"
     dates = _event_candidate_dates(candidate)
     future_dates = [day for day in dates if day >= today]
     if any(today <= day <= today + timedelta(days=7) for day in future_dates):
@@ -3957,6 +3998,8 @@ def _future_announcement_decision(candidate: dict) -> tuple[str, str]:
     nearest = future_dates[0]
     days_out = (nearest - today).days
     if days_out <= 7:
+        if _is_leisure_candidate(candidate):
+            return "hold", "near-term leisure is not a future announcement"
         return "move_next_7", f"nearest dated occurrence is {days_out} day(s) away"
     if _is_long_running_exhibition_without_week_hook(candidate):
         return "hold", "long-running exhibition without a near-term hook"
@@ -3974,29 +4017,6 @@ def _section_event_timing_decision(candidate: dict) -> tuple[str, str]:
     if block == "future_announcements":
         return _future_announcement_decision(candidate)
     return "keep", ""
-
-
-def _complete_next_7_rescue_candidate(candidate: dict, section_name: str) -> bool:
-    if section_name != "Что важно в ближайшие 7 дней":
-        return False
-    if str(candidate.get("primary_block") or "") != "next_7_days":
-        return False
-    if candidate.get("include"):
-        return False
-    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    if not event.get("is_event"):
-        return False
-    if _next_7_event_decision(candidate)[0] != "keep":
-        return False
-    if not str(event.get("event_name") or candidate.get("title") or "").strip():
-        return False
-    source = str(candidate.get("source_label") or "")
-    if not re.search(r"\b(?:HOME|Lowry|People's History Museum|Manchester's Finest|Stockport Events|Whitworth|Band on the Wall|Bridgewater|Manchester Wire|Makers Market)\b", source, re.IGNORECASE):
-        return False
-    reason = str(candidate.get("reason") or "")
-    if re.search(r"\b(?:non-GM|not GM|expired|past|duplicate|paywall|full text not accessible|stub)\b", reason, re.IGNORECASE):
-        return False
-    return True
 
 
 def _transport_empty_line(project_root: Path) -> str:
@@ -4773,19 +4793,11 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
     #     280-char teaser, accept whatever LLM produced rather than
     #     dropping a real event for being a sentence too short.
     is_transport_block = block_key == "transport"
-    if block_key in _EVENT_BLOCKS and _SOLD_OUT_EVENT_RE.search(
-        " ".join(
-            str(value or "")
-            for value in (
-                text,
-                candidate.get("title"),
-                candidate.get("summary"),
-                candidate.get("lead"),
-                candidate.get("evidence_text"),
-            )
-        )
-    ):
-        errors.append("sold-out event must not be published.")
+    if block_key in _EVENT_BLOCKS:
+        from news_digest.pipeline.candidate_validator import event_is_fully_sold_out  # noqa: PLC0415
+
+        if event_is_fully_sold_out(candidate, text):
+            errors.append("sold-out event must not be published.")
     if block_key == "weather" and re.search(r"\b(?:локальн\w+\s+)?радар\b", text, re.IGNORECASE):
         errors.append("weather line must not tell the reader to check a radar.")
     if is_transport_block:
@@ -4935,22 +4947,6 @@ _FOOTBALL_SPORT_RE = re.compile(
     r"call[- ]?up|debut|suspension|ban|training return|ruled out|available)\b",
     re.IGNORECASE,
 )
-_FOOTBALL_SOFT_RE = re.compile(
-    r"\b(?:birthday|break[- ]?up|girlfriend|boyfriend|maya jama|personal life|"
-    r"fan reaction|fans react|social media|instagram|party|gossip|rumour|"
-    r"speculation|shirt launch|kit launch|award|charity|community|documentary|"
-    r"amazon|prime video|behind[- ]the[- ]scenes|poll|vote|supporters?|fans?)\b",
-    re.IGNORECASE,
-)
-_FOOTBALL_HARD_NEWS_RE = re.compile(
-    r"\b(?:match|fixture|result|score|goal|injur|fitness|transfer|sign(?:s|ed|ing)?|"
-    r"contract|loan|squad|line[- ]?up|team news|appoint(?:s|ed|ment)?|"
-    r"negotiat(?:e|es|ed|ions?)|bid|rejected|accepted|available|ruled out|"
-    r"debut|call[- ]?up|suspension|ban|training return)\b",
-    re.IGNORECASE,
-)
-
-
 def _football_is_sport_news(candidate: dict) -> bool:
     if str(candidate.get("primary_block") or "") != "football":
         return False
@@ -4959,19 +4955,6 @@ def _football_is_sport_news(candidate: dict) -> bool:
         for field in ("title", "summary", "lead", "evidence_text", "source_url")
     )
     return bool(_FOOTBALL_SPORT_RE.search(blob))
-
-
-def _football_should_route_to_soft(candidate: dict) -> bool:
-    if str(candidate.get("primary_block") or "") != "football":
-        return False
-    if not _football_is_sport_news(candidate):
-        return True
-    blob = " ".join(
-        str(candidate.get(field) or "")
-        for field in ("title", "summary", "lead", "evidence_text", "source_url")
-    )
-    return bool(_FOOTBALL_SOFT_RE.search(blob) and not _FOOTBALL_HARD_NEWS_RE.search(blob))
-
 
 _NON_GM_REGIONAL_RE = re.compile(
     r"\b(?:southport|liverpool|lancashire|cheshire|yorkshire|cumbria|london|devon|north-west|north west)\b",

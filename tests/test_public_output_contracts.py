@@ -31,11 +31,11 @@ from news_digest.pipeline.writer import (
     _draft_line_quality_errors,
     _final_replacement_line,
     _football_is_sport_news,
-    _football_should_route_to_soft,
     _is_outside_current_weekend_candidate,
     _weekend_activity_score,
     _today_focus_candidate_is_eligible,
     _transport_line_priority,
+    _future_announcement_decision,
     _next_7_event_decision,
     _append_recovery_step,
     _repair_editorial_contract_line,
@@ -278,6 +278,38 @@ class PublicOutputContractTests(unittest.TestCase):
             fake_now.return_value = datetime(2026, 6, 11)
             self.assertFalse(_today_focus_candidate_is_eligible(candidate, "• Prestwich: библиотека закроется 14 июня."))
 
+    def test_today_focus_generic_housing_update_is_not_actionable_today(self) -> None:
+        candidate = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "Plans submitted for 500 homes in Stockport",
+            "summary": "A planning application was submitted yesterday.",
+            "practical_angle": "Есть новый городской контекст для Greater Manchester.",
+            "editorial_contract": {
+                "story_type": "service_accountability",
+                "publish_tier": "strong",
+                "event_shape": "none",
+                "story_frame": {"why_now": "new_today"},
+            },
+        }
+        self.assertFalse(_today_focus_candidate_is_eligible(candidate))
+
+    def test_today_focus_past_road_case_is_not_actionable_today(self) -> None:
+        candidate = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "Speeding driver avoids jail after old A580 crash",
+            "summary": "A court heard the driver had hit a pedestrian last year.",
+            "practical_angle": "Учтите новый судебный итог.",
+            "editorial_contract": {
+                "story_type": "incident",
+                "publish_tier": "strong",
+                "event_shape": "none",
+                "story_frame": {"why_now": "new_today"},
+            },
+        }
+        self.assertFalse(_today_focus_candidate_is_eligible(candidate))
+
     def test_next_7_final_date_gate_moves_far_event(self) -> None:
         candidate = {
             "category": "culture_weekly",
@@ -295,7 +327,7 @@ class PublicOutputContractTests(unittest.TestCase):
             fake_now.return_value = datetime(2026, 6, 11)
             decision, reason = _next_7_event_decision(candidate)
         self.assertEqual(decision, "move_future")
-        self.assertIn("16 day", reason)
+        self.assertIn("leisure item", reason)
 
     def test_city_watch_clear_short_story_does_not_fail_length_only(self) -> None:
         candidate = {
@@ -610,15 +642,6 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertTrue(_is_curator_protected({"primary_block": "outside_gm_tickets"}))
         self.assertTrue(_is_curator_protected({"primary_block": "ticket_radar"}))
 
-    def test_football_soft_item_does_not_count_as_football_minimum(self) -> None:
-        candidate = {
-            "primary_block": "football",
-            "title": "Ruben Dias says he draws line over Maya Jama break-up speculation",
-            "summary": "Manchester City defender responds to personal life gossip.",
-        }
-        self.assertFalse(_football_is_sport_news(candidate))
-        self.assertTrue(_football_should_route_to_soft(candidate))
-
     def test_football_sport_item_counts_toward_football_minimum(self) -> None:
         candidate = {
             "primary_block": "football",
@@ -626,16 +649,6 @@ class PublicOutputContractTests(unittest.TestCase):
             "summary": "The transfer is complete and the player could be available for Saturday's match.",
         }
         self.assertTrue(_football_is_sport_news(candidate))
-        self.assertFalse(_football_should_route_to_soft(candidate))
-
-    def test_football_documentary_item_does_not_count_as_sport_minimum(self) -> None:
-        candidate = {
-            "primary_block": "football",
-            "title": "Pep Guardiola: Former Man City manager's final seasons to air in Amazon documentary",
-            "summary": "The behind-the-scenes series will air on Prime Video this summer.",
-        }
-        self.assertTrue(_football_is_sport_news(candidate))
-        self.assertTrue(_football_should_route_to_soft(candidate))
 
     def test_football_numeric_hallucination_is_replaced_by_official_fallback(self) -> None:
         candidate = {
@@ -695,7 +708,7 @@ class PublicOutputContractTests(unittest.TestCase):
                     "date_text": "18 December",
                 },
             }
-            self.assertEqual(_next_7_event_decision(bridgewater)[0], "keep")
+            self.assertEqual(_next_7_event_decision(bridgewater)[0], "move_future")
             line = _build_ticket_fallback_line(bridgewater)
             self.assertIn("12 июня", line)
             self.assertNotIn("00:00", line)
@@ -730,6 +743,27 @@ class PublicOutputContractTests(unittest.TestCase):
                 },
             }
             self.assertEqual(_next_7_event_decision(no_venue), ("hold", "event has no usable venue"))
+
+    def test_near_term_leisure_stays_out_of_next_7(self) -> None:
+        candidate = {
+            "category": "culture_weekly",
+            "primary_block": "future_announcements",
+            "source_label": "HOME",
+            "title": "Thespians musical",
+            "summary": "A musical at HOME on 18 July 2026.",
+            "event": {
+                "is_event": True,
+                "event_name": "Thespians",
+                "venue": "HOME",
+                "date_start": "2026-07-18",
+            },
+        }
+        with patch("news_digest.pipeline.writer.now_london") as fake_now:
+            fake_now.return_value = datetime(2026, 7, 16)
+            self.assertEqual(
+                _future_announcement_decision(candidate),
+                ("hold", "near-term leisure is not a future announcement"),
+            )
 
     def test_ticket_decision_explains_show_and_hide(self) -> None:
         show = {
