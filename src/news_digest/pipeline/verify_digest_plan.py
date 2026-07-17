@@ -72,15 +72,51 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
     if not plan or not plan_slots(plan):
         technical_errors.append("release_plan.json is missing or has no slots.")
     else:
+        # Fail-closed: сверка без отчёта исполнения — это не «чисто», это
+        # «мы не знаем, что отправляем». Блокирует отправку.
+        from news_digest.pipeline.plan_execution import execution_path  # noqa: PLC0415
+
+        exec_slots = execution.get("slots") or {}
+        if not execution_path(state_dir).exists() or not exec_slots:
+            technical_errors.append("plan_execution_report.json is missing or empty — исполнение плана неизвестно.")
         plan_run = str(plan.get("pipeline_run_id") or "")
         exec_run = str(execution.get("pipeline_run_id") or "")
-        if plan_run and exec_run and plan_run != exec_run:
+        if plan_run != exec_run:
             technical_errors.append(
-                f"Plan/run mismatch: release_plan {plan_run} vs plan_execution {exec_run}."
+                f"Plan/run mismatch: release_plan {plan_run!r} vs plan_execution {exec_run!r}."
             )
         plan_day = str(plan.get("run_date_london") or "")
         if plan_day and plan_day != today_london():
             technical_errors.append(f"release_plan is for {plan_day}, today is {today_london()}.")
+        exec_day = str(execution.get("run_date_london") or "")
+        if exec_day and exec_day != today_london():
+            technical_errors.append(f"plan_execution is for {exec_day}, today is {today_london()}.")
+        expected_rows = len(plan_slots(plan)) + (
+            1 if str((plan.get("lead") or {}).get("primary_fingerprint") or "") else 0
+        )
+        if exec_slots and len(exec_slots) != expected_rows:
+            technical_errors.append(
+                f"Execution covers {len(exec_slots)} slot(s), plan expects {expected_rows} — исполнение неполно."
+            )
+        bad_statuses = sorted({
+            str((row or {}).get("status") or "unknown")
+            for row in exec_slots.values()
+            if str((row or {}).get("status") or "") not in {"shown", "replaced", "removed"}
+        })
+        if bad_statuses:
+            technical_errors.append(
+                f"Execution has unfinished slot status(es): {', '.join(bad_statuses)} — конвейер не дошёл до конца."
+            )
+    # Структура Telegram-HTML: битые теги ломают отправку/рендер — технический брак.
+    if html_text:
+        open_a = len(re.findall(r"<a\s", html_text))
+        close_a = html_text.count("</a>")
+        open_b = html_text.count("<b>")
+        close_b = html_text.count("</b>")
+        if open_a != close_a:
+            technical_errors.append(f"Telegram HTML broken: <a>={open_a} vs </a>={close_a}.")
+        if open_b != close_b:
+            technical_errors.append(f"Telegram HTML broken: <b>={open_b} vs </b>={close_b}.")
     masthead = _MASTHEAD_RE.match(html_text.splitlines()[0].strip() if html_text else "")
     if html_text and not masthead:
         technical_errors.append("Masthead line is missing from the final HTML.")

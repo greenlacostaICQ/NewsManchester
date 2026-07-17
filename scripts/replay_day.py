@@ -186,8 +186,13 @@ def run_stages(sandbox: Path) -> list[dict[str, object]]:
 
     results: list[dict[str, object]] = []
     from news_digest.pipeline.plan_digest import run_plan_digest  # noqa: PLC0415
+    from news_digest.pipeline.verify_digest_plan import run_verify_digest_plan  # noqa: PLC0415
 
-    for name, fn in (("plan-digest", run_plan_digest), ("write-digest", write_digest), ("edit-digest", edit_digest), ("build-digest", build_release)):
+    def _run_verify(root):
+        return run_verify_digest_plan(root)
+
+
+    for name, fn in (("plan-digest", run_plan_digest), ("write-digest", write_digest), ("edit-digest", edit_digest), ("build-digest", build_release), ("verify-digest-plan", _run_verify)):
         started = time.monotonic()
         try:
             result = fn(sandbox)
@@ -383,7 +388,7 @@ def replay_one(day: str, sandbox: Path) -> dict[str, object]:
         "sandbox": str(sandbox),
         "stages": stages,
         "total_seconds": total_seconds,
-        "stages_ok": all(s["ok"] for s in stages) and len(stages) == 4,
+        "stages_ok": all(s["ok"] for s in stages) and len(stages) == 5,
         "sent_metrics": analyze_digest(sent_html),
         "replay_metrics": analyze_digest(replayed_html) if replayed_html else None,
         "diff": diff_digests(sent_html, replayed_html, sandbox) if replayed_html else None,

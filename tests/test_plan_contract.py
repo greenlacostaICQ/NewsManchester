@@ -209,21 +209,69 @@ class PlanContractTest(unittest.TestCase):
                 ticket_notability={"artist": f"Ordinary Artist {i}", "tier": "B", "kind": "artist", "confidence": 0.9, "signals": {}},
                 ticket_type="on_sale_now",
             ))
-        a_tier = _candidate(
-            99, block="ticket_radar", category="venues_tickets",
-            title="Global Star — event 2099-01-12 — public sale",
-            draft_line="• Global Star — 12 января, Co-op Live.",
-            event={"date_start": "2099-01-12T20:00:00+00:00", "venue": "Co-op Live", "is_event": True},
-            ticket_notability={"artist": "Global Star", "tier": "A", "kind": "artist", "confidence": 0.99, "signals": {}},
-            ticket_type="on_sale_now",
-        )
+        a_tiers = [
+            _candidate(
+                99 + n, block="ticket_radar", category="venues_tickets",
+                title=f"Global Star {n} — event 2099-01-12 — public sale",
+                draft_line=f"• Global Star {n} — 12 января, Co-op Live.",
+                event={"date_start": "2099-01-12T20:00:00+00:00", "venue": "Co-op Live", "is_event": True},
+                ticket_notability={"artist": f"Global Star {n}", "tier": "A", "kind": "artist", "confidence": 0.99, "signals": {}},
+                ticket_type="on_sale_now",
+                venue_scope=scope,
+            )
+            for n, scope in enumerate(("gm", "nearby", "outside_gm"))
+        ]
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            state_dir = _seed(root, tickets + [a_tier])
+            state_dir = _seed(root, tickets + a_tiers)
             run_plan_digest(root)
             plan = load_plan(state_dir)
         slot_fps = {s_["primary_fingerprint"] for s_ in plan["slots"] if s_["section"] == "Билеты / Ticket Radar"}
-        self.assertIn(a_tier["fingerprint"], slot_fps, "A-tier обязан быть в слотах сверх капа")
+        for a_tier in a_tiers:  # правило 0094: любой scope — gm/nearby/outside
+            self.assertIn(a_tier["fingerprint"], slot_fps, "A-tier обязан быть в слотах сверх капа")
+
+    def test_8_verify_is_fail_closed_on_missing_or_broken_execution(self) -> None:
+        candidates = [_candidate(i) for i in range(7)]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, candidates)
+            run_plan_digest(root)
+            write_digest(root)
+            outgoing = root / "data" / "outgoing"
+            outgoing.mkdir(parents=True, exist_ok=True)
+            html = (state_dir / "draft_digest.html").read_text(encoding="utf-8")
+            (outgoing / "current_digest.html").write_text(html, encoding="utf-8")
+            exec_path = state_dir / "plan_execution_report.json"
+            exec_payload = exec_path.read_text(encoding="utf-8")
+            # нет отчёта исполнения -> блок
+            exec_path.unlink()
+            self.assertFalse(run_verify_digest_plan(root).ok, "без execution report сверка обязана блокировать")
+            exec_path.write_text(exec_payload, encoding="utf-8")
+            # незавершённый статус слота -> блок
+            broken = json.loads(exec_payload)
+            first_key = next(iter(broken["slots"]))
+            broken["slots"][first_key]["status"] = "pending"
+            exec_path.write_text(json.dumps(broken, ensure_ascii=False), encoding="utf-8")
+            self.assertFalse(run_verify_digest_plan(root).ok, "pending-статус = конвейер не дошёл до конца")
+            exec_path.write_text(exec_payload, encoding="utf-8")
+            # битый Telegram-HTML (потерян закрывающий тег ссылки) -> блок
+            (outgoing / "current_digest.html").write_text(html.replace("</a>", "", 1), encoding="utf-8")
+            self.assertFalse(run_verify_digest_plan(root).ok, "битые теги = технический брак артефакта")
+
+    def test_9_plan_promotes_backups_when_pool_below_minimum(self) -> None:
+        # «Свежие новости»: min=6; lead и два дублёра честно съедают три
+        # истории — оставшиеся слоты планёрка добирает из резервов.
+        candidates = [_candidate(i) for i in range(4)]
+        for i in range(200, 206):
+            candidates.append(_candidate(i, include=False, digest_selection_verdict="reserve"))
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, candidates)
+            run_plan_digest(root)
+            plan = load_plan(state_dir)
+        fresh = plan["sections"]["Свежие новости"]
+        self.assertGreaterEqual(fresh["planned"], fresh["min"], "недобор при живом резерве недопустим")
+        self.assertIsNone(fresh["expected_shortfall"])
 
 
 if __name__ == "__main__":
