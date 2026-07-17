@@ -23,11 +23,22 @@ collect-digest
   → validate-candidates
   → curator-pass          # editorial LLM pass: drop PR/evergreen, pick lead story
   → transport-fill        # ensure checked transport coverage / synthetic transport status
-  → llm-rewrite           # 5 category-specific prompts (transport/city/events/business/football)
-  → write-digest
-  → edit-digest
-  → build-digest          # release gate → promotes draft to outgoing
+  → rank-digest           # Этап 3: DeepSeek boards + verdicts + ticket notability (rating half)
+  → plan-digest           # Этап 3: планёрка — immutable slot plan (slots+backups+lead, повторы, лимиты)
+  → llm-rewrite           # prose ONLY for plan slots and their backups
+  → write-digest          # renders strictly by plan; ladder: enrich→rebuild→backup→removal code
+  → edit-digest           # words only; hopeless line → plan_execution controller
+  → build-digest          # release gate (technical) → promotes draft to outgoing
+  → pre-send-quality-judge  # words only; fact-integrity removal записывается в исполнение плана
+  → verify-digest-plan    # финальная сверка HTML ↔ план; технический брак блокирует send
 ```
+
+Состав выпуска решается ОДИН раз — планёркой (plan-digest). После записи
+release_plan.json ни писатель, ни редактор, ни release, ни судья не меняют
+состав: только замена на запасного ИЗ ЦЕПОЧКИ СЛОТА через
+`plan_execution` или снятие по кодифицированной причине. Ремонтные
+механизмы прошлой эпохи (reconcile, quarantine, backup_pool, editor
+reserve pool, floors/backfill) удалены — не переизобретать их.
 
 Each stage reads/writes its own `data/state/*.json` file.
 `build-digest` is the only stage that promotes
@@ -230,6 +241,11 @@ Task is about ... open ...
 - assembling the draft from candidates: `src/news_digest/pipeline/writer.py`
 - line-level dedup, balance check, draft polish: `src/news_digest/pipeline/editor.py`
 - the final pass/fail gate: `src/news_digest/pipeline/release.py`
+- Этап 3 планёрка (слот-план, лимиты, повторы, lead+дублёры):
+  `src/news_digest/pipeline/plan_digest.py`
+- исполнение плана (цепочки запасных, коды снятия, общий бюджет ремонтов):
+  `src/news_digest/pipeline/plan_execution.py`
+- финальная сверка перед отправкой: `src/news_digest/pipeline/verify_digest_plan.py`
 - repeat detection across days: `src/news_digest/pipeline/dedupe.py`
 - shared constants and contracts (REQUIRED_BLOCKS, fingerprint,
   normalize_title): `src/news_digest/pipeline/common.py`
@@ -454,6 +470,10 @@ blockers.
 - `inventory_run_log.jsonl` — per-source night rows keyed by run_id/wave
 - `morning_inventory_intake_report.json` — all-block intake, scan completeness,
   block sufficiency and source-replacement decisions
+- `release_plan.json` — неизменяемый слот-план выпуска (пишет только plan-digest)
+- `plan_execution_report.json` — исполнение плана: shown/replaced/removed по слотам
+- `rank_digest_report.json`, `plan_digest_report.json`, `verify_digest_plan_report.json` — отчёты стадий Этапа 3
+- `publish_plan.json` — read-only ЗЕРКАЛО release_plan для ночного контура (не источник решений)
 - `candidates.json` — current scan output, mutated by dedupe/validator
 - `dedupe_memory.json` — today's dedupe decisions, including
   `semantic_dedup_summary` (I1: model name, embedded/cache hit counts,
