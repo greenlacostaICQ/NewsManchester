@@ -1620,6 +1620,7 @@ def edit_digest(project_root: Path) -> StageResult:
     candidates_path = state_dir / "candidates.json"
     draft_path = state_dir / "draft_digest.html"
     report_path = state_dir / "editor_report.json"
+    _EDITOR_STATE_DIR["path"] = state_dir
     final_editor_report_path = state_dir / "final_editor_report.json"
 
     draft_text = draft_path.read_text(encoding="utf-8") if draft_path.exists() else ""
@@ -1673,9 +1674,8 @@ def edit_digest(project_root: Path) -> StageResult:
             if previous_section and previous_section != section_name and section_name != lead_heading:
                 duplicate_collisions += 1
                 warnings.append(
-                    f"Removed cross-section duplicate from {section_name}; already present in {previous_section}."
+                    f"Cross-section duplicate kept in {section_name} (also in {previous_section}) - состав неизменяем, дедуп делает планёрка."
                 )
-                continue
             seen_lines_to_section[key] = section_name
             filtered.append(line)
         normalized_sections[section_name] = filtered
