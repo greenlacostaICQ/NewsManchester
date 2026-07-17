@@ -6349,6 +6349,26 @@ def _weekend_empty_reason(candidates: list[dict], *, show_weekend: bool, weekend
     )
 
 
+_RU_MONTH_WORD = r"(?:январ|феврал|март|апрел|ма[йя]|июн|июл|август|сентябр|октябр|ноябр|декабр)[а-яё]*"
+
+
+def _strip_unsupported_date_tokens(line: str, tokens: list[str]) -> str:
+    """Вырезать из строки неподтверждённые числа-даты («20 июля 2026 года»).
+
+    _strip_unsupported_number_phrases целится в денежные/количественные
+    формулы; датные фрагменты она не трогает. Для lead-слота фактовая
+    честность важнее конкретики: дату без опоры в evidence убираем целиком.
+    """
+    result = line
+    for token in tokens:
+        tok = re.escape(str(token))
+        result = re.sub(rf"\s*[—–-]?\s*\b{tok}\s+{_RU_MONTH_WORD}(?:\s+\d{{4}})?(?:\s+года?)?", "", result)
+        result = re.sub(rf"\s+\b{tok}\b(?=[\s.,;:!?)]|$)", "", result)
+    result = re.sub(r"\s{2,}", " ", result)
+    result = re.sub(r"\s+([.,;:!?])", r"\1", result)
+    return result.strip()
+
+
 def _produce_slot_line(
     candidate: dict,
     section_name: str,
@@ -6716,24 +6736,26 @@ def write_digest(project_root: Path) -> StageResult:
                     controlled_enrichment_report=controlled_enrichment_report,
                     execution=execution,
                 )
-                if line_errors and slot_id == "lead":
+                if line_errors and slot_id == "lead" and line:
                     # Lead-слот не умирает от мягких ошибок формата: главная
                     # история наверху важнее правила «≥150 знаков». Фактовые
-                    # ошибки (числа без опоры) послабления не получают —
-                    # пересобираем детерминированно из title/lead-фактов.
-                    soft_only = all(err.startswith("draft_line for long-format category needs") for err in line_errors)
-                    if not soft_only:
-                        rebuilt = _hard_news_recovery_line(candidate)
-                        if rebuilt:
-                            rebuilt_errors = [
-                                err for err in _draft_line_quality_errors(candidate, rebuilt)
-                                if not err.startswith("draft_line for long-format category needs")
-                            ]
-                            if not rebuilt_errors:
-                                line, line_errors = rebuilt, []
-                                candidate["draft_line_provider"] = "writer_lead_deterministic_rebuild"
-                    elif line:
+                    # ошибки послабления не получают: неподтверждённые числа
+                    # вырезает существующий ремонт; если после него остались
+                    # только мягкие length-ошибки — строку принимаем.
+                    _soft_prefix = "draft_line for long-format category needs"
+                    if not all(err.startswith(_soft_prefix) for err in line_errors):
+                        _stripped, _strip_repairs = _strip_unsupported_number_phrases(candidate, line)
+                        if not (_strip_repairs and _stripped and _stripped != line):
+                            _bad_tokens = _numeric_missing_tokens(candidate, line)
+                            _stripped = _strip_unsupported_date_tokens(line, _bad_tokens) if _bad_tokens else line
+                        if _stripped and _stripped != line:
+                            _residual = _draft_line_quality_errors(candidate, _stripped)
+                            if all(err.startswith(_soft_prefix) for err in _residual):
+                                line, line_errors = _stripped, _residual
+                                candidate["draft_line_provider"] = "writer_lead_soft_accept"
+                    if line_errors and all(err.startswith(_soft_prefix) for err in line_errors):
                         line_errors = []
+                        candidate["draft_line_provider"] = "writer_lead_soft_accept"
                 if line and not line_errors:
                     status = "replaced" if tried_backup else "shown"
                     if tried_backup:
