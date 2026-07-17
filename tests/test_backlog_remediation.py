@@ -472,61 +472,9 @@ class TransportPassengerImpactContractTest(unittest.TestCase):
             self.assertFalse(_exclude_transport_accessibility_only(c))
             self.assertTrue(c["include"])
 
-    def test_degraded_llm_shrink_holds_lower_priority_soft_section_items(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            state_dir = root / "data" / "state"
-            state_dir.mkdir(parents=True)
-            candidates = []
-            for idx in range(8):
-                candidates.append(
-                    {
-                        "fingerprint": f"city-{idx}",
-                        "include": True,
-                        "category": "media_layer",
-                        "primary_block": "city_watch",
-                        "title": f"City item {idx}",
-                        "lead": f"Manchester council confirmed useful local change {idx}.",
-                        "summary": f"Residents get a concrete update with dates and affected services {idx}.",
-                        "evidence_text": (
-                            f"Manchester council confirmed useful local change {idx}. Residents get a concrete "
-                            "update with dates, affected services, local impact, borough context, and a clear "
-                            "reason to check whether the change affects their routine this week."
-                        ),
-                        "practical_angle": "Проверьте, касается ли это вашего района.",
-                        "source_label": f"Source {idx}",
-                        "source_url": f"https://example.test/{idx}",
-                        "draft_line": (
-                            f"• Manchester: совет подтвердил практическое изменение {idx}, которое касается жителей "
-                            "района и ближайших сервисов. В тексте есть конкретный повод, дата и понятное действие "
-                            "для читателя, поэтому пункт можно оценить без догадок."
-                        ),
-                        "reader_value_score": 100 - idx,
-                    }
-                )
-            (state_dir / "candidates.json").write_text(json.dumps({"candidates": candidates}), encoding="utf-8")
-            (state_dir / "llm_rewrite_report.json").write_text(
-                json.dumps({"stage_status": "degraded", "warnings": ["LLM rewrite yield low"]}),
-                encoding="utf-8",
-            )
-
-            result = write_digest(root)
-            self.assertTrue(result.ok)
-            report = json.loads((state_dir / "writer_report.json").read_text(encoding="utf-8"))
-
-            self.assertGreaterEqual(
-                report["section_counts"]["Городской радар"]
-                + report["section_counts"].get("Что важно сегодня", 0),
-                5,
-            )
-            self.assertLessEqual(
-                report["section_counts"]["Городской радар"]
-                + report["section_counts"].get("Что важно сегодня", 0),
-                8,
-            )
-            self.assertGreaterEqual(len(report["rendered_candidate_fingerprints"]), 5)
-            self.assertTrue(report["degraded_shrink"]["enabled"])
-
+    # Этап 3: degraded-shrink удалён вместе с ремонтами состава — при
+    # деградации rewrite слот без прозы честно снимается с причиной,
+    # а не «утоньшает» секции задним числом.
     def test_borderline_candidate_is_kept_and_rendered(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -646,7 +594,11 @@ class TransportPassengerImpactContractTest(unittest.TestCase):
             report = json.loads((state_dir / "writer_report.json").read_text(encoding="utf-8"))
             rendered = set(report["rendered_candidate_fingerprints"])
             self.assertIn("high-police", rendered)
-            self.assertNotIn("low-10", rendered)
+            # Этап 3: cap Свежих=9 применяет планёрка; high-police уходит в
+            # lead, из 11 равных low-карточек в слоты входят ровно 9
+            # (детерминированный tie-break по fingerprint).
+            low_rendered = [fp for fp in rendered if fp.startswith("low-")]
+            self.assertEqual(len(low_rendered), 9)
 
 
 class LeisureRoutingContractTest(unittest.TestCase):
@@ -1728,9 +1680,10 @@ class PublishedReviewTest(unittest.TestCase):
 
             self.assertTrue(result.ok)
             # P0-A: a thin draft (no lead, sections under minimum) still ships,
-            # but the decision is honest — "ship_degraded", not a silent "pass" —
+            # Этап 3: dedupe-потеря решена планёркой ДО вёрстки — это plan-out,
+            # не видимый дефект выпуска; решение честное "pass" без шума —
             # and the visible-contract report always exists (RC1).
-            self.assertEqual(report["release_decision"], "ship_degraded")
+            self.assertEqual(report["release_decision"], "pass")
             self.assertTrue((state_dir / "visible_contract_report.json").exists())
             self.assertEqual(report["errors"], [])
             # Retired 2026-07-10: the daily "possible real misses" reports were

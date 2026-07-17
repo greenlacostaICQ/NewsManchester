@@ -6466,13 +6466,10 @@ def _produce_slot_line(
 
     if not line:
         if category in REQUIRE_DRAFT_LINE_CATEGORIES:
-            quality_counts["dropped_missing_draft_line"] += 1
             return "", ["missing_required_facts"]
         if _headline_fallback_forbidden(candidate):
-            quality_counts["dropped_missing_draft_line"] += 1
             return "", ["missing_required_facts"]
         if english_detected:
-            quality_counts["dropped_english_passthrough"] += 1
             return "", ["unrenderable_line"]
         headline = lead or title or summary
         rendered_parts: list[str] = []
@@ -6577,7 +6574,6 @@ def _produce_slot_line(
             candidate["draft_line_provider"] = "writer_core_kept_short"
             _append_recovery_step(candidate, "core_kept_short", "recovered", missing=kept_reasons)
     if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
-        quality_counts["dropped_low_quality"] += 1
         # Строку возвращаем вместе с ошибками: lead-ветка _try_slot может
         # спасти её мягким принятием после вычистки фактовых токенов.
         return line, draft_line_errors
@@ -6713,7 +6709,26 @@ def write_digest(project_root: Path) -> StageResult:
     plan = load_plan(state_dir)
     errors: list[str] = []
     warnings: list[str] = []
-    if not plan or not plan_slots(plan):
+    if not plan or not (plan_slots(plan) or str((plan.get("lead") or {}).get("primary_fingerprint") or "")):
+        # Ленивая планёрка: если stage plan-digest не был запущен явно
+        # (локальный прогон/тест), писатель вызывает ЕЁ ЖЕ — состав всё
+        # равно решает только планёрка. В проде stage стоит в workflow.
+        from news_digest.pipeline.plan_digest import run_plan_digest  # noqa: PLC0415
+
+        warnings.append("release_plan.json отсутствовал — планёрка запущена писателем; штатный путь: stage plan-digest.")
+        try:
+            run_plan_digest(project_root)
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"plan-digest failed: {exc}")
+        plan = load_plan(state_dir)
+        payload = read_json(candidates_path, {"candidates": []})
+        candidates = payload.get("candidates", [])
+        candidate_by_fp = {
+            str(candidate.get("fingerprint") or ""): candidate
+            for candidate in candidates
+            if isinstance(candidate, dict)
+        }
+    if not plan or not (plan_slots(plan) or str((plan.get("lead") or {}).get("primary_fingerprint") or "")):
         errors.append("release_plan.json is missing or has no slots — run plan-digest before write-digest.")
         write_json(report_path, {
             "pipeline_run_id": pipeline_run_id,
@@ -6862,6 +6877,10 @@ def write_digest(project_root: Path) -> StageResult:
             attempts.append((backup_fp, backup))
         removal = normalize_removal_reason(_removal_reason_from_errors(first_errors))
         quality_counts["removed_with_reason"] += 1
+        if removal == "missing_required_facts":
+            quality_counts["dropped_missing_draft_line"] += 1
+        else:
+            quality_counts["dropped_low_quality"] += 1
         record_outcome(execution, slot_id, status="removed", reason=removal, stage="writer")
         return None, "", "removed"
 

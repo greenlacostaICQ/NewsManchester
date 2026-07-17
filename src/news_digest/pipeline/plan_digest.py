@@ -848,6 +848,41 @@ def run_plan_digest(project_root: Path) -> StageResult:
         "warnings": warnings,
     }
     write_json_atomic(plan_path(state_dir), plan)
+    # Совместимое зеркало для ночного контура (inventory/story_intelligence
+    # читают publish_plan.json). Это НЕ второй источник решений: файл — прямая
+    # проекция слот-плана, пишется только здесь.
+    legacy_items = []
+    legacy_totals = {"must_show": 0, "show": 0, "reserve": 0, "needs_enrichment": 0, "drop": 0}
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        status = str(candidate.get("publish_plan_status") or "drop")
+        if status not in legacy_totals:
+            status = "drop"
+        legacy_totals[status] += 1
+        legacy_items.append(
+            {
+                "fingerprint": candidate.get("fingerprint") or "",
+                "title": candidate.get("title") or "",
+                "primary_block": candidate.get("primary_block") or "",
+                "section": PRIMARY_BLOCKS.get(str(candidate.get("primary_block") or ""), ""),
+                "status": status,
+                "reason": str(candidate.get("publish_plan_reason") or ""),
+                "is_lead": bool(candidate.get("is_lead")),
+                "protected_budget": bool(candidate.get("publish_plan_status") == "must_show"),
+            }
+        )
+    write_json_atomic(
+        state_dir / "publish_plan.json",
+        {
+            "schema_version": 2,
+            "mirror_of": "release_plan.json",
+            "run_date_london": today_london(),
+            "pipeline_run_id": pipeline_run_id,
+            "totals": legacy_totals,
+            "items": legacy_items,
+        },
+    )
     write_json_atomic(candidates_path, payload)
     write_json(
         report_path,

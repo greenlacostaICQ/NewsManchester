@@ -192,7 +192,7 @@ class ShowRenderableContractTest(unittest.TestCase):
 
         self.assertTrue(result.ok)
         self.assertNotIn("Thin event listing", html)
-        self.assertIn(report["dropped_candidates"][0]["reasons"][0], {"Missing draft_line.", "Headline-only fallback forbidden."})
+        self.assertIn(report["dropped_candidates"][0]["reasons"][0], {"Missing draft_line.", "Headline-only fallback forbidden.", "missing_required_facts"})
         self.assertFalse(report["dropped_candidates"][0].get("recoverable_reserve", False))
 
 

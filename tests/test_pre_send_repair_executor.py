@@ -138,7 +138,7 @@ class PreSendRepairExecutorTest(unittest.TestCase):
             ),
         )
 
-    def test_pre_send_repair_rejects_hallucinated_patch_and_uses_clean_reserve(self) -> None:
+    def test_pre_send_repair_rejects_hallucinated_patch_and_keeps_line_without_plan_backup(self) -> None:
         digest_html = (
             "<b>Greater Manchester Brief — 2026-06-29, 08:00</b>\n\n"
             "<b>Свежие новости</b>\n"
@@ -184,10 +184,14 @@ class PreSendRepairExecutorTest(unittest.TestCase):
                 dry_run=False,
             )
 
-        self.assertIn("Чистая резервная новость", repaired)
+        # Этап 3: замены только из цепочки планового слота. Кандидат без
+        # plan_slot_id заменён быть не может — строка честно сохраняется.
+        self.assertIn("Битая строка без фактов", repaired)
         self.assertNotIn("AO Arena", repaired)
+        self.assertNotIn("Чистая резервная новость", repaired)
         self.assertEqual(report["fact_lock_rejected"], 1)
-        self.assertEqual(report["reserve_replacement_used"], 1)
+        self.assertEqual(report["reserve_replacement_used"], 0)
+        self.assertEqual(report["kept_below_floor"], 1)
 
     def test_strip_below_floor_keeps_original_but_still_drops_unsupported_fact(self) -> None:
         # «Свежие новости» floor is 6. When no reserve is available, a strip that

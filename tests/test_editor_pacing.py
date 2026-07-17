@@ -43,7 +43,7 @@ class EditorPacingTest(unittest.TestCase):
 
         self.assertEqual(polished["Выходные в GM"], [line])
         self.assertEqual(stats["model_requested_stripped"], 0)
-        self.assertIn("Weekend removal", warnings[0])
+        self.assertIn("планового запасного нет", warnings[0])
 
     def test_empty_ending_post_check_strips_generic_filler_and_keeps_link(self):
         line = (
