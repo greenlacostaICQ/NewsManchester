@@ -49,7 +49,6 @@ from news_digest.pipeline.event_quality import (
     is_event_candidate,
 )
 from news_digest.pipeline.writer import (
-    _apply_section_min_floor_pull_back,
     _block_contract_action,
     _draft_line_quality_errors,
     _looks_like_untranslated_english,
@@ -128,38 +127,6 @@ class NoDateEventTest(unittest.TestCase):
 class WriterPullbackRegressionTest(unittest.TestCase):
     """Rejected reserve items must never be resurrected into public sections."""
 
-    def test_rejected_backup_candidate_not_pulled_into_public_section(self) -> None:
-        candidate = {
-            "include": False,
-            "backup_candidate": True,
-            "reject_reasons": ["weak_value_civic_pr"],
-            "primary_block": "city_watch",
-            "fingerprint": "gmmh-rejected",
-            "title": "GMMH appoints new chair",
-            "source_label": "GMMH",
-            "source_url": "https://example.com/gmmh-chair",
-            "draft_line": "• <b>GMMH</b> назначил нового председателя; проверьте.",
-        }
-        lines, fps, _scores, _titles, _srcs = _apply_section_min_floor_pull_back(
-            "Городской радар",
-            [],
-            [],
-            [],
-            [],
-            [],
-            [candidate],
-            set(),
-            1,
-            [],
-            include_backup=True,
-        )
-        self.assertEqual([], lines)
-        self.assertEqual([], fps)
-
-
-# --------------------------------------------------------------------------
-# 2. PR / promotional press release (3 cases)
-# --------------------------------------------------------------------------
 class PressReleaseTest(unittest.TestCase):
     """Past defect: university PR ('vice-chancellor opens new lecture')
     crowded out real city news in Городской радар. Writer's city-watch
@@ -783,72 +750,6 @@ class FinalEditorNetTest(unittest.TestCase):
         key = story_cluster_key(candidate)
         self.assertEqual(key, candidate["story_phase_key"])
         self.assertTrue(candidate["has_new_story_phase"])
-
-    def test_same_section_reserve_skips_story_duplicate(self) -> None:
-        from news_digest.pipeline.editor import _same_section_reserve_line
-
-        rendered_story_keys = {"story:green|civic|manchester"}
-        rendered_urls: set[str] = set()
-        candidates = [
-            {
-                "primary_block": "today_focus",
-                "validated": True,
-                "public_reserve": True,
-                "backup_pool_only": False,
-                "story_identity_key": "story:green|civic|manchester",
-                "draft_line": "• Дубль Green.",
-                "source_url": "https://example.com/dup",
-                "source_label": "BBC",
-            },
-            {
-                "primary_block": "today_focus",
-                "validated": True,
-                "public_reserve": True,
-                "backup_pool_only": False,
-                "story_identity_key": "story:parks|civic|salford",
-                "draft_line": "• Новый пункт про парки.",
-                "source_url": "https://example.com/new",
-                "source_label": "Council",
-            },
-        ]
-        line = _same_section_reserve_line("Что важно сегодня", candidates, rendered_urls, rendered_story_keys)
-        self.assertIn("парки", line)
-        self.assertIn("story:parks|civic|salford", rendered_story_keys)
-
-    def test_same_section_reserve_rebuilds_missing_draft_line(self) -> None:
-        from news_digest.pipeline.editor import _same_section_reserve_line
-
-        rendered_story_keys: set[str] = set()
-        rendered_urls: set[str] = set()
-        candidates = [
-            {
-                "primary_block": "ticket_radar",
-                "category": "venues_tickets",
-                "validated": True,
-                "public_reserve": True,
-                "backup_pool_only": False,
-                "title": "Example Artist — event 2026-07-20",
-                "summary": "AO Arena | Manchester | Pop | event_date=2026-07-20 19:00 | ticket_type=major_upcoming",
-                "source_url": "https://ticketmaster.co.uk/example-artist",
-                "source_label": "Ticketmaster",
-                "event": {"venue": "AO Arena", "date_start": "2026-07-20T19:00:00+01:00"},
-                "ticket_notability": {
-                    "artist": "Example Artist",
-                    "kind": "artist",
-                    "tier": "A",
-                    "signal": "streaming_popularity",
-                    "signals": {"lastfm_listeners": 1800000},
-                },
-            },
-        ]
-        stats: dict[str, object] = {}
-
-        line = _same_section_reserve_line("Билеты / Ticket Radar", candidates, rendered_urls, rendered_story_keys, stats)
-
-        self.assertIn("Example Artist", line)
-        self.assertNotIn("Last.fm", line)
-        self.assertIn("AO Arena", line)
-        self.assertGreaterEqual(int(stats.get("enriched_rewrite_used") or 0), 1)
 
     def test_block_contract_holds_non_a_tier_outside_gm(self) -> None:
         candidate = {

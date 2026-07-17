@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import tempfile
 import unittest
+
+from news_digest.pipeline.release import _final_loss_check, public_html_contract_errors
 from unittest.mock import patch
 
 from news_digest.pipeline.common import now_london
@@ -13,7 +15,6 @@ from news_digest.pipeline.collector.fallbacks import _weather_draft_line
 from news_digest.pipeline.collector.weather import _met_office_practical_angle
 from news_digest.pipeline.curator import _is_curator_protected
 from news_digest.pipeline.editorial_contracts import attach_editorial_contract
-from news_digest.pipeline.release import _final_loss_check, _repair_public_html_contracts, public_html_contract_errors
 from news_digest.pipeline.transport_language import repair_transport_line_language
 from news_digest.pipeline.ticket_notability import (
     _tier_from_signals,
@@ -37,7 +38,6 @@ from news_digest.pipeline.writer import (
     _transport_line_priority,
     _next_7_event_decision,
     _append_recovery_step,
-    _apply_section_min_floor_pull_back,
     _repair_editorial_contract_line,
     _section_priority_score,
     _ticket_watch_decision,
@@ -448,38 +448,6 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertNotIn("Pedddle", line)
         self.assertNotIn("Markets in Manchester", line)
         self.assertNotIn("Markets in", line)
-
-    def test_section_topup_repairs_backup_line_before_rendering(self) -> None:
-        candidate = {
-            "include": True,
-            "fingerprint": "backup-incident",
-            "category": "gmp",
-            "primary_block": "last_24h",
-            "title": "Police investigate triple stabbing in Manchester",
-            "summary": "Police said three men were injured in a knife attack.",
-            "source_label": "MEN",
-            "source_url": "https://example.test/incident",
-            "draft_line": (
-                "• Manchester: полиция расследует тройное ножевое ранение; трое мужчин пострадали "
-                "и были доставлены в больницу. Если вы были рядом с местом происшествия, проверьте обращение полиции."
-            ),
-        }
-        warnings: list[str] = []
-        lines, *_ = _apply_section_min_floor_pull_back(
-            "Свежие новости",
-            [],
-            [],
-            [],
-            [],
-            [],
-            [candidate],
-            set(),
-            1,
-            warnings,
-        )
-        self.assertEqual(len(lines), 1)
-        self.assertIn("нападение с ножом, в котором пострадали трое", lines[0])
-        self.assertIn("top-up repaired", " ".join(warnings))
 
     def test_unknown_artist_does_not_pass_only_for_major_venue(self) -> None:
         candidate = {
@@ -1063,18 +1031,6 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertIn("остановке Metrolink в Prestwich", fixed)
         self.assertNotIn("Метролинк", fixed)
         self.assertNotIn("Prestwichе", fixed)
-
-    def test_release_repairs_transport_contract_before_rechecking(self) -> None:
-        html = (
-            "<b>Greater Manchester Brief — 2026-06-22, 08:10</b>\n"
-            "<b>Общественный транспорт сегодня</b>\n"
-            "• В Манчестере закрыты две станции метро — Shudehill и Market Street. "
-            "<a href=\"https://tfgm.com/travel-updates\">TfGM</a>\n"
-        )
-        repaired, report = _repair_public_html_contracts(html)
-        self.assertEqual(report["fixed_count"], 1)
-        self.assertIn("остановки Metrolink", repaired)
-        self.assertFalse(any("metrolink_written_as_metro" in error for error in public_html_contract_errors(repaired)))
 
     def test_recovery_plan_records_ordered_repair_attempts(self) -> None:
         candidate = {

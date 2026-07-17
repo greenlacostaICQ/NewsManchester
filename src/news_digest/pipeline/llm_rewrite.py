@@ -35,7 +35,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Callable
 
-from news_digest.pipeline.common import PRIMARY_BLOCKS, is_recoverable_reserve, now_london, pipeline_run_id_from, read_json, recoverable_reserve_eligible, today_london, write_json
+from news_digest.pipeline.common import PRIMARY_BLOCKS, now_london, pipeline_run_id_from, read_json, today_london, write_json
 from news_digest.pipeline.model_routing import (
     DEEPSEEK_BASE_URL,
     DEEPSEEK_MODEL,
@@ -111,8 +111,6 @@ REWRITE_TRANSLATION_BOARD_MAX = 50
 # 0001-class reserve pre-write: sections that keep shipping under floor with
 # `no_recoverable_reserve_with_facts` get a bounded rewrite quota for their
 # recoverable reserve, so recovery has renderable lines (~8 extra lines/day).
-RESERVE_PREWRITE_BLOCKS = frozenset({"city_watch", "last_24h", "today_focus", "openings"})
-RESERVE_PREWRITE_PER_SECTION = 2
 REPAIR_DRAFT_MAX_ITEMS_DEFAULT = 8
 TRANSLATION_MEMORY_VERSION = 1
 TRANSLATION_MEMORY_MAX_ENTRIES = 2500
@@ -1284,7 +1282,9 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
             candidate["rewrite_shortlist_reason"] = f"Outside pre-rewrite shortlist for {block or 'unknown'}."
             verdict = "needs_enrichment" if _needs_selection_enrichment(candidate) else "reserve"
             _set_digest_selection_verdict(candidate, verdict, candidate["rewrite_shortlist_reason"])
-            candidate["recoverable_reserve"] = recoverable_reserve_eligible(candidate)  # S1: capacity-cut, still pullable
+            from news_digest.pipeline.plan_digest import _backup_eligible  # noqa: PLC0415
+
+            candidate["recoverable_reserve"] = _backup_eligible(candidate)[0]  # зеркало: пригодность в запасные плана
             held.append(
                 {
                     "fingerprint": candidate.get("fingerprint") or "",
@@ -1356,7 +1356,9 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
             )
             verdict = "needs_enrichment" if _needs_selection_enrichment(candidate) else "reserve"
             _set_digest_selection_verdict(candidate, verdict, candidate["rewrite_shortlist_reason"])
-            candidate["recoverable_reserve"] = recoverable_reserve_eligible(candidate)  # S1: capacity-cut, still pullable
+            from news_digest.pipeline.plan_digest import _backup_eligible  # noqa: PLC0415
+
+            candidate["recoverable_reserve"] = _backup_eligible(candidate)[0]  # зеркало: пригодность в запасные плана
             selected_ids.discard(id(candidate))
             board_overflow += 1
             held.append(
@@ -1388,103 +1390,6 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
         "uncapped_selected": len(uncapped_selected),
         "uncapped_examples": uncapped_selected[:20],
         "today_practical_translation_reserve": today_practical_reserve,
-        "held_examples": held[:40],
-    }
-
-
-def _apply_post_board_translation_cut(candidates: list[dict], board: list[dict]) -> tuple[list[dict], dict[str, object]]:
-    """Trim to the final Russian writing board after source-language ranking.
-
-    DeepSeek / board cards populate ``english_editorial_score`` and
-    ``english_board_decision``. The final cut uses those signals, while still
-    preserving lead, transport/today-focus, and per-block floors.
-    """
-    if len(board) <= REWRITE_TRANSLATION_BOARD_MAX:
-        return board, {
-            "schema_version": 1,
-            "enabled": True,
-            "input_candidates": len(board),
-            "selected_for_russian": len(board),
-            "held_for_backup": 0,
-            "board_max": REWRITE_TRANSLATION_BOARD_MAX,
-            "today_practical_protected": sum(1 for candidate in board if candidate.get("today_practical_translation_reserve")),
-            "held_examples": [],
-        }
-
-    def _never_drop(c: dict) -> bool:
-        return (
-            bool(c.get("is_lead"))
-            or str(c.get("primary_block") or "") in {"transport", "today_focus"}
-            or bool(c.get("today_practical_translation_reserve"))
-            or is_weekend_inventory_candidate(c)
-            or _professional_cv_approved(c)
-        )
-
-    keep_ids: set[int] = {id(c) for c in board if _never_drop(c)}
-    by_block: dict[str, list[dict]] = {}
-    for c in board:
-        by_block.setdefault(str(c.get("primary_block") or ""), []).append(c)
-    for block, items in by_block.items():
-        floor = _REWRITE_BLOCK_FLOORS.get(block, _REWRITE_BLOCK_FLOOR)
-        for c in sorted(items, key=_rewrite_shortlist_priority, reverse=True)[:floor]:
-            keep_ids.add(id(c))
-
-    room = REWRITE_TRANSLATION_BOARD_MAX - len(keep_ids)
-    if room > 0:
-        rest = sorted(
-            (c for c in board if id(c) not in keep_ids),
-            key=_rewrite_shortlist_priority,
-            reverse=True,
-        )
-        keep_ids.update(id(c) for c in rest[:room])
-
-    held: list[dict[str, object]] = []
-    for candidate in board:
-        if id(candidate) in keep_ids:
-            candidate["rewrite_shortlist_status"] = "selected_after_board_rank"
-            _set_digest_selection_verdict(
-                candidate,
-                "selected",
-                "Selected for Russian writing after DeepSeek source-language ranking.",
-            )
-            continue
-        candidate["include"] = False
-        candidate["backup_candidate"] = True
-        candidate["backup_pool_only"] = True
-        candidate["public_reserve"] = False
-        candidate["rewrite_shortlist_status"] = "backup_after_board_rank"
-        candidate["rewrite_shortlist_reason"] = (
-            f"Outside final Russian writing board after DeepSeek ranking (soft max {REWRITE_TRANSLATION_BOARD_MAX})."
-        )
-        verdict = "needs_enrichment" if _needs_selection_enrichment(candidate) else "reserve"
-        _set_digest_selection_verdict(candidate, verdict, candidate["rewrite_shortlist_reason"])
-        candidate["recoverable_reserve"] = recoverable_reserve_eligible(candidate)  # S1: capacity-cut, still pullable
-        held.append(
-            {
-                "fingerprint": candidate.get("fingerprint") or "",
-                "title": candidate.get("title") or "",
-                "source_label": candidate.get("source_label") or "",
-                "category": candidate.get("category") or "",
-                "primary_block": str(candidate.get("primary_block") or ""),
-                "english_editorial_score": candidate.get("english_editorial_score"),
-                "english_board_decision": candidate.get("english_board_decision"),
-                "score_value": candidate.get("score_value"),
-                "score_source": candidate.get("score_source") or "not model scored",
-                "score_scope": candidate.get("score_scope"),
-                "score_verdict": candidate.get("score_verdict"),
-                "reason": candidate["rewrite_shortlist_reason"],
-            }
-        )
-
-    selected = [candidate for candidate in board if id(candidate) in keep_ids]
-    return selected, {
-        "schema_version": 1,
-        "enabled": True,
-        "input_candidates": len(board),
-        "selected_for_russian": len(selected),
-        "held_for_backup": len(held),
-        "board_max": REWRITE_TRANSLATION_BOARD_MAX,
-        "today_practical_protected": sum(1 for candidate in selected if candidate.get("today_practical_translation_reserve")),
         "held_examples": held[:40],
     }
 
@@ -3317,10 +3222,6 @@ def _build_enrichment_report(candidates: list[dict], action: dict[str, object] |
     }
 
 
-def _publish_plan_path(project_root: Path) -> Path:
-    return project_root / "data" / "state" / "publish_plan.json"
-
-
 _PUBLISH_PLAN_BUDGET_BUCKETS = {
     "lead_story": "core_news",
     "last_24h": "core_news",
@@ -3338,130 +3239,6 @@ _PUBLISH_PLAN_BUDGET_BUCKETS = {
     "football": "football",
     "future_announcements": "optional_soft",
 }
-
-
-def _publish_plan_must_show(candidate: dict, previous_by_fp: dict[str, dict] | None = None) -> bool:
-    block = str(candidate.get("primary_block") or "")
-    if candidate.get("is_lead") or block == "transport":
-        return True
-    if block == "russian_events":
-        # A diaspora event repeats daily unless gated: must_show bypasses every
-        # cap and the reconciler re-inserts it into the shipped HTML (Онегин /
-        # «Скамейка» ran 3+ issues in a row). Force-show only while repeat
-        # policy still sees a reader moment; a blocked repeat competes normally.
-        prev = (previous_by_fp or {}).get(str(candidate.get("fingerprint") or ""))
-        if prev:
-            from news_digest.pipeline.repeat_policy import visible_repeat_verdict  # noqa: PLC0415
-
-            if not visible_repeat_verdict(candidate, prev).allow:
-                return False
-        return True
-    if block == "professional_events":
-        # W6: only a CV go/consider earns the protected slot. The keyword scorer
-        # can no longer force a professional event into must_show; an ungoverned
-        # one is held for enrichment upstream, never silently shown.
-        llm = candidate.get("professional_llm_match") if isinstance(candidate.get("professional_llm_match"), dict) else {}
-        return str(llm.get("fit") or "").strip().lower() in {"go", "consider"}
-    return False
-
-
-def _publish_plan_protected_budget(candidate: dict, previous_by_fp: dict[str, dict] | None = None) -> bool:
-    block = str(candidate.get("primary_block") or "")
-    if _publish_plan_must_show(candidate, previous_by_fp):
-        return True
-    return block in {
-        "last_24h",
-        "today_focus",
-        "city_watch",
-        "weekend_activities",
-        "next_7_days",
-        "openings",
-        "tech_business",
-        "football",
-    }
-
-
-def _publish_plan_status(candidate: dict, previous_by_fp: dict[str, dict] | None = None) -> str:
-    verdict = str(candidate.get("digest_selection_verdict") or "").strip()
-    if verdict == "selected":
-        draft_line = str(candidate.get("draft_line") or "").strip()
-        if not draft_line and not _uses_deterministic_writer(candidate):
-            return "needs_enrichment"
-        return "must_show" if _publish_plan_must_show(candidate, previous_by_fp) else "show"
-    if verdict in {"reserve", "needs_enrichment", "drop"}:
-        return verdict
-    return "drop"
-
-
-def _build_publish_plan(candidates: list[dict], published_facts: dict | None = None) -> dict[str, object]:
-    # Publication history feeds the russian_events must_show repeat gate.
-    previous_by_fp = {
-        str(fact.get("fingerprint") or ""): fact
-        for fact in (published_facts or {}).get("facts") or []
-        if isinstance(fact, dict) and fact.get("fingerprint")
-    }
-    sections: dict[str, dict[str, object]] = {}
-    totals = {"must_show": 0, "show": 0, "reserve": 0, "needs_enrichment": 0, "drop": 0}
-    items: list[dict[str, object]] = []
-    for candidate in candidates:
-        if not isinstance(candidate, dict):
-            continue
-        block = str(candidate.get("primary_block") or "unknown")
-        status = _publish_plan_status(candidate, previous_by_fp)
-        if status not in totals:
-            status = "drop"
-        totals[status] += 1
-        section = sections.setdefault(
-            block,
-            {
-                "heading": PRIMARY_BLOCKS.get(block, block),
-                "budget_bucket": _PUBLISH_PLAN_BUDGET_BUCKETS.get(block, "optional_soft"),
-                "must_show": 0,
-                "show": 0,
-                "reserve": 0,
-                "needs_enrichment": 0,
-                "drop": 0,
-                "items": [],
-            },
-        )
-        section[status] = int(section.get(status) or 0) + 1
-        row = {
-            "fingerprint": candidate.get("fingerprint") or "",
-            "title": candidate.get("title") or "",
-            "source_label": candidate.get("source_label") or "",
-            "category": candidate.get("category") or "",
-            "primary_block": block,
-            "section": PRIMARY_BLOCKS.get(block, block),
-            "budget_bucket": _PUBLISH_PLAN_BUDGET_BUCKETS.get(block, "optional_soft"),
-            "status": status,
-            "selection_verdict": candidate.get("digest_selection_verdict") or "",
-            "reason": candidate.get("digest_selection_reason") or candidate.get("reason") or "",
-            "is_lead": bool(candidate.get("is_lead")),
-            "protected_lane": candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {},
-            "protected_budget": _publish_plan_protected_budget(candidate, previous_by_fp),
-            "include": bool(candidate.get("include")),
-            "backup_candidate": bool(candidate.get("backup_candidate")),
-        }
-        candidate["publish_plan_status"] = status
-        candidate["publish_plan_reason"] = str(row["reason"])
-        candidate["publish_plan_protected_budget"] = bool(row["protected_budget"])
-        items.append(row)
-        section_items = section["items"]
-        assert isinstance(section_items, list)
-        if status in {"must_show", "show", "needs_enrichment"} or len(section_items) < 12:
-            section_items.append(row)
-    return {
-        "schema_version": 1,
-        "run_date_london": today_london(),
-        "created_at_london": now_london().isoformat(),
-        "policy": (
-            "Writer must publish must_show items or record repaired / "
-            "replaced_same_block / unrecoverable_no_facts. Silent loss is a contract violation."
-        ),
-        "totals": totals,
-        "sections": sections,
-        "items": items,
-    }
 
 
 def _finalize_digest_selection_verdicts(candidates: list[dict]) -> dict[str, object]:

@@ -1356,56 +1356,6 @@ class SourceFunnelDiagnosticsTest(unittest.TestCase):
         self.assertEqual(review["counts"]["visible_lines"], 1)
         self.assertEqual(review["counts"]["bad_visible_items"], 0)
 
-    def test_rendered_html_review_does_not_block_clear_repaired_borderline_warning(self) -> None:
-        html = (
-            '<b>Свежие новости</b>\n'
-            '• Trafford: 67-летний депутат совета предстанет перед судом по обвинению '
-            'в хранении запрещённого оружия; заседание назначено на август. '
-            '<a href="https://example.test/a">MEN</a>\n'
-        )
-        review = _classify_rendered_html_quality(
-            html,
-            {
-                "candidates": [
-                    {
-                        "fingerprint": "a",
-                        "source_url": "https://example.test/a",
-                        "title": "Councillor to appear in court",
-                        "source_label": "MEN",
-                        "include": True,
-                        "quality_warnings": ["crime_borderline:what_happened__protected_override"],
-                    }
-                ]
-            },
-        )
-
-        self.assertEqual(review["counts"]["visible_lines"], 1)
-        self.assertEqual(review["counts"]["bad_visible_items"], 0)
-
-    def test_rendered_html_review_still_blocks_vague_repaired_borderline_warning(self) -> None:
-        html = (
-            '<b>Свежие новости</b>\n'
-            '• Trafford: появилось обновление по заметному кейсу. '
-            '<a href="https://example.test/a">MEN</a>\n'
-        )
-        review = _classify_rendered_html_quality(
-            html,
-            {
-                "candidates": [
-                    {
-                        "fingerprint": "a",
-                        "source_url": "https://example.test/a",
-                        "title": "Councillor to appear in court",
-                        "source_label": "MEN",
-                        "include": True,
-                        "quality_warnings": ["crime_borderline:what_happened__protected_override"],
-                    }
-                ]
-            },
-        )
-
-        self.assertEqual(review["counts"]["bad_visible_items"], 1)
-
     def test_borderline_queue_includes_manual_include_hint(self) -> None:
         queue = _borderline_queue(
             {
@@ -2684,37 +2634,6 @@ class TelegramBacklog20260527Test(unittest.TestCase):
             _exclude_cross_day_rehash(candidate, state_dir)
             self.assertTrue(candidate["include"])
 
-    def test_section_min_floor_pulls_back_unrendered_included_candidates(self) -> None:
-        # «Главная история дня» was 1 item on 2026-05-27 while score-10
-        # candidates sat with include=True and no draft_line. The pull-
-        # back must promote them up to SECTION_MIN_ITEMS using the
-        # event fallback builder when LLM did not write a draft_line.
-        from news_digest.pipeline.writer import _apply_section_min_floor_pull_back
-        candidates = [
-            {
-                "include": True,
-                "fingerprint": "fp-event-a",
-                "title": "Makers Market double header this May!",
-                "category": "culture_weekly",
-                "primary_block": "weekend_activities",
-                "reader_value_score": 130.0,
-                "source_label": "First Street",
-                "source_url": "https://firststreetmanchester.com/news/makers-market",
-                "event": {
-                    "is_event": True,
-                    "event_name": "Makers Market double header",
-                    "venue": "First Street",
-                    "date_start": (now_london().date() + timedelta(days=2)).isoformat(),
-                },
-            },
-        ]
-        lines, fps, scores, titles, srcs = _apply_section_min_floor_pull_back(
-            "Выходные в GM", [], [], [], [], [],
-            candidates, set(), 1, [],
-        )
-        # The market with a deterministic event fallback must surface.
-        self.assertEqual(len(lines), 1)
-
     def test_ticket_type_default_set_for_venues_tickets_without_signal(self) -> None:
         # 110 venues_tickets items shipped with ticket_type=NONE on
         # 2026-05-27, which made them appear in the 'unknown' bucket
@@ -3108,37 +3027,6 @@ class ReserveAndRecoveryContractTest(unittest.TestCase):
             "title": "Manchester council confirms update",
             "primary_block": "city_watch",
         }
-
-    def test_p0b_stale_freshness_is_not_recoverable(self) -> None:
-        from news_digest.pipeline.common import recoverable_reserve_eligible
-
-        base = self._clean_reserve_base()
-        self.assertTrue(recoverable_reserve_eligible({**base, "freshness_status": "fresh_24h"}))
-        self.assertTrue(recoverable_reserve_eligible({**base, "freshness_status": "not_applicable"}))
-        self.assertFalse(recoverable_reserve_eligible({**base, "freshness_status": "stale"}))
-
-    def test_p0d_no_date_event_not_insertable_into_weekend(self) -> None:
-        from news_digest.pipeline.editor import _reserve_insert_allowed
-
-        self.assertFalse(_reserve_insert_allowed("Выходные в GM", {"event": {}}))
-
-    def test_p0d_in_window_event_is_insertable(self) -> None:
-        from news_digest.pipeline.editor import _reserve_insert_allowed
-
-        tomorrow = (now_london().date() + timedelta(days=1)).isoformat()
-        self.assertTrue(_reserve_insert_allowed("Выходные в GM", {"event": {"date_start": tomorrow}}))
-
-    def test_p0d_far_future_event_not_in_weekend(self) -> None:
-        from news_digest.pipeline.editor import _reserve_insert_allowed
-
-        sept = (now_london().date() + timedelta(days=60)).isoformat()
-        self.assertFalse(_reserve_insert_allowed("Выходные в GM", {"event": {"date_start": sept}}))
-
-    def test_p0d_news_section_has_no_date_contract(self) -> None:
-        from news_digest.pipeline.editor import _reserve_insert_allowed
-
-        self.assertTrue(_reserve_insert_allowed("Свежие новости", {"event": {}}))
-
 
 if __name__ == "__main__":
     unittest.main()

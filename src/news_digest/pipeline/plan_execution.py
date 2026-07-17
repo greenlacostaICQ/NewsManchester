@@ -171,10 +171,15 @@ def _backup_still_valid(candidate: dict[str, Any]) -> tuple[bool, str]:
     if not candidate.get("source_url") or not candidate.get("source_label"):
         return False, "missing_source_reference"
     try:
-        from news_digest.pipeline.writer import _is_expired_event_candidate  # noqa: PLC0415
+        from news_digest.pipeline.writer import (  # noqa: PLC0415
+            _is_expired_event_candidate,
+            _is_outside_current_weekend_candidate,
+        )
 
         if _is_expired_event_candidate(candidate, str(candidate.get("draft_line") or "")):
             return False, "expired_after_plan"
+        if _is_outside_current_weekend_candidate(candidate):
+            return False, "outside_section_window"
     except Exception:  # noqa: BLE001 — validity check must never crash a swap
         pass
     return True, ""

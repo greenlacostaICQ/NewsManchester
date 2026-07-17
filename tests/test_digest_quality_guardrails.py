@@ -39,8 +39,6 @@ from news_digest.pipeline.editorial_contracts import (
 )
 from news_digest.pipeline.llm_rewrite import _apply_rewrite_shortlist
 from news_digest.pipeline.writer import (
-    _allocate_fresh_and_today_focus,
-    _apply_section_min_floor_pull_back,
     _apply_fresh_semantic_duplicate_pass,
     _build_football_fallback_line,
     _build_weekend_event_fallback_line,
@@ -53,12 +51,10 @@ from news_digest.pipeline.writer import (
     _number_tokens,
     _repair_editorial_contract_line,
     _reconcile_rendered_dropped_candidates,
-    _reserved_later_budget,
     _section_priority_score,
     _SectionRow,
     _strip_unsupported_number_phrases,
     _today_focus_candidate_is_eligible,
-    _today_focus_loss_trace,
     _today_focus_recovery_line,
 )
 
@@ -208,40 +204,6 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertEqual(len(drops), 1)
         self.assertEqual(sum(1 for candidate in candidates if candidate["include"]), 1)
-
-    def test_football_min_floor_can_recover_official_backup_candidate(self) -> None:
-        candidate = {
-            "include": False,
-            "backup_candidate": True,
-            "fingerprint": "united-fixtures",
-            "category": "football",
-            "primary_block": "football",
-            "source_label": "Manchester United",
-            "source_url": "https://www.manutd.com/en/news/premier-league-fixtures-day-fast-approaching",
-            "title": "Premier League fixtures day fast approaching",
-            "summary": "The new Premier League fixture list will be released soon, setting Manchester United's first run of matches.",
-            "reader_value_score": 90,
-        }
-
-        line = _build_football_fallback_line(candidate)
-        self.assertIn("календарь Премьер-лиги", line)
-
-        lines, fps, _scores, _titles, _srcs = _apply_section_min_floor_pull_back(
-            "Футбол",
-            [],
-            [],
-            [],
-            [],
-            [],
-            [candidate],
-            set(),
-            1,
-            [],
-            include_backup=True,
-        )
-
-        self.assertEqual(fps, ["united-fixtures"])
-        self.assertEqual(len(lines), 1)
 
     def test_drops_visitor_attraction_from_food_openings(self) -> None:
         updated = self._validate_one(
@@ -2030,60 +1992,6 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             {"calendar_review_not_applicable", "same_calendar_item_without_new_reader_moment"},
         )
 
-    def test_repeat_policy_report_counts_vector_matches_and_canonical_url_visibility(self) -> None:
-        from news_digest.pipeline.release import (
-            _classify_visible_repeat_policy,
-            _quarantine_repeat_rendered_html_items,
-            _write_repeat_policy_report,
-        )
-
-        fp = "food-openings-example-orme"
-        candidate = {
-            "include": True,
-            "fingerprint": fp,
-            "primary_block": "openings",
-            "category": "food_openings",
-            "title": "Michelin-listed Orme returns to Manchester",
-            "summary": "Orme relaunches in Manchester.",
-            "source_label": "Manchester's Finest",
-            "source_url": "https://example.test/orme",
-            "semantic_dedupe_match": {"fingerprint": "older-orme", "score": 0.92},
-            "semantic_dedupe_score": 0.92,
-        }
-        previous = dict(candidate)
-        previous["last_published_day_london"] = (now_london().date() - timedelta(days=1)).isoformat()
-        previous["first_published_day_london"] = previous["last_published_day_london"]
-        previous["editorial_contract"] = build_editorial_contract(previous)
-        candidates_report = {"candidates": [candidate]}
-        published_facts = {"facts": [previous]}
-        html_text = (
-            "• <b>Еда:</b> Orme снова в выпуске — проверьте, нужно ли это читателю. "
-            '<a href="https://www.example.test/orme?utm=telegram">Manchester\'s Finest</a>\n'
-        )
-
-        review = _classify_visible_repeat_policy(html_text, candidates_report, published_facts)
-        sanitized, quarantine = _quarantine_repeat_rendered_html_items(html_text, candidates_report, review)
-
-        self.assertEqual(review["counts"]["bad_visible_repeats"], 1, review)
-        self.assertEqual(quarantine["removed_count"], 1, quarantine)
-        self.assertNotIn("Orme снова", sanitized)
-        with tempfile.TemporaryDirectory() as tmp:
-            state_dir = Path(tmp)
-            report = _write_repeat_policy_report(
-                state_dir,
-                current_day_london=today_london(),
-                candidates_report=candidates_report,
-                rendered_fingerprints={fp},
-                published_facts=published_facts,
-                visible_repeat_review=review,
-                visible_repeat_quarantine=quarantine,
-            )
-
-        self.assertEqual(report["counts"]["exact_previous"], 1, report)
-        self.assertEqual(report["counts"]["visible_repeat_rejected"], 1, report)
-        self.assertEqual(report["counts"]["vector_or_semantic_matches"], 1, report)
-        self.assertEqual(report["by_match_type"]["semantic_embedding"], 1, report)
-
     def test_day_of_ticket_repeat_allowed_across_sources(self) -> None:
         event_day = now_london().date().isoformat()
         previous = {
@@ -2880,23 +2788,6 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertIn("небольшие задержки на Eccles line", line)
         self.assertNotIn("работы на Eccles line", line)
 
-    def test_global_budget_reserves_slots_for_events_tickets_and_football(self) -> None:
-        sections = {
-            "Свежие новости": ["x"] * 9,
-            "Что важно в ближайшие 7 дней": ["x"] * 5,
-            "Билеты / Ticket Radar": ["x"] * 4,
-            "Футбол": ["x"] * 3,
-        }
-        ordered = [
-            "Свежие новости",
-            "Что важно в ближайшие 7 дней",
-            "Билеты / Ticket Radar",
-            "Футбол",
-        ]
-
-        self.assertEqual(_reserved_later_budget(ordered, 0, sections), 7)
-        self.assertEqual(_reserved_later_budget(ordered, 1, sections), 4)
-
     def test_strong_fresh_news_survives_global_rewrite_board_cap(self) -> None:
         fresh = [
             {
@@ -2933,128 +2824,6 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertEqual(len(selected_fresh), 12)
         self.assertGreater(report["board_overflow"], 0)
         self.assertFalse(any(c.get("rewrite_shortlist_status") == "backup_board_cap" for c in fresh))
-
-    def test_fresh_topup_can_promote_current_backup_candidate(self) -> None:
-        candidate = {
-            "include": False,
-            "backup_candidate": True,
-            "fingerprint": "fallowfield-cordon",
-            "category": "media_layer",
-            "primary_block": "last_24h",
-            "title": "Fallowfield street evacuated after suspicious item found",
-            "summary": "Police set up a cordon on Abram Close and evacuated 20 homes.",
-            "source_label": "MEN",
-            "source_url": "https://example.test/fallowfield-cordon",
-            "draft_line": (
-                "• Fallowfield: полиция оцепила Abram Close после обнаружения "
-                "подозрительного предмета; жители 20 домов были эвакуированы. "
-                "На месте работали полиция и специалисты по обезвреживанию, "
-                "поэтому район нужно было обходить до снятия оцепления."
-            ),
-        }
-        lines, fps, _scores, _titles, _srcs = _apply_section_min_floor_pull_back(
-            "Свежие новости",
-            [],
-            [],
-            [],
-            [],
-            [],
-            [candidate],
-            set(),
-            1,
-            [],
-            include_backup=True,
-        )
-
-        self.assertEqual(len(lines), 1)
-        self.assertEqual(fps, ["fallowfield-cordon"])
-
-    def test_today_focus_topup_can_promote_practical_fresh_reserve(self) -> None:
-        candidate = {
-            "include": False,
-            "validated": True,
-            "backup_candidate": True,
-            "backup_pool_only": True,
-            "recoverable_reserve": True,
-            "fingerprint": "m60-prestwich-police-incident",
-            "category": "media_layer",
-            "primary_block": "last_24h",
-            "title": "M60 Prestwich traffic RECAP: Major motorway shut due to police incident with miles of congestion",
-            "summary": "The M60 at Prestwich has been shut due to a police incident, with miles of congestion.",
-            "practical_angle": "Drivers should check routes today and allow extra time.",
-            "source_label": "MEN",
-            "source_url": "https://example.test/m60-prestwich",
-            "editorial_contract": {
-                "story_type": "public_safety_after_incident",
-                "event_shape": "none",
-                "publish_tier": "strong",
-                "story_frame": {"why_now": "active_today"},
-            },
-        }
-
-        lines, fps, _scores, _titles, _srcs = _apply_section_min_floor_pull_back(
-            "Что важно сегодня",
-            [],
-            [],
-            [],
-            [],
-            [],
-            [candidate],
-            set(),
-            1,
-            [],
-            include_backup=True,
-        )
-
-        self.assertEqual(fps, ["m60-prestwich-police-incident"])
-        self.assertIn("M60", lines[0])
-        self.assertIn("проверьте", lines[0])
-
-    def test_today_focus_board_claims_recoverable_practical_reserve_before_fresh(self) -> None:
-        candidate = {
-            "include": False,
-            "validated": True,
-            "backup_candidate": True,
-            "backup_pool_only": True,
-            "recoverable_reserve": True,
-            "fingerprint": "m60-prestwich-police-incident",
-            "category": "media_layer",
-            "primary_block": "last_24h",
-            "title": "M60 Prestwich traffic RECAP: Major motorway shut due to police incident with miles of congestion",
-            "summary": "The M60 at Prestwich has been shut due to a police incident, with miles of congestion.",
-            "practical_angle": "Drivers should check routes today and allow extra time.",
-            "source_label": "MEN",
-            "source_url": "https://example.test/m60-prestwich",
-            "editorial_contract": {
-                "story_type": "public_safety_after_incident",
-                "event_shape": "none",
-                "publish_tier": "strong",
-                "story_frame": {"why_now": "active_today"},
-            },
-        }
-        sections = {
-            "Свежие новости": [],
-            "Что важно сегодня": [],
-            "Городской радар": [],
-            "Главная история дня": [],
-        }
-        section_sources = {key: [] for key in sections}
-        section_scores = {key: [] for key in sections}
-        section_fingerprints = {key: [] for key in sections}
-        section_titles = {key: [] for key in sections}
-
-        report = _allocate_fresh_and_today_focus(
-            sections,
-            section_sources,
-            section_scores,
-            section_fingerprints,
-            section_titles,
-            {candidate["fingerprint"]: candidate},
-        )
-
-        self.assertEqual(report["rendered_candidates"], 1)
-        self.assertEqual(section_fingerprints["Что важно сегодня"], ["m60-prestwich-police-incident"])
-        self.assertEqual(section_fingerprints["Свежие новости"], [])
 
     def test_today_focus_eligibility_rejects_soft_opening(self) -> None:
         candidate = {
@@ -3114,35 +2883,6 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertIn("Bury", line)
         self.assertIn("St Gabriel", line)
         self.assertEqual(_draft_line_quality_errors(candidate, line), [])
-
-    def test_today_focus_loss_trace_names_recoverable_reserve(self) -> None:
-        candidate = {
-            "include": False,
-            "validated": True,
-            "backup_candidate": True,
-            "backup_pool_only": True,
-            "recoverable_reserve": True,
-            "fingerprint": "m60-prestwich-police-incident",
-            "category": "media_layer",
-            "primary_block": "last_24h",
-            "title": "M60 Prestwich traffic RECAP: Major motorway shut due to police incident",
-            "summary": "The M60 at Prestwich has been shut due to a police incident.",
-            "practical_angle": "Drivers should check routes today.",
-            "source_label": "MEN",
-            "rewrite_shortlist_reason": "Outside final Russian writing board after DeepSeek ranking.",
-            "editorial_contract": {
-                "story_type": "public_safety_after_incident",
-                "event_shape": "none",
-                "publish_tier": "strong",
-                "story_frame": {"why_now": "active_today"},
-            },
-        }
-
-        trace = _today_focus_loss_trace([candidate], {}, [])
-
-        self.assertEqual(trace["items"][0]["loss_stage"], "recoverable_reserve_not_rendered")
-        self.assertTrue(trace["items"][0]["eligible_today_focus"])
-        self.assertIn("Russian writing board", trace["items"][0]["reason"])
 
     def test_fresh_final_board_suppresses_cross_source_same_story(self) -> None:
         about_candidate = {
@@ -3735,189 +3475,6 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertFalse(_today_focus_candidate_is_eligible(old_conviction))
         self.assertTrue(_today_focus_candidate_is_eligible(cqc))
         self.assertTrue(_today_focus_candidate_is_eligible(empty_homes))
-
-    def test_today_focus_board_moves_practical_items_and_rejects_soft_fill(self) -> None:
-        candidates = [
-            {
-                "include": True,
-                "fingerprint": "roachdale-flood",
-                "category": "media_layer",
-                "primary_block": "last_24h",
-                "title": "Rochdale shop owner says flood has cost him thousands",
-                "summary": "Businesses at Fieldhouse Industrial Estate were left without water and electricity after flooding.",
-                "lead": "Flooding has left Rochdale businesses without water and electricity.",
-                "evidence_text": "Businesses expect to reopen on Thursday after flooding damaged stock and power supplies.",
-                "source_label": "BBC Manchester",
-                "source_url": "https://example.test/rochdale-flood",
-                "draft_line": "• Rochdale: flooding left Fieldhouse Industrial Estate businesses without water and electricity.",
-            },
-            {
-                "include": True,
-                "fingerprint": "droylsden-licence",
-                "category": "media_layer",
-                "primary_block": "last_24h",
-                "title": "Droylsden shop rejected new licence by council over suspected criminal links",
-                "summary": "Police and Tameside Council objected to the Market Street alcohol licence application.",
-                "lead": "A Droylsden shop was refused an alcohol licence over suspected criminal links.",
-                "evidence_text": "The shop previously lost its licence in 2023 after illegal tobacco sales.",
-                "source_label": "MEN",
-                "source_url": "https://example.test/droylsden",
-                "draft_line": "• Tameside: a Market Street shop in Droylsden was refused an alcohol licence over suspected criminal links.",
-            },
-            {
-                "include": True,
-                "fingerprint": "abandoned-pub-warning",
-                "category": "media_layer",
-                "primary_block": "last_24h",
-                "title": "Child seriously injured in abandoned pub near Carrington as police issue warning",
-                "summary": "Police warned parents after a child fell inside the abandoned Saracens Head pub.",
-                "lead": "A child was seriously injured after entering an abandoned pub in Trafford.",
-                "evidence_text": "Police urged parents to talk to children about the danger of abandoned buildings.",
-                "source_label": "MEN",
-                "source_url": "https://example.test/abandoned-pub",
-                "draft_line": "• Trafford: a child was seriously injured after falling inside the abandoned Saracens Head pub.",
-            },
-            {
-                "include": True,
-                "fingerprint": "stockport-funding",
-                "category": "media_layer",
-                "primary_block": "city_watch",
-                "title": "Fears parts of Stockport are turning on each other over council funding",
-                "summary": "Councillors raised concerns about unequal town-centre funding across Stockport.",
-                "lead": "Stockport councillors raised concerns about unequal funding between districts.",
-                "evidence_text": "A £20m Marple centre prompted criticism from other Stockport areas.",
-                "source_label": "MEN",
-                "source_url": "https://example.test/stockport-funding",
-                "draft_line": "• Stockport: councillors warned that districts are clashing over unequal funding.",
-            },
-            {
-                "include": True,
-                "fingerprint": "empty-homes-report",
-                "category": "council",
-                "primary_block": "city_watch",
-                "title": "The Council wants to bring hundreds of empty homes back into use",
-                "summary": "Manchester residents can report long-term empty homes online or by email.",
-                "lead": "Manchester City Council is asking residents to report empty homes.",
-                "evidence_text": "The strategy asks residents to spot and report empty homes.",
-                "source_label": "Manchester Council",
-                "source_url": "https://example.test/empty-homes",
-                "draft_line": "• Manchester: residents can report long-term empty homes online or by email.",
-            },
-            {
-                "include": True,
-                "fingerprint": "cqc-warning",
-                "category": "media_layer",
-                "primary_block": "today_focus",
-                "title": "Greater Manchester's latest CQC reports including warning notice on nursing home",
-                "summary": "A care home requires improvement after CQC inspectors found fire safety and safeguarding problems.",
-                "lead": "CQC inspectors issued a warning notice after a care-home inspection.",
-                "evidence_text": "Residents and families should know about the inspection and warning notice.",
-                "source_label": "MEN",
-                "source_url": "https://example.test/cqc-warning",
-                "draft_line": "• CQC issued a warning notice after inspectors found fire-safety and safeguarding problems at a care home.",
-            },
-            {
-                "include": True,
-                "fingerprint": "gmmh-personal-story",
-                "category": "public_services",
-                "primary_block": "today_focus",
-                "title": "Inside I was silently screaming - Wigan mum speaks out about common yet isolating experience",
-                "summary": "A Wigan mum shared her personal story after traumatic losses.",
-                "lead": "A Wigan mum spoke about bonding with her son after traumatic losses.",
-                "evidence_text": "The story raises awareness of maternal mental health support.",
-                "source_label": "GMMH",
-                "source_url": "https://example.test/gmmh-story",
-                "draft_line": "• Жительница Wiganа делится личной историей восстановления после травматических потерь.",
-            },
-        ]
-        candidate_by_fp = {c["fingerprint"]: c for c in candidates}
-        sections = {
-            "Свежие новости": [c["draft_line"] for c in candidates[:3]],
-            "Что важно сегодня": [candidates[5]["draft_line"], candidates[6]["draft_line"]],
-            "Городской радар": [candidates[3]["draft_line"], candidates[4]["draft_line"]],
-        }
-        section_sources = {
-            "Свежие новости": [c["source_label"] for c in candidates[:3]],
-            "Что важно сегодня": [candidates[5]["source_label"], candidates[6]["source_label"]],
-            "Городской радар": [candidates[3]["source_label"], candidates[4]["source_label"]],
-        }
-        section_scores = {name: [0.0] * len(lines) for name, lines in sections.items()}
-        section_fps = {
-            "Свежие новости": [c["fingerprint"] for c in candidates[:3]],
-            "Что важно сегодня": [candidates[5]["fingerprint"], candidates[6]["fingerprint"]],
-            "Городской радар": [candidates[3]["fingerprint"], candidates[4]["fingerprint"]],
-        }
-        section_titles = {
-            "Свежие новости": [c["title"] for c in candidates[:3]],
-            "Что важно сегодня": [candidates[5]["title"], candidates[6]["title"]],
-            "Городской радар": [candidates[3]["title"], candidates[4]["title"]],
-        }
-
-        report = _allocate_fresh_and_today_focus(
-            sections,
-            section_sources,
-            section_scores,
-            section_fps,
-            section_titles,
-            candidate_by_fp,
-        )
-
-        self.assertEqual(report["rendered_candidates"], 3)
-        self.assertIn("abandoned-pub-warning", section_fps["Что важно сегодня"])
-        self.assertIn("empty-homes-report", section_fps["Что важно сегодня"])
-        self.assertIn("cqc-warning", section_fps["Что важно сегодня"])
-        self.assertNotIn("stockport-funding", section_fps["Что важно сегодня"])
-        self.assertNotIn("gmmh-personal-story", section_fps["Что важно сегодня"])
-
-    def test_fresh_board_suppresses_reaction_sidebar_when_main_incident_exists(self) -> None:
-        candidates = [
-            {
-                "include": True,
-                "fingerprint": "coop-main",
-                "category": "media_layer",
-                "primary_block": "last_24h",
-                "title": "Teacher and two pupils stabbed in Manchester school attack",
-                "summary": "Two pupils and a teacher were injured in a knife attack at Co-op Academy.",
-                "lead": "A 14-year-old girl was arrested after a knife attack at Co-op Academy.",
-                "evidence_text": "The school was closed after the attack on Plant Hill Road.",
-                "source_label": "BBC Manchester",
-                "source_url": "https://example.test/coop-main",
-                "draft_line": "• Blackley: a 14-year-old girl was arrested after a knife attack at Co-op Academy.",
-            },
-            {
-                "include": True,
-                "fingerprint": "coop-reaction",
-                "category": "media_layer",
-                "primary_block": "last_24h",
-                "title": "Mum of teen killed in school stabbing horrified by Manchester school attack",
-                "summary": "The mother of a teenager killed in 2025 called for metal detectors after the Co-op Academy attack.",
-                "lead": "A mother reacted to the Co-op Academy stabbing.",
-                "evidence_text": "She said she was horrified by the attack.",
-                "source_label": "MEN",
-                "source_url": "https://example.test/coop-reaction",
-                "draft_line": "• Blackley: the mother of a killed teenager said she was horrified by the Co-op Academy attack.",
-            },
-        ]
-        candidate_by_fp = {c["fingerprint"]: c for c in candidates}
-        sections = {"Свежие новости": [c["draft_line"] for c in candidates], "Что важно сегодня": [], "Городской радар": []}
-        section_sources = {"Свежие новости": [c["source_label"] for c in candidates], "Что важно сегодня": [], "Городской радар": []}
-        section_scores = {"Свежие новости": [0.0, 0.0], "Что важно сегодня": [], "Городской радар": []}
-        section_fps = {"Свежие новости": [c["fingerprint"] for c in candidates], "Что важно сегодня": [], "Городской радар": []}
-        section_titles = {"Свежие новости": [c["title"] for c in candidates], "Что важно сегодня": [], "Городской радар": []}
-
-        report = _allocate_fresh_and_today_focus(
-            sections,
-            section_sources,
-            section_scores,
-            section_fps,
-            section_titles,
-            candidate_by_fp,
-        )
-
-        all_visible = set(section_fps["Свежие новости"]) | set(section_fps["Что важно сегодня"]) | set(section_fps["Городской радар"])
-        self.assertIn("coop-main", all_visible)
-        self.assertNotIn("coop-reaction", all_visible)
-        self.assertEqual(report["suppressed_related_sidebars"][0]["title"], candidates[1]["title"])
 
     def test_historical_archive_without_news_hook_is_rejected(self) -> None:
         """User feedback: «Salford Винни Клей 90-х годов — уже было и

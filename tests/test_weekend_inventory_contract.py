@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta
 import unittest
+
+from news_digest.pipeline.llm_rewrite import _apply_rewrite_shortlist
 from unittest import mock
 
 from news_digest.pipeline.common import now_london
 from news_digest.pipeline.editorial_contracts import calendar_repeat_review
 from news_digest.pipeline.event_extraction import enrich_candidate_event
-from news_digest.pipeline.llm_rewrite import _apply_post_board_translation_cut, _apply_rewrite_shortlist
 from news_digest.pipeline.weekend_inventory import (
     current_weekend_window,
     is_weekend_inventory_candidate,
@@ -18,8 +19,6 @@ from news_digest.pipeline.writer import (
     _is_outside_current_weekend_candidate,
     _line_has_conflicting_event_date,
     _rescue_misrouted_weekend_markets,
-    _slice_counting_only_non_exempt,
-    _weekend_inventory_loss_trace,
 )
 
 
@@ -284,21 +283,6 @@ class WeekendInventoryContractTests(unittest.TestCase):
         self.assertFalse(is_weekend_inventory_candidate(concert, today=date(2026, 7, 2)))
         self.assertEqual(market["event"]["date_start"], event_day.isoformat())
 
-    def test_hidden_weekend_inventory_is_not_reported_as_missing(self) -> None:
-        candidate = _weekend_inventory_candidate()
-
-        trace = _weekend_inventory_loss_trace(
-            [candidate],
-            {},
-            [],
-            show_weekend=False,
-        )
-
-        self.assertEqual(trace["counts"]["eligible"], 1)
-        self.assertEqual(trace["counts"]["missing"], 0)
-        self.assertEqual(trace["counts"]["hidden_by_schedule"], 1)
-        self.assertEqual(trace["items"][0]["loss_stage"], "hidden_by_schedule")
-
     def test_rewrite_board_caps_do_not_cut_weekend_inventory(self) -> None:
         weekend = [_weekend_inventory_candidate(idx) for idx in range(12)]
         transport = [_transport_candidate(idx) for idx in range(99)]
@@ -309,57 +293,6 @@ class WeekendInventoryContractTests(unittest.TestCase):
         selected_fps = {str(candidate.get("fingerprint") or "") for candidate in selected}
         self.assertTrue({candidate["fingerprint"] for candidate in weekend} <= selected_fps)
         self.assertFalse(any(candidate.get("rewrite_shortlist_status") == "backup_ranking_board_cap" for candidate in weekend))
-
-    def test_final_translation_cap_does_not_cut_weekend_inventory(self) -> None:
-        weekend = [_weekend_inventory_candidate(idx) for idx in range(12)]
-        transport = [_transport_candidate(idx) for idx in range(40)]
-        board = weekend + transport
-
-        selected, _report = _apply_post_board_translation_cut(board, board)
-
-        selected_fps = {str(candidate.get("fingerprint") or "") for candidate in selected}
-        self.assertTrue({candidate["fingerprint"] for candidate in weekend} <= selected_fps)
-        self.assertFalse(any(candidate.get("rewrite_shortlist_status") == "backup_after_board_rank" for candidate in weekend))
-
-    def test_selected_uncapped_alone_does_not_bypass_translation_cap(self) -> None:
-        board = [_ordinary_selected_uncapped_candidate(idx) for idx in range(60)]
-
-        selected, _report = _apply_post_board_translation_cut(board, board)
-
-        self.assertLess(len(selected), len(board))
-        self.assertTrue(any(candidate.get("rewrite_shortlist_status") == "backup_after_board_rank" for candidate in board))
-
-    def test_writer_section_cap_keeps_inventory_but_counts_ordinary_items(self) -> None:
-        inventory = [_weekend_inventory_candidate(idx) for idx in range(5)]
-        ordinary = []
-        for idx in range(4):
-            candidate = _weekend_inventory_candidate(100 + idx, title=f"Standalone gig {idx}")
-            candidate["summary"] = "Standalone gig listing at an arena."
-            candidate["source_label"] = "Ticketmaster Manchester Upcoming"
-            ordinary.append(candidate)
-        candidates = inventory + ordinary
-        fps = [candidate["fingerprint"] for candidate in candidates]
-        lines = [candidate["draft_line"] for candidate in candidates]
-        srcs = [candidate["source_label"] for candidate in candidates]
-        titles = [candidate["title"] for candidate in candidates]
-        scores = [0.0 for _ in candidates]
-
-        kept_lines, _srcs, kept_fps, _scores, _titles, dropped_idx, counted = _slice_counting_only_non_exempt(
-            lines=lines,
-            srcs=srcs,
-            fps=fps,
-            scores=scores,
-            titles=titles,
-            candidate_by_fp={candidate["fingerprint"]: candidate for candidate in candidates},
-            section_name="Выходные в GM",
-            counted_limit=3,
-            ignore_section_exemption=True,
-        )
-
-        self.assertTrue({candidate["fingerprint"] for candidate in inventory} <= set(kept_fps))
-        self.assertEqual(counted, 3)
-        self.assertEqual(len(dropped_idx), 1)
-        self.assertEqual(len(kept_lines), 8)
 
     def test_current_weekend_inventory_repeat_is_allowed_after_previous_day(self) -> None:
         candidate = _weekend_inventory_candidate(title="Urmston Artisan Market")

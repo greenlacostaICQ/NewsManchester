@@ -3,11 +3,12 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+
+from news_digest.pipeline.common import PRIMARY_BLOCKS
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
-from news_digest.pipeline.common import PRIMARY_BLOCKS, is_recoverable_reserve
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.inventory import (
     InventoryLock,
@@ -347,9 +348,6 @@ class InventoryFactPreservationTest(unittest.TestCase):
             enrich_candidate_event(candidate)
         self.assertEqual(candidate["event"]["venue"], "HOME")
         self.assertEqual(candidate["event"]["date_end"], "2026-07-20")
-
-    def test_explicit_reserve_flag_is_not_trusted_before_validation(self) -> None:
-        self.assertFalse(is_recoverable_reserve({"recoverable_reserve": True, "validated": False}))
 
     def test_matching_live_candidate_keeps_live_values_and_gains_night_facts(self) -> None:
         live = {

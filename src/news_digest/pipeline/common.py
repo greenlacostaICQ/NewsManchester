@@ -95,52 +95,6 @@ SECTION_MAX_PER_SOURCE = {
 }
 
 
-def recoverable_reserve_eligible(candidate: dict) -> bool:
-    """Owner rule (Wave 1 / S1): a held candidate may be pulled back into the
-    public issue ONLY if it was held for *capacity* after passing the upstream
-    gates — never quarantine / manual-review / rejected / stale / non-GM /
-    duplicate / low-trust items. This is the gate that builds the single
-    recoverable reserve pool the recovery actuator (S4) and editor backfill draw
-    from, so the two historical pools (public_reserve vs backup_pool_only) stop
-    being disjoint without re-admitting genuine reject material.
-    """
-    if not isinstance(candidate, dict):
-        return False
-    if not candidate.get("validated", False):
-        return False
-    if str(candidate.get("digest_selection_verdict") or "") == "drop":
-        return False
-    if str(candidate.get("publish_plan_status") or "") == "drop":
-        return False
-    if candidate.get("synthetic_stale"):  # stale (synthetic placeholder)
-        return False
-    if str(candidate.get("freshness_status") or "") == "stale":  # stale by freshness (P0-B)
-        return False
-    if candidate.get("source_trial"):  # untested / low-trust source
-        return False
-    if candidate.get("manual_review_hold") or candidate.get("held_for_manual_review"):
-        return False
-    if str(candidate.get("dedupe_decision") or "") in {"drop", "duplicate"}:  # duplicate
-        return False
-    if candidate.get("reject_reasons"):  # rejected
-        return False
-    return True
-
-
-def is_recoverable_reserve(candidate: dict) -> bool:
-    """A candidate the recovery actuator / editor backfill is allowed to pull
-    into a thin block. Unifies the two historical reserve pools: the explicit
-    public reserve, and the capacity-cut board overflow tagged
-    ``recoverable_reserve`` at the rewrite/translation boards (S1).
-    """
-    if not isinstance(candidate, dict):
-        return False
-    if candidate.get("recoverable_reserve"):
-        return recoverable_reserve_eligible(candidate)
-    if candidate.get("public_reserve") and not candidate.get("backup_pool_only"):
-        return recoverable_reserve_eligible(candidate)
-    return bool(candidate.get("backup_candidate") and recoverable_reserve_eligible(candidate))
-
 VAGUE_PRACTICAL_ANGLES = {
     "Оценить городскую значимость перед выпуском.",
     "Проверить матчевый контекст перед включением в футбольный блок.",

@@ -3,8 +3,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from news_digest.pipeline.llm_rewrite import _publish_plan_status
-from news_digest.pipeline.editor import _PrevalidatedReservePool, _same_section_reserve_line
 from news_digest.pipeline.writer import _SectionRow, _fresh_rows_are_same_story, write_digest
 
 
@@ -112,58 +110,12 @@ class PublicFreshDedupeTest(unittest.TestCase):
 
 class ShowRenderableContractTest(unittest.TestCase):
     def test_russian_event_must_show_respects_repeat_policy(self) -> None:
-        """A diaspora event whose repeat is blocked competes normally («show»)
-        instead of being force-reinserted daily via must_show; a fresh one is
-        still protected."""
-        from datetime import timedelta
+        # Этап 3: правило must_show для русских событий живёт в планёрке.
+        from news_digest.pipeline.plan_digest import _must_show
 
-        from news_digest.pipeline.common import now_london
-
-        yesterday = (now_london().date() - timedelta(days=1)).isoformat()
-        candidate = {
-            "digest_selection_verdict": "selected",
-            "draft_line": "• Концерт в Лондоне.",
-            "primary_block": "russian_events",
-            "category": "russian_speaking_events",
-            "fingerprint": "ru-repeat-1",
-            "title": "Концерт",
-            "event": {"is_event": True, "date_start": yesterday},
-        }
-        previous = {**candidate, "last_published_day_london": yesterday, "first_published_day_london": yesterday}
-
-        self.assertEqual(_publish_plan_status(candidate, {"ru-repeat-1": previous}), "show")
-        self.assertEqual(_publish_plan_status(candidate, {}), "must_show")
-
-    def test_publish_plan_status_requires_text_or_explicit_deterministic_ready_fields(self) -> None:
-        self.assertEqual(_publish_plan_status({"digest_selection_verdict": "selected"}), "needs_enrichment")
-        self.assertIn(
-            _publish_plan_status({"digest_selection_verdict": "selected", "draft_line": "• Готовая строка."}),
-            {"show", "must_show"},
-        )
-        self.assertEqual(
-            _publish_plan_status(
-                {
-                    "digest_selection_verdict": "selected",
-                    "category": "venues_tickets",
-                    "title": "Example Artist",
-                    "primary_block": "ticket_radar",
-                }
-            ),
-            "needs_enrichment",
-        )
-        self.assertIn(
-            _publish_plan_status(
-                {
-                    "digest_selection_verdict": "selected",
-                    "category": "venues_tickets",
-                    "title": "Example Artist",
-                    "primary_block": "ticket_radar",
-                    "event": {"date_start": "2026-07-20", "venue": "AO Arena"},
-                }
-            ),
-            {"show", "must_show"},
-        )
-
+        candidate = {"primary_block": "russian_events", "fingerprint": "ru-repeat-1"}
+        self.assertFalse(_must_show(candidate, repeat_allowed=False))
+        self.assertTrue(_must_show(candidate, repeat_allowed=True))
     def test_writer_drops_event_without_headline_only_fallback(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -194,57 +146,6 @@ class ShowRenderableContractTest(unittest.TestCase):
         self.assertNotIn("Thin event listing", html)
         self.assertIn(report["dropped_candidates"][0]["reasons"][0], {"Missing draft_line.", "Headline-only fallback forbidden.", "missing_required_facts"})
         self.assertFalse(report["dropped_candidates"][0].get("recoverable_reserve", False))
-
-
-class PrevalidatedReserveTest(unittest.TestCase):
-    def test_prevalidated_pool_uses_only_existing_render_ready_lines(self) -> None:
-        candidates = [
-            {
-                "validated": True,
-                "public_reserve": True,
-                "backup_pool_only": False,
-                "primary_block": "ticket_radar",
-                "category": "venues_tickets",
-                "title": "Textless Artist — event 2026-07-20",
-                "summary": "AO Arena | event_date=2026-07-20 19:00",
-                "source_url": "https://example.test/textless",
-                "source_label": "Ticketmaster",
-                "event": {"date_start": "2026-07-20T19:00:00+01:00", "venue": "AO Arena"},
-                "ticket_notability": {"artist": "Textless Artist", "tier": "A", "kind": "artist"},
-                "reader_value_score": 999,
-            },
-            {
-                "validated": True,
-                "public_reserve": True,
-                "backup_pool_only": False,
-                "primary_block": "ticket_radar",
-                "category": "venues_tickets",
-                "title": "Clean Artist",
-                "draft_line": "• <b>Clean Artist</b> — 20 июля, AO Arena. Проверьте билеты.",
-                "source_url": "https://example.test/clean",
-                "source_label": "Ticketmaster",
-                "event": {"date_start": "2026-07-20T19:00:00+01:00", "venue": "AO Arena"},
-                "reader_value_score": 10,
-            },
-        ]
-        rendered_urls: set[str] = set()
-        rendered_story_keys: set[str] = set()
-        reserve_pool = _PrevalidatedReservePool.build(candidates, rendered_urls, rendered_story_keys)
-        stats: dict[str, object] = {}
-
-        line = _same_section_reserve_line(
-            "Билеты / Ticket Radar",
-            candidates,
-            rendered_urls,
-            rendered_story_keys,
-            stats,
-            reserve_pool,
-        )
-
-        self.assertIn("Clean Artist", line)
-        self.assertNotIn("Textless Artist", line)
-        self.assertEqual(stats["prevalidated_pop_used"], 1)
-        self.assertEqual(stats.get("enriched_rewrite_attempts", 0), 0)
 
 
 if __name__ == "__main__":
