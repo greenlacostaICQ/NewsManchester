@@ -473,14 +473,9 @@ def _validate_draft(
     if "<a " not in lower_text:
         errors.append("Draft digest contains no HTML source links.")
 
-    repaired_html, contract_repair = _repair_public_html_contracts(html_text)
-    if contract_repair.get("fixed_count") and repaired_html != html_text:
-        draft_path.write_text(repaired_html, encoding="utf-8")
-        html_text = repaired_html
-        warnings.append(
-            "Release recovered "
-            f"{contract_repair.get('fixed_count')} public-contract line(s); digest continues."
-        )
+    # Этап 3: release не правит HTML. Пустых заголовков не бывает by
+    # construction (писатель не рендерит секцию без строк); нарушение
+    # public-контракта ниже фиксируется ошибкой/предупреждением, не правкой.
 
     sections = extract_sections(html_text)
     errors.extend(public_html_contract_errors(html_text))
@@ -4282,28 +4277,12 @@ def build_release(project_root: Path) -> ReleaseResult:
             published_facts,
         )
         if int((visible_repeat_review.get("counts") or {}).get("bad_visible_repeats") or 0) > 0:
-            sanitized_html, visible_repeat_quarantine = _quarantine_repeat_rendered_html_items(
-                repeat_html_text,
-                candidates_report,
-                visible_repeat_review,
+            # Этап 3: повторы гасит планёрка ДО вёрстки. Release только
+            # фиксирует подозрение — хирургии готового HTML больше нет.
+            warnings.append(
+                "Repeat policy: suspicious visible repeat(s) detected (verify-only) — "
+                "см. release_report.visible_repeat_review; состав не менялся."
             )
-            if int(visible_repeat_quarantine.get("removed_count") or 0) > 0:
-                draft_path.write_text(sanitized_html, encoding="utf-8")
-                warnings.append(
-                    "Repeat policy: removed "
-                    f"{visible_repeat_quarantine.get('removed_count')} exact previously-published visible item(s); "
-                    "digest continues."
-                )
-                visible_repeat_review = _classify_visible_repeat_policy(
-                    sanitized_html,
-                    candidates_report,
-                    published_facts,
-                )
-            else:
-                warnings.append(
-                    "Repeat policy: suspicious visible repeat(s) detected but no exact HTML line was removed; "
-                    "see release_report.visible_repeat_review."
-                )
     repeat_policy_report: dict[str, object] = {}
     try:
         repeat_policy_report = _write_repeat_policy_report(
@@ -4324,36 +4303,12 @@ def build_release(project_root: Path) -> ReleaseResult:
         draft_html_text = draft_path.read_text(encoding="utf-8")
         rendered_html_review = _classify_rendered_html_quality(draft_html_text, candidates_report)
         if rendered_html_review["counts"].get("bad_visible_items", 0) > 0:
-            sanitized_html, rendered_html_quarantine = _quarantine_bad_rendered_html_items(
-                draft_html_text,
-                candidates_report,
-                rendered_html_review,
+            # Этап 3: брак строки лечится лестницей у писателя/редактора
+            # (замена из плана) — release ничего не вырезает.
+            warnings.append(
+                "Rendered HTML review: flagged visible item(s) shipped with warning (verify-only); "
+                "см. release_report.rendered_html_review."
             )
-            if int(rendered_html_quarantine.get("removed_count") or 0) > 0:
-                draft_path.write_text(sanitized_html, encoding="utf-8")
-                warnings.append(
-                    "Rendered HTML review quarantined "
-                    f"{rendered_html_quarantine.get('removed_count')} rejected/borderline visible item(s); "
-                    "digest continues."
-                )
-                rendered_html_review = _classify_rendered_html_quality(sanitized_html, candidates_report)
-    if rendered_html_review["counts"].get("bad_visible_items", 0) > 0:
-        # Degradation, not fail-closed: force-remove any residual flagged row
-        # and ship the issue anyway. One bad content row must never block the
-        # whole digest — only technical inconsistency (missing/unpromoted build,
-        # stale date/marker) may block the send (owner 2026-06-16).
-        if draft_path.exists():
-            forced_html, forced_report = _force_remove_bad_rendered_lines(
-                draft_path.read_text(encoding="utf-8"), rendered_html_review
-            )
-            if int(forced_report.get("removed_count") or 0) > 0:
-                draft_path.write_text(forced_html, encoding="utf-8")
-                rendered_html_review = _classify_rendered_html_quality(forced_html, candidates_report)
-                rendered_html_quarantine["force_removed_count"] = forced_report.get("removed_count")
-        warnings.append(
-            "Rendered HTML review force-removed residual bad visible item(s); "
-            "digest continues (degradation, not block). See release_report.rendered_html_review."
-        )
     dedupe_memory = read_json(state_dir / "dedupe_memory.json", {}) if (state_dir / "dedupe_memory.json").exists() else {}
     # Retired daily reports (owner 2026-07-10): the "N possible real misses"
     # warnings and their release_report payloads were write-only noise. The
@@ -4364,18 +4319,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         rendered_fingerprints=rendered_fingerprints,
         dedupe_memory=dedupe_memory,
     )
-    backup_pool = _write_backup_pool(
-        state_dir=state_dir,
-        current_day_london=current_day_london,
-        candidates_report=candidates_report,
-        writer_report=writer_report,
-        rendered_fingerprints=rendered_fingerprints,
-        final_loss_check=final_loss_check,
-    )
-    if int((backup_pool.get("counts") or {}).get("active") or 0):
-        warnings.append(
-            f"Backup pool: {backup_pool['counts']['active']} candidate(s) retained with TTL for recovery."
-        )
+    backup_pool = {"enabled": False, "replaced_by": "release_plan.slots[].backup_fingerprints"}
     borderline_queue = _borderline_queue(candidates_report, writer_report)
     if borderline_queue["counts"].get("borderline", 0):
         warnings.append(
@@ -4434,42 +4378,43 @@ def build_release(project_root: Path) -> ReleaseResult:
     except Exception as exc:  # noqa: BLE001
         logger.warning("speed report snapshot failed: %s", exc)
 
-    # S4: visible-HTML contract. Reconcile the shipped draft against the
-    # per-section minimums + lead contract and run bounded recovery BEFORE
-    # promotion (owner refinement #3: validate the draft, not the already-
-    # promoted outgoing). Guarded — a reconciler error must never abort the
-    # issue (never-block); the issue still ships.
-    visible_contract: dict[str, object] = {"enabled": False}
+    # Этап 3: реконсилер удалён. Сводка контракта — из отчёта исполнения
+    # плана; финальную сверку перед отправкой делает verify-digest-plan.
+    visible_contract: dict[str, object] = {"enabled": False, "replaced_by": "verify-digest-plan"}
     try:
-        from news_digest.pipeline.release_reconcile import reconcile_visible_html  # noqa: PLC0415
+        from news_digest.pipeline.plan_execution import load_execution  # noqa: PLC0415
 
-        visible_contract = reconcile_visible_html(
-            draft_path,
-            [c for c in (candidates_report.get("candidates") or []) if isinstance(c, dict)],
-            (writer_report or {}).get("section_counts") or {},
-        )
+        _execution = load_execution(state_dir)
+        _slots = _execution.get("slots") or {}
+        _removed = [row for row in _slots.values() if str((row or {}).get("status") or "") == "removed"]
+        _lead_row = _slots.get("lead") or {}
+        visible_contract = {
+            "enabled": True,
+            "mode": "plan_execution_summary",
+            "slots_total": len(_slots),
+            "shown": sum(1 for r in _slots.values() if str((r or {}).get("status") or "") == "shown"),
+            "replaced": sum(1 for r in _slots.values() if str((r or {}).get("status") or "") == "replaced"),
+            "removed": len(_removed),
+            "lead_visible": str(_lead_row.get("status") or "") in {"shown", "replaced"},
+            "removed_sample": [
+                {
+                    "slot_id": (r or {}).get("slot_id"),
+                    "section": (r or {}).get("section"),
+                    "reason": (r or {}).get("replacement_reason"),
+                }
+                for r in _removed[:20]
+            ],
+        }
         write_json(state_dir / "visible_contract_report.json", visible_contract)
-        if not (visible_contract.get("control_assertion") or {}).get("ok", True):
+        if not visible_contract["lead_visible"]:
+            warnings.append("План: lead-слот не отрисован — см. plan_execution_report.json.")
+        for r in _removed:
             warnings.append(
-                "Visible contract: writer section counts diverge from the shipped HTML "
-                "— see visible_contract_report.json (RC1)."
+                f"План: слот {(r or {}).get('slot_id')} снят "
+                f"({(r or {}).get('replacement_reason')}) — честный недобор, выпуск идёт."
             )
-        if not visible_contract.get("lead_visible", True):
-            warnings.append("Visible contract: lead block «Главная история дня» is not visible in the shipped HTML.")
-        if visible_contract.get("inserted_total"):
-            warnings.append(
-                f"Visible contract: recovered {visible_contract['inserted_total']} line(s) into thin section(s) "
-                "from the recoverable reserve before promotion."
-            )
-        for short in visible_contract.get("still_under_minimum") or []:
-            warnings.append(
-                f"Visible contract: «{short['section']}» shipped {short['actual']}/{short['minimum']} "
-                f"— {short['reason']} (honest shortfall, issue still ships)."
-            )
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("visible-HTML reconciler failed (issue still ships): %s", exc)
-        # The report must ALWAYS exist (RC1): a missing file used to read as
-        # "no divergence". Write an explicit degraded marker instead.
+    except Exception as exc:  # noqa: BLE001 — сводка не должна блокировать выпуск
+        logger.warning("plan execution summary failed (issue still ships): %s", exc)
         visible_contract = {"enabled": False, "error": str(exc)}
         try:
             write_json(state_dir / "visible_contract_report.json", visible_contract)
