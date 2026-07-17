@@ -294,7 +294,7 @@ def replay_one(day: str, sandbox_root: Path | None) -> dict[str, object]:
         "sandbox": str(sandbox),
         "stages": stages,
         "total_seconds": total_seconds,
-        "stages_ok": all(s["ok"] for s in stages) and len(stages) == 3,
+        "stages_ok": all(s["ok"] for s in stages) and len(stages) == 4,
         "sent_metrics": analyze_digest(sent_html),
         "replay_metrics": analyze_digest(replayed_html) if replayed_html else None,
         "diff": diff_digests(sent_html, replayed_html, sandbox) if replayed_html else None,
