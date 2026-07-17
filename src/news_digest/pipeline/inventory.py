@@ -687,6 +687,20 @@ def _retention_until(candidate: dict, *, now_iso: str) -> str:
     return (anchor + timedelta(days=retention_days)).isoformat() if retention_days else ""
 
 
+def _attach_recurring_occurrence(candidate: dict) -> None:
+    if str(candidate.get("primary_block") or "") not in {"weekend_activities", "openings"}:
+        return
+    from news_digest.pipeline.weekend_inventory import candidate_recurring_occurrence_date  # noqa: PLC0415
+
+    next_occurrence = candidate_recurring_occurrence_date(candidate)
+    if not next_occurrence:
+        return
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    event["is_recurring"] = True
+    event["next_occurrence"] = next_occurrence.isoformat()
+    candidate["event"] = event
+
+
 def build_inventory_record(
     candidate: dict,
     *,
@@ -700,15 +714,8 @@ def build_inventory_record(
     """Canonical inventory card. Stores English raw/evidence for audit, but the
     working unit is the fact card + readiness, never the raw English text."""
     now_iso = now_iso or now_london().isoformat()
+    _attach_recurring_occurrence(candidate)
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    if str(candidate.get("primary_block") or "") in {"weekend_activities", "openings"}:
-        from news_digest.pipeline.weekend_inventory import candidate_recurring_occurrence_date  # noqa: PLC0415
-
-        next_occurrence = candidate_recurring_occurrence_date(candidate)
-        if next_occurrence:
-            event["is_recurring"] = True
-            event["next_occurrence"] = next_occurrence.isoformat()
-            candidate["event"] = event
     quality_status, render_ready, missing_facts = evaluate_card(candidate)
     fact_card = {
         "event_name": str(event.get("event_name") or event.get("name") or ""),
@@ -1257,6 +1264,7 @@ def prewrite_stable_inventory_candidate(candidate: dict) -> bool:
     policy = INVENTORY_BLOCK_REGISTRY.get(block, {})
     if str(policy.get("text_policy") or "") != "deterministic_or_morning":
         return False
+    _attach_recurring_occurrence(candidate)
     try:
         from news_digest.pipeline.writer import (  # noqa: PLC0415
             _build_event_fallback_line,

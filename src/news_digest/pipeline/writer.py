@@ -3542,6 +3542,7 @@ def _weekend_occurrence_datetime(candidate: dict) -> datetime | None:
             event.get("date_text"),
             event.get("date_start"),
             event.get("date_end"),
+            event.get("next_occurrence"),
             candidate.get("source_url"),
         )
     )
@@ -3876,6 +3877,23 @@ def _build_weekend_event_fallback_line(candidate: dict) -> str:
     title = re.sub(r"\s+[—–-]\s+(?:event|public\s+sale).*$", "", title, flags=re.IGNORECASE).strip()
     title = re.sub(r"\s*\|\s*The(?:\s+Bridgewater\s+Hall)?\s*$", "", title, flags=re.IGNORECASE).strip()
     title = _clean_weekend_event_title(title)
+    if event.get("next_occurrence"):
+        title = re.sub(
+            r"\s+(?:is\s+)?back\s+in\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\b",
+            "",
+            title,
+            flags=re.IGNORECASE,
+        ).strip(" .-–—")
+        source_tokens = set(re.findall(r"[a-zа-яё\d]+", str(candidate.get("source_label") or "").lower()))
+        suffix = re.search(r"\s+[—–-]\s+([^—–-]+)$", title)
+        if suffix:
+            suffix_tokens = {
+                token
+                for token in re.findall(r"[a-zа-яё\d]+", suffix.group(1).lower())
+                if token not in {"the", "a", "an"}
+            }
+            if suffix_tokens and suffix_tokens <= source_tokens:
+                title = title[: suffix.start()].rstrip(" .-–—")
     if not title or _looks_like_source_chrome(title):
         return ""
     venue = _event_venue(candidate)
@@ -3903,6 +3921,9 @@ def _build_weekend_event_fallback_line(candidate: dict) -> str:
         return ""
     sentence = f"{kind}: {detail_text}" if detail_text else kind
     if prefix:
+        if event.get("next_occurrence"):
+            factual_format = sentence.replace(":", ",", 1)
+            return f"• {prefix} — {title}. На площадке: {factual_format}."
         return f"• {prefix} — {title}: {sentence}. Сверьте часы и условия перед поездкой."
     return f"• {title}: {sentence}. Сверьте часы и условия перед поездкой."
 

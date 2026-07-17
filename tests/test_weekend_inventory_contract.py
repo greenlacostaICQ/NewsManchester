@@ -8,7 +8,7 @@ from news_digest.pipeline.common import now_london
 from news_digest.pipeline.editorial_contracts import calendar_repeat_review
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.llm_rewrite import _apply_post_board_translation_cut, _apply_rewrite_shortlist
-from news_digest.pipeline.inventory import build_inventory_record
+from news_digest.pipeline.inventory import build_inventory_record, prewrite_stable_inventory_candidate
 from news_digest.pipeline.weekend_inventory import (
     candidate_recurring_occurrence_date,
     current_weekend_window,
@@ -108,13 +108,18 @@ class WeekendInventoryContractTests(unittest.TestCase):
         self.assertFalse(is_weekend_inventory_candidate(candidate, today=today))
         with mock.patch("news_digest.pipeline.weekend_inventory.now_london") as fake_now:
             fake_now.return_value = datetime(2026, 7, 17, 8, 0)
-            record = build_inventory_record(
-                candidate,
-                prompt_version=1,
-                now_iso="2026-07-17T00:30:00+01:00",
-            )
+            with mock.patch("news_digest.pipeline.writer.now_london", return_value=datetime(2026, 7, 17, 8, 0)):
+                self.assertTrue(prewrite_stable_inventory_candidate(candidate))
+                record = build_inventory_record(
+                    candidate,
+                    prompt_version=1,
+                    now_iso="2026-07-17T00:30:00+01:00",
+                )
         self.assertEqual(record["fact_card"]["next_occurrence"], "2026-08-14")
         self.assertGreaterEqual(record["retention_until"], "2026-09-13")
+        self.assertIn("14 августа", record["draft_line"])
+        self.assertNotIn("10 июля", record["draft_line"])
+        self.assertNotIn("back in July", record["draft_line"])
 
     def test_past_event_is_not_revived_by_false_contract_recurrence(self) -> None:
         candidate = _weekend_inventory_candidate(title="South Manchester Food Festival")
