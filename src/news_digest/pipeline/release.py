@@ -467,7 +467,11 @@ def _validate_draft(
             errors.append(f"Draft digest contains author voice marker: {marker}.")
     for marker in BAD_EDITORIAL_PROSE:
         if marker in visible_lower_text:
-            errors.append(f"Draft digest contains bad editorial prose marker: {marker}.")
+            # Never-block (owner 2026-06-16 + 2026-07-18): одна штампованная
+            # фраза — контентный дефект, не причина не выпустить дайджест.
+            # 2026-07-18 маркер «это событие подчеркивает» заблокировал весь
+            # выпуск — читатель не получил ничего из-за одной строки.
+            warnings.append(f"Draft digest contains bad editorial prose marker: {marker}.")
     if "/amp/" in lower_text:
         errors.append("Draft digest contains an /amp/ URL.")
     if "<a " not in lower_text:
