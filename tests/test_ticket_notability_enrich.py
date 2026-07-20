@@ -157,8 +157,9 @@ class PrefetchTest(unittest.TestCase):
             mock.patch.object(tn, name, lambda _a: {}).start()
 
     def _cache_path(self) -> Path:
-        d = tempfile.mkdtemp()
-        return Path(d) / "ticket_notability_cache.json"
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        return Path(temp_dir.name) / "ticket_notability_cache.json"
 
     def test_prefetch_looks_up_new_and_skips_fresh(self) -> None:
         path = self._cache_path()

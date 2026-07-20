@@ -410,6 +410,23 @@ Known-defect expectations for golden days are asserted on the *sent* artifact
 and never go stale. Time is frozen via `NEWS_DIGEST_FAKE_NOW` (honored in
 `common.now_london()`); network is hard-blocked at the socket level.
 
+## Temporary workspace lifecycle
+
+Disposable baselines, review copies, independent clones, and verification
+sandboxes must not remain in `/tmp` after the task that created them finishes.
+
+- Prefer `tempfile.TemporaryDirectory`, `mktemp -d` plus an EXIT trap, or an
+  equivalent context manager so cleanup also runs after a failed command.
+- Remove a Git worktree with `git worktree remove`, then run
+  `git worktree prune`; never delete only its directory and leave Git metadata.
+- Preserve a temporary workspace only when the user explicitly asks to keep
+  it. Report the exact path and purpose when it is intentionally retained.
+- Before the final handoff, check project-owned temporary paths and remove
+  completed baselines, audit copies, extracted archives, and generated logs.
+- Never clean by a broad `/tmp` glob. Resolve exact project-owned paths first;
+  marker-based stale cleanup may delete only paths carrying this project's
+  marker.
+
 ## Current blockers (hand-maintained — last reviewed 2026-04-28 AM)
 
 Phase 1 is considered complete. This section tracks accepted waivers and
