@@ -915,6 +915,12 @@ class NightWaveTest(unittest.TestCase):
         self.assertIn("for attempt in 1 2 3 4 5", workflow)
         self.assertIn("Pushed daily state on attempt", workflow)
 
+    def test_night_state_commit_pushes_back_to_dispatched_branch(self) -> None:
+        workflow = (Path(__file__).parents[1] / ".github" / "workflows" / "night-inventory.yml").read_text(encoding="utf-8")
+        self.assertIn('target_branch="${GITHUB_REF_NAME:-main}"', workflow)
+        self.assertIn('git pull --rebase --autostash origin "$target_branch"', workflow)
+        self.assertIn('git push origin "HEAD:$target_branch"', workflow)
+
     def test_wave_status_distinguishes_success_degraded_and_failed(self) -> None:
         from scripts.run_local_digest import _inventory_wave_status
 

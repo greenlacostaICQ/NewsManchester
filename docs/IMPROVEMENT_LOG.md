@@ -1392,3 +1392,14 @@
 - Файлы/места: `.github/workflows/daily-digest.yml:Commit updated state files`.
 - ПРОВЕРКА (offline contract): workflow содержит тот же bounded 5-attempt pattern и явный fail after exhaustion; production race пока не воспроизводилась.
 - Удалено: одноразовый daily `pull + push`; ночной loop не дублируется новой архитектурой, а переиспользуется тем же shell-паттерном.
+
+### 0128 — Night state commit сохраняет dispatched branch — 2026-07-20
+- Статус: внедрено в `stage3-plan-lock`; повторный production-substrate run ожидается.
+- Проблема: реальная acceptance Events-wave `29739894935` собрала все 59 source rows за 237,39 с, но state commit пять раз пытался rebase feature-ветку на `origin/main`, получил массовые add/add conflicts и завершил workflow красным.
+- Причина (корень): `.github/workflows/night-inventory.yml` жёстко использовал `git pull ... origin main`, хотя `workflow_dispatch --ref` корректно checkout-ил `stage3-plan-lock`.
+- Решение: pull/push retry работает с `${GITHUB_REF_NAME:-main}` и явно пушит `HEAD:<dispatched branch>`. Для production dispatch это без изменения остаётся `main`; acceptance state не загрязняет main и не теряется.
+- Почему так (отвергнутые альтернативы): отключить state commit на branch-run лишило бы проверку доказательства сохранения; force-push или rebase feature-ветки на main недопустимы.
+- Ожидаемый эффект и метрика проверки: acceptance wave сохраняет inventory commit в свою ветку с первой попытки; production wave продолжает сохранять в main.
+- Файлы/места: `.github/workflows/night-inventory.yml:Commit inventory to repo`, `tests/test_inventory.py:NightWaveTest`.
+- ПРОВЕРКА: первый реальный run `29739894935` — collection `59 sources / 203 found / 70 fact-ready / 2 source errors / degraded`, `duration_seconds=237.39`; state push не прошёл и стал основанием для этой доработки. Повторный proof заполняется следующим run.
+- Удалено: жёстко прошитый `origin main` в night retry; сам bounded retry остаётся.
