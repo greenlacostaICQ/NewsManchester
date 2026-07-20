@@ -565,7 +565,11 @@ def _extract_manchesters_finest_venue(candidate: dict) -> str:
     title_index = after_date.casefold().find(title.casefold())
     if title_index <= 0:
         return ""
-    venue = re.sub(r"\s+", " ", after_date[:title_index]).strip(" -|,.;")
+    # Multi-day cards have a second date before the venue:
+    # ``start - end - venue exact-title``. The final separator-delimited
+    # segment is still the evidenced venue in both one- and multi-day forms.
+    venue_prefix = after_date[:title_index].rsplit(" - ", 1)[-1]
+    venue = re.sub(r"\s+", " ", venue_prefix).strip(" -|,.;")
     if not 2 <= len(venue) <= 100 or re.search(r"\b20\d{2}\b", venue):
         return ""
     return venue

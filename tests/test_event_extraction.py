@@ -170,23 +170,34 @@ class PriceParsingTest(unittest.TestCase):
 
 class ExtractEventTest(unittest.TestCase):
     def test_manchesters_finest_listing_prefix_supplies_evidenced_venue(self):
-        candidate = {
-            "title": "Green Island Festival 2026 Vol. 2",
-            "summary": "A public festival in Manchester on 25 July 2026.",
-            "evidence_text": (
-                "Sat 25th Jul, 2026 - Warwick Street Green Island Festival 2026 Vol. 2 "
-                "Warwick Street, Warwick St, Hulme, Manchester M15 5EU, UK Sat 25th Jul, 2026"
+        examples = (
+            (
+                "Green Island Festival 2026 Vol. 2",
+                "Sat 25th Jul, 2026 - Warwick Street Green Island Festival 2026 Vol. 2",
+                "Warwick Street",
             ),
-            "category": "culture_weekly",
-            "primary_block": "weekend_activities",
-            "source_label": "Manchester's Finest Events",
-            "source_url": "https://www.manchestersfinest.com/events/green-island-festival-2026-vol-2/",
-        }
+            (
+                "Comic Con Manchester 2026",
+                "Sat 25th Jul, 2026 - Sun 26th Jul, 2026 - Bowlers Exhibition Centre Comic Con Manchester 2026",
+                "Bowlers Exhibition Centre",
+            ),
+        )
+        for title, evidence, expected_venue in examples:
+            with self.subTest(title=title):
+                candidate = {
+                    "title": title,
+                    "summary": "A public event in Manchester on 25 July 2026.",
+                    "evidence_text": evidence,
+                    "category": "culture_weekly",
+                    "primary_block": "weekend_activities",
+                    "source_label": "Manchester's Finest Events",
+                    "source_url": "https://www.manchestersfinest.com/events/example/",
+                }
 
-        result = extract_event(candidate)
+                result = extract_event(candidate)
 
-        self.assertEqual(result["venue"], "Warwick Street")
-        self.assertEqual(result["date_start"], "2026-07-25")
+                self.assertEqual(result["venue"], expected_venue)
+                self.assertEqual(result["date_start"], "2026-07-25")
 
     def test_returns_empty_for_non_event_category(self):
         self.assertEqual(extract_event({
