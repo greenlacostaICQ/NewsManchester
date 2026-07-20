@@ -1457,7 +1457,7 @@ def _extract_visit_manchester_events(source: SourceDef, body: str) -> list[Extra
 _VISIT_MANCHESTER_INDEX_PATH_RE = re.compile(
     r"^/whats-on/(?:"
     r"events/(?:whats-on-|events-at-|entertainment-events(?:/|$))|"
-    r"whats-on-this-(?:week|weekend|halloween)(?:/|$)|"
+    r"whats-on-this-(?:week|weekend|halloween|christmas)(?:-|/|$)|"
     r"sporting-events/manchester-city-fc(?:/|$)"
     r")",
     re.IGNORECASE,

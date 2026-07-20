@@ -462,6 +462,8 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         <a href="/whats-on/events/whats-on-opera-house-palace-theatre">venue index</a>
         <a href="/whats-on/events/entertainment-events">category index</a>
         <a href="/whats-on/events/events-at-manchester-arena">arena index</a>
+        <a href="/whats-on/whats-on-this-halloween-in-manchester">season index</a>
+        <a href="/whats-on/whats-on-this-christmas-in-manchester">season index</a>
         <a href="/whats-on/event/manchester-jazz-festival-2026">real event</a>
         """
         enriched_urls: list[str] = []
@@ -511,6 +513,14 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertEqual([item.url for item in result], [item.url for item in items])
         self.assertGreater(peak, 1)
         self.assertLessEqual(peak, 4)
+
+    def test_new_smithfield_uses_runner_accessible_dated_listing(self) -> None:
+        source = next(source for source in SOURCES if source.name == "New Smithfield Sunday Market")
+
+        self.assertEqual(source.source_type, "html_page_event")
+        self.assertEqual(source.max_candidates, 1)
+        self.assertIn("manchester-rocks.co.uk", source.url)
+        self.assertEqual(source.allowed_hosts, ("manchester-rocks.co.uk",))
 
     def test_sk_lowdown_markets_source_routes_to_weekend_inventory(self) -> None:
         source = next(source for source in SOURCES if source.name == "SK Lowdown Markets")
