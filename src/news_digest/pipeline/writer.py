@@ -103,11 +103,6 @@ EVENT_RELAX_EVIDENCE_THRESHOLD = 500
 TODAY_FOCUS_SECTION = "Что важно сегодня"
 FRESH_NEWS_TARGET_ITEMS = 7
 TODAY_FOCUS_TARGET_ITEMS = 4
-CORE_UNDERFLOW_TICKET_CAPS = {
-    "Билеты / Ticket Radar": 4,
-    "Крупные концерты вне GM": 2,
-}
-
 # When the LLM rewrite stage is degraded, keep soft rails compact without
 # suppressing hard-news that did get rewritten.
 PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 40  # counted public budget; reserved sections can borrow within the hard cap

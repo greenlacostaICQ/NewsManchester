@@ -332,17 +332,6 @@ def _today_focus_allocation(
     return moved
 
 
-def _core_shortfall_expected(pools: dict[str, list[dict]], show_weekend: bool) -> list[str]:
-    thin: list[str] = []
-    for section in ("Свежие новости", "Что важно сегодня", "Городской радар", "Еда, открытия и рынки"):
-        if section == "Выходные в GM" and not show_weekend:
-            continue
-        minimum = SECTION_MIN_ITEMS.get(section, 0)
-        if minimum and len(pools.get(section) or []) < minimum:
-            thin.append(section)
-    return thin
-
-
 def run_plan_digest(project_root: Path) -> StageResult:
     state_dir = project_root / "data" / "state"
     report_path = state_dir / "plan_digest_report.json"
@@ -361,7 +350,6 @@ def run_plan_digest(project_root: Path) -> StageResult:
 
     from news_digest.pipeline.editorial_contracts import attach_editorial_contract  # noqa: PLC0415
     from news_digest.pipeline.writer import (  # noqa: PLC0415
-        CORE_UNDERFLOW_TICKET_CAPS,
         PUBLIC_SECTION_RESERVED_MIN,
         _fresh_hard_news_can_bypass_source_cap,
         _is_minor_bus_stop_line,
@@ -573,8 +561,6 @@ def run_plan_digest(project_root: Path) -> StageResult:
         pools[section] = kept
 
     # --- Пер-секционные лимиты ---------------------------------------------
-    thin_core = _core_shortfall_expected(pools, show_weekend)
-
     def _demote(candidate: dict, reason: str) -> None:
         demoted.append((candidate, reason))
 
@@ -618,12 +604,6 @@ def run_plan_digest(project_root: Path) -> StageResult:
                     _demote(candidate, "per_source_cap")
                 pool = filtered
         cap = SECTION_MAX_ITEMS.get(section)
-        if section in CORE_UNDERFLOW_TICKET_CAPS and thin_core:
-            throttle = CORE_UNDERFLOW_TICKET_CAPS[section]
-            cap = min(cap, throttle) if cap else throttle
-            warnings.append(
-                f"Ticket balance guard: «{section}» ограничен {throttle}, тонкие core-разделы: {', '.join(thin_core)}."
-            )
         if cap and pool:
             counted = 0
             trimmed: list[dict] = []
