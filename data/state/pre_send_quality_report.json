@@ -2,128 +2,145 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send section recovery inserted 1 reserve line(s) after final judge repair",
+  "reason": "pre-send section recovery inserted 2 reserve line(s) after final judge repair",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "run_date_london": "2026-07-20",
-  "pipeline_run_id": "20260720T072539+0100",
-  "digest_sha256": "c70cb302715cc16bf2e0cf4e747cda34e1b08ac4f7309dd46fd53d6edb8fc987",
-  "duration_seconds": 23.903,
+  "pipeline_run_id": "20260720T080135+0100",
+  "digest_sha256": "62593f93da9df83ca24d72e296b8d0521588772d705d7497b4395043d35bd512",
+  "duration_seconds": 7.396,
   "confidence": 0.9,
-  "critical_errors": [],
-  "actions": [],
+  "critical_errors": [
+    {
+      "line_index": 10,
+      "section": "Футбол",
+      "problem": "Указан неверный спортивный директор Манчестер Сити. Уго Виана не является спортивным директором клуба.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    }
+  ],
+  "actions": [
+    {
+      "line_index": 10,
+      "section": "Футбол",
+      "action": "replace",
+      "replacement_text": "• Летний трансферный рынок Манчестер Сити ожидает ускорение с понедельника, когда клуб готовится к активному завершению окна. MEN Manchester City",
+      "reason": "Уго Виана не является спортивным директором Манчестер Сити, необходимо удалить неверную информацию.",
+      "risk": "factual"
+    }
+  ],
   "warnings": [
-    "Выпуск содержит много новостей о преступлениях и происшествиях, что может создать впечатление однобокости. Рекомендуется добавить разнообразие в темы.",
-    "Секция 'Крупные концерты вне GM' содержит информацию о концертах за пределами Greater Manchester, что может быть менее релевантно для основной аудитории.",
-    "Что важно сегодня: недостаточно элементов, только 1 из 3 минимально необходимых.",
-    "Низкая производительность писателя: 34 из 318 включенных кандидатов отрендерены.",
-    "Секцию 'Крупные концерты вне GM' можно сократить, чтобы сбалансировать выпуск.",
-    "line 3 drops source number/date fact(s): 14:29, 19 jul 2026",
-    "line 4 drops source number/date fact(s): 11:31, 19 jul 2026"
+    "Выпуск содержит много новостей о преступлениях и судебных делах, что может создать впечатление однобокости. Рекомендуется добавить разнообразие в темы.",
+    "В выпуске отсутствует информация о дате проведения премии Education Estate Awards, что может снизить практическую пользу для читателей.",
+    "Событие в Лондоне не относится к Greater Manchester, но это допустимо в контексте русскоязычных мероприятий в UK.",
+    "Что важно сегодня: 1 item(s), emergency floor 2",
+    "low writer yield: 36/315 included candidates rendered",
+    "line 1 drops source number/date fact(s): 14:29, 19 jul 2026",
+    "line 5 drops source number/date fact(s): 07:14, 19 jul 2026",
+    "line 11 drops source number/date fact(s): 22 july 2025"
   ],
   "product_completeness": {
     "section_counts": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 6,
-      "Общественный транспорт сегодня": 3,
+      "Свежие новости": 4,
+      "Общественный транспорт сегодня": 2,
       "Что важно сегодня": 1,
-      "Футбол": 2,
-      "Городской радар": 1,
-      "IT и бизнес": 1,
-      "Дальние анонсы": 0,
-      "Билеты / Ticket Radar": 1,
-      "Крупные концерты вне GM": 3,
-      "Русскоязычные концерты и стендап UK": 2
+      "Футбол": 1,
+      "Городской радар": 2,
+      "Business/tech события для тебя": 0,
+      "Дальние анонсы": 1,
+      "Билеты / Ticket Radar": 0,
+      "Крупные концерты вне GM": 0,
+      "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
-      "Свежие новости": 6,
-      "Футбол": 2,
+      "Свежие новости": 4,
+      "Футбол": 1,
       "Что важно сегодня": 1,
-      "Общественный транспорт сегодня": 3
+      "Общественный транспорт сегодня": 2
     },
-    "ticket_items": 6,
-    "core_items": 12,
+    "ticket_items": 1,
+    "core_items": 8,
     "writer_quality_counts": {
-      "included_candidates": 318,
-      "rendered_candidates": 34,
+      "included_candidates": 315,
+      "rendered_candidates": 36,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 7,
       "dropped_ticket_not_selected": 209,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 62
+      "dropped_low_quality": 60
     },
     "section_underflow": [
       {
         "section": "Что важно сегодня",
-        "actual": 1,
+        "actual": 2,
         "minimum": 3,
         "dropped_by_writer": 0,
-        "eligible_candidates": 1,
+        "eligible_candidates": 2,
         "underflow_reason": "not_enough_eligible_practical_items"
-      },
-      {
-        "section": "Городской радар",
-        "actual": 4,
-        "minimum": 5,
-        "dropped_by_writer": 2
       }
     ],
     "source_health_counts": {
-      "ok": 105,
+      "ok": 94,
       "partial": 2,
-      "stale": 11,
-      "empty": 6,
-      "failed": 4,
-      "zero_yield": 93,
+      "stale": 19,
+      "empty": 11,
+      "failed": 2,
+      "zero_yield": 81,
       "no_contribution_breakdown": {
-        "fetch_failed": 4,
-        "all_rejected": 93,
-        "idle_no_items": 15
+        "fetch_failed": 2,
+        "all_rejected": 81,
+        "idle_no_items": 28
       },
       "zero_contribution_by_stage": {
-        "written": 23,
-        "selected": 70,
-        "parsed": 15,
-        "fetched": 4
+        "written": 19,
+        "selected": 62,
+        "parsed": 28,
+        "fetched": 2
       },
-      "weekend_source_coverage_incidents": 49
+      "weekend_source_coverage_incidents": 48
     },
     "alerts": [
       "Что важно сегодня: 1 item(s), emergency floor 2",
-      "low writer yield: 34/318 included candidates rendered",
-      "source failures: 4"
+      "low writer yield: 36/315 included candidates rendered"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [],
     "can_apply_actions": true,
-    "action_count": 0
+    "action_count": 1
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 22,
-    "matched_lines": 22,
-    "applicable_lines": 2,
+    "checked_lines": 14,
+    "matched_lines": 14,
+    "applicable_lines": 3,
     "unmatched_lines": 0,
     "critical_omission_count": 0,
     "critical_omissions": [],
     "noncritical_omissions": [
       {
-        "line_index": 3,
+        "line_index": 1,
         "dropped": [
           "14:29",
           "19 jul 2026"
         ]
       },
       {
-        "line_index": 4,
+        "line_index": 5,
         "dropped": [
-          "11:31",
+          "07:14",
           "19 jul 2026"
+        ]
+      },
+      {
+        "line_index": 11,
+        "dropped": [
+          "22 july 2025"
         ]
       }
     ],
@@ -134,16 +151,40 @@
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
-    "status": "post_repair_section_recovery",
-    "requested": 0,
-    "attempted": 0,
-    "applied": 1,
-    "actions": [],
+    "fact_lock_version": "v1",
+    "requested": 1,
+    "attempted": 1,
+    "applied": 3,
+    "model_patch_applied": 1,
+    "deterministic_rewrite_used": 0,
+    "reserve_replacement_used": 2,
+    "stripped": 0,
+    "kept_below_floor": 0,
+    "unresolved": 0,
+    "fact_lock_rejected": 0,
+    "enrich_attempted": 0,
+    "post_check_errors": [],
+    "actions": [
+      {
+        "line_index": 10,
+        "section": "Футбол",
+        "requested_action": "replace",
+        "reason": "Уго Виана не является спортивным директором Манчестер Сити, необходимо удалить неверную информацию.",
+        "outcome": "model_patch_applied"
+      }
+    ],
+    "status": "applied",
     "post_repair_section_recovery": {
       "enabled": true,
       "insert_cap": 8,
       "attempted_sections": [
         {
+          "section": "Свежие новости",
+          "from": 4,
+          "minimum": 6,
+          "added": 0
+        },
+        {
           "section": "Что важно сегодня",
           "from": 1,
           "minimum": 3,
@@ -151,20 +192,38 @@
         },
         {
           "section": "Городской радар",
-          "from": 1,
+          "from": 2,
           "minimum": 5,
           "added": 0
         },
         {
           "section": "Билеты / Ticket Radar",
+          "from": 0,
+          "minimum": 2,
+          "added": 2,
+          "to": 2
+        },
+        {
+          "section": "Business/tech события для тебя",
+          "from": 0,
+          "minimum": 1,
+          "added": 0
+        },
+        {
+          "section": "Футбол",
           "from": 1,
           "minimum": 2,
-          "added": 1,
-          "to": 2
+          "added": 0
         }
       ],
-      "inserted_total": 1,
+      "inserted_total": 2,
       "still_under_minimum": [
+        {
+          "section": "Свежие новости",
+          "actual": 4,
+          "minimum": 6,
+          "reason": "no_visible_section_or_no_recoverable_reserve"
+        },
         {
           "section": "Что важно сегодня",
           "actual": 1,
@@ -173,21 +232,41 @@
         },
         {
           "section": "Городской радар",
-          "actual": 1,
+          "actual": 2,
           "minimum": 5,
+          "reason": "no_visible_section_or_no_recoverable_reserve"
+        },
+        {
+          "section": "Business/tech события для тебя",
+          "actual": 0,
+          "minimum": 1,
+          "reason": "no_visible_section_or_no_recoverable_reserve"
+        },
+        {
+          "section": "Футбол",
+          "actual": 1,
+          "minimum": 2,
           "reason": "no_visible_section_or_no_recoverable_reserve"
         }
       ],
       "reserve_stats": {
-        "enriched_rewrite_attempts": 2,
-        "enriched_rewrite_used": 2,
+        "enriched_rewrite_attempts": 3,
+        "enriched_rewrite_used": 3,
         "refetch": {
           "attempted": 0,
           "improved": 0,
           "failed": 0,
           "empty_or_not_better": 0,
-          "skipped": 2,
+          "skipped": 3,
           "reports": [
+            {
+              "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-steel-panther-manchester-21-07-2026-event-1-00638-4979-1",
+              "title": "Steel Panther — event 2026-07-21 — public sale 2025-12-18 10:00",
+              "status": "skipped",
+              "reason": "structured_ticket_candidate",
+              "url": "https://ticketmaster.co.uk/steel-panther-manchester-21-07-2026/event/1F00638BEE4979A1",
+              "candidate_evidence_chars": 361
+            },
             {
               "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-steel-panther-manchester-21-07-2026-event-1-00638-4979-1",
               "title": "Steel Panther — event 2026-07-21 — public sale 2025-12-18 10:00",
@@ -208,27 +287,43 @@
         }
       },
       "status": "applied"
-    },
-    "reserve_replacement_used": 1
+    }
   },
-  "notes": "Текст корректно передает информацию о решении Совета Манчестера и его последствиях.; Прогноз погоды корректен и безопасен для публикации.; Все новости корректны, но выпуск может показаться слишком сосредоточенным на криминальных событиях.; Все строки в разделе 'Общественный транспорт сегодня' корректны и содержат актуа",
+  "notes": "Информация о ножевом ранении в центре Манчестера представлена корректно и безопасно для публикации.; Прогноз погоды корректен и безопасен для публикации.; Все строки безопасны, но выпуск может показаться слишком сосредоточенным на криминальных новостях.; Обе строки корректно передают информацию о транспортных изменения",
   "raw": {
-    "decision": "warn",
+    "decision": "repair_required",
     "confidence": 0.9,
-    "critical_errors": [],
-    "actions": [],
-    "warnings": [
-      "Выпуск содержит много новостей о преступлениях и происшествиях, что может создать впечатление однобокости. Рекомендуется добавить разнообразие в темы.",
-      "Секция 'Крупные концерты вне GM' содержит информацию о концертах за пределами Greater Manchester, что может быть менее релевантно для основной аудитории.",
-      "Что важно сегодня: недостаточно элементов, только 1 из 3 минимально необходимых.",
-      "Низкая производительность писателя: 34 из 318 включенных кандидатов отрендерены.",
-      "Секцию 'Крупные концерты вне GM' можно сократить, чтобы сбалансировать выпуск."
+    "critical_errors": [
+      {
+        "line_index": 10,
+        "section": "Футбол",
+        "problem": "Указан неверный спортивный директор Манчестер Сити. Уго Виана не является спортивным директором клуба.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      }
     ],
-    "notes": "Текст корректно передает информацию о решении Совета Манчестера и его последствиях.; Прогноз погоды корректен и безопасен для публикации.; Все новости корректны, но выпуск может показаться слишком сосредоточенным на криминальных событиях.; Все строки в разделе 'Общественный транспорт сегодня' корректны и содержат актуа",
+    "actions": [
+      {
+        "line_index": 10,
+        "section": "Футбол",
+        "action": "replace",
+        "replacement_text": "• Летний трансферный рынок Манчестер Сити ожидает ускорение с понедельника, когда клуб готовится к активному завершению окна. MEN Manchester City",
+        "reason": "Уго Виана не является спортивным директором Манчестер Сити, необходимо удалить неверную информацию.",
+        "risk": "factual"
+      }
+    ],
+    "warnings": [
+      "Выпуск содержит много новостей о преступлениях и судебных делах, что может создать впечатление однобокости. Рекомендуется добавить разнообразие в темы.",
+      "В выпуске отсутствует информация о дате проведения премии Education Estate Awards, что может снизить практическую пользу для читателей.",
+      "Событие в Лондоне не относится к Greater Manchester, но это допустимо в контексте русскоязычных мероприятий в UK.",
+      "Что важно сегодня: 1 item(s), emergency floor 2",
+      "low writer yield: 36/315 included candidates rendered"
+    ],
+    "notes": "Информация о ножевом ранении в центре Манчестера представлена корректно и безопасно для публикации.; Прогноз погоды корректен и безопасен для публикации.; Все строки безопасны, но выпуск может показаться слишком сосредоточенным на криминальных новостях.; Обе строки корректно передают информацию о транспортных изменения",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 11,
+      "chunk_count": 9,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -246,8 +341,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2161,
-          "duration_seconds": 1.163
+          "estimated_tokens": 2135,
+          "duration_seconds": 1.237
         },
         {
           "chunk_id": "chunk-02",
@@ -265,14 +360,14 @@
           "warning_count": 0,
           "error": "",
           "estimated_tokens": 1968,
-          "duration_seconds": 1.155
+          "duration_seconds": 1.431
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            8
+            6
           ],
           "sections": [
             "Свежие новости"
@@ -282,15 +377,15 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 3836,
-          "duration_seconds": 1.749
+          "estimated_tokens": 3264,
+          "duration_seconds": 1.613
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            9,
-            11
+            7,
+            8
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -300,15 +395,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2850,
-          "duration_seconds": 1.05
+          "estimated_tokens": 2435,
+          "duration_seconds": 0.811
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            12,
-            12
+            9,
+            9
           ],
           "sections": [
             "Что важно сегодня"
@@ -318,116 +413,80 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2161,
-          "duration_seconds": 1.074
+          "estimated_tokens": 2125,
+          "duration_seconds": 0.782
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            13,
-            14
+            10,
+            10
           ],
           "sections": [
             "Футбол"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2542,
-          "duration_seconds": 1.093
+          "estimated_tokens": 2143,
+          "duration_seconds": 1.77
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            15,
-            15
+            11,
+            12
           ],
           "sections": [
             "Городской радар"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2141,
-          "duration_seconds": 1.694
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            16,
-            16
-          ],
-          "sections": [
-            "IT и бизнес"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2116,
-          "duration_seconds": 1.681
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            17,
-            17
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2189,
-          "duration_seconds": 4.812
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            18,
-            20
-          ],
-          "sections": [
-            "Крупные концерты вне GM"
           ],
           "decision": "warn",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2996,
-          "duration_seconds": 2.745
+          "estimated_tokens": 2511,
+          "duration_seconds": 0.957
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            21,
-            22
+            13,
+            13
           ],
           "sections": [
-            "Русскоязычные концерты и стендап UK"
+            "Дальние анонсы"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2661,
-          "duration_seconds": 0.9
+          "estimated_tokens": 2289,
+          "duration_seconds": 0.633
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            14,
+            14
+          ],
+          "sections": [
+            "Русскоязычные концерты и стендап UK"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 2219,
+          "duration_seconds": 0.966
         }
       ],
       "reduce": {
@@ -438,10 +497,10 @@
         "decision": "warn",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 3,
+        "warning_count": 2,
         "error": "",
-        "estimated_tokens": 8000,
-        "duration_seconds": 14.768
+        "estimated_tokens": 7637,
+        "duration_seconds": 1.286
       },
       "max_workers": 3,
       "chunk_line_target": 12,
