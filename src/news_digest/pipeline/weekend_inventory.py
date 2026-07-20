@@ -67,7 +67,7 @@ _WEEKLY_RE = re.compile(
     r"(?:every|each|all|most|weekly)\s+(fridays?|saturdays?|sundays?)|"
     r"(fridays?|saturdays?|sundays?)\s+(?:weekly|every\s+week)|"
     r"runs?\s+(?:on\s+)?(fridays?|saturdays?|sundays?)|"
-    r"open(?:ing)?\s+(?:hours?\s+)?(?:on\s+)?(fridays?|saturdays?|sundays?)"
+    r"(?:open\s+(?:hours?\s+)?(?:on\s+)?|opening\s+hours?\s+(?:on\s+)?)(fridays|saturdays|sundays)"
     r")",
     re.IGNORECASE,
 )
@@ -167,6 +167,32 @@ def recurring_occurrence_date(text: str, *, today: date | None = None) -> date |
     return None
 
 
+def _iso_day(value: object) -> date | None:
+    raw = str(value or "").strip()[:10]
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        return None
+
+
+def effective_occurrence_window(fact: dict | None) -> tuple[date | None, date | None]:
+    """Use ``next_occurrence`` while preserving a short original duration."""
+    fact = fact if isinstance(fact, dict) else {}
+    original_start = _iso_day(fact.get("date_start") or fact.get("date"))
+    original_end = _iso_day(fact.get("date_end"))
+    next_occurrence = _iso_day(fact.get("next_occurrence"))
+    if next_occurrence:
+        duration = timedelta(0)
+        if original_start and original_end:
+            candidate_duration = original_end - original_start
+            if timedelta(0) <= candidate_duration <= timedelta(days=7):
+                duration = candidate_duration
+        return next_occurrence, next_occurrence + duration
+    return original_start, original_end or original_start
+
+
 def candidate_recurring_occurrence_date(candidate: dict, *, today: date | None = None) -> date | None:
     return recurring_occurrence_date(_blob(candidate), today=today)
 
@@ -193,6 +219,10 @@ def weekend_occurrence_date(candidate: dict, *, today: date | None = None) -> da
     """
     today = today or now_london().date()
     start, end = current_weekend_window(today=today)
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    effective_start, effective_end = effective_occurrence_window(event)
+    if effective_start and effective_end and effective_start <= end and effective_end >= start:
+        return max(effective_start, start)
     rec_date = candidate_recurring_occurrence_date(candidate, today=today)
     if rec_date and start <= rec_date <= end:
         return rec_date
@@ -201,7 +231,6 @@ def weekend_occurrence_date(candidate: dict, *, today: date | None = None) -> da
         event_end = event_end_date(candidate) or event_start
         if event_start <= end and event_end >= start:
             return max(event_start, start)
-    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     confidence = str(event.get("date_confidence") or "")
     contract_day = _contract_occurrence_date(candidate)
     if (not event_start or confidence in {"", "none", "low"}) and contract_day and start <= contract_day <= end:

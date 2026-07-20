@@ -1326,3 +1326,69 @@
 - Ожидаемый эффект и метрика проверки: завершённая агентская проверка не оставляет baseline/review/worktree; `PrefetchTest` не увеличивает число `ticket_notability_cache.json` во временной папке.
 - Файлы/места: `AGENTS.md:Temporary workspace lifecycle`, `tests/test_ticket_notability_enrich.py:PrefetchTest._cache_path`.
 - ПРОВЕРКА (после прогона): суммарно `/private/tmp` + рабочее дерево проекта уменьшились на 11,10 GiB; `/private/tmp` 10,60→0,80 GiB, проект 2,85→1,56 GiB, `.claude/worktrees` 1,29 GiB→0. Единственный новый `news-stage3` (около 798 MiB) создан другой текущей работой после очистки и сохранён. `PrefetchTest`: 3 теста OK, число cache-файлов до/после 0→0.
+
+### 0122 — Единая A-tier политика до timing/watch/cap/repeat — 2026-07-20
+- Статус: внедрено в `stage3-plan-lock`; offline replay на реальных state подтверждён, production-run ожидается после merge.
+- Проблема: аудит 20.07 показывал 28 распознанных A-tier артистов, 4 видимых и 24 потерянных по разным поздним правилам: timing, outside routing, watch, cap и repeat. Даже обязательные Bruno Mars/The Weeknd затем снимались writer из-за ложного конфликта длинной серии дат; Bruno дополнительно нарушал glossary внутренним сокращением `GM`.
+- Причина (корень): A-tier определялся после части решений и не имел одной identity/консервации; общее правило same-artist-per-block схлопывало обычные разные концерты; `_line_has_conflicting_event_date` умел только короткую серию из двух дат.
+- Решение: одна публичная карточка на распознанного A-tier артиста, приоритет Greater Manchester → nearby → ближайшая outside-GM дата. Выжившая карточка получает `must_show` до timing/watch/cap/repeat. Точные/служебные дубли, отменённые события и остальные строки того же A-tier артиста остаются вне выпуска с причиной. Финальная сверка считает `eligible/visible/missing/conserved` по HTML.
+- Почему так (отвергнутые альтернативы): каждая feed-строка не является отдельным продуктом — 97 строк 20.07 представляли 31 артиста; новый cap снова нарушил бы правило A-tier. Общий same-artist guard для всех tier удалён, потому что разные обычные концерты — разные события.
+- Ожидаемый эффект и метрика проверки: `a_tier_conservation.missing=[]`, `conserved=true`; обычные билеты разных venue/date не схлопываются.
+- Файлы/места: `ticket_notability.py:a_tier_ticket_policy`, `plan_digest.py:_collapse_a_tier_event_runs`, `dedupe.py:_apply_ticket_tour_dedup`, `writer.py:_ticket_watch_decision`, `writer.py:_line_has_conflicting_event_date`, `verify_digest_plan.py:run_verify_digest_plan`.
+- ПРОВЕРКА (offline replay реальных state): 18/19/20.07 — `eligible=29`, `visible=29`, `missing=0`, `conserved=true` во все три дня; Bruno Mars и The Weeknd больше не снимаются. Golden replay 12/12 прошёл: lead ok и blank-runs 0. Цена правила видимости зафиксирована честно: итоговый объём на golden-днях 60–101 bullet, потому что A-tier идёт сверх общего бюджета.
+- Удалено: общее `Same artist — one ticket card per block`, которое резало все tier; A-tier identity заменяет его только для распознанных артистов.
+
+### 0123 — Recurring Weekend использует следующую дату, а не прошлую — 2026-07-20
+- Статус: внедрено в `stage3-plan-lock`; проверено на реальном inventory 19.07.
+- Проблема: 310 Weekend-записей → 29 fact-ready → 0 morning-eligible. Burnage/Bowlee имели `date_start=12.07`, `next_occurrence=19.07`, но intake отклонял их как `event_expired`.
+- Причина (корень): TTL, morning contract, supply contract и writer по-разному читали `date_start/date_end`; только часть кода знала о `next_occurrence`.
+- Решение: `effective_occurrence_window` сдвигает старый recurring-интервал на `next_occurrence`; одна и та же эффективная дата применяется в intake, supply, draft-date conflict и writer.
+- Почему так (отвергнутые альтернативы): перезаписывать исходный `date_start` нельзя — он нужен для provenance; специальный hardcode Burnage/Bowlee не исправил бы остальные recurring-события.
+- Ожидаемый эффект и метрика проверки: recurring-карточка с текущим `next_occurrence` проходит intake и пишет текущую дату; one-off со старой датой остаётся expired.
+- Файлы/места: `weekend_inventory.py:effective_occurrence_window`, `inventory.py:passes_morning_contract`, `writer.py:_is_expired_event_candidate`.
+- ПРОВЕРКА (реальный inventory 19.07): Weekend bucket `310 records → 29 card-ready → 3 eligible/inserted` вместо 0; проходят The BIG Stockport Car Boot, Burnage RFC и Bowlee с effective date 19.07 при сохранённом `date_start=12.07`. На 20.07 те же события корректно скрыты расписанием понедельника, а не помечены expired.
+- Удалено: прямое принятие Weekend-решений по старому `date_start` в затронутых местах; provenance-поле не удалялось.
+
+### 0124 — Food восстанавливает именованный объект и входит в утро с валидным dedupe — 2026-07-20
+- Статус: внедрено в `stage3-plan-lock`; проверено на реальном inventory 20.07.
+- Проблема: 22 записи → 4 fact-ready → 2 eligible → 0 visible; только один источник. Rudy's терялся как `Invalid dedupe decision`, а старый Joe & The Juice нельзя было возвращать ради floor.
+- Причина (корень): существующие title/evidence уже содержали название ресторана/магазина, но fact-card оставлял `venue` пустым; inventory-кандидат повторно входил в pipeline с невалидным старым dedupe-состоянием.
+- Решение: детерминированно восстановить именованный Food-объект только из уже собранных title/evidence; при morning intake начинать обычный dedupe как `new / pending dedupe`. Food доверяет `next_occurrence` только при явном weekly/monthly тексте; одноразовое `opens on Friday` больше не классифицируется как recurrence.
+- Почему так (отвергнутые альтернативы): новые источники и модельные догадки не нужны; ослабление freshness вернуло бы Joe & The Juice и другие старые открытия.
+- Ожидаемый эффект и метрика проверки: минимум 3 morning candidates из минимум 2 sources; Rudy's проходит, Joe остаётся expired.
+- Файлы/места: `inventory.py:_repair_food_opening_card`, `inventory.py:inventory_record_to_candidate`, `inventory.py:passes_morning_contract`.
+- ПРОВЕРКА (реальный inventory 20.07): `22 records → 8 card-ready → 5 eligible/inserted`, два источника (`About Manchester Food & Drink`, `Manchester's Finest`); среди пяти Rudy's, OSMA, Fosforo Lounge, Sainsbury's и Gaucho. Rudy's = `dedupe_decision=new`; Joe не возвращён и остаётся `event_expired`, несмотря на ошибочно сохранённый старый `next_occurrence`. Отдельный контракт подтверждает: настоящий monthly Asian Food Night Market продолжает использовать следующую дату после свежего наблюдения.
+- Удалено: ничего — нормальная morning dedupe-стадия нужна; заменено только невалидное унаследованное стартовое решение inventory-кандидата.
+
+### 0125 — Финальная видимость считается только по отправляемому HTML — 2026-07-20
+- Статус: внедрено в `stage3-plan-lock`; проверено replay 19/20.07.
+- Проблема: writer сообщал Weekend=6 и Transport=3, тогда как sent HTML 19.07 содержал 5 и 1. Visible-contract замечал часть расхождений, но итоговый selection report объединял writer fingerprints с HTML и завышал видимость.
+- Причина (корень): `_write_final_selection_report` считал строку visible, если она была либо в HTML, либо когда-то rendered writer; финальная проверка не пересчитывала минимумы по последнему HTML после pre-send judge.
+- Решение: при наличии финального HTML видимость определяется только его source links; verify после judge пересчитывает section counts, required-slot loss, A-tier conservation и заново пишет final selection report.
+- Почему так (отвергнутые альтернативы): writer-report полезен как стадийная воронка, но не может быть доказательством того, что получил читатель.
+- Ожидаемый эффект и метрика проверки: отчёт и HTML имеют одинаковые visible counts; underflow/потеря required slot всегда получают divergence.
+- Файлы/места: `release.py:_write_final_selection_report`, `verify_digest_plan.py:run_verify_digest_plan`.
+- ПРОВЕРКА (real-state replay): 19.07 финальный HTML теперь измерен как Weekend=8 и Transport=3 после Stage 3 (sent было 5 и 1); 20.07 A-tier `29/29`, а реальные underflow Food/7-days/Today остаются явными divergences, не маскируются writer count.
+- Удалено: объединение `HTML-visible ∪ writer-rendered`, потому что оно создавало ложную видимость.
+
+### 0126 — Events sources собираются с bounded parallelism и per-source timing — 2026-07-20
+- Статус: внедрено в `stage3-plan-lock`; production timing ожидается после реального events-wave.
+- Проблема: реальные events-wave занимали 15:52 и 16:12; 59 источников обходились последовательно, параллельной была только последующая проверка URL.
+- Причина (корень): `cmd_collect_inventory` вызывал `_collect_single_source` внутри обычного `for source in sources`.
+- Решение: fetch/extract источников выполняются пулом максимум 8 workers с сохранением registry-order результатов. В run log добавлены `collect/fetch/extract/enrich/duration_seconds`; enrichment, merge и URL probe остаются существующими стадиями.
+- Почему так (отвергнутые альтернативы): новая очередь/модель/стадия не нужна; 59 одновременных запросов опасны для сайтов, поэтому concurrency ограничена 8.
+- Ожидаемый эффект и метрика проверки: 59 source rows сохранены в прежнем порядке, peak concurrency ≤8, реальная events-wave заметно короче 15:52 при той же полноте.
+- Файлы/места: `scripts/run_local_digest.py:_collect_inventory_sources`, `scripts/run_local_digest.py:cmd_collect_inventory`.
+- ПРОВЕРКА (offline contract): 4 искусственно медленных источника при max_workers=2 дали peak=2 и сохранили исходный порядок; целевые тесты зелёные. Production before/after ещё не заявляется.
+- Удалено: последовательный source-fetch loop; параллельный action-URL probe оставлен, потому что решает другую I/O-стадию.
+
+### 0127 — Daily state commit переиспользует ночной retry-loop — 2026-07-20
+- Статус: внедрено в `stage3-plan-lock`; production race proof ожидается.
+- Проблема: отправленный выпуск 18.07 потерял production-state после единственного `git push`, отклонённого GitHub как `commit_refs failure`.
+- Причина (корень): night workflow уже имел bounded pull/rebase/push retry, daily workflow выполнял только одну попытку.
+- Решение: daily state commit делает до 5 попыток `pull --rebase --autostash + push`, между попытками отменяет незавершённый rebase и ждёт 5/10/15/20/25 секунд.
+- Почему так (отвергнутые альтернативы): новый state backend не требуется для обычной гонки refs; бесконечный retry мог бы удерживать workflow и скрывать постоянную ошибку.
+- Ожидаемый эффект и метрика проверки: transient ref race сохраняет state на одной из 5 попыток; после пятой workflow честно падает.
+- Файлы/места: `.github/workflows/daily-digest.yml:Commit updated state files`.
+- ПРОВЕРКА (offline contract): workflow содержит тот же bounded 5-attempt pattern и явный fail after exhaustion; production race пока не воспроизводилась.
+- Удалено: одноразовый daily `pull + push`; ночной loop не дублируется новой архитектурой, а переиспользуется тем же shell-паттерном.

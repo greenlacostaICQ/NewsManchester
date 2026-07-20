@@ -161,6 +161,13 @@ class PlanContractTest(unittest.TestCase):
             self.assertTrue(report["ship_degraded"])
             kinds = {d["kind"] for d in report["divergences"]}
             self.assertIn("planned_line_missing_from_final_html", kinds)
+            self.assertIn("final_section_underflow", kinds)
+            final_selection = json.loads((state_dir / "final_selection_report.json").read_text(encoding="utf-8"))
+            visible_total = sum(
+                int(count) for status, count in final_selection["totals"].items()
+                if status in {"visible", "visible_after_repair"}
+            )
+            self.assertEqual(visible_total, 6, "final selection must count final HTML, not writer output")
             # технический брак: вчерашняя шапка — блокирует
             stale = "\n".join(lines).replace(
                 now_london().strftime("%Y-%m-%d"), "2020-01-01", 1
@@ -229,6 +236,65 @@ class PlanContractTest(unittest.TestCase):
         slot_fps = {s_["primary_fingerprint"] for s_ in plan["slots"] if s_["section"] == "Билеты / Ticket Radar"}
         for a_tier in a_tiers:  # правило 0094: любой scope — gm/nearby/outside
             self.assertIn(a_tier["fingerprint"], slot_fps, "A-tier обязан быть в слотах сверх капа")
+
+    def test_7b_a_tier_repeat_is_promoted_before_watch_and_repeat_policy(self) -> None:
+        ticket = _candidate(
+            700,
+            block="ticket_radar",
+            category="venues_tickets",
+            include=False,
+            validated=True,
+            digest_selection_verdict="reserve",
+            dedupe_decision="drop",
+            reason="Без новых фактов: уже был 2026-07-14.",
+            title="Global Star — event 2099-01-12 — public sale",
+            event={"date_start": "2099-01-12", "venue": "Co-op Live", "is_event": True},
+            ticket_notability={"artist": "Global Star", "tier": "A", "kind": "artist"},
+            ticket_type="regular_upcoming",
+            venue_scope="GM",
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, [ticket])
+            (state_dir / "published_facts.json").write_text(
+                json.dumps({"facts": [{"fingerprint": ticket["fingerprint"], "last_published_day_london": "2026-07-14"}]}),
+                encoding="utf-8",
+            )
+            run_plan_digest(root)
+            plan = load_plan(state_dir)
+        slot = next(s for s in plan["slots"] if s["primary_fingerprint"] == ticket["fingerprint"])
+        self.assertTrue(slot["must_show"])
+        self.assertTrue(plan["a_tier_conservation"]["missing_from_plan"] == [])
+
+    def test_7c_a_tier_identity_conserves_one_artist_card_local_first(self) -> None:
+        rows = [
+            _candidate(
+                710 + idx,
+                block="ticket_radar" if venue == "AO Arena" else "outside_gm_tickets",
+                category="venues_tickets",
+                title=f"Global Star — event {event_day}",
+                event={"date_start": event_day, "venue": venue, "is_event": True},
+                ticket_notability={"artist": "Global Star", "tier": "A", "kind": "artist"},
+                ticket_type="regular_upcoming",
+                venue_scope="GM" if venue == "AO Arena" else "outside",
+            )
+            for idx, (venue, event_day) in enumerate(
+                (("AO Arena", "2099-01-12"), ("AO Arena", "2099-01-13"), ("Usher Hall", "2099-01-14"))
+            )
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, rows)
+            run_plan_digest(root)
+            plan = load_plan(state_dir)
+            planned_candidates = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))["candidates"]
+        planned = [s for s in plan["slots"] if s["primary_fingerprint"] in {row["fingerprint"] for row in rows}]
+        self.assertEqual(len(planned), 1)
+        self.assertEqual(plan["a_tier_conservation"]["recognised"], 1)
+        self.assertEqual(plan["a_tier_conservation"]["identity"]["collapsed_rows"], 2)
+        survivor = next(row for row in planned_candidates if row.get("merged_event_dates"))
+        self.assertEqual(survivor["event"]["venue"], "AO Arena")
+        self.assertEqual(survivor["merged_event_dates"], ["2099-01-12", "2099-01-13"])
 
     def test_8_verify_is_fail_closed_on_missing_or_broken_execution(self) -> None:
         candidates = [_candidate(i) for i in range(7)]

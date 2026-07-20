@@ -285,6 +285,18 @@ jobs:
             echo "No state changes to commit."
           else
             git commit -m "chore: digest state $(date -u '+%Y-%m-%d')"
-            git pull --rebase --autostash origin main
-            git push
+            # Delivery and state persistence are one operational outcome. A
+            # concurrent night wave can advance main after Telegram succeeds;
+            # retry the same bounded rebase/push loop already proven at night.
+            for attempt in 1 2 3 4 5; do
+              if git pull --rebase --autostash origin main && git push; then
+                echo "Pushed daily state on attempt ${attempt}."
+                exit 0
+              fi
+              echo "Daily state push race on attempt ${attempt} — re-syncing and retrying."
+              git rebase --abort 2>/dev/null || true
+              sleep $((attempt * 5))
+            done
+            echo "Could not push daily state after 5 attempts." >&2
+            exit 1
           fi

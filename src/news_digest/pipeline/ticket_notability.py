@@ -83,6 +83,60 @@ class TicketNotability:
     signals: dict[str, object] | None = None
 
 
+_A_TIER_PUBLIC_BLOCKS = frozenset({
+    "ticket_radar",
+    "outside_gm_tickets",
+    "future_announcements",
+    "next_7_days",
+})
+_A_TIER_NON_EVENT_DROP_MARKERS = (
+    "duplicate",
+    "merged into",
+    "fragment merged",
+    "premium/hospitality",
+    "premium/package",
+    "non-music ticket",
+)
+
+
+def is_a_tier_ticket(candidate: dict | None) -> bool:
+    """Recognise A-tier before timing/watch/cap/repeat decisions."""
+    if not isinstance(candidate, dict):
+        return False
+    block = str(candidate.get("primary_block") or "")
+    if block not in _A_TIER_PUBLIC_BLOCKS and str(candidate.get("category") or "") != "venues_tickets":
+        return False
+    notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+    return str(notability.get("tier") or "").strip().upper() == "A"
+
+
+def a_tier_ticket_policy(candidate: dict | None) -> tuple[bool, str]:
+    """Say whether a recognised A-tier row must enter public planning.
+
+    Exact/variant duplicates and non-event upsells stay out. Cross-day repeat,
+    watch score, section timing and capacity do not downgrade an active A-tier
+    event; hard validity checks still run in the normal contract path.
+    """
+    if not is_a_tier_ticket(candidate):
+        return False, "not_a_tier"
+    assert isinstance(candidate, dict)
+    if candidate.get("a_tier_collapsed_into"):
+        return False, "one_public_card_per_a_tier_artist"
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    status = str(event.get("event_status") or candidate.get("event_status") or "").strip().lower()
+    if any(marker in status for marker in ("cancelled", "canceled", "postponed", "rescheduled")):
+        return False, f"event_status:{status}"
+    if not str(event.get("date_start") or event.get("date") or "").strip():
+        return False, "missing_event_date"
+    reason_blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("reason", "dedupe_reason", "duplicate_reason")
+    ).lower()
+    if any(marker in reason_blob for marker in _A_TIER_NON_EVENT_DROP_MARKERS):
+        return False, "exact_or_variant_duplicate"
+    return True, "must_show_before_timing_watch_cap_repeat"
+
+
 def _clean_artist_name(title: str) -> str:
     cleaned = re.sub(r"\s+", " ", str(title or "")).strip()
     # Pipe-delimited source titles ("Jason Isbell and the 400 Unit | The

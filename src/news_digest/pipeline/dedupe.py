@@ -36,6 +36,7 @@ from news_digest.pipeline.story_intelligence import (
     history_match_records,
     new_facts_diff,
 )
+from news_digest.pipeline.ticket_notability import a_tier_ticket_policy
 from news_digest.pipeline.weekend_inventory import weekend_occurrence_date
 from news_digest.pipeline.semantic_dedupe import (
     EMBEDDING_VERSION,
@@ -183,6 +184,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         category = str(candidate.get("category") or "").strip()
         primary_block = str(candidate.get("primary_block") or "").strip()
         operational_repeat_ok = primary_block in {"weather", "transport"}
+        a_tier_keep, _ = a_tier_ticket_policy(candidate)
         same_day_repeat_ok = (
             previous is not None
             and str(previous.get("last_published_day_london") or "").strip() == today_london()
@@ -192,7 +194,11 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             calendar_previous_ref is not None
             and _calendar_item_should_carry_over(candidate, calendar_previous_ref)
         )
-        if previous is not None and (operational_repeat_ok or same_day_repeat_ok):
+        if a_tier_keep:
+            candidate["dedupe_decision"] = "new"
+            candidate["include"] = True
+            candidate["reason"] = "A-tier policy: keep before repeat; planner conserves one public card per artist."
+        elif previous is not None and (operational_repeat_ok or same_day_repeat_ok):
             candidate["dedupe_decision"] = "new"
             candidate["include"] = True
             candidate["reason"] = candidate.get("reason") or (
@@ -251,7 +257,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             if prev_ref is not None and not (same_day_repeat_ok or operational_repeat_ok)
             else {"repeat": False}
         )
-        if lifecycle_review.get("repeat"):
+        if lifecycle_review.get("repeat") and not a_tier_keep:
             candidate["dedupe_decision"] = "drop"
             candidate["include"] = False
             candidate["change_type"] = "same_story_rehash"
@@ -306,7 +312,11 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             # function). Same-day reruns should always re-include items
             # published earlier today so a manually-triggered second
             # digest at 14:00 doesn't lose the morning news.
-            if same_day_repeat_ok or operational_repeat_ok:
+            if a_tier_keep:
+                candidate["dedupe_decision"] = "new"
+                candidate["include"] = True
+                candidate["reason"] = "A-tier policy: keep before repeat; planner conserves one public card per artist."
+            elif same_day_repeat_ok or operational_repeat_ok:
                 # Keep include=True and overwrite the misleading "no facts"
                 # reason with the rerun rationale.
                 candidate["dedupe_decision"] = "new"
@@ -1713,7 +1723,8 @@ def _consolidate_tickets(candidates: list[dict]) -> list[dict]:
       • drops premium / hospitality upsell variants (#3);
       • merges a festival's day / ticket-type / per-artist fragments into ONE
         card and stamps its lineup (#1);
-      • collapses one artist's tour to a single card per block (#2).
+      • leaves distinct dates/venues as distinct events; same-venue multi-night
+        runs are already merged by ``_merge_multinight_ticket_runs``.
     Nothing is lost from the collected pool — only the visible cards collapse.
     """
     from news_digest.pipeline.ticket_notability import ticket_artist_name  # noqa: PLC0415
@@ -1803,24 +1814,6 @@ def _consolidate_tickets(candidates: list[dict]) -> list[dict]:
         survivor["festival_lineup"] = lineup
         for c in grp[1:]:
             _drop(c, "Festival day/ticket-type/artist fragment merged into one festival card.", survivor)
-
-    # (2) Tour → one card per artist per block (keep the nearest date).
-    by_artist: dict[tuple, list[dict]] = {}
-    for c in _live():
-        if c.get("festival_lineup"):
-            continue  # festival survivor, not a single-artist tour
-        an = ticket_artist_name(c) or _ticket_event_identity(c)[0]
-        toks = frozenset(_ticket_name_tokens(normalize_title(an)))
-        if not toks:
-            continue
-        by_artist.setdefault((toks, str(c.get("primary_block"))), []).append(c)
-    for grp in by_artist.values():
-        if len(grp) < 2:
-            continue
-        grp.sort(key=lambda c: _ticket_event_identity(c)[1] or "9999")
-        survivor = grp[0]
-        for c in grp[1:]:
-            _drop(c, "Same artist — one ticket card per block (tour collapsed).", survivor)
 
     return drops
 

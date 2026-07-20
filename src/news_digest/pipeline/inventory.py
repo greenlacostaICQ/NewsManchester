@@ -495,6 +495,54 @@ _FOOD_MEANING_RE = re.compile(
     r"greengrocer|opening|opened|opens|launch|reopen|takeover|pop[-\s]?up)\b",
     re.IGNORECASE,
 )
+_FOOD_GENERIC_NAME_RE = re.compile(
+    r"^(?:new|the new|manchester(?:'s|’s)?|food halls?|restaurant|cafe|coffee shop|bar|pub)\b",
+    re.IGNORECASE,
+)
+_FOOD_BRAND_OPENING_RE = re.compile(
+    r"^(?P<name>[A-Z0-9][A-Za-z0-9&'’ .-]{1,64}?)\s+"
+    r"(?:is\s+set\s+to\s+return|set\s+to\s+return|to\s+open|opens?|opened|"
+    r"has\s+(?:quietly\s+)?(?:opened|launched)|unveils?|arrives?)\b",
+    re.IGNORECASE,
+)
+_FOOD_QUOTED_NAME_RE = re.compile(r"[“\"](?P<name>[^”\"]{2,64})[”\"]")
+_FOOD_EXPLICIT_PLACE_RE = re.compile(
+    r"\b(?:reopen(?:s|ed|ing)?\s+at|located\s+in|situated\s+at)\s+"
+    r"(?P<name>[A-Z0-9][A-Za-z0-9&'’ .-]{2,64}?)(?=\s+(?:in|alongside|with)\b|[,.;]|$)",
+    re.IGNORECASE,
+)
+
+
+def _repair_food_opening_card(candidate: dict) -> None:
+    """Recover a named Food venue already present in collected evidence."""
+    if str(candidate.get("primary_block") or "") != "openings":
+        return
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    if _card_field_value(candidate, "specific_venue"):
+        return
+    title = str(candidate.get("title") or "").strip()
+    evidence = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text")
+    )
+    inferred = ""
+    quoted = _FOOD_QUOTED_NAME_RE.search(title)
+    if quoted:
+        inferred = quoted.group("name").strip()
+    if not inferred:
+        leading = _FOOD_BRAND_OPENING_RE.search(title)
+        if leading:
+            name = leading.group("name").strip(" -–—.:")
+            if not _FOOD_GENERIC_NAME_RE.search(name):
+                inferred = name
+    if not inferred:
+        explicit = _FOOD_EXPLICIT_PLACE_RE.search(evidence)
+        if explicit:
+            inferred = explicit.group("name").strip(" -–—.:")
+    if inferred:
+        event["venue"] = inferred
+        candidate["event"] = event
+        candidate["inventory_fact_repair"] = "food_named_venue_from_existing_evidence"
 
 
 def _card_field_value(candidate: dict, field: str) -> str:
@@ -714,6 +762,7 @@ def build_inventory_record(
     """Canonical inventory card. Stores English raw/evidence for audit, but the
     working unit is the fact card + readiness, never the raw English text."""
     now_iso = now_iso or now_london().isoformat()
+    _repair_food_opening_card(candidate)
     _attach_recurring_occurrence(candidate)
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     quality_status, render_ready, missing_facts = evaluate_card(candidate)
@@ -939,7 +988,13 @@ def passes_ttl_contract(record: dict, *, now: datetime | None = None) -> tuple[b
 
 def _draft_line_future_date_conflicts_with_fact(record: dict, *, today: str) -> bool:
     fact = record.get("fact_card") if isinstance(record.get("fact_card"), dict) else {}
-    fact_raw = str(fact.get("date_start") or "").strip()[:10]
+    if str(record.get("primary_block") or "") == "weekend_activities":
+        from news_digest.pipeline.weekend_inventory import effective_occurrence_window  # noqa: PLC0415
+
+        effective_start, _ = effective_occurrence_window(fact)
+        fact_raw = effective_start.isoformat() if effective_start else ""
+    else:
+        fact_raw = str(fact.get("date_start") or "").strip()[:10]
     line = str(record.get("draft_line") or "")
     if not fact_raw or not line:
         return False
@@ -1004,8 +1059,15 @@ def passes_morning_contract(record: dict, *, today: str | None = None) -> tuple[
         "professional_events",
         "russian_events",
     }:
-        start = str(fact.get("next_occurrence") or fact.get("date_start") or "")[:10]
-        end = str(fact.get("date_end") or start)[:10]
+        if block == "weekend_activities":
+            from news_digest.pipeline.weekend_inventory import effective_occurrence_window  # noqa: PLC0415
+
+            start_day, end_day = effective_occurrence_window(fact)
+            start = start_day.isoformat() if start_day else ""
+            end = end_day.isoformat() if end_day else start
+        else:
+            start = str(fact.get("next_occurrence") or fact.get("date_start") or "")[:10]
+            end = str(fact.get("date_end") or start)[:10]
         if start and end and end < today:
             return False, "event_expired"
     if block == "weekend_activities":
@@ -1013,25 +1075,50 @@ def passes_morning_contract(record: dict, *, today: str | None = None) -> tuple[
             today_day = date.fromisoformat(today)
             if today_day.weekday() < 3:
                 return False, "weekend_hidden_by_schedule"
-            from news_digest.pipeline.weekend_inventory import current_weekend_window  # noqa: PLC0415
+            from news_digest.pipeline.weekend_inventory import (  # noqa: PLC0415
+                current_weekend_window,
+                effective_occurrence_window,
+            )
 
             window_start, window_end = current_weekend_window(today=today_day)
-            start_day = date.fromisoformat(str(fact.get("next_occurrence") or fact.get("date_start") or "")[:10])
-            end_day = date.fromisoformat(str(fact.get("date_end") or start_day.isoformat())[:10])
+            start_day, end_day = effective_occurrence_window(fact)
+            if not start_day or not end_day:
+                return False, "missing_facts"
             if end_day < window_start or start_day > window_end:
                 return False, "outside_current_weekend"
         except ValueError:
             return False, "missing_facts"
     if block == "openings":
-        start = str(fact.get("next_occurrence") or fact.get("date_start") or "")[:10]
-        end = str(fact.get("date_end") or start)[:10]
-        event_name = str(fact.get("event_name") or record.get("title") or "").lower()
-        dated_food_event = bool(
-            start
-            and re.search(r"\b(?:market|fair|festival|car boot|night market|food event|feast|supper|pop-?up|takeover|taking over)\b", event_name)
+        from news_digest.pipeline.weekend_inventory import recurring_occurrence_date  # noqa: PLC0415
+
+        recurrence_text = " ".join(
+            str(record.get(field) or "")
+            for field in ("title", "summary", "lead", "raw_evidence")
         )
-        if dated_food_event and end and end < today:
-            return False, "event_expired"
+        try:
+            explicit_occurrence = recurring_occurrence_date(
+                recurrence_text,
+                today=date.fromisoformat(today),
+            )
+        except ValueError:
+            explicit_occurrence = None
+        # A stored next_occurrence is trusted only when the source text proves
+        # an actual weekly/monthly recurrence. This keeps genuine markets while
+        # refusing the old Joe & The Juice card where "opens on Friday" had
+        # been misclassified as a weekly event.
+        start = str(
+            (fact.get("next_occurrence") if explicit_occurrence else "")
+            or (explicit_occurrence.isoformat() if explicit_occurrence else "")
+            or fact.get("date_start")
+            or ""
+        )[:10]
+        end = str(fact.get("date_end") or start)[:10]
+        if start and end:
+            try:
+                if date.fromisoformat(end) < date.fromisoformat(today) - timedelta(days=3):
+                    return False, "event_expired"
+            except ValueError:
+                pass
     ttl_ok, ttl_reason = passes_ttl_contract(record)
     if not ttl_ok:
         return False, ttl_reason
@@ -1108,11 +1195,14 @@ def inventory_record_to_candidate(record: dict) -> dict:
         "action_url_liveness": str(record.get("action_url_liveness") or "unknown"),
         "action_url_checked_at": str(record.get("action_url_checked_at") or ""),
         "include": True,
+        "dedupe_decision": "new",
+        "reason": "pending dedupe",
     }
     tier = str(fact.get("tier") or "")
     notability = fact.get("ticket_notability") if isinstance(fact.get("ticket_notability"), dict) else {}
     if tier or notability:
         candidate["ticket_notability"] = {**notability, "tier": tier or str(notability.get("tier") or "")}
+    _repair_food_opening_card(candidate)
     return candidate
 
 
@@ -1539,11 +1629,15 @@ def _passes_block_supply_contract(record: dict, *, today: str) -> tuple[bool, st
         return False, reason
     fact = record.get("fact_card") if isinstance(record.get("fact_card"), dict) else {}
     try:
-        from news_digest.pipeline.weekend_inventory import current_weekend_window  # noqa: PLC0415
+        from news_digest.pipeline.weekend_inventory import (  # noqa: PLC0415
+            current_weekend_window,
+            effective_occurrence_window,
+        )
 
         window_start, window_end = current_weekend_window(today=date.fromisoformat(today))
-        start = date.fromisoformat(str(fact.get("next_occurrence") or fact.get("date_start") or "")[:10])
-        end = date.fromisoformat(str(fact.get("date_end") or start.isoformat())[:10])
+        start, end = effective_occurrence_window(fact)
+        if not start or not end:
+            return False, "missing_facts"
     except ValueError:
         return False, "missing_facts"
     if end < window_start or start > window_end:

@@ -58,6 +58,8 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
     plan = load_plan(state_dir)
     execution = load_execution(state_dir)
     payload = read_json(state_dir / "candidates.json", {"candidates": []})
+    writer_report = read_json(state_dir / "writer_report.json", {})
+    dedupe_memory = read_json(state_dir / "dedupe_memory.json", {})
     by_fp = {
         str(c.get("fingerprint") or ""): c
         for c in payload.get("candidates", [])
@@ -132,6 +134,11 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
     lead_visible = bool(sections.get("Главная история дня"))
 
     slot_rows = list((execution.get("slots") or {}).values())
+    slot_by_id = {
+        str(slot.get("slot_id") or ""): slot
+        for slot in plan_slots(plan)
+        if isinstance(slot, dict)
+    }
     planned_ident_by_slot: dict[str, str] = {}
     accounted_idents: set[str] = set()
     for slot in plan_slots(plan):
@@ -171,6 +178,16 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
                 )
         elif status == "removed":
             removed += 1
+            slot_spec = slot_by_id.get(slot_id) or {}
+            if slot_spec.get("required") or slot_spec.get("must_show"):
+                divergences.append(
+                    {
+                        "slot_id": slot_id,
+                        "kind": "required_slot_removed",
+                        "section": row.get("section"),
+                        "detail": row.get("replacement_reason") or "required slot has no valid primary/backup",
+                    }
+                )
             if final_ident and final_ident in visible_idents:
                 divergences.append(
                     {
@@ -198,6 +215,63 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
     if not lead_visible:
         divergences.append({"kind": "lead_not_visible"})
 
+    actual_section_counts = {section: len(lines) for section, lines in sections.items()}
+    for section, summary in (plan.get("sections") or {}).items():
+        if not isinstance(summary, dict):
+            continue
+        minimum = int(summary.get("min") or 0)
+        if not minimum or (section == "Выходные в GM" and not plan.get("show_weekend")):
+            continue
+        actual = int(actual_section_counts.get(section, 0))
+        if actual < minimum:
+            divergences.append(
+                {
+                    "kind": "final_section_underflow",
+                    "section": section,
+                    "actual": actual,
+                    "minimum": minimum,
+                    "detail": f"final HTML has {actual}/{minimum}",
+                }
+            )
+
+    a_tier_rows = [
+        candidate for candidate in by_fp.values()
+        if str(candidate.get("a_tier_policy_status") or "") == "must_show"
+    ]
+    a_tier_visible = []
+    a_tier_missing = []
+    for candidate in a_tier_rows:
+        fp = str(candidate.get("fingerprint") or "")
+        ident = _candidate_url_identity(candidate)
+        if ident and ident in visible_idents:
+            a_tier_visible.append(fp)
+        else:
+            a_tier_missing.append(fp)
+            divergences.append(
+                {
+                    "kind": "a_tier_missing_from_final_html",
+                    "fingerprint": fp,
+                    "section": candidate.get("plan_section") or candidate.get("primary_block"),
+                    "detail": str(candidate.get("title") or "")[:140],
+                }
+            )
+
+    final_selection_report: dict[str, object] = {}
+    try:
+        from news_digest.pipeline.release import _write_final_selection_report  # noqa: PLC0415
+
+        final_selection_report = _write_final_selection_report(
+            state_dir=state_dir,
+            current_day_london=today_london(),
+            candidates_report=payload,
+            writer_report=writer_report,
+            rendered_fingerprints=set(writer_report.get("rendered_candidate_fingerprints") or []),
+            dedupe_memory=dedupe_memory,
+            final_html=html_text,
+        )
+    except Exception as exc:  # noqa: BLE001
+        warnings.append(f"verify: final_selection_report refresh failed — {type(exc).__name__}: {exc}")
+
     for d in divergences:
         warnings.append(f"verify: {d.get('kind')} — {d.get('slot_id') or d.get('detail') or d.get('url_identity') or ''}")
 
@@ -224,6 +298,14 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
                 "lines_outside_plan": len(foreign_lines),
                 "empty_bullets": len(empty_bullets),
             },
+            "actual_section_counts": actual_section_counts,
+            "a_tier_conservation": {
+                "eligible": len(a_tier_rows),
+                "visible": len(a_tier_visible),
+                "missing": a_tier_missing,
+                "conserved": not a_tier_missing,
+            },
+            "final_selection_report": final_selection_report,
             "lead_visible": lead_visible,
             "divergences": divergences[:120],
             "warnings": warnings[:120],

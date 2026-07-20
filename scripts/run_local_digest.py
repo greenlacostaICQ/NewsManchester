@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 import json
 import logging
@@ -47,6 +48,7 @@ from news_digest.state.store import StateStore
 
 LONDON_TZ = ZoneInfo("Europe/London")
 REQUIRED_RELEASE_GATE_VERSION = 3
+NIGHT_SOURCE_MAX_WORKERS = 8
 
 
 def _runtime_state_dir() -> Path:
@@ -1230,6 +1232,24 @@ def _inventory_wave_status(run_log: list[dict], expected_sources: int) -> str:
     return "success"
 
 
+def _collect_inventory_sources(sources: list, collect_fn, *, max_workers: int = NIGHT_SOURCE_MAX_WORKERS) -> list[tuple]:
+    """Collect night sources concurrently, bounded and in registry order."""
+    if not sources:
+        return []
+
+    def _one(source):
+        started = time.monotonic()
+        try:
+            health, candidates = collect_fn(source)
+            return source, health, candidates, None, round(time.monotonic() - started, 3)
+        except Exception as exc:  # noqa: BLE001
+            return source, {}, [], exc, round(time.monotonic() - started, 3)
+
+    workers = min(max(1, int(max_workers)), len(sources))
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        return list(executor.map(_one, sources))
+
+
 def cmd_collect_inventory(wave: str) -> int:
     """Backlog 8.4: one night wave collects ONLY into inventory (upsert),
     never candidates.json. The 08:00 build is untouched, so a night job can
@@ -1281,10 +1301,9 @@ def cmd_collect_inventory(wave: str) -> int:
         category: sum(1 for source in sources if source.report_category == category)
         for category in categories
     }
-    for source in sources:
-        try:
-            health, source_candidates = _collect_single_source(source)
-        except Exception as exc:  # noqa: BLE001
+    collected_results = _collect_inventory_sources(sources, _collect_single_source)
+    for source, health, source_candidates, collect_error, collect_seconds in collected_results:
+        if collect_error is not None:
             run_log.append({
                 "run_id": run_id,
                 "wave": wave,
@@ -1292,14 +1311,18 @@ def cmd_collect_inventory(wave: str) -> int:
                 "category": source.report_category,
                 "checked": False,
                 "fetched": False,
-                "error": str(exc),
+                "error": str(collect_error),
                 "errors": 1,
                 "found": 0,
                 "expected_sources": expected_by_category.get(source.report_category, 0),
+                "collect_seconds": collect_seconds,
+                "enrich_seconds": 0.0,
+                "duration_seconds": collect_seconds,
             })
             continue
         # 0066a: per-card night enrichment only. Corpus-level dedupe/clusters
         # stay in the morning path because a single wave is not the whole corpus.
+        enrich_started = time.monotonic()
         enrich_candidates_entities(source_candidates)
         enrich_candidates_events(source_candidates)
         prewritten = 0
@@ -1327,6 +1350,7 @@ def cmd_collect_inventory(wave: str) -> int:
                 }
             if prewrite_stable_inventory_candidate(candidate):
                 prewritten += 1
+        enrich_seconds = round(time.monotonic() - enrich_started, 3)
         run_row = {
             "run_id": run_id,
             "wave": wave,
@@ -1340,6 +1364,11 @@ def cmd_collect_inventory(wave: str) -> int:
             "error": str((health.get("errors") or [""])[0]),
             "expected_sources": expected_by_category.get(source.report_category, 0),
             "deterministic_prewritten": prewritten,
+            "collect_seconds": collect_seconds,
+            "fetch_seconds": float(health.get("fetch_duration_seconds") or 0.0),
+            "extract_seconds": float(health.get("extract_duration_seconds") or 0.0),
+            "enrich_seconds": enrich_seconds,
+            "duration_seconds": round(collect_seconds + enrich_seconds, 3),
         }
         run_log.append(run_row)
         collected_sources.append((run_row, source_candidates))
@@ -1424,6 +1453,11 @@ def cmd_collect_inventory(wave: str) -> int:
         "action_url_probe": liveness_probe,
         "retention_cleanup": retention_cleanup,
         "duration_seconds": round(time.monotonic() - started, 2),
+        "source_parallelism": {
+            "max_workers": min(NIGHT_SOURCE_MAX_WORKERS, len(sources)) if sources else 0,
+            "ordered_results": True,
+            "per_source_timing": True,
+        },
     }
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0 if wave_status != "failed" else 1

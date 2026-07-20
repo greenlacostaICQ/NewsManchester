@@ -2098,9 +2098,12 @@ def _write_final_selection_report(
     collect_conservation = verify_collect_conservation(source_run_log_rows, len(candidates))
     html_visible = _visible_fingerprints_from_html(final_html, candidates)
     rendered_set = {str(fp) for fp in rendered_fingerprints if fp}
-    visible_set = set(rendered_set) | html_visible
+    # Final HTML is the product truth. Writer fingerprints are useful only
+    # when no rendered artifact exists yet; unioning both made removed lines
+    # look visible (19 July: report said Weekend=6/Transport=3, HTML had 5/1).
+    visible_set = set(html_visible) if final_html.strip() else set(rendered_set)
     # 8.7 no-loss: every captured item has exactly one disposition, computed
-    # against the truly-visible set (rendered + HTML-recovered).
+    # against the final HTML-visible set.
     disposition_conservation = verify_dispositions(candidates, visible_set)
     writer_drops = {
         str(item.get("fingerprint") or ""): item
@@ -2191,7 +2194,7 @@ def _write_final_selection_report(
         "run_date_london": current_day_london,
         "created_at_london": now_london().isoformat(),
         "policy": (
-            "Final per-block table after editor, visible recovery and final HTML. "
+            "Final per-block table uses final HTML as visibility truth after editor and recovery. "
             "Shows who ranked high, who became visible, who was replaced/recovered, "
             "and why a candidate was lost or rejected."
         ),

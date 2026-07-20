@@ -18,8 +18,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 import logging
 from pathlib import Path
+import re
 
 from news_digest.pipeline.common import (
     PRIMARY_BLOCKS,
@@ -34,6 +36,7 @@ from news_digest.pipeline.common import (
     write_json_atomic,
 )
 from news_digest.pipeline.plan_execution import plan_path
+from news_digest.pipeline.ticket_notability import a_tier_ticket_policy, is_a_tier_ticket
 
 logger = logging.getLogger(__name__)
 
@@ -93,9 +96,114 @@ def _published_at(candidate: dict) -> str:
 
 
 def _story_key(candidate: dict) -> str:
+    if is_a_tier_ticket(candidate):
+        from news_digest.pipeline.ticket_notability import ticket_artist_name  # noqa: PLC0415
+
+        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        artist = re.sub(r"[^a-z0-9]+", " ", ticket_artist_name(candidate).lower()).strip()
+        venue = re.sub(r"[^a-z0-9]+", " ", str(event.get("venue") or "").lower()).strip()
+        event_day = str(event.get("date_start") or event.get("date") or "")[:10]
+        if artist and venue and event_day:
+            return f"ticket:{artist}:{venue}:{event_day}"
     from news_digest.pipeline.editor import _candidate_story_identity_key  # noqa: PLC0415
 
     return _candidate_story_identity_key(candidate)
+
+
+def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
+    """Conserve one public A-tier card per recognised artist.
+
+    Ticket feeds repeat the same tour across sellers, dates and cities. The
+    public unit is the recognised artist, not every feed row. Prefer a Greater
+    Manchester event, then a nearby one, then the nearest outside-GM date.
+    This A-tier-only identity rule does not collapse ordinary ticket events.
+    """
+    from news_digest.pipeline.ticket_notability import ticket_artist_name  # noqa: PLC0415
+
+    recognised_artists: set[str] = set()
+    grouped: dict[str, list[tuple[date, dict]]] = {}
+    for candidate in candidates:
+        if not isinstance(candidate, dict) or not is_a_tier_ticket(candidate):
+            continue
+        # These fields are owned by this stage. Clear them so a manual rerun of
+        # plan-digest is deterministic instead of treating yesterday's local
+        # plan decision as upstream evidence.
+        candidate.pop("a_tier_collapsed_into", None)
+        if str(candidate.get("a_tier_policy_status") or "").startswith("collapsed_"):
+            candidate.pop("a_tier_policy_status", None)
+            candidate.pop("a_tier_policy_reason", None)
+    for candidate in candidates:
+        if not isinstance(candidate, dict) or not is_a_tier_ticket(candidate):
+            continue
+        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        artist = re.sub(r"[^a-z0-9]+", " ", ticket_artist_name(candidate).lower()).strip()
+        if artist:
+            recognised_artists.add(artist)
+        eligible, _ = a_tier_ticket_policy(candidate)
+        if not eligible:
+            continue
+        try:
+            event_day = date.fromisoformat(str(event.get("date_start") or event.get("date") or "")[:10])
+        except ValueError:
+            continue
+        if artist:
+            grouped.setdefault(artist, []).append((event_day, candidate))
+
+    collapsed = 0
+    conserved_artists = 0
+    for rows in grouped.values():
+        rows.sort(key=lambda item: (item[0], str(item[1].get("fingerprint") or "")))
+        conserved_artists += 1
+
+        def _geography_priority(candidate: dict) -> int:
+            scope = str(candidate.get("venue_scope") or "").strip().lower()
+            block = str(candidate.get("primary_block") or "")
+            if scope == "gm" or (not scope and block == "ticket_radar"):
+                return 0
+            if scope == "nearby":
+                return 1
+            if block in {"ticket_radar", "future_announcements", "next_7_days"} and scope != "outside":
+                return 1
+            return 2
+
+        def _survivor_key(item: tuple[date, dict]) -> tuple:
+            candidate = item[1]
+            return (
+                _geography_priority(candidate),
+                item[0],
+                0 if candidate.get("include") else 1,
+                -_source_authority(candidate),
+                str(candidate.get("fingerprint") or ""),
+            )
+
+        survivor = min(rows, key=_survivor_key)[1]
+        survivor_event = survivor.get("event") if isinstance(survivor.get("event"), dict) else {}
+        survivor_venue = re.sub(r"[^a-z0-9]+", " ", str(survivor_event.get("venue") or "").lower()).strip()
+
+        def _normalised_venue(candidate: dict) -> str:
+            event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+            return re.sub(r"[^a-z0-9]+", " ", str(event.get("venue") or "").lower()).strip()
+
+        same_venue_dates = sorted({
+            item[0].isoformat()
+            for item in rows
+            if _normalised_venue(item[1]) == survivor_venue
+        })
+        if len(same_venue_dates) > 1:
+            survivor["merged_event_dates"] = same_venue_dates
+        survivor_fp = str(survivor.get("fingerprint") or "")
+        for _, candidate in rows:
+            if candidate is survivor:
+                continue
+            candidate["a_tier_collapsed_into"] = survivor_fp
+            candidate["a_tier_policy_status"] = "collapsed_same_a_tier_artist"
+            candidate["a_tier_policy_reason"] = "one_public_card_per_a_tier_artist"
+            collapsed += 1
+    return {
+        "recognised_artists": len(recognised_artists),
+        "eligible_artists": conserved_artists,
+        "collapsed_rows": collapsed,
+    }
 
 
 def _source_authority(candidate: dict) -> int:
@@ -136,6 +244,13 @@ def _sorted_pool(pool: list[dict], section: str) -> list[dict]:
 
 def _must_show(candidate: dict, repeat_allowed: bool) -> bool:
     block = str(candidate.get("primary_block") or "")
+    if is_a_tier_ticket(candidate):
+        return True
+    if block == "weekend_activities":
+        from news_digest.pipeline.weekend_inventory import is_weekend_inventory_candidate  # noqa: PLC0415
+
+        if is_weekend_inventory_candidate(candidate):
+            return True
     if candidate.get("is_lead") or block == "transport":
         return True
     if block == "russian_events":
@@ -218,7 +333,7 @@ def _admission_verdict(candidate: dict, previous_by_fp: dict[str, dict]) -> tupl
         return "out", "expired_event"
     # Повторы решаются ЗДЕСЬ, один раз — release больше не режет готовый HTML.
     previous = previous_by_fp.get(str(candidate.get("fingerprint") or ""))
-    if previous is not None:
+    if previous is not None and not is_a_tier_ticket(candidate):
         from news_digest.pipeline.repeat_policy import visible_repeat_verdict  # noqa: PLC0415
 
         verdict = visible_repeat_verdict(candidate, previous)
@@ -250,12 +365,18 @@ def _apply_routing(candidate: dict, warnings: list[str]) -> str:
         candidate["primary_block"] = "future_announcements"
     elif timing_decision == "move_next_7":
         candidate["primary_block"] = "next_7_days"
+    elif timing_decision == "hold" and is_a_tier_ticket(candidate):
+        warnings.append(
+            f"A-tier сохранён вопреки timing-hold: {str(candidate.get('title') or '')[:100]} ({timing_reason})."
+        )
     elif timing_decision == "hold":
         return f"event_timing:{timing_reason}"
     return ""
 
 
 def _ticket_public_ok(candidate: dict) -> tuple[bool, str]:
+    if is_a_tier_ticket(candidate):
+        return True, ""
     from news_digest.pipeline.writer import _ticket_watch_decision  # noqa: PLC0415
 
     decision = _ticket_watch_decision(candidate)
@@ -405,7 +526,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
         from news_digest.pipeline.ticket_notability import enrich_ticket_notability  # noqa: PLC0415
 
         for candidate in candidates:
-            if not isinstance(candidate, dict) or not candidate.get("include"):
+            if not isinstance(candidate, dict):
                 continue
             if isinstance(candidate.get("ticket_notability"), dict) and candidate["ticket_notability"].get("tier"):
                 continue
@@ -431,8 +552,11 @@ def run_plan_digest(project_root: Path) -> StageResult:
                 "signals": notability.signals or {},
             }
 
+    a_tier_identity = _collapse_a_tier_event_runs(candidates)
+
     # --- Допуск и роутинг --------------------------------------------------
     out_rows: list[dict] = []
+    eligible_a_tier_fps: set[str] = set()
     pools: dict[str, list[dict]] = {heading: [] for heading in PRIMARY_BLOCKS.values()}
     backup_pools: dict[str, list[dict]] = {heading: [] for heading in PRIMARY_BLOCKS.values()}
 
@@ -453,6 +577,20 @@ def run_plan_digest(project_root: Path) -> StageResult:
             continue
         verdict = str(candidate.get("digest_selection_verdict") or "")
         included = bool(candidate.get("include"))
+        a_tier_eligible, a_tier_reason = a_tier_ticket_policy(candidate)
+        if a_tier_eligible:
+            candidate["a_tier_policy_status"] = "must_show"
+            candidate["a_tier_policy_reason"] = a_tier_reason
+            included = True
+        elif is_a_tier_ticket(candidate):
+            candidate["a_tier_policy_status"] = "ineligible"
+            candidate["a_tier_policy_reason"] = a_tier_reason
+        if candidate.get("a_tier_collapsed_into"):
+            _mark_out(candidate, "a_tier_same_artist_collapsed")
+            continue
+        if is_a_tier_ticket(candidate) and not a_tier_eligible:
+            _mark_out(candidate, f"a_tier_ineligible:{a_tier_reason}")
+            continue
         if not included and verdict not in {"reserve", "selected"}:
             continue  # drop/needs_enrichment: не участвует ни в слотах, ни в запасе
         attach_editorial_contract(candidate)
@@ -474,7 +612,9 @@ def run_plan_digest(project_root: Path) -> StageResult:
                 # watch-режим: билет остаётся в служебном инвентаре, не в выпуске
                 _mark_out(candidate, ticket_reason)
                 continue
-        if included and verdict != "reserve":
+        if a_tier_eligible:
+            eligible_a_tier_fps.add(str(candidate.get("fingerprint") or ""))
+        if included and (verdict != "reserve" or a_tier_eligible):
             pools[section].append(candidate)
         else:
             eligible, render_path = _backup_eligible(candidate)
@@ -820,6 +960,28 @@ def run_plan_digest(project_root: Path) -> StageResult:
             "backups_assigned": sum(len(s.get("backup_fingerprints") or []) for s in slots),
             "out": len(out_rows),
             "demoted_to_backup": len(demoted),
+        },
+        "a_tier_conservation": {
+            "recognised": int(a_tier_identity.get("recognised_artists") or 0),
+            "recognised_rows": sum(
+                1 for candidate in candidates
+                if isinstance(candidate, dict) and is_a_tier_ticket(candidate)
+            ),
+            "eligible": len(eligible_a_tier_fps),
+            "planned": len(
+                eligible_a_tier_fps
+                & {str(slot.get("primary_fingerprint") or "") for slot in slots}
+            ),
+            "missing_from_plan": sorted(
+                eligible_a_tier_fps
+                - {str(slot.get("primary_fingerprint") or "") for slot in slots}
+            ),
+            "identity": a_tier_identity,
+            "policy": (
+                "One public card per recognised A-tier artist, preferring a "
+                "Greater Manchester event. The survivor is decided before "
+                "timing/watch/cap/repeat; only hard event validity may exclude it."
+            ),
         },
         "warnings": warnings,
     }

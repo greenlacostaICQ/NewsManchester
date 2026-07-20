@@ -604,6 +604,24 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertIn("11 и 12 июня", line)
         self.assertNotIn("event date in draft_line conflicts", " ".join(_draft_line_quality_errors(candidate, line)))
 
+    def test_long_multinight_ticket_run_does_not_conflict_or_publish_gm_acronym(self) -> None:
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "outside_gm_tickets",
+            "title": "Bruno Mars — event 2026-07-22",
+            "event": {"venue": "Wembley Stadium", "date_start": "2026-07-22", "genre": "Pop"},
+            "merged_event_dates": ["2026-07-22", "2026-07-24", "2026-07-25", "2026-07-28"],
+            "ticket_type": "major_upcoming",
+            "venue_scope": "outside",
+            "ticket_notability": {"artist": "Bruno Mars", "kind": "artist", "tier": "A"},
+        }
+
+        line = _build_ticket_fallback_line(candidate)
+
+        self.assertIn("22, 24, 25 и 28 июля", line)
+        self.assertNotIn("event date in draft_line conflicts", " ".join(_draft_line_quality_errors(candidate, line)))
+        self.assertNotIn("вне GM", line)
+
     def test_musicbrainz_ticketmaster_identity_does_not_promote_to_public_watch(self) -> None:
         tier, _confidence, signal = _tier_from_signals(
             {

@@ -19,6 +19,7 @@ from news_digest.pipeline.weekend_inventory import (
 )
 from news_digest.pipeline.writer import (
     _collapse_weekend_duplicate_events,
+    _is_expired_event_candidate,
     _is_outside_current_weekend_candidate,
     _line_has_conflicting_event_date,
     _rescue_misrouted_weekend_markets,
@@ -86,6 +87,29 @@ def _ordinary_selected_uncapped_candidate(idx: int) -> dict:
 
 
 class WeekendInventoryContractTests(unittest.TestCase):
+    def test_stored_next_occurrence_overrides_old_structured_dates(self) -> None:
+        candidate = {
+            "primary_block": "weekend_activities",
+            "category": "culture_weekly",
+            "title": "Bowlee Car Boot Sale",
+            "summary": "Sundays at Bowlee Community Park.",
+            "published_at": "2026-07-12T08:00:00+01:00",
+            "source_url": "https://example.test/bowlee",
+            "event": {
+                "event_name": "Bowlee Car Boot Sale",
+                "venue": "Bowlee Community Park",
+                "date_start": "2026-07-12",
+                "date_end": "2026-07-12",
+                "next_occurrence": "2026-07-19",
+                "is_recurring": True,
+            },
+        }
+        with mock.patch("news_digest.pipeline.weekend_inventory.now_london", return_value=datetime(2026, 7, 19, 8, 0)):
+            self.assertEqual(weekend_occurrence_date(candidate), date(2026, 7, 19))
+            with mock.patch("news_digest.pipeline.writer.now_london", return_value=datetime(2026, 7, 19, 8, 0)):
+                self.assertFalse(_is_outside_current_weekend_candidate(candidate))
+                self.assertFalse(_is_expired_event_candidate(candidate))
+
     def test_asian_night_market_keeps_next_monthly_occurrence(self) -> None:
         candidate = {
             "category": "culture_weekly",

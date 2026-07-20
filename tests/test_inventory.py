@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import tempfile
+import threading
+import time
 import unittest
 
 from news_digest.pipeline.common import PRIMARY_BLOCKS
@@ -227,6 +229,90 @@ class MorningContractTest(unittest.TestCase):
         ok, reason = passes_morning_contract(record, today="2026-07-01")
         self.assertFalse(ok)
         self.assertEqual(reason, "expired")
+
+    def test_recurring_weekend_uses_next_occurrence_not_old_date_end(self) -> None:
+        record = {
+            "primary_block": "weekend_activities",
+            "quality_status": "needs_text",
+            "missing_facts": ["draft_line"],
+            "render_ready": False,
+            "last_seen_at": "2026-07-19T01:00:00+01:00",
+            "source_url": "https://example.test/bowlee",
+            "title": "Bowlee Car Boot Sale",
+            "fact_card": {
+                "event_name": "Bowlee Car Boot Sale",
+                "venue": "Bowlee Community Park",
+                "venue_scope": "GM",
+                "date_start": "2026-07-12",
+                "date_end": "2026-07-12",
+                "next_occurrence": "2026-07-19",
+                "is_recurring": True,
+            },
+        }
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-19T08:00:00+01:00"),
+        ):
+            ok, reason = passes_morning_contract(record, today="2026-07-19")
+        self.assertTrue(ok, reason)
+        self.assertEqual(reason, "morning_relevant_needs_text")
+
+    def test_food_inventory_recovers_named_venue_and_has_valid_dedupe_seed(self) -> None:
+        record = {
+            "fingerprint": "osma",
+            "title": "OSMA set to return with new restaurant and grocery in the city centre",
+            "source_url": "https://example.test/osma",
+            "source_label": "Manchester's Finest",
+            "primary_block": "openings",
+            "category": "food_openings",
+            "raw_evidence": "OSMA will reopen at One Port Street in the Northern Quarter alongside a grocery.",
+            "fact_card": {
+                "event_name": "OSMA set to return with new restaurant and grocery in the city centre",
+                "venue": "",
+                "date_start": "",
+                "venue_scope": "GM",
+            },
+        }
+        candidate = inventory_record_to_candidate(record)
+        self.assertEqual(candidate["event"]["venue"], "OSMA")
+        self.assertEqual(candidate["dedupe_decision"], "new")
+        self.assertEqual(candidate["reason"], "pending dedupe")
+        self.assertEqual(evaluate_card(candidate), ("needs_text", False, ["draft_line"]))
+
+    def test_food_recurring_date_requires_explicit_recurrence_evidence(self) -> None:
+        base = {
+            "primary_block": "openings",
+            "quality_status": "needs_text",
+            "missing_facts": ["draft_line"],
+            "last_seen_at": "2026-07-20T03:37:00+01:00",
+        }
+        one_off = {
+            **base,
+            "title": "Joe & The Juice arrives this Friday",
+            "raw_evidence": "The store will open on Friday 10 July 2026.",
+            "fact_card": {
+                "event_name": "Joe & The Juice",
+                "venue": "Sunlight House",
+                "date_start": "2026-07-10",
+                "is_recurring": True,
+                "next_occurrence": "2026-07-24",
+            },
+        }
+        monthly = {
+            **base,
+            "title": "Asian Food Night Market",
+            "raw_evidence": "The market returns every second Friday of the month.",
+            "fact_card": {
+                "event_name": "Asian Food Night Market",
+                "venue": "Churchgate Stockport",
+                "date_start": "2026-07-10",
+                "is_recurring": True,
+                "next_occurrence": "2026-08-14",
+            },
+        }
+
+        self.assertEqual(passes_morning_contract(one_off, today="2026-07-20"), (False, "event_expired"))
+        self.assertTrue(passes_morning_contract(monthly, today="2026-07-20")[0])
 
     def test_fact_ready_without_text_reaches_morning_as_needs_text(self) -> None:
         record = {
@@ -802,6 +888,33 @@ class BuildRecordTest(unittest.TestCase):
 
 
 class NightWaveTest(unittest.TestCase):
+    def test_night_source_collection_is_bounded_parallel_and_ordered(self) -> None:
+        from scripts.run_local_digest import _collect_inventory_sources
+
+        lock = threading.Lock()
+        active = 0
+        peak = 0
+
+        def collect(source):
+            nonlocal active, peak
+            with lock:
+                active += 1
+                peak = max(peak, active)
+            time.sleep(0.03)
+            with lock:
+                active -= 1
+            return {"checked": True}, [{"title": source}]
+
+        results = _collect_inventory_sources(["a", "b", "c", "d"], collect, max_workers=2)
+        self.assertEqual([row[0] for row in results], ["a", "b", "c", "d"])
+        self.assertGreater(peak, 1)
+        self.assertLessEqual(peak, 2)
+
+    def test_daily_state_commit_reuses_bounded_retry_loop(self) -> None:
+        workflow = (Path(__file__).parents[1] / ".github" / "workflows" / "daily-digest.yml").read_text(encoding="utf-8")
+        self.assertIn("for attempt in 1 2 3 4 5", workflow)
+        self.assertIn("Pushed daily state on attempt", workflow)
+
     def test_wave_status_distinguishes_success_degraded_and_failed(self) -> None:
         from scripts.run_local_digest import _inventory_wave_status
 

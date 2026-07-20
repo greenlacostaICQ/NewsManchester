@@ -1,6 +1,6 @@
 """Ticket radar: card format (bold artist, structured genre, festival lineup)
-and consolidation (festival → one card + lineup, tour → one per block, drop
-premium/non-music). Pins the 2026-06-14 fixes.
+and consolidation (festival → one card + lineup, same-venue dates → one run,
+drop premium/non-music). Pins the 2026-06-14 fixes.
 """
 from __future__ import annotations
 
@@ -25,6 +25,19 @@ def _tk(title, *, venue="O2", date="2026-06-19", block="outside_gm_tickets",
 
 
 class TicketCardFormatTest(unittest.TestCase):
+    def test_a_tier_without_event_date_is_not_must_show(self) -> None:
+        from news_digest.pipeline.ticket_notability import a_tier_ticket_policy
+
+        candidate = _tk("Global Star", date="")
+        self.assertEqual(a_tier_ticket_policy(candidate), (False, "missing_event_date"))
+
+    def test_a_tier_bypasses_writer_watch_score(self) -> None:
+        candidate = _tk("Global Star", venue="Small Hall", date="2099-06-19", block="ticket_radar", tier="A")
+        candidate["ticket_type"] = "old_public_sale"
+        with mock.patch.object(w, "_ticket_watch_score", return_value=0):
+            self.assertEqual(w._ticket_watch_decision(candidate)["decision"], "show")
+            self.assertTrue(w._build_ticket_fallback_line(candidate))
+
     def test_bold_artist_and_structured_subgenre(self) -> None:
         with mock.patch.object(w, "_ticket_watch_decision", lambda c: {"decision": "show"}):
             line = w._build_ticket_fallback_line(_tk("Lily Allen", venue="AO Arena", subgenre="Pop"))
@@ -84,7 +97,7 @@ class TicketOnsaleFromBlobTest(unittest.TestCase):
 class TicketConsolidationTest(unittest.TestCase):
     def test_consolidation_collapses_and_drops(self) -> None:
         cands = [
-            # one artist's tour across two cities → one card per block
+            # one artist at two venues/dates → two distinct event cards
             _tk("Dua Lipa", venue="AO Arena", date="2026-06-19"),
             _tk("Dua Lipa", venue="OVO Hydro", date="2026-06-22"),
             # festival fragments → one card + lineup
@@ -101,7 +114,7 @@ class TicketConsolidationTest(unittest.TestCase):
         _consolidate_tickets(cands)
         live = [c for c in cands if c.get("include")]
         titles = [c["title"] for c in live]
-        self.assertEqual(sum("Dua Lipa" in t for t in titles), 1)           # tour collapsed
+        self.assertEqual(sum("Dua Lipa" in t for t in titles), 2)           # distinct events preserved
         self.assertEqual(sum("Glasto Festival" in t for t in titles), 1)    # festival merged
         self.assertFalse(any("Premium" in t for t in titles))              # premium dropped
         self.assertFalse(any("Netball" in t for t in titles))              # non-music dropped

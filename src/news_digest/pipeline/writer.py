@@ -42,7 +42,12 @@ from news_digest.pipeline.reader_value import reader_value_score
 from news_digest.pipeline.reader_actions import classify_reader_action
 from news_digest.pipeline.source_selection import source_score
 from news_digest.pipeline.story_intelligence import section_board_score
-from news_digest.pipeline.ticket_notability import enrich_ticket_notability, prefetch_notability, ticket_artist_name
+from news_digest.pipeline.ticket_notability import (
+    enrich_ticket_notability,
+    is_a_tier_ticket as ticket_policy_is_a_tier,
+    prefetch_notability,
+    ticket_artist_name,
+)
 from news_digest.pipeline.toponyms import restore_english_toponyms
 from news_digest.pipeline.place_names import preserve_place_names
 from news_digest.pipeline.professional_events import score_professional_event
@@ -1269,12 +1274,7 @@ def _is_a_tier_ticket(candidate: dict | None) -> bool:
     Fratellis) announced for a later date is still an A-tier artist. Without it
     the block guard failed the A-tier check and the item slipped silently into
     manual-review instead of being recognised and held (backlog item 7)."""
-    if not isinstance(candidate, dict):
-        return False
-    if str(candidate.get("primary_block") or "") not in {"ticket_radar", "outside_gm_tickets", "future_announcements"}:
-        return False
-    notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
-    return str(notability.get("tier") or "").upper() == "A"
+    return ticket_policy_is_a_tier(candidate)
 
 
 def _is_budget_exempt_a_tier(candidate: dict | None) -> bool:
@@ -1876,6 +1876,8 @@ def _ticket_watch_decision(candidate: dict) -> dict[str, object]:
             )
         ):
             decision = "show"
+    if _is_a_tier_ticket(candidate):
+        decision = "show"
     reasons = [part.strip() for part in _ticket_watch_reason(candidate).split(";") if part.strip()]
     if not reasons and decision == "hide":
         reasons = ["недостаточный notability-сигнал"]
@@ -1969,7 +1971,7 @@ def _ticket_watch_reason(candidate: dict) -> str:
     multi_night = isinstance(merged, list) and len({str(d) for d in merged}) >= 2
     this_week = days is not None and 0 <= days <= 7
     soon = days is not None and 0 <= days <= 14
-    where = "в GM" if in_gm else "вне GM"
+    where = "в Greater Manchester" if in_gm else "вне Greater Manchester"
     # Reason explains WHY it matters with evidence, not machine praise
     # ("крупный артист", "крупная площадка"). A fresh sale is the clearest
     # "act now" reason; notability gets a proof signal from the cache.
@@ -2436,6 +2438,25 @@ def _line_has_conflicting_event_date(candidate: dict, line: str) -> bool:
     event_dt = event_dt or _event_structured_datetime(candidate)
     if event_dt is None:
         return False
+    merged = candidate.get("merged_event_dates")
+    if isinstance(merged, list) and len(merged) >= 2:
+        formatted: list[str] = []
+        for raw in merged:
+            try:
+                value = _format_ru_day_month(datetime.fromisoformat(str(raw)))
+            except ValueError:
+                value = ""
+            if value and value not in formatted:
+                formatted.append(value)
+        if len(formatted) >= 2:
+            months_in_run = {value.split()[-1] for value in formatted}
+            if len(months_in_run) == 1:
+                days = [value.split()[0] for value in formatted]
+                rendered_run = f"{', '.join(days[:-1])} и {days[-1]} {next(iter(months_in_run))}"
+            else:
+                rendered_run = f"{', '.join(formatted[:-1])} и {formatted[-1]}"
+            if rendered_run.lower() in line.lower():
+                return False
     expected = _format_ru_day_month(event_dt)
     if expected and expected in line:
         return False
@@ -4100,6 +4121,8 @@ _RECURRING_EVENT_MARKERS = re.compile(
 
 def _is_expired_event_candidate(candidate: dict, line: str = "") -> bool:
     if str(candidate.get("primary_block") or "") not in _EVENT_BLOCKS:
+        return False
+    if str(candidate.get("primary_block") or "") == _WEEKEND_BLOCK and weekend_occurrence_date(candidate):
         return False
     event_day = _parse_day(candidate.get("published_at"))
     if not event_day or event_day >= now_london().date():
