@@ -1372,14 +1372,14 @@
 - Удалено: объединение `HTML-visible ∪ writer-rendered`, потому что оно создавало ложную видимость.
 
 ### 0126 — Events sources собираются с bounded parallelism и per-source timing — 2026-07-20
-- Статус: внедрено в `stage3-plan-lock`; production timing ожидается после реального events-wave.
+- Статус: внедрено и подтверждено реальной GitHub Events-wave на production-substrate.
 - Проблема: реальные events-wave занимали 15:52 и 16:12; 59 источников обходились последовательно, параллельной была только последующая проверка URL.
 - Причина (корень): `cmd_collect_inventory` вызывал `_collect_single_source` внутри обычного `for source in sources`.
 - Решение: fetch/extract источников выполняются пулом максимум 8 workers с сохранением registry-order результатов. В run log добавлены `collect/fetch/extract/enrich/duration_seconds`; enrichment, merge и URL probe остаются существующими стадиями.
 - Почему так (отвергнутые альтернативы): новая очередь/модель/стадия не нужна; 59 одновременных запросов опасны для сайтов, поэтому concurrency ограничена 8.
 - Ожидаемый эффект и метрика проверки: 59 source rows сохранены в прежнем порядке, peak concurrency ≤8, реальная events-wave заметно короче 15:52 при той же полноте.
 - Файлы/места: `scripts/run_local_digest.py:_collect_inventory_sources`, `scripts/run_local_digest.py:cmd_collect_inventory`.
-- ПРОВЕРКА (offline contract): 4 искусственно медленных источника при max_workers=2 дали peak=2 и сохранили исходный порядок; целевые тесты зелёные. Production before/after ещё не заявляется.
+- ПРОВЕРКА: 4 искусственно медленных источника при max_workers=2 дали peak=2 и сохранили исходный порядок. Реальный GitHub run `29740487193`, run_id `20260720T125954+0100`: 59/59 источников проверены, 203 записи найдены, 70 fact-ready, 41 render-ready, 2 source errors, итог честно `degraded`; `max_workers=8`, `ordered_results=true`, `per_source_timing=true`. Время сбора `216.42s` против прежних `952–972s`: сокращение на 77–78%, примерно в 4,4 раза. Per-source timing локализовал оставшийся хвост в четырёх Visit Manchester extractors: `125.7–195.2s` каждый.
 - Удалено: последовательный source-fetch loop; параллельный action-URL probe оставлен, потому что решает другую I/O-стадию.
 
 ### 0127 — Daily state commit переиспользует ночной retry-loop — 2026-07-20
@@ -1394,12 +1394,12 @@
 - Удалено: одноразовый daily `pull + push`; ночной loop не дублируется новой архитектурой, а переиспользуется тем же shell-паттерном.
 
 ### 0128 — Night state commit сохраняет dispatched branch — 2026-07-20
-- Статус: внедрено в `stage3-plan-lock`; повторный production-substrate run ожидается.
+- Статус: внедрено и подтверждено повторным production-substrate run.
 - Проблема: реальная acceptance Events-wave `29739894935` собрала все 59 source rows за 237,39 с, но state commit пять раз пытался rebase feature-ветку на `origin/main`, получил массовые add/add conflicts и завершил workflow красным.
 - Причина (корень): `.github/workflows/night-inventory.yml` жёстко использовал `git pull ... origin main`, хотя `workflow_dispatch --ref` корректно checkout-ил `stage3-plan-lock`.
 - Решение: pull/push retry работает с `${GITHUB_REF_NAME:-main}` и явно пушит `HEAD:<dispatched branch>`. Для production dispatch это без изменения остаётся `main`; acceptance state не загрязняет main и не теряется.
 - Почему так (отвергнутые альтернативы): отключить state commit на branch-run лишило бы проверку доказательства сохранения; force-push или rebase feature-ветки на main недопустимы.
 - Ожидаемый эффект и метрика проверки: acceptance wave сохраняет inventory commit в свою ветку с первой попытки; production wave продолжает сохранять в main.
 - Файлы/места: `.github/workflows/night-inventory.yml:Commit inventory to repo`, `tests/test_inventory.py:NightWaveTest`.
-- ПРОВЕРКА: первый реальный run `29739894935` — collection `59 sources / 203 found / 70 fact-ready / 2 source errors / degraded`, `duration_seconds=237.39`; state push не прошёл и стал основанием для этой доработки. Повторный proof заполняется следующим run.
+- ПРОВЕРКА: первый реальный run `29739894935` — collection `59 sources / 203 found / 70 fact-ready / 2 source errors / degraded`, `duration_seconds=237.39`; state push не прошёл и стал основанием для этой доработки. Повторный run `29740487193` завершился `success`: state commit `c0e7cac` создан и запушен в `stage3-plan-lock` с первой попытки (`Pushed inventory on attempt 1`), Telegram-уведомление вернуло HTTP 200.
 - Удалено: жёстко прошитый `origin main` в night retry; сам bounded retry остаётся.
