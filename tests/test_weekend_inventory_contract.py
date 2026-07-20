@@ -87,6 +87,12 @@ def _ordinary_selected_uncapped_candidate(idx: int) -> dict:
 
 
 class WeekendInventoryContractTests(unittest.TestCase):
+    def test_comic_con_is_a_concrete_protected_weekend_activity(self) -> None:
+        candidate = _weekend_inventory_candidate(title="Comic Con Manchester 2026")
+        candidate["summary"] = "Comic Con Manchester brings guests, panels and cosplay to Trafford."
+
+        self.assertEqual(weekend_activity_type(candidate), "comic_con")
+
     def test_stored_next_occurrence_overrides_old_structured_dates(self) -> None:
         candidate = {
             "primary_block": "weekend_activities",

@@ -547,7 +547,34 @@ _LABELLED_LOCATION_RE = re.compile(
 )
 
 
+def _extract_manchesters_finest_venue(candidate: dict) -> str:
+    """Read the venue prefix from Manchester's Finest event evidence.
+
+    Live cards repeat a stable sequence:
+    ``Fri 24th Jul, 2026 - The White Hotel <event title> ...``.
+    The venue is therefore evidence before the exact title, not a guess from
+    an address or an unrelated capitalised phrase later in the article.
+    """
+    if str(candidate.get("source_label") or "") != "Manchester's Finest Events":
+        return ""
+    title = str(candidate.get("title") or "").strip()
+    evidence = str(candidate.get("evidence_text") or "").strip()
+    if not title or " - " not in evidence:
+        return ""
+    after_date = evidence.split(" - ", 1)[1]
+    title_index = after_date.casefold().find(title.casefold())
+    if title_index <= 0:
+        return ""
+    venue = re.sub(r"\s+", " ", after_date[:title_index]).strip(" -|,.;")
+    if not 2 <= len(venue) <= 100 or re.search(r"\b20\d{2}\b", venue):
+        return ""
+    return venue
+
+
 def _extract_venue(candidate: dict, entities: dict) -> str:
+    finest_venue = _extract_manchesters_finest_venue(candidate)
+    if finest_venue:
+        return finest_venue
     venues = entities.get("venues") if isinstance(entities, dict) else None
     if venues and isinstance(venues, list) and venues:
         return str(venues[0])

@@ -522,6 +522,12 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertIn("manchester-rocks.co.uk", source.url)
         self.assertEqual(source.allowed_hosts, ("manchester-rocks.co.uk",))
 
+    def test_broken_manchester_theatres_weekend_catalogues_are_disabled(self) -> None:
+        active_names = {source.name for source in SOURCES}
+
+        self.assertNotIn("Manchester Theatres Weekend", active_names)
+        self.assertNotIn("Manchester Theatres Next Weekend", active_names)
+
     def test_sk_lowdown_markets_source_routes_to_weekend_inventory(self) -> None:
         source = next(source for source in SOURCES if source.name == "SK Lowdown Markets")
 
@@ -648,7 +654,11 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertIn("Visit Manchester Weekend", guide_sources)
         self.assertIn("Secret Manchester May Guide", guide_sources)
         self.assertIn("Secret Manchester Gigs", guide_sources)
-        self.assertIn("Manchester Theatres Weekend", [source.name for source in SOURCES])
+        # Manchester Theatres used to satisfy this breadth check, but its
+        # dated routes now return a generic 2026/2027 Highlights catalogue.
+        # Breadth is still supplied by the other live guides; the broken
+        # pseudo-weekend source must not be kept merely to satisfy a count.
+        self.assertNotIn("Manchester Theatres Weekend", [source.name for source in SOURCES])
 
     # ---------------------------------------------------------------
     # S1 — date-aware guardrails

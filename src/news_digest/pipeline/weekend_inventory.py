@@ -39,6 +39,7 @@ _INVENTORY_TYPE_RE = re.compile(
     r"car\s*boot|boot\s*sale|makers?\s+market|artisan\s+market|farmers?\s+market|"
     r"food\s+market|flea\s+market|vintage\s+(?:sale|market)|market|fair|fayre|"
     r"festival|food\s+festival|drink\s+festival|beer\s+festival|rum\s+festival|"
+    r"comic\s+con(?:vention)?|"
     r"pride|community\s+(?:festival|day)|family\s+day|heritage|medieval|"
     r"re-?enact(?:ment)?|beauty\s+brunch|protest(?:\s+music)?|"
     r"workshops?|public\s+trail|themed\s+trail|museum\s+after[-\s]?hours"
