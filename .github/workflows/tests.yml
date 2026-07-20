@@ -2,8 +2,11 @@ name: Tests
 
 on:
   push:
-    branches-ignore:
-      - main  # main runs the daily digest; tests run on branches + PRs.
+    # Code pushed to main must be tested too. State-only commits are produced
+    # several times a night and do not need to rerun the full suite.
+    paths-ignore:
+      - 'data/state/**'
+      - 'data/outgoing/**'
   pull_request:
   workflow_dispatch:
 

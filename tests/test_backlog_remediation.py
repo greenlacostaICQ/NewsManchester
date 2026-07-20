@@ -2741,9 +2741,16 @@ class TelegramBacklog20260527Test(unittest.TestCase):
                 "title": title, "summary": "", "evidence_text": "",
                 "source_url": "https://tfgm.com", "source_label": "TfGM",
             }))
-        a = render("Piccadilly Gardens - Tram Improvement Works")
-        b = render("Prestwich Tram Stop - Improvement Works")
-        c = render("Manchester Airport Tram Stop - Escalator out of service")
+        # A generic TfGM homepage is not an alert detail URL and must never be
+        # fetched: live homepage text previously made this test pass locally
+        # and fail in CI with an unrelated "Eccles line" card.
+        with mock.patch(
+            "news_digest.pipeline.collector.fetch._fetch_text",
+            side_effect=AssertionError("generic TfGM page must not be fetched"),
+        ):
+            a = render("Piccadilly Gardens - Tram Improvement Works")
+            b = render("Prestwich Tram Stop - Improvement Works")
+            c = render("Manchester Airport Tram Stop - Escalator out of service")
         self.assertIn("Piccadilly Gardens", a)
         self.assertNotEqual(a, b)
         self.assertIn("эскалатор не работает", c)  # not mistranslated to 'ремонтные работы'

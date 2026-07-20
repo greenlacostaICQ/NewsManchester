@@ -1232,6 +1232,60 @@ def _inventory_wave_status(run_log: list[dict], expected_sources: int) -> str:
     return "success"
 
 
+def _complete_inventory_wave_for_day(
+    rows: list[dict],
+    *,
+    wave: str,
+    day_london: str,
+) -> dict | None:
+    """Return the newest complete run for a wave/day, otherwise None.
+
+    A degraded run still counts as a completed trigger: the fallback exists to
+    recover a missed scheduler call, not to hammer sources again because one or
+    two of them returned an honest error.
+    """
+    grouped: dict[str, list[dict]] = {}
+    for row in rows:
+        if not isinstance(row, dict) or str(row.get("wave") or "") != wave:
+            continue
+        if str(row.get("run_at_london") or "")[:10] != day_london:
+            continue
+        run_id = str(row.get("run_id") or "")
+        if run_id:
+            grouped.setdefault(run_id, []).append(row)
+    for run_id, run_rows in reversed(list(grouped.items())):
+        expected = max((int(row.get("expected_sources") or 0) for row in run_rows), default=0)
+        checked = sum(1 for row in run_rows if row.get("checked"))
+        if expected > 0 and len(run_rows) >= expected and checked >= expected:
+            return {
+                "run_id": run_id,
+                "wave": wave,
+                "day_london": day_london,
+                "represented": len(run_rows),
+                "checked": checked,
+                "expected_sources": expected,
+                "errors": sum(int(row.get("errors") or 0) for row in run_rows),
+            }
+    return None
+
+
+def cmd_inventory_wave_complete(wave: str) -> int:
+    path = PROJECT_ROOT / "data" / "state" / "inventory_run_log.jsonl"
+    rows: list[dict] = []
+    if path.exists():
+        for raw in path.read_text(encoding="utf-8").splitlines():
+            try:
+                row = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(row, dict):
+                rows.append(row)
+    day = today_london()
+    complete = _complete_inventory_wave_for_day(rows, wave=wave, day_london=day)
+    print(json.dumps({"complete": bool(complete), "match": complete}, ensure_ascii=False))
+    return 0 if complete else 1
+
+
 def _collect_inventory_sources(sources: list, collect_fn, *, max_workers: int = NIGHT_SOURCE_MAX_WORKERS) -> list[tuple]:
     """Collect night sources concurrently, bounded and in registry order."""
     if not sources:
@@ -1738,6 +1792,15 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="Night wave: events | tickets | pro_food_russian | live_news | breaking.",
     )
+    inventory_wave_complete_parser = subparsers.add_parser(
+        "inventory-wave-complete",
+        help="Exit 0 when today's London-date night wave already has every expected source row.",
+    )
+    inventory_wave_complete_parser.add_argument(
+        "--wave",
+        required=True,
+        help="Night wave to check before a scheduler fallback.",
+    )
     subparsers.add_parser(
         "dedupe-digest",
         help="Apply repeat handling and write dedupe_memory.json.",
@@ -1886,6 +1949,8 @@ def main() -> int:
         return cmd_build_inventory()
     if args.command == "collect-inventory":
         return cmd_collect_inventory(args.wave)
+    if args.command == "inventory-wave-complete":
+        return cmd_inventory_wave_complete(args.wave)
     if args.command == "dedupe-digest":
         return cmd_dedupe_digest()
     if args.command == "validate-candidates":

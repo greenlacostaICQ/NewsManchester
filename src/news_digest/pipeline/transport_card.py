@@ -321,6 +321,17 @@ def _maybe_fetch_alert_text(url: str, existing: str) -> str:
         return existing
     if not url.lower().startswith("http"):
         return existing
+    parsed_url = parse.urlsplit(url)
+    alert_prefix = "/travel-updates/travel-alerts/"
+    # Only a concrete TfGM alert page is valid enrichment input. Fetching the
+    # TfGM homepage (as old unit fixtures did) mixes unrelated live alerts into
+    # the card and makes identical code render differently by run time.
+    if (
+        parsed_url.netloc.lower().removeprefix("www.") != "tfgm.com"
+        or not parsed_url.path.lower().startswith(alert_prefix)
+        or parsed_url.path.lower().rstrip("/") == alert_prefix.rstrip("/")
+    ):
+        return existing
     try:
         from news_digest.pipeline.collector.fetch import _fetch_text  # noqa: PLC0415
         from news_digest.pipeline.collector.extract import _html_to_visible_text  # noqa: PLC0415

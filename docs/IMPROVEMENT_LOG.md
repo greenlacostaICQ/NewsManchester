@@ -1403,3 +1403,36 @@
 - Файлы/места: `.github/workflows/night-inventory.yml:Commit inventory to repo`, `tests/test_inventory.py:NightWaveTest`.
 - ПРОВЕРКА: первый реальный run `29739894935` — collection `59 sources / 203 found / 70 fact-ready / 2 source errors / degraded`, `duration_seconds=237.39`; state push не прошёл и стал основанием для этой доработки. Повторный run `29740487193` завершился `success`: state commit `c0e7cac` создан и запушен в `stage3-plan-lock` с первой попытки (`Pushed inventory on attempt 1`), Telegram-уведомление вернуло HTTP 200.
 - Удалено: жёстко прошитый `origin main` в night retry; сам bounded retry остаётся.
+
+### 0129 — Внутренний fallback запускает пропущенную Events-волну без дубля — 2026-07-20
+- Статус: внедрено; offline-проверка на production-state 20.07 пройдена, GitHub-run ожидается.
+- Проблема: 20.07 внешний cron-job.org не вызвал Events; GitHub workflow был только исполнителем и не имел собственного расписания. Пропуск обнаружился лишь утром.
+- Причина (корень): `.github/workflows/night-inventory.yml` имел только `workflow_dispatch`; внутри GitHub не существовало второго независимого триггера и проверки уже завершённой волны за лондонскую дату.
+- Решение: GitHub вызывает только Events в 00:41 London двумя DST-safe UTC schedules. Перед сбором команда `inventory-wave-complete` проверяет по `run_id`, дате London и всем `expected_sources`, завершалась ли волна. Уже выполненная внешним cron волна даёт `skip`; отсутствие полной волны запускает обычный сбор. `degraded` считается завершённым trigger: fallback исправляет пропущенный запуск, а не бесконечно повторяет ошибки отдельных сайтов.
+- Почему так (отвергнутые альтернативы): переносить все пять расписаний в GitHub сейчас не требуется; запускать Events без idempotency создаст дубль; считать `degraded` отсутствующей волной превратит fallback в неограниченный retry источников.
+- Ожидаемый эффект и метрика проверки: при существующей волне job заканчивается без `collect-inventory` и state commit; при её отсутствии создаётся ровно одна Events-волна за текущую London date.
+- Файлы/места: `.github/workflows/night-inventory.yml:Resolve wave from dispatch input`, `scripts/run_local_digest.py:_complete_inventory_wave_for_day`, `tests/test_inventory.py:NightWaveTest`.
+- ПРОВЕРКА (offline на реальном state 20.07): run `20260720T125954+0100` распознан как complete: `represented=59`, `checked=59`, `expected=59`, `errors=2`; команда вернула exit 0, значит fallback пропустил бы повторный сбор.
+- Удалено: ничего — внешний cron остаётся первичным scheduler для всех волн; новый GitHub schedule является независимой страховкой только Events.
+
+### 0130 — Events: исправлены мёртвые источники, catalog-шум и дочерний хвост Visit Manchester — 2026-07-20
+- Статус: внедрено; локальные контракты пройдены, реальная Events-wave ожидается.
+- Проблема: production Events-wave `29740487193` имела 2 source errors и 127 записей с missing facts. Manchester Armed Forces Day возвращал 404, New Smithfield Sunday Market — 403. Четыре Visit Manchester source extractors занимали `125.7–195.2s`; в inventory попадали `${Tripbuilder.Path}` и страницы-каталоги `What's on at…`/`Events at…`, не являющиеся конкретными событиями.
+- Причина (корень): завершившийся 27.06 one-off остался enabled; старый New Smithfield URL закрыт для runner; Visit Manchester дочерние страницы обогащались последовательно внутри уже параллельного source loop, а slug-extractor принимал CMS-template и venue/category indexes за события.
+- Решение: истёкший Armed Forces source disabled до появления новой официальной датированной страницы; New Smithfield переведён на действующую официальную visitor page; template/index URLs отсекаются до child fetch; оставшиеся child pages обогащаются максимум четырьмя workers на source и общим semaphore=8 с сохранением порядка и прежнего `max_candidates`.
+- Почему так (отвергнутые альтернативы): подменять истёкшее событие старой news-страницей нельзя; искусственно заполнять факты 127 строк нельзя, потому что значительная часть — каталоги, а не события; новый queue/stage не нужен после локализации времени существующим per-source timing.
+- Ожидаемый эффект и метрика проверки: 0 ошибок этих двух источников; catalog/template строки не входят в inventory; Visit Manchester extract time заметно ниже 125 секунд при неизменном bound; missing-facts уменьшается только за счёт удаления ложных карточек, а не придуманных фактов.
+- Файлы/места: `data/sources.toml`, `collector/filters.py:_looks_like_candidate_title`, `collector/extract.py:_extract_visit_manchester_events`, `collector/extract.py:_enrich_visit_manchester_items`.
+- ПРОВЕРКА (локальный контракт): catalog/template sample из реального inventory даёт 1 реальное событие вместо 5 ложных ссылок; 8 child items обработаны параллельно с `1 < peak <= 4` и сохранённым input order. Production proof ожидается.
+- Удалено: старый New Smithfield 403 URL; последовательный Visit Manchester child-fetch path. Armed Forces запись не удалена из registry, потому что это ежегодный официальный слот, но физически исключена из активного обхода через `enabled=false`.
+
+### 0131 — CI снова проверяет main и не зависит от сети/дня недели — 2026-07-20
+- Статус: внедрено; локально 859/859, GitHub main-run ожидается.
+- Проблема: все последние Stage 3 branch pushes были красными: run `29741377844` падал на четырёх тестах, а production `main` вообще исключался из `tests.yml`, поэтому тот же SHA не получал CI verdict.
+- Причина (корень): tram test ходил на живую главную TfGM и подмешивал текущий Eccles alert; два Weekend tests строили `now+5 days`, что по понедельникам попадало в текущий weekend и противоречило собственному ожиданию; road-only validator считал слова `road closure` доказательством воздействия на пассажиров; workflow имел `branches-ignore: main`.
+- Решение: enrichment разрешён только для конкретного TfGM alert URL; Weekend tests заморожены на четверг; road alert остаётся только при явном bus/tram/train signal; `main` включён в Tests, но state-only commits не запускают 859 тестов.
+- Почему так (отвергнутые альтернативы): ретраи CI не исправляют недетерминизм; ослаблять assertions нельзя, потому что road-only и Weekend routing — продуктовые правила; запускать полный suite после каждого ночного state commit бессмысленно.
+- Ожидаемый эффект и метрика проверки: один и тот же commit зелёный локально и в GitHub; code/workflow push в main создаёт Tests run, state-only push — нет.
+- Файлы/места: `.github/workflows/tests.yml`, `transport_card.py:_maybe_fetch_alert_text`, `candidate_validator.py:_exclude_road_only_transport`, соответствующие regression tests.
+- ПРОВЕРКА: локально `PYTHONPATH=src python3 -m unittest discover -s tests` — `859 tests`, `OK`, включая прежние 4 падения. GitHub proof ожидается.
+- Удалено: `branches-ignore: main` и обогащение transport-карточки с generic TfGM homepage; отдельного старого механизма больше нет.

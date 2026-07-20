@@ -122,6 +122,12 @@ def _looks_like_candidate_title(title: str) -> bool:
     if len(title) < 18 or len(title) > 160:
         return False
     lowered = title.lower()
+    # Unexpanded CMS/client-side templates are navigation defects, never
+    # candidate titles. Visit Manchester has emitted ${Tripbuilder.Path} in
+    # live listing markup; accepting it creates a fake event with missing
+    # venue/date facts and also wastes a child-page enrichment request.
+    if "${" in title or "{{" in title or "}}" in title:
+        return False
     blocked = {
         "privacy",
         "cookie",

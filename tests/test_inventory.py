@@ -888,6 +888,30 @@ class BuildRecordTest(unittest.TestCase):
 
 
 class NightWaveTest(unittest.TestCase):
+    def test_complete_wave_requires_every_expected_source_row(self) -> None:
+        from scripts.run_local_digest import _complete_inventory_wave_for_day
+
+        complete_rows = [
+            {
+                "run_id": "events-1", "wave": "events",
+                "run_at_london": "2026-07-20T00:31:01+01:00",
+                "expected_sources": 2, "checked": True, "errors": 0,
+            },
+            {
+                "run_id": "events-1", "wave": "events",
+                "run_at_london": "2026-07-20T00:31:02+01:00",
+                "expected_sources": 2, "checked": True, "errors": 1,
+            },
+        ]
+        result = _complete_inventory_wave_for_day(
+            complete_rows, wave="events", day_london="2026-07-20"
+        )
+        self.assertIsNotNone(result)
+        self.assertEqual(result["errors"], 1)
+        self.assertIsNone(_complete_inventory_wave_for_day(
+            complete_rows[:1], wave="events", day_london="2026-07-20"
+        ))
+
     def test_night_source_collection_is_bounded_parallel_and_ordered(self) -> None:
         from scripts.run_local_digest import _collect_inventory_sources
 
@@ -920,6 +944,19 @@ class NightWaveTest(unittest.TestCase):
         self.assertIn('target_branch="${GITHUB_REF_NAME:-main}"', workflow)
         self.assertIn('git pull --rebase --autostash origin "$target_branch"', workflow)
         self.assertIn('git push origin "HEAD:$target_branch"', workflow)
+
+    def test_events_has_dst_safe_idempotent_schedule_fallback(self) -> None:
+        workflow = (Path(__file__).parents[1] / ".github" / "workflows" / "night-inventory.yml").read_text(encoding="utf-8")
+        self.assertIn("cron: '41 23 * * *'", workflow)
+        self.assertIn("cron: '41 0 * * *'", workflow)
+        self.assertIn("inventory-wave-complete --wave", workflow)
+        self.assertIn("steps.wave.outputs.skip != 'true'", workflow)
+
+    def test_main_code_pushes_run_ci_but_state_only_commits_do_not(self) -> None:
+        workflow = (Path(__file__).parents[1] / ".github" / "workflows" / "tests.yml").read_text(encoding="utf-8")
+        self.assertNotIn("branches-ignore", workflow)
+        self.assertIn("'data/state/**'", workflow)
+        self.assertIn("'data/outgoing/**'", workflow)
 
     def test_wave_status_distinguishes_success_degraded_and_failed(self) -> None:
         from scripts.run_local_digest import _inventory_wave_status

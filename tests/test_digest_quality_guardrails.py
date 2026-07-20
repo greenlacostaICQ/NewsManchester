@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import tempfile
+import threading
+import time
 import unittest
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -9,10 +11,13 @@ from unittest import mock
 
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector.routing import _adjust_ticket_radar_block
-from news_digest.pipeline.collector.extract import _extract_source_candidates
+from news_digest.pipeline.collector.extract import (
+    _enrich_visit_manchester_items,
+    _extract_source_candidates,
+)
 from news_digest.pipeline.collector.fallbacks import _weather_draft_line
 from news_digest.pipeline.collector.filters import _is_allowed_source_link
-from news_digest.pipeline.collector.sources import SOURCES, SourceDef
+from news_digest.pipeline.collector.sources import SOURCES, ExtractedItem, SourceDef
 from news_digest.pipeline.transport_card import extract_transport_card, render_card
 from news_digest.pipeline.common import (
     fingerprint_for_candidate,
@@ -440,6 +445,72 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             self.assertEqual(source.primary_block, "weekend_activities")
             self.assertEqual(source.source_type, "html_page_event")
             self.assertEqual(source.max_candidates, 1)
+
+    def test_visit_manchester_rejects_catalog_pages_before_enrichment(self) -> None:
+        source = SourceDef(
+            name="Visit Manchester Weekend",
+            report_category="culture_weekly",
+            candidate_category="culture_weekly",
+            url="https://www.visitmanchester.com/whats-on/whats-on-this-weekend/",
+            primary_block="weekend_activities",
+            source_type="html_visitmanchester_events",
+            allowed_hosts=("visitmanchester.com",),
+            max_candidates=12,
+        )
+        html = """
+        <a href="/whats-on/whats-on-this-weekend/${Tripbuilder.Path}">template</a>
+        <a href="/whats-on/events/whats-on-opera-house-palace-theatre">venue index</a>
+        <a href="/whats-on/events/entertainment-events">category index</a>
+        <a href="/whats-on/events/events-at-manchester-arena">arena index</a>
+        <a href="/whats-on/event/manchester-jazz-festival-2026">real event</a>
+        """
+        enriched_urls: list[str] = []
+
+        def keep(item_source: SourceDef, item: ExtractedItem) -> ExtractedItem:
+            self.assertEqual(item_source, source)
+            enriched_urls.append(item.url)
+            return item
+
+        with mock.patch("news_digest.pipeline.collector.extract._enrich_item", side_effect=keep):
+            candidates = _extract_source_candidates(source, html)
+
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0]["title"], "Manchester Jazz Festival 2026")
+        self.assertEqual(enriched_urls, ["https://www.visitmanchester.com/whats-on/event/manchester-jazz-festival-2026"])
+
+    def test_visit_manchester_child_enrichment_is_bounded_parallel_and_ordered(self) -> None:
+        source = SourceDef(
+            name="Visit Manchester Weekend",
+            report_category="culture_weekly",
+            candidate_category="culture_weekly",
+            url="https://www.visitmanchester.com/whats-on/whats-on-this-weekend/",
+            primary_block="weekend_activities",
+            source_type="html_visitmanchester_events",
+        )
+        items = [
+            ExtractedItem(title=f"Manchester event number {index}", url=f"https://example.test/{index}")
+            for index in range(8)
+        ]
+        lock = threading.Lock()
+        active = 0
+        peak = 0
+
+        def enrich(_source: SourceDef, item: ExtractedItem) -> ExtractedItem:
+            nonlocal active, peak
+            with lock:
+                active += 1
+                peak = max(peak, active)
+            time.sleep(0.02)
+            with lock:
+                active -= 1
+            return item
+
+        with mock.patch("news_digest.pipeline.collector.extract._enrich_item", side_effect=enrich):
+            result = _enrich_visit_manchester_items(source, items)
+
+        self.assertEqual([item.url for item in result], [item.url for item in items])
+        self.assertGreater(peak, 1)
+        self.assertLessEqual(peak, 4)
 
     def test_sk_lowdown_markets_source_routes_to_weekend_inventory(self) -> None:
         source = next(source for source in SOURCES if source.name == "SK Lowdown Markets")
@@ -1011,9 +1082,12 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertEqual(updated.get("primary_block"), "weekend_activities")
 
     def test_annual_food_festival_outside_current_weekend_stays_future(self) -> None:
-        event_day = now_london().date() + timedelta(days=5)
-        updated = self._validate_one(
-            {
+        # Freeze on Thursday: +5 days is Tuesday and therefore definitely
+        # outside the current weekend. Using the real weekday made this test
+        # assert the opposite product rule every Monday.
+        frozen = datetime(2026, 7, 16, 8, 0, tzinfo=now_london().tzinfo)
+        event_day = frozen.date() + timedelta(days=5)
+        candidate = {
                 "include": True,
                 "fingerprint": "bbq-food-festival-next7",
                 "category": "culture_weekly",
@@ -1024,23 +1098,24 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
                 "evidence_text": "This annual barbecue food festival has street food, artists and live music.",
                 "source_label": "Manchester Food & Drink Festival",
                 "source_url": "https://example.test/bbq-food-festival",
-                "published_at": now_london().isoformat(),
+                "published_at": frozen.isoformat(),
                 "event": {
                     "is_event": True,
                     "event_name": "Manchester BBQ Food Festival",
                     "venue": "St Ann's Square",
                     "date_start": event_day.isoformat(),
                 },
-            }
-        )
+        }
+        with mock.patch("news_digest.pipeline.candidate_validator.now_london", return_value=frozen):
+            updated = self._validate_one(candidate)
 
         self.assertTrue(updated.get("include"))
         self.assertEqual(updated.get("primary_block"), "future_announcements")
 
     def test_weekend_source_event_outside_current_weekend_stays_future(self) -> None:
-        event_day = now_london().date() + timedelta(days=5)
-        updated = self._validate_one(
-            {
+        frozen = datetime(2026, 7, 16, 8, 0, tzinfo=now_london().tzinfo)
+        event_day = frozen.date() + timedelta(days=5)
+        candidate = {
                 "include": True,
                 "fingerprint": "annual-food-festival-weekend-source",
                 "category": "culture_weekly",
@@ -1051,15 +1126,16 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
                 "evidence_text": "A once-a-year food festival in Wythenshawe Park with barbecue traders and live music.",
                 "source_label": "South Manchester Food Festival",
                 "source_url": "https://example.test/south-manchester-food-festival",
-                "published_at": now_london().isoformat(),
+                "published_at": frozen.isoformat(),
                 "event": {
                     "is_event": True,
                     "event_name": "South Manchester Food Festival",
                     "venue": "Wythenshawe Park",
                     "date_start": event_day.isoformat(),
                 },
-            }
-        )
+        }
+        with mock.patch("news_digest.pipeline.candidate_validator.now_london", return_value=frozen):
+            updated = self._validate_one(candidate)
 
         self.assertTrue(updated.get("include"))
         self.assertEqual(updated.get("primary_block"), "future_announcements")

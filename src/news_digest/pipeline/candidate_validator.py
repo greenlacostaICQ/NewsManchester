@@ -1283,7 +1283,11 @@ def _exclude_road_only_transport(candidate: dict) -> bool:
         return False
     if str(candidate.get("transport_mode") or "") != "road":
         return False
-    if transport_movement_impact(candidate):
+    # Generic words such as "road closure" are movement impact for drivers,
+    # but not evidence that public transport passengers are affected. Keep a
+    # road alert only when the candidate explicitly names a public-transport
+    # mode/service; TfGM as the source label alone is not enough.
+    if transport_movement_impact(candidate) and _ROAD_PUBLIC_TRANSPORT_RE.search(_candidate_blob(candidate)):
         return False
     _append_reject(
         candidate,
@@ -1291,6 +1295,13 @@ def _exclude_road_only_transport(candidate: dict) -> bool:
         "Validator: road-only TfGM alert is not public transport coverage.",
     )
     return True
+
+
+_ROAD_PUBLIC_TRANSPORT_RE = re.compile(
+    r"\b(?:bus(?:es)?|bus\s+services?|tram(?:s)?|metrolink|train(?:s)?|rail(?:way)?|"
+    r"station|platform|bee\s+network)\b",
+    re.IGNORECASE,
+)
 
 
 def transport_movement_impact(candidate: dict) -> bool:

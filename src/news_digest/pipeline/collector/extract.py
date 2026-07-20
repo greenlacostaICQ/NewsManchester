@@ -12,6 +12,7 @@ HTML enrichment helpers used after re-fetching an article.
 from __future__ import annotations
 
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from html import unescape
 from html.parser import HTMLParser
@@ -19,6 +20,7 @@ from urllib import parse
 import hashlib
 import json
 import re
+import threading
 import xml.etree.ElementTree as ET
 
 try:  # Generic article extractor; optional so the module imports without it.
@@ -1448,7 +1450,53 @@ def _extract_visit_manchester_events(source: SourceDef, body: str) -> list[Extra
         item
         for item in items
         if parse.urlsplit(item.url).path.rstrip("/").lower() != "/whats-on"
+        and not _is_visit_manchester_index_item(item)
     ]
+
+
+_VISIT_MANCHESTER_INDEX_PATH_RE = re.compile(
+    r"^/whats-on/(?:"
+    r"events/(?:whats-on-|events-at-|entertainment-events(?:/|$))|"
+    r"whats-on-this-(?:week|weekend|halloween)(?:/|$)|"
+    r"sporting-events/manchester-city-fc(?:/|$)"
+    r")",
+    re.IGNORECASE,
+)
+_VISIT_MANCHESTER_CHILD_WORKERS = 4
+_VISIT_MANCHESTER_GLOBAL_CHILD_LIMIT = 8
+_VISIT_MANCHESTER_CHILD_GATE = threading.BoundedSemaphore(_VISIT_MANCHESTER_GLOBAL_CHILD_LIMIT)
+
+
+def _is_visit_manchester_index_item(item: ExtractedItem) -> bool:
+    """Reject Visit Manchester catalog/venue pages masquerading as events."""
+    path = parse.unquote(parse.urlsplit(item.url).path)
+    title = str(item.title or "")
+    if "${" in path or "${" in title or "{{" in title or "}}" in title:
+        return True
+    return bool(_VISIT_MANCHESTER_INDEX_PATH_RE.search(path))
+
+
+def _enrich_visit_manchester_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
+    with _VISIT_MANCHESTER_CHILD_GATE:
+        return _enrich_item(source, item)
+
+
+def _enrich_visit_manchester_items(
+    source: SourceDef,
+    items: list[ExtractedItem],
+) -> list[ExtractedItem]:
+    """Enrich Visit Manchester child pages concurrently, in input order.
+
+    Events sources are already collected in parallel. The shared semaphore
+    prevents four overlapping Visit Manchester sources from multiplying that
+    into unbounded child-page traffic, while executor.map preserves registry
+    order for deterministic candidate selection.
+    """
+    if len(items) < 2:
+        return [_enrich_visit_manchester_item(source, item) for item in items]
+    workers = min(_VISIT_MANCHESTER_CHILD_WORKERS, len(items))
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        return list(executor.map(lambda item: _enrich_visit_manchester_item(source, item), items))
 
 
 def _extract_phm_events(source: SourceDef, body: str) -> list[ExtractedItem]:
@@ -3166,6 +3214,13 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
     if jsonld_event_links:
         links = jsonld_event_links + links
 
+    visit_manchester_pre_enriched = source.source_type == "html_visitmanchester_events"
+    if visit_manchester_pre_enriched:
+        # The normal loop stops after max_candidates. Apply the same bound
+        # before child fetches so concurrency changes latency, not source load
+        # or candidate ordering.
+        links = _enrich_visit_manchester_items(source, links[: source.max_candidates])
+
     seen: set[str] = set()
     candidates: list[dict] = []
     for item in links:
@@ -3186,7 +3241,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         if normalized_url in seen:
             continue
         seen.add(normalized_url)
-        item = _enrich_item(source, item)
+        if not visit_manchester_pre_enriched:
+            item = _enrich_item(source, item)
         if source.report_category == "diaspora_events" and not _looks_like_diaspora_event_signal(
             source.name,
             item.title,

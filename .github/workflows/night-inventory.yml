@@ -7,12 +7,16 @@ name: GM Night Inventory
 # candidates.json, so it can't block/corrupt the morning release. The morning
 # build consumes only fact-ready stable cards and keeps ordinary live collection
 # for every category the latest healthy night wave did not fully replace.
-# Production dispatch schedule is owned by cron-job.org in Europe/London:
+# Primary dispatch schedule is owned by cron-job.org in Europe/London:
 # 00:31 events, 02:07 tickets, 03:37 pro_food_russian, 06:17 live_news,
-# 07:31 breaking. GitHub Actions is intentionally executor-only to avoid
-# duplicate runs and UTC/BST drift.
+# 07:31 breaking. GitHub's two UTC schedules provide only an idempotent Events
+# fallback at 00:41 London; the inactive GMT/BST slot and an already-complete
+# external Events run both skip before collection.
 
 on:
+  schedule:
+    - cron: '41 23 * * *'  # 00:41 Europe/London during BST
+    - cron: '41 0 * * *'   # 00:41 Europe/London during GMT
   workflow_dispatch:
     inputs:
       wave:
@@ -25,6 +29,14 @@ on:
           - pro_food_russian
           - live_news
           - breaking
+      mode:
+        description: 'force = always collect; fallback = skip when today is already complete'
+        required: true
+        default: force
+        type: choice
+        options:
+          - force
+          - fallback
 
 permissions:
   contents: write
@@ -58,14 +70,44 @@ jobs:
 
       - name: Resolve wave from dispatch input
         id: wave
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+          DISPATCH_WAVE: ${{ github.event.inputs.wave }}
+          DISPATCH_MODE: ${{ github.event.inputs.mode }}
         run: |
           set -euo pipefail
-          WAVE="${{ github.event.inputs.wave }}"
+          WAVE="$DISPATCH_WAVE"
+          MODE="${DISPATCH_MODE:-force}"
+          if [ "$EVENT_NAME" = "schedule" ]; then
+            WAVE="events"
+            MODE="fallback"
+            expected_schedule=$(python3 - <<'PY'
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          offset = int((datetime.now(ZoneInfo("Europe/London")).utcoffset() or 0).total_seconds())
+          print("41 23 * * *" if offset == 3600 else "41 0 * * *")
+          PY
+            )
+            if [ "$EVENT_SCHEDULE" != "$expected_schedule" ]; then
+              echo "wave=$WAVE" >> "$GITHUB_OUTPUT"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "Inactive GMT/BST fallback slot: $EVENT_SCHEDULE (active: $expected_schedule)."
+              exit 0
+            fi
+          fi
           if [ -z "$WAVE" ]; then echo "No wave resolved" >&2; exit 1; fi
           echo "wave=$WAVE" >> "$GITHUB_OUTPUT"
+          if [ "$MODE" = "fallback" ] && python3 scripts/run_local_digest.py inventory-wave-complete --wave "$WAVE"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "A complete $WAVE wave already exists for today's London date; fallback skipped."
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
           echo "Resolved wave: $WAVE"
 
       - name: Collect inventory wave
+        if: steps.wave.outputs.skip != 'true'
         env:
           TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
           SKIDDLE_API_KEY: ${{ secrets.SKIDDLE_APIKEY }}
@@ -77,7 +119,7 @@ jobs:
           python3 scripts/run_local_digest.py collect-inventory --wave "${{ steps.wave.outputs.wave }}" | tee /tmp/inventory_summary.json
 
       - name: Commit inventory to repo
-        if: always()
+        if: ${{ always() && steps.wave.outputs.skip != 'true' }}
         run: |
           set -uo pipefail
           git config user.name "digest-bot"
@@ -108,7 +150,7 @@ jobs:
           exit 1
 
       - name: Notify Telegram — wave complete
-        if: success()
+        if: ${{ success() && steps.wave.outputs.skip != 'true' }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
@@ -151,7 +193,7 @@ jobs:
           PY
 
       - name: Notify Telegram — wave failed
-        if: failure()
+        if: ${{ failure() && steps.wave.outputs.skip != 'true' }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
