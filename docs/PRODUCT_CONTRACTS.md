@@ -128,6 +128,9 @@ Failure examples:
 - A show, film, exhibition or market happening today or this week belongs in
   Weekend/Tickets when eligible; otherwise it is held, not used as Future fill.
 - Routine old on-sale listings without a new phase are not Future announcements.
+- A workshop needs a real future occurrence. A recurring series contributes one
+  nearest concrete occurrence, and a current/near occurrence cannot be moved to
+  Future merely because the source also lists later dates.
 
 Failure examples:
 
@@ -204,8 +207,9 @@ Contract:
 
 - every item must answer: what is happening today, where, who is affected, and
   what should the reader do or remember.
-- If the block underflows, recovery should search Fresh, Transport, Weather and
-  public-service candidates before accepting underflow.
+- Today accepts only candidates routed upstream for an action, event,
+  restriction or deadline that applies today. Fresh and City never donate rows
+  to fill Today; a short native pool is reported as an honest underflow.
 
 ## Transport Contract
 
@@ -224,6 +228,10 @@ Rules:
 - Generic TfGM fallback is forbidden if concrete disruption exists.
 - A nearby incident is not transport unless it changes travel.
 - A stop/road/work item must explain what passenger or driver should do.
+- A bounded authoritative TfGM tram restriction is persisted independently of
+  whether the article is selected as new news. It needs real movement impact
+  and a concrete end date; one ordinary plan candidate is regenerated each day
+  until expiry, before Stage 3 composition is locked.
 
 Failure examples:
 
@@ -288,6 +296,11 @@ Inventory scope:
 Selection rule:
 
 - Eligibility is date + place + activity type + GM fit.
+- The public target is at least six unique concrete activities. Landing pages,
+  expired first occurrences and duplicate rows from the same recurring series
+  do not count.
+- Market/fair routing happens before planning; writer is not allowed to rescue
+  a Food/Planning row into Weekend after the slot plan exists.
 - Ranking may order eligible Weekend items, but must not exclude an eligible
   current-weekend inventory item.
 - Global public-budget caps, DeepSeek board caps, ticket balancing and soft-item
@@ -310,6 +323,8 @@ Recurring and repeat rule:
 - A repeated recurring event is held only when the occurrence is not current, the
   date cannot be recovered, or the item is not actually useful to visitors
   (for example a seller/admin page rather than a public visitor event).
+- Intake, happening-today, Weekend eligibility, writer expiry, repeat and
+  protected eligibility all read the same `effective_occurrence_window()`.
 
 Recovery rule:
 
@@ -372,9 +387,16 @@ Rules:
 
 - Outside venue cannot use GM wording.
 - A-tier must be evidence-based.
+- The event owner is resolved before artist notability. A normal show keeps its
+  headliner; support never replaces it. A festival keeps the real event name,
+  lists genuine A-tier acts inside one card and is not multiplied per artist.
 - Important concerts should be discovered early, not one day before.
 - Ordinary ticket volume must be capped before editor, not only reported after
-  render. Every recognised A-tier ticket bypasses intake, section and issue caps.
+  render. Every canonical active A-tier ticket bypasses timing, watch, repeat,
+  section and issue caps. Technical duplicates, wrong-owner fragments,
+  cancelled/postponed and expired rows are rejected before this protection.
+- Public ticket text contains event facts and reader timing only. Ranking
+  reasons, internal tiers and service phrases never appear in the card.
 - Ticket Radar is not a general event calendar.
 
 Failure examples:
@@ -466,6 +488,9 @@ Rules:
   menu/concept changed, venue reopened, official confirmation.
 - Markets belong to Weekend when they are weekend activities.
 - Vague "check details" copy is not enough.
+- The public section contains exactly three real cards. When two independent
+  sources are present in the eligible live pool, at least two sources must be
+  represented in those three cards.
 - Night readiness is based on concrete object, place, opening/market phase,
   current date and local reader meaning. A night Russian line is not required;
   the normal morning writer creates public text from these facts.
@@ -480,16 +505,19 @@ Failure examples:
 - `INVENTORY_BLOCK_REGISTRY` defines all 17 active/legacy block identifiers and
   is the only source for collection category, candidate category, output blocks,
   intake mode, freshness, text policy, completeness and replacement permission.
-- Night collection stores facts and provenance. It may use the existing
-  deterministic writer for supported stable blocks, but never a model text
-  prewrite. Professional CV matching remains a separate factual selection step.
+- Night collection stores facts and provenance. Any cached deterministic line
+  is inventory diagnostics only and never replaces morning public prose.
+  Professional CV matching remains a separate factual selection step.
 - Every record stores source report category and routed candidate category,
   run/wave/source, first/last/change times, canonical evidence hash, observation
   in the current wave, action-URL liveness, serving TTL and retention horizon.
 - When a night card and a live card identify the same standalone article/event,
   the live card remains primary and receives only facts missing from the live
-  extraction. The night lineage remains visible through validation, selection,
-  writer and final HTML reporting instead of being counted as a dropped duplicate.
+  extraction: event owner, occurrence, venue, lineup, booking URL and factual
+  detail fields. Night never overwrites summary/lead/practical angle/draft line.
+  A standalone night card is held until a morning-live candidate confirms it.
+  The night lineage remains visible through validation, selection, writer and
+  final HTML reporting instead of being counted as a dropped duplicate.
 - Action URLs are checked only for fact-ready cards. HTTP 2xx/3xx is alive;
   404/410 becomes dead only after two different night runs; 403/405/429 and
   network/timeout failures remain unknown. Unknown is usable in assist but can
@@ -512,6 +540,9 @@ Failure examples:
   today's scan is complete, required blocks are sufficient and source replacement
   is explicitly enabled for every output block, and enough action URLs are alive.
   Otherwise the ordinary live scan remains on.
+- Night inventory never authorises skipping the morning live scan. The final
+  funnel reports `night fact-ready -> live confirmed -> enriched -> planned ->
+  visible` separately from inventory collection totals.
 
 ## Business/IT Contract
 
@@ -525,6 +556,11 @@ Business item must explain:
 
 Rules:
 
+- IT membership is decided from the story's technology/product/software/data
+  content, not from the publisher category. Politics/Burnham coverage without
+  actual IT content stays in City or News.
+- IT is capped at five and has no fill quota; three real IT developments are
+  preferable to five mixed business/political rows.
 - Generic "check details" copy is not acceptable.
 - Personnel PR, anniversary, award and campaign posts need concrete action or
   local impact.
@@ -555,6 +591,23 @@ Failure examples:
 
 - Transfer liveblog/speculation as primary item.
 - Club PR quiz/interview as the only football card.
+
+## Protected Eligibility Contract
+
+Protection is evaluated only after current occurrence, block, event owner,
+date, duplicate status and prose validity are known. It exempts a valid row
+from a cap; it never turns an invalid, expired, duplicated or malformed row into
+a valid candidate.
+
+## Prose Policy Contract
+
+Writer, editor, deterministic repair, release reporting and final plan verify
+use the same classifier from `editorial_contracts`. It returns defect code and
+severity, removes empty/service wording such as `проверьте детали`, `сверяйте
+обновления` and `сроки уточняйте на странице перевозчика`, while preserving a
+concrete useful action such as `проверьте страницу статуса TfGM`. Prose defects
+trigger row repair or degraded reporting; they do not introduce a new
+whole-issue blocking gate.
 
 ## Recovery Contract
 
@@ -605,6 +658,10 @@ Rules:
   itself.
 - The concrete changed fact must be named in candidate/report.
 - If the changed fact cannot be shown to the reader, the repeat is held.
+- Every stage uses `visible_repeat_verdict`. A canonical active A-tier event is
+  the one explicit exception: `allow=true`,
+  `reason=a_tier_must_show_override`. The exception does not apply to technical
+  duplicates, wrong-owner cards, cancellations or expired events.
 
 Failure examples:
 

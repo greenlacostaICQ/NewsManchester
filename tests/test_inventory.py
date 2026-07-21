@@ -389,7 +389,8 @@ class ReplacementPlanTest(unittest.TestCase):
         plan = inventory_source_replacement_plan(report, health)
         self.assertFalse(plan["venues_tickets"]["safe_to_skip"])
         self.assertEqual(plan["venues_tickets"]["reason"], "source_replacement_not_enabled")
-        self.assertTrue(plan["food_openings"]["safe_to_skip"])
+        self.assertFalse(plan["food_openings"]["safe_to_skip"])
+        self.assertEqual(plan["food_openings"]["reason"], "source_replacement_not_enabled")
 
     def test_latest_night_health_exposes_source_errors(self) -> None:
         rows = [
@@ -513,11 +514,12 @@ class InventoryFactPreservationTest(unittest.TestCase):
             "news_digest.pipeline.inventory.now_london",
             return_value=datetime.fromisoformat("2026-07-16T08:00:00+01:00"),
         ):
-            inserted, _ = build_morning_inventory_intake(
+            inserted, report = build_morning_inventory_intake(
                 [record], existing_candidates=[live], mode="assist", today="2026-07-16"
             )
         self.assertEqual(live["event"]["venue"], "")
-        self.assertEqual([candidate["fingerprint"] for candidate in inserted], ["night-index"])
+        self.assertEqual(inserted, [])
+        self.assertEqual(report["rejected"]["not_live_confirmed"], 1)
 
 
 class ReentryTest(unittest.TestCase):
@@ -733,7 +735,7 @@ class BuildRecordTest(unittest.TestCase):
         self.assertEqual(report["totals"]["eligible"], 1)
         self.assertEqual(report["reasons"]["missing_facts"], 1)
 
-    def test_morning_inventory_intake_only_inserts_stable_blocks(self) -> None:
+    def test_morning_inventory_intake_holds_standalone_night_cards(self) -> None:
         records = [
             {
                 "fingerprint": "weekend-1",
@@ -769,10 +771,10 @@ class BuildRecordTest(unittest.TestCase):
             return_value=datetime.fromisoformat("2026-07-09T08:00:00+01:00"),
         ):
             candidates, report = build_morning_inventory_intake(records, mode="assist", today="2026-07-09")
-        self.assertEqual([candidate["fingerprint"] for candidate in candidates], ["weekend-1"])
-        self.assertNotIn("recoverable_reserve", candidates[0])
-        self.assertNotIn("public_reserve", candidates[0])
-        self.assertEqual(report["inserted_candidates"], 1)
+        self.assertEqual(candidates, [])
+        self.assertEqual(report["inserted_candidates"], 0)
+        self.assertEqual(report["rejected"]["not_live_confirmed"], 1)
+        self.assertEqual(report["lineage_status_counts"]["held_without_live_confirmation"], 1)
         self.assertIn("morning_relevant_needs_text", report["hybrid_signals"])
 
     def test_block_completeness_separates_required_and_optional_blocks(self) -> None:
@@ -788,7 +790,7 @@ class BuildRecordTest(unittest.TestCase):
         self.assertTrue(report["blocks"]["future_announcements"]["block_sufficient"])
         self.assertEqual(report["blocks"]["future_announcements"]["candidate_count"], 0)
 
-    def test_a_tier_ticket_inventory_bypasses_intake_cap(self) -> None:
+    def test_a_tier_ticket_inventory_still_requires_morning_live_confirmation(self) -> None:
         records = [
             {
                 "fingerprint": f"ticket-{idx}",
@@ -815,10 +817,11 @@ class BuildRecordTest(unittest.TestCase):
             return_value=datetime.fromisoformat("2026-07-09T08:00:00+01:00"),
         ):
             candidates, report = build_morning_inventory_intake(records, mode="assist", today="2026-07-09")
-        self.assertEqual(len(candidates), 25)
+        self.assertEqual(candidates, [])
         self.assertEqual(report["held_by_cap"], 0)
+        self.assertEqual(report["rejected"]["not_live_confirmed"], 25)
 
-    def test_changed_facts_invalidate_cached_night_line(self) -> None:
+    def test_changed_facts_invalidate_cached_night_line_without_replacing_live_prose(self) -> None:
         candidate = {
             "fingerprint": "event-1",
             "title": "Artist",
@@ -840,11 +843,12 @@ class BuildRecordTest(unittest.TestCase):
             return_value=datetime.fromisoformat("2026-07-09T08:00:00+01:00"),
         ):
             candidates, report = build_morning_inventory_intake(
-                [record], today="2026-07-09", prompt_version=7
+                [record], existing_candidates=[candidate], today="2026-07-09", prompt_version=7
             )
         self.assertEqual(report["invalidated_prewrite"], 1)
-        self.assertEqual(candidates[0]["draft_line"], "")
-        self.assertTrue(candidates[0]["inventory_needs_text"])
+        self.assertEqual(candidates, [])
+        self.assertEqual(candidate["draft_line"], "• 1 августа в Co-op Live выступит Artist.")
+        self.assertTrue(candidate["inventory_merged_into_live"])
 
     def test_canonical_tracking_url_does_not_invalidate_but_status_does(self) -> None:
         candidate = {

@@ -83,7 +83,96 @@ VAGUE_ENDING_MARKERS: tuple[str, ...] = (
     "в курсе событий",
     "будет сообщать новости",
     "поделится подробностями позже",
+    "сверяйте обновления",
+    "сроки уточняйте на странице перевозчика",
 )
+
+PROSE_POLICY_VERSION = 1
+_SERVICE_PROSE_MARKERS: tuple[tuple[str, str], ...] = (
+    ("internal_ticket_rating", "фестивальный состав, не один артист"),
+    ("internal_ticket_rating", "почему в радаре"),
+    ("internal_ticket_rating", "spotify popularity"),
+    ("internal_ticket_rating", "wikidata:"),
+    ("service_template", "слот подтверждён"),
+    ("service_template", "висит карточка"),
+)
+_BAD_PROSE_MARKERS: tuple[str, ...] = (
+    "ticket office", "слот входа", "госпитальн", "кадровый и дисциплинарный кейс",
+    "заметный кейс", "новая фаза истории", "сетка влияния", "следить компаниям",
+    "business-impact", "лучше взять зонт", "лучше прихватить зонт", "не забудьте зонт",
+    "прихватите зонт", "live alert", "live disruption", "forecast", "attractions",
+    "highlights", "matchday", "check before", "опубликовал важное обновление",
+    "появилось новое обновление", "судебное обновление", "новое судебное",
+    "футбольное обновление", "перепроверьте", "убедитесь сами", "читайте подробнее",
+    "подробности ниже", "обогатит", "обещает стать", "центр притяжения",
+    "новая достопримечательность", "другие детали не сообщаются",
+    "подробности не раскрываются", "остаётся нерешённой", "привлечёт внимание",
+    "билеты и даты уточняйте", "время и дату уточняйте", "дату и время уточняйте",
+    "уточните даты", "booking fee", "under-30s", "claimants", "soft refreshments",
+    "guided writing session", "civic reception", "takeaway", "sponge park",
+    "это событие подчеркивает", "отличный повод", "this website makes extensive use of javascript",
+    "browser settings", "проверьте время", "проверьте дату", "билеты и детали берите",
+    "undefined", "вступило в силу.", "свяжитесь с организатор", "проверьте сами",
+    "решение вступило в силу", "достопримечательност", "готовые к изменению климата",
+    "жители в шоке", "эмоциональное прощание",
+)
+EMPTY_ACTION_END_RE = re.compile(
+    r"(?:[.;]\s*)?(?:"
+    r"следите\s+за\s+обновлениями[^.]*|"
+    r"если\s+хотите\s+попасть[^.]*уточните\s+(?:дату|время|детали|доступность)[^.]*|"
+    r"если\s+это\s+касается[^.]*проверьте\s+(?:сроки\s+и\s+детали|детали)[^.]*|"
+    r"перед\s+планами[^.]*проверьте\s+(?:детали|обновления)[^.]*|"
+    r"не\s+откладывайте\s+проверку[^.]*|"
+    r"свер(?:ьте|яйте)\s+(?:обновления|ограничения|детали|часы|время)[^.]*|"
+    r"новое\s+место\s+или\s+запуск\s+стоит\s+проверить[^.]*|"
+    r"проверьте\s+маршрут\s+и\s+время\s+отправления[^.]*|"
+    r"сроки\s+и\s+объ[её]мы\s+работ\s+уточн(?:ите|яйте)[^.]*|"
+    r"сроки\s+уточняйте\s+на\s+странице\s+перевозчика[^.]*|"
+    r"уточн(?:ите|яйте)\s+(?:дату,\s*)?(?:время\s+и\s+)?(?:детали|доступность|доступность\s+мест)[^.]*|"
+    r"уточн(?:ите|яйте)[^.]*(?:на\s+странице|перевозчика)[^.]*|"
+    r"проверьте\s+(?:сроки\s+и\s+детали|детали|обновления|подробности|часы(?:\s+работы)?|время)\b[^.]*"
+    r")\.?\s*$",
+    re.IGNORECASE,
+)
+
+
+def classify_prose_defects(line: str) -> list[dict[str, str]]:
+    """One prose verdict shared by writer, editor, repair, release and verify."""
+    raw = str(line or "")
+    with_anchor_text = re.sub(r"<[^>]+>", " ", raw)
+    with_anchor_text = re.sub(r"\s+", " ", with_anchor_text).strip().lower()
+    visible = re.sub(
+        r"\s*(?:[A-Za-z][A-Za-z&'’.\- ]{0,39}\s+)?<a\b[^>]*>.*?</a>\s*$",
+        " ",
+        raw,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    visible = re.sub(r"<a\b[^>]*>.*?</a>", " ", visible, flags=re.IGNORECASE | re.DOTALL)
+    visible = re.sub(r"<[^>]+>", " ", visible)
+    visible = re.sub(r"\s+", " ", visible).strip()
+    lowered = visible.lower()
+    if not lowered:
+        return [{"code": "empty_line", "severity": "error", "marker": ""}]
+    findings: list[dict[str, str]] = []
+    for code, marker in _SERVICE_PROSE_MARKERS:
+        if marker in lowered:
+            findings.append({"code": code, "severity": "error", "marker": marker})
+    bad_marker = next((marker for marker in _BAD_PROSE_MARKERS if marker in lowered), "")
+    if bad_marker:
+        findings.append({"code": "bad_editorial_prose", "severity": "error", "marker": bad_marker})
+    # This concrete action is explicitly useful and must survive every pass.
+    useful_tfgm_action = "проверьте страницу статуса tfgm" in with_anchor_text
+    useful_source_action = "уточните актуальные изменения на странице" in with_anchor_text
+    last_sentence = re.split(r"(?<=[.!?])\s+", lowered)[-1]
+    vague_hit = next((marker for marker in VAGUE_ENDING_MARKERS if marker in last_sentence), "")
+    empty_match = EMPTY_ACTION_END_RE.search(visible)
+    if not (useful_tfgm_action or useful_source_action) and (empty_match or vague_hit):
+        findings.append({
+            "code": "empty_generic_ending",
+            "severity": "repair",
+            "marker": vague_hit or str(empty_match.group(0) if empty_match else ""),
+        })
+    return findings
 
 _SUMMARY_DATETIME_PATTERN = re.compile(
     r"\b(?P<field>event_date|public_onsale)="
@@ -474,8 +563,13 @@ def event_schema_completeness(candidate: dict) -> dict[str, object]:
             "required_missing": list(_EVENT_REQUIRED_FIELDS),
         }
     present = []
+    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+
+    effective_start, _ = effective_candidate_occurrence_window(candidate)
     for field in _EVENT_COMPLETENESS_FIELDS:
-        value = event.get("date") if field == "date_start" and not event.get("date_start") else event.get(field)
+        value = effective_start.isoformat() if field == "date_start" and effective_start else (
+            event.get("date") if field == "date_start" and not event.get("date_start") else event.get(field)
+        )
         if str(value or "").strip():
             present.append(field)
     missing = [field for field in _EVENT_COMPLETENESS_FIELDS if field not in present]
@@ -520,6 +614,12 @@ def infer_why_now(candidate: dict) -> str:
     change_type = str(candidate.get("change_type") or "")
     category = str(candidate.get("category") or "")
     blob = _blob(candidate).lower()
+    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+
+    occurrence_start, occurrence_end = effective_candidate_occurrence_window(candidate)
+    today = now_london().date()
+    if occurrence_start and occurrence_end and occurrence_start <= today <= occurrence_end:
+        return "happening_today"
     if block == "weather":
         return "today_weather"
     if block == "transport":
@@ -1130,6 +1230,23 @@ def event_occurrence(candidate: dict) -> dict[str, object]:
     shape = _event_shape(candidate)
     blob = _contract_blob(candidate)
     today = now_london().date()
+    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+
+    effective_start, _ = effective_candidate_occurrence_window(candidate, today=today)
+    if effective_start is not None:
+        if shape == "recurring":
+            weekday = effective_start.weekday()
+            return {
+                "shape": shape,
+                "weekday": weekday,
+                "date": effective_start.isoformat(),
+                "date_text": f"в {_WEEKDAY_NAMES[weekday]} {effective_start.day} {_RU_MONTHS_GENITIVE[effective_start.month]}",
+            }
+        return {
+            "shape": shape,
+            "date": effective_start.isoformat(),
+            "date_text": f"{effective_start.day} {_RU_MONTHS_GENITIVE[effective_start.month]}",
+        }
     if shape == "recurring":
         weekday = _weekday_from_text(blob)
         if weekday is None:

@@ -1401,6 +1401,9 @@ def cmd_collect_inventory(wave: str) -> int:
                     "tier": notability.tier,
                     "confidence": notability.confidence,
                     "signal": notability.signal,
+                    "headliners": list(notability.headliners),
+                    "signals": notability.signals or {},
+                    "event_owner": notability.event_owner,
                 }
             if prewrite_stable_inventory_candidate(candidate):
                 prewritten += 1

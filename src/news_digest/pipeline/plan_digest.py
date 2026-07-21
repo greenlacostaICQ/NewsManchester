@@ -388,7 +388,7 @@ def _admission_verdict(candidate: dict, previous_by_fp: dict[str, dict]) -> tupl
         return "out", "expired_event"
     # Повторы решаются ЗДЕСЬ, один раз — release больше не режет готовый HTML.
     previous = previous_by_fp.get(str(candidate.get("fingerprint") or ""))
-    if previous is not None and not is_a_tier_ticket(candidate):
+    if previous is not None:
         from news_digest.pipeline.repeat_policy import visible_repeat_verdict  # noqa: PLC0415
 
         verdict = visible_repeat_verdict(candidate, previous)
@@ -462,52 +462,6 @@ def _collapse_weekend_duplicates(pool: list[dict], demoted: list[tuple[dict, str
     return kept
 
 
-def _today_focus_allocation(
-    pools: dict[str, list[dict]],
-    warnings: list[str],
-) -> dict[str, object]:
-    """Планёрочная версия писательской доски Свежие/Сегодня.
-
-    «Сегодня» отвечает «что жителю учесть сегодня»: если собственный пул
-    меньше цели, добираем ПОДХОДЯЩИЕ (reader-action) истории из Свежих и
-    Радара, не оголяя доноров. После фиксации плана никто ничего не двигает.
-    """
-    from news_digest.pipeline.writer import (  # noqa: PLC0415
-        TODAY_FOCUS_TARGET_ITEMS,
-        _today_focus_candidate_is_eligible,
-    )
-
-    # Доноров не оголяем (семантика удалённого writer-бэкфилла 1cf72f7:
-    # решение переехало на планёрку, защита доноров сохранена).
-    donor_keep_min = {"Свежие новости": 3, "Городской радар": 4}
-
-    today = pools.get("Что важно сегодня") or []
-    moved = {"from_fresh": 0, "from_city_watch": 0}
-    donors = (
-        ("Свежие новости", "from_fresh"),
-        ("Городской радар", "from_city_watch"),
-    )
-    for donor_section, counter in donors:
-        if len(today) >= TODAY_FOCUS_TARGET_ITEMS:
-            break
-        donor_pool = pools.get(donor_section) or []
-        keep_min = donor_keep_min.get(donor_section, 0)
-        for candidate in list(donor_pool):
-            if len(today) >= TODAY_FOCUS_TARGET_ITEMS or len(donor_pool) <= keep_min:
-                break
-            if not _today_focus_candidate_is_eligible(candidate, _blob(candidate)):
-                continue
-            donor_pool.remove(candidate)
-            today.append(candidate)
-            moved[counter] += 1
-    pools["Что важно сегодня"] = today
-    if moved["from_fresh"] or moved["from_city_watch"]:
-        warnings.append(
-            f"Планёрка добрала «Что важно сегодня»: из Свежих {moved['from_fresh']}, из Радара {moved['from_city_watch']}."
-        )
-    return moved
-
-
 def run_plan_digest(project_root: Path) -> StageResult:
     state_dir = project_root / "data" / "state"
     report_path = state_dir / "plan_digest_report.json"
@@ -530,7 +484,6 @@ def run_plan_digest(project_root: Path) -> StageResult:
         _fresh_hard_news_can_bypass_source_cap,
         _is_minor_bus_stop_line,
         _is_public_budget_exempt,
-        _rescue_misrouted_weekend_markets,
         _today_focus_candidate_is_eligible,
         _transport_line_priority,
     )
@@ -571,8 +524,6 @@ def run_plan_digest(project_root: Path) -> StageResult:
         if rolled is not None:
             previous_by_fp[str(fact.get("fingerprint") or "")] = rolled
 
-    _rescue_misrouted_weekend_markets(candidates, warnings)
-
     # Страховка для offline-replay и деградаций rank-этапа: если у билетного
     # кандидата нет notability-штампа, добираем его из локального кэша.
     # Сетевые промахи глотаем: в replay сеть закрыта на уровне сокета.
@@ -605,6 +556,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
                 "sitelinks": notability.sitelinks,
                 "headliners": list(notability.headliners),
                 "signals": notability.signals or {},
+                "event_owner": notability.event_owner,
             }
 
     a_tier_identity = _collapse_a_tier_event_runs(candidates)
@@ -752,7 +704,9 @@ def run_plan_digest(project_root: Path) -> StageResult:
             break
 
     # --- Сегодня/Свежие ----------------------------------------------------
-    today_board = _today_focus_allocation(pools, warnings)
+    # Today is purpose-owned: only items routed there upstream may enter it.
+    # An honest shortfall is reported below instead of borrowing Fresh/City.
+    today_board = {"policy": "native_today_only", "from_fresh": 0, "from_city_watch": 0}
 
     # --- Межсекционный дедуп историй ---------------------------------------
     for section in _ordered_sections(show_weekend):
@@ -777,6 +731,26 @@ def run_plan_digest(project_root: Path) -> StageResult:
     planned: dict[str, list[dict]] = {}
     for section in _ordered_sections(show_weekend):
         pool = list(pools.get(section) or [])
+        if section == "Еда, открытия и рынки" and len(pool) > 1:
+            # The three public Food slots should show two independent live
+            # sources whenever two survived upstream checks.
+            visible_window = min(SECTION_MAX_ITEMS.get(section, len(pool)), len(pool))
+            first_source = str(pool[0].get("source_label") or "")
+            if first_source and all(
+                str(candidate.get("source_label") or "") == first_source
+                for candidate in pool[:visible_window]
+            ):
+                different_index = next(
+                    (
+                        index
+                        for index, candidate in enumerate(pool[visible_window:], start=visible_window)
+                        if str(candidate.get("source_label") or "")
+                        and str(candidate.get("source_label") or "") != first_source
+                    ),
+                    None,
+                )
+                if different_index is not None:
+                    pool.insert(1, pool.pop(different_index))
         if section == "Общественный транспорт сегодня" and pool:
             pool.sort(key=lambda c: -_transport_line_priority(_blob(c), float(c.get("plan_score_snapshot") or 0)))
             minor_seen = 0

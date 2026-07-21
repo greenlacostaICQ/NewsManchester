@@ -64,8 +64,7 @@ class _ApiThrottle:
 _THROTTLE = _ApiThrottle()
 
 LINEUP_EVENT_RE = re.compile(
-    r"\b(?:festival|open air|open-air|presents|with special guest|with guests|"
-    r"line[- ]?up|weekender|live in concert)\b",
+    r"\b(?:festival|open air|open-air|line[- ]?up|weekender)\b",
     re.IGNORECASE,
 )
 
@@ -81,6 +80,7 @@ class TicketNotability:
     sitelinks: int = 0
     headliners: tuple[str, ...] = ()
     signals: dict[str, object] | None = None
+    event_owner: str = ""
 
 
 _A_TIER_PUBLIC_BLOCKS = frozenset({
@@ -128,6 +128,11 @@ def a_tier_ticket_policy(candidate: dict | None) -> tuple[bool, str]:
         return False, f"event_status:{status}"
     if not str(event.get("date_start") or event.get("date") or "").strip():
         return False, "missing_event_date"
+    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+
+    _, occurrence_end = effective_candidate_occurrence_window(candidate)
+    if occurrence_end is not None and occurrence_end < now_london().date():
+        return False, "event_expired"
     reason_blob = " ".join(
         str(candidate.get(field) or "")
         for field in ("reason", "dedupe_reason", "duplicate_reason")
@@ -169,7 +174,13 @@ def _clean_artist_name(title: str) -> str:
     # Multiple times" → drop from the support act on (it also drags the date
     # noise with it, which is why the Wikidata/Spotify lookup returned
     # not_found for real headliners on 2026-06-03).
-    cleaned = re.split(r"\s+(?:with\s+|plus\s+|\+\s*)?special\s+guests?\b", cleaned, maxsplit=1, flags=re.IGNORECASE)[0]
+    cleaned = re.split(
+        r"\s+(?:with\s+|plus\s+|\+\s*)?(?:very\s+)?special\s+guests?\b",
+        cleaned,
+        maxsplit=1,
+        flags=re.IGNORECASE,
+    )[0]
+    cleaned = re.split(r"\s+(?:ft\.?|feat\.?|featuring)\s+", cleaned, maxsplit=1, flags=re.IGNORECASE)[0]
     cleaned = re.split(r"\s+(?:\+|plus|with)\s+support\b", cleaned, maxsplit=1, flags=re.IGNORECASE)[0]
     # Date / time noise anywhere in the string: "Sat 4 Jul 2026", "4 Jul 2026",
     # "Multiple times" (Co-op Live / Ticketmaster titles carry these inline).
@@ -259,6 +270,31 @@ def ticket_artist_name(candidate: dict) -> str:
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     raw = str(event.get("event_name") or candidate.get("title") or "").strip()
     return _clean_artist_name(raw)
+
+
+def ticket_event_owner(candidate: dict, *, kind: str = "") -> str:
+    """Return the physical event's owner, never the strongest lineup act.
+
+    A normal show is owned by its primary headliner. A festival/open-air card
+    is owned by the festival itself; A-tier acts remain lineup facts inside the
+    card and must not rename or multiply the physical event.
+    """
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    explicit = str(event.get("event_owner") or "").strip()
+    if explicit:
+        return _clean_artist_name(explicit)
+    resolved_kind = kind or ticket_event_kind(candidate)
+    raw = str(event.get("event_name") or candidate.get("title") or "").strip()
+    if resolved_kind == "lineup_or_show":
+        festival = re.search(r"(.*?\b(?:festival|weekender|open[- ]air))\b", raw, re.IGNORECASE)
+        owner = festival.group(1) if festival else raw
+        owner = re.sub(r"^.*?\bpresents\b\s*", "", owner, flags=re.IGNORECASE)
+        owner = re.split(r"\s+[—–-]\s+(?:event|public\s+sale)\b", owner, maxsplit=1, flags=re.IGNORECASE)[0]
+        owner = re.sub(r"\s+\b(?:weekend|day)\s+tickets?\b.*$", "", owner, flags=re.IGNORECASE)
+        owner = re.sub(r"\s+", " ", owner).strip(" .,-–—")
+        if owner:
+            return owner[:90]
+    return ticket_artist_name(candidate)
 
 
 def ticket_event_kind(candidate: dict) -> str:
@@ -816,19 +852,32 @@ def prefetch_notability(
 
 def enrich_ticket_notability(candidate: dict, cache_path: Path | None = None) -> TicketNotability:
     kind = ticket_event_kind(candidate)
+    event_owner = ticket_event_owner(candidate, kind=kind)
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    if event_owner:
+        event["event_owner"] = event_owner
+        if kind == "lineup_or_show":
+            event["event_name"] = event_owner
+        candidate["event"] = event
     headliners = ticket_headliner_candidates(candidate)
     artist = headliners[0] if headliners else ticket_artist_name(candidate)
     if not artist:
-        return TicketNotability("", kind, "unknown", 0.0, "no_artist")
+        return TicketNotability("", kind, "unknown", 0.0, "no_artist", event_owner=event_owner)
 
     if str(candidate.get("primary_block") or "") == "russian_events" or str(candidate.get("category") or "") in {
         "russian_speaking_events",
         "diaspora_events",
     }:
-        return TicketNotability(artist, kind, "protected", 1.0, "diaspora_protected", headliners=tuple(headliners))
+        return TicketNotability(
+            artist, kind, "protected", 1.0, "diaspora_protected",
+            headliners=tuple(headliners), event_owner=event_owner,
+        )
 
     if kind == "non_artist_show" and len(headliners) <= 1:
-        return TicketNotability(artist, kind, "D", 0.7, "non_artist_show", headliners=tuple(headliners))
+        return TicketNotability(
+            artist, kind, "D", 0.7, "non_artist_show",
+            headliners=tuple(headliners), event_owner=event_owner,
+        )
 
     cache_path = cache_path or Path("data/state/ticket_notability_cache.json")
     cache = _load_cache(cache_path)
@@ -859,6 +908,10 @@ def enrich_ticket_notability(candidate: dict, cache_path: Path | None = None) ->
     # _artist_notability above is called read-only (allow_network defaults off).
     signals = dict(best.signals or {})
     signals["headliner_resolution"] = "lineup_ranked" if lineup_mode else "primary_headliner_locked"
+    if lineup_mode:
+        signals["a_tier_lineup"] = list(dict.fromkeys(
+            item.artist for item in ranked if str(item.tier or "").upper() == "A" and item.artist
+        ))
     if len(headliners) > 1 and not lineup_mode:
         signals["ignored_support_candidates"] = [name for name in headliners[1:] if name]
     return TicketNotability(
@@ -871,4 +924,5 @@ def enrich_ticket_notability(candidate: dict, cache_path: Path | None = None) ->
         sitelinks=best.sitelinks,
         headliners=tuple(candidate_names),
         signals=signals,
+        event_owner=event_owner,
     )

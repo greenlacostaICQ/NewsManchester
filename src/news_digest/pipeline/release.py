@@ -44,6 +44,7 @@ from news_digest.pipeline.inventory import (
     verify_collect_conservation,
 )
 from news_digest.pipeline.repeat_policy import visible_repeat_verdict
+from news_digest.pipeline.editorial_contracts import classify_prose_defects
 from news_digest.pipeline.prompts_meta import PROMPT_REGISTRY_VERSION
 from news_digest.pipeline.story_intelligence import (
     AUDIT_TRAIL_SCHEMA_VERSION,
@@ -65,69 +66,6 @@ BANNED_AUTHOR_VOICE = [
     "у меня нет подтверждения",
     "для вашего слоя",
     "нужен редакторский rewrite",
-]
-
-BAD_EDITORIAL_PROSE = [
-    "ticket office",
-    "слот входа",
-    "госпитальн",
-    "кадровый и дисциплинарный кейс",
-    "заметный кейс",
-    "новая фаза истории",
-    "сетка влияния",
-    "следить компаниям",
-    "business-impact",
-    # Weather clichés
-    "лучше взять зонт",
-    "лучше прихватить зонт",
-    "не забудьте зонт",
-    "прихватите зонт",
-    # English words / phrases that slip through translation
-    "live alert",
-    "live disruption",
-    "forecast",
-    "attractions",
-    "highlights",
-    "matchday",
-    "check before",
-    # Passive filler / vague council-speak
-    "опубликовал важное обновление",
-    "появилось новое обновление",
-    "судебное обновление",
-    "новое судебное",
-    "футбольное обновление",
-    # Prompts to the reader that belong to the author, not the digest
-    "перепроверьте",
-    "убедитесь сами",
-    "читайте подробнее",
-    "подробности ниже",
-    "обогатит",
-    "центр притяжения",
-    "новая достопримечательность",
-    "другие детали не сообщаются",
-    "подробности не раскрываются",
-    "решение вступило в силу",
-    "остаётся нерешённой",
-    "привлечёт внимание",
-    "достопримечательност",
-    "готовые к изменению климата",
-    "sponge park",
-    "обещает стать",
-    "жители в шоке",
-    "эмоциональное прощание",
-    "это событие подчеркивает",
-    "отличный повод",
-    "билеты и даты уточняйте",
-    "время и дату уточняйте",
-    "дату и время уточняйте",
-    "уточните даты",
-    "booking fee",
-    "under-30s",
-    "claimants",
-    "soft refreshments",
-    "guided writing session",
-    "civic reception",
-    "takeaway",
 ]
 
 ENGLISH_PROSE_PATTERN = re.compile(
@@ -464,13 +402,15 @@ def _validate_draft(
     for marker in BANNED_AUTHOR_VOICE:
         if marker in visible_lower_text:
             errors.append(f"Draft digest contains author voice marker: {marker}.")
-    for marker in BAD_EDITORIAL_PROSE:
-        if marker in visible_lower_text:
-            # Never-block (owner 2026-06-16 + 2026-07-18): одна штампованная
-            # фраза — контентный дефект, не причина не выпустить дайджест.
-            # 2026-07-18 маркер «это событие подчеркивает» заблокировал весь
-            # выпуск — читатель не получил ничего из-за одной строки.
-            warnings.append(f"Draft digest contains bad editorial prose marker: {marker}.")
+    for line in html_text.splitlines():
+        if not line.strip().startswith("•"):
+            continue
+        for finding in classify_prose_defects(line):
+            # Prose is repaired/reported, never a whole-issue technical block.
+            warnings.append(
+                "Draft digest prose defect "
+                f"[{finding.get('severity')}]:{finding.get('code')}:{finding.get('marker')}."
+            )
     if "/amp/" in lower_text:
         errors.append("Draft digest contains an /amp/ URL.")
     if "<a " not in lower_text:
@@ -3018,6 +2958,10 @@ def _summarise_inventory_morning_effect(
     accepted_count = 0
     writer_rendered_count = 0
     visible_count = 0
+    live_confirmed_count = 0
+    enriched_count = 0
+    planned_live_count = 0
+    visible_live_count = 0
     for lineage in lineages:
         block = str(lineage.get("primary_block") or "unknown")
         intake_status = str(lineage.get("intake_status") or "unknown")
@@ -3053,6 +2997,11 @@ def _summarise_inventory_morning_effect(
         selected = str((candidate or {}).get("publish_plan_status") or "") in {"show", "must_show"} or str(
             (candidate or {}).get("digest_selection_verdict") or ""
         ) == "selected"
+        if provenance == "current" and intake_status == "merged_into_live":
+            live_confirmed_count += 1
+            enriched_count += int(bool(lineage.get("enriched_fields")))
+            planned_live_count += int(bool(candidate is not None and selected))
+            visible_live_count += int(visible)
         if intake_status not in active_statuses:
             status = intake_status
         elif candidate is None:
@@ -3096,6 +3045,13 @@ def _summarise_inventory_morning_effect(
         "accepted_after_validation": accepted_count,
         "writer_rendered": writer_rendered_count,
         "visible_in_final_html": visible_count,
+        "night_to_live": {
+            "night_fact_ready": int((actual_intake.get("funnel") or {}).get("operational_fact_ready") or 0),
+            "live_confirmed": live_confirmed_count,
+            "enriched": enriched_count,
+            "planned": planned_live_count,
+            "visible": visible_live_count,
+        },
         "by_block": {block: dict(counts) for block, counts in sorted(final_by_block.items())},
         "active_by_block": {block: dict(counts) for block, counts in sorted(active_by_block.items())},
         "lineage_examples": final_lineages[:80],

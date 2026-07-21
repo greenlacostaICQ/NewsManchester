@@ -7,6 +7,7 @@ from news_digest.pipeline.llm_rewrite import _apply_rewrite_shortlist
 from unittest import mock
 
 from news_digest.pipeline.common import now_london
+from news_digest.pipeline.candidate_validator import _reroute_market_planning_to_weekend
 from news_digest.pipeline.editorial_contracts import calendar_repeat_review
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.inventory import build_inventory_record, prewrite_stable_inventory_candidate
@@ -22,7 +23,6 @@ from news_digest.pipeline.writer import (
     _is_expired_event_candidate,
     _is_outside_current_weekend_candidate,
     _line_has_conflicting_event_date,
-    _rescue_misrouted_weekend_markets,
 )
 
 
@@ -308,16 +308,16 @@ class WeekendInventoryContractTests(unittest.TestCase):
         self.assertEqual(fps, [hubble_fp])
         self.assertEqual(dropped[0]["fingerprint"], sound_fp)
 
-    def test_misrouted_food_opening_market_is_rescued_to_weekend(self) -> None:
+    def test_market_is_routed_to_weekend_before_planning(self) -> None:
         # Pin to a Saturday so the event date lands inside the current-weekend
         # window on any day the suite runs — the rescue only fires when the
         # event day is within current_weekend_window().
         today = date(2026, 7, 11)
         candidate = {
-            "include": False,
+            "include": True,
             "fingerprint": "asian-food-night-market",
             "category": "food_openings",
-            "primary_block": "openings",
+            "primary_block": "next_7_days",
             "title": "The SK Lowdown",
             "summary": "Stockport's Asian Food Night Market returns every second Friday of the month.",
             "lead": "Asian Food Night Market returns in July.",
@@ -328,8 +328,7 @@ class WeekendInventoryContractTests(unittest.TestCase):
             ),
             "source_label": "SK Lowdown Markets",
             "source_url": "https://sklowdown.co.uk/whats-on-stockport/asian-food-night-market-july",
-            "reason": "Validator: cross-day rehash — fingerprint already shipped on 2026-07-07.",
-            "publish_plan_status": "drop",
+            "reason": "Validated current occurrence.",
             "rubric_contract": {"rubric": "weekend_market"},
             "event": {
                 "is_event": True,
@@ -339,20 +338,14 @@ class WeekendInventoryContractTests(unittest.TestCase):
                 "date": today.isoformat(),
             },
         }
-        warnings: list[str] = []
-
         with mock.patch(
-            "news_digest.pipeline.weekend_inventory.now_london",
+            "news_digest.pipeline.candidate_validator.now_london",
             return_value=datetime(2026, 7, 11, 12, 0),
         ):
-            report = _rescue_misrouted_weekend_markets([candidate], warnings)
+            routed = _reroute_market_planning_to_weekend(candidate)
 
-        self.assertEqual(report["count"], 1)
-        self.assertTrue(candidate["include"])
-        self.assertEqual(candidate["category"], "culture_weekly")
+        self.assertTrue(routed)
         self.assertEqual(candidate["primary_block"], "weekend_activities")
-        self.assertEqual(candidate["publish_plan_status"], "show")
-        self.assertTrue(warnings)
 
     def test_inventory_scope_excludes_ordinary_afisha_but_keeps_special_weekend_activity(self) -> None:
         event_day = date(2026, 7, 4)

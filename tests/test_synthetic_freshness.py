@@ -16,7 +16,8 @@ from unittest import mock
 from news_digest.pipeline.collector import fallbacks, weather
 from news_digest.pipeline.collector.weather import _met_office_practical_angle
 from news_digest.pipeline.release import _summarise_synthetic_freshness
-from news_digest.pipeline.transport_fill import _make_reminder_candidate
+from news_digest.pipeline.transport_card import TransportCard
+from news_digest.pipeline.transport_fill import _make_reminder_candidate, _persistent_tram_record
 
 
 # --------------------------------------------------------------------------
@@ -289,6 +290,47 @@ class TransportReminderFreshnessTest(unittest.TestCase):
         cand = _make_reminder_candidate(self._record(""), today.isoformat())
         self.assertTrue(cand["synthetic_stale"])
         self.assertIsNone(cand["data_fetched_at"])
+
+    def test_rejected_tfgm_news_can_still_persist_bounded_movement_restriction(self) -> None:
+        candidate = {
+            "include": False,
+            "source_label": "TfGM",
+            "source_url": "https://tfgm.com/travel-updates/bury-line-closure",
+            "title": "Metrolink Bury line closed while engineering work takes place",
+            "summary": "No tram service between Victoria and Bury; replacement buses operate.",
+        }
+        card = TransportCard(
+            mode="tram",
+            operator="Metrolink",
+            line="Bury line",
+            segment="Victoria – Bury",
+            end_date="31 июля",
+        )
+        record = _persistent_tram_record(candidate, card, date(2026, 7, 21))
+        self.assertIsNotNone(record)
+        self.assertEqual(record["end_date"], "2026-07-31")
+        self.assertEqual(record["last_confirmed"], "2026-07-21")
+
+    def test_persistence_rejects_unbounded_or_no_movement_cards(self) -> None:
+        base = {
+            "source_label": "TfGM",
+            "source_url": "https://tfgm.com/travel-updates/derker",
+            "title": "Metrolink update",
+        }
+        unbounded = TransportCard(mode="tram", operator="Metrolink", line="Oldham line")
+        self.assertIsNone(_persistent_tram_record(
+            {**base, "summary": "Trams are delayed on the Oldham line."},
+            unbounded,
+            date(2026, 7, 21),
+        ))
+        bounded = TransportCard(
+            mode="tram", operator="Metrolink", line="Oldham line", end_date="31 июля"
+        )
+        self.assertIsNone(_persistent_tram_record(
+            {**base, "summary": "Trams are not affected by the lift works."},
+            bounded,
+            date(2026, 7, 21),
+        ))
 
 
 # --------------------------------------------------------------------------

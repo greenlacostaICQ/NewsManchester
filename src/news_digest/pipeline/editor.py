@@ -287,25 +287,6 @@ def _strip_editor_tags(text: str) -> str:
     return re.sub(r"\s+", " ", html.unescape(text)).strip()
 
 
-_EMPTY_ENDING_RE = re.compile(
-    r"(?:[.;]\s*)?(?:"
-    r"следите\s+за\s+обновлениями[^.]*|"
-    r"если\s+хотите\s+попасть[^.]*уточните\s+(?:дату|время|детали|доступность)[^.]*|"
-    r"если\s+это\s+касается[^.]*проверьте\s+(?:сроки\s+и\s+детали|детали)[^.]*|"
-    r"перед\s+планами[^.]*проверьте\s+(?:детали|обновления)[^.]*|"
-    r"не\s+откладывайте\s+проверку[^.]*|"
-    r"свер(?:ьте|яйте)\s+(?:обновления|ограничения|детали|часы|время)[^.]*|"
-    r"новое\s+место\s+или\s+запуск\s+стоит\s+проверить[^.]*|"
-    r"проверьте\s+маршрут\s+и\s+время\s+отправления[^.]*|"
-    r"сроки\s+и\s+объ[её]мы\s+работ\s+уточн(?:ите|яйте)[^.]*|"
-    r"уточн(?:ите|яйте)\s+(?:дату,\s*)?(?:время\s+и\s+)?(?:детали|доступность|доступность\s+мест)[^.]*|"
-    r"уточн(?:ите|яйте)[^.]*(?:на\s+странице|перевозчика)[^.]*|"
-    r"проверьте\s+(?:сроки\s+и\s+детали|детали|обновления|подробности|часы(?:\s+работы)?|время)\b[^.]*"
-    r")\.?\s*$",
-    re.IGNORECASE,
-)
-
-
 def _strip_empty_editor_ending(line: str, *, strip_short: bool = False) -> tuple[str, str]:
     """Remove final generic call-to-action filler while preserving source link.
 
@@ -321,6 +302,10 @@ def _strip_empty_editor_ending(line: str, *, strip_short: bool = False) -> tuple
     raw = str(line or "").strip()
     if not raw:
         return raw, ""
+    from news_digest.pipeline.editorial_contracts import EMPTY_ACTION_END_RE, classify_prose_defects  # noqa: PLC0415
+
+    if not any(row.get("code") == "empty_generic_ending" for row in classify_prose_defects(raw)):
+        return raw, ""
     link = ""
     # An optional dangling latin source label before the anchor («…перед
     # выходом. TfGM <a>TfGM</a>») is leaked chrome — consume it with the link
@@ -335,10 +320,10 @@ def _strip_empty_editor_ending(line: str, *, strip_short: bool = False) -> tuple
     if link_match:
         link = link_match.group(1)
         body = raw[: link_match.start()].rstrip()
-    match = _EMPTY_ENDING_RE.search(_strip_editor_tags(body))
+    match = EMPTY_ACTION_END_RE.search(_strip_editor_tags(body))
     if not match:
         return raw, ""
-    html_match = _EMPTY_ENDING_RE.search(body)
+    html_match = EMPTY_ACTION_END_RE.search(body)
     if not html_match:
         return raw, ""
     kept = body[: html_match.start()].rstrip(" ;.")

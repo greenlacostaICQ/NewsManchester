@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from typing import Any
 
 from news_digest.pipeline.common import now_london
@@ -59,18 +59,14 @@ def _contract(candidate: dict[str, Any]) -> dict[str, Any]:
 
 
 def _event_day(candidate: dict[str, Any]) -> date | None:
+    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+
+    start, _ = effective_candidate_occurrence_window(candidate)
+    if start is not None:
+        return start
     if str(candidate.get("primary_block") or "") == "weekend_activities":
-        occurrence = weekend_occurrence_date(candidate)
-        if occurrence is not None:
-            return occurrence
-    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    raw = str(event.get("date_start") or event.get("date") or "").strip()[:10]
-    if not raw:
-        return None
-    try:
-        return datetime.strptime(raw, "%Y-%m-%d").date()
-    except ValueError:
-        return None
+        return weekend_occurrence_date(candidate)
+    return None
 
 
 def _previous_day(previous: dict[str, Any]) -> str:
@@ -165,6 +161,23 @@ def visible_repeat_verdict(candidate: dict[str, Any], previous: dict[str, Any] |
     previous_title = str(previous.get("title") or "")
     previous_day = _previous_day(previous)
     matched_by = "fingerprint" if previous_fp and previous_fp == str(candidate.get("fingerprint") or "") else "history"
+
+    # The only global repeat exception: a canonical, still-valid A-tier event.
+    # Invalid owners, duplicates, cancelled/expired rows fail the A-tier policy
+    # before reaching this override and continue through ordinary repeat rules.
+    from news_digest.pipeline.ticket_notability import a_tier_ticket_policy  # noqa: PLC0415
+
+    a_tier_allow, _ = a_tier_ticket_policy(candidate)
+    if a_tier_allow:
+        return RepeatVerdict(
+            True,
+            "a_tier",
+            "a_tier_must_show_override",
+            matched_by=matched_by,
+            previous_fingerprint=previous_fp,
+            previous_title=previous_title,
+            previous_published_day=previous_day,
+        )
 
     validator_verdict = validator_same_fingerprint_allow(candidate)
     if validator_verdict.allow:

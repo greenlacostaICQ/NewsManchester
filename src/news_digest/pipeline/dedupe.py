@@ -27,7 +27,11 @@ from news_digest.pipeline.change_classifier import classify_change_phase
 from news_digest.pipeline.entity_extraction import enrich_candidate_entities
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.history import ensure_history_files
-from news_digest.pipeline.repeat_policy import calendar_carry_verdict, is_calendar_carry_candidate
+from news_digest.pipeline.repeat_policy import (
+    calendar_carry_verdict,
+    is_calendar_carry_candidate,
+    visible_repeat_verdict,
+)
 from news_digest.pipeline.story_intelligence import (
     attach_evidence_packet,
     attach_story_identity,
@@ -36,7 +40,6 @@ from news_digest.pipeline.story_intelligence import (
     history_match_records,
     new_facts_diff,
 )
-from news_digest.pipeline.ticket_notability import a_tier_ticket_policy
 from news_digest.pipeline.weekend_inventory import weekend_occurrence_date
 from news_digest.pipeline.semantic_dedupe import (
     EMBEDDING_VERSION,
@@ -184,15 +187,17 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         category = str(candidate.get("category") or "").strip()
         primary_block = str(candidate.get("primary_block") or "").strip()
         operational_repeat_ok = primary_block in {"weather", "transport"}
-        a_tier_keep, _ = a_tier_ticket_policy(candidate)
         same_day_repeat_ok = (
             previous is not None
             and str(previous.get("last_published_day_london") or "").strip() == today_london()
         )
         calendar_previous_ref = previous or (similar_previous[0] if similar_previous else None)
+        repeat_verdict = visible_repeat_verdict(candidate, calendar_previous_ref)
+        a_tier_keep = repeat_verdict.reason == "a_tier_must_show_override"
         calendar_carry_ok = (
             calendar_previous_ref is not None
-            and _calendar_item_should_carry_over(candidate, calendar_previous_ref)
+            and repeat_verdict.allow
+            and repeat_verdict.repeat_class == "calendar"
         )
         if a_tier_keep:
             candidate["dedupe_decision"] = "new"
@@ -257,7 +262,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             if prev_ref is not None and not (same_day_repeat_ok or operational_repeat_ok)
             else {"repeat": False}
         )
-        if lifecycle_review.get("repeat") and not a_tier_keep:
+        if lifecycle_review.get("repeat") and not repeat_verdict.allow:
             candidate["dedupe_decision"] = "drop"
             candidate["include"] = False
             candidate["change_type"] = "same_story_rehash"

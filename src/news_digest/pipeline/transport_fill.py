@@ -1,11 +1,13 @@
 """Deterministic transport-card fill stage.
 
 Runs after curator-pass and BEFORE llm-rewrite. For every transport
-candidate with ``include=True``:
+candidate:
 
 1. Extract a structured ``TransportCard`` (see transport_card.py).
-2. Render a Russian Telegram bullet via the deterministic templates.
-3. Write the result into ``candidate["draft_line"]``.
+2. Persist bounded authoritative tram restrictions independently from the
+   candidate's editorial include decision.
+3. For included rows, render a Russian Telegram bullet via the deterministic
+   templates and write it into ``candidate["draft_line"]``.
 
 The LLM-rewrite stage is then a no-op for transport candidates because
 ``draft_line`` is already populated. Tier-3 LLM fallback only kicks in
@@ -194,8 +196,38 @@ def _card_to_record(card: TransportCard, today: date, source_url: str = "") -> d
         "alternative": card.alternative,
         "cost_phrase": card.cost_phrase,
         "first_seen": today.isoformat(),
+        "last_confirmed": today.isoformat(),
         "source_url": source_url,
     }
+
+
+_NEGATED_MOVEMENT_RE = re.compile(
+    r"\b(?:trams?|metrolink|services?)\s+(?:are\s+)?not\s+affected\b|"
+    r"\bno\s+(?:change|impact)\s+to\s+(?:tram|metrolink|service)",
+    re.IGNORECASE,
+)
+
+
+def _persistent_tram_record(candidate: dict, card: TransportCard | None, today: date) -> dict | None:
+    """Persist only authoritative, bounded, real tram movement restrictions."""
+    if card is None or card.mode != "tram":
+        return None
+    source_url = str(candidate.get("source_url") or "")
+    source_label = str(candidate.get("source_label") or "")
+    authoritative = "tfgm.com" in source_url.lower() or source_label.strip().lower() in {"tfgm", "metrolink"}
+    if not authoritative:
+        return None
+    blob = " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead", "evidence_text"))
+    if _NEGATED_MOVEMENT_RE.search(blob):
+        return None
+    from news_digest.pipeline.candidate_validator import transport_movement_impact  # noqa: PLC0415
+
+    if not transport_movement_impact(candidate):
+        return None
+    record = _card_to_record(card, today, source_url=source_url)
+    if not str(record.get("end_date") or ""):
+        return None
+    return record
 
 
 _ISO_MONTH_RU = {
@@ -272,11 +304,9 @@ def _make_reminder_candidate(rec: dict, today_iso: str) -> dict:
     no fresh article today. Routed to the transport block as a reminder.
 
     O2 freshness markers:
-      - ``data_fetched_at`` = ``first_seen`` (when the underlying TfGM
-        article was last actually observed). For undated open-ended
-        records this becomes the only freshness anchor and the regression
-        pack can assert it exists.
-      - ``synthetic_stale`` = True when ``first_seen`` is older than
+      - ``data_fetched_at`` = ``last_confirmed`` (falling back to legacy
+        ``first_seen``) when authoritative TfGM evidence last confirmed it.
+      - ``synthetic_stale`` = True when that confirmation is older than
         :data:`_REMINDER_STALE_DAYS`. Stale reminders still ship (the
         disruption may genuinely be ongoing) but the release report
         flags them so editorial review can ask TfGM whether the closure
@@ -287,17 +317,17 @@ def _make_reminder_candidate(rec: dict, today_iso: str) -> dict:
     card = _record_to_card(rec)
     line = render_reminder(card)
     fp = f"transport-reminder|{rec.get('key', '')}|{today_iso}"
-    first_seen = str(rec.get("first_seen") or "")
-    data_fetched_at: str | None = first_seen or None
+    last_confirmed = str(rec.get("last_confirmed") or rec.get("first_seen") or "")
+    data_fetched_at: str | None = last_confirmed or None
     synthetic_stale = False
-    if not first_seen:
+    if not last_confirmed:
         # No anchor at all ⇒ we have no way to prove the disruption is
         # still current ⇒ flag as stale.
         synthetic_stale = True
     else:
         try:
             today = date.fromisoformat(today_iso)
-            seen = date.fromisoformat(first_seen)
+            seen = date.fromisoformat(last_confirmed)
             if (today - seen).days > _REMINDER_STALE_DAYS:
                 synthetic_stale = True
         except (TypeError, ValueError):
@@ -397,8 +427,27 @@ def run_transport_fill(project_root: Path) -> StageResult:
             continue
         if str(c.get("primary_block") or "") != "transport":
             continue
+        card = extract_transport_card(c)
+        persistent_record = _persistent_tram_record(c, card, today)
+        persistent_key = ""
+        if persistent_record is not None:
+            persistent_key = str(persistent_record.get("key") or "")
+            if persistent_key in active:
+                existing = active[persistent_key]
+                for field_name in (
+                    "end_date", "start_date", "line", "segment", "reason",
+                    "alternative", "cost_phrase", "source_url",
+                ):
+                    if persistent_record.get(field_name):
+                        existing[field_name] = persistent_record[field_name]
+                existing["last_confirmed"] = today_iso
+            else:
+                active[persistent_key] = persistent_record
+                persisted += 1
         if not c.get("include"):
             continue
+        if persistent_key:
+            seen_keys_today.add(persistent_key)
         # Rich-evidence alerts carry the real detail (TfGM JSON description +
         # step-free advice; NRE rail prose). The deterministic template renders
         # from the TITLE and IGNORES that evidence — it dropped the Derker
@@ -420,7 +469,6 @@ def run_transport_fill(project_root: Path) -> StageResult:
                     c["change_type"] = "same_story_new_facts"
             continue
 
-        card = extract_transport_card(c)
         rendered = render_card(card) if card is not None else ""
 
         # "найдено = опубликовано": a disruption we found but could not parse
@@ -470,23 +518,6 @@ def run_transport_fill(project_root: Path) -> StageResult:
                 and (card.has_dates or card.has_reason or card.has_alternative)
             ) else "2",
         })
-
-        # Persist tram disruptions that have a time horizon. We only
-        # persist trams — bus / road / rail are one-off, no reminders.
-        if card.mode == "tram" and (card.end_date or card.duration_phrase):
-            rec = _card_to_record(card, today, source_url=str(c.get("source_url") or ""))
-            key = rec["key"]
-            seen_keys_today.add(key)
-            if key in active:
-                # Update end_date / segment if we now know them better.
-                existing = active[key]
-                for field_name in ("end_date", "start_date", "line", "segment",
-                                    "reason", "alternative", "cost_phrase"):
-                    if rec.get(field_name) and not existing.get(field_name):
-                        existing[field_name] = rec[field_name]
-            else:
-                active[key] = rec
-                persisted += 1
 
     # ── Inject reminder candidates for active Metrolink disruptions
     #    that are NOT covered by a fresh article today. ─────────────────

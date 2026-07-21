@@ -213,7 +213,8 @@ def run_stages(sandbox: Path) -> list[dict[str, object]]:
 def analyze_digest(html_text: str) -> dict[str, object]:
     """Section/bullet counts plus detectors for the known shipped defects:
     blank-line runs, missing/empty lead block, boilerplate endings."""
-    from news_digest.pipeline.editor import _EMPTY_ENDING_RE, _strip_editor_tags
+    from news_digest.pipeline.editor import _strip_editor_tags
+    from news_digest.pipeline.editorial_contracts import EMPTY_ACTION_END_RE
 
     lines = html_text.splitlines()
     sections: list[dict[str, object]] = []
@@ -247,7 +248,7 @@ def analyze_digest(html_text: str) -> dict[str, object]:
                 current["bullets"] = int(current["bullets"]) + 1
         if stripped.startswith("• "):
             body = re.sub(r"\s*<a\s+[^>]*>.*?</a>\s*$", "", stripped, flags=re.IGNORECASE | re.DOTALL)
-            if _EMPTY_ENDING_RE.search(_strip_editor_tags(body)):
+            if EMPTY_ACTION_END_RE.search(_strip_editor_tags(body)):
                 boilerplate += 1
 
     lead = next((s for s in sections if s["title"] == LEAD_TITLE), None)

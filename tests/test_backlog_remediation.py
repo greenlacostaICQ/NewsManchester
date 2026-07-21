@@ -110,15 +110,10 @@ class WriterRenderedFingerprintTest(unittest.TestCase):
 
             self.assertTrue(result.ok)
             report = json.loads((state_dir / "writer_report.json").read_text(encoding="utf-8"))
-            self.assertGreaterEqual(report["section_counts"]["Что важно сегодня"], 3)
-            self.assertGreaterEqual(
-                report["section_counts"]["Городской радар"]
-                + report["section_counts"].get("Что важно сегодня", 0),
-                14,
-            )
-            self.assertGreaterEqual(report["quality_counts"]["rendered_candidates"], 15)
-            self.assertGreaterEqual(len(report["rendered_candidate_fingerprints"]), 15)
-            self.assertIn("fp-14", report["rendered_candidate_fingerprints"])
+            self.assertEqual(report["section_counts"].get("Что важно сегодня", 0), 0)
+            self.assertEqual(report["section_counts"]["Городской радар"], 12)
+            self.assertEqual(report["quality_counts"]["rendered_candidates"], 12)
+            self.assertEqual(len(report["rendered_candidate_fingerprints"]), 12)
 
     def test_compact_core_news_card_is_recovered_instead_of_dropped(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -2289,7 +2284,7 @@ class StoryIntelligenceTest(unittest.TestCase):
         self.assertIn("stages", diff["new_fact_types"])
         self.assertIn("entities", diff["new_fact_types"])
 
-    def test_protected_reject_requires_second_opinion_and_backup(self) -> None:
+    def test_invalid_rejected_event_does_not_gain_protection(self) -> None:
         candidate = {
             "title": "Russian stand-up show in Manchester",
             "summary": "Russian-language stand-up show in Manchester on 30 May.",
@@ -2309,9 +2304,9 @@ class StoryIntelligenceTest(unittest.TestCase):
 
         mark_reject_second_opinion(candidate, "missing_venue")
 
-        self.assertTrue(candidate["backup_candidate"])
-        self.assertTrue(candidate["second_opinion_required"])
-        self.assertIn("russian_event", candidate["second_opinion_reason"]["protected_lanes"])
+        self.assertNotIn("backup_candidate", candidate)
+        self.assertNotIn("second_opinion_required", candidate)
+        self.assertFalse(candidate["protected_lane"]["protected"])
 
     def test_section_score_prefers_protected_specific_item_over_filler(self) -> None:
         protected = {
@@ -2360,8 +2355,8 @@ class StoryIntelligenceTest(unittest.TestCase):
     def test_final_loss_check_flags_unrendered_protected_candidate(self) -> None:
         candidate = {
             "fingerprint": "fp-ticket",
-            "title": "Tickets announced for Russian stand-up show in Manchester on 30 May",
-            "summary": "Russian-language stand-up show in Manchester on 30 May.",
+            "title": "Tickets announced for Russian stand-up show in Manchester on 30 August",
+            "summary": "Russian-language stand-up show in Manchester on 30 August.",
             "source_label": "Kontramarka UK",
             "category": "russian_speaking_events",
             "primary_block": "russian_events",
@@ -2370,7 +2365,7 @@ class StoryIntelligenceTest(unittest.TestCase):
             "event": {
                 "is_event": True,
                 "event_name": "Russian stand-up show",
-                "date_start": "2026-05-30",
+                "date_start": "2026-08-30",
                 "venue": "Manchester Academy",
                 "borough": "Manchester",
             },

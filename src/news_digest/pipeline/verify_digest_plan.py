@@ -30,6 +30,7 @@ from news_digest.pipeline.plan_execution import (
     load_plan,
     plan_slots,
 )
+from news_digest.pipeline.editorial_contracts import classify_prose_defects
 
 REPORT_NAME = "verify_digest_plan_report.json"
 _HREF_RE = re.compile(r'href="([^"]+)"')
@@ -159,6 +160,17 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
         divergences.append({"kind": "empty_bullets", "count": len(empty_bullets)})
     if not lead_visible:
         divergences.append({"kind": "lead_not_visible"})
+    prose_findings: list[dict[str, object]] = []
+    for line_index, line in enumerate(html_text.splitlines(), start=1):
+        if not line.strip().startswith("•"):
+            continue
+        for finding in classify_prose_defects(line):
+            prose_findings.append({"line_index": line_index, **finding})
+            divergences.append({
+                "kind": "prose_policy_defect",
+                "line_index": line_index,
+                **finding,
+            })
 
     actual_section_counts = {section: len(lines) for section, lines in sections.items()}
     shortfalls = final_selection.get("sections") or {}
@@ -239,6 +251,11 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
                 "conserved": not a_tier_missing,
             },
             "shortfalls": shortfalls,
+            "prose_policy": {
+                "checked_lines": sum(1 for line in html_text.splitlines() if line.strip().startswith("•")),
+                "defect_count": len(prose_findings),
+                "findings": prose_findings[:60],
+            },
             "final_selection_report": {
                 "path": str((state_dir / "final_selection_report.json").resolve()),
                 "schema_version": final_selection.get("schema_version"),

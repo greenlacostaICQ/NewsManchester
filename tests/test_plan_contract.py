@@ -461,6 +461,30 @@ class PlanContractTest(unittest.TestCase):
         self.assertEqual([row["primary_fingerprint"] for row in transport_slots], [concrete["fingerprint"]])
         self.assertFalse(any(row.get("transport_status_fallback") for row in planned_candidates))
 
+    def test_13_food_uses_two_live_sources_when_second_source_is_eligible(self) -> None:
+        candidates = [
+            _candidate(
+                i,
+                block="openings",
+                category="food_openings",
+                source_label="Food Source A" if i < 4 else "Food Source B",
+                title=f"Manchester restaurant opening {i}",
+                summary=f"A real Manchester restaurant opening {i} with confirmed venue details.",
+            )
+            for i in range(5)
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, candidates)
+            run_plan_digest(root)
+            plan = load_plan(state_dir)
+        food_slots = [slot for slot in plan["slots"] if slot["block"] == "openings"]
+        self.assertEqual(len(food_slots), 3)
+        self.assertEqual(
+            {slot["source_label"] for slot in food_slots},
+            {"Food Source A", "Food Source B"},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

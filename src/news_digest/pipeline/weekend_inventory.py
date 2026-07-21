@@ -194,6 +194,23 @@ def effective_occurrence_window(fact: dict | None) -> tuple[date | None, date | 
     return original_start, original_end or original_start
 
 
+def effective_candidate_occurrence_window(
+    candidate: dict | None,
+    *,
+    today: date | None = None,
+) -> tuple[date | None, date | None]:
+    """Stamp a recurring candidate's next occurrence, then use one window."""
+    if not isinstance(candidate, dict):
+        return None, None
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    occurrence = candidate_recurring_occurrence_date(candidate, today=today)
+    if occurrence is not None:
+        event["is_recurring"] = True
+        event["next_occurrence"] = occurrence.isoformat()
+        candidate["event"] = event
+    return effective_occurrence_window(event)
+
+
 def candidate_recurring_occurrence_date(candidate: dict, *, today: date | None = None) -> date | None:
     return recurring_occurrence_date(_blob(candidate), today=today)
 
@@ -221,7 +238,7 @@ def weekend_occurrence_date(candidate: dict, *, today: date | None = None) -> da
     today = today or now_london().date()
     start, end = current_weekend_window(today=today)
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    effective_start, effective_end = effective_occurrence_window(event)
+    effective_start, effective_end = effective_candidate_occurrence_window(candidate, today=today)
     if effective_start and effective_end and effective_start <= end and effective_end >= start:
         return max(effective_start, start)
     rec_date = candidate_recurring_occurrence_date(candidate, today=today)

@@ -128,7 +128,7 @@ class EnglishDataQATests(unittest.TestCase):
             "summary": "The housing scheme includes affordable homes and planning approval.",
         }
         reasons = _apply_section_routing_quality(candidate)
-        self.assertIn("section_routing:property_not_it", reasons)
+        self.assertIn("section_routing:source_is_not_it_content", reasons)
         self.assertEqual(candidate["primary_block"], "city_watch")
 
     def test_sensitive_thin_enrichment_is_held_before_translation(self) -> None:

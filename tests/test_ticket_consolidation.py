@@ -25,6 +25,36 @@ def _tk(title, *, venue="O2", date="2026-06-19", block="outside_gm_tickets",
 
 
 class TicketCardFormatTest(unittest.TestCase):
+    def test_event_owner_is_not_replaced_by_support_or_top_lineup_act(self) -> None:
+        from news_digest.pipeline.ticket_notability import ticket_event_owner
+
+        grace = _tk("Palace Bowl Presents - Grace Jones", venue="Crystal Palace Bowl")
+        grace["ticket_notability"] = {"kind": "lineup_or_show", "tier": "A"}
+        grace["festival_lineup"] = ["Sophie Ellis-Bextor", "Soul II Soul"]
+        self.assertEqual(ticket_event_owner(grace, kind="lineup_or_show"), "Grace Jones")
+
+        gary = _tk("Gary Numan with very special guest Ladytron")
+        self.assertEqual(ticket_event_owner(gary, kind="artist"), "Gary Numan")
+
+        pistols = _tk("SEX PISTOLS FT. FRANK CARTER")
+        self.assertEqual(ticket_event_owner(pistols, kind="artist"), "SEX PISTOLS")
+
+    def test_festival_keeps_event_name_and_lists_acts_inside_card(self) -> None:
+        fest = _tk("Klarna Presents Latitude Festival 2026: General Camping", venue="Henham Park")
+        fest["ticket_notability"] = {
+            "kind": "lineup_or_show",
+            "tier": "A",
+            "event_owner": "Latitude Festival",
+            "signals": {"a_tier_lineup": ["Lewis Capaldi", "David Byrne"]},
+        }
+        fest["festival_lineup"] = ["Lewis Capaldi", "David Byrne"]
+        with mock.patch.object(w, "_ticket_watch_decision", lambda c: {"decision": "show"}):
+            line = w._build_ticket_fallback_line(fest)
+        self.assertIn("<b>Latitude Festival</b>", line)
+        self.assertIn("Состав:", line)
+        self.assertIn("<b>Lewis Capaldi</b>", line)
+        self.assertNotIn("Фестивальный состав, не один артист", line)
+
     def test_a_tier_without_event_date_is_not_must_show(self) -> None:
         from news_digest.pipeline.ticket_notability import a_tier_ticket_policy
 
@@ -37,6 +67,26 @@ class TicketCardFormatTest(unittest.TestCase):
         with mock.patch.object(w, "_ticket_watch_score", return_value=0):
             self.assertEqual(w._ticket_watch_decision(candidate)["decision"], "show")
             self.assertTrue(w._build_ticket_fallback_line(candidate))
+
+    def test_visible_repeat_policy_has_one_explicit_a_tier_override(self) -> None:
+        from news_digest.pipeline.repeat_policy import visible_repeat_verdict
+
+        candidate = _tk("Global Star", venue="AO Arena", date="2099-06-19", tier="A")
+        previous = {**candidate, "last_published_day_london": "2099-05-01"}
+        verdict = visible_repeat_verdict(candidate, previous)
+        self.assertTrue(verdict.allow)
+        self.assertEqual(verdict.reason, "a_tier_must_show_override")
+
+        duplicate = {**candidate, "reason": "Exact duplicate fragment merged into canonical event."}
+        duplicate_verdict = visible_repeat_verdict(duplicate, previous)
+        self.assertFalse(duplicate_verdict.allow)
+        self.assertNotEqual(duplicate_verdict.reason, "a_tier_must_show_override")
+
+        expired = _tk("Global Star", venue="AO Arena", date="2020-06-19", tier="A")
+        expired_previous = {**expired, "last_published_day_london": "2020-06-01"}
+        expired_verdict = visible_repeat_verdict(expired, expired_previous)
+        self.assertFalse(expired_verdict.allow)
+        self.assertNotEqual(expired_verdict.reason, "a_tier_must_show_override")
 
     def test_bold_artist_and_structured_subgenre(self) -> None:
         with mock.patch.object(w, "_ticket_watch_decision", lambda c: {"decision": "show"}):

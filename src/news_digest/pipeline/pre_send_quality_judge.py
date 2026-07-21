@@ -512,7 +512,7 @@ def _deterministic_html_scan(slots: list[dict[str, Any]]) -> dict[str, Any]:
     Detects broken hrefs (raw HTML/whitespace — the CONEXEN class), empty
     generic call-to-action tails, and Latin/Cyrillic glued words per line.
     """
-    from news_digest.pipeline.editorial_contracts import scrub_vague_ending  # noqa: PLC0415
+    from news_digest.pipeline.editorial_contracts import classify_prose_defects  # noqa: PLC0415
     from news_digest.pipeline.writer import _mixed_latin_cyrillic_words  # noqa: PLC0415
 
     findings: list[dict[str, Any]] = []
@@ -523,9 +523,13 @@ def _deterministic_html_scan(slots: list[dict[str, Any]]) -> dict[str, Any]:
         for href in re.findall(r'href="([^"]*)"', html_line):
             if re.search(r"[<>\s]|&lt;|&gt;", href):
                 findings.append({"line_index": idx, "type": "broken_href", "detail": href[:80]})
-        _, removed = scrub_vague_ending(text)
-        if removed:
-            findings.append({"line_index": idx, "type": "empty_generic_ending", "detail": str(removed[0])[:80]})
+        for defect in classify_prose_defects(text):
+            findings.append({
+                "line_index": idx,
+                "type": str(defect.get("code") or "prose_defect"),
+                "severity": str(defect.get("severity") or "repair"),
+                "detail": str(defect.get("marker") or "")[:80],
+            })
         mixed = _mixed_latin_cyrillic_words(text)
         if mixed:
             findings.append({"line_index": idx, "type": "mixed_script", "detail": str(mixed[0])[:80]})

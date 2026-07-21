@@ -398,6 +398,11 @@ _TECH_BUSINESS_RE = re.compile(
     r"digital|platform|app|semiconductor|robotics|open\s+banking)\b",
     re.IGNORECASE,
 )
+_POLITICS_ONLY_RE = re.compile(
+    r"\b(?:mayor|burnham|council leader|minister|mp\b|parliament|election|"
+    r"labour|conservative|liberal democrat|policy speech|politic)",
+    re.IGNORECASE,
+)
 _SENSITIVE_EVIDENCE_RE = re.compile(
     r"\b(?:court|trial|charged|sentence(?:d)?|jailed|convicted|guilty|"
     r"arrest(?:ed)?|murder|killed|death|died|stab(?:bed|bing)?|knife|"
@@ -473,15 +478,23 @@ def _apply_section_routing_quality(candidate: dict) -> list[str]:
     if block != "transport" and _should_route_to_transport(candidate, blob, source_label):
         candidate["primary_block"] = "transport"
         reasons.append("section_routing:transport")
+    block = str(candidate.get("primary_block") or "")
     if (
         str(candidate.get("category") or "") == "tech_business"
-        and _PROPERTY_HOUSING_RE.search(blob)
+        and block in {"tech_business", "it_business"}
         and not _TECH_BUSINESS_RE.search(blob)
     ):
         candidate["primary_block"] = "city_watch"
-        reasons.append("section_routing:property_not_it")
+        reasons.append("section_routing:source_is_not_it_content")
+    elif (
+        block in {"last_24h", "today_focus", "city_watch"}
+        and _TECH_BUSINESS_RE.search(blob)
+        and not _POLITICS_ONLY_RE.search(blob)
+    ):
+        candidate["primary_block"] = "tech_business"
+        reasons.append("section_routing:it_content")
     if (
-        block in {"last_24h", "today_focus"}
+        str(candidate.get("primary_block") or "") in {"last_24h", "today_focus"}
         and _NATIONAL_NO_GM_RE.search(blob)
         and not _GM_ANCHOR_RE.search(blob)
     ):
@@ -1555,14 +1568,10 @@ def _is_forward_looking_event(candidate: dict) -> bool:
         return True
     if str(candidate.get("primary_block") or "") in _AGE_EXEMPT_BLOCKS:
         return True
-    ev = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    raw = str(ev.get("date_start") or ev.get("date") or "").strip()
-    if raw:
-        try:
-            return datetime.fromisoformat(raw.replace("Z", "+00:00")).date() >= now_london().date()
-        except ValueError:
-            return False
-    return False
+    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+
+    _, end = effective_candidate_occurrence_window(candidate)
+    return bool(end and end >= now_london().date())
 
 
 def _exclude_stale_news_without_new_phase(candidate: dict) -> bool:
@@ -1878,7 +1887,7 @@ def _reroute_market_planning_to_weekend(candidate: dict) -> bool:
         return False
     if str(candidate.get("primary_block") or "") != "next_7_days":
         return False
-    if not _is_routine_market_weekend_candidate(candidate):
+    if not _is_market_fair_weekend_candidate(candidate):
         return False
     today = now_london().date()
     future_dates = _event_future_dates(candidate)
@@ -2068,21 +2077,28 @@ def _exclude_stale_event(candidate: dict) -> bool:
     # not into summary's event_date=... field; missing this let a 3 Jan
     # 2026 event ship in a 27 May 2026 "next 7 days" section.
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    raw_event_date = str(event.get("date_start") or event.get("date") or "").strip()
-    if raw_event_date:
-        try:
-            parsed_event_date = datetime.fromisoformat(raw_event_date.replace("Z", "+00:00")).date()
-        except ValueError:
-            parsed_event_date = None
-        if parsed_event_date is not None and parsed_event_date < today:
-            if _has_recurrence_pattern(candidate):
-                event["is_recurring"] = True
-                return False
+    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+
+    effective_start, effective_end = effective_candidate_occurrence_window(candidate, today=today)
+    raw_structured_date = str(event.get("date_start") or event.get("date") or "").strip()
+    explicit_structured_date = bool(
+        re.match(r"^20\d{2}-\d{2}-\d{2}", raw_structured_date)
+        and str(event.get("date_confidence") or "").strip().lower() != "low"
+    )
+    effective_is_authoritative = bool(
+        event.get("is_recurring")
+        or _has_recurrence_pattern(candidate)
+        or event_date_is_trustworthy(candidate)
+        or explicit_structured_date
+    )
+    if effective_start is not None and effective_is_authoritative:
+        if effective_end is not None and effective_end < today:
             candidate["include"] = False
             existing = str(candidate.get("reason") or "").strip()
-            note = f"Validator: structured event date {parsed_event_date.isoformat()} is in the past."
+            note = f"Validator: structured event date effective window ended {effective_end.isoformat()}."
             candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
             return True
+        return False
 
     # 2) authoritative structured summary field
     summary = str(candidate.get("summary") or "")

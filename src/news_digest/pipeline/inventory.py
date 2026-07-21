@@ -149,7 +149,7 @@ INVENTORY_BLOCK_REGISTRY: dict[str, dict[str, object]] = {
         "source_report_categories": frozenset({"food_openings"}),
         "candidate_categories": frozenset({"food_openings"}),
         "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 90,
-        "text_policy": "morning_writer", "source_replacement_allowed": True,
+        "text_policy": "morning_writer", "source_replacement_allowed": False,
         "floor": 3, "min_sources": 2, "optional": False, "intake_cap": 10,
         "required_fields": ("event_name", "specific_event", "venue", "specific_venue", "opening_phase_or_date", "food_meaning", "action_url"),
     },
@@ -684,6 +684,10 @@ def compute_evidence_hash(candidate: dict) -> str:
         "lead": str(candidate.get("lead") or "")[:600],
         "practical_angle": str(candidate.get("practical_angle") or "")[:300],
         "event_name": str(event.get("event_name") or event.get("name") or ""),
+        "event_owner": str(event.get("event_owner") or event.get("event_name") or event.get("name") or ""),
+        "lineup": event.get("lineup") if isinstance(event.get("lineup"), list) else (
+            [str((row or {}).get("name") or "") for row in event.get("attractions") or [] if isinstance(row, dict)]
+        ),
         "event_date_start": str(event.get("date_start") or event.get("date") or ""),
         "event_date_end": str(event.get("date_end") or ""),
         "next_occurrence": str(event.get("next_occurrence") or ""),
@@ -768,6 +772,10 @@ def build_inventory_record(
     quality_status, render_ready, missing_facts = evaluate_card(candidate)
     fact_card = {
         "event_name": str(event.get("event_name") or event.get("name") or ""),
+        "event_owner": str(event.get("event_owner") or event.get("event_name") or event.get("name") or ""),
+        "lineup": event.get("lineup") if isinstance(event.get("lineup"), list) else (
+            [str((row or {}).get("name") or "") for row in event.get("attractions") or [] if isinstance(row, dict)]
+        ),
         "venue": str(event.get("venue") or candidate.get("venue") or ""),
         "date_start": str(event.get("date_start") or event.get("date") or ""),
         "date_end": str(event.get("date_end") or ""),
@@ -1059,15 +1067,11 @@ def passes_morning_contract(record: dict, *, today: str | None = None) -> tuple[
         "professional_events",
         "russian_events",
     }:
-        if block == "weekend_activities":
-            from news_digest.pipeline.weekend_inventory import effective_occurrence_window  # noqa: PLC0415
+        from news_digest.pipeline.weekend_inventory import effective_occurrence_window  # noqa: PLC0415
 
-            start_day, end_day = effective_occurrence_window(fact)
-            start = start_day.isoformat() if start_day else ""
-            end = end_day.isoformat() if end_day else start
-        else:
-            start = str(fact.get("next_occurrence") or fact.get("date_start") or "")[:10]
-            end = str(fact.get("date_end") or start)[:10]
+        start_day, end_day = effective_occurrence_window(fact)
+        start = start_day.isoformat() if start_day else ""
+        end = end_day.isoformat() if end_day else start
         if start and end and end < today:
             return False, "event_expired"
     if block == "weekend_activities":
@@ -1140,6 +1144,8 @@ def inventory_record_to_candidate(record: dict) -> dict:
     event = {
         "event_name": str(fact.get("event_name") or ""),
         "name": str(fact.get("event_name") or ""),
+        "event_owner": str(fact.get("event_owner") or fact.get("event_name") or ""),
+        "lineup": list(fact.get("lineup") or []) if isinstance(fact.get("lineup"), list) else [],
         "venue": str(fact.get("venue") or ""),
         "date_start": str(fact.get("date_start") or ""),
         "date": str(fact.get("date_start") or ""),
@@ -1283,29 +1289,34 @@ def _standalone_url_identity(item: dict) -> str:
     return identity
 
 
-def _merge_missing_mapping(target: dict, source: dict) -> None:
+def _merge_missing_mapping(target: dict, source: dict, *, prefix: str = "") -> list[str]:
+    merged: list[str] = []
     for key, value in source.items():
         current = target.get(key)
+        field_name = f"{prefix}.{key}" if prefix else str(key)
         if isinstance(value, dict):
             if not isinstance(current, dict):
                 if value:
                     target[key] = dict(value)
+                    merged.append(field_name)
             else:
-                _merge_missing_mapping(current, value)
+                merged.extend(_merge_missing_mapping(current, value, prefix=field_name))
         elif current in (None, "", [], {}) and value not in (None, "", [], {}):
             target[key] = value
+            merged.append(field_name)
+    return merged
 
 
-def merge_inventory_record_into_live_candidate(live_candidate: dict, record: dict) -> None:
+def merge_inventory_record_into_live_candidate(live_candidate: dict, record: dict) -> list[str]:
     """Keep fresh live values and add only facts/provenance missing from live."""
     night_candidate = inventory_record_to_candidate(record)
     live_event = live_candidate.get("event")
     if not isinstance(live_event, dict):
         live_event = {}
         live_candidate["event"] = live_event
-    _merge_missing_mapping(live_event, night_candidate.get("event") or {})
+    merged_fields = _merge_missing_mapping(live_event, night_candidate.get("event") or {}, prefix="event")
     for field in (
-        "summary", "lead", "practical_angle", "booking_url", "venue_scope",
+        "booking_url", "venue_scope",
         "venue_city", "ticket_type", "ticket_notability", "what_happened",
         "why_now", "story_type", "change_phase", "professional_event_match",
         "professional_llm_match", "professional_match_status", "russian_evidence",
@@ -1315,6 +1326,7 @@ def merge_inventory_record_into_live_candidate(live_candidate: dict, record: dic
         night_value = night_candidate.get(field)
         if current in (None, "", [], {}) and night_value not in (None, "", [], {}):
             live_candidate[field] = dict(night_value) if isinstance(night_value, dict) else night_value
+            merged_fields.append(field)
     lineage = {
         "fingerprint": str(record.get("fingerprint") or ""),
         "run_id": str(record.get("run_id") or ""),
@@ -1327,6 +1339,10 @@ def merge_inventory_record_into_live_candidate(live_candidate: dict, record: dic
     if lineage not in lineages:
         lineages.append(lineage)
     live_candidate["inventory_merged_into_live"] = True
+    live_candidate["inventory_enriched_fields"] = sorted(set(
+        [str(value) for value in live_candidate.get("inventory_enriched_fields") or []] + merged_fields
+    ))
+    return sorted(set(merged_fields))
 
 
 def inventory_prewrite_is_current(record: dict, *, prompt_version: int | None = None) -> bool:
@@ -1459,6 +1475,7 @@ def build_morning_inventory_intake(
         "operational_records": 0,
         "legacy_unproven_records": 0,
         "card_ready": 0,
+        "operational_fact_ready": 0,
         "morning_eligible": 0,
         "merged_into_live": 0,
         "after_live_dedupe": 0,
@@ -1506,6 +1523,8 @@ def build_morning_inventory_intake(
         if inventory_fact_ready(working_record):
             bucket["card_ready"] += 1
             funnel["card_ready"] += 1
+            if operational_provenance:
+                funnel["operational_fact_ready"] += 1
         ok, reason = passes_morning_contract(working_record, today=today)
         supply_ok, _ = _passes_block_supply_contract(working_record, today=today)
         if supply_ok and operational_provenance:
@@ -1533,11 +1552,12 @@ def build_morning_inventory_intake(
             standalone_url = _standalone_url_identity(candidate)
             matching_live = live_by_url.get(standalone_url) if standalone_url else None
         if matching_live is not None:
-            merge_inventory_record_into_live_candidate(matching_live, working_record)
+            enriched_fields = merge_inventory_record_into_live_candidate(matching_live, working_record)
             lineage["live_fingerprint"] = str(matching_live.get("fingerprint") or "")
             lineage["candidate_fingerprint"] = str(matching_live.get("fingerprint") or "")
             lineage["intake_status"] = "merged_into_live"
             lineage["reason"] = "fingerprint" if fp and live_by_fingerprint.get(fp) is matching_live else "canonical_url"
+            lineage["enriched_fields"] = enriched_fields
             bucket["duplicates"] += 1
             bucket["merged_live"] = bucket.get("merged_live", 0) + 1
             funnel["merged_into_live"] = funnel.get("merged_into_live", 0) + 1
@@ -1548,16 +1568,13 @@ def build_morning_inventory_intake(
             lineage["intake_status"] = "duplicate_inventory"
             lineage["reason"] = "fingerprint_already_present"
             continue
-        if fp:
-            existing.add(fp)
-        candidate["inventory_intake_mode"] = mode
-        candidate["inventory_lineage_id"] = str(lineage["lineage_id"])
-        candidates.append(candidate)
+        # Night is factual enrichment, not a second publisher. A card without
+        # a matching morning-live candidate remains inventory-only even when it
+        # is fact-ready; tomorrow's/current live scan must confirm actuality.
+        rejected["not_live_confirmed"] = rejected.get("not_live_confirmed", 0) + 1
         lineage["candidate_fingerprint"] = fp
-        lineage["intake_status"] = "eligible_inventory_candidate"
-        lineage["reason"] = reason
-        bucket["after_live_dedupe"] += 1
-        funnel["after_live_dedupe"] += 1
+        lineage["intake_status"] = "held_without_live_confirmation"
+        lineage["reason"] = "morning_live_candidate_not_found"
     candidates.sort(key=_inventory_candidate_priority, reverse=True)
     capped: list[dict] = []
     held_by_cap = 0

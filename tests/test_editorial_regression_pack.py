@@ -114,7 +114,7 @@ class EditorialRegressionPackTest(unittest.TestCase):
             (
                 "empty why-it-matters",
                 "• Совет обновил правила записи, это заметный кейс для жителей, проверьте детали сегодня.",
-                "bad editorial prose marker",
+                "bad_editorial_prose",
             ),
         ]
 

@@ -393,24 +393,70 @@ def protected_lane(candidate: dict) -> dict[str, object]:
     event_shape = str(contract.get("event_shape") or "")
     lanes: list[str] = []
     codes: list[str] = []
-    if block == "transport" or _TRANSPORT_RE.search(text):
-        lanes.append("transport")
-        codes.append("transport_disruption")
-    if story_type == "incident" or _PUBLIC_SAFETY_RE.search(text):
+    invalid: list[str] = []
+    if not candidate.get("include"):
+        invalid.append("not_included")
+    if str(candidate.get("dedupe_decision") or "") in {"drop", "duplicate"} or candidate.get("a_tier_collapsed_into"):
+        invalid.append("duplicate")
+    if candidate.get("validation_errors") or candidate.get("reject_reasons"):
+        invalid.append("validation_failed")
+    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+
+    occurrence_start, occurrence_end = effective_candidate_occurrence_window(candidate)
+    event_block = block in {
+        "weekend_activities", "next_7_days", "future_announcements",
+        "ticket_radar", "outside_gm_tickets", "russian_events", "professional_events",
+    }
+    if event_block and (not occurrence_start or not occurrence_end):
+        invalid.append("missing_event_date")
+    elif occurrence_end and occurrence_end < now_london().date():
+        invalid.append("event_expired")
+    draft_line = str(candidate.get("draft_line") or "").strip()
+    if draft_line:
+        from news_digest.pipeline.editorial_contracts import classify_prose_defects  # noqa: PLC0415
+
+        if any(row.get("severity") == "error" for row in classify_prose_defects(draft_line)):
+            invalid.append("prose_invalid")
+    if invalid:
+        return {
+            "protected": False,
+            "lanes": [],
+            "reason_codes": [],
+            "ineligible_reason_codes": _unique(invalid, limit=8),
+        }
+
+    if block == "transport":
+        from news_digest.pipeline.candidate_validator import transport_movement_impact  # noqa: PLC0415
+
+        if transport_movement_impact(candidate):
+            lanes.append("transport")
+            codes.append("transport_disruption")
+    if block in {"last_24h", "today_focus", "city_watch"} and (
+        story_type == "incident" or _PUBLIC_SAFETY_RE.search(text)
+    ):
         lanes.append("public_safety")
         codes.append("public_safety")
-    if story_type in {"planning", "civic", "local_cost"} or _PLANNING_CIVIC_RE.search(text):
+    if block in {"last_24h", "today_focus", "city_watch", "next_7_days"} and (
+        story_type in {"planning", "civic", "local_cost"} or _PLANNING_CIVIC_RE.search(text)
+    ):
         lanes.append("planning_civic")
         codes.append("planning_or_civic")
-    if event_shape == "recurring" or _MARKET_RE.search(text):
-        lanes.append("weekend_market")
-        codes.append("market_or_fair")
-    if block == "russian_events" or category in {"russian_speaking_events", "diaspora_events"}:
+    if block == "weekend_activities":
+        from news_digest.pipeline.weekend_inventory import is_weekend_inventory_candidate  # noqa: PLC0415
+
+        if is_weekend_inventory_candidate(candidate):
+            lanes.append("weekend_market")
+            codes.append("market_or_fair")
+    if block == "russian_events" and category in {"russian_speaking_events", "diaspora_events"}:
         lanes.append("russian_event")
         codes.append("russian_event")
-    if story_type == "ticket" or category == "venues_tickets" or _TICKET_RE.search(text):
-        lanes.append("ticket")
-        codes.append("ticket_opportunity")
+    if block in {"ticket_radar", "outside_gm_tickets"}:
+        from news_digest.pipeline.ticket_notability import a_tier_ticket_policy  # noqa: PLC0415
+
+        a_tier, _ = a_tier_ticket_policy(candidate)
+        if a_tier:
+            lanes.append("ticket")
+            codes.append("a_tier_ticket")
     return {
         "protected": bool(lanes),
         "lanes": _unique(lanes, limit=8),
@@ -485,8 +531,9 @@ def backup_ttl_policy(candidate: dict, *, today: date | None = None) -> dict[str
     contract = attach_editorial_contract(candidate).get("editorial_contract") or {}
     rubric = str((candidate.get("rubric_contract") or {}).get("rubric") or contract.get("story_type") or candidate.get("category") or "")
     block = str(candidate.get("primary_block") or "")
-    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    event_day = _parse_date_value(event.get("date_start") or event.get("date") or event.get("date_end"))
+    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+
+    event_day, _ = effective_candidate_occurrence_window(candidate, today=today)
 
     if block in {"weather", "transport"} or rubric == "transport":
         ttl_days = 1

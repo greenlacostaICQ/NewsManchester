@@ -31,6 +31,7 @@ from news_digest.pipeline.transport_language import (
 )
 from news_digest.pipeline.editorial_contracts import (
     attach_editorial_contract,
+    classify_prose_defects,
     classify_ticket_type,
     copy_invariant_errors,
     onsale_datetime_from_blob,
@@ -47,6 +48,7 @@ from news_digest.pipeline.ticket_notability import (
     is_a_tier_ticket as ticket_policy_is_a_tier,
     prefetch_notability,
     ticket_artist_name,
+    ticket_event_owner,
 )
 from news_digest.pipeline.toponyms import restore_english_toponyms
 from news_digest.pipeline.place_names import preserve_place_names
@@ -157,62 +159,6 @@ def _is_publish_plan_protected_budget(candidate: dict | None) -> bool:
             or _is_publish_plan_must_show(candidate)
         )
     )
-
-
-_BAD_EDITORIAL_PROSE_MARKERS = (
-    "ticket office",
-    "слот входа",
-    "госпитальн",
-    "кадровый и дисциплинарный кейс",
-    "заметный кейс",
-    "новая фаза истории",
-    "сетка влияния",
-    "this website makes extensive use of javascript",
-    "browser settings",
-    "проверьте время",
-    "проверьте дату",
-    "билеты и детали берите",
-    "undefined",
-    "следить компаниям",
-    "business-impact",
-    "лучше взять зонт",
-    "лучше прихватить зонт",
-    "не забудьте зонт",
-    "прихватите зонт",
-    "live alert",
-    "live disruption",
-    "forecast",
-    "attractions",
-    "highlights",
-    "matchday",
-    "check before",
-    "опубликовал важное обновление",
-    "появилось новое обновление",
-    "судебное обновление",
-    "новое судебное",
-    "футбольное обновление",
-    "перепроверьте",
-    "убедитесь сами",
-    "читайте подробнее",
-    "подробности ниже",
-    # PR filler endings from LLM padding
-    "обогатит",
-    "обещает стать",
-    "центр притяжения",
-    "новая достопримечательность",
-    "другие детали не сообщаются",
-    "подробности не раскрываются",
-    "остаётся нерешённой",
-    "привлечёт внимание",
-    "вступило в силу.",
-    "билеты и даты уточняйте",
-    "время и дату уточняйте",
-    "дату и время уточняйте",
-    "уточните даты",
-    "проверьте детали",
-    "свяжитесь с организатор",
-    "проверьте сами",
-)
 
 
 @dataclass(slots=True)
@@ -2031,6 +1977,12 @@ def _ticket_lineup(candidate: dict) -> list[str]:
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     venue_low = re.sub(r"\s+", " ", str(event.get("venue") or "")).strip().lower()
     event_name_low = re.sub(r"\s+", " ", str(event.get("event_name") or "")).strip().lower()
+    notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+    signals = notability.get("signals") if isinstance(notability.get("signals"), dict) else {}
+    protected_a_tier = [str(name).strip() for name in signals.get("a_tier_lineup") or [] if str(name).strip()]
+    protected_keys = {name.lower() for name in protected_a_tier}
+    raw = protected_a_tier + raw
+    raw.sort(key=lambda name: (0 if str(name).strip().lower() in protected_keys else 1))
     names: list[str] = []
     seen: set[str] = set()
     for nm in raw:
@@ -2044,14 +1996,32 @@ def _ticket_lineup(candidate: dict) -> list[str]:
             continue
         seen.add(low)
         names.append(nm)
-        if len(names) >= 6:
+        if len(names) >= max(6, len(protected_a_tier)):
             break
     return names
 
 
+def _ticket_public_status(candidate: dict) -> str:
+    """Reader-facing timing only; ranking reasons stay in reports."""
+    ticket_type = str(candidate.get("ticket_type") or "").strip() or classify_ticket_type(candidate)
+    if ticket_type == "presale_soon":
+        return "Предпродажа откроется в ближайшее время."
+    if ticket_type in {"on_sale_now", "newly_listed"}:
+        return "Билеты поступили в продажу."
+    event_dt = _parse_ticket_datetime(candidate)
+    if event_dt and event_dt.date() == now_london().date():
+        return "Событие проходит сегодня."
+    return ""
+
+
 def _build_ticket_fallback_line(candidate: dict) -> str:
     notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
-    title = str(notability.get("artist") or "").strip() or ticket_artist_name(candidate) or _ticket_headliner(str(candidate.get("title") or ""))
+    title = (
+        str(notability.get("event_owner") or "").strip()
+        or ticket_event_owner(candidate, kind=str(notability.get("kind") or ""))
+        or ticket_artist_name(candidate)
+        or _ticket_headliner(str(candidate.get("title") or ""))
+    )
     venue = _ticket_venue(candidate)
     genre = _ticket_genre(candidate)
     # Build the card from the CLEAN structured fields (event name + venue +
@@ -2063,14 +2033,18 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
         return ""
     if str(candidate.get("primary_block") or "") in {"ticket_radar", "outside_gm_tickets"} and _ticket_watch_decision(candidate)["decision"] != "show":
         return ""
-    reason = _ticket_watch_reason(candidate)
+    public_status = _ticket_public_status(candidate)
+    if str(candidate.get("category") or "") in {"russian_speaking_events", "diaspora_events"}:
+        public_status = "Русскоязычное событие. Билеты и время указаны на официальной странице."
+    if not public_status:
+        public_status = "Билеты и время указаны на официальной странице."
     price = _ticket_price(candidate)
     price_part = f"; цена {price}" if price else ""
     event_dt = _parse_ticket_datetime(candidate)
     if str(candidate.get("primary_block") or "") == "next_7_days" and event_dt:
         days_out = (event_dt.date() - now_london().date()).days
         if 0 <= days_out <= 7:
-            reason = "событие на этой неделе"
+            public_status = "Событие проходит на этой неделе."
     day_month = _format_ru_day_month(event_dt)
     time_part = ""
     if event_dt and event_dt.strftime("%H:%M") not in {"00:00", "12:00"}:
@@ -2096,7 +2070,7 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
                 day_month = f"{', '.join(parts[:-1])} и {parts[-1]}"
             time_part = ""  # multiple nights — a single start time would mislead
     genre_part = f" ({genre})" if genre else ""
-    reason_part = f" {reason[:1].upper()}{reason[1:]}." if reason else ""
+    status_part = f" {public_status}" if public_status else ""
     # Artist name in bold; for festivals show the main lineup (also bold) so the
     # card names the acts that justify it, not just the festival title.
     head = f"<b>{title}</b>"
@@ -2111,12 +2085,12 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
         lineup = []
     lineup_part = f" Состав: {', '.join(f'<b>{n}</b>' for n in lineup)}." if lineup else ""
     if day_month and venue:
-        return f"• {head} — {day_month}{time_part}, {venue}{genre_part}{price_part}.{reason_part}{lineup_part}"
+        return f"• {head} — {day_month}{time_part}, {venue}{genre_part}{price_part}.{status_part}{lineup_part}"
     if day_month:
-        return f"• {head} — {day_month}{time_part}{genre_part}{price_part}.{reason_part}{lineup_part}"
+        return f"• {head} — {day_month}{time_part}{genre_part}{price_part}.{status_part}{lineup_part}"
     if venue:
-        return f"• {head} — {venue}{genre_part}{price_part}.{reason_part}{lineup_part}"
-    return f"• {head}{genre_part}{price_part}.{reason_part}{lineup_part}"
+        return f"• {head} — {venue}{genre_part}{price_part}.{status_part}{lineup_part}"
+    return f"• {head}{genre_part}{price_part}.{status_part}{lineup_part}"
 
 
 def _looks_like_source_chrome(value: str) -> bool:
@@ -2557,7 +2531,7 @@ def _today_focus_recovery_line(candidate: dict) -> str:
         school = "St Gabriel's RC High School" if "st gabriel" in lowered else "школе в Bury"
         return (
             f"• Bury: женщину арестовали в {school} по подозрению в сексуальных преступлениях против ребёнка. "
-            "Если это ваша школа, следите за обновлениями полиции и администрации."
+            "Если это ваша школа, проверяйте сообщения полиции и администрации школы."
         )
     if re.search(r"\bconsultation\b", lowered) and re.search(r"\b(?:open|deadline|closing|closes)\b", lowered):
         place = "Greater Manchester"
@@ -2980,91 +2954,6 @@ def _weekend_occurrence_datetime(candidate: dict) -> datetime | None:
         event_time = structured.timetz() if structured else datetime(2000, 1, 1, 12, 0).timetz()
         return datetime.combine(chosen, event_time).replace(tzinfo=now_london().tzinfo)
     return structured
-
-
-_MISROUTED_WEEKEND_MARKET_RE = re.compile(
-    r"\b(?:asian\s+food\s+night\s+market|night\s+market|makers?\s+market|"
-    r"food\s+market|street\s+food|flea\s+market|vintage\s+market|car\s*boot|"
-    r"fair|fayre|festival)\b",
-    re.IGNORECASE,
-)
-
-
-def _event_day_for_weekend_rescue(candidate: dict) -> date | None:
-    event_dt = _event_structured_datetime(candidate) or _parse_ticket_datetime(candidate)
-    return event_dt.date() if event_dt else None
-
-
-def _is_misrouted_weekend_market_rescue(candidate: dict) -> bool:
-    if not isinstance(candidate, dict) or candidate.get("include"):
-        return False
-    block = str(candidate.get("primary_block") or "")
-    category = str(candidate.get("category") or "")
-    if block != "openings" and category != "food_openings":
-        return False
-    reason = str(candidate.get("reason") or "")
-    if not re.search(
-        r"cross-day rehash|fingerprint already shipped|already shipped|Без новых фактов",
-        reason,
-        re.IGNORECASE,
-    ):
-        return False
-    event_day = _event_day_for_weekend_rescue(candidate)
-    if not event_day:
-        return False
-    weekend_start, weekend_end = current_weekend_window()
-    if not (weekend_start <= event_day <= weekend_end):
-        return False
-    rubric = candidate.get("rubric_contract") if isinstance(candidate.get("rubric_contract"), dict) else {}
-    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    blob = " ".join(
-        str(value or "")
-        for value in (
-            candidate.get("title"),
-            candidate.get("summary"),
-            candidate.get("lead"),
-            candidate.get("evidence_text"),
-            candidate.get("source_label"),
-            candidate.get("source_url"),
-            event.get("event_name"),
-        )
-    )
-    if str(rubric.get("rubric") or "") == "weekend_market":
-        return True
-    return bool(_MISROUTED_WEEKEND_MARKET_RE.search(blob))
-
-
-def _rescue_misrouted_weekend_markets(candidates: list[dict], warnings: list[str]) -> dict[str, object]:
-    rescued: list[dict[str, object]] = []
-    for candidate in candidates:
-        if not _is_misrouted_weekend_market_rescue(candidate):
-            continue
-        previous_block = str(candidate.get("primary_block") or "")
-        previous_category = str(candidate.get("category") or "")
-        candidate["include"] = True
-        candidate["primary_block"] = "weekend_activities"
-        candidate["category"] = "culture_weekly"
-        candidate["publish_plan_status"] = "show"
-        candidate["writer_rescued_weekend_market"] = True
-        candidate["reason"] = (
-            f"{candidate.get('reason') or ''} | Writer rescue: event-like market "
-            "belongs in current weekend inventory."
-        ).strip()
-        attach_editorial_contract(candidate)
-        rescued.append(
-            {
-                "fingerprint": candidate.get("fingerprint"),
-                "title": candidate.get("title"),
-                "source_label": candidate.get("source_label"),
-                "from_block": previous_block,
-                "from_category": previous_category,
-                "to_block": "weekend_activities",
-                "event_date": str(_event_day_for_weekend_rescue(candidate) or ""),
-            }
-        )
-    if rescued:
-        warnings.append(f"Writer rescued {len(rescued)} misrouted current-weekend market item(s).")
-    return {"count": len(rescued), "items": rescued}
 
 
 def _format_event_time(raw_hour: str, raw_minute: str = "", meridiem: str = "") -> str:
@@ -4097,8 +3986,11 @@ _RECURRING_EVENT_MARKERS = re.compile(
 def _is_expired_event_candidate(candidate: dict, line: str = "") -> bool:
     if str(candidate.get("primary_block") or "") not in _EVENT_BLOCKS:
         return False
-    if str(candidate.get("primary_block") or "") == _WEEKEND_BLOCK and weekend_occurrence_date(candidate):
-        return False
+    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+
+    _, effective_end = effective_candidate_occurrence_window(candidate)
+    if effective_end is not None:
+        return effective_end < now_london().date()
     event_day = _parse_day(candidate.get("published_at"))
     if not event_day or event_day >= now_london().date():
         return False
@@ -4113,13 +4005,6 @@ def _is_expired_event_candidate(candidate: dict, line: str = "") -> bool:
             line,
         )
     )
-    # Recurring events ("каждую третью субботу месяца", "every third Saturday",
-    # "weekly car boot") have no single future date to detect, so the stale
-    # `published_at` (often the scrape date, e.g. 2024 for an evergreen market
-    # listing) wrongly marked them expired. A recurring marker means the event
-    # is ongoing, not over. Fixed THE SPINNINGFIELDS MAKERS MARKET (2026-06-01).
-    if _RECURRING_EVENT_MARKERS.search(text):
-        return False
     return not _future_date_signal(text)
 
 
@@ -4847,11 +4732,11 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
             errors.append(
                 f"draft_line for long-format category needs ≥{LONG_FORMAT_MIN_SENTENCES} sentences (got {sentence_count})."
             )
-    lowered = text.lower()
-    for marker in _BAD_EDITORIAL_PROSE_MARKERS:
-        if marker in lowered:
-            errors.append(f"draft_line contains bad editorial prose marker: {marker}.")
-            break
+    for finding in classify_prose_defects(text):
+        errors.append(
+            "draft_line prose defect "
+            f"[{finding.get('severity')}]:{finding.get('code')}:{finding.get('marker')}."
+        )
     errors.extend(_sanity_flags(candidate, text))
     errors.extend(_story_frame_quality_errors(candidate, text))
     for invariant in copy_invariant_errors(candidate, text):

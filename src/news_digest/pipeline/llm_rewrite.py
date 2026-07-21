@@ -3926,6 +3926,7 @@ def run_rank_digest(project_root: Path) -> StageResult:
             "sitelinks": notability.sitelinks,
             "headliners": list(notability.headliners),
             "signals": notability.signals or {},
+            "event_owner": notability.event_owner,
         }
         notability_scored += 1
 
