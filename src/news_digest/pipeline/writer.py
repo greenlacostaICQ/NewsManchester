@@ -4035,31 +4035,6 @@ def _section_event_timing_decision(candidate: dict) -> tuple[str, str]:
     return "keep", ""
 
 
-def _transport_empty_line(project_root: Path) -> str:
-    report = read_json(project_root / "data" / "state" / "collector_report.json", {})
-    transport = ((report.get("categories") or {}).get("transport") or {}) if isinstance(report, dict) else {}
-    checked = bool(transport.get("checked"))
-    health = [entry for entry in (transport.get("source_health") or []) if isinstance(entry, dict)]
-    if not checked:
-        return (
-            '• Транспорт: источники TfGM/Metrolink сегодня не были проверены — '
-            'перед поездкой проверьте официальный сервис. '
-            '<a href="https://tfgm.com/">TfGM</a>'
-        )
-    failed = [entry for entry in health if entry.get("errors")]
-    if health and len(failed) == len(health):
-        return (
-            '• Транспорт: TfGM/Metrolink сегодня недоступны для проверки — '
-            'перед поездкой проверьте официальный сервис. '
-            '<a href="https://tfgm.com/">TfGM</a>'
-        )
-    return (
-        '• Транспорт: проверенные TfGM/Metrolink источники не дали серьёзных '
-        'сбоев для выпуска — перед поездкой всё равно проверьте маршрут. '
-        '<a href="https://tfgm.com/">TfGM</a>'
-    )
-
-
 def _has_current_weekend_recurring_signal(text: str) -> bool:
     lowered = str(text or "").lower()
     today, weekend_end = current_weekend_window()
@@ -5515,8 +5490,8 @@ def _render_lead_line(line: str, source_url: str, source_label: str) -> str:
     return _attach_source_anchor(line, source_url, source_label)
 
 
-def produce_replacement_for_slot(state_dir: Path, slot_id: str, *, stage: str = "editor") -> str:
-    """Одна попытка замены строки слота запасным ИЗ ПЛАНА (для редактора/судьи).
+def produce_replacement_for_slot(state_dir: Path, slot_id: str, *, stage: str = "judge") -> str:
+    """Одна попытка pre-send замены строки слота запасным ИЗ ПЛАНА.
 
     Возвращает готовую строку-буллет с якорем источника или "" — если цепочка
     запасных слота исчерпана/непригодна. Результат фиксируется в
@@ -5834,12 +5809,6 @@ def write_digest(project_root: Path) -> StageResult:
             section_fingerprints.setdefault(section_name, []).append(fp)
             rendered_candidate_fingerprints.append(fp)
             rendered_section_by_fp[fp] = section_name
-
-    if not sections_out.get("Общественный транспорт сегодня"):
-        sections_out["Общественный транспорт сегодня"] = [_transport_empty_line(project_root)]
-        section_sources["Общественный транспорт сегодня"] = ["TfGM"]
-        section_fingerprints["Общественный транспорт сегодня"] = [""]
-        warnings.append("Writer added honest empty-transport coverage line.")
 
     # --- Сборка HTML в порядке плана -----------------------------------------
     rendered: list[str] = [_title_line(), ""]

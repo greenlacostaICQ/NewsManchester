@@ -21,7 +21,7 @@ class EditorPacingTest(unittest.TestCase):
             limiter.acquire(1000)  # reuses the rewrite-stage bucket; no import cycle
         self.assertGreaterEqual(editor.PRE_SEND_EDITOR_MAX_WORKERS, 2)
 
-    def test_weekend_replace_needed_without_reserve_keeps_row(self):
+    def test_weekend_replace_needed_is_deferred_to_plan_repair_executor(self):
         line = (
             '• Stockport Makers Market: в субботу на Market Place будут независимые '
             'продавцы и еда; держите в планах. '
@@ -43,7 +43,7 @@ class EditorPacingTest(unittest.TestCase):
 
         self.assertEqual(polished["Выходные в GM"], [line])
         self.assertEqual(stats["model_requested_stripped"], 0)
-        self.assertIn("планового запасного нет", warnings[0])
+        self.assertIn("передано plan repair executor", warnings[0])
 
     def test_empty_ending_post_check_strips_generic_filler_and_keeps_link(self):
         line = (

@@ -11,9 +11,9 @@
 * повторы гасятся здесь (а не вырезаются из готового HTML на release);
 * недобор ниже минимума фиксируется честной причиной в самом плане.
 
-После записи плана ни писатель, ни редактор, ни release не меняют состав:
-только замена на запасного ИЗ ПЛАНА через plan_execution или снятие по
-кодифицированной причине.
+После записи плана writer только исполняет слоты, editor правит слова, pre-send
+repair executor может заменить слот запасным ИЗ ПЛАНА или снять его по
+кодифицированной причине, а verify только сверяет результат.
 """
 from __future__ import annotations
 
@@ -28,6 +28,7 @@ from news_digest.pipeline.common import (
     SECTION_MAX_ITEMS,
     SECTION_MAX_PER_SOURCE,
     SECTION_MIN_ITEMS,
+    fingerprint_for_candidate,
     now_london,
     pipeline_run_id_from,
     read_json,
@@ -64,6 +65,60 @@ class StageResult:
     ok: bool
     message: str
     report_path: Path
+
+
+def _planned_transport_status_candidate(state_dir: Path) -> tuple[dict | None, str]:
+    """Create the neutral transport card only from a fresh, complete TfGM scan.
+
+    It is admitted only when no concrete transport card survives planning, so it
+    can never replace or sit beside a specific restriction.
+    """
+    report = read_json(state_dir / "collector_report.json", {})
+    if str(report.get("run_date_london") or "") != today_london():
+        return None, "collector_report_not_fresh"
+    transport = (report.get("categories") or {}).get("transport") or {}
+    if not isinstance(transport, dict) or not transport.get("checked"):
+        return None, "transport_scan_not_checked"
+    if transport.get("usable_for_release") is False:
+        return None, "transport_scan_incomplete"
+    health = [row for row in transport.get("source_health") or [] if isinstance(row, dict)]
+    tfgm = next((row for row in health if str(row.get("name") or "").strip().lower() == "tfgm"), None)
+    if not tfgm or tfgm.get("errors") or not (tfgm.get("fetched") or tfgm.get("not_modified")):
+        return None, "tfgm_fresh_check_failed"
+    incomplete = [
+        row for row in health
+        if row.get("errors") or not (row.get("fetched") or row.get("not_modified"))
+    ]
+    if incomplete:
+        return None, "transport_scan_incomplete"
+
+    candidate = {
+        "title": f"TfGM transport status check {today_london()}",
+        "category": "transport",
+        "summary": "TfGM был успешно проверен; отдельной подтверждённой карточки об ограничении для выпуска нет.",
+        "source_url": "https://tfgm.com/travel-updates",
+        "source_label": "TfGM",
+        "primary_block": "transport",
+        "include": True,
+        "validated": True,
+        "digest_selection_verdict": "selected",
+        "dedupe_decision": "new",
+        "freshness_status": "fresh_24h",
+        "published_at": str(report.get("run_at_london") or now_london().isoformat()),
+        "published_date_london": today_london(),
+        "source_health": "dated",
+        "synthetic": True,
+        "synthetic_stale": False,
+        "transport_status_fallback": True,
+        "plan_fallback_only": True,
+        "draft_line": (
+            "• TfGM: утренняя проверка завершена; отдельного подтверждённого ограничения "
+            "для карточки нет. Перед поездкой проверьте актуальный статус своего маршрута."
+        ),
+        "reason": "Plan-owned transport fallback after a fresh complete TfGM scan.",
+    }
+    candidate["fingerprint"] = fingerprint_for_candidate(candidate)
+    return candidate, ""
 
 
 def _ordered_sections(show_weekend: bool) -> list[str]:
@@ -624,6 +679,21 @@ def run_plan_digest(project_root: Path) -> StageResult:
             else:
                 _mark_out(candidate, f"backup_ineligible:{render_path or 'no_render_path'}")
 
+    transport_section = "Общественный транспорт сегодня"
+    if not pools.get(transport_section):
+        transport_fallback, fallback_reason = _planned_transport_status_candidate(state_dir)
+        if transport_fallback is not None:
+            attach_editorial_contract(transport_fallback)
+            candidates.append(transport_fallback)
+            pools[transport_section].append(transport_fallback)
+            warnings.append(
+                "Планёрка создала один synthetic transport fallback после свежей полной проверки TfGM."
+            )
+        elif fallback_reason:
+            warnings.append(
+                f"Transport fallback не запланирован: {fallback_reason}; неполный скан не маскируется статусной строкой."
+            )
+
     # --- Сортировка пулов и планёрочные решения ----------------------------
     for section in list(pools):
         pools[section] = _sorted_pool(pools[section], section)
@@ -933,9 +1003,9 @@ def run_plan_digest(project_root: Path) -> StageResult:
         "weekday": london_now.weekday(),
         "show_weekend": show_weekend,
         "policy": (
-            "Состав решён один раз. Писатель/редактор/судья меняют строку только "
-            "заменой на запасного этого слота (plan_execution) или снятием по "
-            "кодифицированной причине. План неизменяем; исполнение — в plan_execution_report.json."
+            "Состав решён один раз. Writer исполняет план, editor правит только слова, "
+            "pre-send repair executor заменяет слот только его запасным или снимает по "
+            "кодифицированной причине; verify только сверяет. План неизменяем."
         ),
         "budget": {
             "max_visible_items": PLAN_PUBLIC_MAX_VISIBLE_ITEMS,

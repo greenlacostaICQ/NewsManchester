@@ -907,31 +907,6 @@ _RESERVE_INSERT_EVENT_HORIZON_DAYS: dict[str, int | None] = {
 }
 
 
-def _transport_status_fallback_line() -> str:
-    return (
-        '• Транспорт: конкретных подтверждённых сбоев в выпуск не попало. '
-        'Перед поездкой проверьте страницу статуса TfGM. '
-        '<a href="https://tfgm.com/travel-updates">TfGM</a>'
-    )
-
-
-_EDITOR_STATE_DIR: dict[str, object] = {"path": None}
-
-
-def _plan_substitute_for_line(line: str, section_name: str, candidates: list[dict]) -> str:
-    """Замена безнадёжной строки ТОЛЬКО запасным её планового слота."""
-    state_dir = _EDITOR_STATE_DIR.get("path")
-    if state_dir is None:
-        return ""
-    candidate = _candidate_index(candidates).get(_line_url_identity(line))
-    slot_id = str((candidate or {}).get("plan_slot_id") or "")
-    if not slot_id:
-        return ""
-    from news_digest.pipeline.writer import produce_replacement_for_slot  # noqa: PLC0415
-
-    return produce_replacement_for_slot(state_dir, slot_id, stage="editor")
-
-
 def _apply_editor_line_actions(
     polished: dict[str, list[str]],
     *,
@@ -1014,33 +989,12 @@ def _apply_editor_line_actions(
         original = str(item.get("line") or "")
         if section_name not in polished or not original:
             continue
-        replacement = _plan_substitute_for_line(original, section_name, candidates)
-        section_lines = polished.get(section_name) or []
-        try:
-            pos = section_lines.index(original)
-        except ValueError:
-            continue
-        if replacement:
-            section_lines[pos] = replacement
-            item["line"] = replacement
-            stats["model_requested_replaced"] = int(stats["model_requested_replaced"] or 0) + 1
-            if isinstance(changes, list):
-                changes.append(
-                    {
-                        "round": round_no,
-                        "index": index,
-                        "section": section_name,
-                        "before": original,
-                        "after": replacement,
-                        "reason": action.get("reason") or "Model requested same-section replacement.",
-                    }
-                )
-        else:
-            # Этап 3: состав неизменен. Нет планового запасного — строка
-            # остаётся в выпуске с предупреждением; судья пометит её словами.
-            warnings.append(
-                f"Final editor хотел убрать строку в «{section_name}», но планового запасного нет — строка сохранена."
-            )
+        # Editor owns words only. Composition actions are deferred to the
+        # post-build plan repair executor, which can replace/remove the slot and
+        # post-check the exact defect as one auditable operation.
+        warnings.append(
+            f"Final editor запросил изменение состава в «{section_name}»; действие передано plan repair executor."
+        )
     return polished, stats
 
 
@@ -1152,36 +1106,13 @@ def _pre_send_polish_sections(
     block_action_reports.append(block_report)
     round_reports.append({"round": 1, **model_report})
 
-    # Universal degradation (owner: for everything, always): a row still bad
-    # after the repair pass is REPLACED from a clean same-section public
-    # reserve, else STRIPPED. The issue always ships; a known-bad row never does.
+    # Editor owns words only. Any row still bad is left in its slot for the
+    # post-build plan repair executor to replace/remove and post-check.
     for section_name in list(polished.keys()):
-        out: list[str] = []
         for line in polished[section_name]:
             if not line.strip() or not _line_needs_russian_editor(line):
-                out.append(line)
                 continue
-            replacement = _plan_substitute_for_line(line, section_name, candidates or [])
-            if replacement:
-                out.append(replacement)
-                replaced += 1
-            else:
-                # A concrete transport row we cannot render is STRIPPED, never
-                # swapped for the generic "check TfGM" status line: that line
-                # may only stand in for an *empty* block (contract: generic
-                # fallback is forbidden when concrete disruption exists). The
-                # concrete location-bearing recovery already ran above
-                # (_transport_replacement_for_line).
-                out.append(line)
-                warnings.append(f"Известно-слабая строка сохранена в «{section_name}» (планового запасного нет); судья пометит.")
-        polished[section_name] = out
-    transport_lines = [
-        line for line in polished.get("Общественный транспорт сегодня", [])
-        if line.strip() and line.strip() != "•"
-    ]
-    if not transport_lines:
-        polished["Общественный транспорт сегодня"] = [_transport_status_fallback_line()]
-        warnings.append("Degradation: replaced empty transport block with TfGM status fallback.")
+            warnings.append(f"Известно-слабая строка в «{section_name}» передана plan repair executor.")
 
     needs_second_round = (
         bool(api_key)
@@ -1265,31 +1196,10 @@ def _pre_send_polish_sections(
         round_reports.append({"round": 2, "status": "skipped_not_needed"})
 
     for section_name in list(polished.keys()):
-        out: list[str] = []
         for line in polished[section_name]:
             if not line.strip() or not _line_needs_russian_editor(line):
-                out.append(line)
                 continue
-            replacement = _plan_substitute_for_line(line, section_name, candidates or [])
-            if replacement:
-                out.append(replacement)
-                replaced += 1
-            else:
-                # Strip, don't substitute the generic status line for a concrete
-                # row (see first-round note above).
-                stripped += 1
-                warnings.append(f"Final editor stop-loss: stripped an unrepairable line in «{section_name}».")
-        polished[section_name] = out
-
-    # Generic TfGM status line stands in ONLY for an otherwise-empty transport
-    # block (honest "no confirmed disruptions"), never beside concrete lines.
-    _second_round_transport = [
-        line for line in polished.get("Общественный транспорт сегодня", [])
-        if line.strip() and line.strip() != "•"
-    ]
-    if not _second_round_transport and "Общественный транспорт сегодня" in polished:
-        polished["Общественный транспорт сегодня"] = [_transport_status_fallback_line()]
-        warnings.append("Final editor stop-loss: empty transport block replaced with TfGM status fallback.")
+            warnings.append(f"Final editor оставил состав неизменным в «{section_name}»; repair executor обязан перепроверить строку.")
 
     polished, empty_ending_post_check = _apply_empty_ending_post_check(polished, warnings)
 
@@ -1354,7 +1264,6 @@ def edit_digest(project_root: Path) -> StageResult:
     candidates_path = state_dir / "candidates.json"
     draft_path = state_dir / "draft_digest.html"
     report_path = state_dir / "editor_report.json"
-    _EDITOR_STATE_DIR["path"] = state_dir
     final_editor_report_path = state_dir / "final_editor_report.json"
 
     draft_text = draft_path.read_text(encoding="utf-8") if draft_path.exists() else ""
@@ -1366,8 +1275,7 @@ def edit_digest(project_root: Path) -> StageResult:
         for candidate in payload.get("candidates", [])
         if isinstance(candidate, dict) and candidate.get("include")
     ]
-    # All candidates (incl. public reserves with include=False) so the polish
-    # pass can replace an unrepairable row from a same-section reserve.
+    # All candidates provide fact evidence; editor never changes composition.
     all_candidates = [c for c in payload.get("candidates", []) if isinstance(c, dict)]
 
     errors: list[str] = []

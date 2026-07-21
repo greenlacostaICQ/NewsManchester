@@ -4,9 +4,9 @@
 send-file. Сравнивает ФИНАЛЬНЫЙ отправляемый HTML с неизменяемым планом
 и отчётом исполнения.
 
-Правило блокировки (согласовано): контентные расхождения НИКОГДА не
-отменяют выпуск — они уходят предупреждениями и ship_degraded; отправку
-блокируют только технические дефекты артефакта:
+Плановый недобор и кодифицированные снятия уходят в ship_degraded. Ошибка
+исполнения плана или известная фактическая ошибка после ремонта блокирует
+отправку:
   * плана нет или он от другого pipeline_run_id;
   * шапка выпуска не за сегодняшний день;
   * HTML пуст или без единой ссылки-источника.
@@ -18,14 +18,18 @@ import re
 from pathlib import Path
 
 from news_digest.pipeline.common import (
-    canonical_url_identity,
     extract_sections,
     now_london,
     read_json,
     today_london,
     write_json,
 )
-from news_digest.pipeline.plan_execution import load_execution, load_plan, plan_slots
+from news_digest.pipeline.plan_execution import (
+    build_final_execution_report,
+    load_execution,
+    load_plan,
+    plan_slots,
+)
 
 REPORT_NAME = "verify_digest_plan_report.json"
 _HREF_RE = re.compile(r'href="([^"]+)"')
@@ -37,12 +41,6 @@ class VerifyResult:
     ok: bool
     message: str
     report_path: Path
-
-
-def _candidate_url_identity(candidate: dict | None) -> str:
-    if not isinstance(candidate, dict):
-        return ""
-    return canonical_url_identity(str(candidate.get("source_url") or ""))
 
 
 def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) -> VerifyResult:
@@ -58,8 +56,6 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
     plan = load_plan(state_dir)
     execution = load_execution(state_dir)
     payload = read_json(state_dir / "candidates.json", {"candidates": []})
-    writer_report = read_json(state_dir / "writer_report.json", {})
-    dedupe_memory = read_json(state_dir / "dedupe_memory.json", {})
     by_fp = {
         str(c.get("fingerprint") or ""): c
         for c in payload.get("candidates", [])
@@ -127,87 +123,36 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
             f"Masthead date {masthead.group(1)} is not today ({today_london()}) — stale artifact."
         )
 
-    # --- Контентная сверка (warnings, никогда не блокирует) ----------------
-    visible_idents = {canonical_url_identity(u) for u in _HREF_RE.findall(html_text)}
-    visible_idents.discard("")
+    # --- Сверка исполнения: каждая HTML-строка потребляется одним слотом ----
     sections = extract_sections(html_text)
     lead_visible = bool(sections.get("Главная история дня"))
+    final_selection = build_final_execution_report(state_dir, html_text, write=True)
+    divergences.extend(final_selection.get("divergences") or [])
+    final_counts = final_selection.get("counts") or {}
+    shown = int(final_counts.get("shown") or 0)
+    replaced = int(final_counts.get("replaced") or 0)
+    removed = int(final_counts.get("removed") or 0)
+    unfilled = max(0, int(final_counts.get("slots") or 0) - shown - replaced - removed)
 
-    slot_rows = list((execution.get("slots") or {}).values())
-    slot_by_id = {
-        str(slot.get("slot_id") or ""): slot
-        for slot in plan_slots(plan)
-        if isinstance(slot, dict)
+    # These are technical composition defects: unlike an honest coded removal,
+    # they mean the HTML is not a faithful execution of the immutable plan.
+    blocking_plan_kinds = {
+        "planned_line_missing_from_final_html",
+        "slot_rendered_in_wrong_section",
+        "removed_line_still_visible",
+        "line_outside_plan",
+        "html_line_duplicated",
+        "final_report_row_count_mismatch",
     }
-    planned_ident_by_slot: dict[str, str] = {}
-    accounted_idents: set[str] = set()
-    for slot in plan_slots(plan):
-        slot_id = str(slot.get("slot_id") or "")
-        for fp in [slot.get("primary_fingerprint"), *(slot.get("backup_fingerprints") or [])]:
-            ident = _candidate_url_identity(by_fp.get(str(fp or "")))
-            if ident:
-                accounted_idents.add(ident)
-        planned_ident_by_slot[slot_id] = _candidate_url_identity(
-            by_fp.get(str(slot.get("primary_fingerprint") or ""))
-        )
-    lead_plan = plan.get("lead") if isinstance(plan.get("lead"), dict) else {}
-    for fp in [lead_plan.get("primary_fingerprint"), *(lead_plan.get("understudy_fingerprints") or [])]:
-        ident = _candidate_url_identity(by_fp.get(str(fp or "")))
-        if ident:
-            accounted_idents.add(ident)
-
-    shown = replaced = removed = unfilled = 0
-    for row in slot_rows:
-        if not isinstance(row, dict):
-            continue
-        slot_id = str(row.get("slot_id") or "")
-        status = str(row.get("status") or "")
-        final_fp = str(row.get("final_fingerprint") or "")
-        final_ident = _candidate_url_identity(by_fp.get(final_fp))
-        if status in {"shown", "replaced"}:
-            shown += status == "shown"
-            replaced += status == "replaced"
-            if final_ident and final_ident not in visible_idents:
-                divergences.append(
-                    {
-                        "slot_id": slot_id,
-                        "kind": "planned_line_missing_from_final_html",
-                        "section": row.get("section"),
-                        "detail": f"status={status}, но строки слота нет в финальном HTML",
-                    }
-                )
-        elif status == "removed":
-            removed += 1
-            slot_spec = slot_by_id.get(slot_id) or {}
-            if slot_spec.get("required") or slot_spec.get("must_show"):
-                divergences.append(
-                    {
-                        "slot_id": slot_id,
-                        "kind": "required_slot_removed",
-                        "section": row.get("section"),
-                        "detail": row.get("replacement_reason") or "required slot has no valid primary/backup",
-                    }
-                )
-            if final_ident and final_ident in visible_idents:
-                divergences.append(
-                    {
-                        "slot_id": slot_id,
-                        "kind": "removed_line_still_visible",
-                        "section": row.get("section"),
-                        "detail": row.get("replacement_reason"),
-                    }
-                )
-            if not str(row.get("replacement_reason") or "").strip():
-                divergences.append(
-                    {"slot_id": slot_id, "kind": "removed_without_coded_reason", "section": row.get("section")}
-                )
-        else:
-            unfilled += 1
-            divergences.append({"slot_id": slot_id, "kind": f"slot_status_{status or 'unknown'}"})
-
-    foreign_lines = sorted(visible_idents - accounted_idents)
-    for ident in foreign_lines[:20]:
-        divergences.append({"kind": "line_outside_plan", "url_identity": ident})
+    for divergence in divergences:
+        if str(divergence.get("kind") or "") in blocking_plan_kinds:
+            technical_errors.append(
+                "Plan execution mismatch: "
+                f"{divergence.get('kind')} ({divergence.get('slot_id') or divergence.get('url') or ''})."
+            )
+    for row in (execution.get("slots") or {}).values():
+        if isinstance(row, dict) and str(row.get("status") or "") == "removed" and not str(row.get("replacement_reason") or "").strip():
+            technical_errors.append(f"Removed slot {row.get('slot_id') or '?'} has no coded reason.")
 
     empty_bullets = [ln for ln in html_text.splitlines() if ln.strip() in {"•", "• "}]
     if empty_bullets:
@@ -216,23 +161,23 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
         divergences.append({"kind": "lead_not_visible"})
 
     actual_section_counts = {section: len(lines) for section, lines in sections.items()}
-    for section, summary in (plan.get("sections") or {}).items():
+    shortfalls = final_selection.get("sections") or {}
+    for section, summary in shortfalls.items():
         if not isinstance(summary, dict):
             continue
-        minimum = int(summary.get("min") or 0)
-        if not minimum or (section == "Выходные в GM" and not plan.get("show_weekend")):
-            continue
-        actual = int(actual_section_counts.get(section, 0))
-        if actual < minimum:
-            divergences.append(
-                {
-                    "kind": "final_section_underflow",
-                    "section": section,
-                    "actual": actual,
-                    "minimum": minimum,
-                    "detail": f"final HTML has {actual}/{minimum}",
-                }
-            )
+        if int(summary.get("planned_shortfall") or 0):
+            divergences.append({"kind": "planned_shortfall", "section": section, **summary})
+        if int(summary.get("execution_loss") or 0):
+            divergences.append({"kind": "execution_loss", "section": section, **summary})
+
+    quality_report = read_json(state_dir / "pre_send_quality_report.json", {})
+    repair_report = quality_report.get("repair_executor") if isinstance(quality_report, dict) else {}
+    repair_report = repair_report if isinstance(repair_report, dict) else {}
+    blocking_unresolved = int(repair_report.get("blocking_unresolved") or 0)
+    if blocking_unresolved:
+        technical_errors.append(
+            f"Pre-send repair has {blocking_unresolved} unresolved known factual error operation(s)."
+        )
 
     a_tier_rows = [
         candidate for candidate in by_fp.values()
@@ -240,10 +185,14 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
     ]
     a_tier_visible = []
     a_tier_missing = []
+    final_fps = {
+        str((row.get("final_candidate") or {}).get("fingerprint") or "")
+        for row in final_selection.get("final_rows") or []
+        if isinstance(row, dict)
+    }
     for candidate in a_tier_rows:
         fp = str(candidate.get("fingerprint") or "")
-        ident = _candidate_url_identity(candidate)
-        if ident and ident in visible_idents:
+        if fp in final_fps:
             a_tier_visible.append(fp)
         else:
             a_tier_missing.append(fp)
@@ -256,27 +205,11 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
                 }
             )
 
-    final_selection_report: dict[str, object] = {}
-    try:
-        from news_digest.pipeline.release import _write_final_selection_report  # noqa: PLC0415
-
-        final_selection_report = _write_final_selection_report(
-            state_dir=state_dir,
-            current_day_london=today_london(),
-            candidates_report=payload,
-            writer_report=writer_report,
-            rendered_fingerprints=set(writer_report.get("rendered_candidate_fingerprints") or []),
-            dedupe_memory=dedupe_memory,
-            final_html=html_text,
-        )
-    except Exception as exc:  # noqa: BLE001
-        warnings.append(f"verify: final_selection_report refresh failed — {type(exc).__name__}: {exc}")
-
     for d in divergences:
         warnings.append(f"verify: {d.get('kind')} — {d.get('slot_id') or d.get('detail') or d.get('url_identity') or ''}")
 
     ok = not technical_errors
-    ship_degraded = bool(divergences)
+    ship_degraded = bool(divergences or int(repair_report.get("unresolved") or 0)) and not technical_errors
     write_json(
         report_path,
         {
@@ -289,13 +222,13 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
             "ship_degraded": ship_degraded,
             "technical_errors": technical_errors,
             "counts": {
-                "slots": len(slot_rows),
+                "slots": int(final_counts.get("slots") or 0),
                 "shown": shown,
                 "replaced": replaced,
                 "removed": removed,
                 "unfilled": unfilled,
-                "visible_source_links": len(visible_idents),
-                "lines_outside_plan": len(foreign_lines),
+                "visible_source_links": len(_HREF_RE.findall(html_text)),
+                "lines_outside_plan": int(final_counts.get("lines_outside_plan") or 0),
                 "empty_bullets": len(empty_bullets),
             },
             "actual_section_counts": actual_section_counts,
@@ -305,13 +238,18 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
                 "missing": a_tier_missing,
                 "conserved": not a_tier_missing,
             },
-            "final_selection_report": final_selection_report,
+            "shortfalls": shortfalls,
+            "final_selection_report": {
+                "path": str((state_dir / "final_selection_report.json").resolve()),
+                "schema_version": final_selection.get("schema_version"),
+                "counts": final_counts,
+            },
             "lead_visible": lead_visible,
             "divergences": divergences[:120],
             "warnings": warnings[:120],
             "policy": (
-                "Контентные расхождения не отменяют выпуск (ship_degraded + warning); "
-                "технически негодный артефакт не отправляется."
+                "Плановый недобор и кодифицированные снятия дают ship_degraded; "
+                "строка вне слота/блока, повторное использование HTML-строки и unresolved fact error блокируют отправку."
             ),
         },
     )

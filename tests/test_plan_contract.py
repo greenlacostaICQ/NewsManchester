@@ -140,7 +140,7 @@ class PlanContractTest(unittest.TestCase):
         self.assertEqual(report["applied"], 0)
         self.assertEqual(report["status"], "ignored_plan_locked")
 
-    def test_5_verify_catches_missing_planned_line_and_blocks_stale_artifact(self) -> None:
+    def test_5_verify_blocks_missing_planned_line_and_stale_artifact(self) -> None:
         candidates = [_candidate(i) for i in range(7)]
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -157,17 +157,16 @@ class PlanContractTest(unittest.TestCase):
             (outgoing / "current_digest.html").write_text("\n".join(lines) + "\n", encoding="utf-8")
             result = run_verify_digest_plan(root)
             report = json.loads((state_dir / "verify_digest_plan_report.json").read_text(encoding="utf-8"))
-            self.assertTrue(result.ok, "контентное расхождение не блокирует отправку")
-            self.assertTrue(report["ship_degraded"])
+            self.assertFalse(result.ok, "HTML, не совпадающий со слотами, не должен отправляться")
+            self.assertFalse(report["ship_degraded"])
             kinds = {d["kind"] for d in report["divergences"]}
             self.assertIn("planned_line_missing_from_final_html", kinds)
-            self.assertIn("final_section_underflow", kinds)
+            self.assertIn("execution_loss", kinds)
             final_selection = json.loads((state_dir / "final_selection_report.json").read_text(encoding="utf-8"))
-            visible_total = sum(
-                int(count) for status, count in final_selection["totals"].items()
-                if status in {"visible", "visible_after_repair"}
-            )
-            self.assertEqual(visible_total, 6, "final selection must count final HTML, not writer output")
+            self.assertEqual(final_selection["counts"]["final_html_rows"], 6)
+            self.assertEqual(final_selection["counts"]["final_report_rows"], 6)
+            self.assertEqual(final_selection["sections"]["Свежие новости"]["execution_loss"], 1)
+            self.assertEqual(final_selection["sections"]["Что важно в ближайшие 7 дней"]["planned_shortfall"], 3)
             # технический брак: вчерашняя шапка — блокирует
             stale = "\n".join(lines).replace(
                 now_london().strftime("%Y-%m-%d"), "2020-01-01", 1
@@ -203,6 +202,42 @@ class PlanContractTest(unittest.TestCase):
             self.assertEqual(fp, good_backup["fingerprint"], "stale запасной должен быть пропущен")
             failed = (execution["slots"].get(target_slot) or {}).get("failed_attempts") or []
             self.assertTrue(any("backup_invalid:stale" in str(a.get("reason")) for a in failed))
+
+    def test_verify_enforces_exact_section_removed_absence_and_no_foreign_lines(self) -> None:
+        candidates = [_candidate(i) for i in range(7)]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, candidates)
+            run_plan_digest(root)
+            write_digest(root)
+            outgoing = root / "data" / "outgoing"
+            outgoing.mkdir(parents=True, exist_ok=True)
+            original = (state_dir / "draft_digest.html").read_text(encoding="utf-8")
+            lines = original.splitlines()
+            victim_index = next(i for i, line in enumerate(lines) if line.startswith("• "))
+            victim = lines.pop(victim_index)
+            moved = "\n".join(lines + ["", "<b>Футбол</b>", victim]) + "\n"
+            (outgoing / "current_digest.html").write_text(moved, encoding="utf-8")
+            run_verify_digest_plan(root)
+            report = json.loads((state_dir / "verify_digest_plan_report.json").read_text(encoding="utf-8"))
+            self.assertIn("slot_rendered_in_wrong_section", {row["kind"] for row in report["divergences"]})
+
+            foreign = original + '• Вне плана. <a href="https://foreign.test/item">X</a>\n'
+            (outgoing / "current_digest.html").write_text(foreign, encoding="utf-8")
+            run_verify_digest_plan(root)
+            report = json.loads((state_dir / "verify_digest_plan_report.json").read_text(encoding="utf-8"))
+            self.assertIn("line_outside_plan", {row["kind"] for row in report["divergences"]})
+
+            execution = json.loads((state_dir / "plan_execution_report.json").read_text(encoding="utf-8"))
+            visible_slot = next(row for row in execution["slots"].values() if row.get("status") == "shown")
+            visible_slot["status"] = "removed"
+            visible_slot["replacement_reason"] = "unrenderable_line"
+            visible_slot["final_fingerprint"] = ""
+            (state_dir / "plan_execution_report.json").write_text(json.dumps(execution), encoding="utf-8")
+            (outgoing / "current_digest.html").write_text(original, encoding="utf-8")
+            run_verify_digest_plan(root)
+            report = json.loads((state_dir / "verify_digest_plan_report.json").read_text(encoding="utf-8"))
+            self.assertIn("removed_line_still_visible", {row["kind"] for row in report["divergences"]})
 
     def test_7_a_tier_ticket_exempt_from_section_cap(self) -> None:
         # Правило 0094: каждый A-tier артист виден сверх любых лимитов.
@@ -338,6 +373,93 @@ class PlanContractTest(unittest.TestCase):
         fresh = plan["sections"]["Свежие новости"]
         self.assertGreaterEqual(fresh["planned"], fresh["min"], "недобор при живом резерве недопустим")
         self.assertIsNone(fresh["expected_shortfall"])
+
+    def test_10_transport_fallback_is_planned_only_after_complete_fresh_tfgm_scan(self) -> None:
+        candidates = [_candidate(i) for i in range(7)]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, candidates)
+            (state_dir / "collector_report.json").write_text(
+                json.dumps(
+                    {
+                        "run_date_london": now_london().strftime("%Y-%m-%d"),
+                        "run_at_london": now_london().isoformat(),
+                        "categories": {
+                            "transport": {
+                                "checked": True,
+                                "usable_for_release": True,
+                                "source_health": [
+                                    {"name": "TfGM", "fetched": True, "not_modified": False, "errors": []},
+                                    {"name": "National Rail Enquiries", "fetched": True, "not_modified": False, "errors": []},
+                                ],
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            run_plan_digest(root)
+            plan = load_plan(state_dir)
+            planned_candidates = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))["candidates"]
+        transport_slots = [row for row in plan["slots"] if row["section"] == "Общественный транспорт сегодня"]
+        self.assertEqual(len(transport_slots), 1)
+        fallback = next(row for row in planned_candidates if row.get("transport_status_fallback"))
+        self.assertEqual(transport_slots[0]["primary_fingerprint"], fallback["fingerprint"])
+
+    def test_11_transport_fallback_never_masks_incomplete_scan(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, [_candidate(i) for i in range(7)])
+            (state_dir / "collector_report.json").write_text(
+                json.dumps(
+                    {
+                        "run_date_london": now_london().strftime("%Y-%m-%d"),
+                        "categories": {
+                            "transport": {
+                                "checked": True,
+                                "usable_for_release": False,
+                                "source_health": [{"name": "TfGM", "fetched": False, "errors": ["timeout"]}],
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            run_plan_digest(root)
+            plan = load_plan(state_dir)
+            planned_candidates = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))["candidates"]
+        self.assertFalse(any(row["section"] == "Общественный транспорт сегодня" for row in plan["slots"]))
+        self.assertFalse(any(row.get("transport_status_fallback") for row in planned_candidates))
+
+    def test_12_transport_fallback_does_not_replace_concrete_restriction(self) -> None:
+        concrete = _candidate(
+            90,
+            block="transport",
+            category="transport",
+            title="TfGM confirms Airport line delays today",
+            summary="TfGM confirms delays on the Airport line affecting passengers today.",
+            source_label="TfGM",
+            source_url="https://tfgm.com/travel-updates/airport-line-delays",
+            draft_line="• Metrolink: на линии Airport сегодня задержки; перед поездкой проверьте маршрут.",
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, [_candidate(i) for i in range(7)] + [concrete])
+            (state_dir / "collector_report.json").write_text(
+                json.dumps(
+                    {
+                        "run_date_london": now_london().strftime("%Y-%m-%d"),
+                        "categories": {"transport": {"checked": True, "usable_for_release": True, "source_health": [{"name": "TfGM", "fetched": True, "errors": []}]}},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            run_plan_digest(root)
+            plan = load_plan(state_dir)
+            planned_candidates = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))["candidates"]
+        transport_slots = [row for row in plan["slots"] if row["section"] == "Общественный транспорт сегодня"]
+        self.assertEqual([row["primary_fingerprint"] for row in transport_slots], [concrete["fingerprint"]])
+        self.assertFalse(any(row.get("transport_status_fallback") for row in planned_candidates))
 
 
 if __name__ == "__main__":

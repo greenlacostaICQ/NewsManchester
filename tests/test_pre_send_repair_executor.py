@@ -10,7 +10,7 @@ from news_digest.pipeline.editor import _editor_item_fact_lock_errors
 from news_digest.pipeline.pre_send_quality_judge import (
     _apply_repair_executor,
 )
-from news_digest.pipeline.release import _write_final_selection_report
+from news_digest.pipeline.plan_execution import build_final_execution_report
 
 
 class PreSendRepairExecutorTest(unittest.TestCase):
@@ -91,13 +91,13 @@ class PreSendRepairExecutorTest(unittest.TestCase):
         self.assertNotIn("Чистая резервная новость", repaired)
         self.assertEqual(report["fact_lock_rejected"], 1)
         self.assertEqual(report["reserve_replacement_used"], 0)
-        self.assertEqual(report["kept_below_floor"], 1)
+        self.assertEqual(report["unresolved"], 1)
+        self.assertEqual(report["operations"][0]["outcome"], "unresolved")
 
-    def test_strip_below_floor_keeps_original_but_still_drops_unsupported_fact(self) -> None:
-        # «Свежие новости» floor is 6. When no reserve is available, a strip that
-        # would push a section below its floor keeps the real (vetted) line rather
-        # than leaving a blank slot — this is the 5→2 collapse fix. A fact-integrity
-        # strip (unsupported date) still removes the line: integrity outranks floor.
+    def test_strip_does_not_keep_bad_line_for_section_floor(self) -> None:
+        # A requested strip is never silently kept merely to protect a floor.
+        # Without execution evidence the operation remains honestly unresolved,
+        # but both bad HTML lines are removed.
         bullets = "".join(
             f'• Новость номер {i} про Большой Манчестер сегодня. <a href="https://example.test/{i}">MEN</a>\n'
             for i in range(1, 7)
@@ -126,10 +126,118 @@ class PreSendRepairExecutorTest(unittest.TestCase):
                 deterministic_post_check={"errors": []},
                 dry_run=False,
             )
-        self.assertIn("Новость номер 2", repaired)  # duplicate strip below floor kept
-        self.assertEqual(report["kept_below_floor"], 1)
-        self.assertNotIn("Новость номер 3", repaired)  # unsupported fact still stripped
-        self.assertEqual(report["stripped"], 1)
+        self.assertNotIn("Новость номер 2", repaired)
+        self.assertNotIn("Новость номер 3", repaired)
+        self.assertEqual(report["stripped"], 2)
+        self.assertNotIn("kept_below_floor", report)
+
+    def test_related_duplicate_lines_are_one_unresolved_operation_while_both_remain(self) -> None:
+        digest_html = (
+            "<b>Greater Manchester Brief — 2026-07-21, 08:00</b>\n\n"
+            "<b>Билеты / Ticket Radar</b>\n"
+            '• <b>Steel Panther</b> — 21 июля, Manchester Academy. <a href="https://tickets.test/steel-1">A</a>\n'
+            '• <b>Steel Panther</b> — 21 июля, Manchester Academy. <a href="https://tickets.test/steel-2">B</a>\n'
+        )
+        candidates = []
+        slots = {}
+        for idx in (1, 2):
+            fp = f"steel-{idx}"
+            candidates.append(
+                {
+                    "fingerprint": fp,
+                    "plan_slot_id": f"ticket_radar-0{idx}",
+                    "source_url": f"https://tickets.test/steel-{idx}",
+                    "source_label": "Tickets",
+                    "ticket_notability": {"artist": "Steel Panther"},
+                    "event": {"event_name": "Steel Panther", "date_start": "2026-07-21", "venue": "Manchester Academy"},
+                }
+            )
+            slots[f"ticket_radar-0{idx}"] = {
+                "slot_id": f"ticket_radar-0{idx}",
+                "section": "Билеты / Ticket Radar",
+                "status": "shown",
+                "final_fingerprint": fp,
+                "replacement_reason": "",
+                "failed_attempts": [],
+            }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            (state_dir / "candidates.json").write_text(json.dumps({"candidates": candidates}), encoding="utf-8")
+            (state_dir / "plan_execution_report.json").write_text(json.dumps({"slots": slots}), encoding="utf-8")
+            _, report = _apply_repair_executor(
+                project_root=root,
+                digest_html=digest_html,
+                actions=[
+                    {"line_index": 1, "section": "Билеты / Ticket Radar", "action": "keep", "reason": "Дублирование Steel Panther в строках 1 и 2. Оставить одну."},
+                    {"line_index": 2, "section": "Билеты / Ticket Radar", "action": "keep", "reason": "Дублирование Steel Panther в строках 1 и 2. Удалить дубль."},
+                ],
+                critical_errors=[],
+                deterministic_post_check={"errors": []},
+                dry_run=False,
+            )
+
+        self.assertEqual(len(report["operations"]), 1)
+        self.assertEqual(report["operations"][0]["outcome"], "unresolved")
+        self.assertEqual(report["unresolved"], 1)
+        self.assertEqual(report["blocking_unresolved"], 0)
+
+    def test_wrong_artist_is_unresolved_and_blocking_until_expected_headliner_is_visible(self) -> None:
+        digest_html = (
+            "<b>Greater Manchester Brief — 2026-07-21, 08:00</b>\n\n"
+            "<b>Крупные концерты вне GM</b>\n"
+            '• <b>Ladytron</b> — 6 августа, Crystal Palace Bowl. <a href="https://tickets.test/gary-numan">Tickets</a>\n'
+        )
+        candidate = {
+            "fingerprint": "gary-numan",
+            "plan_slot_id": "outside_gm_tickets-01",
+            "source_url": "https://tickets.test/gary-numan",
+            "source_label": "Tickets",
+            "event": {"event_name": "Palace Bowl Presents - Gary Numan", "date_start": "2026-08-06", "venue": "Crystal Palace Bowl"},
+            "ticket_notability": {"artist": "Ladytron"},
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            (state_dir / "candidates.json").write_text(json.dumps({"candidates": [candidate]}), encoding="utf-8")
+            (state_dir / "plan_execution_report.json").write_text(
+                json.dumps(
+                    {
+                        "slots": {
+                            "outside_gm_tickets-01": {
+                                "slot_id": "outside_gm_tickets-01",
+                                "section": "Крупные концерты вне GM",
+                                "status": "shown",
+                                "final_fingerprint": "gary-numan",
+                                "replacement_reason": "",
+                                "failed_attempts": [],
+                            }
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            _, report = _apply_repair_executor(
+                project_root=root,
+                digest_html=digest_html,
+                actions=[
+                    {
+                        "line_index": 1,
+                        "section": "Крупные концерты вне GM",
+                        "action": "keep",
+                        "reason": "Неправильное указание основного артиста.",
+                        "risk": "fact_integrity",
+                    }
+                ],
+                critical_errors=[],
+                deterministic_post_check={"errors": []},
+                dry_run=False,
+            )
+
+        self.assertEqual(report["operations"][0]["outcome"], "unresolved")
+        self.assertEqual(report["blocking_unresolved"], 1)
 
     @mock.patch("news_digest.pipeline.collector.extract._fetch_text")
     def test_deep_event_enrichment_fetches_child_page_facts_for_home(self, fetch_text: mock.Mock) -> None:
@@ -170,7 +278,7 @@ class PreSendRepairExecutorTest(unittest.TestCase):
         self.assertEqual(enriched.structured_event_hint["price"], "£12")
         self.assertIn("book", enriched.structured_event_hint["booking_url"])
 
-    def test_final_selection_report_shows_top_visible_and_lost_by_block(self) -> None:
+    def test_final_selection_report_is_slot_based_and_counts_each_html_row_once(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             state_dir = Path(tmp)
             candidates = [
@@ -192,23 +300,56 @@ class PreSendRepairExecutorTest(unittest.TestCase):
                     "include": True,
                     "section_board_score": 40,
                 },
+                {
+                    "fingerprint": "same-url-inventory-copy",
+                    "title": "Inventory copy must not create a report row",
+                    "source_url": "https://example.test/visible",
+                    "source_label": "Duplicate feed",
+                    "primary_block": "city_watch",
+                    "include": False,
+                },
             ]
-            summary = _write_final_selection_report(
-                state_dir=state_dir,
-                current_day_london="2026-06-29",
-                candidates_report={"candidates": candidates},
-                writer_report={"dropped_candidates": [{"fingerprint": "lost", "reasons": ["no clean draft_line"]}]},
-                rendered_fingerprints=set(),
-                dedupe_memory={},
-                final_html='<b>Свежие новости</b>\n• Visible <a href="https://example.test/visible">BBC</a>',
+            (state_dir / "candidates.json").write_text(json.dumps({"candidates": candidates}), encoding="utf-8")
+            (state_dir / "release_plan.json").write_text(
+                json.dumps(
+                    {
+                        "pipeline_run_id": "report-test",
+                        "run_date_london": "2026-06-29",
+                        "ordered_sections": ["Свежие новости"],
+                        "sections": {"Свежие новости": {"min": 2, "planned": 2}},
+                        "slots": [
+                            {"slot_id": "last_24h-01", "section": "Свежие новости", "block": "last_24h", "position": 1, "primary_fingerprint": "visible", "backup_fingerprints": []},
+                            {"slot_id": "last_24h-02", "section": "Свежие новости", "block": "last_24h", "position": 2, "primary_fingerprint": "lost", "backup_fingerprints": []},
+                        ],
+                        "lead": {},
+                    }
+                ),
+                encoding="utf-8",
             )
-            payload = json.loads((state_dir / "final_selection_report.json").read_text(encoding="utf-8"))
+            (state_dir / "plan_execution_report.json").write_text(
+                json.dumps(
+                    {
+                        "pipeline_run_id": "report-test",
+                        "run_date_london": "2026-06-29",
+                        "slots": {
+                            "last_24h-01": {"slot_id": "last_24h-01", "section": "Свежие новости", "status": "shown", "final_fingerprint": "visible", "replacement_reason": "", "failed_attempts": []},
+                            "last_24h-02": {"slot_id": "last_24h-02", "section": "Свежие новости", "status": "removed", "final_fingerprint": "", "replacement_reason": "unrenderable_line", "failed_attempts": []},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            payload = build_final_execution_report(
+                state_dir,
+                '<b>Свежие новости</b>\n• Visible <a href="https://example.test/visible">BBC</a>',
+            )
 
-        section = payload["sections"]["Свежие новости"]
-        self.assertEqual(summary["section_count"], 1)
-        self.assertGreaterEqual(section["top"][0]["score"], section["top"][1]["score"])
-        self.assertEqual(section["visible"][0]["final_status"], "visible_after_repair")
-        self.assertEqual(section["lost_or_rejected"][0]["final_status"], "writer_dropped")
+        self.assertEqual(payload["counts"]["slots"], 2)
+        self.assertEqual(payload["counts"]["final_html_rows"], 1)
+        self.assertEqual(payload["counts"]["final_report_rows"], 1)
+        self.assertEqual(len(payload["final_rows"]), 1)
+        self.assertEqual(len(payload["removed_slots"]), 1)
+        self.assertEqual(payload["sections"]["Свежие новости"]["execution_loss"], 1)
 
 
 if __name__ == "__main__":
