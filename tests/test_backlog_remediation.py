@@ -163,7 +163,7 @@ class WriterRenderedFingerprintTest(unittest.TestCase):
             self.assertIn("обновление городского сервиса", html)
             self.assertNotIn("проверьте сроки", html)
 
-    def test_editor_replaces_empty_transport_after_stripping_bad_line(self) -> None:
+    def test_editor_does_not_insert_late_transport_fallback(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             state_dir = root / "data" / "state"
@@ -206,8 +206,10 @@ class WriterRenderedFingerprintTest(unittest.TestCase):
 
             self.assertTrue(result.ok)
             html = (state_dir / "draft_digest.html").read_text(encoding="utf-8")
-            self.assertIn("конкретных подтверждённых сбоев", html)
-            self.assertIn("https://tfgm.com/travel-updates", html)
+            self.assertIn("TfGM инквест сегодня", html)
+            self.assertIn("https://example.test/tfgm", html)
+            self.assertNotIn("конкретных подтверждённых сбоев", html)
+            self.assertNotIn("https://tfgm.com/travel-updates", html)
 
 
 class TargetedEditorSecondRoundTest(unittest.TestCase):
