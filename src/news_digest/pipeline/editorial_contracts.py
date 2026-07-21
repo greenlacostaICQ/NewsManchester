@@ -563,9 +563,9 @@ def event_schema_completeness(candidate: dict) -> dict[str, object]:
             "required_missing": list(_EVENT_REQUIRED_FIELDS),
         }
     present = []
-    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+    from news_digest.pipeline.weekend_inventory import effective_occurrence_window  # noqa: PLC0415
 
-    effective_start, _ = effective_candidate_occurrence_window(candidate)
+    effective_start, _ = effective_occurrence_window(candidate)
     for field in _EVENT_COMPLETENESS_FIELDS:
         value = effective_start.isoformat() if field == "date_start" and effective_start else (
             event.get("date") if field == "date_start" and not event.get("date_start") else event.get(field)
@@ -614,9 +614,9 @@ def infer_why_now(candidate: dict) -> str:
     change_type = str(candidate.get("change_type") or "")
     category = str(candidate.get("category") or "")
     blob = _blob(candidate).lower()
-    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+    from news_digest.pipeline.weekend_inventory import effective_occurrence_window  # noqa: PLC0415
 
-    occurrence_start, occurrence_end = effective_candidate_occurrence_window(candidate)
+    occurrence_start, occurrence_end = effective_occurrence_window(candidate)
     today = now_london().date()
     if occurrence_start and occurrence_end and occurrence_start <= today <= occurrence_end:
         return "happening_today"
@@ -1230,9 +1230,9 @@ def event_occurrence(candidate: dict) -> dict[str, object]:
     shape = _event_shape(candidate)
     blob = _contract_blob(candidate)
     today = now_london().date()
-    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+    from news_digest.pipeline.weekend_inventory import effective_occurrence_window  # noqa: PLC0415
 
-    effective_start, _ = effective_candidate_occurrence_window(candidate, today=today)
+    effective_start, _ = effective_occurrence_window(candidate, today=today)
     if effective_start is not None:
         if shape == "recurring":
             weekday = effective_start.weekday()

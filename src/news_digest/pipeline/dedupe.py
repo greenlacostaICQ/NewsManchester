@@ -20,7 +20,6 @@ from news_digest.pipeline.editorial_contracts import (
     attach_editorial_contract,
     history_window_days_for_contract,
     is_specific_topic_key,
-    lifecycle_repeat_review,
     topic_key_for_candidate,
 )
 from news_digest.pipeline.change_classifier import classify_change_phase
@@ -28,7 +27,6 @@ from news_digest.pipeline.entity_extraction import enrich_candidate_entities
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.history import ensure_history_files
 from news_digest.pipeline.repeat_policy import (
-    calendar_carry_verdict,
     is_calendar_carry_candidate,
     visible_repeat_verdict,
 )
@@ -183,16 +181,22 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         candidate.setdefault("reason", "")
         candidate.setdefault("matched_previous_fingerprint", "")
 
+        prev_ref = previous or (
+            published_by_fp.get(str(similar_previous[0].get("fingerprint") or ""))
+            if similar_previous else None
+        )
+        # Classify the concrete change before the single repeat verdict so no
+        # later stage can override that verdict with a parallel repeat engine.
+        change_type = _classify_change_type(candidate, previous, similar_previous, prev_ref)
+        candidate["change_type"] = change_type
+        attach_story_identity(candidate)
+
         decision = str(candidate.get("dedupe_decision") or "").strip()
         category = str(candidate.get("category") or "").strip()
         primary_block = str(candidate.get("primary_block") or "").strip()
-        operational_repeat_ok = primary_block in {"weather", "transport"}
-        same_day_repeat_ok = (
-            previous is not None
-            and str(previous.get("last_published_day_london") or "").strip() == today_london()
-        )
         calendar_previous_ref = previous or (similar_previous[0] if similar_previous else None)
         repeat_verdict = visible_repeat_verdict(candidate, calendar_previous_ref)
+        candidate["visible_repeat_verdict"] = repeat_verdict.as_dict()
         a_tier_keep = repeat_verdict.reason == "a_tier_must_show_override"
         calendar_carry_ok = (
             calendar_previous_ref is not None
@@ -202,14 +206,14 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         if a_tier_keep:
             candidate["dedupe_decision"] = "new"
             candidate["include"] = True
-            candidate["reason"] = "A-tier policy: keep before repeat; planner conserves one public card per artist."
-        elif previous is not None and (operational_repeat_ok or same_day_repeat_ok):
-            candidate["dedupe_decision"] = "new"
+            candidate["reason"] = "A-tier policy: keep canonical active physical event before repeat."
+        elif previous is not None and repeat_verdict.allow and not calendar_carry_ok:
+            candidate["dedupe_decision"] = (
+                "new_phase" if repeat_verdict.repeat_class == "lifecycle" else "new"
+            )
             candidate["include"] = True
             candidate["reason"] = candidate.get("reason") or (
-                "Same-day rerun repeat is allowed while correcting today's issue."
-                if same_day_repeat_ok
-                else "Operational block repeat is allowed while it remains relevant."
+                f"Visible repeat policy allows this item: {repeat_verdict.reason}."
             )
         elif calendar_carry_ok:
             candidate["dedupe_decision"] = "carry_over_with_label"
@@ -233,45 +237,6 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             candidate["dedupe_decision"] = "drop"
             candidate["include"] = False
             candidate["reason"] = "Invalid dedupe decision."
-
-        prev_ref = previous or (
-            published_by_fp.get(str(similar_previous[0].get("fingerprint") or ""))
-            if similar_previous else None
-        )
-
-        # Q6: classify what kind of change this candidate represents.
-        change_type = _classify_change_type(candidate, previous, similar_previous, prev_ref)
-        candidate["change_type"] = change_type
-        attach_story_identity(candidate)
-        if (
-            change_type in {"same_story_new_facts", "follow_up"}
-            and prev_ref is not None
-            and not (same_day_repeat_ok or operational_repeat_ok)
-            and str(candidate.get("dedupe_decision") or "") == "drop"
-        ):
-            candidate["dedupe_decision"] = "new_phase"
-            candidate["include"] = True
-            candidate["reason"] = (
-                "Same story, but semantic dedupe found concrete new facts."
-                if change_type == "same_story_new_facts"
-                else "Follow-up to a previous story with a new phase."
-            )
-
-        lifecycle_review = (
-            lifecycle_repeat_review(candidate, prev_ref)
-            if prev_ref is not None and not (same_day_repeat_ok or operational_repeat_ok)
-            else {"repeat": False}
-        )
-        if lifecycle_review.get("repeat") and not repeat_verdict.allow:
-            candidate["dedupe_decision"] = "drop"
-            candidate["include"] = False
-            candidate["change_type"] = "same_story_rehash"
-            candidate["topic_lifecycle_repeat"] = lifecycle_review
-            candidate["reason"] = (
-                "Повтор темы без новой фазы: уже был"
-                f" {prev_ref.get('last_published_day_london') or prev_ref.get('first_published_day_london') or 'ранее'}"
-                f" как «{str(prev_ref.get('title') or '')[:120]}»."
-            )
 
         # Q7: pull "previous fact" out into structured fields whenever
         # there's any prior match (exact fingerprint or title-similar),
@@ -320,17 +285,17 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             if a_tier_keep:
                 candidate["dedupe_decision"] = "new"
                 candidate["include"] = True
-                candidate["reason"] = "A-tier policy: keep before repeat; planner conserves one public card per artist."
-            elif same_day_repeat_ok or operational_repeat_ok:
-                # Keep include=True and overwrite the misleading "no facts"
-                # reason with the rerun rationale.
-                candidate["dedupe_decision"] = "new"
-                candidate["include"] = True
-                candidate["reason"] = (
-                    "Same-day rerun repeat is allowed while correcting today's issue."
-                    if same_day_repeat_ok
-                    else "Operational block repeat is allowed while it remains relevant."
+                candidate["reason"] = "A-tier policy: keep canonical active physical event before repeat."
+            elif repeat_verdict.allow:
+                candidate["dedupe_decision"] = (
+                    "carry_over_with_label"
+                    if repeat_verdict.repeat_class == "calendar"
+                    else ("new_phase" if repeat_verdict.repeat_class == "lifecycle" else "new")
                 )
+                candidate["include"] = True
+                if repeat_verdict.repeat_class == "calendar":
+                    candidate["carry_over_label"] = candidate.get("carry_over_label") or "актуально к дате"
+                candidate["reason"] = f"Visible repeat policy allows this item: {repeat_verdict.reason}."
             elif candidate.get("dedupe_decision") not in {"drop"}:
                 candidate["dedupe_decision"] = "drop"
                 candidate["include"] = False
@@ -496,65 +461,6 @@ _TITLE_STOPWORDS: frozenset[str] = frozenset({
     "live", "concert", "concerts",
 })
 
-_CALENDAR_CARRY_BLOCKS: frozenset[str] = frozenset({
-    "weekend_activities",
-    "next_7_days",
-    "ticket_radar",
-    "outside_gm_tickets",
-    "russian_events",
-    "future_announcements",
-})
-_CALENDAR_CARRY_CATEGORIES: frozenset[str] = frozenset({
-    "culture_weekly",
-    "venues_tickets",
-    "russian_speaking_events",
-})
-_CALENDAR_CARRY_MIN_INTERVAL_DAYS = 2
-_CALENDAR_CARRY_MAX_AGE_DAYS = 14
-_CALENDAR_SIGNAL_TERMS: tuple[str, ...] = (
-    "bar",
-    "beer",
-    "brewery",
-    "cafe",
-    "café",
-    "car boot",
-    "closing",
-    "craft",
-    "fair",
-    "farmers market",
-    "festival",
-    "flea",
-    "food hall",
-    "food market",
-    "launch",
-    "launches",
-    "maker",
-    "makers market",
-    "market",
-    "opening",
-    "opens",
-    "pop-up",
-    "pub",
-    "reopen",
-    "restaurant",
-    "street food",
-)
-_MONTHS: dict[str, int] = {
-    "jan": 1, "january": 1,
-    "feb": 2, "february": 2,
-    "mar": 3, "march": 3,
-    "apr": 4, "april": 4,
-    "may": 5,
-    "jun": 6, "june": 6,
-    "jul": 7, "july": 7,
-    "aug": 8, "august": 8,
-    "sep": 9, "sept": 9, "september": 9,
-    "oct": 10, "october": 10,
-    "nov": 11, "november": 11,
-    "dec": 12, "december": 12,
-}
-
-
 def _parse_day(value: object) -> date | None:
     raw = str(value or "").strip()
     if not raw:
@@ -610,111 +516,10 @@ def _within_history_window(candidate: dict, item: dict) -> bool:
     return age_days <= _history_window_days(candidate)
 
 
-def _candidate_text(candidate: dict) -> str:
-    return " ".join(
-        str(candidate.get(field) or "")
-        for field in ("title", "summary", "lead", "practical_angle", "source_url")
-    )
-
-
-def _calendar_dates_from_text(text: str) -> list[date]:
-    today = now_london().date()
-    dates: list[date] = []
-    lowered = str(text or "").lower()
-
-    for match in re.finditer(r"\b(20\d{2})[/-](\d{1,2})[/-](\d{1,2})\b", lowered):
-        year, month, day = (int(part) for part in match.groups())
-        try:
-            dates.append(date(year, month, day))
-        except ValueError:
-            continue
-
-    for match in re.finditer(r"/(20\d{2})/(\d{1,2})/(\d{1,2})(?:/|$)", lowered):
-        year, month, day = (int(part) for part in match.groups())
-        try:
-            dates.append(date(year, month, day))
-        except ValueError:
-            continue
-
-    for match in re.finditer(r"\b(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]{3,9})(?:\s+(20\d{2}))?\b", lowered):
-        day_raw, month_raw, year_raw = match.groups()
-        month = _MONTHS.get(month_raw)
-        if not month:
-            continue
-        year = int(year_raw) if year_raw else today.year
-        try:
-            parsed = date(year, month, int(day_raw))
-        except ValueError:
-            continue
-        if not year_raw and parsed < today.replace(day=1):
-            parsed = parsed.replace(year=parsed.year + 1)
-        dates.append(parsed)
-
-    return dates
-
-
 def _calendar_item_should_carry_over(candidate: dict, previous: dict) -> bool:
-    primary_block = str(candidate.get("primary_block") or "")
-    category = str(candidate.get("category") or "")
-    if (
-        primary_block not in _CALENDAR_CARRY_BLOCKS
-        and category not in _CALENDAR_CARRY_CATEGORIES
-        and not is_calendar_carry_candidate(candidate)
-    ):
-        return False
-
-    today = now_london().date()
-    # Dated upcoming event short-circuit. A ticketed concert/show
-    # ("Cherryholt", "Skipinnish", "Calum Scott") has a concrete future
-    # event date but NONE of the food/market signal terms below, so the
-    # signal-term gate used to drop it as a "no new facts" repeat even
-    # though the gig is still ahead of us. If the event itself is today
-    # or in the next 14 days, it is by definition still relevant — carry
-    # it over regardless of wording. (2026-05-28 Cherryholt loss.)
-    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    ev_raw = str(event.get("date_start") or event.get("date") or "").strip()[:10]
-    if ev_raw:
-        try:
-            ev_day = datetime.strptime(ev_raw, "%Y-%m-%d").date()
-        except ValueError:
-            ev_day = None
-        if ev_day is not None and today <= ev_day <= today + timedelta(days=14):
-            return calendar_carry_verdict(candidate, previous).allow
-
-    policy_review = calendar_carry_verdict(candidate, previous)
-    if policy_review.repeat_class == "calendar":
-        return policy_review.allow
-
-    text = _candidate_text(candidate)
-    lowered = text.lower()
-    if not any(term in lowered for term in _CALENDAR_SIGNAL_TERMS):
-        return False
-
-    today = now_london().date()
-    first_published = _published_day_from_history(previous, "first_published_day_london")
-    if first_published and (today - first_published).days > _CALENDAR_CARRY_MAX_AGE_DAYS:
-        return False
-
-    explicit_dates = _calendar_dates_from_text(text)
-    published_day = _parse_day(candidate.get("published_at"))
-    if primary_block in {"weekend_activities", "next_7_days", "ticket_radar", "outside_gm_tickets", "russian_events", "future_announcements"} and published_day:
-        explicit_dates.append(published_day)
-
-    long_running_active = False
-    if len(explicit_dates) >= 2:
-        start = min(explicit_dates)
-        end = max(explicit_dates)
-        long_running_active = start <= today <= end and (end - start).days >= 7
-
-    last_published = _published_day_from_history(previous, "last_published_day_london")
-    min_interval = 1 if long_running_active else _CALENDAR_CARRY_MIN_INTERVAL_DAYS
-    if last_published and (today - last_published).days < min_interval:
-        return False
-
-    if explicit_dates:
-        return max(explicit_dates) >= today
-
-    return False
+    # Compatibility surface for focused tests and older callers. The actual
+    # decision belongs to the single public repeat policy.
+    return visible_repeat_verdict(candidate, previous).allow
 
 
 def _topic_published_matches(candidate: dict, published_by_topic: dict[str, list[dict]]) -> list[dict]:

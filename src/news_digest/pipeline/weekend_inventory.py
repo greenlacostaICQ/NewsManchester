@@ -178,9 +178,31 @@ def _iso_day(value: object) -> date | None:
         return None
 
 
-def effective_occurrence_window(fact: dict | None) -> tuple[date | None, date | None]:
-    """Use ``next_occurrence`` while preserving a short original duration."""
-    fact = fact if isinstance(fact, dict) else {}
+def effective_occurrence_window(
+    value: dict | None,
+    *,
+    today: date | None = None,
+) -> tuple[date | None, date | None]:
+    """Return the one effective date window for a fact card or candidate.
+
+    Candidate callers are normalised here so intake, routing, repeat, writer
+    and protection cannot disagree about a recurring occurrence. Inventory
+    callers may continue to pass the structured fact card directly.
+    """
+    value = value if isinstance(value, dict) else {}
+    is_candidate = isinstance(value.get("event"), dict) or any(
+        key in value for key in ("primary_block", "category", "source_url", "draft_line")
+    )
+    if is_candidate:
+        candidate = value
+        fact = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        occurrence = candidate_recurring_occurrence_date(candidate, today=today)
+        if occurrence is not None:
+            fact["is_recurring"] = True
+            fact["next_occurrence"] = occurrence.isoformat()
+            candidate["event"] = fact
+    else:
+        fact = value
     original_start = _iso_day(fact.get("date_start") or fact.get("date"))
     original_end = _iso_day(fact.get("date_end"))
     next_occurrence = _iso_day(fact.get("next_occurrence"))
@@ -192,23 +214,6 @@ def effective_occurrence_window(fact: dict | None) -> tuple[date | None, date | 
                 duration = candidate_duration
         return next_occurrence, next_occurrence + duration
     return original_start, original_end or original_start
-
-
-def effective_candidate_occurrence_window(
-    candidate: dict | None,
-    *,
-    today: date | None = None,
-) -> tuple[date | None, date | None]:
-    """Stamp a recurring candidate's next occurrence, then use one window."""
-    if not isinstance(candidate, dict):
-        return None, None
-    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    occurrence = candidate_recurring_occurrence_date(candidate, today=today)
-    if occurrence is not None:
-        event["is_recurring"] = True
-        event["next_occurrence"] = occurrence.isoformat()
-        candidate["event"] = event
-    return effective_occurrence_window(event)
 
 
 def candidate_recurring_occurrence_date(candidate: dict, *, today: date | None = None) -> date | None:
@@ -238,7 +243,7 @@ def weekend_occurrence_date(candidate: dict, *, today: date | None = None) -> da
     today = today or now_london().date()
     start, end = current_weekend_window(today=today)
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    effective_start, effective_end = effective_candidate_occurrence_window(candidate, today=today)
+    effective_start, effective_end = effective_occurrence_window(candidate, today=today)
     if effective_start and effective_end and effective_start <= end and effective_end >= start:
         return max(effective_start, start)
     rec_date = candidate_recurring_occurrence_date(candidate, today=today)

@@ -59,9 +59,9 @@ def _contract(candidate: dict[str, Any]) -> dict[str, Any]:
 
 
 def _event_day(candidate: dict[str, Any]) -> date | None:
-    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+    from news_digest.pipeline.weekend_inventory import effective_occurrence_window  # noqa: PLC0415
 
-    start, _ = effective_candidate_occurrence_window(candidate)
+    start, _ = effective_occurrence_window(candidate)
     if start is not None:
         return start
     if str(candidate.get("primary_block") or "") == "weekend_activities":
@@ -74,8 +74,9 @@ def _previous_day(previous: dict[str, Any]) -> str:
         previous.get("last_published_day_london")
         or previous.get("first_published_day_london")
         or previous.get("published_day_london")
+        or previous.get("ts")
         or ""
-    )
+    )[:10]
 
 
 def is_calendar_carry_candidate(candidate: dict[str, Any]) -> bool:
@@ -89,6 +90,8 @@ def is_calendar_carry_candidate(candidate: dict[str, Any]) -> bool:
     category = str(candidate.get("category") or "")
     if block == "openings" or category == "food_openings":
         return False
+    if str(_contract(candidate).get("anchor_type") or "") == "bookable_listing":
+        return True
     if block in TICKET_REPEAT_BLOCKS or block in EVENT_REPEAT_BLOCKS:
         return True
     return category in EVENT_REPEAT_CATEGORIES
@@ -111,8 +114,21 @@ def calendar_carry_verdict(candidate: dict[str, Any], previous: dict[str, Any]) 
         )
 
     text_date = _event_day(candidate)
-    if text_date is not None and now_london().date() <= text_date <= now_london().date() + timedelta(days=14):
-        return RepeatVerdict(False, "calendar", "calendar_review_not_applicable")
+    anchor = str(_contract(candidate).get("anchor_type") or "")
+    if (
+        anchor == "bookable_listing"
+        and text_date is not None
+        and now_london().date() <= text_date <= now_london().date() + timedelta(days=14)
+    ):
+        return RepeatVerdict(
+            True,
+            "calendar",
+            "upcoming_event_occurrence_window",
+            matched_by="effective_occurrence_window",
+            previous_fingerprint=str(previous.get("fingerprint") or ""),
+            previous_title=str(previous.get("title") or ""),
+            previous_published_day=_previous_day(previous),
+        )
 
     return RepeatVerdict(False, "not_calendar_carry", "calendar_review_not_applicable")
 
@@ -173,6 +189,49 @@ def visible_repeat_verdict(candidate: dict[str, Any], previous: dict[str, Any] |
             True,
             "a_tier",
             "a_tier_must_show_override",
+            matched_by=matched_by,
+            previous_fingerprint=previous_fp,
+            previous_title=previous_title,
+            previous_published_day=previous_day,
+        )
+
+    if previous_day == now_london().date().isoformat() and matched_by == "fingerprint":
+        return RepeatVerdict(
+            True,
+            "same_day",
+            "same_day_correction",
+            matched_by=matched_by,
+            previous_fingerprint=previous_fp,
+            previous_title=previous_title,
+            previous_published_day=previous_day,
+        )
+
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    if matched_by == "fingerprint" and (block == "openings" or category == "food_openings"):
+        comparable_previous_facts = any(
+            previous.get(key)
+            for key in ("summary", "lead", "event", "change_phase", "editorial_contract")
+        )
+        candidate_day = str(candidate.get("published_at") or "")[:10]
+        if not comparable_previous_facts or (
+            candidate_day and previous_day and candidate_day <= previous_day
+        ):
+            return RepeatVerdict(
+                False,
+                "same_fingerprint",
+                "food_repeat_without_comparable_new_fact",
+                matched_by=matched_by,
+                previous_fingerprint=previous_fp,
+                previous_title=previous_title,
+                previous_published_day=previous_day,
+            )
+
+    if str(candidate.get("change_type") or "") in {"same_story_new_facts", "follow_up"}:
+        return RepeatVerdict(
+            True,
+            "lifecycle",
+            "concrete_story_change",
             matched_by=matched_by,
             previous_fingerprint=previous_fp,
             previous_title=previous_title,

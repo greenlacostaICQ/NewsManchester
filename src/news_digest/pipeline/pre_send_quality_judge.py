@@ -973,6 +973,7 @@ def _finalize_repair_report(
         for slot in final_slots
         if _line_url_identity(str(slot.get("html") or ""))
     }
+    from news_digest.pipeline.editorial_contracts import classify_prose_defects  # noqa: PLC0415
     try:
         from news_digest.pipeline.editor import _line_needs_russian_editor  # noqa: PLC0415
     except Exception:  # noqa: BLE001
@@ -1035,7 +1036,10 @@ def _finalize_repair_report(
                 if method in {"model_patch", "deterministic_rewrite"} and current_html == str(action.get("original_html") or ""):
                     passed = False
                     detail = "line did not change"
-                if passed and _line_needs_russian_editor(current_html):
+                if passed and (
+                    classify_prose_defects(current_html)
+                    or _line_needs_russian_editor(current_html)
+                ):
                     passed = False
                     detail = "shared prose policy still fails"
             if current_slot is not None and method != "removed":
@@ -1088,12 +1092,25 @@ def _finalize_repair_report(
     prose_findings = []
     for slot in final_slots:
         line = str(slot.get("html") or "")
-        if _line_needs_russian_editor(line):
+        shared_findings = classify_prose_defects(line)
+        if shared_findings:
+            for finding in shared_findings:
+                prose_findings.append(
+                    {
+                        "line_index": slot.get("line_index"),
+                        "section": slot.get("section") or "",
+                        "outcome": "unresolved",
+                        **finding,
+                    }
+                )
+        elif _line_needs_russian_editor(line):
             prose_findings.append(
                 {
                     "line_index": slot.get("line_index"),
                     "section": slot.get("section") or "",
                     "outcome": "unresolved",
+                    "code": "language_policy_defect",
+                    "severity": "warning",
                 }
             )
     report["resolved_in_place"] = resolved

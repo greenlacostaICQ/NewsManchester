@@ -13,10 +13,12 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from news_digest.pipeline.common import canonical_url_identity, now_london
+from news_digest.pipeline.editor import edit_digest
 from news_digest.pipeline.plan_digest import run_plan_digest
-from news_digest.pipeline.plan_execution import load_execution, load_plan, next_backup
+from news_digest.pipeline.plan_execution import load_execution, load_plan, next_backup, save_execution
 from news_digest.pipeline.verify_digest_plan import run_verify_digest_plan
 from news_digest.pipeline.writer import write_digest
 
@@ -140,6 +142,23 @@ class PlanContractTest(unittest.TestCase):
         self.assertEqual(report["applied"], 0)
         self.assertEqual(report["status"], "ignored_plan_locked")
 
+    def test_4b_editor_does_not_delete_identical_planned_rows(self) -> None:
+        candidates = [_candidate(i) for i in range(7)]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, candidates)
+            run_plan_digest(root)
+            write_digest(root)
+            draft_path = state_dir / "draft_digest.html"
+            lines = draft_path.read_text(encoding="utf-8").splitlines()
+            duplicate = next(line for line in lines if line.startswith("• "))
+            insert_at = lines.index(duplicate) + 1
+            lines.insert(insert_at, duplicate)
+            draft_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            edit_digest(root)
+            edited = draft_path.read_text(encoding="utf-8")
+        self.assertEqual(edited.count(duplicate), 2)
+
     def test_5_verify_blocks_missing_planned_line_and_stale_artifact(self) -> None:
         candidates = [_candidate(i) for i in range(7)]
         with tempfile.TemporaryDirectory() as tmp:
@@ -240,7 +259,7 @@ class PlanContractTest(unittest.TestCase):
             self.assertIn("removed_line_still_visible", {row["kind"] for row in report["divergences"]})
 
     def test_7_a_tier_ticket_exempt_from_section_cap(self) -> None:
-        # Правило 0094: каждый A-tier артист виден сверх любых лимитов.
+        # Каждый canonical A-tier event виден сверх любых лимитов.
         tickets = []
         for i in range(16):
             tickets.append(_candidate(
@@ -301,7 +320,7 @@ class PlanContractTest(unittest.TestCase):
         self.assertTrue(slot["must_show"])
         self.assertTrue(plan["a_tier_conservation"]["missing_from_plan"] == [])
 
-    def test_7c_a_tier_identity_conserves_one_artist_card_local_first(self) -> None:
+    def test_7c_a_tier_identity_preserves_distinct_physical_events(self) -> None:
         rows = [
             _candidate(
                 710 + idx,
@@ -324,12 +343,34 @@ class PlanContractTest(unittest.TestCase):
             plan = load_plan(state_dir)
             planned_candidates = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))["candidates"]
         planned = [s for s in plan["slots"] if s["primary_fingerprint"] in {row["fingerprint"] for row in rows}]
-        self.assertEqual(len(planned), 1)
+        self.assertEqual(len(planned), 3)
         self.assertEqual(plan["a_tier_conservation"]["recognised"], 1)
-        self.assertEqual(plan["a_tier_conservation"]["identity"]["collapsed_rows"], 2)
-        survivor = next(row for row in planned_candidates if row.get("merged_event_dates"))
-        self.assertEqual(survivor["event"]["venue"], "AO Arena")
-        self.assertEqual(survivor["merged_event_dates"], ["2099-01-12", "2099-01-13"])
+        self.assertEqual(plan["a_tier_conservation"]["identity"]["collapsed_rows"], 0)
+        self.assertFalse(any(row.get("a_tier_collapsed_into") for row in planned_candidates))
+
+    def test_7d_a_tier_identity_collapses_only_same_owner_venue_and_date(self) -> None:
+        rows = [
+            _candidate(
+                740 + idx,
+                block="ticket_radar",
+                category="venues_tickets",
+                title="Global Star — AO Arena — 12 January",
+                source_label=f"Ticket Source {idx}",
+                event={"date_start": "2099-01-12", "venue": "AO Arena", "is_event": True},
+                ticket_notability={"artist": "Global Star", "tier": "A", "kind": "artist"},
+                ticket_type="regular_upcoming",
+                venue_scope="GM",
+            )
+            for idx in range(2)
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, rows)
+            run_plan_digest(root)
+            plan = load_plan(state_dir)
+        planned = [s for s in plan["slots"] if s["primary_fingerprint"] in {row["fingerprint"] for row in rows}]
+        self.assertEqual(len(planned), 1)
+        self.assertEqual(plan["a_tier_conservation"]["identity"]["collapsed_rows"], 1)
 
     def test_8_verify_is_fail_closed_on_missing_or_broken_execution(self) -> None:
         candidates = [_candidate(i) for i in range(7)]
@@ -484,6 +525,68 @@ class PlanContractTest(unittest.TestCase):
             {slot["source_label"] for slot in food_slots},
             {"Food Source A", "Food Source B"},
         )
+
+    def test_14_food_keeps_three_slots_when_earlier_sections_fill_issue_budget(self) -> None:
+        rows: list[dict] = []
+        index = 2000
+        for block, count, category in (
+            ("last_24h", 9, "media_layer"),
+            ("today_focus", 5, "public_services"),
+            ("football", 3, "football"),
+            ("weekend_activities", 10, "culture_weekly"),
+            ("city_watch", 12, "city_news"),
+            ("next_7_days", 6, "culture_weekly"),
+            ("openings", 3, "food_openings"),
+        ):
+            for offset in range(count):
+                rows.append(
+                    _candidate(
+                        index,
+                        block=block,
+                        category=category,
+                        source_label=f"{block}-source-{offset % 3}",
+                        title=f"Unique {block} story {offset}",
+                    )
+                )
+                index += 1
+        rows[0]["is_lead"] = True
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, rows)
+            with patch("news_digest.pipeline.plan_digest._apply_routing", return_value=""), patch(
+                "news_digest.pipeline.plan_digest._admission_verdict", return_value=("ok", "")
+            ):
+                run_plan_digest(root)
+            plan = load_plan(state_dir)
+        food = plan["sections"]["Еда, открытия и рынки"]
+        self.assertEqual(food["planned"], 3)
+        self.assertIsNone(food["expected_shortfall"])
+
+    def test_15_verify_rejects_non_coded_removal_reason(self) -> None:
+        candidates = [_candidate(i) for i in range(7)]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, candidates)
+            run_plan_digest(root)
+            write_digest(root)
+            outgoing = root / "data" / "outgoing"
+            outgoing.mkdir(parents=True, exist_ok=True)
+            draft = (state_dir / "draft_digest.html").read_text(encoding="utf-8")
+            execution = load_execution(state_dir)
+            slot = next(row for row in execution["slots"].values() if row.get("status") == "shown")
+            candidate = next(row for row in candidates if row["fingerprint"] == slot["final_fingerprint"])
+            (outgoing / "current_digest.html").write_text(
+                "\n".join(line for line in draft.splitlines() if candidate["source_url"] not in line) + "\n",
+                encoding="utf-8",
+            )
+            slot["status"] = "removed"
+            slot["replacement_reason"] = "arbitrary_free_text_reason"
+            slot["final_fingerprint"] = ""
+            save_execution(state_dir, execution)
+            result = run_verify_digest_plan(root)
+            report = json.loads((state_dir / "verify_digest_plan_report.json").read_text(encoding="utf-8"))
+        self.assertFalse(result.ok)
+        self.assertTrue(any("invalid coded reason" in error for error in report["technical_errors"]))
 
 
 if __name__ == "__main__":

@@ -174,18 +174,6 @@ class StageResult:
     draft_path: Path
 
 
-def _unique_preserving_order(lines: list[str]) -> list[str]:
-    seen: set[str] = set()
-    result: list[str] = []
-    for line in lines:
-        key = line.strip()
-        if key in seen:
-            continue
-        seen.add(key)
-        result.append(line)
-    return result
-
-
 def _is_weak_city_candidate(candidate: dict) -> bool:
     practical_angle = str(candidate.get("practical_angle") or "").strip()
     if is_placeholder_practical_angle(practical_angle):
@@ -272,6 +260,10 @@ def _polish_russian_line_rules(line: str) -> tuple[str, list[str]]:
 
 def _line_needs_russian_editor(line: str) -> bool:
     text = str(line or "")
+    from news_digest.pipeline.editorial_contracts import classify_prose_defects  # noqa: PLC0415
+
+    if classify_prose_defects(text):
+        return True
     clean_text = re.sub(r"<a\s+[^>]*>.*?</a>", "", text, flags=re.IGNORECASE | re.DOTALL)
     if transport_language_issues(clean_text):
         return True
@@ -1291,10 +1283,11 @@ def edit_digest(project_root: Path) -> StageResult:
     lead_heading = "Главная история дня"
     ordered_sections = sorted(sections.items(), key=lambda kv: (kv[0] != lead_heading,))
     for section_name, lines in ordered_sections:
-        deduped = _unique_preserving_order(lines)
+        # Composition is immutable after plan-digest. Even byte-identical rows
+        # represent separate planned slots here; deleting one would turn a
+        # content issue into an execution loss. Planner/verify own dedup.
+        deduped = list(lines)
         filtered: list[str] = []
-        if len(deduped) < len(lines):
-            warnings.append(f"Removed duplicate lines in section {section_name}.")
         for line in deduped:
             key = _line_story_key(line, candidates_by_key)
             previous_section = seen_lines_to_section.get(key)

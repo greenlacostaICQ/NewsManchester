@@ -25,6 +25,7 @@ from news_digest.pipeline.common import (
     write_json,
 )
 from news_digest.pipeline.plan_execution import (
+    REMOVAL_REASONS,
     build_final_execution_report,
     load_execution,
     load_plan,
@@ -152,8 +153,13 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
                 f"{divergence.get('kind')} ({divergence.get('slot_id') or divergence.get('url') or ''})."
             )
     for row in (execution.get("slots") or {}).values():
-        if isinstance(row, dict) and str(row.get("status") or "") == "removed" and not str(row.get("replacement_reason") or "").strip():
-            technical_errors.append(f"Removed slot {row.get('slot_id') or '?'} has no coded reason.")
+        if not isinstance(row, dict) or str(row.get("status") or "") != "removed":
+            continue
+        reason = str(row.get("replacement_reason") or "").strip()
+        if reason not in REMOVAL_REASONS:
+            technical_errors.append(
+                f"Removed slot {row.get('slot_id') or '?'} has invalid coded reason: {reason or 'missing'}."
+            )
 
     empty_bullets = [ln for ln in html_text.splitlines() if ln.strip() in {"•", "• "}]
     if empty_bullets:

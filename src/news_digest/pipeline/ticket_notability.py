@@ -121,16 +121,16 @@ def a_tier_ticket_policy(candidate: dict | None) -> tuple[bool, str]:
         return False, "not_a_tier"
     assert isinstance(candidate, dict)
     if candidate.get("a_tier_collapsed_into"):
-        return False, "one_public_card_per_a_tier_artist"
+        return False, "duplicate_physical_a_tier_event"
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     status = str(event.get("event_status") or candidate.get("event_status") or "").strip().lower()
     if any(marker in status for marker in ("cancelled", "canceled", "postponed", "rescheduled")):
         return False, f"event_status:{status}"
     if not str(event.get("date_start") or event.get("date") or "").strip():
         return False, "missing_event_date"
-    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+    from news_digest.pipeline.weekend_inventory import effective_occurrence_window  # noqa: PLC0415
 
-    _, occurrence_end = effective_candidate_occurrence_window(candidate)
+    _, occurrence_end = effective_occurrence_window(candidate)
     if occurrence_end is not None and occurrence_end < now_london().date():
         return False, "event_expired"
     reason_blob = " ".join(

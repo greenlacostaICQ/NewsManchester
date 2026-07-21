@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline replay of a past day's publish pipeline (write → edit → build).
+"""Offline replay of a past day's deterministic publish pipeline.
 
 Every morning run commits its full state to git ("chore: digest state
 YYYY-MM-DD"), including data/state/candidates.json (with draft_line already
@@ -34,6 +34,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 CODE_ROOT = Path(os.environ.get("NEWS_DIGEST_REPLAY_CODE_ROOT", PROJECT_ROOT))
@@ -191,8 +192,50 @@ def run_stages(sandbox: Path) -> list[dict[str, object]]:
     def _run_verify(root):
         return run_verify_digest_plan(root)
 
+    def _run_pre_send_finalize(root):
+        """Replay the deterministic last prose mutation and exact post-check.
 
-    for name, fn in (("plan-digest", run_plan_digest), ("write-digest", write_digest), ("edit-digest", edit_digest), ("build-digest", build_release), ("verify-digest-plan", _run_verify)):
+        The model judge is intentionally not called offline. Its factual/group
+        actions have focused unit coverage; this stage exercises the exact
+        hygiene + shared prose policy that production runs after those actions
+        and before verify/send.
+        """
+        from news_digest.pipeline.pre_send_quality_judge import (  # noqa: PLC0415
+            _finalize_repair_report,
+            _strip_empty_endings_in_html,
+            _strip_empty_section_headings,
+        )
+
+        digest_path = root / "data" / "outgoing" / "current_digest.html"
+        digest_html = digest_path.read_text(encoding="utf-8")
+        digest_html, stripped = _strip_empty_endings_in_html(digest_html)
+        digest_html = _strip_empty_section_headings(digest_html)
+        digest_path.write_text(digest_html, encoding="utf-8")
+        contract_report = {"operations": []}
+        _finalize_repair_report(
+            root,
+            digest_html,
+            contract_report,
+            persist_execution=False,
+        )
+        prose_unresolved = int((contract_report.get("final_prose_policy") or {}).get("unresolved") or 0)
+        return SimpleNamespace(
+            ok=True,
+            message=(
+                "Deterministic pre-send finalization: "
+                f"{stripped} empty ending(s) stripped, {prose_unresolved} prose finding(s)."
+            ),
+        )
+
+
+    for name, fn in (
+        ("plan-digest", run_plan_digest),
+        ("write-digest", write_digest),
+        ("edit-digest", edit_digest),
+        ("build-digest", build_release),
+        ("pre-send-finalize", _run_pre_send_finalize),
+        ("verify-digest-plan", _run_verify),
+    ):
         started = time.monotonic()
         try:
             result = fn(sandbox)
@@ -389,7 +432,7 @@ def replay_one(day: str, sandbox: Path) -> dict[str, object]:
         "sandbox": str(sandbox),
         "stages": stages,
         "total_seconds": total_seconds,
-        "stages_ok": all(s["ok"] for s in stages) and len(stages) == 5,
+        "stages_ok": all(s["ok"] for s in stages) and len(stages) == 6,
         "sent_metrics": analyze_digest(sent_html),
         "replay_metrics": analyze_digest(replayed_html) if replayed_html else None,
         "diff": diff_digests(sent_html, replayed_html, sandbox) if replayed_html else None,

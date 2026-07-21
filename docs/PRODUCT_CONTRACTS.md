@@ -390,6 +390,9 @@ Rules:
 - The event owner is resolved before artist notability. A normal show keeps its
   headliner; support never replaces it. A festival keeps the real event name,
   lists genuine A-tier acts inside one card and is not multiplied per artist.
+- A canonical physical event is identified by event owner, venue and occurrence
+  date. Different dates or venues must remain represented; a same-venue
+  multi-night run may share one card only when that card lists every date.
 - Important concerts should be discovered early, not one day before.
 - Ordinary ticket volume must be capped before editor, not only reported after
   render. Every canonical active A-tier ticket bypasses timing, watch, repeat,

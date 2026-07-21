@@ -9,11 +9,29 @@ from news_digest.pipeline.collector.sources import ExtractedItem, SourceDef
 from news_digest.pipeline.editor import _editor_item_fact_lock_errors
 from news_digest.pipeline.pre_send_quality_judge import (
     _apply_repair_executor,
+    _finalize_repair_report,
 )
 from news_digest.pipeline.plan_execution import build_final_execution_report
 
 
 class PreSendRepairExecutorTest(unittest.TestCase):
+    def test_final_prose_policy_uses_shared_classifier(self) -> None:
+        line = '• TfGM: слот подтверждён. <a href="https://tfgm.com/travel-updates">TfGM</a>'
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            (state_dir / "candidates.json").write_text(json.dumps({"candidates": []}), encoding="utf-8")
+            report = {"operations": []}
+            _finalize_repair_report(
+                root,
+                f"<b>Общественный транспорт сегодня</b>\n{line}\n",
+                report,
+                persist_execution=False,
+            )
+        self.assertEqual(report["status"], "unresolved")
+        self.assertEqual(report["final_prose_policy"]["unresolved"], 1)
+        self.assertEqual(report["final_prose_policy"]["findings"][0]["code"], "service_template")
     def test_editor_fact_lock_allows_source_fact_but_rejects_new_date(self) -> None:
         item = {
             "line": "• HOME показывает выставку на 28 June. <a href=\"https://home.test/event\">HOME</a>",

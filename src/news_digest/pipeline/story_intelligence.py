@@ -400,9 +400,9 @@ def protected_lane(candidate: dict) -> dict[str, object]:
         invalid.append("duplicate")
     if candidate.get("validation_errors") or candidate.get("reject_reasons"):
         invalid.append("validation_failed")
-    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+    from news_digest.pipeline.weekend_inventory import effective_occurrence_window  # noqa: PLC0415
 
-    occurrence_start, occurrence_end = effective_candidate_occurrence_window(candidate)
+    occurrence_start, occurrence_end = effective_occurrence_window(candidate)
     event_block = block in {
         "weekend_activities", "next_7_days", "future_announcements",
         "ticket_radar", "outside_gm_tickets", "russian_events", "professional_events",
@@ -531,9 +531,9 @@ def backup_ttl_policy(candidate: dict, *, today: date | None = None) -> dict[str
     contract = attach_editorial_contract(candidate).get("editorial_contract") or {}
     rubric = str((candidate.get("rubric_contract") or {}).get("rubric") or contract.get("story_type") or candidate.get("category") or "")
     block = str(candidate.get("primary_block") or "")
-    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+    from news_digest.pipeline.weekend_inventory import effective_occurrence_window  # noqa: PLC0415
 
-    event_day, _ = effective_candidate_occurrence_window(candidate, today=today)
+    event_day, _ = effective_occurrence_window(candidate, today=today)
 
     if block in {"weather", "transport"} or rubric == "transport":
         ttl_days = 1

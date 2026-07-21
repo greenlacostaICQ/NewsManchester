@@ -31,7 +31,7 @@ from news_digest.pipeline.event_quality import event_quality_reject_reasons, eve
 from news_digest.pipeline.professional_events import apply_professional_event_llm_matches, apply_professional_event_match
 from news_digest.pipeline.reader_actions import attach_reader_action
 from news_digest.pipeline.reader_value import attach_reader_value
-from news_digest.pipeline.repeat_policy import validator_same_fingerprint_allow
+from news_digest.pipeline.repeat_policy import visible_repeat_verdict
 from news_digest.pipeline.story_intelligence import apply_story_intelligence, mark_reject_second_opinion
 from news_digest.pipeline.transport_classifier import classify_transport_candidate
 
@@ -1568,9 +1568,9 @@ def _is_forward_looking_event(candidate: dict) -> bool:
         return True
     if str(candidate.get("primary_block") or "") in _AGE_EXEMPT_BLOCKS:
         return True
-    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+    from news_digest.pipeline.weekend_inventory import effective_occurrence_window  # noqa: PLC0415
 
-    _, end = effective_candidate_occurrence_window(candidate)
+    _, end = effective_occurrence_window(candidate)
     return bool(end and end >= now_london().date())
 
 
@@ -2077,9 +2077,9 @@ def _exclude_stale_event(candidate: dict) -> bool:
     # not into summary's event_date=... field; missing this let a 3 Jan
     # 2026 event ship in a 27 May 2026 "next 7 days" section.
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+    from news_digest.pipeline.weekend_inventory import effective_occurrence_window  # noqa: PLC0415
 
-    effective_start, effective_end = effective_candidate_occurrence_window(candidate, today=today)
+    effective_start, effective_end = effective_occurrence_window(candidate, today=today)
     raw_structured_date = str(event.get("date_start") or event.get("date") or "").strip()
     explicit_structured_date = bool(
         re.match(r"^20\d{2}-\d{2}-\d{2}", raw_structured_date)
@@ -2650,64 +2650,11 @@ def _exclude_cross_day_rehash(candidate: dict, state_dir: Path) -> bool:
         return False
     contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
     anchor = str(contract.get("anchor_type") or "")
-    repeat_allow = validator_same_fingerprint_allow(candidate)
-    if repeat_allow.allow:
-        return False
-    # Operational blocks (transport, weather) self-manage rotation via
-    # transport_fill and synthetic_freshness; never gate them here.
-    block = str(candidate.get("primary_block") or "")
-    if block in {"transport", "weather"}:
-        return False
-    if block == "weekend_activities" and _has_recurrence_pattern(candidate):
-        today_date = now_london().date()
-        days_to_sat = (5 - today_date.weekday()) % 7
-        days_to_sun = (6 - today_date.weekday()) % 7
-        if min(days_to_sat, days_to_sun) <= 7:
-            # A recurring market/fair is not a stale repeat just because
-            # yesterday's digest also mentioned the same page. The actionable
-            # occurrence is the next weekend instance; keep it eligible across
-            # the planning week and let writer caps/budget decide visibility.
-            return False
-    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    event_day_str = str(event.get("date_start") or event.get("date") or "").strip()
-    if block in {"openings", "weekend_activities", "next_7_days"} and event_day_str:
-        try:
-            event_day = datetime.strptime(event_day_str[:10], "%Y-%m-%d").date()
-        except ValueError:
-            event_day = None
-        if event_day == now_london().date():
-            # Same URL can be announced earlier and become actionable again on
-            # the actual event day. Treat that as the existing dated-event
-            # repeat exception, not as a stale article rehash.
-            return False
-
     policy = contract.get("section_policy") if isinstance(contract.get("section_policy"), dict) else {}
     try:
         ttl_days = max(1, int(policy.get("repeat_ttl_days") or 1))
     except (TypeError, ValueError):
         ttl_days = 1
-    # bookable_listing / future event TTL override: a concert on Saturday
-    # mentioned in Monday's digest is STILL the same valid concert on
-    # Tuesday — the default ttl=1d would reject it as a rehash. While
-    # the event itself is still in the future (and within 14 days), the
-    # cross-day rehash window must follow the event, not the original
-    # post date. Closes the 2026-05-27 Lowry Boys / Cherryholt loss.
-    if anchor == "bookable_listing":
-        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-        event_day_str = str(event.get("date_start") or event.get("date") or "").strip()
-        if event_day_str:
-            try:
-                event_day = datetime.strptime(event_day_str[:10], "%Y-%m-%d").date()
-            except ValueError:
-                event_day = None
-            if event_day is not None:
-                today_date = now_london().date()
-                if today_date <= event_day <= today_date + timedelta(days=14):
-                    # Event is still upcoming within 14 days — do not
-                    # block as a cross-day rehash, the concert/market
-                    # itself is still happening.
-                    return False
-        # Older/undated bookable_listings fall through to the default ttl.
     # Look back ttl_days + 1 to catch the day before yesterday for
     # short-TTL items (default 1d means "yesterday").
     lookback = ttl_days + 1
@@ -2738,20 +2685,20 @@ def _exclude_cross_day_rehash(candidate: dict, state_dir: Path) -> bool:
                 continue
             if not rec.get("included"):
                 continue
-            phase = classify_change_phase(candidate)
-            previous_phase = classify_change_phase(rec)
-            if phase and phase != previous_phase:
-                candidate["change_phase"] = phase
-                candidate["change_type"] = "new_phase"
+            repeat_verdict = visible_repeat_verdict(candidate, rec)
+            candidate["visible_repeat_verdict"] = repeat_verdict.as_dict()
+            if repeat_verdict.allow:
+                if repeat_verdict.repeat_class == "lifecycle":
+                    candidate["change_type"] = "new_phase"
                 existing = str(candidate.get("reason") or "").strip()
                 note = (
                     f"Validator: same fingerprint was published on {check_day}, "
-                    f"but today has a new phase ({phase})."
+                    f"but repeat policy allows it ({repeat_verdict.reason})."
                 )
                 candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
                 candidate["quality_warnings"] = sorted(set(
                     [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]
-                    + ["cross_day_same_url_new_phase"]
+                    + [f"cross_day_repeat_allowed:{repeat_verdict.reason}"]
                 ))
                 return False
             # Hit — same fingerprint already shipped on a previous day.
@@ -2760,7 +2707,7 @@ def _exclude_cross_day_rehash(candidate: dict, state_dir: Path) -> bool:
             existing = str(candidate.get("reason") or "").strip()
             note = (
                 f"Validator: cross-day rehash — fingerprint already shipped on {check_day} "
-                f"(anchor={anchor or 'unknown'}, ttl={ttl_days}d)."
+                f"(repeat={repeat_verdict.reason}, anchor={anchor or 'unknown'}, ttl={ttl_days}d)."
             )
             candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
             candidate["reject_reasons"] = sorted(set(
@@ -2979,7 +2926,6 @@ def validate_candidates(project_root: Path) -> StageResult:
         _time_gate("why_now_gate", lambda: _apply_why_now_gate(candidate, manual_override=manual))
         _time_gate("reader_action", lambda: attach_reader_action(candidate))
         _time_gate("editorial_contract_final", lambda: attach_editorial_contract(candidate))
-        _time_gate("story_intelligence_final", lambda: apply_story_intelligence(candidate))
         if candidate.get("event_page_type") in {"homepage", "aggregator"}:
             validation_errors.append("Event candidate must use an official event page.")
 
@@ -2991,11 +2937,15 @@ def validate_candidates(project_root: Path) -> StageResult:
             note = "Validator: source is in trial mode, so candidate is measured but not published."
             candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
 
+        # Protection is a cap exemption for an already valid card. Publish the
+        # final validity fields first so no homepage, duplicate or failed event
+        # can remain protected in reports/scoring from an earlier pass.
+        candidate["validation_errors"] = validation_errors
+        candidate["validated"] = not validation_errors
+        _time_gate("story_intelligence_final", lambda: apply_story_intelligence(candidate))
         _time_gate("reader_value", lambda: attach_reader_value(candidate))
         _time_gate("scoring_trace", lambda: attach_scoring_trace(candidate))
 
-        candidate["validation_errors"] = validation_errors
-        candidate["validated"] = not validation_errors
         items.append(
             {
                 "fingerprint": candidate.get("fingerprint"),

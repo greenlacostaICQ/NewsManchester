@@ -166,17 +166,17 @@ def _story_key(candidate: dict) -> str:
 
 
 def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
-    """Conserve one public A-tier card per recognised artist.
+    """Collapse only technical copies of the same physical A-tier event.
 
-    Ticket feeds repeat the same tour across sellers, dates and cities. The
-    public unit is the recognised artist, not every feed row. Prefer a Greater
-    Manchester event, then a nearby one, then the nearest outside-GM date.
-    This A-tier-only identity rule does not collapse ordinary ticket events.
+    Event owner + venue + occurrence day is the public identity. Multiple feed
+    rows for that identity collapse to the best source, while another date or
+    venue remains a separate canonical card. A festival already has one event
+    owner, so its lineup cannot multiply the physical event into artist cards.
     """
     from news_digest.pipeline.ticket_notability import ticket_artist_name  # noqa: PLC0415
 
     recognised_artists: set[str] = set()
-    grouped: dict[str, list[tuple[date, dict]]] = {}
+    grouped: dict[tuple[str, str, date], list[dict]] = {}
     for candidate in candidates:
         if not isinstance(candidate, dict) or not is_a_tier_ticket(candidate):
             continue
@@ -201,62 +201,34 @@ def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
             event_day = date.fromisoformat(str(event.get("date_start") or event.get("date") or "")[:10])
         except ValueError:
             continue
-        if artist:
-            grouped.setdefault(artist, []).append((event_day, candidate))
+        venue = re.sub(r"[^a-z0-9]+", " ", str(event.get("venue") or "").lower()).strip()
+        if artist and venue:
+            grouped.setdefault((artist, venue, event_day), []).append(candidate)
 
     collapsed = 0
-    conserved_artists = 0
+    conserved_events = 0
     for rows in grouped.values():
-        rows.sort(key=lambda item: (item[0], str(item[1].get("fingerprint") or "")))
-        conserved_artists += 1
+        conserved_events += 1
 
-        def _geography_priority(candidate: dict) -> int:
-            scope = str(candidate.get("venue_scope") or "").strip().lower()
-            block = str(candidate.get("primary_block") or "")
-            if scope == "gm" or (not scope and block == "ticket_radar"):
-                return 0
-            if scope == "nearby":
-                return 1
-            if block in {"ticket_radar", "future_announcements", "next_7_days"} and scope != "outside":
-                return 1
-            return 2
-
-        def _survivor_key(item: tuple[date, dict]) -> tuple:
-            candidate = item[1]
+        def _survivor_key(candidate: dict) -> tuple:
             return (
-                _geography_priority(candidate),
-                item[0],
                 0 if candidate.get("include") else 1,
                 -_source_authority(candidate),
                 str(candidate.get("fingerprint") or ""),
             )
 
-        survivor = min(rows, key=_survivor_key)[1]
-        survivor_event = survivor.get("event") if isinstance(survivor.get("event"), dict) else {}
-        survivor_venue = re.sub(r"[^a-z0-9]+", " ", str(survivor_event.get("venue") or "").lower()).strip()
-
-        def _normalised_venue(candidate: dict) -> str:
-            event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-            return re.sub(r"[^a-z0-9]+", " ", str(event.get("venue") or "").lower()).strip()
-
-        same_venue_dates = sorted({
-            item[0].isoformat()
-            for item in rows
-            if _normalised_venue(item[1]) == survivor_venue
-        })
-        if len(same_venue_dates) > 1:
-            survivor["merged_event_dates"] = same_venue_dates
+        survivor = min(rows, key=_survivor_key)
         survivor_fp = str(survivor.get("fingerprint") or "")
-        for _, candidate in rows:
+        for candidate in rows:
             if candidate is survivor:
                 continue
             candidate["a_tier_collapsed_into"] = survivor_fp
-            candidate["a_tier_policy_status"] = "collapsed_same_a_tier_artist"
-            candidate["a_tier_policy_reason"] = "one_public_card_per_a_tier_artist"
+            candidate["a_tier_policy_status"] = "collapsed_same_physical_event"
+            candidate["a_tier_policy_reason"] = "duplicate_physical_a_tier_event"
             collapsed += 1
     return {
         "recognised_artists": len(recognised_artists),
-        "eligible_artists": conserved_artists,
+        "eligible_events": conserved_events,
         "collapsed_rows": collapsed,
     }
 
@@ -593,7 +565,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
             candidate["a_tier_policy_status"] = "ineligible"
             candidate["a_tier_policy_reason"] = a_tier_reason
         if candidate.get("a_tier_collapsed_into"):
-            _mark_out(candidate, "a_tier_same_artist_collapsed")
+            _mark_out(candidate, "a_tier_duplicate_physical_event_collapsed")
             continue
         if is_a_tier_ticket(candidate) and not a_tier_eligible:
             _mark_out(candidate, f"a_tier_ineligible:{a_tier_reason}")
@@ -1022,9 +994,9 @@ def run_plan_digest(project_root: Path) -> StageResult:
             ),
             "identity": a_tier_identity,
             "policy": (
-                "One public card per recognised A-tier artist, preferring a "
-                "Greater Manchester event. The survivor is decided before "
-                "timing/watch/cap/repeat; only hard event validity may exclude it."
+                "One public card per physical A-tier event (owner + venue + date). "
+                "Technical source duplicates collapse before timing/watch/cap/repeat; "
+                "another real date or venue remains independently canonical."
             ),
         },
         "warnings": warnings,

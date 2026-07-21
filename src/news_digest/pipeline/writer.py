@@ -124,6 +124,7 @@ PUBLIC_SECTION_RESERVED_MIN = {
     # disappear just because early news sections are noisy on a given morning.
     "Выходные в GM": 8,
     "Что важно в ближайшие 7 дней": 3,
+    "Еда, открытия и рынки": SECTION_MIN_ITEMS.get("Еда, открытия и рынки", 3),
     "Business/tech события для тебя": 2,
     "Билеты / Ticket Radar": 2,
     "Футбол": 2,
@@ -3986,9 +3987,9 @@ _RECURRING_EVENT_MARKERS = re.compile(
 def _is_expired_event_candidate(candidate: dict, line: str = "") -> bool:
     if str(candidate.get("primary_block") or "") not in _EVENT_BLOCKS:
         return False
-    from news_digest.pipeline.weekend_inventory import effective_candidate_occurrence_window  # noqa: PLC0415
+    from news_digest.pipeline.weekend_inventory import effective_occurrence_window  # noqa: PLC0415
 
-    _, effective_end = effective_candidate_occurrence_window(candidate)
+    _, effective_end = effective_occurrence_window(candidate)
     if effective_end is not None:
         return effective_end < now_london().date()
     event_day = _parse_day(candidate.get("published_at"))

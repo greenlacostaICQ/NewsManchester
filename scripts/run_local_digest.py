@@ -132,6 +132,12 @@ def _release_gate_error_for_file(path: Path) -> str | None:
     text = resolved_path.read_text(encoding="utf-8")
     if f"Greater Manchester Brief — {today}," not in text:
         return "current_digest.html does not contain today's digest header"
+    # Re-run the final plan verifier against the exact bytes about to be sent.
+    # This keeps direct/manual send-file calls as safe as the GitHub workflow
+    # without introducing a second hash or trusting a stale report.
+    verification = run_verify_digest_plan(PROJECT_ROOT, digest_path=resolved_path)
+    if not verification.ok:
+        return f"final plan verification failed: {verification.message}"
     # The send gate blocks ONLY on technical consistency (built+promoted digest,
     # matching date/header, no hard release failure). "ship_degraded" is allowed:
     # it means the issue was promoted and visible quality problems were repaired,
