@@ -26,7 +26,7 @@ def _tk(title, *, venue="O2", date="2026-06-19", block="outside_gm_tickets",
 
 class TicketCardFormatTest(unittest.TestCase):
     def test_event_owner_is_not_replaced_by_support_or_top_lineup_act(self) -> None:
-        from news_digest.pipeline.ticket_notability import ticket_event_owner
+        from news_digest.pipeline.ticket_notability import ticket_event_kind, ticket_event_owner
 
         grace = _tk("Palace Bowl Presents - Grace Jones", venue="Crystal Palace Bowl")
         grace["ticket_notability"] = {"kind": "lineup_or_show", "tier": "A"}
@@ -37,6 +37,8 @@ class TicketCardFormatTest(unittest.TestCase):
         self.assertEqual(ticket_event_owner(gary, kind="artist"), "Gary Numan")
 
         pistols = _tk("SEX PISTOLS FT. FRANK CARTER")
+        pistols["summary"] = "Scarborough Open Air Theatre | Scarborough | Rock"
+        self.assertEqual(ticket_event_kind(pistols), "artist")
         self.assertEqual(ticket_event_owner(pistols, kind="artist"), "SEX PISTOLS")
 
     def test_festival_keeps_event_name_and_lists_acts_inside_card(self) -> None:

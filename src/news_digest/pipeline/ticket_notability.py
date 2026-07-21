@@ -298,13 +298,22 @@ def ticket_event_owner(candidate: dict, *, kind: str = "") -> str:
 
 
 def ticket_event_kind(candidate: dict) -> str:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    hint = candidate.get("structured_event_hint") if isinstance(candidate.get("structured_event_hint"), dict) else {}
     blob = " ".join(
         str(candidate.get(field) or "")
         for field in ("title", "summary", "lead", "evidence_text", "source_label")
     )
     if NON_ARTIST_EVENT_RE.search(blob) and len(ticket_headliner_candidates(candidate)) <= 1:
         return "non_artist_show"
-    if LINEUP_EVENT_RE.search(blob):
+    identity_blob = " ".join(
+        str(value or "")
+        for value in (candidate.get("title"), event.get("event_name"), hint.get("event_name"))
+    )
+    explicit_lineup = event.get("lineup") or hint.get("lineup")
+    if LINEUP_EVENT_RE.search(identity_blob) or (
+        isinstance(explicit_lineup, list) and len(explicit_lineup) > 1
+    ):
         return "lineup_or_show"
     return "artist"
 
