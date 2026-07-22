@@ -54,7 +54,10 @@ _JUDGE_TOKEN_LIMITER = None
 
 SYSTEM_PROMPT = """Ты старший редактор и fact-check судья русскоязычного утреннего дайджеста Greater Manchester.
 
-Твоя задача — решить, можно ли отправлять уже собранный выпуск читателям в Telegram.
+Твоя задача — найти строки, которые нужно исправить перед отправкой уже собранного выпуска
+читателям в Telegram. Ошибка отдельной строки никогда не отменяет весь выпуск: для неё нужно
+дать patch/replace/strip, а технический контроллер применит исправление, запасного или снимет
+только эту строку.
 
 Проверяй именно финальный выпуск, а не широкий исходный пул:
 1. смысловая верность: текст не меняет субъект, роль, обвинение, статус дела;
@@ -72,7 +75,8 @@ Decision:
 - "pass": критических проблем нет.
 - "warn": есть мелкие стилистические/плотностные замечания, но выпуск можно отправлять.
 - "repair_required": есть конкретные строки, которые нельзя отправлять без правки/удаления.
-- "block": выпуск в целом небезопасен или почти пустой; это редкий случай.
+- "block": зарезервировано для технически отсутствующего/нечитаемого выпуска; не используй
+  его для ошибок отдельных строк или продуктовой полноты.
 
 Верни ТОЛЬКО JSON без markdown:
 {
@@ -275,6 +279,11 @@ def _compact_candidate_for_judge(candidate: dict[str, Any]) -> dict[str, Any]:
         "primary_block": str(candidate.get("primary_block") or ""),
         "category": str(candidate.get("category") or ""),
         "compact_facts": _compact_text(" | ".join(fact_bits), 520),
+        # Reverse fact-completeness must read the actual story claim, not the
+        # first navigation/header words scraped into evidence_text. The latter
+        # produced a real false positive when an unrelated Prolific North nav
+        # item contained "grooming" beside a parking-platform story.
+        "source_claim": _compact_text(candidate.get("summary") or candidate.get("lead"), 360),
         "event": event,
         "is_lead": bool(candidate.get("is_lead")),
         "protected_lane": candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {},
@@ -549,9 +558,16 @@ def _completeness_source_blob(candidate: dict[str, Any]) -> str:
     headline of a crime story, so this is enough to decide presence without
     re-reading the full article.
     """
+    source_claim = str(
+        candidate.get("source_claim")
+        or candidate.get("summary")
+        or candidate.get("lead")
+        or ""
+    ).strip()
+    if not source_claim:
+        source_claim = str(candidate.get("compact_facts") or "").strip()
     return " ".join(
-        str(candidate.get(field) or "")
-        for field in ("title", "compact_facts")
+        part for part in (str(candidate.get("title") or "").strip(), source_claim) if part
     ).strip()
 
 
@@ -738,6 +754,15 @@ def _replacement_with_link(replacement: str, original_line: str, candidate: dict
         return line
     original_link = re.search(r'(<a\s+[^>]*href="[^"]+"[^>]*>.*?</a>)', str(original_line or ""), flags=re.IGNORECASE | re.DOTALL)
     if original_link:
+        source_label = re.sub(r"<[^>]+>", " ", original_link.group(1))
+        source_label = re.sub(r"\s+", " ", html.unescape(source_label)).strip()
+        if source_label:
+            line = re.sub(
+                rf"(?:\s+|\.\s*){re.escape(source_label)}\.?\s*$",
+                "",
+                line,
+                flags=re.IGNORECASE,
+            ).rstrip()
         return f"{line} {original_link.group(1)}"
     if isinstance(candidate, dict):
         url = str(candidate.get("source_url") or "").strip()
@@ -925,6 +950,130 @@ def _known_factual_error(row: dict[str, Any]) -> bool:
     )
 
 
+_RU_EVENT_MONTH_STEMS = {
+    1: "январ",
+    2: "феврал",
+    3: "март",
+    4: "апрел",
+    5: "ма[йя]",
+    6: "июн",
+    7: "июл",
+    8: "август",
+    9: "сентябр",
+    10: "октябр",
+    11: "ноябр",
+    12: "декабр",
+}
+
+
+def _line_has_expected_event_date(candidate: dict[str, Any] | None, line: str) -> bool:
+    if not isinstance(candidate, dict):
+        return False
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    raw = str(event.get("date_start") or event.get("date") or "")[:10]
+    match = re.fullmatch(r"(20\d{2})-(\d{2})-(\d{2})", raw)
+    if not match:
+        return False
+    year, month, day = (int(value) for value in match.groups())
+    stem = _RU_EVENT_MONTH_STEMS.get(month)
+    if not stem:
+        return False
+    visible = _strip_tags(line).lower()
+    if not re.search(rf"\b0?{day}\s+{stem}[а-яё]*\b", visible):
+        return False
+    try:
+        from news_digest.pipeline.writer import _line_has_conflicting_event_date  # noqa: PLC0415
+
+        if _line_has_conflicting_event_date(candidate, visible):
+            return False
+    except Exception:  # noqa: BLE001
+        pass
+    # A displayed year, when present, must agree with the structured event.
+    displayed_years = {int(value) for value in re.findall(r"\b20\d{2}\b", visible)}
+    return not displayed_years or displayed_years == {year}
+
+
+def _repair_request_already_satisfied(
+    row: dict[str, Any],
+    original_line: str,
+    candidate: dict[str, Any] | None,
+) -> bool:
+    """Reject a self-contradictory model complaint without rewriting a good row."""
+    concept = str(row.get("completeness_concept") or "").strip()
+    if concept and line_satisfies_concept(concept, _strip_tags(original_line)):
+        return True
+    risk_blob = f"{row.get('risk') or ''} {row.get('reason') or ''} {row.get('critical_problem') or ''}".lower()
+    return bool(
+        re.search(r"\bdate\b|дат", risk_blob)
+        and _line_has_expected_event_date(candidate, original_line)
+    )
+
+
+def _repair_line_postcheck_errors(
+    row: dict[str, Any],
+    line: str,
+    candidate: dict[str, Any] | None,
+    *,
+    apply_requested_concept: bool,
+) -> list[str]:
+    errors: list[str] = []
+    plain = _strip_tags(line)
+    concept = str(row.get("completeness_concept") or "") if apply_requested_concept else ""
+    if concept and not line_satisfies_concept(concept, plain):
+        errors.append(f"critical concept still absent: {concept}")
+    reason_blob = str(row.get("reason") or row.get("critical_problem") or "").lower()
+    if re.search(r"wrong[- ]artist|неправильн[^.]{0,80}артист", reason_blob):
+        expected = _expected_primary_artist(candidate)
+        rendered = re.sub(r"[^a-z0-9а-яё]+", " ", plain.lower()).strip()
+        if not expected or expected not in rendered:
+            errors.append(f"expected primary artist still absent: {expected or 'unknown'}")
+    risk_blob = f"{row.get('risk') or ''} {reason_blob}".lower()
+    event = candidate.get("event") if isinstance(candidate, dict) and isinstance(candidate.get("event"), dict) else {}
+    if re.search(r"\bdate\b|дат", risk_blob) and str(event.get("date_start") or event.get("date") or ""):
+        if not _line_has_expected_event_date(candidate, line):
+            errors.append("structured event date is not rendered correctly")
+    return errors
+
+
+def _candidate_own_completeness_errors(candidate: dict[str, Any] | None, line: str) -> list[str]:
+    if not isinstance(candidate, dict):
+        return []
+    review = translation_completeness_review(_completeness_source_blob(candidate), _strip_tags(line))
+    return [
+        f"replacement drops {str(row.get('concept') or 'critical concept')}"
+        for row in review.get("missing_critical") or []
+        if isinstance(row, dict)
+    ]
+
+
+def _plan_slot_id_for_line(
+    execution: dict[str, Any],
+    candidate: dict[str, Any] | None,
+    original_line: str,
+    section: str,
+) -> str:
+    candidate_slot = str((candidate or {}).get("plan_slot_id") or "")
+    slots = execution.get("slots") if isinstance(execution.get("slots"), dict) else {}
+    if candidate_slot and candidate_slot in slots:
+        return candidate_slot
+    url_identity = _line_url_identity(original_line)
+    fingerprint = str((candidate or {}).get("fingerprint") or "")
+    for slot_id, payload in slots.items():
+        if not isinstance(payload, dict):
+            continue
+        if section and str(payload.get("section") or "") != section:
+            continue
+        final_url = canonical_url_identity(str(payload.get("final_html_url") or ""))
+        if url_identity and final_url == url_identity:
+            return str(slot_id)
+        if fingerprint and fingerprint in {
+            str(payload.get("final_fingerprint") or ""),
+            str(payload.get("original_fingerprint") or ""),
+        }:
+            return str(slot_id)
+    return ""
+
+
 def _ticket_duplicate_identity(candidate: dict[str, Any] | None) -> str:
     if not isinstance(candidate, dict):
         return ""
@@ -1020,9 +1169,13 @@ def _finalize_repair_report(
             method = str(action.get("method") or "")
             passed = False
             detail = ""
-            if method == "keep":
+            if method in {"keep", "verified_existing_fact"}:
                 passed = current_slot is not None and str(current_slot.get("section") or "") == str(action.get("section") or "")
-                detail = "no repair requested" if passed else "kept line missing or moved"
+                detail = (
+                    "existing fact verified"
+                    if passed and method == "verified_existing_fact"
+                    else ("no repair requested" if passed else "kept line missing or moved")
+                )
             elif method == "removed":
                 passed = str(execution_row.get("status") or "") == "removed" and original_url not in final_by_url
                 detail = "slot removed and source absent" if passed else "removed source is still visible"
@@ -1042,19 +1195,19 @@ def _finalize_repair_report(
                 ):
                     passed = False
                     detail = "shared prose policy still fails"
-            if current_slot is not None and method != "removed":
+            if current_slot is not None and method not in {"removed", "keep", "verified_existing_fact"}:
                 current_html = str(current_slot.get("html") or "")
-                reason_blob = str(action.get("reason") or "").lower()
-                if re.search(r"wrong[- ]artist|неправильн[^.]{0,80}артист", reason_blob):
-                    expected = _expected_primary_artist(candidate)
-                    rendered = re.sub(r"[^a-z0-9а-яё]+", " ", _strip_tags(current_html).lower()).strip()
-                    if not expected or expected not in rendered:
-                        passed = False
-                        detail = f"expected primary artist still absent: {expected or 'unknown'}"
-                concept = str(action.get("completeness_concept") or "")
-                if concept and not line_satisfies_concept(concept, _strip_tags(current_html)):
+                post_errors = _repair_line_postcheck_errors(
+                    action,
+                    current_html,
+                    final_candidate,
+                    apply_requested_concept=method != "reserve_replacement",
+                )
+                if method == "reserve_replacement":
+                    post_errors.extend(_candidate_own_completeness_errors(final_candidate, current_html))
+                if post_errors:
                     passed = False
-                    detail = f"critical concept still absent: {concept}"
+                    detail = "; ".join(post_errors[:4])
             identity = _ticket_duplicate_identity(candidate)
             if identity and re.search(r"\bduplicate\b|дубли", str(action.get("reason") or "").lower()):
                 duplicate_identities.add(identity)
@@ -1165,6 +1318,12 @@ def _apply_repair_executor(
     candidates_payload = read_json(state_dir / "candidates.json", {"candidates": []})
     candidates = [c for c in candidates_payload.get("candidates") or [] if isinstance(c, dict)]
     candidates_by_key = _candidate_index(candidates)
+    try:
+        from news_digest.pipeline.plan_execution import load_execution  # noqa: PLC0415
+
+        execution_for_lookup = load_execution(state_dir)
+    except Exception:  # noqa: BLE001
+        execution_for_lookup = {}
     slots = _digest_line_slots_from_html(digest_html)
     slot_by_index = {int(slot.get("line_index") or 0): slot for slot in slots}
     html_lines = digest_html.splitlines()
@@ -1203,7 +1362,12 @@ def _apply_repair_executor(
         action_name = str(row.get("action") or "").strip().lower()
         candidate = candidates_by_key.get(_line_url_identity(original))
         repair_candidate = _enrich_candidate_for_repair(candidate, report) if action_name != "keep" else candidate
-        plan_slot_id = str((candidate or {}).get("plan_slot_id") or "")
+        plan_slot_id = _plan_slot_id_for_line(
+            execution_for_lookup,
+            candidate,
+            original,
+            section_name,
+        )
         action_record.update(
             {
                 "section": section_name,
@@ -1213,8 +1377,19 @@ def _apply_repair_executor(
                 "original_html": original,
             }
         )
-        if action_name == "keep":
+        if action_name == "keep" and not _known_factual_error(row):
             action_record["method"] = "keep"
+            report["actions"].append(action_record)
+            continue
+        if action_name == "keep":
+            # A model cannot preserve a line it simultaneously marks as a
+            # known factual defect. Run the normal recovery ladder instead.
+            action_record["keep_rejected"] = "known_factual_error"
+            action_name = "replace"
+        if action_name != "strip" and _repair_request_already_satisfied(row, original, repair_candidate):
+            action_record["method"] = "verified_existing_fact"
+            action_record["verification"] = "structured fact already rendered correctly"
+            report["false_positive_existing_fact"] = int(report.get("false_positive_existing_fact") or 0) + 1
             report["actions"].append(action_record)
             continue
         report["attempted"] = int(report.get("attempted") or 0) + 1
@@ -1236,23 +1411,78 @@ def _apply_repair_executor(
             elif _line_needs_russian_editor(model_line):
                 action_record["model_replacement_rejected"] = "still_needs_editor"
             else:
-                replacement = model_line
-                action_record["method"] = "model_patch"
-                report["model_patch_applied"] = int(report.get("model_patch_applied") or 0) + 1
+                post_errors = _repair_line_postcheck_errors(
+                    row,
+                    model_line,
+                    repair_candidate,
+                    apply_requested_concept=True,
+                )
+                if post_errors:
+                    action_record["model_replacement_rejected"] = f"post_check: {', '.join(post_errors[:4])}"
+                    report["model_post_check_rejected"] = int(report.get("model_post_check_rejected") or 0) + 1
+                else:
+                    replacement = model_line
+                    action_record["method"] = "model_patch"
+                    report["model_patch_applied"] = int(report.get("model_patch_applied") or 0) + 1
 
         if not replacement and action_name != "strip":
             replacement = _deterministic_rewrite_from_candidate(repair_candidate, original, report)
             if replacement:
-                action_record["method"] = "deterministic_rewrite"
+                post_errors = _repair_line_postcheck_errors(
+                    row,
+                    replacement,
+                    repair_candidate,
+                    apply_requested_concept=True,
+                )
+                if post_errors:
+                    action_record["deterministic_rewrite_rejected"] = f"post_check: {', '.join(post_errors[:4])}"
+                    report["deterministic_post_check_rejected"] = int(report.get("deterministic_post_check_rejected") or 0) + 1
+                    replacement = ""
+                else:
+                    action_record["method"] = "deterministic_rewrite"
 
         if not replacement and action_name != "strip":
             # Этап 3: единственный источник замен — цепочка запасных слота.
             if plan_slot_id:
+                from news_digest.pipeline.plan_execution import (  # noqa: PLC0415
+                    load_execution,
+                    record_outcome,
+                    save_execution,
+                )
                 from news_digest.pipeline.writer import produce_replacement_for_slot  # noqa: PLC0415
 
-                replacement = produce_replacement_for_slot(state_dir, plan_slot_id, stage="judge")
-            if replacement:
-                action_record["method"] = "reserve_replacement"
+                for _attempt in range(4):
+                    candidate_line = produce_replacement_for_slot(state_dir, plan_slot_id, stage="judge")
+                    if not candidate_line:
+                        break
+                    current_execution = load_execution(state_dir)
+                    current_row = ((current_execution.get("slots") or {}).get(plan_slot_id) or {})
+                    backup_fp = str(current_row.get("final_fingerprint") or "")
+                    backup_candidate = candidates_by_key.get(backup_fp)
+                    post_errors = _repair_line_postcheck_errors(
+                        row,
+                        candidate_line,
+                        backup_candidate,
+                        apply_requested_concept=False,
+                    ) + _candidate_own_completeness_errors(backup_candidate, candidate_line)
+                    if not post_errors:
+                        replacement = candidate_line
+                        action_record["method"] = "reserve_replacement"
+                        action_record["replacement_fingerprint"] = backup_fp
+                        break
+                    record_outcome(
+                        current_execution,
+                        plan_slot_id,
+                        status="",
+                        failed_fingerprint=backup_fp,
+                        reason=f"judge_post_check:{', '.join(post_errors[:3])}",
+                        stage="judge",
+                    )
+                    save_execution(state_dir, current_execution)
+                    action_record.setdefault("reserve_rejections", []).append(
+                        {"fingerprint": backup_fp, "errors": post_errors[:4]}
+                    )
+                    report["reserve_post_check_rejected"] = int(report.get("reserve_post_check_rejected") or 0) + 1
 
         if replacement:
             if not dry_run:
@@ -1265,10 +1495,17 @@ def _apply_repair_executor(
             report["actions"].append(action_record)
             continue
 
-        if action_name != "strip":
+        if action_name != "strip" and not _known_factual_error(row):
             # A stylistic/fix request may remain visible, but it is explicitly
             # unresolved. It is never called repaired merely because a floor is
             # at risk.
+            report["actions"].append(action_record)
+            continue
+        if action_name != "strip" and _known_factual_error(row) and not plan_slot_id:
+            # Never create a technical plan mismatch merely to remove a quality
+            # defect whose slot could not be identified. Keep it visible,
+            # report it honestly, and let delivery continue as degraded.
+            action_record["outcome"] = "unresolved_no_plan_slot"
             report["actions"].append(action_record)
             continue
 
@@ -1664,9 +1901,7 @@ def _write_report(project_root: Path, result: PreSendQualityResult) -> Path:
         blocking_unresolved = int(repair.get("blocking_unresolved") or 0) if repair else 0
         if repair:
             release_report["pre_send_repair_executor"] = repair
-        if result.decision == "block" and blocking_unresolved:
-            release_report["release_decision"] = "block"
-        elif result.decision == "warn" or repair_applied or repair_unresolved:
+        if result.decision == "warn" or repair_applied or repair_unresolved or blocking_unresolved:
             if release_report.get("release_decision") == "pass":
                 release_report["release_decision"] = "ship_degraded"
             warnings = release_report.setdefault("warnings", [])
@@ -1739,8 +1974,8 @@ def evaluate_pre_send_quality(
     if not route:
         result = PreSendQualityResult(
             status="failed",
-            decision="block",
-            can_send=False,
+            decision="warn",
+            can_send=True,
             reason="pre_send_quality model route is not configured",
             run_date_london=run_date,
             pipeline_run_id=pipeline_run_id,
@@ -1757,8 +1992,8 @@ def evaluate_pre_send_quality(
     if not key:
         result = PreSendQualityResult(
             status="failed",
-            decision="block",
-            can_send=False,
+            decision="warn",
+            can_send=True,
             reason=f"{step.api_key_env} is not set for required pre-send quality judge",
             model=step.model,
             provider=step.provider,
@@ -1778,8 +2013,8 @@ def evaluate_pre_send_quality(
     except ImportError:
         result = PreSendQualityResult(
             status="failed",
-            decision="block",
-            can_send=False,
+            decision="warn",
+            can_send=True,
             reason="openai package is not installed",
             model=step.model,
             provider=step.provider,
@@ -1816,8 +2051,8 @@ def evaluate_pre_send_quality(
         fallback_scan = _deterministic_html_scan(digest_slots)
         result = PreSendQualityResult(
             status="failed",
-            decision="block",
-            can_send=False,
+            decision="warn",
+            can_send=True,
             reason=f"pre-send quality judge LLM call failed: {exc}",
             model=step.model,
             provider=step.provider,
@@ -1840,8 +2075,8 @@ def evaluate_pre_send_quality(
         fallback_scan = _deterministic_html_scan(digest_slots)
         result = PreSendQualityResult(
             status="failed",
-            decision="block",
-            can_send=False,
+            decision="warn",
+            can_send=True,
             reason="pre-send quality judge returned no parseable JSON",
             model=step.model,
             provider=step.provider,
@@ -1922,10 +2157,11 @@ def evaluate_pre_send_quality(
         unresolved = int(repair_executor.get("unresolved") or 0)
         prose_unresolved = int((repair_executor.get("final_prose_policy") or {}).get("unresolved") or 0)
         if blocking_unresolved:
-            decision = "block"
-            can_send = False
+            decision = "warn"
+            can_send = True
             reason = (
-                f"pre-send repair left {blocking_unresolved} known factual error operation(s) unresolved"
+                f"pre-send repair left {blocking_unresolved} known factual operation(s) unresolved; "
+                "delivery continues as degraded"
             )
         elif unresolved or prose_unresolved:
             decision = "warn"
@@ -1941,6 +2177,10 @@ def evaluate_pre_send_quality(
                 "pre-send repair executor applied "
                 f"{repair_executor.get('applied')} repair(s); every operation passed its post-check"
             )
+        elif decision in BLOCKING_DECISIONS:
+            decision = "warn"
+            can_send = True
+            reason = "pre-send judge requested a hold without an executable repair; delivery continues as degraded"
     result = PreSendQualityResult(
         status=judge_status,
         decision=decision,
@@ -1968,7 +2208,13 @@ def evaluate_pre_send_quality(
 
 
 def quality_gate_error_for_digest(project_root: Path, digest_path: Path) -> str:
-    """Return a blocking reason if current_digest.html lacks a fresh pass."""
+    """Quality reports are advisory; only a missing digest is undeliverable.
+
+    Kept as a compatibility surface for callers/tests. Freshness, model failure,
+    and unresolved findings are written to reports and warnings, but the global
+    release contract forbids using them to hold an otherwise technical-valid
+    issue.
+    """
     current_digest = (project_root / "data" / "outgoing" / "current_digest.html").resolve()
     try:
         resolved = digest_path.resolve()
@@ -1978,16 +2224,4 @@ def quality_gate_error_for_digest(project_root: Path, digest_path: Path) -> str:
         return ""
     if not digest_path.exists():
         return "current_digest.html missing"
-    html = digest_path.read_text(encoding="utf-8")
-    sha = digest_hash(html)
-    report = read_json(project_root / "data" / "state" / REPORT_NAME, {})
-    if not report:
-        return "pre-send quality judge has not run for current_digest.html"
-    if str(report.get("digest_sha256") or "") != sha:
-        return "pre-send quality judge report is stale for current_digest.html"
-    if report.get("can_send") is not True or str(report.get("decision") or "") not in ALLOWED_TO_SEND:
-        return f"pre-send quality judge blocked send: {report.get('decision') or report.get('reason') or 'unknown'}"
-    today = today_london()
-    if str(report.get("run_date_london") or "") != today:
-        return f"pre-send quality judge report is for {report.get('run_date_london')}, not {today}"
     return ""

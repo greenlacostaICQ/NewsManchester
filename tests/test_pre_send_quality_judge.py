@@ -42,7 +42,7 @@ class PreSendQualityJudgeTests(unittest.TestCase):
         self.assertEqual(lines[0]["line_index"], 1)
         self.assertIn("Manchester:", lines[0]["text"])
 
-    def test_quality_gate_requires_fresh_pass_for_current_digest(self) -> None:
+    def test_quality_gate_never_blocks_current_digest_for_quality_verdict(self) -> None:
         tmp, root = self._project()
         with tmp:
             today = today_london()
@@ -73,7 +73,7 @@ class PreSendQualityJudgeTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            self.assertIn("blocked", quality_gate_error_for_digest(root, digest_path))
+            self.assertEqual(quality_gate_error_for_digest(root, digest_path), "")
 
     def test_dry_run_writes_non_blocking_report_without_api(self) -> None:
         tmp, root = self._project()
@@ -86,6 +86,20 @@ class PreSendQualityJudgeTests(unittest.TestCase):
             self.assertTrue(result["can_send"])
             report = json.loads((root / "data" / "state" / REPORT_NAME).read_text(encoding="utf-8"))
             self.assertEqual(report["digest_sha256"], digest_hash(html))
+
+    @mock.patch("news_digest.pipeline.pre_send_quality_judge.resolve_model_route", return_value=[])
+    def test_missing_quality_model_is_warning_not_delivery_block(self, _route: mock.Mock) -> None:
+        tmp, root = self._project()
+        with tmp:
+            today = today_london()
+            html = f"<b>Greater Manchester Brief — {today}, 08:10</b>\n\n<b>Свежие новости</b>\n• Safe line."
+            (root / "data" / "outgoing" / "current_digest.html").write_text(html, encoding="utf-8")
+
+            result = evaluate_pre_send_quality(root)
+
+        self.assertEqual(result["status"], "failed")
+        self.assertEqual(result["decision"], "warn")
+        self.assertTrue(result["can_send"])
 
     def test_dry_run_records_product_completeness_alerts(self) -> None:
         tmp, root = self._project()

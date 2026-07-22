@@ -36,6 +36,12 @@ class TranslationCompletenessTests(unittest.TestCase):
         self.assertEqual(review["missing_critical"], [])
         self.assertTrue(line_satisfies_concept("sexual_offence", self.FAITHFUL))
 
+    def test_russian_found_dead_word_satisfies_death_concept(self) -> None:
+        line = "• Майкл Селвуд был найден мёртвым после того, как его объявили пропавшим."
+        review = translation_completeness_review("Michael Selwood was found dead.", line)
+        self.assertEqual(review["missing_critical"], [])
+        self.assertTrue(line_satisfies_concept("death", line))
+
     def test_critical_fact_obligations_derives_classes_from_source(self) -> None:
         # The obligation list the review reports is now derived from this helper;
         # grave source concepts map to their obligation classes, benign copy to none.
@@ -107,6 +113,28 @@ class TranslationCompletenessTests(unittest.TestCase):
 
         self.assertEqual(scan["checked_lines"], 1)
         self.assertEqual(scan["matched_lines"], 1)
+        self.assertEqual(scan["applicable_lines"], 0)
+        self.assertEqual(scan["critical_omission_count"], 0)
+
+    def test_source_claim_ignores_unrelated_navigation_severity_word(self) -> None:
+        url = "https://prolificnorth.co.uk/news/parking-platform"
+        candidate = {
+            "source_url": url,
+            "title": "Hi-tech parking brief for Manchester agency",
+            "source_claim": "The agency won a media contract for a parking platform.",
+            "compact_facts": "Navigation: documentary about a grooming scandal.",
+        }
+        slots = [
+            {
+                "line_index": 1,
+                "section": "IT и бизнес",
+                "html": f'• Агентство выиграло контракт для парковочной платформы. <a href="{url}">Source</a>',
+                "text": "• Агентство выиграло контракт для парковочной платформы.",
+            }
+        ]
+
+        scan = _deterministic_completeness_scan(slots, _rendered_candidates_by_url([candidate]))
+
         self.assertEqual(scan["applicable_lines"], 0)
         self.assertEqual(scan["critical_omission_count"], 0)
 

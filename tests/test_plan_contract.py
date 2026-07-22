@@ -588,6 +588,39 @@ class PlanContractTest(unittest.TestCase):
         self.assertFalse(result.ok)
         self.assertTrue(any("invalid coded reason" in error for error in report["technical_errors"]))
 
+    def test_16_verify_reports_unresolved_quality_but_never_blocks_delivery(self) -> None:
+        candidates = [_candidate(i) for i in range(7)]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, candidates)
+            run_plan_digest(root)
+            write_digest(root)
+            outgoing = root / "data" / "outgoing"
+            outgoing.mkdir(parents=True, exist_ok=True)
+            (outgoing / "current_digest.html").write_text(
+                (state_dir / "draft_digest.html").read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            (state_dir / "pre_send_quality_report.json").write_text(
+                json.dumps(
+                    {
+                        "repair_executor": {
+                            "unresolved": 1,
+                            "blocking_unresolved": 1,
+                            "operations": [{"outcome": "unresolved", "known_factual_error": True}],
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_verify_digest_plan(root)
+            report = json.loads((state_dir / "verify_digest_plan_report.json").read_text(encoding="utf-8"))
+
+        self.assertTrue(result.ok)
+        self.assertTrue(report["ship_degraded"])
+        self.assertEqual(report["technical_errors"], [])
+        self.assertIn("unresolved_known_factual", {row["kind"] for row in report["divergences"]})
+
 
 if __name__ == "__main__":
     unittest.main()

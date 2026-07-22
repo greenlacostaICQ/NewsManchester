@@ -53,7 +53,7 @@ _SEVERITY_CONCEPTS: tuple[tuple[str, str, str, str], ...] = (
         "death",
         "who/what",
         r"\bdied\b|\bdeath\b|\bdead\b|\bdies\b|\bfatal(?:ly)?\b|\bkilled\b",
-        r"погиб|умер|смерт|скончал|гибел|летальн|жертв",
+        r"погиб|умер|м[её]ртв|смерт|скончал|гибел|летальн|жертв",
     ),
     (
         "weapon_violence",

@@ -4,9 +4,8 @@
 send-file. Сравнивает ФИНАЛЬНЫЙ отправляемый HTML с неизменяемым планом
 и отчётом исполнения.
 
-Плановый недобор и кодифицированные снятия уходят в ship_degraded. Ошибка
-исполнения плана или известная фактическая ошибка после ремонта блокирует
-отправку:
+Плановый недобор, кодифицированные снятия и unresolved quality findings уходят
+в ship_degraded. Отправку блокирует только техническая ошибка исполнения:
   * плана нет или он от другого pipeline_run_id;
   * шапка выпуска не за сегодняшний день;
   * HTML пуст или без единой ссылки-источника.
@@ -193,8 +192,15 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
     repair_report = repair_report if isinstance(repair_report, dict) else {}
     blocking_unresolved = int(repair_report.get("blocking_unresolved") or 0)
     if blocking_unresolved:
-        technical_errors.append(
-            f"Pre-send repair has {blocking_unresolved} unresolved known factual error operation(s)."
+        divergences.append(
+            {
+                "kind": "unresolved_known_factual",
+                "count": blocking_unresolved,
+                "detail": (
+                    f"{blocking_unresolved} known factual repair operation(s) remain unresolved; "
+                    "quality degradation never blocks delivery"
+                ),
+            }
         )
 
     a_tier_rows = [
@@ -272,7 +278,8 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
             "warnings": warnings[:120],
             "policy": (
                 "Плановый недобор и кодифицированные снятия дают ship_degraded; "
-                "строка вне слота/блока, повторное использование HTML-строки и unresolved fact error блокируют отправку."
+                "quality findings никогда не блокируют выпуск; только отсутствие/чужой run, "
+                "битый HTML или техническое расхождение плана блокируют отправку."
             ),
         },
     )

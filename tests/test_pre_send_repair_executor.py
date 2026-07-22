@@ -201,7 +201,7 @@ class PreSendRepairExecutorTest(unittest.TestCase):
         self.assertEqual(report["unresolved"], 1)
         self.assertEqual(report["blocking_unresolved"], 0)
 
-    def test_wrong_artist_is_unresolved_and_blocking_until_expected_headliner_is_visible(self) -> None:
+    def test_wrong_artist_is_removed_when_repair_and_slot_backup_fail(self) -> None:
         digest_html = (
             "<b>Greater Manchester Brief — 2026-07-21, 08:00</b>\n\n"
             "<b>Крупные концерты вне GM</b>\n"
@@ -237,7 +237,7 @@ class PreSendRepairExecutorTest(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            _, report = _apply_repair_executor(
+            repaired, report = _apply_repair_executor(
                 project_root=root,
                 digest_html=digest_html,
                 actions=[
@@ -254,8 +254,176 @@ class PreSendRepairExecutorTest(unittest.TestCase):
                 dry_run=False,
             )
 
-        self.assertEqual(report["operations"][0]["outcome"], "unresolved")
-        self.assertEqual(report["blocking_unresolved"], 1)
+            execution = json.loads((state_dir / "plan_execution_report.json").read_text(encoding="utf-8"))
+
+        self.assertNotIn("Ladytron", repaired)
+        self.assertEqual(report["operations"][0]["outcome"], "resolved_in_place")
+        self.assertEqual(report["actions"][0]["method"], "removed")
+        self.assertEqual(report["actions"][0]["removal_reason"], "fact_lock_failed")
+        self.assertEqual(report["blocking_unresolved"], 0)
+        self.assertEqual(execution["slots"]["outside_gm_tickets-01"]["status"], "removed")
+
+    def test_correct_structured_date_rejects_self_contradictory_model_complaint(self) -> None:
+        digest_html = (
+            "<b>Business/tech события для тебя</b>\n"
+            '• 23 июля 2026 года в Олдхэме пройдет бесплатная консультация. '
+            '<a href="https://events.test/oldham">Events</a>\n'
+        )
+        candidate = {
+            "fingerprint": "oldham-event",
+            "plan_slot_id": "professional_events-01",
+            "source_url": "https://events.test/oldham",
+            "source_label": "Events",
+            "title": "Oldham business clinic",
+            "evidence_text": "23 July 2026 " * 30,
+            "event": {"date_start": "2026-07-23", "venue": "Oldham"},
+        }
+        execution = {
+            "slots": {
+                "professional_events-01": {
+                    "slot_id": "professional_events-01",
+                    "section": "Business/tech события для тебя",
+                    "status": "shown",
+                    "final_fingerprint": "oldham-event",
+                    "replacement_reason": "",
+                    "failed_attempts": [],
+                }
+            }
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            (state_dir / "candidates.json").write_text(json.dumps({"candidates": [candidate]}), encoding="utf-8")
+            (state_dir / "plan_execution_report.json").write_text(json.dumps(execution), encoding="utf-8")
+            repaired, report = _apply_repair_executor(
+                project_root=root,
+                digest_html=digest_html,
+                actions=[
+                    {
+                        "line_index": 1,
+                        "section": "Business/tech события для тебя",
+                        "action": "patch",
+                        "replacement_text": "• 23 июля 2026 года в Олдхэме пройдет бесплатная консультация.",
+                        "reason": "Дата неверна, должна быть 23 июля 2026 года.",
+                        "risk": "date",
+                    }
+                ],
+                critical_errors=[
+                    {
+                        "line_index": 1,
+                        "section": "Business/tech события для тебя",
+                        "risk": "date",
+                        "problem": "Неправильная дата события",
+                        "suggested_action": "repair",
+                    }
+                ],
+                deterministic_post_check={"errors": []},
+                dry_run=False,
+            )
+
+        self.assertEqual(repaired, digest_html.strip())
+        self.assertEqual(report["false_positive_existing_fact"], 1)
+        self.assertEqual(report["actions"][0]["method"], "verified_existing_fact")
+        self.assertEqual(report["operations"][0]["outcome"], "resolved_in_place")
+        self.assertEqual(report["blocking_unresolved"], 0)
+
+    def test_failed_patch_uses_slot_backup_and_checks_backup_own_facts(self) -> None:
+        digest_html = (
+            "<b>Свежие новости</b>\n"
+            '• Исходная строка без критического факта. <a href="https://news.test/primary">News</a>\n'
+        )
+        primary = {
+            "fingerprint": "primary",
+            "plan_slot_id": "last_24h-01",
+            "source_url": "https://news.test/primary",
+            "source_label": "News",
+            "title": "Person died in Manchester",
+            "summary": "A person died in Manchester.",
+            "evidence_text": "A person died in Manchester. " * 30,
+        }
+        backup = {
+            "fingerprint": "backup",
+            "source_url": "https://news.test/backup",
+            "source_label": "BBC",
+            "title": "Council opens a new service",
+            "summary": "Manchester council opened a new public service.",
+        }
+        execution = {
+            "slots": {
+                "last_24h-01": {
+                    "slot_id": "last_24h-01",
+                    "section": "Свежие новости",
+                    "status": "shown",
+                    "final_fingerprint": "primary",
+                    "replacement_reason": "",
+                    "failed_attempts": [],
+                }
+            }
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            (state_dir / "candidates.json").write_text(
+                json.dumps({"candidates": [primary, backup]}), encoding="utf-8"
+            )
+            (state_dir / "plan_execution_report.json").write_text(json.dumps(execution), encoding="utf-8")
+
+            def produce_backup(_state_dir: Path, slot_id: str, *, stage: str = "judge") -> str:
+                payload = json.loads((state_dir / "plan_execution_report.json").read_text(encoding="utf-8"))
+                payload["slots"][slot_id]["status"] = "replaced"
+                payload["slots"][slot_id]["final_fingerprint"] = "backup"
+                (state_dir / "plan_execution_report.json").write_text(json.dumps(payload), encoding="utf-8")
+                return '• Совет открыл новую городскую услугу. <a href="https://news.test/backup">BBC</a>'
+
+            with mock.patch(
+                "news_digest.pipeline.pre_send_quality_judge._deterministic_rewrite_from_candidate",
+                return_value="",
+            ), mock.patch(
+                "news_digest.pipeline.writer.produce_replacement_for_slot",
+                side_effect=produce_backup,
+            ), mock.patch(
+                "news_digest.pipeline.editor._line_needs_russian_editor",
+                return_value=False,
+            ), mock.patch(
+                "news_digest.pipeline.editor._line_preserves_links",
+                return_value=True,
+            ):
+                repaired, report = _apply_repair_executor(
+                    project_root=root,
+                    digest_html=digest_html,
+                    actions=[
+                        {
+                            "line_index": 1,
+                            "section": "Свежие новости",
+                            "action": "patch",
+                            "replacement_text": "• История требует дополнительной проверки.",
+                            "reason": "В строке пропущен факт смерти.",
+                            "risk": "translation",
+                        }
+                    ],
+                    critical_errors=[
+                        {
+                            "line_index": 1,
+                            "section": "Свежие новости",
+                            "risk": "translation",
+                            "problem": "critical death fact omitted",
+                            "suggested_action": "repair",
+                            "completeness_concept": "death",
+                        }
+                    ],
+                    deterministic_post_check={"errors": []},
+                    dry_run=False,
+                )
+
+        self.assertNotIn("Исходная строка", repaired)
+        self.assertIn("Совет открыл новую городскую услугу", repaired)
+        self.assertEqual(report["model_post_check_rejected"], 1)
+        self.assertEqual(report["reserve_replacement_used"], 1)
+        self.assertEqual(report["actions"][0]["method"], "reserve_replacement")
+        self.assertEqual(report["operations"][0]["outcome"], "resolved_in_place")
+        self.assertEqual(report["blocking_unresolved"], 0)
 
     @mock.patch("news_digest.pipeline.collector.extract._fetch_text")
     def test_deep_event_enrichment_fetches_child_page_facts_for_home(self, fetch_text: mock.Mock) -> None:
