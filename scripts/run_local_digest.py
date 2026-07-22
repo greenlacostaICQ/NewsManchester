@@ -1319,6 +1319,7 @@ def cmd_collect_inventory(wave: str) -> int:
         BREAKING_CHECK_CATEGORIES,
         NIGHT_WAVES,
         build_inventory_record,
+        enrich_hybrid_inventory_facts,
         merge_inventory,
         passes_morning_contract,
         prewrite_stable_inventory_candidate,
@@ -1390,6 +1391,7 @@ def cmd_collect_inventory(wave: str) -> int:
             if not isinstance(candidate, dict):
                 continue
             attach_change_phase(candidate)
+            enrich_hybrid_inventory_facts(candidate)
             scope, city = resolve_venue_scope(candidate)
             candidate["venue_scope"] = scope
             candidate["venue_city"] = city

@@ -24,6 +24,7 @@ from news_digest.pipeline.inventory import (
     classify_category_health,
     classify_disposition,
     evaluate_card,
+    enrich_hybrid_inventory_facts,
     inventory_block_completeness,
     inventory_category_output_blocks,
     inventory_record_to_candidate,
@@ -653,6 +654,27 @@ class StateFoundationTest(unittest.TestCase):
 
 
 class BuildRecordTest(unittest.TestCase):
+    def test_hybrid_blocks_reuse_editorial_story_facts_at_night(self) -> None:
+        for block in ("transport", "last_24h", "city_watch", "tech_business", "football"):
+            with self.subTest(block=block):
+                candidate = {
+                    "fingerprint": f"fp-{block}",
+                    "primary_block": block,
+                    "category": "transport" if block == "transport" else block,
+                    "source_url": f"https://example.test/{block}",
+                    "title": "Confirmed service change in Manchester",
+                    "summary": "The operator published the change today.",
+                    "change_type": "new_story",
+                    "include": True,
+                }
+                enrich_hybrid_inventory_facts(candidate)
+                record = build_inventory_record(candidate, prompt_version=1)
+                self.assertEqual(record["fact_card"]["what_happened"], candidate["title"])
+                expected_why_now = "ongoing_disruption" if block == "transport" else "new_today"
+                self.assertEqual(record["fact_card"]["why_now"], expected_why_now)
+                self.assertEqual(record["quality_status"], "needs_text")
+                self.assertEqual(record["missing_facts"], ["draft_line"])
+
     def test_record_has_canonical_schema(self) -> None:
         cand = {
             "fingerprint": "fp1",

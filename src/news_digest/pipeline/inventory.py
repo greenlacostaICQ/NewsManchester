@@ -43,6 +43,7 @@ from news_digest.pipeline.common import (
     valid_http_url,
     write_json_atomic,
 )
+from news_digest.pipeline.editorial_contracts import attach_editorial_contract
 
 INVENTORY_SCHEMA_VERSION = 1
 
@@ -677,6 +678,20 @@ def evaluate_card(candidate: dict) -> tuple[str, bool, list[str]]:
     if not has_text:
         return "needs_text", False, ["draft_line"]
     return "ready", True, []
+
+
+def enrich_hybrid_inventory_facts(candidate: dict) -> dict:
+    """Persist the existing editorial story frame for night hybrid cards."""
+    block = str(candidate.get("primary_block") or "")
+    if str(INVENTORY_BLOCK_REGISTRY.get(block, {}).get("mode") or "") != "hybrid":
+        return candidate
+    attach_editorial_contract(candidate)
+    contract = candidate.get("editorial_contract") if isinstance(candidate.get("editorial_contract"), dict) else {}
+    frame = contract.get("story_frame") if isinstance(contract.get("story_frame"), dict) else {}
+    candidate["what_happened"] = str(candidate.get("what_happened") or frame.get("what_happened") or "")
+    candidate["why_now"] = str(candidate.get("why_now") or frame.get("why_now") or "")
+    candidate["story_type"] = str(candidate.get("story_type") or contract.get("story_type") or "")
+    return candidate
 
 
 # ── 8.3 evidence identity (inventory-local; decoupled from the reuse cache) ─
