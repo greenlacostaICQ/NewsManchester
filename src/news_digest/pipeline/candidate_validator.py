@@ -320,6 +320,20 @@ def resolve_venue_scope(candidate: dict) -> tuple[str, str]:
         if _token_in(explicit_location, token):
             return "outside", token.title()
 
+    # Ticketmaster's compact feed stores the authoritative city in the
+    # structured summary ("venue | city | genre") but older event payloads do
+    # not copy it into event.city. Treat any explicit Ticketmaster city that is
+    # not GM/nearby as outside GM; otherwise Crawley, Whitby, York, etc. remain
+    # "unknown" and can leak into the GM future-announcements block.
+    if str(event.get("schema_source") or "") == "ticketmaster_api":
+        summary_parts = [part.strip() for part in str(candidate.get("summary") or "").split("|")]
+        structured_city = summary_parts[1] if len(summary_parts) >= 2 else ""
+        if structured_city:
+            scope, city = _resolve_named_venue_scope(structured_city)
+            if scope:
+                return scope, city
+            return "outside", structured_city
+
     title_venue = _title_venue_fragment(str(candidate.get("title") or ""))
     scope, city = _resolve_named_venue_scope(title_venue)
     if scope:
@@ -479,13 +493,27 @@ def _apply_section_routing_quality(candidate: dict) -> list[str]:
         candidate["primary_block"] = "transport"
         reasons.append("section_routing:transport")
     block = str(candidate.get("primary_block") or "")
+    incident_only = bool(
+        _SENSITIVE_INCIDENT_DETAIL_RE.search(blob)
+        and not _TECH_MARKERS_RE.search(blob)
+        and not _BUSINESS_ACTION_RE.search(blob)
+    )
     if (
-        str(candidate.get("category") or "") == "tech_business"
-        and block in {"tech_business", "it_business"}
-        and not _TECH_BUSINESS_RE.search(blob)
+        block in {"tech_business", "it_business"}
+        and (
+            incident_only
+            or (
+                str(candidate.get("category") or "") == "tech_business"
+                and not _TECH_BUSINESS_RE.search(blob)
+            )
+        )
     ):
         candidate["primary_block"] = "city_watch"
-        reasons.append("section_routing:source_is_not_it_content")
+        reasons.append(
+            "section_routing:incident_is_not_it_content"
+            if incident_only
+            else "section_routing:source_is_not_it_content"
+        )
     elif (
         block in {"last_24h", "today_focus", "city_watch"}
         and _TECH_BUSINESS_RE.search(blob)
@@ -1424,6 +1452,32 @@ def _exclude_non_impact_transport(candidate: dict) -> bool:
         "transport_no_passenger_movement_impact",
         "Validator: transport item has no passenger movement impact and cannot "
         "be shown in Transport or borrowed by another public block.",
+    )
+    return True
+
+
+def _exclude_non_gm_transport(candidate: dict) -> bool:
+    """Hold transport alerts whose public facts contain no GM journey anchor.
+
+    TfGM occasionally republishes national rail alerts for routes wholly
+    outside Greater Manchester. The publisher label and URL are deliberately
+    excluded from the geography check: a TfGM page about Thirsk or
+    Mansfield–Worksop is still not useful local transport coverage.
+    """
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("primary_block") or "") != "transport" and str(candidate.get("category") or "") != "transport":
+        return False
+    public_facts = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text")
+    )
+    if _GM_ANCHOR_RE.search(public_facts):
+        return False
+    _append_reject(
+        candidate,
+        "transport_non_gm",
+        "Validator: transport alert has no Greater Manchester journey anchor.",
     )
     return True
 
@@ -2856,6 +2910,8 @@ def validate_candidates(project_root: Path) -> StageResult:
             _time_gate("road_only_transport", lambda: _exclude_road_only_transport(candidate))
         if candidate.get("include") and manual != "force_include":
             _time_gate("transport_accessibility_only", lambda: _exclude_transport_accessibility_only(candidate))
+        if candidate.get("include") and manual != "force_include":
+            _time_gate("non_gm_transport", lambda: _exclude_non_gm_transport(candidate))
         if candidate.get("include") and manual != "force_include":
             _time_gate("non_impact_transport", lambda: _exclude_non_impact_transport(candidate))
         if candidate.get("include"):

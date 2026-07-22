@@ -4,7 +4,10 @@ import unittest
 
 from news_digest.pipeline.candidate_validator import (
     _apply_section_routing_quality,
+    _exclude_non_gm_transport,
+    _exclude_wrong_food_opening_category,
     _hold_sensitive_thin_or_failed_enrichment,
+    resolve_venue_scope,
 )
 from news_digest.pipeline.glossary_qa import glossary_line_issues, repair_glossary_terms
 from news_digest.pipeline.writer import _draft_line_quality_errors, _today_focus_candidate_is_eligible
@@ -130,6 +133,80 @@ class EnglishDataQATests(unittest.TestCase):
         reasons = _apply_section_routing_quality(candidate)
         self.assertIn("section_routing:source_is_not_it_content", reasons)
         self.assertEqual(candidate["primary_block"], "city_watch")
+
+    def test_irlam_fire_does_not_stay_in_it_business(self) -> None:
+        candidate = {
+            "include": True,
+            "category": "media_layer",
+            "primary_block": "tech_business",
+            "source_label": "MEN News Sitemap",
+            "title": "Fire service issues update after crews tackle huge Irlam blaze for 19 hours",
+            "summary": (
+                "A fire broke out at an industrial estate. Eight fire engines and an aerial "
+                "ladder platform attended; pallets and two vehicles were involved."
+            ),
+        }
+
+        reasons = _apply_section_routing_quality(candidate)
+
+        self.assertIn("section_routing:incident_is_not_it_content", reasons)
+        self.assertEqual(candidate["primary_block"], "city_watch")
+
+    def test_tfgm_alert_wholly_outside_gm_is_rejected(self) -> None:
+        candidate = {
+            "include": True,
+            "category": "transport",
+            "primary_block": "transport",
+            "source_label": "TfGM",
+            "title": "Buses replace trains between Mansfield Woodhouse and Worksop",
+            "summary": "$66",
+            "evidence_text": "Until 23 July.",
+        }
+
+        self.assertTrue(_exclude_non_gm_transport(candidate))
+        self.assertFalse(candidate["include"])
+        self.assertIn("transport_non_gm", candidate["reject_reasons"])
+
+    def test_transport_alert_with_manchester_anchor_survives_geography_gate(self) -> None:
+        candidate = {
+            "include": True,
+            "category": "transport",
+            "primary_block": "transport",
+            "source_label": "TfGM",
+            "title": "Amended trains between Manchester Piccadilly and Sheffield",
+        }
+
+        self.assertFalse(_exclude_non_gm_transport(candidate))
+        self.assertTrue(candidate["include"])
+
+    def test_ticketmaster_structured_city_is_authoritative_for_scope(self) -> None:
+        candidate = {
+            "category": "venues_tickets",
+            "title": "Queen of the Night — event 2026-09-03",
+            "summary": "Hawth Theatre | Crawley | Rock | event_date=2026-09-03 19:30",
+            "event": {
+                "venue": "Hawth Theatre",
+                "schema_source": "ticketmaster_api",
+            },
+        }
+
+        self.assertEqual(resolve_venue_scope(candidate), ("outside", "Crawley"))
+
+    def test_restaurant_burglary_is_not_a_food_opening(self) -> None:
+        candidate = {
+            "include": True,
+            "category": "food_openings",
+            "primary_block": "openings",
+            "title": "Beloved local restaurant responds after hurtful break-in",
+            "summary": (
+                "The restaurant was burgled and staff wages were stolen. "
+                "The venue opened last year in Chorlton."
+            ),
+        }
+
+        self.assertTrue(_exclude_wrong_food_opening_category(candidate))
+        self.assertFalse(candidate["include"])
+        self.assertIn("wrong_openings_category", candidate["reject_reasons"])
 
     def test_sensitive_thin_enrichment_is_held_before_translation(self) -> None:
         candidate = {

@@ -398,6 +398,68 @@ class PreSendRepairExecutorTest(unittest.TestCase):
         self.assertEqual(report["unresolved"], 0)
         self.assertEqual(report["blocking_unresolved"], 0)
 
+    def test_model_patch_cannot_fix_one_fact_by_dropping_death_fact(self) -> None:
+        digest_html = (
+            "<b>Свежие новости</b>\n"
+            "• Джордан Парк получил запрет на процедуры до трагической смерти Элис Уэбб. "
+            '<a href="https://bbc.test/lip-king">BBC</a>\n'
+        )
+        candidate = {
+            "fingerprint": "lip-king",
+            "source_url": "https://bbc.test/lip-king",
+            "source_label": "BBC",
+            "title": "'Lip King' banned from carrying out BBLs before woman's death",
+            "summary": (
+                "Jordan Parke faced enforcement action before treating Alice Webb in 2024. "
+                "Alice Webb died after the procedure."
+            ),
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            (state_dir / "candidates.json").write_text(
+                json.dumps({"candidates": [candidate]}), encoding="utf-8"
+            )
+            with mock.patch(
+                "news_digest.pipeline.pre_send_quality_judge._fact_lock_errors_for_replacement",
+                return_value=[],
+            ), mock.patch(
+                "news_digest.pipeline.pre_send_quality_judge._deterministic_rewrite_from_candidate",
+                return_value="",
+            ), mock.patch(
+                "news_digest.pipeline.editor._line_needs_russian_editor",
+                return_value=False,
+            ), mock.patch(
+                "news_digest.pipeline.editor._line_preserves_links",
+                return_value=True,
+            ):
+                repaired, report = _apply_repair_executor(
+                    project_root=root,
+                    digest_html=digest_html,
+                    actions=[
+                        {
+                            "line_index": 1,
+                            "section": "Свежие новости",
+                            "action": "patch",
+                            "replacement_text": (
+                                "• Джордан Парк получил запрет на процедуры до того, "
+                                "как он лечил Элис Уэбб."
+                            ),
+                            "reason": "Уточнить последовательность событий.",
+                            "risk": "factual",
+                        }
+                    ],
+                    critical_errors=[],
+                    deterministic_post_check={"errors": []},
+                    dry_run=False,
+                )
+
+        self.assertEqual(repaired, digest_html.strip())
+        self.assertEqual(report["model_post_check_rejected"], 1)
+        self.assertIn("replacement drops death", report["actions"][0]["model_replacement_rejected"])
+        self.assertEqual(report["final_fact_completeness"]["critical_omission_count"], 0)
+
     def test_failed_patch_uses_slot_backup_and_checks_backup_own_facts(self) -> None:
         digest_html = (
             "<b>Свежие новости</b>\n"

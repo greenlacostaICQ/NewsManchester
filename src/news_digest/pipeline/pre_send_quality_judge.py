@@ -1203,7 +1203,7 @@ def _finalize_repair_report(
                     final_candidate,
                     apply_requested_concept=method != "reserve_replacement",
                 )
-                if method == "reserve_replacement":
+                if method in {"model_patch", "deterministic_rewrite", "reserve_replacement"}:
                     post_errors.extend(_candidate_own_completeness_errors(final_candidate, current_html))
                 if post_errors:
                     passed = False
@@ -1269,13 +1269,25 @@ def _finalize_repair_report(
     report["resolved_in_place"] = resolved
     report["unresolved"] = unresolved
     report["blocking_unresolved"] = blocking_unresolved
+    final_fact_completeness = _deterministic_completeness_scan(
+        final_slots,
+        _rendered_candidates_by_url(candidates),
+    )
+    report["final_fact_completeness"] = final_fact_completeness
+    final_critical_omissions = int(final_fact_completeness.get("critical_omission_count") or 0)
+    if final_critical_omissions:
+        report["blocking_unresolved"] = max(blocking_unresolved, final_critical_omissions)
     report["final_prose_policy"] = {
         "checked_lines": len(final_slots),
         "resolved_in_place": len(final_slots) - len(prose_findings),
         "unresolved": len(prose_findings),
         "findings": prose_findings[:60],
     }
-    report["status"] = "resolved_in_place" if not unresolved and not prose_findings else "unresolved"
+    report["status"] = (
+        "resolved_in_place"
+        if not unresolved and not prose_findings and not final_critical_omissions
+        else "unresolved"
+    )
     if execution and persist_execution:
         save_execution(state_dir, execution)
 
@@ -1417,6 +1429,7 @@ def _apply_repair_executor(
                     repair_candidate,
                     apply_requested_concept=True,
                 )
+                post_errors.extend(_candidate_own_completeness_errors(repair_candidate, model_line))
                 if post_errors:
                     action_record["model_replacement_rejected"] = f"post_check: {', '.join(post_errors[:4])}"
                     report["model_post_check_rejected"] = int(report.get("model_post_check_rejected") or 0) + 1
@@ -1447,6 +1460,7 @@ def _apply_repair_executor(
                     repair_candidate,
                     apply_requested_concept=True,
                 )
+                post_errors.extend(_candidate_own_completeness_errors(repair_candidate, replacement))
                 if post_errors:
                     action_record["deterministic_rewrite_rejected"] = f"post_check: {', '.join(post_errors[:4])}"
                     report["deterministic_post_check_rejected"] = int(report.get("deterministic_post_check_rejected") or 0) + 1

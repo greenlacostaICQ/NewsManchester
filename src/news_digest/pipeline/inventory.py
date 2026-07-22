@@ -569,6 +569,13 @@ def food_opening_has_product_meaning(candidate: dict) -> bool:
     current_text = " ".join(
         str(candidate.get(name) or "") for name in ("title", "summary", "lead")
     )
+    title = str(candidate.get("title") or "")
+    # The current story must be a product/venue change, not an incident whose
+    # body merely says that the restaurant "opened last year". A title such as
+    # "Restaurant reopens after burglary" still passes because the current
+    # reopening is explicit in the headline.
+    if _FOOD_INCIDENT_RE.search(title) and not _FOOD_CURRENT_CHANGE_RE.search(title):
+        return False
     if _FOOD_INCIDENT_RE.search(current_text) and not _FOOD_CURRENT_CHANGE_RE.search(current_text):
         return False
     return bool(_FOOD_MEANING_RE.search(blob))
