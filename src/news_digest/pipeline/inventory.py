@@ -150,6 +150,7 @@ INVENTORY_BLOCK_REGISTRY: dict[str, dict[str, object]] = {
         "candidate_categories": frozenset({"food_openings"}),
         "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 90,
         "text_policy": "morning_writer", "source_replacement_allowed": False,
+        "source_not_modified_confirms_inventory": True,
         "floor": 3, "min_sources": 2, "optional": False, "intake_cap": 10,
         "required_fields": ("event_name", "specific_event", "venue", "specific_venue", "opening_phase_or_date", "food_meaning", "action_url"),
     },
@@ -495,6 +496,17 @@ _FOOD_MEANING_RE = re.compile(
     r"greengrocer|opening|opened|opens|launch|reopen|takeover|pop[-\s]?up)\b",
     re.IGNORECASE,
 )
+_FOOD_INCIDENT_RE = re.compile(
+    r"\b(?:break[-\s]?in|burgl(?:ar|ary|ars|aries)|rob(?:bed|bery|bers)?|"
+    r"theft|thieves|stolen|attack(?:ed)?|vandal(?:ism|ised|ized)?)\b",
+    re.IGNORECASE,
+)
+_FOOD_CURRENT_CHANGE_RE = re.compile(
+    r"\b(?:open(?:s|ed|ing)?|reopen(?:s|ed|ing)?|launch(?:es|ed|ing)?|"
+    r"refurbish(?:ment|ed|ing)?|new\s+(?:menu|concept|venue|restaurant|cafe|bar|pub)|"
+    r"takeover|pop[-\s]?up|market)\b",
+    re.IGNORECASE,
+)
 _FOOD_GENERIC_NAME_RE = re.compile(
     r"^(?:new|the new|manchester(?:'s|’s)?|food halls?|restaurant|cafe|coffee shop|bar|pub)\b",
     re.IGNORECASE,
@@ -543,6 +555,23 @@ def _repair_food_opening_card(candidate: dict) -> None:
         event["venue"] = inferred
         candidate["event"] = event
         candidate["inventory_fact_repair"] = "food_named_venue_from_existing_evidence"
+
+
+def food_opening_has_product_meaning(candidate: dict) -> bool:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    blob = " ".join(
+        str(value or "")
+        for value in (
+            candidate.get("title"), candidate.get("summary"), candidate.get("lead"),
+            candidate.get("change_phase"), event.get("event_name"), event.get("venue"),
+        )
+    )
+    current_text = " ".join(
+        str(candidate.get(name) or "") for name in ("title", "summary", "lead")
+    )
+    if _FOOD_INCIDENT_RE.search(current_text) and not _FOOD_CURRENT_CHANGE_RE.search(current_text):
+        return False
+    return bool(_FOOD_MEANING_RE.search(blob))
 
 
 def _card_field_value(candidate: dict, field: str) -> str:
@@ -621,14 +650,7 @@ def _card_field_value(candidate: dict, field: str) -> str:
             return ""
         return "planning"
     if field == "food_meaning":
-        blob = " ".join(
-            str(value or "")
-            for value in (
-                candidate.get("title"), candidate.get("summary"), candidate.get("lead"),
-                candidate.get("change_phase"), event.get("event_name"), event.get("venue"),
-            )
-        )
-        return "local_food_change" if _FOOD_MEANING_RE.search(blob) else ""
+        return "local_food_change" if food_opening_has_product_meaning(candidate) else ""
     if field == "russian_geography":
         return str(candidate.get("venue_city") or event.get("borough") or "").strip()
     return str(candidate.get(field) or event.get(field) or "").strip()
@@ -1446,10 +1468,12 @@ def build_morning_inventory_intake(
     mode: str = "assist",
     today: str | None = None,
     prompt_version: int | None = None,
+    unchanged_source_confirmations: set[tuple[str, str]] | None = None,
 ) -> tuple[list[dict], dict[str, object]]:
     """Restore every registry block marked assist into the normal morning path."""
     today = today or today_london()
     mode = str(mode or "assist").lower()
+    unchanged_source_confirmations = unchanged_source_confirmations or set()
     existing: set[str] = set()
     live_by_fingerprint: dict[str, dict] = {}
     live_by_url: dict[str, dict] = {}
@@ -1468,6 +1492,7 @@ def build_morning_inventory_intake(
     by_block: dict[str, dict[str, int]] = {}
     hybrid_signals: dict[str, int] = {}
     supply_candidates: list[dict] = []
+    confirmed_supply_candidates: list[dict] = []
     lineages: list[dict[str, object]] = []
     invalidated_prewrite = 0
     funnel = {
@@ -1553,6 +1578,8 @@ def build_morning_inventory_intake(
             matching_live = live_by_url.get(standalone_url) if standalone_url else None
         if matching_live is not None:
             enriched_fields = merge_inventory_record_into_live_candidate(matching_live, working_record)
+            if supply_ok and operational_provenance:
+                confirmed_supply_candidates.append(matching_live)
             lineage["live_fingerprint"] = str(matching_live.get("fingerprint") or "")
             lineage["candidate_fingerprint"] = str(matching_live.get("fingerprint") or "")
             lineage["intake_status"] = "merged_into_live"
@@ -1567,6 +1594,29 @@ def build_morning_inventory_intake(
             rejected["duplicate_inventory"] = rejected.get("duplicate_inventory", 0) + 1
             lineage["intake_status"] = "duplicate_inventory"
             lineage["reason"] = "fingerprint_already_present"
+            continue
+        source_key = (
+            str(working_record.get("source_report_category") or ""),
+            str(working_record.get("source_name") or working_record.get("source_label") or ""),
+        )
+        observed_today = str(working_record.get("last_seen_at") or "")[:10] == today
+        if (
+            policy.get("source_not_modified_confirms_inventory")
+            and operational_provenance
+            and observed_today
+            and source_key in unchanged_source_confirmations
+        ):
+            candidate["inventory_lineage_id"] = str(lineage["lineage_id"])
+            candidate["inventory_live_confirmation"] = "source_not_modified"
+            candidates.append(candidate)
+            confirmed_supply_candidates.append(candidate)
+            if fp:
+                existing.add(fp)
+            bucket["after_live_dedupe"] += 1
+            funnel["after_live_dedupe"] += 1
+            lineage["candidate_fingerprint"] = fp
+            lineage["intake_status"] = "confirmed_by_unchanged_source"
+            lineage["reason"] = "morning_source_not_modified"
             continue
         # Night is factual enrichment, not a second publisher. A card without
         # a matching morning-live candidate remains inventory-only even when it
@@ -1607,7 +1657,21 @@ def build_morning_inventory_intake(
                 break
     if held_by_cap:
         rejected["inventory_block_cap"] = rejected.get("inventory_block_cap", 0) + held_by_cap
-    completeness = inventory_block_completeness(supply_candidates)
+    night_supply_completeness = inventory_block_completeness(
+        supply_candidates,
+        basis="current_provenance_post_card_contract_before_live_confirmation",
+    )
+    completeness_candidates = (
+        confirmed_supply_candidates if existing_candidates is not None else supply_candidates
+    )
+    completeness = inventory_block_completeness(
+        completeness_candidates,
+        basis=(
+            "post_live_confirmation_before_dedupe_and_plan"
+            if existing_candidates is not None
+            else "current_provenance_post_card_contract_before_live_confirmation"
+        ),
+    )
     cap_report = {
         block: int(policy.get("intake_cap") or 0)
         for block, policy in INVENTORY_BLOCK_REGISTRY.items()
@@ -1625,6 +1689,7 @@ def build_morning_inventory_intake(
         "funnel": funnel,
         "by_block": by_block,
         "completeness": completeness,
+        "night_supply_completeness": night_supply_completeness,
         "lineage_status_counts": dict(sorted(
             {
                 status: sum(1 for lineage in lineages if lineage.get("intake_status") == status)
@@ -1665,7 +1730,11 @@ def _passes_block_supply_contract(record: dict, *, today: str) -> tuple[bool, st
     return True, "weekend_supply_hidden"
 
 
-def inventory_block_completeness(candidates: list[dict]) -> dict[str, object]:
+def inventory_block_completeness(
+    candidates: list[dict],
+    *,
+    basis: str = "current_provenance_post_card_contract_before_visibility_schedule_and_intake_cap",
+) -> dict[str, object]:
     by_block: dict[str, dict[str, object]] = {}
     for block, policy in INVENTORY_BLOCK_REGISTRY.items():
         floor = int(policy.get("floor") or 0)
@@ -1696,7 +1765,7 @@ def inventory_block_completeness(candidates: list[dict]) -> dict[str, object]:
             "completeness_applicable": applicable,
             "block_sufficient": sufficient,
             "liveness_sufficient_for_replacement": liveness_sufficient,
-            "completeness_basis": "current_provenance_post_card_contract_before_visibility_schedule_and_intake_cap",
+            "completeness_basis": basis,
         }
     return {
         "schema_version": INVENTORY_SCHEMA_VERSION,

@@ -231,6 +231,53 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertFalse(updated["include"])
         self.assertIn("wrong_openings_category", updated["reject_reasons"])
 
+    def test_drops_restaurant_burglary_from_food_openings(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "thirsty-korean-burglary",
+                "category": "food_openings",
+                "primary_block": "openings",
+                "title": "Beloved local restaurant tears apart burglars after break-in",
+                "summary": "The Chorlton restaurant had staff wages and goods stolen.",
+                "lead": "The restaurant was the victim of a break-in.",
+                "evidence_text": "The Thirsty Korean opened last year and was burgled this week.",
+                "source_label": "The Manc Eats",
+                "source_url": "https://example.test/thirsty-korean-burglary",
+                "dedupe_decision": "new",
+                "change_type": "new_story",
+                "published_at": now_london().isoformat(),
+            }
+        )
+
+        self.assertFalse(updated["include"])
+        self.assertIn("wrong_openings_category", updated["reject_reasons"])
+
+    def test_keeps_current_night_gaucho_reopening_after_source_304(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "gaucho-manchester-reopening",
+                "category": "food_openings",
+                "primary_block": "openings",
+                "title": "Gaucho Manchester unveils major refurbishment ahead of August reopening",
+                "summary": "The restaurant unveils its redesigned interior ahead of reopening in August.",
+                "lead": "Gaucho Manchester begins a new chapter after a major refurbishment.",
+                "evidence_text": "The restaurant will reopen in August in Manchester city centre.",
+                "source_label": "About Manchester Food & Drink",
+                "source_url": "https://example.test/gaucho-manchester-reopening",
+                "dedupe_decision": "new",
+                "change_type": "new_story",
+                "published_at": "2026-07-07T11:07:56+01:00",
+                "inventory_live_confirmation": "source_not_modified",
+                "inventory_last_seen_at": now_london().isoformat(),
+                "event": {"venue": "Gaucho Manchester"},
+            }
+        )
+
+        self.assertTrue(updated["include"])
+        self.assertNotIn("stale_opening", updated.get("reject_reasons") or [])
+
     def test_drops_old_undated_election_results_page(self) -> None:
         # Freeze "today" so the bare day-month dates resolve to 2026 (not a
         # year-rollover) and the staleness window stays deterministic.

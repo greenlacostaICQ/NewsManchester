@@ -777,6 +777,65 @@ class BuildRecordTest(unittest.TestCase):
         self.assertEqual(report["lineage_status_counts"]["held_without_live_confirmation"], 1)
         self.assertIn("morning_relevant_needs_text", report["hybrid_signals"])
 
+    def test_food_304_confirms_only_current_wave_and_keeps_completeness_honest(self) -> None:
+        def food_record(fingerprint: str, source: str, last_seen: str) -> dict:
+            return {
+                "fingerprint": fingerprint,
+                "title": f"{fingerprint} restaurant reopens in August",
+                "summary": "The restaurant will reopen after refurbishment.",
+                "source_url": f"https://example.test/{fingerprint}",
+                "source_label": source,
+                "source_name": source,
+                "primary_block": "openings",
+                "category": "food_openings",
+                "source_report_category": "food_openings",
+                "quality_status": "needs_text",
+                "missing_facts": ["draft_line"],
+                "last_seen_at": last_seen,
+                "run_id": "20260722T033755+0100",
+                "wave": "pro_food_russian",
+                "observed_in_wave": True,
+                "action_url_liveness": "alive",
+                "fact_card": {
+                    "event_name": f"{fingerprint} reopening",
+                    "venue": fingerprint,
+                    "date_start": "2026-08-01",
+                    "change_phase": "reopening",
+                },
+            }
+
+        records = [
+            food_record("Gaucho Manchester", "About Manchester Food & Drink", "2026-07-22T03:38:46+01:00"),
+            food_record("Rudy's Monton", "About Manchester Food & Drink", "2026-07-22T03:38:46+01:00"),
+            food_record("Other opening", "Other Food", "2026-07-22T03:38:46+01:00"),
+            food_record("Old opening", "About Manchester Food & Drink", "2026-07-21T03:38:46+01:00"),
+        ]
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-22T08:00:00+01:00"),
+        ):
+            inserted, report = build_morning_inventory_intake(
+                records,
+                existing_candidates=[],
+                mode="assist",
+                today="2026-07-22",
+                unchanged_source_confirmations={
+                    ("food_openings", "About Manchester Food & Drink")
+                },
+            )
+
+        self.assertEqual({row["fingerprint"] for row in inserted}, {"Gaucho Manchester", "Rudy's Monton"})
+        self.assertTrue(all(row["inventory_live_confirmation"] == "source_not_modified" for row in inserted))
+        self.assertTrue(report["night_supply_completeness"]["blocks"]["openings"]["block_sufficient"])
+        self.assertFalse(report["completeness"]["blocks"]["openings"]["block_sufficient"])
+        self.assertEqual(report["completeness"]["blocks"]["openings"]["candidate_count"], 2)
+        self.assertEqual(report["lineage_status_counts"]["inserted_into_pipeline"], 2)
+        held = [row for row in report["lineages"] if row["intake_status"] == "held_without_live_confirmation"]
+        self.assertEqual({row["title"] for row in held}, {
+            "Other opening restaurant reopens in August",
+            "Old opening restaurant reopens in August",
+        })
+
     def test_block_completeness_separates_required_and_optional_blocks(self) -> None:
         candidates = [
             {"primary_block": "weekend_activities", "source_label": f"src{i}", "draft_line": "• line"}

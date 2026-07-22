@@ -744,11 +744,21 @@ def collect_digest(project_root: Path) -> StageResult:
         category_report["checked"] = True
 
     if inventory_mode in {"assist", "on"}:
+        unchanged_source_confirmations = {
+            (str(category_key), str(source_health.get("name") or ""))
+            for category_key, category_report in report["categories"].items()
+            for source_health in category_report.get("source_health") or []
+            if isinstance(source_health, dict)
+            and source_health.get("fetched")
+            and source_health.get("not_modified")
+            and not source_health.get("errors")
+        }
         inventory_candidates, intake_report = build_morning_inventory_intake(
             inventory_records,
             existing_candidates=candidates,
             mode=inventory_mode,
             prompt_version=PROMPT_REGISTRY_VERSION,
+            unchanged_source_confirmations=unchanged_source_confirmations,
         )
         candidates.extend(inventory_candidates)
         inventory_report["actual_intake"] = intake_report

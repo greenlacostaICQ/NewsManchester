@@ -519,6 +519,9 @@ Failure examples:
   extraction: event owner, occurrence, venue, lineup, booking URL and factual
   detail fields. Night never overwrites summary/lead/practical angle/draft line.
   A standalone night card is held until a morning-live candidate confirms it.
+  For Food only, a card observed in the current night wave is also confirmed
+  when that same source is reached successfully in the morning and answers
+  `304 Not Modified`; it then follows normal dedupe, validation and planning.
   The night lineage remains visible through validation, selection, writer and
   final HTML reporting instead of being counted as a dropped duplicate.
 - Action URLs are checked only for fact-ready cards. HTTP 2xx/3xx is alive;

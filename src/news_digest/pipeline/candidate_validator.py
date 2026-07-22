@@ -1513,6 +1513,15 @@ def _exclude_wrong_food_opening_category(candidate: dict) -> bool:
     if str(candidate.get("category") or "") != "food_openings" and str(candidate.get("primary_block") or "") != "openings":
         return False
     text = _candidate_blob(candidate).lower()
+    from news_digest.pipeline.inventory import food_opening_has_product_meaning  # noqa: PLC0415
+
+    if not food_opening_has_product_meaning(candidate):
+        _append_reject(
+            candidate,
+            "wrong_openings_category",
+            "Validator: item has no current food opening, reopening, market, menu, or concept change.",
+        )
+        return True
     if "coronation street experience" in text:
         _append_reject(
             candidate,
@@ -1688,6 +1697,16 @@ def _exclude_bad_food_opening_timing(candidate: dict) -> bool:
                 f"Validator: food/opening date {earliest.isoformat()} is more than 30 days away.",
             )
             return True
+        return False
+    if (
+        str(candidate.get("inventory_live_confirmation") or "") == "source_not_modified"
+        and str(candidate.get("inventory_last_seen_at") or "")[:10] == today.isoformat()
+        and re.search(
+            r"\b(?:open(?:s|ed|ing)?|reopen(?:s|ed|ing)?|launch(?:es|ed|ing)?|refurbish(?:ment|ed|ing)?)\b",
+            _candidate_blob(candidate),
+            flags=re.IGNORECASE,
+        )
+    ):
         return False
     pub_day = _published_day(candidate)
     if pub_day is not None and (today - pub_day).days > 7:
