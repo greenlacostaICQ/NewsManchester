@@ -328,6 +328,76 @@ class PreSendRepairExecutorTest(unittest.TestCase):
         self.assertEqual(report["operations"][0]["outcome"], "resolved_in_place")
         self.assertEqual(report["blocking_unresolved"], 0)
 
+    def test_identical_model_correction_is_verified_not_left_unresolved(self) -> None:
+        visible = (
+            "Терренс Кинг был признан виновным в убийстве Девона Симмонса-Кейна "
+            "22 июля 2025 года. Вердикт был вынесен 17 июля 2026 года."
+        )
+        digest_html = (
+            "<b>Городской радар</b>\n"
+            f'• {visible} <a href="https://news.test/verdict">News</a>\n'
+        )
+        candidate = {
+            "fingerprint": "verdict",
+            "plan_slot_id": "city_watch-01",
+            "source_url": "https://news.test/verdict",
+            "source_label": "News",
+            "title": "Man found guilty of murdering teenager using his car",
+            "summary": visible,
+        }
+        execution = {
+            "slots": {
+                "city_watch-01": {
+                    "slot_id": "city_watch-01",
+                    "section": "Городской радар",
+                    "status": "shown",
+                    "final_fingerprint": "verdict",
+                    "replacement_reason": "",
+                    "failed_attempts": [],
+                }
+            }
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            (state_dir / "candidates.json").write_text(
+                json.dumps({"candidates": [candidate]}), encoding="utf-8"
+            )
+            (state_dir / "plan_execution_report.json").write_text(json.dumps(execution), encoding="utf-8")
+            repaired, report = _apply_repair_executor(
+                project_root=root,
+                digest_html=digest_html,
+                actions=[
+                    {
+                        "line_index": 1,
+                        "section": "Городской радар",
+                        "action": "patch",
+                        "replacement_text": f"• {visible}",
+                        "reason": "Исправление даты события для соответствия фактам.",
+                        "risk": "factual",
+                    }
+                ],
+                critical_errors=[
+                    {
+                        "line_index": 1,
+                        "section": "Городской радар",
+                        "risk": "factual",
+                        "problem": "Убийство произошло 22 июля 2025 года, а не 2026 года.",
+                        "suggested_action": "repair",
+                    }
+                ],
+                deterministic_post_check={"errors": []},
+                dry_run=False,
+            )
+
+        self.assertEqual(repaired, digest_html.strip())
+        self.assertEqual(report["false_positive_existing_fact"], 1)
+        self.assertEqual(report["actions"][0]["method"], "verified_existing_fact")
+        self.assertEqual(report["operations"][0]["outcome"], "resolved_in_place")
+        self.assertEqual(report["unresolved"], 0)
+        self.assertEqual(report["blocking_unresolved"], 0)
+
     def test_failed_patch_uses_slot_backup_and_checks_backup_own_facts(self) -> None:
         digest_html = (
             "<b>Свежие новости</b>\n"

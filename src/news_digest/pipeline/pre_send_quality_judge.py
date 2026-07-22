@@ -1420,6 +1420,19 @@ def _apply_repair_executor(
                 if post_errors:
                     action_record["model_replacement_rejected"] = f"post_check: {', '.join(post_errors[:4])}"
                     report["model_post_check_rejected"] = int(report.get("model_post_check_rejected") or 0) + 1
+                elif _strip_tags(model_line) == _strip_tags(original):
+                    # A judge can occasionally complain about a fact and then
+                    # propose the exact existing line as its correction. That
+                    # is a self-contradictory finding, not a failed repair. It
+                    # has already passed fact-lock, link, language and every
+                    # available defect-specific post-check above.
+                    action_record["method"] = "verified_existing_fact"
+                    action_record["verification"] = "judge correction matches the existing visible facts"
+                    report["false_positive_existing_fact"] = int(
+                        report.get("false_positive_existing_fact") or 0
+                    ) + 1
+                    report["actions"].append(action_record)
+                    continue
                 else:
                     replacement = model_line
                     action_record["method"] = "model_patch"
