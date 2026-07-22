@@ -1,40 +1,41 @@
 {
   "status": "ok",
-  "decision": "warn",
-  "can_send": true,
-  "reason": "pre-send repair executor applied 3 repair(s); issue ships with honest degradation report",
+  "decision": "block",
+  "can_send": false,
+  "reason": "pre-send repair left 4 known factual error operation(s) unresolved",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
-  "run_date_london": "2026-07-21",
-  "pipeline_run_id": "20260721T080141+0100",
-  "digest_sha256": "7a564ec1da86cc9a96f30e731b751a0ed1135f7b9f52501e93d8b350e0287501",
-  "duration_seconds": 95.196,
+  "run_date_london": "2026-07-22",
+  "pipeline_run_id": "20260722T080130+0100",
+  "digest_sha256": "736540409782ed574c9bf842f3e11ae8bfc2897c9f69d4e3312b3a64986d2d91",
+  "duration_seconds": 104.676,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 35,
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Текст утверждает, что Джордан Парке был запрещён проводить процедуры BBL в Дадли и Большом Манчестере до инцидента в Глостере, но неясно, был ли он запрещён именно в этих регионах или просто подвергся мерам принуждения.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 28,
       "section": "Business/tech события для тебя",
-      "problem": "Дата вебинара указана неверно.",
+      "problem": "Неправильная дата события",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 59,
-      "section": "Крупные концерты вне GM",
-      "problem": "Неправильное указание основного артиста.",
-      "risk": "factual",
-      "suggested_action": "repair"
+      "line_index": 1,
+      "section": "Главная история дня",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "death"
     },
     {
-      "line_index": 60,
-      "section": "Крупные концерты вне GM",
-      "problem": "Неправильное указание основного артиста.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 6,
+      "line_index": 5,
       "section": "Свежие новости",
       "risk": "translation",
       "problem": "critical source fact dropped in translation: 'dead' (death/who/what) has no Russian rendering in the shipped line",
@@ -42,16 +43,8 @@
       "completeness_concept": "death"
     },
     {
-      "line_index": 8,
-      "section": "Свежие новости",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'killed' (death/who/what) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "death"
-    },
-    {
-      "line_index": 11,
-      "section": "Свежие новости",
+      "line_index": 25,
+      "section": "IT и бизнес",
       "risk": "translation",
       "problem": "critical source fact dropped in translation: 'grooming' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
       "suggested_action": "repair",
@@ -60,99 +53,82 @@
   ],
   "actions": [
     {
-      "line_index": 13,
-      "section": "Общественный транспорт сегодня",
+      "line_index": 1,
+      "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• National Rail: услуги Northern поздно вечером и рано утром на маршрутах из Манчестер Пикадилли и обратно будут изменены с понедельника, 20 июля, по пятницу, 24 июля 2026 года. Рекомендуется проверять расписание перед поездкой. National Rail Enquiries",
-      "reason": "Дата 20 июля 2026 года уже прошла, но информация может быть полезна для текущих изменений.",
+      "replacement_text": "• Джордан Парке, известный как \"Lip King\", подвергся мерам принуждения в Дадли и Большом Манчестере до того, как он сделал процедуру для Элис Уэбб в Глостере в 2024 году. Бывший партнёр Элис, Бен Кингскот, заявил, что этот случай подчеркивает недостатки в регулировании и призвал к созданию национальной системы для предотвращения работы таких практиков в других регионах.",
+      "reason": "Уточнение формулировки о мерах принуждения вместо запрета.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 28,
+      "section": "Business/tech события для тебя",
+      "action": "patch",
+      "replacement_text": "• 23 июля 2026 года в The Hive Co-Working Space в Oldham пройдет бесплатная консультация для владельцев бизнеса. Запись обязательна. GM Business Growth Hub Events",
+      "reason": "Дата события указана неверно, должна быть 23 июля 2026 года.",
+      "risk": "date"
+    },
+    {
+      "line_index": 34,
+      "section": "Дальние анонсы",
+      "action": "replace",
+      "replacement_text": "• 10 июня в HOME пройдет мероприятие Let Wildflowers Bloom / Que Esclatin Les Flors. Формат: фестиваль. HOME",
+      "reason": "Дата мероприятия уже прошла, но текст не указывает на это. Уточнение формата и даты поможет избежать путаницы.",
       "risk": "date"
     },
     {
       "line_index": 35,
-      "section": "Business/tech события для тебя",
-      "action": "patch",
-      "replacement_text": "• Бесплатный онлайн-вебинар по управлению ИИ: создание доверия, управление рисками и соблюдение норм пройдет 22 июля 2026 года с 15:00 до 15:45 BST. Manchester Digital Events",
-      "reason": "Дата вебинара должна быть исправлена на 22 июля 2026 года.",
-      "risk": "date"
-    },
-    {
-      "line_index": 42,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Steel Panther — 21 июля, Manchester Academy. Фестивальный состав, не один артист. Manchester Academy",
-      "reason": "Дублирование информации о Steel Panther в строках 42 и 43. Оставляем одну строку.",
-      "risk": "format"
-    },
-    {
-      "line_index": 43,
-      "section": "Билеты / Ticket Radar",
-      "action": "strip",
-      "reason": "Дублирование информации о Steel Panther в строках 42 и 43. Удаляем дублирующую строку.",
-      "risk": "format",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 59,
-      "section": "Крупные концерты вне GM",
+      "section": "Дальние анонсы",
       "action": "replace",
-      "replacement_text": "• SEX PISTOLS FT. FRANK CARTER — 2 августа, Scarborough Open Air Theatre (Поп). Фестивальный состав, не один артист. Участвуют: Frank Carter and Paul Cook, Steve Jones, Glen Matlock of the Sex Pistols, The Undertones. Ticketmaster",
-      "reason": "Неправильное указание основного артиста.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 60,
-      "section": "Крупные концерты вне GM",
-      "action": "replace",
-      "replacement_text": "• Palace Bowl Presents - Gary Numan — 6 августа, Crystal Palace Bowl (Поп). Фестивальный состав, не один артист. Участвуют: Marc Almond. Ticketmaster",
-      "reason": "Неправильное указание основного артиста.",
-      "risk": "factual"
+      "replacement_text": "• Queen of the Night — 3 сентября, Hawth Theatre, Crawley (Pop). Билеты и время указаны на официальной странице. Ticketmaster",
+      "reason": "Уточнение местоположения, так как Crawley не относится к Greater Manchester.",
+      "risk": "geo"
     }
   ],
   "warnings": [
-    "Выпуск содержит много новостей о преступлениях и судебных разбирательствах, что может создать впечатление дисбаланса в освещении событий.",
-    "Дата в строке 13 уже прошла, но информация может быть полезна для текущих изменений.",
-    "В блоке 'Футбол' отсутствует информация о матчах или расписании, что может снизить практическую ценность для читателей.",
-    "Выпуск содержит много информации о событиях и инициативах, но может не хватать новостей о текущих происшествиях или изменениях в политике.",
-    "В разделе 'Еда, открытия и рынки' преобладают анонсы открытий, что может снизить разнообразие контента.",
-    "В выпуске отсутствует информация о том, что Эндрю Бернхэм стал премьер-министром. Это значительное событие, которое может требовать дополнительного контекста или подтверждения.",
-    "Дублирование информации о Steel Panther в строках 42 и 43. Оставлена одна строка.",
-    "Секция 'Крупные концерты вне GM' содержит много информации о концертах, которые не относятся к Greater Manchester. Это может отвлечь внимание от основной информации о событиях в GM.",
-    "ticket dominance: 33 ticket/concert item(s) vs 17 core item(s)",
-    "line 3 drops source number/date fact(s): 15:19, 20 jul 2026",
-    "line 6 drops source number/date fact(s): 07:46, 21 jul 2026",
-    "line 8 drops source number/date fact(s): 06:23, 21 jul 2026",
-    "line 11 drops source number/date fact(s): 17",
-    "line 22 drops source number/date fact(s): 10 july 2026",
-    "line 24 drops source number/date fact(s): 17 july 2026"
+    "Выпуск содержит много новостей о происшествиях и пожарах, что может создать впечатление доминирования негативных новостей. Рекомендуется добавить больше разнообразия в контенте.",
+    "В разделе 'Футбол' присутствует информация о смерти Кевина Кигана, которая может быть чувствительной для некоторых читателей. Убедитесь, что это корректно и подтверждено.",
+    "Выпуск содержит много новостей, связанных с общественной безопасностью и планированием, но может не охватывать другие важные темы.",
+    "Секция 'IT и бизнес' содержит информацию о пожаре, что может быть неуместно в данной категории. Однако, информация верна и не требует исправления.",
+    "Некоторые события не относятся к Greater Manchester, что может вызвать путаницу у читателей.",
+    "Некоторые строки содержат повторяющуюся информацию о том, что билеты и время указаны на официальной странице. Это может быть упрощено для улучшения читабельности.",
+    "Секция 'Крупные концерты вне GM' содержит много информации о концертах, которые не относятся к Greater Manchester. Это может быть неинтересно основной аудитории.",
+    "Секция 'Крупные концерты вне GM' содержит только информацию о концертах за пределами Greater Manchester, что может не соответствовать интересам всех читателей.",
+    "Секция 'Крупные концерты вне GM' содержит много информации о концертах, которые не относятся к Greater Manchester. Это может быть неинтересно основной аудитории.",
+    "Некоторые строки содержат фразу 'Официальная страница должна подтверждать дату, город, площадку и старт продаж', что может быть избыточной информацией для читателей.",
+    "Что важно сегодня: 0 item(s), emergency floor 2",
+    "ticket dominance: 50 ticket/concert item(s) vs 13 core item(s)",
+    "line 3 drops source number/date fact(s): 21 july 2026, 30 june",
+    "line 5 drops source number/date fact(s): 07:46, 21 jul 2026",
+    "line 23 drops source number/date fact(s): 17 july 2026",
+    "line 25 drops source number/date fact(s): £1m, £2m"
   ],
   "product_completeness": {
     "section_counts": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 9,
-      "Общественный транспорт сегодня": 3,
-      "Что важно сегодня": 2,
+      "Свежие новости": 8,
+      "Общественный транспорт сегодня": 2,
       "Футбол": 3,
-      "Городской радар": 7,
-      "Еда, открытия и рынки": 3,
-      "IT и бизнес": 5,
+      "Городской радар": 9,
+      "IT и бизнес": 3,
       "Business/tech события для тебя": 1,
-      "Дальние анонсы": 2,
-      "Билеты / Ticket Radar": 7,
-      "Крупные концерты вне GM": 24,
-      "Русскоязычные концерты и стендап UK": 2
+      "Дальние анонсы": 8,
+      "Билеты / Ticket Radar": 8,
+      "Крупные концерты вне GM": 36,
+      "Русскоязычные концерты и стендап UK": 6
     },
     "core_counts": {
-      "Свежие новости": 9,
+      "Свежие новости": 8,
       "Футбол": 3,
-      "Что важно сегодня": 2,
-      "Общественный транспорт сегодня": 3
+      "Что важно сегодня": 0,
+      "Общественный транспорт сегодня": 2
     },
-    "ticket_items": 33,
-    "core_items": 17,
+    "ticket_items": 50,
+    "core_items": 13,
     "writer_quality_counts": {
-      "included_candidates": 77,
-      "rendered_candidates": 70,
+      "included_candidates": 93,
+      "rendered_candidates": 86,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
@@ -162,64 +138,70 @@
       "replaced_from_plan_backup": 0,
       "removed_with_reason": 7
     },
-    "section_underflow": [],
+    "section_underflow": [
+      {
+        "section": "Еда, открытия и рынки",
+        "actual": 0,
+        "minimum": 3,
+        "dropped_by_writer": 1
+      }
+    ],
     "source_health_counts": {
-      "ok": 91,
+      "ok": 102,
       "partial": 2,
-      "stale": 9,
-      "empty": 22,
+      "stale": 10,
+      "empty": 10,
       "failed": 1,
-      "zero_yield": 66,
+      "zero_yield": 77,
       "no_contribution_breakdown": {
         "fetch_failed": 1,
-        "all_rejected": 66,
-        "idle_no_items": 29
+        "all_rejected": 77,
+        "idle_no_items": 18
       },
       "zero_contribution_by_stage": {
-        "written": 23,
-        "selected": 43,
-        "parsed": 29,
+        "selected": 49,
+        "written": 28,
+        "parsed": 18,
         "fetched": 1
       },
-      "weekend_source_coverage_incidents": 45
+      "weekend_source_coverage_incidents": 44
     },
     "alerts": [
-      "ticket dominance: 33 ticket/concert item(s) vs 17 core item(s)"
+      "Что важно сегодня: 0 item(s), emergency floor 2",
+      "ticket dominance: 50 ticket/concert item(s) vs 13 core item(s)"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [
-      "replace for line 60 has unchecked number/date token(s): 6"
-    ],
+    "warnings": [],
     "can_apply_actions": true,
-    "action_count": 6
+    "action_count": 4
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 70,
-    "matched_lines": 70,
+    "checked_lines": 86,
+    "matched_lines": 86,
     "applicable_lines": 6,
     "unmatched_lines": 0,
     "critical_omission_count": 3,
     "critical_omissions": [
       {
-        "line_index": 6,
+        "line_index": 1,
+        "source_url_key": "bbc.com/news/articles/c1w1q8w0xzwo",
+        "concept": "death",
+        "obligation": "who/what",
+        "source_hit": "death"
+      },
+      {
+        "line_index": 5,
         "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/tiktok-michael-selwood-death-missing-34324277",
         "concept": "death",
         "obligation": "who/what",
         "source_hit": "dead"
       },
       {
-        "line_index": 8,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/dad-woman-allegedly-killed-husband-34323076",
-        "concept": "death",
-        "obligation": "who/what",
-        "source_hit": "killed"
-      },
-      {
-        "line_index": 11,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/freed-rochdale-grooming-gang-leader-34322062",
+        "line_index": 25,
+        "source_url_key": "prolificnorth.co.uk/news/hi-tech-parking-brief-for-manchester-agency",
         "concept": "sexual_offence",
         "obligation": "charge/verdict/victim",
         "source_hit": "grooming"
@@ -229,262 +211,446 @@
       {
         "line_index": 3,
         "dropped": [
-          "15:19",
-          "20 jul 2026"
+          "21 july 2026",
+          "30 june"
         ]
       },
       {
-        "line_index": 6,
+        "line_index": 5,
         "dropped": [
           "07:46",
           "21 jul 2026"
         ]
       },
       {
-        "line_index": 8,
-        "dropped": [
-          "06:23",
-          "21 jul 2026"
-        ]
-      },
-      {
-        "line_index": 11,
-        "dropped": [
-          "17"
-        ]
-      },
-      {
-        "line_index": 22,
-        "dropped": [
-          "10 july 2026"
-        ]
-      },
-      {
-        "line_index": 24,
+        "line_index": 23,
         "dropped": [
           "17 july 2026"
+        ]
+      },
+      {
+        "line_index": 25,
+        "dropped": [
+          "£1m",
+          "£2m"
         ]
       }
     ],
     "recovered": 0,
-    "pulled_for_rework": 0,
-    "still_missing": 3
+    "pulled_for_rework": 1,
+    "still_missing": 2
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 9,
-    "attempted": 9,
-    "applied": 3,
-    "model_patch_applied": 1,
-    "deterministic_rewrite_used": 2,
-    "reserve_replacement_used": 0,
+    "requested": 6,
+    "attempted": 6,
+    "applied": 4,
+    "model_patch_applied": 3,
+    "deterministic_rewrite_used": 0,
+    "reserve_replacement_used": 1,
     "stripped": 0,
-    "kept_below_floor": 6,
-    "unresolved": 0,
-    "fact_lock_rejected": 4,
-    "enrich_attempted": 7,
+    "unresolved": 4,
+    "blocking_unresolved": 4,
+    "resolved_in_place": 2,
+    "fact_lock_rejected": 0,
+    "enrich_attempted": 6,
     "post_check_errors": [],
     "actions": [
       {
-        "line_index": 13,
-        "section": "Общественный транспорт сегодня",
+        "line_index": 1,
+        "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Дата 20 июля 2026 года уже прошла, но информация может быть полезна для текущих изменений.",
-        "outcome": "kept_style_issue_plan_locked",
-        "model_replacement_rejected": "fact_lock: national rail"
+        "reason": "Уточнение формулировки о мерах принуждения вместо запрета.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Текст утверждает, что Джордан Парке был запрещён проводить процедуры BBL в Дадли и Большом Манчестере до инцидента в Глостере, но неясно, был ли он запрещён именно в этих регионах или просто подвергся мерам принуждения.",
+        "completeness_concept": "death",
+        "outcome": "unresolved",
+        "method": "model_patch",
+        "plan_slot_id": "",
+        "candidate_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c1w1q8w0xzwo",
+        "original_url_identity": "bbc.com/news/articles/c1w1q8w0xzwo",
+        "original_html": "<b>Джордан Парке, известный как \"Lip King\", был запрещён проводить процедуры BBL в Дадли и Большом Манчестере до того, как он сделал это для Элис Уэбб в Глостере в 2024 году.</b> Бывший партнёр Элис, Бен Кингскот, заявил, что этот случай подчеркивает недостатки в регулировании и призвал к созданию национальной системы для предотвращения работы таких практиков в других регионах. <a href=\"https://bbc.com/news/articles/c1w1q8w0xzwo\">BBC Manchester</a>",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 28,
+        "section": "Business/tech события для тебя",
+        "requested_action": "patch",
+        "reason": "Дата события указана неверно, должна быть 23 июля 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Неправильная дата события",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "",
+        "plan_slot_id": "professional_events-01",
+        "candidate_fingerprint": "professional-events-gm-business-growth-hub-events-businessgrowthhub-com-events-oldham-business-clinic-drop-in-session",
+        "original_url_identity": "businessgrowthhub.com/events/oldham-business-clinic-drop-in-session",
+        "original_html": "• 23 июля 2026 года в The Hive Co-Working Space в Oldham пройдет бесплатная консультация для владельцев бизнеса. Запись обязательна. <a href=\"https://businessgrowthhub.com/events/oldham-business-clinic-drop-in-session\">GM Business Growth Hub Events</a>",
+        "model_replacement_rejected": "still_needs_editor",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 34,
+        "section": "Дальние анонсы",
+        "requested_action": "replace",
+        "reason": "Дата мероприятия уже прошла, но текст не указывает на это. Уточнение формата и даты поможет избежать путаницы.",
+        "risk": "date",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "future_announcements-06",
+        "candidate_fingerprint": "culture-weekly-home-homemcr-org-whats-on-let-wildflowers-bloom-que-esclatin-les-flors-ntxy",
+        "original_url_identity": "homemcr.org/whats-on/let-wildflowers-bloom-que-esclatin-les-flors-ntxy",
+        "original_html": "• 10 июня в HOME — Let Wildflowers Bloom / Que Esclatin Les Flors. Формат: фестиваль. <a href=\"https://homemcr.org/whats-on/let-wildflowers-bloom-que-esclatin-les-flors-ntxy\">HOME</a>",
+        "post_check_passed": true
       },
       {
         "line_index": 35,
-        "section": "Business/tech события для тебя",
-        "requested_action": "patch",
-        "reason": "Дата вебинара должна быть исправлена на 22 июля 2026 года.",
-        "outcome": "kept_style_issue_plan_locked",
-        "model_replacement_rejected": "fact_lock: bst. manchester digital events"
-      },
-      {
-        "line_index": 42,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Дублирование информации о Steel Panther в строках 42 и 43. Оставляем одну строку.",
-        "outcome": "model_patch_applied"
-      },
-      {
-        "line_index": 43,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о Steel Panther в строках 42 и 43. Удаляем дублирующую строку.",
-        "outcome": "kept_style_issue_plan_locked"
-      },
-      {
-        "line_index": 59,
-        "section": "Крупные концерты вне GM",
+        "section": "Дальние анонсы",
         "requested_action": "replace",
-        "reason": "Неправильное указание основного артиста.",
-        "outcome": "deterministic_rewrite",
-        "model_replacement_rejected": "fact_lock: the undertones. ticketmaster"
+        "reason": "Уточнение местоположения, так как Crawley не относится к Greater Manchester.",
+        "risk": "geo",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "future_announcements-07",
+        "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-crawley-03-09-2026-event-3500629828-28-2",
+        "original_url_identity": "ticketmaster.co.uk/queen-of-the-night-a-tribute-crawley-03-09-2026/event/3500629828C28A2E",
+        "original_html": "• <b>Queen of the Night</b> — 3 сентября, Hawth Theatre (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/queen-of-the-night-a-tribute-crawley-03-09-2026/event/3500629828C28A2E\">Ticketmaster</a>",
+        "post_check_passed": true
       },
       {
-        "line_index": 60,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "replace",
-        "reason": "Неправильное указание основного артиста.",
-        "outcome": "deterministic_rewrite",
-        "model_replacement_rejected": "fact_lock: marc almond. ticketmaster"
-      },
-      {
-        "line_index": 6,
+        "line_index": 5,
         "section": "Свежие новости",
         "requested_action": "replace",
         "reason": "critical source fact dropped in translation: 'dead' (death/who/what) has no Russian rendering in the shipped line",
-        "outcome": "kept_style_issue_plan_locked"
+        "risk": "translation",
+        "critical_error": true,
+        "critical_problem": "",
+        "completeness_concept": "death",
+        "outcome": "unresolved",
+        "method": "",
+        "plan_slot_id": "last_24h-03",
+        "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-tiktok-michael-selwood-death-missing-34324277",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/tiktok-michael-selwood-death-missing-34324277",
+        "original_html": "• Майкл Селвуд, тиктокер и боксер из Tameside, был найден мертвым после того, как его объявили пропавшим; дань уважения поступает от друзей и подписчиков. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/tiktok-michael-selwood-death-missing-34324277\">MEN</a>",
+        "post_check_passed": false
       },
       {
-        "line_index": 8,
-        "section": "Свежие новости",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'killed' (death/who/what) has no Russian rendering in the shipped line",
-        "outcome": "kept_style_issue_plan_locked"
-      },
-      {
-        "line_index": 11,
-        "section": "Свежие новости",
+        "line_index": 25,
+        "section": "IT и бизнес",
         "requested_action": "replace",
         "reason": "critical source fact dropped in translation: 'grooming' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
-        "outcome": "kept_style_issue_plan_locked"
+        "risk": "translation",
+        "critical_error": true,
+        "critical_problem": "",
+        "completeness_concept": "sexual_offence",
+        "outcome": "unresolved",
+        "method": "reserve_replacement",
+        "plan_slot_id": "tech_business-01",
+        "candidate_fingerprint": "tech-business-prolific-north-manchester-prolificnorth-co-uk-news-hi-tech-parking-brief-for-manchester-agency",
+        "original_url_identity": "prolificnorth.co.uk/news/hi-tech-parking-brief-for-manchester-agency",
+        "original_html": "• Манчестерское агентство Freedom Media Group выиграло контракт на стратегию медиа для платформы YourParkingSpace. <a href=\"https://prolificnorth.co.uk/news/hi-tech-parking-brief-for-manchester-agency\">Prolific North Manchester</a>",
+        "post_check_passed": false
+      }
+    ],
+    "operations": [
+      {
+        "group_key": "главная история дня::уточнение формулировки о мерах принуждения вместо запрета.",
+        "actions": [
+          {
+            "line_index": 1,
+            "section": "Главная история дня",
+            "requested_action": "patch",
+            "reason": "Уточнение формулировки о мерах принуждения вместо запрета.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Текст утверждает, что Джордан Парке был запрещён проводить процедуры BBL в Дадли и Большом Манчестере до инцидента в Глостере, но неясно, был ли он запрещён именно в этих регионах или просто подвергся мерам принуждения.",
+            "completeness_concept": "death",
+            "outcome": "unresolved",
+            "method": "model_patch",
+            "plan_slot_id": "",
+            "candidate_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c1w1q8w0xzwo",
+            "original_url_identity": "bbc.com/news/articles/c1w1q8w0xzwo",
+            "original_html": "<b>Джордан Парке, известный как \"Lip King\", был запрещён проводить процедуры BBL в Дадли и Большом Манчестере до того, как он сделал это для Элис Уэбб в Глостере в 2024 году.</b> Бывший партнёр Элис, Бен Кингскот, заявил, что этот случай подчеркивает недостатки в регулировании и призвал к созданию национальной системы для предотвращения работы таких практиков в других регионах. <a href=\"https://bbc.com/news/articles/c1w1q8w0xzwo\">BBC Manchester</a>",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 1,
+            "passed": false,
+            "detail": "critical concept still absent: death"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "business/tech события для тебя::дата события указана неверно, должна быть 23 июля 2026 года.",
+        "actions": [
+          {
+            "line_index": 28,
+            "section": "Business/tech события для тебя",
+            "requested_action": "patch",
+            "reason": "Дата события указана неверно, должна быть 23 июля 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Неправильная дата события",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "",
+            "plan_slot_id": "professional_events-01",
+            "candidate_fingerprint": "professional-events-gm-business-growth-hub-events-businessgrowthhub-com-events-oldham-business-clinic-drop-in-session",
+            "original_url_identity": "businessgrowthhub.com/events/oldham-business-clinic-drop-in-session",
+            "original_html": "• 23 июля 2026 года в The Hive Co-Working Space в Oldham пройдет бесплатная консультация для владельцев бизнеса. Запись обязательна. <a href=\"https://businessgrowthhub.com/events/oldham-business-clinic-drop-in-session\">GM Business Growth Hub Events</a>",
+            "model_replacement_rejected": "still_needs_editor",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 28,
+            "passed": false,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "дальние анонсы::дата мероприятия уже прошла, но текст не указывает на это. уточнение формата и даты поможет избежать путаницы.",
+        "actions": [
+          {
+            "line_index": 34,
+            "section": "Дальние анонсы",
+            "requested_action": "replace",
+            "reason": "Дата мероприятия уже прошла, но текст не указывает на это. Уточнение формата и даты поможет избежать путаницы.",
+            "risk": "date",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "future_announcements-06",
+            "candidate_fingerprint": "culture-weekly-home-homemcr-org-whats-on-let-wildflowers-bloom-que-esclatin-les-flors-ntxy",
+            "original_url_identity": "homemcr.org/whats-on/let-wildflowers-bloom-que-esclatin-les-flors-ntxy",
+            "original_html": "• 10 июня в HOME — Let Wildflowers Bloom / Que Esclatin Les Flors. Формат: фестиваль. <a href=\"https://homemcr.org/whats-on/let-wildflowers-bloom-que-esclatin-les-flors-ntxy\">HOME</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 34,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "дальние анонсы::уточнение местоположения, так как crawley не относится к greater manchester.",
+        "actions": [
+          {
+            "line_index": 35,
+            "section": "Дальние анонсы",
+            "requested_action": "replace",
+            "reason": "Уточнение местоположения, так как Crawley не относится к Greater Manchester.",
+            "risk": "geo",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "future_announcements-07",
+            "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-crawley-03-09-2026-event-3500629828-28-2",
+            "original_url_identity": "ticketmaster.co.uk/queen-of-the-night-a-tribute-crawley-03-09-2026/event/3500629828C28A2E",
+            "original_html": "• <b>Queen of the Night</b> — 3 сентября, Hawth Theatre (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/queen-of-the-night-a-tribute-crawley-03-09-2026/event/3500629828C28A2E\">Ticketmaster</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 35,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "свежие новости::critical source fact dropped in translation: 'dead' (death/who/what) has no russian rendering in the shipped line",
+        "actions": [
+          {
+            "line_index": 5,
+            "section": "Свежие новости",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'dead' (death/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
+            "critical_error": true,
+            "critical_problem": "",
+            "completeness_concept": "death",
+            "outcome": "unresolved",
+            "method": "",
+            "plan_slot_id": "last_24h-03",
+            "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-tiktok-michael-selwood-death-missing-34324277",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/tiktok-michael-selwood-death-missing-34324277",
+            "original_html": "• Майкл Селвуд, тиктокер и боксер из Tameside, был найден мертвым после того, как его объявили пропавшим; дань уважения поступает от друзей и подписчиков. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/tiktok-michael-selwood-death-missing-34324277\">MEN</a>",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 5,
+            "passed": false,
+            "detail": "critical concept still absent: death"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "it и бизнес::critical source fact dropped in translation: 'grooming' (sexual_offence/charge/verdict/victim) has no russian rendering in the shipped line",
+        "actions": [
+          {
+            "line_index": 25,
+            "section": "IT и бизнес",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'grooming' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
+            "risk": "translation",
+            "critical_error": true,
+            "critical_problem": "",
+            "completeness_concept": "sexual_offence",
+            "outcome": "unresolved",
+            "method": "reserve_replacement",
+            "plan_slot_id": "tech_business-01",
+            "candidate_fingerprint": "tech-business-prolific-north-manchester-prolificnorth-co-uk-news-hi-tech-parking-brief-for-manchester-agency",
+            "original_url_identity": "prolificnorth.co.uk/news/hi-tech-parking-brief-for-manchester-agency",
+            "original_html": "• Манчестерское агентство Freedom Media Group выиграло контракт на стратегию медиа для платформы YourParkingSpace. <a href=\"https://prolificnorth.co.uk/news/hi-tech-parking-brief-for-manchester-agency\">Prolific North Manchester</a>",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 25,
+            "passed": false,
+            "detail": "critical concept still absent: sexual_offence"
+          }
+        ],
+        "known_factual_error": true
       }
     ],
     "refetch": {
-      "attempted": 1,
+      "attempted": 0,
       "improved": 0,
-      "failed": 1,
+      "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 2,
+      "skipped": 1,
       "reports": [
         {
-          "fingerprint": "transport-national-rail-enquiries-nationalrail-co-uk-status-and-disruptions-amended-late-night-early-morning-northern-service-to-from-manchester-piccadilly",
-          "title": "Amended late night / early morning Northern service to / from Manchester Piccadilly from Monday 20 to Friday 24 July",
-          "status": "failed",
-          "url": "https://nationalrail.co.uk/status-and-disruptions/amended-late-night-early-morning-northern-service-to-from-manchester-piccadilly-",
-          "error": "RuntimeError: HTTP 404"
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-sex-pistols-ft-frank-carter-scarborough-02-08-2026-event-35006378-9-4825",
-          "title": "SEX PISTOLS FT. FRANK CARTER — event 2026-08-02 — public sale 2025-11-28 10:00",
+          "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-crawley-03-09-2026-event-3500629828-28-2",
+          "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-09-03 — public sale 2025-05-02 10:00",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-scarborough-02-08-2026/event/35006378AE9C4825",
-          "candidate_evidence_chars": 389
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-palace-bowl-presents-gary-numan-london-06-08-2026-event-35006446-2-06-57",
-          "title": "Palace Bowl Presents - Gary Numan — event 2026-08-06 — public sale 2026-02-20 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/palace-bowl-presents-gary-numan-london-06-08-2026/event/35006446C2F06E57",
-          "candidate_evidence_chars": 361
+          "url": "https://ticketmaster.co.uk/queen-of-the-night-a-tribute-crawley-03-09-2026/event/3500629828C28A2E",
+          "candidate_evidence_chars": 325
         }
       ]
     },
-    "enrich_improved": 7,
-    "deterministic_fact_lock_rejected": 1,
-    "deterministic_rewrite_rejected": 4,
-    "deterministic_rewrite_built": 2,
-    "status": "applied"
+    "enrich_improved": 6,
+    "deterministic_rewrite_rejected": 3,
+    "final_prose_policy": {
+      "checked_lines": 86,
+      "resolved_in_place": 86,
+      "unresolved": 0,
+      "findings": []
+    },
+    "status": "unresolved"
   },
-  "notes": "Информация о находке оружия и арестах в Eccles соответствует источнику и безопасна для публикации.; Прогноз погоды корректен и безопасен для публикации.; Выпуск безопасен, но стоит обратить внимание на разнообразие тем в будущем.; В строке 13 указана прошедшая дата, но информация может быть актуальна для текущих измене",
+  "notes": "Уточнена формулировка о мерах принуждения, чтобы избежать фактической ошибки.; Прогноз погоды корректен и соответствует источнику Met Office.; Все новости корректны, но выпуск может восприниматься как слишком негативный из-за преобладания происшествий.; Информация о транспортных изменениях и предложениях для пассажиров",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 35,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Текст утверждает, что Джордан Парке был запрещён проводить процедуры BBL в Дадли и Большом Манчестере до инцидента в Глостере, но неясно, был ли он запрещён именно в этих регионах или просто подвергся мерам принуждения.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 28,
         "section": "Business/tech события для тебя",
-        "problem": "Дата вебинара указана неверно.",
+        "problem": "Неправильная дата события",
         "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 59,
-        "section": "Крупные концерты вне GM",
-        "problem": "Неправильное указание основного артиста.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 60,
-        "section": "Крупные концерты вне GM",
-        "problem": "Неправильное указание основного артиста.",
-        "risk": "factual",
         "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 13,
-        "section": "Общественный транспорт сегодня",
+        "line_index": 1,
+        "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• National Rail: услуги Northern поздно вечером и рано утром на маршрутах из Манчестер Пикадилли и обратно будут изменены с понедельника, 20 июля, по пятницу, 24 июля 2026 года. Рекомендуется проверять расписание перед поездкой. National Rail Enquiries",
-        "reason": "Дата 20 июля 2026 года уже прошла, но информация может быть полезна для текущих изменений.",
+        "replacement_text": "• Джордан Парке, известный как \"Lip King\", подвергся мерам принуждения в Дадли и Большом Манчестере до того, как он сделал процедуру для Элис Уэбб в Глостере в 2024 году. Бывший партнёр Элис, Бен Кингскот, заявил, что этот случай подчеркивает недостатки в регулировании и призвал к созданию национальной системы для предотвращения работы таких практиков в других регионах.",
+        "reason": "Уточнение формулировки о мерах принуждения вместо запрета.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 28,
+        "section": "Business/tech события для тебя",
+        "action": "patch",
+        "replacement_text": "• 23 июля 2026 года в The Hive Co-Working Space в Oldham пройдет бесплатная консультация для владельцев бизнеса. Запись обязательна. GM Business Growth Hub Events",
+        "reason": "Дата события указана неверно, должна быть 23 июля 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 34,
+        "section": "Дальние анонсы",
+        "action": "replace",
+        "replacement_text": "• 10 июня в HOME пройдет мероприятие Let Wildflowers Bloom / Que Esclatin Les Flors. Формат: фестиваль. HOME",
+        "reason": "Дата мероприятия уже прошла, но текст не указывает на это. Уточнение формата и даты поможет избежать путаницы.",
         "risk": "date"
       },
       {
         "line_index": 35,
-        "section": "Business/tech события для тебя",
-        "action": "patch",
-        "replacement_text": "• Бесплатный онлайн-вебинар по управлению ИИ: создание доверия, управление рисками и соблюдение норм пройдет 22 июля 2026 года с 15:00 до 15:45 BST. Manchester Digital Events",
-        "reason": "Дата вебинара должна быть исправлена на 22 июля 2026 года.",
-        "risk": "date"
-      },
-      {
-        "line_index": 42,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Steel Panther — 21 июля, Manchester Academy. Фестивальный состав, не один артист. Manchester Academy",
-        "reason": "Дублирование информации о Steel Panther в строках 42 и 43. Оставляем одну строку.",
-        "risk": "format"
-      },
-      {
-        "line_index": 43,
-        "section": "Билеты / Ticket Radar",
-        "action": "strip",
-        "reason": "Дублирование информации о Steel Panther в строках 42 и 43. Удаляем дублирующую строку.",
-        "risk": "format"
-      },
-      {
-        "line_index": 59,
-        "section": "Крупные концерты вне GM",
+        "section": "Дальние анонсы",
         "action": "replace",
-        "replacement_text": "• SEX PISTOLS FT. FRANK CARTER — 2 августа, Scarborough Open Air Theatre (Поп). Фестивальный состав, не один артист. Участвуют: Frank Carter and Paul Cook, Steve Jones, Glen Matlock of the Sex Pistols, The Undertones. Ticketmaster",
-        "reason": "Неправильное указание основного артиста.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 60,
-        "section": "Крупные концерты вне GM",
-        "action": "replace",
-        "replacement_text": "• Palace Bowl Presents - Gary Numan — 6 августа, Crystal Palace Bowl (Поп). Фестивальный состав, не один артист. Участвуют: Marc Almond. Ticketmaster",
-        "reason": "Неправильное указание основного артиста.",
-        "risk": "factual"
+        "replacement_text": "• Queen of the Night — 3 сентября, Hawth Theatre, Crawley (Pop). Билеты и время указаны на официальной странице. Ticketmaster",
+        "reason": "Уточнение местоположения, так как Crawley не относится к Greater Manchester.",
+        "risk": "geo"
       }
     ],
     "warnings": [
-      "Выпуск содержит много новостей о преступлениях и судебных разбирательствах, что может создать впечатление дисбаланса в освещении событий.",
-      "Дата в строке 13 уже прошла, но информация может быть полезна для текущих изменений.",
-      "В блоке 'Футбол' отсутствует информация о матчах или расписании, что может снизить практическую ценность для читателей.",
-      "Выпуск содержит много информации о событиях и инициативах, но может не хватать новостей о текущих происшествиях или изменениях в политике.",
-      "В разделе 'Еда, открытия и рынки' преобладают анонсы открытий, что может снизить разнообразие контента.",
-      "В выпуске отсутствует информация о том, что Эндрю Бернхэм стал премьер-министром. Это значительное событие, которое может требовать дополнительного контекста или подтверждения.",
-      "Дублирование информации о Steel Panther в строках 42 и 43. Оставлена одна строка.",
-      "Секция 'Крупные концерты вне GM' содержит много информации о концертах, которые не относятся к Greater Manchester. Это может отвлечь внимание от основной информации о событиях в GM.",
-      "ticket dominance: 33 ticket/concert item(s) vs 17 core item(s)"
+      "Выпуск содержит много новостей о происшествиях и пожарах, что может создать впечатление доминирования негативных новостей. Рекомендуется добавить больше разнообразия в контенте.",
+      "В разделе 'Футбол' присутствует информация о смерти Кевина Кигана, которая может быть чувствительной для некоторых читателей. Убедитесь, что это корректно и подтверждено.",
+      "Выпуск содержит много новостей, связанных с общественной безопасностью и планированием, но может не охватывать другие важные темы.",
+      "Секция 'IT и бизнес' содержит информацию о пожаре, что может быть неуместно в данной категории. Однако, информация верна и не требует исправления.",
+      "Некоторые события не относятся к Greater Manchester, что может вызвать путаницу у читателей.",
+      "Некоторые строки содержат повторяющуюся информацию о том, что билеты и время указаны на официальной странице. Это может быть упрощено для улучшения читабельности.",
+      "Секция 'Крупные концерты вне GM' содержит много информации о концертах, которые не относятся к Greater Manchester. Это может быть неинтересно основной аудитории.",
+      "Секция 'Крупные концерты вне GM' содержит только информацию о концертах за пределами Greater Manchester, что может не соответствовать интересам всех читателей.",
+      "Секция 'Крупные концерты вне GM' содержит много информации о концертах, которые не относятся к Greater Manchester. Это может быть неинтересно основной аудитории.",
+      "Некоторые строки содержат фразу 'Официальная страница должна подтверждать дату, город, площадку и старт продаж', что может быть избыточной информацией для читателей.",
+      "Что важно сегодня: 0 item(s), emergency floor 2",
+      "ticket dominance: 50 ticket/concert item(s) vs 13 core item(s)"
     ],
-    "notes": "Информация о находке оружия и арестах в Eccles соответствует источнику и безопасна для публикации.; Прогноз погоды корректен и безопасен для публикации.; Выпуск безопасен, но стоит обратить внимание на разнообразие тем в будущем.; В строке 13 указана прошедшая дата, но информация может быть актуальна для текущих измене",
+    "notes": "Уточнена формулировка о мерах принуждения, чтобы избежать фактической ошибки.; Прогноз погоды корректен и соответствует источнику Met Office.; Все новости корректны, но выпуск может восприниматься как слишком негативный из-за преобладания происшествий.; Информация о транспортных изменениях и предложениях для пассажиров",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 15,
+      "chunk_count": 14,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -497,13 +663,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2124,
-          "duration_seconds": 1.461
+          "estimated_tokens": 2182,
+          "duration_seconds": 4.315
         },
         {
           "chunk_id": "chunk-02",
@@ -521,14 +687,14 @@
           "warning_count": 0,
           "error": "",
           "estimated_tokens": 1968,
-          "duration_seconds": 1.727
+          "duration_seconds": 1.13
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            11
+            10
           ],
           "sections": [
             "Свежие новости"
@@ -538,51 +704,33 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 5353,
-          "duration_seconds": 2.183
+          "estimated_tokens": 4791,
+          "duration_seconds": 2.695
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            12,
-            14
+            11,
+            12
           ],
           "sections": [
             "Общественный транспорт сегодня"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 1,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 2844,
-          "duration_seconds": 2.515
-        },
-        {
-          "chunk_id": "chunk-05",
-          "status": "ok",
-          "line_range": [
-            15,
-            16
-          ],
-          "sections": [
-            "Что важно сегодня"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2549,
-          "duration_seconds": 0.964
+          "estimated_tokens": 2319,
+          "duration_seconds": 1.159
         },
         {
-          "chunk_id": "chunk-06",
+          "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            17,
-            19
+            13,
+            15
           ],
           "sections": [
             "Футбол"
@@ -592,15 +740,15 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2869,
-          "duration_seconds": 1.65
+          "estimated_tokens": 2822,
+          "duration_seconds": 1.704
         },
         {
-          "chunk_id": "chunk-07",
+          "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            20,
-            26
+            16,
+            24
           ],
           "sections": [
             "Городской радар"
@@ -610,33 +758,15 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 4458,
-          "duration_seconds": 1.815
+          "estimated_tokens": 4969,
+          "duration_seconds": 1.289
         },
         {
-          "chunk_id": "chunk-08",
+          "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            27,
-            29
-          ],
-          "sections": [
-            "Еда, открытия и рынки"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 3086,
-          "duration_seconds": 1.64
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            30,
-            34
+            25,
+            27
           ],
           "sections": [
             "IT и бизнес"
@@ -646,15 +776,15 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 3575,
-          "duration_seconds": 1.73
+          "estimated_tokens": 2820,
+          "duration_seconds": 1.542
         },
         {
-          "chunk_id": "chunk-10",
+          "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            35,
-            35
+            28,
+            28
           ],
           "sections": [
             "Business/tech события для тебя"
@@ -664,32 +794,32 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2267,
-          "duration_seconds": 6.821
+          "estimated_tokens": 2245,
+          "duration_seconds": 2.71
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            36,
-            37
+            29,
+            36
           ],
           "sections": [
             "Дальние анонсы"
           ],
-          "decision": "pass",
+          "decision": "warn",
           "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
+          "action_count": 2,
+          "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2664,
-          "duration_seconds": 10.728
+          "estimated_tokens": 5371,
+          "duration_seconds": 16.846
         },
         {
-          "chunk_id": "chunk-12",
+          "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            38,
+            37,
             44
           ],
           "sections": [
@@ -697,14 +827,14 @@
           ],
           "decision": "warn",
           "critical_error_count": 0,
-          "action_count": 2,
+          "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 4710,
-          "duration_seconds": 22.712
+          "estimated_tokens": 5260,
+          "duration_seconds": 1.965
         },
         {
-          "chunk_id": "chunk-13",
+          "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
             45,
@@ -718,11 +848,11 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 6610,
-          "duration_seconds": 37.481
+          "estimated_tokens": 6563,
+          "duration_seconds": 51.1
         },
         {
-          "chunk_id": "chunk-14",
+          "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
             57,
@@ -731,31 +861,49 @@
           "sections": [
             "Крупные концерты вне GM"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
-          "warning_count": 0,
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
           "error": "",
-          "estimated_tokens": 6833,
-          "duration_seconds": 48.516
+          "estimated_tokens": 6413,
+          "duration_seconds": 25.958
         },
         {
-          "chunk_id": "chunk-15",
+          "chunk_id": "chunk-13",
           "status": "ok",
           "line_range": [
             69,
-            70
+            80
+          ],
+          "sections": [
+            "Крупные концерты вне GM"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 6661,
+          "duration_seconds": 51.602
+        },
+        {
+          "chunk_id": "chunk-14",
+          "status": "ok",
+          "line_range": [
+            81,
+            86
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
           ],
-          "decision": "pass",
+          "decision": "warn",
           "critical_error_count": 0,
           "action_count": 0,
-          "warning_count": 0,
+          "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2649,
-          "duration_seconds": 4.088
+          "estimated_tokens": 4490,
+          "duration_seconds": 9.986
         }
       ],
       "reduce": {
@@ -766,10 +914,10 @@
         "decision": "warn",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 1,
+        "warning_count": 2,
         "error": "",
-        "estimated_tokens": 12252,
-        "duration_seconds": 25.398
+        "estimated_tokens": 12696,
+        "duration_seconds": 28.643
       },
       "max_workers": 3,
       "chunk_line_target": 12,
