@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "policy_version": 1,
-  "pipeline_run_id": "20260722T092902+0100",
-  "run_date_london": "2026-07-22",
-  "created_at_london": "2026-07-22T09:39:40.355112+01:00",
-  "weekday": 2,
-  "show_weekend": false,
+  "pipeline_run_id": "20260723T080134+0100",
+  "run_date_london": "2026-07-23",
+  "created_at_london": "2026-07-23T08:14:42.340723+01:00",
+  "weekday": 3,
+  "show_weekend": true,
   "policy": "Состав решён один раз. Writer исполняет план, editor правит только слова, pre-send repair executor заменяет слот только его запасным или снимает по кодифицированной причине; verify только сверяет. План неизменяем.",
   "budget": {
     "max_visible_items": 40,
@@ -23,6 +23,7 @@
     "Общественный транспорт сегодня",
     "Что важно сегодня",
     "Футбол",
+    "Выходные в GM",
     "Городской радар",
     "Что важно в ближайшие 7 дней",
     "Еда, открытия и рынки",
@@ -34,10 +35,10 @@
     "Русскоязычные концерты и стендап UK"
   ],
   "lead": {
-    "primary_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-huge-flames-engulf-manchester-home-34326106",
+    "primary_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-bury-new-road-incident-live-34335376",
     "understudy_fingerprints": [],
-    "promoted_by_plan": false,
-    "title": "Huge flames engulf Manchester home as blaze breaks out"
+    "promoted_by_plan": true,
+    "title": "Bury New Road incident RECAP as man stabbed and two arrested with police cordon in place"
   },
   "sections": {
     "Погода": {
@@ -76,19 +77,21 @@
         "last_24h-08",
         "last_24h-09"
       ],
-      "backups_available": 11,
+      "backups_available": 10,
       "expected_shortfall": null
     },
     "Общественный транспорт сегодня": {
       "block": "transport",
       "min": 0,
       "max": null,
-      "planned": 4,
+      "planned": 6,
       "slots": [
         "transport-01",
         "transport-02",
         "transport-03",
-        "transport-04"
+        "transport-04",
+        "transport-05",
+        "transport-06"
       ],
       "backups_available": 0,
       "expected_shortfall": null
@@ -116,14 +119,48 @@
         "football-02",
         "football-03"
       ],
-      "backups_available": 12,
+      "backups_available": 7,
+      "expected_shortfall": null
+    },
+    "Выходные в GM": {
+      "block": "weekend_activities",
+      "min": 6,
+      "max": null,
+      "planned": 24,
+      "slots": [
+        "weekend_activities-01",
+        "weekend_activities-02",
+        "weekend_activities-03",
+        "weekend_activities-04",
+        "weekend_activities-05",
+        "weekend_activities-06",
+        "weekend_activities-07",
+        "weekend_activities-08",
+        "weekend_activities-09",
+        "weekend_activities-10",
+        "weekend_activities-11",
+        "weekend_activities-12",
+        "weekend_activities-13",
+        "weekend_activities-14",
+        "weekend_activities-15",
+        "weekend_activities-16",
+        "weekend_activities-17",
+        "weekend_activities-18",
+        "weekend_activities-19",
+        "weekend_activities-20",
+        "weekend_activities-21",
+        "weekend_activities-22",
+        "weekend_activities-23",
+        "weekend_activities-24"
+      ],
+      "backups_available": 0,
       "expected_shortfall": null
     },
     "Городской радар": {
       "block": "city_watch",
       "min": 5,
       "max": 12,
-      "planned": 12,
+      "planned": 10,
       "slots": [
         "city_watch-01",
         "city_watch-02",
@@ -134,11 +171,9 @@
         "city_watch-07",
         "city_watch-08",
         "city_watch-09",
-        "city_watch-10",
-        "city_watch-11",
-        "city_watch-12"
+        "city_watch-10"
       ],
-      "backups_available": 2,
+      "backups_available": 3,
       "expected_shortfall": null
     },
     "Что важно в ближайшие 7 дней": {
@@ -173,43 +208,36 @@
       "block": "tech_business",
       "min": 0,
       "max": 5,
-      "planned": 5,
+      "planned": 4,
       "slots": [
         "tech_business-01",
         "tech_business-02",
         "tech_business-03",
-        "tech_business-04",
-        "tech_business-05"
+        "tech_business-04"
       ],
-      "backups_available": 2,
+      "backups_available": 0,
       "expected_shortfall": null
     },
     "Business/tech события для тебя": {
       "block": "professional_events",
       "min": 1,
       "max": 4,
-      "planned": 2,
-      "slots": [
-        "professional_events-01",
-        "professional_events-02"
-      ],
+      "planned": 0,
+      "slots": [],
       "backups_available": 0,
-      "expected_shortfall": null
+      "expected_shortfall": {
+        "planned": 0,
+        "minimum": 1,
+        "reason": "pool_exhausted_after_upstream_gates"
+      }
     },
     "Дальние анонсы": {
       "block": "future_announcements",
       "min": 0,
       "max": null,
-      "planned": 8,
+      "planned": 1,
       "slots": [
-        "future_announcements-01",
-        "future_announcements-02",
-        "future_announcements-03",
-        "future_announcements-04",
-        "future_announcements-05",
-        "future_announcements-06",
-        "future_announcements-07",
-        "future_announcements-08"
+        "future_announcements-01"
       ],
       "backups_available": 1,
       "expected_shortfall": null
@@ -218,25 +246,23 @@
       "block": "ticket_radar",
       "min": 2,
       "max": 15,
-      "planned": 8,
+      "planned": 6,
       "slots": [
         "ticket_radar-01",
         "ticket_radar-02",
         "ticket_radar-03",
         "ticket_radar-04",
         "ticket_radar-05",
-        "ticket_radar-06",
-        "ticket_radar-07",
-        "ticket_radar-08"
+        "ticket_radar-06"
       ],
-      "backups_available": 13,
+      "backups_available": 5,
       "expected_shortfall": null
     },
     "Крупные концерты вне GM": {
       "block": "outside_gm_tickets",
       "min": 0,
       "max": 6,
-      "planned": 36,
+      "planned": 37,
       "slots": [
         "outside_gm_tickets-01",
         "outside_gm_tickets-02",
@@ -273,7 +299,8 @@
         "outside_gm_tickets-33",
         "outside_gm_tickets-34",
         "outside_gm_tickets-35",
-        "outside_gm_tickets-36"
+        "outside_gm_tickets-36",
+        "outside_gm_tickets-37"
       ],
       "backups_available": 0,
       "expected_shortfall": null
@@ -282,13 +309,10 @@
       "block": "russian_events",
       "min": 1,
       "max": 6,
-      "planned": 5,
+      "planned": 2,
       "slots": [
         "russian_events-01",
-        "russian_events-02",
-        "russian_events-03",
-        "russian_events-04",
-        "russian_events-05"
+        "russian_events-02"
       ],
       "backups_available": 0,
       "expected_shortfall": null
@@ -306,161 +330,161 @@
       "must_show": false,
       "selection_reason": "Included for the current digest.",
       "score_snapshot": 168.5,
-      "story_key": "topic:generic:met office weather placeholder for 2026 07 22",
+      "story_key": "topic:generic:met office weather placeholder for 2026 07 23",
       "prose_source": "synthetic",
       "source_label": "Met Office",
-      "title": "Weather placeholder for 2026-07-22"
+      "title": "Weather placeholder for 2026-07-23"
     },
     {
       "slot_id": "last_24h-01",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 1,
-      "primary_fingerprint": "gmp-bbc-manchester-public-safety-fallback-bbc-com-news-articles-c1w1q8w0xzwo",
+      "primary_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-islamic-extremist-plotted-atrocity-defence-34335283",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 211.75,
-      "story_key": "topic:incident:lip king banned from carrying out bbls in two uk areas before woman s death|new story|2026 07 22",
+      "score_snapshot": 201.75,
+      "story_key": "topic:incident:manchester prestwich islamic extremist plotted atrocity at defence base with terrorist who carried out fatal knife rampage at heaton park sy|new story|2026 07 22",
       "prose_source": "deterministic",
-      "source_label": "BBC Manchester public safety fallback",
-      "title": "'Lip King' banned from carrying out BBLs in two UK areas before woman's death"
+      "source_label": "MEN",
+      "title": "Islamic extremist plotted atrocity at defence base with terrorist who carried out fatal knife rampage at Heaton Park synagogue"
     },
     {
       "slot_id": "last_24h-02",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 2,
-      "primary_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c8rnjyjp4z1o",
+      "primary_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-man-jailed-sex-predator-police-34331107",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 210.75,
-      "story_key": "topic:incident:bolton boy 15 detained after man found dead in bolton|new story|2026 07 21",
+      "score_snapshot": 200.75,
+      "story_key": "topic:incident:wigan man guilty after complex police investigation uncovered his despicable behaviour|new story|2026 07 22",
       "prose_source": "deterministic",
-      "source_label": "BBC Manchester",
-      "title": "Boy, 15, detained after man found dead in Bolton"
+      "source_label": "MEN News Sitemap",
+      "title": "Man guilty after complex police investigation uncovered his despicable behaviour"
     },
     {
       "slot_id": "last_24h-03",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 3,
-      "primary_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-stretford-park-taped-police-investigate-34330216",
+      "primary_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c0rdnvkq4rdo",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 197.75,
-      "story_key": "topic:incident:stretford stretford park taped off as police investigate reports of sex assault on teen girl|new story|2026 07 21",
+      "score_snapshot": 196.25,
+      "story_key": "topic:incident:olympic medal and large bear figure among unusual police seizures|new story|2026 07 22",
       "prose_source": "deterministic",
-      "source_label": "MEN",
-      "title": "Stretford park taped off as police investigate reports of sex assault on teen girl"
+      "source_label": "BBC Manchester",
+      "title": "Olympic medal and large bear figure among unusual police seizures"
     },
     {
       "slot_id": "last_24h-04",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 4,
-      "primary_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-tiktok-michael-selwood-death-missing-34324277",
+      "primary_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-clyvng27gx3o",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 191.75,
-      "story_key": "topic:incident:tameside gone too soon tributes pour in for tiktoker found dead after going missing|follow up|2026 07 21",
+      "score_snapshot": 195.0,
+      "story_key": "topic:incident:eccles man charged over guns found buried in eccles garden|charged|2026 07 22",
       "prose_source": "deterministic",
-      "source_label": "MEN News Sitemap",
-      "title": "'Gone too soon': Tributes pour in for TikToker found dead after going missing"
+      "source_label": "BBC Manchester",
+      "title": "Man charged over guns found buried in Eccles garden"
     },
     {
       "slot_id": "last_24h-05",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 5,
-      "primary_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-salford-shed-fire-sparks-major-34329637",
+      "primary_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-mps-appointed-andy-34336633",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 190.75,
-      "story_key": "topic:incident:bolton salford altrincham eccles salford shed fire sparks major alert amid fear blaze could spread to homes|event this week|2026 07 21",
+      "score_snapshot": 194.0,
+      "story_key": "topic:planning:manchester central bury oldham the greater manchester mps appointed in andy burnham s ministerial team|same story new facts|2026 07 23",
       "prose_source": "deterministic",
       "source_label": "MEN",
-      "title": "Salford shed fire sparks major alert amid fear blaze could spread to homes"
+      "title": "The Greater Manchester MPs appointed in Andy Burnham's ministerial team"
     },
     {
       "slot_id": "last_24h-06",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 6,
-      "primary_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-dovestone-moorland-blaze-firefighters-set-34329905",
+      "primary_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-man-58-seriously-injured-in-34331599",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 189.75,
-      "story_key": "topic:incident:oldham dovestone moorland blaze firefighters set to remain until the weekend|event this week|2026 07 21",
+      "score_snapshot": 193.25,
+      "story_key": "topic:incident:wigan man 58 rushed to hospital as he s seriously hurt helping hgv driver reverse into street|appeal updated|2026 07 22",
       "prose_source": "deterministic",
-      "source_label": "MEN",
-      "title": "Dovestone moorland blaze: firefighters set to remain until the weekend"
+      "source_label": "MEN News Sitemap",
+      "title": "Man, 58, rushed to hospital as he's seriously hurt helping HGV driver reverse into street"
     },
     {
       "slot_id": "last_24h-07",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 7,
-      "primary_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-garden-fire-failsworth-sparks-major-34329981",
+      "primary_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-terry-lewis-mp-dies-salford-34331021",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 183.75,
-      "story_key": "topic:incident:manchester garden fire in failsworth sparks major alert on suburban street|new story|2026 07 21",
+      "score_snapshot": 192.25,
+      "story_key": "topic:incident:bolton council bolton salford tributes as ex mp and salford legend terry lewis dies aged 90|new story|2026 07 22",
       "prose_source": "deterministic",
-      "source_label": "MEN",
-      "title": "Garden fire in Failsworth sparks major alert on suburban street"
+      "source_label": "MEN News Sitemap",
+      "title": "Tributes as ex-MP and 'Salford legend' Terry Lewis dies aged 90"
     },
     {
       "slot_id": "last_24h-08",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 8,
-      "primary_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-plans-five-six-bed-luxury-34328604",
+      "primary_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-major-police-update-and-suspect-34333211",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 177.75,
-      "story_key": "topic:planning:bolton plans for five and six bed luxury homes on green belt site close to country park|new story|2026 07 21",
+      "score_snapshot": 191.5,
+      "story_key": "story:public safety after incident|trafford|major police update and suspect description after girl sexually attacked in stretford park|follow up|2026 07 22",
       "prose_source": "deterministic",
       "source_label": "MEN News Sitemap",
-      "title": "Plans for five and six-bed luxury homes on green belt site close to country park"
+      "title": "Major police update and suspect description after girl sexually attacked in Stretford park"
     },
     {
       "slot_id": "last_24h-09",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 9,
-      "primary_fingerprint": "media-layer-place-north-west-placenorthwest-co-uk-bellway-adds-to-wilmslow-aspirations",
+      "primary_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-major-old-trafford-parking-crackdown-34333023",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 174.75,
-      "story_key": "topic:planning:bellway adds to wilmslow aspirations|new story|2026 07 21",
+      "score_snapshot": 190.0,
+      "story_key": "topic:incident:old trafford trafford council trafford old trafford major old trafford parking crackdown full list of eight roads impacted|new story|2026 07 22",
       "prose_source": "deterministic",
-      "source_label": "Place North West",
-      "title": "Bellway adds to Wilmslow aspirations"
+      "source_label": "MEN",
+      "title": "Major Old Trafford parking crackdown - full list of eight roads impacted"
     },
     {
       "slot_id": "transport-01",
       "section": "Общественный транспорт сегодня",
       "block": "transport",
       "position": 1,
-      "primary_fingerprint": "transport-reminder|metrolink|eccles-line|2026-07-22",
+      "primary_fingerprint": "transport-reminder|metrolink|eccles-line|2026-07-23",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
@@ -476,191 +500,620 @@
       "section": "Общественный транспорт сегодня",
       "block": "transport",
       "position": 2,
-      "primary_fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-amended-late-night-early-morning-transpennine-express-service-normally-calling-a",
+      "primary_fingerprint": "transport-national-rail-enquiries-nationalrail-co-uk-status-and-disruptions-amended-late-night-early-morning-northern-service-to-from-manchester-piccadilly",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
-      "selection_reason": "Included for the current digest.",
-      "score_snapshot": 248.0,
-      "story_key": "story:tfgm|transpennine express|transport||new story|2026 07 22",
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 245.0,
+      "story_key": "story:northern|transport|manchester|new phase|2026 07 23",
       "prose_source": "synthetic",
-      "source_label": "TfGM",
-      "title": "Amended late night / early morning TransPennine Express service normally calling at Thirsk on Wednesday 22 and Thursday 23 July"
+      "source_label": "National Rail Enquiries",
+      "title": "Amended late night / early morning Northern service to / from Manchester Piccadilly from Monday 20 to Friday 24 July"
     },
     {
       "slot_id": "transport-03",
       "section": "Общественный транспорт сегодня",
       "block": "transport",
       "position": 3,
-      "primary_fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-buses-replace-late-night-trains-between-mansfield-woodhouse-and-worksop-from-mon",
+      "primary_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-inside-biggest-upgrade-metrolink-history-34336116",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
-      "selection_reason": "Included for the current digest.",
-      "score_snapshot": 248.0,
-      "story_key": "story:tfgm|transport||new story|2026 07 22",
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 234.5,
+      "story_key": "story:metrolink|tfgm|opened|rochdale|trafford|new story|2026 07 23",
       "prose_source": "synthetic",
-      "source_label": "TfGM",
-      "title": "Buses replace late night trains between Mansfield Woodhouse and Worksop from Monday 20 to Thursday 23 July"
+      "source_label": "MEN",
+      "title": "Inside the biggest upgrade in Metrolink history"
     },
     {
       "slot_id": "transport-04",
       "section": "Общественный транспорт сегодня",
       "block": "transport",
       "position": 4,
-      "primary_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-cwylgzrx006o",
+      "primary_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-six-hour-middleton-rooftop-stand-34336224",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 215.25,
-      "story_key": "story:bbc|metrolink|tfgm|transport|salford|trafford|new phase|2026 07 20",
+      "score_snapshot": 226.75,
+      "story_key": "story:transport|oldham|six hour middleton rooftop stand off ends with wanted man being returned to prison|new story|2026 07 22",
       "prose_source": "synthetic",
-      "source_label": "BBC Manchester Web",
-      "title": "Free bikes offered to commuters hit by Metrolink tram disruption"
+      "source_label": "MEN",
+      "title": "Six-hour Middleton rooftop stand-off ends with wanted man being returned to prison"
+    },
+    {
+      "slot_id": "transport-05",
+      "section": "Общественный транспорт сегодня",
+      "block": "transport",
+      "position": 5,
+      "primary_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-middleton-incident-live-emergency-services-34333493",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 221.25,
+      "story_key": "story:transport|oldham|middleton incident recap as emergency services swarm town centre in stand off with man on |new story|2026 07 22",
+      "prose_source": "synthetic",
+      "source_label": "MEN News Sitemap",
+      "title": "Middleton incident RECAP as emergency services swarm town centre in stand off with man on roof"
+    },
+    {
+      "slot_id": "transport-06",
+      "section": "Общественный транспорт сегодня",
+      "block": "transport",
+      "position": 6,
+      "primary_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-elon-musk-restore-britain-mayoral-34331433",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 212.75,
+      "story_key": "topic:civic:elon musk backs restore britain s greater manchester mayoral election candidate after nhs suspends him|approved|2026 07 22",
+      "prose_source": "synthetic",
+      "source_label": "MEN News Sitemap",
+      "title": "Elon Musk backs Restore Britain's Greater Manchester mayoral election candidate after NHS suspends him"
     },
     {
       "slot_id": "football-01",
       "section": "Футбол",
       "block": "football",
       "position": 1,
-      "primary_fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-joshua-zirkzee-just-gave-manchester-34325062",
+      "primary_fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-how-manchester-united-stolen-march-34334662",
       "backup_fingerprints": [
-        "football-men-manchester-city-manchestereveningnews-co-uk-sport-football-football-news-man-city-stance-ticket-id-34326269",
-        "football-men-manchester-city-manchestereveningnews-co-uk-sport-football-football-news-man-city-make-transfer-statement-34325337"
+        "football-men-manchester-city-manchestereveningnews-co-uk-news-fashion-news-manchester-city-fans-can-grab-34332071",
+        "football-manchester-city-men-mancity-com-news-mens-rodri-world-cup-european-championships-uefa-champions-league-premier-league-ballon-d-or-63920146"
       ],
       "required": false,
       "must_show": false,
       "selection_reason": "Selected in football shortlist before writing.",
-      "score_snapshot": 139.25,
-      "story_key": "topic:planning:manchester joshua zirkzee just gave manchester united a much needed reminder|new story|2026 07 22",
+      "score_snapshot": 99.5,
+      "story_key": "story:old trafford|news|manchester|trafford|event this week|2026 07 23",
       "prose_source": "deterministic",
       "source_label": "MEN Manchester United",
-      "title": "Joshua Zirkzee just gave Manchester United a much-needed reminder"
+      "title": "How Manchester United have stolen a march on their rivals in new transfer war"
     },
     {
       "slot_id": "football-02",
       "section": "Футбол",
       "block": "football",
       "position": 2,
-      "primary_fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-manchester-united-launch-new-202627-34326456",
+      "primary_fingerprint": "football-men-manchester-city-manchestereveningnews-co-uk-sport-football-transfer-news-man-city-given-ayyoub-bouaddi-34321902",
       "backup_fingerprints": [
-        "football-guardian-manchester-united-theguardian-com-football-2026-jul-15-manchester-united-crysencio-summerville-marcus-rashford",
-        "football-guardian-manchester-united-theguardian-com-football-2026-jul-18-manchester-united-start-new-signing-andrey-santos-in-pre-season-loss-to-wrexham"
+        "football-guardian-manchester-united-theguardian-com-football-2026-jul-21-manchester-united-supporters-groups-suspension-of-season-tickets",
+        "football-guardian-manchester-united-theguardian-com-football-2026-jul-20-joao-gomes-signs-aston-villa-lewis-hall-antonee-robinson-manchester-united-transfer-latest"
       ],
       "required": false,
       "must_show": false,
       "selection_reason": "Selected in football shortlist before writing.",
-      "score_snapshot": 138.75,
-      "story_key": "topic:local_cost:manchester manchester united launch new 2026 27 away kit with bold blue design|new story|2026 07 22",
+      "score_snapshot": 98.25,
+      "story_key": "topic:local_cost:manchester man city given ayyoub bouaddi transfer verdict as 85million price tag set|new story|2026 07 22",
       "prose_source": "deterministic",
-      "source_label": "MEN Manchester United",
-      "title": "Manchester United launch new 2026/27 away kit with bold blue design"
+      "source_label": "MEN Manchester City",
+      "title": "Man City given Ayyoub Bouaddi transfer verdict as £85million price tag set"
     },
     {
       "slot_id": "football-03",
       "section": "Футбол",
       "block": "football",
       "position": 3,
-      "primary_fingerprint": "football-guardian-manchester-united-theguardian-com-football-2026-jul-21-alex-ferguson-pays-tribute-kevin-keegan-newcastle",
-      "backup_fingerprints": [
-        "football-manchester-city-mancity-com-news-mens-rodri-world-cup-european-championships-uefa-champions-league-premier-league-ballon-d-or-63920146",
-        "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-football-news-martinez-argentina-united-world-cup-34330521"
-      ],
+      "primary_fingerprint": "football-men-manchester-city-manchestereveningnews-co-uk-sport-football-transfer-news-man-citys-next-generation-immediate-34328170",
+      "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Selected in football shortlist before writing.",
-      "score_snapshot": 122.25,
-      "story_key": "topic:planning:manchester the utmost respect for him alex ferguson pays tribute to kevin keegan|new story|2026 07 21",
+      "score_snapshot": 85.0,
+      "story_key": "topic:local_cost:manchester man city s next generation get immediate chance to stake major claim|new phase|2026 07 22",
       "prose_source": "deterministic",
-      "source_label": "Guardian Manchester United",
-      "title": "‘The utmost respect for him': Alex Ferguson pays tribute to Kevin Keegan"
+      "source_label": "MEN Manchester City",
+      "title": "Man City's next generation get immediate chance to stake major claim"
+    },
+    {
+      "slot_id": "weekend_activities-01",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 1,
+      "primary_fingerprint": "culture-weekly-bolton-car-boot-sale-carbootdirectory-co-uk-listings-bolton-car-boot",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 227.5,
+      "story_key": "event:bolton car boot sale|2026 07 26|bolton car boot sale",
+      "prose_source": "deterministic",
+      "source_label": "Bolton Car Boot Sale",
+      "title": "Bolton Car Boot Sale"
+    },
+    {
+      "slot_id": "weekend_activities-02",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 2,
+      "primary_fingerprint": "culture-weekly-the-big-stockport-car-boot-manchester-rocks-co-uk-things-to-do-the-big-stockport-car-boot-romiley",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Structured writer template will produce the visible line.",
+      "score_snapshot": 165.75,
+      "story_key": "event:the big stockport car boot romiley|2026 07 19|waterside farm otterspool road romiley stockport sk6 3lq",
+      "prose_source": "deterministic",
+      "source_label": "The BIG Stockport Car Boot",
+      "title": "The BIG Stockport Car Boot, Romiley"
+    },
+    {
+      "slot_id": "weekend_activities-03",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 3,
+      "primary_fingerprint": "culture-weekly-manchester-wire-manchesterwire-co-uk-manchester-day-returns-this-month-with-a-catalan-twist",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 156.75,
+      "story_key": "event:manchester day returns this weekend with a catalan twist|2026 07 26|",
+      "prose_source": "deterministic",
+      "source_label": "Manchester Wire",
+      "title": "Manchester Day returns this weekend with a Catalan twist"
+    },
+    {
+      "slot_id": "weekend_activities-04",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 4,
+      "primary_fingerprint": "culture-weekly-burnage-rfc-car-boot-sale-manchester-rocks-co-uk-things-to-do-burnage-rfc-car-boot-sale",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Structured writer template will produce the visible line.",
+      "score_snapshot": 143.5,
+      "story_key": "event:burnage rfc car boot sale|2026 07 19|burnage rfc varley park battersea road stockport sk4 3ea",
+      "prose_source": "deterministic",
+      "source_label": "Burnage RFC Car Boot Sale",
+      "title": "Burnage RFC Car Boot Sale"
+    },
+    {
+      "slot_id": "weekend_activities-05",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 5,
+      "primary_fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-green-island-festival-2026-vol-2",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 142.0,
+      "story_key": "event:green island festival 2026 vol 2|2026 07 25|warwick street",
+      "prose_source": "deterministic",
+      "source_label": "Manchester's Finest Events",
+      "title": "Green Island Festival 2026 Vol. 2"
+    },
+    {
+      "slot_id": "weekend_activities-06",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 6,
+      "primary_fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-bury-bid-food-drink-festival",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 140.25,
+      "story_key": "event:bury bid food drink festival|2026 07 24|bury town centre",
+      "prose_source": "deterministic",
+      "source_label": "Manchester's Finest Events",
+      "title": "Bury BID Food & Drink Festival"
+    },
+    {
+      "slot_id": "weekend_activities-07",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 7,
+      "primary_fingerprint": "culture-weekly-new-smithfield-sunday-market-manchester-rocks-co-uk-things-to-do-new-smithfield-sunday-market-and-car-boot",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Structured writer template will produce the visible line.",
+      "score_snapshot": 139.75,
+      "story_key": "event:new smithfield sunday market and car boot|2026 07 19|new smithfield market openshaw manchester m11",
+      "prose_source": "deterministic",
+      "source_label": "New Smithfield Sunday Market",
+      "title": "New Smithfield Sunday Market and Car Boot"
+    },
+    {
+      "slot_id": "weekend_activities-08",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 8,
+      "primary_fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-page-2",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 128.5,
+      "story_key": "event:next page next page|2026 07 26|manchester next",
+      "prose_source": "deterministic",
+      "source_label": "Manchester's Finest Events",
+      "title": "Next page Next page"
+    },
+    {
+      "slot_id": "weekend_activities-09",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 9,
+      "primary_fingerprint": "culture-weekly-bowlee-car-boot-sale-manchester-rocks-co-uk-things-to-do-bowlee-car-boot-sale",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Structured writer template will produce the visible line.",
+      "score_snapshot": 120.25,
+      "story_key": "event:bowlee car boot sale|2026 07 19|bowlee community park middleton manchester",
+      "prose_source": "deterministic",
+      "source_label": "Bowlee Car Boot Sale",
+      "title": "Bowlee Car Boot Sale"
+    },
+    {
+      "slot_id": "weekend_activities-10",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 10,
+      "primary_fingerprint": "culture-weekly-creative-tourist-manchester-creativetourist-com-event-greater-manchester-fringe-2",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 118.75,
+      "story_key": "event:greater manchester fringe 2026|2026 07 01|salford arts theatre",
+      "prose_source": "deterministic",
+      "source_label": "Creative Tourist Manchester",
+      "title": "Greater Manchester Fringe 2026 | Our Preview | Festival | Creative Tourist"
+    },
+    {
+      "slot_id": "weekend_activities-11",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 11,
+      "primary_fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-free-summer-party-at-red-arch",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 107.0,
+      "story_key": "event:free summer party|2026 07 25|red arch",
+      "prose_source": "deterministic",
+      "source_label": "Manchester's Finest Events",
+      "title": "Free Summer Party at Red Arch"
+    },
+    {
+      "slot_id": "weekend_activities-12",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 12,
+      "primary_fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-comic-con-manchester-2026",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 105.75,
+      "story_key": "event:comic con manchester 2026|2026 07 25|bowlers exhibition centre",
+      "prose_source": "deterministic",
+      "source_label": "Manchester's Finest Events",
+      "title": "Comic Con Manchester 2026"
+    },
+    {
+      "slot_id": "weekend_activities-13",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 13,
+      "primary_fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-creatures-comedy-festival",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 105.0,
+      "story_key": "event:creatures comedy festival|2026 07 25|creatures of the night comedy club",
+      "prose_source": "deterministic",
+      "source_label": "Manchester's Finest Events",
+      "title": "Creatures Comedy Festival"
+    },
+    {
+      "slot_id": "weekend_activities-14",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 14,
+      "primary_fingerprint": "culture-weekly-campfield-market-campfieldmarket-com",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Structured writer template will produce the visible line.",
+      "score_snapshot": 92.75,
+      "story_key": "event:campfield market manchester s new city market|2026 07 25|",
+      "prose_source": "deterministic",
+      "source_label": "Campfield Market",
+      "title": "Campfield Market | Manchester's New City Market"
+    },
+    {
+      "slot_id": "weekend_activities-15",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 15,
+      "primary_fingerprint": "culture-weekly-creative-tourist-manchester-creativetourist-com-event-secrets-of-didsbury",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Selected in weekend_activities shortlist before writing.",
+      "score_snapshot": 91.25,
+      "story_key": "event:secrets of didsbury|2026 05 16|",
+      "prose_source": "deterministic",
+      "source_label": "Creative Tourist Manchester",
+      "title": "Secrets of Didsbury | Jonathan Schofield Walking Tours"
+    },
+    {
+      "slot_id": "weekend_activities-16",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 16,
+      "primary_fingerprint": "culture-weekly-barton-aerodrome-car-boot-manchester-rocks-co-uk-things-to-do-barton-aerodrome-car-boot-sale",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Structured writer template will produce the visible line.",
+      "score_snapshot": 78.75,
+      "story_key": "event:barton aerodrome car boot sale|2026 07 18|manchester barton aerodrome liverpool road eccles m30 7sa manchester u",
+      "prose_source": "deterministic",
+      "source_label": "Barton Aerodrome Car Boot",
+      "title": "Barton Aerodrome Car Boot Sale"
+    },
+    {
+      "slot_id": "weekend_activities-17",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 17,
+      "primary_fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-i-am-the-fly-at-refuge",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Selected in weekend_activities shortlist before writing.",
+      "score_snapshot": 77.25,
+      "story_key": "event:i am the fly at refuge|2026 07 23|the refuge",
+      "prose_source": "deterministic",
+      "source_label": "Manchester's Finest Events",
+      "title": "I Am The Fly at Refuge"
+    },
+    {
+      "slot_id": "weekend_activities-18",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 18,
+      "primary_fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-lucky-cat-printing-x-fizzel-preserves-pickle-party",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 69.5,
+      "story_key": "event:lucky cat printing x fizzel preserves pickle party|2026 07 25|pollard yard",
+      "prose_source": "deterministic",
+      "source_label": "Manchester's Finest Events",
+      "title": "Lucky Cat Printing X Fizzel Preserves: Pickle Party"
+    },
+    {
+      "slot_id": "weekend_activities-19",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 19,
+      "primary_fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-drama-call-nq-drop",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 68.5,
+      "story_key": "event:drama call nq drop|2026 07 25|northern quarter",
+      "prose_source": "deterministic",
+      "source_label": "Manchester's Finest Events",
+      "title": "Drama Call NQ drop"
+    },
+    {
+      "slot_id": "weekend_activities-20",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 20,
+      "primary_fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-sticky-fingers-x-loft-social-tiramisu-party",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Selected in weekend_activities shortlist before writing.",
+      "score_snapshot": 64.5,
+      "story_key": "event:sticky fingers x loft social tiramisu party|2026 07 24|loft social",
+      "prose_source": "deterministic",
+      "source_label": "Manchester's Finest Events",
+      "title": "Sticky Fingers X Loft Social Tiramisu Party"
+    },
+    {
+      "slot_id": "weekend_activities-21",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 21,
+      "primary_fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-neighbourhood-dbridge-tasha",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Selected in weekend_activities shortlist before writing.",
+      "score_snapshot": 62.5,
+      "story_key": "event:neighbourhood dbridge tasha|2026 07 24|the white hotel",
+      "prose_source": "deterministic",
+      "source_label": "Manchester's Finest Events",
+      "title": "Neighbourhood: dBridge & Tasha"
+    },
+    {
+      "slot_id": "weekend_activities-22",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 22,
+      "primary_fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-the-strangest-most-wuthering-heights-ever",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 60.75,
+      "story_key": "event:the strangest most wuthering heights ever|2026 07 26|high lea hall",
+      "prose_source": "deterministic",
+      "source_label": "Manchester's Finest Events",
+      "title": "The Strangest Most Wuthering Heights Ever"
+    },
+    {
+      "slot_id": "weekend_activities-23",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 23,
+      "primary_fingerprint": "culture-weekly-designmynight-bank-holiday-designmynight-com-manchester-bars-king-street-flight-club-manchester-manchester-brunch-social",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 24.5,
+      "story_key": "event:flight club manchester brunch social|2026 07 25|",
+      "prose_source": "deterministic",
+      "source_label": "DesignMyNight Bank Holiday",
+      "title": "Flight Club Manchester Brunch Social"
+    },
+    {
+      "slot_id": "weekend_activities-24",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 24,
+      "primary_fingerprint": "culture-weekly-designmynight-bank-holiday-designmynight-com-manchester-whats-on-hen-party-funnyboyz-manchester-hosts-world-famous-benidorm-bingo",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 17.0,
+      "story_key": "event:funnyboyz manchester presents benidorm bingo|2026 07 25|funnyboyz manchester",
+      "prose_source": "deterministic",
+      "source_label": "DesignMyNight Bank Holiday",
+      "title": "FunnyBoyz Manchester presents... BENIDORM BINGO"
     },
     {
       "slot_id": "city_watch-01",
       "section": "Городской радар",
       "block": "city_watch",
       "position": 1,
-      "primary_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c86nqzpnndqo",
+      "primary_fingerprint": "gmp-bbc-manchester-public-safety-fallback-bbc-com-news-articles-cd0xe1xgjeno",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 195.0,
-      "story_key": "topic:incident:eccles two arrested after police find guns buried in eccles garden|same story new facts|2026 07 20",
+      "score_snapshot": 190.5,
+      "story_key": "topic:incident:manchester synagogue attacker s friend a committed jihadist court told|new story|2026 07 22",
       "prose_source": "deterministic",
-      "source_label": "BBC Manchester Web",
-      "title": "Two arrested after police find guns buried in Eccles garden"
+      "source_label": "BBC Manchester public safety fallback",
+      "title": "Synagogue attacker's friend 'a committed jihadist', court told"
     },
     {
       "slot_id": "city_watch-02",
       "section": "Городской радар",
       "block": "city_watch",
       "position": 2,
-      "primary_fingerprint": "council-oldham-council-oldham-gov-uk-news-article-2938-three-year-hospital-ban-for-repeat-offender-following-threats-to-nhs-staff",
+      "primary_fingerprint": "gmp-bbc-manchester-public-safety-fallback-bbc-com-news-articles-cq89q7v434xo",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 191.0,
-      "story_key": "topic:incident:oldham council manchester oldham three year hospital ban for repeat offender following threats to nhs staff|same story new facts|2026 07 15",
+      "score_snapshot": 186.25,
+      "story_key": "topic:incident:bolton manchester winter hill still not fully recovered from moor fire eight years ago|new story|2026 07 23",
       "prose_source": "deterministic",
-      "source_label": "Oldham Council",
-      "title": "Three-year hospital ban for repeat offender following threats to NHS staff"
+      "source_label": "BBC Manchester public safety fallback",
+      "title": "Winter Hill still not fully recovered from moor fire eight years ago"
     },
     {
       "slot_id": "city_watch-03",
       "section": "Городской радар",
       "block": "city_watch",
       "position": 3,
-      "primary_fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-smoke-from-wildfire-affecting-air-quality-in-some-areas",
+      "primary_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c80nvxgym9go",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 184.25,
-      "story_key": "topic:incident:manchester city council smoke from wildfire affecting air quality in some areas|new phase|2026 07 15",
+      "score_snapshot": 179.0,
+      "story_key": "topic:incident:manchester son who killed his mum in macclesfield home given hospital order|new story|2026 07 21",
       "prose_source": "deterministic",
-      "source_label": "Manchester Council",
-      "title": "Smoke from wildfire affecting air quality in some areas"
+      "source_label": "BBC Manchester",
+      "title": "Son who killed his mum in Macclesfield home given hospital order"
     },
     {
       "slot_id": "city_watch-04",
       "section": "Городской радар",
       "block": "city_watch",
       "position": 4,
-      "primary_fingerprint": "gmp-bbc-manchester-public-safety-fallback-bbc-com-news-articles-c8xnjvgn5zlo",
+      "primary_fingerprint": "council-rochdale-council-rochdale-gov-uk-news-article-658-new-contractor-appointed-as-touchstones-rochdale-transformation-moves-up",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 181.5,
-      "story_key": "topic:planning:people lighting bbqs near dove stone and swineshaw moorland fires|new story|2026 07 21",
+      "score_snapshot": 169.75,
+      "story_key": "topic:planning:rochdale borough council rochdale new contractor appointed as touchstones rochdale transformation moves up rochdale borough council|same story new facts|2026 07 21",
       "prose_source": "deterministic",
-      "source_label": "BBC Manchester public safety fallback",
-      "title": "People lighting BBQs near Dove Stone and Swineshaw moorland fires"
+      "source_label": "Rochdale Council",
+      "title": "New contractor appointed as Touchstones Rochdale transformation moves up - Rochdale Borough Council"
     },
     {
       "slot_id": "city_watch-05",
       "section": "Городской радар",
       "block": "city_watch",
       "position": 5,
-      "primary_fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-why-severe-wildfires-are-becoming-more-frequent-in-the-uk-and-how-to-cope-with-the-health-risks",
+      "primary_fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-manchester-builds-more-homes-than-greater-london",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 181.0,
-      "story_key": "topic:incident:manchester city council manchester why severe wildfires are becoming more frequent in the uk and how to cope with the health risks|same story new facts|2026 07 16",
+      "score_snapshot": 166.5,
+      "story_key": "topic:planning:manchester city council manchester city centre manchester builds more homes than greater london|new story|2026 07 22",
       "prose_source": "deterministic",
       "source_label": "Manchester Council",
-      "title": "Why severe wildfires are becoming more frequent in the UK and how to cope with the health risks"
+      "title": "Manchester builds more homes than Greater London"
     },
     {
       "slot_id": "city_watch-06",
       "section": "Городской радар",
       "block": "city_watch",
       "position": 6,
+      "primary_fingerprint": "tech-business-bdaily-manchester-bdaily-co-uk-articles-2026-07-23-housing-venture-plots-152-affordable-home-scheme",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 161.25,
+      "story_key": "topic:planning:manchester stockport housing venture plots 152 affordable home scheme|new story|2026 07 23",
+      "prose_source": "deterministic",
+      "source_label": "Bdaily Manchester",
+      "title": "Housing venture plots 152-affordable home scheme"
+    },
+    {
+      "slot_id": "city_watch-07",
+      "section": "Городской радар",
+      "block": "city_watch",
+      "position": 7,
       "primary_fingerprint": "council-wigan-council-wigan-gov-uk-ews-rticles-2026-uly-istorical-lantation-odges-open-to-all-for-the-very-first-time-aspx",
       "backup_fingerprints": [],
       "required": false,
@@ -673,348 +1126,138 @@
       "title": "Historical Plantation Lodges open to all for the very first time"
     },
     {
-      "slot_id": "city_watch-07",
-      "section": "Городской радар",
-      "block": "city_watch",
-      "position": 7,
-      "primary_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c39e0zjz3j0o",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 158.5,
-      "story_key": "topic:local_cost:manchester city council did andy burnham really fail to tackle homelessness as mayor|new story|2026 07 22",
-      "prose_source": "deterministic",
-      "source_label": "BBC Manchester",
-      "title": "Did Andy Burnham really fail to tackle homelessness as mayor?"
-    },
-    {
       "slot_id": "city_watch-08",
       "section": "Городской радар",
       "block": "city_watch",
       "position": 8,
-      "primary_fingerprint": "media-layer-men-latest-news-manchestereveningnews-co-uk-news-greater-manchester-news-cheapest-petrol-diesel-greater-manchester-34330812",
+      "primary_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-i-cant-understand-people-things-34336496",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 152.25,
-      "story_key": "topic:local_cost:altrincham the cheapest place to get petrol and diesel in greater manchester today wednesday 22 july|same story new facts|2026 07 22",
+      "score_snapshot": 156.5,
+      "story_key": "topic:planning:wigan i can t understand why people do these things woman devastated after cat shot with air gun dies|new story|2026 07 23",
       "prose_source": "deterministic",
-      "source_label": "MEN Latest News",
-      "title": "The cheapest place to get petrol and diesel in Greater Manchester today - Wednesday, 22 July"
+      "source_label": "MEN",
+      "title": "'I can't understand why people do these things' - Woman devastated after cat shot with air gun dies"
     },
     {
       "slot_id": "city_watch-09",
       "section": "Городской радар",
       "block": "city_watch",
       "position": 9,
-      "primary_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-cvg85y2j7deo",
+      "primary_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-who-could-manchester-councils-next-34329397",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 146.75,
-      "story_key": "topic:planning:manchester mum s tears of joy as her daughter finally leaves hospital unit|new story|2026 07 21",
+      "score_snapshot": 150.0,
+      "story_key": "topic:civic:manchester city council manchester who could be manchester council s next leader if bev craig becomes mayor|new story|2026 07 22",
       "prose_source": "deterministic",
-      "source_label": "BBC Manchester",
-      "title": "Mum's 'tears of joy' as her daughter finally leaves hospital unit"
+      "source_label": "MEN News Sitemap",
+      "title": "Who could be Manchester council's next leader if Bev Craig becomes mayor?"
     },
     {
       "slot_id": "city_watch-10",
       "section": "Городской радар",
       "block": "city_watch",
       "position": 10,
-      "primary_fingerprint": "gmp-bbc-manchester-public-safety-fallback-bbc-com-news-articles-c0rdnvkq4rdo",
+      "primary_fingerprint": "media-layer-the-mill-manchestermill-co-uk-meet-the-wannabe-mayors",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 132.25,
-      "story_key": "topic:incident:olympic medal and large bear figure among unusual police seizures|new story|2026 07 22",
+      "score_snapshot": 148.25,
+      "story_key": "topic:civic:manchester city council manchester prestwich meet the wannabe mayors|new story|2026 07 09",
       "prose_source": "deterministic",
-      "source_label": "BBC Manchester public safety fallback",
-      "title": "Olympic medal and large bear figure among unusual police seizures"
-    },
-    {
-      "slot_id": "city_watch-11",
-      "section": "Городской радар",
-      "block": "city_watch",
-      "position": 11,
-      "primary_fingerprint": "media-layer-itv-granada-greater-manchester-itv-com-news-granada-2026-07-17-man-found-guilty-of-murdering-15-year-old-on-e-bike-using-his-car",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 130.5,
-      "story_key": "topic:incident:manchester man found guilty of killing 15 year old after ramming e bike with car|new phase|2026 07 17",
-      "prose_source": "deterministic",
-      "source_label": "ITV Granada Greater Manchester",
-      "title": "Man found guilty of killing 15-year-old after ramming e-bike with car"
-    },
-    {
-      "slot_id": "city_watch-12",
-      "section": "Городской радар",
-      "block": "city_watch",
-      "position": 12,
-      "primary_fingerprint": "council-oldham-council-oldham-gov-uk-news-article-2940-oldham-bucks-national-trend-as-more-young-people-choose-education-and-training",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 122.0,
-      "story_key": "topic:civic:oldham council oldham oldham bucks national trend as more young people choose education and training|same story new facts|2026 07 17",
-      "prose_source": "deterministic",
-      "source_label": "Oldham Council",
-      "title": "Oldham bucks national trend as more young people choose education and training"
+      "source_label": "The Mill",
+      "title": "Meet the wannabe mayors"
     },
     {
       "slot_id": "openings-01",
       "section": "Еда, открытия и рынки",
       "block": "openings",
       "position": 1,
-      "primary_fingerprint": "food-openings-the-manc-eats-themanc-com-eats-the-thirsty-korean-chorlton-burglary",
+      "primary_fingerprint": "food-openings-about-manchester-food-drink-aboutmanchester-co-uk-gaucho-manchester-unveils-major-refurbishment-ahead-of-august-reopening",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Selected in openings shortlist before writing.",
-      "score_snapshot": 158.5,
-      "story_key": "topic:opening:manchester chorlton beloved local restaurant passionately tears apart burglars after hurtful and disappointing break in|new story|2026 07 21",
+      "score_snapshot": 142.75,
+      "story_key": "topic:opening:manchester gaucho manchester unveils major refurbishment ahead of august reopening about manchester|new story|2026 07 07",
       "prose_source": "deterministic",
-      "source_label": "The Manc Eats",
-      "title": "Beloved local restaurant passionately tears apart burglars after ‘hurtful and disappointing' break-in"
+      "source_label": "About Manchester Food & Drink",
+      "title": "Gaucho Manchester unveils major refurbishment ahead of August reopening - About Manchester"
     },
     {
       "slot_id": "tech_business-01",
       "section": "IT и бизнес",
       "block": "tech_business",
       "position": 1,
-      "primary_fingerprint": "tech-business-prolific-north-manchester-prolificnorth-co-uk-news-200m-valuation-for-manchester-proptech-following-new-minority-investment",
-      "backup_fingerprints": [
-        "tech-business-bdaily-manchester-bdaily-co-uk-articles-2026-07-17-former-united-coach-joins-ai-coaching-venture"
-      ],
+      "primary_fingerprint": "tech-business-prolific-north-manchester-prolificnorth-co-uk-news-hi-tech-parking-brief-for-manchester-agency",
+      "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Selected in tech_business shortlist before writing.",
-      "score_snapshot": 146.75,
-      "story_key": "story:prolific north|street group|news|manchester|new story|2026 07 22",
+      "score_snapshot": 139.5,
+      "story_key": "topic:planning:manchester prolific north|announced|2026 07 21",
       "prose_source": "deterministic",
       "source_label": "Prolific North Manchester",
-      "title": "£200m+ valuation for Manchester proptech following new minority investment"
+      "title": "Prolific North"
     },
     {
       "slot_id": "tech_business-02",
       "section": "IT и бизнес",
       "block": "tech_business",
       "position": 2,
-      "primary_fingerprint": "tech-business-prolific-north-manchester-prolificnorth-co-uk-news-professional-services-software-specialist-makes-transatlantic-agency-appointment",
+      "primary_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-dad-suspected-vaping-truth-far-34332966",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
-      "selection_reason": "Selected in tech_business shortlist before writing.",
-      "score_snapshot": 124.0,
-      "story_key": "topic:planning:manchester prolific north|same story new facts|2026 07 22",
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 99.5,
+      "story_key": "topic:incident:her dad suspected she was vaping the truth was far more sinister|sentenced|2026 07 22",
       "prose_source": "deterministic",
-      "source_label": "Prolific North Manchester",
-      "title": "Prolific North"
+      "source_label": "MEN",
+      "title": "Her dad suspected she was vaping, the truth was far more sinister"
     },
     {
       "slot_id": "tech_business-03",
       "section": "IT и бизнес",
       "block": "tech_business",
       "position": 3,
-      "primary_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-fire-service-issues-update-after-34324881",
+      "primary_fingerprint": "media-layer-about-manchester-news-aboutmanchester-co-uk-manchester-start-up-takes-to-the-streets-in-independent-shops-campaign",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
-      "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 123.75,
-      "story_key": "topic:incident:trafford wigan fire service issues update after crews tackle huge irlam blaze for 19 hours|same story new facts|2026 07 21",
+      "selection_reason": "Selected in tech_business shortlist before writing.",
+      "score_snapshot": 94.0,
+      "story_key": "story:news|manchester|manchester start up takes to the streets in independent shops campaign about manchester|new story|2026 07 23",
       "prose_source": "deterministic",
-      "source_label": "MEN News Sitemap",
-      "title": "Fire service issues update after crews tackle huge Irlam blaze for 19 hours"
+      "source_label": "About Manchester News",
+      "title": "Manchester Start up takes to the streets in Independent shops campaign - About Manchester"
     },
     {
       "slot_id": "tech_business-04",
       "section": "IT и бизнес",
       "block": "tech_business",
       "position": 4,
-      "primary_fingerprint": "tech-business-prolific-north-manchester-prolificnorth-co-uk-news-manchester-teen-entrepreneurs-conversational-ai-startup-bags-spot-on-e500000-accelerator-programme",
+      "primary_fingerprint": "media-layer-altrincham-today-altrincham-todaynews-co-uk-news-2026-07-21-families-invited-to-crack-the-case-of-the-missing-league-ball-in-new-altrincham-summer-trail",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Selected in tech_business shortlist before writing.",
-      "score_snapshot": 114.0,
-      "story_key": "story:prolific north|news|manchester|new story|2026 07 21",
+      "score_snapshot": 93.0,
+      "story_key": "story:news|altrincham|families invited to crack the case of the missing league ball in new altrincham summer tra|new story|2026 07 21",
       "prose_source": "deterministic",
-      "source_label": "Prolific North Manchester",
-      "title": "Manchester teen entrepreneurs' conversational AI startup bags spot on €500,000 accelerator programme"
-    },
-    {
-      "slot_id": "tech_business-05",
-      "section": "IT и бизнес",
-      "block": "tech_business",
-      "position": 5,
-      "primary_fingerprint": "media-layer-about-manchester-news-aboutmanchester-co-uk-new-contractor-appointed-as-touchstones-transformation-moves-up",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 106.75,
-      "story_key": "topic:planning:rochdale borough council manchester rochdale rochdale town centre new contractor appointed as touchstones transformation moves up about manc|new story|2026 07 21",
-      "prose_source": "deterministic",
-      "source_label": "About Manchester News",
-      "title": "New contractor appointed as Touchstones transformation moves up - About Manchester"
-    },
-    {
-      "slot_id": "professional_events-01",
-      "section": "Business/tech события для тебя",
-      "block": "professional_events",
-      "position": 1,
-      "primary_fingerprint": "professional-events-manchester-digital-events-manchesterdigital-com-event-manchester-digital-md-future-26",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Selected in professional_events shortlist before writing.",
-      "score_snapshot": 1122.0,
-      "story_key": "event:md future 26 manchester digital|2026 09 17|",
-      "prose_source": "deterministic",
-      "source_label": "Manchester Digital Events",
-      "title": "MD Future 26 | Manchester Digital"
-    },
-    {
-      "slot_id": "professional_events-02",
-      "section": "Business/tech события для тебя",
-      "block": "professional_events",
-      "position": 2,
-      "primary_fingerprint": "professional-events-gm-business-growth-hub-events-businessgrowthhub-com-events-oldham-business-clinic-drop-in-session",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Selected in professional_events shortlist before writing.",
-      "score_snapshot": 593.0,
-      "story_key": "event:gm business growth hub oldham business clinic drop in session|2026 07 23|the hive co working space",
-      "prose_source": "deterministic",
-      "source_label": "GM Business Growth Hub Events",
-      "title": "GM Business Growth Hub | Oldham Business Clinic Drop-In Session"
+      "source_label": "Altrincham Today",
+      "title": "Families invited to crack the case of the missing league ball in new Altrincham summer trail"
     },
     {
       "slot_id": "future_announcements-01",
       "section": "Дальние анонсы",
       "block": "future_announcements",
       "position": 1,
-      "primary_fingerprint": "culture-weekly-skiddle-manchester-comedy-skiddle-com-whats-on-anchester-33-ldham-t-tand-up-workshop-weekly-monday-sessions-41972051",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 178.5,
-      "story_key": "event:stand up workshop weekly monday sessions|2026 08 17|33 oldham st",
-      "prose_source": "deterministic",
-      "source_label": "Skiddle Manchester Comedy",
-      "title": "Stand-up workshop (weekly monday sessions)"
-    },
-    {
-      "slot_id": "future_announcements-02",
-      "section": "Дальние анонсы",
-      "block": "future_announcements",
-      "position": 2,
-      "primary_fingerprint": "culture-weekly-skiddle-manchester-comedy-skiddle-com-whats-on-anchester-33-ldham-t-tand-up-workshop-weekly-monday-sessions-41972050",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 150.5,
-      "story_key": "event:stand up workshop weekly monday sessions|2026 08 10|33 oldham st",
-      "prose_source": "deterministic",
-      "source_label": "Skiddle Manchester Comedy",
-      "title": "Stand-up workshop (weekly monday sessions)"
-    },
-    {
-      "slot_id": "future_announcements-03",
-      "section": "Дальние анонсы",
-      "block": "future_announcements",
-      "position": 3,
-      "primary_fingerprint": "culture-weekly-skiddle-manchester-festivals-skiddle-com-whats-on-anchester-reight-sland-overs-ummer-eekender-reight-sland-anchester-42437186",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 112.5,
-      "story_key": "event:r b lovers summer weekender freight island manchester|2026 08 08|freight island",
-      "prose_source": "deterministic",
-      "source_label": "Skiddle Manchester Festivals",
-      "title": "R&B Lovers - Summer Weekender - Freight Island Manchester"
-    },
-    {
-      "slot_id": "future_announcements-04",
-      "section": "Дальние анонсы",
-      "block": "future_announcements",
-      "position": 4,
-      "primary_fingerprint": "culture-weekly-home-homemcr-org-whats-on-let-wildflowers-bloom-que-esclatin-les-flors-ntxy",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Selected in future_announcements shortlist before writing.",
-      "score_snapshot": 101.0,
-      "story_key": "event:let wildflowers bloom que esclatin les flors a cross cultural poetic collaboration celebra|2026 06 10|home",
-      "prose_source": "deterministic",
-      "source_label": "HOME",
-      "title": "No booking required"
-    },
-    {
-      "slot_id": "future_announcements-05",
-      "section": "Дальние анонсы",
-      "block": "future_announcements",
-      "position": 5,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-crawley-03-09-2026-event-3500629828-28-2",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 12.75,
-      "story_key": "event:queen of the night a tribute to whitney houston|2026 09 03|hawth theatre",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Onsale",
-      "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-09-03 — public sale 2025-05-02 10:00"
-    },
-    {
-      "slot_id": "future_announcements-06",
-      "section": "Дальние анонсы",
-      "block": "future_announcements",
-      "position": 6,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-thank-abba-for-the-music-whitby-29-08-2026-event-35006323-3473369",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 12.75,
-      "story_key": "event:thank abba for the music|2026 08 29|whitby pavilion theatre",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Onsale",
-      "title": "Thank ABBA for The Music — event 2026-08-29 — public sale 2025-09-05 10:00"
-    },
-    {
-      "slot_id": "future_announcements-07",
-      "section": "Дальние анонсы",
-      "block": "future_announcements",
-      "position": 7,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-york-28-08-2026-event-360062-761400",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 12.75,
-      "story_key": "event:queen of the night a tribute to whitney houston|2026 08 28|york barbican",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Onsale",
-      "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-08-28 — public sale 2025-06-27 10:00"
-    },
-    {
-      "slot_id": "future_announcements-08",
-      "section": "Дальние анонсы",
-      "block": "future_announcements",
-      "position": 8,
       "primary_fingerprint": "venues-tickets-ticketmaster-manchester-onsale-ticketmaster-co-uk-anastacia-manchester-21-09-2026-event-3600631-683",
       "backup_fingerprints": [],
       "required": true,
@@ -1031,48 +1274,48 @@
       "section": "Билеты / Ticket Radar",
       "block": "ticket_radar",
       "position": 1,
-      "primary_fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-charlie-puth-whatevers-clever-world-tour-manchester-22-07-2026-event-1-006391-2-659",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 961.0,
-      "story_key": "ticket:charlie puth:manchester academy:2026-07-22",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster Manchester Upcoming",
-      "title": "Charlie Puth - Whatever's Clever! World Tour — event 2026-07-22 — public sale 2026-01-16 10:00"
-    },
-    {
-      "slot_id": "ticket_radar-02",
-      "section": "Билеты / Ticket Radar",
-      "block": "ticket_radar",
-      "position": 2,
       "primary_fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-vanessa-carlton-manchester-28-07-2026-event-1-006392-2861-1",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
       "selection_reason": "Held as same-block backup for recovery.",
-      "score_snapshot": 955.0,
+      "score_snapshot": 956.0,
       "story_key": "ticket:vanessa carlton:band on the wall:2026-07-28",
       "prose_source": "deterministic",
       "source_label": "Ticketmaster Manchester Upcoming",
       "title": "Vanessa Carlton — event 2026-07-28 — public sale 2026-01-30 10:00"
     },
     {
-      "slot_id": "ticket_radar-03",
+      "slot_id": "ticket_radar-02",
       "section": "Билеты / Ticket Radar",
       "block": "ticket_radar",
-      "position": 3,
+      "position": 2,
       "primary_fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-wolfmother-manchester-30-07-2026-event-3-006477-1839-4",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
       "selection_reason": "Held as same-block backup for recovery.",
-      "score_snapshot": 913.0,
+      "score_snapshot": 954.0,
       "story_key": "ticket:wolfmother:o2 ritz manchester:2026-07-30",
       "prose_source": "deterministic",
       "source_label": "Ticketmaster Manchester Upcoming",
       "title": "Wolfmother — event 2026-07-30 — public sale 2026-03-30 10:00"
+    },
+    {
+      "slot_id": "ticket_radar-03",
+      "section": "Билеты / Ticket Radar",
+      "block": "ticket_radar",
+      "position": 3,
+      "primary_fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-lewis-capaldi-manchester-22-08-2026-event-1-006329-48-1",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Structured writer template will produce the visible line.",
+      "score_snapshot": 820.0,
+      "story_key": "ticket:lewis capaldi:wythenshawe park:2026-08-22",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster Manchester Upcoming",
+      "title": "Lewis Capaldi — event 2026-08-22"
     },
     {
       "slot_id": "ticket_radar-04",
@@ -1095,64 +1338,32 @@
       "section": "Билеты / Ticket Radar",
       "block": "ticket_radar",
       "position": 5,
-      "primary_fingerprint": "venues-tickets-manchester-academy-manchesteracademy-net-order-gateway-13380846-tesseract-the-descent-manchester-academy-2026-10-30-19-00-00",
+      "primary_fingerprint": "venues-tickets-manchester-academy-manchesteracademy-net-order-gateway-13380043-bear-mccreary-manchester-club-academy-2026-07-26-19-00-00",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 480.0,
-      "story_key": "event:tesseract the descent 30th october 2026|2026 10 30|manchester academy",
+      "score_snapshot": 498.0,
+      "story_key": "event:bear mccreary 26th july 2026|2026 07 26|manchester academy",
       "prose_source": "deterministic",
       "source_label": "Manchester Academy",
-      "title": "TesseracT - The Descent - 30th October 2026"
+      "title": "Bear McCreary - 26th July 2026"
     },
     {
       "slot_id": "ticket_radar-06",
       "section": "Билеты / Ticket Radar",
       "block": "ticket_radar",
       "position": 6,
-      "primary_fingerprint": "venues-tickets-manchester-academy-manchesteracademy-net-order-gateway-13380957-eloise-manchester-club-academy-2026-11-22-19-00-00",
+      "primary_fingerprint": "venues-tickets-manchester-academy-manchesteracademy-net-order-gateway-13380970-fireworks-manchester-academy-3-2027-01-31-19-00-00",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 480.0,
-      "story_key": "event:eloise 22nd november 2026|2026 11 22|manchester academy",
+      "score_snapshot": 270.0,
+      "story_key": "event:fireworks 31st january 2027|2027 01 31|manchester academy",
       "prose_source": "deterministic",
       "source_label": "Manchester Academy",
-      "title": "Eloise - 22nd November 2026"
-    },
-    {
-      "slot_id": "ticket_radar-07",
-      "section": "Билеты / Ticket Radar",
-      "block": "ticket_radar",
-      "position": 7,
-      "primary_fingerprint": "venues-tickets-manchester-academy-manchesteracademy-net-order-gateway-13380803-dizzee-rascal-manchester-academy-2026-11-05-19-00-00",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 480.0,
-      "story_key": "event:dizzee rascal 5th november 2026|2026 11 05|manchester academy",
-      "prose_source": "deterministic",
-      "source_label": "Manchester Academy",
-      "title": "Dizzee Rascal - 5th November 2026"
-    },
-    {
-      "slot_id": "ticket_radar-08",
-      "section": "Билеты / Ticket Radar",
-      "block": "ticket_radar",
-      "position": 8,
-      "primary_fingerprint": "venues-tickets-manchester-academy-manchesteracademy-net-order-gateway-13380697-rizzle-kicks-manchester-academy-2026-11-15-19-00-00",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 480.0,
-      "story_key": "event:rizzle kicks 15th november 2026|2026 11 15|manchester academy",
-      "prose_source": "deterministic",
-      "source_label": "Manchester Academy",
-      "title": "Rizzle Kicks - 15th November 2026"
+      "title": "Fireworks - 31st January 2027"
     },
     {
       "slot_id": "outside_gm_tickets-01",
@@ -1179,7 +1390,7 @@
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
-      "selection_reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-21 (repeat=same_calendar_item_without_new_reader",
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «Anastacia — event 2026-09-26 — public sale 2025-09-05 10:00».",
       "score_snapshot": 1080.0,
       "story_key": "ticket:anastacia:ovo arena wembley:2026-09-26",
       "prose_source": "deterministic",
@@ -1195,7 +1406,7 @@
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
-      "selection_reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-21 (repeat=same_calendar_item_without_new_reader",
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «Anastacia — event 2026-09-27 — public sale 2025-09-05 10:00».",
       "score_snapshot": 1080.0,
       "story_key": "ticket:anastacia:the brighton centre:2026-09-27",
       "prose_source": "deterministic",
@@ -1211,7 +1422,7 @@
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
-      "selection_reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-21 (repeat=same_calendar_item_without_new_reader",
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «Anastacia — event 2026-09-24 — public sale 2025-09-05 10:00».",
       "score_snapshot": 1080.0,
       "story_key": "ticket:anastacia:utilita arena cardiff:2026-09-24",
       "prose_source": "deterministic",
@@ -1227,7 +1438,7 @@
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
-      "selection_reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-21 (repeat=same_calendar_item_without_new_reader",
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «Anastacia — event 2026-09-20 — public sale 2025-09-05 10:00».",
       "score_snapshot": 1080.0,
       "story_key": "ticket:anastacia:sec armadillo:2026-09-20",
       "prose_source": "deterministic",
@@ -1243,7 +1454,7 @@
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
-      "selection_reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-21 (repeat=same_calendar_item_without_new_reader",
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «Anastacia — event 2026-09-23 — public sale 2025-09-05 10:00».",
       "score_snapshot": 1080.0,
       "story_key": "ticket:anastacia:university of wolverhampton at the civic hall:2026-09-23",
       "prose_source": "deterministic",
@@ -1287,6 +1498,22 @@
       "section": "Крупные концерты вне GM",
       "block": "outside_gm_tickets",
       "position": 9,
+      "primary_fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-ariana-grande-the-eternal-sunshine-tour-london-16-08-2026-event-3500631-937630",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «Ariana Grande - The Eternal Sunshine Tour — event 2026-08-16 — public sale 2025-09-18 10:00».",
+      "score_snapshot": 1080.0,
+      "story_key": "ticket:ariana grande:the o2:2026-08-16",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster London Major Onsale",
+      "title": "Ariana Grande - The Eternal Sunshine Tour — event 2026-08-16 — public sale 2025-09-18 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-10",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 10,
       "primary_fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-14-08-2026-event-23006323-137102",
       "backup_fingerprints": [],
       "required": true,
@@ -1299,314 +1526,394 @@
       "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-08-14 — public sale 2025-09-12 12:00"
     },
     {
-      "slot_id": "outside_gm_tickets-10",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 10,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-summer-walker-london-01-08-2026-event-35006437-516-62",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «Summer Walker — event 2026-08-01 — public sale 2026-01-29 10:00».",
-      "score_snapshot": 1051.0,
-      "story_key": "ticket:summer walker:the o2:2026-08-01",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "Summer Walker — event 2026-08-01 — public sale 2026-01-29 10:00"
-    },
-    {
       "slot_id": "outside_gm_tickets-11",
       "section": "Крупные концерты вне GM",
       "block": "outside_gm_tickets",
       "position": 11,
-      "primary_fingerprint": "venues-tickets-ticketmaster-london-major-upcoming-ticketmaster-co-uk-bruno-mars-the-romantic-tour-london-22-07-2026-event-23006427-6-10-5",
+      "primary_fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-15-08-2026-event-2300631-1960-6",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 961.0,
-      "story_key": "ticket:bruno mars:wembley stadium:2026-07-22",
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «The Weeknd: After Hours Til Dawn Tour — event 2026-08-15 — public sale 2025-09-12 12:00».",
+      "score_snapshot": 1080.0,
+      "story_key": "ticket:the weeknd:wembley stadium:2026-08-15",
       "prose_source": "deterministic",
-      "source_label": "Ticketmaster London Major Upcoming",
-      "title": "Bruno Mars - The Romantic Tour — event 2026-07-22 — public sale 2026-01-15 12:00"
+      "source_label": "Ticketmaster London Major Onsale",
+      "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-08-15 — public sale 2025-09-12 12:00"
     },
     {
       "slot_id": "outside_gm_tickets-12",
       "section": "Крупные концерты вне GM",
       "block": "outside_gm_tickets",
       "position": 12,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-vanessa-carlton-bristol-22-07-2026-event-1-006392-46-685",
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-the-fratellis-celebrating-20-years-of-glasgow-20-02-2027-event-3-0062-70-09-7",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 961.0,
-      "story_key": "ticket:vanessa carlton:thekla:2026-07-22",
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «The Fratellis - Celebrating 20 Years of Costello Music — event 2027-02-20 — public sale 2025-07-18 12:00».",
+      "score_snapshot": 1080.0,
+      "story_key": "ticket:the fratellis:o2 academy glasgow:2027-02-20",
       "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "Vanessa Carlton — event 2026-07-22 — public sale 2026-01-30 10:00"
+      "source_label": "Ticketmaster UK Major Onsale",
+      "title": "The Fratellis - Celebrating 20 Years of Costello Music — event 2027-02-20 — public sale 2025-07-18 12:00"
     },
     {
       "slot_id": "outside_gm_tickets-13",
       "section": "Крупные концерты вне GM",
       "block": "outside_gm_tickets",
       "position": 13,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-tom-jones-halifax-25-07-2026-event-35006425948-1-4",
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-the-fratellis-celebrating-20-years-of-leeds-25-02-2027-event-3-006291-30910-1",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
-      "selection_reason": "Без новых фактов: уже был 2026-07-19 как «Tom Jones — event 2026-07-25 — public sale 2026-01-30 10:00».",
-      "score_snapshot": 958.0,
-      "story_key": "ticket:tom jones:the piece hall:2026-07-25",
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «The Fratellis - Celebrating 20 Years of Costello Music — event 2027-02-25 — public sale 2025-05-29 09:00».",
+      "score_snapshot": 1080.0,
+      "story_key": "ticket:the fratellis:o2 academy leeds:2027-02-25",
       "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "Tom Jones — event 2026-07-25 — public sale 2026-01-30 10:00"
+      "source_label": "Ticketmaster UK Major Onsale",
+      "title": "The Fratellis - Celebrating 20 Years of Costello Music — event 2027-02-25 — public sale 2025-05-29 09:00"
     },
     {
       "slot_id": "outside_gm_tickets-14",
       "section": "Крупные концерты вне GM",
       "block": "outside_gm_tickets",
       "position": 14,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-tom-jones-scarborough-26-07-2026-event-35006394-35-9476",
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-summer-walker-london-01-08-2026-event-35006437-516-62",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
-      "selection_reason": "Без новых фактов: уже был 2026-07-20 как «Tom Jones — event 2026-07-26 — public sale 2026-01-30 10:00».",
-      "score_snapshot": 957.0,
-      "story_key": "ticket:tom jones:scarborough open air theatre:2026-07-26",
+      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «Summer Walker — event 2026-08-01 — public sale 2026-01-29 10:00».",
+      "score_snapshot": 1052.0,
+      "story_key": "ticket:summer walker:the o2:2026-08-01",
       "prose_source": "deterministic",
       "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "Tom Jones — event 2026-07-26 — public sale 2026-01-30 10:00"
+      "title": "Summer Walker — event 2026-08-01 — public sale 2026-01-29 10:00"
     },
     {
       "slot_id": "outside_gm_tickets-15",
       "section": "Крупные концерты вне GM",
       "block": "outside_gm_tickets",
       "position": 15,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-wolfmother-bristol-28-07-2026-event-3-006477-003-5",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-21 (repeat=same_calendar_item_without_new_reader",
-      "score_snapshot": 955.0,
-      "story_key": "ticket:wolfmother:o2 academy bristol:2026-07-28",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "Wolfmother — event 2026-07-28 — public sale 2026-03-27 10:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-16",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 16,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-wolfmother-london-29-07-2026-event-3-006477-6-45-6",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 954.0,
-      "story_key": "ticket:wolfmother:o2 shepherds bush empire:2026-07-29",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "Wolfmother — event 2026-07-29 — public sale 2026-03-30 10:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-17",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 17,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-mika-glasgow-29-07-2026-event-3600642-43-8",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Visible repeat policy allows this item: event_milestone_d7. | Validator: same fingerprint was published on 2026-07-21, but repeat policy allows it (event_milestone_d7). | Validator: no publishable rea",
-      "score_snapshot": 954.0,
-      "story_key": "ticket:mika:kelvingrove bandstand:2026-07-29",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "MIKA — event 2026-07-29 — public sale 2026-01-23 09:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-18",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 18,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-thievery-corporation-london-30-07-2026-event-1-006459-8737-5",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «Thievery Corporation — event 2026-07-30 — public sale 2026-02-27 10:00».",
-      "score_snapshot": 913.0,
-      "story_key": "ticket:thievery corporation:roundhouse:2026-07-30",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "Thievery Corporation — event 2026-07-30 — public sale 2026-02-27 10:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-19",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 19,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-calvin-harris-glasgow-01-08-2026-event-36006349-22786-2",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «Calvin Harris — event 2026-08-01 — public sale 2025-11-07 10:00».",
-      "score_snapshot": 911.0,
-      "story_key": "ticket:calvin harris:barclays hampden:2026-08-01",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "Calvin Harris — event 2026-08-01 — public sale 2025-11-07 10:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-20",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 20,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-the-kooks-margate-01-08-2026-event-35006383-2675-31",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «The Kooks — event 2026-08-01 — public sale 2025-12-10 10:00».",
-      "score_snapshot": 911.0,
-      "story_key": "ticket:the kooks:dreamland:2026-08-01",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "The Kooks — event 2026-08-01 — public sale 2025-12-10 10:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-21",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 21,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-sex-pistols-ft-frank-carter-cardiff-01-08-2026-event-1-006378-5-46923",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 911.0,
-      "story_key": "ticket:sex pistols:cardiff castle:2026-08-01",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "SEX PISTOLS FT. FRANK CARTER — event 2026-08-01 — public sale 2025-11-28 10:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-22",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 22,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-sophie-ellisbextor-glasgow-01-08-2026-event-3600642-496-30",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «Sophie Ellis-Bextor — event 2026-08-01 — public sale 2026-01-23 09:00».",
-      "score_snapshot": 911.0,
-      "story_key": "ticket:sophie ellis bextor:kelvingrove bandstand:2026-08-01",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "Sophie Ellis-Bextor — event 2026-08-01 — public sale 2026-01-23 09:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-23",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 23,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-calvin-harris-glasgow-02-08-2026-event-3600636496-358",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 910.0,
-      "story_key": "ticket:calvin harris:barclays hampden:2026-08-02",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "Calvin Harris — event 2026-08-02 — public sale 2025-11-07 10:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-24",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 24,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-two-door-cinema-club-cardiff-02-08-2026-event-1-006328-74422-7",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «Two Door Cinema Club — event 2026-08-02 — public sale 2025-10-31 10:00».",
-      "score_snapshot": 910.0,
-      "story_key": "ticket:two door cinema club:cardiff castle:2026-08-02",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "Two Door Cinema Club — event 2026-08-02 — public sale 2025-10-31 10:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-25",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 25,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-sex-pistols-ft-frank-carter-scarborough-02-08-2026-event-35006378-9-4825",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «SEX PISTOLS FT. FRANK CARTER — event 2026-08-02 — public sale 2025-11-28 10:00».",
-      "score_snapshot": 910.0,
-      "story_key": "ticket:sex pistols:scarborough open air theatre:2026-08-02",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "SEX PISTOLS FT. FRANK CARTER — event 2026-08-02 — public sale 2025-11-28 10:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-26",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 26,
       "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-summer-walker-london-02-08-2026-event-35006436-7502325",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 910.0,
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «Summer Walker — event 2026-08-02 — public sale 2026-01-29 10:00».",
+      "score_snapshot": 1051.0,
       "story_key": "ticket:summer walker:the o2:2026-08-02",
       "prose_source": "deterministic",
       "source_label": "Ticketmaster UK Major Upcoming",
       "title": "Summer Walker — event 2026-08-02 — public sale 2026-01-29 10:00"
     },
     {
-      "slot_id": "outside_gm_tickets-27",
+      "slot_id": "outside_gm_tickets-16",
       "section": "Крупные концерты вне GM",
       "block": "outside_gm_tickets",
-      "position": 27,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-palace-bowl-presents-tom-jones-london-05-08-2026-event-35006445-1-7075",
+      "position": 16,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-joji-solaris-london-13-08-2026-event-35006459-96-4896",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «JOJI: SOLARIS — event 2026-08-13 — public sale 2026-03-06 10:00».",
+      "score_snapshot": 1040.0,
+      "story_key": "ticket:joji:the o2:2026-08-13",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "JOJI: SOLARIS — event 2026-08-13 — public sale 2026-03-06 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-17",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 17,
+      "primary_fingerprint": "venues-tickets-ticketmaster-london-major-upcoming-ticketmaster-co-uk-bruno-mars-the-romantic-tour-london-24-07-2026-event-23006427-78-0-67",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
       "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 907.0,
-      "story_key": "ticket:tom jones:crystal palace bowl:2026-08-05",
+      "score_snapshot": 960.0,
+      "story_key": "ticket:bruno mars:wembley stadium:2026-07-24",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster London Major Upcoming",
+      "title": "Bruno Mars - The Romantic Tour — event 2026-07-24 — public sale 2026-01-15 12:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-18",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 18,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-tom-jones-halifax-25-07-2026-event-35006425948-1-4",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-19 как «Tom Jones — event 2026-07-25 — public sale 2026-01-30 10:00».",
+      "score_snapshot": 959.0,
+      "story_key": "ticket:tom jones:the piece hall:2026-07-25",
       "prose_source": "deterministic",
       "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "Palace Bowl Presents - Tom Jones — event 2026-08-05 — public sale 2026-03-13 10:00"
+      "title": "Tom Jones — event 2026-07-25 — public sale 2026-01-30 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-19",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 19,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-tom-jones-scarborough-26-07-2026-event-35006394-35-9476",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-20 как «Tom Jones — event 2026-07-26 — public sale 2026-01-30 10:00».",
+      "score_snapshot": 958.0,
+      "story_key": "ticket:tom jones:scarborough open air theatre:2026-07-26",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "Tom Jones — event 2026-07-26 — public sale 2026-01-30 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-20",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 20,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-wolfmother-bristol-28-07-2026-event-3-006477-003-5",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «Wolfmother — event 2026-07-28 — public sale 2026-03-27 10:00».",
+      "score_snapshot": 956.0,
+      "story_key": "ticket:wolfmother:o2 academy bristol:2026-07-28",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "Wolfmother — event 2026-07-28 — public sale 2026-03-27 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-21",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 21,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-wolfmother-london-29-07-2026-event-3-006477-6-45-6",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «Wolfmother — event 2026-07-29 — public sale 2026-03-30 10:00».",
+      "score_snapshot": 955.0,
+      "story_key": "ticket:wolfmother:o2 shepherds bush empire:2026-07-29",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "Wolfmother — event 2026-07-29 — public sale 2026-03-30 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-22",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 22,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-mika-glasgow-29-07-2026-event-3600642-43-8",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «MIKA — event 2026-07-29 — public sale 2026-01-23 09:00».",
+      "score_snapshot": 955.0,
+      "story_key": "ticket:mika:kelvingrove bandstand:2026-07-29",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "MIKA — event 2026-07-29 — public sale 2026-01-23 09:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-23",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 23,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-thievery-corporation-london-30-07-2026-event-1-006459-8737-5",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Visible repeat policy allows this item: event_milestone_d7. | Validator: same fingerprint was published on 2026-07-21, but repeat policy allows it (event_milestone_d7). | Validator: no publishable rea",
+      "score_snapshot": 954.0,
+      "story_key": "ticket:thievery corporation:roundhouse:2026-07-30",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "Thievery Corporation — event 2026-07-30 — public sale 2026-02-27 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-24",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 24,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-calvin-harris-glasgow-01-08-2026-event-36006349-22786-2",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «Calvin Harris — event 2026-08-01 — public sale 2025-11-07 10:00».",
+      "score_snapshot": 912.0,
+      "story_key": "ticket:calvin harris:barclays hampden:2026-08-01",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "Calvin Harris — event 2026-08-01 — public sale 2025-11-07 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-25",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 25,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-the-kooks-margate-01-08-2026-event-35006383-2675-31",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «The Kooks — event 2026-08-01 — public sale 2025-12-10 10:00».",
+      "score_snapshot": 912.0,
+      "story_key": "ticket:the kooks:dreamland:2026-08-01",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "The Kooks — event 2026-08-01 — public sale 2025-12-10 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-26",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 26,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-sex-pistols-ft-frank-carter-cardiff-01-08-2026-event-1-006378-5-46923",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «SEX PISTOLS FT. FRANK CARTER — event 2026-08-01 — public sale 2025-11-28 10:00».",
+      "score_snapshot": 912.0,
+      "story_key": "ticket:sex pistols:cardiff castle:2026-08-01",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "SEX PISTOLS FT. FRANK CARTER — event 2026-08-01 — public sale 2025-11-28 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-27",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 27,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-sophie-ellisbextor-glasgow-01-08-2026-event-3600642-496-30",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «Sophie Ellis-Bextor — event 2026-08-01 — public sale 2026-01-23 09:00».",
+      "score_snapshot": 912.0,
+      "story_key": "ticket:sophie ellis bextor:kelvingrove bandstand:2026-08-01",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "Sophie Ellis-Bextor — event 2026-08-01 — public sale 2026-01-23 09:00"
     },
     {
       "slot_id": "outside_gm_tickets-28",
       "section": "Крупные концерты вне GM",
       "block": "outside_gm_tickets",
       "position": 28,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-scissor-sisters-scarborough-08-08-2026-event-35006364-8345-72",
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-calvin-harris-glasgow-02-08-2026-event-3600636496-358",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
-      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «Scissor Sisters — event 2026-08-08 — public sale 2025-11-21 10:00».",
-      "score_snapshot": 824.0,
-      "story_key": "ticket:scissor sisters:scarborough open air theatre:2026-08-08",
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «Calvin Harris — event 2026-08-02 — public sale 2025-11-07 10:00».",
+      "score_snapshot": 911.0,
+      "story_key": "ticket:calvin harris:barclays hampden:2026-08-02",
       "prose_source": "deterministic",
       "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "Scissor Sisters — event 2026-08-08 — public sale 2025-11-21 10:00"
+      "title": "Calvin Harris — event 2026-08-02 — public sale 2025-11-07 10:00"
     },
     {
       "slot_id": "outside_gm_tickets-29",
       "section": "Крупные концерты вне GM",
       "block": "outside_gm_tickets",
       "position": 29,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-two-door-cinema-club-cardiff-02-08-2026-event-1-006328-74422-7",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «Two Door Cinema Club — event 2026-08-02 — public sale 2025-10-31 10:00».",
+      "score_snapshot": 911.0,
+      "story_key": "ticket:two door cinema club:cardiff castle:2026-08-02",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "Two Door Cinema Club — event 2026-08-02 — public sale 2025-10-31 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-30",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 30,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-sex-pistols-ft-frank-carter-scarborough-02-08-2026-event-35006378-9-4825",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «SEX PISTOLS FT. FRANK CARTER — event 2026-08-02 — public sale 2025-11-28 10:00».",
+      "score_snapshot": 911.0,
+      "story_key": "ticket:sex pistols:scarborough open air theatre:2026-08-02",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "SEX PISTOLS FT. FRANK CARTER — event 2026-08-02 — public sale 2025-11-28 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-31",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 31,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-palace-bowl-presents-tom-jones-london-05-08-2026-event-35006445-1-7075",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «Palace Bowl Presents - Tom Jones — event 2026-08-05 — public sale 2026-03-13 10:00».",
+      "score_snapshot": 908.0,
+      "story_key": "ticket:tom jones:crystal palace bowl:2026-08-05",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "Palace Bowl Presents - Tom Jones — event 2026-08-05 — public sale 2026-03-13 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-32",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 32,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-scissor-sisters-scarborough-08-08-2026-event-35006364-8345-72",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «Scissor Sisters — event 2026-08-08 — public sale 2025-11-21 10:00».",
+      "score_snapshot": 825.0,
+      "story_key": "ticket:scissor sisters:scarborough open air theatre:2026-08-08",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "Scissor Sisters — event 2026-08-08 — public sale 2025-11-21 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-33",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 33,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-scissor-sisters-halifax-09-08-2026-event-3500636794-55-3",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-22 как «Scissor Sisters — event 2026-08-09 — public sale 2025-11-21 10:00».",
+      "score_snapshot": 824.0,
+      "story_key": "ticket:scissor sisters:the piece hall:2026-08-09",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "Scissor Sisters — event 2026-08-09 — public sale 2025-11-21 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-34",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 34,
+      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-the-wombats-glasgow-12-08-2026-event-36006466990638",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «The Wombats — event 2026-08-12 — public sale 2026-03-13 09:00».",
+      "score_snapshot": 821.0,
+      "story_key": "ticket:the wombats:kelvingrove bandstand:2026-08-12",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster UK Major Upcoming",
+      "title": "The Wombats — event 2026-08-12 — public sale 2026-03-13 09:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-35",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 35,
       "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-jessie-j-live-after-racing-newbury-15-08-2026-event-1-006457-02",
       "backup_fingerprints": [],
       "required": true,
@@ -1619,196 +1926,68 @@
       "title": "Jessie J - Live after Racing — event 2026-08-15 — public sale 2026-02-27 10:00"
     },
     {
-      "slot_id": "outside_gm_tickets-30",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 30,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-the-wombats-glasgow-12-08-2026-event-36006466990638",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Без новых фактов: уже был 2026-07-21 как «The Wombats — event 2026-08-12 — public sale 2026-03-13 09:00».",
-      "score_snapshot": 820.0,
-      "story_key": "ticket:the wombats:kelvingrove bandstand:2026-08-12",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "The Wombats — event 2026-08-12 — public sale 2026-03-13 09:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-31",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 31,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-scissor-sisters-halifax-09-08-2026-event-3500636794-55-3",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 743.0,
-      "story_key": "ticket:scissor sisters:the piece hall:2026-08-09",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "Scissor Sisters — event 2026-08-09 — public sale 2025-11-21 10:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-32",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 32,
-      "primary_fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-ariana-grande-the-eternal-sunshine-tour-london-16-08-2026-event-3500631-937630",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 740.0,
-      "story_key": "ticket:ariana grande:the o2:2026-08-16",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster London Major Onsale",
-      "title": "Ariana Grande - The Eternal Sunshine Tour — event 2026-08-16 — public sale 2025-09-18 10:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-33",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 33,
-      "primary_fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-15-08-2026-event-2300631-1960-6",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 740.0,
-      "story_key": "ticket:the weeknd:wembley stadium:2026-08-15",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster London Major Onsale",
-      "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-08-15 — public sale 2025-09-12 12:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-34",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 34,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-the-fratellis-celebrating-20-years-of-glasgow-20-02-2027-event-3-0062-70-09-7",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 740.0,
-      "story_key": "ticket:the fratellis:o2 academy glasgow:2027-02-20",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Onsale",
-      "title": "The Fratellis - Celebrating 20 Years of Costello Music — event 2027-02-20 — public sale 2025-07-18 12:00"
-    },
-    {
-      "slot_id": "outside_gm_tickets-35",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 35,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-the-fratellis-celebrating-20-years-of-leeds-25-02-2027-event-3-006291-30910-1",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 740.0,
-      "story_key": "ticket:the fratellis:o2 academy leeds:2027-02-25",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Onsale",
-      "title": "The Fratellis - Celebrating 20 Years of Costello Music — event 2027-02-25 — public sale 2025-05-29 09:00"
-    },
-    {
       "slot_id": "outside_gm_tickets-36",
       "section": "Крупные концерты вне GM",
       "block": "outside_gm_tickets",
       "position": 36,
-      "primary_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-joji-solaris-london-13-08-2026-event-35006459-96-4896",
+      "primary_fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-ariana-grande-the-eternal-sunshine-tour-london-19-08-2026-event-3500631-950-310",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
       "selection_reason": "Structured writer template will produce the visible line.",
       "score_snapshot": 740.0,
-      "story_key": "ticket:joji:the o2:2026-08-13",
+      "story_key": "ticket:ariana grande:the o2:2026-08-19",
       "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "JOJI: SOLARIS — event 2026-08-13 — public sale 2026-03-06 10:00"
+      "source_label": "Ticketmaster London Major Onsale",
+      "title": "Ariana Grande - The Eternal Sunshine Tour — event 2026-08-19 — public sale 2025-09-18 10:00"
+    },
+    {
+      "slot_id": "outside_gm_tickets-37",
+      "section": "Крупные концерты вне GM",
+      "block": "outside_gm_tickets",
+      "position": 37,
+      "primary_fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-16-08-2026-event-23006328-99-0-5",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Structured writer template will produce the visible line.",
+      "score_snapshot": 740.0,
+      "story_key": "ticket:the weeknd:wembley stadium:2026-08-16",
+      "prose_source": "deterministic",
+      "source_label": "Ticketmaster London Major Onsale",
+      "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-08-16 — public sale 2025-09-12 12:00"
     },
     {
       "slot_id": "russian_events-01",
       "section": "Русскоязычные концерты и стендап UK",
       "block": "russian_events",
       "position": 1,
-      "primary_fingerprint": "russian-speaking-events-mticket-russian-concerts-mticket-uk-ru-london-monatik-europe-tour-2027-3968-html",
+      "primary_fingerprint": "russian-speaking-events-uk-stand-up-club-eventbrite-eventbrite-co-uk-e-30-big-belly-comedy-club-tickets-1993910265278",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 955.5,
-      "story_key": "event:monatik europe tour 2027 london|2027 02 26|indigo at the o2",
+      "score_snapshot": 315.25,
+      "story_key": "event:павел дедищев в лондоне 30го сентября big belly comedy club|2026 09 30|big belly comedy club",
       "prose_source": "deterministic",
-      "source_label": "MTicket Russian Concerts",
-      "title": "Monatik Europe Tour 2027. London"
+      "source_label": "UK Stand-Up Club Eventbrite",
+      "title": "ПАВЕЛ ДЕДИЩЕВ В ЛОНДОНЕ | 30ГО СЕНТЯБРЯ | BIG BELLY COMEDY CLUB"
     },
     {
       "slot_id": "russian_events-02",
       "section": "Русскоязычные концерты и стендап UK",
       "block": "russian_events",
       "position": 2,
-      "primary_fingerprint": "russian-speaking-events-eventfirst-diaspora-eventfirst-co-uk-event-skameika",
+      "primary_fingerprint": "russian-speaking-events-uk-stand-up-club-eventbrite-eventbrite-co-uk-e-big-belly-comedy-club-tickets-1993777184229",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 617.25,
-      "story_key": "event:спектакль скамейка|2026 11 29|",
+      "score_snapshot": 97.25,
+      "story_key": "event:полезные связи крауд нетворк шоу big belly comedy club|2026 08 04|big belly comedy club",
       "prose_source": "deterministic",
-      "source_label": "EventFirst Diaspora",
-      "title": "Спектакль \"Скамейка\""
-    },
-    {
-      "slot_id": "russian_events-03",
-      "section": "Русскоязычные концерты и стендап UK",
-      "block": "russian_events",
-      "position": 3,
-      "primary_fingerprint": "russian-speaking-events-mticket-russian-concerts-mticket-uk-ru-london-goran-bregovic-3499-html",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 548.5,
-      "story_key": "event:горан брегович|2026 11 08|indigo at the o2",
-      "prose_source": "deterministic",
-      "source_label": "MTicket Russian Concerts",
-      "title": "Горан Брегович"
-    },
-    {
-      "slot_id": "russian_events-04",
-      "section": "Русскоязычные концерты и стендап UK",
-      "block": "russian_events",
-      "position": 4,
-      "primary_fingerprint": "russian-speaking-events-mticket-russian-concerts-mticket-uk-ru-london-andrij-kravcenko-4082-html",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 434.5,
-      "story_key": "event:андрей кравченко|2026 10 17|brixton jamm",
-      "prose_source": "deterministic",
-      "source_label": "MTicket Russian Concerts",
-      "title": "Андрей Кравченко"
-    },
-    {
-      "slot_id": "russian_events-05",
-      "section": "Русскоязычные концерты и стендап UK",
-      "block": "russian_events",
-      "position": 5,
-      "primary_fingerprint": "russian-speaking-events-mticket-russian-concerts-mticket-uk-ru-london-august-breeze-party-svatkuemo-den-nezaleznosti-ukraini-razom-4239-html",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 207.5,
-      "story_key": "event:august breeze party святку мо день незалежност укра ни разом london|2026 08 23|golden spirit",
-      "prose_source": "deterministic",
-      "source_label": "MTicket Russian Concerts",
-      "title": "August Breeze Party - Святкуємо День Незалежності України разом! London"
+      "source_label": "UK Stand-Up Club Eventbrite",
+      "title": "ПОЛЕЗНЫЕ СВЯЗИ | КРАУД-НЕТВОРК ШОУ | BIG BELLY COMEDY CLUB"
     }
   ],
   "today_focus_board": {
@@ -1824,22 +2003,22 @@
       "reason": "backup_ineligible:stale"
     },
     {
-      "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c39yd73xml3o",
-      "title": "Announced candidates for Greater Manchester mayoral election",
-      "section": "Городской радар",
-      "reason": "backup_ineligible:stale"
-    },
-    {
       "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-cqx1edd7x43o",
       "title": "What is the Greater Manchester mayor and what do they do?",
       "section": "Городской радар",
       "reason": "backup_ineligible:stale"
     },
     {
-      "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c8dnmnmqyp8o",
-      "title": "Warrington Council's sale of £30m Redwood Bank shares collapses",
-      "section": "Свежие новости",
+      "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c1w1q8w0xzwo",
+      "title": "'Lip King' banned from carrying out BBLs in two UK areas before woman's death",
+      "section": "Городской радар",
       "reason": "backup_ineligible:rejected"
+    },
+    {
+      "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c80nlz8j0rzo",
+      "title": "The Odyssey cast shown oldest book copy of Homer's epic poem",
+      "section": "Свежие новости",
+      "reason": "contract_drop:editorial_filler"
     },
     {
       "fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-clyxje8y8vko",
@@ -1848,10 +2027,10 @@
       "reason": "backup_ineligible:stale"
     },
     {
-      "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-ryanair-passengers-forced-buy-water-34329342",
-      "title": "Ryanair passengers 'forced to buy water' on delayed flight to Manchester as temperatures top 40C",
-      "section": "Свежие новости",
-      "reason": "contract_drop:editorial_filler"
+      "fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-property-hotspot-house-34335291",
+      "title": "The Greater Manchester property hotspot where house prices are soaring",
+      "section": "Городской радар",
+      "reason": "contract_drop:editorial_contract:property_listing"
     },
     {
       "fingerprint": "media-layer-itv-granada-greater-manchester-itv-com-news-granada-2026-05-26-gang-members-jailed-after-1m-worth-goods-stolen",
@@ -1866,16 +2045,34 @@
       "reason": "backup_ineligible:stale"
     },
     {
-      "fingerprint": "gmp-bbc-manchester-public-safety-fallback-bbc-com-news-articles-c4gkl7zr8z2o",
-      "title": "Warning as helicopters tackle fire in Macclesfield Forest",
-      "section": "Свежие новости",
-      "reason": "non_gm_regional"
+      "fingerprint": "media-layer-the-mill-manchestermill-co-uk-weve-got-the-data-on-second-choice-votes",
+      "title": "We've got the data on… second choice votes",
+      "section": "Городской радар",
+      "reason": "contract_drop:editorial_filler"
     },
     {
-      "fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-amended-late-night-transpennine-express-service-via-huddersfield-from-monday-20",
-      "title": "Amended late night TransPennine Express service via Huddersfield from Monday 20 to Thursday 23 July",
+      "fingerprint": "media-layer-the-mill-manchestermill-co-uk-the-heat-is-getting-to-us",
+      "title": "The heat is getting to us.",
+      "section": "Городской радар",
+      "reason": "backup_ineligible:stale"
+    },
+    {
+      "fingerprint": "media-layer-the-mill-manchestermill-co-uk-exclusive-vice-chancellor-george-holmes-among-those-arrested-on-suspicion-of-fraud",
+      "title": "Exclusive: Vice-chancellor George Holmes among those arrested on suspicion of fraud",
+      "section": "Городской радар",
+      "reason": "backup_ineligible:stale"
+    },
+    {
+      "fingerprint": "media-layer-the-mill-manchestermill-co-uk-breaking-three-people-arrested-on-suspicion-of-money-laundering-fraud-and-bribery-at-university-of-greater-manchester",
+      "title": "BREAKING: Three people arrested on suspicion of money laundering, fraud and bribery at University of Greater Manchester",
+      "section": "Городской радар",
+      "reason": "backup_ineligible:stale"
+    },
+    {
+      "fingerprint": "media-layer-the-mill-manchestermill-co-uk-football-maybe-sunshine-certainly-heres-whats-coming-home",
+      "title": "Football: maybe. Sunshine: certainly — here's what's coming home",
       "section": "Общественный транспорт сегодня",
-      "reason": "backup_ineligible:duplicate"
+      "reason": "backup_ineligible:stale"
     },
     {
       "fingerprint": "public-services-gmmh-gmmh-nhs-uk-media-centre-press-releases-gmmhs-antiracism-work-shortlisted-for-national-patient-safety-award-8068",
@@ -1902,6 +2099,18 @@
       "reason": "backup_ineligible:rejected"
     },
     {
+      "fingerprint": "council-gmca-greatermanchester-ca-gov-uk-news-vacancy-in-the-office-of-the-greater-manchester-combined-authority-mayor",
+      "title": "Vacancy in the Office of the Greater Manchester Combined Authority Mayor - Greater Manchester Combined Authority",
+      "section": "Городской радар",
+      "reason": "backup_ineligible:rejected"
+    },
+    {
+      "fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-smoke-from-wildfire-affecting-air-quality-in-some-areas",
+      "title": "Smoke from wildfire affecting air quality in some areas",
+      "section": "Городской радар",
+      "reason": "repeat_blocked:topic_lifecycle_rehash:incident:local_action"
+    },
+    {
       "fingerprint": "council-manchester-council-manchester-gov-uk-news-stories-2026-eco-schools-celebrate-green-flag-success-in-making-the-planet-greener2",
       "title": "Eco-schools celebrate Green Flag success in making the planet greener",
       "section": "Городской радар",
@@ -1914,10 +2123,16 @@
       "reason": "contract_drop:editorial_filler"
     },
     {
-      "fingerprint": "culture-weekly-home-homemcr-org-whats-on-inhale-me-exhale-you-ntbg",
-      "title": "Inhale Me, Exhale You By Kate Partington Tue 2 Jun 10:00 - Mon 28 Sep 22:00 Arches Windows",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 62 day(s) away"
+      "fingerprint": "council-oldham-council-oldham-gov-uk-news-article-2939-countdown-to-opening-begins-as-northern-roots-receives-keys-to-oldhams-newest-visitor-attraction",
+      "title": "Countdown to opening begins as Northern Roots receives keys to Oldham's newest visitor attraction",
+      "section": "Городской радар",
+      "reason": "backup_ineligible:stale"
+    },
+    {
+      "fingerprint": "council-bury-council-mynewsdesk-com-uk-bury-council-pressreleases-new-guidance-supports-affordable-housing-3458836",
+      "title": "New guidance supports affordable housing",
+      "section": "Городской радар",
+      "reason": "contract_drop:editorial_filler"
     },
     {
       "fingerprint": "culture-weekly-home-homemcr-org-whats-on-manchesteropen2026-rslt",
@@ -1926,46 +2141,58 @@
       "reason": "event_timing:near-term leisure is not a future announcement"
     },
     {
+      "fingerprint": "culture-weekly-home-homemcr-org-whats-on-blue-heron-12a-8j5t",
+      "title": "Blue Heron (12A) A deeply personal portrait of childhood, family, and the fragility of recollection. Fri 3 Jul - Thu 23 ",
+      "section": "Дальние анонсы",
+      "reason": "event_timing:near-term leisure is not a future announcement"
+    },
+    {
+      "fingerprint": "culture-weekly-home-homemcr-org-whats-on-nirvanna-the-band-the-show-the-movie-15-zpsn",
+      "title": "Nirvanna: The Band - The Show - The Movie (15) The next chapter in the cult mockumentary series from Matt Johnson and Ja",
+      "section": "Дальние анонсы",
+      "reason": "event_timing:near-term leisure is not a future announcement"
+    },
+    {
+      "fingerprint": "culture-weekly-the-lowry-thelowry-com-whats-on-the-spy-who-came-in-from-the-cold-nxlf",
+      "title": "The Spy Who Came in from The Cold",
+      "section": "Дальние анонсы",
+      "reason": "event_timing:near-term leisure is not a future announcement"
+    },
+    {
+      "fingerprint": "culture-weekly-the-lowry-thelowry-com-whats-on-oh-zeus-8t8s",
+      "title": "Oh Zeus!",
+      "section": "Дальние анонсы",
+      "reason": "event_timing:near-term leisure is not a future announcement"
+    },
+    {
+      "fingerprint": "culture-weekly-contact-theatre-contactmcr-com-support-us",
+      "title": "Contact Theatre",
+      "section": "Дальние анонсы",
+      "reason": "event_timing:event has no usable venue"
+    },
+    {
       "fingerprint": "culture-weekly-people-s-history-museum-phm-org-uk-events-new-100-years-of-strikes-solidarity",
       "title": "100 years of strikes & solidarity - People's History Museum",
       "section": "Дальние анонсы",
       "reason": "event_timing:long-running exhibition without a near-term hook"
     },
     {
-      "fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-the-strangest-most-wuthering-heights-ever",
-      "title": "The Strangest Most Wuthering Heights Ever",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:near-term leisure is not a future announcement"
-    },
-    {
-      "fingerprint": "culture-weekly-manchester-s-finest-events-manchestersfinest-com-events-page-2",
-      "title": "Next page Next page",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:near-term leisure is not a future announcement"
-    },
-    {
       "fingerprint": "venues-tickets-ticketmaster-manchester-onsale-ticketmaster-co-uk-westlife-25-the-anniversary-world-tour-manchester-23-10-2026-event-37006355-06-46",
       "title": "Westlife 25 - The Anniversary World Tour — event 2026-10-23 — public sale 2025-10-31 10:00",
       "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 93 day(s) away"
+      "reason": "event_timing:nearest dated occurrence is 92 day(s) away"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-manchester-onsale-ticketmaster-co-uk-westlife-25-the-anniversary-world-tour-manchester-24-10-2026-event-3700635-99-7875",
       "title": "Westlife 25 - The Anniversary World Tour — event 2026-10-24 — public sale 2025-10-31 10:00",
       "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 94 day(s) away"
+      "reason": "event_timing:nearest dated occurrence is 93 day(s) away"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-liverpool-onsale-ticketmaster-co-uk-the-mersey-beatles-liverpool-14-11-2026-event-3700635-401-96",
       "title": "The Mersey Beatles — event 2026-11-14 — public sale 2025-11-07 10:00",
       "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 115 day(s) away"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-theo-kandel-manchester-22-07-2026-event-1-0064-8589-1",
-      "title": "Theo Kandel — event 2026-07-22 — public sale 2026-05-27 10:00",
-      "section": "Билеты / Ticket Radar",
-      "reason": "ticket_watch:open-air концерт на estate-площадке"
+      "reason": "event_timing:nearest dated occurrence is 114 day(s) away"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-westislonely-manchester-23-07-2026-event-1-006496-6915145",
@@ -1998,16 +2225,10 @@
       "reason": "ticket_watch:билетный повод"
     },
     {
-      "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-the-living-tombstone-manchester-21-08-2026-event-1-00645-7-26924",
-      "title": "The Living Tombstone — event 2026-08-21 — public sale 2026-03-06 10:00",
+      "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-yebba-manchester-25-08-2026-event-37006465-0560-6",
+      "title": "Yebba — event 2026-08-25 — public sale 2026-03-13 10:00",
       "section": "Билеты / Ticket Radar",
-      "reason": "ticket_watch:Manchester Academy: подтверждённая дата"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-liverpool-upcoming-ticketmaster-co-uk-bar-dust-tribute-to-the-pogues-liverpool-22-07-2026-event-3-00647-0052",
-      "title": "Bar Dust - Tribute To the Pogues — event 2026-07-22 — public sale 2026-04-01 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+      "reason": "ticket_watch:Manchester New Century Hall: подтверждённая дата"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-liverpool-upcoming-ticketmaster-co-uk-in-the-park-liverpool-presents-lewis-liverpool-15-08-2026-event-1-006332-357-18",
@@ -2040,10 +2261,16 @@
       "reason": "ticket_watch:билетный повод"
     },
     {
+      "fingerprint": "venues-tickets-ticketmaster-liverpool-upcoming-ticketmaster-co-uk-madra-salach-liverpool-02-10-2026-event-1-006473-344337",
+      "title": "Madra Salach — event 2026-10-02 — public sale 2026-03-27 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
+    },
+    {
       "fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-anastacia-venue-premium-tickets-london-26-09-2026-event-37006322-664-8",
       "title": "Anastacia - Venue Premium Tickets — event 2026-09-26 — public sale 2025-09-05 10:00",
       "section": "Крупные концерты вне GM",
-      "reason": "a_tier_ineligible:exact_or_variant_duplicate"
+      "reason": "a_tier_duplicate_physical_event_collapsed"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-18-08-2026-event-2300632990-70945",
@@ -2052,20 +2279,8 @@
       "reason": "a_tier_ineligible:exact_or_variant_duplicate"
     },
     {
-      "fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-16-08-2026-event-23006328-99-0-5",
-      "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-08-16 — public sale 2025-09-12 12:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "a_tier_ineligible:exact_or_variant_duplicate"
-    },
-    {
       "fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-19-08-2026-event-230063299-0-09",
       "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-08-19 — public sale 2025-09-12 12:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "a_tier_ineligible:exact_or_variant_duplicate"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-ariana-grande-the-eternal-sunshine-tour-london-19-08-2026-event-3500631-950-310",
-      "title": "Ariana Grande - The Eternal Sunshine Tour — event 2026-08-19 — public sale 2025-09-18 10:00",
       "section": "Крупные концерты вне GM",
       "reason": "a_tier_ineligible:exact_or_variant_duplicate"
     },
@@ -2118,12 +2333,6 @@
       "reason": "ticket_watch:The O2: дата на этой неделе"
     },
     {
-      "fingerprint": "venues-tickets-ticketmaster-london-major-upcoming-ticketmaster-co-uk-bruno-mars-the-romantic-tour-london-24-07-2026-event-23006427-78-0-67",
-      "title": "Bruno Mars - The Romantic Tour — event 2026-07-24 — public sale 2026-01-15 12:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "a_tier_ineligible:exact_or_variant_duplicate"
-    },
-    {
       "fingerprint": "venues-tickets-ticketmaster-london-major-upcoming-ticketmaster-co-uk-bruno-mars-the-romantic-tour-london-25-07-2026-event-23006427-8750-70",
       "title": "Bruno Mars - The Romantic Tour — event 2026-07-25 — public sale 2026-01-15 12:00",
       "section": "Крупные концерты вне GM",
@@ -2138,128 +2347,146 @@
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-michael-starring-ben-colchester-17-09-2026-event-3500625-574-009",
       "title": "Michael Starring Ben — event 2026-09-17 — public sale 2025-03-07 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 57 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-michael-starring-ben-blackburn-08-10-2026-event-1-00625-98-960-2",
       "title": "Michael Starring Ben — event 2026-10-08 — public sale 2025-03-07 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 78 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-blackburn-16-10-2026-event-1-00626-35-3591",
       "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-10-16 — public sale 2025-03-21 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 86 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-michael-starring-ben-watford-20-11-2026-event-37006290-50-41",
       "title": "Michael Starring Ben — event 2026-11-20 — public sale 2025-04-25 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 121 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-michael-starring-ben-kendal-25-09-2026-event-1-00628-848442",
       "title": "Michael Starring Ben — event 2026-09-25 — public sale 2025-04-25 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 65 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-crawley-03-09-2026-event-3500629828-28-2",
+      "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-09-03 — public sale 2025-05-02 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-llandudno-22-11-2026-event-1-006299-0122-1",
       "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-11-22 — public sale 2025-05-02 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 123 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-michael-starring-ben-derby-17-10-2026-event-230062-0450",
       "title": "Michael Starring Ben — event 2026-10-17 — public sale 2025-06-06 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 87 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-michael-starring-ben-halifax-21-11-2026-event-1-0062-1-5676",
       "title": "Michael Starring Ben — event 2026-11-21 — public sale 2025-06-06 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 122 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-michael-starring-ben-leicester-30-10-2026-event-1-0062-5691",
       "title": "Michael Starring Ben — event 2026-10-30 — public sale 2025-06-06 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 100 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-york-28-08-2026-event-360062-761400",
+      "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-08-28 — public sale 2025-06-27 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-fareham-30-10-2026-event-370062-1909-0",
       "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-10-30 — public sale 2025-06-27 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 100 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-eastbourne-30-01-2027-event-1-0062-3021-16",
       "title": "Queen of the Night - A Tribute to Whitney Houston — event 2027-01-30 — public sale 2025-06-27 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 192 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-barnstaple-17-09-2026-event-1-0062-0-120-2",
       "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-09-17 — public sale 2025-06-27 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 57 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-newport-07-11-2026-event-1-0062-2981094",
       "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-11-07 — public sale 2025-06-27 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 108 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-michael-starring-ben-crawley-04-11-2026-event-350062-8-4",
       "title": "Michael Starring Ben — event 2026-11-04 — public sale 2025-07-25 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 105 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-michael-starring-ben-southendonsea-28-11-2026-event-1-0062-9-0-8",
       "title": "Michael Starring Ben — event 2026-11-28 — public sale 2025-07-25 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 129 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-lancaster-15-01-2027-event-350062-0-3795",
       "title": "Queen of the Night - A Tribute to Whitney Houston — event 2027-01-15 — public sale 2025-08-01 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 177 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-the-jeff-beck-experience-oxford-26-09-2026-event-3-0062-5-1826",
       "title": "The Jeff Beck Experience — event 2026-09-26 — public sale 2025-08-01 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 66 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-darlington-09-09-2026-event-1-0062-9-4460-0",
       "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-09-09 — public sale 2025-08-01 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 49 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-audi-presents-wilderness-boutique-2026-park-chipping-norton-30-07-2026-event-1-0062-3-3660",
+      "title": "Audi presents Wilderness Boutique 2026 - Park & Pitch — event 2026-07-30 — public sale 2025-08-05 12:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:open-air концерт на estate-площадке"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-michael-starring-ben-southampton-23-10-2026-event-360062-7-63-4",
       "title": "Michael Starring Ben — event 2026-10-23 — public sale 2025-08-22 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 93 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-michael-starring-ben-harrogate-09-10-2026-event-1-00630795650-0",
       "title": "Michael Starring Ben — event 2026-10-09 — public sale 2025-08-22 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 79 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-girls-like-you-london-17-09-2026-event-37006314-6691250",
       "title": "Girls Like You — event 2026-09-17 — public sale 2025-08-29 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 57 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-girls-like-you-birmingham-18-09-2026-event-3-006315-41-1",
@@ -2271,19 +2498,19 @@
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-anastacia-london-26-09-2026-event-37006321-85387-3",
       "title": "Anastacia — event 2026-09-26 — public sale 2025-09-05 10:00",
       "section": "Крупные концерты вне GM",
-      "reason": "a_tier_ineligible:exact_or_variant_duplicate"
+      "reason": "a_tier_duplicate_physical_event_collapsed"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-watford-09-10-2026-event-37006306-74",
       "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-10-09 — public sale 2025-09-05 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 79 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-anastacia-venue-premium-tickets-london-26-09-2026-event-37006322-664-8",
       "title": "Anastacia - Venue Premium Tickets — event 2026-09-26 — public sale 2025-09-05 10:00",
       "section": "Крупные концерты вне GM",
-      "reason": "a_tier_ineligible:exact_or_variant_duplicate"
+      "reason": "a_tier_duplicate_physical_event_collapsed"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-anastacia-manchester-21-09-2026-event-3600631-683",
@@ -2294,26 +2521,32 @@
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-bromley-11-10-2026-event-3700631-96-0-9",
       "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-10-11 — public sale 2025-09-05 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 81 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-thank-abba-for-the-music-whitby-29-08-2026-event-35006323-3473369",
+      "title": "Thank ABBA for The Music — event 2026-08-29 — public sale 2025-09-05 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-basingstoke-27-11-2026-event-1-006306-4-312-6",
       "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-11-27 — public sale 2025-09-05 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 128 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-harrogate-24-10-2026-event-1-006306-3-312",
       "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-10-24 — public sale 2025-09-05 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 94 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-hull-05-12-2026-event-1-00631-3372018",
       "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-12-05 — public sale 2025-09-05 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 136 day(s) away"
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-18-08-2026-event-2300632990-70945",
@@ -2337,7 +2570,7 @@
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-15-08-2026-event-2300631-1960-6",
       "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-08-15 — public sale 2025-09-12 12:00",
       "section": "Крупные концерты вне GM",
-      "reason": "a_tier_ineligible:exact_or_variant_duplicate"
+      "reason": "a_tier_duplicate_physical_event_collapsed"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-19-08-2026-event-230063299-0-09",
@@ -2367,7 +2600,7 @@
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-ariana-grande-the-eternal-sunshine-tour-london-16-08-2026-event-3500631-937630",
       "title": "Ariana Grande - The Eternal Sunshine Tour — event 2026-08-16 — public sale 2025-09-18 10:00",
       "section": "Крупные концерты вне GM",
-      "reason": "a_tier_ineligible:exact_or_variant_duplicate"
+      "reason": "a_tier_duplicate_physical_event_collapsed"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-ariana-grande-the-eternal-sunshine-tour-london-23-08-2026-event-3500631-98-031-3",
@@ -2412,76 +2645,16 @@
       "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
     },
     {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-lenny-pearce-york-22-07-2026-event-360064541201-2",
-      "title": "Lenny Pearce — event 2026-07-22 — public sale 2026-02-27 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-bruno-mars-the-romantic-tour-london-22-07-2026-event-23006427-6-10-5",
-      "title": "Bruno Mars - The Romantic Tour — event 2026-07-22 — public sale 2026-01-15 12:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "a_tier_ineligible:exact_or_variant_duplicate"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-teddy-swims-scarborough-22-07-2026-event-3500633-389-230",
-      "title": "Teddy Swims — event 2026-07-22",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:open-air концерт на estate-площадке"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-theatre-ticketmaster-co-uk-book-1-58th-street",
-      "title": "Belle Livingstone's 58th Street Country Club — event 2026-07-22 — public sale 2026-06-29 16:36",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-david-byrne-edinburgh-22-07-2026-event-3600643-34-83-1",
-      "title": "David Byrne — event 2026-07-22 — public sale 2026-02-06 10:05",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-en-vogue-london-22-07-2026-event-3-006497-455-7",
-      "title": "En Vogue — event 2026-07-22 — public sale 2026-05-01 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-steel-panther-europe-twenty-twenty-sx-birmingham-22-07-2026-event-3-00638-96002-9",
-      "title": "Steel Panther - EUROPE TWENTY TWENTY S£X TOUR — event 2026-07-22 — public sale 2025-12-18 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-charlie-puth-whatevers-clever-world-tour-manchester-22-07-2026-event-1-006391-2-659",
-      "title": "Charlie Puth - Whatever's Clever! World Tour — event 2026-07-22 — public sale 2026-01-16 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "a_tier_ineligible:exact_or_variant_duplicate"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-westislonely-london-22-07-2026-event-37006496-477683",
-      "title": "Westislonely — event 2026-07-22 — public sale 2026-05-01 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-somerset-house-summer-series-black-country-london-22-07-2026-event-1-006451-9-4-52",
-      "title": "Somerset House Summer Series: Black Country, New Road — event 2026-07-22 — public sale 2026-03-06 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-rumours-of-fleetwood-mac-southendonsea-22-07-2026-event-1-006330-3-7",
-      "title": "Rumours of Fleetwood Mac — event 2026-07-22 — public sale 2025-09-26 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
-    },
-    {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-cancelled-heritage-live-faithless-special-guests-reading-23-07-2026-event-1-00635-0-7095",
       "title": "*CANCELLED* HERITAGE LIVE: Faithless + Special Guests — event 2026-07-23 — public sale 2025-11-04 09:00",
       "section": "Крупные концерты вне GM",
       "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-teddy-swims-scarborough-23-07-2026-event-3500633-00-8-4",
+      "title": "Teddy Swims — event 2026-07-23 — public sale 2025-10-03 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:open-air концерт на estate-площадке"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-the-flaming-lips-the-beta-band-halifax-23-07-2026-event-35006366-27-6-4",
@@ -2498,6 +2671,12 @@
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-jay-buchanan-southampton-23-07-2026-event-350064-5-93-2-8",
       "title": "Jay Buchanan — event 2026-07-23 — public sale 2026-06-12 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-theatre-ticketmaster-co-uk-book-1-58th-street",
+      "title": "Belle Livingstone's 58th Street Country Club — event 2026-07-23 — public sale 2026-06-29 16:36",
       "section": "Крупные концерты вне GM",
       "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
     },
@@ -2522,6 +2701,12 @@
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-the-proclaimers-sunderland-23-07-2026-event-3600644-76-92",
       "title": "The Proclaimers — event 2026-07-23 — public sale 2026-02-20 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-somerset-house-summer-series-venna-london-23-07-2026-event-1-006451-004-8",
+      "title": "Somerset House Summer Series: Venna — event 2026-07-23 — public sale 2026-03-06 10:00",
       "section": "Крупные концерты вне GM",
       "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
     },
@@ -2580,10 +2765,28 @@
       "reason": "ticket_watch:open-air концерт на estate-площадке"
     },
     {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-craig-david-presents-ts5-grandstand-paddock-york-24-07-2026-event-35006443-65-968",
+      "title": "Craig David Presents Ts5 - Grandstand & Paddock — event 2026-07-24 — public sale 2026-02-13 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-craig-david-presents-ts5-county-stand-york-24-07-2026-event-35006443-8346-59",
+      "title": "Craig David Presents TS5 - County Stand — event 2026-07-24 — public sale 2026-02-13 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-bruno-mars-the-romantic-tour-london-24-07-2026-event-23006427-78-0-67",
       "title": "Bruno Mars - The Romantic Tour — event 2026-07-24 — public sale 2026-01-15 12:00",
       "section": "Крупные концерты вне GM",
       "reason": "a_tier_ineligible:exact_or_variant_duplicate"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-luke-combs-my-kinda-saturday-night-edinburgh-24-07-2026-event-3600634-93-83",
+      "title": "Luke Combs - My Kinda Saturday Night Tour — event 2026-07-24 — public sale 2025-10-24 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-self-esteem-upgrade-does-not-include-cardiff-24-07-2026-event-1-006442-9854-91",
@@ -2592,10 +2795,34 @@
       "reason": "ticket_watch:open-air концерт на estate-площадке"
     },
     {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-self-esteem-cardiff-24-07-2026-event-1-0063718-33-9",
+      "title": "Self Esteem — event 2026-07-24 — public sale 2025-12-05 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:open-air концерт на estate-площадке"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-alex-james-britpop-classical-margate-24-07-2026-event-3500635-9-4314",
+      "title": "Alex James' Britpop Classical — event 2026-07-24 — public sale 2025-10-31 12:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-kyle-falconer-spyres-chancer-alcatraz-fog-glasgow-24-07-2026-event-360064-4-14-75",
+      "title": "Kyle Falconer, Spyres, Chancer, Alcatraz, Fog Bandits — event 2026-07-24 — public sale 2026-06-15 09:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-summer-concerts-fleetwood-bac-a-tribute-staffordshire-24-07-2026-event-1-006436-416",
       "title": "Summer Concerts - Fleetwood Bac - A Tribute to Fleetwood Mac — event 2026-07-24 — public sale 2026-03-02 10:00",
       "section": "Крупные концерты вне GM",
       "reason": "ticket_watch:open-air концерт на estate-площадке"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-jools-holland-and-his-rhythm-and-peterborough-24-07-2026-event-3700636-756686",
+      "title": "Jools Holland and His Rhythm and Blues Orchestra — event 2026-07-24 — public sale 2025-11-14 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-gary-numan-bournemouth-24-07-2026-event-1-006463953-1-02",
@@ -2604,8 +2831,32 @@
       "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
     },
     {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-six60-glasgow-24-07-2026-event-360064-8-699805",
+      "title": "Six60 — event 2026-07-24 — public sale 2026-05-18 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-jk-leeds-24-07-2026-event-3500649-6-584-6",
+      "title": "JK — event 2026-07-24 — public sale 2026-05-07 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-donell-jones-ginuwine-london-24-07-2026-event-3-00649-5-44-0",
       "title": "Donell Jones & Ginuwine — event 2026-07-24 — public sale 2026-05-11 12:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-armanii-the-impact-tour-birmingham-24-07-2026-event-3-006498-89741",
+      "title": "Armanii - The Impact Tour — event 2026-07-24 — public sale 2026-05-01 11:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-guns-2-roses-metallica-reloaded-faith-birmingham-24-07-2026-event-3-00637-31823",
+      "title": "Guns 2 Roses + Metallica Re-Loaded + Faith No Man — event 2026-07-24 — public sale 2025-12-03 10:00",
       "section": "Крупные концерты вне GM",
       "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
     },
@@ -2619,7 +2870,37 @@
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-black-pistol-fire-manchester-24-07-2026-event-1-00646-672949",
       "title": "Black Pistol Fire — event 2026-07-24 — public sale 2026-03-20 10:00",
       "section": "Крупные концерты вне GM",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-david-gray-basingstoke-24-07-2026-event-1-00636-5382-2",
+      "title": "David Gray — event 2026-07-24 — public sale 2025-11-28 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-chalk-london-24-07-2026-event-1-006355-89880",
+      "title": "Chalk — event 2026-07-24 — public sale 2025-10-30 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-lost-in-music-one-night-at-bath-24-07-2026-event-3700642729913-4",
+      "title": "Lost In Music - One Night at the Disco — event 2026-07-24 — public sale 2026-01-08 09:23",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-jay-buchanan-bristol-24-07-2026-event-370064-72-987",
+      "title": "Jay Buchanan — event 2026-07-24 — public sale 2026-06-12 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-bbc-proms-nadine-shah-and-royal-gateshead-24-07-2026-event-370064-6-8-5",
+      "title": "BBC Proms: Nadine Shah and Royal Northern Sinfonia — event 2026-07-24 — public sale 2026-06-22 15:25",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-latitude-festival-2026-saturday-day-ticket-suffolk-25-07-2026-event-3700642-9-8319",
@@ -2700,22 +2981,10 @@
       "reason": "a_tier_duplicate_physical_event_collapsed"
     },
     {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-lenny-pearce-nottingham-29-07-2026-event-370064541-8-4",
-      "title": "Lenny Pearce — event 2026-07-29 — public sale 2026-02-27 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
-    },
-    {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-billy-ocean-live-after-racing-esher-29-07-2026-event-37006358-40-94",
       "title": "Billy Ocean - Live After Racing — event 2026-07-29 — public sale 2025-10-31 10:00",
       "section": "Крупные концерты вне GM",
       "reason": "ticket_watch:open-air концерт на estate-площадке"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-sounds-of-the-60s-live-hosted-cardiff-29-07-2026-event-3500630-93603077",
-      "title": "Sounds Of The 60s Live - Hosted by Tony Blackburn MBE — event 2026-07-29 — public sale 2025-09-19 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-belladrum-festival-2026-thursday-day-tickets-inverness-30-07-2026-event-360064-19-3-6883",
@@ -2730,16 +2999,52 @@
       "reason": "ticket_watch:open-air концерт на estate-площадке"
     },
     {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-lenny-pearce-cardiff-30-07-2026-event-1-00645706117674",
+      "title": "Lenny Pearce — event 2026-07-30 — public sale 2026-02-27 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-biffy-clyro-cardiff-30-07-2026-event-1-00642-12-51-0",
       "title": "Biffy Clyro — event 2026-07-30 — public sale 2026-02-13 10:00",
       "section": "Крупные концерты вне GM",
       "reason": "ticket_watch:open-air концерт на estate-площадке"
     },
     {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-inpop-london-30-07-2026-event-3-0064-9-5-1807",
+      "title": "InPop — event 2026-07-30 — public sale 2026-06-13 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-omd-glasgow-30-07-2026-event-3600642-265192",
+      "title": "OMD — event 2026-07-30 — public sale 2026-01-23 09:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-wolfmother-manchester-30-07-2026-event-3-006477-1839-4",
       "title": "Wolfmother — event 2026-07-30 — public sale 2026-03-30 10:00",
       "section": "Крупные концерты вне GM",
-      "reason": "a_tier_duplicate_physical_event_collapsed"
+      "reason": "a_tier_ineligible:exact_or_variant_duplicate"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-suzanne-vega-halifax-30-07-2026-event-1-006462-35931-0",
+      "title": "Suzanne Vega — event 2026-07-30 — public sale 2026-03-06 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-the-castellows-london-30-07-2026-event-1-006372-46",
+      "title": "The Castellows — event 2026-07-30 — public sale 2025-11-21 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-vowws-london-30-07-2026-event-1-006371-2-17-2",
+      "title": "VOWWS — event 2026-07-30 — public sale 2025-11-21 10:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-bridges-for-music-x-audi-presents-oxfordshire-30-07-2026-event-1-0062-7-952223",
@@ -2811,7 +3116,7 @@
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-heritage-live-scissor-sisters-special-guests-essex-06-08-2026-event-1-00636-364-5",
       "title": "HERITAGE LIVE: Scissor Sisters + Special Guests — event 2026-08-06 — public sale 2025-11-21 10:00",
       "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:билетный повод"
+      "reason": "ticket_watch:ближайшая дата тура"
     },
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-cancelled-heritage-live-the-streets-special-essex-07-08-2026-event-1-0063489-6-18",
@@ -2844,12 +3149,6 @@
       "reason": "ticket_watch:open-air концерт на estate-площадке"
     },
     {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-gramps-morgan-birmingham-07-08-2026-event-3-00648-22-49",
-      "title": "Gramps Morgan — event 2026-08-07 — public sale 2026-04-20 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:билетный повод"
-    },
-    {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-the-eminem-experience-in-london-london-07-08-2026-event-3-00642-5334-40",
       "title": "The Eminem Experience in London! — event 2026-08-07 — public sale 2026-01-21 11:00",
       "section": "Крупные концерты вне GM",
@@ -2864,6 +3163,12 @@
     {
       "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-james-johnston-glasgow-11-08-2026-event-3600649-9692209",
       "title": "James Johnston — event 2026-08-11 — public sale 2026-05-01 11:00",
+      "section": "Крупные концерты вне GM",
+      "reason": "ticket_watch:билетный повод"
+    },
+    {
+      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-davido-london-11-08-2026-event-3-0064-473-89",
+      "title": "Davido — event 2026-08-11 — public sale 2026-07-23 12:00",
       "section": "Крупные концерты вне GM",
       "reason": "ticket_watch:билетный повод"
     },
@@ -2890,157 +3195,33 @@
       "title": "Craig David TS5 Live After Racing - Grandstand and Paddock — event 2026-08-14 — public sale 2025-10-31 10:00",
       "section": "Крупные концерты вне GM",
       "reason": "ticket_watch:билетный повод"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-craig-david-ts5-live-after-racing-newmarket-14-08-2026-event-37006358-5-0-20",
-      "title": "Craig David TS5 Live After Racing - The Premier Enclosure — event 2026-08-14 — public sale 2025-10-31 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:билетный повод"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-tom-jones-and-nile-rodgers-chic-chester-14-08-2026-event-350064379-4-2",
-      "title": "Tom Jones and Nile Rodgers & Chic — event 2026-08-14 — public sale 2026-01-30 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:билетный повод"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-14-08-2026-event-23006323-137102",
-      "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-08-14 — public sale 2025-09-12 12:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "a_tier_duplicate_physical_event_collapsed"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-the-harry-styles-tribute-show-starring-leeds-14-08-2026-event-3-00645-01695",
-      "title": "The Harry Styles Tribute Show starring Sean Mac — event 2026-08-14 — public sale 2026-03-06 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:билетный повод"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-michael-starring-ben-ramsgate-14-08-2026-event-3500648-43-09",
-      "title": "Michael Starring Ben — event 2026-08-14 — public sale 2026-04-17 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:билетный повод"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-trail-west-fest-2026-glasgow-15-08-2026-event-3600638-3-5625",
-      "title": "Trail West Fest 2026 — event 2026-08-15 — public sale 2025-12-19 09:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:билетный повод"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-in-the-park-liverpool-presents-lewis-liverpool-15-08-2026-event-1-006332-357-18",
-      "title": "In the Park Liverpool presents Lewis Capaldi — event 2026-08-15 — public sale 2025-11-21 09:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "a_tier_duplicate_physical_event_collapsed"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-15-08-2026-event-2300631-1960-6",
-      "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-08-15 — public sale 2025-09-12 12:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "a_tier_ineligible:exact_or_variant_duplicate"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-ariana-grande-the-eternal-sunshine-tour-london-15-08-2026-event-3500631-8-13055",
-      "title": "Ariana Grande - The Eternal Sunshine Tour — event 2026-08-15 — public sale 2025-09-18 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "a_tier_duplicate_physical_event_collapsed"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-leon-majcen-london-15-08-2026-event-1-0064-6-8585930",
-      "title": "Leon Majcen — event 2026-08-15 — public sale 2026-05-15 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:билетный повод"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-aaron-lee-tasjan-london-15-08-2026-event-1-006482-0-94523",
-      "title": "Aaron Lee Tasjan — event 2026-08-15 — public sale 2026-04-15 09:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:билетный повод"
-    },
-    {
-      "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-palace-bowl-presents-jimmy-eat-world-london-16-08-2026-event-3700635875-63709",
-      "title": "Palace Bowl Presents - Jimmy Eat World Bleed American 25th Anniversary — event 2026-08-16 — public sale 2025-12-05 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:open-air концерт на estate-площадке"
-    },
-    {
-      "fingerprint": "venues-tickets-manchester-academy-manchesteracademy-net-order-gateway-13379453-charlie-puth-manchester-academy-2026-07-22-19-00-00",
-      "title": "Charlie Puth - 22nd July 2026",
-      "section": "Билеты / Ticket Radar",
-      "reason": "a_tier_duplicate_physical_event_collapsed"
-    },
-    {
-      "fingerprint": "food-openings-manchester-s-finest-manchestersfinest-com-eating-and-drinking-food-halls-and-markets-hello-oriental-become-manchesters-first-dedicated-east-asian-food-hall",
-      "title": "Hello Oriental to become Manchester's first dedicated East Asian food hall - and is putting the call out for traders",
-      "section": "Еда, открытия и рынки",
-      "reason": "backup_ineligible:rejected"
-    },
-    {
-      "fingerprint": "tech-business-bdaily-manchester-bdaily-co-uk-articles-2026-07-19-northern-gritstone-strengthens-investment-team",
-      "title": "Northern Gritstone strengthens investment team",
-      "section": "Городской радар",
-      "reason": "repeat_blocked:exact_fingerprint_already_published"
-    },
-    {
-      "fingerprint": "culture-weekly-manchester-wire-manchesterwire-co-uk-manchester-day-returns-this-month-with-a-catalan-twist",
-      "title": "Manchester Day returns this weekend with a Catalan twist",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:event has no usable venue"
-    },
-    {
-      "fingerprint": "culture-weekly-manchester-wire-manchesterwire-co-uk-kids-can-claim-free-unlimited-bus-travel-across-greater-manchester-through-summer",
-      "title": "Kids can claim free unlimited bus travel across Greater Manchester through summer",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:event has no usable venue"
-    },
-    {
-      "fingerprint": "culture-weekly-designmynight-bank-holiday-designmynight-com-manchester-whats-on-theatrearts-magic-at-the-midland",
-      "title": "Magic at the Midland",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:event has no usable venue"
-    },
-    {
-      "fingerprint": "culture-weekly-designmynight-bank-holiday-designmynight-com-manchester-whats-on-something-a-little-different-events-the-big-manchester-bake",
-      "title": "The Big Manchester Bake",
-      "section": "Выходные в GM",
-      "reason": "outside_current_weekend"
-    },
-    {
-      "fingerprint": "culture-weekly-designmynight-bank-holiday-designmynight-com-manchester-whats-on-party-bottomless-pizzaluxe",
-      "title": "Bottomless PizzaLuxe Manchester",
-      "section": "Выходные в GM",
-      "reason": "outside_current_weekend"
-    },
-    {
-      "fingerprint": "culture-weekly-designmynight-bank-holiday-designmynight-com-manchester-whats-on-daytime-the-great-game-virus-safe-outdoor-treasure-hunt-manchester",
-      "title": "Manchester Fun Puzzle Treasure Hunt! Single route or double for racing!",
-      "section": "Выходные в GM",
-      "reason": "outside_current_weekend"
     }
   ],
   "totals": {
-    "slots": 94,
-    "backups_assigned": 7,
-    "out": 207,
-    "demoted_to_backup": 31
+    "slots": 104,
+    "backups_assigned": 4,
+    "out": 237,
+    "demoted_to_backup": 23
   },
   "a_tier_conservation": {
-    "recognised": 23,
-    "recognised_rows": 92,
-    "eligible": 41,
-    "planned": 41,
+    "recognised": 22,
+    "recognised_rows": 91,
+    "eligible": 42,
+    "planned": 42,
     "missing_from_plan": [],
     "identity": {
-      "recognised_artists": 23,
-      "eligible_events": 41,
-      "collapsed_rows": 11
+      "recognised_artists": 22,
+      "eligible_events": 42,
+      "collapsed_rows": 16
     },
     "policy": "One public card per physical A-tier event (owner + venue + date). Technical source duplicates collapse before timing/watch/cap/repeat; another real date or venue remains independently canonical."
   },
   "warnings": [
-    "A-tier сохранён вопреки timing-hold: Anastacia — event 2026-09-21 — public sale 2025-09-05 10:00 (nearest dated occurrence is 61 day(s) away).",
+    "A-tier сохранён вопреки timing-hold: Anastacia — event 2026-09-21 — public sale 2025-09-05 10:00 (nearest dated occurrence is 60 day(s) away).",
+    "Куратор не дал lead — планёрка повысила сильнейшую новость дня.",
     "Недобор в «Что важно сегодня»: 0/3 — pool_exhausted_after_upstream_gates",
     "Недобор в «Что важно в ближайшие 7 дней»: 0/3 — pool_exhausted_after_upstream_gates",
-    "Недобор в «Еда, открытия и рынки»: 1/3 — backup_ineligible:rejected"
+    "Недобор в «Еда, открытия и рынки»: 1/3 — backup_ineligible:rejected",
+    "Недобор в «Business/tech события для тебя»: 0/1 — pool_exhausted_after_upstream_gates"
   ]
 }
