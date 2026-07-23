@@ -180,7 +180,12 @@ def _load_optional_json(path: Path) -> dict | None:
     return read_json(path)
 
 
-def _validate_scan_report(scan_report: dict | None, current_day_london: str, errors: list[str]) -> None:
+def _validate_scan_report(
+    scan_report: dict | None,
+    current_day_london: str,
+    errors: list[str],
+    warnings: list[str],
+) -> None:
     if scan_report is None:
         errors.append("Missing data/state/collector_report.json.")
         return
@@ -211,16 +216,20 @@ def _validate_scan_report(scan_report: dict | None, current_day_london: str, err
     for key, label in REQUIRED_SCAN_CATEGORIES.items():
         category = categories.get(key)
         if not isinstance(category, dict) or not category.get("checked"):
-            errors.append(f"Broad scan incomplete: {label} was not marked as checked.")
+            warnings.append(f"Broad scan degraded: {label} was not marked as checked.")
             continue
         if key in REQUIRED_USABLE_CATEGORIES and not category.get("usable_for_release"):
-            errors.append(f"Scan category {label} was checked but not usable for release (all sources failed or timed out).")
+            warnings.append(
+                f"Scan category {label} was checked but not usable for release "
+                "(all sources failed or timed out)."
+            )
 
 
 def _validate_candidates(
     candidates_report: dict | None,
     current_day_london: str,
     errors: list[str],
+    warnings: list[str],
 ) -> dict[str, list[dict]]:
     if candidates_report is None:
         errors.append("Missing data/state/candidates.json.")
@@ -239,20 +248,27 @@ def _validate_candidates(
     included_candidates: list[dict] = []
     for index, candidate in enumerate(candidates, start=1):
         if not isinstance(candidate, dict):
-            errors.append(f"Candidate #{index} is not an object.")
+            warnings.append(f"Candidate #{index} is not an object and was ignored by release.")
             continue
         if not candidate.get("source_url") or not candidate.get("source_label"):
-            errors.append(f"Candidate #{index} is missing source_url or source_label.")
+            warnings.append(f"Candidate #{index} is missing source_url or source_label and was ignored by release.")
+            continue
         decision = candidate.get("dedupe_decision")
         if decision not in {"drop", "carry_over_with_label", "new_phase", "new"}:
-            errors.append(f"Candidate #{index} has invalid dedupe_decision: {decision!r}.")
+            warnings.append(
+                f"Candidate #{index} has invalid dedupe_decision {decision!r} and was ignored by release."
+            )
+            continue
         if decision == "carry_over_with_label" and not candidate.get("carry_over_label"):
-            errors.append(f"Candidate #{index} carry-over is missing carry_over_label.")
+            warnings.append(
+                f"Candidate #{index} carry-over is missing carry_over_label and was ignored by release."
+            )
+            continue
         if candidate.get("include") is True and decision != "drop":
             included_candidates.append(candidate)
 
     if not included_candidates:
-        errors.append("No included candidates survived dedupe.")
+        warnings.append("No included candidates survived dedupe; the issue may ship degraded.")
 
     return {"included_candidates": included_candidates}
 
@@ -276,16 +292,13 @@ def _validate_curator_report(
     status = curator_report.get("status")
     if status == "skipped":
         reason = curator_report.get("reason", "unknown")
-        if reason in {"all providers failed", "LLM_PROVIDER=none"}:
-            warnings.append(f"Curator skipped ({reason}) — existing include flags kept.")
-        else:
-            errors.append(f"Curator skipped unexpectedly: {reason!r}.")
+        warnings.append(f"Curator skipped ({reason}) — existing include flags kept.")
     elif status != "complete":
         errors.append(f"Curator report is not complete: {status!r}.")
     else:
         reviewed = curator_report.get("reviewed")
         if not isinstance(reviewed, int) or reviewed <= 0:
-            errors.append("Curator report did not review any included candidates.")
+            warnings.append("Curator report did not review any included candidates.")
 
 
 def _validate_stage_reports(
@@ -3481,8 +3494,8 @@ def build_release(project_root: Path) -> ReleaseResult:
 
     errors: list[str] = []
     warnings: list[str] = []
-    _validate_scan_report(scan_report, current_day_london, errors)
-    candidate_context = _validate_candidates(candidates_report, current_day_london, errors)
+    _validate_scan_report(scan_report, current_day_london, errors, warnings)
+    candidate_context = _validate_candidates(candidates_report, current_day_london, errors, warnings)
     _validate_curator_report(curator_report, current_day_london, errors, warnings)
     rendered_fingerprints = _validate_stage_reports(writer_report, editor_report, errors)
     pipeline_run_id = _validate_pipeline_run_consistency(

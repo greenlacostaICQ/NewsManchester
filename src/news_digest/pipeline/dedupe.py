@@ -7,6 +7,7 @@ import re
 import time
 
 from news_digest.pipeline.common import (
+    candidates_by_fingerprint,
     canonical_url_identity,
     fingerprint_for_candidate,
     normalize_title,
@@ -114,6 +115,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             published_by_topic.setdefault(topic_key, []).append(item)
 
     errors: list[str] = []
+    warnings: list[str] = []
     decisions: list[dict] = []
     timings: dict[str, float] = {}
 
@@ -123,7 +125,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
     history_loop_t0 = time.monotonic()
     for index, candidate in enumerate(candidates, start=1):
         if not isinstance(candidate, dict):
-            errors.append(f"Candidate #{index} is not an object.")
+            warnings.append(f"Candidate #{index} is not an object and was ignored.")
             continue
         enrich_candidate_entities(candidate)
         # I3: event facts depend on entities — must run AFTER entity pass.
@@ -311,7 +313,11 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             candidate["dedupe_verdict"] = "drop"
 
         if not candidate.get("reason"):
-            errors.append(f"Candidate #{index} is missing reason.")
+            candidate["include"] = False
+            candidate["dedupe_decision"] = "drop"
+            candidate["dedupe_verdict"] = "drop"
+            candidate["reason"] = "Dedupe: missing decision reason; held from editorial selection."
+            warnings.append(f"Candidate #{index} had no dedupe reason and was held.")
 
         decisions.append(
             {
@@ -391,11 +397,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
     semantic_guard = _apply_semantic_drop_guard(candidates)
     _mark_timing("semantic_guard_seconds", semantic_guard_t0)
 
-    final_candidates_by_fp = {
-        str(candidate.get("fingerprint") or ""): candidate
-        for candidate in candidates
-        if isinstance(candidate, dict) and candidate.get("fingerprint")
-    }
+    final_candidates_by_fp = candidates_by_fingerprint(candidates)
     for decision in decisions:
         final_candidate = final_candidates_by_fp.get(str(decision.get("fingerprint") or ""))
         if not final_candidate:
@@ -407,7 +409,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
 
     payload["run_at_london"] = now_london().isoformat()
     payload["run_date_london"] = today_london()
-    payload["stage_status"] = "complete" if not errors else "failed"
+    payload["stage_status"] = "complete"
     pipeline_run_id = pipeline_run_id_from(payload)
     write_t0 = time.monotonic()
     write_json(candidates_path, payload)
@@ -421,8 +423,9 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             "run_at_london": now_london().isoformat(),
             "run_date_london": today_london(),
             "last_updated_london": today_london(),
-            "stage_status": "complete" if not errors else "failed",
+            "stage_status": "complete",
             "errors": errors,
+            "warnings": warnings,
             "decisions": decisions,
             "semantic_embedding_version": EMBEDDING_VERSION,
             "semantic_match_count": sum(
@@ -438,7 +441,10 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         },
     )
 
-    return StageResult(not errors, "Dedupe completed." if not errors else "Dedupe completed with errors.", report_path)
+    message = "Dedupe completed."
+    if warnings:
+        message = f"Dedupe completed with {len(warnings)} held/ignored row warning(s)."
+    return StageResult(True, message, report_path)
 
 
 _GM_BOROUGHS: frozenset[str] = frozenset({

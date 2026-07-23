@@ -17,6 +17,7 @@ import re
 from pathlib import Path
 
 from news_digest.pipeline.common import (
+    candidates_by_fingerprint,
     extract_sections,
     now_london,
     read_json,
@@ -57,11 +58,7 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
     plan = load_plan(state_dir)
     execution = load_execution(state_dir)
     payload = read_json(state_dir / "candidates.json", {"candidates": []})
-    by_fp = {
-        str(c.get("fingerprint") or ""): c
-        for c in payload.get("candidates", [])
-        if isinstance(c, dict)
-    }
+    by_fp = candidates_by_fingerprint(payload.get("candidates", []))
 
     # --- Технический гейт (единственное, что блокирует отправку) -----------
     if not html_text.strip():

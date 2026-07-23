@@ -2826,6 +2826,7 @@ def validate_candidates(project_root: Path) -> StageResult:
     payload = read_json(candidates_path, {"candidates": []})
     candidates = payload.get("candidates", [])
     errors: list[str] = []
+    warnings: list[str] = []
     items: list[dict] = []
     timings: dict[str, float | dict[str, float]] = {}
     gate_timings: dict[str, float] = {}
@@ -2846,7 +2847,7 @@ def validate_candidates(project_root: Path) -> StageResult:
     validation_loop_t0 = time.monotonic()
     for index, candidate in enumerate(candidates, start=1):
         if not isinstance(candidate, dict):
-            errors.append(f"Candidate #{index} is not an object.")
+            warnings.append(f"Candidate #{index} is not an object and was ignored.")
             continue
 
         # E2: enrichment happens before any validator gate. This prevents
@@ -3048,7 +3049,15 @@ def validate_candidates(project_root: Path) -> StageResult:
         )
 
         if candidate.get("include") and validation_errors:
-            errors.append(f"Candidate #{index} failed validation.")
+            candidate["include"] = False
+            existing_reason = str(candidate.get("reason") or "").strip()
+            hold_reason = "Validator: held because required candidate fields are invalid."
+            candidate["reason"] = (
+                f"{existing_reason} | {hold_reason}".strip(" |")
+                if existing_reason
+                else hold_reason
+            )
+            warnings.append(f"Candidate #{index} failed validation and was held.")
 
     _mark_timing("validation_loop_seconds", validation_loop_t0)
     professional_llm_t0 = time.monotonic()
@@ -3059,6 +3068,7 @@ def validate_candidates(project_root: Path) -> StageResult:
     _mark_timing("city_intelligence_seconds", city_t0)
     payload["run_at_london"] = now_london().isoformat()
     payload["run_date_london"] = today_london()
+    payload["stage_status"] = "complete"
     pipeline_run_id = pipeline_run_id_from(payload)
     write_t0 = time.monotonic()
     write_json(candidates_path, payload)
@@ -3072,8 +3082,9 @@ def validate_candidates(project_root: Path) -> StageResult:
             "pipeline_run_id": pipeline_run_id,
             "run_at_london": now_london().isoformat(),
             "run_date_london": today_london(),
-            "stage_status": "complete" if not errors else "failed",
+            "stage_status": "complete",
             "errors": errors,
+            "warnings": warnings,
             "city_intelligence": city_intelligence,
             "professional_llm_match": professional_llm_match,
             "trial_candidates": sum(1 for c in candidates if isinstance(c, dict) and c.get("source_trial")),
@@ -3084,7 +3095,11 @@ def validate_candidates(project_root: Path) -> StageResult:
     )
 
     return StageResult(
-        not errors,
-        "Candidate validation completed." if not errors else "Candidate validation found blocking errors.",
+        True,
+        (
+            f"Candidate validation completed with {len(warnings)} held/ignored row warning(s)."
+            if warnings
+            else "Candidate validation completed."
+        ),
         report_path,
     )

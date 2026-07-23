@@ -21,6 +21,7 @@ import re
 from typing import Any
 
 from news_digest.pipeline.common import (
+    candidates_by_fingerprint,
     canonical_url_identity,
     now_london,
     pipeline_run_id_from,
@@ -347,11 +348,7 @@ def build_final_execution_report(
     plan = load_plan(state_dir)
     execution = load_execution(state_dir)
     payload = read_json(state_dir / "candidates.json", {"candidates": []})
-    by_fp = {
-        str(candidate.get("fingerprint") or ""): candidate
-        for candidate in payload.get("candidates") or []
-        if isinstance(candidate, dict) and candidate.get("fingerprint")
-    }
+    by_fp = candidates_by_fingerprint(payload.get("candidates") or [])
     html_rows = _html_item_rows(final_html)
     unused_rows = set(range(len(html_rows)))
     divergences: list[dict[str, Any]] = []

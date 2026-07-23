@@ -20,10 +20,12 @@ RCA item.
 - A failed or partially failed editor must trigger recovery/rebalance before
   send and is not a clean quality pass. It must never block or hold delivery —
   the issue still ships.
-- No pre-send pipeline command may return non-zero solely because a content
-  block is empty, thin, imbalanced or contains an unrepaired editorial defect.
-  These outcomes are reported as `ship_degraded`; only technical state/date/
-  HTML/slot-plan inconsistency can stop delivery.
+- No pre-send pipeline command, from collection through final verification, may
+  return non-zero solely because a source/category is incomplete, a candidate
+  is malformed, a model produced no prose, or a content block is empty, thin,
+  imbalanced or contains an unrepaired editorial defect. The affected row is
+  held or removed with a reason and the issue is reported as `ship_degraded`;
+  only technical state/date/HTML/slot-plan inconsistency can stop delivery.
 - A pre-send warning for critical balance issues must trigger action before
   send: rebalance, recovery or replacement. It must not only report — and it
   must not hold delivery either.

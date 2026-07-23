@@ -879,7 +879,7 @@ def collect_digest(project_root: Path) -> StageResult:
         bool(report["categories"][key]["checked"])
         for key in REQUIRED_SCAN_CATEGORIES
     )
-    report["stage_status"] = "complete" if checked_all else "incomplete"
+    report["stage_status"] = "complete" if checked_all else "degraded"
     report["total_duration_seconds"] = round(time.perf_counter() - collect_started_at, 3)
 
     candidates_payload = {
@@ -897,12 +897,20 @@ def collect_digest(project_root: Path) -> StageResult:
     write_json(state_dir / "morning_inventory_intake_report.json", inventory_report)
     write_json(state_dir / "candidates.json", candidates_payload)
 
-    if checked_all:
-        return StageResult(True, f"Collector fetched {len(candidates)} candidate(s).", report_path)
-
     incomplete = [
         label
         for key, label in REQUIRED_SCAN_CATEGORIES.items()
         if not bool(report["categories"][key]["checked"])
     ]
-    return StageResult(False, "Collector incomplete: " + ", ".join(incomplete), report_path)
+    if incomplete:
+        report.setdefault("warnings", []).append(
+            "Broad scan degraded: unchecked categories: " + ", ".join(incomplete)
+        )
+        write_json(report_path, report)
+        return StageResult(
+            True,
+            f"Collector fetched {len(candidates)} candidate(s); degraded categories: "
+            + ", ".join(incomplete),
+            report_path,
+        )
+    return StageResult(True, f"Collector fetched {len(candidates)} candidate(s).", report_path)

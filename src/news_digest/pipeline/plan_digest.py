@@ -837,6 +837,23 @@ def run_plan_digest(project_root: Path) -> StageResult:
         else:
             _mark_out(candidate, f"{reason};backup_ineligible")
 
+    # Build reserve collisions from the FINAL primary composition. The earlier
+    # seen_story_keys also contains candidates that were later demoted by caps;
+    # filtering against it made every such candidate collide with itself and
+    # silently emptied Fresh/City backup chains.
+    final_primary_story_keys = {
+        key
+        for key in (
+            [_story_key(lead_candidate)] if lead_candidate is not None else []
+        )
+        + [
+            _story_key(candidate)
+            for section_pool in planned.values()
+            for candidate in section_pool
+        ]
+        if key
+    }
+
     # --- Слоты и цепочки запасных -------------------------------------------
     slots: list[dict] = []
     sections_summary: dict[str, dict] = {}
@@ -850,8 +867,14 @@ def run_plan_digest(project_root: Path) -> StageResult:
         queue = [
             c for c in backup_pools.get(section) or []
             if str(c.get("fingerprint") or "") not in used_backup_fps
-            and _story_key(c) not in seen_story_keys
+            and _story_key(c) not in final_primary_story_keys
         ]
+        eligible_backup_count = len(queue)
+        backups_filtered_before_assignment = max(
+            0,
+            len(backup_pools.get(section) or [])
+            - eligible_backup_count,
+        )
         # Недобор до минимума закрывает сама планёрка: повышаем сильнейших
         # пригодных запасных в основные слоты. Это НЕ ремонт после вёрстки —
         # это нормальное решение состава до написания текстов.
@@ -863,17 +886,18 @@ def run_plan_digest(project_root: Path) -> StageResult:
             if not promoted_fp or promoted_fp in used_backup_fps:
                 continue
             key = _story_key(promoted)
-            if key and key in seen_story_keys:
+            if key and key in final_primary_story_keys:
                 continue
             used_backup_fps.add(promoted_fp)
             if key:
-                seen_story_keys.add(key)
+                final_primary_story_keys.add(key)
             promoted["publish_plan_reason"] = "Повышен планёркой из резерва: недобор раздела до минимума."
             pool.append(promoted)
             promoted_here += 1
         if promoted_here:
             warnings.append(f"Планёрка повысила {promoted_here} запасных в «{section}» до минимума {minimum_floor}.")
         section_slots: list[str] = []
+        backups_assigned_here = 0
         for position, candidate in enumerate(pool, start=1):
             fp = str(candidate.get("fingerprint") or "")
             chain: list[str] = []
@@ -886,6 +910,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
                 backup["publish_plan_status"] = "reserve"
                 backup["publish_plan_reason"] = f"Запасной слота {block_key}-{position:02d}"
                 chain.append(backup_fp)
+                backups_assigned_here += 1
             repeat_allowed = True
             previous = previous_by_fp.get(fp)
             if previous is not None:
@@ -936,7 +961,13 @@ def run_plan_digest(project_root: Path) -> StageResult:
             "max": SECTION_MAX_ITEMS.get(section),
             "planned": len(pool),
             "slots": section_slots,
-            "backups_available": len(backup_pools.get(section) or []),
+            "backups_available": eligible_backup_count,
+            "backups_assigned": backups_assigned_here,
+            "backups_unassigned": max(
+                0,
+                eligible_backup_count - promoted_here - backups_assigned_here,
+            ),
+            "backups_filtered_before_assignment": backups_filtered_before_assignment,
             "expected_shortfall": shortfall,
         }
 

@@ -18,6 +18,7 @@ from news_digest.pipeline.common import (
     SECTION_MAX_ITEMS,
     SECTION_MAX_PER_SOURCE,
     SECTION_MIN_ITEMS,
+    candidates_by_fingerprint,
     is_placeholder_practical_angle,
     now_london,
     pipeline_run_id_from,
@@ -3230,12 +3231,10 @@ def _build_weekend_event_fallback_line(candidate: dict) -> str:
     if not detail_text and not day_month:
         return ""
     sentence = f"{kind}: {detail_text}" if detail_text else kind
+    factual_format = sentence.replace(":", ",", 1)
     if prefix:
-        if event.get("next_occurrence"):
-            factual_format = sentence.replace(":", ",", 1)
-            return f"• {prefix} — {title}. На площадке: {factual_format}."
-        return f"• {prefix} — {title}: {sentence}. Сверьте часы и условия перед поездкой."
-    return f"• {title}: {sentence}. Сверьте часы и условия перед поездкой."
+        return f"• {prefix} — {title}. На площадке: {factual_format}."
+    return f"• {title}. На площадке: {factual_format}."
 
 
 def _repair_weather_line(line: str) -> str:
@@ -5398,7 +5397,7 @@ def produce_replacement_for_slot(state_dir: Path, slot_id: str, *, stage: str = 
     execution = load_execution(state_dir)
     payload = read_json(state_dir / "candidates.json", {"candidates": []})
     candidates = payload.get("candidates", [])
-    by_fp = {str(c.get("fingerprint") or ""): c for c in candidates if isinstance(c, dict)}
+    by_fp = candidates_by_fingerprint(candidates)
     used = {
         str((row or {}).get("final_fingerprint") or "")
         for row in (execution.get("slots") or {}).values()
@@ -5464,11 +5463,7 @@ def write_digest(project_root: Path) -> StageResult:
     payload = read_json(candidates_path, {"candidates": []})
     pipeline_run_id = pipeline_run_id_from(payload)
     candidates = payload.get("candidates", [])
-    candidate_by_fp = {
-        str(candidate.get("fingerprint") or ""): candidate
-        for candidate in candidates
-        if isinstance(candidate, dict)
-    }
+    candidate_by_fp = candidates_by_fingerprint(candidates)
     plan = load_plan(state_dir)
     errors: list[str] = []
     warnings: list[str] = []
@@ -5486,11 +5481,7 @@ def write_digest(project_root: Path) -> StageResult:
         plan = load_plan(state_dir)
         payload = read_json(candidates_path, {"candidates": []})
         candidates = payload.get("candidates", [])
-        candidate_by_fp = {
-            str(candidate.get("fingerprint") or ""): candidate
-            for candidate in candidates
-            if isinstance(candidate, dict)
-        }
+        candidate_by_fp = candidates_by_fingerprint(candidates)
     if not plan or not (plan_slots(plan) or str((plan.get("lead") or {}).get("primary_fingerprint") or "")):
         errors.append("release_plan.json is missing or has no slots — run plan-digest before write-digest.")
         write_json(report_path, {
@@ -5740,6 +5731,12 @@ def write_digest(project_root: Path) -> StageResult:
                 "replaced": sum(1 for s in slot_statuses if s == "replaced"),
                 "removed": removed_slots,
                 "repair_attempts_used": int(execution.get("repair_attempts_used") or 0),
+            },
+            "candidate_resolution": {
+                "input_rows": len(candidates),
+                "unique_fingerprints": len(candidate_by_fp),
+                "duplicate_rows": max(0, len(candidates) - len(candidate_by_fp)),
+                "policy": "strongest_selected_enriched_row_per_fingerprint",
             },
             "controlled_enrichment": controlled_enrichment_report,
             "a_tier_ticket_trace": a_tier_ticket_trace,

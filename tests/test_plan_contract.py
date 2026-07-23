@@ -15,7 +15,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from news_digest.pipeline.common import canonical_url_identity, now_london
+from news_digest.pipeline.common import candidates_by_fingerprint, canonical_url_identity, now_london
 from news_digest.pipeline.editor import edit_digest
 from news_digest.pipeline.plan_digest import run_plan_digest
 from news_digest.pipeline.plan_execution import load_execution, load_plan, next_backup, save_execution
@@ -74,6 +74,42 @@ def _strip_volatile(plan: dict) -> dict:
 
 
 class PlanContractTest(unittest.TestCase):
+    def test_canonical_lookup_keeps_selected_enriched_twin(self) -> None:
+        selected = _candidate(
+            1,
+            fingerprint="same-fp",
+            include=True,
+            dedupe_decision="new",
+            digest_selection_verdict="selected",
+            evidence_text="Detailed evidence " * 80,
+        )
+        dropped_twin = _candidate(
+            2,
+            fingerprint="same-fp",
+            include=False,
+            dedupe_decision="drop",
+            digest_selection_verdict="drop",
+            evidence_text="Thin duplicate.",
+        )
+
+        resolved = candidates_by_fingerprint([selected, dropped_twin])
+
+        self.assertIs(resolved["same-fp"], selected)
+
+    def test_cap_demoted_fresh_candidates_become_slot_backups(self) -> None:
+        candidates = [_candidate(i) for i in range(16)]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, candidates)
+            result = run_plan_digest(root)
+            plan = load_plan(state_dir)
+            report = json.loads((state_dir / "plan_digest_report.json").read_text(encoding="utf-8"))
+
+        self.assertTrue(result.ok)
+        fresh_slots = [slot for slot in plan["slots"] if slot["block"] == "last_24h"]
+        self.assertTrue(any(slot.get("backup_fingerprints") for slot in fresh_slots))
+        self.assertGreater(report["totals"]["backups_assigned"], 0)
+
     def test_1_plan_is_deterministic_for_same_input(self) -> None:
         candidates = [_candidate(i) for i in range(8)]
         with tempfile.TemporaryDirectory() as tmp:

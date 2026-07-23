@@ -86,9 +86,12 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
     ),
     # Write visible Russian directly from the service fact card + selected
     # evidence. The English reader card is not translated literally; it is only
-    # an internal angle/fact note. gpt-4o is a surgical single-lead fallback.
+    # an internal angle/fact note. DeepSeek is the independent broad fallback:
+    # an exhausted OpenAI account must not erase every prose target. gpt-4o
+    # remains a surgical single-lead fallback.
     "final_translate": (
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "direct_ru_writer_mini_primary", 1, batch_size=8, timeout_seconds=30),
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_PRO_MODEL, "DEEPSEEK_API_KEY", "direct_ru_writer_independent_fallback", 1, batch_size=6, timeout_seconds=35),
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_REWRITE_MODEL, "OPENAI_API_KEY", "lead_only_direct_ru_fallback", 2, batch_size=1, timeout_seconds=45),
     ),
     # Transport: short structured translation → cheap mini is enough. Most

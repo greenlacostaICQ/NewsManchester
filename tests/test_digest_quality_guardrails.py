@@ -847,6 +847,8 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertIn(str(event_day.day), line)
         self.assertNotIn("08:14", line)
+        self.assertNotIn("Сверьте часы и условия перед поездкой", line)
+        self.assertEqual(_draft_line_quality_errors(candidate, line), [])
 
     def test_one_off_event_with_only_russian_past_date_is_rejected(self) -> None:
         """Past dates in Russian month names must be caught.

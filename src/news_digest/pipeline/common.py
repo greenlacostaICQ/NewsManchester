@@ -251,6 +251,44 @@ def fingerprint_for_candidate(candidate: dict) -> str:
     return normalized[:180]
 
 
+def candidates_by_fingerprint(candidates: list[dict]) -> dict[str, dict]:
+    """Return the strongest canonical row for each fingerprint.
+
+    The collected pool intentionally retains dropped twin-source rows for
+    provenance. Downstream slot execution must not use ordinary last-write-wins:
+    a dropped web duplicate can otherwise overwrite the selected, enriched row
+    carrying the same canonical URL.
+    """
+
+    def _priority(candidate: dict) -> tuple[int, ...]:
+        plan_status = str(candidate.get("publish_plan_status") or "")
+        selection = str(candidate.get("digest_selection_verdict") or "")
+        dedupe = str(candidate.get("dedupe_decision") or "")
+        return (
+            {"must_show": 3, "show": 2, "reserve": 1}.get(plan_status, 0),
+            int(bool(candidate.get("include"))),
+            int(dedupe != "drop"),
+            {"selected": 3, "reserve": 2, "needs_enrichment": 1}.get(selection, 0),
+            int(bool(candidate.get("validated"))),
+            int(bool(str(candidate.get("draft_line") or "").strip())),
+            int(bool(candidate.get("prewrite_enrichment") or candidate.get("enriched_from_source"))),
+            len(str(candidate.get("evidence_text") or "")),
+            len(str(candidate.get("summary") or candidate.get("lead") or "")),
+        )
+
+    result: dict[str, dict] = {}
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        fingerprint = str(candidate.get("fingerprint") or "").strip()
+        if not fingerprint:
+            continue
+        current = result.get(fingerprint)
+        if current is None or _priority(candidate) > _priority(current):
+            result[fingerprint] = candidate
+    return result
+
+
 def is_placeholder_practical_angle(value: str) -> bool:
     text = str(value or "").strip()
     return text in VAGUE_PRACTICAL_ANGLES or text.startswith("Включать только")

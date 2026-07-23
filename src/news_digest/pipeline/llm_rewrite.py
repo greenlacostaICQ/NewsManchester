@@ -1,10 +1,11 @@
 """LLM rewrite stage — writes Russian draft_lines to candidates.json.
 
 Default model route:
-  1. OpenAI gpt-4o-mini           — source-language board judge + fact cards
+  1. DeepSeek v4-pro              — source-language board judge + fact cards
   2. OpenAI gpt-4o-mini           — direct Russian draft from fact cards + evidence
-  3. Legacy category rewrite      — mini-only full-evidence fallback for selected misses
-  4. Lead-only gpt-4o fallback    — single visible lead item, never the broad pool
+  3. DeepSeek v4-pro              — independent direct-Russian fallback
+  4. Legacy category rewrite      — full-evidence fallback for selected misses
+  5. Lead-only gpt-4o fallback    — single visible lead item, never the broad pool
 
 Required env vars (set in GitHub Actions Secrets or .env.local):
   OPENAI_API_KEY    — platform.openai.com
@@ -3315,6 +3316,21 @@ def _finalize_digest_selection_verdicts(candidates: list[dict]) -> dict[str, obj
     }
 
 
+def _is_terminal_provider_error(exc: Exception | str) -> bool:
+    """Errors that cannot recover by splitting or retrying the same account."""
+    text = str(exc or "").lower()
+    return any(
+        marker in text
+        for marker in (
+            "insufficient_quota",
+            "invalid_api_key",
+            "authenticationerror",
+            "authentication_error",
+            "incorrect api key",
+        )
+    )
+
+
 def _call_provider_batch(
     base_url: str,
     api_key: str,
@@ -3367,6 +3383,7 @@ def _call_provider_batch(
         max_retries=0 if provider_name.lower().startswith("openai") else sdk_retries_for_route(provider=provider_name, model=model, base_url=base_url),
     )
     mapping: ProviderMapping = {}
+    terminal_failure = threading.Event()
 
     batches = _token_aware_batches(
         candidates,
@@ -3384,6 +3401,8 @@ def _call_provider_batch(
     )
 
     def _send_once(batch: list[dict], batch_idx: int, attempt: str) -> ProviderMapping:
+        if terminal_failure.is_set():
+            return {}
         batch_items = item_builder(batch) if item_builder is not None else _rewrite_batch_items(batch)
         if today_date:
             user_payload: object = {"today_date": today_date, "candidates": batch_items}
@@ -3487,6 +3506,12 @@ def _call_provider_batch(
             return batch_mapping
         except Exception as exc:  # noqa: BLE001
             logger.warning("%s: batch %s/%d (%s) failed — %s", provider_name, batch_idx, len(batches), attempt, exc)
+            if _is_terminal_provider_error(exc):
+                terminal_failure.set()
+                logger.warning(
+                    "%s: terminal provider failure — cancelling retries and continuing to the next route.",
+                    provider_name,
+                )
             if diagnostics is not None:
                 diagnostics.append(
                     {
@@ -3520,10 +3545,14 @@ def _call_provider_batch(
         """
         batch_result: ProviderMapping = {}
         batch_result.update(_send_once(batch, batch_idx, "initial"))
+        if terminal_failure.is_set():
+            return batch_result
         missing = [c for c in batch if str(c.get("fingerprint") or "") not in batch_result]
         if missing and len(missing) > 1:
             split_size = max(1, min(3, len(missing) // 2 or 1))
             for split_idx in range(0, len(missing), split_size):
+                if terminal_failure.is_set():
+                    break
                 split = missing[split_idx: split_idx + split_size]
                 _jittered_sleep(0.5)
                 split_mapping = _send_once(split, batch_idx, f"split_{split_idx // split_size + 1}")
@@ -3531,6 +3560,8 @@ def _call_provider_batch(
             missing = [c for c in missing if str(c.get("fingerprint") or "") not in batch_result]
         protected_missing = [c for c in missing if _is_protected_rewrite_candidate(c)]
         for item in protected_missing:
+            if terminal_failure.is_set():
+                break
             _jittered_sleep(0.5)
             item_mapping = _send_once([item], batch_idx, "protected_item_recovery")
             batch_result.update(item_mapping)
@@ -4099,11 +4130,14 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         "held_for_backup": 0,
         "reserve_prewrite": len(reserve_prewrite),
     }
+    rank_prewrite = read_json(_rank_report_path(project_root), {}).get("prewrite_enrichment") or {}
     prewrite_enrichment_report: dict[str, object] = {
-        "attempted": 0,
-        "enriched": 0,
-        "skipped": 0,
-        "failed": 0,
+        "attempted": int(rank_prewrite.get("attempted") or 0),
+        "enriched": int(rank_prewrite.get("enriched") or 0),
+        "skipped": int(rank_prewrite.get("skipped") or 0),
+        "failed": int(rank_prewrite.get("failed") or 0),
+        "rank_stage": rank_prewrite,
+        "rewrite_stage": {},
     }
     post_board_translation_cut: dict[str, object] = {
         "schema_version": 1,
@@ -4182,6 +4216,16 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         # Обогащение тонких кандидатов перед письмом остаётся (правило
         # «сначала обогати»): писать из реальных фактов, не из заголовка.
         enrichment_action = _enrich_thin_candidates_inplace(to_rewrite)
+        prewrite_enrichment_report["attempted"] = int(prewrite_enrichment_report["attempted"]) + int(
+            enrichment_action.get("attempted") or 0
+        )
+        prewrite_enrichment_report["enriched"] = int(prewrite_enrichment_report["enriched"]) + int(
+            enrichment_action.get("enriched") or 0
+        )
+        prewrite_enrichment_report["failed"] = int(prewrite_enrichment_report["failed"]) + int(
+            enrichment_action.get("failed") or 0
+        )
+        prewrite_enrichment_report["rewrite_stage"] = enrichment_action
         if int(enrichment_action.get("enriched") or 0):
             logger.info("Enrichment: pulled full text for %d thin candidate(s).", enrichment_action["enriched"])
         run_iso = now_london().isoformat()
@@ -4521,6 +4565,11 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
     rewrite_inventory = _build_rewrite_inventory(candidates)
     write_json(_rewrite_inventory_path(project_root), rewrite_inventory)
     diagnostics_summary = _summarise_provider_batch_diagnostics(provider_batch_diagnostics)
+    terminal_provider_errors = sum(
+        1
+        for row in provider_batch_diagnostics
+        if _is_terminal_provider_error(str(row.get("error") or ""))
+    )
     token_budget_history_summary = _update_token_budget_history(project_root, provider_batch_diagnostics)
 
     from news_digest.pipeline.cost_tracker import dump_stage, snapshot, summarise  # noqa: PLC0415
@@ -4589,6 +4638,14 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             "release_plan_targets": {
                 "plan_loaded": bool(plan_write_fps),
                 "prose_targets": len(to_rewrite),
+            },
+            "prose_funnel": {
+                "plan_targets": original_rewrite_count if "original_rewrite_count" in locals() else len(to_rewrite),
+                "fact_enriched": int(prewrite_enrichment_report.get("enriched") or 0),
+                "translation_memory_reused": len(translation_memory_reused),
+                "provider_written": applied,
+                "missing_after": len(missing_after),
+                "terminal_provider_errors": terminal_provider_errors,
             },
             "applied": applied,
             "fixed": fixed,

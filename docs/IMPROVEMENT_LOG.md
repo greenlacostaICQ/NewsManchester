@@ -1542,3 +1542,69 @@
 - ПРОВЕРКА (real-state replay 23.07): до — `plan 104`, writer `55 lines / 50 removed`, `edit-digest FAIL`, дальнейшие стадии не запускались. После — `edit ok`, `build ok`, `verify ok`, `55 shown / 0 replaced / 50 removed`, `14 divergences`, итог `ship_degraded`; missing Fresh больше не останавливает выпуск. Targeted affected tests `32/32` OK, `py_compile` и `git diff --check` OK. Production recovery run `29988766337` на commit `c072695`: единый `pipeline_run_id=20260723T083753+0100`; writer `48` строк, editor `stage_status=complete`, `errors=[]` и missing Fresh в warnings; release `ship_degraded`, `errors=[]`; verify `ok_technical=true`, `technical_errors=[]`, `48 shown / 51 removed / 0 unfilled / 0 lines outside plan`; Telegram delivery `delivered` в `2026-07-23T08:56:20+01:00`, `4` сообщения; state commit сохранён.
 - Удалено: старый editor content-blocking path (`stage_status=failed`, `StageResult.ok=false`, blocking message) и release-классификация редакционных дефектов как `errors`.
 - Где была ошибка (если не сработает): сначала проверить exit code `edit-digest`, затем `release_report.errors` против `warnings`, после этого `verify_digest_plan_report.technical_errors`; контентная причина не должна появляться ни в одном blocking-поле.
+
+### 0141 — Независимый перевод выпуска при исчерпанной квоте OpenAI — 2026-07-23
+- Статус: внедрено; production-proof ожидается на следующем штатном daily run.
+- Проблема: в run `20260723T083753+0100` план запросил русский текст для `57` карточек, но OpenAI вернул `insufficient_quota` во всех `59` диагностических вызовах; `0` строк было написано моделью и `30` целей остались без текста.
+- Причина (корень): широкий `final_translate` имел только OpenAI; второй маршрут gpt-4o был lead-only на том же аккаунте. Терминальная ошибка квоты повторялась для batch/split/item recovery.
+- Решение: добавить DeepSeek v4-pro как независимый широкий маршрут `final_translate`; при quota/auth failure прекратить повторные попытки того же аккаунта и перейти к следующему маршруту.
+- Почему так: это использует существующий provider-chain без нового этапа, очереди или fallback-текста. Timeout остаётся повторяемой ошибкой и не отключается терминальным правилом.
+- Ожидаемый эффект и метрика: при недоступной квоте OpenAI DeepSeek получает все unresolved prose targets; `terminal_provider_errors` виден в отчёте, `provider_written > 0` проверяется в production.
+- Файлы/места: `model_routing.py:MODEL_ROUTES`, `llm_rewrite.py:_is_terminal_provider_error/_call_provider_batch`.
+- ПРОВЕРКА: real-state replay не вызывает модели; route/terminal-error regression tests пройдены. Production-proof отложен до штатного запуска, чтобы не отправить повторный выпуск.
+- Удалено: повторные split/per-item обращения к тому же провайдеру после terminal quota/auth failure.
+
+### 0142 — Каноническая версия карточки не теряет обогащённые факты — 2026-07-23
+- Статус: внедрено и подтверждено real-state replay.
+- Проблема: `16` fingerprints имели повторные строки (`22` лишние строки); у двух запланированных BBC Fresh сильная selected-карточка с `~4500` символами evidence заменялась поздней dropped web-копией с `725/981` символами.
+- Причина (корень): writer, execution и verify строили `fingerprint -> candidate` по правилу last-write-wins.
+- Решение: единый resolver выбирает selected/included/validated/enriched версию, затем draft/evidence; его используют dedupe, writer, replacement, execution и verify.
+- Почему так: provenance-дубликаты сохраняются для диагностики, но больше не становятся источником текста и фактов.
+- Ожидаемый эффект и метрика: `writer_report.candidate_resolution` показывает input/unique/duplicates; запланированный fingerprint разрешается в сильнейшую строку.
+- Файлы/места: `common.py:candidates_by_fingerprint`, `dedupe.py`, `writer.py`, `plan_execution.py`, `verify_digest_plan.py`.
+- ПРОВЕРКА: replay 23.07 прошёл writer/build/verify; общий результат вместе с #0143/#0144: `48 -> 66` строк, снятия `51 -> 33`.
+- Удалено: четыре локальных last-write-wins словаря кандидатов.
+
+### 0143 — Запасные после лимитов действительно прикрепляются к слотам — 2026-07-23
+- Статус: внедрено и подтверждено real-state replay.
+- Проблема: Fresh сообщал `9` доступных запасных, City `4`, Ticket `5`, но ни один не прикреплялся; в выпуске было `0` замен.
+- Причина (корень): проверка коллизий использовала список историй до лимитов. Кандидат, пониженный лимитом в резерв, сталкивался с собственной записью и удалялся из очереди запасных.
+- Решение: строить коллизии по финальному составу основных слотов; отдельно показывать available/assigned/unassigned/filtered backups по разделу.
+- Почему так: состав и лимиты не меняются, используется уже существующая цепочка запасных.
+- Ожидаемый эффект и метрика: cap-demoted карточки назначаются только слотам своего раздела; `plan_digest_report` объясняет каждую потерю резерва.
+- Файлы/места: `plan_digest.py:run_plan_digest`.
+- ПРОВЕРКА: replay 23.07: план остался `98` слотов, plan execution изменился с `0` до `1` реальной замены; focused cap-demotion regression пройден.
+- Удалено: фильтрация резервов по устаревшему pre-cap `seen_story_keys`.
+
+### 0144 — Weekend больше не создаёт запрещённую концовку сам себе — 2026-07-23
+- Статус: внедрено и подтверждено real-state replay.
+- Проблема: `17/18` Weekend-карточек были восстановлены из структурных фактов, затем все `17` сняты как `empty_generic_ending`.
+- Причина (корень): deterministic Weekend writer сам добавлял фразу «Сверьте часы и условия перед поездкой», которую общий prose-контракт запрещает.
+- Решение: оставлять только дату, площадку, тип и фактические детали события без общей рекламно-служебной концовки.
+- Почему так: факты уже были в карточке; новый recovery или модель не нужны.
+- Ожидаемый эффект и метрика: те же fact-ready Weekend-карточки проходят существующую проверку текста.
+- Файлы/места: `writer.py:_build_weekend_event_fallback_line`.
+- ПРОВЕРКА: replay 23.07: Weekend-секция вернулась в draft; весь пакет дал `48 -> 66` строк, а `empty_generic_ending` после finalize = `0`.
+- Удалено: self-banned Weekend ending; старый deterministic writer сохранён.
+
+### 0145 — Контентные провалы ранних стадий деградируют выпуск, а не останавливают его — 2026-07-23
+- Статус: внедрено; production-proof ожидается на следующем штатном daily run.
+- Проблема: #0140 исправил editor/release/judge/verify, но collector всё ещё возвращал non-zero за unchecked category, dedupe — за одну повреждённую строку/пустую reason, validator — за один invalid included candidate; release повторно превращал те же случаи в errors.
+- Причина (корень): ревизия 0140 началась с места фактического падения 23.07 и не прошла к collect/dedupe/validate.
+- Решение: неполная категория становится degraded warning; плохая строка игнорируется или удерживается с причиной; release повторно считает эти состояния warnings. Missing/stale/mixed run state, неверная дата, битый HTML и slot-plan mismatch остаются errors.
+- Почему так: читатель получает доступную часть выпуска; повреждённая карточка не проходит в публикацию.
+- Ожидаемый эффект и метрика: все контентные примеры дают exit `0`; технические проверки продолжают блокировать.
+- Файлы/места: `collector/core.py:collect_digest`, `dedupe.py:dedupe_candidates`, `candidate_validator.py:validate_candidates`, `release.py:_validate_*`, `AGENTS.md`, `PRODUCT_CONTRACTS.md`.
+- ПРОВЕРКА: regression с malformed rows и полностью unchecked scan: blocking errors `0`, warnings ненулевые, dedupe/validator `stage_status=complete`; replay 23.07 прошёл все pre-send стадии.
+- Удалено: ранние content-only `StageResult(False)` и повторная release-классификация этих дефектов как blocking errors.
+
+### 0146 — Одна честная воронка фактов, текста, резервов и видимого результата — 2026-07-23
+- Статус: внедрено; production numbers ожидаются на следующем штатном daily run.
+- Проблема: отчёт показывал fact enrichment только внутри rewrite-stage и скрывал `20/20` обогащений rank-stage; не было общей связи prose targets -> memory/provider/missing и причин, почему доступные резервы не назначены.
+- Причина (корень): каждый этап писал локальный счётчик без итоговой продуктовой воронки.
+- Решение: агрегировать rank+rewrite enrichment; добавить `prose_funnel`, terminal provider errors, candidate duplicate resolution и per-section backup assignment.
+- Почему так: это наблюдаемость существующих стадий, без нового решения состава.
+- Ожидаемый эффект и метрика: по одному run видны fact-enriched, memory-reused, provider-written, missing-after, duplicate rows и available/assigned/unassigned backups.
+- Файлы/места: `llm_rewrite.py:run_llm_rewrite`, `writer.py:write_digest`, `plan_digest.py:run_plan_digest`.
+- ПРОВЕРКА: схема и targeted tests пройдены; real production values будут заполнены после следующего штатного daily run.
+- Удалено: отдельный неполный rewrite-only смысл счётчика `prewrite_enrichment`; поле сохранено как агрегированная совместимая метрика.

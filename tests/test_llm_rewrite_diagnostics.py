@@ -9,6 +9,7 @@ from news_digest.pipeline.llm_rewrite import (
     _call_with_fallback,
     _cost_after_quality_skip_reason,
     _force_write_evidence_floor,
+    _is_terminal_provider_error,
     _is_protected_rewrite_candidate,
     _is_actionable_weekend_candidate,
     _needs_quality_repair,
@@ -36,6 +37,11 @@ def _candidate(fingerprint: str, title: str = "Test story") -> dict:
 
 
 class LlmRewriteDiagnosticsTests(unittest.TestCase):
+    def test_terminal_provider_error_stops_same_account_retry_loop(self) -> None:
+        self.assertTrue(_is_terminal_provider_error(RuntimeError("insufficient_quota")))
+        self.assertTrue(_is_terminal_provider_error(RuntimeError("Incorrect API key provided")))
+        self.assertFalse(_is_terminal_provider_error(TimeoutError("request timed out")))
+
     def test_parse_provider_results_reports_rejection_reasons(self) -> None:
         batch = [_candidate("fp-1", "Good"), _candidate("fp-2", "Empty"), _candidate("fp-3", "No bullet")]
         raw = json.dumps(

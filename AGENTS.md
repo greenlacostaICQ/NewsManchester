@@ -41,13 +41,14 @@ release_plan.json ни писатель, ни редактор, ни release, н
 reserve pool, floors/backfill) удалены — не переизобретать их.
 
 Ни один контентный или редакционный дефект не может вернуть non-zero и
-остановить delivery на `edit-digest`, `build-digest`, judge или verify:
-неисправимая строка снимается по кодифицированной причине, пустой/слабый блок
-фиксируется как `ship_degraded`, и выпуск отправляется. Блокировать send могут
-только технические нарушения: отсутствующий или чужой run-specific state,
-неверная дата выпуска, невалидный HTML/Telegram payload или несоответствие
-исполнения slot-plan. При RCA обязательно проверять все четыре точки, а не
-только последний judge/verify.
+остановить delivery на любом pre-send этапе: collect, dedupe, validate,
+curator, rank, plan, rewrite, write, edit, build, judge или verify.
+Непригодная карточка удерживается с причиной, неисправимая строка снимается по
+кодифицированной причине, пустой/слабый блок фиксируется как `ship_degraded`, и
+выпуск отправляется. Блокировать send могут только технические нарушения:
+отсутствующий или чужой run-specific state, неверная дата выпуска, невалидный
+HTML/Telegram payload или несоответствие исполнения slot-plan. При RCA
+обязательно проверять всю цепочку, а не только последний judge/verify.
 
 Each stage reads/writes its own `data/state/*.json` file.
 `build-digest` is the only stage that promotes
