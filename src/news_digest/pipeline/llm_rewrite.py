@@ -50,6 +50,7 @@ from news_digest.pipeline.model_routing import (
     sdk_retries_for_route,
 )
 from news_digest.pipeline.board_rank import (
+    JUDGED_BLOCKS,
     apply_board_rank,
     board_rank_bonus,
     board_reject_verdict,
@@ -90,8 +91,8 @@ REWRITE_SHORTLIST_CAPS_BY_BLOCK: dict[str, int] = {
     # and the cut is made on the judge's order instead of on the formula's.
     "lead_story": 6,          # was 4
     "today_focus": 10,        # was 8
-    "last_24h": 40,           # was 18 — judged block, give the board the real field
-    "city_watch": 30,         # was 15 — judged block
+    "last_24h": 45,           # was 18 — judged block, give the board the real field
+    "city_watch": 35,         # was 15 — judged block
     "weekend_activities": 16,  # was 10
     "next_7_days": 14,        # was 8
     "ticket_radar": 8,        # catalog: deterministic sale/tier ranking
@@ -1131,7 +1132,16 @@ def _must_translate_before_cap(candidate: dict) -> bool:
         if event_day and event_day >= date.fromisoformat(today_london()) and str(event.get("venue") or "").strip():
             return True
     if category in {"media_layer", "council", "gmp", "public_services", "city_news"} and tier in {"must_include", "strong"}:
-        return True
+        # NOT a protection inside a judged block. This clause was a proxy for
+        # "the formula might wrongly cut real city news, so exempt it from the
+        # cap" — and the board is exactly what replaces that proxy. Measured on
+        # 2026-07-23: it protected 82 of 99 in last_24h and 38 of 74 in
+        # city_watch, because "media_layer + strong" is the DEFAULT state of a
+        # news item, not an exception. The block was therefore exempt from its
+        # own cap and the judge had nothing left to decide. Genuinely
+        # non-negotiable lanes are still protected by the clause below.
+        if block not in JUDGED_BLOCKS:
+            return True
     if protected.get("protected") and category != "venues_tickets":
         return True
     return False

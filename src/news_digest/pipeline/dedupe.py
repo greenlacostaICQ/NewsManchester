@@ -205,11 +205,19 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             and repeat_verdict.allow
             and repeat_verdict.repeat_class == "calendar"
         )
+        # The repeat verdict must be honoured for ANY prior reference, not only
+        # an exact-fingerprint one. A follow-up carried by a people/topic match
+        # (yesterday BBC on the victim, today MEN on the officer being charged)
+        # produces `similar_previous` and leaves `previous` empty, so the
+        # allow-verdict was computed and then never consulted — the item fell
+        # through to the missing-decision guard and was dropped with real new
+        # facts (charge, trial date, damages claim) on board.
+        prior_reference = previous is not None or bool(similar_previous)
         if a_tier_keep:
             candidate["dedupe_decision"] = "new"
             candidate["include"] = True
             candidate["reason"] = "A-tier policy: keep canonical active physical event before repeat."
-        elif previous is not None and repeat_verdict.allow and not calendar_carry_ok:
+        elif prior_reference and repeat_verdict.allow and not calendar_carry_ok:
             candidate["dedupe_decision"] = (
                 "new_phase" if repeat_verdict.repeat_class == "lifecycle" else "new"
             )
