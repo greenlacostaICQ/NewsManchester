@@ -1,323 +1,133 @@
 {
-  "status": "partial",
+  "status": "failed",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
+  "reason": "pre-send judge requested a hold without an executable repair; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
-  "run_date_london": "2026-07-22",
-  "pipeline_run_id": "20260722T092902+0100",
-  "digest_sha256": "60314bd89ffcda11ca4d4d509545c1ab7116c08ddb4914608d5e83579d431fc6",
-  "duration_seconds": 128.62,
-  "confidence": 0.9,
-  "critical_errors": [
-    {
-      "line_index": 3,
-      "section": "Свежие новости",
-      "problem": "Неверное указание места проведения процедуры.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 13,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Mansfield Woodhouse и Worksop находятся за пределами Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 15,
-      "section": "Футбол",
-      "problem": "Джошуа Зиркзе не является игроком Манчестер Юнайтед.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 27,
-      "section": "Городской радар",
-      "problem": "Неверное указание даты события. Убийство произошло 22 июля 2025 года, а не 2026 года.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 31,
-      "section": "IT и бизнес",
-      "problem": "Пожар в Ирламе не относится к разделу 'IT и бизнес'.",
-      "risk": "format",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 40,
-      "section": "Дальние анонсы",
-      "problem": "Hawth Theatre находится в Crawley, что не относится к Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 41,
-      "section": "Дальние анонсы",
-      "problem": "Whitby Pavilion Theatre находится в Whitby, что не относится к Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 42,
-      "section": "Дальние анонсы",
-      "problem": "York Barbican находится в York, что не относится к Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 44,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Неправильный жанр указан для Charlie Puth.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 46,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Неправильный жанр указан для Wolfmother.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 69,
-      "section": "Крупные концерты вне GM",
-      "problem": "Неправильный жанр указан для Thievery Corporation.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    }
-  ],
-  "actions": [
-    {
-      "line_index": 3,
-      "section": "Свежие новости",
-      "action": "patch",
-      "replacement_text": "• Джордан Парке, известный как \"Lip King\", был запрещен проводить процедуры BBL в Дадли и Большом Манчестере до того, как он лечил Элис Уэбб в Глостере в 2024 году. Бывший партнер Элис, Бен Кингскот, подчеркнул необходимость создания национальной системы регулирования, чтобы предотвратить подобные случаи, так как Элис не знала о запретах и могла бы избежать процедуры, если бы была информирована. BBC Manchester",
-      "reason": "Уточнение места проведения процедуры для соответствия фактам.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 13,
-      "section": "Общественный транспорт сегодня",
-      "action": "strip",
-      "reason": "Mansfield Woodhouse и Worksop не относятся к Greater Manchester.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 15,
-      "section": "Футбол",
-      "action": "replace",
-      "replacement_text": "• Джошуа Зиркзе вышел в стартовом составе в первом предсезонном матче против Уэксема, напомнив Манчестер Юнайтед о необходимости подписать еще одного нападающего этим летом. MEN Manchester United",
-      "reason": "Джошуа Зиркзе не является игроком Манчестер Юнайтед, но его игра могла повлиять на их планы.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 27,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Терренс Кинг, 60 лет, из Мидлтона, был признан виновным в убийстве 15-летнего Девона Симмонса-Кейна, наехав на него на своем автомобиле 22 июля 2025 года. Вердикт был вынесен 17 июля 2026 года.",
-      "reason": "Исправление даты события для соответствия фактам.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 31,
-      "section": "IT и бизнес",
-      "action": "strip",
-      "reason": "Пожар в Ирламе не соответствует тематике раздела 'IT и бизнес'.",
-      "risk": "format",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 34,
-      "section": "Business/tech события для тебя",
-      "action": "patch",
-      "replacement_text": "• 17 сентября 2026 года в Манчестере пройдет конференция MD Future 26, посвященная инфраструктуре, талантам и инновациям для экономики данных. Организатор: Manchester Digital Events",
-      "reason": "Добавлено уточнение об организаторе для ясности.",
-      "risk": "format"
-    },
-    {
-      "line_index": 40,
-      "section": "Дальние анонсы",
-      "action": "strip",
-      "replacement_text": "",
-      "reason": "Hawth Theatre находится в Crawley, что не относится к Greater Manchester.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 41,
-      "section": "Дальние анонсы",
-      "action": "strip",
-      "replacement_text": "",
-      "reason": "Whitby Pavilion Theatre находится в Whitby, что не относится к Greater Manchester.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 42,
-      "section": "Дальние анонсы",
-      "action": "strip",
-      "replacement_text": "",
-      "reason": "York Barbican находится в York, что не относится к Greater Manchester.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 44,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Charlie Puth — 22 июля, Manchester Academy (Поп/Рок). Событие проходит сегодня. Ticketmaster",
-      "reason": "Указан неверный жанр для Charlie Puth.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 46,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Wolfmother — 30 июля, O2 Ritz Manchester (Рок). Билеты и время указаны на официальной странице. Ticketmaster",
-      "reason": "Указан неверный жанр для Wolfmother.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 60,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• The Weeknd — 14 августа, Wembley Stadium (Хип-хоп/рэп). Билеты уже в продаже. Ticketmaster",
-      "reason": "Указан неверный жанр 'Трэп', в источнике указан 'Хип-хоп/рэп'.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 69,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• Thievery Corporation — 30 июля, Roundhouse (Электронная музыка). Билеты и время указаны на официальной странице. Ticketmaster",
-      "reason": "Указан неверный жанр 'Ампиано', следует заменить на 'Электронная музыка'.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 88,
-      "section": "Русскоязычные концерты и стендап UK",
-      "action": "patch",
-      "replacement_text": "• 26 февраля 2027 года в Indigo at The O2 — Monatik Europe Tour 2027. London. Официальная страница должна подтверждать дату, город, площадку и старт продаж. MTicket Russian Concerts",
-      "reason": "Уточнение года события для ясности.",
-      "risk": "date"
-    },
-    {
-      "line_index": 90,
-      "section": "Русскоязычные концерты и стендап UK",
-      "action": "patch",
-      "replacement_text": "• 8 ноября 2026 года в Indigo at The O2 — Горан Брегович. Официальная страница должна подтверждать дату, город, площадку и старт продаж. MTicket Russian Concerts",
-      "reason": "Уточнение года события для ясности.",
-      "risk": "date"
-    },
-    {
-      "line_index": 91,
-      "section": "Русскоязычные концерты и стендап UK",
-      "action": "patch",
-      "replacement_text": "• 17 октября 2026 года в Brixton Jamm — Андрей Кравченко. Официальная страница должна подтверждать дату, город, площадку и старт продаж. MTicket Russian Concerts",
-      "reason": "Уточнение года события для ясности.",
-      "risk": "date"
-    }
-  ],
+  "run_date_london": "2026-07-23",
+  "pipeline_run_id": "20260723T083753+0100",
+  "digest_sha256": "4f5b88f40ae7972ba55f9b4b20bd50fc73464c280939a7af137c381c001e7047",
+  "duration_seconds": 52.587,
+  "confidence": 0.0,
+  "critical_errors": [],
+  "actions": [],
   "warnings": [
-    "Уточнено, что Manchester Digital Events является организатором, а не частью названия конференции.",
-    "Проверьте, что все даты и жанры соответствуют источникам, чтобы избежать ошибок в информации о концертах.",
-    "Секция 'Крупные концерты вне GM' содержит много информации о концертах, которые не относятся к Greater Manchester. Это может отвлечь внимание от основной информации о событиях в GM.",
-    "Некоторые строки требуют уточнения года события для ясности.",
-    "judge reduce failed: parse_failed no parseable JSON",
-    "line 27 drops source number/date fact(s): 17 july 2026"
+    "all judge calls failed: 10 failure(s)"
   ],
   "product_completeness": {
     "section_counts": {
-      "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 9,
-      "Общественный транспорт сегодня": 3,
-      "Футбол": 3,
-      "Городской радар": 11,
-      "IT и бизнес": 5,
-      "Business/tech события для тебя": 2,
-      "Дальние анонсы": 8,
-      "Билеты / Ticket Radar": 8,
-      "Крупные концерты вне GM": 36,
-      "Русскоязычные концерты и стендап UK": 5
+      "Общественный транспорт сегодня": 1,
+      "Выходные в GM": 1,
+      "Дальние анонсы": 1,
+      "Билеты / Ticket Radar": 7,
+      "Крупные концерты вне GM": 37
     },
     "core_counts": {
-      "Свежие новости": 9,
-      "Футбол": 3,
+      "Свежие новости": 0,
+      "Футбол": 0,
       "Что важно сегодня": 0,
-      "Общественный транспорт сегодня": 3
+      "Общественный транспорт сегодня": 1,
+      "Выходные в GM": 1
     },
-    "ticket_items": 49,
-    "core_items": 15,
+    "ticket_items": 44,
+    "core_items": 2,
     "writer_quality_counts": {
-      "included_candidates": 95,
-      "rendered_candidates": 92,
+      "included_candidates": 104,
+      "rendered_candidates": 48,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
-      "dropped_missing_draft_line": 0,
+      "dropped_missing_draft_line": 31,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 3,
+      "dropped_low_quality": 20,
       "replaced_from_plan_backup": 0,
-      "removed_with_reason": 3
+      "removed_with_reason": 51
     },
     "section_underflow": [
+      {
+        "section": "Свежие новости",
+        "actual": 0,
+        "minimum": 6,
+        "dropped_by_writer": 10
+      },
+      {
+        "section": "Городской радар",
+        "actual": 0,
+        "minimum": 5,
+        "dropped_by_writer": 10
+      },
+      {
+        "section": "Выходные в GM",
+        "actual": 1,
+        "minimum": 6,
+        "dropped_by_writer": 17
+      },
       {
         "section": "Еда, открытия и рынки",
         "actual": 0,
         "minimum": 3,
         "dropped_by_writer": 1
+      },
+      {
+        "section": "Футбол",
+        "actual": 0,
+        "minimum": 2,
+        "dropped_by_writer": 8
       }
     ],
     "source_health_counts": {
-      "ok": 90,
+      "ok": 91,
       "partial": 2,
-      "stale": 17,
+      "stale": 15,
       "empty": 14,
-      "failed": 2,
-      "zero_yield": 63,
+      "failed": 4,
+      "zero_yield": 88,
       "no_contribution_breakdown": {
-        "fetch_failed": 2,
-        "all_rejected": 63,
-        "idle_no_items": 29
+        "fetch_failed": 4,
+        "all_rejected": 88,
+        "idle_no_items": 27
       },
       "zero_contribution_by_stage": {
-        "parsed": 29,
-        "selected": 41,
-        "written": 22,
-        "fetched": 2
+        "written": 39,
+        "selected": 49,
+        "parsed": 27,
+        "fetched": 4
       },
-      "weekend_source_coverage_incidents": 44
+      "weekend_source_coverage_incidents": 45
     },
     "alerts": [
+      "Свежие новости: 0 item(s), emergency floor 3",
+      "Футбол: 0 item(s), emergency floor 1",
       "Что важно сегодня: 0 item(s), emergency floor 2",
-      "ticket dominance: 49 ticket/concert item(s) vs 15 core item(s)"
+      "Выходные в GM: 1 item(s), emergency floor 3",
+      "ticket dominance: 44 ticket/concert item(s) vs 2 core item(s)",
+      "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [],
     "can_apply_actions": true,
-    "action_count": 16
+    "action_count": 0,
+    "model_unavailable_fallback": {
+      "status": "ran",
+      "mode": "model_unavailable_fallback",
+      "defect_count": 0,
+      "findings": []
+    }
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 92,
-    "matched_lines": 92,
-    "applicable_lines": 5,
+    "checked_lines": 48,
+    "matched_lines": 48,
+    "applicable_lines": 0,
     "unmatched_lines": 0,
     "critical_omission_count": 0,
     "critical_omissions": [],
-    "noncritical_omissions": [
-      {
-        "line_index": 27,
-        "dropped": [
-          "17 july 2026"
-        ]
-      }
-    ],
+    "noncritical_omissions": [],
     "recovered": 0,
     "pulled_for_rework": 0,
     "still_missing": 0
@@ -326,1362 +136,231 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 16,
-    "attempted": 13,
-    "applied": 13,
-    "model_patch_applied": 8,
+    "requested": 0,
+    "attempted": 0,
+    "applied": 0,
+    "model_patch_applied": 0,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 0,
-    "stripped": 5,
-    "unresolved": 1,
-    "blocking_unresolved": 1,
-    "resolved_in_place": 13,
+    "stripped": 0,
+    "unresolved": 0,
+    "blocking_unresolved": 0,
+    "resolved_in_place": 0,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 16,
+    "enrich_attempted": 0,
     "post_check_errors": [],
-    "actions": [
-      {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "requested_action": "patch",
-        "reason": "Уточнение места проведения процедуры для соответствия фактам.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неверное указание места проведения процедуры.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "",
-        "candidate_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c1w1q8w0xzwo",
-        "original_url_identity": "bbc.com/news/articles/c1w1q8w0xzwo",
-        "original_html": "• Джордан Парке, известный как \"Lip King\", был запрещен проводить процедуры BBL в Дадли и Большом Манчестере до трагической смерти Элис Уэбб в 2024 году. Бывший партнер Элис, Бен Кингскот, подчеркнул необходимость создания национальной системы регулирования, чтобы предотвратить подобные случаи, так как Элис не знала о запретах и могла бы избежать процедуры, если бы была информирована. <a href=\"https://bbc.com/news/articles/c1w1q8w0xzwo\">BBC Manchester</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 13,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Mansfield Woodhouse и Worksop не относятся к Greater Manchester.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Mansfield Woodhouse и Worksop находятся за пределами Greater Manchester.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "removed",
-        "plan_slot_id": "transport-03",
-        "candidate_fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-buses-replace-late-night-trains-between-mansfield-woodhouse-and-worksop-from-mon",
-        "original_url_identity": "tfgm.com/travel-updates/travel-alerts/buses-replace-late-night-trains-between-mansfield-woodhouse-and-worksop-from-mon",
-        "original_html": "• National Rail: автобусы заменят поздние ночные поезда между Mansfield Woodhouse и Worksop с понедельника 20 по четверг 23 июля. Подробности на сайте <a href=\"https://tfgm.com/travel-updates/travel-alerts/buses-replace-late-night-trains-between-mansfield-woodhouse-and-worksop-from-mon\">TfGM</a>",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 15,
-        "section": "Футбол",
-        "requested_action": "replace",
-        "reason": "Джошуа Зиркзе не является игроком Манчестер Юнайтед, но его игра могла повлиять на их планы.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Джошуа Зиркзе не является игроком Манчестер Юнайтед.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-joshua-zirkzee-just-gave-manchester-34325062",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/joshua-zirkzee-just-gave-manchester-34325062",
-        "original_html": "• Джошуа Зиркзе вышел в стартовом составе Манчестер Юнайтед в первом предсезонном матче против Уэксема, напомнив клубу о необходимости подписать еще одного нападающего этим летом. <a href=\"https://manchestereveningnews.co.uk/sport/football/joshua-zirkzee-just-gave-manchester-34325062\">MEN Manchester United</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 27,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Исправление даты события для соответствия фактам.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неверное указание даты события. Убийство произошло 22 июля 2025 года, а не 2026 года.",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "model_patch",
-        "plan_slot_id": "city_watch-11",
-        "candidate_fingerprint": "media-layer-itv-granada-greater-manchester-itv-com-news-granada-2026-07-17-man-found-guilty-of-murdering-15-year-old-on-e-bike-using-his-car",
-        "original_url_identity": "itv.com/news/granada/2026-07-17/man-found-guilty-of-murdering-15-year-old-on-e-bike-using-his-car",
-        "original_html": "• Терренс Кинг, 60 лет, из Мидлтона, был признан виновным в убийстве 15-летнего Девона Симмонса-Кейна, наехав на него на своем автомобиле 22 июля 2025 года. Вердикт был вынесен 17 июля 2026 года. <a href=\"https://itv.com/news/granada/2026-07-17/man-found-guilty-of-murdering-15-year-old-on-e-bike-using-his-car\">ITV Granada Greater Manchester</a>",
-        "post_check_passed": false
-      },
-      {
-        "line_index": 31,
-        "section": "IT и бизнес",
-        "requested_action": "strip",
-        "reason": "Пожар в Ирламе не соответствует тематике раздела 'IT и бизнес'.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Пожар в Ирламе не относится к разделу 'IT и бизнес'.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "removed",
-        "plan_slot_id": "tech_business-03",
-        "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-fire-service-issues-update-after-34324881",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/fire-service-issues-update-after-34324881",
-        "original_html": "• Пожарные боролись с крупным пожаром на Бринелл Драйв в Ирламе около 19 часов; дым был виден на расстоянии нескольких миль. Пожар начался на промышленной территории и включал большое количество поддонов и два автомобиля. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/fire-service-issues-update-after-34324881\">MEN</a>",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 34,
-        "section": "Business/tech события для тебя",
-        "requested_action": "patch",
-        "reason": "Добавлено уточнение об организаторе для ясности.",
-        "risk": "format",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "professional_events-01",
-        "candidate_fingerprint": "professional-events-manchester-digital-events-manchesterdigital-com-event-manchester-digital-md-future-26",
-        "original_url_identity": "manchesterdigital.com/event/manchester-digital/md-future-26",
-        "original_html": "• 17 сентября 2026 года в Манчестере пройдет конференция MD Future 26, посвященная инфраструктуре, талантам и инновациям для экономики данных. <a href=\"https://manchesterdigital.com/event/manchester-digital/md-future-26\">Manchester Digital Events</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 40,
-        "section": "Дальние анонсы",
-        "requested_action": "strip",
-        "reason": "Hawth Theatre находится в Crawley, что не относится к Greater Manchester.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Hawth Theatre находится в Crawley, что не относится к Greater Manchester.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "removed",
-        "plan_slot_id": "future_announcements-05",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-crawley-03-09-2026-event-3500629828-28-2",
-        "original_url_identity": "ticketmaster.co.uk/queen-of-the-night-a-tribute-crawley-03-09-2026/event/3500629828C28A2E",
-        "original_html": "• <b>Queen of the Night</b> — 3 сентября, Hawth Theatre (Рок). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/queen-of-the-night-a-tribute-crawley-03-09-2026/event/3500629828C28A2E\">Ticketmaster</a>",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 41,
-        "section": "Дальние анонсы",
-        "requested_action": "strip",
-        "reason": "Whitby Pavilion Theatre находится в Whitby, что не относится к Greater Manchester.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Whitby Pavilion Theatre находится в Whitby, что не относится к Greater Manchester.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "removed",
-        "plan_slot_id": "future_announcements-06",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-thank-abba-for-the-music-whitby-29-08-2026-event-35006323-3473369",
-        "original_url_identity": "ticketmaster.co.uk/thank-abba-for-the-music-whitby-29-08-2026/event/35006323D3473369",
-        "original_html": "• <b>Thank ABBA for The Music</b> — 29 августа, Whitby Pavilion Theatre (Whitby). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/thank-abba-for-the-music-whitby-29-08-2026/event/35006323D3473369\">Ticketmaster</a>",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 42,
-        "section": "Дальние анонсы",
-        "requested_action": "strip",
-        "reason": "York Barbican находится в York, что не относится к Greater Manchester.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "York Barbican находится в York, что не относится к Greater Manchester.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "removed",
-        "plan_slot_id": "future_announcements-07",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-york-28-08-2026-event-360062-761400",
-        "original_url_identity": "ticketmaster.co.uk/queen-of-the-night-a-tribute-york-28-08-2026/event/360062CBD761400D",
-        "original_html": "• <b>Queen of the Night</b> — 28 августа, York Barbican (Рок). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/queen-of-the-night-a-tribute-york-28-08-2026/event/360062CBD761400D\">Ticketmaster</a>",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 44,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Указан неверный жанр для Charlie Puth.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильный жанр указан для Charlie Puth.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "ticket_radar-01",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-charlie-puth-whatevers-clever-world-tour-manchester-22-07-2026-event-1-006391-2-659",
-        "original_url_identity": "ticketmaster.co.uk/charlie-puth-whatevers-clever-world-tour-manchester-22-07-2026/event/1F006391DC2E659B",
-        "original_html": "• <b>Charlie Puth</b> — 22 июля, Manchester Academy (Поп). Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/charlie-puth-whatevers-clever-world-tour-manchester-22-07-2026/event/1F006391DC2E659B\">Ticketmaster</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 46,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Указан неверный жанр для Wolfmother.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильный жанр указан для Wolfmother.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "ticket_radar-03",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-wolfmother-manchester-30-07-2026-event-3-006477-1839-4",
-        "original_url_identity": "ticketmaster.co.uk/wolfmother-manchester-30-07-2026/event/3E006477CA1839C4",
-        "original_html": "• <b>Wolfmother</b> — 30 июля, O2 Ritz Manchester (Поп). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/wolfmother-manchester-30-07-2026/event/3E006477CA1839C4\">Ticketmaster</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 60,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Указан неверный жанр 'Трэп', в источнике указан 'Хип-хоп/рэп'.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "outside_gm_tickets-09",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-14-08-2026-event-23006323-137102",
-        "original_url_identity": "ticketmaster.co.uk/the-weeknd-after-hours-til-dawn-london-14-08-2026/event/23006323C137102D",
-        "original_html": "• <b>The Weeknd</b> — 14 августа, Wembley Stadium (Трэп). Билеты уже в продаже. <a href=\"https://ticketmaster.co.uk/the-weeknd-after-hours-til-dawn-london-14-08-2026/event/23006323C137102D\">Ticketmaster</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 69,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Указан неверный жанр 'Ампиано', следует заменить на 'Электронная музыка'.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильный жанр указан для Thievery Corporation.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "outside_gm_tickets-18",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-thievery-corporation-london-30-07-2026-event-1-006459-8737-5",
-        "original_url_identity": "ticketmaster.co.uk/thievery-corporation-london-30-07-2026/event/1F006459E8737ED5",
-        "original_html": "• <b>Thievery Corporation</b> — 30 июля, Roundhouse (Ампиано). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/thievery-corporation-london-30-07-2026/event/1F006459E8737ED5\">Ticketmaster</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 88,
-        "section": "Русскоязычные концерты и стендап UK",
-        "requested_action": "patch",
-        "reason": "Уточнение года события для ясности.",
-        "risk": "date",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "russian_events-01",
-        "candidate_fingerprint": "russian-speaking-events-mticket-russian-concerts-mticket-uk-ru-london-monatik-europe-tour-2027-3968-html",
-        "original_url_identity": "mticket.uk/ru/london/monatik-europe-tour-2027-3968.html",
-        "original_html": "• 26 февраля в Indigo at The O2 — Monatik Europe Tour 2027. London. Официальная страница должна подтверждать дату, город, площадку и старт продаж. <a href=\"https://mticket.uk/ru/london/monatik-europe-tour-2027-3968.html\">MTicket Russian Concerts</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 90,
-        "section": "Русскоязычные концерты и стендап UK",
-        "requested_action": "patch",
-        "reason": "Уточнение года события для ясности.",
-        "risk": "date",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "russian_events-03",
-        "candidate_fingerprint": "russian-speaking-events-mticket-russian-concerts-mticket-uk-ru-london-goran-bregovic-3499-html",
-        "original_url_identity": "mticket.uk/ru/london/goran-bregovic-3499.html",
-        "original_html": "• 8 ноября в Indigo at The O2 — Горан Брегович. Официальная страница должна подтверждать дату, город, площадку и старт продаж. <a href=\"https://mticket.uk/ru/london/goran-bregovic-3499.html\">MTicket Russian Concerts</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 91,
-        "section": "Русскоязычные концерты и стендап UK",
-        "requested_action": "patch",
-        "reason": "Уточнение года события для ясности.",
-        "risk": "date",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "russian_events-04",
-        "candidate_fingerprint": "russian-speaking-events-mticket-russian-concerts-mticket-uk-ru-london-andrij-kravcenko-4082-html",
-        "original_url_identity": "mticket.uk/ru/london/andrij-kravcenko-4082.html",
-        "original_html": "• 17 октября в Brixton Jamm — Андрей Кравченко. Официальная страница должна подтверждать дату, город, площадку и старт продаж. <a href=\"https://mticket.uk/ru/london/andrij-kravcenko-4082.html\">MTicket Russian Concerts</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      }
-    ],
-    "operations": [
-      {
-        "group_key": "свежие новости::уточнение места проведения процедуры для соответствия фактам.",
-        "actions": [
-          {
-            "line_index": 3,
-            "section": "Свежие новости",
-            "requested_action": "patch",
-            "reason": "Уточнение места проведения процедуры для соответствия фактам.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неверное указание места проведения процедуры.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "",
-            "candidate_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c1w1q8w0xzwo",
-            "original_url_identity": "bbc.com/news/articles/c1w1q8w0xzwo",
-            "original_html": "• Джордан Парке, известный как \"Lip King\", был запрещен проводить процедуры BBL в Дадли и Большом Манчестере до трагической смерти Элис Уэбб в 2024 году. Бывший партнер Элис, Бен Кингскот, подчеркнул необходимость создания национальной системы регулирования, чтобы предотвратить подобные случаи, так как Элис не знала о запретах и могла бы избежать процедуры, если бы была информирована. <a href=\"https://bbc.com/news/articles/c1w1q8w0xzwo\">BBC Manchester</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 3,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::mansfield woodhouse и worksop не относятся к greater manchester.",
-        "actions": [
-          {
-            "line_index": 13,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Mansfield Woodhouse и Worksop не относятся к Greater Manchester.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Mansfield Woodhouse и Worksop находятся за пределами Greater Manchester.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "removed",
-            "plan_slot_id": "transport-03",
-            "candidate_fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-buses-replace-late-night-trains-between-mansfield-woodhouse-and-worksop-from-mon",
-            "original_url_identity": "tfgm.com/travel-updates/travel-alerts/buses-replace-late-night-trains-between-mansfield-woodhouse-and-worksop-from-mon",
-            "original_html": "• National Rail: автобусы заменят поздние ночные поезда между Mansfield Woodhouse и Worksop с понедельника 20 по четверг 23 июля. Подробности на сайте <a href=\"https://tfgm.com/travel-updates/travel-alerts/buses-replace-late-night-trains-between-mansfield-woodhouse-and-worksop-from-mon\">TfGM</a>",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 13,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::джошуа зиркзе не является игроком манчестер юнайтед, но его игра могла повлиять на их планы.",
-        "actions": [
-          {
-            "line_index": 15,
-            "section": "Футбол",
-            "requested_action": "replace",
-            "reason": "Джошуа Зиркзе не является игроком Манчестер Юнайтед, но его игра могла повлиять на их планы.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Джошуа Зиркзе не является игроком Манчестер Юнайтед.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-joshua-zirkzee-just-gave-manchester-34325062",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/joshua-zirkzee-just-gave-manchester-34325062",
-            "original_html": "• Джошуа Зиркзе вышел в стартовом составе Манчестер Юнайтед в первом предсезонном матче против Уэксема, напомнив клубу о необходимости подписать еще одного нападающего этим летом. <a href=\"https://manchestereveningnews.co.uk/sport/football/joshua-zirkzee-just-gave-manchester-34325062\">MEN Manchester United</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 15,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::исправление даты события для соответствия фактам.",
-        "actions": [
-          {
-            "line_index": 27,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Исправление даты события для соответствия фактам.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неверное указание даты события. Убийство произошло 22 июля 2025 года, а не 2026 года.",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "model_patch",
-            "plan_slot_id": "city_watch-11",
-            "candidate_fingerprint": "media-layer-itv-granada-greater-manchester-itv-com-news-granada-2026-07-17-man-found-guilty-of-murdering-15-year-old-on-e-bike-using-his-car",
-            "original_url_identity": "itv.com/news/granada/2026-07-17/man-found-guilty-of-murdering-15-year-old-on-e-bike-using-his-car",
-            "original_html": "• Терренс Кинг, 60 лет, из Мидлтона, был признан виновным в убийстве 15-летнего Девона Симмонса-Кейна, наехав на него на своем автомобиле 22 июля 2025 года. Вердикт был вынесен 17 июля 2026 года. <a href=\"https://itv.com/news/granada/2026-07-17/man-found-guilty-of-murdering-15-year-old-on-e-bike-using-his-car\">ITV Granada Greater Manchester</a>",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 27,
-            "passed": false,
-            "detail": "line did not change"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "it и бизнес::пожар в ирламе не соответствует тематике раздела 'it и бизнес'.",
-        "actions": [
-          {
-            "line_index": 31,
-            "section": "IT и бизнес",
-            "requested_action": "strip",
-            "reason": "Пожар в Ирламе не соответствует тематике раздела 'IT и бизнес'.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Пожар в Ирламе не относится к разделу 'IT и бизнес'.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "removed",
-            "plan_slot_id": "tech_business-03",
-            "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-fire-service-issues-update-after-34324881",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/fire-service-issues-update-after-34324881",
-            "original_html": "• Пожарные боролись с крупным пожаром на Бринелл Драйв в Ирламе около 19 часов; дым был виден на расстоянии нескольких миль. Пожар начался на промышленной территории и включал большое количество поддонов и два автомобиля. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/fire-service-issues-update-after-34324881\">MEN</a>",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 31,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "business/tech события для тебя::добавлено уточнение об организаторе для ясности.",
-        "actions": [
-          {
-            "line_index": 34,
-            "section": "Business/tech события для тебя",
-            "requested_action": "patch",
-            "reason": "Добавлено уточнение об организаторе для ясности.",
-            "risk": "format",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "professional_events-01",
-            "candidate_fingerprint": "professional-events-manchester-digital-events-manchesterdigital-com-event-manchester-digital-md-future-26",
-            "original_url_identity": "manchesterdigital.com/event/manchester-digital/md-future-26",
-            "original_html": "• 17 сентября 2026 года в Манчестере пройдет конференция MD Future 26, посвященная инфраструктуре, талантам и инновациям для экономики данных. <a href=\"https://manchesterdigital.com/event/manchester-digital/md-future-26\">Manchester Digital Events</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 34,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "дальние анонсы::hawth theatre находится в crawley, что не относится к greater manchester.",
-        "actions": [
-          {
-            "line_index": 40,
-            "section": "Дальние анонсы",
-            "requested_action": "strip",
-            "reason": "Hawth Theatre находится в Crawley, что не относится к Greater Manchester.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Hawth Theatre находится в Crawley, что не относится к Greater Manchester.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "removed",
-            "plan_slot_id": "future_announcements-05",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-crawley-03-09-2026-event-3500629828-28-2",
-            "original_url_identity": "ticketmaster.co.uk/queen-of-the-night-a-tribute-crawley-03-09-2026/event/3500629828C28A2E",
-            "original_html": "• <b>Queen of the Night</b> — 3 сентября, Hawth Theatre (Рок). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/queen-of-the-night-a-tribute-crawley-03-09-2026/event/3500629828C28A2E\">Ticketmaster</a>",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 40,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "дальние анонсы::whitby pavilion theatre находится в whitby, что не относится к greater manchester.",
-        "actions": [
-          {
-            "line_index": 41,
-            "section": "Дальние анонсы",
-            "requested_action": "strip",
-            "reason": "Whitby Pavilion Theatre находится в Whitby, что не относится к Greater Manchester.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Whitby Pavilion Theatre находится в Whitby, что не относится к Greater Manchester.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "removed",
-            "plan_slot_id": "future_announcements-06",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-thank-abba-for-the-music-whitby-29-08-2026-event-35006323-3473369",
-            "original_url_identity": "ticketmaster.co.uk/thank-abba-for-the-music-whitby-29-08-2026/event/35006323D3473369",
-            "original_html": "• <b>Thank ABBA for The Music</b> — 29 августа, Whitby Pavilion Theatre (Whitby). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/thank-abba-for-the-music-whitby-29-08-2026/event/35006323D3473369\">Ticketmaster</a>",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 41,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "дальние анонсы::york barbican находится в york, что не относится к greater manchester.",
-        "actions": [
-          {
-            "line_index": 42,
-            "section": "Дальние анонсы",
-            "requested_action": "strip",
-            "reason": "York Barbican находится в York, что не относится к Greater Manchester.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "York Barbican находится в York, что не относится к Greater Manchester.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "removed",
-            "plan_slot_id": "future_announcements-07",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-york-28-08-2026-event-360062-761400",
-            "original_url_identity": "ticketmaster.co.uk/queen-of-the-night-a-tribute-york-28-08-2026/event/360062CBD761400D",
-            "original_html": "• <b>Queen of the Night</b> — 28 августа, York Barbican (Рок). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/queen-of-the-night-a-tribute-york-28-08-2026/event/360062CBD761400D\">Ticketmaster</a>",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 42,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::указан неверный жанр для charlie puth.",
-        "actions": [
-          {
-            "line_index": 44,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "patch",
-            "reason": "Указан неверный жанр для Charlie Puth.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неправильный жанр указан для Charlie Puth.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-charlie-puth-whatevers-clever-world-tour-manchester-22-07-2026-event-1-006391-2-659",
-            "original_url_identity": "ticketmaster.co.uk/charlie-puth-whatevers-clever-world-tour-manchester-22-07-2026/event/1F006391DC2E659B",
-            "original_html": "• <b>Charlie Puth</b> — 22 июля, Manchester Academy (Поп). Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/charlie-puth-whatevers-clever-world-tour-manchester-22-07-2026/event/1F006391DC2E659B\">Ticketmaster</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 44,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::указан неверный жанр для wolfmother.",
-        "actions": [
-          {
-            "line_index": 46,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "patch",
-            "reason": "Указан неверный жанр для Wolfmother.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неправильный жанр указан для Wolfmother.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "ticket_radar-03",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-wolfmother-manchester-30-07-2026-event-3-006477-1839-4",
-            "original_url_identity": "ticketmaster.co.uk/wolfmother-manchester-30-07-2026/event/3E006477CA1839C4",
-            "original_html": "• <b>Wolfmother</b> — 30 июля, O2 Ritz Manchester (Поп). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/wolfmother-manchester-30-07-2026/event/3E006477CA1839C4\">Ticketmaster</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 46,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "крупные концерты вне gm::указан неверный жанр 'трэп', в источнике указан 'хип-хоп/рэп'.",
-        "actions": [
-          {
-            "line_index": 60,
-            "section": "Крупные концерты вне GM",
-            "requested_action": "patch",
-            "reason": "Указан неверный жанр 'Трэп', в источнике указан 'Хип-хоп/рэп'.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "outside_gm_tickets-09",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-14-08-2026-event-23006323-137102",
-            "original_url_identity": "ticketmaster.co.uk/the-weeknd-after-hours-til-dawn-london-14-08-2026/event/23006323C137102D",
-            "original_html": "• <b>The Weeknd</b> — 14 августа, Wembley Stadium (Трэп). Билеты уже в продаже. <a href=\"https://ticketmaster.co.uk/the-weeknd-after-hours-til-dawn-london-14-08-2026/event/23006323C137102D\">Ticketmaster</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 60,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "крупные концерты вне gm::указан неверный жанр 'ампиано', следует заменить на 'электронная музыка'.",
-        "actions": [
-          {
-            "line_index": 69,
-            "section": "Крупные концерты вне GM",
-            "requested_action": "patch",
-            "reason": "Указан неверный жанр 'Ампиано', следует заменить на 'Электронная музыка'.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неправильный жанр указан для Thievery Corporation.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "outside_gm_tickets-18",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-thievery-corporation-london-30-07-2026-event-1-006459-8737-5",
-            "original_url_identity": "ticketmaster.co.uk/thievery-corporation-london-30-07-2026/event/1F006459E8737ED5",
-            "original_html": "• <b>Thievery Corporation</b> — 30 июля, Roundhouse (Ампиано). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/thievery-corporation-london-30-07-2026/event/1F006459E8737ED5\">Ticketmaster</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 69,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "русскоязычные концерты и стендап uk::уточнение года события для ясности.",
-        "actions": [
-          {
-            "line_index": 88,
-            "section": "Русскоязычные концерты и стендап UK",
-            "requested_action": "patch",
-            "reason": "Уточнение года события для ясности.",
-            "risk": "date",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "russian_events-01",
-            "candidate_fingerprint": "russian-speaking-events-mticket-russian-concerts-mticket-uk-ru-london-monatik-europe-tour-2027-3968-html",
-            "original_url_identity": "mticket.uk/ru/london/monatik-europe-tour-2027-3968.html",
-            "original_html": "• 26 февраля в Indigo at The O2 — Monatik Europe Tour 2027. London. Официальная страница должна подтверждать дату, город, площадку и старт продаж. <a href=\"https://mticket.uk/ru/london/monatik-europe-tour-2027-3968.html\">MTicket Russian Concerts</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 90,
-            "section": "Русскоязычные концерты и стендап UK",
-            "requested_action": "patch",
-            "reason": "Уточнение года события для ясности.",
-            "risk": "date",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "russian_events-03",
-            "candidate_fingerprint": "russian-speaking-events-mticket-russian-concerts-mticket-uk-ru-london-goran-bregovic-3499-html",
-            "original_url_identity": "mticket.uk/ru/london/goran-bregovic-3499.html",
-            "original_html": "• 8 ноября в Indigo at The O2 — Горан Брегович. Официальная страница должна подтверждать дату, город, площадку и старт продаж. <a href=\"https://mticket.uk/ru/london/goran-bregovic-3499.html\">MTicket Russian Concerts</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 91,
-            "section": "Русскоязычные концерты и стендап UK",
-            "requested_action": "patch",
-            "reason": "Уточнение года события для ясности.",
-            "risk": "date",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "russian_events-04",
-            "candidate_fingerprint": "russian-speaking-events-mticket-russian-concerts-mticket-uk-ru-london-andrij-kravcenko-4082-html",
-            "original_url_identity": "mticket.uk/ru/london/andrij-kravcenko-4082.html",
-            "original_html": "• 17 октября в Brixton Jamm — Андрей Кравченко. Официальная страница должна подтверждать дату, город, площадку и старт продаж. <a href=\"https://mticket.uk/ru/london/andrij-kravcenko-4082.html\">MTicket Russian Concerts</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 88,
-            "passed": true,
-            "detail": "existing fact verified"
-          },
-          {
-            "line_index": 90,
-            "passed": true,
-            "detail": "existing fact verified"
-          },
-          {
-            "line_index": 91,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": false
-      }
-    ],
-    "refetch": {
-      "attempted": 0,
-      "improved": 0,
-      "failed": 0,
-      "empty_or_not_better": 0,
-      "skipped": 8,
-      "reports": [
-        {
-          "fingerprint": "transport-tfgm-tfgm-com-travel-updates-travel-alerts-buses-replace-late-night-trains-between-mansfield-woodhouse-and-worksop-from-mon",
-          "title": "Buses replace late night trains between Mansfield Woodhouse and Worksop from Monday 20 to Thursday 23 July",
-          "status": "skipped",
-          "reason": "tfgm_ephemeral_alert",
-          "url": "https://tfgm.com/travel-updates/travel-alerts/buses-replace-late-night-trains-between-mansfield-woodhouse-and-worksop-from-mon",
-          "candidate_evidence_chars": 67
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-crawley-03-09-2026-event-3500629828-28-2",
-          "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-09-03 — public sale 2025-05-02 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/queen-of-the-night-a-tribute-crawley-03-09-2026/event/3500629828C28A2E",
-          "candidate_evidence_chars": 325
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-thank-abba-for-the-music-whitby-29-08-2026-event-35006323-3473369",
-          "title": "Thank ABBA for The Music — event 2026-08-29 — public sale 2025-09-05 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/thank-abba-for-the-music-whitby-29-08-2026/event/35006323D3473369",
-          "candidate_evidence_chars": 353
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-queen-of-the-night-a-tribute-york-28-08-2026-event-360062-761400",
-          "title": "Queen of the Night - A Tribute to Whitney Houston — event 2026-08-28 — public sale 2025-06-27 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/queen-of-the-night-a-tribute-york-28-08-2026/event/360062CBD761400D",
-          "candidate_evidence_chars": 319
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-charlie-puth-whatevers-clever-world-tour-manchester-22-07-2026-event-1-006391-2-659",
-          "title": "Charlie Puth - Whatever's Clever! World Tour — event 2026-07-22 — public sale 2026-01-16 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/charlie-puth-whatevers-clever-world-tour-manchester-22-07-2026/event/1F006391DC2E659B",
-          "candidate_evidence_chars": 361
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-wolfmother-manchester-30-07-2026-event-3-006477-1839-4",
-          "title": "Wolfmother — event 2026-07-30 — public sale 2026-03-30 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/wolfmother-manchester-30-07-2026/event/3E006477CA1839C4",
-          "candidate_evidence_chars": 367
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-14-08-2026-event-23006323-137102",
-          "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-08-14 — public sale 2025-09-12 12:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/the-weeknd-after-hours-til-dawn-london-14-08-2026/event/23006323C137102D",
-          "candidate_evidence_chars": 339
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-thievery-corporation-london-30-07-2026-event-1-006459-8737-5",
-          "title": "Thievery Corporation — event 2026-07-30 — public sale 2026-02-27 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/thievery-corporation-london-30-07-2026/event/1F006459E8737ED5",
-          "candidate_evidence_chars": 367
-        }
-      ]
+    "actions": [],
+    "operations": [],
+    "final_fact_completeness": {
+      "version": "v1",
+      "checked_lines": 48,
+      "matched_lines": 48,
+      "applicable_lines": 0,
+      "unmatched_lines": 0,
+      "critical_omission_count": 0,
+      "critical_omissions": [],
+      "noncritical_omissions": [],
+      "critical_errors": [],
+      "warnings": [],
+      "recovered": 0,
+      "pulled_for_rework": 0,
+      "still_missing": 0
     },
-    "enrich_improved": 16,
-    "false_positive_existing_fact": 3,
     "final_prose_policy": {
-      "checked_lines": 87,
-      "resolved_in_place": 87,
+      "checked_lines": 48,
+      "resolved_in_place": 48,
       "unresolved": 0,
       "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved_in_place"
   },
-  "notes": "Информация о пожаре в Openshaw представлена корректно и соответствует источнику.; Прогноз погоды корректен и соответствует источнику Met Office.; Исправлена ошибка в указании места проведения процедуры Джорданом Парке.; Убедитесь, что информация о транспорте относится к Greater Manchester.; Исправлена ошибка в информац",
+  "notes": "pre-send judge failed before producing usable verdicts",
   "raw": {
-    "decision": "repair_required",
-    "confidence": 0.9,
-    "critical_errors": [
-      {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "problem": "Неверное указание места проведения процедуры.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 13,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Mansfield Woodhouse и Worksop находятся за пределами Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 15,
-        "section": "Футбол",
-        "problem": "Джошуа Зиркзе не является игроком Манчестер Юнайтед.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 27,
-        "section": "Городской радар",
-        "problem": "Неверное указание даты события. Убийство произошло 22 июля 2025 года, а не 2026 года.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 31,
-        "section": "IT и бизнес",
-        "problem": "Пожар в Ирламе не относится к разделу 'IT и бизнес'.",
-        "risk": "format",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 40,
-        "section": "Дальние анонсы",
-        "problem": "Hawth Theatre находится в Crawley, что не относится к Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 41,
-        "section": "Дальние анонсы",
-        "problem": "Whitby Pavilion Theatre находится в Whitby, что не относится к Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 42,
-        "section": "Дальние анонсы",
-        "problem": "York Barbican находится в York, что не относится к Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 44,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Неправильный жанр указан для Charlie Puth.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 46,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Неправильный жанр указан для Wolfmother.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 69,
-        "section": "Крупные концерты вне GM",
-        "problem": "Неправильный жанр указан для Thievery Corporation.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      }
-    ],
-    "actions": [
-      {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "action": "patch",
-        "replacement_text": "• Джордан Парке, известный как \"Lip King\", был запрещен проводить процедуры BBL в Дадли и Большом Манчестере до того, как он лечил Элис Уэбб в Глостере в 2024 году. Бывший партнер Элис, Бен Кингскот, подчеркнул необходимость создания национальной системы регулирования, чтобы предотвратить подобные случаи, так как Элис не знала о запретах и могла бы избежать процедуры, если бы была информирована. BBC Manchester",
-        "reason": "Уточнение места проведения процедуры для соответствия фактам.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 13,
-        "section": "Общественный транспорт сегодня",
-        "action": "strip",
-        "reason": "Mansfield Woodhouse и Worksop не относятся к Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 15,
-        "section": "Футбол",
-        "action": "replace",
-        "replacement_text": "• Джошуа Зиркзе вышел в стартовом составе в первом предсезонном матче против Уэксема, напомнив Манчестер Юнайтед о необходимости подписать еще одного нападающего этим летом. MEN Manchester United",
-        "reason": "Джошуа Зиркзе не является игроком Манчестер Юнайтед, но его игра могла повлиять на их планы.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 27,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Терренс Кинг, 60 лет, из Мидлтона, был признан виновным в убийстве 15-летнего Девона Симмонса-Кейна, наехав на него на своем автомобиле 22 июля 2025 года. Вердикт был вынесен 17 июля 2026 года.",
-        "reason": "Исправление даты события для соответствия фактам.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 31,
-        "section": "IT и бизнес",
-        "action": "strip",
-        "reason": "Пожар в Ирламе не соответствует тематике раздела 'IT и бизнес'.",
-        "risk": "format"
-      },
-      {
-        "line_index": 34,
-        "section": "Business/tech события для тебя",
-        "action": "patch",
-        "replacement_text": "• 17 сентября 2026 года в Манчестере пройдет конференция MD Future 26, посвященная инфраструктуре, талантам и инновациям для экономики данных. Организатор: Manchester Digital Events",
-        "reason": "Добавлено уточнение об организаторе для ясности.",
-        "risk": "format"
-      },
-      {
-        "line_index": 40,
-        "section": "Дальние анонсы",
-        "action": "strip",
-        "replacement_text": "",
-        "reason": "Hawth Theatre находится в Crawley, что не относится к Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 41,
-        "section": "Дальние анонсы",
-        "action": "strip",
-        "replacement_text": "",
-        "reason": "Whitby Pavilion Theatre находится в Whitby, что не относится к Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 42,
-        "section": "Дальние анонсы",
-        "action": "strip",
-        "replacement_text": "",
-        "reason": "York Barbican находится в York, что не относится к Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 44,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Charlie Puth — 22 июля, Manchester Academy (Поп/Рок). Событие проходит сегодня. Ticketmaster",
-        "reason": "Указан неверный жанр для Charlie Puth.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 46,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Wolfmother — 30 июля, O2 Ritz Manchester (Рок). Билеты и время указаны на официальной странице. Ticketmaster",
-        "reason": "Указан неверный жанр для Wolfmother.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 60,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• The Weeknd — 14 августа, Wembley Stadium (Хип-хоп/рэп). Билеты уже в продаже. Ticketmaster",
-        "reason": "Указан неверный жанр 'Трэп', в источнике указан 'Хип-хоп/рэп'.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 69,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• Thievery Corporation — 30 июля, Roundhouse (Электронная музыка). Билеты и время указаны на официальной странице. Ticketmaster",
-        "reason": "Указан неверный жанр 'Ампиано', следует заменить на 'Электронная музыка'.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 88,
-        "section": "Русскоязычные концерты и стендап UK",
-        "action": "patch",
-        "replacement_text": "• 26 февраля 2027 года в Indigo at The O2 — Monatik Europe Tour 2027. London. Официальная страница должна подтверждать дату, город, площадку и старт продаж. MTicket Russian Concerts",
-        "reason": "Уточнение года события для ясности.",
-        "risk": "date"
-      },
-      {
-        "line_index": 90,
-        "section": "Русскоязычные концерты и стендап UK",
-        "action": "patch",
-        "replacement_text": "• 8 ноября 2026 года в Indigo at The O2 — Горан Брегович. Официальная страница должна подтверждать дату, город, площадку и старт продаж. MTicket Russian Concerts",
-        "reason": "Уточнение года события для ясности.",
-        "risk": "date"
-      },
-      {
-        "line_index": 91,
-        "section": "Русскоязычные концерты и стендап UK",
-        "action": "patch",
-        "replacement_text": "• 17 октября 2026 года в Brixton Jamm — Андрей Кравченко. Официальная страница должна подтверждать дату, город, площадку и старт продаж. MTicket Russian Concerts",
-        "reason": "Уточнение года события для ясности.",
-        "risk": "date"
-      }
-    ],
+    "decision": "block",
+    "confidence": 0.0,
+    "critical_errors": [],
+    "actions": [],
     "warnings": [
-      "Уточнено, что Manchester Digital Events является организатором, а не частью названия конференции.",
-      "Проверьте, что все даты и жанры соответствуют источникам, чтобы избежать ошибок в информации о концертах.",
-      "Секция 'Крупные концерты вне GM' содержит много информации о концертах, которые не относятся к Greater Manchester. Это может отвлечь внимание от основной информации о событиях в GM.",
-      "Некоторые строки требуют уточнения года события для ясности.",
-      "judge reduce failed: parse_failed no parseable JSON"
+      "all judge calls failed: 10 failure(s)"
     ],
-    "notes": "Информация о пожаре в Openshaw представлена корректно и соответствует источнику.; Прогноз погоды корректен и соответствует источнику Met Office.; Исправлена ошибка в указании места проведения процедуры Джорданом Парке.; Убедитесь, что информация о транспорте относится к Greater Manchester.; Исправлена ошибка в информац",
+    "notes": "pre-send judge failed before producing usable verdicts",
     "map_reduce": {
-      "mode": "map_reduce",
-      "status": "partial",
-      "chunk_count": 14,
-      "failed_chunk_count": 0,
       "chunks": [
         {
           "chunk_id": "chunk-01",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
             1,
             1
           ],
           "sections": [
-            "Главная история дня"
+            "Погода"
           ],
-          "decision": "pass",
+          "decision": "",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2375,
-          "duration_seconds": 1.251
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.', 'type': 'insufficient_quota', 'param': None, 'code': 'insufficient_quota'}}",
+          "estimated_tokens": 2094,
+          "duration_seconds": 0.913
         },
         {
           "chunk_id": "chunk-02",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
             2,
             2
           ],
           "sections": [
-            "Погода"
+            "Общественный транспорт сегодня"
           ],
-          "decision": "pass",
+          "decision": "",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2084,
-          "duration_seconds": 1.158
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.', 'type': 'insufficient_quota', 'param': None, 'code': 'insufficient_quota'}}",
+          "estimated_tokens": 2060,
+          "duration_seconds": 1.06
         },
         {
           "chunk_id": "chunk-03",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
             3,
-            11
+            3
           ],
           "sections": [
-            "Свежие новости"
+            "Выходные в GM"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 5815,
-          "duration_seconds": 5.227
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.', 'type': 'insufficient_quota', 'param': None, 'code': 'insufficient_quota'}}",
+          "estimated_tokens": 2388,
+          "duration_seconds": 0.789
         },
         {
           "chunk_id": "chunk-04",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
-            12,
-            14
-          ],
-          "sections": [
-            "Общественный транспорт сегодня"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2776,
-          "duration_seconds": 2.453
-        },
-        {
-          "chunk_id": "chunk-05",
-          "status": "ok",
-          "line_range": [
-            15,
-            17
-          ],
-          "sections": [
-            "Футбол"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3034,
-          "duration_seconds": 2.753
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "ok",
-          "line_range": [
-            18,
-            28
-          ],
-          "sections": [
-            "Городской радар"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 6615,
-          "duration_seconds": 2.882
-        },
-        {
-          "chunk_id": "chunk-07",
-          "status": "ok",
-          "line_range": [
-            29,
-            33
-          ],
-          "sections": [
-            "IT и бизнес"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 4060,
-          "duration_seconds": 2.173
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            34,
-            35
-          ],
-          "sections": [
-            "Business/tech события для тебя"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 1,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 2923,
-          "duration_seconds": 2.925
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            36,
-            43
+            4,
+            4
           ],
           "sections": [
             "Дальние анонсы"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 3,
-          "action_count": 3,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 5726,
-          "duration_seconds": 17.636
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.', 'type': 'insufficient_quota', 'param': None, 'code': 'insufficient_quota'}}",
+          "estimated_tokens": 2328,
+          "duration_seconds": 0.573
         },
         {
-          "chunk_id": "chunk-10",
-          "status": "ok",
+          "chunk_id": "chunk-05",
+          "status": "failed",
           "line_range": [
-            44,
-            51
+            5,
+            11
           ],
           "sections": [
             "Билеты / Ticket Radar"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 5882,
-          "duration_seconds": 29.125
-        },
-        {
-          "chunk_id": "chunk-11",
-          "status": "ok",
-          "line_range": [
-            52,
-            63
-          ],
-          "sections": [
-            "Крупные концерты вне GM"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 1,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 7282,
-          "duration_seconds": 67.98
-        },
-        {
-          "chunk_id": "chunk-12",
-          "status": "ok",
-          "line_range": [
-            64,
-            75
-          ],
-          "sections": [
-            "Крупные концерты вне GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 7176,
-          "duration_seconds": 26.764
-        },
-        {
-          "chunk_id": "chunk-13",
-          "status": "ok",
-          "line_range": [
-            76,
-            87
-          ],
-          "sections": [
-            "Крупные концерты вне GM"
-          ],
-          "decision": "warn",
+          "decision": "",
           "critical_error_count": 0,
           "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 7408,
-          "duration_seconds": 57.527
+          "warning_count": 0,
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.', 'type': 'insufficient_quota', 'param': None, 'code': 'insufficient_quota'}}",
+          "estimated_tokens": 5337,
+          "duration_seconds": 0.577
         },
         {
-          "chunk_id": "chunk-14",
-          "status": "ok",
+          "chunk_id": "chunk-06",
+          "status": "failed",
           "line_range": [
-            88,
-            92
+            12,
+            23
           ],
           "sections": [
-            "Русскоязычные концерты и стендап UK"
+            "Крупные концерты вне GM"
           ],
-          "decision": "warn",
+          "decision": "",
           "critical_error_count": 0,
-          "action_count": 3,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 4338,
-          "duration_seconds": 10.87
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.', 'type': 'insufficient_quota', 'param': None, 'code': 'insufficient_quota'}}",
+          "estimated_tokens": 7433,
+          "duration_seconds": 0.535
+        },
+        {
+          "chunk_id": "chunk-07",
+          "status": "failed",
+          "line_range": [
+            24,
+            35
+          ],
+          "sections": [
+            "Крупные концерты вне GM"
+          ],
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.', 'type': 'insufficient_quota', 'param': None, 'code': 'insufficient_quota'}}",
+          "estimated_tokens": 7207,
+          "duration_seconds": 8.537
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "failed",
+          "line_range": [
+            36,
+            47
+          ],
+          "sections": [
+            "Крупные концерты вне GM"
+          ],
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.', 'type': 'insufficient_quota', 'param': None, 'code': 'insufficient_quota'}}",
+          "estimated_tokens": 7427,
+          "duration_seconds": 24.965
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "failed",
+          "line_range": [
+            48,
+            48
+          ],
+          "sections": [
+            "Крупные концерты вне GM"
+          ],
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.', 'type': 'insufficient_quota', 'param': None, 'code': 'insufficient_quota'}}",
+          "estimated_tokens": 2346,
+          "duration_seconds": 0.567
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "failed",
         "line_range": [],
         "sections": [],
         "decision": "",
         "critical_error_count": 0,
         "action_count": 0,
         "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 13216,
-        "duration_seconds": 33.206
+        "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.', 'type': 'insufficient_quota', 'param': None, 'code': 'insufficient_quota'}}",
+        "estimated_tokens": 11109,
+        "duration_seconds": 24.879
       },
       "max_workers": 3,
       "chunk_line_target": 12,
