@@ -3040,7 +3040,7 @@ def validate_candidates(project_root: Path) -> StageResult:
                 "rubric_contract": candidate.get("rubric_contract") or {},
                 "news_anchor": candidate.get("news_anchor") or {},
                 "protected_lane": candidate.get("protected_lane") or {},
-                "english_judge": candidate.get("english_judge") or {},
+                "formula_judge": candidate.get("formula_judge") or {},
                 "second_opinion_required": bool(candidate.get("second_opinion_required")),
                 "reject_reasons": candidate.get("reject_reasons") or [],
                 "quality_warnings": candidate.get("quality_warnings") or [],

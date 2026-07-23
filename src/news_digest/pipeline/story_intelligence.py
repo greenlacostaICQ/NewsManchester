@@ -464,11 +464,20 @@ def protected_lane(candidate: dict) -> dict[str, object]:
     }
 
 
-def english_judge_stub(candidate: dict) -> dict[str, object]:
-    """Deterministic JSON-shaped contract for the future English judge.
+def formula_judge_stub(candidate: dict) -> dict[str, object]:
+    """Deterministic verdict from the formula — NOT a model.
 
-    This is deliberately not an LLM call; it gives downstream stages a stable
-    schema and lets us audit rejects before we turn on a model bake-off.
+    Runs on every candidate and is the fallback whenever the real board in
+    board_rank.py did not judge an item: an unjudged block, a failed call, or
+    LLM_PROVIDER=none. The verdict is derived from the publish tier, the
+    protected lane and reader value, so it adds no knowledge beyond
+    section_board_score; it only expresses it in verdict shape.
+
+    Named `formula_judge` on purpose. Until 2026-07-23 this was called
+    `english_judge`, which made the archive unreadable: a report line saying the
+    judge rejected N items was really the formula rejecting them, and there was
+    no way to tell those apart from the model's verdicts. Read `judged_by` on the
+    candidate to know which one decided.
     """
     anchor = formal_news_anchor(candidate)
     lane = protected_lane(candidate)
@@ -577,7 +586,7 @@ def backup_pool_record(
         today = now_london().date()
     fp = str(candidate.get("fingerprint") or "").strip() or fingerprint_for_candidate(candidate)
     ttl = backup_ttl_policy(candidate, today=today)
-    judge = candidate.get("english_judge") if isinstance(candidate.get("english_judge"), dict) else english_judge_stub(candidate)
+    judge = candidate.get("formula_judge") if isinstance(candidate.get("formula_judge"), dict) else formula_judge_stub(candidate)
     lane = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else protected_lane(candidate)
     return {
         "schema_version": BACKUP_POOL_SCHEMA_VERSION,
@@ -593,7 +602,7 @@ def backup_pool_record(
         "primary_block": candidate.get("primary_block") or "",
         "rubric": (candidate.get("rubric_contract") or {}).get("rubric") if isinstance(candidate.get("rubric_contract"), dict) else "",
         "protected_lanes": lane.get("lanes") or [],
-        "english_judge": judge,
+        "formula_judge": judge,
         "section_board_score": candidate.get("section_board_score"),
         "enrichment_health": candidate.get("enrichment_health") or enrichment_health(candidate),
         "reason": reason or str(candidate.get("reason") or ""),
@@ -672,7 +681,12 @@ def apply_story_intelligence(candidate: dict) -> dict:
             "evidence_chars": candidate["enrichment_health"].get("evidence_chars") or 0,
             "reason": "protected_or_anchored_item_has_failed_or_thin_enrichment",
         }
-    candidate["english_judge"] = english_judge_stub(candidate)
+    candidate["formula_judge"] = formula_judge_stub(candidate)
+    # Who actually decided this item. The formula always runs; board_rank
+    # overwrites this with "model" for judged blocks and must not be reverted by
+    # a later story-intelligence refresh, hence the guard rather than a plain set.
+    if str(candidate.get("judged_by") or "") != "model":
+        candidate["judged_by"] = "formula"
     candidate["section_board_score"] = section_board_score(candidate)
     attach_evidence_packet(candidate)
     return candidate

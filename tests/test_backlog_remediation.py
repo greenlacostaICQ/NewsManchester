@@ -2296,7 +2296,7 @@ class StoryIntelligenceTest(unittest.TestCase):
         self.assertTrue(candidate["news_anchor"]["has_news_anchor"])
         self.assertTrue(candidate["protected_lane"]["protected"])
         self.assertIn("planning_civic", candidate["protected_lane"]["lanes"])
-        self.assertEqual(candidate["english_judge"]["decision"], "publish_candidate")
+        self.assertEqual(candidate["formula_judge"]["decision"], "publish_candidate")
         self.assertGreater(candidate["section_board_score"], 100)
 
     def test_new_facts_diff_detects_stage_and_entity_changes(self) -> None:
@@ -2991,7 +2991,7 @@ class TelegramBacklog20260527Test(unittest.TestCase):
                     "title": "Held item",
                     "editorial_status": "borderline",
                     "quality_warnings": ["property_borderline:no_clear_action"],
-                    "english_judge": {"reason_codes": ["property_listing"]},
+                    "formula_judge": {"reason_codes": ["property_listing"]},
                 }
             ]
         }

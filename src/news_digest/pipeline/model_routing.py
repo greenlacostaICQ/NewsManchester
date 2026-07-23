@@ -75,10 +75,17 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
     "rewrite": (
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "mini_rewrite_primary", 1, batch_size=6, timeout_seconds=45),
     ),
-    # Source-language selection/fact-card pass. DeepSeek v4-pro gets the
-    # reasoning/ranking job on the already-trimmed candidate list; OpenAI mini
-    # is the fast full-list reserve when DeepSeek is unavailable or misses
-    # items; gpt-4o remains surgical for lead escalation only.
+    # Editorial board ranking: one listwise call per judged block, before any
+    # cut. DeepSeek v4-pro does the reasoning; mini is the reserve. There is no
+    # lead-only third step — a failed ranking simply leaves the deterministic
+    # order in place, which is the correct degradation.
+    "board_rank": (
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_PRO_MODEL, "DEEPSEEK_API_KEY", "board_rank_deepseek_pro_primary", 1, batch_size=1, timeout_seconds=60),
+        ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "board_rank_mini_reserve", 1, batch_size=1, timeout_seconds=45),
+    ),
+    # Source-language fact-card pass. The card is about ONE story and is cached
+    # by content hash; ranking moved out to the "board_rank" route above, so a
+    # cached card no longer drags a stale verdict with it.
     "english_cards": (
         ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_PRO_MODEL, "DEEPSEEK_API_KEY", "board_ranker_deepseek_pro_primary", 1, batch_size=6, timeout_seconds=35),
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "board_judge_mini_reserve", 1, batch_size=8, timeout_seconds=30),

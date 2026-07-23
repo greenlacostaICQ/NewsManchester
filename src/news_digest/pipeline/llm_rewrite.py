@@ -49,6 +49,13 @@ from news_digest.pipeline.model_routing import (
     route_snapshot,
     sdk_retries_for_route,
 )
+from news_digest.pipeline.board_rank import (
+    apply_board_rank,
+    board_rank_bonus,
+    board_reject_verdict,
+    rank_boards,
+    write_board_rank_report,
+)
 from news_digest.pipeline.reader_value import reader_value_score
 from news_digest.pipeline.story_intelligence import apply_story_intelligence, section_board_score
 from news_digest.pipeline.weekend_inventory import is_weekend_inventory_candidate
@@ -78,10 +85,13 @@ REWRITE_SHORTLIST_VERSION = 2
 # deterministic tier/lifecycle, the model adds nothing there.
 REWRITE_SHORTLIST_CAPS_BY_BLOCK: dict[str, int] = {
     "transport": 99,          # rules: show every real tram/rail restriction
-    "lead_story": 4,
-    "today_focus": 8,
-    "last_24h": 18,           # was 12 — biggest news pool, give the model recall
-    "city_watch": 15,         # was 8
+    # Judged blocks (see board_rank.JUDGED_BLOCKS) are deliberately wider: the
+    # board now ranks them BEFORE this cut, so a wide net costs one listwise call
+    # and the cut is made on the judge's order instead of on the formula's.
+    "lead_story": 6,          # was 4
+    "today_focus": 10,        # was 8
+    "last_24h": 40,           # was 18 — judged block, give the board the real field
+    "city_watch": 30,         # was 15 — judged block
     "weekend_activities": 16,  # was 10
     "next_7_days": 14,        # was 8
     "ticket_radar": 8,        # catalog: deterministic sale/tier ranking
@@ -89,7 +99,7 @@ REWRITE_SHORTLIST_CAPS_BY_BLOCK: dict[str, int] = {
     "outside_gm_tickets": 4,  # catalog: A-tier notability ranking, not the model
     "russian_events": 12,     # was 6 — show all valid after dedupe
     "openings": 10,           # was 6
-    "tech_business": 10,      # was 5
+    "tech_business": 15,      # was 10 — judged block
     "professional_events": 3,  # CV-approved personal rail; keep compact.
     "football": 6,            # was 3
 }
@@ -100,14 +110,6 @@ REWRITE_SHORTLIST_DEFAULT_CAP = 8
 # The board judge is the CHEAP model (DeepSeek-pro on compact cards), so a wider
 # board buys recall cheaply; the expensive Russian writing stays capped at 42.
 REWRITE_RANKING_BOARD_MAX = 90
-# #9 Soft global ceiling on how many candidates we write in Russian per run.
-# Items above the ceiling are not deleted — they stay as backup reserve.
-# Raised 42→50 (2026-07-07): per-section floors starve on a busy morning when the
-# global cap is too tight — Свежие/Еда shipped below their minimums most of the
-# week because there was no board room left after events/tickets. The per-section
-# floors do the shaping; the global cap only needs to be wide enough not to fight
-# them.
-REWRITE_TRANSLATION_BOARD_MAX = 50
 
 # 0001-class reserve pre-write: sections that keep shipping under floor with
 # `no_recoverable_reserve_with_facts` get a bounded rewrite quota for their
@@ -224,8 +226,8 @@ _ANTI_HALLUCINATION = (
     "а не значимая цитата.\n\n"
 )
 
-ENGLISH_CARD_SYSTEM = """You are the English-first board judge for Greater Manchester AM Brief.
-Your job is NOT to translate. Judge publishability, then build a compact English fact card and a readable English reader card from the supplied source evidence.
+ENGLISH_CARD_SYSTEM = """You are the English-first fact-card builder for Greater Manchester AM Brief.
+Your job is NOT to translate and NOT to rank. Build a compact English fact card and a readable English reader card from the supplied source evidence. Ranking is a separate board pass over the whole section.
 
 Use only title, summary, lead, evidence_text, event, entities, story_frame, source_label, dates and glossary_terms supplied in the JSON. Do not browse. Do not invent missing facts.
 If glossary_terms are present, follow them for terminology and naming. Glossary terms do not add facts; they only control wording.
@@ -245,21 +247,12 @@ Return ONLY a JSON object in this shape: {"items": [...]}. The items array must 
     "missing_facts": []
   },
   "reader_card": "One concise English digest bullet without the bullet marker.",
-  "editorial_score": 0-100,
-  "selection_hint": "publish|backup|weak",
-  "board_decision": "publish|backup|reject",
-  "board_confidence": 0.0-1.0,
-  "suggested_block": "transport|today_focus|last_24h|next_7_days|weekend_activities|future_announcements|business|football|short_actions|other",
-  "reason_codes": ["..."],
   "needs_gpt4o_escalation": false,
   "missing_facts": []
 }
 
-Decision rules:
-- publish: local, fresh/useful, enough facts for a self-contained Telegram line.
-- backup: potentially useful but weaker than the board, repetitive, or missing secondary facts.
-- reject: PR-only, stale, non-Greater-Manchester, duplicate, expired, or too thin to write without inventing facts.
 - Mark needs_gpt4o_escalation=true for borderline civic/legal/safety stories, protected lanes, low confidence, or lead-story contenders.
+- List in missing_facts anything the rubric below requires but the evidence does not supply. Do not guess it.
 
 Rubric-specific requirements:
 - transport: explain what is disrupted, where/which line, when, who is affected, and what the reader should do. If the affected section is not named, say that the operator/source has not named a specific section.
@@ -1096,18 +1089,16 @@ def _rewrite_shortlist_priority(candidate: dict) -> tuple[float, float, float, s
             float(reader_value_score({**candidate, "included": True})),
             str(candidate.get("title") or ""),
         )
-    board_score = candidate.get("english_editorial_score")
-    try:
-        board_score_bonus = float(board_score)
-    except (TypeError, ValueError):
-        board_score_bonus = 0.0
-    decision = str(candidate.get("english_board_decision") or candidate.get("english_selection_hint") or "").lower()
-    if decision == "publish":
-        board_score_bonus += 25.0
-    elif decision == "backup":
-        board_score_bonus -= 40.0
+    # The judge now runs BEFORE this cut, so its verdict is real here. The bonus
+    # is symmetric around zero (-25..+25) and zero for anything unjudged, so a
+    # deterministic block is never pushed down merely for having no judge —
+    # which is exactly what the old raw 0-100 term did.
+    board_score_bonus = board_rank_bonus(candidate)
+    decision = str(candidate.get("board_decision") or "").lower()
+    if decision == "backup":
+        board_score_bonus -= 20.0
     elif decision == "reject":
-        board_score_bonus -= 200.0
+        board_score_bonus -= 60.0
     return (
         lead_bonus + protected_bonus + board_score_bonus,
         float(section_board_score(candidate)),
@@ -1241,6 +1232,55 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
     held: list[dict[str, object]] = []
     uncapped_selected: list[dict[str, object]] = []
     caps: dict[str, int] = {}
+
+    # Board rejects are executed here — the first and only place that can see how
+    # many survivors a block has left. Worst rank goes first and the block floor
+    # stops the bleeding, so a harsh morning can never empty a section. Protected
+    # lanes and low-confidence rejects are already filtered by board_reject_verdict.
+    board_rejects_executed = 0
+    board_rejects_blocked: dict[str, int] = {}
+    for block, group in groups.items():
+        floor = _REWRITE_BLOCK_FLOORS.get(block, _REWRITE_BLOCK_FLOOR)
+        rejectable = sorted(
+            (c for c in group if board_reject_verdict(c)[0]),
+            key=lambda c: -int(c.get("board_rank") or 0),
+        )
+        for candidate in group:
+            blocked_reason = board_reject_verdict(candidate)[1]
+            if blocked_reason and blocked_reason != "board_reject":
+                board_rejects_blocked[blocked_reason] = board_rejects_blocked.get(blocked_reason, 0) + 1
+        survivors = len(group)
+        for candidate in rejectable:
+            if survivors <= floor:
+                board_rejects_blocked["block_floor_protects_section"] = (
+                    board_rejects_blocked.get("block_floor_protects_section", 0) + 1
+                )
+                continue
+            candidate["include"] = False
+            candidate["backup_candidate"] = True
+            candidate["backup_pool_only"] = True
+            candidate["public_reserve"] = False
+            candidate["rewrite_shortlist_status"] = "board_rejected"
+            candidate["rewrite_shortlist_reason"] = (
+                "Board rejected: "
+                + ", ".join(str(code) for code in (candidate.get("board_reason_codes") or [])[:3])
+            ).strip(": ")
+            _set_digest_selection_verdict(candidate, "reserve", candidate["rewrite_shortlist_reason"])
+            held.append(
+                {
+                    "fingerprint": candidate.get("fingerprint") or "",
+                    "title": candidate.get("title") or "",
+                    "primary_block": block,
+                    "board_rank": candidate.get("board_rank"),
+                    "board_confidence": candidate.get("board_confidence"),
+                    "reason": candidate["rewrite_shortlist_reason"],
+                }
+            )
+            survivors -= 1
+            board_rejects_executed += 1
+        if rejectable:
+            groups[block] = [c for c in group if c.get("rewrite_shortlist_status") != "board_rejected"]
+
     for block, group in groups.items():
         cap = REWRITE_SHORTLIST_CAPS_BY_BLOCK.get(block, REWRITE_SHORTLIST_DEFAULT_CAP)
         caps[block] = cap
@@ -1386,7 +1426,8 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
         "held_for_backup": len(held),
         "board_overflow": board_overflow,
         "board_max": REWRITE_RANKING_BOARD_MAX,
-        "final_russian_board_max": REWRITE_TRANSLATION_BOARD_MAX,
+        "board_rejects_executed": board_rejects_executed,
+        "board_rejects_blocked": board_rejects_blocked,
         "caps_by_block": caps,
         "uncapped_selected": len(uncapped_selected),
         "uncapped_examples": uncapped_selected[:20],
@@ -1938,21 +1979,13 @@ def _parse_english_card_results(
             _example("missing_reader_card", item, fp)
             continue
         fact_card = item.get("fact_card") if isinstance(item.get("fact_card"), dict) else {}
-        score_raw = item.get("editorial_score")
-        try:
-            editorial_score = int(float(score_raw))
-        except (TypeError, ValueError):
-            editorial_score = int(min(100, max(0, section_board_score(expected[fp], str(expected[fp].get("primary_block") or "")))))
+        # No verdict fields here on purpose: a card is cached by content hash and
+        # reused for days, while a verdict is only true for the day it was made.
+        # Ranking lives in board_rank.py and runs fresh every morning.
         card = {
             "rubric": str(item.get("rubric") or "other").strip() or "other",
             "fact_card": fact_card,
             "reader_card": reader_card,
-            "editorial_score": max(0, min(100, editorial_score)),
-            "selection_hint": str(item.get("selection_hint") or "publish").strip() or "publish",
-            "board_decision": str(item.get("board_decision") or item.get("selection_hint") or "publish").strip() or "publish",
-            "board_confidence": item.get("board_confidence"),
-            "suggested_block": str(item.get("suggested_block") or "").strip(),
-            "reason_codes": item.get("reason_codes") if isinstance(item.get("reason_codes"), list) else [],
             "needs_gpt4o_escalation": bool(item.get("needs_gpt4o_escalation")),
             "missing_facts": item.get("missing_facts") if isinstance(item.get("missing_facts"), list) else [],
         }
@@ -2242,13 +2275,6 @@ def _apply_english_cards_to_candidates(
         candidate["english_rubric"] = card.get("rubric") or "other"
         candidate["english_fact_card"] = fact_card
         candidate["english_reader_card"] = card.get("reader_card") or ""
-        candidate["english_editorial_score"] = card.get("editorial_score")
-        candidate["english_selection_hint"] = card.get("selection_hint") or "publish"
-        candidate["english_board_decision"] = card.get("board_decision") or candidate["english_selection_hint"]
-        candidate["english_board_confidence"] = card.get("board_confidence")
-        candidate["english_suggested_block"] = card.get("suggested_block") or ""
-        candidate["english_board_reason_codes"] = card.get("reason_codes") or []
-        candidate["english_needs_gpt4o_escalation"] = bool(card.get("needs_gpt4o_escalation"))
         candidate["english_missing_facts"] = card.get("missing_facts") or []
         candidate["english_card_provider"] = prov
         candidate["english_card_model"] = model_name
@@ -3906,6 +3932,7 @@ def run_rank_digest(project_root: Path) -> StageResult:
         "selected_for_rewrite": len(to_rank),
         "held_for_backup": 0,
     }
+    board_rank_report: dict[str, object] = {"enabled": False, "ranked_candidates": 0, "applied": 0}
     prewrite_enrichment_report: dict[str, object] = {"attempted": 0, "enriched": 0, "skipped": 0, "failed": 0}
     english_cards_applied = 0
     english_card_memory_reused: list[dict] = []
@@ -3916,6 +3943,17 @@ def run_rank_digest(project_root: Path) -> StageResult:
     elif to_rank:
         enrichment_action = _enrich_thin_candidates_inplace(to_rank)
         to_rank, cost_after_quality_guard = _apply_cost_after_quality_guard(to_rank)
+        # The board judges BEFORE any cut. Until 2026-07-23 the order was the
+        # other way round — the shortlist trimmed the list and only then asked
+        # the model, so the judge could never rescue what the formula dropped.
+        board_verdicts, board_rank_report = rank_boards(
+            to_rank,
+            provider_override=provider_override,
+            base_url_override=base_url_override,
+            model_override=model_override,
+        )
+        board_rank_report["applied"] = apply_board_rank(candidates, board_verdicts)
+        write_board_rank_report(project_root, board_rank_report)
         to_rank, rewrite_shortlist = _apply_rewrite_shortlist(candidates, to_rank)
         prewrite_enrichment_report = _enrich_before_board(to_rank)
         english_card_memory_reused = _apply_english_card_memory(to_rank, english_card_memory)
@@ -3989,6 +4027,7 @@ def run_rank_digest(project_root: Path) -> StageResult:
                 "examples": deterministic_writer_items[:40],
             },
             "cost_after_quality_guard": cost_after_quality_guard,
+            "board_rank": board_rank_report,
             "rewrite_shortlist": rewrite_shortlist,
             "prewrite_enrichment": prewrite_enrichment_report,
             "english_cards": {

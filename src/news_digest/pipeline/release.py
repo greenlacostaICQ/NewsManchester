@@ -1586,7 +1586,7 @@ def _borderline_queue(candidates_report: dict | None, writer_report: dict | None
         # the borderline pool. Without this the queue previously stored
         # everything as "no_reason" which violated E16 (audit per story).
         warnings = [str(w) for w in (candidate.get("quality_warnings") or []) if str(w).strip()]
-        ej = candidate.get("english_judge") if isinstance(candidate.get("english_judge"), dict) else {}
+        ej = candidate.get("formula_judge") if isinstance(candidate.get("formula_judge"), dict) else {}
         ej_codes = [str(c) for c in (ej.get("reason_codes") or []) if str(c).strip()]
         reason_code = next(
             (w.split(":")[0] for w in warnings if w),
@@ -1602,7 +1602,7 @@ def _borderline_queue(candidates_report: dict | None, writer_report: dict | None
                 "reason_code": reason_code,
                 "reason": candidate.get("reason") or "",
                 "quality_warnings": warnings,
-                "english_judge_reason_codes": ej_codes,
+                "formula_judge_reason_codes": ej_codes,
                 "specificity_review": candidate.get("specificity_review") or {},
                 "event_schema_completeness": candidate.get("event_schema_completeness") or {},
                 "manual_include_hint": f'Add "{fp}" to data/state/manual_candidate_overrides.json force_include[]',
@@ -1779,7 +1779,7 @@ def _is_independent_high_value_signal(candidate: dict) -> bool:
     apply_story_intelligence(candidate)
     lane = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
     anchor = candidate.get("news_anchor") if isinstance(candidate.get("news_anchor"), dict) else {}
-    judge = candidate.get("english_judge") if isinstance(candidate.get("english_judge"), dict) else {}
+    judge = candidate.get("formula_judge") if isinstance(candidate.get("formula_judge"), dict) else {}
     score = float(candidate.get("section_board_score") or 0.0)
     if candidate.get("second_opinion_required") or candidate.get("backup_candidate"):
         return True
@@ -1866,7 +1866,7 @@ def _final_loss_check(
             "recovery_plan": recovery_plan,
             "protected_lanes": lane.get("lanes") or [],
             "section_board_score": candidate.get("section_board_score"),
-            "false_negative_risk": (candidate.get("english_judge") or {}).get("false_negative_risk") if isinstance(candidate.get("english_judge"), dict) else "",
+            "false_negative_risk": (candidate.get("formula_judge") or {}).get("false_negative_risk") if isinstance(candidate.get("formula_judge"), dict) else "",
             "enrichment_warning": bool(enrichment.get("warning")),
             "manual_include_hint": f'Add "{fp}" to data/state/manual_candidate_overrides.json force_include[]',
         }
@@ -1951,7 +1951,7 @@ def _write_audit_trail(
                 "rubric_contract": candidate.get("rubric_contract") or {},
                 "news_anchor": candidate.get("news_anchor") or {},
                 "protected_lane": candidate.get("protected_lane") or {},
-                "english_judge": candidate.get("english_judge") or {},
+                "formula_judge": candidate.get("formula_judge") or {},
                 "section_board_score": candidate.get("section_board_score"),
                 "enrichment_health": candidate.get("enrichment_health") or {},
             },

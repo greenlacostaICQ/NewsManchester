@@ -41,6 +41,7 @@ from news_digest.pipeline.editorial_contracts import (
 )
 from news_digest.pipeline.glossary_qa import glossary_line_issues, repair_glossary_terms
 from news_digest.pipeline.reader_value import reader_value_score
+from news_digest.pipeline.board_rank import board_rank_bonus
 from news_digest.pipeline.reader_actions import classify_reader_action
 from news_digest.pipeline.source_selection import source_score
 from news_digest.pipeline.story_intelligence import section_board_score
@@ -4451,16 +4452,12 @@ def _section_priority_score(candidate: dict, section_name: str, line: str) -> fl
     """Shared reader-value score used when capped sections choose survivors."""
     attach_editorial_contract(candidate)
     score = float(section_board_score(candidate, section_name))
-    # English-first rewrite produces a source-language editorial score before
-    # Russian translation. Treat it as a soft ordering signal only: if the
-    # model was unavailable the field is absent and the old deterministic
-    # section score remains the source of truth.
-    try:
-        english_score = float(candidate.get("english_editorial_score"))
-    except (TypeError, ValueError):
-        english_score = 0.0
-    if english_score:
-        score += (max(0.0, min(100.0, english_score)) - 50.0) / 4.0
+    # Editorial board contribution, relative to today's competition inside the
+    # candidate's own block: rank 1 gets +25, the last rank -25, unjudged blocks
+    # get exactly 0 so they keep the order they had before the judge existed.
+    # Replaces the old absolute 0-100 term, which graded record completeness and
+    # put a bus stop closure above a court report.
+    score += board_rank_bonus(candidate)
     action = str(candidate.get("reader_action_type") or classify_reader_action(candidate))
     action_bonus = {
         "check_route": 14,

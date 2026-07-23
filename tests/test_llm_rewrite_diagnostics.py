@@ -139,7 +139,10 @@ class LlmRewriteDiagnosticsTests(unittest.TestCase):
         self.assertEqual(provider, "DeepSeek")
         self.assertEqual(model, "deepseek-v4-pro")
         self.assertEqual(card["rubric"], "civic")
-        self.assertEqual(card["editorial_score"], 72)
+        # Cards carry no verdict: ranking moved to board_rank, so a card reused
+        # from cache days later cannot drag a stale verdict along with it.
+        self.assertNotIn("editorial_score", card)
+        self.assertNotIn("board_decision", card)
         self.assertEqual(diagnostic["accepted"], 1)
 
     def test_translation_payload_uses_english_card_not_raw_evidence(self) -> None:
