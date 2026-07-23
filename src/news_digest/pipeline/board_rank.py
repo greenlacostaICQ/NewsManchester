@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import logging
+import random
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -105,13 +106,35 @@ BOARD_RANK_SYSTEM = """You are the editorial board for the Greater Manchester AM
 
 You are given EVERY candidate for ONE section of today's issue. Rank them against each other.
 
-You are NOT grading how complete or well-formed a record is. A tidy roadworks notice with a
-street name and a timestamp is not more important than a thin court report. Judge only what a
-Greater Manchester resident would most want to know today, within this section.
+THE MISTAKE YOU MUST NOT MAKE
+Do not rank by how complete or tidy a record looks. This is a real failure from this desk: a bus
+stop closure notice was placed at the top of the section and a court report about the friend of a
+synagogue attacker was placed below it. The closure notice won because it had a street name, an
+operator and a timestamp, while the court report had facts the source was not allowed to print.
+A story is not weaker because details are withheld for legal reasons, and a routine notice is not
+strong because every field is filled in. Rank consequence, not tidiness.
+
+HOW TO RANK, in this order of weight
+1. Consequence — how many Greater Manchester residents this changes something for, and how much.
+   A death, a charge, a verdict, a closure of something people rely on, money or services changing.
+2. Novelty — is this new today, or a restatement of a situation readers already know?
+3. Actionability — can a reader do something about it today?
+Actionability is the tie-breaker, never the lead criterion: routine notices score high on it and
+near zero on consequence, which is exactly how the mistake above happened.
+
+WHAT DOES NOT EARN RANK
+- A famous name. A Manchester United stadium story is not automatically above a council leadership
+  vacancy; judge the consequence, not the recognisability.
+- Volume of detail, length, or a well-filled record.
+- The order in which candidates are supplied. It carries no signal and is deliberately shuffled.
 
 Use only the supplied fields. Do not browse. Do not invent facts.
 
-Return ONLY a JSON object: {"items": [...]}, ordered best first.
+Return ONLY a JSON object:
+{
+  "board_note": "one sentence: what is genuinely the strongest signal in this section today",
+  "items": [ ... ordered best first ... ]
+}
 Each item:
 {
   "fingerprint": "...",
@@ -122,14 +145,17 @@ Each item:
   "why": "one short sentence — REQUIRED for ranks 1-3, omit otherwise"
 }
 
+Write board_note first, after reading the whole list and before fixing the order.
+
 Hard rules:
 - Every supplied fingerprint appears exactly once. Do not add or drop items.
 - Ranks are 1..N, contiguous, no ties, best first.
-- decision "reject" is for: not Greater Manchester, stale, pure PR, duplicate of a stronger
-  item in this same list, or too thin to write a self-contained line from.
-- decision "backup" is for genuinely useful items that lost to stronger competition today.
-- confidence is your own certainty about THIS verdict, not about the story.
-- Be honest about weak days: if the section is thin, say so with low ranks, do not inflate.
+- "reject" ONLY for: outside Greater Manchester, stale, pure PR or marketing, a duplicate of a
+  stronger item in this same list, or too thin to write a self-contained line from.
+- Losing to stronger competition today is "backup", NOT "reject". Do not use reject to express
+  that the field was strong; most of a normal section is publish or backup.
+- confidence is your certainty about THIS verdict, not about the story itself.
+- On a thin day say so through low ranks and honest decisions. Do not inflate a weak field.
 """
 
 
@@ -194,6 +220,8 @@ def _parse_board_rank_results(
         diagnostic["raw_excerpt"] = cleaned[:400]
         return {}, diagnostic
 
+    if isinstance(payload, dict):
+        diagnostic["board_note"] = _clip(payload.get("board_note"), 300)
     items = payload.get("items") if isinstance(payload, dict) else payload
     if not isinstance(items, list):
         diagnostic["parse_error"] = f"items is {type(items).__name__}, not a list."
@@ -280,12 +308,19 @@ def _call_block(
     )
 
     expected = {str(c.get("fingerprint") or ""): c for c in candidates if str(c.get("fingerprint") or "")}
+    # Candidates arrive in deterministic-score order. Feeding that order to the
+    # judge anchors it on the very formula it is supposed to second-guess, and
+    # LLM rankers are documented to be biased by position in the prompt. Shuffle
+    # deterministically by date+block so the judge sees no formula hint and a
+    # rerun of the same morning still reproduces exactly.
+    prompt_order = list(expected.values())
+    random.Random(f"{today_london()}|{block}").shuffle(prompt_order)
     user_payload = {
         "today_date": today_london(),
         "section": PRIMARY_BLOCKS.get(block, block),
         "ranking_criterion": JUDGED_BLOCKS.get(block, ""),
         "slots_available": len(expected),
-        "candidates": [_rank_item_payload(c) for c in expected.values()],
+        "candidates": [_rank_item_payload(c) for c in prompt_order],
     }
     messages = [
         {"role": "system", "content": BOARD_RANK_SYSTEM},
@@ -452,7 +487,12 @@ def rank_boards(
             decisions: dict[str, int] = {}
             for verdict in block_verdicts.values():
                 decisions[verdict["decision"]] = decisions.get(verdict["decision"], 0) + 1
+            note = next(
+                (str(d.get("board_note") or "") for d in diagnostics if d.get("block") == block and d.get("board_note")),
+                "",
+            )
             report["blocks"][block] = {
+                "board_note": note,
                 "candidates": len(by_block[block]),
                 "sent_to_model": min(len(by_block[block]), _MAX_ITEMS_PER_CALL),
                 "ranked": len(block_verdicts),

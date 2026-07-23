@@ -2949,26 +2949,40 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             }
             for idx in range(12)
         ]
-        crowded = [
-            {
-                "include": True,
-                "fingerprint": f"city-{idx}",
-                "category": "media_layer",
-                "primary_block": "city_watch",
-                "title": f"City watch item {idx}",
-                "summary": "Council update in Manchester.",
-                "source_label": "MEN",
-                "reader_value_score": 50,
-            }
-            for idx in range(80)
-        ]
+        # Filler exists only to push the run past the GLOBAL 90-item board cap.
+        # It has to span several blocks now: since judged blocks lost the
+        # blanket "media_layer + strong" cap exemption (ADR 0152), a single
+        # crowded block can no longer overflow 90 on its own — it stops at its
+        # own per-block cap. last_24h 45 + city_watch 35 + weekend 16 = 96.
+        def _filler(block: str, count: int, prefix: str) -> list[dict]:
+            return [
+                {
+                    "include": True,
+                    "fingerprint": f"{prefix}-{idx}",
+                    "category": "media_layer",
+                    "primary_block": block,
+                    "title": f"{prefix} item {idx}",
+                    "summary": "Council update in Manchester.",
+                    "source_label": "MEN",
+                    "reader_value_score": 40,
+                }
+                for idx in range(count)
+            ]
+
+        crowded = (
+            _filler("city_watch", 80, "city")
+            + _filler("weekend_activities", 40, "weekend")
+            + _filler("next_7_days", 40, "next7")
+            + _filler("tech_business", 30, "tech")
+            + _filler("openings", 20, "openings")
+        )
 
         selected, report = _apply_rewrite_shortlist(fresh + crowded, fresh + crowded)
-        selected_fresh = [c for c in selected if str(c.get("primary_block")) == "last_24h"]
+        survived = {str(c.get("fingerprint")) for c in selected}
 
-        self.assertEqual(len(selected_fresh), 12)
         self.assertGreater(report["board_overflow"], 0)
-        self.assertFalse(any(c.get("rewrite_shortlist_status") == "backup_board_cap" for c in fresh))
+        # Every strong fresh item survives the global cap, whatever the filler did.
+        self.assertEqual({f"fresh-{idx}" for idx in range(12)} - survived, set())
 
     def test_today_focus_eligibility_rejects_soft_opening(self) -> None:
         candidate = {

@@ -1143,6 +1143,14 @@ def _must_translate_before_cap(candidate: dict) -> bool:
         if block not in JUDGED_BLOCKS:
             return True
     if protected.get("protected") and category != "venues_tickets":
+        # Inside a judged block only the non-negotiable lanes exempt from the
+        # cap. `planning_civic` is a topic label — it fires on story_type
+        # planning/civic/local_cost — not a "must not be cut" signal, and on
+        # 2026-07-23 it alone protected 11 of city_watch's 18, including
+        # "Young competition winner announced" and "Building consultancy eyes
+        # growth". Those are exactly the calls the board exists to make.
+        if block in JUDGED_BLOCKS:
+            return bool({"transport", "public_safety"} & set(protected.get("lanes") or []))
         return True
     return False
 
