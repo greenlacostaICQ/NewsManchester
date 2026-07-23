@@ -206,6 +206,37 @@ class WriterRenderedFingerprintTest(unittest.TestCase):
             self.assertNotIn("конкретных подтверждённых сбоев", html)
             self.assertNotIn("https://tfgm.com/travel-updates", html)
 
+    def test_editor_missing_required_content_block_warns_not_blocks(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            run_date = now_london().strftime("%Y-%m-%d")
+            (state_dir / "candidates.json").write_text(
+                json.dumps(
+                    {
+                        "pipeline_run_id": "test-run",
+                        "run_date_london": run_date,
+                        "candidates": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (state_dir / "draft_digest.html").write_text(
+                f"<b>Greater Manchester Brief — {run_date}, 08:00</b>\n\n"
+                "<b>Погода</b>\n"
+                "• Погода: 15°C. <a href=\"https://example.test/weather\">Met Office</a>\n",
+                encoding="utf-8",
+            )
+
+            result = edit_digest(root)
+            report = json.loads((state_dir / "editor_report.json").read_text(encoding="utf-8"))
+
+            self.assertTrue(result.ok)
+            self.assertEqual(report["stage_status"], "complete")
+            self.assertEqual(report["errors"], [])
+            self.assertTrue(any("Required block missing" in row for row in report["warnings"]))
+
 
 class TargetedEditorSecondRoundTest(unittest.TestCase):
     """Backlog item 2: round 2 re-sends to the model ONLY the lines round 1 left
@@ -1783,7 +1814,7 @@ class PublishedReviewTest(unittest.TestCase):
             self.assertNotIn("Draft digest is missing required block: Что важно сегодня.", report["errors"])
             self.assertTrue(any("no eligible practical today-focus item" in warning for warning in report["warnings"]))
 
-    def test_empty_today_focus_with_eligible_writer_rows_still_blocks(self) -> None:
+    def test_empty_today_focus_with_eligible_writer_rows_warns_not_blocks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             state_dir = root / "data" / "state"
@@ -1890,8 +1921,10 @@ class PublishedReviewTest(unittest.TestCase):
             result = build_release(root)
             report = json.loads((state_dir / "release_report.json").read_text(encoding="utf-8"))
 
-            self.assertFalse(result.ok)
-            self.assertIn("Draft digest is missing required block: Что важно сегодня.", report["errors"])
+            self.assertTrue(result.ok)
+            self.assertEqual(report["release_decision"], "ship_degraded")
+            self.assertEqual(report["errors"], [])
+            self.assertTrue(any("missing required block: Что важно сегодня" in row for row in report["warnings"]))
 
     def test_public_services_source_failure_does_not_block_release(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

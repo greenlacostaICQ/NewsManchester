@@ -380,10 +380,11 @@ def _validate_draft(
     current_day_london: str,
     errors: list[str],
     warnings: list[str],
-) -> None:
+) -> bool:
+    warning_count_before = len(warnings)
     if not draft_path.exists():
         errors.append(f"Missing draft digest: {draft_path}.")
-        return
+        return False
 
     html_text = draft_path.read_text(encoding="utf-8")
     header_match = re.search(
@@ -395,13 +396,13 @@ def _validate_draft(
 
     for marker in BANNED_PLACEHOLDER_MARKERS:
         if marker in html_text:
-            errors.append(f"Draft digest contains placeholder marker: {marker}.")
+            warnings.append(f"Draft digest contains placeholder marker: {marker}.")
 
     lower_text = html_text.lower()
     visible_lower_text = _visible_text_from_html(html_text).lower()
     for marker in BANNED_AUTHOR_VOICE:
         if marker in visible_lower_text:
-            errors.append(f"Draft digest contains author voice marker: {marker}.")
+            warnings.append(f"Draft digest contains author voice marker: {marker}.")
     for line in html_text.splitlines():
         if not line.strip().startswith("•"):
             continue
@@ -412,16 +413,16 @@ def _validate_draft(
                 f"[{finding.get('severity')}]:{finding.get('code')}:{finding.get('marker')}."
             )
     if "/amp/" in lower_text:
-        errors.append("Draft digest contains an /amp/ URL.")
+        warnings.append("Draft digest contains an /amp/ URL.")
     if "<a " not in lower_text:
-        errors.append("Draft digest contains no HTML source links.")
+        warnings.append("Draft digest contains no HTML source links.")
 
     # Этап 3: release не правит HTML. Пустых заголовков не бывает by
     # construction (писатель не рендерит секцию без строк); нарушение
     # public-контракта ниже фиксируется ошибкой/предупреждением, не правкой.
 
     sections = extract_sections(html_text)
-    errors.extend(public_html_contract_errors(html_text))
+    warnings.extend(public_html_contract_errors(html_text))
     for block in REQUIRED_BLOCKS:
         has_candidates_for_block = any(
             PRIMARY_BLOCKS.get(str(candidate.get("primary_block") or "")) == block
@@ -448,7 +449,7 @@ def _validate_draft(
                 else:
                     warnings.append("Draft has no «Что важно сегодня» section because no today_focus candidates survived.")
             else:
-                errors.append(f"Draft digest is missing required block: {block}.")
+                warnings.append(f"Draft digest is missing required block: {block}; shipping degraded.")
         elif not [line for line in sections.get(block, []) if line.strip() != "•"]:
             if block == "Что важно сегодня" and (not has_candidates_for_block or today_focus_has_no_eligible_rows):
                 if today_focus_has_no_eligible_rows:
@@ -459,7 +460,9 @@ def _validate_draft(
                 else:
                     warnings.append("Draft has empty «Что важно сегодня» section because no today_focus candidates survived.")
             else:
-                errors.append(f"Draft digest has no substantive item in required block: {block}.")
+                warnings.append(
+                    f"Draft digest has no substantive item in required block: {block}; shipping degraded."
+                )
 
     visible_item_count = sum(
         1
@@ -477,7 +480,7 @@ def _validate_draft(
                 if isinstance(category, dict)
             )
     if collected_candidate_count >= 40 and visible_item_count < 12:
-        errors.append(
+        warnings.append(
             "Draft digest is too thin for a full scan: "
             f"{visible_item_count} visible item(s) from {collected_candidate_count} collected candidate(s)."
         )
@@ -502,7 +505,7 @@ def _validate_draft(
                 "Shipping placeholder."
             )
         else:
-            errors.append("Weather block is missing digits.")
+            warnings.append("Weather block is missing digits.")
 
     for section_name, lines in sections.items():
         for line in lines:
@@ -512,7 +515,7 @@ def _validate_draft(
                 continue
             chunks = [chunk.strip(" .") for chunk in re.split(r"(?<=[.!?])\s+", body) if chunk.strip()]
             if len(chunks) >= 2 and chunks[0].lower() == chunks[1].lower():
-                errors.append(f"Draft digest contains repeated sentence in section {section_name}.")
+                warnings.append(f"Draft digest contains repeated sentence in section {section_name}.")
                 break
 
     # Strip quoted spans (Russian guillemets and ASCII/curly double quotes)
@@ -556,7 +559,7 @@ def _validate_draft(
         if candidate.get("category") in {"media_layer", "gmp", "public_services", "city_news", "council"}
     ]
     if not city_candidates:
-        errors.append("Draft digest has no included city/public-affairs candidates.")
+        warnings.append("Draft digest has no included city/public-affairs candidates.")
     if len(city_candidates) >= 2:
         city_hits = 0
         for candidate in city_candidates:
@@ -564,7 +567,7 @@ def _validate_draft(
             if fingerprint and fingerprint in rendered_fingerprints:
                 city_hits += 1
         if city_hits < 2:
-            errors.append(
+            warnings.append(
                 "Draft digest is skewed away from city news: fewer than 2 included city/public-affairs candidates are visible."
             )
 
@@ -580,9 +583,10 @@ def _validate_draft(
             if c.get("category") == "public_services" and str(c.get("fingerprint") or "").strip()
         }
         if ps_fingerprints and not ps_fingerprints.intersection(rendered_fingerprints):
-            errors.append(
+            warnings.append(
                 "Active public-services disruption is marked for today but not visible in the digest."
             )
+    return len(warnings) > warning_count_before
 
 
 def public_html_contract_errors(html_text: str) -> list[str]:
@@ -3628,7 +3632,7 @@ def build_release(project_root: Path) -> ReleaseResult:
             "Cost/latency budget: warning threshold breached — "
             f"{', '.join(cost_latency_budget.get('breaches') or [])}; see release_report.cost_latency_budget."
         )
-    _validate_draft(
+    draft_content_degraded = _validate_draft(
         draft_path=draft_path,
         scan_report=scan_report,
         included_candidates=candidate_context["included_candidates"],
@@ -3958,7 +3962,12 @@ def build_release(project_root: Path) -> ReleaseResult:
     ) > 0
     if not ok:
         release_decision = "fail"
-    elif visible_contract_failed or unrepaired_bad_visible_lines or repeat_policy_removed:
+    elif (
+        draft_content_degraded
+        or visible_contract_failed
+        or unrepaired_bad_visible_lines
+        or repeat_policy_removed
+    ):
         release_decision = "ship_degraded"
     else:
         release_decision = "pass"
