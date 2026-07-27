@@ -458,19 +458,42 @@ def fill_professional_event_facts(candidate: dict[str, Any]) -> dict[str, str]:
     return filled
 
 
+def professional_cv_fact_snapshot(candidate: dict[str, Any]) -> dict[str, str]:
+    """Immutable snapshot of the facts the CV model was shown.
+
+    Source facts only. Nothing the verdict itself writes back may enter: the
+    model's ruling overwrites ``access_label`` and ``free_access_reason`` on
+    ``professional_event_match`` immediately after it is stored, so a snapshot
+    built from those could never match itself again. Access is represented by
+    the source's own price/free fields instead of the derived label.
+    """
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    return {
+        "id": str(candidate.get("fingerprint") or candidate.get("source_url") or candidate.get("title") or "")[:220],
+        "title": str(event.get("event_name") or candidate.get("title") or "")[:220],
+        "date": str(event.get("date_start") or event.get("date") or event.get("date_text") or "")[:80],
+        "venue": str(event.get("venue") or "")[:160],
+        "price": str(event.get("price") or "")[:120],
+        "free": "yes" if event.get("free") else "",
+        "booking_url": str(event.get("booking_url") or candidate.get("source_url") or "")[:260],
+        "source": str(candidate.get("source_label") or "")[:120],
+        "summary": str(candidate.get("summary") or candidate.get("lead") or candidate.get("evidence_text") or "")[:900],
+    }
+
+
 def professional_cv_evidence_hash(candidate: dict[str, Any]) -> str:
     """Identity of exactly what the CV model was shown — nothing else.
 
     Deliberately narrower than the inventory evidence hash: an unrelated morning
     re-enrichment must not invalidate a night verdict, while a changed date,
-    venue, access or description must.
+    venue, price or description must.
     """
-    payload = _llm_payload(candidate)
-    facts = {
-        key: payload.get(key)
-        for key in ("id", "title", "date", "venue", "price_or_access", "booking_url", "source", "summary")
-    }
-    raw = json.dumps(facts, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    raw = json.dumps(
+        professional_cv_fact_snapshot(candidate),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
 
 
@@ -785,8 +808,10 @@ def _run_professional_cv_match(
                 "access_label": access_label,
                 "free_access": access_label == "free",
                 "reason": str(row.get("reason") or "").strip(),
-                # 0164: what the model actually ruled on. The morning pass
-                # reuses this verdict while the hash still matches.
+                # 0164: what the model actually ruled on, kept as an immutable
+                # snapshot. The morning reuses this verdict while it still
+                # describes the card.
+                "evidence": professional_cv_fact_snapshot(candidate),
                 "evidence_hash": professional_cv_evidence_hash(candidate),
             }
             candidate["professional_llm_match"] = llm_match

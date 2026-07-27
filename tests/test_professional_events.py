@@ -293,33 +293,60 @@ class ProfessionalEventsTest(unittest.TestCase):
         self.assertEqual(second["professional_cv_outcome"], "held_error")
         self.assertEqual(second["editorial_status"], "held_for_enrichment")
 
-    def test_night_verdict_is_reused_instead_of_a_second_morning_cv_call(self) -> None:
-        # 0164: the night already paid for this judgement; while the card's CV
-        # evidence is unchanged the morning must neither re-score nor re-ask.
-        from news_digest.pipeline.professional_events import apply_professional_event_llm_matches
+    def test_night_verdict_survives_the_inventory_round_trip(self) -> None:
+        # 0164: the real path is night → inventory record → morning candidate.
+        # The verdict must still describe the card after it, and the night's own
+        # decision (go/consider visible, skip out) has to come back with it.
+        from news_digest.pipeline.inventory import (
+            build_inventory_record,
+            inventory_record_to_candidate,
+        )
+        from news_digest.pipeline.professional_events import (
+            apply_professional_event_llm_matches,
+            professional_cv_verdict_is_current,
+        )
 
-        c = self._candidate("Manchester AI leadership briefing", "Free AI briefing for product leaders.")
-        c["fingerprint"] = "pro-night"
-        c["include"] = True
-        apply_professional_event_match(c)
-        rows = [{"id": "pro-night", "fit": "go", "score": 90, "access_label": "free", "action": "register"}]
+        kept = self._candidate("Manchester AI leadership briefing", "Free AI briefing for product leaders.")
+        kept["fingerprint"] = "pro-go"
+        rejected = self._candidate("Student-only vendor demo evening", "Free student-only vendor demo.")
+        rejected["fingerprint"] = "pro-skip"
+        for candidate in (kept, rejected):
+            candidate["include"] = True
+            apply_professional_event_match(candidate)
+        rows = [
+            {"id": "pro-go", "fit": "go", "score": 90, "access_label": "free", "action": "register"},
+            {"id": "pro-skip", "fit": "skip", "score": 10, "access_label": "free", "action": "skip"},
+        ]
         with _fake_openai(rows), patch(
             "news_digest.pipeline.model_routing.resolve_model_route",
             return_value=[_fake_route()],
         ):
-            apply_professional_event_llm_matches([c])
-        self.assertEqual(c["professional_match_status"], "llm_cv_matched")
+            apply_professional_event_llm_matches([kept, rejected])
+        self.assertEqual(kept["professional_match_status"], "llm_cv_matched")
 
-        apply_professional_event_match(c)  # morning re-score must not downgrade
-        self.assertEqual(c["professional_match_status"], "llm_cv_matched")
+        def _through_inventory(candidate: dict) -> dict:
+            record = build_inventory_record(
+                candidate,
+                prompt_version=7,
+                source_report_category="professional_events",
+            )
+            return inventory_record_to_candidate(record)
+
+        morning_kept = _through_inventory(kept)
+        morning_rejected = _through_inventory(rejected)
+        self.assertTrue(professional_cv_verdict_is_current(morning_kept))
+        self.assertFalse(morning_rejected["include"])  # night skip stays out
+
+        apply_professional_event_match(morning_kept)  # morning re-score must not downgrade
+        self.assertEqual(morning_kept["professional_match_status"], "llm_cv_matched")
         with patch(
             "news_digest.pipeline.model_routing.resolve_model_route",
             side_effect=AssertionError("the model must not be asked twice"),
         ):
-            report = apply_professional_event_llm_matches([c])
+            report = apply_professional_event_llm_matches([morning_kept])
         self.assertEqual(report["reused_night_verdict"], 1)
         self.assertEqual(report["sent"], 0)
-        self.assertTrue(c["include"])
+        self.assertTrue(morning_kept["include"])
 
     def test_night_fills_place_and_access_before_the_cv_match(self) -> None:
         # 0164: a card held without place/access can never render, so the model

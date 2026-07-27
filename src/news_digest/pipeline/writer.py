@@ -1547,27 +1547,38 @@ _GENRE_NOT_CITY = {
 }
 
 
-def _ticket_genre(candidate: dict) -> str:
-    """Only the source's own confirmed sub-genre. No genre otherwise.
+_GENRE_PLACEHOLDERS = {"", "undefined", "other", "unknown", "miscellaneous"}
+
+
+def confirmed_ticket_subgenre(event: dict) -> str:
+    """The source's sub-genre, but only where the source agrees with itself.
 
     0167: the coarse Ticketmaster category is not a genre — the same Ariana
     Grande tour arrived as "Pop" on some dates and "Rock" on others, Wolfmother
-    as "Rock" then "Pop", The Weeknd as "Trap". Guessing it (from that coarse
-    field or from a summary chunk) produced exactly the labels the judge kept
-    correcting, so an unconfirmed genre is simply not written.
+    as genre="Rock" / subGenre="Pop", The Weeknd as "Hip-Hop/Rap" / "Trap". A
+    source contradicting itself is not a confirmation, so nothing is written.
     """
-    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    _skip = {"", "undefined", "other", "unknown", "miscellaneous"}
+    if not isinstance(event, dict):
+        return ""
     sub = re.sub(r"\s+", " ", str(event.get("subGenre") or "")).strip()
     coarse = re.sub(r"\s+", " ", str(event.get("genre") or "")).strip()
-    if sub.lower() in _skip or sub.lower() in _GENRE_NOT_CITY:
+    if sub.lower() in _GENRE_PLACEHOLDERS or sub.lower() in _GENRE_NOT_CITY:
         return ""
-    # The source contradicting itself is not a confirmation: Wolfmother arrives
-    # as genre="Rock" / subGenre="Pop", The Weeknd as "Hip-Hop/Rap" / "Trap".
-    # Only a sub-genre the source's own category agrees with is written.
     if coarse.lower() != sub.lower():
         return ""
     return sub
+
+
+def _ticket_genre(candidate: dict) -> str:
+    """Only a confirmed sub-genre. No genre otherwise."""
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    # An inventory card carries the genre already confirmed at collect time;
+    # the contradicting coarse category is deliberately not stored, so the
+    # agreement check cannot be redone here.
+    stored = re.sub(r"\s+", " ", str(event.get("confirmed_subgenre") or "")).strip()
+    if stored and stored.lower() not in _GENRE_PLACEHOLDERS and stored.lower() not in _GENRE_NOT_CITY:
+        return stored
+    return confirmed_ticket_subgenre(event)
 
 
 _TICKET_MAJOR_VENUE_RE = re.compile(

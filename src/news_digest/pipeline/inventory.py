@@ -815,6 +815,15 @@ def _attach_recurring_occurrence(candidate: dict) -> None:
     candidate["event"] = event
 
 
+def _confirmed_subgenre(event: dict) -> str:
+    """The genre the source confirms, resolved while both its fields exist."""
+    try:
+        from news_digest.pipeline.writer import confirmed_ticket_subgenre  # noqa: PLC0415
+    except Exception:  # noqa: BLE001 — a card must never fail over its genre
+        return ""
+    return confirmed_ticket_subgenre(event)
+
+
 def build_inventory_record(
     candidate: dict,
     *,
@@ -843,12 +852,18 @@ def build_inventory_record(
         "date_end": str(event.get("date_end") or ""),
         "date_text": str(event.get("date_text") or ""),
         "date_confidence": str(event.get("date_confidence") or ""),
+        # Price/free are source facts about access, and part of what the CV
+        # model was shown — without them a night verdict cannot be recognised
+        # as still current after the card comes back out of the warehouse.
+        "price": str(event.get("price") or ""),
+        "free": bool(event.get("free")),
         "is_recurring": bool(event.get("is_recurring")),
         "next_occurrence": str(event.get("next_occurrence") or ""),
         "event_status": str(event.get("event_status") or ""),
-        # 0167: only the source's confirmed sub-genre is kept. The coarse
-        # Ticketmaster category is deliberately not stored — it is not a genre.
-        "subgenre": str(event.get("subGenre") or ""),
+        # 0167: the genre is confirmed here, at collect time, while both source
+        # fields are still present. Only the confirmed value is stored — the
+        # contradicting coarse category is never carried into the card.
+        "confirmed_subgenre": _confirmed_subgenre(event),
         "venue_scope": str(candidate.get("venue_scope") or ""),
         "venue_city": str(candidate.get("venue_city") or ""),
         "ticket_type": str(candidate.get("ticket_type") or ""),
@@ -865,6 +880,13 @@ def build_inventory_record(
         "professional_llm_match": candidate.get("professional_llm_match")
         if isinstance(candidate.get("professional_llm_match"), dict) else {},
         "professional_match_status": str(candidate.get("professional_match_status") or ""),
+        # 0164: the night's decision, not just its verdict. Without it every
+        # card came back include=True and a night `skip` re-entered the morning.
+        "professional_cv_outcome": str(candidate.get("professional_cv_outcome") or ""),
+        # Only meaningful once the CV stage has actually run on this card.
+        "professional_cv_visible": bool(candidate.get("include"))
+        if str(candidate.get("professional_match_status") or "")
+        else True,
         "russian_evidence": candidate.get("russian_evidence")
         if isinstance(candidate.get("russian_evidence"), dict) else {},
     }
@@ -1223,10 +1245,12 @@ def inventory_record_to_candidate(record: dict) -> dict:
         "date_end": str(fact.get("date_end") or ""),
         "date_text": str(fact.get("date_text") or ""),
         "date_confidence": str(fact.get("date_confidence") or ""),
+        "price": str(fact.get("price") or ""),
+        "free": bool(fact.get("free")),
         "is_recurring": bool(fact.get("is_recurring")),
         "next_occurrence": str(fact.get("next_occurrence") or ""),
         "event_status": str(fact.get("event_status") or ""),
-        "subGenre": str(fact.get("subgenre") or ""),
+        "confirmed_subgenre": str(fact.get("confirmed_subgenre") or ""),
         "booking_url": str(record.get("booking_url") or ""),
     }
     candidate = {
@@ -1259,6 +1283,7 @@ def inventory_record_to_candidate(record: dict) -> dict:
         "professional_llm_match": fact.get("professional_llm_match")
         if isinstance(fact.get("professional_llm_match"), dict) else {},
         "professional_match_status": str(fact.get("professional_match_status") or ""),
+        "professional_cv_outcome": str(fact.get("professional_cv_outcome") or ""),
         "russian_evidence": fact.get("russian_evidence")
         if isinstance(fact.get("russian_evidence"), dict) else {},
         "inventory_source": "night_inventory",
@@ -1280,8 +1305,35 @@ def inventory_record_to_candidate(record: dict) -> dict:
     notability = fact.get("ticket_notability") if isinstance(fact.get("ticket_notability"), dict) else {}
     if tier or notability:
         candidate["ticket_notability"] = {**notability, "tier": tier or str(notability.get("tier") or "")}
+    _restore_night_cv_decision(candidate, fact)
     _repair_food_opening_card(candidate)
     return candidate
+
+
+def _restore_night_cv_decision(candidate: dict, fact: dict) -> None:
+    """0164: a professional card comes back with the night's decision, not visible.
+
+    The night already ruled skip / held / show. Restoring every card as
+    ``include=True`` put four night `skip` verdicts back into the morning pool
+    and let the morning re-run the same judgement.
+    """
+    if str(candidate.get("category") or "") != "professional_events":
+        return
+    outcome = str(fact.get("professional_cv_outcome") or "")
+    if outcome == "skip":
+        candidate["include"] = False
+        candidate["editorial_status"] = "dropped"
+        candidate["reason"] = "Ночной CV-матч: skip — карточка не подходит под профиль."
+        return
+    if outcome and outcome not in {"go", "consider"}:
+        candidate["include"] = False
+        candidate["editorial_status"] = "held_for_enrichment"
+        candidate["reason"] = f"Ночной CV-матч: {outcome} — карточка ждёт обогащения."
+        return
+    if fact.get("professional_cv_visible") is False:
+        candidate["include"] = False
+        candidate["editorial_status"] = "held_for_enrichment"
+        candidate["reason"] = "Ночной CV-матч: карточка удержана без управляющего вердикта."
 
 
 def recalculate_retention_until(record: dict) -> str:

@@ -98,12 +98,27 @@ class TicketCardFormatTest(unittest.TestCase):
         confirmed["event"]["genre"] = "Pop"
         contradicted = _tk("Wolfmother", venue="AO Arena", subgenre="Pop")
         contradicted["event"]["genre"] = "Rock"
+        from news_digest.pipeline.inventory import (
+            build_inventory_record,
+            inventory_record_to_candidate,
+        )
+
+        def _through_inventory(candidate: dict) -> dict:
+            return inventory_record_to_candidate(
+                build_inventory_record(candidate, prompt_version=7)
+            )
+
         with mock.patch.object(w, "_ticket_watch_decision", lambda c: {"decision": "show"}):
             line = w._build_ticket_fallback_line(confirmed)
             noisy = w._build_ticket_fallback_line(contradicted)
+            # the confirmed genre has to survive the night warehouse too
+            stored = w._build_ticket_fallback_line(_through_inventory(confirmed))
+            stored_noisy = w._build_ticket_fallback_line(_through_inventory(contradicted))
         self.assertIn("<b>Lily Allen</b>", line)   # artist bold
         self.assertIn("(Pop)", line)
+        self.assertIn("(Pop)", stored)
         self.assertNotIn("(Pop)", noisy)
+        self.assertNotIn("(Pop)", stored_noisy)
 
     def test_festival_card_shows_bold_lineup(self) -> None:
         fest = _tk("Isle of Wight Festival", venue="Isle of Wight")
