@@ -1897,7 +1897,7 @@
 - Почему так (отвергнутые альтернативы): коммитить CV или private JSON нельзя; LinkedIn scraping не нужен и нестабилен; общий текстовый fallback не отражает реальный профиль.
 - Ожидаемый эффект и метрика проверки: `profile_source=env_json`, `profile_version=linkedin_resume_2026-07-27`, непустой безопасный hash; `providers_used` показывает фактический маршрут, `route_failures` — fallback; ни одной programme/index-card среди `eligible`.
 - Файлы/места: `.github/workflows/daily-digest.yml`; `.github/workflows/night-inventory.yml`; `professional_events.py:_business_event_profile_context/_professional_event_has_minimum_facts/_run_professional_cv_match`; `model_routing.py:MODEL_ROUTES`.
-- ПРОВЕРКА: GitHub подтвердил наличие имени секрета без чтения содержимого; targeted metadata/minimum-facts/fallback contract вошёл в целевые прогоны 120 тестов OK. Боевые числа появятся после night wave.
+- ПРОВЕРКА: GitHub подтвердил наличие имени секрета без чтения содержимого; targeted metadata/minimum-facts/fallback contract вошёл в целевые прогоны 120 тестов OK. Первая production-wave `30269037142` подтвердила `profile_source=env_json`, но дала `eligible=0/held=41` и открыла слишком узкое требование URL; исправление — #0178.
 - Где была ошибка (если не сработает): —
 
 ### 0174 — P1: Spotify — наблюдаемый независимый A-tier сигнал — 2026-07-27
@@ -1943,3 +1943,14 @@
 - Файлы/места: `writer.py:_football_priority_kind/_football_editorial_priority/_section_priority_score`; `plan_digest.py:run_plan_digest`.
 - ПРОВЕРКА (offline): targeted ordering regression OK; replay 27.07 сохранил 48 слотов, lead `ok`, `blank_runs_2plus=0`, technical release/verify OK и снял одну дополнительную строку по новому plan-order/cap (bullets 45→44).
 - Где была ошибка (если не сработает): —
+
+### 0178 — Professional принимает конкретную event-detail ссылку как registration path — 2026-07-27
+- Статус: внедрено; повторный production-proof ожидается после push.
+- Проблема: первая волна после #0173 собрала 78 Professional-записей и нашла 7 утренне-пригодных, но CV-контур получил `eligible=0`, `held_for_enrich=41`.
+- Причина (корень): `_professional_event_has_minimum_facts` требовал отдельный `event.booking_url`, хотя Manchester Digital/GM Chamber/Business Growth Hub используют конкретную event-detail страницу в `source_url` как страницу регистрации.
+- Решение: конкретный `source_url` снова допускается как action/registration URL; корень сайта, `/events`, `/programme`, Member Events и Programme led events по-прежнему отклоняются до модели.
+- Почему так (отвергнутые альтернативы): копировать `source_url` во все `event.booking_url` на складе означало бы менять данные ради одного потребителя; разрешить любой source URL вернуло бы index pages.
+- Ожидаемый эффект и метрика проверки: повторная `pro_food_russian` wave показывает ненулевые `eligible/sent`; generic Member/Programme/CompiledMCR root остаются вне payload.
+- Файлы/места: `professional_events.py:_is_programme_page/_professional_event_has_minimum_facts`; `tests/test_professional_events.py:ProfessionalMinimumFactsTest`.
+- ПРОВЕРКА: production-state 27.07 после применения нового predicate: 13 записей проходят факт-контракт, из них 7 имеют будущую дату; MD Future и конкретные GM Chamber/Business Growth Hub event pages проходят, `https://events.compiledmcr.com/` и обе pro-manchester programme pages не проходят. 24 Professional-теста OK.
+- Где была ошибка: `professional_events.py:_professional_event_has_minimum_facts` — registration URL ошибочно был сведён только к одному структурированному полю.

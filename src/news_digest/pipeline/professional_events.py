@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import re
 from typing import Any
+from urllib.parse import urlsplit
 
 
 PROFILE_ENV_JSON = "BUSINESS_EVENT_PROFILE_JSON"
@@ -358,6 +359,9 @@ def _has_place_or_online(candidate: dict[str, Any], event: dict[str, Any]) -> bo
 def _is_programme_page(candidate: dict[str, Any], event: dict[str, Any]) -> bool:
     title = str(event.get("event_name") or candidate.get("title") or "").strip().lower()
     url = str(event.get("booking_url") or candidate.get("source_url") or "").strip().lower().rstrip("/")
+    path = urlsplit(url).path.rstrip("/")
+    if not path:
+        return True
     if re.search(r"/(?:events|event|programme|programmes|whats-on|what-s-on)$", url):
         return True
     if re.search(
@@ -377,8 +381,11 @@ def _professional_event_has_minimum_facts(candidate: dict[str, Any]) -> bool:
     if _is_programme_page(candidate, event):
         return False
     name = str(event.get("event_name") or candidate.get("title") or "").strip()
-    booking_url = str(event.get("booking_url") or "").strip()
-    if not (name and booking_url):
+    # Many authoritative sources use the event-detail page itself as the
+    # registration/action page and do not expose a second booking_url field.
+    # Listing/programme/root pages were already rejected above.
+    action_url = str(event.get("booking_url") or candidate.get("source_url") or "").strip()
+    if not (name and action_url):
         return False
     # A trustworthy, concrete date is the discriminator that keeps generic
     # programme / membership pages (no date, or a stray far-future month/day)

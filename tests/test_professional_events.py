@@ -503,6 +503,26 @@ class ProfessionalMinimumFactsTest(unittest.TestCase):
         )
         self.assertTrue(_professional_event_has_minimum_facts(c))
 
+    def test_concrete_event_detail_url_is_valid_registration_path(self) -> None:
+        c = self._prof(
+            date="2026-09-17",
+            date_confidence="high",
+            venue="Campfield Studios",
+            booking_url="",
+        )
+        c["source_url"] = "https://manchesterdigital.com/event/manchester-digital/md-future-26"
+        self.assertTrue(_professional_event_has_minimum_facts(c))
+
+    def test_listing_root_is_not_a_registration_path(self) -> None:
+        c = self._prof(
+            date="2026-07-29",
+            date_confidence="high",
+            venue="Manchester",
+            booking_url="",
+        )
+        c["source_url"] = "https://events.compiledmcr.com/"
+        self.assertFalse(_professional_event_has_minimum_facts(c))
+
     def test_low_confidence_far_future_date_is_not_eligible(self) -> None:
         c = self._prof(date="2027-05-02", date_confidence="low", venue="Somewhere")
         self.assertFalse(_professional_event_has_minimum_facts(c))
