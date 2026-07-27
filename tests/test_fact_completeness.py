@@ -72,7 +72,10 @@ class TranslationCompletenessTests(unittest.TestCase):
         candidate = {
             "source_url": url,
             "title": self.SRC,
-            "compact_facts": "evidence_text=Man admitted a rape fantasy during the trial.",
+            "story_facts": {
+                "what_happened": "Man admitted a rape fantasy during the trial.",
+                "story_type": "court",
+            },
         }
         slots = [
             {

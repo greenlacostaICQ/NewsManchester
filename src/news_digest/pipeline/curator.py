@@ -535,6 +535,12 @@ def run_curator_pass(project_root: Path) -> None:
     semantic_dropped = _semantic_dedup_pass(candidates)
     dropped += semantic_dropped
 
+    # Composition is refilled only after deterministic validation and curator
+    # removals. Rejected cards therefore cannot count toward Today fullness.
+    from news_digest.pipeline.collector.routing import _promote_to_today_focus  # noqa: PLC0415
+
+    _promote_to_today_focus(candidates)
+
     # Refresh reader_value_score after curator can flip include / rewrite
     # reason. Writer and release.py both sort/classify by this score, so
     # it must reflect the curator's final decision.

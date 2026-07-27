@@ -28,6 +28,12 @@ from news_digest.pipeline.common import (
     today_london,
     write_json,
 )
+from news_digest.pipeline.block_policy import (
+    BLOCK_POLICY_REGISTRY,
+    BLOCK_POLICY_VERSION,
+    block_active_on_weekday,
+    block_policy,
+)
 from news_digest.pipeline.fact_completeness import (
     FACT_COMPLETENESS_VERSION,
     line_satisfies_concept,
@@ -145,6 +151,7 @@ class PreSendQualityResult:
     model: str = ""
     provider: str = ""
     prompt_version: str = PROMPT_VERSION
+    block_policy_version: str = BLOCK_POLICY_VERSION
     run_date_london: str = ""
     pipeline_run_id: str = ""
     digest_sha256: str = ""
@@ -259,6 +266,35 @@ def _compact_event(event: object, hint: object) -> dict[str, Any]:
     return out
 
 
+def _structured_story_facts(candidate: dict[str, Any]) -> dict[str, str]:
+    explicit = candidate.get("story_facts")
+    if isinstance(explicit, dict):
+        source = explicit
+    else:
+        contract = (
+            candidate.get("editorial_contract")
+            if isinstance(candidate.get("editorial_contract"), dict)
+            else {}
+        )
+        frame = contract.get("story_frame") if isinstance(contract.get("story_frame"), dict) else {}
+        source = {
+            "what_happened": candidate.get("what_happened") or frame.get("what_happened"),
+            "who_affected": candidate.get("who_affected") or frame.get("who_affected"),
+            "why_now": candidate.get("why_now") or frame.get("why_now"),
+            "story_type": candidate.get("story_type") or frame.get("event_type"),
+        }
+    return {
+        key: _compact_text(source.get(key), limit)
+        for key, limit in (
+            ("what_happened", 300),
+            ("who_affected", 200),
+            ("why_now", 200),
+            ("story_type", 80),
+        )
+        if _compact_text(source.get(key), limit)
+    }
+
+
 def _compact_candidate_for_judge(candidate: dict[str, Any]) -> dict[str, Any]:
     """Small, line-checkable candidate facts for judge map chunks.
 
@@ -277,6 +313,7 @@ def _compact_candidate_for_judge(candidate: dict[str, Any]) -> dict[str, Any]:
         value = _compact_text(candidate.get(field), 320 if field == "evidence_text" else 180)
         if value:
             fact_bits.append(value)
+    story_facts = _structured_story_facts(candidate)
     return {
         "fingerprint": str(candidate.get("fingerprint") or "").strip(),
         "title": _compact_text(candidate.get("title"), 220),
@@ -290,6 +327,7 @@ def _compact_candidate_for_judge(candidate: dict[str, Any]) -> dict[str, Any]:
         # produced a real false positive when an unrelated Prolific North nav
         # item contained "grooming" beside a parking-platform story.
         "source_claim": _compact_text(candidate.get("summary") or candidate.get("lead"), 360),
+        "story_facts": story_facts,
         "event": event,
         "is_lead": bool(candidate.get("is_lead")),
         "protected_lane": candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {},
@@ -332,13 +370,6 @@ def _rendered_candidates_by_url(rendered_candidates: list[dict[str, Any]]) -> di
     return out
 
 
-# 0157: география — свойство РАЗДЕЛА, а не выпуска. Общего условия «любое
-# событие должно быть в GM» больше нет: судья получает контракт своей строки.
-_SECTION_GEO_SCOPE = {
-    "Русскоязычные концерты и стендап UK": "uk",
-    "Крупные концерты вне GM": "uk_outside_gm",
-}
-_GEO_SCOPE_DEFAULT = "gm"
 # Разделы, где не-GM география законна и снимать за неё строку нельзя.
 _NON_GM_GEO_SCOPES = {"uk", "uk_outside_gm"}
 _GEO_RISK_RE = re.compile(
@@ -350,7 +381,7 @@ _GEO_RISK_RE = re.compile(
 
 def section_geo_scope(section: str) -> str:
     """Геоконтракт одного раздела: gm | uk | uk_outside_gm."""
-    return _SECTION_GEO_SCOPE.get(str(section or "").strip(), _GEO_SCOPE_DEFAULT)
+    return str(block_policy(section).get("geo_scope") or "gm")
 
 
 def _row_is_out_of_contract_geo_complaint(row: dict[str, Any], section: str) -> bool:
@@ -397,10 +428,23 @@ def _line_payload_for_judge(slot: dict[str, Any], rendered_by_url: dict[str, dic
     html_line = str(slot.get("html") or "")
     candidate = rendered_by_url.get(_line_url_identity(html_line)) or {}
     section = str(slot.get("section") or "")
+    policy = block_policy(section)
     payload = {
         "line_index": int(slot.get("line_index") or 0),
         "section": section,
         "geo_scope": section_geo_scope(section),
+        "block_contract": {
+            key: policy.get(key)
+            for key in (
+                "min",
+                "max",
+                "geo_scope",
+                "schedule",
+                "required_fields",
+                "repeat_policy",
+                "backup_depth",
+            )
+        },
         "text": _compact_text(slot.get("text"), 650),
     }
     if candidate:
@@ -473,21 +517,25 @@ def _product_completeness_context(project_root: Path, digest_lines: list[dict[st
         section_counts = dict(writer_report.get("section_counts") or {})
     ticket_sections = {"Билеты / Ticket Radar", "Крупные концерты вне GM", "Русскоязычные концерты и стендап UK"}
     ticket_items = sum(int(section_counts.get(section) or 0) for section in ticket_sections)
-    core_sections = {
-        "Свежие новости": 3,
-        "Футбол": 1,
-        "Что важно сегодня": 2,
-        "Общественный транспорт сегодня": 1,
-    }
-    if now_london().weekday() >= 3:
-        core_sections["Выходные в GM"] = 3
+    core_sections: dict[str, int] = {}
+    for block, policy in BLOCK_POLICY_REGISTRY.items():
+        floor = int(policy.get("min") or 0)
+        if not floor or bool(policy.get("optional")) or str(policy.get("schedule") or "") == "retired":
+            continue
+        if not block_active_on_weekday(block, now_london().weekday()):
+            continue
+        core_sections[str(policy.get("heading") or block)] = floor
     core_counts = {section: int(section_counts.get(section) or 0) for section in core_sections}
     alerts: list[str] = []
     for section, floor in core_sections.items():
         count = core_counts[section]
         if count < floor:
             alerts.append(f"{section}: {count} item(s), emergency floor {floor}")
-    core_total = sum(core_counts.values())
+    core_total = sum(
+        count
+        for section, count in core_counts.items()
+        if section not in ticket_sections
+    )
     if ticket_items > max(6, core_total):
         alerts.append(f"ticket dominance: {ticket_items} ticket/concert item(s) vs {core_total} core item(s)")
     qc = writer_report.get("quality_counts") or {}
@@ -500,6 +548,7 @@ def _product_completeness_context(project_root: Path, digest_lines: list[dict[st
     if failed_sources >= 3:
         alerts.append(f"source failures: {failed_sources}")
     return {
+        "block_policy_version": BLOCK_POLICY_VERSION,
         "section_counts": section_counts,
         "core_counts": core_counts,
         "ticket_items": ticket_items,
@@ -620,24 +669,23 @@ def _deterministic_html_scan(slots: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def _completeness_source_blob(candidate: dict[str, Any]) -> str:
-    """English source headline blob for the reverse fact-lock check.
+    """Structured story facts only for the reverse fact-lock check.
 
-    Kept to title + compact facts (which already carry the event fields and the
-    first ~320 chars of evidence): a grave severity concept lives in the
-    headline of a crime story, so this is enough to decide presence without
-    re-reading the full article.
+    Raw English titles contain metaphors (``death sentence``) and artist names
+    (``Thy Art Is Murder``).  They are evidence for identity, not a typed claim
+    that somebody died.  Completeness therefore activates only from the
+    editorial story frame produced upstream.
     """
-    source_claim = str(
-        candidate.get("source_claim")
-        or candidate.get("summary")
-        or candidate.get("lead")
-        or ""
-    ).strip()
-    if not source_claim:
-        source_claim = str(candidate.get("compact_facts") or "").strip()
-    return " ".join(
-        part for part in (str(candidate.get("title") or "").strip(), source_claim) if part
-    ).strip()
+    story_facts = _structured_story_facts(candidate)
+    blob = " ".join(
+        str(story_facts.get(key) or "").strip()
+        for key in ("what_happened", "who_affected", "why_now", "story_type")
+        if str(story_facts.get(key) or "").strip()
+    )
+    # Known metaphor from the live 27 July card: it describes threatened
+    # community facilities, not a death. The phrase can occur inside a typed
+    # story frame because the frame faithfully preserves the speaker's words.
+    return re.sub(r"\bdeath\s+sentence\b", "severe consequence", blob, flags=re.IGNORECASE)
 
 
 def _deterministic_completeness_scan(
@@ -1539,8 +1587,9 @@ def _apply_repair_executor(
                 else:
                     action_record["method"] = "deterministic_rewrite"
 
-        if not replacement and action_name != "strip":
-            # Этап 3: единственный источник замен — цепочка запасных слота.
+        if not replacement:
+            # Любое снятие, включая прямой ``strip`` судьи, сначала проходит
+            # через неизменяемую цепочку запасных своего слота.
             if plan_slot_id:
                 from news_digest.pipeline.plan_execution import (  # noqa: PLC0415
                     load_execution,
@@ -1581,6 +1630,26 @@ def _apply_repair_executor(
                         {"fingerprint": backup_fp, "errors": post_errors[:4]}
                     )
                     report["reserve_post_check_rejected"] = int(report.get("reserve_post_check_rejected") or 0) + 1
+                if not replacement:
+                    from news_digest.pipeline.plan_execution import load_plan, plan_slots  # noqa: PLC0415
+
+                    plan_for_status = load_plan(state_dir)
+                    slot_for_status = next(
+                        (
+                            item
+                            for item in plan_slots(plan_for_status)
+                            if str(item.get("slot_id") or "") == plan_slot_id
+                        ),
+                        None,
+                    )
+                    action_record["backup_outcome"] = (
+                        "no_eligible_backup"
+                        if not (slot_for_status or {}).get("backup_fingerprints")
+                        else "backup_chain_exhausted"
+                    )
+                    report[action_record["backup_outcome"]] = int(
+                        report.get(action_record["backup_outcome"]) or 0
+                    ) + 1
 
         if replacement:
             if not dry_run:

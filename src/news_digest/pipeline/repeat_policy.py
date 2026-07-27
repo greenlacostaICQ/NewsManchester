@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from typing import Any
 
 from news_digest.pipeline.common import now_london
+from news_digest.pipeline.block_policy import BLOCK_POLICY_REGISTRY
 from news_digest.pipeline.editorial_contracts import (
     build_editorial_contract,
     calendar_repeat_review,
@@ -13,15 +14,21 @@ from news_digest.pipeline.editorial_contracts import (
 from news_digest.pipeline.weekend_inventory import weekend_occurrence_date
 
 
-OPERATIONAL_REPEAT_BLOCKS = frozenset({"weather", "transport"})
-TICKET_REPEAT_BLOCKS = frozenset({"ticket_radar", "outside_gm_tickets"})
-EVENT_REPEAT_BLOCKS = frozenset({
-    "weekend_activities",
-    "next_7_days",
-    "future_announcements",
-    "russian_events",
-    "professional_events",
-})
+OPERATIONAL_REPEAT_BLOCKS = frozenset(
+    block
+    for block, policy in BLOCK_POLICY_REGISTRY.items()
+    if policy.get("repeat_policy") == "operational"
+)
+TICKET_REPEAT_BLOCKS = frozenset(
+    block
+    for block, policy in BLOCK_POLICY_REGISTRY.items()
+    if policy.get("repeat_policy") == "ticket_calendar_milestones"
+)
+EVENT_REPEAT_BLOCKS = frozenset(
+    block
+    for block, policy in BLOCK_POLICY_REGISTRY.items()
+    if policy.get("repeat_policy") == "calendar_milestones"
+)
 EVENT_REPEAT_CATEGORIES = frozenset({
     "culture_weekly",
     "venues_tickets",
@@ -224,6 +231,22 @@ def validator_same_fingerprint_allow(candidate: dict[str, Any]) -> RepeatVerdict
 
 
 def visible_repeat_verdict(candidate: dict[str, Any], previous: dict[str, Any] | None) -> RepeatVerdict:
+    from news_digest.pipeline.ticket_notability import (  # noqa: PLC0415
+        a_tier_ticket_policy,
+        is_a_tier_ticket,
+    )
+
+    if is_a_tier_ticket(candidate):
+        eligible, reason = a_tier_ticket_policy(candidate)
+        if not eligible:
+            return RepeatVerdict(
+                False,
+                "a_tier_ineligible",
+                f"a_tier_ineligible:{reason}",
+                previous_fingerprint=str((previous or {}).get("fingerprint") or ""),
+                previous_title=str((previous or {}).get("title") or ""),
+                previous_published_day=_previous_day(previous or {}),
+            )
     if not previous:
         return RepeatVerdict(True, "new", "no_previous_match")
 
@@ -231,23 +254,6 @@ def visible_repeat_verdict(candidate: dict[str, Any], previous: dict[str, Any] |
     previous_title = str(previous.get("title") or "")
     previous_day = _previous_day(previous)
     matched_by = "fingerprint" if previous_fp and previous_fp == str(candidate.get("fingerprint") or "") else "history"
-
-    # The only global repeat exception: a canonical, still-valid A-tier event.
-    # Invalid owners, duplicates, cancelled/expired rows fail the A-tier policy
-    # before reaching this override and continue through ordinary repeat rules.
-    from news_digest.pipeline.ticket_notability import a_tier_ticket_policy  # noqa: PLC0415
-
-    a_tier_allow, _ = a_tier_ticket_policy(candidate)
-    if a_tier_allow:
-        return RepeatVerdict(
-            True,
-            "a_tier",
-            "a_tier_must_show_override",
-            matched_by=matched_by,
-            previous_fingerprint=previous_fp,
-            previous_title=previous_title,
-            previous_published_day=previous_day,
-        )
 
     if previous_day == now_london().date().isoformat() and matched_by == "fingerprint":
         return RepeatVerdict(

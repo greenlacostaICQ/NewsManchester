@@ -44,150 +44,17 @@ from news_digest.pipeline.common import (
     valid_http_url,
     write_json_atomic,
 )
+from news_digest.pipeline.block_policy import (
+    BLOCK_POLICY_REGISTRY,
+    BLOCK_POLICY_VERSION,
+    block_active_on_weekday,
+)
 from news_digest.pipeline.editorial_contracts import attach_editorial_contract
 
 INVENTORY_SCHEMA_VERSION = 1
 
 
-# One inventory policy for every public/legacy block. All night collection,
-# card evaluation, morning intake, completeness and source replacement derive
-# from this registry; parallel allowlists/caps are intentionally forbidden.
-INVENTORY_BLOCK_REGISTRY: dict[str, dict[str, object]] = {
-    "weather": {
-        "source_report_categories": frozenset({"synthetic"}),
-        "candidate_categories": frozenset({"weather"}),
-        "mode": "live_only", "serving_ttl_hours": 0.5, "retention_days": 2,
-        "text_policy": "morning_live", "source_replacement_allowed": False,
-        "floor": 1, "min_sources": 1, "optional": False, "intake_cap": 0,
-    },
-    "transport": {
-        "source_report_categories": frozenset({"transport"}),
-        "candidate_categories": frozenset({"transport"}),
-        "mode": "hybrid", "serving_ttl_hours": 1.0, "retention_days": 14,
-        "text_policy": "morning_live", "source_replacement_allowed": False,
-        "floor": 0, "min_sources": 1, "optional": True, "intake_cap": 0,
-        "required_fields": ("what_happened", "why_now"),
-    },
-    "today_focus": {
-        "source_report_categories": frozenset({"media_layer", "gmp", "public_services"}),
-        "candidate_categories": frozenset({"media_layer", "gmp", "public_services", "council"}),
-        "mode": "live_only", "serving_ttl_hours": 6.0, "retention_days": 7,
-        "text_policy": "morning_live", "source_replacement_allowed": False,
-        "floor": 3, "min_sources": 2, "optional": False, "intake_cap": 0,
-    },
-    "last_24h": {
-        "source_report_categories": frozenset({"media_layer", "gmp"}),
-        "candidate_categories": frozenset({"media_layer", "gmp", "council"}),
-        "mode": "hybrid", "serving_ttl_hours": 6.0, "retention_days": 14,
-        "text_policy": "morning_live", "source_replacement_allowed": False,
-        "floor": 6, "min_sources": 2, "optional": False, "intake_cap": 0,
-        "required_fields": ("what_happened", "why_now"),
-    },
-    "lead_story": {
-        "source_report_categories": frozenset({"media_layer", "gmp", "public_services"}),
-        "candidate_categories": frozenset({"media_layer", "gmp", "public_services", "council"}),
-        "mode": "live_only", "serving_ttl_hours": 6.0, "retention_days": 14,
-        "text_policy": "morning_live", "source_replacement_allowed": False,
-        "floor": 1, "min_sources": 1, "optional": False, "intake_cap": 0,
-        "required_fields": ("what_happened", "why_now"),
-    },
-    "city_watch": {
-        "source_report_categories": frozenset({"media_layer", "gmp", "public_services", "transport", "tech_business"}),
-        "candidate_categories": frozenset({"media_layer", "gmp", "public_services", "council", "transport", "tech_business"}),
-        "mode": "hybrid", "serving_ttl_hours": 24.0, "retention_days": 30,
-        "text_policy": "morning_live", "source_replacement_allowed": False,
-        "floor": 5, "min_sources": 2, "optional": False, "intake_cap": 0,
-        "required_fields": ("what_happened", "why_now"),
-    },
-    "weekend_activities": {
-        "source_report_categories": frozenset({"culture_weekly"}),
-        "candidate_categories": frozenset({"culture_weekly"}),
-        "mode": "assist", "serving_ttl_hours": 96.0, "retention_days": 30,
-        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
-        "floor": 6, "min_sources": 2, "optional": False, "intake_cap": 0,
-        "required_fields": ("event_name", "specific_event", "venue", "date_start", "action_url", "activity_type", "gm_fit"),
-    },
-    "next_7_days": {
-        "source_report_categories": frozenset({"media_layer", "gmp", "public_services", "transport"}),
-        "candidate_categories": frozenset({"media_layer", "gmp", "public_services", "council", "transport"}),
-        "mode": "assist", "serving_ttl_hours": 96.0, "retention_days": 30,
-        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
-        "floor": 3, "min_sources": 2, "optional": False, "intake_cap": 12,
-        "required_fields": ("event_name", "specific_event", "venue", "date_start", "action_url", "non_leisure"),
-    },
-    "future_announcements": {
-        "source_report_categories": frozenset({"culture_weekly", "venues_tickets"}),
-        "candidate_categories": frozenset({"culture_weekly", "venues_tickets"}),
-        "mode": "assist", "serving_ttl_hours": 336.0, "retention_days": 30,
-        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
-        "floor": 0, "min_sources": 1, "optional": True, "intake_cap": 20,
-        "required_fields": ("event_name", "venue", "action_url"),
-    },
-    "ticket_radar": {
-        "source_report_categories": frozenset({"venues_tickets"}),
-        "candidate_categories": frozenset({"venues_tickets"}),
-        "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 30,
-        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
-        "floor": 2, "min_sources": 2, "optional": False, "intake_cap": 20,
-        "required_fields": ("event_name", "date_start", "venue", "action_url", "ticket_type", "tier", "venue_scope", "ticket_why_now"),
-    },
-    "outside_gm_tickets": {
-        "source_report_categories": frozenset({"venues_tickets"}),
-        "candidate_categories": frozenset({"venues_tickets"}),
-        "mode": "assist", "serving_ttl_hours": 336.0, "retention_days": 30,
-        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
-        "floor": 0, "min_sources": 1, "optional": True, "intake_cap": 6,
-        "required_fields": ("event_name", "date_start", "venue", "action_url", "ticket_type", "outside_a_tier"),
-    },
-    "russian_events": {
-        "source_report_categories": frozenset({"diaspora_events"}),
-        "candidate_categories": frozenset({"russian_speaking_events", "diaspora_events"}),
-        "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 30,
-        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
-        "floor": 1, "min_sources": 1, "optional": False, "intake_cap": 10,
-        "required_fields": ("event_name", "specific_event", "date_start", "venue", "russian_evidence", "russian_geography", "action_url"),
-    },
-    "openings": {
-        "source_report_categories": frozenset({"food_openings"}),
-        "candidate_categories": frozenset({"food_openings"}),
-        "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 90,
-        "text_policy": "morning_writer", "source_replacement_allowed": False,
-        "source_not_modified_confirms_inventory": True,
-        "floor": 3, "min_sources": 2, "optional": False, "intake_cap": 10,
-        "required_fields": ("event_name", "specific_event", "venue", "specific_venue", "opening_phase_or_date", "food_meaning", "action_url"),
-    },
-    "tech_business": {
-        "source_report_categories": frozenset({"tech_business"}),
-        "candidate_categories": frozenset({"tech_business"}),
-        "mode": "hybrid", "serving_ttl_hours": 24.0, "retention_days": 30,
-        "text_policy": "morning_live", "source_replacement_allowed": False,
-        "floor": 0, "min_sources": 1, "optional": True, "intake_cap": 0,
-        "required_fields": ("what_happened", "why_now"),
-    },
-    "professional_events": {
-        "source_report_categories": frozenset({"professional_events"}),
-        "candidate_categories": frozenset({"professional_events"}),
-        "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 30,
-        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
-        "floor": 1, "min_sources": 1, "optional": False, "intake_cap": 10,
-        "required_fields": ("event_name", "specific_event", "venue", "date_start", "professional_llm_cv", "professional_access", "action_url"),
-    },
-    "football": {
-        "source_report_categories": frozenset({"football"}),
-        "candidate_categories": frozenset({"football"}),
-        "mode": "hybrid", "serving_ttl_hours": 12.0, "retention_days": 14,
-        "text_policy": "morning_live", "source_replacement_allowed": False,
-        "floor": 2, "min_sources": 1, "optional": False, "intake_cap": 0,
-        "required_fields": ("what_happened", "why_now"),
-    },
-    "district_radar": {
-        "source_report_categories": frozenset(),
-        "candidate_categories": frozenset(),
-        "mode": "retired", "serving_ttl_hours": 0.0, "retention_days": 0,
-        "text_policy": "none", "source_replacement_allowed": False,
-        "floor": 0, "min_sources": 0, "optional": True, "intake_cap": 0,
-    },
-}
+INVENTORY_BLOCK_REGISTRY = BLOCK_POLICY_REGISTRY
 
 if set(INVENTORY_BLOCK_REGISTRY) != set(PRIMARY_BLOCKS):
     raise RuntimeError("INVENTORY_BLOCK_REGISTRY must define every PRIMARY_BLOCK exactly once")
@@ -271,7 +138,14 @@ def write_inventory(state_dir: Path, category: str, records: list[dict]) -> Path
     so a reader never sees an inventory file as empty mid-write."""
     path = inventory_dir(state_dir) / f"{category}.jsonl"
     body = "\n".join(
-        json.dumps({"schema_version": INVENTORY_SCHEMA_VERSION, **record}, ensure_ascii=False)
+        json.dumps(
+            {
+                "schema_version": INVENTORY_SCHEMA_VERSION,
+                "block_policy_version": BLOCK_POLICY_VERSION,
+                **record,
+            },
+            ensure_ascii=False,
+        )
         for record in records
     )
     with InventoryLock(state_dir, name=f"write-{category}"):
@@ -1010,6 +884,7 @@ def verify_dispositions(candidates: list[dict], rendered_fingerprints: set[str])
     accounted = sum(totals.values())
     return {
         "schema_version": INVENTORY_SCHEMA_VERSION,
+        "block_policy_version": BLOCK_POLICY_VERSION,
         "captured": captured,
         "accounted": accounted,
         "conserved": accounted == captured and not violations,
@@ -1170,7 +1045,7 @@ def passes_morning_contract(record: dict, *, today: str | None = None) -> tuple[
     if block == "weekend_activities":
         try:
             today_day = date.fromisoformat(today)
-            if today_day.weekday() < 3:
+            if not block_active_on_weekday(block, today_day.weekday()):
                 return False, "weekend_hidden_by_schedule"
             from news_digest.pipeline.weekend_inventory import (  # noqa: PLC0415
                 current_weekend_window,
@@ -1919,6 +1794,7 @@ def build_morning_inventory_intake(
     }
     report = {
         "schema_version": INVENTORY_SCHEMA_VERSION,
+        "block_policy_version": BLOCK_POLICY_VERSION,
         "mode": mode,
         "inserted_candidates": len(capped),
         "candidate_cap": cap_report,
@@ -1977,7 +1853,7 @@ def inventory_block_completeness(
 ) -> dict[str, object]:
     by_block: dict[str, dict[str, object]] = {}
     for block, policy in INVENTORY_BLOCK_REGISTRY.items():
-        floor = int(policy.get("floor") or 0)
+        floor = int(policy.get("min") or 0)
         rows = [c for c in candidates if isinstance(c, dict) and str(c.get("primary_block") or "") == block]
         sources = {str(c.get("source_label") or "") for c in rows if str(c.get("source_label") or "")}
         live_rows = [c for c in rows if str(c.get("action_url_liveness") or "") == "alive"]
@@ -2009,6 +1885,7 @@ def inventory_block_completeness(
         }
     return {
         "schema_version": INVENTORY_SCHEMA_VERSION,
+        "block_policy_version": BLOCK_POLICY_VERSION,
         "blocks": by_block,
         "sufficient_blocks": [block for block, row in by_block.items() if row.get("block_sufficient") is True],
         "insufficient_blocks": [block for block, row in by_block.items() if row.get("block_sufficient") is False],
@@ -2216,6 +2093,7 @@ def summarise_morning_intake(
                 )
     return {
         "schema_version": INVENTORY_SCHEMA_VERSION,
+        "block_policy_version": BLOCK_POLICY_VERSION,
         "mode": "report_only",
         "totals": totals,
         "reasons": reasons,
@@ -2320,6 +2198,7 @@ def verify_collect_conservation(source_run_log_rows: list[dict], candidates_json
     delta = candidates_json_count - collected_found
     return {
         "schema_version": INVENTORY_SCHEMA_VERSION,
+        "block_policy_version": BLOCK_POLICY_VERSION,
         "collected_found": collected_found,
         "candidates_json_count": candidates_json_count,
         "delta": delta,

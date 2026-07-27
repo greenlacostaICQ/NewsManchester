@@ -53,7 +53,7 @@ from .fallbacks import (
 )
 from .fetch import NotModified, _fetch_source_body, _fetch_text, load_fetch_cache, save_fetch_cache
 from .dates import _parse_datetime_value
-from .routing import _promote_to_today_focus, _reroute_media_transit_to_transport
+from .routing import _reroute_media_transit_to_transport
 from .sources import SOURCES
 from .summary import _looks_like_active_disruption
 
@@ -861,7 +861,6 @@ def collect_digest(project_root: Path) -> StageResult:
     )
     candidates.extend(_transport_fallback_candidates(report))
     _reroute_media_transit_to_transport(candidates)
-    _promote_to_today_focus(candidates)
     candidates.extend(_last_24h_fallback_candidates(candidates))
     cheap_dedup_summary = apply_cheap_dedup_before_enrich(candidates)
     enrich_candidates_entities(candidates)

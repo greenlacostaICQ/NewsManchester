@@ -249,7 +249,6 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         calendar_previous_ref = previous or (similar_previous[0] if similar_previous else None)
         repeat_verdict = visible_repeat_verdict(candidate, calendar_previous_ref)
         candidate["visible_repeat_verdict"] = repeat_verdict.as_dict()
-        a_tier_keep = repeat_verdict.reason == "a_tier_must_show_override"
         calendar_carry_ok = (
             calendar_previous_ref is not None
             and repeat_verdict.allow
@@ -263,11 +262,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         # through to the missing-decision guard and was dropped with real new
         # facts (charge, trial date, damages claim) on board.
         prior_reference = previous is not None or bool(similar_previous)
-        if a_tier_keep:
-            candidate["dedupe_decision"] = "new"
-            candidate["include"] = True
-            candidate["reason"] = "A-tier policy: keep canonical active physical event before repeat."
-        elif prior_reference and repeat_verdict.allow and not calendar_carry_ok:
+        if prior_reference and repeat_verdict.allow and not calendar_carry_ok:
             candidate["dedupe_decision"] = (
                 "new_phase" if repeat_verdict.repeat_class == "lifecycle" else "new"
             )
@@ -342,11 +337,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             # function). Same-day reruns should always re-include items
             # published earlier today so a manually-triggered second
             # digest at 14:00 doesn't lose the morning news.
-            if a_tier_keep:
-                candidate["dedupe_decision"] = "new"
-                candidate["include"] = True
-                candidate["reason"] = "A-tier policy: keep canonical active physical event before repeat."
-            elif repeat_verdict.allow:
+            if repeat_verdict.allow:
                 candidate["dedupe_decision"] = (
                     "carry_over_with_label"
                     if repeat_verdict.repeat_class == "calendar"

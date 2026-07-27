@@ -327,7 +327,7 @@ class PlanContractTest(unittest.TestCase):
         for a_tier in a_tiers:  # правило 0094: любой scope — gm/nearby/outside
             self.assertIn(a_tier["fingerprint"], slot_fps, "A-tier обязан быть в слотах сверх капа")
 
-    def test_7b_a_tier_repeat_is_promoted_before_watch_and_repeat_policy(self) -> None:
+    def test_7b_a_tier_repeat_obeys_calendar_policy(self) -> None:
         ticket = _candidate(
             700,
             block="ticket_radar",
@@ -352,9 +352,16 @@ class PlanContractTest(unittest.TestCase):
             )
             run_plan_digest(root)
             plan = load_plan(state_dir)
-        slot = next(s for s in plan["slots"] if s["primary_fingerprint"] == ticket["fingerprint"])
-        self.assertTrue(slot["must_show"])
-        self.assertTrue(plan["a_tier_conservation"]["missing_from_plan"] == [])
+        self.assertFalse(
+            any(s["primary_fingerprint"] == ticket["fingerprint"] for s in plan["slots"])
+        )
+        self.assertTrue(
+            any(
+                row["fingerprint"] == ticket["fingerprint"]
+                and "repeat_blocked" in row["reason"]
+                for row in plan["out_sample"]
+            )
+        )
 
     def test_7c_a_tier_identity_preserves_distinct_physical_events(self) -> None:
         rows = [
@@ -380,7 +387,7 @@ class PlanContractTest(unittest.TestCase):
             planned_candidates = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))["candidates"]
         planned = [s for s in plan["slots"] if s["primary_fingerprint"] in {row["fingerprint"] for row in rows}]
         self.assertEqual(len(planned), 3)
-        self.assertEqual(plan["a_tier_conservation"]["recognised"], 1)
+        self.assertEqual(plan["a_tier_conservation"]["recognised"], 3)
         self.assertEqual(plan["a_tier_conservation"]["identity"]["collapsed_rows"], 0)
         self.assertFalse(any(row.get("a_tier_collapsed_into") for row in planned_candidates))
 

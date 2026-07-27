@@ -8,6 +8,7 @@ import re
 from urllib import parse
 from zoneinfo import ZoneInfo
 
+from news_digest.pipeline.block_policy import BLOCK_POLICY_REGISTRY, PRIMARY_BLOCKS
 
 LONDON_TZ = ZoneInfo("Europe/London")
 
@@ -43,23 +44,9 @@ LOW_SIGNAL_BLOCKS = [
 ]
 
 SECTION_MAX_ITEMS = {
-    # Length 350–450 char cards are 3× longer than old headlines, so caps
-    # are pulled down to keep the digest readable in Telegram.
-    "Свежие новости": 9,
-    "Городской радар": 12,
-    "Футбол": 3,
-    "IT и бизнес": 5,
-    "Business/tech события для тебя": 4,
-    "Что важно в ближайшие 7 дней": 6,
-    "Еда, открытия и рынки": 3,
-    # Tickets are capped like every other section: a quiet news day must not
-    # turn the issue into a ticket catalogue. On 2026-05-31 an uncapped rail
-    # (40 items) pushed the issue to 69 against a 45 target. 15 is plenty of
-    # live shows; the rest stay in the reserve pool and rotate in over days.
-    "Билеты / Ticket Radar": 15,
-    "Крупные концерты вне GM": 6,
-    "Русскоязычные концерты и стендап UK": 6,
-    "Что важно сегодня": 5,
+    str(policy["heading"]): int(policy["max"])
+    for policy in BLOCK_POLICY_REGISTRY.values()
+    if int(policy.get("max") or 0)
 }
 
 # Soft minimums: release gate emits a warning (does not block) when a
@@ -68,30 +55,18 @@ SECTION_MAX_ITEMS = {
 # or similar — so the underflow is visible in release_report instead of
 # silently shipping a thin section.
 SECTION_MIN_ITEMS = {
-    # Hard floor. The product target for Fresh is higher (handled in writer),
-    # but fewer than 6 means the newsroom board failed to recover enough
-    # hard-news / public-affairs items from the collected pool.
-    "Свежие новости": 6,
-    "Что важно сегодня": 3,
-    "Городской радар": 5,
-    "Что важно в ближайшие 7 дней": 3,
-    "Выходные в GM": 6,
-    "Билеты / Ticket Radar": 2,
-    "Еда, открытия и рынки": 3,
-    "Business/tech события для тебя": 1,
-    "Футбол": 2,
-    "Русскоязычные концерты и стендап UK": 1,
+    str(policy["heading"]): int(policy["min"])
+    for policy in BLOCK_POLICY_REGISTRY.values()
+    if int(policy.get("min") or 0)
 }
 
 # Max items per single source per section. Universities pump out 5+ press
 # releases a day each and dominated city_watch on 2026-05-12 — keep them
 # capped so they don't crowd out actual city news.
 SECTION_MAX_PER_SOURCE = {
-    "Городской радар": 2,
-    "Свежие новости": 3,
-    # Whitworth/venue sources publish many recurring events — cap at 2 per
-    # venue so a single gallery doesn't dominate the 7-day calendar.
-    "Что важно в ближайшие 7 дней": 2,
+    str(policy["heading"]): int(policy["max_per_source"])
+    for policy in BLOCK_POLICY_REGISTRY.values()
+    if int(policy.get("max_per_source") or 0)
 }
 
 
@@ -99,27 +74,6 @@ VAGUE_PRACTICAL_ANGLES = {
     "Оценить городскую значимость перед выпуском.",
     "Проверить матчевый контекст перед включением в футбольный блок.",
 }
-
-PRIMARY_BLOCKS = {
-    "weather": "Погода",
-    "transport": "Общественный транспорт сегодня",
-    "today_focus": "Что важно сегодня",
-    "last_24h": "Свежие новости",
-    "lead_story": "Главная история дня",
-    "city_watch": "Городской радар",
-    "weekend_activities": "Выходные в GM",
-    "next_7_days": "Что важно в ближайшие 7 дней",
-    "future_announcements": "Дальние анонсы",
-    "ticket_radar": "Билеты / Ticket Radar",
-    "outside_gm_tickets": "Крупные концерты вне GM",
-    "russian_events": "Русскоязычные концерты и стендап UK",
-    "openings": "Еда, открытия и рынки",
-    "tech_business": "IT и бизнес",
-    "professional_events": "Business/tech события для тебя",
-    "football": "Футбол",
-    "district_radar": "Радар по районам",
-}
-
 
 def now_london() -> datetime:
     # NEWS_DIGEST_FAKE_NOW (ISO datetime) freezes pipeline time for offline

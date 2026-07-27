@@ -8,7 +8,7 @@ candidate lands. `_promote_to_today_focus` (and helpers) is the
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import re
 
 from news_digest.pipeline.common import now_london
@@ -17,6 +17,7 @@ from news_digest.pipeline.editorial_contracts import classify_ticket_type, ticke
 from .dates import _parse_datetime_value
 from .filters import _has_gm_token
 from .sources import SourceDef
+from news_digest.pipeline.block_policy import block_policy
 
 
 def _freshness_status(source: SourceDef, published_at: str | None) -> str:
@@ -257,7 +258,6 @@ def _is_awareness_item(candidate: dict) -> bool:
     return bool(_AWARENESS_TOKENS.search(blob))
 
 
-_TODAY_FOCUS_TARGET = 3  # editorial minimum, was 2
 _TODAY_FOCUS_NORMAL_SCORE = 15
 _TODAY_FOCUS_FAILSAFE_SCORE = 5  # accept weaker candidates rather than ship empty
 
@@ -292,8 +292,9 @@ def _promote_to_today_focus(candidates: list[dict]) -> None:
     # по строкам, которые сам блок не пропустил бы.
     _demote_unfit_native_today(candidates)
 
+    target = int(block_policy("today_focus").get("min") or 0)
     substantive = _today_focus_substantive(candidates)
-    if len(substantive) >= _TODAY_FOCUS_TARGET:
+    if len(substantive) >= target:
         return
 
     promoted_fingerprints = {
@@ -344,15 +345,95 @@ def _promote_to_today_focus(candidates: list[dict]) -> None:
         return promoted_count
 
     # Pass 1 — normal threshold.
-    needed = _TODAY_FOCUS_TARGET - len(substantive)
+    needed = target - len(substantive)
     _do_promote(_TODAY_FOCUS_NORMAL_SCORE, needed)
 
     # Pass 2 — fail-safe. Recount substantive (promotion may have added some).
     substantive = _today_focus_substantive(candidates)
-    if len(substantive) >= 1:
-        return  # at least one real news item is fine — don't dilute further
-    needed = max(1, _TODAY_FOCUS_TARGET - len(substantive))
+    if len(substantive) >= target:
+        return
+    needed = target - len(substantive)
     _do_promote(_TODAY_FOCUS_FAILSAFE_SCORE, needed)
+
+
+_NEXT_7_PRACTICAL_CHANGE_RE = re.compile(
+    r"\b(?:clos(?:e|ed|es|ing|ure)|shut|suspend(?:ed|s|ing)?|service\s+change|"
+    r"route\s+change|diversion|roadworks?|works?\s+(?:start|begin)|"
+    r"deadline|applications?\s+close|consultation\s+(?:closes|ends)|"
+    r"vote|ballot|hearing|decision|takes?\s+effect|comes?\s+into\s+force|"
+    r"fare|price|charge|fee|restriction|access\s+change|"
+    r"закры|перекры|приостан|изменени[ея]\s+маршрут|работы\s+нач|"
+    r"срок|дедлайн|голосован|вступ(?:ит|ает)\s+в\s+силу)\b",
+    re.IGNORECASE,
+)
+_NEXT_7_LEISURE_RE = re.compile(
+    r"\b(?:concert|gig|festival|market|fair|fete|show|exhibition|workshop|"
+    r"screening|comedy|stand[-\s]?up|концерт|фестивал|ярмарк|выставк|стендап)\b",
+    re.IGNORECASE,
+)
+_NEXT_7_SOURCE_CATEGORIES = {
+    "media_layer", "gmp", "public_services", "council", "transport",
+}
+
+
+def _next_7_structured_date(candidate: dict) -> date | None:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    for value in (
+        event.get("date_start"),
+        event.get("date"),
+        candidate.get("effective_date"),
+        candidate.get("deadline_date"),
+    ):
+        raw = str(value or "").strip()[:10]
+        if not raw:
+            continue
+        try:
+            return datetime.fromisoformat(raw).date()
+        except ValueError:
+            continue
+    blob = " ".join(str(candidate.get(field) or "") for field in ("title", "summary", "lead"))
+    for raw in re.findall(r"\b20\d{2}-\d{2}-\d{2}\b", blob):
+        try:
+            return datetime.fromisoformat(raw).date()
+        except ValueError:
+            continue
+    return None
+
+
+def route_future_practical_change(candidate: dict) -> bool:
+    """Route a real D+2…D+7 practical change into Next 7.
+
+    This is a producer contract, not a minimum-filler: ordinary crime and
+    leisure never qualify merely because the section is short.
+    """
+    if not isinstance(candidate, dict) or not candidate.get("include"):
+        return False
+    if str(candidate.get("category") or "") not in _NEXT_7_SOURCE_CATEGORIES:
+        return False
+    if str(candidate.get("primary_block") or "") not in {
+        "last_24h", "city_watch", "transport", "future_announcements",
+    }:
+        return False
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "practical_angle", "what_happened")
+    )
+    if _NEXT_7_LEISURE_RE.search(blob) or not _NEXT_7_PRACTICAL_CHANGE_RE.search(blob):
+        return False
+    change_day = _next_7_structured_date(candidate)
+    if change_day is None:
+        return False
+    days_out = (change_day - now_london().date()).days
+    if not 2 <= days_out <= 7:
+        return False
+    candidate["primary_block"] = "next_7_days"
+    candidate["next_7_practical_change"] = True
+    candidate["next_7_effective_date"] = change_day.isoformat()
+    candidate["next_7_route_reason"] = f"future_practical_change_d{days_out}"
+    existing = str(candidate.get("reason") or "").strip()
+    note = f"Routed to next_7_days: practical change takes effect in {days_out} day(s)."
+    candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+    return True
 
 
 def _demote_unfit_native_today(candidates: list[dict]) -> list[dict]:

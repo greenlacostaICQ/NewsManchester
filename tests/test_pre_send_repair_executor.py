@@ -413,6 +413,9 @@ class PreSendRepairExecutorTest(unittest.TestCase):
                 "Jordan Parke faced enforcement action before treating Alice Webb in 2024. "
                 "Alice Webb died after the procedure."
             ),
+            "what_happened": "Alice Webb died after the procedure.",
+            "who_affected": "Alice Webb",
+            "story_type": "death",
         }
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -556,6 +559,85 @@ class PreSendRepairExecutorTest(unittest.TestCase):
         self.assertEqual(report["actions"][0]["method"], "reserve_replacement")
         self.assertEqual(report["operations"][0]["outcome"], "resolved_in_place")
         self.assertEqual(report["blocking_unresolved"], 0)
+
+    def test_strip_uses_slot_backup_before_removing_line(self) -> None:
+        digest_html = (
+            "<b>Свежие новости</b>\n"
+            '• Физический дубль. <a href="https://news.test/primary-strip">News</a>\n'
+        )
+        primary = {
+            "fingerprint": "primary-strip",
+            "plan_slot_id": "last_24h-01",
+            "source_url": "https://news.test/primary-strip",
+            "source_label": "News",
+        }
+        backup = {
+            "fingerprint": "backup-strip",
+            "source_url": "https://news.test/backup-strip",
+            "source_label": "BBC",
+            "story_facts": {},
+        }
+        execution = {
+            "slots": {
+                "last_24h-01": {
+                    "slot_id": "last_24h-01",
+                    "section": "Свежие новости",
+                    "status": "shown",
+                    "final_fingerprint": "primary-strip",
+                    "failed_attempts": [],
+                }
+            }
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            (state_dir / "candidates.json").write_text(
+                json.dumps({"candidates": [primary, backup]}), encoding="utf-8"
+            )
+            (state_dir / "plan_execution_report.json").write_text(
+                json.dumps(execution), encoding="utf-8"
+            )
+
+            def produce_backup(_state_dir: Path, slot_id: str, *, stage: str = "judge") -> str:
+                payload = json.loads(
+                    (state_dir / "plan_execution_report.json").read_text(encoding="utf-8")
+                )
+                payload["slots"][slot_id]["status"] = "replaced"
+                payload["slots"][slot_id]["final_fingerprint"] = "backup-strip"
+                (state_dir / "plan_execution_report.json").write_text(
+                    json.dumps(payload), encoding="utf-8"
+                )
+                return (
+                    '• Независимая городская новость. '
+                    '<a href="https://news.test/backup-strip">BBC</a>'
+                )
+
+            with mock.patch(
+                "news_digest.pipeline.writer.produce_replacement_for_slot",
+                side_effect=produce_backup,
+            ):
+                repaired, report = _apply_repair_executor(
+                    project_root=root,
+                    digest_html=digest_html,
+                    actions=[
+                        {
+                            "line_index": 1,
+                            "section": "Свежие новости",
+                            "action": "strip",
+                            "reason": "physical duplicate",
+                            "risk": "duplicate",
+                        }
+                    ],
+                    critical_errors=[],
+                    deterministic_post_check={"errors": []},
+                    dry_run=False,
+                )
+
+        self.assertIn("Независимая городская новость", repaired)
+        self.assertNotIn("Физический дубль", repaired)
+        self.assertEqual(report["reserve_replacement_used"], 1)
+        self.assertEqual(report["stripped"], 0)
 
     @mock.patch("news_digest.pipeline.collector.extract._fetch_text")
     def test_deep_event_enrichment_fetches_child_page_facts_for_home(self, fetch_text: mock.Mock) -> None:

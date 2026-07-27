@@ -29,6 +29,7 @@ from news_digest.pipeline.common import (
     today_london,
     write_json_atomic,
 )
+from news_digest.pipeline.block_policy import BLOCK_POLICY_VERSION
 
 # Кодифицированные причины снятия строки (единственные допустимые).
 REMOVAL_REASONS = frozenset(
@@ -45,6 +46,7 @@ REMOVAL_REASONS = frozenset(
 
 # Общий бюджет ремонтов на выпуск (писатель + редактор + судья вместе).
 SHARED_REPAIR_BUDGET_PER_RUN = 8
+JUDGE_REPAIR_BUDGET_RESERVE = 2
 
 PLAN_FILE = "release_plan.json"
 EXECUTION_FILE = "plan_execution_report.json"
@@ -75,10 +77,12 @@ def load_execution(state_dir: Path) -> dict[str, Any]:
     if not isinstance(payload, dict) or not payload.get("slots"):
         payload = {
             "schema_version": 2,
+            "block_policy_version": BLOCK_POLICY_VERSION,
             "run_date_london": today_london(),
             "pipeline_run_id": "",
             "slots": {},
             "repair_attempts_used": 0,
+            "repair_attempts_by_stage": {},
             "events": [],
         }
     return payload
@@ -93,6 +97,7 @@ def init_execution(state_dir: Path, plan: dict[str, Any]) -> dict[str, Any]:
     """Writer calls this once: every slot starts as pending."""
     execution = {
         "schema_version": 2,
+        "block_policy_version": BLOCK_POLICY_VERSION,
         "run_date_london": today_london(),
         "pipeline_run_id": pipeline_run_id_from(plan),
         "slots": {
@@ -110,6 +115,7 @@ def init_execution(state_dir: Path, plan: dict[str, Any]) -> dict[str, Any]:
             for slot in plan_slots(plan)
         },
         "repair_attempts_used": 0,
+        "repair_attempts_by_stage": {},
         "events": [],
     }
     lead = plan.get("lead") if isinstance(plan.get("lead"), dict) else {}
@@ -191,10 +197,16 @@ def repair_budget_left(execution: dict[str, Any]) -> int:
     return max(0, SHARED_REPAIR_BUDGET_PER_RUN - used)
 
 
-def consume_repair_attempt(execution: dict[str, Any]) -> bool:
-    if repair_budget_left(execution) <= 0:
+def consume_repair_attempt(execution: dict[str, Any], *, stage: str = "writer") -> bool:
+    remaining = repair_budget_left(execution)
+    if remaining <= 0:
+        return False
+    if stage != "judge" and remaining <= JUDGE_REPAIR_BUDGET_RESERVE:
         return False
     execution["repair_attempts_used"] = int(execution.get("repair_attempts_used") or 0) + 1
+    by_stage = execution.setdefault("repair_attempts_by_stage", {})
+    if isinstance(by_stage, dict):
+        by_stage[stage] = int(by_stage.get(stage) or 0) + 1
     return True
 
 

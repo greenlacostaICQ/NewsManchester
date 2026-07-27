@@ -1996,12 +1996,13 @@ def _enforce_leisure_routing_contract(candidate: dict) -> bool:
         return False
     if str(candidate.get("primary_block") or "") != "next_7_days":
         return False
+    if candidate.get("next_7_practical_change"):
+        return False
     category = str(candidate.get("category") or "")
     blob = _candidate_blob(candidate)
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     leisure_like = (
         category in {"culture_weekly", "venues_tickets", "russian_speaking_events", "diaspora_events"}
-        or str(event.get("is_event") or "").lower() == "true"
         or _LEISURE_NEXT7_RE.search(blob)
     )
     if not leisure_like:
@@ -3002,6 +3003,10 @@ def validate_candidates(project_root: Path) -> StageResult:
         # leisure, and a dated event has its date_start populated before we
         # decide whether it is routine leisure or a real next_7_days plan.
         if candidate.get("include") and manual != "force_include":
+            from news_digest.pipeline.collector.routing import route_future_practical_change  # noqa: PLC0415
+
+            _time_gate("future_practical_next_7", lambda: route_future_practical_change(candidate))
+        if candidate.get("include") and manual != "force_include":
             _time_gate("leisure_routing_contract", lambda: _enforce_leisure_routing_contract(candidate))
         if manual == "force_include":
             candidate["include"] = True
@@ -3073,6 +3078,9 @@ def validate_candidates(project_root: Path) -> StageResult:
     _mark_timing("professional_llm_match_seconds", professional_llm_t0)
     city_t0 = time.monotonic()
     city_intelligence = annotate_city_intelligence(candidates)
+    from news_digest.pipeline.collector.routing import _promote_to_today_focus  # noqa: PLC0415
+
+    _promote_to_today_focus(candidates)
     _mark_timing("city_intelligence_seconds", city_t0)
     payload["run_at_london"] = now_london().isoformat()
     payload["run_date_london"] = today_london()

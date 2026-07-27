@@ -37,6 +37,11 @@ from news_digest.pipeline.common import (
     write_json_atomic,
 )
 from news_digest.pipeline.inventory import INVENTORY_BLOCK_REGISTRY
+from news_digest.pipeline.block_policy import (
+    BLOCK_POLICY_VERSION,
+    block_active_on_weekday,
+    block_policy,
+)
 from news_digest.pipeline.plan_execution import plan_path
 from news_digest.pipeline.ticket_notability import a_tier_ticket_policy, is_a_tier_ticket
 
@@ -47,9 +52,6 @@ PLAN_POLICY_VERSION = 1
 
 # Глубина цепочки запасных на слот: 3 для стержневых разделов, 2 остальным,
 # 0 синтетике (Погода/Транспорт — их производит детерминированный контур).
-SPINE_SECTIONS = frozenset({"Свежие новости", "Что важно сегодня", "Городской радар", "Еда, открытия и рынки"})
-BACKUP_DEPTH_SPINE = 3
-BACKUP_DEPTH_DEFAULT = 2
 SYNTHETIC_SECTIONS = frozenset({"Погода", "Общественный транспорт сегодня"})
 LEAD_UNDERSTUDY_COUNT = 2
 LEAD_UNDERSTUDY_SOURCE_BLOCKS = ("today_focus", "last_24h", "city_watch")
@@ -153,17 +155,28 @@ def _published_at(candidate: dict) -> str:
 
 def _story_key(candidate: dict) -> str:
     if is_a_tier_ticket(candidate):
-        from news_digest.pipeline.ticket_notability import ticket_artist_name  # noqa: PLC0415
-
-        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-        artist = re.sub(r"[^a-z0-9]+", " ", ticket_artist_name(candidate).lower()).strip()
-        venue = re.sub(r"[^a-z0-9]+", " ", str(event.get("venue") or "").lower()).strip()
-        event_day = str(event.get("date_start") or event.get("date") or "")[:10]
-        if artist and venue and event_day:
-            return f"ticket:{artist}:{venue}:{event_day}"
+        physical = _a_tier_physical_key(candidate)
+        if physical:
+            return physical
     from news_digest.pipeline.editor import _candidate_story_identity_key  # noqa: PLC0415
 
     return _candidate_story_identity_key(candidate)
+
+
+def _a_tier_physical_key(candidate: dict) -> str:
+    """Physical event identity used for collapse and conservation."""
+    from news_digest.pipeline.ticket_notability import ticket_artist_name  # noqa: PLC0415
+
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    artist = re.sub(r"[^a-z0-9]+", " ", ticket_artist_name(candidate).lower()).strip()
+    venue = re.sub(r"[^a-z0-9]+", " ", str(event.get("venue") or "").lower()).strip()
+    event_day = str(event.get("date_start") or event.get("date") or "")[:10]
+    return f"ticket:{artist}:{venue}:{event_day}" if artist and venue and event_day else ""
+
+
+def _stored_repeat_allows(candidate: dict) -> bool:
+    verdict = candidate.get("visible_repeat_verdict")
+    return not isinstance(verdict, dict) or bool(verdict.get("allow"))
 
 
 def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
@@ -180,6 +193,7 @@ def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
     from news_digest.pipeline.ticket_notability import ticket_artist_name  # noqa: PLC0415
 
     recognised_artists: set[str] = set()
+    recognised_physical_events: set[str] = set()
     grouped: dict[tuple[str, str, date], list[dict]] = {}
     for candidate in candidates:
         if not isinstance(candidate, dict) or not is_a_tier_ticket(candidate):
@@ -209,6 +223,10 @@ def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
             continue
         venue = re.sub(r"[^a-z0-9]+", " ", str(event.get("venue") or "").lower()).strip()
         if artist and venue:
+            recognised_physical_events.add(f"ticket:{artist}:{venue}:{event_day.isoformat()}")
+        if not _stored_repeat_allows(candidate):
+            continue
+        if artist and venue:
             grouped.setdefault((artist, venue, event_day), []).append(candidate)
 
     def _survivor_key(candidate: dict) -> tuple:
@@ -221,10 +239,14 @@ def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
     collapsed = 0
     conserved_events = 0
     physical_survivors: dict[str, list[tuple[date, str, dict]]] = {}
+    physical_representatives: dict[str, str] = {}
     for (artist, _venue, event_day), rows in grouped.items():
         conserved_events += 1
         survivor = min(rows, key=_survivor_key)
         survivor_fp = str(survivor.get("fingerprint") or "")
+        physical_key = _a_tier_physical_key(survivor)
+        if physical_key:
+            physical_representatives[physical_key] = survivor_fp
         for candidate in rows:
             if candidate is survivor:
                 continue
@@ -262,7 +284,12 @@ def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
             tour_survivor["draft_line_provider"] = "plan_a_tier_tour_card"
             tour_survivor["draft_line_model"] = "deterministic_writer_fallback"
         tour_cards += 1
-        for _event_day, _venue, candidate in stops[1:]:
+        for _stop_day, _stop_venue, candidate in stops:
+            stop_key = _a_tier_physical_key(candidate)
+            if stop_key:
+                physical_representatives[stop_key] = tour_fp
+            if candidate is tour_survivor:
+                continue
             candidate["a_tier_collapsed_into"] = tour_fp
             candidate["a_tier_policy_status"] = "collapsed_same_tour"
             candidate["a_tier_policy_reason"] = "tour_date_listed_on_artist_card"
@@ -270,9 +297,11 @@ def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
             collapsed += 1
     return {
         "recognised_artists": len(recognised_artists),
+        "recognised_physical_events": sorted(recognised_physical_events),
         "eligible_events": conserved_events,
         "collapsed_rows": collapsed,
         "tour_cards": tour_cards,
+        "physical_representative_fingerprints": physical_representatives,
     }
 
 
@@ -315,7 +344,7 @@ def _sorted_pool(pool: list[dict], section: str) -> list[dict]:
 def _must_show(candidate: dict, repeat_allowed: bool) -> bool:
     block = str(candidate.get("primary_block") or "")
     if is_a_tier_ticket(candidate):
-        return True
+        return repeat_allowed
     if block == "weekend_activities":
         from news_digest.pipeline.weekend_inventory import is_weekend_inventory_candidate  # noqa: PLC0415
 
@@ -487,6 +516,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
     if not candidates:
         write_json(report_path, {
             "pipeline_run_id": pipeline_run_id,
+            "block_policy_version": BLOCK_POLICY_VERSION,
             "run_date_london": today_london(),
             "stage_status": "failed",
             "errors": ["candidates.json is missing or empty."],
@@ -505,7 +535,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
 
     warnings: list[str] = []
     london_now = now_london()
-    show_weekend = london_now.weekday() >= 3
+    show_weekend = block_active_on_weekday("weekend_activities", london_now.weekday())
 
     published_facts = read_json(state_dir / "published_facts.json", {})
 
@@ -578,7 +608,10 @@ def run_plan_digest(project_root: Path) -> StageResult:
 
     # --- Допуск и роутинг --------------------------------------------------
     out_rows: list[dict] = []
-    eligible_a_tier_fps: set[str] = set()
+    eligible_a_tier_physical_keys: set[str] = set()
+    a_tier_physical_representatives = (
+        a_tier_identity.get("physical_representative_fingerprints") or {}
+    )
     pools: dict[str, list[dict]] = {heading: [] for heading in PRIMARY_BLOCKS.values()}
     backup_pools: dict[str, list[dict]] = {heading: [] for heading in PRIMARY_BLOCKS.values()}
 
@@ -600,6 +633,14 @@ def run_plan_digest(project_root: Path) -> StageResult:
         verdict = str(candidate.get("digest_selection_verdict") or "")
         included = bool(candidate.get("include"))
         a_tier_eligible, a_tier_reason = a_tier_ticket_policy(candidate)
+        upstream_repeat = (
+            candidate.get("visible_repeat_verdict")
+            if isinstance(candidate.get("visible_repeat_verdict"), dict)
+            else {}
+        )
+        if a_tier_eligible and upstream_repeat and not bool(upstream_repeat.get("allow")):
+            a_tier_eligible = False
+            a_tier_reason = f"calendar_blocked:{upstream_repeat.get('reason') or 'repeat_not_allowed'}"
         if a_tier_eligible:
             candidate["a_tier_policy_status"] = "must_show"
             candidate["a_tier_policy_reason"] = a_tier_reason
@@ -635,7 +676,18 @@ def run_plan_digest(project_root: Path) -> StageResult:
                 _mark_out(candidate, ticket_reason)
                 continue
         if a_tier_eligible:
-            eligible_a_tier_fps.add(str(candidate.get("fingerprint") or ""))
+            candidate_fp = str(candidate.get("fingerprint") or "")
+            represented = {
+                key
+                for key, representative_fp in a_tier_physical_representatives.items()
+                if representative_fp == candidate_fp
+            }
+            if represented:
+                eligible_a_tier_physical_keys.update(represented)
+            else:
+                physical_key = _a_tier_physical_key(candidate)
+                if physical_key:
+                    eligible_a_tier_physical_keys.add(physical_key)
         if included and (verdict != "reserve" or a_tier_eligible):
             # 0161: основной слот допускается только с доказуемым путём до
             # строки. Раньше проверку проходили лишь запасные — планёрка
@@ -913,9 +965,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
     for section in ordered:
         pool = planned.get(section) or []
         block_key = next((k for k, v in PRIMARY_BLOCKS.items() if v == section), section)
-        depth = 0 if section in SYNTHETIC_SECTIONS else (
-            BACKUP_DEPTH_SPINE if section in SPINE_SECTIONS else BACKUP_DEPTH_DEFAULT
-        )
+        depth = int(block_policy(block_key).get("backup_depth") or 0)
         queue = [
             c for c in backup_pools.get(section) or []
             if str(c.get("fingerprint") or "") not in used_backup_fps
@@ -1082,6 +1132,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
 
     plan = {
         "schema_version": PLAN_SCHEMA_VERSION,
+        "block_policy_version": BLOCK_POLICY_VERSION,
         "policy_version": PLAN_POLICY_VERSION,
         "pipeline_run_id": pipeline_run_id,
         "run_date_london": today_london(),
@@ -1118,23 +1169,38 @@ def run_plan_digest(project_root: Path) -> StageResult:
             "demoted_to_backup": len(demoted),
         },
         "a_tier_conservation": {
-            "recognised": int(a_tier_identity.get("recognised_artists") or 0),
+            "recognised": len(a_tier_identity.get("recognised_physical_events") or []),
+            "recognised_artists": int(a_tier_identity.get("recognised_artists") or 0),
             "recognised_rows": sum(
                 1 for candidate in candidates
                 if isinstance(candidate, dict) and is_a_tier_ticket(candidate)
             ),
-            "eligible": len(eligible_a_tier_fps),
+            "eligible": len(eligible_a_tier_physical_keys),
             "planned": len(
-                eligible_a_tier_fps
-                & {str(slot.get("primary_fingerprint") or "") for slot in slots}
+                eligible_a_tier_physical_keys
+                & {
+                    key
+                    for key, representative_fp in (
+                        a_tier_identity.get("physical_representative_fingerprints") or {}
+                    ).items()
+                    if representative_fp
+                    in {str(slot.get("primary_fingerprint") or "") for slot in slots}
+                }
             ),
             "missing_from_plan": sorted(
-                eligible_a_tier_fps
-                - {str(slot.get("primary_fingerprint") or "") for slot in slots}
+                eligible_a_tier_physical_keys
+                - {
+                    key
+                    for key, representative_fp in (
+                        a_tier_identity.get("physical_representative_fingerprints") or {}
+                    ).items()
+                    if representative_fp
+                    in {str(slot.get("primary_fingerprint") or "") for slot in slots}
+                }
             ),
             "identity": a_tier_identity,
             "policy": (
-                "One public card per physical A-tier event (owner + venue + date). "
+                "Conservation is counted by physical A-tier event (owner + venue + date), "
                 "Technical source duplicates collapse before timing/watch/cap/repeat; "
                 "another real date or venue remains independently canonical."
             ),
@@ -1170,6 +1236,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
         state_dir / "publish_plan.json",
         {
             "schema_version": 2,
+            "block_policy_version": BLOCK_POLICY_VERSION,
             "mirror_of": "release_plan.json",
             "run_date_london": today_london(),
             "pipeline_run_id": pipeline_run_id,
@@ -1182,6 +1249,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
         report_path,
         {
             "pipeline_run_id": pipeline_run_id,
+            "block_policy_version": BLOCK_POLICY_VERSION,
             "run_at_london": london_now.isoformat(),
             "run_date_london": today_london(),
             "stage_status": "complete",

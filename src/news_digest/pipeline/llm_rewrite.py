@@ -37,6 +37,7 @@ from pathlib import Path
 from typing import Callable
 
 from news_digest.pipeline.common import PRIMARY_BLOCKS, now_london, pipeline_run_id_from, read_json, today_london, write_json
+from news_digest.pipeline.block_policy import BLOCK_POLICY_VERSION, block_policy
 from news_digest.pipeline.model_routing import (
     DEEPSEEK_BASE_URL,
     DEEPSEEK_MODEL,
@@ -128,11 +129,6 @@ TOKEN_BUDGET_MARGIN = 1.35
 TOKEN_BUDGET_RESPONSE_BUFFER = 256
 TOKEN_HISTORY_MAX_SAMPLES = 240
 _ACTIVE_TOKEN_BUDGET_HISTORY: dict[str, object] = {}
-_REWRITE_BLOCK_FLOOR = 3
-_REWRITE_BLOCK_FLOORS: dict[str, int] = {
-    "last_24h": 7,
-    "weekend_activities": 8,
-}
 _FRESH_GLOBAL_PROTECTED_TARGET = 12
 TODAY_PRACTICAL_TRANSLATION_RESERVE = 3
 
@@ -1252,13 +1248,13 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
     caps: dict[str, int] = {}
 
     # Board rejects are executed here — the first and only place that can see how
-    # many survivors a block has left. Worst rank goes first and the block floor
-    # stops the bleeding, so a harsh morning can never empty a section. Protected
-    # lanes and low-confidence rejects are already filtered by board_reject_verdict.
+    # many survivors a block has left. The only floor comes from the shared
+    # block registry; an optional block such as tech_business therefore cannot
+    # resurrect a board rejection behind rewrite's back.
     board_rejects_executed = 0
     board_rejects_blocked: dict[str, int] = {}
     for block, group in groups.items():
-        floor = _REWRITE_BLOCK_FLOORS.get(block, _REWRITE_BLOCK_FLOOR)
+        floor = int(block_policy(block).get("min") or 0)
         rejectable = sorted(
             (c for c in group if board_reject_verdict(c)[0]),
             key=lambda c: -int(c.get("board_rank") or 0),
@@ -1385,12 +1381,12 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
         ]
         for c in sorted(fresh_protected, key=_rewrite_shortlist_priority, reverse=True)[:_FRESH_GLOBAL_PROTECTED_TARGET]:
             keep_ids.add(id(c))
-        # Per-block floor: keep the top _REWRITE_BLOCK_FLOOR of each block.
+        # Per-block floor: keep the registry minimum of each block.
         by_block: dict[str, list[dict]] = {}
         for c in selected:
             by_block.setdefault(str(c.get("primary_block") or ""), []).append(c)
         for _block, items in by_block.items():
-            floor = _REWRITE_BLOCK_FLOORS.get(_block, _REWRITE_BLOCK_FLOOR)
+            floor = int(block_policy(_block).get("min") or 0)
             for c in sorted(items, key=_rewrite_shortlist_priority, reverse=True)[:floor]:
                 keep_ids.add(id(c))
         # Fill the rest of the budget by global priority.
@@ -3867,6 +3863,7 @@ def run_rank_digest(project_root: Path) -> StageResult:
             report_path,
             {
                 "pipeline_run_id": "",
+                "block_policy_version": BLOCK_POLICY_VERSION,
                 "run_at_london": now_london().isoformat(),
                 "run_date_london": today_london(),
                 "stage_status": "failed",
@@ -4033,6 +4030,7 @@ def run_rank_digest(project_root: Path) -> StageResult:
         report_path,
         {
             "pipeline_run_id": pipeline_run_id,
+            "block_policy_version": BLOCK_POLICY_VERSION,
             "run_at_london": now_london().isoformat(),
             "run_date_london": today_london(),
             "stage_status": "complete" if not errors else "degraded",
@@ -4086,6 +4084,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             report_path,
             {
                 "pipeline_run_id": "",
+                "block_policy_version": BLOCK_POLICY_VERSION,
                 "run_at_london": now_london().isoformat(),
                 "run_date_london": today_london(),
                 "stage_status": "failed",
@@ -4242,6 +4241,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
             report_path,
             {
                 "pipeline_run_id": pipeline_run_id,
+                "block_policy_version": BLOCK_POLICY_VERSION,
                 "run_at_london": now_london().isoformat(),
                 "run_date_london": today_london(),
                 "stage_status": "degraded",
@@ -4637,6 +4637,7 @@ def run_llm_rewrite(project_root: Path) -> StageResult:
         report_path,
         {
             "pipeline_run_id": pipeline_run_id,
+            "block_policy_version": BLOCK_POLICY_VERSION,
             "run_at_london": now_london().isoformat(),
             "run_date_london": today_london(),
             "stage_status": "complete" if not warnings else "degraded",

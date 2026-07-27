@@ -1514,7 +1514,7 @@ def is_specific_topic_key(topic_key: str) -> bool:
 
 
 _CALENDAR_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 14, 30})
-_A_TIER_TICKET_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 14, 30, 90, 180, 365})
+_A_TIER_TICKET_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 3, 7, 30, 365})
 _B_TIER_TICKET_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 30})
 _LOW_TIER_TICKET_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7})
 _MAJOR_UPCOMING_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 14, 30, 365})
@@ -1584,7 +1584,9 @@ def _ticket_repeat_milestone_days(candidate: dict, previous: dict) -> frozenset[
 def _max_public_ticket_repeats(candidate: dict, previous: dict) -> int:
     tier = _ticket_notability_tier(candidate, previous)
     if tier in {"A", "PROTECTED"}:
-        return len(_A_TIER_TICKET_REPEAT_MILESTONE_DAYS)
+        # A-tier has no quantity cap. Visibility is still calendar-controlled:
+        # first discovery, material change, sale moment, or an explicit D-day.
+        return 0
     return _MAX_PUBLIC_TICKET_REPEATS
 
 
@@ -1696,7 +1698,7 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
     if is_ticket_item:
         published_count = _published_count_for_repeat(previous)
         repeat_limit = _max_public_ticket_repeats(candidate, previous)
-        if published_count >= repeat_limit:
+        if repeat_limit and published_count >= repeat_limit:
             return {
                 "applies": True,
                 "allow": False,

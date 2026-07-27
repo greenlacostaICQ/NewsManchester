@@ -5272,7 +5272,7 @@ def _produce_slot_line(
         # Обогатить-и-переписать моделью — в пределах ОБЩЕГО бюджета выпуска
         # (писатель + редактор + судья делят SHARED_REPAIR_BUDGET_PER_RUN).
         _append_recovery_step(candidate, "must_show_model_recovery", "attempted", missing=draft_line_errors)
-        if not consume_repair_attempt(execution):
+        if not consume_repair_attempt(execution, stage=stage):
             model_line, model_recovery_report = "", {"status": "skipped_shared_budget", "attempted": False}
         else:
             controlled_enrichment_report["model_attempts"] = int(controlled_enrichment_report.get("model_attempts") or 0) + 1

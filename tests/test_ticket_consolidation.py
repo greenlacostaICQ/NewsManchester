@@ -5,9 +5,11 @@ drop premium/non-music). Pins the 2026-06-14 fixes.
 from __future__ import annotations
 
 import unittest
+from datetime import timedelta
 from unittest import mock
 
 from news_digest.pipeline import writer as w
+from news_digest.pipeline.common import now_london
 from news_digest.pipeline.dedupe import _consolidate_tickets, _merge_multinight_ticket_runs
 
 
@@ -70,25 +72,37 @@ class TicketCardFormatTest(unittest.TestCase):
             self.assertEqual(w._ticket_watch_decision(candidate)["decision"], "show")
             self.assertTrue(w._build_ticket_fallback_line(candidate))
 
-    def test_visible_repeat_policy_has_one_explicit_a_tier_override(self) -> None:
+    def test_visible_repeat_policy_keeps_a_tier_under_calendar_control(self) -> None:
         from news_digest.pipeline.repeat_policy import visible_repeat_verdict
 
-        candidate = _tk("Global Star", venue="AO Arena", date="2099-06-19", tier="A")
-        previous = {**candidate, "last_published_day_london": "2099-05-01"}
+        event_day = (now_london().date() + timedelta(days=3)).isoformat()
+        candidate = _tk("Global Star", venue="AO Arena", date=event_day, tier="A")
+        previous = {
+            **candidate,
+            "last_published_day_london": (now_london().date() - timedelta(days=1)).isoformat(),
+            "published_count": 99,
+        }
         verdict = visible_repeat_verdict(candidate, previous)
         self.assertTrue(verdict.allow)
-        self.assertEqual(verdict.reason, "a_tier_must_show_override")
+        self.assertEqual(verdict.reason, "event_milestone_d3")
 
         duplicate = {**candidate, "reason": "Exact duplicate fragment merged into canonical event."}
         duplicate_verdict = visible_repeat_verdict(duplicate, previous)
         self.assertFalse(duplicate_verdict.allow)
-        self.assertNotEqual(duplicate_verdict.reason, "a_tier_must_show_override")
 
         expired = _tk("Global Star", venue="AO Arena", date="2020-06-19", tier="A")
         expired_previous = {**expired, "last_published_day_london": "2020-06-01"}
         expired_verdict = visible_repeat_verdict(expired, expired_previous)
         self.assertFalse(expired_verdict.allow)
-        self.assertNotEqual(expired_verdict.reason, "a_tier_must_show_override")
+
+        ordinary_day = _tk(
+            "Global Star",
+            venue="AO Arena",
+            date=(now_london().date() + timedelta(days=10)).isoformat(),
+            tier="A",
+        )
+        ordinary_previous = {**ordinary_day, "last_published_day_london": previous["last_published_day_london"]}
+        self.assertFalse(visible_repeat_verdict(ordinary_day, ordinary_previous).allow)
 
     def test_bold_artist_and_confirmed_genre_only(self) -> None:
         # 0167: a genre is written only when the source's own category and
