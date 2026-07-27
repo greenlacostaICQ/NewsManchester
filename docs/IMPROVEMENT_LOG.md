@@ -1930,7 +1930,7 @@
 - Почему так (отвергнутые альтернативы): расширение реестра не решает поломку существующих URL; общий headless browser для Manchester United был бы тяжелее уже доказанного WAF-fetch.
 - Ожидаемый эффект и метрика проверки: 0 активных источников без tier; ненулевой yield у Pedddle/Secret/United; Prolific/Fairfield отдельно наблюдаемы.
 - Файлы/места: `data/sources.toml`; `collector/sources.py:_load_sources`; `collector/extract.py:_extract_pedddle_event_cards/_extract_source_candidates`; `collector/fetch.py:_CLOUDFLARE_PROTECTED_HOSTS`; `source_selection.py:SOURCE_TIER`.
-- ПРОВЕРКА (live source probe 27.07): Pedddle 2, Secret monthly 9, Secret gigs 11, Prolific North 5, Fairfield 4, Manchester United 1; active/tiered/missing = `122/122/0`; parser/source-tier tests входят в 120 OK.
+- ПРОВЕРКА: локальный live source probe 27.07: Pedddle 2, Secret monthly 9, Secret gigs 11, Prolific North 5, Fairfield 4, Manchester United 1; active/tiered/missing = `122/122/0`; parser/source-tier tests входят в 120 OK. Первая Events production-wave `30269740360`: Pedddle `found=2`, Fairfield `found=4`, но оба Secret остались `found=0`; production-fix CDN/WAF body — #0179.
 - Где была ошибка (если не сработает): —
 
 ### 0177 — P1: подтверждённый футбол выше transfer roundup — 2026-07-27
@@ -1954,3 +1954,14 @@
 - Файлы/места: `professional_events.py:_is_programme_page/_professional_event_has_minimum_facts`; `tests/test_professional_events.py:ProfessionalMinimumFactsTest`.
 - ПРОВЕРКА: production-state 27.07 после применения нового predicate: 13 записей проходят факт-контракт, из них 7 имеют будущую дату; MD Future и конкретные GM Chamber/Business Growth Hub event pages проходят, `https://events.compiledmcr.com/` и обе pro-manchester programme pages не проходят. 24 Professional-теста OK.
 - Где была ошибка: `professional_events.py:_professional_event_has_minimum_facts` — registration URL ошибочно был сведён только к одному структурированному полю.
+
+### 0179 — Secret Manchester получает реальный HTML через WAF-compatible fetch — 2026-07-27
+- Статус: внедрено; повторный production-proof ожидается после push.
+- Проблема: Events production-wave `30269740360` успешно опросила 55 источников без ошибок, Pedddle дал 2 и Fairfield 4, но Secret Monthly и Secret Gigs оба дали `found=0`; на том же live HTML новые/существующие парсеры локально дают 9/11.
+- Причина (корень): production urllib получает от CDN `secretmanchester.com` иной body, чем browser-compatible curl; поэтому extractor не видит карточки, хотя HTTP fetch считается успешным.
+- Решение: только `secretmanchester.com` добавлен в существующий `_CLOUDFLARE_PROTECTED_HOSTS`, то есть использует уже проверенный `curl_cffi` browser-compatible fetch; parser и реестр не расширяются.
+- Почему так (отвергнутые альтернативы): ещё один parser для bot/challenge body не извлечёт событий; headless browser не нужен, поскольку тот же WAF-маршрут уже используется для DesignMyNight/Skiddle/Manchester United.
+- Ожидаемый эффект и метрика проверки: повторная Events wave даёт `found>0` для Secret Monthly/Gigs без роста `source_errors`.
+- Файлы/места: `collector/fetch.py:_CLOUDFLARE_PROTECTED_HOSTS`.
+- ПРОВЕРКА: ожидается после повторной production-wave.
+- Где была ошибка: `collector/fetch.py` — host не был направлен в уже существующий WAF-compatible транспорт.
