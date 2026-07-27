@@ -3324,7 +3324,10 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertIn("Secret Manchester Gigs", by_name)
         self.assertNotIn("Secret Manchester Weekend Guide", by_name)
         self.assertNotIn("Manchester Flower Festival CityCo News", by_name)
-        self.assertEqual(by_name["Manchester United"].url, "https://www.manutd.com/en/news")
+        self.assertEqual(
+            by_name["Manchester United"].url,
+            "https://www.youtube.com/feeds/videos.xml?channel_id=UC6yW44UGJJBvYTlfC7CRg2Q",
+        )
         self.assertNotIn("Prolific North", by_name)
         self.assertNotIn("Sofar Manchester Bank Holiday", by_name)
 
@@ -3354,6 +3357,27 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             candidates[0]["source_url"],
             "https://manutd.com/en/news/man-utd-team-news-injury-update-before-world-cup-fixture-2026",
         )
+
+    def test_manchester_united_official_youtube_feed_is_publishable_fallback(self) -> None:
+        source = next(source for source in SOURCES if source.name == "Manchester United")
+        atom = """<?xml version="1.0" encoding="UTF-8"?>
+        <feed xmlns="http://www.w3.org/2005/Atom">
+          <entry>
+            <title>Rosenborg v Man Utd | Extended Highlights</title>
+            <link rel="alternate" href="https://www.youtube.com/watch?v=official123"/>
+            <published>2026-07-27T08:00:00+00:00</published>
+            <content>Official Manchester United match highlights.</content>
+          </entry>
+        </feed>
+        """
+        with mock.patch(
+            "news_digest.pipeline.collector.extract._enrich_item",
+            side_effect=lambda _source, item: item,
+        ):
+            candidates = _extract_source_candidates(source, atom)
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0]["source_label"], "Manchester United")
+        self.assertEqual(candidates[0]["source_url"], "https://youtube.com/watch")
 
     def test_men_soft_fluff_is_not_publishable_news(self) -> None:
         examples = [

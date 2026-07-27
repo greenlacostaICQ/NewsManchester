@@ -3238,7 +3238,7 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_skiddle_items(source, body)
     elif source.name == "GMMH":
         links = _extract_gmmh_press_releases(source, body)
-    elif source.name == "Manchester United":
+    elif source.name == "Manchester United" and source.source_type != "rss":
         links = _extract_manutd_items(source, body)
     elif source.name in {"Manchester City", "Manchester City Men"}:
         links = _extract_mancity_items(source, body)
@@ -3386,7 +3386,20 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
                         continue
             except (ValueError, TypeError):
                 pass
-        if source.report_category == "football" and _is_football_fluff(item.title, normalized_url):
+        official_youtube_match_highlight = (
+            source.name == "Manchester United"
+            and source.source_type == "rss"
+            and "highlights" in str(item.title or "").lower()
+            and (
+                " v " in str(item.title or "").lower()
+                or "match" in str(item.summary or "").lower()
+            )
+        )
+        if (
+            source.report_category == "football"
+            and _is_football_fluff(item.title, normalized_url)
+            and not official_youtube_match_highlight
+        ):
             continue
         candidate["fingerprint"] = fingerprint_for_candidate(candidate)
         event_instance_id = str((item.structured_event_hint or {}).get("event_instance_id") or "").strip()

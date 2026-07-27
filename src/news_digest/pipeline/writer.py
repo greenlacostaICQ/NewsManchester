@@ -4486,7 +4486,7 @@ _FOOTBALL_CONFIRMED_CONTRACT_RE = re.compile(
 )
 _FOOTBALL_RESULT_RE = re.compile(
     r"\b(?:full[- ]time|match\s+report|final\s+score|beat|defeat(?:ed)?|won|drew|"
-    r"victory|loss|result)\b",
+    r"victory|loss|result|highlights?)\b",
     re.IGNORECASE,
 )
 _FOOTBALL_INJURY_RE = re.compile(

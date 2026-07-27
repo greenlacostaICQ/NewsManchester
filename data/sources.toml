@@ -1381,7 +1381,7 @@ notes = "current-month curated guide; URL month is resolved at runtime and the s
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://secretmanchester.com/things-to-do-july/"
-url_template = "https://secretmanchester.com/things-to-do-{month}/"
+url_template = "https://secretmanchester.com/things-to-do-{month}/?digest_date={date}"
 primary_block = "weekend_activities"
 source_type = "html_sectioned_event_guide"
 allowed_hosts = ["secretmanchester.com"]
@@ -1405,6 +1405,7 @@ notes = "monthly live music guide; fills genre and major-gig blind spots"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://secretmanchester.com/gigs-in-manchester/"
+url_template = "https://secretmanchester.com/gigs-in-manchester/?digest_date={date}"
 primary_block = "weekend_activities"
 source_type = "html_sectioned_event_guide"
 allowed_hosts = ["secretmanchester.com"]
@@ -1490,12 +1491,13 @@ allowed_hosts = ["bolton.gov.uk"]
 
 [[sources]]
 name = "Manchester United"
-notes = "результаты, preview, squad news"
+notes = "официальный YouTube RSS клуба; fallback после устойчивого HTTP 403 manutd.com на GitHub Actions"
 report_category = "football"
 candidate_category = "football"
-url = "https://www.manutd.com/en/news"
+url = "https://www.youtube.com/feeds/videos.xml?channel_id=UC6yW44UGJJBvYTlfC7CRg2Q"
 primary_block = "football"
-allowed_hosts = ["manutd.com"]
+source_type = "rss"
+allowed_hosts = ["youtube.com", "youtu.be"]
 
 [[sources]]
 name = "Manchester City"

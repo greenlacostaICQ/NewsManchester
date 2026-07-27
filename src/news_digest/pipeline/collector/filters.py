@@ -516,7 +516,10 @@ def _is_football_publishable(title: str, url: str = "") -> bool:
         or " for " in normalized or " with " in normalized
     ):
         return True
-    preview_terms = ("match preview", "preview", "team news", "confirmed line up", "confirmed lineup")
+    preview_terms = (
+        "match preview", "preview", "team news", "confirmed line up",
+        "confirmed lineup", "highlights",
+    )
     if any(term in normalized for term in preview_terms):
         return True
     competition_terms = (
@@ -1143,7 +1146,14 @@ def _source_override(
         return _is_football_publishable(lowered_title, lowered_path)
 
     if source.name == "Manchester United":
-        if "/en/news/" not in lowered_path:
+        if "youtube.com/feeds/videos.xml" in source.url:
+            if lowered_path != "/watch":
+                return False
+            if "highlights" in lowered_title and (
+                " v " in lowered_title or "match" in lowered_summary
+            ):
+                return True
+        elif "/en/news/" not in lowered_path:
             return False
         if _is_football_fluff(lowered_title, lowered_path, lowered_summary):
             return False

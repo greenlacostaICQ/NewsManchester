@@ -1956,12 +1956,34 @@
 - Где была ошибка: `professional_events.py:_professional_event_has_minimum_facts` — registration URL ошибочно был сведён только к одному структурированному полю.
 
 ### 0179 — Secret Manchester получает реальный HTML через WAF-compatible fetch — 2026-07-27
-- Статус: внедрено; повторный production-proof ожидается после push.
+- Статус: ПРОВЕРЕНО-НЕ-работает; заменено #0181.
 - Проблема: Events production-wave `30269740360` успешно опросила 55 источников без ошибок, Pedddle дал 2 и Fairfield 4, но Secret Monthly и Secret Gigs оба дали `found=0`; на том же live HTML новые/существующие парсеры локально дают 9/11.
 - Причина (корень): production urllib получает от CDN `secretmanchester.com` иной body, чем browser-compatible curl; поэтому extractor не видит карточки, хотя HTTP fetch считается успешным.
 - Решение: только `secretmanchester.com` добавлен в существующий `_CLOUDFLARE_PROTECTED_HOSTS`, то есть использует уже проверенный `curl_cffi` browser-compatible fetch; parser и реестр не расширяются.
 - Почему так (отвергнутые альтернативы): ещё один parser для bot/challenge body не извлечёт событий; headless browser не нужен, поскольку тот же WAF-маршрут уже используется для DesignMyNight/Skiddle/Manchester United.
 - Ожидаемый эффект и метрика проверки: повторная Events wave даёт `found>0` для Secret Monthly/Gigs без роста `source_errors`.
 - Файлы/места: `collector/fetch.py:_CLOUDFLARE_PROTECTED_HOSTS`.
-- ПРОВЕРКА: ожидается после повторной production-wave.
-- Где была ошибка: `collector/fetch.py` — host не был направлен в уже существующий WAF-compatible транспорт.
+- ПРОВЕРКА: повторная Events wave `30270149707` снова дала Monthly/Gigs `found=0`, `extract_seconds=0.0`; транспорт сменился, но conditional cache завершил источник до extractor.
+- Где была ошибка: `collector/fetch.py` — смена транспорта не меняет старый ETag/Last-Modified cache key, поэтому новый parser/transport не получает body.
+
+### 0180 — Manchester United: официальный YouTube RSS вместо недоступного сайта — 2026-07-27
+- Статус: внедрено; production-proof ожидается после push.
+- Проблема: `manutd.com/en/news` повторно дал HTTP 403 в GitHub Actions даже через три `curl_cffi` browser profiles; live_news run `30270312330` подтвердил `fetched=false/found=0/errors=1`. Локальный IP получает HTML, поэтому прежний probe не доказывал production-доступность.
+- Причина (корень): WAF блокирует IP GitHub Actions, а не только urllib TLS fingerprint.
+- Решение: существующий источник Manchester United переключён на RSS официального YouTube-канала клуба (`UC6yW44UGJJBvYTlfC7CRg2Q`); это официальный fallback, а не новый редакционный источник. Допускаются только publishable football titles, fluff/academy/women/ticketing по-прежнему фильтруются.
+- Почему так (отвергнутые альтернативы): дальнейшая смена TLS profile не меняет заблокированный IP; IR RSS содержит корпоративные релизы, а не матч/команду; сторонний proxy нарушил бы требование официального источника.
+- Ожидаемый эффект и метрика проверки: production `Manchester United fetched=true/errors=0`, ненулевой `found` когда канал публикует результат, preview, squad/injury/contract news.
+- Файлы/места: `data/sources.toml`; `collector/extract.py:_extract_source_candidates`; `collector/filters.py:_source_override`; `collector/fetch.py:_CLOUDFLARE_PROTECTED_HOSTS`.
+- ПРОВЕРКА: официальный feed URL отвечает HTTP 200; реальный collector/parser probe будет выполнен после fixture fix и production-wave.
+- Где была ошибка: `collector/fetch.py` — WAF-проблема была ошибочно сведена к TLS fingerprint, хотя production evidence показал IP-level block.
+
+### 0181 — Secret Manchester: ежедневный cache key для изменяемых guide pages — 2026-07-27
+- Статус: внедрено; production-proof ожидается после push.
+- Проблема: после #0179 обе страницы повторно дали `found=0` и `extract_seconds=0.0`, хотя live HTML даёт 9/11 карточек локально.
+- Причина (корень): источник завершался по условному cache validator до extractor; URL/transport/parser менялись, а старый validator оставался источником решения.
+- Решение: Monthly и Gigs получают дневной технический query `digest_date=YYYY-MM-DD` через `url_template`; каждый день parser гарантированно видит один свежий body, а в течение дня повторные волны остаются cacheable по тому же ключу.
+- Почему так (отвергнутые альтернативы): отключать общий fetch cache для всех источников нельзя; ручная правка `data/state/fetch_cache.json` исчезнет на следующем state checkout; новый источник не нужен.
+- Ожидаемый эффект и метрика проверки: первая Events wave дня имеет `extract_seconds>0` и `found>0` для обеих Secret pages, без `source_errors`.
+- Файлы/места: `data/sources.toml`; `collector/sources.py:_configured_url`.
+- ПРОВЕРКА: ожидается после production-wave.
+- Где была ошибка: —
