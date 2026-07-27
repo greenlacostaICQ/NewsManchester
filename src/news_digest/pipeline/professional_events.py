@@ -8,6 +8,7 @@ block is not just "business keywords", but "worth Aleksei's time".
 from __future__ import annotations
 
 from collections import Counter
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -263,6 +264,11 @@ def score_professional_event(candidate: dict[str, Any], project_root: Path | Non
 def apply_professional_event_match(candidate: dict[str, Any], project_root: Path | None = None) -> dict[str, Any]:
     if str(candidate.get("category") or "") != "professional_events":
         return candidate
+    # 0164: a night card whose CV evidence has not changed keeps its night
+    # verdict. Re-scoring it here would reset `professional_match_status` back
+    # to `needs_llm_cv_match` and send it to the model a second time the same day.
+    if professional_cv_verdict_is_current(candidate):
+        return candidate
     match = score_professional_event(candidate, project_root)
     candidate["professional_event_match"] = match
     candidate["reader_action_type"] = "book_or_buy" if match.get("recommended_action") == "register" else "plan_ahead"
@@ -374,6 +380,107 @@ def _professional_access_allowed(candidate: dict[str, Any], *, fit: str, score: 
     if access_label in {"paid", "unknown"}:
         return _professional_event_has_full_public_facts(candidate) and (fit == "go" or score >= 75)
     return False
+
+
+# 0164: the CV model must never be spent on a card whose date/place/access are
+# still blank — its verdict then governs an event that can never render. These
+# fills run at night BEFORE the model, from evidence the source already states.
+_VENUE_LABEL_RE = re.compile(
+    r"(?:location|venue|where)\s*[:\-–]\s*(?P<venue>[^\n,;|]{2,70})",
+    re.IGNORECASE,
+)
+# Listing pages put the venue between pictogram-labelled fields
+# ("📅 Date: … 📍 Location: Campfield Studios 🎟️ Tickets …"), so the value ends
+# at the next pictogram or at a run of spaces, not at the line end.
+_VENUE_TAIL_RE = re.compile(r"[\U0001F300-\U0001FAFF☀-➿️]|\s{2,}")
+_BOOKING_CTA_RE = re.compile(
+    r"\b(?:register|registration|book\s+now|booking|sign\s+up|rsvp|reserve\s+your\s+(?:place|seat)|tickets?)\b",
+    re.IGNORECASE,
+)
+
+
+def _evidence_blob(candidate: dict[str, Any]) -> str:
+    return " ".join(
+        str(candidate.get(key) or "")
+        for key in ("title", "summary", "lead", "evidence_text")
+    )
+
+
+def _derived_place(candidate: dict[str, Any], event: dict[str, Any]) -> str:
+    blob = _evidence_blob(candidate)
+    match = _VENUE_LABEL_RE.search(blob)
+    if match:
+        venue = _VENUE_TAIL_RE.split(match.group("venue").strip())[0].strip(" .;:-—–")
+        if 2 <= len(venue) <= 70:
+            return venue
+    borough = str(event.get("borough") or candidate.get("venue_city") or "").strip()
+    if borough:
+        return borough
+    if any(token in blob.lower() for token in _ONLINE_TOKENS):
+        return "Online"
+    return ""
+
+
+def fill_professional_event_facts(candidate: dict[str, Any]) -> dict[str, str]:
+    """Fill date, place and access from stated evidence. Returns what was filled.
+
+    Order matters (0164): this runs at night before the CV match, so the model
+    rules on a card that already carries the facts the block requires.
+    """
+    if str(candidate.get("category") or "") != "professional_events":
+        return {}
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    if not event:
+        return {}
+    filled: dict[str, str] = {}
+    if not str(event.get("date_start") or event.get("date") or "").strip():
+        next_occurrence = str(event.get("next_occurrence") or "").strip()
+        if next_occurrence:
+            event["date_start"] = next_occurrence
+            event["date"] = next_occurrence
+            filled["date"] = next_occurrence
+    if not str(event.get("venue") or candidate.get("venue") or "").strip():
+        place = _derived_place(candidate, event)
+        if place:
+            event["venue"] = place
+            filled["place"] = place
+    candidate["event"] = event
+    match = candidate.get("professional_event_match") if isinstance(candidate.get("professional_event_match"), dict) else {}
+    if match and str(match.get("access_label") or "") == "unknown":
+        if _BOOKING_CTA_RE.search(_evidence_blob(candidate)):
+            match["access_label"] = "booking_required"
+            match["free_access_status"] = "conditional"
+            match["free_access_reason"] = "регистрация обязательна, стоимость нужно сверить на странице"
+            candidate["professional_event_match"] = match
+            filled["access"] = "booking_required"
+    if filled:
+        candidate["professional_facts_filled"] = sorted(filled)
+    return filled
+
+
+def professional_cv_evidence_hash(candidate: dict[str, Any]) -> str:
+    """Identity of exactly what the CV model was shown — nothing else.
+
+    Deliberately narrower than the inventory evidence hash: an unrelated morning
+    re-enrichment must not invalidate a night verdict, while a changed date,
+    venue, access or description must.
+    """
+    payload = _llm_payload(candidate)
+    facts = {
+        key: payload.get(key)
+        for key in ("id", "title", "date", "venue", "price_or_access", "booking_url", "source", "summary")
+    }
+    raw = json.dumps(facts, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
+
+
+def professional_cv_verdict_is_current(candidate: dict[str, Any]) -> bool:
+    """True while the stored night verdict still describes this exact card."""
+    if str(candidate.get("professional_match_status") or "") != "llm_cv_matched":
+        return False
+    llm_match = candidate.get("professional_llm_match") if isinstance(candidate.get("professional_llm_match"), dict) else {}
+    stored = str(llm_match.get("evidence_hash") or "")
+    return bool(stored) and stored == professional_cv_evidence_hash(candidate)
 
 
 def _profile_for_prompt(project_root: Path | None = None) -> dict[str, object]:
@@ -509,13 +616,21 @@ def _run_professional_cv_match(
     source item. The model sees only professional candidates with event facts,
     returns go/consider/skip, and the result is written back to candidates.
     """
-    professional = [
+    eligible = [
         c for c in candidates
         if isinstance(c, dict)
         and str(c.get("category") or "") == "professional_events"
         and c.get("include")
         and _professional_event_has_minimum_facts(c)
     ]
+    # 0164: a card already ruled on at night, whose CV evidence has not moved,
+    # keeps that verdict — the morning never pays for the same judgement twice.
+    reused = [c for c in eligible if professional_cv_verdict_is_current(c)]
+    for candidate in reused:
+        llm_match = candidate.get("professional_llm_match") if isinstance(candidate.get("professional_llm_match"), dict) else {}
+        candidate["professional_cv_outcome"] = str(llm_match.get("fit") or "consider")
+    reused_ids = {id(c) for c in reused}
+    professional = [c for c in eligible if id(c) not in reused_ids]
     professional.sort(key=_candidate_sort_key, reverse=True)
     if max_candidates is None:
         selected = professional
@@ -526,7 +641,9 @@ def _run_professional_cv_match(
         not_sent = professional[limit:]
     report: dict[str, Any] = {
         "model_version": LLM_MATCH_MODEL_VERSION,
-        "eligible": len(professional),
+        "eligible": len(eligible),
+        "reused_night_verdict": len(reused),
+        "to_evaluate": len(professional),
         "sent": len(selected),
         "not_sent": len(not_sent),
         "batch_size": max(1, int(LLM_MATCH_BATCH_SIZE or 1)),
@@ -668,6 +785,9 @@ def _run_professional_cv_match(
                 "access_label": access_label,
                 "free_access": access_label == "free",
                 "reason": str(row.get("reason") or "").strip(),
+                # 0164: what the model actually ruled on. The morning pass
+                # reuses this verdict while the hash still matches.
+                "evidence_hash": professional_cv_evidence_hash(candidate),
             }
             candidate["professional_llm_match"] = llm_match
             candidate["professional_cv_outcome"] = fit

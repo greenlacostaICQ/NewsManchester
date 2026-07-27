@@ -1548,31 +1548,26 @@ _GENRE_NOT_CITY = {
 
 
 def _ticket_genre(candidate: dict) -> str:
-    # Prefer the structured Ticketmaster sub-genre, then genre. It is far more
-    # accurate than the coarse summary chunk: Lily Allen is subGenre="Pop"
-    # (genre="Rock"), Fatboy Slim "Electro Pop" (genre="Pop"), Gorillaz
-    # "Alternative Rock". Skip Ticketmaster's no-real-classification placeholders.
+    """Only the source's own confirmed sub-genre. No genre otherwise.
+
+    0167: the coarse Ticketmaster category is not a genre — the same Ariana
+    Grande tour arrived as "Pop" on some dates and "Rock" on others, Wolfmother
+    as "Rock" then "Pop", The Weeknd as "Trap". Guessing it (from that coarse
+    field or from a summary chunk) produced exactly the labels the judge kept
+    correcting, so an unconfirmed genre is simply not written.
+    """
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    _skip = {"", "undefined", "other", "unknown", "miscellaneous", "undefined "}
-    for key in ("subGenre", "genre"):
-        val = re.sub(r"\s+", " ", str(event.get(key) or "")).strip()
-        if val.lower() not in _skip and val.lower() not in _GENRE_NOT_CITY:
-            return val
-    summary = str(candidate.get("summary") or "")
-    chunks = [chunk.strip(" .") for chunk in summary.split("|")]
-    ignored = _GENRE_NOT_CITY
-    for chunk in chunks[1:4]:
-        lowered = chunk.lower()
-        if not chunk or lowered in ignored:
-            continue
-        if "=" in chunk or lowered.startswith("ticket_") or lowered == "undefined":
-            continue
-        if _looks_like_source_chrome(chunk):
-            continue
-        if re.search(r"\b(?:arena|hall|warehouse|academy|institute|studios|club|depot|apollo|ritz|theatre|stadium)\b", lowered):
-            continue
-        return chunk
-    return ""
+    _skip = {"", "undefined", "other", "unknown", "miscellaneous"}
+    sub = re.sub(r"\s+", " ", str(event.get("subGenre") or "")).strip()
+    coarse = re.sub(r"\s+", " ", str(event.get("genre") or "")).strip()
+    if sub.lower() in _skip or sub.lower() in _GENRE_NOT_CITY:
+        return ""
+    # The source contradicting itself is not a confirmation: Wolfmother arrives
+    # as genre="Rock" / subGenre="Pop", The Weeknd as "Hip-Hop/Rap" / "Trap".
+    # Only a sub-genre the source's own category agrees with is written.
+    if coarse.lower() != sub.lower():
+        return ""
+    return sub
 
 
 _TICKET_MAJOR_VENUE_RE = re.compile(
@@ -1723,8 +1718,9 @@ def _ticket_watch_score(candidate: dict) -> float:
         score -= 60
     if kind == "lineup_or_show" and tier not in {"A", "B", "PROTECTED"}:
         score -= 20
-    if not genre:
-        score -= 4
+    # 0167: an absent genre stopped being evidence of a weak card once guessed
+    # genres were removed — most honest cards now simply have none, so the old
+    # -4 penalty applied to nearly everything and discriminated nothing.
     if not venue:
         score -= 12
     return score
@@ -1957,6 +1953,69 @@ def _ticket_public_status(candidate: dict) -> str:
     return ""
 
 
+_TOUR_STOPS_SHOWN = 5
+
+
+def _ticket_tour_run(candidate: dict) -> str:
+    """"14 августа, Wembley Stadium; 20 сентября, SEC Armadillo" — the tour's run.
+
+    Built only from the stops the plan stamped on the surviving artist card
+    (0166); every physical event behind them stays in the pool.
+    """
+    stops = candidate.get("a_tier_tour_stops")
+    if not isinstance(stops, list) or len(stops) < 2:
+        return ""
+    # Several nights at one venue are one stop of the run, not several: the
+    # reader needs "15, 16 и 19 августа, The O2", not the venue three times.
+    by_venue: list[tuple[str, list[str]]] = []
+    for stop in stops:
+        if not isinstance(stop, dict):
+            continue
+        try:
+            day = _format_ru_day_month(datetime.fromisoformat(str(stop.get("date") or "")))
+        except ValueError:
+            continue
+        if not day:
+            continue
+        venue = str(stop.get("venue") or "").strip()
+        if by_venue and by_venue[-1][0] == venue:
+            if day not in by_venue[-1][1]:
+                by_venue[-1][1].append(day)
+            continue
+        by_venue.append((venue, [day]))
+    rendered = [
+        f"{_join_ru_days(days)}, {venue}" if venue else _join_ru_days(days)
+        for venue, days in by_venue
+    ]
+    if len(rendered) < 2 and sum(len(days) for _venue, days in by_venue) < 2:
+        return ""
+    shown = rendered[:_TOUR_STOPS_SHOWN]
+    tail = len(rendered) - len(shown)
+    run = "; ".join(shown)
+    if tail:
+        run += f"; и ещё {tail} {_russian_plural(tail, 'площадка', 'площадки', 'площадок')} тура"
+    return f"тур: {run}"
+
+
+def _join_ru_days(days: list[str]) -> str:
+    """"15, 16 и 19 августа" when the run stays inside one month."""
+    if len(days) == 1:
+        return days[0]
+    months = {day.split()[-1] for day in days}
+    if len(months) == 1:
+        numbers = [day.split()[0] for day in days]
+        return f"{', '.join(numbers[:-1])} и {numbers[-1]} {next(iter(months))}"
+    return f"{', '.join(days[:-1])} и {days[-1]}"
+
+
+def _russian_plural(count: int, one: str, few: str, many: str) -> str:
+    if count % 10 == 1 and count % 100 != 11:
+        return one
+    if count % 10 in {2, 3, 4} and count % 100 not in {12, 13, 14}:
+        return few
+    return many
+
+
 def _build_ticket_fallback_line(candidate: dict) -> str:
     notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
     title = (
@@ -2014,6 +2073,11 @@ def _build_ticket_fallback_line(candidate: dict) -> str:
             time_part = ""  # multiple nights — a single start time would mislead
     genre_part = f" ({genre})" if genre else ""
     status_part = f" {public_status}" if public_status else ""
+    # 0166: one card per A-tier artist/tour — the whole run of dates and venues
+    # on a single line instead of a near-identical bullet per date.
+    tour_line = _ticket_tour_run(candidate)
+    if tour_line:
+        return f"• <b>{title}</b> — {tour_line}{genre_part}{price_part}.{status_part}"
     # Artist name in bold; for festivals show the main lineup (also bold) so the
     # card names the acts that justify it, not just the festival title.
     head = f"<b>{title}</b>"

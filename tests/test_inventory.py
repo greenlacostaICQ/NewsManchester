@@ -644,6 +644,64 @@ class StateFoundationTest(unittest.TestCase):
             self.assertEqual(rows[0]["retention_until"], "2026-12-31")
             self.assertEqual(report["removed_expired"], 1)
 
+    def test_retires_deregistered_source_and_extra_recurring_copy(self) -> None:
+        # 0169: `removed_retired` stayed 0 while a source deleted from the
+        # registry kept its stock, and one monthly market held a card per past
+        # occurrence page (…-june and …-july, same next occurrence).
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "data").mkdir()
+            state_dir = root / "data" / "state"
+            state_dir.mkdir()
+            (root / "data" / "sources.toml").write_text(
+                '[[sources]]\nname = "SK Lowdown Markets"\n', encoding="utf-8"
+            )
+            recurring = {
+                "primary_block": "weekend_activities",
+                "source_name": "SK Lowdown Markets",
+                "last_seen_at": "2026-07-20T01:00:00+01:00",
+            }
+            write_inventory(
+                state_dir,
+                "culture_weekly",
+                [
+                    {
+                        **recurring,
+                        "fingerprint": "market-july",
+                        "fact_card": {
+                            "event_name": "Asian Food Night Market is back in July",
+                            "is_recurring": True,
+                            "next_occurrence": "2026-08-14",
+                            "date_start": "2026-07-10",
+                        },
+                    },
+                    {
+                        **recurring,
+                        "fingerprint": "market-june",
+                        "fact_card": {
+                            "event_name": "Asian Food Night Market is back in June",
+                            "is_recurring": True,
+                            "next_occurrence": "2026-08-14",
+                            "date_start": "2026-06-12",
+                        },
+                    },
+                    {
+                        "fingerprint": "orphan",
+                        "primary_block": "weekend_activities",
+                        "source_name": "Spinningfields Makers Market",
+                        "last_seen_at": "2026-07-20T01:00:00+01:00",
+                        "fact_card": {},
+                    },
+                ],
+            )
+            report = prune_inventory(state_dir, today="2026-07-21")
+            self.assertEqual(
+                [row["fingerprint"] for row in read_inventory(state_dir, "culture_weekly")],
+                ["market-july"],
+            )
+            self.assertEqual(report["removed_retired"], 1)
+            self.assertEqual(report["removed_recurring_duplicate"], 1)
+
     def test_http_status_contract_keeps_blocking_responses_unknown(self) -> None:
         self.assertEqual(action_url_probe_result(200), "alive")
         self.assertEqual(action_url_probe_result(302), "alive")
@@ -973,6 +1031,17 @@ class BuildRecordTest(unittest.TestCase):
 
 
 class NightWaveTest(unittest.TestCase):
+    def test_breaking_check_is_volatile_feeds_without_council_pages(self) -> None:
+        # 0168: the old category filter dragged every council page into what is
+        # meant to be a short headline check — Stockport Council alone took 209s.
+        from news_digest.pipeline.collector.core import SOURCES
+        from news_digest.pipeline.inventory import BREAKING_CHECK_SOURCES
+
+        selected = {source.name for source in SOURCES if source.name in BREAKING_CHECK_SOURCES}
+        self.assertEqual(selected, set(BREAKING_CHECK_SOURCES))
+        self.assertNotIn("Stockport Council", BREAKING_CHECK_SOURCES)
+        self.assertNotIn("Manchester Council", BREAKING_CHECK_SOURCES)
+
     def test_complete_wave_requires_every_expected_source_row(self) -> None:
         from scripts.run_local_digest import _complete_inventory_wave_for_day
 

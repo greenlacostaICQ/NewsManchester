@@ -31,6 +31,60 @@ EVENT_REPEAT_CATEGORIES = frozenset({
 })
 
 
+# 0165: for an event or ticket card a new phase is a changed FACT — date,
+# place, status, lineup, availability or sale. A fresh model retelling of the
+# very same facts is not one, so it must not buy a daily repeat slot.
+_CONCRETE_PHASE_FACTS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("date", ("date_start", "date_end", "next_occurrence")),
+    ("place", ("venue", "borough")),
+    ("status", ("event_status",)),
+    ("lineup", ("lineup", "attractions")),
+    ("availability", ("price", "free")),
+    ("sale", ("ticket_type",)),
+)
+
+
+def _phase_fact_value(entry: dict[str, Any], key: str) -> str:
+    event = entry.get("event") if isinstance(entry.get("event"), dict) else {}
+    if key == "attractions":
+        rows = event.get("attractions") if isinstance(event.get("attractions"), list) else []
+        names = [str((row or {}).get("name") or "") for row in rows if isinstance(row, dict)]
+        return "|".join(sorted(name for name in names if name))
+    if key == "lineup":
+        rows = event.get("lineup") if isinstance(event.get("lineup"), list) else []
+        return "|".join(sorted(str(row) for row in rows if str(row or "").strip()))
+    if key == "ticket_type":
+        return str(entry.get("ticket_type") or event.get("ticket_type") or "").strip().lower()
+    if key == "date_start":
+        return str(event.get("date_start") or event.get("date") or "").strip()[:10]
+    return str(event.get(key) if event.get(key) is not None else "").strip().lower()
+
+
+def concrete_phase_changes(candidate: dict[str, Any], previous: dict[str, Any] | None) -> list[str]:
+    """Which of the six concrete facts moved between the published card and today's.
+
+    Only compares facts both sides actually state: an older published entry that
+    never stored a venue must not read as "the venue changed".
+    """
+    if not previous:
+        return []
+    changed: list[str] = []
+    for label, keys in _CONCRETE_PHASE_FACTS:
+        for key in keys:
+            now_value = _phase_fact_value(candidate, key)
+            was_value = _phase_fact_value(previous, key)
+            if now_value and was_value and now_value != was_value:
+                changed.append(label)
+                break
+    return changed
+
+
+def needs_concrete_phase_fact(candidate: dict[str, Any]) -> bool:
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    return block in TICKET_REPEAT_BLOCKS or block in EVENT_REPEAT_BLOCKS or category in EVENT_REPEAT_CATEGORIES
+
+
 @dataclass(frozen=True, slots=True)
 class RepeatVerdict:
     allow: bool
@@ -228,15 +282,21 @@ def visible_repeat_verdict(candidate: dict[str, Any], previous: dict[str, Any] |
             )
 
     if str(candidate.get("change_type") or "") in {"same_story_new_facts", "follow_up"}:
-        return RepeatVerdict(
-            True,
-            "lifecycle",
-            "concrete_story_change",
-            matched_by=matched_by,
-            previous_fingerprint=previous_fp,
-            previous_title=previous_title,
-            previous_published_day=previous_day,
-        )
+        # 0165: for an event/ticket card the claim "same story, new facts" has to
+        # name the fact. Without a moved date, place, status, lineup, availability
+        # or sale it is a fresh retelling of yesterday's card, and the ordinary
+        # repeat rules below decide it.
+        changed = concrete_phase_changes(candidate, previous) if needs_concrete_phase_fact(candidate) else ["declared"]
+        if changed:
+            return RepeatVerdict(
+                True,
+                "lifecycle",
+                f"concrete_story_change:{','.join(changed)}",
+                matched_by=matched_by,
+                previous_fingerprint=previous_fp,
+                previous_title=previous_title,
+                previous_published_day=previous_day,
+            )
 
     validator_verdict = validator_same_fingerprint_allow(candidate)
     if validator_verdict.allow:

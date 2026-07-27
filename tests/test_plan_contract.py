@@ -384,6 +384,43 @@ class PlanContractTest(unittest.TestCase):
         self.assertEqual(plan["a_tier_conservation"]["identity"]["collapsed_rows"], 0)
         self.assertFalse(any(row.get("a_tier_collapsed_into") for row in planned_candidates))
 
+    def test_0166_outside_gm_tour_becomes_one_artist_card_listing_its_dates(self) -> None:
+        # 29 A-tier artists produced 54 physical dates and 46 Outside-GM lines.
+        # The dates stay in the pool; the section shows one card per tour.
+        rows = [
+            _candidate(
+                760 + idx,
+                block="outside_gm_tickets",
+                category="venues_tickets",
+                title=f"Touring Star — event {event_day}",
+                event={"date_start": event_day, "venue": venue, "is_event": True},
+                ticket_notability={"artist": "Touring Star", "tier": "A", "kind": "artist"},
+                ticket_type="regular_upcoming",
+                venue_scope="outside",
+            )
+            for idx, (venue, event_day) in enumerate(
+                (("Wembley Stadium", "2099-01-12"), ("Wembley Stadium", "2099-01-13"), ("SEC Armadillo", "2099-01-20"))
+            )
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, rows)
+            run_plan_digest(root)
+            plan = load_plan(state_dir)
+            planned_candidates = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))["candidates"]
+        fingerprints = {row["fingerprint"] for row in rows}
+        planned = [s for s in plan["slots"] if s["primary_fingerprint"] in fingerprints]
+        self.assertEqual(len(planned), 1)
+        survivor = next(row for row in planned_candidates if row["fingerprint"] == planned[0]["primary_fingerprint"])
+        self.assertEqual(
+            [stop["venue"] for stop in survivor["a_tier_tour_stops"]],
+            ["Wembley Stadium", "Wembley Stadium", "SEC Armadillo"],
+        )
+        self.assertIn("12 и 13 января, Wembley Stadium; 20 января, SEC Armadillo", survivor["draft_line"])
+        # every physical date is still a record, only its own slot is gone
+        collapsed = [row for row in planned_candidates if row["fingerprint"] in fingerprints]
+        self.assertEqual(len(collapsed), 3)
+
     def test_7d_a_tier_identity_collapses_only_same_owner_venue_and_date(self) -> None:
         rows = [
             _candidate(

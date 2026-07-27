@@ -28,7 +28,11 @@ from news_digest.pipeline.event_extraction import (
     event_is_far_future,
 )
 from news_digest.pipeline.event_quality import event_quality_reject_reasons, event_quality_report
-from news_digest.pipeline.professional_events import apply_professional_event_llm_matches, apply_professional_event_match
+from news_digest.pipeline.professional_events import (
+    apply_professional_event_llm_matches,
+    apply_professional_event_match,
+    fill_professional_event_facts,
+)
 from news_digest.pipeline.reader_actions import attach_reader_action
 from news_digest.pipeline.reader_value import attach_reader_value
 from news_digest.pipeline.repeat_policy import visible_repeat_verdict
@@ -2893,6 +2897,9 @@ def validate_candidates(project_root: Path) -> StageResult:
         # TfGM roadworks bulletin. Idempotent and safe for non-transport.
         if candidate.get("include"):
             _time_gate("professional_event_match", lambda: apply_professional_event_match(candidate, project_root))
+            # 0164: same order as the night wave — date, place and access are
+            # filled before the CV model is asked to rule on the card.
+            _time_gate("professional_event_facts_fill", lambda: fill_professional_event_facts(candidate))
         if candidate.get("include"):
             _time_gate("russian_event_classifier", lambda: _exclude_non_diaspora_classical_from_russian_events(candidate))
         if candidate.get("include"):

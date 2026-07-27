@@ -583,7 +583,8 @@ class PublicOutputContractTests(unittest.TestCase):
         line = _build_ticket_fallback_line(candidate)
 
         self.assertIn("11 июня", line)
-        self.assertIn("(Hip-Hop/Rap)", line)
+        # 0167: the coarse Ticketmaster category in the summary is not a genre.
+        self.assertNotIn("(Hip-Hop/Rap)", line)
         self.assertNotIn("10 июня", line)
         self.assertNotIn("event date in draft_line conflicts", " ".join(_draft_line_quality_errors(candidate, line)))
 

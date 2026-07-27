@@ -1316,7 +1316,7 @@ def cmd_collect_inventory(wave: str) -> int:
     never block or corrupt the morning release."""
     from news_digest.pipeline.collector.core import SOURCES, _collect_single_source  # noqa: PLC0415
     from news_digest.pipeline.inventory import (  # noqa: PLC0415
-        BREAKING_CHECK_CATEGORIES,
+        BREAKING_CHECK_SOURCES,
         NIGHT_WAVES,
         build_inventory_record,
         enrich_hybrid_inventory_facts,
@@ -1338,21 +1338,26 @@ def cmd_collect_inventory(wave: str) -> int:
     from news_digest.pipeline.professional_events import (  # noqa: PLC0415
         apply_professional_event_llm_matches,
         apply_professional_event_match,
+        fill_professional_event_facts,
     )
     from news_digest.pipeline.ticket_notability import enrich_ticket_notability  # noqa: PLC0415
     from news_digest.pipeline.prompts_meta import PROMPT_REGISTRY_VERSION  # noqa: PLC0415
     from news_digest.pipeline.common import new_pipeline_run_id, write_json_atomic  # noqa: PLC0415
 
+    # 0168: breaking is a named list of volatile feeds; the night waves stay
+    # category-driven. A category filter here dragged the whole council estate
+    # into what is meant to be a short headline check.
     if wave == "breaking":
-        categories = BREAKING_CHECK_CATEGORIES
+        sources = [s for s in SOURCES if s.name in BREAKING_CHECK_SOURCES]
+        categories = frozenset(s.report_category for s in sources)
     else:
-        categories = NIGHT_WAVES.get(wave)
+        categories = NIGHT_WAVES.get(wave) or frozenset()
+        sources = [s for s in SOURCES if s.report_category in categories]
     if not categories:
         print(json.dumps({"ok": False, "error": f"unknown wave '{wave}'", "known": sorted(NIGHT_WAVES) + ["breaking"]}, ensure_ascii=False))
         return 1
 
     state_dir = PROJECT_ROOT / "data" / "state"
-    sources = [s for s in SOURCES if s.report_category in categories]
     per_category: dict[str, list[dict]] = {}
     run_log: list[dict] = []
     collected_sources: list[tuple[dict, list[dict]]] = []
@@ -1399,6 +1404,9 @@ def cmd_collect_inventory(wave: str) -> int:
             _enforce_leisure_routing_contract(candidate)
             if str(candidate.get("category") or "") == "professional_events":
                 apply_professional_event_match(candidate, PROJECT_ROOT)
+                # 0164: date, place and access first — the CV model that runs
+                # after this loop must never rule on a card missing them.
+                fill_professional_event_facts(candidate)
             if str(candidate.get("primary_block") or "") == "russian_events":
                 candidate["russian_evidence"] = classify_russian_evidence(candidate)
             if str(candidate.get("category") or "") == "venues_tickets":

@@ -28,6 +28,8 @@ from news_digest.pipeline.entity_extraction import enrich_candidate_entities
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.history import ensure_history_files
 from news_digest.pipeline.repeat_policy import (
+    needs_concrete_phase_fact,
+    concrete_phase_changes,
     is_calendar_carry_candidate,
     visible_repeat_verdict,
 )
@@ -1013,6 +1015,7 @@ def _review_borderline_with_llm(
     upgrades: dict[str, dict] = {}
     upgrade_map = {"new_facts": "same_story_new_facts", "follow_up": "follow_up"}
     cands_by_fp = {str(c.get("fingerprint") or ""): c for c in candidates if isinstance(c, dict)}
+    prev_by_fp = {str(c.get("fingerprint") or ""): prev for c, prev in pairs}
     for d in decisions:
         if not isinstance(d, dict):
             continue
@@ -1025,6 +1028,13 @@ def _review_borderline_with_llm(
         if not c:
             continue
         upgraded_ct = upgrade_map.get(ct_raw)
+        # 0165: an event/ticket card is not promoted to a new phase on the
+        # model's explanation alone. The named fact has to be visible in the
+        # card itself — date, place, status, lineup, availability or sale.
+        if upgraded_ct and needs_concrete_phase_fact(c) and not concrete_phase_changes(c, prev_by_fp.get(fp)):
+            c["reason"] = f"{c.get('reason') or ''} LLM-review: {reason} — без изменения факта карточки, остаётся повтор.".strip()
+            upgrades[fp] = {"change_type": c.get("change_type") or "same_story_rehash", "reason": c["reason"]}
+            continue
         if upgraded_ct:
             c["change_type"] = upgraded_ct
             c["include"] = True

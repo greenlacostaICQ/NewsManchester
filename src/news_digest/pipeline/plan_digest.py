@@ -167,12 +167,15 @@ def _story_key(candidate: dict) -> str:
 
 
 def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
-    """Collapse only technical copies of the same physical A-tier event.
+    """One public card per A-tier artist/tour; every physical event is kept.
 
-    Event owner + venue + occurrence day is the public identity. Multiple feed
-    rows for that identity collapse to the best source, while another date or
-    venue remains a separate canonical card. A festival already has one event
-    owner, so its lineup cannot multiply the physical event into artist cards.
+    Two levels. Event owner + venue + occurrence day is the physical identity:
+    several feed rows for it collapse to the best source. Above that (0166), in
+    Outside GM only, the artist is the *public* identity — a tour's dates and
+    venues belong on one card with the whole run listed, not on forty
+    near-identical rows (29 A-tier artists produced 54 dates and 46 lines). A GM
+    date stays its own card: that one is the reader's own city. Nothing leaves
+    the pool — collapsed rows keep their event records and only lose their slot.
     """
     from news_digest.pipeline.ticket_notability import ticket_artist_name  # noqa: PLC0415
 
@@ -185,6 +188,8 @@ def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
         # plan-digest is deterministic instead of treating yesterday's local
         # plan decision as upstream evidence.
         candidate.pop("a_tier_collapsed_into", None)
+        candidate.pop("a_tier_collapse_kind", None)
+        candidate.pop("a_tier_tour_stops", None)
         if str(candidate.get("a_tier_policy_status") or "").startswith("collapsed_"):
             candidate.pop("a_tier_policy_status", None)
             candidate.pop("a_tier_policy_reason", None)
@@ -206,18 +211,18 @@ def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
         if artist and venue:
             grouped.setdefault((artist, venue, event_day), []).append(candidate)
 
+    def _survivor_key(candidate: dict) -> tuple:
+        return (
+            0 if candidate.get("include") else 1,
+            -_source_authority(candidate),
+            str(candidate.get("fingerprint") or ""),
+        )
+
     collapsed = 0
     conserved_events = 0
-    for rows in grouped.values():
+    physical_survivors: dict[str, list[tuple[date, str, dict]]] = {}
+    for (artist, _venue, event_day), rows in grouped.items():
         conserved_events += 1
-
-        def _survivor_key(candidate: dict) -> tuple:
-            return (
-                0 if candidate.get("include") else 1,
-                -_source_authority(candidate),
-                str(candidate.get("fingerprint") or ""),
-            )
-
         survivor = min(rows, key=_survivor_key)
         survivor_fp = str(survivor.get("fingerprint") or "")
         for candidate in rows:
@@ -226,11 +231,48 @@ def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
             candidate["a_tier_collapsed_into"] = survivor_fp
             candidate["a_tier_policy_status"] = "collapsed_same_physical_event"
             candidate["a_tier_policy_reason"] = "duplicate_physical_a_tier_event"
+            candidate["a_tier_collapse_kind"] = "a_tier_duplicate_physical_event_collapsed"
+            collapsed += 1
+        # The tour card is the Outside-GM answer only. A Manchester date is the
+        # reader's own date and keeps its card in the GM radar.
+        if str(survivor.get("primary_block") or "") != "outside_gm_tickets":
+            continue
+        event = survivor.get("event") if isinstance(survivor.get("event"), dict) else {}
+        physical_survivors.setdefault(artist, []).append(
+            (event_day, str(event.get("venue") or "").strip(), survivor)
+        )
+
+    tour_cards = 0
+    for stops in physical_survivors.values():
+        if len(stops) < 2:
+            continue
+        stops.sort(key=lambda row: (row[0], row[1]))
+        tour_survivor = stops[0][2]
+        tour_fp = str(tour_survivor.get("fingerprint") or "")
+        tour_survivor["a_tier_tour_stops"] = [
+            {"date": event_day.isoformat(), "venue": venue} for event_day, venue, _row in stops
+        ]
+        # The night prewrote this card for a single date; the visible line has to
+        # be rebuilt now that it stands for the whole run.
+        from news_digest.pipeline.writer import _build_ticket_fallback_line  # noqa: PLC0415
+
+        tour_line = _build_ticket_fallback_line(tour_survivor)
+        if tour_line:
+            tour_survivor["draft_line"] = tour_line
+            tour_survivor["draft_line_provider"] = "plan_a_tier_tour_card"
+            tour_survivor["draft_line_model"] = "deterministic_writer_fallback"
+        tour_cards += 1
+        for _event_day, _venue, candidate in stops[1:]:
+            candidate["a_tier_collapsed_into"] = tour_fp
+            candidate["a_tier_policy_status"] = "collapsed_same_tour"
+            candidate["a_tier_policy_reason"] = "tour_date_listed_on_artist_card"
+            candidate["a_tier_collapse_kind"] = "a_tier_tour_date_listed_on_artist_card"
             collapsed += 1
     return {
         "recognised_artists": len(recognised_artists),
         "eligible_events": conserved_events,
         "collapsed_rows": collapsed,
+        "tour_cards": tour_cards,
     }
 
 
@@ -566,7 +608,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
             candidate["a_tier_policy_status"] = "ineligible"
             candidate["a_tier_policy_reason"] = a_tier_reason
         if candidate.get("a_tier_collapsed_into"):
-            _mark_out(candidate, "a_tier_duplicate_physical_event_collapsed")
+            _mark_out(candidate, str(candidate.get("a_tier_collapse_kind") or "a_tier_duplicate_physical_event_collapsed"))
             continue
         if is_a_tier_ticket(candidate) and not a_tier_eligible:
             _mark_out(candidate, f"a_tier_ineligible:{a_tier_reason}")

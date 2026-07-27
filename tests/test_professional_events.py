@@ -293,6 +293,53 @@ class ProfessionalEventsTest(unittest.TestCase):
         self.assertEqual(second["professional_cv_outcome"], "held_error")
         self.assertEqual(second["editorial_status"], "held_for_enrichment")
 
+    def test_night_verdict_is_reused_instead_of_a_second_morning_cv_call(self) -> None:
+        # 0164: the night already paid for this judgement; while the card's CV
+        # evidence is unchanged the morning must neither re-score nor re-ask.
+        from news_digest.pipeline.professional_events import apply_professional_event_llm_matches
+
+        c = self._candidate("Manchester AI leadership briefing", "Free AI briefing for product leaders.")
+        c["fingerprint"] = "pro-night"
+        c["include"] = True
+        apply_professional_event_match(c)
+        rows = [{"id": "pro-night", "fit": "go", "score": 90, "access_label": "free", "action": "register"}]
+        with _fake_openai(rows), patch(
+            "news_digest.pipeline.model_routing.resolve_model_route",
+            return_value=[_fake_route()],
+        ):
+            apply_professional_event_llm_matches([c])
+        self.assertEqual(c["professional_match_status"], "llm_cv_matched")
+
+        apply_professional_event_match(c)  # morning re-score must not downgrade
+        self.assertEqual(c["professional_match_status"], "llm_cv_matched")
+        with patch(
+            "news_digest.pipeline.model_routing.resolve_model_route",
+            side_effect=AssertionError("the model must not be asked twice"),
+        ):
+            report = apply_professional_event_llm_matches([c])
+        self.assertEqual(report["reused_night_verdict"], 1)
+        self.assertEqual(report["sent"], 0)
+        self.assertTrue(c["include"])
+
+    def test_night_fills_place_and_access_before_the_cv_match(self) -> None:
+        # 0164: a card held without place/access can never render, so the model
+        # must not be spent on it — the stated facts are filled first.
+        from news_digest.pipeline.professional_events import fill_professional_event_facts
+
+        c = self._candidate(
+            "MD Future 26",
+            "Keynotes and panels. 📅 Date: Thursday 17th September 2026 🕒 Time: 10:00-17:30 "
+            "📍 Location: Campfield Studios 🎟️ Register now for a place.",
+            price="",
+            venue="",
+        )
+        apply_professional_event_match(c)
+        self.assertEqual(c["professional_event_match"]["access_label"], "unknown")
+        filled = fill_professional_event_facts(c)
+        self.assertEqual(filled["place"], "Campfield Studios")
+        self.assertEqual(c["event"]["venue"], "Campfield Studios")
+        self.assertEqual(c["professional_event_match"]["access_label"], "booking_required")
+
     def test_writer_builds_self_contained_russian_card(self) -> None:
         c = self._candidate(
             "CreaTech Connect: Accelerating University-Industry Partnerships",

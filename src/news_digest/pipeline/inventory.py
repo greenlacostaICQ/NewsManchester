@@ -38,6 +38,7 @@ from urllib import request as urlrequest
 from news_digest.pipeline.common import (
     PRIMARY_BLOCKS,
     canonical_url_identity,
+    normalize_title,
     now_london,
     today_london,
     valid_http_url,
@@ -290,9 +291,26 @@ NIGHT_WAVES: dict[str, frozenset[str]] = {
     "pro_food_russian": frozenset({"professional_events", "food_openings", "diaspora_events"}),
     "live_news": frozenset({"media_layer", "gmp", "public_services", "transport", "football", "tech_business"}),
 }
-# 07:45 bounded breaking-check: a tiny hard-news subset, headlines only, hard
-# time budget — never a second full collect.
-BREAKING_CHECK_CATEGORIES: frozenset[str] = frozenset({"media_layer", "gmp", "transport"})
+# 07:45 bounded breaking-check: named volatile feeds, never a category sweep.
+# 0168: `media_layer` also holds every council page, so a category filter made
+# the "short headline check" re-run the whole media wave — Stockport Council
+# alone took 209s of a 231s wave. Councils publish on a daily cadence and
+# already ran in the live_news wave; they are deliberately absent here.
+BREAKING_CHECK_SOURCES: frozenset[str] = frozenset({
+    # operational newsrooms
+    "BBC Manchester",
+    "BBC Manchester Web",
+    "MEN",
+    "MEN Latest News",
+    "MEN News Sitemap",
+    "ITV Granada Greater Manchester",
+    "About Manchester News",
+    # police / public safety
+    "BBC Manchester public safety fallback",
+    # transport
+    "TfGM",
+    "National Rail Enquiries",
+})
 
 
 def action_url_probe_result(http_status: int | None) -> str:
@@ -828,6 +846,9 @@ def build_inventory_record(
         "is_recurring": bool(event.get("is_recurring")),
         "next_occurrence": str(event.get("next_occurrence") or ""),
         "event_status": str(event.get("event_status") or ""),
+        # 0167: only the source's confirmed sub-genre is kept. The coarse
+        # Ticketmaster category is deliberately not stored — it is not a genre.
+        "subgenre": str(event.get("subGenre") or ""),
         "venue_scope": str(candidate.get("venue_scope") or ""),
         "venue_city": str(candidate.get("venue_city") or ""),
         "ticket_type": str(candidate.get("ticket_type") or ""),
@@ -1205,6 +1226,7 @@ def inventory_record_to_candidate(record: dict) -> dict:
         "is_recurring": bool(fact.get("is_recurring")),
         "next_occurrence": str(fact.get("next_occurrence") or ""),
         "event_status": str(fact.get("event_status") or ""),
+        "subGenre": str(fact.get("subgenre") or ""),
         "booking_url": str(record.get("booking_url") or ""),
     }
     candidate = {
@@ -1301,6 +1323,86 @@ def _superseded_block_copies(state_dir: Path) -> set[tuple[str, str]]:
     return superseded
 
 
+_SOURCE_NAME_RE = re.compile(r'^\s*name\s*=\s*"(?P<name>[^"]+)"', re.MULTILINE)
+
+
+def _registered_source_names(state_dir: Path) -> frozenset[str]:
+    """Every name the registry file beside this state tree declares.
+
+    Empty means "cannot tell" and the retirement rule stays off. Read from
+    ``sources.toml`` rather than the runtime source list: a source switched off
+    with ``enabled = false`` is still registered and keeps its stock, while a
+    source deleted from the file no longer has an owner.
+    """
+    try:
+        text = (Path(state_dir).parent / "sources.toml").read_text(encoding="utf-8")
+    except OSError:
+        return frozenset()
+    return frozenset(match.group("name") for match in _SOURCE_NAME_RE.finditer(text))
+
+
+_MONTH_WORD_RE = re.compile(
+    r"\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\b",
+    re.IGNORECASE,
+)
+
+
+def _recurring_event_identity(name: str) -> str:
+    """The recurring event's name without the occurrence month.
+
+    "Asian Food Night Market is back in June" and "… in July" are the same
+    monthly market, published once per occurrence.
+    """
+    return re.sub(r"\s+", " ", _MONTH_WORD_RE.sub(" ", normalize_title(name))).strip()
+
+
+def _recurring_duplicate_keys(state_dir: Path) -> set[str]:
+    """Fingerprints of extra copies of one recurring event inside one block.
+
+    A recurring market publishes a page per past occurrence (…-june, …-july).
+    Those pages differ only by the month in their title, and point at the same
+    next occurrence, so only one of them is a card; the rest are last month's
+    URL for the same event (0169).
+    """
+    inv_dir = inventory_dir(state_dir)
+    if not inv_dir.exists():
+        return set()
+    grouped: dict[tuple[str, str, str, str], list[dict]] = {}
+    for path in sorted(inv_dir.glob("*.jsonl")):
+        for record in read_inventory(state_dir, path.stem):
+            fact = record.get("fact_card") if isinstance(record.get("fact_card"), dict) else {}
+            if not fact.get("is_recurring"):
+                continue
+            next_occurrence = str(fact.get("next_occurrence") or "").strip()
+            name = _recurring_event_identity(str(fact.get("event_name") or record.get("title") or ""))
+            if not next_occurrence or not name:
+                continue
+            key = (
+                str(record.get("primary_block") or ""),
+                str(record.get("source_name") or record.get("source_label") or ""),
+                name,
+                next_occurrence,
+            )
+            grouped.setdefault(key, []).append(record)
+    duplicates: set[str] = set()
+    for rows in grouped.values():
+        if len(rows) < 2:
+            continue
+        # The canonical copy is the one describing the most recent occurrence.
+        rows.sort(
+            key=lambda record: (
+                str((record.get("fact_card") or {}).get("date_start") or ""),
+                str(record.get("last_seen_at") or ""),
+            ),
+            reverse=True,
+        )
+        for record in rows[1:]:
+            fingerprint = str(record.get("fingerprint") or "")
+            if fingerprint:
+                duplicates.add(fingerprint)
+    return duplicates
+
+
 def prune_inventory(state_dir: Path, *, today: str | None = None) -> dict[str, object]:
     """Physically remove confirmed-dead and out-of-retention inventory rows."""
     today = today or today_london()
@@ -1311,21 +1413,40 @@ def prune_inventory(state_dir: Path, *, today: str | None = None) -> dict[str, o
         "removed_dead": 0,
         "removed_retired": 0,
         "removed_superseded_block_copy": 0,
+        "removed_recurring_duplicate": 0,
         "by_category": {},
     }
     inv_dir = inventory_dir(state_dir)
     if not inv_dir.exists():
         return report
     superseded = _superseded_block_copies(state_dir)
+    registered_sources = _registered_source_names(state_dir)
+    recurring_duplicates = _recurring_duplicate_keys(state_dir)
     for path in sorted(inv_dir.glob("*.jsonl")):
         rows = read_inventory(state_dir, path.stem)
         kept: list[dict] = []
-        removed = {"expired": 0, "dead": 0, "retired": 0, "superseded_block_copy": 0}
+        removed = {
+            "expired": 0,
+            "dead": 0,
+            "retired": 0,
+            "superseded_block_copy": 0,
+            "recurring_duplicate": 0,
+        }
         for record in rows:
             report["before"] = int(report["before"]) + 1
             block = str(record.get("primary_block") or "")
             if str(INVENTORY_BLOCK_REGISTRY.get(block, {}).get("mode") or "") == "retired":
                 removed["retired"] += 1
+                continue
+            # 0169: a card whose source left the registry has no owner that can
+            # refresh or retire it — it was the reason `removed_retired` stayed 0
+            # while dead sources kept their stock on the shelf.
+            source_name = str(record.get("source_name") or "")
+            if registered_sources and source_name and source_name not in registered_sources:
+                removed["retired"] += 1
+                continue
+            if str(record.get("fingerprint") or "") in recurring_duplicates:
+                removed["recurring_duplicate"] += 1
                 continue
             if (_standalone_url_identity(record), block) in superseded:
                 removed["superseded_block_copy"] += 1
@@ -1346,6 +1467,9 @@ def prune_inventory(state_dir: Path, *, today: str | None = None) -> dict[str, o
         report["removed_retired"] = int(report["removed_retired"]) + removed["retired"]
         report["removed_superseded_block_copy"] = (
             int(report["removed_superseded_block_copy"]) + removed["superseded_block_copy"]
+        )
+        report["removed_recurring_duplicate"] = (
+            int(report["removed_recurring_duplicate"]) + removed["recurring_duplicate"]
         )
         report["by_category"][path.stem] = {"before": len(rows), "after": len(kept), **removed}
     return report

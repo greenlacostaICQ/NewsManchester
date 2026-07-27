@@ -90,11 +90,20 @@ class TicketCardFormatTest(unittest.TestCase):
         self.assertFalse(expired_verdict.allow)
         self.assertNotEqual(expired_verdict.reason, "a_tier_must_show_override")
 
-    def test_bold_artist_and_structured_subgenre(self) -> None:
+    def test_bold_artist_and_confirmed_genre_only(self) -> None:
+        # 0167: a genre is written only when the source's own category and
+        # sub-genre agree. Wolfmother arrived as genre="Rock"/subGenre="Pop",
+        # so a contradicting sub-genre is not a confirmation and is not shown.
+        confirmed = _tk("Lily Allen", venue="AO Arena", subgenre="Pop")
+        confirmed["event"]["genre"] = "Pop"
+        contradicted = _tk("Wolfmother", venue="AO Arena", subgenre="Pop")
+        contradicted["event"]["genre"] = "Rock"
         with mock.patch.object(w, "_ticket_watch_decision", lambda c: {"decision": "show"}):
-            line = w._build_ticket_fallback_line(_tk("Lily Allen", venue="AO Arena", subgenre="Pop"))
+            line = w._build_ticket_fallback_line(confirmed)
+            noisy = w._build_ticket_fallback_line(contradicted)
         self.assertIn("<b>Lily Allen</b>", line)   # artist bold
-        self.assertIn("(Pop)", line)               # structured subGenre, not coarse genre
+        self.assertIn("(Pop)", line)
+        self.assertNotIn("(Pop)", noisy)
 
     def test_festival_card_shows_bold_lineup(self) -> None:
         fest = _tk("Isle of Wight Festival", venue="Isle of Wight")

@@ -1787,3 +1787,63 @@
 - Файлы/места: `writer.py:write_digest`, `release.py:_validate_stage_reports`.
 - ПРОВЕРКА: прогон write→build на копии реального `data/state` в обоих режимах; `unittest discover` 915 тестов, падают только два досуществовавших date-dependent.
 - Удалено: отказ выпуска из-за плана без слотов.
+
+### 0164 — Ночной Pro CV доводится до результата и не пересчитывается утром — 2026-07-27
+- Проблема: outcomes сходились честно (7 отправлено, 7 учтено), но 14 карточек висели `held_for_enrichment` без полноценной даты/места/доступа, видимых строк 0. Вердикт модели тратился на карточку, которая всё равно не может отрендериться, а утром её оценивали второй раз.
+- Причина (корень): ночью между обогащением и CV-матчем не было шага заполнения фактов — `venue` и `access_label` оставались пустыми (`professional_access` требует free/paid/booking_required, «unknown» не проходит). А утренний `apply_professional_event_match` безусловно пересчитывал скоринг и сбрасывал `professional_match_status` обратно в `needs_llm_cv_match`, после чего карточка снова уезжала в модель.
+- Решение: (1) `fill_professional_event_facts` — дата из `next_occurrence`, место из «Location:/Venue:/Where:» в тексте источника (обрезка по пиктограмме), иначе borough/venue_city, иначе «Online»; доступ `unknown` + явная регистрация → `booking_required`; вызывается ночью и утром ДО CV; (2) `professional_cv_evidence_hash` — узкий хеш ровно того, что видела модель (id/title/date/venue/access/booking_url/source/summary), пишется в `professional_llm_match.evidence_hash`; (3) `professional_cv_verdict_is_current` — пока хеш совпадает, вердикт переиспользуется: `apply_professional_event_match` не понижает статус, `_run_professional_cv_match` не берёт карточку в пакет (`reused_night_verdict` в отчёте).
+- Почему так: узкий хеш вместо инвентарного — чтобы утреннее переобогащение соседних полей не обнуляло вердикт, но изменение даты/места/доступа/описания обнуляло.
+- Ожидаемый эффект и метрика: на реальном складе 27.07 (78 карточек) место заполнено у 41, доступ у 6; `missing_facts:venue` 64→23, `professional_access` 54→48, «полные публичные факты» 11→15. Ночной вердикт переживает round-trip склада и утренний пересчёт.
+- Файлы/места: `professional_events.py:fill_professional_event_facts/professional_cv_evidence_hash/professional_cv_verdict_is_current/apply_professional_event_match/_run_professional_cv_match`, `run_local_digest.py:cmd_collect_inventory`, `candidate_validator.py` (тот же порядок утром).
+- ПРОВЕРКА: прогон заполнения и round-trip склада на реальном `data/state/inventory/professional_events.jsonl`; `unittest discover` — 2 новых теста, падений нет.
+- Удалено: повторный утренний CV-вызов для уже оценённой ночной карточки.
+
+### 0165 — Новая фаза события — только изменившийся факт — 2026-07-27
+- Проблема: одинаковые Russian- и Ticket-события ежедневно получали `concrete_story_change` — 291 вердикт на пуле 27.07, из них 132 в Outside GM, 26 в Ticket Radar, 14 в Russian.
+- Причина (корень): вердикт выдавался по одному `change_type in {same_story_new_facts, follow_up}`, а этот тип мог прийти из LLM-ревью дедупа, которое поднимало карточку в `new_phase` по своему объяснению, без единого изменившегося факта.
+- Решение: `concrete_phase_changes` сравнивает шесть фактов карточки с опубликованной записью — дата, место, статус, состав, доступность, продажа; сравниваются только те поля, которые заявлены с обеих сторон. Для событийных и билетных блоков (`needs_concrete_phase_fact`) вердикт «новая фаза» выдаётся, только если хоть один факт сдвинулся, и называет какой (`concrete_story_change:place`). Хард-ньюс не затронут: там следующая фаза сюжета — это не дата/площадка.
+- Почему так: пересказ той же карточки другой моделью — не новость; факт, который сдвинулся, назвать обязан кто угодно, включая модель.
+- Ожидаемый эффект и метрика: на реальном пуле 27.07 291 → 159 вердиктов. Russian 14→1, Ticket Radar 26→5, Outside GM 132→57; last_24h/city_watch/football без изменений.
+- Файлы/места: `repeat_policy.py:_CONCRETE_PHASE_FACTS/concrete_phase_changes/needs_concrete_phase_fact/visible_repeat_verdict`, `dedupe.py:_review_borderline_with_llm`.
+- ПРОВЕРКА: пересчёт вердиктов на реальном `candidates.json` 27.07; `unittest discover` — 1 новый тест, падений нет.
+- Удалено: признание новой фазы по объяснению LLM-ревью без изменившегося факта карточки.
+
+### 0166 — Outside GM: одна карточка на тур артиста — 2026-07-27
+- Проблема: правило A-tier выполнялось формально — 29 артистов дали 54 физические даты, раздел показывал 46 почти одинаковых строк, выпуск занимал 8 Telegram-сообщений.
+- Причина (корень): `_collapse_a_tier_event_runs` схлопывал только технические копии одного физического события (владелец + площадка + день). Разные даты одного тура оставались самостоятельными публичными карточками.
+- Решение: над физическим уровнем добавлен публичный — в `outside_gm_tickets` идентичностью карточки становится артист. Уцелевший (самая ранняя дата) получает `a_tier_tour_stops` со всеми датами и площадками и перерисованную строку; остальные помечаются `collapsed_same_tour` и теряют только слот. Рендер `_ticket_tour_run` группирует подряд идущие даты одной площадки («12 и 13 января, Wembley Stadium; 20 января, SEC Armadillo»), показывает 5 площадок и «и ещё N площадок тура». GM-дата остаётся отдельной карточкой в Ticket Radar — это дата в городе читателя.
+- Почему так: сохранить все физические события в складе, но не платить за них десятками почти одинаковых публичных строк.
+- Ожидаемый эффект и метрика: на копии реального состояния 27.07 план даёт 12 тур-карточек, 48 схлопнутых строк, раздел 47 → 26 строк, весь план 97 → 76 слотов; `a_tier_conservation` — eligible 32, planned 32, missing 0.
+- Файлы/места: `plan_digest.py:_collapse_a_tier_event_runs`, `writer.py:_ticket_tour_run/_join_ru_days/_build_ticket_fallback_line`.
+- ПРОВЕРКА: plan-digest + write-digest на копии реального `data/state`, раздел выведен глазами; `unittest discover` — 1 новый тест, старый `test_7c` проходит без правок (GM-даты не схлопываются).
+- Удалено: отдельные публичные слоты на каждую дату одного тура в Outside GM. Event records не удалялись.
+
+### 0167 — Жанр только из подтверждённого поля источника — 2026-07-27
+- Проблема: судья правил Pop/Rock/Trap у Wolfmother, Ariana Grande, The Weeknd и других.
+- Причина (корень): `_ticket_genre` брал `subGenre`, затем грубый `genre`, а если и его нет — угадывал жанр из куска `summary`. Данные Ticketmaster сами себе противоречат: один и тот же тур Ariana Grande приезжает как genre=«Pop» и как «Rock», Wolfmother — genre=«Rock»/subGenre=«Pop», The Weeknd — «Hip-Hop/Rap»/«Trap». Карточки склада вообще теряли структурный жанр, и он целиком собирался из summary.
+- Решение: жанр пишется, только когда собственная категория источника и его sub-genre совпадают; иначе не пишется. Подтверждённый sub-genre сохраняется в `fact_card.subgenre` и переживает склад. Штраф `-4` за отсутствие жанра в watch-score снят: после ремонта жанра нет у большинства честных карточек, штраф перестал что-либо различать.
+- Почему так: источник, противоречащий сам себе, не является подтверждением.
+- Ожидаемый эффект и метрика: на реальном выпуске 27.07 исчезают Wolfmother (Rock/Pop), The Weeknd (Trap), Anastacia (Pop), The Fratellis (Pop); остаются подтверждённые Summer Walker (R&B), JOJI (R&B), Jessie J (Pop).
+- Файлы/места: `writer.py:_ticket_genre/_ticket_watch_score`, `inventory.py:build_inventory_record/inventory_record_to_candidate`.
+- ПРОВЕРКА: write-digest на копии реального `data/state`, раздел выведен глазами; `unittest discover` — 3 теста обновлены под новый контракт, падений нет.
+- Удалено: угадывание жанра по грубой категории Ticketmaster и по куску `summary`.
+
+### 0168 — Breaking — волна волатильных лент, а не второй полный сбор — 2026-07-27
+- Проблема: комментарий обещал короткую проверку заголовков, а `BREAKING_CHECK_CATEGORIES` заново гнал все media-источники; Stockport Council занял 209 секунд из 231 секунды всей волны.
+- Причина (корень): фильтр был по `report_category`, а `media_layer` держит не только оперативные редакции, но и восемь советов, GMCA, Place North West, The Mill.
+- Решение: `BREAKING_CHECK_SOURCES` — поимённый список волатильных лент (BBC/MEN/ITV/About Manchester, GMP-fallback, TfGM, National Rail). Ночные волны остались категорийными.
+- Почему так: советы публикуются с суточным ритмом и уже отработали в волне live_news; в 07:45 их обогащение — чистая трата бюджета.
+- Ожидаемый эффект и метрика: breaking опрашивает 10 источников вместо 21; уходят все советы, GMCA, Place North West, The Mill, Altrincham Today.
+- Файлы/места: `inventory.py:BREAKING_CHECK_SOURCES`, `run_local_digest.py:cmd_collect_inventory`.
+- ПРОВЕРКА: список сверен с реальным реестром источников (все 10 имён существуют); `unittest discover` — 1 новый тест, падений нет.
+- Удалено: `BREAKING_CHECK_CATEGORIES` как широкий категорийный фильтр; Stockport Council и Manchester Council из breaking.
+
+### 0169 — Очистка реестра источников и склада — 2026-07-27
+- Проблема: Spinningfields Makers Market стабильно отдавал 404 и держал Events в degraded; retention работал (105 expired, 4 dead), но `removed_retired=0`; Asian Food Night Market лежал двумя карточками (июль и июнь) в Weekend плюс копией в Food.
+- Причина (корень): `removed_retired` снимал записи только по retired-блоку реестра, а не по исчезнувшему источнику. Recurring-событие публикует страницу на каждое прошедшее вхождение (…-june, …-july) — названия различаются только месяцем, поэтому дедуп по имени их не видел.
+- Решение: (1) источник Spinningfields Makers Market удалён из `sources.toml`; (2) `_registered_source_names` читает реестр рядом с самим складом — записи источника, удалённого из файла, снимаются как retired, а `enabled = false` остаётся зарегистрированным и свой запас сохраняет; (3) `_recurring_duplicate_keys` схлопывает копии одного recurring-события в блоке (имя без месяца + источник + `next_occurrence`), оставляя описывающую свежайшее вхождение.
+- Почему так: у карточки без источника в реестре нет владельца, который её обновит или снимет; страница прошлого месяца — не отдельное событие.
+- Ожидаемый эффект и метрика: финальная проверка — `/event/makers-market/` даёт 404, в текущем индексе событий Spinningfields Makers Market отсутствует. На копии реального склада 27.07: `removed_retired=1` (ровно Spinningfields), `removed_recurring_duplicate=3` (включая июньскую Asian Food Night Market — остаётся канонический recurring с `next_occurrence=2026-08-14`), `removed_superseded_block_copy=3` (Food-копии).
+- Файлы/места: `data/sources.toml`, `inventory.py:_registered_source_names/_recurring_event_identity/_recurring_duplicate_keys/prune_inventory`.
+- ПРОВЕРКА: `prune_inventory` прогнан на копии реального `data/state/inventory`; `unittest discover` — 1 новый тест, падений нет.
+- Удалено: источник Spinningfields Makers Market; июньская дубль-карточка Asian Food Night Market; записи источников, снятых с реестра.

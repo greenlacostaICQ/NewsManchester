@@ -335,6 +335,9 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
                     f"event_date={event_day} 19:00 | public_onsale=2025-11-14 10:00 | "
                     "ticket_signal=upcoming_event | ticket_type=major_upcoming | major_venue=true"
                 ),
+                # 0167: the genre comes from the source's confirmed
+                # classification, not from a chunk of the summary.
+                "event": {"genre": "R&B", "subGenre": "R&B"},
                 "ticket_notability": {"artist": "Lola Young", "kind": "artist", "tier": "B"},
             }
         )
@@ -2104,6 +2107,34 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(verdict.allow, verdict)
         self.assertEqual(verdict.repeat_class, "calendar")
         self.assertEqual(verdict.reason, "event_milestone_d0")
+
+    def test_event_repeat_needs_a_moved_fact_not_a_fresh_retelling(self) -> None:
+        # 0165: Russian and Ticket cards were getting an artificial
+        # `concrete_story_change` every day while nothing about the event moved.
+        from news_digest.pipeline.repeat_policy import visible_repeat_verdict
+
+        candidate = {
+            "include": True,
+            "fingerprint": "ru-concert-repeat",
+            "primary_block": "russian_events",
+            "category": "russian_speaking_events",
+            "title": "Стендап в Лондоне",
+            "change_type": "same_story_new_facts",
+            "event": {"event_name": "Стендап", "venue": "Union Chapel", "date_start": "2099-03-14"},
+        }
+        previous = {
+            "fingerprint": candidate["fingerprint"],
+            "title": candidate["title"],
+            "last_published_day_london": (now_london().date() - timedelta(days=1)).isoformat(),
+            "event": dict(candidate["event"]),
+        }
+
+        self.assertFalse(visible_repeat_verdict(candidate, previous).allow)
+
+        moved = {**candidate, "event": {**candidate["event"], "venue": "O2 Academy Islington"}}
+        moved_verdict = visible_repeat_verdict(moved, previous)
+        self.assertTrue(moved_verdict.allow)
+        self.assertEqual(moved_verdict.reason, "concrete_story_change:place")
 
     def test_undated_ticket_visible_repeat_policy_does_not_bypass_calendar_review(self) -> None:
         from news_digest.pipeline.repeat_policy import visible_repeat_verdict
