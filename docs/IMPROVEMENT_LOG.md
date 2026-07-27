@@ -1967,14 +1967,14 @@
 - Где была ошибка: `collector/fetch.py` — смена транспорта не меняет старый ETag/Last-Modified cache key, поэтому новый parser/transport не получает body.
 
 ### 0180 — Manchester United: официальный YouTube RSS вместо недоступного сайта — 2026-07-27
-- Статус: внедрено; production-proof ожидается после push.
+- Статус: ПРОВЕРЕНО-работает.
 - Проблема: `manutd.com/en/news` повторно дал HTTP 403 в GitHub Actions даже через три `curl_cffi` browser profiles; live_news run `30270312330` подтвердил `fetched=false/found=0/errors=1`. Локальный IP получает HTML, поэтому прежний probe не доказывал production-доступность.
 - Причина (корень): WAF блокирует IP GitHub Actions, а не только urllib TLS fingerprint.
 - Решение: существующий источник Manchester United переключён на RSS официального YouTube-канала клуба (`UC6yW44UGJJBvYTlfC7CRg2Q`); это официальный fallback, а не новый редакционный источник. Допускаются только publishable football titles, fluff/academy/women/ticketing по-прежнему фильтруются.
 - Почему так (отвергнутые альтернативы): дальнейшая смена TLS profile не меняет заблокированный IP; IR RSS содержит корпоративные релизы, а не матч/команду; сторонний proxy нарушил бы требование официального источника.
 - Ожидаемый эффект и метрика проверки: production `Manchester United fetched=true/errors=0`, ненулевой `found` когда канал публикует результат, preview, squad/injury/contract news.
 - Файлы/места: `data/sources.toml`; `collector/extract.py:_extract_source_candidates`; `collector/filters.py:_source_override`; `collector/fetch.py:_CLOUDFLARE_PROTECTED_HOSTS`.
-- ПРОВЕРКА: официальный feed URL отвечает HTTP 200; реальный collector/parser probe будет выполнен после fixture fix и production-wave.
+- ПРОВЕРКА: live_news production-wave `30271705622`: `fetched=true`, `found=1`, `enriched=1`, `errors=0`, `fact_ready=1`, `morning_eligible=1`.
 - Где была ошибка: `collector/fetch.py` — WAF-проблема была ошибочно сведена к TLS fingerprint, хотя production evidence показал IP-level block.
 
 ### 0181 — Secret Manchester: ежедневный cache key для изменяемых guide pages — 2026-07-27
@@ -1996,5 +1996,5 @@
 - Почему так (отвергнутые альтернативы): сторонний proxy не нужен; отключение источников теряет полезные факты; четвёртая вариация browser headers не устраняет IP/CDN policy.
 - Ожидаемый эффект и метрика проверки: production `extract_seconds>0`, `found>0`, `errors=0` для обеих статей.
 - Файлы/места: `data/sources.toml`; `collector/extract.py:_extract_wordpress_sectioned_event_guide/_extract_source_candidates`; `collector/fetch.py:_CLOUDFLARE_PROTECTED_HOSTS`.
-- ПРОВЕРКА: промежуточная production-wave `30272621116` подтвердила HTTP 200 без ошибок, но получила `found=0`: API по-прежнему ошибочно шёл через WAF-маршрут #0179. Прямой официальный endpoint вернул HTTP 200, один post и 106778 байт JSON; targeted adapter regressions `3 OK`. Финальная production-wave ожидается после удаления host-wide WAF routing.
-- Где была ошибка: #0179 маршрутизировал весь host через `curl_cffi`; для открытого WordPress REST это давало непригодный body, хотя обычный urllib получает JSON.
+- ПРОВЕРКА: промежуточная production-wave `30272621116` подтвердила HTTP 200 без ошибок, но получила `found=0`: API по-прежнему ошибочно шёл через WAF-маршрут #0179. Прямой официальный endpoint вернул HTTP 200, один post и 106778 байт JSON; этот реальный body дал parser 12 карточек, targeted adapter regressions `3 OK`. Wave `30272930993` после смены транспорта получила старый `304` по валидатору неудачного ответа, поэтому parser не запускался; cache key повышен до версии 2, production-proof остаётся за следующей штатной Events-wave без дополнительного ручного запуска.
+- Где была ошибка: #0179 маршрутизировал весь host через `curl_cffi`, а сохранённый validator пережил смену транспорта; для открытого WordPress REST нужен обычный urllib и новый versioned cache key.
