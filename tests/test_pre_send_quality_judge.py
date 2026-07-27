@@ -130,7 +130,7 @@ class PreSendQualityJudgeTests(unittest.TestCase):
 
             result = evaluate_pre_send_quality(root, dry_run=True)
 
-            alerts = result["product_completeness"]["alerts"]
+            alerts = result["product_completeness"]["input_alerts_before_judge"]
             self.assertTrue(any("Свежие новости" in alert for alert in alerts))
             self.assertTrue(any("ticket dominance" in alert for alert in alerts))
 
@@ -146,7 +146,7 @@ class PreSendQualityJudgeTests(unittest.TestCase):
             product = _product_completeness_context(root, [])
 
         self.assertNotIn("Выходные в GM", product["core_counts"])
-        self.assertFalse(any("Выходные в GM" in alert for alert in product["alerts"]))
+        self.assertFalse(any("Выходные в GM" in alert for alert in product["input_alerts_before_judge"]))
 
     def test_rendered_candidates_uses_compact_judge_payload(self) -> None:
         tmp, root = self._project()

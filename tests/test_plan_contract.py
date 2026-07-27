@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from datetime import timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -230,6 +231,92 @@ class PlanContractTest(unittest.TestCase):
             result2 = run_verify_digest_plan(root)
             self.assertFalse(result2.ok, "устаревший артефакт должен блокировать отправку")
             self.assertIn("removed_line_marker", [removed_line[:1] and "removed_line_marker"])
+
+    def test_5b_verify_is_single_truth_for_full_funnel_events_and_shortfalls(self) -> None:
+        event_day = now_london().date() + timedelta(days=3)
+        event = _candidate(
+            50,
+            block="ticket_radar",
+            category="venues_tickets",
+            source_label="Event Source",
+            source_url="https://event.test/show",
+            title="Global Star — public sale",
+            draft_line=f"• Global Star выступит {event_day.strftime('%d.%m')}; площадка — HOME. Дату уточните.",
+            event={
+                "is_event": True,
+                "event_name": "Global Star",
+                "venue": "HOME",
+                "date_start": event_day.isoformat(),
+            },
+            ticket_notability={
+                "artist": "Global Star",
+                "tier": "A",
+                "kind": "artist",
+                "confidence": 0.99,
+                "signals": {},
+            },
+            ticket_type="on_sale_now",
+            venue_scope="gm",
+            curated_for_rank=True,
+            digest_selection_verdict="selected",
+        )
+        planner_lost = _candidate(
+            99,
+            block="unknown_block",
+            source_label="Planner Lost",
+            source_url="https://lost.test/story",
+            curated_for_rank=True,
+            digest_selection_verdict="selected",
+        )
+        candidates = [_candidate(i, curated_for_rank=True, digest_selection_verdict="selected") for i in range(7)]
+        candidates.extend([event, planner_lost])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, candidates)
+            (state_dir / "collector_report.json").write_text(
+                json.dumps(
+                    {
+                        "categories": {
+                            "media_layer": {
+                                "source_health": [
+                                    {"name": "Planner Lost", "candidate_count": 1},
+                                    {"name": "Event Source", "candidate_count": 1},
+                                ]
+                            }
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            run_plan_digest(root)
+            write_digest(root)
+            outgoing = root / "data" / "outgoing"
+            outgoing.mkdir(parents=True, exist_ok=True)
+            (outgoing / "current_digest.html").write_text(
+                (state_dir / "draft_digest.html").read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+
+            result = run_verify_digest_plan(root)
+            report = json.loads((state_dir / "verify_digest_plan_report.json").read_text(encoding="utf-8"))
+
+        self.assertTrue(result.ok)
+        by_source = {row["name"]: row for row in report["source_funnel"]["sources"]}
+        self.assertEqual(
+            {key: by_source["Planner Lost"][key] for key in ("raw", "curated", "ranked", "planned", "written", "final")},
+            {"raw": 1, "curated": 1, "ranked": 1, "planned": 0, "written": 0, "final": 0},
+        )
+        self.assertEqual(by_source["Planner Lost"]["loss_stage"], "planned")
+        self.assertGreater(by_source["Event Source"]["final"], 0)
+        self.assertEqual(
+            report["event_completeness"]["counts"],
+            {"checked": 1, "missing_date": 0, "missing_venue": 0},
+        )
+        self.assertGreater(
+            report["shortfalls"]["Что важно в ближайшие 7 дней"]["planned_shortfall"],
+            0,
+        )
 
     def test_6_controller_skips_invalid_backup_and_uses_next(self) -> None:
         primary = _candidate(0)

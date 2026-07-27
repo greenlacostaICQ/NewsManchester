@@ -2264,7 +2264,6 @@ def _build_after_run_summary(
     reject_review: dict,
     writer_report: dict | None,
     lost_leads: list,
-    section_underflow: list,
     synthetic_freshness: dict | None = None,
     semantic_dedup: dict | None = None,
     city_intelligence: dict | None = None,
@@ -2306,7 +2305,7 @@ def _build_after_run_summary(
         "rising_topics_7d": len(rising_topics) if isinstance(rising_topics, list) else 0,
         "rising_entities_7d": len(rising_entities) if isinstance(rising_entities, list) else 0,
         "lost_leads": len(lost_leads or []),
-        "section_underflow": len(section_underflow or []),
+        "final_composition_status": "pending_verify_digest_plan",
     }
 
 
@@ -2386,77 +2385,6 @@ def _summarise_news_lead_quality(
                 "detail": "карточка начинается с «местного жителя/жительницы», не с факта",
             })
     return {"counts": counts, "issues": issues[:20]}
-
-
-def _summarise_event_completeness(
-    candidates_report: dict | None,
-    rendered_fingerprints: set[str],
-    sections: dict[str, list[str]] | None,
-) -> dict[str, object]:
-    """S3: surface published event cards that lost their date or venue
-    on the rewrite path.
-
-    For each rendered candidate whose primary_block is an event block:
-      - if the draft_line has no date marker AT ALL (even though the
-        extracted event has a date_iso or date_text), flag as
-        "lost_date" — the rewriter dropped the time anchor.
-      - if the candidate has an extracted event.venue but the venue
-        name does not appear anywhere in the draft_line, flag as
-        "lost_venue".
-
-    Warning-only — the digest still ships per the never-block rule.
-    Pure surfacing so the support report shows "events shipped without
-    when/where".
-    """
-    counts = {"checked": 0, "missing_date": 0, "missing_venue": 0}
-    issues: list[dict[str, object]] = []
-    if not isinstance(candidates_report, dict):
-        return {"counts": counts, "issues": issues}
-    event_blocks = _EVENT_SECTIONS_FOR_DATE_CHECK
-    # Map block-id -> section name; only blocks that end up in event sections.
-    event_block_ids = {
-        block_id for block_id, sec_name in PRIMARY_BLOCKS.items()
-        if sec_name in event_blocks
-    }
-    for candidate in candidates_report.get("candidates") or []:
-        if not isinstance(candidate, dict):
-            continue
-        fp = str(candidate.get("fingerprint") or "")
-        if fp not in rendered_fingerprints:
-            continue
-        block = str(candidate.get("primary_block") or "")
-        if block not in event_block_ids:
-            continue
-        counts["checked"] += 1
-        draft_line = str(candidate.get("draft_line") or "")
-        visible = re.sub(r"<[^>]+>", " ", draft_line)
-        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-        has_extracted_date = bool(
-            event.get("date_iso") or event.get("date_text") or event.get("is_recurring")
-        )
-        has_date_in_text = bool(_DATE_MARKER_RE.search(visible))
-        if has_extracted_date and not has_date_in_text:
-            counts["missing_date"] += 1
-            issues.append({
-                "fingerprint": fp,
-                "title": str(candidate.get("title") or "")[:140],
-                "primary_block": block,
-                "issue": "missing_date",
-                "detail": "event has extracted date but draft_line has no time anchor",
-            })
-        venue = str(event.get("venue") or "").strip()
-        if venue and len(venue) >= 4:
-            # Simple containment check — case-insensitive.
-            if venue.lower() not in visible.lower():
-                counts["missing_venue"] += 1
-                issues.append({
-                    "fingerprint": fp,
-                    "title": str(candidate.get("title") or "")[:140],
-                    "primary_block": block,
-                    "issue": "missing_venue",
-                    "detail": f"event.venue=«{venue}» not in draft_line",
-                })
-    return {"counts": counts, "issues": issues[:30]}
 
 
 def _summarise_cross_day_recurrence(candidates_report: dict | None) -> dict[str, object]:
@@ -3512,7 +3440,6 @@ def build_release(project_root: Path) -> ReleaseResult:
         warnings=warnings,
     )
     lost_leads: list[dict[str, object]] = []
-    section_underflow: list[dict[str, object]] = []
     if writer_report:
         qc = writer_report.get("quality_counts") or {}
         english = int(qc.get("dropped_english_passthrough") or 0)
@@ -3551,70 +3478,11 @@ def build_release(project_root: Path) -> ReleaseResult:
                 f"({drop.get('category') or 'unknown'}) — {'; '.join(drop.get('reasons') or ['no reason recorded'])}"
             )
 
-        # Section underflow: spot days when writer filtering pushed a
-        # section below its target minimum. We only flag underflow when
-        # writer actually dropped candidates that would have lived in
-        # that section — a thin section with zero drops just means there
-        # was no news today, which is not a signal worth alerting on.
-        sec_counts = writer_report.get("section_counts") or {}
-        dropped_per_section: dict[str, int] = {}
-        for drop in writer_report.get("dropped_candidates") or []:
-            if not isinstance(drop, dict):
-                continue
-            section_name = PRIMARY_BLOCKS.get(str(drop.get("primary_block") or ""))
-            if section_name:
-                dropped_per_section[section_name] = dropped_per_section.get(section_name, 0) + 1
-        for section_name, minimum in SECTION_MIN_ITEMS.items():
-            if section_name == "Выходные в GM":
-                try:
-                    weekday = datetime.strptime(current_day_london, "%Y-%m-%d").weekday()
-                except ValueError:
-                    weekday = now_london().weekday()
-                # Weekend planning is intentionally active only Thu-Sun.
-                # A Monday-Wednesday empty block is normal and should not
-                # produce a false editorial alarm.
-                if weekday not in {3, 4, 5, 6}:
-                    continue
-            actual = int(sec_counts.get(section_name) or 0)
-            dropped_here = dropped_per_section.get(section_name, 0)
-            if section_name == "Что важно сегодня" and actual < minimum:
-                board = writer_report.get("today_focus_board") if isinstance(writer_report.get("today_focus_board"), dict) else {}
-                if board:
-                    section_underflow.append(
-                        {
-                            "section": section_name,
-                            "actual": actual,
-                            "minimum": minimum,
-                            "dropped_by_writer": dropped_here,
-                            "eligible_candidates": board.get("eligible_candidates"),
-                            "underflow_reason": board.get("underflow_reason") or "",
-                        }
-                    )
-                    warnings.append(
-                        f"Section underflow: «{section_name}» shipped {actual} items "
-                        f"(min={minimum}); board saw {board.get('eligible_candidates', 0)} "
-                        f"eligible practical candidate(s), reason={board.get('underflow_reason') or 'unknown'}."
-                    )
-                    continue
-            if actual < minimum and dropped_here > 0:
-                section_underflow.append(
-                    {
-                        "section": section_name,
-                        "actual": actual,
-                        "minimum": minimum,
-                        "dropped_by_writer": dropped_here,
-                    }
-                )
-                warnings.append(
-                    f"Section underflow: «{section_name}» shipped {actual} items "
-                    f"(min={minimum}) while writer dropped {dropped_here} candidate(s) "
-                    f"that targeted this section — quality gates may be too strict."
-                )
+        # The pre-send judge can still remove or replace lines after release.
+        # Final section counts and shortfalls therefore belong only to
+        # verify-digest-plan.
     change_type_summary = _summarise_change_types(state_dir)
     cross_day_recurrence = _summarise_cross_day_recurrence(candidates_report)
-    event_completeness = _summarise_event_completeness(
-        candidates_report, rendered_fingerprints, None,
-    )
     news_lead_quality = _summarise_news_lead_quality(
         candidates_report, rendered_fingerprints,
     )
@@ -3683,30 +3551,19 @@ def build_release(project_root: Path) -> ReleaseResult:
         rendered_fingerprints=rendered_fingerprints,
         writer_report=writer_report,
     )
-    # Phase 1: emit the per-source funnel (raw → curated → rendered) as its own
-    # report so "fetched OK / 0 rendered" is a visible red signal instead of
-    # being buried in the release report. Reporting must never block release.
-    try:
-        write_json(
-            state_dir / "source_health_funnel.json",
-            {
-                "run_date_london": today_london(),
-                "sources": [
-                    {
-                        "name": row.get("name"),
-                        "category": row.get("category"),
-                        "status": row.get("status"),
-                        "raw": (row.get("loss_funnel") or {}).get("source_raw_count"),
-                        "rendered": (row.get("loss_funnel") or {}).get("rendered"),
-                        "loss_funnel": row.get("loss_funnel", {}),
-                    }
-                    for row in (source_status or [])
-                    if isinstance(row, dict)
-                ],
-            },
-        )
-    except Exception:  # noqa: BLE001 - reporting must never block release
-        pass
+    # This is source/feed health plus the writer-stage snapshot, not the final
+    # composition. Remove late-loss verdicts here; verify-digest-plan writes the
+    # only curated→ranked→planned→written→final funnel.
+    source_status["scope"] = "intermediate_pre_verify"
+    source_status["final_composition_status"] = "pending_verify_digest_plan"
+    for row in source_status.get("sources") or []:
+        if not isinstance(row, dict):
+            continue
+        row["written_count"] = int(row.get("rendered_count") or 0)
+        row.pop("human_funnel", None)
+        row.pop("loss_stage", None)
+        row.pop("loss_reason", None)
+    (state_dir / "source_health_funnel.json").unlink(missing_ok=True)
     # Phase 2 #2: append today's source health to the rolling jsonl log so the
     # anomaly check can compare against the trailing window. Never blocks.
     source_anomalies: list[dict] = []
@@ -3903,7 +3760,6 @@ def build_release(project_root: Path) -> ReleaseResult:
         reject_review=reject_review,
         writer_report=writer_report,
         lost_leads=lost_leads,
-        section_underflow=section_underflow,
         synthetic_freshness=synthetic_freshness,
         semantic_dedup=semantic_dedup_counts,
         city_intelligence=city_intelligence,
@@ -4028,7 +3884,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         "errors": errors,
         "warnings": warnings,
         "lost_leads": lost_leads,
-        "section_underflow": section_underflow,
+        "final_composition_status": "pending_verify_digest_plan",
         "cost_summary": cost_summary,
         "llm_rewrite_diagnostics": {
             "diagnostics_summary": (llm_rewrite_report or {}).get("diagnostics_summary") if isinstance(llm_rewrite_report, dict) else {},
@@ -4041,7 +3897,6 @@ def build_release(project_root: Path) -> ReleaseResult:
         "inventory_morning_effect": inventory_morning_effect,
         "change_type_summary": change_type_summary,
         "cross_day_recurrence": cross_day_recurrence,
-        "event_completeness": event_completeness,
         "news_lead_quality": news_lead_quality,
         "digest_health": digest_health,
         "source_status": source_status,

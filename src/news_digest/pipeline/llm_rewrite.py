@@ -3875,6 +3875,13 @@ def run_rank_digest(project_root: Path) -> StageResult:
     payload = json.loads(candidates_path.read_text(encoding="utf-8"))
     pipeline_run_id = pipeline_run_id_from(payload)
     candidates = payload.get("candidates", [])
+    # Reporting snapshot: this is the exact pool handed from curator/validator
+    # to rank-digest. Later shortlist and planner decisions mutate ``include``,
+    # so the final source funnel must not try to reconstruct curation from the
+    # end-of-run value.
+    for candidate in candidates:
+        if isinstance(candidate, dict):
+            candidate["curated_for_rank"] = bool(candidate.get("include"))
     provider_override = os.environ.get("LLM_PROVIDER", "").lower().strip()
     model_override = os.environ.get("LLM_MODEL", "").strip()
     base_url_override = os.environ.get("LLM_BASE_URL", "").strip()

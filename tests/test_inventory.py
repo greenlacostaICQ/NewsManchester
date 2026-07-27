@@ -312,8 +312,12 @@ class MorningContractTest(unittest.TestCase):
             },
         }
 
-        self.assertEqual(passes_morning_contract(one_off, today="2026-07-20"), (False, "event_expired"))
-        self.assertTrue(passes_morning_contract(monthly, today="2026-07-20")[0])
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-20T08:00:00+01:00"),
+        ):
+            self.assertEqual(passes_morning_contract(one_off, today="2026-07-20"), (False, "event_expired"))
+            self.assertTrue(passes_morning_contract(monthly, today="2026-07-20")[0])
 
     def test_fact_ready_without_text_reaches_morning_as_needs_text(self) -> None:
         record = {

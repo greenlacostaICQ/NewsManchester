@@ -2473,25 +2473,21 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         rewriter produced a draft_line without any time anchor, the
         post-rewrite review must surface it as missing_date.
         """
-        from news_digest.pipeline.release import _summarise_event_completeness
-        candidates_report = {
-            "candidates": [
-                {
-                    "fingerprint": "no-date-event",
-                    "primary_block": "weekend_activities",
-                    "draft_line": "• Burnage RFC, популярная воскресная распродажа. Сезон проходит на свежем воздухе с большим количеством продавцов.",
-                    "title": "Burnage RFC Car Boot",
-                    "event": {
-                        "venue": "Burnage RFC",
-                        "date_iso": "2026-05-25",
-                        "date_text": "Sunday 25 May",
-                        "is_recurring": False,
-                    },
-                }
-            ],
+        from news_digest.pipeline.verify_digest_plan import _final_event_completeness
+        candidates = {
+            "no-date-event": {
+                "fingerprint": "no-date-event",
+                "event": {
+                    "venue": "Burnage RFC",
+                    "date_iso": "2026-05-25",
+                    "date_text": "Sunday 25 May",
+                    "is_recurring": False,
+                },
+            }
         }
-        rendered = {"no-date-event"}
-        result = _summarise_event_completeness(candidates_report, rendered, None)
+        line = "• Burnage RFC, популярная воскресная распродажа."
+        rows = [{"slot_id": "weekend-01", "final_html_section": "Выходные в GM", "final_html_line": 1, "final_candidate": {"fingerprint": "no-date-event"}}]
+        result = _final_event_completeness(rows, candidates, line)
         self.assertEqual(result["counts"]["missing_date"], 1)
         self.assertTrue(
             any(issue["issue"] == "missing_date" for issue in result["issues"]),
@@ -2502,45 +2498,31 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         """Defensive: a recurring event card that says «каждое
         воскресенье до сентября» must NOT be flagged as missing_date.
         """
-        from news_digest.pipeline.release import _summarise_event_completeness
-        candidates_report = {
-            "candidates": [
-                {
-                    "fingerprint": "recurring-ok",
-                    "primary_block": "weekend_activities",
-                    "draft_line": "• Burnage RFC car boot — каждое воскресенье до конца августа, 6:00 для продавцов.",
-                    "title": "Burnage RFC Car Boot",
-                    "event": {
-                        "venue": "Burnage RFC",
-                        "is_recurring": True,
-                    },
-                }
-            ],
+        from news_digest.pipeline.verify_digest_plan import _final_event_completeness
+        candidates = {
+            "recurring-ok": {
+                "fingerprint": "recurring-ok",
+                "event": {"venue": "Burnage RFC", "is_recurring": True},
+            }
         }
-        rendered = {"recurring-ok"}
-        result = _summarise_event_completeness(candidates_report, rendered, None)
+        line = "• Burnage RFC car boot — каждое воскресенье до конца августа, 6:00 для продавцов."
+        rows = [{"slot_id": "weekend-01", "final_html_section": "Выходные в GM", "final_html_line": 1, "final_candidate": {"fingerprint": "recurring-ok"}}]
+        result = _final_event_completeness(rows, candidates, line)
         self.assertEqual(result["counts"]["missing_date"], 0)
         self.assertEqual(result["counts"]["missing_venue"], 0)
 
     def test_event_completeness_flags_missing_venue(self) -> None:
         """Carlo missing venue gets surfaced (warning-only)."""
-        from news_digest.pipeline.release import _summarise_event_completeness
-        candidates_report = {
-            "candidates": [
-                {
-                    "fingerprint": "no-venue-event",
-                    "primary_block": "weekend_activities",
-                    "draft_line": "• 25 мая — концерт без указания места проведения.",
-                    "title": "Concert",
-                    "event": {
-                        "venue": "The Deaf Institute",
-                        "date_iso": "2026-05-25",
-                    },
-                }
-            ],
+        from news_digest.pipeline.verify_digest_plan import _final_event_completeness
+        candidates = {
+            "no-venue-event": {
+                "fingerprint": "no-venue-event",
+                "event": {"venue": "The Deaf Institute", "date_iso": "2026-05-25"},
+            }
         }
-        rendered = {"no-venue-event"}
-        result = _summarise_event_completeness(candidates_report, rendered, None)
+        line = "• 25 мая — концерт без указания места проведения."
+        rows = [{"slot_id": "weekend-01", "final_html_section": "Выходные в GM", "final_html_line": 1, "final_candidate": {"fingerprint": "no-venue-event"}}]
+        result = _final_event_completeness(rows, candidates, line)
         self.assertEqual(result["counts"]["missing_venue"], 1)
 
     def test_events_prompt_is_v5_with_three_templates(self) -> None:

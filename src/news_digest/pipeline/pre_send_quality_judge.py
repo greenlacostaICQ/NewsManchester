@@ -549,14 +549,14 @@ def _product_completeness_context(project_root: Path, digest_lines: list[dict[st
         alerts.append(f"source failures: {failed_sources}")
     return {
         "block_policy_version": BLOCK_POLICY_VERSION,
-        "section_counts": section_counts,
+        "scope": "input_before_pre_send_judge",
+        "input_section_counts_before_judge": section_counts,
         "core_counts": core_counts,
         "ticket_items": ticket_items,
         "core_items": core_total,
         "writer_quality_counts": qc,
-        "section_underflow": release_report.get("section_underflow") or [],
         "source_health_counts": (source_status.get("counts") or {}),
-        "alerts": alerts,
+        "input_alerts_before_judge": alerts,
     }
 
 

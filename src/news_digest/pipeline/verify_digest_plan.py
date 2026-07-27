@@ -13,6 +13,7 @@ send-file. Сравнивает ФИНАЛЬНЫЙ отправляемый HTML
 from __future__ import annotations
 
 from dataclasses import dataclass
+import html
 import re
 from pathlib import Path
 
@@ -45,6 +46,192 @@ class VerifyResult:
     report_path: Path
 
 
+def _final_event_completeness(
+    final_rows: list[dict[str, object]],
+    candidates: dict[str, dict],
+    html_text: str,
+) -> dict[str, object]:
+    """Check the actual final HTML row consumed by each event slot."""
+    from news_digest.pipeline.release import (  # noqa: PLC0415
+        _DATE_MARKER_RE,
+        _EVENT_SECTIONS_FOR_DATE_CHECK,
+    )
+
+    html_lines = html_text.splitlines()
+    counts = {"checked": 0, "missing_date": 0, "missing_venue": 0}
+    issues: list[dict[str, object]] = []
+    for row in final_rows:
+        if not isinstance(row, dict):
+            continue
+        section = str(row.get("final_html_section") or row.get("planned_section") or "")
+        if section not in _EVENT_SECTIONS_FOR_DATE_CHECK:
+            continue
+        ref = row.get("final_candidate") if isinstance(row.get("final_candidate"), dict) else {}
+        fingerprint = str(ref.get("fingerprint") or "")
+        candidate = candidates.get(fingerprint) or {}
+        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        line_number = int(row.get("final_html_line") or 0)
+        rendered_html = html_lines[line_number - 1] if 0 < line_number <= len(html_lines) else ""
+        visible = html.unescape(re.sub(r"<[^>]+>", " ", rendered_html))
+        visible = re.sub(r"\s+", " ", visible).strip()
+        counts["checked"] += 1
+
+        has_date_fact = bool(
+            event.get("date_iso")
+            or event.get("date_text")
+            or event.get("date")
+            or event.get("date_start")
+            or event.get("next_occurrence")
+            or event.get("is_recurring")
+        )
+        if has_date_fact and not _DATE_MARKER_RE.search(visible):
+            counts["missing_date"] += 1
+            issues.append(
+                {
+                    "slot_id": row.get("slot_id") or "",
+                    "fingerprint": fingerprint,
+                    "final_html_line": line_number,
+                    "issue": "missing_date",
+                    "rendered_text": visible[:240],
+                }
+            )
+
+        venue = str(event.get("venue") or "").strip()
+        if venue and len(venue) >= 4:
+            variants = {
+                venue,
+                venue.split(",", 1)[0].strip(),
+                re.sub(r"\s*\([^)]*\)\s*", " ", venue).strip(),
+            }
+            normal_visible = re.sub(r"[^a-zа-яё0-9]+", " ", visible.lower()).strip()
+            venue_visible = any(
+                re.sub(r"[^a-zа-яё0-9]+", " ", variant.lower()).strip() in normal_visible
+                for variant in variants
+                if len(variant) >= 4
+            )
+            if not venue_visible:
+                counts["missing_venue"] += 1
+                issues.append(
+                    {
+                        "slot_id": row.get("slot_id") or "",
+                        "fingerprint": fingerprint,
+                        "final_html_line": line_number,
+                        "issue": "missing_venue",
+                        "expected_venue": venue,
+                        "rendered_text": visible[:240],
+                    }
+                )
+    return {
+        "scope": "final_html_slot_fingerprint",
+        "counts": counts,
+        "issues": issues[:60],
+    }
+
+
+def _final_source_funnel(
+    scan_report: dict,
+    candidates: list[dict],
+    plan: dict,
+    writer_report: dict,
+    final_selection: dict,
+) -> dict[str, object]:
+    """One monotonic per-source funnel ending at the verified HTML."""
+    rows: dict[str, dict[str, object]] = {}
+
+    def _row(name: str) -> dict[str, object]:
+        return rows.setdefault(
+            name,
+            {
+                "name": name,
+                "raw": 0,
+                "curated": 0,
+                "ranked": 0,
+                "planned": 0,
+                "written": 0,
+                "final": 0,
+            },
+        )
+
+    for category in (scan_report.get("categories") or {}).values():
+        if not isinstance(category, dict):
+            continue
+        for source in category.get("source_health") or []:
+            if not isinstance(source, dict):
+                continue
+            name = str(source.get("name") or "").strip()
+            if name:
+                record = _row(name)
+                record["raw"] = int(record["raw"]) + int(source.get("candidate_count") or 0)
+
+    by_fp = {
+        str(candidate.get("fingerprint") or ""): candidate
+        for candidate in candidates
+        if isinstance(candidate, dict) and str(candidate.get("fingerprint") or "")
+    }
+    planned_fps: set[str] = set()
+    for slot in plan_slots(plan):
+        planned_fps.add(str(slot.get("primary_fingerprint") or ""))
+        planned_fps.update(str(fp) for fp in (slot.get("backup_fingerprints") or []) if str(fp))
+    lead = plan.get("lead") if isinstance(plan.get("lead"), dict) else {}
+    planned_fps.add(str(lead.get("primary_fingerprint") or ""))
+    planned_fps.update(str(fp) for fp in (lead.get("understudy_fingerprints") or []) if str(fp))
+    planned_fps.discard("")
+    written_fps = set(writer_report.get("rendered_candidate_fingerprints") or [])
+    final_fps = {
+        str((row.get("final_candidate") or {}).get("fingerprint") or "")
+        for row in final_selection.get("final_rows") or []
+        if isinstance(row, dict) and isinstance(row.get("final_candidate"), dict)
+    }
+
+    for fingerprint, candidate in by_fp.items():
+        name = str(candidate.get("source_label") or "").strip()
+        if not name:
+            continue
+        record = _row(name)
+        curated = bool(
+            candidate.get("curated_for_rank")
+            if "curated_for_rank" in candidate
+            else candidate.get("include") or candidate.get("digest_selection_verdict")
+        )
+        ranked = str(candidate.get("digest_selection_verdict") or "") in {"selected", "reserve"}
+        if curated:
+            record["curated"] = int(record["curated"]) + 1
+        if ranked:
+            record["ranked"] = int(record["ranked"]) + 1
+        if fingerprint in planned_fps:
+            record["planned"] = int(record["planned"]) + 1
+        if fingerprint in written_fps:
+            record["written"] = int(record["written"]) + 1
+        if fingerprint in final_fps:
+            record["final"] = int(record["final"]) + 1
+
+    loss_counts: dict[str, int] = {}
+    for record in rows.values():
+        if int(record["final"]) > 0:
+            record["loss_stage"] = ""
+            record["loss_reason"] = ""
+            continue
+        if int(record["curated"]) == 0:
+            stage, reason = "curated", "raw candidates did not survive curation"
+        elif int(record["ranked"]) == 0:
+            stage, reason = "ranked", "curated candidates did not survive rank selection"
+        elif int(record["planned"]) == 0:
+            stage, reason = "planned", "ranked candidates were not selected by planner"
+        elif int(record["written"]) == 0:
+            stage, reason = "written", "planned candidates did not reach writer HTML"
+        else:
+            stage, reason = "final", "written candidates were removed after writing"
+        record["loss_stage"] = stage
+        record["loss_reason"] = reason
+        loss_counts[stage] = loss_counts.get(stage, 0) + 1
+    return {
+        "scope": "verified_final_html",
+        "columns": ["raw", "curated", "ranked", "planned", "written", "final"],
+        "loss_counts": loss_counts,
+        "sources": sorted(rows.values(), key=lambda row: str(row.get("name") or "")),
+    }
+
+
 def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) -> VerifyResult:
     state_dir = project_root / "data" / "state"
     report_path = state_dir / REPORT_NAME
@@ -58,7 +245,8 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
     plan = load_plan(state_dir)
     execution = load_execution(state_dir)
     payload = read_json(state_dir / "candidates.json", {"candidates": []})
-    by_fp = candidates_by_fingerprint(payload.get("candidates", []))
+    candidates = payload.get("candidates", [])
+    by_fp = candidates_by_fingerprint(candidates)
 
     # --- Технический гейт (единственное, что блокирует отправку) -----------
     if not html_text.strip():
@@ -184,6 +372,19 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
         if int(summary.get("execution_loss") or 0):
             divergences.append({"kind": "execution_loss", "section": section, **summary})
 
+    event_completeness = _final_event_completeness(
+        final_selection.get("final_rows") or [],
+        by_fp,
+        html_text,
+    )
+    source_funnel = _final_source_funnel(
+        read_json(state_dir / "collector_report.json", {}),
+        candidates,
+        plan,
+        read_json(state_dir / "writer_report.json", {}),
+        final_selection,
+    )
+
     quality_report = read_json(state_dir / "pre_send_quality_report.json", {})
     repair_report = quality_report.get("repair_executor") if isinstance(quality_report, dict) else {}
     repair_report = repair_report if isinstance(repair_report, dict) else {}
@@ -234,7 +435,7 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
     write_json(
         report_path,
         {
-            "schema_version": 1,
+            "schema_version": 2,
             "run_at_london": now_london().isoformat(),
             "run_date_london": today_london(),
             "pipeline_run_id": str(plan.get("pipeline_run_id") or ""),
@@ -260,6 +461,8 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
                 "conserved": not a_tier_missing,
             },
             "shortfalls": shortfalls,
+            "event_completeness": event_completeness,
+            "source_funnel": source_funnel,
             "prose_policy": {
                 "checked_lines": sum(1 for line in html_text.splitlines() if line.strip().startswith("•")),
                 "defect_count": len(prose_findings),
