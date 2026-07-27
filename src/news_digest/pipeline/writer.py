@@ -205,16 +205,6 @@ def _summary_is_useful(summary: str, headline: str) -> bool:
     return True
 
 
-_TODAY_FOCUS_BOARD_SOURCE_SECTIONS = (
-    "Свежие новости",
-    TODAY_FOCUS_SECTION,
-    "Городской радар",
-)
-_TODAY_FOCUS_RECOVERY_SOURCE_BLOCKS = {
-    "today_focus",
-    "last_24h",
-    "city_watch",
-}
 _TODAY_FOCUS_ALLOWED_STORY_TYPES = {
     "public_safety_after_incident",
     "service_accountability",
@@ -352,24 +342,6 @@ def _row_blob(row: _SectionRow) -> str:
     )
 
 
-def _today_focus_bucket(row: _SectionRow) -> str:
-    story_type = _candidate_story_type(row.candidate)
-    blob = _row_blob(row)
-    if story_type in {"service_accountability", "local_service_change"}:
-        return "service"
-    if story_type in {"planning", "civic", "local_cost"}:
-        return "civic"
-    if (
-        story_type == "public_safety_after_incident"
-        or _TODAY_FOCUS_ROAD_RE.search(blob)
-        or re.search(r"\b(?:warning|warned|parents?|abandoned|unsafe|danger|safety)\b", blob, re.IGNORECASE)
-    ):
-        return "safety"
-    if story_type == "incident":
-        return "incident"
-    return "other"
-
-
 def _candidate_future_only_dates(candidate: dict, line: str = "") -> list[date]:
     text = " ".join(
         str(candidate.get(field) or "")
@@ -493,38 +465,6 @@ def _today_focus_candidate_is_eligible(candidate: dict | None, line: str = "") -
     if _TODAY_FOCUS_NATIONAL_RE.search(text) and not _GM_LOCAL_ANCHOR_RE.search(text):
         return False
     return True
-
-
-def _today_focus_candidate_score(row: _SectionRow) -> float:
-    c = row.candidate or {}
-    story_type = _candidate_story_type(c)
-    tier = _candidate_publish_tier(c)
-    blob = _row_blob(row)
-    score = _section_priority_score(c, TODAY_FOCUS_SECTION, row.line) if c else row.score
-    if tier == "must_include":
-        score += 25
-    elif tier == "strong":
-        score += 14
-    score += {
-        "public_safety_after_incident": 40,
-        "service_accountability": 34,
-        "local_service_change": 28,
-        "planning": 24,
-        "civic": 20,
-        "local_cost": 24,
-        "incident": 10,
-    }.get(story_type, 0)
-    if _TODAY_FOCUS_ROAD_RE.search(blob):
-        score += 16
-    if re.search(r"\b(?:flood|water|electric|power|damage|thousands?|compensation|reopen)\b", blob, re.IGNORECASE):
-        score += 55
-    if re.search(r"\b(?:licen[cs]e|council|ofsted|cqc|safety|warning|flood|power|water|closed|closure)\b", blob, re.IGNORECASE):
-        score += 14
-    if _TODAY_FOCUS_SOFT_RE.search(blob):
-        score -= 45
-    if _FRESH_COMMERCIAL_PR_RE.search(blob):
-        score -= 28
-    return score
 
 
 def _fresh_related_story_key(row: _SectionRow) -> str:
@@ -2505,47 +2445,6 @@ def _hard_news_recovery_line(candidate: dict) -> str:
         return f"• {prefix or 'Суд: '}в суде прозвучали новые детали дела об убийстве. Это важное обновление по расследованию; подробности сверяйте в источнике."
     if "police incident" in lowered:
         return f"• {prefix}полиция продолжает работу на месте инцидента. Если вы рядом, учитывайте возможные ограничения доступа и движение служб."
-    return ""
-
-
-def _today_focus_recovery_line(candidate: dict) -> str:
-    line = _hard_news_recovery_line(candidate)
-    if line:
-        return line
-    title = re.sub(r"\s+", " ", str(candidate.get("title") or "")).strip()
-    blob = " ".join(
-        str(candidate.get(field) or "")
-        for field in ("title", "summary", "lead", "evidence_text", "practical_angle")
-    )
-    lowered = blob.lower()
-    if not title or _looks_like_source_chrome(title):
-        return ""
-    if re.search(r"\boldham\b", lowered) and re.search(r"\bpub\b", lowered) and re.search(r"\bcouncil\b", lowered) and re.search(r"\bdemolish", lowered):
-        price = ""
-        price_match = re.search(r"£\s?\d+(?:\.\d+)?\s?(?:m|million)?", blob, flags=re.IGNORECASE)
-        if price_match:
-            price = f" за {price_match.group(0).replace(' ', '')}"
-        return (
-            f"• Oldham: совет может купить редкий паб{price} и затем снести его; "
-            "депутат парламента предупреждает о потере исторических пабов. "
-            "Если вам важен район, следите за решением совета."
-        )
-    if re.search(r"\bbury\b", lowered) and re.search(r"\bschool\b", lowered) and re.search(r"\bchild sex offences?\b|\bsafeguarding\b", lowered):
-        school = "St Gabriel's RC High School" if "st gabriel" in lowered else "школе в Bury"
-        return (
-            f"• Bury: женщину арестовали в {school} по подозрению в сексуальных преступлениях против ребёнка. "
-            "Если это ваша школа, проверяйте сообщения полиции и администрации школы."
-        )
-    if re.search(r"\bconsultation\b", lowered) and re.search(r"\b(?:open|deadline|closing|closes)\b", lowered):
-        place = "Greater Manchester"
-        borough_match = re.search(r"\b(Oldham|Rochdale|Bury|Bolton|Wigan|Stockport|Salford|Trafford|Tameside|Manchester)\b", blob)
-        if borough_match:
-            place = borough_match.group(1)
-        subject = re.sub(r"\s+[|–—-]\s+.*$", "", title).strip(" .")
-        return (
-            f"• {place}: открыта консультация — {subject}. "
-            "Если это касается вашего района, проверьте сроки и отправьте замечания до закрытия."
-        )
     return ""
 
 

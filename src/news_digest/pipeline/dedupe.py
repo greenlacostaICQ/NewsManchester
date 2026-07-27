@@ -56,6 +56,46 @@ class StageResult:
     report_path: Path
 
 
+# 0158: заглушка, которой ночной склад помечает карточку до дедупа.
+_PENDING_DEDUPE_RE = re.compile(r"pending dedupe", re.IGNORECASE)
+
+
+def _is_pending_dedupe_reason(reason: object) -> bool:
+    return bool(_PENDING_DEDUPE_RE.search(str(reason or "")))
+
+
+def close_pending_dedupe_reasons(candidates: list[dict]) -> list[dict]:
+    """Ни одна карточка не покидает стадию дедупа с «pending dedupe».
+
+    Замок на выходе: любая поздняя ветка, снявшая карточку без причины,
+    получает здесь окончательное кодифицированное решение.
+    """
+    closed: list[dict] = []
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        for field in ("reason", "digest_selection_reason"):
+            if not _is_pending_dedupe_reason(candidate.get(field)):
+                continue
+            decision = str(candidate.get("dedupe_decision") or "").strip()
+            candidate[field] = (
+                "Dedupe: карточка снята дедупом без отдельной причины."
+                if decision in {"drop", "duplicate"} or not candidate.get("include")
+                else "Dedupe: повтора нет; карточка допущена к редакционному отбору."
+            )
+            if field == "reason":
+                closed.append(
+                    {
+                        "fingerprint": str(candidate.get("fingerprint") or ""),
+                        "title": str(candidate.get("title") or "")[:120],
+                        "primary_block": str(candidate.get("primary_block") or ""),
+                        "decision": decision or "unknown",
+                        "reason": candidate[field],
+                    }
+                )
+    return closed
+
+
 def initialize_candidates_state(project_root: Path, *, overwrite: bool = False) -> StageResult:
     state_dir = project_root / "data" / "state"
     state_dir.mkdir(parents=True, exist_ok=True)
@@ -182,6 +222,14 @@ def dedupe_candidates(project_root: Path) -> StageResult:
             }
         candidate.setdefault("reason", "")
         candidate.setdefault("matched_previous_fingerprint", "")
+        # 0158: «pending dedupe» — заглушка ночного склада, а не решение. Пока
+        # она считалась готовой причиной, ветки вида `reason or "..."`
+        # оставляли ночную карточку с ней навсегда (27.07: Rudy's, Fosforo
+        # уехали в drop с «pending dedupe»). Снимаем заглушку ДО решения —
+        # ниже каждая ветка обязана записать свою настоящую причину.
+        pending_intake_reason = _is_pending_dedupe_reason(candidate.get("reason"))
+        if pending_intake_reason:
+            candidate["reason"] = ""
 
         prev_ref = previous or (
             published_by_fp.get(str(similar_previous[0].get("fingerprint") or ""))
@@ -310,15 +358,22 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 candidate["dedupe_decision"] = "drop"
                 candidate["include"] = False
 
-        pending_reason = "pending dedupe" in str(candidate.get("reason") or "").lower()
         if candidate.get("include"):
             candidate["dedupe_verdict"] = "selected"
-            if pending_reason:
+            if not str(candidate.get("reason") or "").strip():
                 candidate["reason"] = (
                     "Dedupe: live item has no exact/history repeat; accepted for editorial selection."
                 )
         else:
             candidate["dedupe_verdict"] = "drop"
+            if pending_intake_reason and not str(candidate.get("reason") or "").strip():
+                # Ночная карточка обязана уйти из дедупа с окончательным
+                # решением, а не с заглушкой склада.
+                candidate["reason"] = (
+                    "Dedupe: повтор без новой фазы — ночная карточка снята дедупом."
+                    if str(candidate.get("dedupe_decision") or "") == "drop"
+                    else "Dedupe: карточка ночного склада не прошла дедуп."
+                )
 
         if not candidate.get("reason"):
             candidate["include"] = False
@@ -405,6 +460,20 @@ def dedupe_candidates(project_root: Path) -> StageResult:
     semantic_guard = _apply_semantic_drop_guard(candidates)
     _mark_timing("semantic_guard_seconds", semantic_guard_t0)
 
+    # 0158: замок дедупа — «pending dedupe» не переживает стадию, а полнота
+    # блока считается по тому, что реально пережило дедуп, а не по ночному складу.
+    pending_dedupe_closed = close_pending_dedupe_reasons(candidates)
+    if pending_dedupe_closed:
+        warnings.append(
+            f"Дедуп закрыл {len(pending_dedupe_closed)} карточек, оставшихся с «pending dedupe»."
+        )
+    from news_digest.pipeline.inventory import inventory_block_completeness  # noqa: PLC0415
+
+    post_dedupe_completeness = inventory_block_completeness(
+        [c for c in candidates if isinstance(c, dict) and c.get("include")],
+        basis="post_dedupe_before_plan",
+    )
+
     final_candidates_by_fp = candidates_by_fingerprint(candidates)
     for decision in decisions:
         final_candidate = final_candidates_by_fp.get(str(decision.get("fingerprint") or ""))
@@ -441,6 +510,8 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 if isinstance(c, dict) and str(c.get("semantic_dedupe_match") or "").startswith("embedding")
             ),
             "semantic_guard": semantic_guard,
+            "pending_dedupe_closed": pending_dedupe_closed,
+            "post_dedupe_completeness": post_dedupe_completeness,
             "story_clusters": story_cluster_summary,
             "intra_batch_dedup_drops": intra_batch_drops,
             "semantic_dedup_summary": semantic_result,

@@ -58,6 +58,26 @@ _BOOKING_RE = re.compile(
 )
 
 
+# 0160: Next7 держит ограничения, сроки и официальные изменения услуг.
+# С такой карточки нельзя требовать цену или бронирование — их там нет и
+# быть не должно; из-за этого требования блок ежедневно выходил пустым.
+_LEISURE_CATEGORIES = {"culture_weekly", "venues_tickets", "russian_speaking_events", "diaspora_events"}
+_LEISURE_RE = re.compile(
+    r"\b(?:car\s+boot|market|fair|fete|festival|concert|gig|live\s+music|"
+    r"recital|open\s+day|workshop|screening|exhibition|tour|comedy|"
+    r"stand[-\s]?up|matinee|show|performance)\b",
+    re.IGNORECASE,
+)
+
+
+def _is_non_leisure_next7(candidate: dict, blob: str) -> bool:
+    if str(candidate.get("primary_block") or "") != "next_7_days":
+        return False
+    if str(candidate.get("category") or "") in _LEISURE_CATEGORIES:
+        return False
+    return not _LEISURE_RE.search(blob)
+
+
 def is_event_candidate(candidate: dict) -> bool:
     category = str(candidate.get("category") or "")
     block = str(candidate.get("primary_block") or "")
@@ -97,7 +117,14 @@ def event_quality_report(candidate: dict) -> dict[str, object]:
         "booking": has_booking_signal,
         "source": bool(str(candidate.get("source_url") or "").strip() and str(candidate.get("source_label") or "").strip()),
     }
-    checks["access"] = has_price_or_free or has_booking_signal or ((market_like or food_drop_in) and checks["source"])
+    non_leisure_next7 = _is_non_leisure_next7(candidate, blob)
+    checks["access"] = (
+        has_price_or_free
+        or has_booking_signal
+        or non_leisure_next7
+        or ((market_like or food_drop_in) and checks["source"])
+    )
+    checks["non_leisure_next7"] = non_leisure_next7
 
     missing: list[str] = []
     if not checks["date"]:

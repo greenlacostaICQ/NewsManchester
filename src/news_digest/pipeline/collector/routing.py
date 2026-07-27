@@ -116,6 +116,106 @@ def _today_facing_practical_angle(candidate: dict) -> str:
     return "Сверить, остаётся ли история актуальной для сегодняшнего дня перед публикацией."
 
 
+# 0159: Today наполняется по смыслу действия, а не по совпадению ключевых
+# слов. Кандидат попадает в блок, только если сегодняшнее действие читателя
+# следует из одного из пяти классов и в карточке есть место, затронутые люди
+# и само действие. Ключевые слова ниже остаются лишь ранжированием.
+_TODAY_ACTION_CLASS_RE: tuple[tuple[str, "re.Pattern[str]"], ...] = (
+    (
+        "restriction",
+        re.compile(
+            r"\b(?:clos(?:ed|ure|ing)|shut|suspend(?:ed)?|cancel(?:led|s)?|"
+            r"restrict(?:ed|ion)s?|cordon|evacuat\w*|diversion|"
+            r"road\s*works?|strike|industrial action|walkout|no\s+access|"
+            r"ban\s+on|bans?\s+(?:come|comes|take|takes)\s+into\s+force|"
+            r"lanes?\s+(?:closed|shut|blocked)|traffic\s+(?:stopped|held)|"
+            r"facing\s+delays|severe\s+delays)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "deadline",
+        re.compile(
+            r"\b(?:deadline|last\s+(?:day|chance)|clos(?:es|ing)\s+(?:today|on|at)|"
+            r"applications?\s+clos\w*|consultation\s+(?:closes|ends|deadline)|"
+            r"must\s+(?:apply|register|respond)\s+by|expires?)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "service_change",
+        re.compile(
+            r"\b(?:new\s+rules?|comes?\s+into\s+force|takes?\s+effect|from\s+today|"
+            r"changes?\s+to\s+(?:collections?|services?|opening|charges?|parking|fares?)|"
+            r"service\s+change|bin\s+collections?|opening\s+hours?|reopen(?:s|ed|ing)?|"
+            r"charges?\s+(?:rise|increase|apply)|timetable\s+change)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "weather_impact",
+        re.compile(
+            r"\b(?:weather\s+warning|amber\s+warning|yellow\s+warning|red\s+warning|"
+            r"met\s+office|flood(?:ing|\s+alert)?|heatwave|storm\s+\w+|ice\s+warning|"
+            r"heavy\s+(?:rain|snow)|high\s+winds?)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "active_safety",
+        re.compile(
+            r"\b(?:urge[ds]?\s+to\s+avoid|avoid\s+the\s+area|ongoing\s+incident|"
+            r"live\s+incident|remains?\s+at\s+the\s+scene|manhunt|on\s+the\s+run|"
+            r"do\s+not\s+approach|contamination|recall(?:ed)?|outbreak|"
+            r"safety\s+(?:warning|alert)|unsafe)\b",
+            re.IGNORECASE,
+        ),
+    ),
+)
+
+_TODAY_AFFECTED_PEOPLE_RE = re.compile(
+    r"\b(?:residents?|passengers?|commuters?|drivers?|pupils?|students?|parents?|"
+    r"patients?|customers?|shoppers?|tenants?|households?|families|staff|workers?|"
+    r"visitors?|motorists?|travellers?|anyone|people\s+(?:in|living|who))\b",
+    re.IGNORECASE,
+)
+
+
+def _today_blob(candidate: dict) -> str:
+    """Только собственный текст карточки.
+
+    ``evidence_text`` тянет за собой чужую обвязку страницы (блоки «External
+    links», чужие заголовки) — по ней «M60 lanes shut» приезжало в карточку
+    про суд. Для решения о блоке берём только редакционные поля.
+    """
+    return " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "practical_angle")
+    )
+
+
+def _today_action_class(candidate: dict) -> str:
+    """Класс сегодняшнего действия или пустая строка."""
+    blob = _today_blob(candidate)
+    for name, pattern in _TODAY_ACTION_CLASS_RE:
+        if pattern.search(blob):
+            return name
+    return ""
+
+
+def _today_focus_native_fit(candidate: dict) -> tuple[bool, str]:
+    """(годен для Today, причина отказа). Место + люди + действие обязательны."""
+    action_class = _today_action_class(candidate)
+    if not action_class:
+        return False, "no_today_action"
+    blob = _today_blob(candidate)
+    if not _has_gm_token(blob.lower()):
+        return False, "no_place"
+    if not _TODAY_AFFECTED_PEOPLE_RE.search(blob):
+        return False, "no_affected_people"
+    return True, action_class
+
+
 def _today_focus_score(candidate: dict) -> int:
     """Score a candidate's fitness for today_focus promotion.
 
@@ -181,7 +281,11 @@ def _promote_to_today_focus(candidates: list[dict]) -> None:
        Better a slightly off-target news in "Что важно сегодня" than
        an empty block that breaks the required-block invariant.
 
-    Net effect: today_focus is never empty when last_24h has anything.
+    0159: обе волны идут по одному смысловому шлюзу
+    ``_today_focus_native_fit`` — ограничение, срок, изменение услуги,
+    погодное воздействие или активная проблема безопасности, плюс место
+    и затронутые люди. Балл только упорядочивает уже пригодных: подбор
+    по ключевым словам давал две негодные карточки в день и пустой блок.
     """
 
     substantive = _today_focus_substantive(candidates)
@@ -193,15 +297,26 @@ def _promote_to_today_focus(candidates: list[dict]) -> None:
     }
 
     def _do_promote(threshold: int, slots: int) -> int:
-        pool = [
-            c for c in candidates
-            if isinstance(c, dict)
-            and c.get("include")  # only promote items that will actually publish
-            and c.get("category") in {"media_layer", "gmp", "council"}
-            and c.get("primary_block") in {"last_24h", "city_watch"}
-            and not c.get("promoted_to_today_focus")
-            and str(c.get("fingerprint") or "") not in promoted_fingerprints
-        ]
+        pool = []
+        for c in candidates:
+            if not isinstance(c, dict):
+                continue
+            if not c.get("include"):  # only promote items that will actually publish
+                continue
+            if c.get("category") not in {"media_layer", "gmp", "council", "public_services"}:
+                continue
+            if c.get("primary_block") not in {"last_24h", "city_watch"}:
+                continue
+            if c.get("promoted_to_today_focus"):
+                continue
+            if str(c.get("fingerprint") or "") in promoted_fingerprints:
+                continue
+            fit, verdict = _today_focus_native_fit(c)
+            if not fit:
+                c["today_focus_reject_reason"] = verdict
+                continue
+            c["today_action_class"] = verdict
+            pool.append(c)
         pool.sort(key=_today_focus_score, reverse=True)
         promoted_count = 0
         for c in pool:
@@ -214,7 +329,10 @@ def _promote_to_today_focus(candidates: list[dict]) -> None:
             c["promoted_to_today_focus"] = True
             c["practical_angle"] = _today_facing_practical_angle(c)
             existing = str(c.get("reason") or "").strip()
-            note = f"Promoted to today_focus (threshold={threshold})."
+            note = (
+                f"Promoted to today_focus: сегодняшнее действие "
+                f"({c.get('today_action_class')}), место и затронутые люди есть."
+            )
             c["reason"] = f"{existing} | {note}".strip(" |") if existing else note
             if fp:
                 promoted_fingerprints.add(fp)
@@ -443,9 +561,9 @@ def _adjust_ticket_radar_block(candidate: dict) -> None:
     # gigs in date order".
     candidate["ticket_type"] = ticket_type
     if ticket_type == "regular_upcoming":
-        event_dt = _parse_summary_field_date(summary, "event_date") or latest
-        days_to_event = (event_dt - today_dt).days
-        candidate["primary_block"] = "next_7_days" if days_to_event <= 7 else "future_announcements"
+        # 0160: Next7 — недосуговый блок. Обычный будущий билет уезжает в
+        # Future независимо от близости даты; досуг живёт в Weekend/Ticket/Future.
+        candidate["primary_block"] = "future_announcements"
         existing_reason = str(candidate.get("reason") or "").strip()
         venue = ticket_venue(candidate)
         note = f"Regular upcoming ticket at non-major venue ({venue}); moved out of ticket_radar."

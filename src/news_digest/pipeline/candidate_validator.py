@@ -2325,11 +2325,13 @@ def _demote_distant_weekend_event(candidate: dict) -> bool:
             )
             candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
             return False
-        candidate["primary_block"] = "next_7_days"
+        # 0160: Next7 — недосуговый блок. Досуг с 4–7-дневным горизонтом
+        # уходит в Future, а не в Next7.
+        candidate["primary_block"] = "future_announcements"
         existing = str(candidate.get("reason") or "").strip()
         note = (
-            f"Demoted from weekend_activities: recurring event's next "
-            f"weekend occurrence is {nearest_weekend_day} days out."
+            f"Demoted from weekend_activities to future_announcements: recurring "
+            f"event's next weekend occurrence is {nearest_weekend_day} days out."
         )
         candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
         return True
@@ -2379,10 +2381,7 @@ def _demote_distant_weekend_event(candidate: dict) -> bool:
             )
             candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
             return False
-        if days_out <= 7:
-            candidate["primary_block"] = "next_7_days"
-            target = "next_7_days"
-        elif days_out <= 30:
+        if days_out <= 30:
             candidate["primary_block"] = "future_announcements"
             target = "future_announcements"
         else:
@@ -2425,11 +2424,13 @@ def _demote_distant_weekend_event(candidate: dict) -> bool:
         )
         candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
         return False
-    candidate["primary_block"] = "next_7_days"
+    # 0160: Next7 — недосуговый блок. Досуг с 4–7-дневным горизонтом
+    # уходит в Future, а не в Next7.
+    candidate["primary_block"] = "future_announcements"
     existing = str(candidate.get("reason") or "").strip()
     note = (
-        f"Demoted from weekend_activities: recurring event's next "
-        f"weekend occurrence is {nearest_weekend_day} days out."
+        f"Demoted from weekend_activities to future_announcements: recurring "
+        f"event's next weekend occurrence is {nearest_weekend_day} days out."
     )
     candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
     return True

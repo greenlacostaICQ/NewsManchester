@@ -36,6 +36,7 @@ from news_digest.pipeline.common import (
     write_json,
     write_json_atomic,
 )
+from news_digest.pipeline.inventory import INVENTORY_BLOCK_REGISTRY
 from news_digest.pipeline.plan_execution import plan_path
 from news_digest.pipeline.ticket_notability import a_tier_ticket_policy, is_a_tier_ticket
 
@@ -594,6 +595,15 @@ def run_plan_digest(project_root: Path) -> StageResult:
         if a_tier_eligible:
             eligible_a_tier_fps.add(str(candidate.get("fingerprint") or ""))
         if included and (verdict != "reserve" or a_tier_eligible):
+            # 0161: основной слот допускается только с доказуемым путём до
+            # строки. Раньше проверку проходили лишь запасные — планёрка
+            # ставила в план карточку без фактов и текста (27.07: Tech 2,
+            # Russian 2, Future 7 в плане → 0/0/4 в HTML).
+            render_path = _backup_render_path(candidate)
+            if not render_path and section not in SYNTHETIC_SECTIONS:
+                _mark_out(candidate, "primary_ineligible:no_render_path")
+                continue
+            candidate["plan_render_path"] = render_path
             pools[section].append(candidate)
         else:
             eligible, render_path = _backup_eligible(candidate)
@@ -898,10 +908,24 @@ def run_plan_digest(project_root: Path) -> StageResult:
             warnings.append(f"Планёрка повысила {promoted_here} запасных в «{section}» до минимума {minimum_floor}.")
         section_slots: list[str] = []
         backups_assigned_here = 0
+
+        # 0161: обязательный слот получает своего запасного раньше, чем
+        # углубляется цепочка соседа. Прежний порядок отдавал всю очередь
+        # первому слоту, и must_show-слот ниже оставался без замены.
+        required_by_position: dict[int, bool] = {}
         for position, candidate in enumerate(pool, start=1):
-            fp = str(candidate.get("fingerprint") or "")
-            chain: list[str] = []
-            while queue and len(chain) < depth:
+            repeat_allowed = True
+            previous = previous_by_fp.get(str(candidate.get("fingerprint") or ""))
+            if previous is not None:
+                from news_digest.pipeline.repeat_policy import visible_repeat_verdict  # noqa: PLC0415
+
+                repeat_allowed = visible_repeat_verdict(candidate, previous).allow
+            required_by_position[position] = _must_show(candidate, repeat_allowed)
+
+        chains: dict[int, list[str]] = {position: [] for position in required_by_position}
+
+        def _take_backup(position: int) -> bool:
+            while queue:
                 backup = queue.pop(0)
                 backup_fp = str(backup.get("fingerprint") or "")
                 if not backup_fp or backup_fp in used_backup_fps:
@@ -909,15 +933,26 @@ def run_plan_digest(project_root: Path) -> StageResult:
                 used_backup_fps.add(backup_fp)
                 backup["publish_plan_status"] = "reserve"
                 backup["publish_plan_reason"] = f"Запасной слота {block_key}-{position:02d}"
-                chain.append(backup_fp)
-                backups_assigned_here += 1
-            repeat_allowed = True
-            previous = previous_by_fp.get(fp)
-            if previous is not None:
-                from news_digest.pipeline.repeat_policy import visible_repeat_verdict  # noqa: PLC0415
+                chains[position].append(backup_fp)
+                return True
+            return False
 
-                repeat_allowed = visible_repeat_verdict(candidate, previous).allow
-            required = _must_show(candidate, repeat_allowed)
+        first_round = sorted(
+            required_by_position,
+            key=lambda position: (not required_by_position[position], position),
+        )
+        for position in first_round:
+            if depth and _take_backup(position):
+                backups_assigned_here += 1
+        for _round in range(2, depth + 1):
+            for position in sorted(chains):
+                if len(chains[position]) < depth and _take_backup(position):
+                    backups_assigned_here += 1
+
+        for position, candidate in enumerate(pool, start=1):
+            fp = str(candidate.get("fingerprint") or "")
+            chain = chains[position]
+            required = required_by_position[position]
             slot_id = f"{block_key}-{position:02d}"
             candidate["publish_plan_status"] = "must_show" if required else "show"
             candidate["publish_plan_reason"] = str(candidate.get("digest_selection_reason") or "Слот плана.")
@@ -955,6 +990,32 @@ def run_plan_digest(project_root: Path) -> StageResult:
                 "reason": "; ".join(dict.fromkeys(section_reasons)) or "pool_exhausted_after_upstream_gates",
             }
             warnings.append(f"Недобор в «{section}»: {len(pool)}/{minimum} — {shortfall['reason'][:160]}")
+        required_without_backup = sorted(
+            position for position, is_required in required_by_position.items()
+            if is_required and not chains.get(position)
+        )
+        # Пустой резерв раздела — это недобор пула, он уже отражён в
+        # backups_available/shortfall. Отдельное предупреждение нужно только
+        # когда запасные БЫЛИ, а обязательный слот всё равно остался без них.
+        if required_without_backup and eligible_backup_count:
+            warnings.append(
+                f"«{section}»: обязательных слотов без запасного — "
+                f"{len(required_without_backup)} при {eligible_backup_count} пригодных запасных."
+            )
+        # 0158: полнота блока считается по реально представленным источникам
+        # плана, а не по ночному складу до дедупа.
+        planned_sources = sorted({
+            str(candidate.get("source_label") or "").strip()
+            for candidate in pool
+            if str(candidate.get("source_label") or "").strip()
+        })
+        min_sources = int(
+            (INVENTORY_BLOCK_REGISTRY.get(block_key) or {}).get("min_sources") or 0
+        )
+        if minimum and min_sources and len(planned_sources) < min_sources and pool:
+            warnings.append(
+                f"«{section}»: источников в плане {len(planned_sources)}/{min_sources}."
+            )
         sections_summary[section] = {
             "block": block_key,
             "min": minimum,
@@ -968,6 +1029,12 @@ def run_plan_digest(project_root: Path) -> StageResult:
                 eligible_backup_count - promoted_here - backups_assigned_here,
             ),
             "backups_filtered_before_assignment": backups_filtered_before_assignment,
+            "required_slots_without_backup_count": len(required_without_backup),
+            "required_slots_without_backup": [
+                f"{block_key}-{position:02d}" for position in required_without_backup[:5]
+            ],
+            "planned_sources": planned_sources,
+            "min_sources": min_sources,
             "expected_shortfall": shortfall,
         }
 

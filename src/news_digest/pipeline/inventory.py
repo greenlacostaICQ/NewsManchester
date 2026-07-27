@@ -1101,6 +1101,12 @@ def passes_morning_contract(record: dict, *, today: str | None = None) -> tuple[
     if _is_expired(record, today):
         return False, "expired"
     block = str(record.get("primary_block") or "")
+    if block == "transport":
+        # 0162: закончившееся ограничение не выдаётся в утренний отбор.
+        from news_digest.pipeline.transport_card import transport_card_is_finished  # noqa: PLC0415
+
+        if transport_card_is_finished(inventory_record_to_candidate(record)):
+            return False, "transport_window_ended"
     fact = record.get("fact_card") if isinstance(record.get("fact_card"), dict) else {}
     if block in {
         "next_7_days",
@@ -1267,6 +1273,34 @@ def recalculate_retention_until(record: dict) -> str:
     return _retention_until(candidate, now_iso=anchor)
 
 
+# 0158: событие живёт в одном блоке. Food-склад держал собственные копии
+# карточек, канонически переехавших в Weekend (Asian Food Night Market
+# из The SK Lowdown), и они всплывали как отдельная еда. Копия остаётся
+# только в каноническом блоке. Правило узкое: событийный блок забирает
+# карточку у openings, обратного переноса нет.
+_SUPERSEDED_BLOCK_COPY_RULES = {"openings": frozenset({"weekend_activities"})}
+
+
+def _superseded_block_copies(state_dir: Path) -> set[tuple[str, str]]:
+    """(url, block) копий, чей канонический блок держит ту же ссылку."""
+    inv_dir = inventory_dir(state_dir)
+    if not inv_dir.exists():
+        return set()
+    blocks_by_url: dict[str, set[str]] = {}
+    for path in sorted(inv_dir.glob("*.jsonl")):
+        for record in read_inventory(state_dir, path.stem):
+            url = _standalone_url_identity(record)
+            block = str(record.get("primary_block") or "")
+            if url and block:
+                blocks_by_url.setdefault(url, set()).add(block)
+    superseded: set[tuple[str, str]] = set()
+    for url, blocks in blocks_by_url.items():
+        for block, canonical_blocks in _SUPERSEDED_BLOCK_COPY_RULES.items():
+            if block in blocks and (blocks & canonical_blocks):
+                superseded.add((url, block))
+    return superseded
+
+
 def prune_inventory(state_dir: Path, *, today: str | None = None) -> dict[str, object]:
     """Physically remove confirmed-dead and out-of-retention inventory rows."""
     today = today or today_london()
@@ -1276,20 +1310,25 @@ def prune_inventory(state_dir: Path, *, today: str | None = None) -> dict[str, o
         "removed_expired": 0,
         "removed_dead": 0,
         "removed_retired": 0,
+        "removed_superseded_block_copy": 0,
         "by_category": {},
     }
     inv_dir = inventory_dir(state_dir)
     if not inv_dir.exists():
         return report
+    superseded = _superseded_block_copies(state_dir)
     for path in sorted(inv_dir.glob("*.jsonl")):
         rows = read_inventory(state_dir, path.stem)
         kept: list[dict] = []
-        removed = {"expired": 0, "dead": 0, "retired": 0}
+        removed = {"expired": 0, "dead": 0, "retired": 0, "superseded_block_copy": 0}
         for record in rows:
             report["before"] = int(report["before"]) + 1
             block = str(record.get("primary_block") or "")
             if str(INVENTORY_BLOCK_REGISTRY.get(block, {}).get("mode") or "") == "retired":
                 removed["retired"] += 1
+                continue
+            if (_standalone_url_identity(record), block) in superseded:
+                removed["superseded_block_copy"] += 1
                 continue
             retention_until = recalculate_retention_until(record)
             record["retention_until"] = retention_until
@@ -1305,6 +1344,9 @@ def prune_inventory(state_dir: Path, *, today: str | None = None) -> dict[str, o
         report["removed_expired"] = int(report["removed_expired"]) + removed["expired"]
         report["removed_dead"] = int(report["removed_dead"]) + removed["dead"]
         report["removed_retired"] = int(report["removed_retired"]) + removed["retired"]
+        report["removed_superseded_block_copy"] = (
+            int(report["removed_superseded_block_copy"]) + removed["superseded_block_copy"]
+        )
         report["by_category"][path.stem] = {"before": len(rows), "after": len(kept), **removed}
     return report
 

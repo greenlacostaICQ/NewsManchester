@@ -48,6 +48,7 @@ from news_digest.pipeline.transport_card import (
     extract_transport_card,
     render_card,
     render_reminder,
+    transport_end_datetime,
 )
 
 
@@ -400,6 +401,138 @@ def _minimal_transport_line(candidate: dict) -> str:
     return f"• Транспорт: работы в районе {where} — подробности в источнике TfGM."
 
 
+# 0162: один участок и период — один пассажирский статус. Официальная лента
+# оператора (TfGM / Metrolink / National Rail) владеет строкой; медийная
+# статья допускается только с самостоятельным воздействием сверх неё.
+_OFFICIAL_TRANSPORT_CATEGORIES = frozenset({"transport"})
+_SEGMENT_TOKEN_RE = re.compile(
+    r"\b(?:eccles|altrincham|trafford\s+centre|bury|rochdale|oldham|ashton|"
+    r"didsbury|chorlton|salford\s+quays|media\s*city|piccadilly|victoria|"
+    r"deansgate|cornbrook|stalybridge|wigan\s+wallgate|southport|bolton|"
+    r"stockport|prestwich|whitefield|radcliffe|droylsden|newton\s+heath|"
+    r"velopark|etihad|airport|wythenshawe|sale|brooklands|timperley)\b",
+    re.IGNORECASE,
+)
+
+
+def _transport_blob(candidate: dict) -> str:
+    return " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "draft_line", "evidence_text")
+    )
+
+
+def _transport_segment_tokens(candidate: dict) -> frozenset[str]:
+    return frozenset(
+        match.group(0).lower().replace("  ", " ")
+        for match in _SEGMENT_TOKEN_RE.finditer(_transport_blob(candidate))
+    )
+
+
+# Классы воздействия. Самостоятельным считается воздействие, которого нет
+# ни в одном официальном статусе по тому же участку, — а не просто ещё одно
+# название места внутри тех же работ.
+_IMPACT_CLASS_RE: tuple[tuple[str, "re.Pattern[str]"], ...] = (
+    ("no_service", re.compile(r"no\s+trams?|no\s+trains?|нет\s+трамва|нет\s+поезд|suspend", re.IGNORECASE)),
+    ("replacement", re.compile(r"replacement\s+bus|замещающ\w*\s+автобус|buses\s+replace", re.IGNORECASE)),
+    ("closure", re.compile(r"clos(?:ed|ure)|закрыт", re.IGNORECASE)),
+    ("diversion", re.compile(r"diversion|объезд", re.IGNORECASE)),
+    ("delay", re.compile(r"delay|сбой|задержк", re.IGNORECASE)),
+    ("works", re.compile(r"engineering\s+work|track\s+(?:replacement|renewal)|roadworks?|ремонтн\w*\s+работ|замена\s+рельс", re.IGNORECASE)),
+    ("money", re.compile(r"refund|compensation|fares?\s+(?:rise|increase)|компенсац|возврат\s+денег", re.IGNORECASE)),
+    ("strike", re.compile(r"strike|industrial\s+action|забастовк", re.IGNORECASE)),
+)
+
+
+def _transport_impact_classes(candidate: dict) -> frozenset[str]:
+    blob = _transport_blob(candidate)
+    return frozenset(name for name, pattern in _IMPACT_CLASS_RE if pattern.search(blob))
+
+
+def _expire_finished_transport(candidates: list[dict]) -> list[dict]:
+    """Снять карточки, чьё окно закончилось до времени планирования."""
+    now = now_london()
+    expired: list[dict] = []
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        if str(candidate.get("primary_block") or "") != "transport":
+            continue
+        if not candidate.get("include"):
+            continue
+        end = transport_end_datetime(candidate, now=now)
+        if end is None or end > now:
+            continue
+        candidate["include"] = False
+        candidate["transport_window_ended_at"] = end.isoformat()
+        candidate["reason"] = (
+            f"Transport: ограничение закончилось в {end.strftime('%H:%M')} — "
+            "до времени планирования выпуска."
+        )
+        expired.append(
+            {
+                "fingerprint": candidate.get("fingerprint"),
+                "title": str(candidate.get("title") or "")[:120],
+                "end_time": end.isoformat(),
+            }
+        )
+    return expired
+
+
+def _collapse_transport_segment_duplicates(candidates: list[dict]) -> list[dict]:
+    """Медийный пересказ официального статуса того же участка снимается."""
+    active = [
+        candidate for candidate in candidates
+        if isinstance(candidate, dict)
+        and str(candidate.get("primary_block") or "") == "transport"
+        and candidate.get("include")
+    ]
+    official = [
+        candidate for candidate in active
+        if str(candidate.get("category") or "") in _OFFICIAL_TRANSPORT_CATEGORIES
+    ]
+    if not official:
+        return []
+    dropped: list[dict] = []
+    for candidate in active:
+        if str(candidate.get("category") or "") in _OFFICIAL_TRANSPORT_CATEGORIES:
+            continue
+        tokens = _transport_segment_tokens(candidate)
+        if not tokens:
+            continue
+        covering = [
+            official_card for official_card in official
+            if _transport_segment_tokens(official_card) & tokens
+        ]
+        if not covering:
+            continue
+        shared: set[str] = set()
+        official_impacts: set[str] = set()
+        for official_card in covering:
+            shared |= set(_transport_segment_tokens(official_card) & tokens)
+            official_impacts |= set(_transport_impact_classes(official_card))
+        # Самостоятельное воздействие — класс последствий, которого нет ни в
+        # одном официальном статусе по этому участку. Ещё одно название места
+        # внутри тех же работ самостоятельным воздействием не считается.
+        if _transport_impact_classes(candidate) - official_impacts:
+            continue
+        candidate["include"] = False
+        candidate["reason"] = (
+            "Transport: тот же участок и период уже закрыт официальным "
+            f"пассажирским статусом ({', '.join(sorted(shared))}); "
+            "самостоятельного воздействия у материала нет."
+        )
+        dropped.append(
+            {
+                "fingerprint": candidate.get("fingerprint"),
+                "title": str(candidate.get("title") or "")[:120],
+                "source_label": candidate.get("source_label"),
+                "shared_segments": sorted(shared),
+            }
+        )
+    return dropped
+
+
 def run_transport_fill(project_root: Path) -> StageResult:
     state_dir = project_root / "data" / "state"
     candidates_path = state_dir / "candidates.json"
@@ -542,6 +675,12 @@ def run_transport_fill(project_root: Path) -> StageResult:
         candidates.append(_make_reminder_candidate(rec, today_iso))
         injected += 1
 
+    # 0162: закончившееся ограничение и смысловой дубль участка снимаются
+    # ЗДЕСЬ, до планёрки — в выпуск попадает только то, что ещё действует,
+    # и только один текст на участок.
+    finished = _expire_finished_transport(candidates)
+    segment_duplicates = _collapse_transport_segment_duplicates(candidates)
+
     candidates_path.write_text(
         __import__("json").dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
@@ -560,6 +699,8 @@ def run_transport_fill(project_root: Path) -> StageResult:
             "skipped_no_card": skipped,
             "persisted_tram_disruptions": persisted,
             "injected_reminders": injected,
+            "expired_finished": finished,
+            "segment_duplicates": segment_duplicates,
             "pruned_expired": pruned,
             "active_tram_count": len(active),
             "details": fill_details,

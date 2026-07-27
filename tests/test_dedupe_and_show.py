@@ -128,7 +128,10 @@ class ShowRenderableContractTest(unittest.TestCase):
                 "category": "culture_weekly",
                 "primary_block": "openings",
                 "title": "Thin event listing",
-                "summary": "",
+                # 0161: карточка совсем без фактов теперь не доходит до
+                # писателя — её отсекает планёрка. Здесь проверяется
+                # следующий рубеж: факт есть, строки нет.
+                "summary": "Thin event listing at a venue.",
                 "lead": "",
                 "source_label": "Venue",
                 "source_url": "https://example.test/thin-event",

@@ -63,7 +63,13 @@ SYSTEM_PROMPT = """Ты старший редактор и fact-check судья
 1. смысловая верность: текст не меняет субъект, роль, обвинение, статус дела;
 2. crime/court/sensitive: особенно строго проверяй роли, возраст, обвиняемый/жертва/свидетель, "обвиняется" vs "осуждён";
 3. события/афиша: venue не должен стать artist, дата/окно даты не должны противоречить evidence;
-4. география: не выдавать не-GM за Greater Manchester без явного контекста;
+4. география — ПО КОНТРАКТУ РАЗДЕЛА, у каждой строки он приходит в поле geo_scope:
+   • gm — событие обязано быть в Greater Manchester (Дальние анонсы, Билеты, городские блоки);
+   • uk — допустима любая точка UK, включая Лондон (Русскоязычные концерты и стендап UK);
+   • uk_outside_gm — допустима точка UK вне GM (Крупные концерты вне GM).
+   Единого правила «любое событие должно быть в GM» нет: строку нельзя снимать за
+   не-GM географию, если geo_scope её разрешает. Ошибка географии — это только
+   выдача чужого места за GM или нарушение контракта своего раздела;
 5. русский текст: нет непереведённых бытовых английских слов, машинной кальки, абсурда;
 6. практическая польза: карточка должна быть понятной без открытия ссылки;
 7. продуктовая полнота: проверь product_completeness — не схлопнулись ли «Свежие новости»,
@@ -326,12 +332,75 @@ def _rendered_candidates_by_url(rendered_candidates: list[dict[str, Any]]) -> di
     return out
 
 
+# 0157: география — свойство РАЗДЕЛА, а не выпуска. Общего условия «любое
+# событие должно быть в GM» больше нет: судья получает контракт своей строки.
+_SECTION_GEO_SCOPE = {
+    "Русскоязычные концерты и стендап UK": "uk",
+    "Крупные концерты вне GM": "uk_outside_gm",
+}
+_GEO_SCOPE_DEFAULT = "gm"
+# Разделы, где не-GM география законна и снимать за неё строку нельзя.
+_NON_GM_GEO_SCOPES = {"uk", "uk_outside_gm"}
+_GEO_RISK_RE = re.compile(
+    r"\bgeo(?:graph\w*)?\b|географ|"
+    r"не\s*-?\s*gm|вне\s+gm|greater\s+manchester|не\s+в\s+gm|not\s+in\s+gm",
+    re.IGNORECASE,
+)
+
+
+def section_geo_scope(section: str) -> str:
+    """Геоконтракт одного раздела: gm | uk | uk_outside_gm."""
+    return _SECTION_GEO_SCOPE.get(str(section or "").strip(), _GEO_SCOPE_DEFAULT)
+
+
+def _row_is_out_of_contract_geo_complaint(row: dict[str, Any], section: str) -> bool:
+    """True, если судья снимает строку за географию, которую раздел разрешает."""
+    if section_geo_scope(section) not in _NON_GM_GEO_SCOPES:
+        return False
+    blob = " ".join(
+        str(row.get(field) or "")
+        for field in ("risk", "reason", "critical_problem", "problem")
+    )
+    return bool(_GEO_RISK_RE.search(blob))
+
+
+def _drop_out_of_contract_geo_rows(
+    rows: list[dict[str, Any]], digest_html: str
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    section_by_index = {
+        int(slot.get("line_index") or 0): str(slot.get("section") or "")
+        for slot in _digest_line_slots_from_html(digest_html)
+    }
+    kept: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    for row in rows:
+        try:
+            line_index = int(row.get("line_index") or 0)
+        except (TypeError, ValueError):
+            line_index = 0
+        section = section_by_index.get(line_index) or str(row.get("section") or "")
+        if _row_is_out_of_contract_geo_complaint(row, section):
+            rejected.append(
+                {
+                    "line_index": line_index,
+                    "section": section,
+                    "geo_scope": section_geo_scope(section),
+                    "reason": str(row.get("reason") or row.get("critical_problem") or "")[:200],
+                }
+            )
+            continue
+        kept.append(row)
+    return kept, rejected
+
+
 def _line_payload_for_judge(slot: dict[str, Any], rendered_by_url: dict[str, dict[str, Any]]) -> dict[str, Any]:
     html_line = str(slot.get("html") or "")
     candidate = rendered_by_url.get(_line_url_identity(html_line)) or {}
+    section = str(slot.get("section") or "")
     payload = {
         "line_index": int(slot.get("line_index") or 0),
-        "section": str(slot.get("section") or ""),
+        "section": section,
+        "geo_scope": section_geo_scope(section),
         "text": _compact_text(slot.get("text"), 650),
     }
     if candidate:
@@ -1302,6 +1371,7 @@ def _apply_repair_executor(
     dry_run: bool,
 ) -> tuple[str, dict[str, Any]]:
     rows = _action_rows(actions, critical_errors)
+    rows, geo_contract_rejected = _drop_out_of_contract_geo_rows(rows, digest_html)
     report: dict[str, Any] = {
         "enabled": True,
         "dry_run": dry_run,
@@ -1319,6 +1389,7 @@ def _apply_repair_executor(
         "fact_lock_rejected": 0,
         "enrich_attempted": 0,
         "post_check_errors": deterministic_post_check.get("errors") or [],
+        "geo_contract_rejected": geo_contract_rejected,
         "actions": [],
         "operations": [],
     }

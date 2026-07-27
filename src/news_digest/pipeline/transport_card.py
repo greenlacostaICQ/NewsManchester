@@ -26,8 +26,11 @@ Greenfield) — that's a hard requirement for the digest readership.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 import re
 from urllib import parse
+
+from news_digest.pipeline.common import now_london
 
 
 @dataclass(slots=True)
@@ -276,6 +279,69 @@ def _extract_duration_or_dates(text: str) -> tuple[str, str, str]:
             return "", "", _RU_WEEKS.get(n, f"{n} недель")
 
     return "", "", ""
+
+
+# ── Конец события ────────────────────────────────────────────────────────
+# 0162: карточка с истёкшим окном не показывается. 27.07 выпуск после 08:31
+# вёз «сбой ожидается до 08:00» — событие закончилось до планирования.
+_MONTHS_RU_TO_NUM = {
+    "января": 1, "февраля": 2, "марта": 3, "апреля": 4, "мая": 5, "июня": 6,
+    "июля": 7, "августа": 8, "сентября": 9, "октября": 10, "ноября": 11, "декабря": 12,
+}
+_MONTHS_EN_TO_NUM = {name.lower(): number for number, name in enumerate(_MONTHS_EN, start=1)}
+
+_END_TIME_RE = re.compile(
+    r"\b(?:until|till|до)\s+(?P<hour>\d{1,2})[:.](?P<minute>\d{2})"
+    r"(?:\s*(?P<day>\d{1,2})\s+(?P<month>[A-Za-zА-Яа-яё]+)(?:\s+(?P<year>20\d{2}))?)?",
+    re.IGNORECASE,
+)
+
+
+def transport_end_datetime(candidate: dict, *, now: datetime | None = None) -> datetime | None:
+    """Момент окончания ограничения, если он назван явным временем суток.
+
+    Только время суток: «until 08:00», «до 08:00 27 июля 2026». Дневные окна
+    («до 2 августа») закрываются существующим retention/prune по дате.
+    """
+    now = now or now_london()
+    text = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("draft_line", "title", "summary", "lead", "evidence_text")
+    )
+    match = _END_TIME_RE.search(text)
+    if not match:
+        return None
+    try:
+        hour = int(match.group("hour"))
+        minute = int(match.group("minute"))
+    except (TypeError, ValueError):
+        return None
+    if hour > 23 or minute > 59:
+        return None
+    day_raw = match.group("day")
+    month_raw = (match.group("month") or "").lower()
+    year_raw = match.group("year")
+    if day_raw and month_raw:
+        month = _MONTHS_RU_TO_NUM.get(month_raw) or _MONTHS_EN_TO_NUM.get(month_raw[:3].lower())
+        if month is None:
+            month = _MONTHS_EN_TO_NUM.get(month_raw)
+        if month is None:
+            return None
+        year = int(year_raw) if year_raw else now.year
+        try:
+            return now.replace(
+                year=year, month=month, day=int(day_raw),
+                hour=hour, minute=minute, second=0, microsecond=0,
+            )
+        except ValueError:
+            return None
+    return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+
+
+def transport_card_is_finished(candidate: dict, *, now: datetime | None = None) -> bool:
+    now = now or now_london()
+    end = transport_end_datetime(candidate, now=now)
+    return end is not None and end <= now
 
 
 # ── Alternative / cost / line cleanup ────────────────────────────────────

@@ -60,7 +60,6 @@ from news_digest.pipeline.writer import (
     _SectionRow,
     _strip_unsupported_number_phrases,
     _today_focus_candidate_is_eligible,
-    _today_focus_recovery_line,
 )
 
 
@@ -3000,48 +2999,6 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         }
 
         self.assertFalse(_today_focus_candidate_is_eligible(candidate))
-
-    def test_today_focus_recovery_line_handles_oldham_pub_planning(self) -> None:
-        candidate = {
-            "category": "media_layer",
-            "primary_block": "last_24h",
-            "title": "The 'rare' Oldham pub that could be bought by the council - and then demolished",
-            "summary": "Oldham £1m plans to buy and then demolish a rare pub; a local MP called for pubs to be protected.",
-            "source_label": "MEN",
-            "editorial_contract": {
-                "story_type": "planning",
-                "event_shape": "none",
-                "publish_tier": "strong",
-                "story_frame": {"why_now": "new_today"},
-            },
-        }
-
-        line = _today_focus_recovery_line(candidate)
-
-        self.assertIn("Oldham", line)
-        self.assertIn("£1m", line)
-        self.assertEqual(_draft_line_quality_errors(candidate, line), [])
-
-    def test_today_focus_recovery_line_handles_bury_school_safeguarding(self) -> None:
-        candidate = {
-            "category": "media_layer",
-            "primary_block": "last_24h",
-            "title": "Woman arrested at Bury school on suspicion of child sex offences",
-            "summary": "An investigation continues after police arrest a woman at St Gabriel's RC High School in Bury on suspicion of child sex offences and safeguarding concerns.",
-            "source_label": "BBC Manchester",
-            "editorial_contract": {
-                "story_type": "service_accountability",
-                "event_shape": "none",
-                "publish_tier": "strong",
-                "story_frame": {"why_now": "new_today"},
-            },
-        }
-
-        line = _today_focus_recovery_line(candidate)
-
-        self.assertIn("Bury", line)
-        self.assertIn("St Gabriel", line)
-        self.assertEqual(_draft_line_quality_errors(candidate, line), [])
 
     def test_fresh_final_board_suppresses_cross_source_same_story(self) -> None:
         about_candidate = {
