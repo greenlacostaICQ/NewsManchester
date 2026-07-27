@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+import tempfile
 import unittest
 
 from news_digest.pipeline.collector.routing import _today_focus_native_fit
@@ -123,6 +126,40 @@ class Release20260727FixesTest(unittest.TestCase):
         self.assertEqual([row["fingerprint"] for row in duplicates], ["bbc-1"])
         self.assertTrue(official["include"])
         del now
+
+    # 0163 — пустой план не останавливает выпуск.
+    def test_empty_plan_ships_degraded_instead_of_failing(self) -> None:
+        from news_digest.pipeline.writer import write_digest
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = root / "data" / "state"
+            state_dir.mkdir(parents=True)
+            (state_dir / "candidates.json").write_text(
+                json.dumps({"candidates": [], "pipeline_run_id": "run-1"}), encoding="utf-8"
+            )
+            (state_dir / "release_plan.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "pipeline_run_id": "run-1",
+                        "slots": [],
+                        "lead": {"primary_fingerprint": ""},
+                        "ordered_sections": [],
+                        "sections": {},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = write_digest(root)
+            report = json.loads((state_dir / "writer_report.json").read_text(encoding="utf-8"))
+            draft_exists = (state_dir / "draft_digest.html").exists()
+
+        self.assertTrue(result.ok)
+        self.assertTrue(draft_exists)
+        self.assertEqual(report["stage_status"], "complete_degraded")
+        self.assertEqual(report["errors"], [])
 
 
 if __name__ == "__main__":

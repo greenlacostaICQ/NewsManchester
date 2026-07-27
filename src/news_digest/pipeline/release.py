@@ -310,7 +310,10 @@ def _validate_stage_reports(
     if writer_report is None:
         errors.append("Missing data/state/writer_report.json.")
     else:
-        if writer_report.get("stage_status") != "complete":
+        # `complete_degraded` — писатель отработал, но состав пуст (план без
+        # слотов). Это редакционный недобор, а не техническая поломка стадии:
+        # блокировать выпуск он не может, решение принимает release-гейт ниже.
+        if str(writer_report.get("stage_status") or "") not in {"complete", "complete_degraded"}:
             errors.append("Writer report is not complete.")
         rendered_fingerprints = {
             str(item)

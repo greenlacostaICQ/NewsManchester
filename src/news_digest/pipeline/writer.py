@@ -5378,8 +5378,11 @@ def write_digest(project_root: Path) -> StageResult:
         payload = read_json(candidates_path, {"candidates": []})
         candidates = payload.get("candidates", [])
         candidate_by_fp = candidates_by_fingerprint(candidates)
-    if not plan or not (plan_slots(plan) or str((plan.get("lead") or {}).get("primary_fingerprint") or "")):
-        errors.append("release_plan.json is missing or has no slots — run plan-digest before write-digest.")
+    empty_plan = False
+    if not plan:
+        # Технический отказ: run-specific state отсутствует или нечитаем.
+        # Это единственное, что писатель имеет право остановить.
+        errors.append("release_plan.json is missing or unreadable — run plan-digest before write-digest.")
         write_json(report_path, {
             "pipeline_run_id": pipeline_run_id,
             "run_at_london": now_london().isoformat(),
@@ -5392,6 +5395,16 @@ def write_digest(project_root: Path) -> StageResult:
             "rendered_candidate_fingerprints": [],
         })
         return StageResult(False, "No release plan.", report_path, draft_path)
+    if not (plan_slots(plan) or str((plan.get("lead") or {}).get("primary_fingerprint") or "")):
+        # План есть, но состав пуст — это редакционный, а не технический
+        # отказ. Писатель не останавливает выпуск: он честно пишет пустой
+        # черновик и отдаёт решение release-гейту (обогатить → заменить →
+        # пропустить; блокировать send может только техника).
+        empty_plan = True
+        warnings.append(
+            "План не содержит ни одного слота — черновик пуст; выпуск не останавливается, "
+            "решение принимает release-гейт (ship_degraded)."
+        )
 
     execution = init_execution(state_dir, plan)
     quality_counts = {
@@ -5615,7 +5628,10 @@ def write_digest(project_root: Path) -> StageResult:
             "pipeline_run_id": pipeline_run_id,
             "run_at_london": now_london().isoformat(),
             "run_date_london": today_london(),
-            "stage_status": "complete" if not errors else "failed",
+            "stage_status": (
+                "failed" if errors else ("complete_degraded" if empty_plan else "complete")
+            ),
+            "empty_plan": empty_plan,
             "errors": errors,
             "warnings": warnings,
             "quality_counts": quality_counts,
