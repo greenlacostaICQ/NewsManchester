@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import unittest
 
+from news_digest.pipeline.collector.sources import SOURCES
 from news_digest.pipeline.source_selection import (
     CATEGORY_AUTHORITY,
     SOURCE_AUTHORITY_VERSION,
@@ -145,6 +146,10 @@ class SourceTierTest(unittest.TestCase):
     def test_unknown_defaults_to_tier_3(self):
         self.assertEqual(source_tier("Random Blog"), 3)
         self.assertEqual(source_tier(""), 3)
+
+    def test_every_active_source_has_an_explicit_tier(self):
+        missing = sorted(source.name for source in SOURCES if source.name not in SOURCE_TIER)
+        self.assertEqual(missing, [])
 
 
 class SourceRankTest(unittest.TestCase):

@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import tomllib
 
+from news_digest.pipeline.common import now_london
+
 
 @dataclass(frozen=True, slots=True)
 class SourceDef:
@@ -66,12 +68,18 @@ _SOURCES_TOML = Path(__file__).parents[4] / "data" / "sources.toml"
 def _load_sources() -> tuple[SourceDef, ...]:
     with open(_SOURCES_TOML, "rb") as _f:
         _data = tomllib.load(_f)
+    def _configured_url(source: dict) -> str:
+        template = str(source.get("url_template") or "")
+        if template:
+            return template.format(month=now_london().strftime("%B").lower())
+        return str(source["url"])
+
     return tuple(
         SourceDef(
             s["name"],
             s["report_category"],
             s["candidate_category"],
-            s["url"],
+            _configured_url(s),
             s["primary_block"],
             source_type=s.get("source_type", "html"),
             fallback_urls=tuple(s.get("fallback_urls", [])),

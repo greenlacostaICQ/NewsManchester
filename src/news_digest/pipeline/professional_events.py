@@ -81,29 +81,52 @@ def _project_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
 
-def load_business_event_profile(project_root: Path | None = None) -> dict[str, Any]:
+def _business_event_profile_context(
+    project_root: Path | None = None,
+) -> tuple[dict[str, Any], dict[str, str]]:
+    profile: dict[str, Any] = {}
+    source = "fallback_default"
     raw = os.getenv(PROFILE_ENV_JSON, "").strip()
     if raw:
         try:
             parsed = json.loads(raw)
-            return parsed if isinstance(parsed, dict) else {}
+            if isinstance(parsed, dict) and parsed:
+                profile = parsed
+                source = "env_json"
+            else:
+                source = "env_json_invalid"
         except json.JSONDecodeError:
-            return {}
+            source = "env_json_invalid"
 
-    path_raw = os.getenv(PROFILE_ENV_PATH, "").strip()
-    paths = []
-    if path_raw:
-        paths.append(Path(path_raw).expanduser())
-    root = project_root or _project_root()
-    paths.append(root / "data" / "private" / "business_event_profile.json")
-    for path in paths:
-        try:
-            if path.exists():
-                parsed = json.loads(path.read_text(encoding="utf-8"))
-                return parsed if isinstance(parsed, dict) else {}
-        except (OSError, json.JSONDecodeError):
-            continue
-    return {}
+    if not profile and source != "env_json_invalid":
+        path_raw = os.getenv(PROFILE_ENV_PATH, "").strip()
+        paths: list[tuple[Path, str]] = []
+        if path_raw:
+            paths.append((Path(path_raw).expanduser(), "env_path"))
+        root = project_root or _project_root()
+        paths.append((root / "data" / "private" / "business_event_profile.json", "local_private"))
+        for path, path_source in paths:
+            try:
+                if path.exists():
+                    parsed = json.loads(path.read_text(encoding="utf-8"))
+                    if isinstance(parsed, dict) and parsed:
+                        profile = parsed
+                        source = path_source
+                        break
+            except (OSError, json.JSONDecodeError):
+                continue
+
+    canonical = json.dumps(profile, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    metadata = {
+        "profile_source": source,
+        "profile_version": str(profile.get("profile_version") or ("fallback_v1" if not profile else "unversioned"))[:80],
+        "profile_hash": hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16] if profile else "",
+    }
+    return profile, metadata
+
+
+def load_business_event_profile(project_root: Path | None = None) -> dict[str, Any]:
+    return _business_event_profile_context(project_root)[0]
 
 
 def _blob(candidate: dict[str, Any]) -> str:
@@ -337,7 +360,10 @@ def _is_programme_page(candidate: dict[str, Any], event: dict[str, Any]) -> bool
     url = str(event.get("booking_url") or candidate.get("source_url") or "").strip().lower().rstrip("/")
     if re.search(r"/(?:events|event|programme|programmes|whats-on|what-s-on)$", url):
         return True
-    if re.search(r"\b(?:programme|membership|training\s+programme)\b", title) and not str(event.get("date_start") or event.get("date") or "").strip():
+    if re.search(
+        r"\b(?:member\s+events?|programme[- ]led\s+events?|programme|membership|training\s+programme)\b",
+        title,
+    ):
         return True
     return False
 
@@ -351,8 +377,8 @@ def _professional_event_has_minimum_facts(candidate: dict[str, Any]) -> bool:
     if _is_programme_page(candidate, event):
         return False
     name = str(event.get("event_name") or candidate.get("title") or "").strip()
-    url = str(event.get("booking_url") or candidate.get("source_url") or "").strip()
-    if not (name and url):
+    booking_url = str(event.get("booking_url") or "").strip()
+    if not (name and booking_url):
         return False
     # A trustworthy, concrete date is the discriminator that keeps generic
     # programme / membership pages (no date, or a stray far-future month/day)
@@ -518,6 +544,11 @@ def _profile_for_prompt(project_root: Path | None = None) -> dict[str, object]:
     }
 
 
+def business_event_profile_metadata(project_root: Path | None = None) -> dict[str, str]:
+    """Safe report fields only; never returns CV text or a private path."""
+    return _business_event_profile_context(project_root)[1]
+
+
 def _llm_payload(candidate: dict[str, Any]) -> dict[str, object]:
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     deterministic = candidate.get("professional_event_match") if isinstance(candidate.get("professional_event_match"), dict) else {}
@@ -664,6 +695,7 @@ def _run_professional_cv_match(
         not_sent = professional[limit:]
     report: dict[str, Any] = {
         "model_version": LLM_MATCH_MODEL_VERSION,
+        **business_event_profile_metadata(project_root),
         "eligible": len(eligible),
         "reused_night_verdict": len(reused),
         "to_evaluate": len(professional),
@@ -702,26 +734,21 @@ def _run_professional_cv_match(
         report.update({"status": "skipped_no_api_key"})
         _attach_sent_outcomes(report, selected)
         return report
-    route = routes[0]
     system_prompt = (
         "Ты оцениваешь business/tech события под конкретный профиль владельца дайджеста. "
-        "Нужно выбрать не просто события с business-словами, а те, куда ему реально стоит пойти: "
-        "CPO/CDTO, fintech/SaaS, AI/ML, product, digital transformation, board/advisory, UK networking, "
-        "практика профессионального английского. Верни строгий JSON: "
+        "Используй только профиль из payload: не подменяй его общим шаблоном и не добавляй биографию. "
+        "Нужно выбрать не просто события с business-словами, а те, куда этому человеку реально стоит пойти. "
+        "Верни строгий JSON: "
         "{\"items\":[{\"id\":\"...\",\"fit\":\"go|consider|skip\",\"score\":0-100,"
         "\"why\":\"одно конкретное предложение\",\"action\":\"register|consider|skip\","
         "\"access_label\":\"free|paid|unknown|booking_required\",\"reason\":\"кратко\"}]}."
         "Если нет даты, места/online или ссылки, fit=skip. Платное или unknown можно пометить go/consider "
         "только при сильном соответствии профилю. Не выдумывай факты."
     )
-    client = OpenAI(
-        api_key=route.api_key,
-        base_url=route.base_url,
-        timeout=route.timeout_seconds or 35,
-        max_retries=sdk_retries_for_route(provider=route.provider, model=route.model, base_url=route.base_url),
-    )
     profile = _profile_for_prompt(project_root)
     batch_failures = 0
+    providers_used: set[str] = set()
+    route_failures: list[dict[str, str]] = []
     for batch in _chunks(selected, int(LLM_MATCH_BATCH_SIZE or 1)):
         report["batches"] = int(report.get("batches") or 0) + 1
         payload_events: list[dict[str, object]] = []
@@ -738,41 +765,59 @@ def _run_professional_cv_match(
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
         ]
-        try:
-            response = client.chat.completions.create(
-                model=route.model,
-                messages=messages,
-                temperature=0.1,
-                max_tokens=min(6000, 360 * len(batch) + 900),
-                response_format={"type": "json_object"},
-                **chat_completion_options_for_route(provider=route.provider, model=route.model, base_url=route.base_url),
+        parsed: dict[str, Any] | None = None
+        used_route = None
+        for route in routes:
+            client = OpenAI(
+                api_key=route.api_key,
+                base_url=route.base_url,
+                timeout=route.timeout_seconds or 35,
+                max_retries=sdk_retries_for_route(
+                    provider=route.provider,
+                    model=route.model,
+                    base_url=route.base_url,
+                ),
             )
-            record_call_from_response(
-                response=response,
-                stage="validate",
-                provider=route.provider_label,
-                model=route.model,
-                prompt_name="professional_cv_match",
-                messages=messages,
-                max_tokens=min(6000, 360 * len(batch) + 900),
-            )
-            parsed = json.loads(str(response.choices[0].message.content or "{}"))
-        except Exception as exc:  # noqa: BLE001
+            try:
+                response = client.chat.completions.create(
+                    model=route.model,
+                    messages=messages,
+                    temperature=0.1,
+                    max_tokens=min(6000, 360 * len(batch) + 900),
+                    response_format={"type": "json_object"},
+                    **chat_completion_options_for_route(
+                        provider=route.provider,
+                        model=route.model,
+                        base_url=route.base_url,
+                    ),
+                )
+                candidate_parsed = json.loads(str(response.choices[0].message.content or "{}"))
+                if not isinstance(candidate_parsed, dict) or not isinstance(candidate_parsed.get("items"), list):
+                    raise ValueError("response does not contain an items list")
+                record_call_from_response(
+                    response=response,
+                    stage="validate",
+                    provider=route.provider_label,
+                    model=route.model,
+                    prompt_name="professional_cv_match",
+                    messages=messages,
+                    max_tokens=min(6000, 360 * len(batch) + 900),
+                )
+                parsed = candidate_parsed
+                used_route = route
+                providers_used.add(route.provider_label)
+                break
+            except Exception as exc:  # noqa: BLE001
+                route_failures.append({
+                    "provider": route.provider_label,
+                    "error": f"{exc.__class__.__name__}: {exc}",
+                })
+        if parsed is None or used_route is None:
             batch_failures += 1
             report["dropped_pending"] = int(report.get("dropped_pending") or 0) + _drop_pending_llm_candidates(batch, "model call failed")
-            report.update({
-                "provider": route.provider_label,
-                "model": route.model,
-                "error": f"{exc.__class__.__name__}: {exc}",
-            })
             continue
 
         rows = parsed.get("items") if isinstance(parsed, dict) else []
-        if not isinstance(rows, list):
-            batch_failures += 1
-            report["dropped_pending"] = int(report.get("dropped_pending") or 0) + _drop_pending_llm_candidates(batch, "model response could not be parsed")
-            report.update({"raw_type": type(parsed).__name__})
-            continue
         accounted_ids: set[str] = set()
         for row in rows:
             if not isinstance(row, dict):
@@ -799,8 +844,8 @@ def _run_professional_cv_match(
                 access_label = "booking_required"
             llm_match = {
                 "model": LLM_MATCH_MODEL_VERSION,
-                "provider": route.provider_label,
-                "route_role": route.role,
+                "provider": used_route.provider_label,
+                "route_role": used_route.role,
                 "fit": fit,
                 "score": score,
                 "why": str(row.get("why") or row.get("reason") or "").strip(),
@@ -892,5 +937,9 @@ def _run_professional_cv_match(
         status = "partial_failed"
     elif batch_failures:
         status = "failed"
-    report.update({"status": status, "provider": route.provider_label, "model": route.model})
+    report.update({
+        "status": status,
+        "providers_used": sorted(providers_used),
+        "route_failures": route_failures[-12:],
+    })
     return report

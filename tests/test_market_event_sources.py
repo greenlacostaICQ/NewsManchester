@@ -220,10 +220,10 @@ class MarketEventSourcesTest(unittest.TestCase):
 
     def test_sectioned_event_guide_extracts_individual_weekend_picks(self) -> None:
         source = SourceDef(
-            name="Secret Manchester May Guide",
+            name="Secret Manchester Monthly Guide",
             report_category="culture_weekly",
             candidate_category="culture_weekly",
-            url="https://secretmanchester.com/things-to-do-in-may/",
+            url="https://secretmanchester.com/things-to-do-july/",
             primary_block="weekend_activities",
             source_type="html_sectioned_event_guide",
             allowed_hosts=("secretmanchester.com",),
@@ -270,6 +270,32 @@ class MarketEventSourcesTest(unittest.TestCase):
 
         self.assertEqual(candidate["title"], "Kraftwerk")
         self.assertIn("O2 Apollo", candidate["evidence_text"])
+
+    def test_pedddle_web_component_cards_are_decoded(self) -> None:
+        source = SourceDef(
+            name="Pedddle Makers Market",
+            report_category="culture_weekly",
+            candidate_category="culture_weekly",
+            url="https://pedddle.com/organiser/makers-market/",
+            primary_block="weekend_activities",
+            source_type="html_pedddle_events",
+            allowed_hosts=("pedddle.com",),
+            max_candidates=5,
+        )
+        payload = {
+            "permalink": "https://pedddle.com/market/ancoats-cutting-room-square-makers-market/",
+            "title": "Ancoats <br>Makers Market",
+            "location": {"city": "Manchester", "postcode": "M4 6BF"},
+            "schema": {"startDate": "2026-08-02", "endDate": "2026-08-02"},
+        }
+        escaped = json.dumps(payload).replace('"', "&quot;")
+        html = f'<pedddle-event data-payload="{escaped}"></pedddle-event>'
+
+        [candidate] = _extract_source_candidates(source, html)
+
+        self.assertEqual(candidate["title"], "Ancoats Makers Market")
+        self.assertEqual(candidate["structured_event_hint"]["date_start"], "2026-08-02")
+        self.assertIn("M4 6BF", candidate["structured_event_hint"]["venue"])
 
     def test_manchester_theatres_extracts_cards_not_day_headings(self) -> None:
         source = SourceDef(

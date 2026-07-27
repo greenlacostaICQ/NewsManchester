@@ -1877,3 +1877,69 @@
 - Файлы/места: `block_policy.py`; `common.py`; `inventory.py`; `llm_rewrite.py:_apply_rewrite_shortlist`; `pre_send_quality_judge.py:_structured_story_facts/_completeness_source_blob/_apply_repair_executor`; `fact_completeness.py`; `editorial_contracts.py:calendar_repeat_review`; `repeat_policy.py:visible_repeat_verdict`; `dedupe.py`; `plan_digest.py`; `plan_execution.py`; `writer.py`; `collector/routing.py`; `collector/core.py`; `candidate_validator.py`; `curator.py`.
 - ПРОВЕРКА: offline — 145 точечных контрактных тестов OK. Replay 2026-07-27 старый main → новая версия: plan slots 75→48, rendered bullets 70→45 (ожидаемое снятие ежедневных A-tier повторов), lead `ok→ok`, `blank_runs_2plus=0→0`, verify завершён как `ship_degraded` без технической остановки. Отдельный plan-probe на копии реального state: `block_policy_version=2026-07-27.p0`; физический A-tier `recognised=53, eligible=5, planned=5, missing_from_plan=[]`; Fresh получил восемь запасных как `[1,1,1,1,1,1,1,1,0]`, то есть первый круг охватил каждый возможный слот. Прод-прогон ещё не выполнялся.
 - Удалено: отдельный rewrite floor; отдельная таблица географии/минимумов judge; безусловный A-tier repeat override; снятие `strip` без попытки слот-запасного; раннее collector-наполнение Today.
+
+### 0172 — P1: board определяет lead, порядок и дубликаты — 2026-07-27
+- Статус: внедрено; production-proof ожидается на следующем утреннем выпуске.
+- Проблема: lead judge видел одного уже назначенного кандидата; модельный ранг давал только ±25 к формуле; текстовое слово `duplicate` не снимало вторую карточку; чужой rewrite-floor сохранял reject.
+- Причина (корень): `judged_block` превращал curator lead в отдельный блок из одной строки, `board_rank_bonus` оставался малой добавкой к `section_board_score`, а контракт ответа не имел связи `duplicate_of`.
+- Решение: отдельный lead-board сравнивает до шести лучших включённых Today/Fresh/City-карточек и переназначает `is_lead`; внутри judged-блока `board_rank` стал первым ключом, формула — вторым; ответ содержит проверяемый `duplicate_of`, дубликат принудительно получает `reject` и не может стать backup; floor читается только из общего `block_policy`.
+- Почему так (отвергнутые альтернативы): увеличение веса ±25 оставляло две конфликтующие шкалы; разбор слова `duplicate` из свободного объяснения был бы нестабильным.
+- Ожидаемый эффект и метрика проверки: одна карточка на один пожар; board №1 виден первым в своём блоке; lead выбран из 5–6 реальных новостей; уверенный reject не спасается локальным floor.
+- Файлы/места: `board_rank.py:lead_candidate_pool/rank_boards/_parse_board_rank_results`; `llm_rewrite.py:_rewrite_shortlist_priority/_apply_rewrite_shortlist`; `writer.py:_section_priority_score`.
+- ПРОВЕРКА (offline): blind regression 27.07 закрепляет одну пожарную карточку, GMP IT failure выше второстепенной истории и reject слабого IT. В целевых прогонах 120 тестов OK. Replay 27.07: план 48→48 слотов, lead `ok→ok`, `blank_runs_2plus 0→0`, technical release/verify OK; одна дополнительная слабая строка снята (bullets 45→44).
+- Где была ошибка (если не сработает): —
+
+### 0173 — P1: настоящий CV в Professional и независимый fallback — 2026-07-27
+- Статус: внедрено; GitHub Secret установлен, production-wave ожидается после push.
+- Проблема: production ежедневно оценивал события по общему CPO/CDTO fallback, потому что локальный private JSON игнорируется Git и workflows не передавали профиль.
+- Причина (корень): `professional_events.py` умел читать env, но `daily-digest.yml` и `night-inventory.yml` не задавали `BUSINESS_EVENT_PROFILE_JSON`; маршрут имел только OpenAI.
+- Решение: безопасный структурированный профиль из приложенного CV без телефона/email сохранён в GitHub Secret `BUSINESS_EVENT_PROFILE_JSON` и передаётся обеим workflows; в отчёт идут только `profile_source/profile_version/profile_hash`; в модель допускаются только конкретные события с достоверной датой, местом/online и собственной registration URL; Member Events/Programme pages исключаются; маршруты OpenAI→DeepSeek→Groq перебираются независимо по batch.
+- Почему так (отвергнутые альтернативы): коммитить CV или private JSON нельзя; LinkedIn scraping не нужен и нестабилен; общий текстовый fallback не отражает реальный профиль.
+- Ожидаемый эффект и метрика проверки: `profile_source=env_json`, `profile_version=linkedin_resume_2026-07-27`, непустой безопасный hash; `providers_used` показывает фактический маршрут, `route_failures` — fallback; ни одной programme/index-card среди `eligible`.
+- Файлы/места: `.github/workflows/daily-digest.yml`; `.github/workflows/night-inventory.yml`; `professional_events.py:_business_event_profile_context/_professional_event_has_minimum_facts/_run_professional_cv_match`; `model_routing.py:MODEL_ROUTES`.
+- ПРОВЕРКА: GitHub подтвердил наличие имени секрета без чтения содержимого; targeted metadata/minimum-facts/fallback contract вошёл в целевые прогоны 120 тестов OK. Боевые числа появятся после night wave.
+- Где была ошибка (если не сработает): —
+
+### 0174 — P1: Spotify — наблюдаемый независимый A-tier сигнал — 2026-07-27
+- Статус: внедрено; полная переклассификация cache запланирована самой миграцией при следующей ticket-wave.
+- Проблема: Spotify дал 0 положительных результатов, но нельзя было отличить отсутствие credentials, auth failure, no-match и timeout; Last.fm в одиночку мог дать A и закрепиться на 30 дней.
+- Причина (корень): provider exceptions превращались в пустой dict, cache не знал частичного сбоя, а `_tier_from_signals` объединял Spotify/Last.fm в один достаточный порог.
+- Решение: каждый запрошенный provider пишет `ok/no_credentials/auth_error/no_match/timeout`; сбой любого запрошенного provider сокращает recheck до 1 дня; немануальный A требует Spotify плюс Last.fm/Wikidata либо Wikidata ≥80 sitelinks; Last.fm один даёт максимум B; cache v1→v2 помечает все исторические A на blind recheck, но сохраняет старое значение для offline/read-only до успешной проверки.
+- Почему так (отвергнутые альтернативы): Spotify не заменяет Wikidata/Last.fm; полный сброс cache потерял бы полезные B/C и создал ненужный API burst.
+- Ожидаемый эффект и метрика проверки: ticket report содержит разбивку статусов по provider; при Spotify failure нет нового 30-day A; все прежние A проходят v2-контракт.
+- Файлы/места: `ticket_notability.py:_load_cache/_artist_notability/_tier_from_signals/prefetch_notability`.
+- ПРОВЕРКА (offline): тесты подтверждают Last.fm-only ≠ A и recheck=1, Spotify+Last.fm = A, Wikidata≥80 = независимый A, v1 A ставится в очередь миграции; целевые прогоны 120 тестов OK.
+- Где была ошибка (если не сработает): —
+
+### 0175 — P1: hybrid обогащает совпавшую live-карточку — 2026-07-27
+- Статус: внедрено; production-proof ожидается на следующей live_news/morning intake.
+- Проблема: 1468 hybrid-сигналов удерживались до попытки сопоставления, поэтому `merged=0`, хотя ночной склад мог содержать недостающие факты для свежей утренней карточки.
+- Причина (корень): unconditional `continue` в `build_morning_inventory_intake` стоял перед поиском `live_by_fingerprint/live_by_url`.
+- Решение: hybrid сначала ищет совпавшую live-карточку, проверяет TTL/expiry/liveness и переносит только недостающие ночные факты; затем всё равно делает `continue`, поэтому самостоятельно ночная hybrid-card никогда не публикуется. Очистка склада не менялась.
+- Почему так (отвергнутые альтернативы): вставка hybrid как самостоятельной строки нарушила бы morning-live контракт; новый источник/этап не нужен.
+- Ожидаемый эффект и метрика проверки: `lineage_status_counts.hybrid_merged_into_live>0` при совпадениях, `inserted_candidates` для hybrid остаётся 0.
+- Файлы/места: `inventory.py:build_morning_inventory_intake`.
+- ПРОВЕРКА (offline): regression с совпавшим fingerprint переносит `what_happened/why_now`, даёт `hybrid_merged_into_live=1` и не вставляет вторую карточку; вошёл в целевые прогоны 120 тестов OK.
+- Где была ошибка (если не сработает): —
+
+### 0176 — P1: восстановлены существующие парсеры и полный source tier — 2026-07-27
+- Статус: внедрено; production-proof ожидается после events/live_news waves.
+- Проблема: Pedddle и старый статический Secret May URL давали 0; Manchester United получал 403; 49 из 156 исторически перечисленных источников не имели tier; Spinningfields уже был удалён в #0169.
+- Причина (корень): Pedddle перешёл на JSON в `<pedddle-event data-payload>`; month-guide URL устарел; `manutd.com` не использовал уже существующий WAF-compatible fetch; tiers заполнялись только для старого подмножества.
+- Решение: добавлен узкий Pedddle web-component parser; Secret guide получает текущий месяц из `url_template`; Manchester United направлен через `curl_cffi`-маршрут; повторяющиеся Fairfield card titles нормализуются; tier заполнен для каждого активного источника. Новых источников не добавлено.
+- Почему так (отвергнутые альтернативы): расширение реестра не решает поломку существующих URL; общий headless browser для Manchester United был бы тяжелее уже доказанного WAF-fetch.
+- Ожидаемый эффект и метрика проверки: 0 активных источников без tier; ненулевой yield у Pedddle/Secret/United; Prolific/Fairfield отдельно наблюдаемы.
+- Файлы/места: `data/sources.toml`; `collector/sources.py:_load_sources`; `collector/extract.py:_extract_pedddle_event_cards/_extract_source_candidates`; `collector/fetch.py:_CLOUDFLARE_PROTECTED_HOSTS`; `source_selection.py:SOURCE_TIER`.
+- ПРОВЕРКА (live source probe 27.07): Pedddle 2, Secret monthly 9, Secret gigs 11, Prolific North 5, Fairfield 4, Manchester United 1; active/tiered/missing = `122/122/0`; parser/source-tier tests входят в 120 OK.
+- Где была ошибка (если не сработает): —
+
+### 0177 — P1: подтверждённый футбол выше transfer roundup — 2026-07-27
+- Статус: внедрено; production-proof ожидается на следующем утреннем выпуске.
+- Проблема: при заполненном 3/3 блоке две строки могли быть transfer rumours/live blog, пока подтверждённый контракт, результат, травма, решение клуба или матч оставались ниже.
+- Причина (корень): общий score не различал подтверждённый football event и агрегированный слух; section cap принимал первые три как есть.
+- Решение: детерминированный порядок `contract > result > injury > club decision > official match > other > aggregated rumour`; если есть подтверждённая альтернатива, план допускает не больше одного агрегированного слуха. Второй LLM не добавлен.
+- Почему так (отвергнутые альтернативы): проблема имеет ясные типы факта и не требует ещё одного недетерминированного судьи.
+- Ожидаемый эффект и метрика проверки: подтверждённые football cards выше live transfer roundup; `football_aggregate_rumour_cap` объясняет снятые повторы слухов.
+- Файлы/места: `writer.py:_football_priority_kind/_football_editorial_priority/_section_priority_score`; `plan_digest.py:run_plan_digest`.
+- ПРОВЕРКА (offline): targeted ordering regression OK; replay 27.07 сохранил 48 слотов, lead `ok`, `blank_runs_2plus=0`, technical release/verify OK и снял одну дополнительную строку по новому plan-order/cap (bullets 45→44).
+- Где была ошибка (если не сработает): —

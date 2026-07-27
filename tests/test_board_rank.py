@@ -12,10 +12,13 @@ import unittest
 from news_digest.pipeline.board_rank import (
     JUDGED_BLOCKS,
     _parse_board_rank_results,
+    apply_board_rank,
     board_rank_bonus,
     board_reject_verdict,
     judged_block,
+    lead_candidate_pool,
 )
+from news_digest.pipeline.writer import _section_priority_score
 
 
 class BoardRankContractTests(unittest.TestCase):
@@ -51,12 +54,12 @@ class BoardRankContractTests(unittest.TestCase):
         unsure = {"board_decision": "reject", "board_confidence": 0.2}
         self.assertFalse(board_reject_verdict(unsure)[0])
 
-        protected = {
+        duplicate = {
             "board_decision": "reject",
-            "board_confidence": 0.99,
-            "protected_lane": {"protected": True, "lanes": ["transport"]},
+            "board_confidence": 0.1,
+            "board_duplicate_of": "stronger-fire",
         }
-        self.assertEqual(board_reject_verdict(protected), (False, "protected_lane_overrides_board_reject"))
+        self.assertEqual(board_reject_verdict(duplicate), (True, "board_duplicate"))
 
     def test_only_judgement_blocks_reach_the_model(self) -> None:
         self.assertEqual(judged_block({"primary_block": "last_24h"}), "last_24h")
@@ -64,8 +67,113 @@ class BoardRankContractTests(unittest.TestCase):
         self.assertEqual(judged_block({"primary_block": "ticket_radar"}), "")
         self.assertEqual(judged_block({"primary_block": "weekend_activities"}), "")
         self.assertEqual(judged_block({"primary_block": "transport"}), "")
-        self.assertEqual(judged_block({"primary_block": "ticket_radar", "is_lead": True}), "lead_story")
+        self.assertEqual(judged_block({"primary_block": "ticket_radar", "is_lead": True}), "")
         self.assertIn("last_24h", JUDGED_BLOCKS)
+
+    def test_duplicate_is_structured_and_can_never_be_backup(self) -> None:
+        expected = {"fire-a": {"title": "Fire A"}, "fire-b": {"title": "Fire B"}}
+        raw = json.dumps({
+            "items": [
+                {"fingerprint": "fire-a", "rank": 1, "decision": "publish", "confidence": 0.9},
+                {
+                    "fingerprint": "fire-b",
+                    "rank": 2,
+                    "decision": "backup",
+                    "duplicate_of": "fire-a",
+                    "confidence": 0.7,
+                },
+            ]
+        })
+        verdicts, _ = _parse_board_rank_results(raw, expected, "last_24h")
+        self.assertEqual(verdicts["fire-b"]["decision"], "reject")
+        self.assertEqual(verdicts["fire-b"]["duplicate_of"], "fire-a")
+
+    def test_lead_board_compares_six_real_news_candidates(self) -> None:
+        candidates = [
+            {
+                "fingerprint": f"fp-{index}",
+                "include": True,
+                "primary_block": ("today_focus", "last_24h", "city_watch")[index % 3],
+                "title": f"Story {index}",
+                "summary": "A concrete Greater Manchester news event with public consequence.",
+            }
+            for index in range(8)
+        ]
+        candidates.append({
+            "fingerprint": "ticket",
+            "include": True,
+            "primary_block": "ticket_radar",
+            "title": "Arena show",
+        })
+        pool = lead_candidate_pool(candidates)
+        self.assertEqual(len(pool), 6)
+        self.assertNotIn("ticket", {candidate["fingerprint"] for candidate in pool})
+
+    def test_july_27_blind_pool_contract(self) -> None:
+        """One fire, useful GMP failure above filler, weak IT rejected."""
+        candidates = [
+            {
+                "fingerprint": "about-fire",
+                "title": "Major fire in Greater Manchester",
+                "primary_block": "last_24h",
+                "include": True,
+                "reader_value_score": 20,
+            },
+            {
+                "fingerprint": "men-fire",
+                "title": "Fire crews tackle the same Greater Manchester blaze",
+                "primary_block": "last_24h",
+                "include": True,
+                "reader_value_score": 95,
+            },
+            {
+                "fingerprint": "gmp-it-failure",
+                "title": "GMP IT failure disrupts a public service",
+                "primary_block": "last_24h",
+                "include": True,
+                "reader_value_score": 15,
+            },
+            {
+                "fingerprint": "secondary",
+                "title": "Secondary local story",
+                "primary_block": "last_24h",
+                "include": True,
+                "reader_value_score": 90,
+            },
+            {
+                "fingerprint": "weak-it",
+                "title": "Weak generic IT item",
+                "primary_block": "last_24h",
+                "include": True,
+                "reader_value_score": 100,
+            },
+        ]
+        expected = {candidate["fingerprint"]: candidate for candidate in candidates}
+        raw = json.dumps({
+            "items": [
+                {"fingerprint": "about-fire", "rank": 1, "decision": "publish", "confidence": 0.95},
+                {
+                    "fingerprint": "men-fire",
+                    "rank": 2,
+                    "decision": "backup",
+                    "duplicate_of": "about-fire",
+                    "confidence": 0.8,
+                },
+                {"fingerprint": "gmp-it-failure", "rank": 2, "decision": "publish", "confidence": 0.9},
+                {"fingerprint": "secondary", "rank": 3, "decision": "publish", "confidence": 0.8},
+                {"fingerprint": "weak-it", "rank": 4, "decision": "reject", "confidence": 0.9},
+            ]
+        })
+        verdicts, _ = _parse_board_rank_results(raw, expected, "last_24h")
+        apply_board_rank(candidates, verdicts)
+
+        self.assertTrue(board_reject_verdict(expected["men-fire"])[0])
+        self.assertEqual(expected["men-fire"]["board_decision"], "reject")
+        self.assertTrue(board_reject_verdict(expected["weak-it"])[0])
+        self.assertGreater(
+            _section_priority_score(expected["gmp-it-failure"], "Свежие новости", ""),
+            _section_priority_score(expected["secondary"], "Свежие новости", ""),
+        )
 
 
 if __name__ == "__main__":

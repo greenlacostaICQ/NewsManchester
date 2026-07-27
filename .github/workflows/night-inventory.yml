@@ -114,6 +114,9 @@ jobs:
           NRE_USERNAME: ${{ secrets.NRE_USERNAME }}
           NRE_PASSWORD: ${{ secrets.NRE_PASSWORD }}
           OPENAI_API_KEY: ${{ secrets.OPENAI }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROGAPIKEY }}
+          BUSINESS_EVENT_PROFILE_JSON: ${{ secrets.BUSINESS_EVENT_PROFILE_JSON }}
         run: |
           set -euo pipefail
           python3 scripts/run_local_digest.py collect-inventory --wave "${{ steps.wave.outputs.wave }}" | tee /tmp/inventory_summary.json

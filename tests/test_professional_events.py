@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from news_digest.pipeline.professional_events import (
     apply_professional_event_match,
+    business_event_profile_metadata,
     score_professional_event,
     _professional_event_has_minimum_facts,
 )
@@ -47,6 +48,23 @@ class ProfessionalEventsTest(unittest.TestCase):
         self.assertEqual(match["event_level"], "major_conference_or_expo")
         self.assertTrue(match["major_conference_or_expo"])
         self.assertEqual(match["recommended_action"], "register")
+
+    def test_profile_report_metadata_is_safe_and_versioned(self) -> None:
+        profile = {
+            "profile_version": "resume_2026_07_27",
+            "role": "Chief Product and Digital Transformation Officer",
+            "private_note": "must never reach the report",
+        }
+        with patch.dict(
+            "os.environ",
+            {"BUSINESS_EVENT_PROFILE_JSON": json.dumps(profile)},
+            clear=False,
+        ):
+            metadata = business_event_profile_metadata()
+        self.assertEqual(metadata["profile_source"], "env_json")
+        self.assertEqual(metadata["profile_version"], "resume_2026_07_27")
+        self.assertRegex(metadata["profile_hash"], r"^[0-9a-f]{16}$")
+        self.assertNotIn("private_note", metadata)
 
     def test_basic_free_networking_can_pass_for_english_practice(self) -> None:
         c = self._candidate(
@@ -199,6 +217,51 @@ class ProfessionalEventsTest(unittest.TestCase):
         self.assertEqual(c["score_source"], "model")
         self.assertEqual(c["score_verdict"], "go")
         self.assertNotIn("english_editorial_score", c)
+
+    def test_professional_cv_uses_independent_provider_fallback(self) -> None:
+        from news_digest.pipeline.professional_events import apply_professional_event_llm_matches
+
+        c = self._candidate(
+            "Manchester AI leadership briefing",
+            "Free briefing for product and digital leaders.",
+        )
+        c["include"] = True
+        apply_professional_event_match(c)
+        rows = [{
+            "id": c["source_url"],
+            "fit": "go",
+            "score": 90,
+            "access_label": "free",
+            "reason": "Strong profile fit.",
+            "action": "register",
+        }]
+        primary = SimpleNamespace(**{**vars(_fake_route()), "base_url": "https://primary", "provider_label": "Primary"})
+        fallback = SimpleNamespace(**{**vars(_fake_route()), "base_url": "https://fallback", "provider_label": "Fallback"})
+        module = types.ModuleType("openai")
+
+        class _Completions:
+            def __init__(self, base_url: str) -> None:
+                self.base_url = base_url
+
+            def create(self, **kwargs):
+                if self.base_url == "https://primary":
+                    raise TimeoutError("primary unavailable")
+                return _FakeResponse(rows)
+
+        class _OpenAI:
+            def __init__(self, **kwargs) -> None:
+                self.chat = SimpleNamespace(completions=_Completions(kwargs.get("base_url", "")))
+
+        module.OpenAI = _OpenAI
+        with patch.dict(sys.modules, {"openai": module}), patch(
+            "news_digest.pipeline.model_routing.resolve_model_route",
+            return_value=[primary, fallback],
+        ):
+            report = apply_professional_event_llm_matches([c])
+
+        self.assertTrue(c["include"])
+        self.assertEqual(report["providers_used"], ["Fallback"])
+        self.assertEqual(report["route_failures"][0]["provider"], "Primary")
 
     def test_llm_and_extracted_access_conflict_is_stored_as_conditional(self) -> None:
         from news_digest.pipeline.professional_events import apply_professional_event_llm_matches
@@ -432,7 +495,12 @@ class ProfessionalMinimumFactsTest(unittest.TestCase):
         }
 
     def test_dated_gm_event_without_parsed_venue_is_eligible(self) -> None:
-        c = self._prof(date="2026-07-03", date_confidence="medium", venue="")
+        c = self._prof(
+            date="2026-07-03",
+            date_confidence="medium",
+            venue="",
+            booking_url="https://www.gmchamber.co.uk/events/example",
+        )
         self.assertTrue(_professional_event_has_minimum_facts(c))
 
     def test_low_confidence_far_future_date_is_not_eligible(self) -> None:

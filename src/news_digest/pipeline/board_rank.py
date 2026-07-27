@@ -45,7 +45,7 @@ from news_digest.pipeline.model_routing import (
 
 logger = logging.getLogger(__name__)
 
-BOARD_RANK_VERSION = 1
+BOARD_RANK_VERSION = 2
 
 # Blocks whose ordering needs editorial judgement, with the criterion the judge
 # is asked to apply. Everything absent from this map is ranked deterministically
@@ -91,7 +91,7 @@ BOARD_RANK_TOP_SCORE = 100.0
 # "strong" item over a weak "must_include" — which is the point of having a
 # judge. Deliberately tunable in one place: raise or lower it from the eval in
 # tools/board_eval.py, not by editing call sites.
-BOARD_RANK_WEIGHT = 0.5  # (score - 50) * 0.5 => -25 .. +25
+BOARD_RANK_WEIGHT = 0.5  # Legacy diagnostic only; public ordering uses rank first.
 
 # A reject only removes an item when the model is actually sure. Below this the
 # verdict degrades to "backup" — the item stays recoverable instead of dying on
@@ -100,6 +100,8 @@ BOARD_REJECT_MIN_CONFIDENCE = 0.65
 
 _MAX_ITEMS_PER_CALL = 60
 _EVIDENCE_CHARS = 320
+LEAD_POOL_SIZE = 6
+LEAD_SOURCE_BLOCKS = frozenset({"today_focus", "last_24h", "city_watch"})
 
 
 BOARD_RANK_SYSTEM = """You are the editorial board for the Greater Manchester AM Brief.
@@ -140,6 +142,7 @@ Each item:
   "fingerprint": "...",
   "rank": 1,
   "decision": "publish|backup|reject",
+  "duplicate_of": null,
   "confidence": 0.0-1.0,
   "reason_codes": ["..."],
   "why": "one short sentence — REQUIRED for ranks 1-3, omit otherwise"
@@ -152,6 +155,9 @@ Hard rules:
 - Ranks are 1..N, contiguous, no ties, best first.
 - "reject" ONLY for: outside Greater Manchester, stale, pure PR or marketing, a duplicate of a
   stronger item in this same list, or too thin to write a self-contained line from.
+- For a duplicate, decision MUST be "reject" and duplicate_of MUST contain the exact fingerprint
+  of the stronger item. Never express a duplicate only in why/reason_codes and never call it backup.
+- For a non-duplicate, duplicate_of MUST be null.
 - Losing to stronger competition today is "backup", NOT "reject". Do not use reject to express
   that the field was strong; most of a normal section is publish or backup.
 - confidence is your certainty about THIS verdict, not about the story itself.
@@ -163,8 +169,6 @@ def judged_block(candidate: dict) -> str:
     """Block name if this candidate belongs to a judged board, else ""."""
     if not isinstance(candidate, dict):
         return ""
-    if candidate.get("is_lead"):
-        return "lead_story"
     block = str(candidate.get("primary_block") or "")
     return block if block in JUDGED_BLOCKS else ""
 
@@ -257,9 +261,18 @@ def _parse_board_rank_results(
         decision = str(item.get("decision") or "publish").strip().lower()
         if decision not in {"publish", "backup", "reject"}:
             decision = "publish"
+        duplicate_of = str(item.get("duplicate_of") or "").strip()
+        if duplicate_of and (duplicate_of == fp or duplicate_of not in expected):
+            _reject("invalid_duplicate_of")
+            duplicate_of = ""
+        if duplicate_of:
+            # A duplicate is not reserve material. It represents the same story
+            # as another row and must never consume a second public slot.
+            decision = "reject"
         verdicts[fp] = {
             "rank": max(1, rank),
             "decision": decision,
+            "duplicate_of": duplicate_of,
             "confidence": max(0.0, min(1.0, confidence)),
             "reason_codes": [str(c)[:60] for c in (item.get("reason_codes") or [])][:8],
             "why": _clip(item.get("why"), 240),
@@ -400,7 +413,23 @@ def _call_block(
     for verdict in verdicts.values():
         verdict["provider"] = step.provider_label
         verdict["model"] = step.model
+        verdict["board_block"] = block
     return verdicts
+
+
+def lead_candidate_pool(candidates: list[dict]) -> list[dict]:
+    """Return the six strongest real news cards the lead board must compare."""
+    from news_digest.pipeline.story_intelligence import section_board_score  # noqa: PLC0415
+
+    eligible = [
+        candidate
+        for candidate in candidates
+        if isinstance(candidate, dict)
+        and candidate.get("include")
+        and str(candidate.get("primary_block") or "") in LEAD_SOURCE_BLOCKS
+        and str(candidate.get("fingerprint") or "")
+    ]
+    return sorted(eligible, key=lambda candidate: -float(section_board_score(candidate)))[:LEAD_POOL_SIZE]
 
 
 def rank_boards(
@@ -435,6 +464,9 @@ def rank_boards(
         return {}, report
 
     by_block: dict[str, list[dict]] = {}
+    lead_pool = lead_candidate_pool(candidates)
+    if lead_pool:
+        by_block["lead_story"] = lead_pool
     for candidate in candidates:
         block = judged_block(candidate)
         if not block:
@@ -483,7 +515,34 @@ def rank_boards(
         }
         for block, future in futures.items():
             block_verdicts = future.result()
-            verdicts.update(block_verdicts)
+            if block == "lead_story":
+                for candidate in by_block[block]:
+                    fp = str(candidate.get("fingerprint") or "")
+                    lead_verdict = block_verdicts.get(fp)
+                    if not lead_verdict:
+                        continue
+                    candidate["lead_board_rank"] = lead_verdict["rank"]
+                    candidate["lead_board_decision"] = lead_verdict["decision"]
+                    candidate["lead_board_confidence"] = lead_verdict["confidence"]
+                    candidate["lead_board_duplicate_of"] = lead_verdict.get("duplicate_of") or ""
+                    candidate["lead_board_why"] = lead_verdict.get("why") or ""
+                ordered_leads = [
+                    (fp, verdict)
+                    for fp, verdict in sorted(
+                        block_verdicts.items(),
+                        key=lambda pair: pair[1]["rank"],
+                    )
+                    if verdict.get("decision") != "reject" and not verdict.get("duplicate_of")
+                ]
+                winner_fp = ordered_leads[0][0] if ordered_leads else ""
+                if winner_fp:
+                    for candidate in candidates:
+                        if not isinstance(candidate, dict):
+                            continue
+                        candidate["is_lead"] = str(candidate.get("fingerprint") or "") == winner_fp
+                report["lead_winner_fingerprint"] = winner_fp
+            else:
+                verdicts.update(block_verdicts)
             decisions: dict[str, int] = {}
             for verdict in block_verdicts.values():
                 decisions[verdict["decision"]] = decisions.get(verdict["decision"], 0) + 1
@@ -521,6 +580,7 @@ def apply_board_rank(candidates: list[dict], verdicts: dict[str, dict]) -> int:
         candidate["board_rank_total"] = verdict.get("rank_total") or verdict["rank"]
         candidate["board_rank_score"] = verdict.get("score")
         candidate["board_decision"] = verdict["decision"]
+        candidate["board_duplicate_of"] = verdict.get("duplicate_of") or ""
         candidate["board_confidence"] = verdict["confidence"]
         candidate["board_reason_codes"] = verdict.get("reason_codes") or []
         candidate["board_rank_why"] = verdict.get("why") or ""
@@ -549,16 +609,14 @@ def board_rank_bonus(candidate: dict) -> float:
 def board_reject_verdict(candidate: dict) -> tuple[bool, str]:
     """Should the judge's reject actually remove this candidate?
 
-    Three guards, in order. A protected lane is never dropped on a model's word;
-    a low-confidence reject degrades to reserve instead of a coin-flip removal;
-    and the per-block floor is enforced by the caller, which is the only place
-    that knows how many survivors are left.
+    A structured duplicate is always removed because it is the same story, not
+    reserve material. Other rejects need confidence; the shared block registry
+    floor is enforced by the caller, which alone knows the survivor count.
     """
     if str(candidate.get("board_decision") or "") != "reject":
         return False, ""
-    lane = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
-    if lane.get("protected"):
-        return False, "protected_lane_overrides_board_reject"
+    if str(candidate.get("board_duplicate_of") or ""):
+        return True, "board_duplicate"
     try:
         confidence = float(candidate.get("board_confidence"))
     except (TypeError, ValueError):

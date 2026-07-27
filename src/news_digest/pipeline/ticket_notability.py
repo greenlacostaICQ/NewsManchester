@@ -10,7 +10,7 @@ from pathlib import Path
 import re
 import threading
 import time
-from urllib import parse, request
+from urllib import error, parse, request
 
 from news_digest.pipeline.common import now_london, read_json, write_json
 
@@ -28,6 +28,7 @@ NON_ARTIST_EVENT_RE = re.compile(
 )
 
 _CACHE_MEM: dict[str, dict] = {}
+_CACHE_VERSION = 2
 
 # Minimum seconds between calls to each external API, enforced across all
 # worker threads. MusicBrainz documents ~1 request/second per IP — the others
@@ -342,9 +343,17 @@ def _load_cache(path: Path) -> dict:
         return _CACHE_MEM[cache_id]
     payload = read_json(path, {})
     if not isinstance(payload, dict):
-        payload = {"version": 1, "artists": {}}
-    payload.setdefault("version", 1)
+        payload = {"version": _CACHE_VERSION, "artists": {}}
+    previous_version = int(payload.get("version") or 1)
     payload.setdefault("artists", {})
+    if previous_version < _CACHE_VERSION:
+        # One-time blind recheck of every cached A result. Old records allowed
+        # Last.fm alone to award A and did not say whether Spotify failed.
+        for record in payload["artists"].values():
+            if not isinstance(record, dict) or str(record.get("tier") or "").upper() != "A":
+                continue
+            record["a_tier_recheck_pending"] = True
+        payload["version"] = _CACHE_VERSION
     _CACHE_MEM[cache_id] = payload
     return payload
 
@@ -486,7 +495,7 @@ def _spotify_access_token() -> str:
 def _lookup_spotify(artist: str) -> dict:
     token = _spotify_access_token()
     if not token:
-        return {}
+        return {"_provider_status": "no_credentials"}
     query = parse.urlencode({"q": artist, "type": "artist", "limit": "3"})
     payload = _spotify_json(f"https://api.spotify.com/v1/search?{query}", token)
     best: dict = {}
@@ -516,7 +525,7 @@ def _lookup_spotify(artist: str) -> dict:
 def _lookup_lastfm(artist: str) -> dict:
     api_key = os.environ.get("LASTFM_API", "").strip() or os.environ.get("LASTFM_API_KEY", "").strip()
     if not api_key:
-        return {}
+        return {"_provider_status": "no_credentials"}
     query = parse.urlencode(
         {
             "method": "artist.getinfo",
@@ -579,8 +588,13 @@ def _ticketmaster_signal(candidate: dict, artist: str) -> dict:
 
 
 def _tier_from_sitelinks(sitelinks: int) -> tuple[str, float]:
-    if sitelinks >= 45:
+    # A single source may award A only when Wikidata presence is exceptionally
+    # high. The old 45-link threshold made a large historical Last.fm/Wiki
+    # footprint sufficient without a second contemporary signal.
+    if sitelinks >= 80:
         return "A", 0.95
+    if sitelinks >= 45:
+        return "B", 0.9
     if sitelinks >= 16:
         return "B", 0.85
     if sitelinks >= 5:
@@ -598,10 +612,15 @@ def _tier_from_signals(signals: dict) -> tuple[str, float, str]:
     spotify_popularity = int(signals.get("spotify_popularity") or 0)
     spotify_followers = int(signals.get("spotify_followers") or 0)
     lastfm_listeners = int(signals.get("lastfm_listeners") or 0)
-    if spotify_popularity >= 78 or spotify_followers >= 2_000_000 or lastfm_listeners >= 1_500_000:
+    spotify_a = spotify_popularity >= 78 or spotify_followers >= 2_000_000
+    lastfm_a = lastfm_listeners >= 1_500_000
+    independent_support = lastfm_listeners >= 250_000 or int(signals.get("sitelinks") or 0) >= 16
+    if spotify_a and independent_support:
         if tier in {"unknown", "D", "C"}:
-            return "A", 0.9, "streaming_popularity"
-    if spotify_popularity >= 58 or spotify_followers >= 250_000 or lastfm_listeners >= 250_000:
+            return "A", 0.9, "spotify_plus_independent_signal"
+        if tier == "B":
+            return "A", 0.93, "spotify_plus_wikidata"
+    if spotify_popularity >= 58 or spotify_followers >= 250_000 or lastfm_listeners >= 250_000 or lastfm_a:
         if tier in {"unknown", "D"}:
             return "B", 0.78, "streaming_popularity"
     if spotify_popularity >= 42 or spotify_followers >= 50_000 or lastfm_listeners >= 50_000:
@@ -656,7 +675,11 @@ def _artist_notability(
         # clean "not found" is retried in a week, a transient API failure next
         # run — so a blip never poisons the cache for a month.
         recheck_days = int(cached.get("recheck_days") or 30)
-        if checked and now - checked <= timedelta(days=recheck_days):
+        if (
+            checked
+            and now - checked <= timedelta(days=recheck_days)
+            and not (allow_network and cached.get("a_tier_recheck_pending"))
+        ):
             signals = dict(cached.get("signals") or {})
             signals.setdefault("sitelinks", int(cached.get("sitelinks") or 0))
             signals.setdefault("wikidata_id", str(cached.get("wikidata_id") or ""))
@@ -680,20 +703,28 @@ def _artist_notability(
     if not allow_network or os.environ.get("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "").strip() != "1":
         return TicketNotability(artist, kind, "unknown", 0.0, "lookup_disabled", signals=tm_signal)
 
-    errors = 0
+    provider_status: dict[str, str] = {}
 
     def _lookup(host: str, fn) -> dict:
-        nonlocal errors
         _THROTTLE.wait(host)
         try:
-            return fn(artist)
-        except Exception as exc:  # pragma: no cover - network failure is fail-open.
-            errors += 1
-            return {"error": type(exc).__name__}
+            result = fn(artist)
+            marker = str(result.get("_provider_status") or "") if isinstance(result, dict) else ""
+            if marker in {"no_credentials", "auth_error", "no_match", "timeout"}:
+                provider_status[host] = marker
+                return {}
+            provider_status[host] = "ok" if isinstance(result, dict) and result else "no_match"
+            return result if isinstance(result, dict) else {}
+        except error.HTTPError as exc:  # pragma: no cover - real provider response.
+            provider_status[host] = "auth_error" if exc.code in {401, 403} else "timeout"
+            return {}
+        except Exception:  # pragma: no cover - network failure is fail-open.
+            provider_status[host] = "timeout"
+            return {}
 
-    # Short-circuit ladder. Wikidata first: a well-linked entity is already
-    # clearly notable (A/B), so the other three APIs are skipped entirely. Only
-    # a thin Wikidata result spends Spotify/Last.fm (modern acts). MusicBrainz —
+    # Short-circuit ladder. Only exceptionally high Wikidata is independently
+    # sufficient for A. Every other possible A spends Spotify plus Last.fm so a
+    # large historical footprint cannot award A by itself. MusicBrainz —
     # the strict ~1 req/sec service — runs LAST and only if still unknown, so it
     # only ever sees the residual tail, not the whole pool.
     wd = _lookup("wikidata", _lookup_wikidata)
@@ -703,7 +734,7 @@ def _artist_notability(
         **tm_signal,
     }
     tier, _conf, _sig = _tier_from_signals(signals)
-    if tier not in {"A", "B"}:
+    if tier != "A":
         sp = _lookup("spotify", _lookup_spotify)
         lf = _lookup("lastfm", _lookup_lastfm)
         signals.update(
@@ -725,14 +756,19 @@ def _artist_notability(
                     "musicbrainz_type": str(mb.get("musicbrainz_type") or ""),
                 }
             )
+    signals["provider_status"] = dict(provider_status)
 
     tier, confidence, signal = _tier_from_signals(signals)
     # Error taxonomy → recheck window. found=30d; clean not_found=7d; transient
     # api_failed=1d (retry next run, don't cache a failure for a month).
-    if tier != "unknown":
-        recheck_days = 30
-    elif errors:
+    provider_failed = any(
+        status in {"no_credentials", "auth_error", "timeout"}
+        for status in provider_status.values()
+    )
+    if provider_failed:
         recheck_days = 1
+    elif tier != "unknown":
+        recheck_days = 30
     else:
         recheck_days = 7
     record = {
@@ -748,6 +784,8 @@ def _artist_notability(
         "checked_at": now.isoformat(),
         "recheck_days": recheck_days,
     }
+    if provider_failed:
+        record["a_tier_recheck_pending"] = bool(cached and cached.get("a_tier_recheck_pending"))
     artists_cache[key] = record
     return TicketNotability(
         artist=artist,
@@ -799,6 +837,8 @@ def prefetch_notability(
         rec = artists.get(_cache_key(name))
         if not isinstance(rec, dict):
             return False
+        if rec.get("a_tier_recheck_pending"):
+            return False
         try:
             checked = datetime.fromisoformat(str(rec.get("checked_at") or ""))
         except ValueError:
@@ -826,12 +866,30 @@ def prefetch_notability(
                 continue
             work.append((proximity, name, c))
 
+    # Cache v2 migrates every historical A row through the new two-signal
+    # contract. These cache-only rows need no ticket context for provider
+    # identity lookups and remain pending until Spotify is genuinely available.
+    for record in artists.values():
+        if not isinstance(record, dict) or not record.get("a_tier_recheck_pending"):
+            continue
+        name = str(record.get("artist") or "").strip()
+        key = _cache_key(name)
+        if not name or key in seen:
+            continue
+        seen.add(key)
+        work.append((
+            9998,
+            name,
+            {"title": name, "category": "venues_tickets", "primary_block": "ticket_radar", "event": {}},
+        ))
+
     work.sort(key=lambda item: item[0])  # near-term first, far-future last
     skipped_fresh = len(seen) - len(work)
     deadline = time.monotonic() + max(1.0, budget_seconds)
     looked = 0
     deferred = 0
     counter_lock = threading.Lock()
+    provider_status_counts: dict[str, dict[str, int]] = {}
 
     def _task(name: str, c: dict) -> None:
         nonlocal looked, deferred
@@ -839,9 +897,14 @@ def prefetch_notability(
             with counter_lock:
                 deferred += 1
             return
-        _artist_notability(name, ticket_event_kind(c), c, artists, now, allow_network=True)
+        result = _artist_notability(name, ticket_event_kind(c), c, artists, now, allow_network=True)
         with counter_lock:
             looked += 1
+            statuses = (result.signals or {}).get("provider_status")
+            if isinstance(statuses, dict):
+                for provider, status in statuses.items():
+                    bucket = provider_status_counts.setdefault(str(provider), {})
+                    bucket[str(status)] = bucket.get(str(status), 0) + 1
 
     if work:
         with ThreadPoolExecutor(max_workers=max(1, max_workers)) as executor:
@@ -856,6 +919,7 @@ def prefetch_notability(
         "skipped_fresh": skipped_fresh,
         "queued": len(work),
         "deferred_budget": deferred,
+        "provider_status": provider_status_counts,
     }
 
 

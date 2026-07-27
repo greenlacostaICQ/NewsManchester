@@ -71,6 +71,8 @@ MODEL_ROUTES: dict[str, tuple[ModelRouteStep, ...]] = {
     ),
     "professional_cv_match": (
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "professional_cv_match_mini", 1, batch_size=12, timeout_seconds=35),
+        ModelRouteStep("deepseek", "DeepSeek", DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, "DEEPSEEK_API_KEY", "professional_cv_match_fallback", 2, batch_size=12, timeout_seconds=35),
+        ModelRouteStep("groq", "Groq", GROQ_BASE_URL, GROQ_FALLBACK_MODEL, "GROQ_API_KEY", "professional_cv_match_resilient", 3, batch_size=6, timeout_seconds=30),
     ),
     "rewrite": (
         ModelRouteStep("openai", "OpenAI", OPENAI_BASE_URL, OPENAI_SCORING_MODEL, "OPENAI_API_KEY", "mini_rewrite_primary", 1, batch_size=6, timeout_seconds=45),

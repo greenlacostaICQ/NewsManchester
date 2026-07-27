@@ -1673,6 +1673,42 @@ def build_morning_inventory_intake(
             hybrid_signals[reason] = hybrid_signals.get(reason, 0) + 1
             lineage["intake_status"] = "hybrid_signal"
             lineage["reason"] = reason
+            # Hybrid stock is never a second publisher, but it is useful when
+            # the morning scan found the same live story. Merge current night
+            # facts into that card before the unconditional hold.
+            hybrid_candidate = inventory_record_to_candidate(working_record)
+            hybrid_fp = str(hybrid_candidate.get("fingerprint") or "")
+            matching_live = live_by_fingerprint.get(hybrid_fp) if hybrid_fp else None
+            if matching_live is None:
+                standalone_url = _standalone_url_identity(hybrid_candidate)
+                matching_live = live_by_url.get(standalone_url) if standalone_url else None
+            ttl_ok, _ = passes_ttl_contract(working_record)
+            current_enough = (
+                ttl_ok
+                and not _is_expired(working_record, today)
+                and str(
+                    working_record.get("action_url_liveness")
+                    or working_record.get("liveness_status")
+                    or ""
+                ) != "dead"
+            )
+            if matching_live is not None and current_enough:
+                enriched_fields = merge_inventory_record_into_live_candidate(
+                    matching_live,
+                    working_record,
+                )
+                lineage["live_fingerprint"] = str(matching_live.get("fingerprint") or "")
+                lineage["candidate_fingerprint"] = str(matching_live.get("fingerprint") or "")
+                lineage["intake_status"] = "hybrid_merged_into_live"
+                lineage["reason"] = (
+                    "fingerprint"
+                    if hybrid_fp and live_by_fingerprint.get(hybrid_fp) is matching_live
+                    else "canonical_url"
+                )
+                lineage["enriched_fields"] = enriched_fields
+                bucket["duplicates"] += 1
+                bucket["merged_live"] = bucket.get("merged_live", 0) + 1
+                funnel["merged_into_live"] = funnel.get("merged_into_live", 0) + 1
             continue
         if block_mode != "assist":
             lineage["intake_status"] = "not_assist_block"

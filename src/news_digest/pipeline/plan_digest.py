@@ -807,6 +807,24 @@ def run_plan_digest(project_root: Path) -> StageResult:
     planned: dict[str, list[dict]] = {}
     for section in _ordered_sections(show_weekend):
         pool = list(pools.get(section) or [])
+        if section == PRIMARY_BLOCKS["football"] and pool:
+            from news_digest.pipeline.writer import (  # noqa: PLC0415
+                _is_aggregated_transfer_rumour,
+                _is_confirmed_football_alternative,
+            )
+
+            confirmed_available = any(_is_confirmed_football_alternative(c) for c in pool)
+            if confirmed_available:
+                rumour_seen = False
+                filtered = []
+                for candidate in pool:
+                    if _is_aggregated_transfer_rumour(candidate):
+                        if rumour_seen:
+                            _demote(candidate, "football_aggregate_rumour_cap")
+                            continue
+                        rumour_seen = True
+                    filtered.append(candidate)
+                pool = filtered
         if section == "Еда, открытия и рынки" and len(pool) > 1:
             # The three public Food slots should show two independent live
             # sources whenever two survived upstream checks.

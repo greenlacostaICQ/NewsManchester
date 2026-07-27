@@ -927,7 +927,7 @@ _SOURCE_POLICIES: dict[str, _SourcePolicy] = {
     "Skiddle Manchester": _SourcePolicy(path_must_contain=("/whats-on/",), min_path_depth=4),
     "Skiddle Manchester Bank Holiday": _SourcePolicy(path_must_contain=("/whats-on/",), min_path_depth=4),
     "Sofar Manchester Bank Holiday": _SourcePolicy(path_must_contain=("/cities/manchester/", "/events/"), min_path_depth=3),
-    "Secret Manchester May Guide": _SourcePolicy(
+    "Secret Manchester Monthly Guide": _SourcePolicy(
         min_path_depth=1,
         block_non_gm_weekend=True,
         require_gm_or_date=True,

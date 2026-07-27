@@ -857,6 +857,47 @@ class BuildRecordTest(unittest.TestCase):
         self.assertEqual(report["lineage_status_counts"]["held_without_live_confirmation"], 1)
         self.assertIn("morning_relevant_needs_text", report["hybrid_signals"])
 
+    def test_current_hybrid_record_enriches_matching_live_card_but_is_not_inserted(self) -> None:
+        live = {
+            "fingerprint": "fresh-1",
+            "title": "Morning live story",
+            "summary": "Live summary",
+            "source_url": "https://example.test/news/fresh-1",
+            "primary_block": "last_24h",
+            "category": "media_layer",
+            "what_happened": "",
+            "why_now": "",
+        }
+        record = {
+            "fingerprint": "fresh-1",
+            "title": "Night story frame",
+            "source_url": "https://example.test/news/fresh-1",
+            "primary_block": "last_24h",
+            "category": "media_layer",
+            "quality_status": "needs_text",
+            "missing_facts": ["draft_line"],
+            "last_seen_at": "2026-07-09T06:30:00+01:00",
+            "fact_card": {
+                "what_happened": "GMP restored a failed operational IT service.",
+                "why_now": "The restoration was confirmed this morning.",
+            },
+        }
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-09T08:00:00+01:00"),
+        ):
+            inserted, report = build_morning_inventory_intake(
+                [record],
+                existing_candidates=[live],
+                mode="assist",
+                today="2026-07-09",
+            )
+        self.assertEqual(inserted, [])
+        self.assertEqual(live["what_happened"], "GMP restored a failed operational IT service.")
+        self.assertTrue(live["inventory_merged_into_live"])
+        self.assertEqual(report["funnel"]["merged_into_live"], 1)
+        self.assertEqual(report["lineage_status_counts"]["hybrid_merged_into_live"], 1)
+
     def test_food_304_confirms_only_current_wave_and_keeps_completeness_honest(self) -> None:
         def food_record(fingerprint: str, source: str, last_seen: str) -> dict:
             return {

@@ -209,6 +209,26 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertEqual(len(drops), 1)
         self.assertEqual(sum(1 for candidate in candidates if candidate["include"]), 1)
 
+    def test_confirmed_football_news_outranks_transfer_live_blog(self) -> None:
+        confirmed = {
+            "category": "football",
+            "primary_block": "football",
+            "title": "Manchester City confirm a new contract for a first-team player",
+            "summary": "The club announced the signed contract.",
+            "reader_value_score": 20,
+        }
+        roundup = {
+            "category": "football",
+            "primary_block": "football",
+            "title": "Manchester United transfer news live",
+            "summary": "Transfer rumours, gossip and latest links.",
+            "reader_value_score": 80,
+        }
+        self.assertGreater(
+            _section_priority_score(confirmed, "Футбол", ""),
+            _section_priority_score(roundup, "Футбол", ""),
+        )
+
     def test_drops_visitor_attraction_from_food_openings(self) -> None:
         updated = self._validate_one(
             {
@@ -526,6 +546,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             candidates = _extract_source_candidates(source, html)
 
         self.assertEqual(len(candidates), 1)
+
         self.assertEqual(candidates[0]["title"], "Manchester Jazz Festival 2026")
         self.assertEqual(enriched_urls, ["https://www.visitmanchester.com/whats-on/event/manchester-jazz-festival-2026"])
 
@@ -701,7 +722,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         # without requiring stale sources to stay enabled.
         self.assertGreaterEqual(len(guide_sources), 6)
         self.assertIn("Visit Manchester Weekend", guide_sources)
-        self.assertIn("Secret Manchester May Guide", guide_sources)
+        self.assertIn("Secret Manchester Monthly Guide", guide_sources)
         self.assertIn("Secret Manchester Gigs", guide_sources)
         # Manchester Theatres used to satisfy this breadth check, but its
         # dated routes now return a generic 2026/2027 Highlights catalogue.
@@ -3299,7 +3320,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             "Manchester United transfer news live",
             "",
         ))
-        self.assertIn("Secret Manchester May Guide", by_name)
+        self.assertIn("Secret Manchester Monthly Guide", by_name)
         self.assertIn("Secret Manchester Gigs", by_name)
         self.assertNotIn("Secret Manchester Weekend Guide", by_name)
         self.assertNotIn("Manchester Flower Festival CityCo News", by_name)

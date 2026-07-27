@@ -41,7 +41,6 @@ from news_digest.pipeline.editorial_contracts import (
 )
 from news_digest.pipeline.glossary_qa import glossary_line_issues, repair_glossary_terms
 from news_digest.pipeline.reader_value import reader_value_score
-from news_digest.pipeline.board_rank import board_rank_bonus
 from news_digest.pipeline.reader_actions import classify_reader_action
 from news_digest.pipeline.source_selection import source_score
 from news_digest.pipeline.story_intelligence import section_board_score
@@ -4426,12 +4425,10 @@ def _section_priority_score(candidate: dict, section_name: str, line: str) -> fl
     """Shared reader-value score used when capped sections choose survivors."""
     attach_editorial_contract(candidate)
     score = float(section_board_score(candidate, section_name))
-    # Editorial board contribution, relative to today's competition inside the
-    # candidate's own block: rank 1 gets +25, the last rank -25, unjudged blocks
-    # get exactly 0 so they keep the order they had before the judge existed.
-    # Replaces the old absolute 0-100 term, which graded record completeness and
-    # put a bus stop closure above a court report.
-    score += board_rank_bonus(candidate)
+    # The board is the primary order inside judged blocks. The formula remains
+    # a tie-breaker and still owns every unjudged block.
+    if str(candidate.get("judged_by") or "") == "model" and candidate.get("board_rank"):
+        score += 100_000.0 - float(candidate.get("board_rank") or 0) * 1_000.0
     action = str(candidate.get("reader_action_type") or classify_reader_action(candidate))
     action_bonus = {
         "check_route": 14,
@@ -4472,7 +4469,86 @@ def _section_priority_score(candidate: dict, section_name: str, line: str) -> fl
         return _ticket_public_priority_score(candidate)
     elif section_name == "Крупные концерты вне GM":
         return _ticket_public_priority_score(candidate)
+    elif str(candidate.get("primary_block") or "") == "football":
+        score += _football_editorial_priority(candidate)
     return score
+
+
+_FOOTBALL_AGGREGATED_RUMOUR_RE = re.compile(
+    r"\b(?:live\s+(?:transfer|transfers)|transfer\s+(?:live|round[- ]?up|rumours?|"
+    r"gossip|latest)|rumour\s+round[- ]?up|transfer\s+blog)\b",
+    re.IGNORECASE,
+)
+_FOOTBALL_CONFIRMED_CONTRACT_RE = re.compile(
+    r"\b(?:sign(?:s|ed|ing)|new\s+contract|contract\s+(?:extension|agreed|signed)|"
+    r"joins?|completes?\s+(?:a\s+)?move|loan\s+(?:deal|move)|permanent\s+deal)\b",
+    re.IGNORECASE,
+)
+_FOOTBALL_RESULT_RE = re.compile(
+    r"\b(?:full[- ]time|match\s+report|final\s+score|beat|defeat(?:ed)?|won|drew|"
+    r"victory|loss|result)\b",
+    re.IGNORECASE,
+)
+_FOOTBALL_INJURY_RE = re.compile(
+    r"\b(?:injur(?:y|ed)|ruled\s+out|fitness\s+update|surgery|return\s+date)\b",
+    re.IGNORECASE,
+)
+_FOOTBALL_CLUB_DECISION_RE = re.compile(
+    r"\b(?:club\s+(?:announce|confirm|decision)|appoint(?:s|ed)?|sack(?:s|ed)?|"
+    r"manager\s+(?:appointed|dismissed)|suspension|ban|official\s+statement)\b",
+    re.IGNORECASE,
+)
+_FOOTBALL_OFFICIAL_MATCH_RE = re.compile(
+    r"\b(?:fixture|team\s+news|squad|line[- ]?up|kick[- ]?off|matchday|"
+    r"fa\s+cup|premier\s+league|champions\s+league|europa\s+league|wsl)\b",
+    re.IGNORECASE,
+)
+
+
+def _football_priority_kind(candidate: dict) -> str:
+    blob = " ".join(
+        str(candidate.get(field) or "")
+        for field in ("title", "summary", "lead", "evidence_text", "draft_line")
+    )
+    if _FOOTBALL_AGGREGATED_RUMOUR_RE.search(blob):
+        return "aggregated_rumour"
+    if _FOOTBALL_CONFIRMED_CONTRACT_RE.search(blob):
+        return "confirmed_contract"
+    if _FOOTBALL_RESULT_RE.search(blob):
+        return "result"
+    if _FOOTBALL_INJURY_RE.search(blob):
+        return "injury"
+    if _FOOTBALL_CLUB_DECISION_RE.search(blob):
+        return "club_decision"
+    if _FOOTBALL_OFFICIAL_MATCH_RE.search(blob):
+        return "official_match"
+    return "other"
+
+
+def _football_editorial_priority(candidate: dict) -> float:
+    return {
+        "confirmed_contract": 90.0,
+        "result": 82.0,
+        "injury": 74.0,
+        "club_decision": 68.0,
+        "official_match": 56.0,
+        "other": 0.0,
+        "aggregated_rumour": -100.0,
+    }[_football_priority_kind(candidate)]
+
+
+def _is_aggregated_transfer_rumour(candidate: dict) -> bool:
+    return _football_priority_kind(candidate) == "aggregated_rumour"
+
+
+def _is_confirmed_football_alternative(candidate: dict) -> bool:
+    return _football_priority_kind(candidate) in {
+        "confirmed_contract",
+        "result",
+        "injury",
+        "club_decision",
+        "official_match",
+    }
 
 
 _NUMBER_TOKEN_RE = re.compile(r"\b\d{1,4}(?:[,.]\d{3})*(?:\.\d+)?\b")

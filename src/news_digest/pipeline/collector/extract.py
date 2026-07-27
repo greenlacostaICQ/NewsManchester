@@ -1950,6 +1950,55 @@ def _extract_manutd_items(source: SourceDef, body: str) -> list[ExtractedItem]:
     return items
 
 
+def _extract_pedddle_event_cards(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Decode Pedddle's current ``<pedddle-event data-payload>`` cards."""
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    for raw_payload in re.findall(
+        r"<pedddle-event\b[^>]*\bdata-payload=\"(.*?)\"[^>]*>",
+        body,
+        flags=re.IGNORECASE | re.DOTALL,
+    ):
+        try:
+            payload = json.loads(unescape(raw_payload))
+        except (json.JSONDecodeError, TypeError):
+            continue
+        url = clean_url(str(payload.get("permalink") or ""))
+        title = _clean_title_text(_clean_long_text(str(payload.get("title") or "")))
+        location = payload.get("location") if isinstance(payload.get("location"), dict) else {}
+        schema = payload.get("schema") if isinstance(payload.get("schema"), dict) else {}
+        city = _clean_title_text(str(location.get("city") or ""))
+        postcode = _clean_title_text(str(location.get("postcode") or ""))
+        date_start = str(schema.get("startDate") or "")
+        date_end = str(schema.get("endDate") or date_start)
+        if not url or not title or url in seen:
+            continue
+        seen.add(url)
+        place = " ".join(value for value in (city, postcode) if value)
+        evidence = ". ".join(value for value in (title, place, date_start) if value)
+        items.append(
+            ExtractedItem(
+                title=title,
+                url=url,
+                published_at=date_start or None,
+                summary=evidence,
+                lead=_derive_lead(source, title, evidence),
+                evidence_text=evidence,
+                enrichment_status="ok_pedddle_event_card",
+                structured_event_hint={
+                    "is_event": True,
+                    "event_name": title,
+                    "venue": place,
+                    "date_start": date_start,
+                    "date_end": date_end,
+                },
+            )
+        )
+        if len(items) >= source.max_candidates:
+            break
+    return items
+
+
 def _collapse_repeated_card_title(title: str) -> str:
     clean = _clean_title_text(title)
     if not clean:
@@ -3179,6 +3228,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_manchester_theatres_events(source, body)
     elif source.source_type == "html_sectioned_event_guide":
         links = _extract_sectioned_event_guide(source, body)
+    elif source.source_type == "html_pedddle_events":
+        links = _extract_pedddle_event_cards(source, body)
     elif source.source_type == "html_designmynight":
         links = _extract_designmynight_cards(source, body)
     elif source.source_type == "html_heritage_live":
@@ -3243,6 +3294,17 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         seen.add(normalized_url)
         if not visit_manchester_pre_enriched:
             item = _enrich_item(source, item)
+        if source.name == "Fairfield Social Club":
+            item = ExtractedItem(
+                title=_collapse_repeated_card_title(item.title),
+                url=item.url,
+                published_at=item.published_at,
+                summary=item.summary,
+                lead=item.lead,
+                evidence_text=item.evidence_text,
+                enrichment_status=item.enrichment_status,
+                structured_event_hint=item.structured_event_hint,
+            )
         if source.report_category == "diaspora_events" and not _looks_like_diaspora_event_signal(
             source.name,
             item.title,

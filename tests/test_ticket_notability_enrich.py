@@ -44,7 +44,7 @@ class ArtistNotabilityTest(unittest.TestCase):
 
         def wd(_a):
             calls["wd"] += 1
-            return {"sitelinks": 50, "wikidata_id": "Q123", "description": "band"}
+            return {"sitelinks": 90, "wikidata_id": "Q123", "description": "band"}
 
         def sp(_a):
             calls["sp"] += 1
@@ -119,7 +119,7 @@ class ArtistNotabilityTest(unittest.TestCase):
             return {}
 
         def notable(_a):
-            return {"sitelinks": 50, "wikidata_id": "Q9"}
+            return {"sitelinks": 90, "wikidata_id": "Q9"}
 
         # api_failed → retry next run (1 day).
         cache: dict = {}
@@ -144,6 +144,47 @@ class ArtistNotabilityTest(unittest.TestCase):
         ):
             tn._artist_notability("Famous", "artist", _ticket("Famous"), cache, now_london(), allow_network=True)
         self.assertEqual(cache[tn._cache_key("Famous")]["recheck_days"], 30)
+
+    def test_lastfm_alone_cannot_award_a_and_provider_status_is_reported(self) -> None:
+        cache: dict = {}
+        with mock.patch.multiple(
+            tn,
+            _lookup_wikidata=lambda _a: {},
+            _lookup_spotify=lambda _a: {"_provider_status": "no_credentials"},
+            _lookup_lastfm=lambda _a: {"lastfm_listeners": 2_000_000},
+            _lookup_musicbrainz=lambda _a: {},
+        ):
+            result = tn._artist_notability(
+                "Legacy-heavy artist",
+                "artist",
+                _ticket("Legacy-heavy artist"),
+                cache,
+                now_london(),
+                allow_network=True,
+            )
+        self.assertNotEqual(result.tier, "A")
+        self.assertEqual((result.signals or {})["provider_status"]["spotify"], "no_credentials")
+        self.assertEqual(cache[tn._cache_key("Legacy-heavy artist")]["recheck_days"], 1)
+
+    def test_spotify_plus_lastfm_can_award_a(self) -> None:
+        cache: dict = {}
+        with mock.patch.multiple(
+            tn,
+            _lookup_wikidata=lambda _a: {},
+            _lookup_spotify=lambda _a: {"spotify_popularity": 82, "spotify_followers": 3_000_000},
+            _lookup_lastfm=lambda _a: {"lastfm_listeners": 1_800_000},
+            _lookup_musicbrainz=lambda _a: {},
+        ):
+            result = tn._artist_notability(
+                "Two-signal artist",
+                "artist",
+                _ticket("Two-signal artist"),
+                cache,
+                now_london(),
+                allow_network=True,
+            )
+        self.assertEqual(result.tier, "A")
+        self.assertEqual((result.signals or {})["provider_status"]["spotify"], "ok")
 
 
 class PrefetchTest(unittest.TestCase):
@@ -175,6 +216,28 @@ class PrefetchTest(unittest.TestCase):
         report2 = tn.prefetch_notability(candidates, path, budget_seconds=30, max_workers=4)
         self.assertEqual(report2["looked_up"], 0)
         self.assertEqual(report2["skipped_fresh"], 2)
+
+    def test_cache_v1_a_tier_is_forced_through_new_provider_contract(self) -> None:
+        path = self._cache_path()
+        tn.write_json(path, {
+            "version": 1,
+            "artists": {
+                "legacy artist": {
+                    "artist": "Legacy Artist",
+                    "tier": "A",
+                    "checked_at": now_london().isoformat(),
+                    "recheck_days": 30,
+                    "signals": {"lastfm_listeners": 2_000_000},
+                }
+            },
+        })
+        tn._CACHE_MEM.clear()
+
+        report = tn.prefetch_notability([], path, budget_seconds=30, max_workers=1)
+
+        self.assertEqual(report["queued"], 1)
+        self.assertEqual(report["looked_up"], 1)
+        self.assertEqual(tn.read_json(path, {})["version"], 2)
 
     def test_prefetch_budget_defers_without_dropping(self) -> None:
         path = self._cache_path()

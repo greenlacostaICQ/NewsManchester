@@ -53,7 +53,6 @@ from news_digest.pipeline.model_routing import (
 from news_digest.pipeline.board_rank import (
     JUDGED_BLOCKS,
     apply_board_rank,
-    board_rank_bonus,
     board_reject_verdict,
     rank_boards,
     write_board_rank_report,
@@ -1086,18 +1085,17 @@ def _rewrite_shortlist_priority(candidate: dict) -> tuple[float, float, float, s
             float(reader_value_score({**candidate, "included": True})),
             str(candidate.get("title") or ""),
         )
-    # The judge now runs BEFORE this cut, so its verdict is real here. The bonus
-    # is symmetric around zero (-25..+25) and zero for anything unjudged, so a
-    # deterministic block is never pushed down merely for having no judge —
-    # which is exactly what the old raw 0-100 term did.
-    board_score_bonus = board_rank_bonus(candidate)
-    decision = str(candidate.get("board_decision") or "").lower()
-    if decision == "backup":
-        board_score_bonus -= 20.0
-    elif decision == "reject":
-        board_score_bonus -= 60.0
+    # Inside a judged block the model's listwise rank is the primary order.
+    # The deterministic formula is deliberately only the second tuple field.
+    if str(candidate.get("judged_by") or "") == "model" and candidate.get("board_rank"):
+        return (
+            100_000.0 - float(candidate.get("board_rank") or 0),
+            float(section_board_score(candidate)),
+            float(reader_value_score({**candidate, "included": True})),
+            str(candidate.get("title") or ""),
+        )
     return (
-        lead_bonus + protected_bonus + board_score_bonus,
+        lead_bonus + protected_bonus,
         float(section_board_score(candidate)),
         float(reader_value_score({**candidate, "included": True})),
         str(candidate.get("title") or ""),
@@ -1265,7 +1263,8 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
                 board_rejects_blocked[blocked_reason] = board_rejects_blocked.get(blocked_reason, 0) + 1
         survivors = len(group)
         for candidate in rejectable:
-            if survivors <= floor:
+            reject_reason = board_reject_verdict(candidate)[1]
+            if reject_reason != "board_duplicate" and survivors <= floor:
                 board_rejects_blocked["block_floor_protects_section"] = (
                     board_rejects_blocked.get("block_floor_protects_section", 0) + 1
                 )
