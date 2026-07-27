@@ -288,6 +288,10 @@ def _promote_to_today_focus(candidates: list[dict]) -> None:
     по ключевым словам давал две негодные карточки в день и пустой блок.
     """
 
+    # Шлюз применяется и к нативным карточкам блока — иначе полнота считается
+    # по строкам, которые сам блок не пропустил бы.
+    _demote_unfit_native_today(candidates)
+
     substantive = _today_focus_substantive(candidates)
     if len(substantive) >= _TODAY_FOCUS_TARGET:
         return
@@ -351,12 +355,50 @@ def _promote_to_today_focus(candidates: list[dict]) -> None:
     _do_promote(_TODAY_FOCUS_FAILSAFE_SCORE, needed)
 
 
+def _demote_unfit_native_today(candidates: list[dict]) -> list[dict]:
+    """Нативная Today-карточка проходит тот же шлюз, что и повышенная.
+
+    0170: источник может отдать карточку прямо в `today_focus`
+    (`data/sources.toml`: GMMH). Такая карточка обходила
+    `_today_focus_native_fit`, а `_today_focus_substantive` считала её
+    полноценной без проверки действия, места и затронутых людей — блок
+    выглядел заполненным, а на деле вёз пресс-релиз. Непригодная карточка
+    уезжает в `city_watch` ДО подсчёта полноты; из выпуска она не теряется.
+    """
+    demoted: list[dict] = []
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        if str(candidate.get("primary_block") or "") != "today_focus":
+            continue
+        # Шлюз проходят ВСЕ карточки блока, включая уже помеченные как
+        # повышенные: флаг мог остаться в state от прошлого прогона, и тогда
+        # пропуск проверки вернул бы ровно ту дыру, которую закрываем.
+        fit, verdict = _today_focus_native_fit(candidate)
+        if fit:
+            candidate["today_action_class"] = verdict
+            continue
+        candidate["primary_block"] = "city_watch"
+        candidate["today_focus_reject_reason"] = verdict
+        existing = str(candidate.get("reason") or "").strip()
+        note = f"Demoted from today_focus to city_watch: {verdict}."
+        candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
+        demoted.append(candidate)
+    return demoted
+
+
 def _today_focus_substantive(candidates: list[dict]) -> list[dict]:
-    """Today_focus items that are real news (not awareness/PR boilerplate)."""
+    """Today_focus items that are real news (not awareness/PR boilerplate).
+
+    0170: считаются только публикуемые карточки. Непубликуемая строка
+    заполняла счётчик полноты, и блок выглядел набранным, хотя в выпуск
+    из него не уходило ничего.
+    """
     return [
         c for c in candidates
         if isinstance(c, dict)
         and c.get("primary_block") == "today_focus"
+        and c.get("include")
         and not str(c.get("practical_angle") or "").startswith("Включать только")
         and not _is_awareness_item(c)
     ]

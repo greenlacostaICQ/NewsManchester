@@ -161,6 +161,31 @@ class Release20260727FixesTest(unittest.TestCase):
         self.assertEqual(report["stage_status"], "complete_degraded")
         self.assertEqual(report["errors"], [])
 
+    # 0170 — нативная Today-карточка проходит тот же шлюз.
+    def test_native_today_card_without_action_is_demoted_before_counting(self) -> None:
+        from news_digest.pipeline.collector.routing import (
+            _demote_unfit_native_today,
+            _today_focus_substantive,
+        )
+
+        native = {
+            "fingerprint": "gmmh-1",
+            "primary_block": "today_focus",
+            "category": "public_services",
+            "include": True,
+            "source_label": "GMMH",
+            "title": "GMMH staff celebrate award for community mental health work",
+            "summary": "Trust staff in Manchester received a national award for their service.",
+        }
+
+        self.assertEqual(len(_today_focus_substantive([native])), 1)
+
+        demoted = _demote_unfit_native_today([native])
+
+        self.assertEqual([c["fingerprint"] for c in demoted], ["gmmh-1"])
+        self.assertEqual(native["primary_block"], "city_watch")
+        self.assertEqual(_today_focus_substantive([native]), [])
+
 
 if __name__ == "__main__":
     unittest.main()
