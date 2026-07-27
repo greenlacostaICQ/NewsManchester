@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from datetime import datetime, timedelta
 from html import unescape
 from html.parser import HTMLParser
@@ -1852,6 +1853,31 @@ def _extract_sectioned_event_guide(source: SourceDef, body: str) -> list[Extract
     return items
 
 
+def _extract_wordpress_sectioned_event_guide(
+    source: SourceDef,
+    body: str,
+) -> list[ExtractedItem]:
+    """Extract the rendered article from an official WordPress REST response."""
+    try:
+        payload = json.loads(body)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(payload, list) or not payload or not isinstance(payload[0], dict):
+        return []
+    post = payload[0]
+    content = post.get("content") if isinstance(post.get("content"), dict) else {}
+    rendered = str(content.get("rendered") or "")
+    canonical_url = str(post.get("link") or "").strip()
+    if not rendered or not valid_http_url(canonical_url):
+        return []
+    article_source = replace(
+        source,
+        url=canonical_url,
+        source_type="html_sectioned_event_guide",
+    )
+    return _extract_sectioned_event_guide(article_source, rendered)
+
+
 def _extract_gmmh_press_releases(source: SourceDef, body: str) -> list[ExtractedItem]:
     items: list[ExtractedItem] = []
     seen: set[str] = set()
@@ -3228,6 +3254,8 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         links = _extract_manchester_theatres_events(source, body)
     elif source.source_type == "html_sectioned_event_guide":
         links = _extract_sectioned_event_guide(source, body)
+    elif source.source_type == "json_wordpress_sectioned_event_guide":
+        links = _extract_wordpress_sectioned_event_guide(source, body)
     elif source.source_type == "html_pedddle_events":
         links = _extract_pedddle_event_cards(source, body)
     elif source.source_type == "html_designmynight":
@@ -3281,12 +3309,29 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
         normalized_url = (
             f"{base_url}#{fragment}"
             if (
-                source.source_type in {"html_the_manc_weekly_events", "html_sectioned_event_guide", "html_heritage_live"}
+                source.source_type in {
+                    "html_the_manc_weekly_events",
+                    "html_sectioned_event_guide",
+                    "json_wordpress_sectioned_event_guide",
+                    "html_heritage_live",
+                }
                 or jsonld_event_item
             ) and fragment
             else base_url
         )
-        same_source_page = source.source_type in {"html_page_event", "html_the_manc_weekly_events", "html_sectioned_event_guide", "html_heritage_live"} and base_url == clean_url(source.url)
+        same_source_page = source.source_type in {
+            "html_page_event",
+            "html_the_manc_weekly_events",
+            "html_sectioned_event_guide",
+            "json_wordpress_sectioned_event_guide",
+            "html_heritage_live",
+        } and (
+            base_url == clean_url(source.url)
+            or (
+                source.source_type == "json_wordpress_sectioned_event_guide"
+                and str(item.enrichment_status or "") == "ok_sectioned_guide"
+            )
+        )
         if not jsonld_event_item and not same_source_page and not _is_allowed_source_link(source, base_url, item.title, item.summary):
             continue
         if normalized_url in seen:

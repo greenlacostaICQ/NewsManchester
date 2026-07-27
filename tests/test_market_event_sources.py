@@ -271,6 +271,42 @@ class MarketEventSourcesTest(unittest.TestCase):
         self.assertEqual(candidate["title"], "Kraftwerk")
         self.assertIn("O2 Apollo", candidate["evidence_text"])
 
+    def test_wordpress_sectioned_guide_reuses_canonical_article_parser(self) -> None:
+        source = SourceDef(
+            name="Secret Manchester Monthly Guide",
+            report_category="culture_weekly",
+            candidate_category="culture_weekly",
+            url="https://secretmanchester.com/wp-json/wp/v2/posts?slug=things-to-do-july",
+            primary_block="weekend_activities",
+            source_type="json_wordpress_sectioned_event_guide",
+            allowed_hosts=("secretmanchester.com",),
+            max_candidates=12,
+        )
+        body = json.dumps(
+            [
+                {
+                    "link": "https://secretmanchester.com/things-to-do-july/",
+                    "content": {
+                        "rendered": """
+                        <article>
+                          <h2>Manchester Summer Food Festival</h2>
+                          <p>Manchester city centre on 29 July 2026.</p>
+                          <p>The festival includes food, live music, workshops and a makers market with tickets available.</p>
+                        </article>
+                        """
+                    },
+                }
+            ]
+        )
+
+        [candidate] = _extract_source_candidates(source, body)
+
+        self.assertEqual(candidate["title"], "Manchester Summer Food Festival")
+        self.assertIn(
+            "secretmanchester.com/things-to-do-july#manchester-summer-food-festival",
+            candidate["source_url"],
+        )
+
     def test_pedddle_web_component_cards_are_decoded(self) -> None:
         source = SourceDef(
             name="Pedddle Makers Market",

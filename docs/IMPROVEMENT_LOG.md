@@ -1978,12 +1978,23 @@
 - Где была ошибка: `collector/fetch.py` — WAF-проблема была ошибочно сведена к TLS fingerprint, хотя production evidence показал IP-level block.
 
 ### 0181 — Secret Manchester: ежедневный cache key для изменяемых guide pages — 2026-07-27
-- Статус: внедрено; production-proof ожидается после push.
+- Статус: ПРОВЕРЕНО-НЕ-работает; заменено #0182.
 - Проблема: после #0179 обе страницы повторно дали `found=0` и `extract_seconds=0.0`, хотя live HTML даёт 9/11 карточек локально.
 - Причина (корень): источник завершался по условному cache validator до extractor; URL/transport/parser менялись, а старый validator оставался источником решения.
 - Решение: Monthly и Gigs получают дневной технический query `digest_date=YYYY-MM-DD` через `url_template`; каждый день parser гарантированно видит один свежий body, а в течение дня повторные волны остаются cacheable по тому же ключу.
 - Почему так (отвергнутые альтернативы): отключать общий fetch cache для всех источников нельзя; ручная правка `data/state/fetch_cache.json` исчезнет на следующем state checkout; новый источник не нужен.
 - Ожидаемый эффект и метрика проверки: первая Events wave дня имеет `extract_seconds>0` и `found>0` для обеих Secret pages, без `source_errors`.
 - Файлы/места: `data/sources.toml`; `collector/sources.py:_configured_url`.
+- ПРОВЕРКА: финальная Events wave `30271551688` снова дала Monthly/Gigs `found=0`, `extract_seconds=0.0`; новый URL key не превратил CDN/WAF response в полезный article body.
+- Где была ошибка: cache key устранял 304, но не гарантировал содержательный HTML body на GitHub Actions IP.
+
+### 0182 — Secret Manchester: официальный WordPress JSON вместо WAF HTML — 2026-07-27
+- Статус: внедрено; production-proof ожидается после push.
+- Проблема: HTML URL не даёт extractor полезный body на GitHub Actions после двух транспортов и нового cache key, при этом сайт официально публикует тот же article content через WordPress REST.
+- Причина (корень): блокируется/подменяется HTML delivery surface, не сами данные статьи.
+- Решение: те же Monthly/Gigs статьи читаются из официальных `wp-json/wp/v2/posts?slug=...`; новый узкий adapter берёт только `content.rendered` и canonical `link`, затем передаёт их существующему sectioned-guide parser. Источник, фильтры дат и карточек не меняются.
+- Почему так (отвергнутые альтернативы): сторонний proxy не нужен; отключение источников теряет полезные факты; четвёртая вариация browser headers не устраняет IP/CDN policy.
+- Ожидаемый эффект и метрика проверки: production `extract_seconds>0`, `found>0`, `errors=0` для обеих статей.
+- Файлы/места: `data/sources.toml`; `collector/extract.py:_extract_wordpress_sectioned_event_guide/_extract_source_candidates`.
 - ПРОВЕРКА: ожидается после production-wave.
 - Где была ошибка: —

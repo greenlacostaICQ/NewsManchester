@@ -71,11 +71,7 @@ def _load_sources() -> tuple[SourceDef, ...]:
     def _configured_url(source: dict) -> str:
         template = str(source.get("url_template") or "")
         if template:
-            current = now_london()
-            return template.format(
-                month=current.strftime("%B").lower(),
-                date=current.date().isoformat(),
-            )
+            return template.format(month=now_london().strftime("%B").lower())
         return str(source["url"])
 
     return tuple(
