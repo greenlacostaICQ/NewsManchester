@@ -1992,9 +1992,9 @@
 - Статус: внедрено; production-proof ожидается после push.
 - Проблема: HTML URL не даёт extractor полезный body на GitHub Actions после двух транспортов и нового cache key, при этом сайт официально публикует тот же article content через WordPress REST.
 - Причина (корень): блокируется/подменяется HTML delivery surface, не сами данные статьи.
-- Решение: те же Monthly/Gigs статьи читаются из официальных `wp-json/wp/v2/posts?slug=...`; новый узкий adapter берёт только `content.rendered` и canonical `link`, затем передаёт их существующему sectioned-guide parser. Источник, фильтры дат и карточек не меняются.
+- Решение: те же Monthly/Gigs статьи читаются из официальных `wp-json/wp/v2/posts?slug=...` обычным urllib-маршрутом; новый узкий adapter берёт только `content.rendered` и canonical `link`, затем передаёт их существующему sectioned-guide parser. Источник, фильтры дат и карточек не меняются.
 - Почему так (отвергнутые альтернативы): сторонний proxy не нужен; отключение источников теряет полезные факты; четвёртая вариация browser headers не устраняет IP/CDN policy.
 - Ожидаемый эффект и метрика проверки: production `extract_seconds>0`, `found>0`, `errors=0` для обеих статей.
-- Файлы/места: `data/sources.toml`; `collector/extract.py:_extract_wordpress_sectioned_event_guide/_extract_source_candidates`.
-- ПРОВЕРКА: ожидается после production-wave.
-- Где была ошибка: —
+- Файлы/места: `data/sources.toml`; `collector/extract.py:_extract_wordpress_sectioned_event_guide/_extract_source_candidates`; `collector/fetch.py:_CLOUDFLARE_PROTECTED_HOSTS`.
+- ПРОВЕРКА: промежуточная production-wave `30272621116` подтвердила HTTP 200 без ошибок, но получила `found=0`: API по-прежнему ошибочно шёл через WAF-маршрут #0179. Прямой официальный endpoint вернул HTTP 200, один post и 106778 байт JSON; targeted adapter regressions `3 OK`. Финальная production-wave ожидается после удаления host-wide WAF routing.
+- Где была ошибка: #0179 маршрутизировал весь host через `curl_cffi`; для открытого WordPress REST это давало непригодный body, хотя обычный urllib получает JSON.
