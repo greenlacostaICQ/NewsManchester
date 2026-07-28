@@ -125,7 +125,7 @@ _TODAY_ACTION_CLASS_RE: tuple[tuple[str, "re.Pattern[str]"], ...] = (
     (
         "restriction",
         re.compile(
-            r"\b(?:clos(?:ed|ure|ing)|shut|suspend(?:ed)?|cancel(?:led|s)?|"
+            r"\b(?:clos(?:ed|ures?|ing)|shut|suspend(?:ed)?|cancel(?:led|s)?|"
             r"restrict(?:ed|ion)s?|cordon|evacuat\w*|diversion|"
             r"road\s*works?|strike|industrial action|walkout|no\s+access|"
             r"ban\s+on|bans?\s+(?:come|comes|take|takes)\s+into\s+force|"
@@ -177,7 +177,7 @@ _TODAY_ACTION_CLASS_RE: tuple[tuple[str, "re.Pattern[str]"], ...] = (
 _TODAY_AFFECTED_PEOPLE_RE = re.compile(
     r"\b(?:residents?|passengers?|commuters?|drivers?|pupils?|students?|parents?|"
     r"patients?|customers?|shoppers?|tenants?|households?|families|staff|workers?|"
-    r"visitors?|motorists?|travellers?|anyone|people\s+(?:in|living|who))\b",
+    r"visitors?|motorists?|travellers?|locals|anyone|people(?:\s+(?:in|living|who))?)\b",
     re.IGNORECASE,
 )
 
@@ -212,7 +212,12 @@ def _today_focus_native_fit(candidate: dict) -> tuple[bool, str]:
     blob = _today_blob(candidate)
     if not _has_gm_token(blob.lower()):
         return False, "no_place"
-    if not _TODAY_AFFECTED_PEOPLE_RE.search(blob):
+    # Summary and lead are deliberately compact.  The action and place above
+    # must still be present in the card's own fields (so a foreign page sidebar
+    # cannot create a Today story), but the article body may identify who is
+    # affected just after the truncation boundary.
+    affected_blob = " ".join((blob, str(candidate.get("evidence_text") or "")[:1200]))
+    if not _TODAY_AFFECTED_PEOPLE_RE.search(affected_blob):
         return False, "no_affected_people"
     return True, action_class
 

@@ -120,6 +120,88 @@ class Release20260727FixesTest(unittest.TestCase):
         self.assertTrue(review["allow"], review)
         self.assertEqual(review["reason"], "event_milestone_d3")
 
+    def test_ticket_sale_repeat_is_an_announcement_and_start_milestone_not_a_window(self) -> None:
+        today = now_london().date()
+        event_day = today + timedelta(days=20)
+        sale_day = today + timedelta(days=3)
+        base = {
+            "primary_block": "ticket_radar",
+            "category": "venues_tickets",
+            "title": f"Example Artist — public sale {sale_day.isoformat()}",
+            "ticket_notability": {"tier": "A", "artist": "Example Artist"},
+            "event": {
+                "is_event": True,
+                "event_name": "Example Artist",
+                "venue": "Co-op Live",
+                "date_start": event_day.isoformat(),
+            },
+        }
+        previous_without_sale = {
+            **base,
+            "title": "Example Artist — tickets announced",
+            "last_published_day_london": (today - timedelta(days=1)).isoformat(),
+        }
+        announced = calendar_repeat_review(base, previous_without_sale)
+        self.assertTrue(announced["allow"], announced)
+        self.assertEqual(announced["reason"], "ticket_sale_date_announced_or_changed")
+
+        previous_same_sale = {
+            **base,
+            "last_published_day_london": (today - timedelta(days=1)).isoformat(),
+        }
+        before_sale = calendar_repeat_review(base, previous_same_sale)
+        self.assertFalse(before_sale["allow"], before_sale)
+
+        starts_today = {
+            **base,
+            "title": f"Example Artist — public sale {today.isoformat()}",
+        }
+        previous_starts_today = {
+            **previous_same_sale,
+            "title": starts_today["title"],
+        }
+        started = calendar_repeat_review(starts_today, previous_starts_today)
+        self.assertTrue(started["allow"], started)
+        self.assertEqual(started["reason"], "ticket_sale_started_today")
+
+        started_yesterday = {
+            **base,
+            "title": (
+                "Example Artist — public sale "
+                f"{(today - timedelta(days=1)).isoformat()}"
+            ),
+        }
+        previous_started_yesterday = {
+            **previous_same_sale,
+            "title": started_yesterday["title"],
+        }
+        after_sale = calendar_repeat_review(
+            started_yesterday,
+            previous_started_yesterday,
+        )
+        self.assertFalse(after_sale["allow"], after_sale)
+
+        newly_enriched_old_sale = {
+            **previous_started_yesterday,
+            "event": {
+                **previous_started_yesterday["event"],
+                "sale_start": (today - timedelta(days=30)).isoformat(),
+            },
+        }
+        previous_without_sale = {
+            **newly_enriched_old_sale,
+            "event": {
+                key: value
+                for key, value in newly_enriched_old_sale["event"].items()
+                if key != "sale_start"
+            },
+        }
+        old_sale_backfill = calendar_repeat_review(
+            newly_enriched_old_sale,
+            previous_without_sale,
+        )
+        self.assertFalse(old_sale_backfill["allow"], old_sale_backfill)
+
     def test_writer_budget_reserves_two_attempts_for_judge(self) -> None:
         execution = {"repair_attempts_used": 0, "repair_attempts_by_stage": {}}
         writer_limit = SHARED_REPAIR_BUDGET_PER_RUN - JUDGE_REPAIR_BUDGET_RESERVE
@@ -156,6 +238,29 @@ class Release20260727FixesTest(unittest.TestCase):
 
         self.assertEqual(_today_focus_native_fit(eligible), (True, "restriction"))
         self.assertEqual(_today_focus_native_fit(no_action)[0], False)
+
+    def test_today_native_fit_uses_article_evidence_only_for_affected_people(self) -> None:
+        truncated_motorway_story = {
+            "title": "Greater Manchester motorway closures this week on the M60 and M62",
+            "summary": "Several overnight closures are planned from Monday to Thursday.",
+            "evidence_text": "National Highways says drivers should be aware of the disruptions.",
+        }
+        foreign_sidebar_without_story_action = {
+            "title": "Manchester museum unveils a new Peterloo exhibit",
+            "summary": "The exhibition opens next month.",
+            "evidence_text": "External links: M60 closed in Salford; drivers face delays.",
+        }
+        closed_historically_without_current_audience = {
+            "title": "Manchester Town Hall restoration is months from completion",
+            "summary": "The Town Hall has been closed since 2018. Local Democracy Reporter.",
+        }
+
+        self.assertEqual(
+            _today_focus_native_fit(truncated_motorway_story),
+            (True, "restriction"),
+        )
+        self.assertEqual(_today_focus_native_fit(foreign_sidebar_without_story_action)[0], False)
+        self.assertEqual(_today_focus_native_fit(closed_historically_without_current_audience)[0], False)
 
     def test_today_refill_counts_only_post_validation_survivors(self) -> None:
         rejected = {

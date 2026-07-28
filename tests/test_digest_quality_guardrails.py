@@ -52,6 +52,7 @@ from news_digest.pipeline.writer import (
     _contract_public_drop_reason,
     _draft_line_quality_errors,
     _ensure_source_anchor_for_rendered_line,
+    _football_priority_kind,
     _line_claims_future_ticket_sale,
     _number_tokens,
     _repair_editorial_contract_line,
@@ -228,6 +229,31 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             _section_priority_score(confirmed, "Футбол", ""),
             _section_priority_score(roundup, "Футбол", ""),
         )
+
+    def test_speculative_statement_signing_is_not_a_confirmed_transfer(self) -> None:
+        speculative = {
+            "category": "football",
+            "primary_block": "football",
+            "title": "Manchester United are a statement signing away from their target",
+            "summary": "The club could sign a midfielder and remains in talks.",
+        }
+        self.assertEqual(_football_priority_kind(speculative), "other")
+
+    def test_club_signs_player_headline_is_confirmed_but_could_sign_is_not(self) -> None:
+        confirmed = {
+            "category": "football",
+            "primary_block": "football",
+            "title": "Manchester United sign midfielder from Bundesliga club",
+            "summary": "The club announced the deal on Tuesday.",
+        }
+        speculative = {
+            **confirmed,
+            "title": "Manchester United could sign midfielder from Bundesliga club",
+            "summary": "The club remains in talks over a possible deal.",
+        }
+
+        self.assertEqual(_football_priority_kind(confirmed), "confirmed_contract")
+        self.assertEqual(_football_priority_kind(speculative), "other")
 
     def test_drops_visitor_attraction_from_food_openings(self) -> None:
         updated = self._validate_one(
@@ -713,6 +739,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             and source.source_type in {
                 "html_visitmanchester_events",
                 "html_sectioned_event_guide",
+                "json_wordpress_sectioned_event_guide",
                 "html_designmynight",
             }
         ]
@@ -729,6 +756,21 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         # Breadth is still supplied by the other live guides; the broken
         # pseudo-weekend source must not be kept merely to satisfy a count.
         self.assertNotIn("Manchester Theatres Weekend", [source.name for source in SOURCES])
+
+    def test_next_7_days_has_no_static_leisure_producers(self) -> None:
+        offenders = [
+            source.name
+            for source in SOURCES
+            if source.primary_block == "next_7_days"
+            and source.candidate_category in {
+                "culture_weekly",
+                "venues_tickets",
+                "russian_speaking_events",
+                "diaspora_events",
+            }
+        ]
+
+        self.assertEqual(offenders, [])
 
     # ---------------------------------------------------------------
     # S1 — date-aware guardrails

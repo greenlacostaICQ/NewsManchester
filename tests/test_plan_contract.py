@@ -132,6 +132,14 @@ class PlanContractTest(unittest.TestCase):
             candidates.append(
                 _candidate(i, include=False, digest_selection_verdict="reserve")
             )
+        rejected_reserve = _candidate(
+            102,
+            include=False,
+            digest_selection_verdict="reserve",
+            board_decision="reject",
+            board_confidence=0.99,
+        )
+        candidates.append(rejected_reserve)
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             state_dir = _seed(root, candidates)
@@ -141,7 +149,27 @@ class PlanContractTest(unittest.TestCase):
         understudies = set(plan["lead"]["understudy_fingerprints"])
         self.assertTrue(understudies, "lead must have understudies when reserves exist")
         self.assertFalse(understudies & slot_fps, "дублёры lead не могут занимать публичные слоты")
+        self.assertNotIn(
+            rejected_reserve["fingerprint"],
+            understudies,
+            "board-reject не может стать дублёром главной",
+        )
         self.assertNotIn(plan["lead"]["primary_fingerprint"], slot_fps)
+        self.assertEqual(plan["sections"]["Главная история дня"]["planned"], 1)
+        self.assertEqual(plan["sections"]["Главная история дня"]["slots"], ["lead"])
+        self.assertIsNone(
+            plan["sections"]["Главная история дня"]["expected_shortfall"]
+        )
+        self.assertEqual(plan["totals"]["lead_slots"], 1)
+        self.assertEqual(
+            plan["totals"]["public_slots"],
+            len(plan["slots"]) + 1,
+        )
+        self.assertEqual(
+            plan["totals"]["backups_assigned"],
+            sum(len(slot["backup_fingerprints"]) for slot in plan["slots"])
+            + len(plan["lead"]["understudy_fingerprints"]),
+        )
 
     def test_3_writer_renders_only_plan_composition(self) -> None:
         candidates = [_candidate(i) for i in range(9)]
@@ -323,19 +351,33 @@ class PlanContractTest(unittest.TestCase):
         stale_backup = _candidate(
             1, include=False, digest_selection_verdict="reserve", freshness_status="stale"
         )
+        rejected_backup = _candidate(
+            3,
+            include=False,
+            digest_selection_verdict="reserve",
+            board_decision="reject",
+            board_confidence=0.99,
+        )
         good_backup = _candidate(2, include=False, digest_selection_verdict="reserve")
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            state_dir = _seed(root, [primary, stale_backup, good_backup])
+            state_dir = _seed(root, [primary, stale_backup, rejected_backup, good_backup])
             run_plan_digest(root)
             plan = load_plan(state_dir)
             execution = load_execution(state_dir)
-            by_fp = {c["fingerprint"]: c for c in [primary, stale_backup, good_backup]}
+            by_fp = {
+                c["fingerprint"]: c
+                for c in [primary, stale_backup, rejected_backup, good_backup]
+            }
             slot = plan["slots"][0] if plan["slots"] else None
             # негодный запасной вставляем в цепочку насильно — контроллер
             # обязан отклонить его при вводе и взять следующего
             target_slot = slot["slot_id"] if slot else "lead"
-            chain = [stale_backup["fingerprint"], good_backup["fingerprint"]]
+            chain = [
+                stale_backup["fingerprint"],
+                rejected_backup["fingerprint"],
+                good_backup["fingerprint"],
+            ]
             if slot:
                 slot["backup_fingerprints"] = chain
             else:
@@ -344,6 +386,9 @@ class PlanContractTest(unittest.TestCase):
             self.assertEqual(fp, good_backup["fingerprint"], "stale запасной должен быть пропущен")
             failed = (execution["slots"].get(target_slot) or {}).get("failed_attempts") or []
             self.assertTrue(any("backup_invalid:stale" in str(a.get("reason")) for a in failed))
+            self.assertTrue(
+                any("backup_invalid:board_reject" in str(a.get("reason")) for a in failed)
+            )
 
     def test_verify_enforces_exact_section_removed_absence_and_no_foreign_lines(self) -> None:
         candidates = [_candidate(i) for i in range(7)]
@@ -439,6 +484,13 @@ class PlanContractTest(unittest.TestCase):
             )
             run_plan_digest(root)
             plan = load_plan(state_dir)
+            planned_ticket = next(
+                candidate
+                for candidate in json.loads(
+                    (state_dir / "candidates.json").read_text(encoding="utf-8")
+                )["candidates"]
+                if candidate["fingerprint"] == ticket["fingerprint"]
+            )
         self.assertFalse(
             any(s["primary_fingerprint"] == ticket["fingerprint"] for s in plan["slots"])
         )
@@ -447,6 +499,103 @@ class PlanContractTest(unittest.TestCase):
                 row["fingerprint"] == ticket["fingerprint"]
                 and "repeat_blocked" in row["reason"]
                 for row in plan["out_sample"]
+            )
+        )
+        self.assertEqual(planned_ticket["a_tier_policy_status"], "calendar_blocked")
+        [outcome] = plan["a_tier_conservation"]["physical_event_outcomes"]
+        self.assertEqual(outcome["status"], "calendar_blocked")
+        self.assertEqual(plan["a_tier_conservation"]["eligible"], 0)
+
+    def test_7bb_verify_uses_planner_a_tier_ledger_not_stale_candidate_flag(self) -> None:
+        today = now_london().date()
+        eligible = _candidate(
+            701,
+            block="ticket_radar",
+            category="venues_tickets",
+            title="Visible Star — public sale",
+            event={
+                "is_event": True,
+                "event_name": "Visible Star",
+                "date_start": (today + timedelta(days=3)).isoformat(),
+                "venue": "Co-op Live",
+            },
+            ticket_notability={"artist": "Visible Star", "tier": "A", "kind": "artist"},
+            ticket_type="major_upcoming",
+            venue_scope="GM",
+        )
+        blocked = _candidate(
+            702,
+            block="ticket_radar",
+            category="venues_tickets",
+            title="Blocked Star — public sale",
+            event={
+                "is_event": True,
+                "event_name": "Blocked Star",
+                "date_start": (today + timedelta(days=10)).isoformat(),
+                "venue": "AO Arena",
+            },
+            ticket_notability={"artist": "Blocked Star", "tier": "A", "kind": "artist"},
+            ticket_type="major_upcoming",
+            venue_scope="GM",
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, [eligible, blocked])
+            (state_dir / "published_facts.json").write_text(
+                json.dumps(
+                    {
+                        "facts": [
+                            {
+                                "fingerprint": blocked["fingerprint"],
+                                "last_published_day_london": (
+                                    today - timedelta(days=1)
+                                ).isoformat(),
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            run_plan_digest(root)
+            candidates_payload = json.loads(
+                (state_dir / "candidates.json").read_text(encoding="utf-8")
+            )
+            blocked_state = next(
+                row
+                for row in candidates_payload["candidates"]
+                if row["fingerprint"] == blocked["fingerprint"]
+            )
+            # The old verify used this stale per-candidate flag instead of the
+            # planner's physical-event ledger.
+            blocked_state["a_tier_policy_status"] = "must_show"
+            (state_dir / "candidates.json").write_text(
+                json.dumps(candidates_payload),
+                encoding="utf-8",
+            )
+            write_digest(root)
+            outgoing = root / "data" / "outgoing"
+            outgoing.mkdir(parents=True, exist_ok=True)
+            (outgoing / "current_digest.html").write_text(
+                (state_dir / "draft_digest.html").read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            result = run_verify_digest_plan(root)
+            report = json.loads(
+                (state_dir / "verify_digest_plan_report.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+
+        self.assertTrue(result.ok)
+        self.assertEqual(report["a_tier_conservation"]["eligible"], 1)
+        self.assertEqual(report["a_tier_conservation"]["visible"], 1)
+        self.assertEqual(report["a_tier_conservation"]["calendar_blocked"], 1)
+        self.assertEqual(report["a_tier_conservation"]["missing"], [])
+        self.assertEqual(report["block_policy_version"], "2026-07-27.p0")
+        self.assertFalse(
+            any(
+                row["kind"].startswith("a_tier_missing")
+                for row in report["divergences"]
             )
         )
 

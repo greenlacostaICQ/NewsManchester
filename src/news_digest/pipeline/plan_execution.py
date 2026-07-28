@@ -218,6 +218,16 @@ def _backup_still_valid(candidate: dict[str, Any]) -> tuple[bool, str]:
     """
     if not isinstance(candidate, dict):
         return False, "missing_candidate"
+    if str(candidate.get("digest_selection_verdict") or "") == "drop":
+        return False, "verdict_drop"
+    if str(candidate.get("board_decision") or "") == "reject":
+        return False, "board_reject"
+    if str(candidate.get("lead_board_decision") or "") == "reject":
+        return False, "lead_board_reject"
+    if str(candidate.get("board_duplicate_of") or candidate.get("lead_board_duplicate_of") or ""):
+        return False, "board_duplicate"
+    if candidate.get("reject_reasons") or candidate.get("validation_errors"):
+        return False, "rejected"
     if str(candidate.get("freshness_status") or "") == "stale":
         return False, "stale"
     if candidate.get("synthetic_stale"):

@@ -19,6 +19,7 @@ from news_digest.pipeline.weekend_inventory import (
     weekend_occurrence_date,
 )
 from news_digest.pipeline.writer import (
+    _RU_MONTHS_GENITIVE,
     _collapse_weekend_duplicate_events,
     _is_expired_event_candidate,
     _is_outside_current_weekend_candidate,
@@ -224,7 +225,10 @@ class WeekendInventoryContractTests(unittest.TestCase):
         self.assertFalse(
             _line_has_conflicting_event_date(
                 candidate,
-                f"• {weekend_end.day} июля — Bowlee Car Boot Sale.",
+                (
+                    f"• {weekend_end.day} "
+                    f"{_RU_MONTHS_GENITIVE[weekend_end.month]} — Bowlee Car Boot Sale."
+                ),
             )
         )
 

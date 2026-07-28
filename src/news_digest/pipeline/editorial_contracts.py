@@ -1792,11 +1792,19 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
     sale_date = _ticket_sale_date(candidate)
     if sale_date:
         sale_age = (today - sale_date).days
-        if -3 <= sale_age <= 7:
+        previous_sale_date = _ticket_sale_date(previous)
+        if previous_sale_date != sale_date and sale_age <= 0:
             return {
                 "applies": True,
                 "allow": True,
-                "reason": "fresh_ticket_sale",
+                "reason": "ticket_sale_date_announced_or_changed",
+                "sale_age_days": sale_age,
+            }
+        if sale_age == 0:
+            return {
+                "applies": True,
+                "allow": True,
+                "reason": "ticket_sale_started_today",
                 "sale_age_days": sale_age,
             }
 

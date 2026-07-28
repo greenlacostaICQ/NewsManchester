@@ -9,12 +9,51 @@ from news_digest.pipeline.collector.sources import ExtractedItem, SourceDef
 from news_digest.pipeline.editor import _editor_item_fact_lock_errors
 from news_digest.pipeline.pre_send_quality_judge import (
     _apply_repair_executor,
+    _fact_lock_errors_for_replacement,
     _finalize_repair_report,
 )
 from news_digest.pipeline.plan_execution import build_final_execution_report
 
 
 class PreSendRepairExecutorTest(unittest.TestCase):
+    def test_repair_fact_lock_ignores_copied_source_anchor_but_not_new_claims(self) -> None:
+        candidate = {
+            "source_label": "MEN News Sitemap",
+            "title": "Ahoor Ramabark Fathi jailed for 12 years",
+            "summary": "Police seized more than 2,000 litres of GBL.",
+        }
+        original = (
+            "• Мужчина получил 12 лет тюрьмы. "
+            '<a href="https://men.test/story">MEN</a>'
+        )
+        supported = (
+            "• Ахур Рамабарк Фатхи получил 12 лет тюрьмы. "
+            '<a href="https://men.test/story">MEN</a>'
+        )
+        unsupported = (
+            "• Ахур Рамабарк Фатхи получил 13 лет тюрьмы. "
+            '<a href="https://men.test/story">MEN</a>'
+        )
+
+        self.assertEqual(
+            _fact_lock_errors_for_replacement(
+                supported,
+                candidate=candidate,
+                original_line=original,
+                allow_original_line_facts=False,
+            ),
+            [],
+        )
+        self.assertIn(
+            "13",
+            _fact_lock_errors_for_replacement(
+                unsupported,
+                candidate=candidate,
+                original_line=original,
+                allow_original_line_facts=False,
+            ),
+        )
+
     def test_final_prose_policy_uses_shared_classifier(self) -> None:
         line = '• TfGM: слот подтверждён. <a href="https://tfgm.com/travel-updates">TfGM</a>'
         with tempfile.TemporaryDirectory() as tmp:
@@ -257,7 +296,7 @@ class PreSendRepairExecutorTest(unittest.TestCase):
             execution = json.loads((state_dir / "plan_execution_report.json").read_text(encoding="utf-8"))
 
         self.assertNotIn("Ladytron", repaired)
-        self.assertEqual(report["operations"][0]["outcome"], "resolved_in_place")
+        self.assertEqual(report["operations"][0]["outcome"], "resolved_by_removal")
         self.assertEqual(report["actions"][0]["method"], "removed")
         self.assertEqual(report["actions"][0]["removal_reason"], "fact_lock_failed")
         self.assertEqual(report["blocking_unresolved"], 0)
@@ -557,7 +596,7 @@ class PreSendRepairExecutorTest(unittest.TestCase):
         self.assertEqual(report["model_post_check_rejected"], 1)
         self.assertEqual(report["reserve_replacement_used"], 1)
         self.assertEqual(report["actions"][0]["method"], "reserve_replacement")
-        self.assertEqual(report["operations"][0]["outcome"], "resolved_in_place")
+        self.assertEqual(report["operations"][0]["outcome"], "resolved_by_replacement")
         self.assertEqual(report["blocking_unresolved"], 0)
 
     def test_strip_uses_slot_backup_before_removing_line(self) -> None:

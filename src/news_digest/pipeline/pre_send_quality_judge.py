@@ -902,7 +902,20 @@ def _fact_lock_errors_for_replacement(
     )
     if not allowed:
         allowed = [original_line]
-    return unsupported_fact_tokens(replacement, allowed)
+    # Source anchors are transport metadata copied verbatim from the original
+    # line by `_replacement_with_link`, not editorial claims.  Counting their
+    # visible labels as new proper nouns rejected otherwise valid repairs
+    # (28.07: the copied `MEN` label was the only unsupported token), which
+    # exhausted the lead backup chain and removed a factually repairable lead.
+    # Remove the whole anchor from the fact comparison; all names, dates and
+    # numbers in the actual replacement prose remain locked to evidence.
+    prose_only = re.sub(
+        r"<a\s+[^>]*>.*?</a>",
+        " ",
+        str(replacement or ""),
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    return unsupported_fact_tokens(prose_only, allowed)
 
 
 def _enrich_candidate_for_repair(
@@ -1256,6 +1269,11 @@ def _finalize_repair_report(
     unresolved = 0
     blocking_unresolved = 0
     resolved = 0
+    resolved_by_outcome = {
+        "resolved_in_place": 0,
+        "resolved_by_replacement": 0,
+        "resolved_by_removal": 0,
+    }
     try:
         from news_digest.pipeline.plan_execution import (  # noqa: PLC0415
             load_execution,
@@ -1337,12 +1355,25 @@ def _finalize_repair_report(
             checks.append({"check": "duplicate_identity", "identity": identity, "visible_count": count, "passed": duplicate_ok})
             operation_ok = operation_ok and duplicate_ok
 
-        outcome = "resolved_in_place" if operation_ok else "unresolved"
+        methods = {
+            str(action.get("method") or "")
+            for action in actions
+            if str(action.get("method") or "")
+        }
+        if not operation_ok:
+            outcome = "unresolved"
+        elif methods == {"removed"}:
+            outcome = "resolved_by_removal"
+        elif "reserve_replacement" in methods:
+            outcome = "resolved_by_replacement"
+        else:
+            outcome = "resolved_in_place"
         operation["outcome"] = outcome
         operation["post_checks"] = checks
         operation["known_factual_error"] = any(_known_factual_error(action) for action in actions)
         if operation_ok:
             resolved += 1
+            resolved_by_outcome[outcome] = int(resolved_by_outcome.get(outcome) or 0) + 1
         else:
             unresolved += 1
             if operation["known_factual_error"]:
@@ -1383,7 +1414,8 @@ def _finalize_repair_report(
                     "severity": "warning",
                 }
             )
-    report["resolved_in_place"] = resolved
+    report["resolved"] = resolved
+    report.update(resolved_by_outcome)
     report["unresolved"] = unresolved
     report["blocking_unresolved"] = blocking_unresolved
     final_fact_completeness = _deterministic_completeness_scan(
@@ -1401,7 +1433,7 @@ def _finalize_repair_report(
         "findings": prose_findings[:60],
     }
     report["status"] = (
-        "resolved_in_place"
+        "resolved"
         if not unresolved and not prose_findings and not final_critical_omissions
         else "unresolved"
     )
@@ -1433,7 +1465,10 @@ def _apply_repair_executor(
         "stripped": 0,
         "unresolved": 0,
         "blocking_unresolved": 0,
+        "resolved": 0,
         "resolved_in_place": 0,
+        "resolved_by_replacement": 0,
+        "resolved_by_removal": 0,
         "fact_lock_rejected": 0,
         "enrich_attempted": 0,
         "post_check_errors": deterministic_post_check.get("errors") or [],
@@ -1634,17 +1669,30 @@ def _apply_repair_executor(
                     from news_digest.pipeline.plan_execution import load_plan, plan_slots  # noqa: PLC0415
 
                     plan_for_status = load_plan(state_dir)
-                    slot_for_status = next(
-                        (
-                            item
-                            for item in plan_slots(plan_for_status)
-                            if str(item.get("slot_id") or "") == plan_slot_id
-                        ),
-                        None,
-                    )
+                    if plan_slot_id == "lead":
+                        lead_for_status = (
+                            plan_for_status.get("lead")
+                            if isinstance(plan_for_status.get("lead"), dict)
+                            else {}
+                        )
+                        backup_fingerprints = list(
+                            lead_for_status.get("understudy_fingerprints") or []
+                        )
+                    else:
+                        slot_for_status = next(
+                            (
+                                item
+                                for item in plan_slots(plan_for_status)
+                                if str(item.get("slot_id") or "") == plan_slot_id
+                            ),
+                            None,
+                        )
+                        backup_fingerprints = list(
+                            (slot_for_status or {}).get("backup_fingerprints") or []
+                        )
                     action_record["backup_outcome"] = (
                         "no_eligible_backup"
-                        if not (slot_for_status or {}).get("backup_fingerprints")
+                        if not backup_fingerprints
                         else "backup_chain_exhausted"
                     )
                     report[action_record["backup_outcome"]] = int(

@@ -4480,8 +4480,22 @@ _FOOTBALL_AGGREGATED_RUMOUR_RE = re.compile(
     re.IGNORECASE,
 )
 _FOOTBALL_CONFIRMED_CONTRACT_RE = re.compile(
-    r"\b(?:sign(?:s|ed|ing)|new\s+contract|contract\s+(?:extension|agreed|signed)|"
-    r"joins?|completes?\s+(?:a\s+)?move|loan\s+(?:deal|move)|permanent\s+deal)\b",
+    r"\b(?:has|have)\s+signed\b"
+    r"|\b(?:manchester\s+(?:united|city)|man\s+(?:united|utd|city)|the\s+club)"
+    r"\s+(?:have\s+)?sign(?:s|ed)?\b"
+    r"|\bsign(?:s|ed)\s+(?:a\s+|an\s+|the\s+)?(?:new\s+)?(?:player|contract|deal)\b"
+    r"|\b(?:club\s+)?(?:announces?|confirms?)\s+(?:the\s+)?signing\b"
+    r"|\bcompletes?\s+(?:the\s+)?signing\b"
+    r"|\bcontract\s+(?:extension\s+)?(?:agreed|signed)\b"
+    r"|\bjoins?\s+(?:manchester\s+(?:united|city)|the\s+club)\b"
+    r"|\bcompletes?\s+(?:a\s+)?(?:loan\s+|permanent\s+)?move\b"
+    r"|\b(?:loan|permanent)\s+deal\s+(?:completed|confirmed|agreed)\b",
+    re.IGNORECASE,
+)
+_FOOTBALL_SPECULATIVE_TRANSFER_RE = re.compile(
+    r"\b(?:could|may|might|set\s+to|expected\s+to|poised\s+to|close\s+to|"
+    r"on\s+the\s+verge|in\s+talks|linked\s+with|target(?:s|ed|ing)?|"
+    r"interest(?:ed)?\s+in|statement\s+signing\s+away|would\s+sign)\b",
     re.IGNORECASE,
 )
 _FOOTBALL_RESULT_RE = re.compile(
@@ -4512,7 +4526,24 @@ def _football_priority_kind(candidate: dict) -> str:
     )
     if _FOOTBALL_AGGREGATED_RUMOUR_RE.search(blob):
         return "aggregated_rumour"
-    if _FOOTBALL_CONFIRMED_CONTRACT_RE.search(blob):
+    structured_status = str(
+        candidate.get("transfer_status")
+        or candidate.get("confirmation_status")
+        or candidate.get("official_confirmation")
+        or ""
+    ).strip().lower()
+    structured_confirmed = structured_status in {
+        "announced",
+        "complete",
+        "completed",
+        "confirmed",
+        "joined",
+        "signed",
+    }
+    if structured_confirmed or (
+        _FOOTBALL_CONFIRMED_CONTRACT_RE.search(blob)
+        and not _FOOTBALL_SPECULATIVE_TRANSFER_RE.search(blob)
+    ):
         return "confirmed_contract"
     if _FOOTBALL_RESULT_RE.search(blob):
         return "result"

@@ -814,7 +814,7 @@ class PublicOutputContractTests(unittest.TestCase):
                     "tier": "A",
                     "confidence": 0.95,
                     "signal": "wikidata_sitelinks",
-                    "sitelinks": 68,
+                    "sitelinks": 88,
                 }
             }
         )
@@ -1002,14 +1002,14 @@ class PublicOutputContractTests(unittest.TestCase):
         with patch.dict(os.environ, {"NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP": "0"}):
             notability = enrich_ticket_notability(candidate, cache_path)
         self.assertEqual(notability.tier, "A")
-        self.assertEqual(notability.signal, "streaming_popularity")
+        self.assertEqual(notability.signal, "spotify_plus_independent_signal")
         self.assertGreaterEqual(int((notability.signals or {}).get("spotify_popularity") or 0), 80)
 
     def test_ticket_golden_names_are_a_tier_when_external_signal_exists(self) -> None:
         cache_path = self._ticket_notability_cache(
             {
                 "the weeknd": {"artist": "The Weeknd", "tier": "A", "confidence": 0.95, "sitelinks": 104},
-                "imagine dragons": {"artist": "Imagine Dragons", "tier": "A", "confidence": 0.95, "sitelinks": 75},
+                "imagine dragons": {"artist": "Imagine Dragons", "tier": "A", "confidence": 0.95, "sitelinks": 85},
             }
         )
         for title, expected in (

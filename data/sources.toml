@@ -307,6 +307,10 @@ primary_block = "last_24h"
 allowed_hosts = ["wigan.gov.uk"]
 
 # ── Culture / Events ───────────────────────────────────────────────────────────
+# Culture is accumulated in the weekend inventory and is served only when its
+# structured date belongs to the current weekend.  `next_7_days` is reserved
+# for dynamically routed practical changes (closures, deadlines, services),
+# never for leisure merely because it has a date in the coming week.
 
 [[sources]]
 name = "HOME"
@@ -314,7 +318,7 @@ notes = "cinema, theatre, exhibitions"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://homemcr.org/whats-on/"
-primary_block = "next_7_days"
+primary_block = "weekend_activities"
 
 [[sources]]
 name = "Whitworth"
@@ -322,7 +326,7 @@ notes = "exhibitions with long city relevance"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.whitworth.manchester.ac.uk/whats-on/events/"
-primary_block = "next_7_days"
+primary_block = "weekend_activities"
 
 [[sources]]
 name = "Factory International"
@@ -330,21 +334,21 @@ notes = "выставки, performances, talks"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://factoryinternational.org/whats-on/"
-primary_block = "next_7_days"
+primary_block = "weekend_activities"
 
 [[sources]]
 name = "The Lowry"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://thelowry.com/whats-on"
-primary_block = "next_7_days"
+primary_block = "weekend_activities"
 
 [[sources]]
 name = "Palace Theatre"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.atgtickets.com/venues/palace-theatre-manchester/whats-on/"
-primary_block = "next_7_days"
+primary_block = "weekend_activities"
 allowed_hosts = ["atgtickets.com"]
 
 [[sources]]
@@ -353,7 +357,7 @@ notes = "theatre and youth-led programme with city relevance"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://contactmcr.com/whats-on/"
-primary_block = "next_7_days"
+primary_block = "weekend_activities"
 allowed_hosts = ["contactmcr.com"]
 
 [[sources]]
@@ -362,7 +366,7 @@ notes = "exhibitions and public events with civic relevance"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://phm.org.uk/whats-on/"
-primary_block = "next_7_days"
+primary_block = "weekend_activities"
 source_type = "html_phm_events"
 allowed_hosts = ["phm.org.uk"]
 
@@ -372,7 +376,7 @@ notes = "exhibitions, talks and special programming"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.library.manchester.ac.uk/rylands/visit/events/"
-primary_block = "next_7_days"
+primary_block = "weekend_activities"
 allowed_hosts = ["library.manchester.ac.uk"]
 
 [[sources]]
@@ -381,17 +385,17 @@ notes = "broad discovery layer for weekly planning"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.visitmanchester.com/whats-on"
-primary_block = "next_7_days"
+primary_block = "weekend_activities"
 source_type = "html_visitmanchester_events"
 allowed_hosts = ["visitmanchester.com"]
 
 [[sources]]
 name = "Visit Manchester This Week"
-notes = "official rolling next-7-days guide; catches practical events missed by venue feeds"
+notes = "official rolling guide; night inventory accumulates its dated weekend events"
 report_category = "culture_weekly"
 candidate_category = "culture_weekly"
 url = "https://www.visitmanchester.com/whats-on/whats-on-this-week/"
-primary_block = "next_7_days"
+primary_block = "weekend_activities"
 source_type = "html_visitmanchester_events"
 allowed_hosts = ["visitmanchester.com"]
 max_candidates = 12
@@ -446,7 +450,7 @@ enabled = false  # SPA: server returns 19KB shell with 0 article links (Next.js)
 report_category = "venues_tickets"
 candidate_category = "venues_tickets"
 url = "https://www.ao-arena.com/events"
-primary_block = "next_7_days"
+primary_block = "ticket_radar"
 
 [[sources]]
 name = "Ticketmaster Manchester Onsale"
@@ -542,13 +546,15 @@ allowed_hosts = ["heritagelive.net", "heritagelive.seetickets.com", "seetickets.
 max_candidates = 40
 
 # ── Official Venues (HTML/sitemap) ────────────────────────────────────────────
+# Venue programmes feed Ticket Radar; they must not occupy the practical
+# `next_7_days` block.
 
 [[sources]]
 name = "Bridgewater Hall"
 report_category = "venues_tickets"
 candidate_category = "venues_tickets"
 url = "https://www.bridgewater-hall.co.uk/whats-on/"
-primary_block = "next_7_days"
+primary_block = "ticket_radar"
 allowed_hosts = ["bridgewater-hall.co.uk"]
 
 [[sources]]
@@ -558,7 +564,7 @@ candidate_category = "venues_tickets"
 # 2026-07-10: event-sitemap.xml is a frozen archive (1000 entries, newest lastmod 2022) —
 # 36 runs yielded only 2018 items. The /whats-on/ listing carries current shows with dates.
 url = "https://alberthallmanchester.com/whats-on/"
-primary_block = "next_7_days"
+primary_block = "ticket_radar"
 allowed_hosts = ["alberthallmanchester.com"]
 
 [[sources]]
@@ -567,7 +573,7 @@ report_category = "venues_tickets"
 candidate_category = "venues_tickets"
 source_type = "rss"
 url = "https://bandonthewall.org/feed/"
-primary_block = "next_7_days"
+primary_block = "ticket_radar"
 allowed_hosts = ["bandonthewall.org"]
 
 [[sources]]
@@ -575,7 +581,7 @@ name = "RNCM"
 report_category = "venues_tickets"
 candidate_category = "venues_tickets"
 url = "https://www.rncm.ac.uk/whats-on/"
-primary_block = "next_7_days"
+primary_block = "ticket_radar"
 allowed_hosts = ["rncm.ac.uk"]
 
 # ── Russian-speaking / diaspora concerts & stand-up ──────────────────────────

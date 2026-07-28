@@ -294,6 +294,14 @@ def _parse_board_rank_results(
     diagnostic["missing_candidates"] = [
         {"fingerprint": fp, "title": _clip(expected[fp].get("title"), 120)} for fp in missing[:8]
     ]
+    if missing:
+        # A listwise answer is one decision over the whole comparison set.
+        # Applying only the rows the model happened to return silently changes
+        # the competition and lets a partial response control public order.
+        # Reject it atomically so the provider chain can retry; if every route
+        # is incomplete, the existing deterministic order remains untouched.
+        diagnostic["atomic_rejection"] = "incomplete_candidate_set"
+        return {}, diagnostic
     return verdicts, diagnostic
 
 

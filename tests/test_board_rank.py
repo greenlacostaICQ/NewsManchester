@@ -88,6 +88,31 @@ class BoardRankContractTests(unittest.TestCase):
         self.assertEqual(verdicts["fire-b"]["decision"], "reject")
         self.assertEqual(verdicts["fire-b"]["duplicate_of"], "fire-a")
 
+    def test_partial_listwise_response_is_rejected_atomically(self) -> None:
+        expected = {
+            "fp-a": {"title": "A"},
+            "fp-b": {"title": "B"},
+            "fp-c": {"title": "C"},
+        }
+        raw = json.dumps(
+            {
+                "items": [
+                    {"fingerprint": "fp-a", "rank": 1, "decision": "publish"},
+                    {"fingerprint": "fp-b", "rank": 2, "decision": "backup"},
+                ]
+            }
+        )
+
+        verdicts, diagnostic = _parse_board_rank_results(raw, expected, "last_24h")
+
+        self.assertEqual(verdicts, {})
+        self.assertEqual(diagnostic["accepted"], 2)
+        self.assertEqual(diagnostic["atomic_rejection"], "incomplete_candidate_set")
+        self.assertEqual(
+            [row["fingerprint"] for row in diagnostic["missing_candidates"]],
+            ["fp-c"],
+        )
+
     def test_lead_board_compares_six_real_news_candidates(self) -> None:
         candidates = [
             {
@@ -109,8 +134,8 @@ class BoardRankContractTests(unittest.TestCase):
         self.assertEqual(len(pool), 6)
         self.assertNotIn("ticket", {candidate["fingerprint"] for candidate in pool})
 
-    def test_july_27_blind_pool_contract(self) -> None:
-        """One fire, useful GMP failure above filler, weak IT rejected."""
+    def test_structured_board_verdict_controls_duplicates_and_order(self) -> None:
+        """Parser/application contract; production evaluates model judgement."""
         candidates = [
             {
                 "fingerprint": "about-fire",

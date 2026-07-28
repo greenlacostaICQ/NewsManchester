@@ -401,29 +401,83 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
             }
         )
 
-    a_tier_rows = [
-        candidate for candidate in by_fp.values()
-        if str(candidate.get("a_tier_policy_status") or "") == "must_show"
+    plan_a_tier = (
+        plan.get("a_tier_conservation")
+        if isinstance(plan.get("a_tier_conservation"), dict)
+        else {}
+    )
+    a_tier_outcomes = [
+        dict(row)
+        for row in plan_a_tier.get("physical_event_outcomes") or []
+        if isinstance(row, dict)
     ]
-    a_tier_visible = []
-    a_tier_missing = []
+    if not a_tier_outcomes:
+        # Backward-compatible projection for plans written before the outcome
+        # ledger existed. The representative map contains only calendar-
+        # eligible physical events; stale candidate flags are deliberately not
+        # consulted because planner is the sole composition authority.
+        identity = (
+            plan_a_tier.get("identity")
+            if isinstance(plan_a_tier.get("identity"), dict)
+            else {}
+        )
+        representatives = (
+            identity.get("physical_representative_fingerprints")
+            if isinstance(identity.get("physical_representative_fingerprints"), dict)
+            else {}
+        )
+        missing_from_plan = {
+            str(value) for value in plan_a_tier.get("missing_from_plan") or []
+        }
+        a_tier_outcomes = [
+            {
+                "physical_event": str(physical_event),
+                "status": (
+                    "missing_from_plan"
+                    if str(physical_event) in missing_from_plan
+                    else "planned"
+                ),
+                "representative_fingerprint": str(representative_fp or ""),
+                "reason": "",
+            }
+            for physical_event, representative_fp in sorted(representatives.items())
+        ]
+
+    eligible_a_tier_outcomes = [
+        row
+        for row in a_tier_outcomes
+        if str(row.get("status") or "") in {"planned", "missing_from_plan"}
+    ]
+    a_tier_visible: list[str] = []
+    a_tier_missing: list[str] = []
     final_fps = {
         str((row.get("final_candidate") or {}).get("fingerprint") or "")
         for row in final_selection.get("final_rows") or []
         if isinstance(row, dict)
     }
-    for candidate in a_tier_rows:
-        fp = str(candidate.get("fingerprint") or "")
-        if fp in final_fps:
-            a_tier_visible.append(fp)
+    for outcome in eligible_a_tier_outcomes:
+        physical_event = str(outcome.get("physical_event") or "")
+        fp = str(outcome.get("representative_fingerprint") or "")
+        if str(outcome.get("status") or "") == "missing_from_plan":
+            a_tier_missing.append(physical_event)
+            divergences.append(
+                {
+                    "kind": "a_tier_missing_from_plan",
+                    "physical_event": physical_event,
+                    "fingerprint": fp,
+                    "detail": physical_event,
+                }
+            )
+        elif fp and fp in final_fps:
+            a_tier_visible.append(physical_event)
         else:
-            a_tier_missing.append(fp)
+            a_tier_missing.append(physical_event)
             divergences.append(
                 {
                     "kind": "a_tier_missing_from_final_html",
+                    "physical_event": physical_event,
                     "fingerprint": fp,
-                    "section": candidate.get("plan_section") or candidate.get("primary_block"),
-                    "detail": str(candidate.get("title") or "")[:140],
+                    "detail": physical_event,
                 }
             )
 
@@ -435,7 +489,8 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
     write_json(
         report_path,
         {
-            "schema_version": 2,
+            "schema_version": 3,
+            "block_policy_version": str(plan.get("block_policy_version") or ""),
             "run_at_london": now_london().isoformat(),
             "run_date_london": today_london(),
             "pipeline_run_id": str(plan.get("pipeline_run_id") or ""),
@@ -455,10 +510,22 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
             },
             "actual_section_counts": actual_section_counts,
             "a_tier_conservation": {
-                "eligible": len(a_tier_rows),
+                "recognised": int(plan_a_tier.get("recognised") or 0),
+                "eligible": len(eligible_a_tier_outcomes),
                 "visible": len(a_tier_visible),
                 "missing": a_tier_missing,
+                "calendar_blocked": sum(
+                    1
+                    for row in a_tier_outcomes
+                    if str(row.get("status") or "") == "calendar_blocked"
+                ),
+                "ineligible": sum(
+                    1
+                    for row in a_tier_outcomes
+                    if str(row.get("status") or "") == "ineligible"
+                ),
                 "conserved": not a_tier_missing,
+                "physical_event_outcomes": a_tier_outcomes,
             },
             "shortfalls": shortfalls,
             "event_completeness": event_completeness,

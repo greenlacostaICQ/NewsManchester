@@ -725,6 +725,7 @@ _TRUSTED_CARD_ENRICHMENT = {
     "ok_dmn_card", "ok_skiddle_card", "ok_page_event",
     "ok_weekly_section", "ok_sectioned_guide", "ok_gmmh_press_release",
     "ok_heritage_card", "ok_manchester_theatres_card",
+    "ok_pedddle_event_card",
 }
 
 _DEEP_EVENT_ENRICHMENT_SOURCES = {

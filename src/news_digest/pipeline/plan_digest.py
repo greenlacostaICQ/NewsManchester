@@ -387,6 +387,12 @@ def _backup_eligible(candidate: dict) -> tuple[bool, str]:
         return False, "not_validated"
     if str(candidate.get("digest_selection_verdict") or "") == "drop":
         return False, "verdict_drop"
+    if str(candidate.get("board_decision") or "") == "reject":
+        return False, "board_reject"
+    if str(candidate.get("lead_board_decision") or "") == "reject":
+        return False, "lead_board_reject"
+    if str(candidate.get("board_duplicate_of") or candidate.get("lead_board_duplicate_of") or ""):
+        return False, "board_duplicate"
     if candidate.get("synthetic_stale"):
         return False, "stale_synthetic"
     if str(candidate.get("freshness_status") or "") == "stale":
@@ -397,7 +403,7 @@ def _backup_eligible(candidate: dict) -> tuple[bool, str]:
         return False, "manual_review"
     if str(candidate.get("dedupe_decision") or "") in {"drop", "duplicate"}:
         return False, "duplicate"
-    if candidate.get("reject_reasons"):
+    if candidate.get("reject_reasons") or candidate.get("validation_errors"):
         return False, "rejected"
     render_path = _backup_render_path(candidate)
     if not render_path:
@@ -641,12 +647,16 @@ def run_plan_digest(project_root: Path) -> StageResult:
         if a_tier_eligible and upstream_repeat and not bool(upstream_repeat.get("allow")):
             a_tier_eligible = False
             a_tier_reason = f"calendar_blocked:{upstream_repeat.get('reason') or 'repeat_not_allowed'}"
-        if a_tier_eligible:
+        if a_tier_eligible and not candidate.get("a_tier_collapsed_into"):
             candidate["a_tier_policy_status"] = "must_show"
             candidate["a_tier_policy_reason"] = a_tier_reason
             included = True
-        elif is_a_tier_ticket(candidate):
-            candidate["a_tier_policy_status"] = "ineligible"
+        elif is_a_tier_ticket(candidate) and not candidate.get("a_tier_collapsed_into"):
+            candidate["a_tier_policy_status"] = (
+                "calendar_blocked"
+                if str(a_tier_reason).startswith("calendar_blocked:")
+                else "ineligible"
+            )
             candidate["a_tier_policy_reason"] = a_tier_reason
         if candidate.get("a_tier_collapsed_into"):
             _mark_out(candidate, str(candidate.get("a_tier_collapse_kind") or "a_tier_duplicate_physical_event_collapsed"))
@@ -667,6 +677,9 @@ def run_plan_digest(project_root: Path) -> StageResult:
             continue
         decision, reason = _admission_verdict(candidate, previous_by_fp)
         if decision == "out":
+            if is_a_tier_ticket(candidate) and str(reason).startswith("repeat_blocked:"):
+                candidate["a_tier_policy_status"] = "calendar_blocked"
+                candidate["a_tier_policy_reason"] = f"calendar_blocked:{reason}"
             _mark_out(candidate, reason)
             continue
         if str(candidate.get("primary_block") or "") in {"ticket_radar", "outside_gm_tickets"}:
@@ -981,6 +994,43 @@ def run_plan_digest(project_root: Path) -> StageResult:
     sections_summary: dict[str, dict] = {}
     used_backup_fps = set(lead_understudies)
     for section in ordered:
+        if section == PRIMARY_BLOCKS["lead_story"]:
+            lead_planned = 1 if lead_candidate is not None else 0
+            shortfall = None
+            if not lead_planned:
+                shortfall = {
+                    "planned": 0,
+                    "minimum": 1,
+                    "reason": "pool_exhausted_after_upstream_gates",
+                }
+                warnings.append(
+                    "Недобор в «Главная история дня»: 0/1 — "
+                    "pool_exhausted_after_upstream_gates"
+                )
+            lead_source = str((lead_candidate or {}).get("source_label") or "").strip()
+            sections_summary[section] = {
+                "block": "lead_story",
+                "min": 1,
+                "max": 1,
+                "planned": lead_planned,
+                "slots": ["lead"] if lead_planned else [],
+                "backups_available": len(lead_understudies),
+                "backups_assigned": len(lead_understudies),
+                "backups_unassigned": 0,
+                "backups_filtered_before_assignment": 0,
+                "required_slots_without_backup_count": (
+                    1 if lead_planned and not lead_understudies else 0
+                ),
+                "required_slots_without_backup": (
+                    ["lead"] if lead_planned and not lead_understudies else []
+                ),
+                "planned_sources": [lead_source] if lead_source else [],
+                "min_sources": int(
+                    (INVENTORY_BLOCK_REGISTRY.get("lead_story") or {}).get("min_sources") or 0
+                ),
+                "expected_shortfall": shortfall,
+            }
+            continue
         pool = planned.get(section) or []
         block_key = next((k for k, v in PRIMARY_BLOCKS.items() if v == section), section)
         depth = int(block_policy(block_key).get("backup_depth") or 0)
@@ -1148,6 +1198,62 @@ def run_plan_digest(project_root: Path) -> StageResult:
             "expected_shortfall": shortfall,
         }
 
+    planned_primary_fps = {
+        str(slot.get("primary_fingerprint") or "")
+        for slot in slots
+        if str(slot.get("primary_fingerprint") or "")
+    }
+    physical_representatives = (
+        a_tier_identity.get("physical_representative_fingerprints") or {}
+    )
+    a_tier_candidates_by_physical_key: dict[str, list[dict]] = {}
+    for candidate in candidates:
+        if not isinstance(candidate, dict) or not is_a_tier_ticket(candidate):
+            continue
+        physical_key = _a_tier_physical_key(candidate)
+        if physical_key:
+            a_tier_candidates_by_physical_key.setdefault(physical_key, []).append(candidate)
+    a_tier_physical_event_outcomes: list[dict[str, str]] = []
+    for physical_key in sorted(a_tier_identity.get("recognised_physical_events") or []):
+        rows = a_tier_candidates_by_physical_key.get(physical_key) or []
+        representative_fp = str(physical_representatives.get(physical_key) or "")
+        if physical_key in eligible_a_tier_physical_keys:
+            status = "planned" if representative_fp in planned_primary_fps else "missing_from_plan"
+        elif any(
+            str(row.get("a_tier_policy_status") or "") == "calendar_blocked"
+            for row in rows
+        ):
+            status = "calendar_blocked"
+        else:
+            status = "ineligible"
+        reason = next(
+            (
+                str(row.get("a_tier_policy_reason") or "")
+                for row in rows
+                if str(row.get("a_tier_policy_reason") or "")
+            ),
+            "",
+        )
+        a_tier_physical_event_outcomes.append(
+            {
+                "physical_event": physical_key,
+                "status": status,
+                "representative_fingerprint": representative_fp,
+                "reason": reason,
+            }
+        )
+
+    planned_a_tier_physical_keys = {
+        str(row.get("physical_event") or "")
+        for row in a_tier_physical_event_outcomes
+        if row.get("status") == "planned"
+    }
+    missing_a_tier_physical_keys = {
+        str(row.get("physical_event") or "")
+        for row in a_tier_physical_event_outcomes
+        if row.get("status") == "missing_from_plan"
+    }
+
     plan = {
         "schema_version": PLAN_SCHEMA_VERSION,
         "block_policy_version": BLOCK_POLICY_VERSION,
@@ -1182,7 +1288,12 @@ def run_plan_digest(project_root: Path) -> StageResult:
         "out_sample": out_rows[:200],
         "totals": {
             "slots": len(slots),
-            "backups_assigned": sum(len(s.get("backup_fingerprints") or []) for s in slots),
+            "public_slots": len(slots) + (1 if lead_candidate is not None else 0),
+            "lead_slots": 1 if lead_candidate is not None else 0,
+            "backups_assigned": (
+                sum(len(s.get("backup_fingerprints") or []) for s in slots)
+                + len(lead_understudies)
+            ),
             "out": len(out_rows),
             "demoted_to_backup": len(demoted),
         },
@@ -1194,28 +1305,19 @@ def run_plan_digest(project_root: Path) -> StageResult:
                 if isinstance(candidate, dict) and is_a_tier_ticket(candidate)
             ),
             "eligible": len(eligible_a_tier_physical_keys),
-            "planned": len(
-                eligible_a_tier_physical_keys
-                & {
-                    key
-                    for key, representative_fp in (
-                        a_tier_identity.get("physical_representative_fingerprints") or {}
-                    ).items()
-                    if representative_fp
-                    in {str(slot.get("primary_fingerprint") or "") for slot in slots}
-                }
+            "planned": len(planned_a_tier_physical_keys),
+            "calendar_blocked": sum(
+                1
+                for row in a_tier_physical_event_outcomes
+                if row.get("status") == "calendar_blocked"
             ),
-            "missing_from_plan": sorted(
-                eligible_a_tier_physical_keys
-                - {
-                    key
-                    for key, representative_fp in (
-                        a_tier_identity.get("physical_representative_fingerprints") or {}
-                    ).items()
-                    if representative_fp
-                    in {str(slot.get("primary_fingerprint") or "") for slot in slots}
-                }
+            "ineligible": sum(
+                1
+                for row in a_tier_physical_event_outcomes
+                if row.get("status") == "ineligible"
             ),
+            "missing_from_plan": sorted(missing_a_tier_physical_keys),
+            "physical_event_outcomes": a_tier_physical_event_outcomes,
             "identity": a_tier_identity,
             "policy": (
                 "Conservation is counted by physical A-tier event (owner + venue + date), "
@@ -1282,10 +1384,17 @@ def run_plan_digest(project_root: Path) -> StageResult:
         },
     )
     logger.info(
-        "Plan digest: %d slots, %d backups, %d out, lead=%s.",
-        len(slots),
+        "Plan digest: %d public slots, %d backups, %d out, lead=%s.",
+        plan["totals"]["public_slots"],
         plan["totals"]["backups_assigned"],
         len(out_rows),
         "yes" if lead_candidate else "NO",
     )
-    return StageResult(True, f"Release plan fixed: {len(slots)} slots.", report_path)
+    return StageResult(
+        True,
+        (
+            f"Release plan fixed: {plan['totals']['public_slots']} public slots "
+            f"({len(slots)} section slots + lead)."
+        ),
+        report_path,
+    )

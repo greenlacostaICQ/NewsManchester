@@ -2020,3 +2020,69 @@
 - Файлы/места: `transport_fill.py:_normalize_active_date_ranges/_extract_tram_service_impacts/_recover_active_service_impacts/_render_service_impacts_reminder`; `tests/test_synthetic_freshness.py`.
 - ПРОВЕРКА (offline): одна целевая регрессия `1 OK`; probe на реальных state-файлах 28.07: `dates_repaired=1`, `incidents_recovered=1`, в строке 6 линий, Firswood, Exchange Square и конец `2 августа`. Сеть и pipeline не запускались.
 - Где была ошибка (если не сработает): проверить `transport_fill_report.recovered_tram_incidents_from_history/repaired_tram_date_ranges` и сохранённый `active_tram_disruptions.records[*].affected_services`.
+
+### 0185 — Главная ремонтируется по фактам и получает только пригодного дублёра — 2026-07-28
+- Статус: внедрено; offline-проверка завершена, production-proof ожидается на следующем штатном утреннем выпуске.
+- Проблема: выпуск 28.07 отправился без главной. Судья отверг две фактически поддержанные правки, затем попробовал football betting-карточку, которую board уже отклонил, и снял lead. Отчёт при этом называл снятие `resolved_in_place`, а цепочку lead — отсутствующей.
+- Причина (корень): `_fact_lock_errors_for_replacement` считал подпись скопированной source-ссылки `MEN` новым proper noun; `_backup_eligible` и `_backup_still_valid` не читали board reject/duplicate; lead-цепочка не входила в `backup_outcome`; outcome ремонта не различал правку, замену и снятие.
+- Решение: source-anchor целиком исключён только из сравнения фактов, тогда как числа/даты/имена в прозе по-прежнему закрыты fact-lock; board reject/lead reject/duplicate/validation defect запрещены и при планировании, и при фактическом вводе запасного; judge читает `lead.understudy_fingerprints`; отчёт различает `resolved_in_place`, `resolved_by_replacement`, `resolved_by_removal`. Lead включён в секционные и итоговые числа плана.
+- Почему так (отвергнутые альтернативы): ослаблять fact-lock для всей исходной строки нельзя — это разрешило бы перенос неподтверждённых фактов; сохранять board-reject как «аварийный» backup повторно вводило бы уже принятое редакционное решение.
+- Ожидаемый эффект и метрика проверки: поддержанная правка lead применяется; негодный дублёр не назначается и не вводится; `plan.sections["Главная история дня"].planned=1`, `totals.public_slots=section slots+lead`; снятие никогда не называется исправлением на месте.
+- Файлы/места: `pre_send_quality_judge.py:_fact_lock_errors_for_replacement/_apply_repair_executor/_finalize_repair_report`; `plan_digest.py:_backup_eligible/run_plan_digest`; `plan_execution.py:_backup_still_valid`.
+- ПРОВЕРКА: точный probe на двух production-actions 28.07 после исправления дал `unsupported=[]` для обеих правок lead (до исправления: `fact_lock: men`); контрольная выдумка `13 лет` при подтверждённых `12` остаётся заблокированной. Replay 28.07: план `38 public slots = 37 section + lead`, `37 shown / 0 replaced / 1 removed`, `lead_status=ok` (в отправленном HTML `missing`), пустых серий `0`. Финальный `replay_day.py --golden`: 12/12 дней завершены, `lead_status=ok` и `blank_runs_2plus=0` на всех; финальная выборка исполнения от `33 shown / 1 replaced / 10 removed` до `64 / 0 / 4` без технического нарушения плана. Полный набор: 955 тестов OK.
+- Где была ошибка: `pre_send_quality_judge.py:_fact_lock_errors_for_replacement` проверял редакционный текст вместе с транспортной подписью ссылки; `plan_digest.py:_backup_eligible` не запрещал board-reject.
+
+### 0186 — A-tier сверяется по физическому событию и календарному статусу planner — 2026-07-28
+- Статус: внедрено; offline-проверка завершена, production-proof ожидается на следующем штатном ticket/morning цикле.
+- Проблема: verify повторно читал мутируемый `candidate.a_tier_policy_status=must_show`, поэтому календарно заблокированная карточка могла считаться потерянным A-tier; planner не объяснял судьбу каждого физического события. Продажный repeat дополнительно разрешался каждый день в окне `−3…+7`, а не только на рубеже.
+- Причина (корень): conservation не имел неизменяемого event-level ledger в `release_plan`; проверка восстанавливала обязанность показа из более старого state. `calendar_repeat_review` трактовал окно вокруг продажи как один длинный milestone.
+- Решение: planner записывает по каждому `artist/owner + venue + date` один outcome: `planned`, `missing_from_plan`, `calendar_blocked` или `ineligible`; verify читает только этот ledger. Любое число A-tier по-прежнему обходит caps, но повтор появляется лишь при новой/изменённой будущей дате продажи, в сам день старта и на остальных календарных milestone; позднее обогащение старой датой повтор не создаёт.
+- Почему так (отвергнутые альтернативы): возвращать безусловный ежедневный A-tier override нарушает календарь; применять section cap к A-tier нарушает отдельное правило видимости. Эти правила не конфликтуют: cap отсутствует, календарная новизна обязательна.
+- Ожидаемый эффект и метрика проверки: `verify.a_tier_conservation.eligible` равен только planner outcomes `planned|missing_from_plan`; `calendar_blocked` не попадает в missing; каждый физический event имеет одну объяснимую судьбу.
+- Файлы/места: `plan_digest.py:run_plan_digest`; `verify_digest_plan.py:run_verify_digest_plan`; `editorial_contracts.py:calendar_repeat_review`.
+- ПРОВЕРКА: regression с одним eligible и одним вчера показанным A-tier: verify `eligible=1, visible=1, calendar_blocked=1, missing=[]`; stale кандидатному флагу `must_show` доверия нет. Отдельные тесты подтверждают announcement/change, день старта и запрет повторов после старта/при поздней подстановке старой даты. Полный набор: 955 тестов OK.
+- Где была ошибка: `verify_digest_plan.py` создавал вторую таблицу обязанностей из candidates вместо чтения решения planner.
+
+### 0187 — Неполный ответ board не меняет половину списка — 2026-07-28
+- Статус: внедрено; offline-проверка завершена, production-proof ожидается на следующем утреннем board-run.
+- Проблема: 28.07 City board вернул 17 из 18 кандидатов, Last24 — 24 из 25; обе неполные доски были применены, то есть модель управляла только ответившей частью сравнения.
+- Причина (корень): parser записывал `missing_candidates` как диагностику, но возвращал частичный `verdicts`; provider chain считал такой вызов успешным и не пробовал следующий маршрут.
+- Решение: listwise board принимается атомарно только при полном множестве fingerprint. Неполный ответ возвращает `atomic_rejection=incomplete_candidate_set`, после чего вызывается следующий provider; если все ответы неполные, остаётся детерминированный порядок без частичного модельного влияния.
+- Почему так (отвергнутые альтернативы): дополнять пропущенные строки формульными рангами смешивает две несопоставимые шкалы внутри одной доски; молча удалять пропущенного кандидата превращает ошибку ответа в редакционное решение.
+- Ожидаемый эффект и метрика проверки: для каждого применённого блока `ranked == sent_to_model`; partial виден в diagnostics и даёт retry/fallback.
+- Файлы/места: `board_rank.py:_parse_board_rank_results`; `tests/test_board_rank.py`.
+- ПРОВЕРКА: regression на ответе 1/2 возвращает `verdicts={}`, missing fingerprint и `atomic_rejection`; полный ответ продолжает применяться. Полный набор: 955 тестов OK.
+- Где была ошибка: `board_rank.py:_parse_board_rank_results` диагностировал неполноту, но не делал её условием отказа.
+
+### 0188 — Football contract требует подтверждения, а не слова signing — 2026-07-28
+- Статус: внедрено; offline-проверка завершена, production-proof ожидается на следующем выпуске с трансферными карточками.
+- Проблема: заголовок `Manchester United are a statement signing away...` классифицировался как подтверждённый контракт и мог обойти результат/официальную новость.
+- Причина (корень): `_FOOTBALL_CONFIRMED_CONTRACT_RE` принимал любое `sign/signing`, включая условные и рекламные формулировки.
+- Решение: confirmed допускается по структурированному статусу или по закрытому набору конструкций `has signed`, `club confirms/announces signing`, `contract signed/agreed`, `completes move`; `could/may/might/set to/in talks/linked/statement signing away` явно остаются speculative. Подтверждённый заголовок `Manchester United sign …` сохранён.
+- Почему так (отвергнутые альтернативы): второй LLM не нужен — отличие выражено проверяемыми формами факта; запретить все слова `sign` потерял бы официальные краткие club headlines.
+- Ожидаемый эффект и метрика проверки: официальный контракт выше result/injury/rumour; условный transfer текст получает `other`, а не `confirmed_contract`.
+- Файлы/места: `writer.py:_FOOTBALL_CONFIRMED_CONTRACT_RE/_FOOTBALL_SPECULATIVE_TRANSFER_RE/_football_priority_kind`.
+- ПРОВЕРКА: regressions `statement signing away + could + in talks → other`, `Manchester United sign midfielder + announced deal → confirmed_contract`; 2026-07-28 replay и golden сохраняют плановую целостность. Полный набор: 955 тестов OK.
+- Где была ошибка: `writer.py:_FOOTBALL_CONFIRMED_CONTRACT_RE` классифицировал тему по одному слову вместо статуса сделки.
+
+### 0189 — Next7 очищен от досуга, Weekend реально накапливает события, Today видит полный audience — 2026-07-28
+- Статус: внедрено; offline-проверка завершена, production-proof ожидается после следующей events-wave и штатного утреннего выпуска.
+- Проблема: утро 28.07 имело `Next7 records=46, fact_ready=0`, потому что все статически назначенные производители блока были театрами, музеями и концертными площадками — вопреки контракту практических изменений D+2…D+7. Weekend при этом реально накопил `404 records / 50 fact_ready`, но основные cultural feeds шли мимо него. Today не принимал motorway closures, потому что summary обрывался до фразы `Drivers should be aware`.
+- Причина (корень): 15 source definitions напрямую задавали leisure-кандидатам `next_7_days`, обходя правильный динамический router; Today искал затронутых людей только в усечённых title/summary/lead и не узнавал plural `closures`/самостоятельное `people`.
+- Решение: culture feeds направлены в `weekend_activities` и хранятся до структурированной даты текущих выходных; venue programmes направлены в `ticket_radar`; статических leisure producers у Next7 больше нет — только динамические closures/deadlines/service changes. Today по-прежнему требует действие и GM-place в собственных полях, но аудиторию может подтвердить первые 1200 символов той же статьи; добавлены `closures`, `people`, `locals`, без ложного совпадения `Local Democracy Reporter`.
+- Почему так (отвергнутые альтернативы): понижать минимум Next7 или печатать концерт как «практическое изменение» маскирует отсутствие настоящих фактов; показывать весь Weekend во вторник нарушает расписание; допускать action/place из полного HTML вернул бы загрязнение чужими sidebar links.
+- Ожидаемый эффект и метрика проверки: `static leisure producers for next_7_days=0`; во вторник Weekend остаётся скрытым, но записи сохраняются; в пятницу/выходные пригодные даты используются; Today принимает реальные closures и сохраняет честный shortfall, если таких историй меньше трёх.
+- Файлы/места: `data/sources.toml`; `collector/routing.py:_TODAY_ACTION_CLASS_RE/_TODAY_AFFECTED_PEOPLE_RE/_today_focus_native_fit`.
+- ПРОВЕРКА: реальный state 28.07: Weekend `404 records / 50 fact_ready / 41 render_ready / 0 eligible` во вторник — накопление подтверждено без преждевременного расхода; после нового predicate Today имеет ровно две реальные карточки (Stockport bins и GM motorway closures), а исторически закрытый Town Hall не проходит. Registry probe: `static_next_7=[]`; contract tests и полный набор 955 тестов OK.
+- Где была ошибка: `data/sources.toml` вручную обходил смысловой router блока; `collector/routing.py:_today_focus_native_fit` принимал решение по обрезанному до 280 символов тексту.
+
+### 0190 — Source/test contracts не зависят от live child-fetch и календарного месяца — 2026-07-28
+- Статус: внедрено; offline и полный unittest proof завершены.
+- Проблема: CI падал на Pedddle fixture и июльской строке Weekend в конце июля/августе; ticket-policy fixtures также оставались на старых порогах текущего уже внедрённого контракта.
+- Причина (корень): готовая Pedddle event-card не входила в trusted enrichment и тест пытался live-fetch child page; Weekend ожидал слово `июля` независимо от фактического месяца; несколько fixtures проверяли устаревшие значения, а не текущую policy.
+- Решение: `ok_pedddle_event_card` считается самодостаточной parser-card и не требует дочернего сетевого запроса; месяц строится из общего русского календаря writer; policy fixtures синхронизированы с действующим контрактом. Производственный Spotify-код, credentials и классификация в этой доработке не менялись.
+- Почему так (отвергнутые альтернативы): сетевой тест parser-card не проверяет parser и нестабилен по Python/HTTP; фиксировать текущий месяц строкой превращает тест в ежемесячную поломку.
+- Ожидаемый эффект и метрика проверки: одинаковый результат на Python 3.11 CI и локальном Python 3.14; тесты не зависят от сети или месяца запуска.
+- Файлы/места: `collector/extract.py:_TRUSTED_CARD_ENRICHMENT`; `tests/test_weekend_inventory_contract.py`; `tests/test_public_output_contracts.py`.
+- ПРОВЕРКА: targeted 281 тест и полный `unittest discover` 955 тестов — OK; `py_compile` и `git diff --check` — OK.
+- Где была ошибка: тестовый путь Pedddle неожиданно переходил из синтетической parser-card в live enrichment, а календарная проверка содержала абсолютный месяц.
