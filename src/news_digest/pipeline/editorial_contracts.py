@@ -92,6 +92,7 @@ _SERVICE_PROSE_MARKERS: tuple[tuple[str, str], ...] = (
     ("internal_ticket_rating", "фестивальный состав, не один артист"),
     ("internal_ticket_rating", "почему в радаре"),
     ("internal_ticket_rating", "spotify popularity"),
+    ("internal_ticket_rating", "youtube:"),
     ("internal_ticket_rating", "wikidata:"),
     ("service_template", "слот подтверждён"),
     ("service_template", "висит карточка"),

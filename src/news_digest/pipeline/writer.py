@@ -1810,15 +1810,12 @@ def _ticket_notability_proof(candidate: dict) -> str:
     notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
     signals = notability.get("signals") if isinstance(notability.get("signals"), dict) else {}
     signal = str(notability.get("signal") or "").strip()
-    spotify_followers = _format_compact_number(signals.get("spotify_followers"))
-    spotify_popularity = str(signals.get("spotify_popularity") or "").strip()
+    youtube_subscribers = _format_compact_number(signals.get("youtube_subscribers"))
     lastfm = _format_compact_number(signals.get("lastfm_listeners"))
     sitelinks = _format_compact_number(notability.get("sitelinks") or signals.get("sitelinks"))
-    if signal == "streaming_popularity":
-        if spotify_followers:
-            return f"Spotify: {spotify_followers} подписчиков"
-        if spotify_popularity and spotify_popularity != "0":
-            return f"Spotify popularity {spotify_popularity}/100"
+    if signal == "audience_popularity":
+        if youtube_subscribers:
+            return f"YouTube: {youtube_subscribers} подписчиков"
         if lastfm:
             return f"Last.fm: {lastfm} слушателей"
     if signal.startswith("wikidata") and sitelinks:
@@ -1829,8 +1826,8 @@ def _ticket_notability_proof(candidate: dict) -> str:
         return "MusicBrainz и Ticketmaster подтверждают артиста"
     if lastfm:
         return f"Last.fm: {lastfm} слушателей"
-    if spotify_followers:
-        return f"Spotify: {spotify_followers} подписчиков"
+    if youtube_subscribers:
+        return f"YouTube: {youtube_subscribers} подписчиков"
     if sitelinks:
         return f"Wikidata: {sitelinks} языковых страниц"
     return ""
@@ -1879,7 +1876,7 @@ def _ticket_watch_reason(candidate: dict) -> str:
         return "фестивальный состав, не один артист"
     if tier == "A":
         # P1-B: give the reader a reason to act (date / venue), not the machine
-        # notability signal. Last.fm / Spotify / Wikidata stay in the internal
+        # notability signal. Last.fm / YouTube / Wikidata stay in the internal
         # ticket_notability report, never in the published line.
         if days == 0:
             return f"сегодня в {venue}" if venue else "сегодня"

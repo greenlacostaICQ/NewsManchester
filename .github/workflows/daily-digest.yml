@@ -78,8 +78,8 @@ jobs:
           TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
           SKIDDLE_API_KEY: ${{ secrets.SKIDDLE_APIKEY }}
           NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP: "1"
-          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
-          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          YOUTUBE_SEARCH_DAILY_LIMIT: "95"
           LASTFM_API: ${{ secrets.LASTFM_API }}
         run: python3 scripts/run_local_digest.py rank-digest
 
@@ -101,10 +101,6 @@ jobs:
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
           TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
           SKIDDLE_API_KEY: ${{ secrets.SKIDDLE_APIKEY }}
-          NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP: "1"
-          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
-          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
-          LASTFM_API: ${{ secrets.LASTFM_API }}
           OPENAI_API_KEY: ${{ secrets.OPENAI }}
         run: |
           set -euo pipefail
@@ -273,7 +269,7 @@ jobs:
           # new API call, so the daily semantic-dedup cost stays at the
           # marginal "today's new candidates" only.
           git add -f data/state/embedding_cache.json || true
-          # Ticket fame (Wikidata/MusicBrainz/Last.fm/Spotify) cache. Persisting
+          # Ticket fame (Wikidata/MusicBrainz/Last.fm/YouTube) cache. Persisting
           # it means a known artist is graded once, not re-looked-up every day —
           # faster and stable when an upstream API is briefly down.
           git add -f data/state/ticket_notability_cache.json || true

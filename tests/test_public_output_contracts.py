@@ -554,12 +554,12 @@ class PublicOutputContractTests(unittest.TestCase):
                 "artist": "The Weeknd",
                 "kind": "artist",
                 "tier": "A",
-                "signal": "streaming_popularity",
-                "signals": {"spotify_followers": 41200000},
+                "signal": "audience_popularity",
+                "signals": {"youtube_subscribers": 38400000},
             },
         }
         line = _build_ticket_fallback_line(candidate)
-        self.assertNotIn("Spotify", line)
+        self.assertNotIn("YouTube", line)
         self.assertNotIn("сигнал:", line)
         self.assertIn("Etihad Stadium", line)
         self.assertNotIn("крупный артист", line.lower())
@@ -977,16 +977,16 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertEqual(notability.signal, "musicbrainz_ticketmaster_identity")
         self.assertTrue((notability.signals or {}).get("ticketmaster_attraction"))
 
-    def test_spotify_lastfm_signals_can_promote_without_manual_artist_list(self) -> None:
+    def test_youtube_lastfm_signals_can_promote_without_manual_artist_list(self) -> None:
         cache_path = self._ticket_notability_cache(
             {
-                "streaming star": {
-                    "artist": "Streaming Star",
+                "audience star": {
+                    "artist": "Audience Star",
                     "confidence": 0.9,
                     "signals": {
                         "sitelinks": 0,
-                        "spotify_popularity": 82,
-                        "spotify_followers": 2_500_000,
+                        "youtube_channel_id": "UCstar",
+                        "youtube_subscribers": 2_500_000,
                         "lastfm_listeners": 1_800_000,
                     },
                 }
@@ -995,15 +995,15 @@ class PublicOutputContractTests(unittest.TestCase):
         candidate = {
             "category": "venues_tickets",
             "primary_block": "outside_gm_tickets",
-            "title": "Streaming Star — event 2026-10-01",
+            "title": "Audience Star — event 2026-10-01",
             "summary": "UK | Pop | event_date=2026-10-01 19:00 | ticket_type=newly_listed",
             "event": {"venue": "Small UK venue", "date_start": "2026-10-01"},
         }
         with patch.dict(os.environ, {"NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP": "0"}):
             notability = enrich_ticket_notability(candidate, cache_path)
         self.assertEqual(notability.tier, "A")
-        self.assertEqual(notability.signal, "spotify_plus_independent_signal")
-        self.assertGreaterEqual(int((notability.signals or {}).get("spotify_popularity") or 0), 80)
+        self.assertEqual(notability.signal, "youtube_plus_independent_signal")
+        self.assertGreaterEqual(int((notability.signals or {}).get("youtube_subscribers") or 0), 1_000_000)
 
     def test_ticket_golden_names_are_a_tier_when_external_signal_exists(self) -> None:
         cache_path = self._ticket_notability_cache(

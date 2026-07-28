@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -28,7 +27,8 @@ NON_ARTIST_EVENT_RE = re.compile(
 )
 
 _CACHE_MEM: dict[str, dict] = {}
-_CACHE_VERSION = 2
+_CACHE_VERSION = 3
+_YOUTUBE_SEARCH_DAILY_LIMIT = 95
 
 # Minimum seconds between calls to each external API, enforced across all
 # worker threads. MusicBrainz documents ~1 request/second per IP — the others
@@ -37,7 +37,7 @@ _CACHE_VERSION = 2
 _API_MIN_INTERVAL = {
     "musicbrainz": 1.1,
     "wikidata": 0.15,
-    "spotify": 0.1,
+    "youtube": 0.1,
     "lastfm": 0.1,
 }
 
@@ -63,6 +63,50 @@ class _ApiThrottle:
 
 
 _THROTTLE = _ApiThrottle()
+
+
+class _YoutubeSearchBudget:
+    """Persisted, thread-safe guard for YouTube's daily search quota.
+
+    Known channel IDs use channels.list and never spend this budget. Only the
+    expensive discovery fallback (search.list) takes a token. The state object
+    is part of ticket_notability_cache.json, so workflow reruns on the same day
+    cannot accidentally start from zero again.
+    """
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._state: dict[str, object] = {}
+
+    def bind(self, state: dict, day: str) -> None:
+        with self._lock:
+            if str(state.get("date") or "") != day:
+                state.clear()
+                state.update({"date": day, "search_calls": 0})
+            state.setdefault("search_calls", 0)
+            self._state = state
+
+    def acquire(self) -> bool:
+        raw_limit = os.environ.get("YOUTUBE_SEARCH_DAILY_LIMIT", "").strip()
+        try:
+            limit = int(raw_limit) if raw_limit else _YOUTUBE_SEARCH_DAILY_LIMIT
+        except ValueError:
+            limit = _YOUTUBE_SEARCH_DAILY_LIMIT
+        limit = max(0, min(100, limit))
+        with self._lock:
+            used = int(self._state.get("search_calls") or 0)
+            if used >= limit:
+                return False
+            self._state["search_calls"] = used + 1
+            self._state["daily_limit"] = limit
+            return True
+
+    def snapshot(self) -> dict[str, object]:
+        with self._lock:
+            return dict(self._state)
+
+
+_YOUTUBE_SEARCH_BUDGET = _YoutubeSearchBudget()
 
 LINEUP_EVENT_RE = re.compile(
     r"\b(?:festival|open air|open-air|line[- ]?up|weekender)\b",
@@ -173,7 +217,7 @@ def _clean_artist_name(title: str) -> str:
         cleaned = presenter.group(1).strip()
     # Support / guest act: "Kings Of Leon Special Guest Snuts Sat 4 Jul 2026
     # Multiple times" → drop from the support act on (it also drags the date
-    # noise with it, which is why the Wikidata/Spotify lookup returned
+    # noise with it, which is why external identity lookups returned
     # not_found for real headliners on 2026-06-03).
     cleaned = re.split(
         r"\s+(?:with\s+|plus\s+|\+\s*)?(?:very\s+)?special\s+guests?\b",
@@ -346,14 +390,34 @@ def _load_cache(path: Path) -> dict:
         payload = {"version": _CACHE_VERSION, "artists": {}}
     previous_version = int(payload.get("version") or 1)
     payload.setdefault("artists", {})
-    if previous_version < _CACHE_VERSION:
+    if previous_version < 2:
         # One-time blind recheck of every cached A result. Old records allowed
-        # Last.fm alone to award A and did not say whether Spotify failed.
+        # Last.fm alone to award A and did not record partial provider failure.
         for record in payload["artists"].values():
             if not isinstance(record, dict) or str(record.get("tier") or "").upper() != "A":
                 continue
             record["a_tier_recheck_pending"] = True
+    if previous_version < 3:
+        # Spotify Development Mode now requires a paid Premium owner account.
+        # Remove its stale signals and route any pending/A contract recheck to
+        # the free, quota-bounded YouTube reach signal instead.
+        for record in payload["artists"].values():
+            if not isinstance(record, dict):
+                continue
+            signals = record.get("signals") if isinstance(record.get("signals"), dict) else {}
+            signals.pop("spotify_id", None)
+            signals.pop("spotify_name", None)
+            signals.pop("spotify_popularity", None)
+            signals.pop("spotify_followers", None)
+            statuses = signals.get("provider_status")
+            if isinstance(statuses, dict):
+                statuses.pop("spotify", None)
+            record["signals"] = signals
+            if str(record.get("tier") or "").upper() == "A" or record.get("a_tier_recheck_pending"):
+                record["a_tier_recheck_pending"] = True
         payload["version"] = _CACHE_VERSION
+    payload.setdefault("youtube_search_quota", {})
+    _YOUTUBE_SEARCH_BUDGET.bind(payload["youtube_search_quota"], now_london().date().isoformat())
     _CACHE_MEM[cache_id] = payload
     return payload
 
@@ -401,7 +465,7 @@ def _lookup_wikidata(artist: str) -> dict:
                 "action": "wbgetentities",
                 "format": "json",
                 "ids": entity_id,
-                "props": "sitelinks|descriptions|labels",
+                "props": "sitelinks|descriptions|labels|claims",
                 "languages": "en",
             }
         )
@@ -414,11 +478,18 @@ def _lookup_wikidata(artist: str) -> dict:
         )
         if not MUSIC_ENTITY_RE.search(desc) and not performerish:
             continue
+        youtube_channel_id = ""
+        for claim in ((entity.get("claims") or {}).get("P2397") or []):
+            value = (((claim.get("mainsnak") or {}).get("datavalue") or {}).get("value"))
+            if isinstance(value, str) and value.strip():
+                youtube_channel_id = value.strip()
+                break
         return {
             "wikidata_id": entity_id,
             "label": label,
             "description": desc,
             "sitelinks": len(sitelinks),
+            "youtube_channel_id": youtube_channel_id,
         }
     return {}
 
@@ -458,68 +529,139 @@ def _lookup_musicbrainz(artist: str) -> dict:
     return best
 
 
-def _spotify_json(url: str, token: str) -> dict:
+def _youtube_json(resource: str, params: dict[str, object], api_key: str) -> dict:
+    query = parse.urlencode({**params, "key": api_key})
     req = request.Request(
-        url,
+        f"https://www.googleapis.com/youtube/v3/{resource}?{query}",
         headers={
             "User-Agent": "NewsManchester/1.0 (personal city intelligence; ticket notability)",
             "Accept": "application/json",
-            "Authorization": f"Bearer {token}",
         },
     )
-    with request.urlopen(req, timeout=4) as response:  # noqa: S310 - public Spotify API.
-        return json.loads(response.read().decode("utf-8"))
+    try:
+        with request.urlopen(req, timeout=4) as response:  # noqa: S310 - public YouTube API.
+            return json.loads(response.read().decode("utf-8"))
+    except error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace").lower()
+        if exc.code == 403 and "quota" in body:
+            return {"_provider_status": "quota_deferred"}
+        raise
 
 
-def _spotify_access_token() -> str:
-    client_id = os.environ.get("SPOTIFY_CLIENT_ID", "").strip()
-    client_secret = os.environ.get("SPOTIFY_CLIENT_SECRET", "").strip()
-    if not client_id or not client_secret:
-        return ""
-    body = parse.urlencode({"grant_type": "client_credentials"}).encode("utf-8")
-    basic = base64.b64encode(f"{client_id}:{client_secret}".encode("utf-8")).decode("ascii")
-    req = request.Request(
-        "https://accounts.spotify.com/api/token",
-        data=body,
-        headers={
-            "User-Agent": "NewsManchester/1.0 (personal city intelligence; ticket notability)",
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Authorization": f"Basic {basic}",
-        },
+def _youtube_identity_key(value: str) -> str:
+    cleaned = re.sub(
+        r"(?:\s*[-–—]\s*)?(?:official(?:\s+artist)?(?:\s+channel)?|music|topic)$",
+        "",
+        value.strip(),
+        flags=re.IGNORECASE,
     )
-    with request.urlopen(req, timeout=4) as response:  # noqa: S310 - public Spotify API.
-        payload = json.loads(response.read().decode("utf-8"))
-    return str(payload.get("access_token") or "")
+    cleaned = re.sub(r"vevo$", "", cleaned, flags=re.IGNORECASE)
+    return _cache_key(cleaned)
 
 
-def _lookup_spotify(artist: str) -> dict:
-    token = _spotify_access_token()
-    if not token:
+def _youtube_channel_match_score(artist: str, channel: dict) -> int:
+    snippet = channel.get("snippet") if isinstance(channel.get("snippet"), dict) else {}
+    topic_details = channel.get("topicDetails") if isinstance(channel.get("topicDetails"), dict) else {}
+    title = str(snippet.get("title") or "").strip()
+    description = str(snippet.get("description") or "").lower()
+    if not title:
+        return -1
+    identity_blob = f"{title} {description}".lower()
+    if re.search(r"\b(?:fan|fanpage|tribute|covers?|reaction|unofficial)\b", identity_blob):
+        return -1
+    artist_key = _cache_key(artist)
+    raw_exact = _cache_key(title) == artist_key
+    normalized_exact = _youtube_identity_key(title) == artist_key
+    if not raw_exact and not normalized_exact:
+        return -1
+    score = 5 if raw_exact else 4
+    if re.search(r"\b(?:official|vevo)\b", title, re.IGNORECASE) or "official" in description:
+        score += 2
+    topics = " ".join(str(x) for x in (topic_details.get("topicCategories") or []))
+    if "music" in topics.lower():
+        score += 1
+    return score
+
+
+def _youtube_channel_rows(channel_ids: list[str], api_key: str) -> list[dict]:
+    unique_ids = list(dict.fromkeys(x for x in channel_ids if x))
+    if not unique_ids:
+        return []
+    payload = _youtube_json(
+        "channels",
+        {
+            "part": "snippet,statistics,topicDetails",
+            "id": ",".join(unique_ids[:50]),
+            "maxResults": min(50, len(unique_ids)),
+        },
+        api_key,
+    )
+    if payload.get("_provider_status"):
+        return [payload]
+    return [x for x in (payload.get("items") or []) if isinstance(x, dict)]
+
+
+def _youtube_result(channel: dict, *, identity_source: str, confidence: float) -> dict:
+    snippet = channel.get("snippet") if isinstance(channel.get("snippet"), dict) else {}
+    statistics = channel.get("statistics") if isinstance(channel.get("statistics"), dict) else {}
+    hidden = bool(statistics.get("hiddenSubscriberCount"))
+    return {
+        "youtube_channel_id": str(channel.get("id") or ""),
+        "youtube_channel_name": str(snippet.get("title") or ""),
+        "youtube_subscribers": 0 if hidden else int(statistics.get("subscriberCount") or 0),
+        "youtube_views": int(statistics.get("viewCount") or 0),
+        "youtube_subscribers_hidden": hidden,
+        "youtube_identity_source": identity_source,
+        "youtube_identity_confidence": confidence,
+    }
+
+
+def _lookup_youtube(artist: str, known_channel_id: str = "") -> dict:
+    api_key = os.environ.get("YOUTUBE_API_KEY", "").strip()
+    if not api_key:
         return {"_provider_status": "no_credentials"}
-    query = parse.urlencode({"q": artist, "type": "artist", "limit": "3"})
-    payload = _spotify_json(f"https://api.spotify.com/v1/search?{query}", token)
-    best: dict = {}
-    best_rank = (-1, -1)
-    for item in (((payload.get("artists") or {}).get("items")) or []):
-        name = str(item.get("name") or "")
-        if not name:
-            continue
-        exactish = _cache_key(name) == _cache_key(artist)
-        popularity = int(item.get("popularity") or 0)
-        followers = int(((item.get("followers") or {}).get("total")) or 0)
-        if not exactish and popularity < 55:
-            continue
-        rank = (popularity, followers)
-        if rank <= best_rank:
-            continue
-        best = {
-            "spotify_id": str(item.get("id") or ""),
-            "spotify_name": name,
-            "spotify_popularity": popularity,
-            "spotify_followers": followers,
-        }
-        best_rank = rank
-    return best
+    if known_channel_id:
+        rows = _youtube_channel_rows([known_channel_id], api_key)
+        if rows and rows[0].get("_provider_status"):
+            return rows[0]
+        if not rows:
+            return {"_provider_status": "no_match"}
+        return _youtube_result(rows[0], identity_source="wikidata", confidence=1.0)
+
+    if not _YOUTUBE_SEARCH_BUDGET.acquire():
+        return {"_provider_status": "quota_deferred"}
+    search = _youtube_json(
+        "search",
+        {"part": "snippet", "type": "channel", "q": artist, "maxResults": 5},
+        api_key,
+    )
+    if search.get("_provider_status"):
+        return search
+    ids = [
+        str(((item.get("id") or {}).get("channelId")) or "")
+        for item in (search.get("items") or [])
+        if isinstance(item, dict)
+    ]
+    rows = _youtube_channel_rows(ids, api_key)
+    if rows and rows[0].get("_provider_status"):
+        return rows[0]
+    ranked = sorted(
+        (
+            (
+                _youtube_channel_match_score(artist, row),
+                int(((row.get("statistics") or {}).get("subscriberCount")) or 0),
+                row,
+            )
+            for row in rows
+        ),
+        key=lambda item: (item[0], item[1]),
+        reverse=True,
+    )
+    if not ranked or ranked[0][0] < 4:
+        return {"_provider_status": "no_match"}
+    score, _subscribers, best = ranked[0]
+    confidence = min(0.98, 0.72 + (score * 0.04))
+    return _youtube_result(best, identity_source="youtube_search", confidence=confidence)
 
 
 def _lookup_lastfm(artist: str) -> dict:
@@ -609,27 +751,26 @@ def _tier_from_signals(signals: dict) -> tuple[str, float, str]:
     source = "wikidata_sitelinks" if tier != "unknown" else ""
     mb_score = int(signals.get("musicbrainz_score") or 0)
     tm = bool(signals.get("ticketmaster_attraction"))
-    spotify_popularity = int(signals.get("spotify_popularity") or 0)
-    spotify_followers = int(signals.get("spotify_followers") or 0)
+    youtube_subscribers = int(signals.get("youtube_subscribers") or 0)
     lastfm_listeners = int(signals.get("lastfm_listeners") or 0)
-    spotify_a = spotify_popularity >= 78 or spotify_followers >= 2_000_000
+    youtube_a = youtube_subscribers >= 1_000_000
     lastfm_a = lastfm_listeners >= 1_500_000
     independent_support = lastfm_listeners >= 250_000 or int(signals.get("sitelinks") or 0) >= 16
-    if spotify_a and independent_support:
+    if youtube_a and independent_support:
         if tier in {"unknown", "D", "C"}:
-            return "A", 0.9, "spotify_plus_independent_signal"
+            return "A", 0.9, "youtube_plus_independent_signal"
         if tier == "B":
-            return "A", 0.93, "spotify_plus_wikidata"
-    if spotify_popularity >= 58 or spotify_followers >= 250_000 or lastfm_listeners >= 250_000 or lastfm_a:
+            return "A", 0.93, "youtube_plus_wikidata"
+    if youtube_subscribers >= 250_000 or lastfm_listeners >= 250_000 or lastfm_a:
         if tier in {"unknown", "D"}:
-            return "B", 0.78, "streaming_popularity"
-    if spotify_popularity >= 42 or spotify_followers >= 50_000 or lastfm_listeners >= 50_000:
+            return "B", 0.78, "audience_popularity"
+    if youtube_subscribers >= 50_000 or lastfm_listeners >= 50_000:
         if tier == "unknown":
-            return "C", 0.62, "streaming_popularity"
+            return "C", 0.62, "audience_popularity"
     if tier == "unknown":
         # MusicBrainz + Ticketmaster proves identity/live-market presence; it
         # is not enough to call the act notable for a personal UK-wide watch.
-        # Last.fm/Wiki/Spotify-scale signals must do that promotion.
+        # Last.fm/Wiki/YouTube-scale signals must do that promotion.
         if mb_score >= 95 and tm:
             return "C", 0.62, "musicbrainz_ticketmaster_identity"
         if mb_score >= 95:
@@ -638,7 +779,7 @@ def _tier_from_signals(signals: dict) -> tuple[str, float, str]:
             return "C", 0.62, "ticketmaster_attraction"
     elif tier == "D" and mb_score >= 95 and tm:
         return "C", 0.62, "musicbrainz_ticketmaster_identity"
-    elif mb_score >= 90 or tm or spotify_popularity or lastfm_listeners:
+    elif mb_score >= 90 or tm or youtube_subscribers or lastfm_listeners:
         source = f"{source}+multi_source"
         confidence = min(0.99, confidence + 0.04)
     return tier, confidence, source or "not_found"
@@ -710,7 +851,7 @@ def _artist_notability(
         try:
             result = fn(artist)
             marker = str(result.get("_provider_status") or "") if isinstance(result, dict) else ""
-            if marker in {"no_credentials", "auth_error", "no_match", "timeout"}:
+            if marker in {"no_credentials", "auth_error", "no_match", "timeout", "quota_deferred"}:
                 provider_status[host] = marker
                 return {}
             provider_status[host] = "ok" if isinstance(result, dict) and result else "no_match"
@@ -723,7 +864,7 @@ def _artist_notability(
             return {}
 
     # Short-circuit ladder. Only exceptionally high Wikidata is independently
-    # sufficient for A. Every other possible A spends Spotify plus Last.fm so a
+    # sufficient for A. Every other possible A spends YouTube plus Last.fm so a
     # large historical footprint cannot award A by itself. MusicBrainz —
     # the strict ~1 req/sec service — runs LAST and only if still unknown, so it
     # only ever sees the residual tail, not the whole pool.
@@ -735,13 +876,20 @@ def _artist_notability(
     }
     tier, _conf, _sig = _tier_from_signals(signals)
     if tier != "A":
-        sp = _lookup("spotify", _lookup_spotify)
+        yt = _lookup(
+            "youtube",
+            lambda name: _lookup_youtube(name, str(wd.get("youtube_channel_id") or "")),
+        )
         lf = _lookup("lastfm", _lookup_lastfm)
         signals.update(
             {
-                "spotify_id": str(sp.get("spotify_id") or ""),
-                "spotify_popularity": int(sp.get("spotify_popularity") or 0),
-                "spotify_followers": int(sp.get("spotify_followers") or 0),
+                "youtube_channel_id": str(yt.get("youtube_channel_id") or ""),
+                "youtube_channel_name": str(yt.get("youtube_channel_name") or ""),
+                "youtube_subscribers": int(yt.get("youtube_subscribers") or 0),
+                "youtube_views": int(yt.get("youtube_views") or 0),
+                "youtube_subscribers_hidden": bool(yt.get("youtube_subscribers_hidden")),
+                "youtube_identity_source": str(yt.get("youtube_identity_source") or ""),
+                "youtube_identity_confidence": float(yt.get("youtube_identity_confidence") or 0.0),
                 "lastfm_listeners": int(lf.get("lastfm_listeners") or 0),
                 "lastfm_playcount": int(lf.get("lastfm_playcount") or 0),
             }
@@ -762,7 +910,7 @@ def _artist_notability(
     # Error taxonomy → recheck window. found=30d; clean not_found=7d; transient
     # api_failed=1d (retry next run, don't cache a failure for a month).
     provider_failed = any(
-        status in {"no_credentials", "auth_error", "timeout"}
+        status in {"no_credentials", "auth_error", "timeout", "quota_deferred"}
         for status in provider_status.values()
     )
     if provider_failed:
@@ -866,9 +1014,9 @@ def prefetch_notability(
                 continue
             work.append((proximity, name, c))
 
-    # Cache v2 migrates every historical A row through the new two-signal
-    # contract. These cache-only rows need no ticket context for provider
-    # identity lookups and remain pending until Spotify is genuinely available.
+    # Cache migrations route every historical A row through the current
+    # YouTube + independent-signal contract. These cache-only rows need no
+    # ticket context and stay pending until YouTube is genuinely available.
     for record in artists.values():
         if not isinstance(record, dict) or not record.get("a_tier_recheck_pending"):
             continue
@@ -920,6 +1068,7 @@ def prefetch_notability(
         "queued": len(work),
         "deferred_budget": deferred,
         "provider_status": provider_status_counts,
+        "youtube_search_quota": _YOUTUBE_SEARCH_BUDGET.snapshot(),
     }
 
 

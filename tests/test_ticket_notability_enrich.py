@@ -40,14 +40,14 @@ class ArtistNotabilityTest(unittest.TestCase):
         self.addCleanup(self._env.stop)
 
     def test_short_circuit_skips_other_apis_when_wikidata_notable(self) -> None:
-        calls = {"wd": 0, "sp": 0, "lf": 0, "mb": 0}
+        calls = {"wd": 0, "yt": 0, "lf": 0, "mb": 0}
 
         def wd(_a):
             calls["wd"] += 1
             return {"sitelinks": 90, "wikidata_id": "Q123", "description": "band"}
 
-        def sp(_a):
-            calls["sp"] += 1
+        def yt(_a, _known_id=""):
+            calls["yt"] += 1
             return {}
 
         def lf(_a):
@@ -61,7 +61,7 @@ class ArtistNotabilityTest(unittest.TestCase):
         with mock.patch.multiple(
             tn,
             _lookup_wikidata=wd,
-            _lookup_spotify=sp,
+            _lookup_youtube=yt,
             _lookup_lastfm=lf,
             _lookup_musicbrainz=mb,
         ):
@@ -70,8 +70,8 @@ class ArtistNotabilityTest(unittest.TestCase):
         self.assertEqual(result.tier, "A")
         self.assertEqual(calls["wd"], 1)
         # The whole point: a clearly-notable Wikidata hit means we never spend
-        # Spotify/Last.fm/MusicBrainz (the rate-limited one).
-        self.assertEqual((calls["sp"], calls["lf"], calls["mb"]), (0, 0, 0))
+        # YouTube/Last.fm/MusicBrainz (the rate-limited one).
+        self.assertEqual((calls["yt"], calls["lf"], calls["mb"]), (0, 0, 0))
 
     def test_musicbrainz_only_runs_when_still_unknown(self) -> None:
         calls = {"mb": 0}
@@ -86,13 +86,13 @@ class ArtistNotabilityTest(unittest.TestCase):
         with mock.patch.multiple(
             tn,
             _lookup_wikidata=thin,
-            _lookup_spotify=thin,
+            _lookup_youtube=lambda artist, known_id="": thin(artist),
             _lookup_lastfm=thin,
             _lookup_musicbrainz=mb,
         ):
             tn._artist_notability("Obscure Act", "artist", _ticket("Obscure Act"), {}, now_london(), allow_network=True)
 
-        # Wikidata + Spotify + Last.fm all blank → still unknown → MusicBrainz runs.
+        # Wikidata + YouTube + Last.fm all blank → still unknown → MusicBrainz runs.
         self.assertEqual(calls["mb"], 1)
 
     def test_read_only_does_no_network(self) -> None:
@@ -103,7 +103,11 @@ class ArtistNotabilityTest(unittest.TestCase):
             return {}
 
         with mock.patch.multiple(
-            tn, _lookup_wikidata=boom, _lookup_spotify=boom, _lookup_lastfm=boom, _lookup_musicbrainz=boom
+            tn,
+            _lookup_wikidata=boom,
+            _lookup_youtube=lambda artist, known_id="": boom(artist),
+            _lookup_lastfm=boom,
+            _lookup_musicbrainz=boom,
         ):
             # Default allow_network=False (the writer render-loop path).
             result = tn._artist_notability("Anyone", "artist", _ticket("Anyone"), {}, now_london())
@@ -124,7 +128,11 @@ class ArtistNotabilityTest(unittest.TestCase):
         # api_failed → retry next run (1 day).
         cache: dict = {}
         with mock.patch.multiple(
-            tn, _lookup_wikidata=raise_, _lookup_spotify=empty, _lookup_lastfm=empty, _lookup_musicbrainz=empty
+            tn,
+            _lookup_wikidata=raise_,
+            _lookup_youtube=lambda artist, known_id="": empty(artist),
+            _lookup_lastfm=empty,
+            _lookup_musicbrainz=empty,
         ):
             tn._artist_notability("Fails", "artist", _ticket("Fails"), cache, now_london(), allow_network=True)
         self.assertEqual(cache[tn._cache_key("Fails")]["recheck_days"], 1)
@@ -132,7 +140,11 @@ class ArtistNotabilityTest(unittest.TestCase):
         # clean not_found → 7 days.
         cache = {}
         with mock.patch.multiple(
-            tn, _lookup_wikidata=empty, _lookup_spotify=empty, _lookup_lastfm=empty, _lookup_musicbrainz=empty
+            tn,
+            _lookup_wikidata=empty,
+            _lookup_youtube=lambda artist, known_id="": empty(artist),
+            _lookup_lastfm=empty,
+            _lookup_musicbrainz=empty,
         ):
             tn._artist_notability("Nobody", "artist", _ticket("Nobody"), cache, now_london(), allow_network=True)
         self.assertEqual(cache[tn._cache_key("Nobody")]["recheck_days"], 7)
@@ -140,7 +152,11 @@ class ArtistNotabilityTest(unittest.TestCase):
         # found → 30 days.
         cache = {}
         with mock.patch.multiple(
-            tn, _lookup_wikidata=notable, _lookup_spotify=empty, _lookup_lastfm=empty, _lookup_musicbrainz=empty
+            tn,
+            _lookup_wikidata=notable,
+            _lookup_youtube=lambda artist, known_id="": empty(artist),
+            _lookup_lastfm=empty,
+            _lookup_musicbrainz=empty,
         ):
             tn._artist_notability("Famous", "artist", _ticket("Famous"), cache, now_london(), allow_network=True)
         self.assertEqual(cache[tn._cache_key("Famous")]["recheck_days"], 30)
@@ -150,7 +166,7 @@ class ArtistNotabilityTest(unittest.TestCase):
         with mock.patch.multiple(
             tn,
             _lookup_wikidata=lambda _a: {},
-            _lookup_spotify=lambda _a: {"_provider_status": "no_credentials"},
+            _lookup_youtube=lambda _a, _known_id="": {"_provider_status": "no_credentials"},
             _lookup_lastfm=lambda _a: {"lastfm_listeners": 2_000_000},
             _lookup_musicbrainz=lambda _a: {},
         ):
@@ -163,15 +179,19 @@ class ArtistNotabilityTest(unittest.TestCase):
                 allow_network=True,
             )
         self.assertNotEqual(result.tier, "A")
-        self.assertEqual((result.signals or {})["provider_status"]["spotify"], "no_credentials")
+        self.assertEqual((result.signals or {})["provider_status"]["youtube"], "no_credentials")
         self.assertEqual(cache[tn._cache_key("Legacy-heavy artist")]["recheck_days"], 1)
 
-    def test_spotify_plus_lastfm_can_award_a(self) -> None:
+    def test_youtube_plus_lastfm_can_award_a(self) -> None:
         cache: dict = {}
         with mock.patch.multiple(
             tn,
             _lookup_wikidata=lambda _a: {},
-            _lookup_spotify=lambda _a: {"spotify_popularity": 82, "spotify_followers": 3_000_000},
+            _lookup_youtube=lambda _a, _known_id="": {
+                "youtube_channel_id": "UC123",
+                "youtube_subscribers": 3_000_000,
+                "youtube_views": 900_000_000,
+            },
             _lookup_lastfm=lambda _a: {"lastfm_listeners": 1_800_000},
             _lookup_musicbrainz=lambda _a: {},
         ):
@@ -184,7 +204,115 @@ class ArtistNotabilityTest(unittest.TestCase):
                 allow_network=True,
             )
         self.assertEqual(result.tier, "A")
-        self.assertEqual((result.signals or {})["provider_status"]["spotify"], "ok")
+        self.assertEqual((result.signals or {})["provider_status"]["youtube"], "ok")
+
+    def test_wikidata_channel_id_skips_youtube_search(self) -> None:
+        day = now_london().date().isoformat()
+        tn._YOUTUBE_SEARCH_BUDGET.bind({"date": day, "search_calls": 0}, day)
+        channel_payload = {
+            "items": [{
+                "id": "UCknown",
+                "snippet": {"title": "Known Artist"},
+                "statistics": {"subscriberCount": "1200000", "viewCount": "400000000"},
+            }]
+        }
+        with mock.patch.dict(os.environ, {"YOUTUBE_API_KEY": "test-key"}), mock.patch.object(
+            tn, "_youtube_json", return_value=channel_payload
+        ) as youtube_json:
+            result = tn._lookup_youtube("Known Artist", "UCknown")
+        self.assertEqual(result["youtube_channel_id"], "UCknown")
+        self.assertEqual(result["youtube_subscribers"], 1_200_000)
+        self.assertEqual(tn._YOUTUBE_SEARCH_BUDGET.snapshot()["search_calls"], 0)
+        self.assertEqual(youtube_json.call_args.args[0], "channels")
+
+    def test_wikidata_extracts_official_youtube_channel_claim(self) -> None:
+        search_payload = {
+            "search": [{"id": "Q123", "label": "Known Artist", "description": "English singer"}]
+        }
+        details_payload = {
+            "entities": {
+                "Q123": {
+                    "descriptions": {"en": {"value": "English singer and songwriter"}},
+                    "sitelinks": {"enwiki": {}, "dewiki": {}},
+                    "claims": {
+                        "P2397": [{
+                            "mainsnak": {"datavalue": {"value": "UCknown"}}
+                        }]
+                    },
+                }
+            }
+        }
+        with mock.patch.object(
+            tn,
+            "_wikidata_json",
+            side_effect=[search_payload, details_payload],
+        ):
+            result = tn._lookup_wikidata("Known Artist")
+        self.assertEqual(result["wikidata_id"], "Q123")
+        self.assertEqual(result["youtube_channel_id"], "UCknown")
+
+    def test_hidden_youtube_subscribers_are_recorded_without_fake_count(self) -> None:
+        payload = {
+            "items": [{
+                "id": "UChidden",
+                "snippet": {"title": "Hidden Artist"},
+                "statistics": {
+                    "hiddenSubscriberCount": True,
+                    "subscriberCount": "9999999",
+                    "viewCount": "800000000",
+                },
+            }]
+        }
+        with mock.patch.dict(os.environ, {"YOUTUBE_API_KEY": "test-key"}), mock.patch.object(
+            tn, "_youtube_json", return_value=payload
+        ):
+            result = tn._lookup_youtube("Hidden Artist", "UChidden")
+        self.assertTrue(result["youtube_subscribers_hidden"])
+        self.assertEqual(result["youtube_subscribers"], 0)
+        self.assertEqual(result["youtube_views"], 800_000_000)
+
+    def test_youtube_search_rejects_fan_channel_and_keeps_official(self) -> None:
+        day = now_london().date().isoformat()
+        tn._YOUTUBE_SEARCH_BUDGET.bind({"date": day, "search_calls": 0}, day)
+        search_payload = {
+            "items": [
+                {"id": {"channelId": "UCfan"}},
+                {"id": {"channelId": "UCofficial"}},
+            ]
+        }
+        channel_payload = {
+            "items": [
+                {
+                    "id": "UCfan",
+                    "snippet": {"title": "Test Artist", "description": "Unofficial fan page"},
+                    "statistics": {"subscriberCount": "9000000", "viewCount": "1"},
+                },
+                {
+                    "id": "UCofficial",
+                    "snippet": {"title": "Test Artist Official", "description": "Official artist channel"},
+                    "statistics": {"subscriberCount": "1500000", "viewCount": "500000000"},
+                    "topicDetails": {"topicCategories": ["https://en.wikipedia.org/wiki/Music"]},
+                },
+            ]
+        }
+        with mock.patch.dict(os.environ, {"YOUTUBE_API_KEY": "test-key"}), mock.patch.object(
+            tn, "_youtube_json", side_effect=[search_payload, channel_payload]
+        ):
+            result = tn._lookup_youtube("Test Artist")
+        self.assertEqual(result["youtube_channel_id"], "UCofficial")
+        self.assertEqual(result["youtube_identity_source"], "youtube_search")
+        self.assertEqual(tn._YOUTUBE_SEARCH_BUDGET.snapshot()["search_calls"], 1)
+
+    def test_youtube_daily_search_limit_defers_without_network(self) -> None:
+        day = now_london().date().isoformat()
+        tn._YOUTUBE_SEARCH_BUDGET.bind({"date": day, "search_calls": 1}, day)
+        with mock.patch.dict(
+            os.environ,
+            {"YOUTUBE_API_KEY": "test-key", "YOUTUBE_SEARCH_DAILY_LIMIT": "1"},
+        ), mock.patch.object(tn, "_youtube_json") as youtube_json:
+            result = tn._lookup_youtube("Deferred Artist")
+        self.assertEqual(result["_provider_status"], "quota_deferred")
+        youtube_json.assert_not_called()
 
 
 class PrefetchTest(unittest.TestCase):
@@ -194,8 +322,9 @@ class PrefetchTest(unittest.TestCase):
         mock.patch.dict(os.environ, {"NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP": "1"}).start()
         # Each candidate resolves to one deterministic artist name.
         mock.patch.object(tn, "ticket_headliner_candidates", side_effect=lambda c: [c["title"]]).start()
-        for name in ("_lookup_wikidata", "_lookup_spotify", "_lookup_lastfm", "_lookup_musicbrainz"):
+        for name in ("_lookup_wikidata", "_lookup_lastfm", "_lookup_musicbrainz"):
             mock.patch.object(tn, name, lambda _a: {}).start()
+        mock.patch.object(tn, "_lookup_youtube", lambda _a, _known_id="": {}).start()
 
     def _cache_path(self) -> Path:
         temp_dir = tempfile.TemporaryDirectory()
@@ -205,7 +334,11 @@ class PrefetchTest(unittest.TestCase):
     def test_prefetch_looks_up_new_and_skips_fresh(self) -> None:
         path = self._cache_path()
         tn._CACHE_MEM.clear()
-        candidates = [_ticket("Artist A"), _ticket("Artist B"), {"primary_block": "last_24h", "title": "Not a ticket"}]
+        candidates = [
+            _ticket("Artist A"),
+            _ticket("Artist B"),
+            {"primary_block": "last_24h", "title": "Not a ticket"},
+        ]
         report = tn.prefetch_notability(candidates, path, budget_seconds=30, max_workers=4)
         self.assertTrue(report["enabled"])
         self.assertEqual(report["queued"], 2)  # the non-ticket candidate is ignored
@@ -237,7 +370,22 @@ class PrefetchTest(unittest.TestCase):
 
         self.assertEqual(report["queued"], 1)
         self.assertEqual(report["looked_up"], 1)
-        self.assertEqual(tn.read_json(path, {})["version"], 2)
+        self.assertEqual(tn.read_json(path, {})["version"], 3)
+
+    def test_persisted_youtube_search_budget_survives_cache_reload(self) -> None:
+        path = self._cache_path()
+        day = now_london().date().isoformat()
+        tn.write_json(path, {
+            "version": 3,
+            "artists": {},
+            "youtube_search_quota": {"date": day, "search_calls": 94, "daily_limit": 95},
+        })
+        tn._CACHE_MEM.clear()
+        tn._load_cache(path)
+        with mock.patch.dict(os.environ, {"YOUTUBE_SEARCH_DAILY_LIMIT": "95"}):
+            self.assertTrue(tn._YOUTUBE_SEARCH_BUDGET.acquire())
+            self.assertFalse(tn._YOUTUBE_SEARCH_BUDGET.acquire())
+        self.assertEqual(tn._YOUTUBE_SEARCH_BUDGET.snapshot()["search_calls"], 95)
 
     def test_prefetch_budget_defers_without_dropping(self) -> None:
         path = self._cache_path()
