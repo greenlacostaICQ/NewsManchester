@@ -3,6 +3,12 @@ name: Greater Manchester AM Digest
 on:
   workflow_dispatch:
     # Triggered by the external scheduler, or manually from GitHub Actions UI.
+    inputs:
+      stop_after_rank:
+        description: "Run through rank-digest for a safe provider probe; do not build, send, warn or persist state"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -83,10 +89,17 @@ jobs:
           LASTFM_API: ${{ secrets.LASTFM_API }}
         run: python3 scripts/run_local_digest.py rank-digest
 
+      - name: Report notability provider probe
+        if: ${{ inputs.stop_after_rank }}
+        run: |
+          python3 -c "import json; r=json.load(open('data/state/rank_digest_report.json')); print(json.dumps(r.get('ticket_notability',{}), ensure_ascii=False, indent=2))"
+
       - name: Plan digest — планёрка, неизменяемый слот-план (Этап 3)
+        if: ${{ inputs.stop_after_rank != true }}
         run: python3 scripts/run_local_digest.py plan-digest
 
       - name: LLM rewrite — проза строго слотам и запасным плана
+        if: ${{ inputs.stop_after_rank != true }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
@@ -96,6 +109,7 @@ jobs:
         run: python3 scripts/run_local_digest.py llm-rewrite
 
       - name: Run pipeline — write → edit → build
+        if: ${{ inputs.stop_after_rank != true }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
@@ -113,6 +127,7 @@ jobs:
         # applies executable line repairs/replacements first; if a defect cannot
         # be recovered, the issue ships as degraded with an explicit report.
         # continue-on-error guards against a judge crash blocking delivery.
+        if: ${{ inputs.stop_after_rank != true }}
         continue-on-error: true
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI }}
@@ -123,9 +138,11 @@ jobs:
       - name: Verify digest vs plan — финальная сверка (Этап 3)
         # Контентные расхождения — warnings (выпуск идёт); блокирует отправку
         # только технически негодный артефакт (нет плана/чужой run/стухшая дата).
+        if: ${{ inputs.stop_after_rank != true }}
         run: python3 scripts/run_local_digest.py verify-digest-plan
 
       - name: Send digest to Telegram
+        if: ${{ inputs.stop_after_rank != true }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
@@ -139,6 +156,7 @@ jobs:
         # the LLM call errors, the step prints and exits 0. Drift is
         # written into release_report.json so send-warnings can surface
         # it without rerunning the judge.
+        if: ${{ inputs.stop_after_rank != true }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI }}
         run: |
@@ -148,7 +166,7 @@ jobs:
         # Always run so a blocked digest (release_decision=fail with
         # unhealthy health) still notifies the chat. Script no-ops when
         # release_report.json is missing.
-        if: always()
+        if: ${{ always() && inputs.stop_after_rank != true }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
@@ -157,6 +175,7 @@ jobs:
           python3 scripts/run_local_digest.py send-warnings
 
       - name: Send weekly quality panel summary (Sundays only)
+        if: ${{ inputs.stop_after_rank != true }}
         # The ONLY weekly Telegram report: quality panel + one cost line.
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
@@ -214,7 +233,7 @@ jobs:
           fi
 
       - name: Commit updated state files
-        if: always()
+        if: ${{ always() && inputs.stop_after_rank != true }}
         run: |
           git config user.name "digest-bot"
           git config user.email "digest-bot@users.noreply.github.com"
