@@ -2216,12 +2216,12 @@
 - ОБЩАЯ REPLAY-ПРОВЕРКА #0193–#0205: обязательный `replay_day.py --golden` завершил 12/12 дней без technical verify failure; lead во всех replay `ok`, новых `blank_runs_2plus` нет. На дефектном 28.07 до/после: plan `38→39`, shown `37→38`, removed `1→1`, divergences `7→6`, replay bullets `36→37`, lead `ok→ok`; восстановлена одна корректная строка, техническая целостность сохранена. Это offline proof; production-proof по свежим waves/rank остаётся ожидаемым.
 
 ### 0206 — Weekend serializer сохраняет те же derived facts, что readiness — 2026-07-28
-- Статус: внедрено после production proof; повторная Events-wave ожидается.
+- Статус: внедрено; production проверено.
 - Проблема: Events run `30357657334` успешно получил `55/55` sources, `141 found/enriched`, `42 fact-ready`, `37 render-ready`, но в сохранённых ready-карточках вычисленные `activity_type/gm_fit` оставались пустыми.
 - Причина (корень): `evaluate_card()` проверял `_card_field_value`, а `build_inventory_record()` затем сериализовал только raw `candidate/event` fields; synthetic fixture с явно заданными полями скрыла расхождение.
 - Решение: serializer сохраняет для каждого required field ровно тот derived `_card_field_value`, который прошёл readiness.
 - Ожидаемый эффект и метрика проверки: production ready-карточки имеют непустые `activity_type/gm_fit`, после `inventory_record_to_candidate` readiness не падает.
-- ПРОВЕРКА: production-дефект зафиксирован числами выше; derived-only regression добавлен, повторная wave фиксируется после push.
+- ПРОВЕРКА: derived-only regression входит в полный набор 994 теста OK. Повторная production Events-wave `30358163221` на исправленном commit проверила `55/55` источников, получила `141 found / 141 enriched / 42 fact-ready / 42 render-ready`, `0` source errors. В сохранённом `culture_weekly` все `37/37` ready-карточек имеют `activity_type`, `gm_fit=GM`, `specific_event=true` и action URL; пропусков обязательных полей `0`. Из ссылок `35 alive / 2 unknown`; неизвестная liveness не превращалась в ложное подтверждение.
 
 ### 0207 — Retry только для parser-zero, не для осознанного filter-zero — 2026-07-28
 - Статус: внедрено; production-proof ожидается.
