@@ -10,9 +10,7 @@ from urllib import parse
 from zoneinfo import ZoneInfo
 
 from news_digest.pipeline.block_policy import (
-    BLOCK_POLICY_REGISTRY,
     PRIMARY_BLOCKS,
-    block_active_on_weekday,
 )
 
 LONDON_TZ = ZoneInfo("Europe/London")
@@ -30,59 +28,6 @@ REQUIRED_SCAN_CATEGORIES = {
     "professional_events": "professional events",
     "diaspora_events": "Russian-speaking / diaspora events",
 }
-
-REQUIRED_BLOCKS = [
-    str(policy["heading"])
-    for policy in BLOCK_POLICY_REGISTRY.values()
-    if int(policy.get("min") or 0)
-    and not bool(policy.get("optional"))
-    and str(policy.get("schedule") or "") != "retired"
-]
-
-
-def required_blocks_for_weekday(weekday: int) -> list[str]:
-    return [
-        str(policy["heading"])
-        for block, policy in BLOCK_POLICY_REGISTRY.items()
-        if int(policy.get("min") or 0)
-        and not bool(policy.get("optional"))
-        and block_active_on_weekday(block, weekday)
-    ]
-
-
-LOW_SIGNAL_BLOCKS = [
-    str(policy["heading"])
-    for policy in BLOCK_POLICY_REGISTRY.values()
-    if bool(policy.get("optional"))
-    and str(policy.get("schedule") or "") != "retired"
-]
-
-SECTION_MAX_ITEMS = {
-    str(policy["heading"]): int(policy["max"])
-    for policy in BLOCK_POLICY_REGISTRY.values()
-    if int(policy.get("max") or 0)
-}
-
-# Soft minimums: release gate emits a warning (does not block) when a
-# section ends up below this count after caps and quality drops. Used to
-# catch days when curator only nominated 2 items for "Что важно сегодня"
-# or similar — so the underflow is visible in release_report instead of
-# silently shipping a thin section.
-SECTION_MIN_ITEMS = {
-    str(policy["heading"]): int(policy["min"])
-    for policy in BLOCK_POLICY_REGISTRY.values()
-    if int(policy.get("min") or 0)
-}
-
-# Max items per single source per section. Universities pump out 5+ press
-# releases a day each and dominated city_watch on 2026-05-12 — keep them
-# capped so they don't crowd out actual city news.
-SECTION_MAX_PER_SOURCE = {
-    str(policy["heading"]): int(policy["max_per_source"])
-    for policy in BLOCK_POLICY_REGISTRY.values()
-    if int(policy.get("max_per_source") or 0)
-}
-
 
 VAGUE_PRACTICAL_ANGLES = {
     "Оценить городскую значимость перед выпуском.",

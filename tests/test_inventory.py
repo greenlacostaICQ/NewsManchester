@@ -92,7 +92,7 @@ class DispositionTest(unittest.TestCase):
     def test_every_captured_item_has_exactly_one_disposition(self) -> None:
         candidates = [
             {"fingerprint": "shown1", "publish_plan_status": "show"},
-            {"fingerprint": "res1", "recoverable_reserve": True},
+            {"fingerprint": "res1", "publish_plan_status": "reserve"},
             {"fingerprint": "held1", "ticket_inventory_held": True},
             {"fingerprint": "dup1", "dedupe_decision": "drop"},
             {"fingerprint": "lost1", "digest_selection_verdict": "selected"},

@@ -15,9 +15,6 @@ logger = logging.getLogger(__name__)
 from news_digest.pipeline.block_policy import BLOCK_POLICY_REGISTRY, block_policy
 from news_digest.pipeline.common import (
     PRIMARY_BLOCKS,
-    SECTION_MAX_ITEMS,
-    SECTION_MAX_PER_SOURCE,
-    SECTION_MIN_ITEMS,
     candidates_by_fingerprint,
     is_placeholder_practical_angle,
     now_london,
@@ -115,13 +112,6 @@ TODAY_FOCUS_TARGET_ITEMS = 4
 # suppressing hard-news that did get rewritten.
 PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 40  # counted public budget; reserved sections can borrow within the hard cap
 PUBLIC_DIGEST_HARD_RENDERED_ITEMS = 52
-PUBLIC_SECTION_RESERVED_MIN = {
-    str(policy["heading"]): int(policy["min"])
-    for policy in BLOCK_POLICY_REGISTRY.values()
-    if int(policy.get("min") or 0)
-    and not bool(policy.get("optional"))
-    and str(policy.get("schedule") or "") != "retired"
-}
 def _candidate_publish_plan_status(candidate: dict | None) -> str:
     if not isinstance(candidate, dict):
         return ""
@@ -1001,67 +991,6 @@ def _block_contract_action(candidate: dict, line: str) -> dict[str, str]:
     if block == "food_openings" and not _FOOD_CONCRETE_RE.search(text):
         return {"action": "hold", "reason": "block_contract:food_no_opening_market_or_change"}
     return {"action": "keep", "reason": ""}
-
-
-def _classify_drop_bucket(item: dict) -> str:
-    """Sort a dropped candidate into failure / quarantine / reserve.
-
-    The release report previously lumped every non-rendered candidate into a
-    single "dropped N" number that read as panic. The three buckets carry very
-    different meaning: a *failure* is a production fault we must fix; a
-    *quarantine* is a deliberate editorial hold; a *reserve* item is good and
-    simply over budget / out of window, and rotates in on a later day.
-    """
-    reasons = " ".join(str(r).lower() for r in (item.get("reasons") or []))
-    category = str(item.get("category") or "")
-    if "weekend window" in reasons or "expired event" in reasons:
-        return "reserve"
-    if "missing draft_line" in reasons or "untranslated" in reasons or "passthrough" in reasons:
-        # Structured categories hold an incomplete card for review; news
-        # categories losing their draft_line is a genuine writer failure.
-        return "quarantine" if category in {"venues_tickets", "transport"} else "failure"
-    # Everything else (borderline holds, editorial-contract drops) is an
-    # intentional editorial quarantine, not a fault.
-    return "quarantine"
-
-
-def _quality_count_key_for_drop(item: dict) -> str:
-    reasons = " ".join(str(r).lower() for r in (item.get("reasons") or []))
-    if "missing draft_line" in reasons:
-        return "dropped_missing_draft_line"
-    if "ticket not selected" in reasons:
-        return "dropped_ticket_not_selected"
-    if "untranslated" in reasons or "passthrough" in reasons:
-        return "dropped_english_passthrough"
-    if "held for manual review" in reasons or "borderline" in reasons:
-        return "held_for_editorial_quality"
-    return "dropped_low_quality"
-
-
-def _reconcile_rendered_dropped_candidates(
-    dropped_candidates: list[dict[str, object]],
-    quality_counts: dict[str, int],
-    rendered_fingerprints: set[str],
-) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
-    """Remove contradictions after late recovery/top-up.
-
-    A candidate can fail an early public-line check, then be recovered by the
-    section top-up or replacement layer. The support report must describe the
-    final public issue, so a rendered fingerprint cannot remain in
-    dropped_candidates.
-    """
-    remaining: list[dict[str, object]] = []
-    reconciled: list[dict[str, object]] = []
-    for item in dropped_candidates:
-        fp = str(item.get("fingerprint") or "")
-        if fp and fp in rendered_fingerprints:
-            reconciled.append(item)
-            key = _quality_count_key_for_drop(item)
-            if key in quality_counts:
-                quality_counts[key] = max(0, int(quality_counts.get(key) or 0) - 1)
-            continue
-        remaining.append(item)
-    return remaining, reconciled
 
 
 # The main Ticket Radar now counts toward the 45-item issue budget so a quiet
@@ -4121,7 +4050,6 @@ def _collapse_weekend_duplicate_events(
                     "is_lead": bool(candidate.get("is_lead")),
                     "reasons": [f"Duplicate weekend event already rendered ({duplicate_of})."],
                     "duplicate_of": duplicate_of,
-                    "recoverable_reserve": False,
                     "story_frame": candidate.get("story_frame") or {},
                     "recovery_trace": candidate.get("recovery_trace") or [],
                 }

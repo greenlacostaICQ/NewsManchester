@@ -32,9 +32,10 @@ _load_env_file(PROJECT_ROOT / ".env.local")
 
 from news_digest.config.settings import load_settings
 from news_digest.delivery.telegram import TelegramClient
+from news_digest.pipeline.block_policy import BLOCK_POLICY_REGISTRY, block_policy
 from news_digest.pipeline.candidate_validator import validate_candidates
 from news_digest.pipeline.collector import collect_digest, initialize_collector_state
-from news_digest.pipeline.common import SECTION_MAX_ITEMS, SECTION_MIN_ITEMS, read_json, today_london, write_json
+from news_digest.pipeline.common import read_json, today_london, write_json
 from news_digest.pipeline.dedupe import dedupe_candidates, initialize_candidates_state
 from news_digest.pipeline.editor import edit_digest
 from news_digest.pipeline.history import ensure_history_files, record_delivery_artifacts
@@ -310,12 +311,18 @@ def _source_name_human(name: str) -> str:
 
 def _section_shape_rows(writer_report: dict) -> list[dict[str, object]]:
     counts = (writer_report.get("section_counts") or {}) if isinstance(writer_report, dict) else {}
-    names = sorted(set(counts) | set(SECTION_MAX_ITEMS) | set(SECTION_MIN_ITEMS))
+    policy_headings = {
+        str(policy.get("heading") or block)
+        for block, policy in BLOCK_POLICY_REGISTRY.items()
+        if int(policy.get("min") or 0) or int(policy.get("max") or 0)
+    }
+    names = sorted(set(counts) | policy_headings)
     rows: list[dict[str, object]] = []
     for name in names:
         actual = int(counts.get(name) or 0)
-        max_items = SECTION_MAX_ITEMS.get(name)
-        min_items = SECTION_MIN_ITEMS.get(name)
+        policy = block_policy(name)
+        max_items = int(policy.get("max") or 0) or None
+        min_items = int(policy.get("min") or 0) or None
         status = "в норме"
         if max_items is not None and actual > max_items:
             status = "выше лимита"
@@ -642,19 +649,13 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
     lines.append(f"Опубликовано: {rendered}; прошло первичный редакционный отбор: {included}.")
     lines.append("")
 
-    # 📊 Honest end-to-end funnel from ONE cohort. The earlier version
-    # mixed two populations: it showed included→rendered (a small set)
-    # but pulled the breakdown from final_loss_check, which counts the
-    # full collected pool (~600). That made the numbers (dedupe 140,
-    # rejected 274) dwarf the stated "lost 75". Now every number is the
-    # real cohort: collected → included → sent to text → published, and
-    # the "no text" line is the real LLM miss count, not writer drops.
+    # Honest end-to-end funnel from one cohort:
+    # included → sent to text → published.
     llm_rewrite = llm_report if isinstance(llm_report, dict) else {}
     sent_to_text = int(llm_rewrite.get("included_for_rewrite") or 0)
     no_text = len(llm_rewrite.get("missing_after") or [])
     weak_text = len(llm_rewrite.get("weak_after") or [])
     held_backup = int(((llm_rewrite.get("rewrite_shortlist") or {}).get("held_for_backup")) or 0)
-    backup_counts = ((report.get("backup_pool") or {}).get("counts") or {})
     lines.append("📊 Воронка дня (по одному и тому же набору)")
     lines.append(f"• Прошло редакционный отбор: {included}.")
     if sent_to_text:
@@ -667,28 +668,6 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
     if weak_text:
         lines.append(f"• Текст написан, но слабый после ремонта: {weak_text}.")
     lines.append("")
-
-    recovery = writer_report.get("recovery_controller") if isinstance(writer_report, dict) else {}
-    recovery_totals = recovery.get("totals") if isinstance(recovery, dict) else {}
-    if isinstance(recovery_totals, dict) and int(recovery_totals.get("section_below_floor") or 0):
-        lines.append("🧩 Восстановление тонких блоков")
-        lines.append(
-            f"Блоков ниже минимума: {recovery_totals.get('section_below_floor', 0)}; "
-            f"запасных материалов найдено: {recovery_totals.get('reserve_available', 0)}; "
-            f"вставлено замен: {recovery_totals.get('replacements_inserted', 0)}."
-        )
-        if int(recovery_totals.get("model_recovery_attempts") or 0):
-            lines.append(
-                f"ИИ-дописка запасных материалов: попыток {recovery_totals.get('model_recovery_attempts', 0)}, "
-                f"успешно вставлено {recovery_totals.get('model_recovery_inserted', 0)}, "
-                f"не получилось {recovery_totals.get('model_recovery_failed', 0)}."
-            )
-        if int(recovery_totals.get("still_underflow") or 0):
-            lines.append(
-                f"Остались тонкими: {recovery_totals.get('still_underflow', 0)} блока; "
-                "причины по каждому блоку сохранены в writer_report."
-            )
-        lines.append("")
 
     speed_lines = _llm_speed_summary_lines(llm_rewrite)
     if speed_lines:
@@ -739,27 +718,6 @@ def _build_product_support_text(report: dict, writer_report: dict) -> str:
         lines.append("🎟️ Билеты и события")
         zero_published = sum(1 for row in ticket_rows if int(row.get("raw_count") or 0) and not int(row.get("rendered_count") or 0))
         lines.append(f"• Ticketmaster-источников без публикаций: {zero_published}; детали по каждому источнику в JSON.")
-        lines.append("")
-
-    backup_pool = report.get("backup_pool") or {}
-    backup_active = int((backup_pool.get("counts") or {}).get("active") or 0)
-    if backup_active:
-        backup_items = backup_pool.get("items") or []
-        future_blocks = {"weekend_activities", "next_7_days", "future_announcements",
-                         "ticket_radar", "outside_gm_tickets", "russian_events"}
-        future_count = sum(1 for it in backup_items if str(it.get("primary_block") or "") in future_blocks)
-        news_count = len(backup_items) - future_count
-        lines.append("🗂 В резерве (не «за 24 часа»)")
-        lines.append(
-            f"Всего {backup_active}: это в основном будущие события/билеты "
-            f"(~{future_count} — концерты, ярмарки, выставки на ближайшие недели), "
-            f"а не сегодняшние новости."
-        )
-        if news_count:
-            lines.append(
-                f"Из них ~{news_count} — новости в коротком резерве на добор, если завтра секция окажется тонкой; "
-                "у каждой свой TTL, устаревшие удаляются автоматически."
-            )
         lines.append("")
 
     if borderline_count:

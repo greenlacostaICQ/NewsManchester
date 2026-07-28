@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 import re
 
 from news_digest.pipeline.common import (
@@ -20,7 +20,6 @@ EVIDENCE_PACKET_VERSION = 1
 STORY_CLUSTER_VERSION = 1
 STORY_IDENTITY_VERSION = 1
 ENGLISH_JUDGE_SCHEMA_VERSION = 1
-BACKUP_POOL_SCHEMA_VERSION = 1
 AUDIT_TRAIL_SCHEMA_VERSION = 1
 
 COST_LATENCY_BUDGETS: dict[str, object] = {
@@ -535,80 +534,6 @@ def enrichment_health(candidate: dict) -> dict[str, object]:
     }
 
 
-def backup_ttl_policy(candidate: dict, *, today: date | None = None) -> dict[str, object]:
-    today = today or now_london().date()
-    contract = attach_editorial_contract(candidate).get("editorial_contract") or {}
-    rubric = str((candidate.get("rubric_contract") or {}).get("rubric") or contract.get("story_type") or candidate.get("category") or "")
-    block = str(candidate.get("primary_block") or "")
-    from news_digest.pipeline.weekend_inventory import effective_occurrence_window  # noqa: PLC0415
-
-    event_day, _ = effective_occurrence_window(candidate, today=today)
-
-    if block in {"weather", "transport"} or rubric == "transport":
-        ttl_days = 1
-        reason = "transport_weather_short_ttl"
-    elif rubric in {"weekend_market"} or _MARKET_RE.search(_blob(candidate)):
-        ttl_days = max(1, min(4, ((event_day - today).days + 1) if event_day else 3))
-        reason = "recurring_market_short_window"
-    elif rubric in {"event", "ticket", "russian_event"} or block in {"weekend_activities", "next_7_days", "ticket_radar", "russian_events"}:
-        ttl_days = max(1, min(45, ((event_day - today).days + 1) if event_day else 10))
-        reason = "event_until_occurrence"
-    elif rubric in {"incident", "planning", "civic", "local_cost"}:
-        ttl_days = 14
-        reason = "hard_news_followup_window"
-    elif rubric in {"opening"} or block == "openings":
-        ttl_days = 7
-        reason = "opening_short_memory"
-    else:
-        ttl_days = 2
-        reason = "generic_short_ttl"
-    expires = today + timedelta(days=ttl_days)
-    return {
-        "schema_version": 1,
-        "ttl_days": ttl_days,
-        "expires_on_london": expires.isoformat(),
-        "reason": reason,
-    }
-
-
-def backup_pool_record(
-    candidate: dict,
-    *,
-    reason: str = "",
-    current_day_london: str | None = None,
-) -> dict[str, object]:
-    if not isinstance(candidate, dict):
-        return {}
-    run_day = current_day_london or today_london()
-    try:
-        today = datetime.strptime(run_day, "%Y-%m-%d").date()
-    except ValueError:
-        today = now_london().date()
-    fp = str(candidate.get("fingerprint") or "").strip() or fingerprint_for_candidate(candidate)
-    ttl = backup_ttl_policy(candidate, today=today)
-    judge = candidate.get("formula_judge") if isinstance(candidate.get("formula_judge"), dict) else formula_judge_stub(candidate)
-    lane = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else protected_lane(candidate)
-    return {
-        "schema_version": BACKUP_POOL_SCHEMA_VERSION,
-        "created_on_london": run_day,
-        "expires_on_london": ttl["expires_on_london"],
-        "ttl_days": ttl["ttl_days"],
-        "ttl_reason": ttl["reason"],
-        "fingerprint": fp,
-        "title": candidate.get("title") or "",
-        "source_label": candidate.get("source_label") or "",
-        "source_url": candidate.get("source_url") or "",
-        "category": candidate.get("category") or "",
-        "primary_block": candidate.get("primary_block") or "",
-        "rubric": (candidate.get("rubric_contract") or {}).get("rubric") if isinstance(candidate.get("rubric_contract"), dict) else "",
-        "protected_lanes": lane.get("lanes") or [],
-        "formula_judge": judge,
-        "section_board_score": candidate.get("section_board_score"),
-        "enrichment_health": candidate.get("enrichment_health") or enrichment_health(candidate),
-        "reason": reason or str(candidate.get("reason") or ""),
-    }
-
-
 def _section_fit(candidate: dict) -> list[str]:
     block = str(candidate.get("primary_block") or "")
     label = PRIMARY_BLOCKS.get(block, block)
@@ -665,15 +590,9 @@ def apply_story_intelligence(candidate: dict) -> dict:
     candidate["protected_lane"] = protected_lane(candidate)
     candidate["enrichment_health"] = enrichment_health(candidate)
     if (candidate.get("enrichment_health") or {}).get("warning"):
-        # Flag split (D13): a protected/anchored or already-included item with
-        # thin enrichment is a PUBLIC reserve — it may be pulled back into a thin
-        # section. Only a non-anchored, non-included item is archive-only.
-        lane = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
-        anchor = candidate.get("news_anchor") if isinstance(candidate.get("news_anchor"), dict) else {}
-        pullable = bool(candidate.get("include") or lane.get("protected") or anchor.get("has_news_anchor"))
+        # Planner decides whether this candidate is usable in a slot backup
+        # chain; story intelligence only marks that a second opinion is needed.
         candidate["backup_candidate"] = True
-        candidate["public_reserve"] = pullable
-        candidate["backup_pool_only"] = not pullable
         candidate["second_opinion_required"] = True
         candidate["enrichment_warning"] = {
             "policy": "backup_not_reject",
@@ -701,8 +620,6 @@ def mark_reject_second_opinion(candidate: dict, code: str) -> None:
     if not (lane.get("protected") or anchor.get("has_news_anchor")):
         return
     candidate["backup_candidate"] = True
-    candidate["backup_pool_only"] = True
-    candidate["public_reserve"] = False
     candidate["second_opinion_required"] = True
     candidate["second_opinion_reason"] = {
         "reject_code": code,

@@ -20,10 +20,10 @@ from news_digest.pipeline.common import (
     now_london,
     pipeline_run_id_from,
     read_json,
-    required_blocks_for_weekday,
     today_london,
     write_json,
 )
+from news_digest.pipeline.block_policy import required_block_headings
 from news_digest.pipeline.fact_lock import FACT_LOCK_VERSION, iter_fact_texts, unsupported_fact_tokens
 from news_digest.pipeline.glossary_qa import glossary_line_issues, repair_glossary_terms
 from news_digest.pipeline.transport_language import (
@@ -62,9 +62,8 @@ PRE_SEND_RUSSIAN_EDITOR_PROMPT = """Ты выпускающий редактор
 Тебе дают уже видимые строки выпуска и, если удалось сопоставить строку с кандидатом, evidence по исходной новости.
 Исправь русский язык и редакторские дефекты. Если строка непонятная, битая или слишком машинная, пересобери её заново из evidence.
 
-Верни JSON-объект: {"items":[{"index":0,"action":"ok|rewrite|enrich_and_rewrite|replace_needed|strip_only_if_replacement_unavailable","line":"...","reason":"..."}],"block_actions":[{"action":"recover_lead|backfill|trim|move_outside_gm_to_chunk","section":"...","count":1,"reason":"..."}]}.
+Верни JSON-объект: {"items":[{"index":0,"action":"ok|rewrite|enrich_and_rewrite|replace_needed|strip_only_if_replacement_unavailable","line":"...","reason":"..."}]}.
 ОБЯЗАТЕЛЬНО верни ровно один item на КАЖДУЮ присланную строку (по её index). Чистая строка — action="ok".
-block_actions верни пустым списком, если блоковых действий не нужно.
 Fact-lock: меняй русский язык, порядок и ясность, но НЕ добавляй новую дату,
 время, место, имя, число или сумму, которых нет в evidence. Если правильный
 факт есть в evidence — исправь строку; если факта нет — верни
@@ -95,7 +94,6 @@ replace_needed или strip_only_if_replacement_unavailable.
 - Если строку нужно переписать после дотягивания evidence, верни action="enrich_and_rewrite" и новую line, если evidence в payload уже хватает.
 - Если строка плохая, но evidence не хватает для честного исправления, верни action="replace_needed".
 - Если строка должна исчезнуть и замены нет, верни action="strip_only_if_replacement_unavailable".
-- Для тонкого protected-блока верни block_action="backfill"; для потерянного lead — "recover_lead"; для доминирующих optional-блоков — "trim"; для outside-GM, который вытесняет protected, — "move_outside_gm_to_chunk".
 """
 
 _BAD_RUSSIAN_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
@@ -442,12 +440,6 @@ def _candidate_story_identity_key(candidate: dict | None) -> str:
     return ""
 
 
-def _line_story_identity_key(line: str, candidates_by_key: dict[str, dict]) -> str:
-    url_key = _line_url_identity(line)
-    candidate = candidates_by_key.get(url_key) if url_key else None
-    return _candidate_story_identity_key(candidate)
-
-
 def _candidate_index(candidates: list[dict]) -> dict[str, dict]:
     index: dict[str, dict] = {}
     for candidate in candidates:
@@ -776,9 +768,6 @@ def _call_pre_send_russian_editor_batch(
         return {}, {"status": "parse_failed", "error": "JSON root has no items list", "raw_excerpt": raw[:400], "items_sent": len(items)}
     fixes: dict[int, str] = {}
     actions: list[dict[str, object]] = []
-    block_actions = parsed.get("block_actions") if isinstance(parsed, dict) else []
-    if not isinstance(block_actions, list):
-        block_actions = []
     expected_indices = {int(item.get("index")) for item in items if isinstance(item.get("index"), int)}
     returned_indices: set[int] = set()
     for row in rows:
@@ -804,7 +793,6 @@ def _call_pre_send_russian_editor_batch(
         "coverage_complete": not missing_indices and len(returned_indices) >= len(expected_indices),
         "missing_action_indices": missing_indices[:80],
         "actions": actions[:120],
-        "block_actions": block_actions[:40],
     }
 
 
@@ -821,7 +809,6 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
     fixes: dict[int, str] = {}
     batch_reports: list[dict[str, object]] = []
     actions: list[dict[str, object]] = []
-    block_actions: list[dict[str, object]] = []
     batches = _batch_editor_items(items)
     max_workers = max(1, int(os.environ.get("PRE_SEND_EDITOR_MAX_WORKERS", PRE_SEND_EDITOR_MAX_WORKERS)))
     max_workers = min(len(batches), max_workers)
@@ -831,7 +818,6 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
             batch_fixes, batch_report = _call_pre_send_russian_editor_batch(client, batch, record_call_from_response)
             fixes.update(batch_fixes)
             actions.extend(batch_report.get("actions") or [])
-            block_actions.extend(batch_report.get("block_actions") or [])
             batch_reports.append(batch_report)
     else:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -843,7 +829,6 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
                 batch_fixes, batch_report = future.result()
                 fixes.update(batch_fixes)
                 actions.extend(batch_report.get("actions") or [])
-                block_actions.extend(batch_report.get("block_actions") or [])
                 batch_reports.append(batch_report)
     failed = [report for report in batch_reports if report.get("status") != "ok"]
     missing_indices: list[int] = []
@@ -861,26 +846,8 @@ def _call_pre_send_russian_editor(items: list[dict[str, object]], api_key: str) 
         "duration_seconds": round(time.monotonic() - started, 3),
         "failed_batches": len(failed),
         "actions": actions[:200],
-        "block_actions": block_actions[:80],
         "batches": batch_reports[:20],
     }
-
-
-# P0-D: recovery may only insert an event into a date-anchored section if the
-# event has a concrete occurrence date inside that section's horizon. A no-date
-# listing (Black Friar / Boro) or a far-future one (Manchester Psych Festival,
-# 5 Sept, in «Выходные») was being re-manufactured into a thin weekend block
-# even though validation had dropped it — recovery filled the counter with a
-# line that is not actually this weekend. News/city blocks carry no such date
-# contract and are unaffected.
-_RESERVE_INSERT_EVENT_HORIZON_DAYS: dict[str, int | None] = {
-    "Выходные в GM": 3,
-    "Что важно в ближайшие 7 дней": 7,
-    "Дальние анонсы": None,  # future, any horizon
-    "Билеты / Ticket Radar": None,
-    "Крупные концерты вне GM": None,
-    "Русскоязычные концерты и стендап UK": None,
-}
 
 
 def _apply_editor_line_actions(
@@ -889,12 +856,8 @@ def _apply_editor_line_actions(
     items: list[dict[str, object]],
     model_fixes: dict[int, str],
     model_report: dict[str, object],
-    candidates: list[dict],
-    rendered_urls: set[str],
-    rendered_story_keys: set[str],
     warnings: list[str],
     round_no: int,
-    reserve_pool: _PrevalidatedReservePool | None = None,
 ) -> tuple[dict[str, list[str]], dict[str, object]]:
     action_by_index = {
         int(action.get("index")): action
@@ -907,9 +870,6 @@ def _apply_editor_line_actions(
         "model_changes": [],
         "fact_lock_version": FACT_LOCK_VERSION,
         "fact_lock_rejected": 0,
-        "model_requested_replaced": 0,
-        "model_requested_stripped": 0,
-        "reserve_replacement": {"enriched_rewrite_attempts": 0, "enriched_rewrite_used": 0},
     }
     changes = stats["model_changes"]
     if model_report.get("status") not in {"ok", "skipped_no_items"}:
@@ -974,25 +934,6 @@ def _apply_editor_line_actions(
     return polished, stats
 
 
-def _apply_editor_block_actions(
-    polished: dict[str, list[str]],
-    *,
-    block_actions: list[dict[str, object]],
-    candidates: list[dict],
-    rendered_urls: set[str],
-    rendered_story_keys: set[str],
-    warnings: list[str],
-    reserve_pool: object | None = None,
-) -> tuple[dict[str, list[str]], dict[str, object]]:
-    """Этап 3: блок-команды модели игнорируются — состав решён планом."""
-    ignored = [str((row or {}).get("action") or "") for row in block_actions if isinstance(row, dict)]
-    if ignored:
-        warnings.append(
-            "Final editor block actions ignored (план неизменяем): " + ", ".join(sorted(set(ignored)))[:120]
-        )
-    return polished, {"requested": len(ignored), "applied": 0, "status": "ignored_plan_locked", "actions": []}
-
-
 def _pre_send_polish_sections(
     sections: dict[str, list[str]],
     warnings: list[str],
@@ -1027,59 +968,22 @@ def _pre_send_polish_sections(
     model_fixes, model_report = _call_pre_send_russian_editor(items, api_key)
     model_report["targeted_items"] = len(items)
     model_report["selection_policy"] = "whole_visible_digest"
-    replaced = 0
-    stripped = 0
-    model_requested_replaced = 0
-    model_requested_stripped = 0
     fact_lock_rejected = 0
-    rendered_urls = {
-        _line_url_identity(line)
-        for lines in polished.values()
-        for line in lines
-        if line.strip()
-    }
-    rendered_story_keys = {
-        _line_story_identity_key(line, candidates_by_key)
-        for lines in polished.values()
-        for line in lines
-        if line.strip()
-    }
-    rendered_story_keys.discard("")
-    reserve_pool = None  # Этап 3: единственный источник замен — план
     round_reports: list[dict[str, object]] = []
-    block_action_reports: list[dict[str, object]] = []
     model_changes: list[dict[str, object]] = []
     polished, round_stats = _apply_editor_line_actions(
         polished,
         items=items,
         model_fixes=model_fixes,
         model_report=model_report,
-        candidates=candidates or [],
-        rendered_urls=rendered_urls,
-        rendered_story_keys=rendered_story_keys,
         warnings=warnings,
         round_no=1,
-        reserve_pool=reserve_pool,
     )
     model_fixed += int(round_stats.get("model_fixed") or 0)
-    model_requested_replaced += int(round_stats.get("model_requested_replaced") or 0)
-    model_requested_stripped += int(round_stats.get("model_requested_stripped") or 0)
     fact_lock_rejected += int(round_stats.get("fact_lock_rejected") or 0)
-    replaced += int(round_stats.get("model_requested_replaced") or 0)
-    stripped += int(round_stats.get("model_requested_stripped") or 0)
     model_changes.extend(round_stats.get("model_changes") or [])
     if not model_report.get("coverage_complete") and model_report.get("status") == "ok":
         warnings.append("Pre-send Russian editor did not return an action for every visible line; running recovery round.")
-    polished, block_report = _apply_editor_block_actions(
-        polished,
-        block_actions=[row for row in (model_report.get("block_actions") or []) if isinstance(row, dict)],
-        candidates=candidates or [],
-        rendered_urls=rendered_urls,
-        rendered_story_keys=rendered_story_keys,
-        warnings=warnings,
-        reserve_pool=reserve_pool,
-    )
-    block_action_reports.append(block_report)
     round_reports.append({"round": 1, **model_report})
 
     # Editor owns words only. Any row still bad is left in its slot for the
@@ -1144,29 +1048,12 @@ def _pre_send_polish_sections(
             items=second_items_all,
             model_fixes=second_fixes,
             model_report=second_report,
-            candidates=candidates or [],
-            rendered_urls=rendered_urls,
-            rendered_story_keys=rendered_story_keys,
             warnings=warnings,
             round_no=2,
-            reserve_pool=reserve_pool,
         )
         model_fixed += int(second_stats.get("model_fixed") or 0)
-        model_requested_replaced += int(second_stats.get("model_requested_replaced") or 0)
-        model_requested_stripped += int(second_stats.get("model_requested_stripped") or 0)
         fact_lock_rejected += int(second_stats.get("fact_lock_rejected") or 0)
-        replaced += int(second_stats.get("model_requested_replaced") or 0)
-        stripped += int(second_stats.get("model_requested_stripped") or 0)
         model_changes.extend(second_stats.get("model_changes") or [])
-        polished, second_block_report = _apply_editor_block_actions(
-            polished,
-            block_actions=[row for row in (second_report.get("block_actions") or []) if isinstance(row, dict)],
-            candidates=candidates or [],
-            rendered_urls=rendered_urls,
-            rendered_story_keys=rendered_story_keys,
-            warnings=warnings,
-        )
-        block_action_reports.append(second_block_report)
         round_reports.append({"round": 2, **second_report})
     else:
         round_reports.append({"round": 2, "status": "skipped_not_needed"})
@@ -1211,10 +1098,6 @@ def _pre_send_polish_sections(
         "rules_fixed": rule_fixed,
         "model_fixed": model_fixed,
         "model_changes": model_changes[:120],
-        "degraded_replaced": replaced,
-        "degraded_stripped": stripped,
-        "model_requested_replaced": model_requested_replaced,
-        "model_requested_stripped": model_requested_stripped,
         "fact_lock_version": FACT_LOCK_VERSION,
         "fact_lock_rejected": fact_lock_rejected,
         "remaining_bad": remaining_bad,
@@ -1223,7 +1106,6 @@ def _pre_send_polish_sections(
         "model": PRE_SEND_RUSSIAN_EDITOR_MODEL,
         "max_rounds": PRE_SEND_EDITOR_MAX_ROUNDS,
         "rounds": round_reports,
-        "block_action_reports": block_action_reports,
         "empty_ending_post_check": empty_ending_post_check,
         "visible_items": len(items),
         "evidence_items": evidence_items,
@@ -1329,7 +1211,7 @@ def edit_digest(project_root: Path) -> StageResult:
     # "Коротко" больше не требуется — убрана из дайджеста
     required_to_check = [
         block
-        for block in required_blocks_for_weekday(now_london().weekday())
+        for block in required_block_headings(now_london().weekday())
         if block != "Коротко"
     ]
     for block in required_to_check:

@@ -7,7 +7,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from news_digest.pipeline.release import _final_loss_check, public_html_contract_errors
+from news_digest.pipeline.release import public_html_contract_errors
 from unittest.mock import patch
 
 from news_digest.pipeline.common import now_london
@@ -1151,31 +1151,6 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertEqual(len(capped), 1)
         self.assertIn("5 мелких закрытий остановок", capped[0])
         self.assertEqual(len(dropped), 4)
-
-    def test_final_loss_check_explains_missing_facts(self) -> None:
-        candidate = {
-            "fingerprint": "critical-1",
-            "include": True,
-            "category": "gmp",
-            "primary_block": "today_focus",
-            "title": "Police appeal after stabbing in Wigan",
-            "source_label": "BBC Manchester",
-            "protected_lane": {"protected": True, "lanes": ["public_safety"]},
-            "story_frame": {"missing_facts": ["who_affected"], "what_happened": "stabbing"},
-            "recovery_trace": [{"step": "hard_news_recovery", "outcome": "held"}],
-        }
-        report = _final_loss_check(
-            candidates_report={"candidates": [candidate]},
-            writer_report={"dropped_candidates": [{"fingerprint": "critical-1", "reasons": ["Missing draft_line."]}]},
-            rendered_fingerprints=set(),
-            dedupe_memory={},
-        )
-        item = report["items"][0]
-        self.assertIn("human_reason", item)
-        self.assertTrue(item["missing_facts"])
-        self.assertIn("Не хватило:", item["human_reason"])
-        self.assertEqual(item["recovery_trace"][0]["step"], "hard_news_recovery")
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -155,9 +155,7 @@ class PreSendRepairExecutorTest(unittest.TestCase):
                             {
                                 "fingerprint": "reserve-1",
                                 "primary_block": "last_24h",
-                                "public_reserve": True,
                                 "validated": True,
-                                "backup_pool_only": False,
                                 "draft_line": "• Чистая резервная новость про город.",
                                 "source_url": "https://example.test/reserve",
                                 "source_label": "BBC Manchester",

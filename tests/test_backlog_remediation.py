@@ -20,7 +20,6 @@ from news_digest.pipeline.story_intelligence import (
     apply_cheap_dedup_before_enrich,
     apply_story_intelligence,
     attach_story_clusters,
-    backup_pool_record,
     mark_reject_second_opinion,
     new_facts_diff,
     section_board_score,
@@ -29,7 +28,6 @@ from news_digest.pipeline.release import (
     build_release,
     _classify_published_candidates,
     _classify_rendered_html_quality,
-    _final_loss_check,
     _borderline_queue,
     _summarise_diaspora_diagnostics,
     _summarise_source_health,
@@ -273,7 +271,6 @@ class TargetedEditorSecondRoundTest(unittest.TestCase):
                     "coverage_complete": False,
                     "missing_action_indices": missing,
                     "actions": actions,
-                    "block_actions": [],
                 }
             # Round 2 covers everything it was actually sent.
             actions = [
@@ -287,7 +284,6 @@ class TargetedEditorSecondRoundTest(unittest.TestCase):
                 "coverage_complete": True,
                 "missing_action_indices": [],
                 "actions": actions,
-                "block_actions": [],
             }
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -1704,6 +1700,9 @@ class PublishedReviewTest(unittest.TestCase):
             # or a release_report payload.
             self.assertNotIn("event_miss_review", report)
             self.assertNotIn("final_loss_check", report)
+            self.assertNotIn("backup_pool", report)
+            self.assertNotIn("visible_repeat_quarantine", report)
+            self.assertNotIn("rendered_html_quarantine", report)
             self.assertNotIn("quality_scorecard", report)
             self.assertNotIn("model_bakeoff", report)
             self.assertFalse(any("possible real misses" in warning for warning in report["warnings"]))
@@ -2370,7 +2369,7 @@ class StoryIntelligenceTest(unittest.TestCase):
 
         self.assertGreater(section_board_score(protected), section_board_score(filler))
 
-    def test_enrich_failure_on_protected_item_goes_to_backup_not_silent_reject(self) -> None:
+    def test_enrich_failure_on_protected_item_goes_to_planner_reserve_not_silent_reject(self) -> None:
         candidate = {
             "title": "TfGM confirms Metrolink disruption on Airport Line today",
             "summary": "TfGM confirms disruption on the Airport Line today.",
@@ -2384,45 +2383,12 @@ class StoryIntelligenceTest(unittest.TestCase):
         }
 
         apply_story_intelligence(candidate)
-        backup = backup_pool_record(candidate, reason="enrichment failed", current_day_london="2026-05-26")
 
         self.assertTrue(candidate["enrichment_health"]["warning"])
         self.assertTrue(candidate["backup_candidate"])
         self.assertTrue(candidate["second_opinion_required"])
-        self.assertEqual(backup["expires_on_london"], "2026-05-27")
-        self.assertEqual(backup["ttl_reason"], "transport_weather_short_ttl")
-
-    def test_final_loss_check_flags_unrendered_protected_candidate(self) -> None:
-        candidate = {
-            "fingerprint": "fp-ticket",
-            "title": "Tickets announced for Russian stand-up show in Manchester on 30 August",
-            "summary": "Russian-language stand-up show in Manchester on 30 August.",
-            "source_label": "Kontramarka UK",
-            "category": "russian_speaking_events",
-            "primary_block": "russian_events",
-            "include": True,
-            "entities": {"boroughs": ["Manchester"]},
-            "event": {
-                "is_event": True,
-                "event_name": "Russian stand-up show",
-                "date_start": "2026-08-30",
-                "venue": "Manchester Academy",
-                "borough": "Manchester",
-            },
-        }
-        apply_story_intelligence(candidate)
-
-        review = _final_loss_check(
-            candidates_report={"candidates": [candidate]},
-            writer_report={"dropped_candidates": [{"fingerprint": "fp-ticket", "reasons": ["cap"]}]},
-            rendered_fingerprints=set(),
-            dedupe_memory={},
-        )
-
-        self.assertEqual(review["counts"]["critical_losses"], 1)
-        self.assertEqual(review["critical_losses"][0]["disposition"], "writer_dropped")
-        self.assertIn("russian_event", review["critical_losses"][0]["protected_lanes"])
-
+        self.assertNotIn("backup_pool_only", candidate)
+        self.assertNotIn("public_reserve", candidate)
 
 class TelegramBacklog20260527Test(unittest.TestCase):
     """Behaviour pinned for the 2026-05-27 release-report findings: public
@@ -3086,20 +3052,6 @@ class RussianPositiveEvidenceTest(unittest.TestCase):
                      source="UK Stand-Up Club")
         self.assertFalse(self._gate(c))
         self.assertIn("russian_or_ukrainian_language_phrase", c["russian_evidence"]["strong_signals"])
-
-
-class ReserveAndRecoveryContractTest(unittest.TestCase):
-    """P0-B: only capacity-cut material is recoverable (never stale).
-    P0-D: recovery cannot manufacture a no-date / out-of-window event line."""
-
-    def _clean_reserve_base(self) -> dict:
-        return {
-            "include": True,
-            "validated": True,
-            "recoverable_reserve": True,
-            "title": "Manchester council confirms update",
-            "primary_block": "city_watch",
-        }
 
 if __name__ == "__main__":
     unittest.main()

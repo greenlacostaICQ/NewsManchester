@@ -78,28 +78,13 @@ EnglishCardMapping = dict[str, tuple[dict[str, object], str, str]]
 _ACTIVE_TRANSLATION_GLOSSARY: list[dict[str, str]] = []
 
 REWRITE_SHORTLIST_VERSION = 2
-# Per-block recall cap = how many candidates the DeepSeek board judge gets to
-# see and rank. Editorial blocks (news/weekend/civic/professional) get a wide
-# net so the model — not a deterministic rule cap — picks the best from real
-# competition (last_24h had 112 candidates but the model only saw 12).
-# Catalog blocks (tickets, transport) stay narrow: they are ranked by
-# deterministic tier/lifecycle, the model adds nothing there.
-REWRITE_SHORTLIST_CAPS_BY_BLOCK: dict[str, int] = {
-    block: int(policy.get("rewrite_recall_cap") or 0)
-    for block, policy in BLOCK_POLICY_REGISTRY.items()
-    if int(policy.get("rewrite_recall_cap") or 0)
-}
-REWRITE_SHORTLIST_DEFAULT_CAP = 8
-
 # Source-language board judge gets a wider per-block board first. The final
 # Russian writer is capped later, after DeepSeek has assigned scores/decisions.
 # The board judge is the CHEAP model (DeepSeek-pro on compact cards), so a wider
 # board buys recall cheaply; the expensive Russian writing stays capped at 42.
 REWRITE_RANKING_BOARD_MAX = 90
 
-# 0001-class reserve pre-write: sections that keep shipping under floor with
-# `no_recoverable_reserve_with_facts` get a bounded rewrite quota for their
-# recoverable reserve, so recovery has renderable lines (~8 extra lines/day).
+# Bounded prose preparation for planner-selected primary/backup rows.
 REPAIR_DRAFT_MAX_ITEMS_DEFAULT = 8
 TRANSLATION_MEMORY_VERSION = 1
 TRANSLATION_MEMORY_MAX_ENTRIES = 2500
@@ -1216,8 +1201,8 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
 
     This is the cutover from "translate the broad included pool" to
     "judge/score first, translate only the publishable shortlist". Items
-    held back are not deleted: they are marked as backup candidates so the
-    release report and backup_pool can explain what was not translated.
+    held back are not deleted: planner receives their rank verdict and decides
+    whether they belong in a slot backup chain.
     """
     today_practical_reserve = _mark_today_practical_translation_reserve(to_rewrite)
     groups: dict[str, list[dict]] = {}
@@ -1255,8 +1240,6 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
                 )
                 continue
             candidate["backup_candidate"] = True
-            candidate["backup_pool_only"] = True
-            candidate["public_reserve"] = False
             candidate["rewrite_shortlist_status"] = "board_rejected"
             candidate["rewrite_shortlist_reason"] = (
                 "Board rejected: "
@@ -1279,7 +1262,7 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
             groups[block] = [c for c in group if c.get("rewrite_shortlist_status") != "board_rejected"]
 
     for block, group in groups.items():
-        cap = REWRITE_SHORTLIST_CAPS_BY_BLOCK.get(block, REWRITE_SHORTLIST_DEFAULT_CAP)
+        cap = int(block_policy(block).get("rewrite_recall_cap") or 8)
         caps[block] = cap
         ranked = sorted(group, key=_rewrite_shortlist_priority, reverse=True)
         protected_group = [candidate for candidate in ranked if _must_translate_before_cap(candidate)]
@@ -1313,15 +1296,10 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
             )
         for candidate in normal_group[cap:]:
             candidate["backup_candidate"] = True
-            candidate["backup_pool_only"] = True
-            candidate["public_reserve"] = False
             candidate["rewrite_shortlist_status"] = "backup_before_rewrite"
             candidate["rewrite_shortlist_reason"] = f"Outside pre-rewrite shortlist for {block or 'unknown'}."
             verdict = "needs_enrichment" if _needs_selection_enrichment(candidate) else "reserve"
             _set_digest_selection_verdict(candidate, verdict, candidate["rewrite_shortlist_reason"])
-            from news_digest.pipeline.plan_digest import _backup_eligible  # noqa: PLC0415
-
-            candidate["recoverable_reserve"] = _backup_eligible(candidate)[0]  # зеркало: пригодность в запасные плана
             held.append(
                 {
                     "fingerprint": candidate.get("fingerprint") or "",
@@ -1384,17 +1362,12 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
             if id(candidate) in keep_ids:
                 continue
             candidate["backup_candidate"] = True
-            candidate["backup_pool_only"] = True
-            candidate["public_reserve"] = False
             candidate["rewrite_shortlist_status"] = "backup_ranking_board_cap"
             candidate["rewrite_shortlist_reason"] = (
                 f"Outside DeepSeek ranking board (soft max {REWRITE_RANKING_BOARD_MAX})."
             )
             verdict = "needs_enrichment" if _needs_selection_enrichment(candidate) else "reserve"
             _set_digest_selection_verdict(candidate, verdict, candidate["rewrite_shortlist_reason"])
-            from news_digest.pipeline.plan_digest import _backup_eligible  # noqa: PLC0415
-
-            candidate["recoverable_reserve"] = _backup_eligible(candidate)[0]  # зеркало: пригодность в запасные плана
             selected_ids.discard(id(candidate))
             board_overflow += 1
             held.append(
@@ -1574,9 +1547,6 @@ def _apply_cost_after_quality_guard(to_rewrite: list[dict]) -> tuple[list[dict],
             selected.append(candidate)
             continue
         candidate["backup_candidate"] = True
-        candidate["backup_pool_only"] = True
-        candidate["public_reserve"] = False
-        candidate["recoverable_reserve"] = False
         candidate["rewrite_shortlist_status"] = "held_cost_after_quality"
         candidate["rewrite_shortlist_reason"] = reason
         verdict = "needs_enrichment" if (
@@ -2585,7 +2555,6 @@ def _selected_evidence_text(candidate: dict, *, limit: int = 3000) -> str:
         or shortlist_status == "writer_deterministic"
         or bool(candidate.get("is_lead"))
         or bool(protected)
-        or bool(candidate.get("public_reserve"))
         or bool(candidate.get("backup_candidate"))
     )
     if not selected:

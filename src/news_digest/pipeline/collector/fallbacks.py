@@ -321,7 +321,7 @@ def _weather_candidate() -> dict:
 
 
 def _transport_fallback_candidates(report: dict) -> list[dict]:
-    # Transport block is optional (not in REQUIRED_BLOCKS). A quiet day with
+    # Transport block is optional in BLOCK_POLICY_REGISTRY. A quiet day with
     # no disruptions produces no transport candidates — that is correct behaviour.
     return []
 

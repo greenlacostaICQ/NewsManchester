@@ -34,15 +34,12 @@ class EditorPacingTest(unittest.TestCase):
             items=[{"index": 0, "section": "Выходные в GM", "line": line}],
             model_fixes={},
             model_report={"status": "ok", "actions": [{"index": 0, "action": "replace_needed"}]},
-            candidates=[],
-            rendered_urls=set(),
-            rendered_story_keys=set(),
             warnings=warnings,
             round_no=1,
         )
 
         self.assertEqual(polished["Выходные в GM"], [line])
-        self.assertEqual(stats["model_requested_stripped"], 0)
+        self.assertEqual(stats["fact_lock_rejected"], 0)
         self.assertIn("передано plan repair executor", warnings[0])
 
     def test_empty_ending_post_check_strips_generic_filler_and_keeps_link(self):

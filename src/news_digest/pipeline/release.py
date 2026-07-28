@@ -14,19 +14,17 @@ import time
 logger = logging.getLogger(__name__)
 
 from news_digest.pipeline.common import (
-    LOW_SIGNAL_BLOCKS,
     PRIMARY_BLOCKS,
     REQUIRED_SCAN_CATEGORIES,
-    SECTION_MIN_ITEMS,
     canonical_url_identity,
     extract_sections,
     now_london,
     pipeline_run_id_from,
     read_json,
-    required_blocks_for_weekday,
     today_london,
     write_json,
 )
+from news_digest.pipeline.block_policy import optional_block_headings, required_block_headings
 from news_digest.pipeline.transport_language import (
     repair_transport_line_language,
     transport_public_contract_errors,
@@ -43,14 +41,12 @@ from news_digest.pipeline.inventory import (
     summarise_morning_intake,
     verify_collect_conservation,
 )
-from news_digest.pipeline.repeat_policy import visible_repeat_verdict
 from news_digest.pipeline.editorial_contracts import classify_prose_defects
 from news_digest.pipeline.prompts_meta import PROMPT_REGISTRY_VERSION
 from news_digest.pipeline.story_intelligence import (
     AUDIT_TRAIL_SCHEMA_VERSION,
     COST_LATENCY_BUDGETS,
     apply_story_intelligence,
-    backup_pool_record,
 )
 
 
@@ -439,7 +435,7 @@ def _validate_draft(
 
     sections = extract_sections(html_text)
     warnings.extend(public_html_contract_errors(html_text))
-    for block in required_blocks_for_weekday(now_london().weekday()):
+    for block in required_block_headings(now_london().weekday()):
         has_candidates_for_block = any(
             PRIMARY_BLOCKS.get(str(candidate.get("primary_block") or "")) == block
             for candidate in included_candidates
@@ -547,7 +543,7 @@ def _validate_draft(
             return True
         return "не добавляю" in stripped.lower()
 
-    for block in LOW_SIGNAL_BLOCKS:
+    for block in optional_block_headings():
         lines = sections.get(block, [])
         if lines and any(_has_refusal_marker(line) for line in lines):
             # NEVER block the whole release because a single low-signal block
@@ -1478,6 +1474,29 @@ def _rendered_html_lines(html_text: str) -> list[dict[str, object]]:
     return lines
 
 
+def _planner_repeat_decision(candidate: dict, previous: dict | None) -> dict[str, object]:
+    governing = (
+        candidate.get("governing_repeat_decision")
+        if isinstance(candidate.get("governing_repeat_decision"), dict)
+        else {}
+    )
+    if governing:
+        return governing
+    if previous:
+        return {
+            "allow": False,
+            "repeat_class": "unknown",
+            "reason": "missing_governing_repeat_decision",
+            "owner": "missing",
+        }
+    return {
+        "allow": True,
+        "repeat_class": "new",
+        "reason": "no_previous_match",
+        "owner": "plan_digest",
+    }
+
+
 def _classify_visible_repeat_policy(
     html_text: str,
     candidates_report: dict | None,
@@ -1506,12 +1525,7 @@ def _classify_visible_repeat_policy(
             if not previous:
                 continue
             checked += 1
-            governing = (
-                candidate.get("governing_repeat_decision")
-                if isinstance(candidate.get("governing_repeat_decision"), dict)
-                else {}
-            )
-            verdict_dict = governing or visible_repeat_verdict(candidate, previous).as_dict()
+            verdict_dict = _planner_repeat_decision(candidate, previous)
             if verdict_dict.get("allow"):
                 allowed += 1
                 continue
@@ -1779,131 +1793,6 @@ def _disposition_for_candidate(
     if candidate.get("include"):
         return "selected_not_published", ""
     return "rejected", str(candidate.get("reason") or "; ".join(str(r) for r in (candidate.get("reject_reasons") or [])))
-
-
-def _is_independent_high_value_signal(candidate: dict) -> bool:
-    if not isinstance(candidate, dict):
-        return False
-    apply_story_intelligence(candidate)
-    lane = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
-    anchor = candidate.get("news_anchor") if isinstance(candidate.get("news_anchor"), dict) else {}
-    judge = candidate.get("formula_judge") if isinstance(candidate.get("formula_judge"), dict) else {}
-    score = float(candidate.get("section_board_score") or 0.0)
-    if candidate.get("second_opinion_required") or candidate.get("backup_candidate"):
-        return True
-    if lane.get("protected"):
-        return True
-    if anchor.get("has_news_anchor") and score >= 80:
-        return True
-    return judge.get("decision") == "publish_candidate" and score >= 90
-
-
-def _final_loss_check(
-    *,
-    candidates_report: dict | None,
-    writer_report: dict | None,
-    rendered_fingerprints: set[str],
-    dedupe_memory: dict | None,
-) -> dict[str, object]:
-    """Warning-only check for valuable candidates that disappeared late.
-
-    Event miss review is event-specific; this covers transport, public
-    safety, civic/planning, Russian events, tickets and any anchored story
-    with a strong independent score.
-    """
-    rendered_set = {str(fp) for fp in rendered_fingerprints if fp}
-    writer_drops = {
-        str(item.get("fingerprint") or ""): item
-        for item in ((writer_report or {}).get("dropped_candidates") or [])
-        if isinstance(item, dict)
-    }
-    dedupe_drops = _dedupe_drop_map(dedupe_memory)
-    items: list[dict[str, object]] = []
-    counts = Counter()
-    for candidate in (candidates_report or {}).get("candidates") or []:
-        if not isinstance(candidate, dict):
-            continue
-        fp = str(candidate.get("fingerprint") or "")
-        if not fp or fp in rendered_set:
-            continue
-        if not _is_independent_high_value_signal(candidate):
-            continue
-        disposition, reason = _disposition_for_candidate(
-            candidate,
-            rendered_set=rendered_set,
-            writer_drops=writer_drops,
-            dedupe_drops=dedupe_drops,
-        )
-        reason_l = str(reason or "").lower()
-        category = str(candidate.get("category") or "")
-        if disposition == "rendered":
-            alert_class = "rendered"
-        elif "ticket not selected" in reason_l or "not selected" in reason_l:
-            alert_class = "not_selected_by_design"
-        elif disposition == "dedupe_dropped" and any(token in reason_l for token in ("duplicate", "same story", "multi-night", "merged")):
-            alert_class = "duplicate_or_covered"
-        elif "held for manual review" in reason_l or "borderline editorial status" in reason_l:
-            alert_class = "manual_review"
-        elif category == "venues_tickets" and disposition in {"writer_dropped", "selected_not_published"}:
-            alert_class = "ticket_inventory_not_rendered"
-        elif disposition in {"writer_dropped", "selected_not_published", "dedupe_dropped"}:
-            alert_class = "possible_miss"
-        else:
-            alert_class = "review_only"
-        lane = candidate.get("protected_lane") if isinstance(candidate.get("protected_lane"), dict) else {}
-        enrichment = candidate.get("enrichment_health") if isinstance(candidate.get("enrichment_health"), dict) else {}
-        frame = candidate.get("story_frame") if isinstance(candidate.get("story_frame"), dict) else {}
-        recovery_trace = candidate.get("recovery_trace") if isinstance(candidate.get("recovery_trace"), list) else []
-        recovery_plan = candidate.get("recovery_plan") if isinstance(candidate.get("recovery_plan"), dict) else {}
-        record = {
-            "fingerprint": fp,
-            "title": candidate.get("title") or "",
-            "source_label": candidate.get("source_label") or "",
-            "category": candidate.get("category") or "",
-            "primary_block": candidate.get("primary_block") or "",
-            "disposition": disposition,
-            "alert_class": alert_class,
-            "reason": reason,
-            "human_reason": (
-                f"Не дошло до выпуска: {reason}. "
-                f"Не хватило: {', '.join(frame.get('missing_facts') or []) or 'явных недостающих фактов нет'}."
-            ),
-            "story_frame": frame,
-            "missing_facts": frame.get("missing_facts") or [],
-            "recovery_trace": recovery_trace,
-            "recovery_plan": recovery_plan,
-            "protected_lanes": lane.get("lanes") or [],
-            "section_board_score": candidate.get("section_board_score"),
-            "false_negative_risk": (candidate.get("formula_judge") or {}).get("false_negative_risk") if isinstance(candidate.get("formula_judge"), dict) else "",
-            "enrichment_warning": bool(enrichment.get("warning")),
-            "manual_include_hint": f'Add "{fp}" to data/state/manual_candidate_overrides.json force_include[]',
-        }
-        items.append(record)
-        counts[disposition] += 1
-        counts[f"alert_{alert_class}"] += 1
-
-    items = sorted(
-        items,
-        key=lambda item: (
-            0 if item.get("enrichment_warning") else 1,
-            -float(item.get("section_board_score") or 0.0),
-            str(item.get("title") or ""),
-        ),
-    )
-    critical = [
-        item for item in items
-        if item.get("alert_class") == "possible_miss"
-    ]
-    return {
-        "schema_version": 1,
-        "counts": {
-            "high_value_not_rendered": len(items),
-            "critical_losses": len(critical),
-            **dict(counts),
-        },
-        "critical_losses": critical[:30],
-        "items": items[:80],
-    }
 
 
 def _write_audit_trail(
@@ -3187,7 +3076,7 @@ def _write_selection_snapshot(state_dir: Path, stage: str) -> dict[str, object]:
                 "status": status,
                 "include": bool(candidate.get("include")),
                 "has_public_text": _candidate_has_public_text(candidate),
-                "recoverable_reserve": bool(candidate.get("recoverable_reserve") or candidate.get("public_reserve")),
+                "planner_reserve": status == "reserve",
                 "reason": str(candidate.get("digest_selection_reason") or candidate.get("publish_plan_reason") or "")[:240],
             })
     for section in sections.values():
@@ -3238,7 +3127,6 @@ def _write_repeat_policy_report(
     rendered_fingerprints: set[str],
     published_facts: dict | None,
     visible_repeat_review: dict[str, object],
-    visible_repeat_quarantine: dict[str, object],
 ) -> dict[str, object]:
     candidates = [c for c in (candidates_report or {}).get("candidates") or [] if isinstance(c, dict)]
     previous_by_fp = _published_by_fingerprint(published_facts)
@@ -3251,16 +3139,7 @@ def _write_repeat_policy_report(
         block = str(candidate.get("primary_block") or "unknown")
         status = "rendered" if fp in rendered_fingerprints else ("included" if candidate.get("include") else "not_included")
         previous = previous_by_fp.get(fp)
-        governing = (
-            candidate.get("governing_repeat_decision")
-            if isinstance(candidate.get("governing_repeat_decision"), dict)
-            else {}
-        )
-        verdict = governing or (visible_repeat_verdict(candidate, previous).as_dict() if previous else {
-            "allow": True,
-            "repeat_class": "new",
-            "reason": "no_previous_match",
-        })
+        verdict = _planner_repeat_decision(candidate, previous)
         match_types = _repeat_match_types(candidate)
         if previous and "fingerprint" not in match_types:
             match_types.append("fingerprint")
@@ -3307,7 +3186,6 @@ def _write_repeat_policy_report(
         "by_block": {block: dict(counter) for block, counter in sorted(by_block.items())},
         "by_match_type": dict(by_match_type),
         "visible_repeat_review": visible_repeat_review,
-        "visible_repeat_quarantine": visible_repeat_quarantine,
         "items": rows[:400],
     }
     path = state_dir / "repeat_policy_report.json"
@@ -3679,7 +3557,6 @@ def build_release(project_root: Path) -> ReleaseResult:
         )
     published_facts = read_json(state_dir / "published_facts.json", {"facts": []}) if (state_dir / "published_facts.json").exists() else {"facts": []}
     visible_repeat_review = {"counts": {"visible_lines": 0, "bad_visible_repeats": 0}, "bad_visible_repeats": []}
-    visible_repeat_quarantine: dict[str, object] = {"attempted": False, "removed_count": 0}
     if draft_path.exists():
         repeat_html_text = draft_path.read_text(encoding="utf-8")
         visible_repeat_review = _classify_visible_repeat_policy(
@@ -3703,13 +3580,11 @@ def build_release(project_root: Path) -> ReleaseResult:
             rendered_fingerprints=rendered_fingerprints,
             published_facts=published_facts,
             visible_repeat_review=visible_repeat_review,
-            visible_repeat_quarantine=visible_repeat_quarantine,
         )
     except Exception as exc:  # noqa: BLE001 - observability must not block release
         logger.warning("repeat policy report failed: %s", exc)
         warnings.append("Repeat policy report: snapshot failed; check release logs.")
     rendered_html_review = {"counts": {"visible_lines": 0, "bad_visible_items": 0}, "bad_visible_items": []}
-    rendered_html_quarantine: dict[str, object] = {"attempted": False, "removed_count": 0}
     if draft_path.exists():
         draft_html_text = draft_path.read_text(encoding="utf-8")
         rendered_html_review = _classify_rendered_html_quality(draft_html_text, candidates_report)
@@ -3721,16 +3596,6 @@ def build_release(project_root: Path) -> ReleaseResult:
                 "см. release_report.rendered_html_review."
             )
     dedupe_memory = read_json(state_dir / "dedupe_memory.json", {}) if (state_dir / "dedupe_memory.json").exists() else {}
-    # Retired daily reports (owner 2026-07-10): the "N possible real misses"
-    # warnings and their release_report payloads were write-only noise. The
-    # loss scan itself stays — it is the input that fills the backup pool.
-    final_loss_check = _final_loss_check(
-        candidates_report=candidates_report,
-        writer_report=writer_report,
-        rendered_fingerprints=rendered_fingerprints,
-        dedupe_memory=dedupe_memory,
-    )
-    backup_pool = {"enabled": False, "replaced_by": "release_plan.slots[].backup_fingerprints"}
     borderline_queue = _borderline_queue(candidates_report, writer_report)
     if borderline_queue["counts"].get("borderline", 0):
         warnings.append(
@@ -3790,7 +3655,7 @@ def build_release(project_root: Path) -> ReleaseResult:
 
     # Этап 3: реконсилер удалён. Сводка контракта — из отчёта исполнения
     # плана; финальную сверку перед отправкой делает verify-digest-plan.
-    visible_contract: dict[str, object] = {"enabled": False, "replaced_by": "verify-digest-plan"}
+    visible_contract: dict[str, object] = {}
     try:
         from news_digest.pipeline.plan_execution import load_execution  # noqa: PLC0415
 
@@ -3835,10 +3700,6 @@ def build_release(project_root: Path) -> ReleaseResult:
     # ships (never-block), but the decision tells the truth: "ship_degraded".
     # Technical errors still fail-close. (P0-A.)
     ok = not errors
-    visible_contract_failed = bool(visible_contract.get("enabled")) and not (
-        (visible_contract.get("control_assertion") or {}).get("ok", True)
-    )
-    repeat_policy_removed = int(visible_repeat_quarantine.get("removed_count") or 0) > 0
     unrepaired_bad_visible_lines = int(
         (rendered_html_review.get("counts") or {}).get("bad_visible_items", 0) or 0
     ) > 0
@@ -3846,9 +3707,7 @@ def build_release(project_root: Path) -> ReleaseResult:
         release_decision = "fail"
     elif (
         draft_content_degraded
-        or visible_contract_failed
         or unrepaired_bad_visible_lines
-        or repeat_policy_removed
     ):
         release_decision = "ship_degraded"
     else:
@@ -3917,11 +3776,8 @@ def build_release(project_root: Path) -> ReleaseResult:
         "reject_review": reject_review,
         "published_review": published_review,
         "visible_repeat_review": visible_repeat_review,
-        "visible_repeat_quarantine": visible_repeat_quarantine,
         "repeat_policy_report": repeat_policy_report,
         "rendered_html_review": rendered_html_review,
-        "rendered_html_quarantine": rendered_html_quarantine,
-        "backup_pool": backup_pool,
         "borderline_queue": borderline_queue,
         "feedback_capture": feedback_capture,
         "speed_report": speed_report,

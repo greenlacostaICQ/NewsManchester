@@ -223,7 +223,8 @@ class LlmRewriteDiagnosticsTests(unittest.TestCase):
         self.assertEqual(selected, [])
         self.assertTrue(candidate["include"])
         self.assertEqual(candidate["digest_selection_verdict"], "needs_enrichment")
-        self.assertTrue(candidate["backup_pool_only"])
+        self.assertTrue(candidate["backup_candidate"])
+        self.assertNotIn("backup_pool_only", candidate)
         self.assertEqual(report["held_before_model"], 1)
 
     def test_cost_after_quality_holds_no_date_event_before_model(self) -> None:

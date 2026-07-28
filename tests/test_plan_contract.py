@@ -1,9 +1,9 @@
-"""Этап 3: контракт слот-плана — 6 согласованных случаев.
+"""Этап 3: контракт слот-плана.
 
 1. Детерминизм: одинаковый вход → идентичный план.
 2. Дублёры lead не занимают публичные слоты (из-под границы отбора).
 3. Писатель не меняет состав: каждая видимая строка ∈ плану.
-4. Редактор не меняет состав: блок-команды игнорируются.
+4. Редактор не имеет API блоковых действий и не меняет состав.
 5. Финальная сверка ловит пропажу плановой строки; технический брак блокирует.
 6. Негодный (протухший) запасной отклоняется контроллером, берётся следующий.
 """
@@ -22,6 +22,7 @@ from news_digest.pipeline.common import candidates_by_fingerprint, canonical_url
 from news_digest.pipeline.editor import edit_digest
 from news_digest.pipeline.plan_digest import run_plan_digest
 from news_digest.pipeline.plan_execution import load_execution, load_plan, next_backup, save_execution
+from news_digest.pipeline.release import _planner_repeat_decision
 from news_digest.pipeline.verify_digest_plan import run_verify_digest_plan
 from news_digest.pipeline.writer import write_digest
 
@@ -189,6 +190,27 @@ class PlanContractTest(unittest.TestCase):
             for row in plan["out_sample"]
         ))
 
+    def test_release_reads_planner_repeat_decision_and_never_recomputes_it(self) -> None:
+        previous = {"fingerprint": "prior", "published_count": 99}
+        missing = _planner_repeat_decision({"fingerprint": "current"}, previous)
+        self.assertFalse(missing["allow"])
+        self.assertEqual(missing["reason"], "missing_governing_repeat_decision")
+        self.assertEqual(missing["owner"], "missing")
+
+        governing = {
+            "allow": True,
+            "repeat_class": "calendar",
+            "reason": "event_milestone_d7",
+            "owner": "plan_digest",
+        }
+        self.assertIs(
+            _planner_repeat_decision(
+                {"governing_repeat_decision": governing},
+                previous,
+            ),
+            governing,
+        )
+
     def test_1_plan_is_deterministic_for_same_input(self) -> None:
         candidates = [_candidate(i) for i in range(8)]
         with tempfile.TemporaryDirectory() as tmp:
@@ -267,23 +289,6 @@ class PlanContractTest(unittest.TestCase):
         rendered = set(report["rendered_candidate_fingerprints"])
         self.assertTrue(rendered, "writer must render the plan")
         self.assertLessEqual(rendered, allowed, "видимая строка вне плана запрещена")
-
-    def test_4_editor_ignores_block_actions(self) -> None:
-        from news_digest.pipeline import editor
-
-        lines = {"Свежие новости": ["• Строка один. <a href=\"https://e.test/1\">S</a>"]}
-        warnings: list[str] = []
-        polished, report = editor._apply_editor_block_actions(
-            dict(lines),
-            block_actions=[{"action": "trim", "section": "Свежие новости", "count": 1}],
-            candidates=[],
-            rendered_urls=set(),
-            rendered_story_keys=set(),
-            warnings=warnings,
-        )
-        self.assertEqual(polished, lines)
-        self.assertEqual(report["applied"], 0)
-        self.assertEqual(report["status"], "ignored_plan_locked")
 
     def test_4b_editor_does_not_delete_identical_planned_rows(self) -> None:
         candidates = [_candidate(i) for i in range(7)]

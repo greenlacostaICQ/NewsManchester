@@ -25,9 +25,6 @@ import re
 
 from news_digest.pipeline.common import (
     PRIMARY_BLOCKS,
-    SECTION_MAX_ITEMS,
-    SECTION_MAX_PER_SOURCE,
-    SECTION_MIN_ITEMS,
     fingerprint_for_candidate,
     now_london,
     pipeline_run_id_from,
@@ -61,6 +58,20 @@ PLAN_PUBLIC_MAX_VISIBLE_ITEMS = 40
 PLAN_PUBLIC_HARD_RENDERED_ITEMS = 52
 
 _MINOR_BUS_STOP_MAX = 3
+
+
+def _section_minimum(section: str) -> int:
+    return int(block_policy(section).get("min") or 0)
+
+
+def _section_maximum(section: str) -> int | None:
+    value = int(block_policy(section).get("max") or 0)
+    return value or None
+
+
+def _section_max_per_source(section: str) -> int | None:
+    value = int(block_policy(section).get("max_per_source") or 0)
+    return value or None
 
 
 @dataclass
@@ -380,7 +391,7 @@ def _backup_render_path(candidate: dict) -> str:
 
 
 def _backup_eligible(candidate: dict) -> tuple[bool, str]:
-    """Порт recoverable_reserve_eligible: только capacity-hold, не брак."""
+    """Only a clean capacity hold can enter a planner slot backup chain."""
     if not isinstance(candidate, dict):
         return False, "not_a_candidate"
     if not candidate.get("validated", False):
@@ -568,7 +579,6 @@ def run_plan_digest(project_root: Path) -> StageResult:
 
     from news_digest.pipeline.editorial_contracts import attach_editorial_contract  # noqa: PLC0415
     from news_digest.pipeline.writer import (  # noqa: PLC0415
-        PUBLIC_SECTION_RESERVED_MIN,
         _fresh_hard_news_can_bypass_source_cap,
         _is_minor_bus_stop_line,
         _is_public_budget_exempt,
@@ -814,7 +824,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
         for source_block in LEAD_UNDERSTUDY_SOURCE_BLOCKS:
             section = PRIMARY_BLOCKS[source_block]
             pool = pools.get(section) or []
-            minimum = SECTION_MIN_ITEMS.get(section, 0)
+            minimum = _section_minimum(section)
             # Work from the bottom of the already ranked home pool so the
             # strongest Today/Fresh stories remain public.
             for candidate in reversed(list(pool)):
@@ -890,7 +900,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
         if section == "Еда, открытия и рынки" and len(pool) > 1:
             # The three public Food slots should show two independent live
             # sources whenever two survived upstream checks.
-            visible_window = min(SECTION_MAX_ITEMS.get(section, len(pool)), len(pool))
+            visible_window = min(_section_maximum(section) or len(pool), len(pool))
             first_source = str(pool[0].get("source_label") or "")
             if first_source and all(
                 str(candidate.get("source_label") or "") == first_source
@@ -919,7 +929,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
                         continue
                 filtered.append(candidate)
             pool = filtered
-        per_source_cap = SECTION_MAX_PER_SOURCE.get(section)
+        per_source_cap = _section_max_per_source(section)
         if per_source_cap and pool:
             src_counts: dict[str, int] = {}
             filtered = []
@@ -938,12 +948,12 @@ def run_plan_digest(project_root: Path) -> StageResult:
                     continue
                 src_counts[src] = src_counts.get(src, 0) + 1
                 filtered.append(candidate)
-            min_items = SECTION_MIN_ITEMS.get(section, 0)
+            min_items = _section_minimum(section)
             if not min_items or len(filtered) >= min_items or len(pool) < min_items:
                 for candidate in skipped:
                     _demote(candidate, "per_source_cap")
                 pool = filtered
-        cap = SECTION_MAX_ITEMS.get(section)
+        cap = _section_maximum(section)
         if cap and pool:
             counted = 0
             trimmed: list[dict] = []
@@ -973,11 +983,13 @@ def run_plan_digest(project_root: Path) -> StageResult:
         reserved_later = 0
         for later in ordered[index + 1:]:
             later_pool = planned.get(later) or []
-            if later in PUBLIC_SECTION_RESERVED_MIN:
-                reserved_later += min(PUBLIC_SECTION_RESERVED_MIN[later], _counted(later, later_pool))
+            later_minimum = _section_minimum(later)
+            if later_minimum:
+                reserved_later += min(later_minimum, _counted(later, later_pool))
         remaining = PLAN_PUBLIC_MAX_VISIBLE_ITEMS - visible_count - reserved_later
-        if section in PUBLIC_SECTION_RESERVED_MIN:
-            remaining += min(PUBLIC_SECTION_RESERVED_MIN[section], _counted(section, pool))
+        section_minimum = _section_minimum(section)
+        if section_minimum:
+            remaining += min(section_minimum, _counted(section, pool))
         kept: list[dict] = []
         counted_kept = 0
         for candidate in pool:
@@ -1099,7 +1111,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
         # Недобор до минимума закрывает сама планёрка: повышаем сильнейших
         # пригодных запасных в основные слоты. Это НЕ ремонт после вёрстки —
         # это нормальное решение состава до написания текстов.
-        minimum_floor = SECTION_MIN_ITEMS.get(section, 0)
+        minimum_floor = _section_minimum(section)
         promoted_here = 0
         while minimum_floor and len(pool) < minimum_floor and queue and section not in SYNTHETIC_SECTIONS:
             promoted = queue.pop(0)
@@ -1191,7 +1203,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
                 }
             )
             section_slots.append(slot_id)
-        minimum = SECTION_MIN_ITEMS.get(section, 0)
+        minimum = _section_minimum(section)
         shortfall = None
         if minimum and len(pool) < minimum and not (section == "Выходные в GM" and not show_weekend):
             section_reasons = [row["reason"] for row in out_rows if row.get("section") == section][:5]
@@ -1231,7 +1243,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
         sections_summary[section] = {
             "block": block_key,
             "min": minimum,
-            "max": SECTION_MAX_ITEMS.get(section),
+            "max": _section_maximum(section),
             "planned": len(pool),
             "slots": section_slots,
             "backups_available": eligible_backup_count,

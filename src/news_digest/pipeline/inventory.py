@@ -871,7 +871,7 @@ def classify_disposition(candidate: dict, rendered_fingerprints: set[str]) -> st
     fingerprint = str(candidate.get("fingerprint") or "")
     if fingerprint and fingerprint in rendered_fingerprints:
         return "shown"
-    if candidate.get("recoverable_reserve") or candidate.get("public_reserve"):
+    if str(candidate.get("publish_plan_status") or "") == "reserve":
         return "reserve"
     if candidate.get("ticket_inventory_held"):
         return "inventory_only"

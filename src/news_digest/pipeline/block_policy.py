@@ -221,3 +221,24 @@ def block_active_on_weekday(block_or_heading: str, weekday: int) -> bool:
     if schedule == "thursday_to_sunday":
         return int(weekday) >= 3
     return True
+
+
+def required_block_headings(weekday: int) -> list[str]:
+    """Required public headings active on the requested London weekday."""
+    return [
+        str(policy["heading"])
+        for block, policy in BLOCK_POLICY_REGISTRY.items()
+        if int(policy.get("min") or 0)
+        and not bool(policy.get("optional"))
+        and block_active_on_weekday(block, weekday)
+    ]
+
+
+def optional_block_headings() -> list[str]:
+    """Optional public headings; empty ones are omitted from the digest."""
+    return [
+        str(policy["heading"])
+        for policy in BLOCK_POLICY_REGISTRY.values()
+        if bool(policy.get("optional"))
+        and str(policy.get("schedule") or "") != "retired"
+    ]

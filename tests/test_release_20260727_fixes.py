@@ -6,17 +6,17 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from news_digest.pipeline.block_policy import BLOCK_POLICY_VERSION, block_policy
+from news_digest.pipeline.block_policy import (
+    BLOCK_POLICY_VERSION,
+    block_policy,
+    required_block_headings,
+)
 from news_digest.pipeline.collector.routing import (
     _promote_to_today_focus,
     _today_focus_native_fit,
     route_future_practical_change,
 )
-from news_digest.pipeline.common import (
-    SECTION_MIN_ITEMS,
-    now_london,
-    required_blocks_for_weekday,
-)
+from news_digest.pipeline.common import now_london
 from news_digest.pipeline.dedupe import close_pending_dedupe_reasons
 from news_digest.pipeline.editorial_contracts import calendar_repeat_review
 from news_digest.pipeline.event_quality import event_quality_report
@@ -34,8 +34,8 @@ from news_digest.pipeline.transport_fill import _collapse_transport_segment_dupl
 
 class Release20260727FixesTest(unittest.TestCase):
     def test_required_blocks_follow_registry_schedule(self) -> None:
-        self.assertNotIn("Выходные в GM", required_blocks_for_weekday(2))
-        self.assertIn("Выходные в GM", required_blocks_for_weekday(3))
+        self.assertNotIn("Выходные в GM", required_block_headings(2))
+        self.assertIn("Выходные в GM", required_block_headings(3))
 
     # 0157 — география судьи по контракту раздела.
     def test_judge_geo_action_rejected_for_russian_uk_section(self) -> None:
@@ -64,7 +64,7 @@ class Release20260727FixesTest(unittest.TestCase):
     def test_one_registry_controls_rewrite_minimum_and_russian_geography(self) -> None:
         self.assertEqual(block_policy("tech_business")["min"], 0)
         self.assertEqual(block_policy("russian_events")["geo_scope"], "uk")
-        self.assertNotIn("IT и бизнес", SECTION_MIN_ITEMS)
+        self.assertEqual(block_policy("tech_business")["min"], 0)
         self.assertTrue(BLOCK_POLICY_VERSION)
 
         rejected = [

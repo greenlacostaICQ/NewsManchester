@@ -58,7 +58,6 @@ from news_digest.pipeline.writer import (
     _line_claims_future_ticket_sale,
     _number_tokens,
     _repair_editorial_contract_line,
-    _reconcile_rendered_dropped_candidates,
     _section_priority_score,
     _SectionRow,
     _strip_unsupported_number_phrases,
@@ -3455,26 +3454,6 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         )
 
         self.assertIn('<a href="https://aboutmanchester.co.uk/police-seize-knife-drugs-and-cash-after-stopping-suspicious-car-in-bury">About Manchester News</a>', line)
-
-    def test_rendered_recovered_candidate_is_not_reported_as_dropped(self) -> None:
-        dropped = [
-            {"fingerprint": "bury-stop", "reasons": ["draft_line contains number(s) not present in evidence: 10000."]},
-            {"fingerprint": "other", "reasons": ["Missing draft_line."]},
-        ]
-        counts = {
-            "dropped_low_quality": 1,
-            "dropped_missing_draft_line": 1,
-            "dropped_ticket_not_selected": 0,
-            "dropped_english_passthrough": 0,
-            "held_for_editorial_quality": 0,
-        }
-
-        remaining, reconciled = _reconcile_rendered_dropped_candidates(dropped, counts, {"bury-stop"})
-
-        self.assertEqual([item["fingerprint"] for item in remaining], ["other"])
-        self.assertEqual([item["fingerprint"] for item in reconciled], ["bury-stop"])
-        self.assertEqual(counts["dropped_low_quality"], 0)
-        self.assertEqual(counts["dropped_missing_draft_line"], 1)
 
     def test_fresh_duplicate_prefers_more_complete_fact_frame_on_same_source_rank(self) -> None:
         vague = {
