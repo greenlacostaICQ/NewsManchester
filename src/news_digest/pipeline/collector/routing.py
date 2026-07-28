@@ -156,8 +156,13 @@ _TODAY_ACTION_CLASS_RE: tuple[tuple[str, "re.Pattern[str]"], ...] = (
     (
         "weather_impact",
         re.compile(
+            # 0191: «flooding» без погодного контекста — метафора. По ней
+            # рейд с изъятием GBL («a man involved in flooding GM with…»)
+            # получал класс weather_impact.
             r"\b(?:weather\s+warning|amber\s+warning|yellow\s+warning|red\s+warning|"
-            r"met\s+office|flood(?:ing|\s+alert)?|heatwave|storm\s+\w+|ice\s+warning|"
+            r"met\s+office|flood\s+(?:warning|alert|risk)|flooded\s+\w+|"
+            r"flooding\s+(?:of|expected|forecast|possible)|"
+            r"heatwave|storm\s+\w+|ice\s+warning|"
             r"heavy\s+(?:rain|snow)|high\s+winds?)\b",
             re.IGNORECASE,
         ),
@@ -180,6 +185,27 @@ _TODAY_AFFECTED_PEOPLE_RE = re.compile(
     r"visitors?|motorists?|travellers?|locals|anyone|people(?:\s+(?:in|living|who))?)\b",
     re.IGNORECASE,
 )
+
+
+# 0191: аудиторию можно назвать не только словом «residents». Если карточка
+# называет затронутый общественный объект или маршрут, действие читателя всё
+# равно конкретное («улицы оцеплены» = людям туда нельзя).
+_TODAY_AFFECTED_PLACE_RE = re.compile(
+    r"\b(?:street|streets|road|roads|motorway|lane|junction|line|route|"
+    r"station|stop|tram|bus|train|school|schools|college|hospital|"
+    r"library|park|playground|tip|recycling\s+centre|leisure\s+centre|"
+    r"pool|surgery|clinic|market|car\s+park)\b",
+    re.IGNORECASE,
+)
+# …но только пока действие ещё длится. «Closed since 2018» и судебная фаза
+# прошедшего инцидента — это не сегодняшнее действие: по ним в Today
+# приезжали реставрация ратуши и суд по прошлогоднему bomb hoax.
+_TODAY_FINISHED_ACTION_RE = re.compile(
+    r"\bsince\s+20\d{2}\b|\bmonths?\s+away\b|\byears?\s+ago\b|"
+    r"\b(?:charged|convicted|sentenced|jailed|pleaded|in\s+court|trial)\b",
+    re.IGNORECASE,
+)
+_TODAY_PLACE_AUDIENCE_CLASSES = frozenset({"restriction", "active_safety", "service_change"})
 
 
 def _today_blob(candidate: dict) -> str:
@@ -218,7 +244,15 @@ def _today_focus_native_fit(candidate: dict) -> tuple[bool, str]:
     # affected just after the truncation boundary.
     affected_blob = " ".join((blob, str(candidate.get("evidence_text") or "")[:1200]))
     if not _TODAY_AFFECTED_PEOPLE_RE.search(affected_blob):
-        return False, "no_affected_people"
+        # 0191: затронутый общественный объект или маршрут называет аудиторию
+        # не хуже слова «residents» — но только у длящегося действия.
+        named_place = (
+            action_class in _TODAY_PLACE_AUDIENCE_CLASSES
+            and _TODAY_AFFECTED_PLACE_RE.search(blob)
+            and not _TODAY_FINISHED_ACTION_RE.search(blob)
+        )
+        if not named_place:
+            return False, "no_affected_people"
     return True, action_class
 
 
@@ -402,7 +436,24 @@ def _next_7_structured_date(candidate: dict) -> date | None:
             return datetime.fromisoformat(raw).date()
         except ValueError:
             continue
-    return None
+    # 0191: практическое изменение почти никогда не приходит с ISO-датой —
+    # его называют прозой («set to close from Monday», «closes on 31 July»).
+    # Пока принимались только структурные даты, роутер Next7 не срабатывал ни
+    # разу: на пуле 28.07 все 7 практических карточек отсеивались здесь.
+    # Берём ближайшую будущую дату из собственных полей карточки; окно D+2…D+7
+    # проверяет вызывающий.
+    try:
+        from news_digest.pipeline.candidate_validator import _explicit_dates_from_blob  # noqa: PLC0415
+    except Exception:  # noqa: BLE001 — карточка не должна падать из-за даты
+        return None
+    own_text = {
+        "title": candidate.get("title"),
+        "summary": candidate.get("summary"),
+        "lead": candidate.get("lead"),
+    }
+    today = now_london().date()
+    future = sorted(day for day in _explicit_dates_from_blob(own_text) if day >= today)
+    return future[0] if future else None
 
 
 def route_future_practical_change(candidate: dict) -> bool:

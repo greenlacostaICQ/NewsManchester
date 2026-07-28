@@ -401,6 +401,20 @@ class Release20260727FixesTest(unittest.TestCase):
         self.assertEqual(report["stage_status"], "complete_degraded")
         self.assertEqual(report["errors"], [])
 
+    # 0191 — затронутый объект называет аудиторию, но только у длящегося действия.
+    def test_named_place_counts_as_audience_only_while_action_lasts(self) -> None:
+        cordon = {
+            "title": "Cheetham Hill stabbing sees air ambulance called to street and cordon put in place",
+            "summary": "Residential streets have been taped off.",
+        }
+        historic = {
+            "title": "Manchester Town Hall's £500m restoration is months away from completion",
+            "summary": "The Town Hall has been closed since 2018.",
+        }
+
+        self.assertEqual(_today_focus_native_fit(cordon), (True, "restriction"))
+        self.assertEqual(_today_focus_native_fit(historic)[0], False)
+
     # 0170 — нативная Today-карточка проходит тот же шлюз.
     def test_native_today_card_without_action_is_demoted_before_counting(self) -> None:
         from news_digest.pipeline.collector.routing import (

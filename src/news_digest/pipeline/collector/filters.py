@@ -68,6 +68,21 @@ GM_TOKENS: tuple[str, ...] = (
     "gmp",
     "greater manchester",
     "mancunian",
+    # 0191: реальные районы и города GM, которых в списке не было. На пуле
+    # 28.07 они встречаются 40+ раз, и карточка про оцепление в Cheetham Hill
+    # снималась как «no_place». Добавляются только однозначные имена: Leigh,
+    # Hyde, Middleton, Hale, Worsley, Partington, Gorton совпадают с
+    # фамилиями и не-GM топонимами, и по ним в блок приезжали бы чужие сюжеты.
+    "cheetham hill",
+    "blackley",
+    "timperley",
+    "failsworth",
+    "milnrow",
+    "mossley",
+    "horwich",
+    "westhoughton",
+    "walkden",
+    "urmston",
 )
 
 
