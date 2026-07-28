@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import threading
 import time
 from http import cookiejar
@@ -403,7 +404,11 @@ def _source_fetch_headers(source: SourceDef) -> dict[str, str]:
     return headers
 
 
-def _fetch_source_body(source: SourceDef) -> tuple[str, str, list[str]]:
+def _fetch_source_body(
+    source: SourceDef,
+    *,
+    use_cache: bool = True,
+) -> tuple[str, str, list[str]]:
     """Fetch a source body, trying primary URL then any configured fallbacks.
 
     Returns a tuple of (body, fetched_url, attempt_log) where attempt_log
@@ -420,14 +425,31 @@ def _fetch_source_body(source: SourceDef) -> tuple[str, str, list[str]]:
     attempt_log: list[str] = []
     last_exception: Exception | None = None
     source_headers = _source_fetch_headers(source)
+    retry_transient_http = (
+        str(source.source_type or "").startswith("json_")
+        or str(source.source_type or "") == "rss"
+    )
     for candidate_url in (_resolve_url(source.url), *[_resolve_url(u) for u in source.fallback_urls]):
         try:
-            body = _fetch_text(candidate_url, extra_headers=source_headers, use_cache=True)
+            body = _fetch_text(candidate_url, extra_headers=source_headers, use_cache=use_cache)
             return body, candidate_url, attempt_log
         except NotModified:
             # Propagate — caller distinguishes "not modified" from "failed".
             raise
         except Exception as exc:  # noqa: BLE001 - all failures are recorded.
+            if retry_transient_http and re.search(r"\bHTTP\s+(?:404|410|429|5\d\d)\b", str(exc), re.IGNORECASE):
+                try:
+                    body = _fetch_text(candidate_url, extra_headers=source_headers, use_cache=False)
+                    attempt_log.append(
+                        f"{candidate_url}: transient response recovered by one bounded retry"
+                    )
+                    return body, candidate_url, attempt_log
+                except Exception as retry_exc:  # noqa: BLE001
+                    attempt_log.append(
+                        f"{candidate_url}: bounded retry also failed: {retry_exc}"
+                    )
+                    last_exception = retry_exc
+                    continue
             attempt_log.append(f"{candidate_url}: {exc}")
             last_exception = exc
             continue

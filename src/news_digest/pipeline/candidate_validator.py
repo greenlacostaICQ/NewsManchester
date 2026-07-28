@@ -1024,12 +1024,34 @@ _STRONG_NON_GM_RE = re.compile(
     r"\b("
     r"warrington|cheshire|liverpool|london|leeds|sheffield|birmingham|"
     r"blackpool|blackburn|burnley|lancaster|chester|crewe|bradford|"
-    r"wakefield|nottingham|leicester|newcastle|"
+    r"wakefield|nottingham|leicester|newcastle|jodrell\s+bank|macclesfield|"
     # "Preston Crown Court" is a court name, not a GM location; only treat
     # Preston as non-GM when it reads as the city, not a person/court.
     r"preston\s+(?:city|town|north|new\s+road)|"
     r"texas|america|usa|united\s+states"
     r")\b",
+    re.IGNORECASE,
+)
+
+_DAY_OUT_DIAGNOSTIC_RE = re.compile(
+    r"\b(?:things?\s+to\s+do|day\s+out|perfect\s+for\s+(?:a\s+)?sunny\s+day|"
+    r"water\s+park|visitor\s+attraction|near\s+manchester)\b",
+    re.IGNORECASE,
+)
+
+_EXPLICIT_GM_CONSEQUENCE_RE = re.compile(
+    r"\b(?:affect(?:s|ed|ing)?|impact(?:s|ed|ing)?|disrupt(?:s|ed|ing)?|"
+    r"close(?:s|d)?|change(?:s|d)?|serve(?:s|d)?|fund(?:s|ed)?|"
+    r"open(?:s|ed|ing)?|launch(?:es|ed|ing)?|invest(?:s|ed|ing)?|creat(?:e|es|ed|ing)|"
+    r"jobs?|services?|routes?|trains?|roads?|schools?|businesses?|offices?|sites?|residents?|"
+    r"commuters?|patients?|customers?)\b[^.]{0,80}\b(?:greater\s+manchester|"
+    r"manchester|salford|stockport|trafford|tameside|rochdale|oldham|wigan|"
+    r"bolton|bury)\b|"
+    r"\b(?:greater\s+manchester|manchester|salford|stockport|trafford|"
+    r"tameside|rochdale|oldham|wigan|bolton|bury)\b[^.]{0,80}\b"
+    r"(?:residents?|commuters?|patients?|services?|routes?|trains?|roads?|"
+    r"schools?|businesses?|offices?|sites?|jobs?|"
+    r"will\s+(?:lose|gain|face|receive|be\s+affected))\b",
     re.IGNORECASE,
 )
 
@@ -1088,9 +1110,15 @@ def _exclude_non_gm_news(candidate: dict) -> bool:
     if str(candidate.get("category") or "") not in {"media_layer", "gmp", "public_services", "tech_business"}:
         return False
     text = _news_text_without_publisher_chrome(candidate)
+    if _DAY_OUT_DIAGNOSTIC_RE.search(text):
+        # Preserve the more specific product diagnosis; the later low-value
+        # gate will reject this regardless of geography.
+        return False
     if not _STRONG_NON_GM_RE.search(text):
         return False
-    if _LOCAL_SIGNAL_RE.search(text):
+    # A local celebrity, employer or publisher is not a local consequence.
+    # The external story must state what changes for GM readers or services.
+    if _LOCAL_SIGNAL_RE.search(text) and _EXPLICIT_GM_CONSEQUENCE_RE.search(text):
         return False
     _append_reject(
         candidate,
@@ -2724,6 +2752,16 @@ def _exclude_cross_day_rehash(candidate: dict, state_dir: Path) -> bool:
     """
     if not candidate.get("include"):
         return False
+    provisional = (
+        candidate.get("visible_repeat_verdict")
+        if isinstance(candidate.get("visible_repeat_verdict"), dict)
+        else {}
+    )
+    if provisional.get("allow") and provisional.get("repeat_class") in {"calendar", "lifecycle"}:
+        # Dedupe has already attached the previous fact and a provisional
+        # policy result.  Do not run a second daily-index repeat engine here;
+        # plan_digest records the single governing decision later.
+        return False
     fingerprint = str(candidate.get("fingerprint") or "").strip()
     if not fingerprint:
         return False
@@ -2766,6 +2804,26 @@ def _exclude_cross_day_rehash(candidate: dict, state_dir: Path) -> bool:
                 continue
             repeat_verdict = visible_repeat_verdict(candidate, rec)
             candidate["visible_repeat_verdict"] = repeat_verdict.as_dict()
+            candidate["repeat_policy_previous"] = {
+                key: rec.get(key)
+                for key in (
+                    "fingerprint",
+                    "title",
+                    "category",
+                    "primary_block",
+                    "first_published_day_london",
+                    "last_published_day_london",
+                    "published_count",
+                    "event",
+                    "ticket_type",
+                    "ticket_notability",
+                    "editorial_contract",
+                    "change_type",
+                    "story_phase_key",
+                    "event_identity_key",
+                )
+                if rec.get(key) not in (None, "", [], {})
+            }
             if repeat_verdict.allow:
                 if repeat_verdict.repeat_class == "lifecycle":
                     candidate["change_type"] = "new_phase"
@@ -2780,25 +2838,41 @@ def _exclude_cross_day_rehash(candidate: dict, state_dir: Path) -> bool:
                     + [f"cross_day_repeat_allowed:{repeat_verdict.reason}"]
                 ))
                 return False
-            # Hit — same fingerprint already shipped on a previous day.
-            candidate["include"] = False
+            # A hit is evidence, not a final composition decision. Planner
+            # re-evaluates it after canonical tier/event contracts are ready.
             candidate["change_type"] = "same_story_rehash"
             existing = str(candidate.get("reason") or "").strip()
             note = (
-                f"Validator: cross-day rehash — fingerprint already shipped on {check_day} "
-                f"(repeat={repeat_verdict.reason}, anchor={anchor or 'unknown'}, ttl={ttl_days}d)."
+                f"Validator: previous publication found on {check_day}; "
+                f"plan-digest will make the final repeat decision "
+                f"(provisional={repeat_verdict.reason}, anchor={anchor or 'unknown'}, ttl={ttl_days}d)."
             )
             candidate["reason"] = f"{existing} | {note}".strip(" |") if existing else note
-            candidate["reject_reasons"] = sorted(set(
-                [str(r) for r in candidate.get("reject_reasons") or [] if str(r).strip()]
-                + ["cross_day_rehash"]
+            candidate["quality_warnings"] = sorted(set(
+                [str(r) for r in candidate.get("quality_warnings") or [] if str(r).strip()]
+                + [f"cross_day_repeat_pending_planner:{repeat_verdict.reason}"]
             ))
-            return True
+            return False
     return False
 
 
 def _apply_why_now_gate(candidate: dict, *, manual_override: str = "") -> None:
     """Q1: make today's reason explicit before the writer sees the item."""
+    repeat_verdict = (
+        candidate.get("visible_repeat_verdict")
+        if isinstance(candidate.get("visible_repeat_verdict"), dict)
+        else {}
+    )
+    if repeat_verdict.get("allow") and repeat_verdict.get("repeat_class") in {"calendar", "lifecycle"}:
+        candidate["why_now"] = (
+            "ticket_opportunity"
+            if repeat_verdict.get("repeat_class") == "calendar"
+            else "update_today"
+        )
+        return
+    if isinstance(candidate.get("repeat_policy_previous"), dict):
+        candidate["why_now"] = "repeat_pending_planner"
+        return
     why_now = infer_why_now(candidate)
     candidate["why_now"] = why_now
     if manual_override == "force_include" or not candidate.get("include"):

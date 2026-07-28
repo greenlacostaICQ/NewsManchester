@@ -536,8 +536,6 @@ def _product_completeness_context(project_root: Path, digest_lines: list[dict[st
         for section, count in core_counts.items()
         if section not in ticket_sections
     )
-    if ticket_items > max(6, core_total):
-        alerts.append(f"ticket dominance: {ticket_items} ticket/concert item(s) vs {core_total} core item(s)")
     qc = writer_report.get("quality_counts") or {}
     included = int(qc.get("included_candidates") or 0)
     rendered = int(qc.get("rendered_candidates") or 0)
@@ -1133,10 +1131,36 @@ def _repair_request_already_satisfied(
     if concept and line_satisfies_concept(concept, _strip_tags(original_line)):
         return True
     risk_blob = f"{row.get('risk') or ''} {row.get('reason') or ''} {row.get('critical_problem') or ''}".lower()
-    return bool(
+    date_supported = bool(
         re.search(r"\bdate\b|дат", risk_blob)
         and _line_has_expected_event_date(candidate, original_line)
     )
+    if date_supported:
+        return True
+    # Bidirectional fact lock: the judge may not call an existing number,
+    # venue, place or other factual token "wrong" when every such token is
+    # present in the saved candidate evidence.  The model has no independent
+    # source; omissions still proceed through the normal completeness repair.
+    if (
+        isinstance(candidate, dict)
+        and _known_factual_error(row)
+        and re.search(
+            r"\bwrong\b|\bincorrect\b|unsupported|fabricat|hallucin|"
+            r"неправиль|неверн|не подтвержд|выдум|географ|venue|location|"
+            r"\bplace\b|\bnumber\b|\bamount\b|числ|сумм|площад",
+            risk_blob,
+        )
+        and not re.search(r"\bmissing\b|omitt|absence|не хватает|отсутств", risk_blob)
+    ):
+        unsupported = _fact_lock_errors_for_replacement(
+            original_line,
+            candidate=candidate,
+            original_line=original_line,
+            allow_original_line_facts=False,
+        )
+        if not unsupported:
+            return True
+    return False
 
 
 def _repair_line_postcheck_errors(
@@ -2203,26 +2227,6 @@ def evaluate_pre_send_quality(
         _write_report(project_root, result)
         return asdict(result)
     step = route[0]
-    key = api_key if api_key is not None else step.api_key
-    if not key:
-        result = PreSendQualityResult(
-            status="failed",
-            decision="warn",
-            can_send=True,
-            reason=f"{step.api_key_env} is not set for required pre-send quality judge",
-            model=step.model,
-            provider=step.provider,
-            run_date_london=run_date,
-            pipeline_run_id=pipeline_run_id,
-            digest_sha256=sha,
-            duration_seconds=round(time.monotonic() - start, 3),
-            critical_errors=[],
-            warnings=[],
-            product_completeness=product_completeness,
-        )
-        _write_report(project_root, result)
-        return asdict(result)
-
     try:
         from openai import OpenAI  # noqa: PLC0415
     except ImportError:
@@ -2244,47 +2248,88 @@ def evaluate_pre_send_quality(
         _write_report(project_root, result)
         return asdict(result)
 
-    try:
-        client = OpenAI(
-            api_key=key,
-            base_url=step.base_url,
-            timeout=step.timeout_seconds or 75,
-            max_retries=sdk_retries_for_route(provider=step.provider, model=step.model, base_url=step.base_url),
-        )
-        judge_status, parsed, map_reduce_raw = _run_map_reduce_judge(
-            client=client,
-            step=step,
-            state_dir=state_dir,
-            run_date=run_date,
-            pipeline_run_id=pipeline_run_id,
-            sha=sha,
-            slots=digest_slots,
-            rendered_candidates=rendered_candidates,
-            product_completeness=product_completeness,
-        )
-    except Exception as exc:  # noqa: BLE001
-        fallback_scan = _deterministic_html_scan(digest_slots)
-        result = PreSendQualityResult(
-            status="failed",
-            decision="warn",
-            can_send=True,
-            reason=f"pre-send quality judge LLM call failed: {exc}",
-            model=step.model,
-            provider=step.provider,
-            run_date_london=run_date,
-            pipeline_run_id=pipeline_run_id,
-            digest_sha256=sha,
-            duration_seconds=round(time.monotonic() - start, 3),
-            critical_errors=[],
-            warnings=[
-                f"deterministic fallback: {f.get('type')} on line {f.get('line_index')} — {f.get('detail')}"
-                for f in fallback_scan.get("findings", [])
-            ],
-            product_completeness=product_completeness,
-            deterministic_post_check={"model_unavailable_fallback": fallback_scan},
-        )
-        _write_report(project_root, result)
-        return asdict(result)
+    from news_digest.pipeline import provider_health  # noqa: PLC0415
+
+    judge_status = "failed"
+    parsed: dict | None = None
+    map_reduce_raw: dict[str, Any] = {}
+    provider_attempts: list[dict[str, str]] = []
+    last_error = ""
+    for index, candidate_step in enumerate(route):
+        key = api_key if api_key is not None and index == 0 else candidate_step.api_key
+        if not key:
+            provider_attempts.append(
+                {
+                    "provider": candidate_step.provider,
+                    "model": candidate_step.model,
+                    "status": "skipped_no_credentials",
+                }
+            )
+            continue
+        if provider_health.is_dead(candidate_step.provider):
+            provider_attempts.append(
+                {
+                    "provider": candidate_step.provider,
+                    "model": candidate_step.model,
+                    "status": "skipped_circuit_open",
+                }
+            )
+            continue
+        try:
+            client = OpenAI(
+                api_key=key,
+                base_url=candidate_step.base_url,
+                timeout=candidate_step.timeout_seconds or 75,
+                max_retries=sdk_retries_for_route(
+                    provider=candidate_step.provider,
+                    model=candidate_step.model,
+                    base_url=candidate_step.base_url,
+                ),
+            )
+            candidate_status, candidate_parsed, candidate_raw = _run_map_reduce_judge(
+                client=client,
+                step=candidate_step,
+                state_dir=state_dir,
+                run_date=run_date,
+                pipeline_run_id=pipeline_run_id,
+                sha=sha,
+                slots=digest_slots,
+                rendered_candidates=rendered_candidates,
+                product_completeness=product_completeness,
+            )
+            if candidate_parsed is None:
+                provider_health.record_failure(candidate_step.provider)
+                provider_attempts.append(
+                    {
+                        "provider": candidate_step.provider,
+                        "model": candidate_step.model,
+                        "status": "unparseable",
+                    }
+                )
+                continue
+            provider_health.record_success(candidate_step.provider)
+            step = candidate_step
+            judge_status = candidate_status
+            parsed = candidate_parsed
+            map_reduce_raw = candidate_raw
+            provider_attempts.append(
+                {
+                    "provider": candidate_step.provider,
+                    "model": candidate_step.model,
+                    "status": "used",
+                }
+            )
+            break
+        except Exception as exc:  # noqa: BLE001
+            last_error = str(exc)
+            provider_health.record_failure(candidate_step.provider)
+            provider_attempts.append(
+                {
+                    "provider": candidate_step.provider,
+                    "model": candidate_step.model,
+                    "status": f"failed:{type(exc).__name__}",
+                }
+            )
 
     if parsed is None:
         fallback_scan = _deterministic_html_scan(digest_slots)
@@ -2292,7 +2337,10 @@ def evaluate_pre_send_quality(
             status="failed",
             decision="warn",
             can_send=True,
-            reason="pre-send quality judge returned no parseable JSON",
+            reason=(
+                "pre-send quality judge provider chain exhausted"
+                + (f": {last_error}" if last_error else "")
+            ),
             model=step.model,
             provider=step.provider,
             run_date_london=run_date,
@@ -2305,7 +2353,10 @@ def evaluate_pre_send_quality(
                 for f in fallback_scan.get("findings", [])
             ],
             product_completeness=product_completeness,
-            deterministic_post_check={"model_unavailable_fallback": fallback_scan},
+            deterministic_post_check={
+                "model_unavailable_fallback": fallback_scan,
+                "provider_attempts": provider_attempts,
+            },
         )
         _write_report(project_root, result)
         return asdict(result)
@@ -2416,7 +2467,11 @@ def evaluate_pre_send_quality(
         translation_completeness=translation_completeness,
         repair_executor=repair_executor,
         notes=notes,
-        raw={**parsed, "map_reduce": map_reduce_raw},
+        raw={
+            **parsed,
+            "map_reduce": map_reduce_raw,
+            "provider_attempts": provider_attempts,
+        },
     )
     _write_report(project_root, result)
     return asdict(result)

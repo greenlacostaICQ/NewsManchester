@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 from news_digest.pipeline.common import (
     LOW_SIGNAL_BLOCKS,
     PRIMARY_BLOCKS,
-    REQUIRED_BLOCKS,
     REQUIRED_SCAN_CATEGORIES,
     SECTION_MIN_ITEMS,
     canonical_url_identity,
@@ -24,6 +23,7 @@ from news_digest.pipeline.common import (
     now_london,
     pipeline_run_id_from,
     read_json,
+    required_blocks_for_weekday,
     today_london,
     write_json,
 )
@@ -439,7 +439,7 @@ def _validate_draft(
 
     sections = extract_sections(html_text)
     warnings.extend(public_html_contract_errors(html_text))
-    for block in REQUIRED_BLOCKS:
+    for block in required_blocks_for_weekday(now_london().weekday()):
         has_candidates_for_block = any(
             PRIMARY_BLOCKS.get(str(candidate.get("primary_block") or "")) == block
             for candidate in included_candidates
@@ -1506,8 +1506,13 @@ def _classify_visible_repeat_policy(
             if not previous:
                 continue
             checked += 1
-            verdict = visible_repeat_verdict(candidate, previous)
-            if verdict.allow:
+            governing = (
+                candidate.get("governing_repeat_decision")
+                if isinstance(candidate.get("governing_repeat_decision"), dict)
+                else {}
+            )
+            verdict_dict = governing or visible_repeat_verdict(candidate, previous).as_dict()
+            if verdict_dict.get("allow"):
                 allowed += 1
                 continue
             bad.append(
@@ -1518,7 +1523,7 @@ def _classify_visible_repeat_policy(
                     "primary_block": candidate.get("primary_block"),
                     "category": candidate.get("category"),
                     "visible_text": row["visible_text"],
-                    "repeat_policy": verdict.as_dict(),
+                    "repeat_policy": verdict_dict,
                 }
             )
     return {
@@ -3246,11 +3251,16 @@ def _write_repeat_policy_report(
         block = str(candidate.get("primary_block") or "unknown")
         status = "rendered" if fp in rendered_fingerprints else ("included" if candidate.get("include") else "not_included")
         previous = previous_by_fp.get(fp)
-        verdict = visible_repeat_verdict(candidate, previous).as_dict() if previous else {
+        governing = (
+            candidate.get("governing_repeat_decision")
+            if isinstance(candidate.get("governing_repeat_decision"), dict)
+            else {}
+        )
+        verdict = governing or (visible_repeat_verdict(candidate, previous).as_dict() if previous else {
             "allow": True,
             "repeat_class": "new",
             "reason": "no_previous_match",
-        }
+        })
         match_types = _repeat_match_types(candidate)
         if previous and "fingerprint" not in match_types:
             match_types.append("fingerprint")

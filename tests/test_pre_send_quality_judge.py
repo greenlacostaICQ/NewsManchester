@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import sys
 import tempfile
 import unittest
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 from news_digest.pipeline.pre_send_quality_judge import (
@@ -132,7 +134,72 @@ class PreSendQualityJudgeTests(unittest.TestCase):
 
             alerts = result["product_completeness"]["input_alerts_before_judge"]
             self.assertTrue(any("Свежие новости" in alert for alert in alerts))
-            self.assertTrue(any("ticket dominance" in alert for alert in alerts))
+            self.assertFalse(any("ticket dominance" in alert for alert in alerts))
+
+    def test_quality_judge_uses_second_provider_after_first_unparseable(self) -> None:
+        tmp, root = self._project()
+        with tmp:
+            today = today_london()
+            html = f"<b>Greater Manchester Brief — {today}, 08:10</b>\n\n<b>Свежие новости</b>\n• Safe line."
+            (root / "data" / "outgoing" / "current_digest.html").write_text(html, encoding="utf-8")
+            steps = [
+                SimpleNamespace(
+                    provider="first",
+                    model="model-1",
+                    api_key="key-1",
+                    base_url="https://first.invalid",
+                    timeout_seconds=1,
+                ),
+                SimpleNamespace(
+                    provider="second",
+                    model="model-2",
+                    api_key="key-2",
+                    base_url="https://second.invalid",
+                    timeout_seconds=1,
+                ),
+            ]
+            parsed = {
+                "decision": "pass",
+                "can_send": True,
+                "reason": "ok",
+                "confidence": 0.9,
+                "critical_errors": [],
+                "actions": [],
+                "warnings": [],
+                "notes": [],
+            }
+            with mock.patch(
+                "news_digest.pipeline.pre_send_quality_judge.resolve_model_route",
+                return_value=steps,
+            ), mock.patch.dict(
+                sys.modules,
+                {"openai": SimpleNamespace(OpenAI=mock.Mock(return_value=object()))},
+            ), mock.patch(
+                "news_digest.pipeline.pre_send_quality_judge.sdk_retries_for_route",
+                return_value=0,
+            ), mock.patch(
+                "news_digest.pipeline.pre_send_quality_judge._run_map_reduce_judge",
+                side_effect=[("failed", None, {}), ("ok", parsed, {})],
+            ), mock.patch(
+                "news_digest.pipeline.provider_health.is_dead",
+                return_value=False,
+            ), mock.patch(
+                "news_digest.pipeline.provider_health.record_failure",
+            ), mock.patch(
+                "news_digest.pipeline.provider_health.record_success",
+            ), mock.patch(
+                "news_digest.pipeline.pre_send_quality_judge._apply_repair_executor",
+                return_value=(html, {"applied": 0, "unresolved": 0, "blocking_unresolved": 0}),
+            ), mock.patch(
+                "news_digest.pipeline.pre_send_quality_judge._finalize_repair_report",
+            ):
+                result = evaluate_pre_send_quality(root)
+
+        self.assertEqual(result["provider"], "second")
+        self.assertEqual(
+            [row["status"] for row in result["raw"]["provider_attempts"]],
+            ["unparseable", "used"],
+        )
 
     def test_product_completeness_does_not_alert_hidden_weekend_monday_to_wednesday(self) -> None:
         tmp, root = self._project()

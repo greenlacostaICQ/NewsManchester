@@ -7,9 +7,10 @@ import time
 import unittest
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
-from news_digest.pipeline.candidate_validator import validate_candidates
+from news_digest.pipeline.candidate_validator import _apply_why_now_gate, validate_candidates
 from news_digest.pipeline.collector.routing import _adjust_ticket_radar_block
 from news_digest.pipeline.collector.extract import (
     _enrich_visit_manchester_items,
@@ -32,6 +33,7 @@ from news_digest.pipeline.dedupe import (
     _normalise_person_tokens,
     _people_published_matches,
     _prefer_dedupe_candidate,
+    _review_semantic_borderline_with_llm,
     _topic_published_matches,
     dedupe_candidates,
 )
@@ -107,6 +109,65 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertFalse(updated["include"])
         self.assertIn("not_gm", updated["reject_reasons"])
+
+    def test_birmingham_court_story_is_not_local_because_subject_is_from_bolton(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "birmingham-court-bolton-person",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "Birmingham court hears case involving Bolton comedian",
+                "summary": "The hearing and alleged offence are in Birmingham; the defendant has links to Bolton.",
+                "source_label": "MEN",
+                "source_url": "https://example.test/birmingham-court",
+                "published_at": now_london().isoformat(),
+                "dedupe_decision": "new",
+                "change_type": "new_story",
+            }
+        )
+        self.assertFalse(updated["include"])
+        self.assertIn("not_gm", updated["reject_reasons"])
+
+    def test_jodrell_bank_needs_explicit_gm_consequence_not_institutional_link(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "jodrell-funding",
+                "category": "media_layer",
+                "primary_block": "city_watch",
+                "title": "Jodrell Bank telescope in Cheshire faces funding cut",
+                "summary": (
+                    "The Cheshire observatory is hosted by the University of Manchester "
+                    "and carries out national astronomy research."
+                ),
+                "source_label": "BBC Manchester",
+                "source_url": "https://example.test/jodrell-funding",
+                "published_at": now_london().isoformat(),
+                "dedupe_decision": "new",
+                "change_type": "new_story",
+            }
+        )
+        self.assertFalse(updated["include"])
+        self.assertIn("not_gm", updated["reject_reasons"])
+
+    def test_external_company_with_concrete_gm_effect_passes_geo_gate(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "birmingham-firm-manchester-office",
+                "category": "tech_business",
+                "primary_block": "tech_business",
+                "title": "Birmingham software firm opens Manchester office",
+                "summary": "The company created 40 jobs at its new Manchester city-centre office.",
+                "source_label": "Business source",
+                "source_url": "https://example.test/manchester-office",
+                "published_at": now_london().isoformat(),
+                "dedupe_decision": "new",
+                "change_type": "new_story",
+            }
+        )
+        self.assertTrue(updated["include"], updated.get("reject_reasons"))
 
     def test_drops_loose_tv_local_only_story(self) -> None:
         updated = self._validate_one(
@@ -254,6 +315,28 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertEqual(_football_priority_kind(confirmed), "confirmed_contract")
         self.assertEqual(_football_priority_kind(speculative), "other")
+
+    def test_football_sidebar_cannot_promote_speculation_to_official_match(self) -> None:
+        candidate = {
+            "category": "football",
+            "primary_block": "football",
+            "title": "Manchester City linked with midfielder before new season",
+            "summary": "Reports say the club could make an offer, but no decision is confirmed.",
+            "evidence_text": (
+                "Sidebar: Premier League fixture, confirmed squad, team news and official statement."
+            ),
+        }
+        self.assertEqual(_football_priority_kind(candidate), "other")
+
+    def test_typed_football_match_status_can_prove_official_match(self) -> None:
+        candidate = {
+            "category": "football",
+            "primary_block": "football",
+            "title": "Manchester City prepare for Sunday",
+            "summary": "The club published its match information.",
+            "football_facts": {"match_status": "official"},
+        }
+        self.assertEqual(_football_priority_kind(candidate), "official_match")
 
     def test_drops_visitor_attraction_from_food_openings(self) -> None:
         updated = self._validate_one(
@@ -1440,7 +1523,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertEqual(matches[0]["match_type"], "people_entity")
         self.assertGreaterEqual(int(matches[0]["shared_tokens"]), 2)
 
-    def test_cross_day_same_victim_blocks_candidate(self) -> None:
+    def test_cross_day_same_victim_is_preserved_for_planner_decision(self) -> None:
         """User feedback: «Эрика 3 денб получаю эту новость где проверка??».
 
         Integration through dedupe_candidates: with Эрика published two
@@ -1528,10 +1611,10 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             dedupe_candidates(root)
             out = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))
             updated = out["candidates"][0]
-            self.assertFalse(
-                updated.get("include"),
-                f"Same victim cross-day was not blocked: reason={updated.get('reason')}",
-            )
+            self.assertTrue(updated.get("include"), updated)
+            self.assertEqual(updated.get("dedupe_decision"), "repeat_pending_planner")
+            self.assertFalse(updated["visible_repeat_verdict"]["allow"])
+            self.assertIsInstance(updated.get("repeat_policy_previous"), dict)
             self.assertTrue(
                 updated.get("cross_day_entity_repeat"),
                 f"cross_day_entity_repeat flag not set: {updated}",
@@ -1759,7 +1842,105 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertEqual(pairs, [])
 
-    def test_ticket_repeat_allows_third_public_show_but_not_fourth(self) -> None:
+    def test_semantic_borderline_created_after_embedding_is_reviewed_same_run(self) -> None:
+        candidates = [
+            {
+                "fingerprint": "dovestone-men",
+                "title": "Dovestone wildfire update",
+                "summary": "Fire crews remain at the moorland fire.",
+                "source_label": "MEN",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "include": True,
+            },
+            {
+                "fingerprint": "dovestone-bbc",
+                "title": "Crews tackle Dovestone moor fire",
+                "summary": "Firefighters remain at the same wildfire.",
+                "source_label": "BBC Manchester",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "include": True,
+            },
+        ]
+        semantic = {
+            "borderline_pairs": [
+                {
+                    "kind": "intra_batch",
+                    "fingerprint": "dovestone-men",
+                    "other_fingerprint": "dovestone-bbc",
+                    "sim": 0.8044,
+                }
+            ]
+        }
+
+        def verdict_for_loser(pairs, *_args):
+            return [
+                {
+                    "fingerprint": pairs[0][0]["fingerprint"],
+                    "change_type": "rehash",
+                    "reason": "same wildfire phase",
+                }
+            ]
+
+        step = SimpleNamespace(
+            provider="test",
+            model="test",
+            api_key="key",
+            base_url="https://example.test",
+        )
+        with mock.patch(
+            "news_digest.pipeline.model_routing.resolve_model_route",
+            return_value=[step],
+        ), mock.patch(
+            "news_digest.pipeline.provider_health.is_dead",
+            return_value=False,
+        ), mock.patch(
+            "news_digest.pipeline.provider_health.record_success",
+        ), mock.patch(
+            "news_digest.pipeline.dedupe._call_dedupe_review_llm",
+            side_effect=verdict_for_loser,
+        ):
+            applied = _review_semantic_borderline_with_llm(candidates, {}, semantic)
+
+        self.assertEqual(len(applied), 1)
+        self.assertEqual(sum(bool(row["include"]) for row in candidates), 1)
+
+    def test_professional_event_uses_shared_event_contract(self) -> None:
+        candidate = {
+            "category": "professional_events",
+            "primary_block": "professional_events",
+            "title": "Rochdale Business Growth Hub Drop-In",
+            "summary": "A free business advice drop-in in Rochdale.",
+            "event": {
+                "is_event": True,
+                "event_name": "Rochdale Business Growth Hub Drop-In",
+                "venue": "Rochdale Growth Hub",
+                "date_start": (now_london().date() + timedelta(days=7)).isoformat(),
+            },
+        }
+        contract = build_editorial_contract(candidate)
+        self.assertNotEqual(contract["event_shape"], "none")
+        self.assertTrue(str(contract["topic_key"]).startswith("event:"))
+
+    def test_allowed_professional_calendar_repeat_survives_why_now_gate(self) -> None:
+        candidate = {
+            "include": True,
+            "category": "professional_events",
+            "primary_block": "professional_events",
+            "title": "Rochdale Business Growth Hub Drop-In",
+            "summary": "A free business advice drop-in in Rochdale.",
+            "visible_repeat_verdict": {
+                "allow": True,
+                "repeat_class": "calendar",
+                "reason": "calendar_milestone_d7",
+            },
+        }
+        _apply_why_now_gate(candidate)
+        self.assertTrue(candidate["include"])
+        self.assertEqual(candidate["why_now"], "ticket_opportunity")
+
+    def test_ticket_repeat_count_never_overrides_calendar_milestone(self) -> None:
         event_day = (now_london().date() + timedelta(days=1)).isoformat()
         candidate = {
             "include": True,
@@ -1779,18 +1960,27 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         previous = dict(candidate)
         previous["last_published_day_london"] = (now_london().date() - timedelta(days=2)).isoformat()
         previous["first_published_day_london"] = (now_london().date() - timedelta(days=9)).isoformat()
-        previous["published_count"] = 2
+        previous["published_count"] = 99
         previous["editorial_contract"] = build_editorial_contract(previous)
 
-        third_show = calendar_repeat_review(candidate, previous)
-        self.assertTrue(third_show["allow"], third_show)
+        milestone = calendar_repeat_review(candidate, previous)
+        self.assertTrue(milestone["allow"], milestone)
+        self.assertEqual(milestone["reason"], "event_milestone_d1")
 
-        previous["published_count"] = 3
-        fourth_show = calendar_repeat_review(candidate, previous)
-        self.assertFalse(fourth_show["allow"], fourth_show)
-        self.assertEqual(fourth_show["reason"], "ticket_repeat_limit_reached")
+        ordinary_day = {
+            **candidate,
+            "event": {
+                **candidate["event"],
+                "date_start": (now_london().date() + timedelta(days=2)).isoformat(),
+            },
+        }
+        previous_ordinary = {**previous, "event": dict(ordinary_day["event"])}
+        previous_ordinary.pop("editorial_contract", None)
+        held = calendar_repeat_review(ordinary_day, previous_ordinary)
+        self.assertFalse(held["allow"], held)
+        self.assertEqual(held["reason"], "same_calendar_item_without_new_reader_moment")
 
-    def test_far_future_ticket_repeat_dropped_across_sources(self) -> None:
+    def test_far_future_ticket_repeat_is_deferred_to_planner_across_sources(self) -> None:
         event_day = (now_london().date() + timedelta(days=21)).isoformat()
         previous = {
             "fingerprint": "bridgewater-jason-old",
@@ -1841,9 +2031,14 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             out = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))
 
         updated = out["candidates"][0]
-        self.assertFalse(updated["include"], updated)
-        self.assertEqual(updated["dedupe_decision"], "drop")
+        self.assertTrue(updated["include"], updated)
+        self.assertEqual(updated["dedupe_decision"], "repeat_pending_planner")
         self.assertEqual(updated["change_type"], "same_story_rehash")
+        self.assertFalse(updated["visible_repeat_verdict"]["allow"])
+        self.assertEqual(
+            updated["visible_repeat_verdict"]["reason"],
+            "same_calendar_item_without_new_reader_moment",
+        )
 
     def test_a_tier_major_ticket_repeat_allowed_at_annual_milestone_from_history(self) -> None:
         event_day = (now_london().date() + timedelta(days=365)).isoformat()
@@ -2016,6 +2211,108 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             payload = json.loads((state_dir / "published_facts.json").read_text(encoding="utf-8"))
 
         self.assertEqual(payload["facts"][0]["published_count"], 3)
+
+    def test_event_fingerprint_is_independent_of_feed_label(self) -> None:
+        event = {
+            "is_event": True,
+            "event_name": "Vanessa Carlton",
+            "venue": "Band On The Wall",
+            "date_start": "2026-07-28",
+            "event_instance_id": "1F006392CD2861A1",
+            "schema_source": "ticketmaster_api",
+        }
+        first = {
+            "category": "venues_tickets",
+            "source_label": "Ticketmaster Manchester Upcoming",
+            "source_url": "https://ticketmaster.co.uk/event/1F006392CD2861A1",
+            "event": event,
+        }
+        second = {
+            **first,
+            "source_label": "Ticketmaster UK Major Upcoming",
+        }
+        self.assertEqual(fingerprint_for_candidate(first), fingerprint_for_candidate(second))
+
+    def test_event_fingerprint_ignores_ticket_feed_metadata_suffix(self) -> None:
+        clean = {
+            "category": "venues_tickets",
+            "source_url": "https://venue.example/show/global-star",
+            "event": {
+                "is_event": True,
+                "event_name": "Global Star",
+                "venue": "Co-op Live",
+                "date_start": "2026-08-18",
+            },
+        }
+        feed = {
+            **clean,
+            "source_url": "https://tickets.example/global-star-2026",
+            "event": {
+                **clean["event"],
+                "event_name": "Global Star — event 2026-08-18 — public sale 2026-03-01 10:00",
+            },
+        }
+        self.assertEqual(fingerprint_for_candidate(clean), fingerprint_for_candidate(feed))
+
+    def test_shared_event_listing_page_does_not_merge_distinct_events(self) -> None:
+        first = {
+            "category": "culture_weekly",
+            "title": "Family Science Day",
+            "source_url": "https://example.test/events",
+            "event_page_type": "aggregator",
+            "event": {"is_event": True, "event_name": "Family Science Day"},
+        }
+        second = {
+            **first,
+            "title": "Night Market",
+            "event": {"is_event": True, "event_name": "Night Market"},
+        }
+        self.assertNotEqual(
+            fingerprint_for_candidate(first),
+            fingerprint_for_candidate(second),
+        )
+
+    def test_history_identity_migration_does_not_sum_overlapping_feed_counters(self) -> None:
+        from news_digest.pipeline.history import canonicalize_published_facts
+
+        event = {
+            "is_event": True,
+            "event_name": "Vanessa Carlton",
+            "venue": "Band On The Wall",
+            "date_start": "2026-07-28",
+            "event_instance_id": "1F006392CD2861A1",
+            "schema_source": "ticketmaster_api",
+        }
+        payload = {
+            "facts": [
+                {
+                    "fingerprint": "old-manchester-feed",
+                    "source_label": "Ticketmaster Manchester Upcoming",
+                    "source_url": "https://ticketmaster.co.uk/event/1F006392CD2861A1",
+                    "event": event,
+                    "first_published_day_london": "2026-07-07",
+                    "last_published_day_london": "2026-07-27",
+                    "published_count": 7,
+                },
+                {
+                    "fingerprint": "old-uk-feed",
+                    "source_label": "Ticketmaster UK Major Upcoming",
+                    "source_url": "https://ticketmaster.co.uk/event/1F006392CD2861A1",
+                    "event": event,
+                    "first_published_day_london": "2026-07-21",
+                    "last_published_day_london": "2026-07-27",
+                    "published_count": 6,
+                },
+            ]
+        }
+        migrated, report = canonicalize_published_facts(payload)
+        self.assertEqual(report["aliases_removed"], 1)
+        self.assertEqual(len(migrated["facts"]), 1)
+        self.assertEqual(migrated["facts"][0]["published_count"], 7)
+        self.assertEqual(
+            set(migrated["facts"][0]["legacy_fingerprints"]),
+            {"old-manchester-feed", "old-uk-feed"},
+        )
 
     def test_tomorrow_ticket_repeat_is_allowed_as_reminder(self) -> None:
         event_day = (now_london().date() + timedelta(days=1)).isoformat()
@@ -2982,6 +3279,25 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertNotIn("50", repaired)
         self.assertNotIn("9:55", repaired)
         self.assertFalse(_draft_line_quality_errors(candidate, repaired))
+
+    def test_city_grouped_number_and_concise_complete_line_are_supported(self) -> None:
+        candidate = {
+            "category": "media_layer",
+            "primary_block": "city_watch",
+            "title": "Tatton Estate acquires industrial property",
+            "summary": "Tatton Estate acquired an 18,458 sq ft industrial property in Greater Manchester.",
+            "evidence_text": "The completed acquisition covers 18,458 sq ft and expands the estate portfolio.",
+            "story_frame": {"missing_facts": []},
+        }
+        line = (
+            "• Tatton Estate приобрела промышленный объект площадью 18\u202f458 кв. футов "
+            "в Greater Manchester; сделка расширяет портфель компании."
+        )
+        errors = _draft_line_quality_errors(candidate, line)
+        self.assertFalse(
+            any("number(s) not present" in error or "needs ≥150 chars" in error for error in errors),
+            errors,
+        )
 
     def test_local_retail_takeover_is_news_anchor_not_filler(self) -> None:
         candidate = {

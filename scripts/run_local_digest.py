@@ -1537,6 +1537,7 @@ def cmd_collect_inventory(wave: str) -> int:
 
 
 def cmd_dedupe_digest() -> int:
+    """Run exact/topic/semantic dedupe and its same-run borderline reviewer."""
     result = dedupe_candidates(PROJECT_ROOT)
     print(json.dumps(_stage_payload(result), ensure_ascii=False, indent=2))
     _flush_obs("dedupe")

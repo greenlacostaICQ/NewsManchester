@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -8,7 +9,11 @@ import re
 from urllib import parse
 from zoneinfo import ZoneInfo
 
-from news_digest.pipeline.block_policy import BLOCK_POLICY_REGISTRY, PRIMARY_BLOCKS
+from news_digest.pipeline.block_policy import (
+    BLOCK_POLICY_REGISTRY,
+    PRIMARY_BLOCKS,
+    block_active_on_weekday,
+)
 
 LONDON_TZ = ZoneInfo("Europe/London")
 
@@ -27,20 +32,29 @@ REQUIRED_SCAN_CATEGORIES = {
 }
 
 REQUIRED_BLOCKS = [
-    "Погода",
-    "Что важно сегодня",
-    "Свежие новости",
+    str(policy["heading"])
+    for policy in BLOCK_POLICY_REGISTRY.values()
+    if int(policy.get("min") or 0)
+    and not bool(policy.get("optional"))
+    and str(policy.get("schedule") or "") != "retired"
 ]
 
+
+def required_blocks_for_weekday(weekday: int) -> list[str]:
+    return [
+        str(policy["heading"])
+        for block, policy in BLOCK_POLICY_REGISTRY.items()
+        if int(policy.get("min") or 0)
+        and not bool(policy.get("optional"))
+        and block_active_on_weekday(block, weekday)
+    ]
+
+
 LOW_SIGNAL_BLOCKS = [
-    "Городской радар",
-    "Дальние анонсы",
-    "Билеты / Ticket Radar",
-    "Крупные концерты вне GM",
-    "Русскоязычные концерты и стендап UK",
-    "Еда, открытия и рынки",
-    "IT и бизнес",
-    "Business/tech события для тебя",
+    str(policy["heading"])
+    for policy in BLOCK_POLICY_REGISTRY.values()
+    if bool(policy.get("optional"))
+    and str(policy.get("schedule") or "") != "retired"
 ]
 
 SECTION_MAX_ITEMS = {
@@ -188,21 +202,103 @@ def normalize_title(value: str) -> str:
     return re.sub(r"\s+", " ", lowered).strip()
 
 
-# Twin feeds of one outlet: same content, kept only for resilience (the web
-# backup catches stories on quiet RSS days). Fingerprint them under one label
-# so the duplicate collapses as a clean exact-dup, not topic-dedup churn.
-_TWIN_SOURCE_LABELS = {"bbc manchester web": "bbc manchester"}
+def _fingerprint_slug(prefix: str, identity: str) -> str:
+    normalized = re.sub(r"[^a-z0-9]+", "-", str(identity or "").lower()).strip("-")
+    digest = hashlib.sha1(str(identity or "").encode("utf-8")).hexdigest()[:12]
+    return f"{prefix}-{normalized[:150]}-{digest}".strip("-")[:180]
+
+
+def _event_identity_name(value: object) -> str:
+    """Normalise collector metadata without erasing a real event title."""
+    text = str(value or "").strip()
+    text = re.split(
+        r"\s+[—–-]\s+event\s+20\d{2}-\d{2}-\d{2}\b",
+        text,
+        maxsplit=1,
+        flags=re.IGNORECASE,
+    )[0]
+    text = re.split(
+        r"\s+[—–-]\s+(?:public\s+sale|tickets?\s+on\s+sale)\b",
+        text,
+        maxsplit=1,
+        flags=re.IGNORECASE,
+    )[0]
+    return normalize_title(text)
 
 
 def fingerprint_for_candidate(candidate: dict) -> str:
+    """Return the source-independent identity of one article or occurrence.
+
+    Source labels describe provenance, not identity.  The same Ticketmaster
+    event can arrive through Manchester, London and UK feeds; including the
+    label created parallel publication counters for one physical event.
+    Structured occurrences therefore use, in order, the provider event id,
+    name/date/venue identity, canonical URL, and only then a title fallback.
+    """
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    hint = (
+        candidate.get("structured_event_hint")
+        if isinstance(candidate.get("structured_event_hint"), dict)
+        else {}
+    )
+    instance_id = str(
+        candidate.get("event_instance_id")
+        or event.get("event_instance_id")
+        or event.get("ticketmaster_event_id")
+        or hint.get("event_instance_id")
+        or hint.get("ticketmaster_event_id")
+        or ""
+    ).strip()
     source_url = canonical_url_identity(str(candidate.get("source_url") or ""))
-    source_label = str(candidate.get("source_label") or "").strip().lower()
-    source_label = _TWIN_SOURCE_LABELS.get(source_label, source_label)
+    provider = str(event.get("schema_source") or hint.get("schema_source") or "").strip()
+    if not provider and source_url:
+        provider = source_url.split("/", 1)[0]
+    if instance_id:
+        return _fingerprint_slug("event-id", f"{provider}|{instance_id}")
+
+    is_event = bool(event.get("is_event") or hint.get("event_name"))
+    if is_event:
+        explicit_identity = str(
+            candidate.get("event_identity_key")
+            or event.get("event_identity_key")
+            or hint.get("event_identity_key")
+            or ""
+        ).strip()
+        if explicit_identity:
+            return _fingerprint_slug("event", explicit_identity)
+        event_name = _event_identity_name(
+            str(event.get("event_name") or hint.get("event_name") or candidate.get("title") or "")
+        )
+        event_date = str(
+            event.get("date_start")
+            or event.get("date")
+            or hint.get("date_start")
+            or hint.get("date")
+            or ""
+        ).strip()[:10]
+        venue = normalize_title(str(event.get("venue") or hint.get("venue") or ""))
+        if event_name and event_date and venue:
+            return _fingerprint_slug("event", f"{event_name}|{event_date}|{venue}")
+
+    raw_source_url = str(candidate.get("source_url") or "")
+    parsed_source_url = parse.urlsplit(raw_source_url)
+    event_page_type = str(candidate.get("event_page_type") or "").strip().lower()
+    path_segments = [value for value in parsed_source_url.path.rstrip("/").lower().split("/") if value]
+    generic_event_tail = bool(
+        path_segments
+        and path_segments[-1] in {"events", "calendar", "programme", "whats-on", "what-s-on"}
+    )
+    if is_event and parsed_source_url.fragment and source_url:
+        return _fingerprint_slug("event-url", f"{source_url}#{parsed_source_url.fragment}")
+    if source_url and not (
+        is_event
+        and (event_page_type in {"homepage", "aggregator"} or generic_event_tail)
+    ):
+        return _fingerprint_slug("url", source_url)
+
     title = str(candidate.get("title") or "").strip().lower()
     category = str(candidate.get("category") or "").strip().lower()
-    base = f"{category}-{source_label}-{source_url}" if source_url else f"{category}-{source_label}-{title}"
-    normalized = re.sub(r"[^a-z0-9]+", "-", base).strip("-")
-    return normalized[:180]
+    return _fingerprint_slug("title", f"{category}|{normalize_title(title)}")
 
 
 def candidates_by_fingerprint(candidates: list[dict]) -> dict[str, dict]:

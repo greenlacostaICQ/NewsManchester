@@ -2109,3 +2109,108 @@
 - Файлы/места: `ticket_notability.py:_load_cache/_lookup_wikidata/_lookup_youtube/_tier_from_signals/_artist_notability/prefetch_notability`; `writer.py:_ticket_notability_proof/_ticket_watch_reason`; `editorial_contracts.py:_SERVICE_PROSE_MARKERS`; `.github/workflows/daily-digest.yml`; `tests/test_ticket_notability_enrich.py`; `tests/test_public_output_contracts.py`.
 - ПРОВЕРКА: offline — 76 целевых тестов OK, включая точный Wikidata channel ID без search quota, выбор official вместо fan channel, persisted daily limit, hidden/provider taxonomy и YouTube+Last.fm A-tier; workflow YAML parsed, все внешние/persist steps имеют отрицательное условие probe. Replay 2026-07-27 до/после идентичен по метрикам: `49 public slots`, `45 shown / 0 replaced / 4 removed`, `lead_status=ok`, `max_blank_run=1`, `blank_runs_2plus=0`, verify `ship_degraded` с теми же 6 контентными расхождениями. Production provider-probe [run 30348026103](https://github.com/greenlacostaICQ/NewsManchester/actions/runs/30348026103) на `bf731ae`: `looked_up=152`, `skipped_fresh=627`, `scored=60`; YouTube `ok=91 / no_match=6 / quota_deferred=54 / no_credentials=0`, persisted counter на runner `search_calls=95 / daily_limit=95`. Rank и compact report завершились success; plan/build/send/warnings/state-commit помечены skipped, второй Telegram-выпуск и изменение production state не создавались.
 - Где была ошибка (если production-proof не сработает): проверить `rank_digest_report.ticket_notability.prefetched.provider_status.youtube`, `youtube_search_quota` в cache v3 и API restriction секрета `YOUTUBE_API_KEY`.
+
+### 0193 — Билетные повторы без отдельного лимита трёх показов — 2026-07-28
+- Статус: внедрено; production-proof ожидается.
+- Проблема: календарно полезная билетная карточка снималась как `ticket_repeat_limit_reached` после трёх публикаций, включая B-tier на D1.
+- Причина (корень): `editorial_contracts.py` содержал отдельные `_MAX_PUBLIC_TICKET_REPEATS/_published_count_for_repeat`, которых не было в общем контракте.
+- Решение: счётчик удалён; planner использует только milestones из `block_policy.py`: A `D365/D30/D7/D3/D1/D0`, B `D30/D7/D1/D0`, default `D7/D1/D0`. `published_count` больше не отменяет рубеж.
+- Ожидаемый эффект и метрика проверки: B с `published_count=99` проходит D30/D7/D1/D0 и не проходит D2; A проходит все шесть своих рубежей.
+- ПРОВЕРКА (offline): acceptance regressions входят в 992 теста OK; обязательный replay фиксируется ниже после завершения.
+
+### 0194 — Физическая identity события и миграция истории — 2026-07-28
+- Статус: внедрено; production-proof ожидается.
+- Проблема: одно событие из двух feed labels получало два fingerprints и два независимых счётчика; URL-only при этом склеил бы разные события на общей programme page.
+- Причина (корень): fingerprint включал `category/source_label/source_url`, то есть provenance ошибочно считался identity.
+- Решение: порядок identity стал `provider event ID → event_identity/name+date+venue → уникальный URL → title fallback`; metadata suffix Ticketmaster нормализуется, общая aggregator page не используется как identity. История мигрируется перед dedupe, overlapping counters объединяются через `max`, а не сумму.
+- Ожидаемый эффект и метрика проверки: feed twins дают один physical fact; два события на `/events` остаются разными; legacy counters `3+2` становятся одним `3`, не `5`.
+- ПРОВЕРКА (offline): все три сценария входят в 992 теста OK.
+
+### 0195 — Один артист получает один canonical tier на прогон — 2026-07-28
+- Статус: внедрено; production-proof ожидается; выбор внешнего provider не менялся.
+- Проблема: include/reserve-карточки одного артиста одновременно несли A и B; временный provider failure мог затереть последний полный A.
+- Причина (корень): rank оценивал только `include=True`, planner пропускал уже заполненный, но устаревший tier, а результат жил на строке, не на artist identity.
+- Решение: rank и planner штампуют один strongest complete result всем рассматриваемым карточкам артиста; failed recheck хранится как `last_attempt`, последний полный tier остаётся source of truth.
+- Ожидаемый эффект и метрика проверки: Anastacia/Vanessa не имеют разно-tierных строк; reserve/include-false получают тот же tier; failure не понижает A.
+- ПРОВЕРКА (offline): cache/no-cache/failure regressions входят в 992 теста OK. Spotify-код и provider policy в этой записи не менялись.
+
+### 0196 — Planner принимает единственное финальное repeat-решение — 2026-07-28
+- Статус: внедрено; production-proof ожидается.
+- Проблема: dedupe, semantic dedupe, validator, planner и release независимо снимали повтор; предварительный B-tier verdict мог остановить будущий A-tier D3, а why-now повторно снимал разрешённый Professional event.
+- Причина (корень): ранние provisional verdicts меняли `include`, а поздние стадии повторно вычисляли policy на разном наборе фактов.
+- Решение: dedupe/semantic/validator сохраняют `repeat_policy_previous` и диагноз `repeat_pending_planner`, но не принимают финальное решение. После canonical tier/event contract planner один раз пишет `governing_repeat_decision`; backup/release только читают его.
+- Ожидаемый эффект и метрика проверки: обычный rehash снимается planner; A-tier D3 проходит вопреки старому provisional B verdict; разрешённый repeat получает `why_now` из governing decision.
+- ПРОВЕРКА (offline): три сквозных planner regressions и полный набор 992 теста OK.
+
+### 0197 — Professional events включён в общий event-contract — 2026-07-28
+- Статус: внедрено; production-proof ожидается.
+- Проблема: Rochdale Business Growth Hub с корректным CV `consider=77` классифицировался позднее как обычная stale story.
+- Причина (корень): `professional_events` отсутствовал в `_EVENT_BLOCKS`, хотя registry задавал `calendar_milestones`.
+- Решение: Professional использует тот же event occurrence, calendar repeat и why-now contract, что другие датированные события; CV provider/profile logic не менялись.
+- Ожидаемый эффект и метрика проверки: разрешённый professional calendar/new-phase repeat доходит до planner, отсутствие CV fit по-прежнему снимает карточку.
+- ПРОВЕРКА (offline): contract + why-now regressions входят в 992 теста OK.
+
+### 0198 — Weekend inventory возвращается Thu–Sun с полным fact-card — 2026-07-28
+- Статус: внедрено; production-proof ожидается в Events wave.
+- Проблема: ночь сохраняла weekend-карточки, но пятничная симуляция имела `49 card-ready / 8 eligible / 0 inserted`; round-trip терял `gm_fit/activity_type`, а Tuesday TTL мог истечь до выходных.
+- Причина (корень): direct insertion разрешалась только Food/current-day; Weekend 304 не обновлял serving clock, обязательные registry fields не сериализовались.
+- Решение: fact-card сохраняет/восстанавливает все обязательные поля; живой action URL плюс operational source 304 подтверждает retained Weekend inventory и обновляет TTL. Food остаётся current-day-only; dead URL не оживляется 304.
+- Ожидаемый эффект и метрика проверки: Tuesday карточка возвращается Friday, обязательные поля переживают round-trip, dead URL остаётся rejected.
+- ПРОВЕРКА (offline): четыре inventory regressions и полный набор 992 теста OK.
+
+### 0199 — Единый block registry, planner-only composition и явные backups — 2026-07-28
+- Статус: внедрено; production-proof ожидается.
+- Проблема: REQUIRED/LOW_SIGNAL/minima/shortlist/milestones/cap exemptions жили в параллельных таблицах; rank менял `include`; у lead было 0 дублёров, а shortage обычных chains молчал.
+- Причина (корень): policy постепенно копировалась в writer, rank, judge и planner вместо чтения `block_policy.py`.
+- Решение: registry хранит schedule, min/max, rewrite recall, milestones, backup depth, budget/cap exemptions и 304 policy. Rank оставляет score/verdict, planner исполняет board/cost decisions. Planner резервирует до двух независимых lead-grade overflow и сообщает `backup_depth_shortfall/slots_below_backup_depth`.
+- Ожидаемый эффект и метрика проверки: A-tier bypass читает registry; rank не меняет include; lead/section shortage всегда виден, даже когда pool пуст.
+- ПРОВЕРКА (offline): rank/planner/backup/schedule regressions входят в 992 теста OK.
+
+### 0200 — Semantic borderline реально проходит same-run review — 2026-07-28
+- Статус: внедрено; production-proof ожидается.
+- Проблема: Dovestone pair с cosine `0.8044` попадала в `semantic_borderline`, но обе строки доходили до выпуска.
+- Причина (корень): LLM review запускался до embedding pass; созданные после него borderline pairs никто не потреблял.
+- Решение: результаты semantic pass передаются существующему dedupe-review provider chain в том же запуске. Intra-batch `rehash` снимает слабую строку; cross-day verdict передаётся planner как repeat evidence.
+- Ожидаемый эффект и метрика проверки: synthetic Dovestone pair оставляет ровно одну include-строку; cross-day match не создаёт параллельный финальный repeat gate.
+- ПРОВЕРКА (offline): Dovestone и cross-day regressions входят в 992 теста OK.
+
+### 0201 — Evidence-locked judge с последовательной provider-chain — 2026-07-28
+- Статус: внедрено; production-proof ожидается.
+- Проблема: judge называл подтверждённые дату Jodrell и Stockport venue неправильными, предлагал unsupported £85m и при отказе `route[0]` не пробовал следующий provider.
+- Причина (корень): fact-lock запрещал добавление нового вымысла, но не запрещал удалить поддержанный факт; stage исполняла только первый route step.
+- Решение: поддержанные evidence/structured date, number, venue/place защищены двусторонне; omission остаётся repairable, unsupported число не защищается. Provider steps идут последовательно до первого parseable ответа, attempts записываются.
+- Ожидаемый эффект и метрика проверки: supported fact не удаляется по мнению модели; первый unparseable/failed provider ведёт ко второму; исчерпание цепочки ship-warn, не block.
+- ПРОВЕРКА (offline): fact-lock и two-provider regressions входят в 992 теста OK.
+
+### 0202 — Числа с grouping и короткая самодостаточная City-card — 2026-07-28
+- Статус: внедрено; production-proof ожидается.
+- Проблема: `18,458 sq ft` не совпадало с evidence `18 458`, а полноценная City строка длиной 109 символов снималась из-за порога 150.
+- Причина (корень): numeric tokenizer удалял только запятую и не знал NBSP/narrow NBSP; completeness подменялась длиной и списком civic nouns.
+- Решение: comma/space/NBSP/narrow-NBSP grouping нормализуется в одно число; factual line от 90 символов с subject+evidence+sentence принимается без искусственного padding.
+- Ожидаемый эффект и метрика проверки: 18,458 = 18 458 = 18458; 109-char complete City card сохраняется.
+- ПРОВЕРКА (offline): оба точных regressions входят в 992 теста OK.
+
+### 0203 — Внешняя сущность требует конкретного эффекта для GM — 2026-07-28
+- Статус: внедрено; production-proof ожидается.
+- Проблема: Birmingham court story проходила из-за Peter Kay/Bolton, Jodrell Bank — из-за институционального упоминания, хотя читательского GM impact не было.
+- Причина (корень): любой local person/source/token отменял strong non-GM signal.
+- Решение: при явной внешней географии требуется конкретное изменение для GM residents/services/transport/business/jobs/offices; local celebrity или publisher не доказательство. Истинное открытие Manchester office/jobs проходит.
+- Ожидаемый эффект и метрика проверки: Birmingham/Peter Kay и Jodrell institution-only снимаются до ranking; Manchester office with jobs остаётся.
+- ПРОВЕРКА (offline): четыре geo regressions входят в 992 теста OK.
+
+### 0204 — Football priority читает собственные и typed facts — 2026-07-28
+- Статус: внедрено; production-proof ожидается.
+- Проблема: sidebar/evidence contamination превращала спекуляцию в `official_match/club_decision`.
+- Причина (корень): classifier сканировал `evidence_text/draft_line`, где находились соседние headlines; competition name само по себе считалось матчем.
+- Решение: priority использует только title/summary/lead и typed match/injury/club statuses; official competition требует match/fixture/tie/game context.
+- Ожидаемый эффект и метрика проверки: sidebar rumor не повышается, typed official/result/injury сохраняют приоритет.
+- ПРОВЕРКА (offline): football contamination/typed regressions входят в 992 теста OK.
+
+### 0205 — Per-source funnel и один bounded retry для неожиданного нуля — 2026-07-28
+- Статус: внедрено; production-proof ожидается.
+- Проблема: `parser_or_filter_empty` не объяснял ноль Secret/market sources; временный Manchester United RSS 404 выглядел как сломанный источник.
+- Причина (корень): source health хранил только final count, не этап потери; RSS/JSON не отличали transient response/conditional-cache anomaly от реального пустого feed.
+- Решение: каждый source пишет `raw → URL → date → geo → routing → candidate`, top reject reasons, byte/post counts. Неожиданный непустой RSS/JSON с zero candidates и transient 404/410/429/5xx получает один no-cache retry; результат и attempts сохраняются.
+- Ожидаемый эффект и метрика проверки: zero-yield имеет точный loss stage/reason; 404→200 и empty-body→useful-body восстанавливаются ровно одним retry.
+- ПРОВЕРКА (offline): fetch/funnel/retry regressions входят в 992 теста OK; workflow/CLI комментарии обновлены для same-run semantic model call.
+- ОБЩАЯ REPLAY-ПРОВЕРКА #0193–#0205: обязательный `replay_day.py --golden` завершил 12/12 дней без technical verify failure; lead во всех replay `ok`, новых `blank_runs_2plus` нет. На дефектном 28.07 до/после: plan `38→39`, shown `37→38`, removed `1→1`, divergences `7→6`, replay bullets `36→37`, lead `ok→ok`; восстановлена одна корректная строка, техническая целостность сохранена. Это offline proof; production-proof по свежим waves/rank остаётся ожидаемым.

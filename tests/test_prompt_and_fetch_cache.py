@@ -21,6 +21,8 @@ from unittest.mock import MagicMock, patch
 from urllib import error
 
 from news_digest.pipeline import cost_tracker
+from news_digest.pipeline.collector import core as collector_core
+from news_digest.pipeline.collector import extract as collector_extract
 from news_digest.pipeline.collector import fetch
 from news_digest.pipeline.collector.sources import SourceDef
 from news_digest.pipeline.release import _aggregate_cost, _append_cost_history
@@ -406,6 +408,32 @@ class FetchCache304IntegrationTest(unittest.TestCase):
         self.assertEqual(entry.get("etag"), '"new123"')
         self.assertEqual(entry.get("last_modified"), "Sun, 18 May 2026 08:00:00 GMT")
 
+    def test_rss_transient_404_gets_one_bounded_retry(self):
+        http_err = error.HTTPError(
+            url=self.source.url,
+            code=404,
+            msg="Not Found",
+            hdrs=MagicMock(),
+            fp=None,
+        )
+        fake_response = MagicMock()
+        fake_response.read.return_value = b"<rss>recovered</rss>"
+        fake_response.headers.get_content_charset.return_value = "utf-8"
+        fake_response.headers.get.side_effect = lambda *_args, **_kw: ""
+        fake_response.__enter__ = MagicMock(return_value=fake_response)
+        fake_response.__exit__ = MagicMock(return_value=False)
+        opener_mock = MagicMock()
+        opener_mock.open.side_effect = [http_err, fake_response]
+        with patch(
+            "news_digest.pipeline.collector.fetch.request.build_opener",
+            return_value=opener_mock,
+        ):
+            body, fetched_url, log = fetch._fetch_source_body(self.source)
+        self.assertEqual(body, "<rss>recovered</rss>")
+        self.assertEqual(fetched_url, self.source.url)
+        self.assertEqual(opener_mock.open.call_count, 2)
+        self.assertTrue(any("bounded retry" in row for row in log))
+
     def test_extract_text_path_does_not_use_cache(self):
         """``_fetch_text`` default (no use_cache) must NOT add conditional
         headers — article enrichment in extract.py relies on this."""
@@ -433,6 +461,80 @@ class FetchCache304IntegrationTest(unittest.TestCase):
         # If-None-Match / If-Modified-Since must NOT have been sent.
         self.assertNotIn("If-none-match", {k.lower() for k in captured_headers})
         self.assertNotIn("If-modified-since", {k.lower() for k in captured_headers})
+
+
+class CollectorEmptyRetryAndFunnelTest(unittest.TestCase):
+    def setUp(self):
+        self.source = SourceDef(
+            name="Retry RSS",
+            report_category="media_layer",
+            candidate_category="media_layer",
+            url="https://example.com/feed.xml",
+            primary_block="last_24h",
+            source_type="rss",
+        )
+
+    def test_rss_unexpected_zero_retries_once_without_conditional_cache(self):
+        candidate = {
+            "include": True,
+            "fingerprint": "retry-recovered",
+            "published_at": "2026-07-28T08:00:00+01:00",
+            "freshness_status": "fresh_24h",
+        }
+
+        def fake_extract(_source, body, *, trace=None):
+            recovered = "good" in body
+            if trace is not None:
+                trace.update(
+                    {
+                        "raw_extracted": 1 if recovered else 0,
+                        "url_gate_passed": 1 if recovered else 0,
+                        "date_gate_passed": 1 if recovered else 0,
+                        "geo_gate_passed": 1 if recovered else 0,
+                        "routing_passed": 1 if recovered else 0,
+                        "candidates": 1 if recovered else 0,
+                        "top_reject_reasons": [],
+                    }
+                )
+            return [dict(candidate)] if recovered else []
+
+        with patch.object(
+            collector_core,
+            "_fetch_source_body",
+            side_effect=[
+                ("<rss>bad</rss>", self.source.url, []),
+                ("<rss>good</rss>", self.source.url, []),
+            ],
+        ) as fetch_mock, patch.object(
+            collector_core,
+            "_extract_source_candidates",
+            side_effect=fake_extract,
+        ):
+            health, candidates = collector_core._collect_single_source(self.source)
+
+        self.assertEqual([row["fingerprint"] for row in candidates], ["retry-recovered"])
+        self.assertTrue(health["empty_retry_performed"])
+        self.assertEqual(health["empty_retry_result"], "recovered")
+        self.assertEqual(health["post_count"], 1)
+        self.assertFalse(fetch_mock.call_args_list[1].kwargs["use_cache"])
+
+    def test_source_extraction_exposes_raw_to_candidate_funnel(self):
+        body = """<?xml version="1.0"?>
+        <rss><channel><item>
+          <title>Manchester council confirms city-centre road change</title>
+          <link>https://example.com/news/road-change</link>
+          <description>Manchester residents will see a road change.</description>
+          <pubDate>Tue, 28 Jul 2026 07:00:00 +0100</pubDate>
+        </item></channel></rss>"""
+        trace: dict[str, object] = {}
+        candidates = collector_extract._extract_source_candidates(
+            self.source,
+            body,
+            trace=trace,
+        )
+        self.assertEqual(trace["raw_extracted"], 1)
+        self.assertEqual(trace["url_gate_passed"], 1)
+        self.assertEqual(trace["candidates"], len(candidates))
 
 
 if __name__ == "__main__":

@@ -221,7 +221,7 @@ class LlmRewriteDiagnosticsTests(unittest.TestCase):
         selected, report = _apply_cost_after_quality_guard([candidate])
 
         self.assertEqual(selected, [])
-        self.assertFalse(candidate["include"])
+        self.assertTrue(candidate["include"])
         self.assertEqual(candidate["digest_selection_verdict"], "needs_enrichment")
         self.assertTrue(candidate["backup_pool_only"])
         self.assertEqual(report["held_before_model"], 1)

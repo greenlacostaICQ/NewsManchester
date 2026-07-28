@@ -6,7 +6,13 @@ from pathlib import Path
 import re
 import shutil
 
-from news_digest.pipeline.common import normalize_title, read_json, today_london, write_json
+from news_digest.pipeline.common import (
+    fingerprint_for_candidate,
+    normalize_title,
+    read_json,
+    today_london,
+    write_json,
+)
 from news_digest.pipeline.entity_extraction import enrich_candidate_entities, extract_entities
 from news_digest.pipeline.event_extraction import enrich_candidate_event, extract_event
 from news_digest.pipeline.editorial_contracts import attach_editorial_contract, topic_key_for_candidate
@@ -21,6 +27,103 @@ from news_digest.pipeline.story_intelligence import apply_story_intelligence, at
 # Facts older than this are pruned from published_facts.json.
 # Must be >= the dedupe look-back window (7 days) with margin.
 _PUBLISHED_FACTS_RETENTION_DAYS = 30
+
+
+def _history_identity_candidate(item: dict) -> dict:
+    candidate = dict(item)
+    evidence = item.get("evidence_packet") if isinstance(item.get("evidence_packet"), dict) else {}
+    if not str(candidate.get("source_url") or "").strip():
+        candidate["source_url"] = str(evidence.get("source_url") or "")
+    if not isinstance(candidate.get("event"), dict) and isinstance(evidence.get("event"), dict):
+        candidate["event"] = evidence["event"]
+    return candidate
+
+
+def canonicalize_published_facts(payload: dict) -> tuple[dict, dict[str, object]]:
+    """Collapse legacy source-labelled rows into one physical fact.
+
+    Old fingerprints included ``source_label``.  A Ticketmaster occurrence
+    discovered by two feeds therefore acquired two counters.  Migration uses
+    the current article/event identity and conservatively keeps the largest
+    counter rather than summing overlapping publication days.
+    """
+    facts = payload.get("facts") if isinstance(payload.get("facts"), list) else []
+    grouped: dict[str, list[dict]] = {}
+    for item in facts:
+        if not isinstance(item, dict):
+            continue
+        canonical = fingerprint_for_candidate(_history_identity_candidate(item))
+        if not canonical:
+            canonical = str(item.get("fingerprint") or "").strip()
+        if canonical:
+            grouped.setdefault(canonical, []).append(item)
+
+    migrated: list[dict] = []
+    aliases_removed = 0
+    for canonical, rows in grouped.items():
+        ordered = sorted(
+            rows,
+            key=lambda row: (
+                str(row.get("last_published_day_london") or ""),
+                len(str((row.get("evidence_packet") or {}).get("evidence_text") or "")),
+            ),
+        )
+        merged = dict(ordered[-1])
+        legacy = sorted(
+            {
+                str(row.get("fingerprint") or "").strip()
+                for row in rows
+                if str(row.get("fingerprint") or "").strip()
+                and str(row.get("fingerprint") or "").strip() != canonical
+            }
+        )
+        first_days = [
+            str(row.get("first_published_day_london") or "").strip()
+            for row in rows
+            if str(row.get("first_published_day_london") or "").strip()
+        ]
+        last_days = [
+            str(row.get("last_published_day_london") or "").strip()
+            for row in rows
+            if str(row.get("last_published_day_london") or "").strip()
+        ]
+        counts: list[int] = []
+        for row in rows:
+            try:
+                counts.append(int(row.get("published_count") or 0))
+            except (TypeError, ValueError):
+                continue
+        merged["fingerprint"] = canonical
+        merged["first_published_day_london"] = min(first_days) if first_days else ""
+        merged["last_published_day_london"] = max(last_days) if last_days else ""
+        merged["published_count"] = max([1, *counts])
+        if legacy:
+            merged["legacy_fingerprints"] = sorted(
+                set(str(value) for value in merged.get("legacy_fingerprints") or [])
+                | set(legacy)
+            )
+        evidence = merged.get("evidence_packet") if isinstance(merged.get("evidence_packet"), dict) else {}
+        if evidence:
+            merged["evidence_packet"] = {**evidence, "fingerprint": canonical}
+        aliases_removed += max(0, len(rows) - 1)
+        migrated.append(merged)
+
+    migrated.sort(key=lambda item: str(item.get("fingerprint") or ""))
+    result = {**payload, "facts": migrated}
+    return result, {
+        "before": len(facts),
+        "after": len(migrated),
+        "aliases_removed": aliases_removed,
+    }
+
+
+def migrate_published_facts_identity(state_dir: Path) -> dict[str, object]:
+    path = state_dir / "published_facts.json"
+    payload = read_json(path, {"last_updated_london": None, "facts": []})
+    migrated, report = canonicalize_published_facts(payload)
+    if migrated != payload:
+        write_json(path, migrated)
+    return report
 
 
 def ensure_history_files(state_dir: Path) -> dict[str, Path]:
@@ -59,12 +162,21 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
     state_dir = project_root / "data" / "state"
     paths = ensure_history_files(state_dir)
 
-    payload = read_json(paths["published_facts"], {"last_updated_london": None, "facts": []})
+    payload, _migration = canonicalize_published_facts(
+        read_json(paths["published_facts"], {"last_updated_london": None, "facts": []})
+    )
     existing_facts = payload.get("facts", [])
     if not isinstance(existing_facts, list):
         existing_facts = []
 
     by_fingerprint = {str(item.get("fingerprint")): item for item in existing_facts if isinstance(item, dict)}
+    by_legacy_fingerprint: dict[str, dict] = {}
+    for item in existing_facts:
+        if not isinstance(item, dict):
+            continue
+        for alias in item.get("legacy_fingerprints") or []:
+            if str(alias or "").strip():
+                by_legacy_fingerprint[str(alias).strip()] = item
     run_day = today_london()
     run_day_date = datetime.strptime(run_day, "%Y-%m-%d").date()
 
@@ -76,10 +188,18 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
         attach_editorial_contract(candidate)
         apply_story_intelligence(candidate)
         attach_evidence_packet(candidate)
-        fingerprint = str(candidate.get("fingerprint") or "").strip()
+        original_fingerprint = str(candidate.get("fingerprint") or "").strip()
+        fingerprint = original_fingerprint
+        canonical_fingerprint = fingerprint_for_candidate(candidate)
+        if canonical_fingerprint:
+            fingerprint = canonical_fingerprint
+            candidate["fingerprint"] = fingerprint
         if not fingerprint:
             continue
-        entry = by_fingerprint.get(fingerprint, {})
+        entry = by_fingerprint.get(fingerprint) or by_legacy_fingerprint.get(original_fingerprint) or {}
+        previous_entry_fingerprint = str(entry.get("fingerprint") or "").strip()
+        if previous_entry_fingerprint and previous_entry_fingerprint != fingerprint:
+            by_fingerprint.pop(previous_entry_fingerprint, None)
         previous_last_published = str(entry.get("last_published_day_london") or "").strip()
         try:
             previous_count = int(entry.get("published_count") or 0)
@@ -94,6 +214,7 @@ def update_published_facts(project_root: Path, candidates: list[dict]) -> dict[s
                 "category": candidate.get("category"),
                 "primary_block": candidate.get("primary_block"),
                 "source_label": candidate.get("source_label"),
+                "source_url": candidate.get("source_url"),
                 "published_at": candidate.get("published_at"),
                 "why_now": candidate.get("why_now") or "",
                 "semantic_embedding_version": EMBEDDING_VERSION,

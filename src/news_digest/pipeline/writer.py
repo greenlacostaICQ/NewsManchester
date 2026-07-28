@@ -12,8 +12,8 @@ import time
 
 logger = logging.getLogger(__name__)
 
+from news_digest.pipeline.block_policy import BLOCK_POLICY_REGISTRY, block_policy
 from news_digest.pipeline.common import (
-    LOW_SIGNAL_BLOCKS,
     PRIMARY_BLOCKS,
     SECTION_MAX_ITEMS,
     SECTION_MAX_PER_SOURCE,
@@ -116,25 +116,11 @@ TODAY_FOCUS_TARGET_ITEMS = 4
 PUBLIC_DIGEST_MAX_VISIBLE_ITEMS = 40  # counted public budget; reserved sections can borrow within the hard cap
 PUBLIC_DIGEST_HARD_RENDERED_ITEMS = 52
 PUBLIC_SECTION_RESERVED_MIN = {
-    # Fresh/Today are the product spine of the morning issue. They must not be
-    # squeezed by later ticket/event rails when strong written news already
-    # exists.
-    "Свежие новости": FRESH_NEWS_TARGET_ITEMS,
-    TODAY_FOCUS_SECTION: SECTION_MIN_ITEMS.get(TODAY_FOCUS_SECTION, 3),
-    # These sections answer "what can I do / see / book now"; they must not
-    # disappear just because early news sections are noisy on a given morning.
-    "Выходные в GM": 8,
-    "Что важно в ближайшие 7 дней": 3,
-    "Еда, открытия и рынки": SECTION_MIN_ITEMS.get("Еда, открытия и рынки", 3),
-    "Business/tech события для тебя": 2,
-    "Билеты / Ticket Radar": 2,
-    "Футбол": 2,
-    "Русскоязычные концерты и стендап UK": 2,
-    # IT/business sits near the end of the order, so the visible-item budget was
-    # exhausted before it (valid items like a new HQ/office, startup, conference
-    # or development came back 'selected_not_published'). Reserve 2 slots so up
-    # to 2 real business items always make the issue when they exist.
-    "IT и бизнес": 2,
+    str(policy["heading"]): int(policy["min"])
+    for policy in BLOCK_POLICY_REGISTRY.values()
+    if int(policy.get("min") or 0)
+    and not bool(policy.get("optional"))
+    and str(policy.get("schedule") or "") != "retired"
 }
 def _candidate_publish_plan_status(candidate: dict | None) -> str:
     if not isinstance(candidate, dict):
@@ -1084,9 +1070,9 @@ def _reconcile_rendered_dropped_candidates(
 # last by reader-value rather than dropped entirely. The small diaspora rails
 # stay exempt — they serve a distinct audience and are short by nature.
 _PUBLIC_BUDGET_EXEMPT_SECTIONS = {
-    "Общественный транспорт сегодня",
-    "Русскоязычные концерты и стендап UK",
-    "Business/tech события для тебя",
+    str(policy["heading"])
+    for policy in BLOCK_POLICY_REGISTRY.values()
+    if bool(policy.get("budget_exempt"))
 }
 
 _MARKET_EVENT_RE = re.compile(
@@ -1165,16 +1151,6 @@ def _is_a_tier_ticket(candidate: dict | None) -> bool:
     return ticket_policy_is_a_tier(candidate)
 
 
-def _is_budget_exempt_a_tier(candidate: dict | None) -> bool:
-    """Every recognised A-tier ticket stays visible, regardless of venue.
-
-    The ticket caps still compact ordinary listings. They must not decide that
-    an A-tier artist is less relevant merely because the show is outside GM or
-    because the issue has already reached its usual item budget.
-    """
-    return _is_a_tier_ticket(candidate)
-
-
 def _is_active_tram_transport(candidate: dict | None) -> bool:
     """Active Metrolink/tram items must not be trimmed by the public budget.
 
@@ -1215,6 +1191,13 @@ def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
     # and should survive a noisy news morning). A-tier artists are always exempt.
     # Dated weekend events (E4) are exempt too: a confirmed this-weekend date
     # means the reader can act on it, so the budget must not silently cut it.
+    section_policy = block_policy(section_name)
+    notability = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+    tier = str(notability.get("tier") or candidate.get("ticket_tier") or "").upper()
+    tier_is_exempt = tier in {
+        str(value).upper()
+        for value in section_policy.get("cap_exempt_tiers") or ()
+    }
     return (
         _is_publish_plan_must_show(candidate)
         or (
@@ -1223,7 +1206,7 @@ def _is_public_budget_exempt(section_name: str, candidate: dict | None) -> bool:
         )
         or _is_active_tram_transport(candidate)
         or _is_market_or_recurring_event(candidate)
-        or _is_budget_exempt_a_tier(candidate)
+        or tier_is_exempt
         or _is_dated_weekend_event(section_name, candidate)
     )
 
@@ -3350,9 +3333,19 @@ def _has_clear_section_story(candidate: dict, line: str) -> bool:
     text = re.sub(r"<[^>]+>", " ", str(line or ""))
     if not re.search(r"[.!?]", text):
         return False
-    if not re.search(r":|—|\b(?:совет|полиция|суд|служба|жител|бизнес|школ|больниц|council|police|court)\b", text, re.IGNORECASE):
+    if len(re.sub(r"\s+", " ", text).strip()) < 90:
         return False
-    return len(re.sub(r"\s+", " ", text).strip()) >= 90
+    # A complete City fact frame does not need padding to 150 characters.
+    # Property, planning and institutional stories often use a named company
+    # rather than one of the old hard-coded civic nouns.
+    return bool(
+        str(candidate.get("title") or "").strip()
+        and (
+            str(candidate.get("summary") or "").strip()
+            or str(candidate.get("lead") or "").strip()
+            or str(candidate.get("evidence_text") or "").strip()
+        )
+    )
 
 
 def _service_fallback_subject(title: str) -> str:
@@ -4510,16 +4503,20 @@ _FOOTBALL_CLUB_DECISION_RE = re.compile(
     re.IGNORECASE,
 )
 _FOOTBALL_OFFICIAL_MATCH_RE = re.compile(
-    r"\b(?:fixture|team\s+news|squad|line[- ]?up|kick[- ]?off|matchday|"
-    r"fa\s+cup|premier\s+league|champions\s+league|europa\s+league|wsl)\b",
+    r"\b(?:fixture|team\s+news|confirmed\s+squad|line[- ]?up|kick[- ]?off|matchday)\b|"
+    r"\b(?:fa\s+cup|premier\s+league|champions\s+league|europa\s+league|wsl)"
+    r"\s+(?:match|fixture|tie|game)\b",
     re.IGNORECASE,
 )
 
 
 def _football_priority_kind(candidate: dict) -> str:
+    # Ranking facts are limited to the story's own editorial fields plus typed
+    # facts.  evidence_text/draft_line can contain page sidebars and unrelated
+    # headlines, which previously promoted speculation into official news.
     blob = " ".join(
         str(candidate.get(field) or "")
-        for field in ("title", "summary", "lead", "evidence_text", "draft_line")
+        for field in ("title", "summary", "lead")
     )
     if _FOOTBALL_AGGREGATED_RUMOUR_RE.search(blob):
         return "aggregated_rumour"
@@ -4542,12 +4539,39 @@ def _football_priority_kind(candidate: dict) -> str:
         and not _FOOTBALL_SPECULATIVE_TRANSFER_RE.search(blob)
     ):
         return "confirmed_contract"
+    football_facts = (
+        candidate.get("football_facts")
+        if isinstance(candidate.get("football_facts"), dict)
+        else {}
+    )
+    match_status = str(
+        football_facts.get("match_status")
+        or candidate.get("match_status")
+        or candidate.get("fixture_status")
+        or ""
+    ).strip().lower()
+    if match_status in {"result", "finished", "full_time", "full-time"}:
+        return "result"
     if _FOOTBALL_RESULT_RE.search(blob):
         return "result"
+    injury_status = str(
+        football_facts.get("injury_status") or candidate.get("injury_status") or ""
+    ).strip().lower()
+    if injury_status in {"confirmed", "injured", "ruled_out", "return_confirmed"}:
+        return "injury"
     if _FOOTBALL_INJURY_RE.search(blob):
         return "injury"
+    club_status = str(
+        football_facts.get("club_decision_status")
+        or candidate.get("club_decision_status")
+        or ""
+    ).strip().lower()
+    if club_status in {"announced", "confirmed", "official"}:
+        return "club_decision"
     if _FOOTBALL_CLUB_DECISION_RE.search(blob):
         return "club_decision"
+    if match_status in {"confirmed", "official", "scheduled", "team_news"}:
+        return "official_match"
     if _FOOTBALL_OFFICIAL_MATCH_RE.search(blob):
         return "official_match"
     return "other"
@@ -4579,7 +4603,9 @@ def _is_confirmed_football_alternative(candidate: dict) -> bool:
     }
 
 
-_NUMBER_TOKEN_RE = re.compile(r"\b\d{1,4}(?:[,.]\d{3})*(?:\.\d+)?\b")
+_NUMBER_TOKEN_RE = re.compile(
+    r"\b\d{1,4}(?:[,\u00a0\u202f ]\d{3})*(?:\.\d+)?\b"
+)
 _TIME_TOKEN_RE = re.compile(r"\b(\d{1,2})[:.](\d{2})\s*(?:am|pm|a\.m\.|p\.m\.)?\b", re.IGNORECASE)
 _MONEY_MAGNITUDE_RE = re.compile(r"\b£?\s*(\d+(?:\.\d+)?)\s*(m|million|bn|billion)\b", re.IGNORECASE)
 
@@ -4602,7 +4628,7 @@ def _number_tokens(value: str) -> set[str]:
         except ValueError:
             pass
     for match in _NUMBER_TOKEN_RE.finditer(text):
-        normalised = match.group(0).replace(",", "")
+        normalised = re.sub(r"[,\u00a0\u202f ]", "", match.group(0))
         if normalised in {"0", "00"}:
             continue
         tokens.add(normalised)

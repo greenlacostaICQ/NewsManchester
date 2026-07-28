@@ -902,6 +902,129 @@ class BuildRecordTest(unittest.TestCase):
         self.assertEqual(report["funnel"]["merged_into_live"], 1)
         self.assertEqual(report["lineage_status_counts"]["hybrid_merged_into_live"], 1)
 
+    def test_weekend_roundtrip_preserves_registry_required_facts(self) -> None:
+        candidate = {
+            "fingerprint": "weekend-roundtrip",
+            "title": "Hillside Festival",
+            "summary": "A family festival in Greater Manchester.",
+            "source_url": "https://example.test/hillside",
+            "booking_url": "https://example.test/hillside",
+            "source_label": "Weekend Source",
+            "primary_block": "weekend_activities",
+            "category": "culture_weekly",
+            "activity_type": "family_festival",
+            "gm_fit": True,
+            "specific_event": True,
+            "event": {
+                "is_event": True,
+                "event_name": "Hillside Festival",
+                "venue": "Bury",
+                "date_start": "2026-08-01",
+                "booking_url": "https://example.test/hillside",
+            },
+        }
+        record = build_inventory_record(
+            candidate,
+            prompt_version=1,
+            now_iso="2026-07-28T09:00:00+01:00",
+            run_id="night-events",
+            wave="events",
+            source_name="Weekend Source",
+            source_report_category="culture_weekly",
+        )
+        restored = inventory_record_to_candidate(record)
+        self.assertEqual(restored["activity_type"], "family_festival")
+        self.assertIs(restored["gm_fit"], True)
+        self.assertTrue(restored["specific_event"])
+        self.assertEqual(restored["action_url"], "https://example.test/hillside")
+
+    def test_weekend_tuesday_card_reenters_on_friday_after_source_304(self) -> None:
+        record = {
+            "fingerprint": "weekend-friday",
+            "title": "Hillside Festival",
+            "summary": "A family festival in Bury.",
+            "source_url": "https://example.test/hillside",
+            "booking_url": "https://example.test/hillside",
+            "source_label": "Weekend Source",
+            "source_name": "Weekend Source",
+            "primary_block": "weekend_activities",
+            "category": "culture_weekly",
+            "source_report_category": "culture_weekly",
+            "quality_status": "needs_text",
+            "missing_facts": ["draft_line"],
+            "last_seen_at": "2026-07-28T09:00:00+01:00",
+            "run_id": "night-events",
+            "wave": "events",
+            "observed_in_wave": True,
+            "action_url_liveness": "alive",
+            "serving_ttl_hours": 96,
+            "fact_card": {
+                "event_name": "Hillside Festival",
+                "specific_event": True,
+                "venue": "Bury",
+                "date_start": "2026-08-01",
+                "action_url": "https://example.test/hillside",
+                "activity_type": "family_festival",
+                "gm_fit": True,
+            },
+        }
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-31T08:00:00+01:00"),
+        ):
+            inserted, report = build_morning_inventory_intake(
+                [record],
+                existing_candidates=[],
+                mode="assist",
+                today="2026-07-31",
+                unchanged_source_confirmations={("culture_weekly", "Weekend Source")},
+            )
+        self.assertEqual([row["fingerprint"] for row in inserted], ["weekend-friday"])
+        self.assertEqual(inserted[0]["inventory_live_confirmation"], "source_not_modified")
+        self.assertEqual(report["lineage_status_counts"]["inserted_into_pipeline"], 1)
+
+    def test_weekend_304_does_not_revive_dead_action_url(self) -> None:
+        record = {
+            "fingerprint": "weekend-dead-link",
+            "title": "Hillside Festival",
+            "summary": "A family festival in Bury.",
+            "source_url": "https://example.test/hillside",
+            "source_label": "Weekend Source",
+            "source_name": "Weekend Source",
+            "primary_block": "weekend_activities",
+            "category": "culture_weekly",
+            "source_report_category": "culture_weekly",
+            "quality_status": "needs_text",
+            "missing_facts": ["draft_line"],
+            "last_seen_at": "2026-07-28T09:00:00+01:00",
+            "run_id": "night-events",
+            "wave": "events",
+            "observed_in_wave": True,
+            "action_url_liveness": "dead",
+            "fact_card": {
+                "event_name": "Hillside Festival",
+                "specific_event": True,
+                "venue": "Bury",
+                "date_start": "2026-08-01",
+                "action_url": "https://example.test/hillside",
+                "activity_type": "family_festival",
+                "gm_fit": True,
+            },
+        }
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-31T08:00:00+01:00"),
+        ):
+            inserted, report = build_morning_inventory_intake(
+                [record],
+                existing_candidates=[],
+                mode="assist",
+                today="2026-07-31",
+                unchanged_source_confirmations={("culture_weekly", "Weekend Source")},
+            )
+        self.assertEqual(inserted, [])
+        self.assertEqual(report["rejected"]["dead_link"], 1)
+
     def test_food_304_confirms_only_current_wave_and_keeps_completeness_honest(self) -> None:
         def food_record(fingerprint: str, source: str, last_seen: str) -> dict:
             return {

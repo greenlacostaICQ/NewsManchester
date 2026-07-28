@@ -10,12 +10,14 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from datetime import timedelta
 from pathlib import Path
 from unittest.mock import patch
 
+from news_digest.pipeline.block_policy import BLOCK_POLICY_VERSION
 from news_digest.pipeline.common import candidates_by_fingerprint, canonical_url_identity, now_london
 from news_digest.pipeline.editor import edit_digest
 from news_digest.pipeline.plan_digest import run_plan_digest
@@ -110,6 +112,82 @@ class PlanContractTest(unittest.TestCase):
         fresh_slots = [slot for slot in plan["slots"] if slot["block"] == "last_24h"]
         self.assertTrue(any(slot.get("backup_fingerprints") for slot in fresh_slots))
         self.assertGreater(report["totals"]["backups_assigned"], 0)
+
+    def test_rank_recommendation_does_not_mutate_include_but_planner_executes_it(self) -> None:
+        candidate = _candidate(
+            90,
+            rewrite_shortlist_status="board_rejected",
+            digest_selection_verdict="reserve",
+        )
+        self.assertTrue(candidate["include"])
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, [candidate])
+            run_plan_digest(root)
+            plan = load_plan(state_dir)
+        self.assertTrue(candidate["include"])
+        self.assertTrue(
+            any(
+                row["fingerprint"] == candidate["fingerprint"]
+                and row["reason"] == "rank_recommendation:board_rejected"
+                for row in plan["out_sample"]
+            )
+        )
+
+    def test_rank_cost_guard_does_not_mutate_include_but_planner_executes_it(self) -> None:
+        candidate = _candidate(
+            91,
+            rewrite_shortlist_status="held_cost_after_quality",
+            digest_selection_verdict="needs_enrichment",
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, [candidate])
+            run_plan_digest(root)
+            plan = load_plan(state_dir)
+        self.assertTrue(candidate["include"])
+        self.assertTrue(
+            any(
+                row["fingerprint"] == candidate["fingerprint"]
+                and row["reason"] == "rank_recommendation:held_cost_after_quality"
+                for row in plan["out_sample"]
+            )
+        )
+
+    def test_planner_is_final_owner_of_generic_cross_day_repeat(self) -> None:
+        candidate = _candidate(
+            92,
+            change_type="same_story_rehash",
+            dedupe_decision="repeat_pending_planner",
+            repeat_policy_previous={
+                "fingerprint": "previous-source-version",
+                "title": "Manchester service update 92",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "last_published_day_london": "2026-07-27",
+                "published_count": 4,
+            },
+        )
+        with patch.dict(os.environ, {"NEWS_DIGEST_FAKE_NOW": "2026-07-28T08:00:00"}):
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                state_dir = _seed(root, [candidate])
+                run_plan_digest(root)
+                plan = load_plan(state_dir)
+                stored = json.loads(
+                    (state_dir / "candidates.json").read_text(encoding="utf-8")
+                )["candidates"][0]
+        self.assertFalse(any(
+            slot["primary_fingerprint"] == candidate["fingerprint"]
+            for slot in plan["slots"]
+        ))
+        self.assertFalse(stored["governing_repeat_decision"]["allow"])
+        self.assertEqual(stored["governing_repeat_decision"]["owner"], "plan_digest")
+        self.assertTrue(any(
+            row["fingerprint"] == candidate["fingerprint"]
+            and row["reason"].startswith("repeat_blocked:")
+            for row in plan["out_sample"]
+        ))
 
     def test_1_plan_is_deterministic_for_same_input(self) -> None:
         candidates = [_candidate(i) for i in range(8)]
@@ -506,6 +584,58 @@ class PlanContractTest(unittest.TestCase):
         self.assertEqual(outcome["status"], "calendar_blocked")
         self.assertEqual(plan["a_tier_conservation"]["eligible"], 0)
 
+    def test_7ba_final_a_tier_repeat_overrides_stale_preliminary_b_tier_decision(self) -> None:
+        ticket = _candidate(
+            704,
+            block="ticket_radar",
+            category="venues_tickets",
+            title="Global Star — event 2026-07-31 — public sale",
+            event={
+                "date_start": "2026-07-31",
+                "event_name": "Global Star",
+                "venue": "Co-op Live",
+                "booking_url": "https://example.test/tickets/global-star",
+                "is_event": True,
+            },
+            ticket_notability={"artist": "Global Star", "tier": "A", "kind": "artist"},
+            ticket_type="regular_upcoming",
+            venue_scope="GM",
+            visible_repeat_verdict={
+                "allow": False,
+                "repeat_class": "blocked",
+                "reason": "no_eligible_new_phase",
+            },
+            repeat_policy_previous={
+                "fingerprint": "old-source-labelled-fingerprint",
+                "last_published_day_london": "2026-07-27",
+                "published_count": 99,
+                "primary_block": "ticket_radar",
+                "event": {
+                    "date_start": "2026-07-31",
+                    "event_name": "Global Star",
+                    "venue": "Co-op Live",
+                    "is_event": True,
+                },
+                "ticket_notability": {"artist": "Global Star", "tier": "B"},
+                "ticket_type": "regular_upcoming",
+            },
+        )
+        with patch.dict(os.environ, {"NEWS_DIGEST_FAKE_NOW": "2026-07-28T08:00:00"}):
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                state_dir = _seed(root, [ticket])
+                run_plan_digest(root)
+                plan = load_plan(state_dir)
+                stored = json.loads(
+                    (state_dir / "candidates.json").read_text(encoding="utf-8")
+                )["candidates"][0]
+        self.assertTrue(
+            any(slot["primary_fingerprint"] == ticket["fingerprint"] for slot in plan["slots"])
+        )
+        self.assertTrue(stored["governing_repeat_decision"]["allow"])
+        self.assertEqual(stored["governing_repeat_decision"]["reason"], "event_milestone_d3")
+        self.assertEqual(stored["governing_repeat_decision"]["owner"], "plan_digest")
+
     def test_7bb_verify_uses_planner_a_tier_ledger_not_stale_candidate_flag(self) -> None:
         today = now_london().date()
         eligible = _candidate(
@@ -591,7 +721,7 @@ class PlanContractTest(unittest.TestCase):
         self.assertEqual(report["a_tier_conservation"]["visible"], 1)
         self.assertEqual(report["a_tier_conservation"]["calendar_blocked"], 1)
         self.assertEqual(report["a_tier_conservation"]["missing"], [])
-        self.assertEqual(report["block_policy_version"], "2026-07-27.p0")
+        self.assertEqual(report["block_policy_version"], BLOCK_POLICY_VERSION)
         self.assertFalse(
             any(
                 row["kind"].startswith("a_tier_missing")

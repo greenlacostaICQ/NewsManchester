@@ -3222,7 +3222,23 @@ def _extract_nre_incidents(source: SourceDef, body: str) -> list[ExtractedItem]:
     return items or _extract_national_rail(source, body)
 
 
-def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
+def _extract_source_candidates(
+    source: SourceDef,
+    body: str,
+    *,
+    trace: dict[str, object] | None = None,
+) -> list[dict]:
+    reject_reasons: Counter[str] = Counter()
+    funnel: dict[str, object] = {
+        "raw_extracted": 0,
+        "url_gate_passed": 0,
+        "date_gate_passed": 0,
+        "geo_gate_passed": 0,
+        "routing_passed": 0,
+        "candidates": 0,
+        "geo_gate_owner": "source policy here; final GM consequence gate in validator",
+        "top_reject_reasons": [],
+    }
     if source.source_type == "json_funnelback":
         links = _extract_funnelback_items(body)
     elif source.source_type == "xml_sitemap":
@@ -3293,6 +3309,7 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
     jsonld_event_links = _extract_jsonld_event_items(source, body)
     if jsonld_event_links:
         links = jsonld_event_links + links
+    funnel["raw_extracted"] = len(links)
 
     visit_manchester_pre_enriched = source.source_type == "html_visitmanchester_events"
     if visit_manchester_pre_enriched:
@@ -3334,10 +3351,14 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
             )
         )
         if not jsonld_event_item and not same_source_page and not _is_allowed_source_link(source, base_url, item.title, item.summary):
+            reject_reasons["url_or_geo_source_policy"] += 1
             continue
         if normalized_url in seen:
+            reject_reasons["duplicate_url"] += 1
             continue
         seen.add(normalized_url)
+        funnel["url_gate_passed"] = int(funnel["url_gate_passed"]) + 1
+        funnel["geo_gate_passed"] = int(funnel["geo_gate_passed"]) + 1
         if not visit_manchester_pre_enriched:
             item = _enrich_item(source, item)
         if source.name == "Fairfield Social Club":
@@ -3358,6 +3379,7 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
             item.lead,
             item.evidence_text,
         ):
+            reject_reasons["diaspora_signal"] += 1
             continue
         published_at = item.published_at or _published_at_from_title_or_url(item.title, normalized_url)
         freshness_status = _freshness_status(source, published_at)
@@ -3371,9 +3393,11 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
             # 'soft city background' that crowds the digest — drop it.
             text_blob = f"{item.title or ''} {item.summary or ''}"
             if not _looks_like_city_watch_topical(text_blob):
+                reject_reasons["date_gate_stale_or_undated"] += 1
                 continue
             primary_block = "city_watch"
         if source.report_category == "transport" and _is_stale_transport(published_at, item.title):
+            reject_reasons["date_gate_stale_transport"] += 1
             continue
         if source.report_category == "public_services" and _is_stale_public_service(published_at, item.title):
             # GMMH and similar public-services sources publish soft PR
@@ -3415,8 +3439,6 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
             )
         # Block-policy filters: ticket horizon, listicle openings, football fluff.
         _adjust_ticket_radar_block(candidate)
-        if source.report_category == "food_openings" and _is_listicle_opening(item.title):
-            continue
         # Drop food_openings entries with a publication date older than 21 days.
         # Last week's digest carried Popeyes from late February and Sticks'n'Sushi
         # from March 30 — those slots should rotate, not freeze. We accept
@@ -3429,9 +3451,14 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
                     from datetime import date  # noqa: PLC0415
                     delta = (now_london().date() - date.fromisoformat(pub_day)).days
                     if delta > 21:
+                        reject_reasons["date_gate_old_food"] += 1
                         continue
             except (ValueError, TypeError):
                 pass
+        funnel["date_gate_passed"] = int(funnel["date_gate_passed"]) + 1
+        if source.report_category == "food_openings" and _is_listicle_opening(item.title):
+            reject_reasons["food_listicle"] += 1
+            continue
         official_youtube_match_highlight = (
             source.name == "Manchester United"
             and source.source_type == "rss"
@@ -3446,13 +3473,22 @@ def _extract_source_candidates(source: SourceDef, body: str) -> list[dict]:
             and _is_football_fluff(item.title, normalized_url)
             and not official_youtube_match_highlight
         ):
+            reject_reasons["football_fluff"] += 1
             continue
-        candidate["fingerprint"] = fingerprint_for_candidate(candidate)
+        funnel["routing_passed"] = int(funnel["routing_passed"]) + 1
         event_instance_id = str((item.structured_event_hint or {}).get("event_instance_id") or "").strip()
         if event_instance_id:
             candidate["event_instance_id"] = event_instance_id
-            candidate["fingerprint"] = f"{candidate['fingerprint']}-{event_instance_id}"[:180]
+        candidate["fingerprint"] = fingerprint_for_candidate(candidate)
         candidates.append(candidate)
         if len(candidates) >= source.max_candidates:
             break
+    funnel["candidates"] = len(candidates)
+    funnel["top_reject_reasons"] = [
+        {"reason": reason, "count": count}
+        for reason, count in reject_reasons.most_common(8)
+    ]
+    if trace is not None:
+        trace.clear()
+        trace.update(funnel)
     return candidates

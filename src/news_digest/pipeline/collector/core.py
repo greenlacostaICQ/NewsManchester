@@ -319,6 +319,11 @@ def _source_health_template(source) -> dict:
         "duration_seconds": 0.0,
         "fetch_duration_seconds": 0.0,
         "extract_duration_seconds": 0.0,
+        "byte_count": 0,
+        "post_count": 0,
+        "extraction_funnel": {},
+        "empty_retry_performed": False,
+        "empty_retry_result": "",
     }
 
 
@@ -457,6 +462,11 @@ def _build_source_health_report(collector_report: dict) -> dict[str, object]:
                 "warnings": entry.get("warnings") or [],
                 "fetch_duration_seconds": float(entry.get("fetch_duration_seconds") or 0.0),
                 "extract_duration_seconds": float(entry.get("extract_duration_seconds") or 0.0),
+                "byte_count": int(entry.get("byte_count") or 0),
+                "post_count": int(entry.get("post_count") or 0),
+                "extraction_funnel": entry.get("extraction_funnel") or {},
+                "empty_retry_performed": bool(entry.get("empty_retry_performed")),
+                "empty_retry_result": str(entry.get("empty_retry_result") or ""),
                 "duration_seconds": float(entry.get("duration_seconds") or 0.0),
                 "needs_action": needs_action,
             }
@@ -542,7 +552,8 @@ def _collect_single_source(source) -> tuple[dict, list[dict]]:
             return source_health, []
         source_health["fetch_duration_seconds"] = round(time.perf_counter() - fetch_started_at, 3)
         if attempt_log:
-            source_health["fallback_used"] = True
+            source_health["fallback_used"] = fetched_url != source.url
+        if source_health["fallback_used"]:
             source_health["warnings"].append(
                 f"primary URL failed; switched to fallback {fetched_url}"
             )
@@ -553,8 +564,48 @@ def _collect_single_source(source) -> tuple[dict, list[dict]]:
             body, pagination_warnings = _fetch_ticketmaster_paginated_body(source, body, fetched_url)
             source_health["warnings"].extend(pagination_warnings)
 
+        source_health["byte_count"] = len(body.encode("utf-8", errors="replace"))
         extract_started_at = time.perf_counter()
-        source_candidates = _extract_source_candidates(source, body)
+        extraction_funnel: dict[str, object] = {}
+        source_candidates = _extract_source_candidates(source, body, trace=extraction_funnel)
+        retryable_empty = (
+            not source_candidates
+            and bool(body.strip())
+            and (
+                str(source.source_type or "").startswith("json_")
+                or str(source.source_type or "") == "rss"
+                or "<rss" in body[:500].lower()
+                or "<feed" in body[:500].lower()
+            )
+        )
+        if retryable_empty:
+            source_health["empty_retry_performed"] = True
+            try:
+                retry_body, retry_url, retry_attempt_log = _fetch_source_body(source, use_cache=False)
+                retry_funnel: dict[str, object] = {}
+                retry_candidates = _extract_source_candidates(source, retry_body, trace=retry_funnel)
+                source_health["retry_byte_count"] = len(retry_body.encode("utf-8", errors="replace"))
+                source_health["retry_post_count"] = int(retry_funnel.get("raw_extracted") or 0)
+                source_health["empty_retry_result"] = (
+                    "recovered" if retry_candidates else "still_empty"
+                )
+                source_health["empty_retry_fetched_url"] = _redact_sensitive_url(retry_url)
+                for attempt_note in retry_attempt_log:
+                    source_health["warnings"].append(
+                        f"empty retry attempt failed: {_redact_sensitive_text(attempt_note)}"
+                    )
+                if retry_candidates:
+                    body = retry_body
+                    source_candidates = retry_candidates
+                    extraction_funnel = retry_funnel
+                    source_health["byte_count"] = source_health["retry_byte_count"]
+            except Exception as exc:  # noqa: BLE001 - one bounded diagnostic retry
+                source_health["empty_retry_result"] = "retry_failed"
+                source_health["warnings"].append(
+                    f"unexpected-empty retry failed: {_redact_sensitive_text(str(exc))}"
+                )
+        source_health["extraction_funnel"] = extraction_funnel
+        source_health["post_count"] = int(extraction_funnel.get("raw_extracted") or 0)
         for candidate in source_candidates:
             if isinstance(candidate, dict):
                 candidate["source_report_category"] = source.report_category

@@ -11,11 +11,54 @@ from news_digest.pipeline.pre_send_quality_judge import (
     _apply_repair_executor,
     _fact_lock_errors_for_replacement,
     _finalize_repair_report,
+    _repair_request_already_satisfied,
 )
 from news_digest.pipeline.plan_execution import build_final_execution_report
 
 
 class PreSendRepairExecutorTest(unittest.TestCase):
+    def test_judge_cannot_remove_supported_structured_date_or_stockport_venue(self) -> None:
+        candidate = {
+            "title": "Business conference at Stockport Exchange",
+            "summary": "The conference takes place at Stockport Exchange on 31 July 2026.",
+            "source_label": "Official organiser",
+            "event": {
+                "event_name": "Business conference",
+                "venue": "Stockport Exchange",
+                "borough": "Stockport",
+                "date_start": "2026-07-31",
+            },
+        }
+        line = "• Конференция пройдёт 31 июля в Stockport Exchange."
+        self.assertTrue(
+            _repair_request_already_satisfied(
+                {
+                    "risk": "factual",
+                    "reason": "The date and Stockport venue are incorrect.",
+                },
+                line,
+                candidate,
+            )
+        )
+
+    def test_bidirectional_lock_does_not_protect_an_unsupported_amount(self) -> None:
+        candidate = {
+            "title": "Club discusses a possible transfer",
+            "summary": "No fee has been announced or confirmed.",
+            "source_label": "Club source",
+        }
+        line = "• Клуб якобы заплатит £85m за трансфер."
+        self.assertFalse(
+            _repair_request_already_satisfied(
+                {
+                    "risk": "factual",
+                    "reason": "The £85m amount is unsupported.",
+                },
+                line,
+                candidate,
+            )
+        )
+
     def test_repair_fact_lock_ignores_copied_source_anchor_but_not_new_claims(self) -> None:
         candidate = {
             "source_label": "MEN News Sitemap",

@@ -140,7 +140,13 @@ class PromptVersioningTest(unittest.TestCase):
         held = [c for c in candidates if c.get("rewrite_shortlist_status") == "backup_before_rewrite"]
         self.assertEqual(len(held), 3)
         self.assertTrue(all(c["backup_candidate"] for c in held))
-        self.assertTrue(all(not c["include"] for c in held))
+        self.assertTrue(all(c["include"] for c in held))
+        self.assertTrue(
+            all(
+                c["digest_selection_verdict"] in {"reserve", "needs_enrichment"}
+                for c in held
+            )
+        )
 
     def test_today_practical_reserve_survives_rewrite_shortlist_cap(self) -> None:
         practical = {

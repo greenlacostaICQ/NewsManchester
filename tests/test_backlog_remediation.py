@@ -920,12 +920,11 @@ class EventQualityPipelineTest(unittest.TestCase):
             updated["reject_reasons"],
         )
 
-    def test_validator_blocks_cross_day_rehash_of_food_opening(self) -> None:
+    def test_validator_defers_cross_day_food_repeat_to_planner(self) -> None:
         """2026-05-25 complaint: GRUB Stretford shipped 4 days in a row.
 
-        Same fingerprint already in yesterday's daily_index must be
-        blocked today as cross_day_rehash — regardless of LLM-assigned
-        change_type ('reminder' / 'same_story_new_facts').
+        Validator must preserve the previous row for the planner's single
+        governing decision; it must not create a second final repeat gate.
         """
         from datetime import date, timedelta
         with tempfile.TemporaryDirectory() as tmp:
@@ -964,11 +963,18 @@ class EventQualityPipelineTest(unittest.TestCase):
             validate_candidates(root)
             payload = json.loads((state_dir / "candidates.json").read_text(encoding="utf-8"))
             cand = payload["candidates"][0]
-            self.assertFalse(
-                cand["include"],
-                msg=f"Cross-day rehash should be blocked but include={cand['include']}; reason={cand.get('reason')}",
+            self.assertTrue(cand["include"], cand)
+            self.assertEqual(
+                cand["repeat_policy_previous"]["fingerprint"],
+                "grub-stretford",
             )
-            self.assertIn("cross_day_rehash", cand.get("reject_reasons") or [])
+            self.assertTrue(
+                any(
+                    str(reason).startswith("cross_day_repeat_pending_planner:")
+                    for reason in cand.get("quality_warnings") or []
+                )
+            )
+            self.assertNotIn("cross_day_rehash", cand.get("reject_reasons") or [])
 
     def test_validator_does_not_block_cross_day_for_transport_disruption(self) -> None:
         """Ongoing transport disruption legitimately re-appears each day —
@@ -1687,9 +1693,10 @@ class PublishedReviewTest(unittest.TestCase):
             self.assertTrue(result.ok)
             # P0-A: a thin draft (no lead, sections under minimum) still ships,
             # Этап 3: dedupe-потеря решена планёркой ДО вёрстки — это plan-out,
-            # не видимый дефект выпуска; решение честное "pass" без шума —
+            # не возвращается как отдельный "possible miss", но единый реестр
+            # честно помечает недобор обязательных блоков как ship_degraded —
             # and the visible-contract report always exists (RC1).
-            self.assertEqual(report["release_decision"], "pass")
+            self.assertEqual(report["release_decision"], "ship_degraded")
             self.assertTrue((state_dir / "visible_contract_report.json").exists())
             self.assertEqual(report["errors"], [])
             # Retired 2026-07-10: the daily "possible real misses" reports were

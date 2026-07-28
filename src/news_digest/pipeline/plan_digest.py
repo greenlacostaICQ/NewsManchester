@@ -175,7 +175,7 @@ def _a_tier_physical_key(candidate: dict) -> str:
 
 
 def _stored_repeat_allows(candidate: dict) -> bool:
-    verdict = candidate.get("visible_repeat_verdict")
+    verdict = candidate.get("governing_repeat_decision")
     return not isinstance(verdict, dict) or bool(verdict.get("allow"))
 
 
@@ -411,6 +411,42 @@ def _backup_eligible(candidate: dict) -> tuple[bool, str]:
     return True, render_path
 
 
+def _stamp_governing_repeat_decision(
+    candidate: dict,
+    previous_by_fp: dict[str, dict],
+) -> dict[str, object]:
+    """Make the planner's one final repeat decision after canonical tiering."""
+    previous = previous_by_fp.get(str(candidate.get("fingerprint") or ""))
+    if previous is None and isinstance(candidate.get("repeat_policy_previous"), dict):
+        previous = candidate["repeat_policy_previous"]
+    if previous is not None:
+        from news_digest.pipeline.repeat_policy import visible_repeat_verdict  # noqa: PLC0415
+
+        decision = {
+            **visible_repeat_verdict(candidate, previous).as_dict(),
+            "owner": "plan_digest",
+            "previous_fingerprint": str(previous.get("fingerprint") or ""),
+            "block_policy_version": BLOCK_POLICY_VERSION,
+        }
+    else:
+        decision = {
+            "allow": True,
+            "repeat_class": "new",
+            "reason": "no_previous_match",
+            "owner": "plan_digest",
+            "previous_fingerprint": "",
+            "block_policy_version": BLOCK_POLICY_VERSION,
+        }
+    candidate["governing_repeat_decision"] = decision
+    if decision.get("allow") and decision.get("repeat_class") in {"calendar", "lifecycle"}:
+        candidate["why_now"] = (
+            "ticket_opportunity"
+            if decision.get("repeat_class") == "calendar"
+            else "update_today"
+        )
+    return decision
+
+
 def _admission_verdict(candidate: dict, previous_by_fp: dict[str, dict]) -> tuple[str, str]:
     """Порт цепочки исключений писателя + repeat-политика (переехала с release).
 
@@ -436,14 +472,15 @@ def _admission_verdict(candidate: dict, previous_by_fp: dict[str, dict]) -> tupl
         return "out", "outside_current_weekend"
     if _is_expired_event_candidate(candidate, _blob(candidate)):
         return "out", "expired_event"
-    # Повторы решаются ЗДЕСЬ, один раз — release больше не режет готовый HTML.
-    previous = previous_by_fp.get(str(candidate.get("fingerprint") or ""))
-    if previous is not None:
-        from news_digest.pipeline.repeat_policy import visible_repeat_verdict  # noqa: PLC0415
-
-        verdict = visible_repeat_verdict(candidate, previous)
-        if not verdict.allow:
-            return "out", f"repeat_blocked:{verdict.reason}"
+    # Повтор уже решён один раз для всего пула после канонического tier.
+    # Ни caps, ни collapse, ни release не пересчитывают это решение.
+    verdict = (
+        candidate.get("governing_repeat_decision")
+        if isinstance(candidate.get("governing_repeat_decision"), dict)
+        else _stamp_governing_repeat_decision(candidate, previous_by_fp)
+    )
+    if not bool(verdict.get("allow")):
+        return "out", f"repeat_blocked:{verdict.get('reason') or 'repeat_not_allowed'}"
     return "ok", ""
 
 
@@ -579,36 +616,16 @@ def run_plan_digest(project_root: Path) -> StageResult:
     # кандидата нет notability-штампа, добираем его из локального кэша.
     # Сетевые промахи глотаем: в replay сеть закрыта на уровне сокета.
     notability_cache = state_dir / "ticket_notability_cache.json"
-    if notability_cache.exists():
-        from news_digest.pipeline.ticket_notability import enrich_ticket_notability  # noqa: PLC0415
+    from news_digest.pipeline.ticket_notability import stamp_canonical_ticket_notability  # noqa: PLC0415
 
-        for candidate in candidates:
-            if not isinstance(candidate, dict):
-                continue
-            if isinstance(candidate.get("ticket_notability"), dict) and candidate["ticket_notability"].get("tier"):
-                continue
-            if str(candidate.get("category") or "") != "venues_tickets" and str(candidate.get("primary_block") or "") not in {
-                "ticket_radar",
-                "outside_gm_tickets",
-                "russian_events",
-            }:
-                continue
-            try:
-                notability = enrich_ticket_notability(candidate, notability_cache)
-            except Exception:  # noqa: BLE001 — offline replay: сеть закрыта
-                continue
-            candidate["ticket_notability"] = {
-                "artist": notability.artist,
-                "kind": notability.kind,
-                "tier": notability.tier,
-                "confidence": notability.confidence,
-                "signal": notability.signal,
-                "wikidata_id": notability.wikidata_id,
-                "sitelinks": notability.sitelinks,
-                "headliners": list(notability.headliners),
-                "signals": notability.signals or {},
-                "event_owner": notability.event_owner,
-            }
+    try:
+        notability_stamp = stamp_canonical_ticket_notability(candidates, notability_cache)
+    except Exception:  # noqa: BLE001 — offline replay: сеть закрыта
+        notability_stamp = {"stamped": 0, "artists": 0, "error": "cache_read_failed"}
+
+    for candidate in candidates:
+        if isinstance(candidate, dict):
+            _stamp_governing_repeat_decision(candidate, previous_by_fp)
 
     a_tier_identity = _collapse_a_tier_event_runs(candidates)
 
@@ -637,16 +654,9 @@ def run_plan_digest(project_root: Path) -> StageResult:
         if not isinstance(candidate, dict):
             continue
         verdict = str(candidate.get("digest_selection_verdict") or "")
+        shortlist_status = str(candidate.get("rewrite_shortlist_status") or "")
         included = bool(candidate.get("include"))
         a_tier_eligible, a_tier_reason = a_tier_ticket_policy(candidate)
-        upstream_repeat = (
-            candidate.get("visible_repeat_verdict")
-            if isinstance(candidate.get("visible_repeat_verdict"), dict)
-            else {}
-        )
-        if a_tier_eligible and upstream_repeat and not bool(upstream_repeat.get("allow")):
-            a_tier_eligible = False
-            a_tier_reason = f"calendar_blocked:{upstream_repeat.get('reason') or 'repeat_not_allowed'}"
         if a_tier_eligible and not candidate.get("a_tier_collapsed_into"):
             candidate["a_tier_policy_status"] = "must_show"
             candidate["a_tier_policy_reason"] = a_tier_reason
@@ -660,6 +670,9 @@ def run_plan_digest(project_root: Path) -> StageResult:
             candidate["a_tier_policy_reason"] = a_tier_reason
         if candidate.get("a_tier_collapsed_into"):
             _mark_out(candidate, str(candidate.get("a_tier_collapse_kind") or "a_tier_duplicate_physical_event_collapsed"))
+            continue
+        if shortlist_status in {"board_rejected", "held_cost_after_quality"} and not a_tier_eligible:
+            _mark_out(candidate, f"rank_recommendation:{shortlist_status}")
             continue
         if is_a_tier_ticket(candidate) and not a_tier_eligible:
             _mark_out(candidate, f"a_tier_ineligible:{a_tier_reason}")
@@ -791,6 +804,42 @@ def run_plan_digest(project_root: Path) -> StageResult:
             seen_story_keys.add(key)
         if len(lead_understudies) >= LEAD_UNDERSTUDY_COUNT:
             break
+    # If ordinary reserve is too thin, deliberately hold strong overflow from
+    # Today/Fresh as lead contingency, but never push its home block below the
+    # registry minimum.  A backup that is already visible in its own section
+    # cannot replace a failed lead without duplicating the same story.
+    if len(lead_understudies) < LEAD_UNDERSTUDY_COUNT:
+        from news_digest.pipeline.curator import _is_weak_lead  # noqa: PLC0415
+
+        for source_block in LEAD_UNDERSTUDY_SOURCE_BLOCKS:
+            section = PRIMARY_BLOCKS[source_block]
+            pool = pools.get(section) or []
+            minimum = SECTION_MIN_ITEMS.get(section, 0)
+            # Work from the bottom of the already ranked home pool so the
+            # strongest Today/Fresh stories remain public.
+            for candidate in reversed(list(pool)):
+                if len(lead_understudies) >= LEAD_UNDERSTUDY_COUNT or len(pool) <= minimum:
+                    break
+                eligible, render_path = _backup_eligible(candidate)
+                key = _story_key(candidate)
+                if not eligible or _is_weak_lead(candidate) or (key and key in seen_story_keys):
+                    continue
+                pool.remove(candidate)
+                candidate["plan_render_path"] = render_path
+                candidate["publish_plan_status"] = "reserve"
+                candidate["publish_plan_reason"] = "Зарезервирован как независимый дублёр главной."
+                lead_understudies.append(str(candidate.get("fingerprint") or ""))
+                if key:
+                    seen_story_keys.add(key)
+            if len(lead_understudies) >= LEAD_UNDERSTUDY_COUNT:
+                break
+    lead_backup_shortfall = max(0, LEAD_UNDERSTUDY_COUNT - len(lead_understudies))
+    if lead_backup_shortfall:
+        warnings.append(
+            "Главная история: не хватает "
+            f"{lead_backup_shortfall} независимых пригодных дублёров "
+            f"до contract depth={LEAD_UNDERSTUDY_COUNT}."
+        )
 
     # --- Сегодня/Свежие ----------------------------------------------------
     # Today is purpose-owned: only items routed there upstream may enter it.
@@ -1018,6 +1067,8 @@ def run_plan_digest(project_root: Path) -> StageResult:
                 "backups_assigned": len(lead_understudies),
                 "backups_unassigned": 0,
                 "backups_filtered_before_assignment": 0,
+                "backup_depth_target": LEAD_UNDERSTUDY_COUNT,
+                "backup_depth_shortfall": lead_backup_shortfall,
                 "required_slots_without_backup_count": (
                     1 if lead_planned and not lead_understudies else 0
                 ),
@@ -1074,12 +1125,12 @@ def run_plan_digest(project_root: Path) -> StageResult:
         # первому слоту, и must_show-слот ниже оставался без замены.
         required_by_position: dict[int, bool] = {}
         for position, candidate in enumerate(pool, start=1):
-            repeat_allowed = True
-            previous = previous_by_fp.get(str(candidate.get("fingerprint") or ""))
-            if previous is not None:
-                from news_digest.pipeline.repeat_policy import visible_repeat_verdict  # noqa: PLC0415
-
-                repeat_allowed = visible_repeat_verdict(candidate, previous).allow
+            governing = (
+                candidate.get("governing_repeat_decision")
+                if isinstance(candidate.get("governing_repeat_decision"), dict)
+                else {}
+            )
+            repeat_allowed = bool(governing.get("allow", True))
             required_by_position[position] = _must_show(candidate, repeat_allowed)
 
         chains: dict[int, list[str]] = {position: [] for position in required_by_position}
@@ -1154,10 +1205,11 @@ def run_plan_digest(project_root: Path) -> StageResult:
             position for position, is_required in required_by_position.items()
             if is_required and not chains.get(position)
         )
-        # Пустой резерв раздела — это недобор пула, он уже отражён в
-        # backups_available/shortfall. Отдельное предупреждение нужно только
-        # когда запасные БЫЛИ, а обязательный слот всё равно остался без них.
-        if required_without_backup and eligible_backup_count:
+        slots_below_backup_depth = sorted(
+            position for position, chain in chains.items()
+            if len(chain) < depth
+        ) if depth else []
+        if required_without_backup:
             warnings.append(
                 f"«{section}»: обязательных слотов без запасного — "
                 f"{len(required_without_backup)} при {eligible_backup_count} пригодных запасных."
@@ -1189,6 +1241,11 @@ def run_plan_digest(project_root: Path) -> StageResult:
                 eligible_backup_count - promoted_here - backups_assigned_here,
             ),
             "backups_filtered_before_assignment": backups_filtered_before_assignment,
+            "backup_depth_target": depth,
+            "slots_below_backup_depth_count": len(slots_below_backup_depth),
+            "slots_below_backup_depth": [
+                f"{block_key}-{position:02d}" for position in slots_below_backup_depth[:10]
+            ],
             "required_slots_without_backup_count": len(required_without_backup),
             "required_slots_without_backup": [
                 f"{block_key}-{position:02d}" for position in required_without_backup[:5]
@@ -1272,19 +1329,24 @@ def run_plan_digest(project_root: Path) -> StageResult:
             "max_visible_items": PLAN_PUBLIC_MAX_VISIBLE_ITEMS,
             "hard_rendered_items": PLAN_PUBLIC_HARD_RENDERED_ITEMS,
             "exempt_sections": sorted(
-                {"Общественный транспорт сегодня", "Русскоязычные концерты и стендап UK", "Business/tech события для тебя"}
+                str(policy["heading"])
+                for policy in INVENTORY_BLOCK_REGISTRY.values()
+                if bool(policy.get("budget_exempt"))
             ),
         },
         "ordered_sections": ordered,
         "lead": {
             "primary_fingerprint": str((lead_candidate or {}).get("fingerprint") or ""),
             "understudy_fingerprints": lead_understudies,
+            "backup_depth_target": LEAD_UNDERSTUDY_COUNT,
+            "backup_depth_shortfall": lead_backup_shortfall,
             "promoted_by_plan": lead_promoted,
             "title": str((lead_candidate or {}).get("title") or "")[:140],
         },
         "sections": sections_summary,
         "slots": slots,
         "today_focus_board": today_board,
+        "ticket_notability": notability_stamp,
         "out_sample": out_rows[:200],
         "totals": {
             "slots": len(slots),
@@ -1377,6 +1439,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
             "warnings": warnings,
             "totals": plan["totals"],
             "lead": plan["lead"],
+            "ticket_notability": notability_stamp,
             "sections": {
                 name: {k: row[k] for k in ("planned", "min", "max", "expected_shortfall")}
                 for name, row in sections_summary.items()

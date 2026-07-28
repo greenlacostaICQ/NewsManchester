@@ -913,6 +913,30 @@ def _artist_notability(
         status in {"no_credentials", "auth_error", "timeout", "quota_deferred"}
         for status in provider_status.values()
     )
+    if provider_failed and isinstance(cached, dict) and str(cached.get("tier") or "").strip():
+        # A failed recheck does not constitute a new classification. Preserve
+        # the last complete result and record the failed attempt separately so
+        # one artist cannot flip tier between duplicate rows in one run.
+        cached["last_attempt"] = {
+            "checked_at": now.isoformat(),
+            "provider_status": dict(provider_status),
+            "result_tier": tier,
+        }
+        cached["a_tier_recheck_pending"] = True
+        cached["recheck_days"] = 1
+        previous_signals = dict(cached.get("signals") or {})
+        previous_signals.update(tm_signal)
+        previous_signals["provider_status_last_attempt"] = dict(provider_status)
+        return TicketNotability(
+            artist=artist,
+            kind=kind,
+            tier=str(cached.get("tier") or "unknown"),
+            confidence=float(cached.get("confidence") or 0.0),
+            signal=str(cached.get("signal") or "last_complete_cache"),
+            wikidata_id=str(cached.get("wikidata_id") or ""),
+            sitelinks=int(cached.get("sitelinks") or 0),
+            signals=previous_signals,
+        )
     if provider_failed:
         recheck_days = 1
     elif tier != "unknown":
@@ -1148,3 +1172,88 @@ def enrich_ticket_notability(candidate: dict, cache_path: Path | None = None) ->
         signals=signals,
         event_owner=event_owner,
     )
+
+
+def ticket_notability_payload(value: TicketNotability) -> dict[str, object]:
+    return {
+        "artist": value.artist,
+        "kind": value.kind,
+        "tier": value.tier,
+        "confidence": value.confidence,
+        "signal": value.signal,
+        "wikidata_id": value.wikidata_id,
+        "sitelinks": value.sitelinks,
+        "headliners": list(value.headliners),
+        "signals": value.signals or {},
+        "event_owner": value.event_owner,
+    }
+
+
+def stamp_canonical_ticket_notability(
+    candidates: list,
+    cache_path: Path | None = None,
+) -> dict[str, object]:
+    """Stamp every planner-visible ticket row from one canonical cache view."""
+    cache_path = cache_path or Path("data/state/ticket_notability_cache.json")
+    rows: list[tuple[dict, TicketNotability]] = []
+    by_artist: dict[str, TicketNotability] = {}
+    conflicts_before: dict[str, set[str]] = {}
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        if str(candidate.get("category") or "") != "venues_tickets" and str(candidate.get("primary_block") or "") not in {
+            "ticket_radar",
+            "outside_gm_tickets",
+            "russian_events",
+        }:
+            continue
+        old = candidate.get("ticket_notability") if isinstance(candidate.get("ticket_notability"), dict) else {}
+        old_artist = _cache_key(str(old.get("artist") or ticket_artist_name(candidate) or ""))
+        old_tier = str(old.get("tier") or "").upper()
+        if old_artist and old_tier:
+            conflicts_before.setdefault(old_artist, set()).add(old_tier)
+        value = enrich_ticket_notability(candidate, cache_path)
+        if (
+            str(value.tier or "").lower() in {"", "unknown"}
+            and str(value.signal or "") in {"lookup_disabled", "not_found"}
+            and old_tier in {"A", "B", "C", "D", "PROTECTED"}
+        ):
+            # Offline/replay or a temporarily unavailable canonical cache must
+            # not erase the last complete row-level result.  All rows for the
+            # artist are still reconciled below to the strongest one.
+            value = TicketNotability(
+                artist=str(old.get("artist") or ticket_artist_name(candidate)),
+                kind=str(old.get("kind") or value.kind or "artist"),
+                tier=str(old.get("tier") or "unknown"),
+                confidence=float(old.get("confidence") or 0.0),
+                signal=str(old.get("signal") or "last_complete_candidate"),
+                wikidata_id=str(old.get("wikidata_id") or ""),
+                sitelinks=int(old.get("sitelinks") or 0),
+                headliners=(
+                    tuple(str(item) for item in old.get("headliners") or [])
+                    if isinstance(old.get("headliners"), list)
+                    else value.headliners
+                ),
+                signals=dict(old.get("signals") or {}),
+                event_owner=str(old.get("event_owner") or value.event_owner),
+            )
+        key = _cache_key(value.artist or ticket_artist_name(candidate))
+        if not key:
+            continue
+        rows.append((candidate, value))
+        current = by_artist.get(key)
+        if current is None or _rank_tuple(value) > _rank_tuple(current):
+            by_artist[key] = value
+
+    for candidate, row_value in rows:
+        key = _cache_key(row_value.artist or ticket_artist_name(candidate))
+        candidate["ticket_notability"] = ticket_notability_payload(by_artist.get(key, row_value))
+    return {
+        "stamped": len(rows),
+        "artists": len(by_artist),
+        "preexisting_tier_conflicts": {
+            artist: sorted(tiers)
+            for artist, tiers in conflicts_before.items()
+            if len(tiers) > 1
+        },
+    }

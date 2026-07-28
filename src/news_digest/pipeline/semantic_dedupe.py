@@ -418,7 +418,7 @@ class SemanticPassResult:
     cache_hits: int
     cache_misses: int
     intra_drops: list[dict]  # {fingerprint, kept_fingerprint, sim}
-    cross_day_drops: list[dict]  # {fingerprint, prev_fingerprint, sim, change_type}
+    cross_day_drops: list[dict]  # legacy field name: cross-day matches + disposition
     borderline_pairs: list[dict]  # {fingerprint, other_fingerprint, sim, kind}
     timings: dict[str, float] = field(default_factory=dict)
 
@@ -434,7 +434,13 @@ class SemanticPassResult:
             "cross_day_drops": self.cross_day_drops,
             "borderline_pairs": self.borderline_pairs,
             "intra_drop_count": len(self.intra_drops),
-            "cross_day_drop_count": len(self.cross_day_drops),
+            "cross_day_match_count": len(self.cross_day_drops),
+            "cross_day_drop_count": sum(
+                1 for row in self.cross_day_drops if not bool(row.get("kept"))
+            ),
+            "cross_day_deferred_count": sum(
+                1 for row in self.cross_day_drops if bool(row.get("deferred_to_planner"))
+            ),
             "borderline_count": len(self.borderline_pairs),
             "timings": self.timings,
         }
@@ -716,12 +722,32 @@ def run_semantic_pass(
                         f"(cos={best_sim:.3f}), kept as follow-up due to marker."
                     ).strip(" |")
                 else:
-                    c["include"] = False
-                    c["dedupe_decision"] = "drop"
+                    c["dedupe_decision"] = "repeat_pending_planner"
                     c["change_type"] = "same_story_rehash"
+                    c["repeat_policy_previous"] = {
+                        key: prev.get(key)
+                        for key in (
+                            "fingerprint",
+                            "title",
+                            "category",
+                            "primary_block",
+                            "first_published_day_london",
+                            "last_published_day_london",
+                            "published_count",
+                            "event",
+                            "ticket_type",
+                            "ticket_notability",
+                            "editorial_contract",
+                            "change_type",
+                            "story_phase_key",
+                            "event_identity_key",
+                        )
+                        if prev.get(key) not in (None, "", [], {})
+                    }
                     c["reason"] = (
-                        f"Semantic cross-day rehash (cos={best_sim:.3f}) of "
-                        f"«{prev.get('title', '')[:120]}»."
+                        f"Semantic cross-day rehash candidate (cos={best_sim:.3f}) of "
+                        f"«{prev.get('title', '')[:120]}»; final repeat decision "
+                        "deferred to plan-digest."
                     )
                 cross_day_drops.append({
                     "fingerprint": fp,
@@ -730,7 +756,8 @@ def run_semantic_pass(
                     "title": c.get("title"),
                     "prev_title": prev.get("title"),
                     "change_type": c.get("change_type"),
-                    "kept": follow_up,
+                    "kept": True,
+                    "deferred_to_planner": not follow_up,
                 })
             elif _BORDERLINE_SIM_THRESHOLD <= best_sim < _HIGH_SIM_THRESHOLD and best_fact_fp:
                 borderline_pairs.append({

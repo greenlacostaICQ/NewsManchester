@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta
 import re
 
+from news_digest.pipeline.block_policy import block_policy
 from news_digest.pipeline.common import normalize_title, now_london
 from news_digest.pipeline.weekend_inventory import is_weekend_inventory_candidate
 
@@ -685,6 +686,7 @@ _EVENT_BLOCKS = {
     "ticket_radar",
     "outside_gm_tickets",
     "russian_events",
+    "professional_events",
 }
 _OPERATIONAL_BLOCKS = {"weather", "transport"}
 _SPECIFIC_TOPIC_PREFIXES = (
@@ -1514,12 +1516,7 @@ def is_specific_topic_key(topic_key: str) -> bool:
     return any(key.startswith(prefix) for prefix in _SPECIFIC_TOPIC_PREFIXES)
 
 
-_CALENDAR_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 14, 30})
-_A_TIER_TICKET_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 3, 7, 30, 365})
-_B_TIER_TICKET_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 30})
-_LOW_TIER_TICKET_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7})
-_MAJOR_UPCOMING_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 14, 30, 365})
-_MAX_PUBLIC_TICKET_REPEATS = 3
+_FALLBACK_CALENDAR_REPEAT_MILESTONE_DAYS = frozenset({0, 1, 7, 14, 30})
 
 
 def _history_day(value: object) -> date | None:
@@ -1569,38 +1566,34 @@ def _ticket_notability_tier(*items: dict) -> str:
 
 
 def _ticket_repeat_milestone_days(candidate: dict, previous: dict) -> frozenset[int]:
+    policy = block_policy(
+        str(candidate.get("primary_block") or previous.get("primary_block") or "ticket_radar")
+    )
+    configured = policy.get("repeat_milestone_days")
+    if not isinstance(configured, dict):
+        configured = {}
     tier = _ticket_notability_tier(candidate, previous)
     if tier in {"A", "PROTECTED"}:
-        return _A_TIER_TICKET_REPEAT_MILESTONE_DAYS
+        return frozenset(int(value) for value in (configured.get("A") or (365, 30, 7, 3, 1, 0)))
     if tier == "B":
-        return _B_TIER_TICKET_REPEAT_MILESTONE_DAYS
+        return frozenset(int(value) for value in (configured.get("B") or (30, 7, 1, 0)))
     ticket_type = str(candidate.get("ticket_type") or previous.get("ticket_type") or "") or classify_ticket_type(candidate)
     if ticket_type == "major_upcoming":
-        # Older published_facts rows may not carry notability yet. Keep the
-        # historic major-concert annual reminder, but only on milestone days.
-        return _MAJOR_UPCOMING_REPEAT_MILESTONE_DAYS
-    return _LOW_TIER_TICKET_REPEAT_MILESTONE_DAYS
+        return frozenset(
+            int(value)
+            for value in (configured.get("major_upcoming") or (365, 30, 14, 7, 1, 0))
+        )
+    return frozenset(int(value) for value in (configured.get("default") or (7, 1, 0)))
 
 
-def _max_public_ticket_repeats(candidate: dict, previous: dict) -> int:
-    tier = _ticket_notability_tier(candidate, previous)
-    if tier in {"A", "PROTECTED"}:
-        # A-tier has no quantity cap. Visibility is still calendar-controlled:
-        # first discovery, material change, sale moment, or an explicit D-day.
-        return 0
-    return _MAX_PUBLIC_TICKET_REPEATS
-
-
-def _published_count_for_repeat(previous: dict) -> int:
-    try:
-        count = int(previous.get("published_count") or 0)
-    except (TypeError, ValueError):
-        count = 0
-    if count > 0:
-        return count
-    first = str(previous.get("first_published_day_london") or "").strip()
-    last = str(previous.get("last_published_day_london") or "").strip()
-    return 2 if first and last and first != last else 1
+def _calendar_repeat_milestone_days(candidate: dict, previous: dict) -> frozenset[int]:
+    policy = block_policy(
+        str(candidate.get("primary_block") or previous.get("primary_block") or "")
+    )
+    configured = policy.get("repeat_milestone_days")
+    if isinstance(configured, (tuple, list, set, frozenset)):
+        return frozenset(int(value) for value in configured)
+    return _FALLBACK_CALENDAR_REPEAT_MILESTONE_DAYS
 
 
 def _event_material_change(candidate: dict, previous: dict) -> str:
@@ -1696,19 +1689,6 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
     if material_change:
         return {"applies": True, "allow": True, "reason": material_change}
 
-    if is_ticket_item:
-        published_count = _published_count_for_repeat(previous)
-        repeat_limit = _max_public_ticket_repeats(candidate, previous)
-        if repeat_limit and published_count >= repeat_limit:
-            return {
-                "applies": True,
-                "allow": False,
-                "reason": "ticket_repeat_limit_reached",
-                "published_count": published_count,
-                "repeat_limit": repeat_limit,
-                "ticket_tier": _ticket_notability_tier(candidate, previous),
-            }
-
     current_date = _occurrence_date_from_contract(current_contract)
     previous_date = _occurrence_date_from_contract(previous_contract)
     if current_date and previous_date and current_date != previous_date:
@@ -1775,7 +1755,7 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
         milestone_days = (
             _ticket_repeat_milestone_days(candidate, previous)
             if is_ticket_item
-            else _CALENDAR_REPEAT_MILESTONE_DAYS
+            else _calendar_repeat_milestone_days(candidate, previous)
         )
         # Recurring items (weekly markets) only repeat via the weekly-occurrence
         # branch above, which enforces a ≥6-day gap. They must NOT fall through

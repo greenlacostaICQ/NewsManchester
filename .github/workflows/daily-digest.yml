@@ -49,9 +49,10 @@ jobs:
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
           TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
           SKIDDLE_API_KEY: ${{ secrets.SKIDDLE_APIKEY }}
-          # I1: dedupe-digest now also runs a semantic pass via OpenAI
-          # embeddings. Falls back to deterministic-only when the key is
-          # missing — never blocks the release.
+          # I1: dedupe-digest runs OpenAI embeddings, then sends same-run
+          # semantic-borderline pairs through the existing dedupe-review
+          # provider chain. Missing providers fall back to deterministic-only
+          # and never block the release.
           OPENAI_API_KEY: ${{ secrets.OPENAI }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROGAPIKEY }}

@@ -136,6 +136,9 @@ def dedupe_candidates(project_root: Path) -> StageResult:
     stage_started = time.monotonic()
     state_dir = project_root / "data" / "state"
     paths = ensure_history_files(state_dir)
+    from news_digest.pipeline.history import migrate_published_facts_identity  # noqa: PLC0415
+
+    history_identity_migration = migrate_published_facts_identity(state_dir)
     candidates_path = state_dir / "candidates.json"
     report_path = paths["dedupe_memory"]
 
@@ -249,6 +252,27 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         calendar_previous_ref = previous or (similar_previous[0] if similar_previous else None)
         repeat_verdict = visible_repeat_verdict(candidate, calendar_previous_ref)
         candidate["visible_repeat_verdict"] = repeat_verdict.as_dict()
+        if calendar_previous_ref is not None:
+            candidate["repeat_policy_previous"] = {
+                key: calendar_previous_ref.get(key)
+                for key in (
+                    "fingerprint",
+                    "title",
+                    "category",
+                    "primary_block",
+                    "first_published_day_london",
+                    "last_published_day_london",
+                    "published_count",
+                    "event",
+                    "ticket_type",
+                    "ticket_notability",
+                    "editorial_contract",
+                    "change_type",
+                    "story_phase_key",
+                    "event_identity_key",
+                )
+                if calendar_previous_ref.get(key) not in (None, "", [], {})
+            }
         calendar_carry_ok = (
             calendar_previous_ref is not None
             and repeat_verdict.allow
@@ -351,6 +375,19 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 candidate["dedupe_decision"] = "drop"
                 candidate["include"] = False
 
+        if prior_reference and not repeat_verdict.allow:
+            # This is only a provisional history diagnosis. Ticket tier,
+            # professional event contract and any late structured facts are
+            # canonicalised after this stage, so planner must own the final
+            # include/exclude decision.
+            candidate["dedupe_decision"] = "repeat_pending_planner"
+            candidate["include"] = True
+            candidate["change_type"] = "same_story_rehash"
+            candidate["reason"] = (
+                "Dedupe found a previous publication; final repeat decision "
+                f"is deferred to plan-digest (provisional={repeat_verdict.reason})."
+            )
+
         if candidate.get("include"):
             candidate["dedupe_verdict"] = "selected"
             if not str(candidate.get("reason") or "").strip():
@@ -449,6 +486,11 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         logging.getLogger(__name__).warning("semantic dedup pass failed: %s", exc)
         semantic_result = {"enabled": False, "error": str(exc)}
         timings.setdefault("semantic_pass_seconds", 0.0)
+    semantic_borderline_review = _review_semantic_borderline_with_llm(
+        candidates,
+        published_by_fp,
+        semantic_result,
+    )
     semantic_guard_t0 = time.monotonic()
     semantic_guard = _apply_semantic_drop_guard(candidates)
     _mark_timing("semantic_guard_seconds", semantic_guard_t0)
@@ -503,11 +545,13 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 if isinstance(c, dict) and str(c.get("semantic_dedupe_match") or "").startswith("embedding")
             ),
             "semantic_guard": semantic_guard,
+            "history_identity_migration": history_identity_migration,
             "pending_dedupe_closed": pending_dedupe_closed,
             "post_dedupe_completeness": post_dedupe_completeness,
             "story_clusters": story_cluster_summary,
             "intra_batch_dedup_drops": intra_batch_drops,
             "semantic_dedup_summary": semantic_result,
+            "semantic_borderline_review": semantic_borderline_review,
             "timings": timings,
             "duration_seconds": total_seconds,
         },
@@ -1046,6 +1090,139 @@ def _review_borderline_with_llm(
         len(pairs),
     )
     return upgrades
+
+
+def _review_semantic_borderline_with_llm(
+    candidates: list[dict],
+    published_by_fp: dict[str, dict],
+    semantic_result: dict,
+) -> dict[str, dict]:
+    """Consume the embedding pass's borderline pairs in the same run."""
+    import os  # noqa: PLC0415
+
+    rows = semantic_result.get("borderline_pairs") if isinstance(semantic_result, dict) else []
+    if not isinstance(rows, list) or not rows:
+        return {}
+    by_fp = {
+        str(candidate.get("fingerprint") or ""): candidate
+        for candidate in candidates
+        if isinstance(candidate, dict)
+    }
+    pairs: list[tuple[dict, dict]] = []
+    similarities: dict[str, float] = {}
+    pair_kinds: dict[str, str] = {}
+    previous_by_candidate: dict[str, dict] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        candidate = by_fp.get(str(row.get("fingerprint") or ""))
+        other = (
+            by_fp.get(str(row.get("other_fingerprint") or ""))
+            if str(row.get("kind") or "") == "intra_batch"
+            else published_by_fp.get(str(row.get("other_fingerprint") or ""))
+        )
+        if not candidate or not other or not candidate.get("include"):
+            continue
+        if str(row.get("kind") or "") == "intra_batch":
+            from news_digest.pipeline.semantic_dedupe import (  # noqa: PLC0415
+                _prefer_semantic_candidate,
+                _source_rank,
+            )
+
+            kept, loser, _reason = _prefer_semantic_candidate(
+                candidate,
+                other,
+                _source_rank(str(candidate.get("source_label") or ""), str(candidate.get("category") or "")),
+                _source_rank(str(other.get("source_label") or ""), str(other.get("category") or "")),
+            )
+            candidate, other = loser, kept
+        fp = str(candidate.get("fingerprint") or "")
+        if not fp or any(str(existing.get("fingerprint") or "") == fp for existing, _ in pairs):
+            continue
+        pairs.append((candidate, other))
+        similarities[fp] = float(row.get("sim") or 0.0)
+        pair_kinds[fp] = str(row.get("kind") or "")
+        previous_by_candidate[fp] = other
+    if not pairs or os.environ.get("LLM_PROVIDER", "").lower().strip() == "none":
+        return {}
+
+    from news_digest.pipeline.model_routing import resolve_model_route  # noqa: PLC0415
+    from news_digest.pipeline import provider_health  # noqa: PLC0415
+
+    route = resolve_model_route(
+        "dedupe_review",
+        provider_override=os.environ.get("LLM_PROVIDER", "").lower().strip(),
+        base_url_override=os.environ.get("LLM_BASE_URL", "").strip(),
+        model_override=os.environ.get("LLM_MODEL", "").strip(),
+    )
+    decisions: list[dict] = []
+    for step in route:
+        if not step.api_key or provider_health.is_dead(step.provider):
+            continue
+        decisions = _call_dedupe_review_llm(pairs, step.api_key, step.base_url, step.model)
+        if decisions:
+            provider_health.record_success(step.provider)
+            break
+        provider_health.record_failure(step.provider)
+    by_candidate = {str(candidate.get("fingerprint") or ""): candidate for candidate, _ in pairs}
+    applied: dict[str, dict] = {}
+    for decision in decisions:
+        if not isinstance(decision, dict):
+            continue
+        fp = str(decision.get("fingerprint") or "")
+        candidate = by_candidate.get(fp)
+        verdict = str(decision.get("change_type") or "").lower()
+        if not candidate or verdict not in {"rehash", "new_facts", "follow_up"}:
+            continue
+        reason = str(decision.get("reason") or "").strip()
+        if verdict == "rehash":
+            candidate["change_type"] = "same_story_rehash"
+            if pair_kinds.get(fp) == "cross_day":
+                previous = previous_by_candidate.get(fp) or {}
+                candidate["dedupe_decision"] = "repeat_pending_planner"
+                candidate["repeat_policy_previous"] = {
+                    key: previous.get(key)
+                    for key in (
+                        "fingerprint",
+                        "title",
+                        "category",
+                        "primary_block",
+                        "first_published_day_london",
+                        "last_published_day_london",
+                        "published_count",
+                        "event",
+                        "ticket_type",
+                        "ticket_notability",
+                        "editorial_contract",
+                        "change_type",
+                        "story_phase_key",
+                        "event_identity_key",
+                    )
+                    if previous.get(key) not in (None, "", [], {})
+                }
+                candidate["reason"] = (
+                    f"Semantic cross-day repeat confirmed by review "
+                    f"(cos={similarities.get(fp, 0.0):.3f}); final decision "
+                    f"deferred to plan-digest: {reason}"
+                ).rstrip(": ")
+            else:
+                candidate["include"] = False
+                candidate["dedupe_decision"] = "drop"
+                candidate["reason"] = (
+                    f"Semantic borderline duplicate confirmed by review "
+                    f"(cos={similarities.get(fp, 0.0):.3f}): {reason}"
+                ).rstrip(": ")
+        else:
+            candidate["include"] = True
+            candidate["dedupe_decision"] = "new_phase" if verdict == "follow_up" else "new"
+            candidate["change_type"] = "follow_up" if verdict == "follow_up" else "same_story_new_facts"
+            candidate["reason"] = f"Semantic borderline kept: {reason}".rstrip()
+        applied[fp] = {
+            "change_type": candidate["change_type"],
+            "reason": candidate["reason"],
+            "similarity": similarities.get(fp, 0.0),
+        }
+    return applied
 
 
 def _title_tokens(title: str) -> frozenset[str]:

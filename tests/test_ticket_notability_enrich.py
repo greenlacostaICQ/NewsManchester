@@ -7,6 +7,7 @@ to a no-op so tests don't sleep.
 """
 from __future__ import annotations
 
+import json
 import os
 import tempfile
 import unittest
@@ -160,6 +161,113 @@ class ArtistNotabilityTest(unittest.TestCase):
         ):
             tn._artist_notability("Famous", "artist", _ticket("Famous"), cache, now_london(), allow_network=True)
         self.assertEqual(cache[tn._cache_key("Famous")]["recheck_days"], 30)
+
+    def test_failed_recheck_preserves_last_complete_tier(self) -> None:
+        now = now_london()
+        cache = {
+            tn._cache_key("Stable Artist"): {
+                "artist": "Stable Artist",
+                "kind": "artist",
+                "tier": "A",
+                "confidence": 0.97,
+                "signal": "youtube+lastfm",
+                "signals": {
+                    "youtube_subscribers": 3_000_000,
+                    "lastfm_listeners": 1_500_000,
+                },
+                "checked_at": (now - timedelta(days=31)).isoformat(),
+                "recheck_days": 30,
+            }
+        }
+        with mock.patch.multiple(
+            tn,
+            _lookup_wikidata=mock.Mock(side_effect=OSError("down")),
+            _lookup_youtube=mock.Mock(side_effect=OSError("down")),
+            _lookup_lastfm=mock.Mock(side_effect=OSError("down")),
+            _lookup_musicbrainz=mock.Mock(side_effect=OSError("down")),
+        ):
+            result = tn._artist_notability(
+                "Stable Artist",
+                "artist",
+                _ticket("Stable Artist"),
+                cache,
+                now,
+                allow_network=True,
+            )
+        self.assertEqual(result.tier, "A")
+        self.assertEqual(cache[tn._cache_key("Stable Artist")]["tier"], "A")
+        self.assertTrue(cache[tn._cache_key("Stable Artist")]["a_tier_recheck_pending"])
+
+    def test_canonical_stamp_overwrites_conflicting_tiers_on_every_row(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_path = Path(tmp) / "ticket_notability_cache.json"
+            cache_path.write_text(
+                json.dumps(
+                    {
+                        "version": tn._CACHE_VERSION,
+                        "artists": {
+                            tn._cache_key("Anastacia"): {
+                                "artist": "Anastacia",
+                                "kind": "artist",
+                                "tier": "A",
+                                "confidence": 0.98,
+                                "signal": "wikidata_sitelinks",
+                                "signals": {"sitelinks": 100},
+                                "sitelinks": 100,
+                                "checked_at": now_london().isoformat(),
+                                "recheck_days": 30,
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            rows = [
+                {
+                    **_ticket("Anastacia"),
+                    "include": True,
+                    "ticket_notability": {"artist": "Anastacia", "tier": "A"},
+                },
+                {
+                    **_ticket("Anastacia"),
+                    "include": False,
+                    "source_label": "Second feed",
+                    "ticket_notability": {"artist": "Anastacia", "tier": "B"},
+                },
+            ]
+            report = tn.stamp_canonical_ticket_notability(rows, cache_path)
+        self.assertEqual({row["ticket_notability"]["tier"] for row in rows}, {"A"})
+        self.assertEqual(report["preexisting_tier_conflicts"]["anastacia"], ["A", "B"])
+
+    def test_canonical_stamp_does_not_erase_complete_tier_when_cache_unavailable(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            rows = [
+                {
+                    **_ticket("Vanessa Carlton"),
+                    "include": True,
+                    "ticket_notability": {
+                        "artist": "Vanessa Carlton",
+                        "kind": "artist",
+                        "tier": "A",
+                        "confidence": 0.95,
+                    },
+                },
+                {
+                    **_ticket("Vanessa Carlton"),
+                    "include": False,
+                    "ticket_notability": {
+                        "artist": "Vanessa Carlton",
+                        "kind": "artist",
+                        "tier": "B",
+                        "confidence": 0.8,
+                    },
+                },
+            ]
+            tn.stamp_canonical_ticket_notability(
+                rows,
+                Path(tmp) / "missing-cache.json",
+            )
+        self.assertEqual({row["ticket_notability"]["tier"] for row in rows}, {"A"})
 
     def test_lastfm_alone_cannot_award_a_and_provider_status_is_reported(self) -> None:
         cache: dict = {}

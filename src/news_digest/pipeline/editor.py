@@ -13,15 +13,14 @@ import time
 from urllib.parse import urlparse
 
 from news_digest.pipeline.common import (
-    LOW_SIGNAL_BLOCKS,
     PRIMARY_BLOCKS,
-    REQUIRED_BLOCKS,
     canonical_url_identity,
     extract_sections,
     is_placeholder_practical_angle,
     now_london,
     pipeline_run_id_from,
     read_json,
+    required_blocks_for_weekday,
     today_london,
     write_json,
 )
@@ -1328,7 +1327,11 @@ def edit_digest(project_root: Path) -> StageResult:
         )
 
     # "Коротко" больше не требуется — убрана из дайджеста
-    required_to_check = [b for b in REQUIRED_BLOCKS if b != "Коротко"]
+    required_to_check = [
+        block
+        for block in required_blocks_for_weekday(now_london().weekday())
+        if block != "Коротко"
+    ]
     for block in required_to_check:
         if block not in normalized_sections:
             if block == "Что важно сегодня":

@@ -37,7 +37,7 @@ from pathlib import Path
 from typing import Callable
 
 from news_digest.pipeline.common import PRIMARY_BLOCKS, now_london, pipeline_run_id_from, read_json, today_london, write_json
-from news_digest.pipeline.block_policy import BLOCK_POLICY_VERSION, block_policy
+from news_digest.pipeline.block_policy import BLOCK_POLICY_REGISTRY, BLOCK_POLICY_VERSION, block_policy
 from news_digest.pipeline.model_routing import (
     DEEPSEEK_BASE_URL,
     DEEPSEEK_MODEL,
@@ -85,24 +85,9 @@ REWRITE_SHORTLIST_VERSION = 2
 # Catalog blocks (tickets, transport) stay narrow: they are ranked by
 # deterministic tier/lifecycle, the model adds nothing there.
 REWRITE_SHORTLIST_CAPS_BY_BLOCK: dict[str, int] = {
-    "transport": 99,          # rules: show every real tram/rail restriction
-    # Judged blocks (see board_rank.JUDGED_BLOCKS) are deliberately wider: the
-    # board now ranks them BEFORE this cut, so a wide net costs one listwise call
-    # and the cut is made on the judge's order instead of on the formula's.
-    "lead_story": 6,          # was 4
-    "today_focus": 10,        # was 8
-    "last_24h": 45,           # was 18 — judged block, give the board the real field
-    "city_watch": 35,         # was 15 — judged block
-    "weekend_activities": 16,  # was 10
-    "next_7_days": 14,        # was 8
-    "ticket_radar": 8,        # catalog: deterministic sale/tier ranking
-    "future_announcements": 14,  # was 4 — far too tight on 88 candidates
-    "outside_gm_tickets": 4,  # catalog: A-tier notability ranking, not the model
-    "russian_events": 12,     # was 6 — show all valid after dedupe
-    "openings": 10,           # was 6
-    "tech_business": 15,      # was 10 — judged block
-    "professional_events": 3,  # CV-approved personal rail; keep compact.
-    "football": 6,            # was 3
+    block: int(policy.get("rewrite_recall_cap") or 0)
+    for block, policy in BLOCK_POLICY_REGISTRY.items()
+    if int(policy.get("rewrite_recall_cap") or 0)
 }
 REWRITE_SHORTLIST_DEFAULT_CAP = 8
 
@@ -1245,10 +1230,10 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
     uncapped_selected: list[dict[str, object]] = []
     caps: dict[str, int] = {}
 
-    # Board rejects are executed here — the first and only place that can see how
-    # many survivors a block has left. The only floor comes from the shared
-    # block registry; an optional block such as tech_business therefore cannot
-    # resurrect a board rejection behind rewrite's back.
+    # Rank only records its recommendation.  It must never rewrite the upstream
+    # include decision: plan-digest is the sole owner of public composition.
+    # The registry floor is still used here to avoid recommending an impossible
+    # underflow, but planner executes the eventual drop/reserve decision.
     board_rejects_executed = 0
     board_rejects_blocked: dict[str, int] = {}
     for block, group in groups.items():
@@ -1269,7 +1254,6 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
                     board_rejects_blocked.get("block_floor_protects_section", 0) + 1
                 )
                 continue
-            candidate["include"] = False
             candidate["backup_candidate"] = True
             candidate["backup_pool_only"] = True
             candidate["public_reserve"] = False
@@ -1328,7 +1312,6 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
                 f"Selected in {block or 'unknown'} shortlist before writing.",
             )
         for candidate in normal_group[cap:]:
-            candidate["include"] = False
             candidate["backup_candidate"] = True
             candidate["backup_pool_only"] = True
             candidate["public_reserve"] = False
@@ -1400,7 +1383,6 @@ def _apply_rewrite_shortlist(candidates: list[dict], to_rewrite: list[dict]) -> 
         for candidate in selected:
             if id(candidate) in keep_ids:
                 continue
-            candidate["include"] = False
             candidate["backup_candidate"] = True
             candidate["backup_pool_only"] = True
             candidate["public_reserve"] = False
@@ -1591,7 +1573,6 @@ def _apply_cost_after_quality_guard(to_rewrite: list[dict]) -> tuple[list[dict],
         if not reason:
             selected.append(candidate)
             continue
-        candidate["include"] = False
         candidate["backup_candidate"] = True
         candidate["backup_pool_only"] = True
         candidate["public_reserve"] = False
@@ -3991,34 +3972,15 @@ def run_rank_digest(project_root: Path) -> StageResult:
 
     # Ticket notability warm (moved out of writer): plan-digest needs the
     # scores to make watch/public decisions before any prose exists.
-    from news_digest.pipeline.ticket_notability import enrich_ticket_notability, prefetch_notability  # noqa: PLC0415
+    from news_digest.pipeline.ticket_notability import (  # noqa: PLC0415
+        prefetch_notability,
+        stamp_canonical_ticket_notability,
+    )
 
     ticket_notability_cache = project_root / "data" / "state" / "ticket_notability_cache.json"
     notability_prefetch = prefetch_notability(candidates, ticket_notability_cache)
-    notability_scored = 0
-    for candidate in candidates:
-        if not isinstance(candidate, dict) or not candidate.get("include"):
-            continue
-        if str(candidate.get("category") or "") != "venues_tickets" and str(candidate.get("primary_block") or "") not in {
-            "ticket_radar",
-            "outside_gm_tickets",
-            "russian_events",
-        }:
-            continue
-        notability = enrich_ticket_notability(candidate, ticket_notability_cache)
-        candidate["ticket_notability"] = {
-            "artist": notability.artist,
-            "kind": notability.kind,
-            "tier": notability.tier,
-            "confidence": notability.confidence,
-            "signal": notability.signal,
-            "wikidata_id": notability.wikidata_id,
-            "sitelinks": notability.sitelinks,
-            "headliners": list(notability.headliners),
-            "signals": notability.signals or {},
-            "event_owner": notability.event_owner,
-        }
-        notability_scored += 1
+    notability_stamp = stamp_canonical_ticket_notability(candidates, ticket_notability_cache)
+    notability_scored = int(notability_stamp.get("stamped") or 0)
 
     section_selection_report = _finalize_digest_selection_verdicts(candidates)
     write_json(_section_selection_report_path(project_root), section_selection_report)
@@ -4059,6 +4021,7 @@ def run_rank_digest(project_root: Path) -> StageResult:
             "ticket_notability": {
                 "prefetched": notability_prefetch if isinstance(notability_prefetch, (int, dict)) else {},
                 "scored": notability_scored,
+                "canonical_stamp": notability_stamp,
             },
             "selection_totals": section_selection_report.get("totals", {}),
             "rank_seconds": round(time.monotonic() - _stage_t0, 2),

@@ -239,7 +239,7 @@ class IntraBatchDropTest(unittest.TestCase):
 # Cross-day semantic dedup
 # --------------------------------------------------------------------------
 class CrossDayDropTest(unittest.TestCase):
-    def test_cross_day_rehash_dropped_without_follow_up_marker(self) -> None:
+    def test_cross_day_rehash_is_deferred_to_planner_without_follow_up_marker(self) -> None:
         cand = _candidate("fp-new", "Council confirms scheme details", topic="scheme-2026")
         fact = _fact("fp-old", "Council reveals new scheme", topic="scheme-2026")
         with tempfile.TemporaryDirectory() as tmp:
@@ -250,9 +250,11 @@ class CrossDayDropTest(unittest.TestCase):
                 client=FakeClient(),
             )
         self.assertEqual(len(result.cross_day_drops), 1)
-        self.assertFalse(cand["include"])
+        self.assertTrue(cand["include"])
+        self.assertEqual(cand["dedupe_decision"], "repeat_pending_planner")
         self.assertEqual(cand["change_type"], "same_story_rehash")
         self.assertEqual(cand["semantic_match_fingerprint"], "fp-old")
+        self.assertTrue(result.cross_day_drops[0]["deferred_to_planner"])
 
     def test_cross_day_with_follow_up_marker_kept(self) -> None:
         cand = _candidate(

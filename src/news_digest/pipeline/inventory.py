@@ -534,6 +534,9 @@ def _card_field_value(candidate: dict, field: str) -> str:
 
         return weekend_activity_type(candidate)
     if field == "gm_fit":
+        explicit_fit = candidate.get("gm_fit")
+        if explicit_fit is True or str(explicit_fit or "").strip().upper() in {"GM", "TRUE", "YES"}:
+            return "GM"
         scope = str(candidate.get("venue_scope") or "")
         borough = str(event.get("borough") or "").lower()
         return "GM" if scope == "GM" or borough in {
@@ -763,8 +766,28 @@ def build_inventory_record(
         else True,
         "russian_evidence": candidate.get("russian_evidence")
         if isinstance(candidate.get("russian_evidence"), dict) else {},
+        "specific_event": bool(candidate.get("specific_event") or event.get("event_name")),
+        "activity_type": str(candidate.get("activity_type") or event.get("activity_type") or ""),
+        "gm_fit": candidate.get("gm_fit")
+        if candidate.get("gm_fit") not in (None, "")
+        else event.get("gm_fit"),
+        "action_url": str(
+            candidate.get("action_url")
+            or candidate.get("booking_url")
+            or event.get("booking_url")
+            or candidate.get("source_url")
+            or ""
+        ),
     }
     block_policy = INVENTORY_BLOCK_REGISTRY.get(str(candidate.get("primary_block") or ""), {})
+    for required_field in block_policy.get("required_fields") or ():
+        if required_field in fact_card and fact_card.get(required_field) not in (None, "", [], {}):
+            continue
+        value = candidate.get(required_field)
+        if value in (None, "", [], {}):
+            value = event.get(required_field)
+        if value not in (None, "", [], {}):
+            fact_card[str(required_field)] = value
     serving_ttl = float(block_policy.get("serving_ttl_hours") or 0.0)
     return {
         "fingerprint": str(candidate.get("fingerprint") or ""),
@@ -1161,6 +1184,10 @@ def inventory_record_to_candidate(record: dict) -> dict:
         "professional_cv_outcome": str(fact.get("professional_cv_outcome") or ""),
         "russian_evidence": fact.get("russian_evidence")
         if isinstance(fact.get("russian_evidence"), dict) else {},
+        "specific_event": bool(fact.get("specific_event")),
+        "activity_type": str(fact.get("activity_type") or ""),
+        "gm_fit": fact.get("gm_fit"),
+        "action_url": str(fact.get("action_url") or record.get("booking_url") or record.get("source_url") or ""),
         "inventory_source": "night_inventory",
         "inventory_run_id": str(record.get("run_id") or ""),
         "inventory_wave": str(record.get("wave") or ""),
@@ -1652,6 +1679,37 @@ def build_morning_inventory_intake(
             and working_record.get("observed_in_wave")
         )
         lineage["operational_provenance"] = "current" if operational_provenance else "legacy_unproven"
+        source_key = (
+            str(working_record.get("source_report_category") or ""),
+            str(working_record.get("source_name") or working_record.get("source_label") or ""),
+        )
+        source_unchanged_confirmed = bool(
+            policy.get("source_not_modified_confirms_inventory")
+            and operational_provenance
+            and source_key in unchanged_source_confirmations
+            and str(
+                working_record.get("action_url_liveness")
+                or working_record.get("liveness_status")
+                or ""
+            ).lower() == "alive"
+            and (
+                str(policy.get("source_confirmation_scope") or "") != "current_day"
+                or str(working_record.get("last_seen_at") or "")[:10] == today
+            )
+        )
+        if source_unchanged_confirmed:
+            # A current 304 proves that the source still serves the same
+            # representation. Refresh the serving clock before applying TTL;
+            # otherwise a Tuesday weekend card expires before Friday even
+            # though the source explicitly confirmed it unchanged.
+            refreshed_at = now_london().isoformat()
+            working_record["last_seen_at"] = refreshed_at
+            working_record["action_url_liveness"] = "alive"
+            ttl_hours = inventory_ttl_hours(working_record)
+            working_record["serving_expires_at"] = (
+                now_london() + timedelta(hours=ttl_hours)
+            ).isoformat()
+            lineage["source_confirmation"] = "not_modified"
         funnel["operational_records" if operational_provenance else "legacy_unproven_records"] += 1
         lineages.append(lineage)
         bucket = by_block.setdefault(
@@ -1746,17 +1804,7 @@ def build_morning_inventory_intake(
             lineage["intake_status"] = "duplicate_inventory"
             lineage["reason"] = "fingerprint_already_present"
             continue
-        source_key = (
-            str(working_record.get("source_report_category") or ""),
-            str(working_record.get("source_name") or working_record.get("source_label") or ""),
-        )
-        observed_today = str(working_record.get("last_seen_at") or "")[:10] == today
-        if (
-            policy.get("source_not_modified_confirms_inventory")
-            and operational_provenance
-            and observed_today
-            and source_key in unchanged_source_confirmations
-        ):
+        if source_unchanged_confirmed:
             candidate["inventory_lineage_id"] = str(lineage["lineage_id"])
             candidate["inventory_live_confirmation"] = "source_not_modified"
             candidates.append(candidate)
