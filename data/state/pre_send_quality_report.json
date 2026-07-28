@@ -2,123 +2,86 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 20 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair left 2 known factual operation(s) unresolved; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
-  "run_date_london": "2026-07-27",
-  "pipeline_run_id": "20260727T080140+0100",
-  "digest_sha256": "2db9e657fd8d3027e97d07fa045e929ad02eaf09f646abe1471faff3ffd100a1",
-  "duration_seconds": 129.249,
-  "confidence": 0.85,
+  "block_policy_version": "2026-07-27.p0",
+  "run_date_london": "2026-07-28",
+  "pipeline_run_id": "20260728T080140+0100",
+  "digest_sha256": "69fcb298c4dc037b0229b2df66fa0b8949b09362378cc9399770b99217f103a3",
+  "duration_seconds": 68.137,
+  "confidence": 0.9,
   "critical_errors": [
     {
       "line_index": 1,
       "section": "Главная история дня",
-      "problem": "Неверное утверждение о причине отставки Энди Бернхэма.",
+      "problem": "Не указано имя осуждённого, что может вызвать путаницу и недопонимание.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 9,
+      "line_index": 6,
       "section": "Свежие новости",
-      "problem": "Дата инцидента указана как 27 июля 2026 года, что противоречит дате публикации и описанию события.",
-      "risk": "date",
+      "problem": "География события не соответствует контракту раздела.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 17,
+      "section": "Футбол",
+      "problem": "Неверное указание тренера. Майкл Каррик не является тренером Манчестер Юнайтед.",
+      "risk": "factual",
       "suggested_action": "repair"
     },
     {
       "line_index": 20,
       "section": "Городской радар",
-      "problem": "Текст утверждает, что коронерское расследование завершено, но неясно, к какому выводу оно пришло. Это может ввести в заблуждение.",
+      "problem": "Дата прекращения научных наблюдений указана как 1 апреля 2028 года, что не соответствует текущему контексту.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 34,
+      "section": "Дальние анонсы",
+      "problem": "Некорректное указание места проведения мероприятия.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 22,
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Неправильное использование термина 'наркотик для изнасилования'.",
+      "risk": "sensitive",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 3,
+      "section": "Свежие новости",
+      "problem": "Дублирование информации о пожарах на болотах.",
+      "risk": "format",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 17,
+      "section": "Футбол",
+      "problem": "Неполная информация о трансфере.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 20,
       "section": "Городской радар",
-      "problem": "Указаны невероятно низкие цифры преступности, что может быть связано с проблемами ИТ, но это не уточнено.",
+      "problem": "Потеря финансирования обсерватории Джодрелл Банк не подтверждена.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
       "line_index": 34,
       "section": "Дальние анонсы",
-      "problem": "Мероприятие в Ливерпуле не относится к Greater Manchester.",
+      "problem": "Мероприятие не соответствует географическому контракту.",
       "risk": "geo",
       "suggested_action": "strip"
-    },
-    {
-      "line_index": 36,
-      "section": "Дальние анонсы",
-      "problem": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 37,
-      "section": "Дальние анонсы",
-      "problem": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 38,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дата события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 39,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Неправильный жанр для Wolfmother.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 49,
-      "section": "Крупные концерты вне GM",
-      "problem": "Duplicate entry for The Weeknd on the same date and venue.",
-      "risk": "factual",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 60,
-      "section": "Крупные концерты вне GM",
-      "problem": "Неправильный жанр указан для концерта Ariana Grande.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 61,
-      "section": "Крупные концерты вне GM",
-      "problem": "Неправильный жанр указан для концерта The Weeknd.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 8,
-      "section": "Свежие новости",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "death"
-    },
-    {
-      "line_index": 28,
-      "section": "Городской радар",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'killed' (death/who/what) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "death"
-    },
-    {
-      "line_index": 44,
-      "section": "Билеты / Ticket Radar",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'Murder' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "homicide"
     }
   ],
   "actions": [
@@ -126,720 +89,632 @@
       "line_index": 1,
       "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• Избиратели в Greater Manchester выберут нового мэра в четверг, чтобы заменить Энди Бернхэма, который подал в отставку. BBC Manchester",
-      "reason": "Утверждение о победе на дополнительных выборах не подтверждено источником.",
+      "replacement_text": "• Мужчина по имени Ахур Рамабарк Фати, участвовавший в поставках 'наркотика для изнасилования' (GBL) между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения. Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. MEN",
+      "reason": "Уточнение имени осуждённого для избежания путаницы.",
       "risk": "factual"
     },
     {
-      "line_index": 9,
+      "line_index": 6,
       "section": "Свежие новости",
-      "action": "patch",
-      "replacement_text": "• В результате инцидента с расистскими оскорблениями, произошедшего ранее в июле 2026 года, трое полицейских из Грейтера Манчестера оказались под следствием. Действия одного из них, который выключил камеру во время конфликта с задержанным, привели к его увольнению. Задержанный, Борвар Ахмед, в состоянии алкогольного опьянения оскорблял офицеров, что вызвало общественное возмущение и вопросы о профессионализме полиции. MEN",
-      "reason": "Исправление даты инцидента для соответствия контексту и дате публикации.",
-      "risk": "date"
+      "action": "strip",
+      "reason": "Событие произошло в Бирмингеме, что выходит за пределы географического охвата GM.",
+      "risk": "geo",
+      "replacement_text": ""
     },
     {
-      "line_index": 12,
-      "section": "Общественный транспорт сегодня",
+      "line_index": 17,
+      "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Metrolink (до 2 августа): на линии Eccles нет трамваев из-за ремонтных работ; курсирует замещающий автобус.",
-      "reason": "Повторение слова 'Metrolink' в конце строки избыточно.",
-      "risk": "format"
+      "replacement_text": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей в следующем сезоне. С менее чем четырьмя неделями до начала Премьер-лиги клубу необходимо активизировать свои действия на трансферном рынке, особенно после недавних изменений в составе, включая уход Каземиро и приход Андрея Сантоса и Юри Тилеманса за общую сумму £85 миллионов. MEN Manchester United",
+      "reason": "Майкл Каррик не является тренером Манчестер Юнайтед.",
+      "risk": "factual"
     },
     {
       "line_index": 20,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Завершилось коронерское расследование по делу учительницы Кэти Аллен-Джайвс, которая умерла через три месяца после начала работы в академии в Гортоне. Коллеги утверждают, что руководство школы не было честным относительно обстоятельств, приведших к её смерти. Результаты расследования пока не раскрыты. The Mill",
-      "reason": "Уточнение о результатах расследования, чтобы избежать недопонимания.",
+      "replacement_text": "• Обсерватория Джодрелл Банк потеряла финансирование, и телескоп Ловелла может закрыться, если не будет найдено новое финансирование. Все научные наблюдения могут прекратиться в будущем. BBC Manchester",
+      "reason": "Указанная дата прекращения научных наблюдений не соответствует текущему контексту.",
+      "risk": "date"
+    },
+    {
+      "line_index": 34,
+      "section": "Дальние анонсы",
+      "action": "patch",
+      "replacement_text": "• Бесплатная прогулка для благополучия пройдет в Stockroom, 37 to 39 Merseyway, Stockport 12 августа с 12:30 до 13:30. Stockport Events",
+      "reason": "Указано неверное место проведения мероприятия.",
       "risk": "factual"
     },
     {
-      "line_index": 22,
+      "line_index": 35,
+      "section": "Билеты / Ticket Radar",
+      "action": "patch",
+      "replacement_text": "• James Johnston — 14 августа, Manchester Academy; цена £20.00. Билеты и время указаны на официальной странице Manchester Academy.",
+      "reason": "Устранение дублирования названия 'Manchester Academy' в конце строки.",
+      "risk": "format"
+    },
+    {
+      "line_index": 1,
+      "section": "Главная история дня",
+      "action": "patch",
+      "replacement_text": "• Мужчина, участвовавший в поставках GBL между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения. Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. MEN",
+      "reason": "Исправление чувствительного термина.",
+      "risk": "sensitive"
+    },
+    {
+      "line_index": 3,
+      "section": "Свежие новости",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации о пожарах на болотах.",
+      "risk": "format"
+    },
+    {
+      "line_index": 17,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей Майкла Каррика в следующем сезоне. Клубу необходимо активизировать свои действия на трансферном рынке.",
+      "reason": "Уточнение информации о трансфере.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 20,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Данные о преступности от Greater Manchester Police показывают невероятно низкие цифры преступности, например, всего четыре преступления в Piccadilly Gardens за год, что вызывает опасения по поводу возможных проблем с ИТ и прозрачностью. MEN Latest News",
-      "reason": "Уточнение о возможных проблемах с ИТ, чтобы избежать недопонимания.",
+      "replacement_text": "• Обсерватория Джодрелл Банк может потерять финансирование, если не будет найдено новое финансирование. Все научные наблюдения могут прекратиться 1 апреля 2028 года. BBC Manchester",
+      "reason": "Уточнение информации о финансировании.",
       "risk": "factual"
     },
     {
       "line_index": 34,
       "section": "Дальние анонсы",
       "action": "strip",
-      "reason": "Мероприятие в Ливерпуле не относится к Greater Manchester.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 36,
-      "section": "Дальние анонсы",
-      "action": "strip",
-      "reason": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 37,
-      "section": "Дальние анонсы",
-      "action": "strip",
-      "reason": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 38,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Vanessa Carlton — 28 июля, Band On The Wall. (Pop). Билеты и время указаны на официальной странице. Ticketmaster",
-      "reason": "Дата события должна быть 28 июля, но в источнике указано 28 июля.",
-      "risk": "date"
-    },
-    {
-      "line_index": 39,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Wolfmother — 30 июля, O2 Ritz Manchester (Rock). Билеты и время указаны на официальной странице. Ticketmaster",
-      "reason": "Wolfmother относится к жанру Rock, а не Pop.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 49,
-      "section": "Крупные концерты вне GM",
-      "action": "strip",
-      "reason": "Duplicate entry for The Weeknd on the same date and venue.",
-      "risk": "factual",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 60,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• Ariana Grande — 24 августа, The O2 (Pop). Билеты поступили в продажу. Ticketmaster",
-      "reason": "Указан неверный жанр 'Rock', должен быть 'Pop'.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 61,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• The Weeknd — 18 августа, Wembley Stadium (Hip-Hop/Rap). Билеты поступили в продажу. Ticketmaster",
-      "reason": "Указан неверный жанр 'Trap', должен быть 'Hip-Hop/Rap'.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 69,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• Wolfmother — 28 июля, O2 Academy Bristol (Rock). Билеты и время указаны на официальной странице. Ticketmaster",
-      "reason": "Указан неверный жанр 'Pop', должен быть 'Rock'.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 75,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• SEX PISTOLS FT. FRANK CARTER — 1 августа, Cardiff Castle (Rock). Билеты и время указаны на официальной странице. Ticketmaster",
-      "reason": "Уточнение названия группы и жанра в соответствии с источником.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 79,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• SEX PISTOLS FT. FRANK CARTER — 2 августа, Scarborough Open Air Theatre (Rock). Билеты и время указаны на официальной странице. Ticketmaster",
-      "reason": "Уточнение названия группы и жанра в соответствии с источником.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 90,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• The Prodigy — 22 августа, The National Bowl (Электронная музыка). Время начала и билеты доступны на официальной странице. Ticketmaster",
-      "reason": "Исправление жанра музыки на правильный.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 93,
-      "section": "Русскоязычные концерты и стендап UK",
-      "action": "strip",
-      "reason": "Мероприятие проходит в Лондоне, что не соответствует географическому охвату Greater Manchester.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 94,
-      "section": "Русскоязычные концерты и стендап UK",
-      "action": "strip",
-      "reason": "Мероприятие проходит в Лондоне, что не соответствует географическому охвату Greater Manchester.",
-      "risk": "geo",
-      "replacement_text": ""
+      "replacement_text": "",
+      "reason": "Мероприятие не соответствует географическому контракту.",
+      "risk": "geo"
     }
   ],
   "warnings": [
-    "Повторение слова 'Metrolink' в строке 12 избыточно.",
-    "В разделе 'Футбол' преобладают трансферные новости, что может снизить разнообразие контента.",
-    "Некоторые жанры и названия групп могут быть неточными, проверьте соответствие с источником.",
-    "Что важно сегодня: 0 item(s), emergency floor 2",
-    "ticket dominance: 57 ticket/concert item(s) vs 17 core item(s)",
-    "line 6 drops source number/date fact(s): 18:32, 19:16, 26 jul 2026",
-    "line 8 drops source number/date fact(s): 16:34, 26 jul 2026",
-    "line 28 drops source number/date fact(s): 23 july 2026",
-    "line 44 drops source number/date fact(s): 2025-12-19 12:00, 2026-07-31, 2026-07-31 12:00"
+    "В разделе 'Общественный транспорт сегодня' все строки соответствуют требованиям, но стоит отметить, что информация о транспортных изменениях может быстро устаревать. Рекомендуется проверять актуальность данных перед публикацией.",
+    "В разделе 'IT и бизнес' нет критических ошибок, но стоит отметить, что плотность новостей может быть выше, чем в других разделах. Убедитесь, что это не нарушает баланс выпуска.",
+    "Дублирование названия 'Manchester Academy' в конце строки.",
+    "Отсутствие блока 'Что важно сегодня' и 'Что важно в ближайшие 7 дней' снижает полноту выпуска."
   ],
   "product_completeness": {
-    "section_counts": {
+    "block_policy_version": "2026-07-27.p0",
+    "scope": "input_before_pre_send_judge",
+    "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
       "Общественный транспорт сегодня": 5,
       "Футбол": 3,
-      "Городской радар": 10,
-      "Еда, открытия и рынки": 1,
-      "Дальние анонсы": 7,
-      "Билеты / Ticket Radar": 8,
-      "Крупные концерты вне GM": 47,
-      "Русскоязычные концерты и стендап UK": 2
+      "Городской радар": 11,
+      "IT и бизнес": 3,
+      "Дальние анонсы": 1,
+      "Билеты / Ticket Radar": 1,
+      "Крупные концерты вне GM": 1,
+      "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
-      "Свежие новости": 9,
-      "Футбол": 3,
+      "Погода": 1,
       "Что важно сегодня": 0,
-      "Общественный транспорт сегодня": 5
+      "Свежие новости": 9,
+      "Главная история дня": 1,
+      "Городской радар": 11,
+      "Что важно в ближайшие 7 дней": 0,
+      "Билеты / Ticket Radar": 1,
+      "Русскоязычные концерты и стендап UK": 1,
+      "Еда, открытия и рынки": 0,
+      "Business/tech события для тебя": 0,
+      "Футбол": 3
     },
-    "ticket_items": 57,
-    "core_items": 17,
+    "ticket_items": 3,
+    "core_items": 25,
     "writer_quality_counts": {
-      "included_candidates": 97,
-      "rendered_candidates": 94,
+      "included_candidates": 38,
+      "rendered_candidates": 37,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 3,
+      "dropped_low_quality": 1,
       "replaced_from_plan_backup": 0,
-      "removed_with_reason": 3
+      "removed_with_reason": 1
     },
-    "section_underflow": [],
     "source_health_counts": {
-      "ok": 101,
+      "ok": 104,
       "partial": 2,
-      "stale": 11,
-      "empty": 10,
-      "failed": 2,
-      "zero_yield": 79,
+      "stale": 13,
+      "empty": 6,
+      "failed": 0,
+      "zero_yield": 87,
       "no_contribution_breakdown": {
-        "fetch_failed": 2,
-        "all_rejected": 79,
-        "idle_no_items": 19
+        "fetch_failed": 0,
+        "all_rejected": 87,
+        "idle_no_items": 17
       },
       "zero_contribution_by_stage": {
-        "parsed": 19,
-        "written": 31,
-        "selected": 48,
-        "fetched": 2
+        "selected": 69,
+        "written": 18,
+        "parsed": 17
       },
       "weekend_source_coverage_incidents": 44
     },
-    "alerts": [
-      "Что важно сегодня: 0 item(s), emergency floor 2",
-      "ticket dominance: 57 ticket/concert item(s) vs 17 core item(s)"
+    "input_alerts_before_judge": [
+      "Что важно сегодня: 0 item(s), emergency floor 3",
+      "Что важно в ближайшие 7 дней: 0 item(s), emergency floor 3",
+      "Билеты / Ticket Radar: 1 item(s), emergency floor 2",
+      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
+      "Business/tech события для тебя: 0 item(s), emergency floor 1"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [],
+    "warnings": [
+      "patch for line 1 has unchecked number/date token(s): 12, 2000",
+      "patch for line 17 has unchecked number/date token(s): 85",
+      "patch for line 34 has unchecked number/date token(s): 12",
+      "multiple actions target line 1",
+      "patch for line 1 has unchecked number/date token(s): 12, 2000",
+      "multiple actions target line 17",
+      "multiple actions target line 20",
+      "patch for line 20 has unchecked number/date token(s): 1, 2028",
+      "multiple actions target line 34"
+    ],
     "can_apply_actions": true,
-    "action_count": 19
+    "action_count": 11
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 94,
-    "matched_lines": 94,
-    "applicable_lines": 5,
+    "checked_lines": 37,
+    "matched_lines": 37,
+    "applicable_lines": 4,
     "unmatched_lines": 0,
-    "critical_omission_count": 3,
-    "critical_omissions": [
-      {
-        "line_index": 8,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/for-me-its-death-sentence-34346528",
-        "concept": "death",
-        "obligation": "who/what",
-        "source_hit": "death"
-      },
-      {
-        "line_index": 28,
-        "source_url_key": "itv.com/news/granada/2026-07-23/man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike",
-        "concept": "death",
-        "obligation": "who/what",
-        "source_hit": "killed"
-      },
-      {
-        "line_index": 44,
-        "source_url_key": "ticketmaster.co.uk/radar-festival-friday-thy-art-is-manchester-31-07-2026/event/3E00638CB943584A",
-        "concept": "homicide",
-        "obligation": "charge/verdict/victim",
-        "source_hit": "Murder"
-      }
-    ],
-    "noncritical_omissions": [
-      {
-        "line_index": 6,
-        "dropped": [
-          "18:32",
-          "19:16",
-          "26 jul 2026"
-        ]
-      },
-      {
-        "line_index": 8,
-        "dropped": [
-          "16:34",
-          "26 jul 2026"
-        ]
-      },
-      {
-        "line_index": 28,
-        "dropped": [
-          "23 july 2026"
-        ]
-      },
-      {
-        "line_index": 44,
-        "dropped": [
-          "2025-12-19 12:00",
-          "2026-07-31",
-          "2026-07-31 12:00"
-        ]
-      }
-    ],
+    "critical_omission_count": 0,
+    "critical_omissions": [],
+    "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 3,
+    "pulled_for_rework": 0,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 22,
-    "attempted": 21,
-    "applied": 20,
-    "model_patch_applied": 11,
+    "requested": 11,
+    "attempted": 11,
+    "applied": 11,
+    "model_patch_applied": 6,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 0,
-    "stripped": 9,
-    "unresolved": 0,
-    "blocking_unresolved": 0,
-    "resolved_in_place": 19,
-    "fact_lock_rejected": 0,
-    "enrich_attempted": 22,
+    "reserve_replacement_used": 1,
+    "stripped": 4,
+    "unresolved": 2,
+    "blocking_unresolved": 2,
+    "resolved_in_place": 9,
+    "fact_lock_rejected": 2,
+    "enrich_attempted": 11,
     "post_check_errors": [],
+    "geo_contract_rejected": [],
     "actions": [
       {
         "line_index": 1,
         "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Утверждение о победе на дополнительных выборах не подтверждено источником.",
+        "reason": "Уточнение имени осуждённого для избежания путаницы.",
         "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неверное утверждение о причине отставки Энди Бернхэма.",
+        "critical_error": false,
+        "critical_problem": "",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
+        "outcome": "unresolved",
+        "method": "reserve_replacement",
         "plan_slot_id": "lead",
-        "candidate_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-cx2ke7pyw1lo",
-        "original_url_identity": "bbc.com/news/articles/cx2ke7pyw1lo",
-        "original_html": "<b>Избиратели в Greater Manchester выберут нового мэра в четверг, чтобы заменить Энди Бернхэма, который подал в отставку после победы на дополнительных выборах.</b> <a href=\"https://bbc.co.uk/news/articles/cx2ke7pyw1lo\">BBC Manchester</a>",
-        "post_check_passed": true
+        "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-moment-police-raid-home-linked-34356849",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849",
+        "original_html": "<b>Мужчина, участвовавший в поставках 'наркотика для изнасилования' (GBL) между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения.</b> Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849\">MEN</a>",
+        "model_replacement_rejected": "fact_lock: men",
+        "replacement_fingerprint": "media-layer-about-manchester-news-aboutmanchester-co-uk-manchester-united-odds-to-win-premier-league-comparing-todays-title-chances-with-the-ferguson-era",
+        "post_check_passed": false
       },
       {
-        "line_index": 9,
+        "line_index": 6,
         "section": "Свежие новости",
-        "requested_action": "patch",
-        "reason": "Исправление даты инцидента для соответствия контексту и дате публикации.",
-        "risk": "date",
+        "requested_action": "strip",
+        "reason": "Событие произошло в Бирмингеме, что выходит за пределы географического охвата GM.",
+        "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Дата инцидента указана как 27 июля 2026 года, что противоречит дате публикации и описанию события.",
+        "critical_problem": "География события не соответствует контракту раздела.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "last_24h-07",
-        "candidate_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-shut-f-up-enough-racist-34331030",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/shut-f-up-enough-racist-34331030",
-        "original_html": "• В результате инцидента с расистскими оскорблениями, произошедшего 27 июля 2026 года, трое полицейских из Грейтера Манчестера оказались под следствием. Действия одного из них, который выключил камеру во время конфликта с задержанным, привели к его увольнению. Задержанный, Борвар Ахмед, в состоянии алкогольного опьянения оскорблял офицеров, что вызвало общественное возмущение и вопросы о профессионализме полиции. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/shut-f-up-enough-racist-34331030\">MEN</a>",
+        "method": "removed",
+        "plan_slot_id": "last_24h-04",
+        "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-teenager-charged-over-alleged-peter-34358047",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/teenager-charged-over-alleged-peter-34358047",
+        "original_html": "• 19-летний Омара Маджед предстал перед судом по обвинению в организации ложной тревоги о бомбе, что привело к эвакуации шоу Питера Кея в Бирмингеме. Предварительное слушание назначено на 30 сентября. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/teenager-charged-over-alleged-peter-34358047\">MEN</a>",
+        "backup_outcome": "backup_chain_exhausted",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
+        "line_index": 17,
+        "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Повторение слова 'Metrolink' в конце строки избыточно.",
-        "risk": "format",
+        "reason": "Майкл Каррик не является тренером Манчестер Юнайтед.",
+        "risk": "factual",
         "critical_error": false,
         "critical_problem": "",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "transport-01",
-        "candidate_fingerprint": "transport-reminder|metrolink|eccles-line|2026-07-27",
-        "original_url_identity": "tfgm.com/travel-updates/travel-alerts/deansgate-castlefield-trafford-bar-tram-improvement-works",
-        "original_html": "• Metrolink (до 2 августа): на линии Eccles нет трамваев из-за ремонтных работ; курсирует замещающий автобус. <a href=\"https://tfgm.com/travel-updates/travel-alerts/deansgate-castlefield-trafford-bar-tram-improvement-works\">Metrolink</a>",
-        "verification": "judge correction matches the existing visible facts",
+        "method": "model_patch",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-manchester-united-statement-signing-away-34360497",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497",
+        "original_html": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей Майкла Каррика в следующем сезоне. С менее чем четырьмя неделями до начала Премьер-лиги клубу необходимо активизировать свои действия на трансферном рынке, особенно после недавних изменений в составе, включая уход Каземиро и приход Андрея Сантоса и Юри Тилеманса за общую сумму £85 миллионов. <a href=\"https://manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497\">MEN Manchester United</a>",
         "post_check_passed": true
       },
       {
         "line_index": 20,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Уточнение о результатах расследования, чтобы избежать недопонимания.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Текст утверждает, что коронерское расследование завершено, но неясно, к какому выводу оно пришло. Это может ввести в заблуждение.",
+        "reason": "Указанная дата прекращения научных наблюдений не соответствует текущему контексту.",
+        "risk": "date",
+        "critical_error": false,
+        "critical_problem": "",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
         "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "media-layer-the-mill-manchestermill-co-uk-death-of-a-teacher-did-an-inquest-get-to-the-heart-of-a-school-tragedy",
-        "original_url_identity": "manchestermill.co.uk/death-of-a-teacher-did-an-inquest-get-to-the-heart-of-a-school-tragedy",
-        "original_html": "• Завершилось коронерское расследование по делу учительницы Кэти Аллен-Джайвс, которая умерла через три месяца после начала работы в академии в Гортоне. Коллеги утверждают, что руководство школы не было честным относительно обстоятельств, приведших к её смерти. <a href=\"https://manchestermill.co.uk/death-of-a-teacher-did-an-inquest-get-to-the-heart-of-a-school-tragedy\">The Mill</a>",
+        "candidate_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c5y6r9rdxygo",
+        "original_url_identity": "bbc.com/news/articles/c5y6r9rdxygo",
+        "original_html": "• Обсерватория Джодрелл Банк потеряла финансирование, и телескоп Ловелла может закрыться, если не будет найдено новое финансирование. Все научные наблюдения прекратятся 1 апреля 2028 года. <a href=\"https://bbc.co.uk/news/articles/c5y6r9rdxygo\">BBC Manchester</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 22,
-        "section": "Городской радар",
+        "line_index": 34,
+        "section": "Дальние анонсы",
         "requested_action": "patch",
-        "reason": "Уточнение о возможных проблемах с ИТ, чтобы избежать недопонимания.",
+        "reason": "Указано неверное место проведения мероприятия.",
         "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Указаны невероятно низкие цифры преступности, что может быть связано с проблемами ИТ, но это не уточнено.",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "model_patch",
+        "plan_slot_id": "future_announcements-01",
+        "candidate_fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-pause-and-notice-wellbeing-walks",
+        "original_url_identity": "stockport.gov.uk/events/pause-and-notice-wellbeing-walks",
+        "original_html": "• Бесплатная прогулка для благополучия пройдет в центре Stockport 12 августа с 12:30 до 13:30. <a href=\"http://stockport.gov.uk/events/pause-and-notice-wellbeing-walks\">Stockport Events</a>",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 35,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "patch",
+        "reason": "Устранение дублирования названия 'Manchester Academy' в конце строки.",
+        "risk": "format",
+        "critical_error": false,
+        "critical_problem": "",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "city_watch-03",
-        "candidate_fingerprint": "media-layer-men-latest-news-manchestereveningnews-co-uk-news-greater-manchester-news-appears-no-crimes-been-committed-34326613",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/appears-no-crimes-been-committed-34326613",
-        "original_html": "• Данные о преступности от Greater Manchester Police показывают невероятно низкие цифры преступности, например, всего четыре преступления в Piccadilly Gardens за год, что вызывает опасения по поводу проблем с ИТ и прозрачностью. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/appears-no-crimes-been-committed-34326613\">MEN Latest News</a>",
+        "plan_slot_id": "ticket_radar-01",
+        "candidate_fingerprint": "venues-tickets-manchester-academy-manchesteracademy-net-order-gateway-13380381-james-johnston-manchester-academy-2-2026-08-14-19-30-00",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13380381/james-johnston-manchester-academy-2-2026-08-14-19-30-00",
+        "original_html": "• <b>James Johnston</b> — 14 августа, Manchester Academy; цена £20.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13380381/james-johnston-manchester-academy-2-2026-08-14-19-30-00\">Manchester Academy</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 1,
+        "section": "Главная история дня",
+        "requested_action": "patch",
+        "reason": "Исправление чувствительного термина.",
+        "risk": "sensitive",
+        "critical_error": true,
+        "critical_problem": "Не указано имя осуждённого, что может вызвать путаницу и недопонимание.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "removed",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-moment-police-raid-home-linked-34356849",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849",
+        "original_html": "<b>Мужчина, участвовавший в поставках 'наркотика для изнасилования' (GBL) между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения.</b> Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849\">MEN</a>",
+        "model_replacement_rejected": "fact_lock: men",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о пожарах на болотах.",
+        "risk": "format",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о пожарах на болотах.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "removed",
+        "plan_slot_id": "last_24h-01",
+        "candidate_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-major-incident-dovestone-new-phase-34361981",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/major-incident-dovestone-new-phase-34361981",
+        "original_html": "• Крупный инцидент продолжается, так как пожары на болотах в Довстоне, Свиншоу и Тинтвистле продолжают гореть, несмотря на дождь. Публика призвана избегать пострадавших районов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/major-incident-dovestone-new-phase-34361981\">MEN</a>",
+        "backup_outcome": "backup_chain_exhausted",
+        "removal_reason": "duplicate_after_plan",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 17,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Уточнение информации о трансфере.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неверное указание тренера. Майкл Каррик не является тренером Манчестер Юнайтед.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-manchester-united-statement-signing-away-34360497",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497",
+        "original_html": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей Майкла Каррика в следующем сезоне. С менее чем четырьмя неделями до начала Премьер-лиги клубу необходимо активизировать свои действия на трансферном рынке, особенно после недавних изменений в составе, включая уход Каземиро и приход Андрея Сантоса и Юри Тилеманса за общую сумму £85 миллионов. <a href=\"https://manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497\">MEN Manchester United</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 20,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Уточнение информации о финансировании.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дата прекращения научных наблюдений указана как 1 апреля 2028 года, что не соответствует текущему контексту.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "city_watch-01",
+        "candidate_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c5y6r9rdxygo",
+        "original_url_identity": "bbc.com/news/articles/c5y6r9rdxygo",
+        "original_html": "• Обсерватория Джодрелл Банк потеряла финансирование, и телескоп Ловелла может закрыться, если не будет найдено новое финансирование. Все научные наблюдения прекратятся 1 апреля 2028 года. <a href=\"https://bbc.co.uk/news/articles/c5y6r9rdxygo\">BBC Manchester</a>",
         "post_check_passed": true
       },
       {
         "line_index": 34,
         "section": "Дальние анонсы",
         "requested_action": "strip",
-        "reason": "Мероприятие в Ливерпуле не относится к Greater Manchester.",
+        "reason": "Мероприятие не соответствует географическому контракту.",
         "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Мероприятие в Ливерпуле не относится к Greater Manchester.",
+        "critical_problem": "Некорректное указание места проведения мероприятия.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "removed",
-        "plan_slot_id": "future_announcements-04",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-liverpool-onsale-ticketmaster-co-uk-gareth-taylor-and-his-queenies-formally-liverpool-04-09-2026-event-3-006315-9-1-97",
-        "original_url_identity": "ticketmaster.co.uk/gareth-taylor-and-his-queenies-formally-liverpool-04-09-2026/event/3E006315CF9C1B97",
-        "original_html": "• <b>Gareth Taylor and his Queenies (formally Bulsara and his Queenies)</b> — 4 сентября, O2 Academy 2 Liverpool (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/gareth-taylor-and-his-queenies-formally-liverpool-04-09-2026/event/3E006315CF9C1B97\">Ticketmaster</a>",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 36,
-        "section": "Дальние анонсы",
-        "requested_action": "strip",
-        "reason": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "removed",
-        "plan_slot_id": "future_announcements-06",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-freshfields-downtown-weekend-pass-cheshire-27-08-2026-event-37006312-59-713",
-        "original_url_identity": "ticketmaster.co.uk/freshfields-downtown-weekend-pass-cheshire-27-08-2026/event/37006312E59B713A",
-        "original_html": "• <b>Freshfields</b> — 27, 28, 29 и 30 августа, Daresbury (Cheshire). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/freshfields-downtown-weekend-pass-cheshire-27-08-2026/event/37006312E59B713A\">Ticketmaster</a>",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 37,
-        "section": "Дальние анонсы",
-        "requested_action": "strip",
-        "reason": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "removed",
-        "plan_slot_id": "future_announcements-07",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-creamfields-2026-souvenir-ticket-cheshire-27-08-2026-event-3700631-31-1",
-        "original_url_identity": "ticketmaster.co.uk/creamfields-2026-souvenir-ticket-cheshire-27-08-2026/event/3700631BCEA31B1E",
-        "original_html": "• <b>Creamfields 2026</b> — 27, 28, 29 и 30 августа, Daresbury (Cheshire). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/creamfields-2026-souvenir-ticket-cheshire-27-08-2026/event/3700631BCEA31B1E\">Ticketmaster</a>",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 38,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Дата события должна быть 28 июля, но в источнике указано 28 июля.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "ticket_radar-01",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-vanessa-carlton-manchester-28-07-2026-event-1-006392-2861-1",
-        "original_url_identity": "ticketmaster.co.uk/vanessa-carlton-manchester-28-07-2026/event/1F006392CD2861A1",
-        "original_html": "• <b>Vanessa Carlton</b> — 28 июля, Band On The Wall. (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/vanessa-carlton-manchester-28-07-2026/event/1F006392CD2861A1\">Ticketmaster</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 39,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Wolfmother относится к жанру Rock, а не Pop.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильный жанр для Wolfmother.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "ticket_radar-02",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-wolfmother-manchester-30-07-2026-event-3-006477-1839-4",
-        "original_url_identity": "ticketmaster.co.uk/wolfmother-manchester-30-07-2026/event/3E006477CA1839C4",
-        "original_html": "• <b>Wolfmother</b> — 30 июля, O2 Ritz Manchester (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/wolfmother-manchester-30-07-2026/event/3E006477CA1839C4\">Ticketmaster</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 49,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "strip",
-        "reason": "Duplicate entry for The Weeknd on the same date and venue.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Duplicate entry for The Weeknd on the same date and venue.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "removed",
-        "plan_slot_id": "outside_gm_tickets-04",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-15-08-2026-event-2300631-1960-6",
-        "original_url_identity": "ticketmaster.co.uk/the-weeknd-after-hours-til-dawn-london-15-08-2026/event/2300631DC1960FC6",
-        "original_html": "• <b>The Weeknd</b> — 15 августа, Wembley Stadium (Trap). Билеты поступили в продажу. <a href=\"https://ticketmaster.co.uk/the-weeknd-after-hours-til-dawn-london-15-08-2026/event/2300631DC1960FC6\">Ticketmaster</a>",
-        "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 60,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Указан неверный жанр 'Rock', должен быть 'Pop'.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильный жанр указан для концерта Ariana Grande.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "outside_gm_tickets-15",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-ariana-grande-the-eternal-sunshine-tour-london-24-08-2026-event-35006324-4-94",
-        "original_url_identity": "ticketmaster.co.uk/ariana-grande-the-eternal-sunshine-tour-london-24-08-2026/event/35006324F4E94EBB",
-        "original_html": "• <b>Ariana Grande</b> — 24 августа, The O2 (Pop). Билеты поступили в продажу. <a href=\"https://ticketmaster.co.uk/ariana-grande-the-eternal-sunshine-tour-london-24-08-2026/event/35006324F4E94EBB\">Ticketmaster</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 61,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Указан неверный жанр 'Trap', должен быть 'Hip-Hop/Rap'.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильный жанр указан для концерта The Weeknd.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "outside_gm_tickets-16",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-18-08-2026-event-2300632990-70945",
-        "original_url_identity": "ticketmaster.co.uk/the-weeknd-after-hours-til-dawn-london-18-08-2026/event/2300632990F70945",
-        "original_html": "• <b>The Weeknd</b> — 18 августа, Wembley Stadium (Trap). Билеты поступили в продажу. <a href=\"https://ticketmaster.co.uk/the-weeknd-after-hours-til-dawn-london-18-08-2026/event/2300632990F70945\">Ticketmaster</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 69,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Указан неверный жанр 'Pop', должен быть 'Rock'.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "outside_gm_tickets-24",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-wolfmother-bristol-28-07-2026-event-3-006477-003-5",
-        "original_url_identity": "ticketmaster.co.uk/wolfmother-bristol-28-07-2026/event/3E006477CE003B5E",
-        "original_html": "• <b>Wolfmother</b> — 28 июля, O2 Academy Bristol (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/wolfmother-bristol-28-07-2026/event/3E006477CE003B5E\">Ticketmaster</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 75,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Уточнение названия группы и жанра в соответствии с источником.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "outside_gm_tickets-30",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-sex-pistols-ft-frank-carter-cardiff-01-08-2026-event-1-006378-5-46923",
-        "original_url_identity": "ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923",
-        "original_html": "• <b>SEX PISTOLS</b> — 1 августа, Cardiff Castle (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923\">Ticketmaster</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 79,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Уточнение названия группы и жанра в соответствии с источником.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "outside_gm_tickets-34",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-sex-pistols-ft-frank-carter-scarborough-02-08-2026-event-35006378-9-4825",
-        "original_url_identity": "ticketmaster.co.uk/sex-pistols-ft-frank-carter-scarborough-02-08-2026/event/35006378AE9C4825",
-        "original_html": "• <b>SEX PISTOLS</b> — 2 августа, Scarborough Open Air Theatre (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-scarborough-02-08-2026/event/35006378AE9C4825\">Ticketmaster</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 90,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Исправление жанра музыки на правильный.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "outside_gm_tickets-45",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-the-prodigy-milton-keynes-22-08-2026-event-3700635-18-8-8",
-        "original_url_identity": "ticketmaster.co.uk/the-prodigy-milton-keynes-22-08-2026/event/3700635EA18A8F8E",
-        "original_html": "• <b>The Prodigy</b> — 22 августа, The National Bowl (Ампиано). Время начала и билеты доступны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-prodigy-milton-keynes-22-08-2026/event/3700635EA18A8F8E\">Ticketmaster</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 93,
-        "section": "Русскоязычные концерты и стендап UK",
-        "requested_action": "strip",
-        "reason": "Мероприятие проходит в Лондоне, что не соответствует географическому охвату Greater Manchester.",
-        "risk": "geo",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "removed",
-        "plan_slot_id": "russian_events-01",
-        "candidate_fingerprint": "russian-speaking-events-eventfirst-diaspora-eventfirst-co-uk-event-skameika",
-        "original_url_identity": "eventfirst.co.uk/event/skameika",
-        "original_html": "• Спектакль «Скамейка» с Алексеем Паниным и Ольгой Силиной состоится 29 ноября 2026 года в Logan Hall, Лондон. Двери откроются в 18:00, начало в 19:00. Билеты в продаже от £30. <a href=\"https://eventfirst.co.uk/event/skameika\">EventFirst Diaspora</a>",
-        "removal_reason": "unrenderable_line",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 94,
-        "section": "Русскоязычные концерты и стендап UK",
-        "requested_action": "strip",
-        "reason": "Мероприятие проходит в Лондоне, что не соответствует географическому охвату Greater Manchester.",
-        "risk": "geo",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "removed",
-        "plan_slot_id": "russian_events-02",
-        "candidate_fingerprint": "russian-speaking-events-uk-stand-up-club-eventbrite-eventbrite-co-uk-e-big-belly-comedy-club-tickets-1993777184229",
-        "original_url_identity": "eventbrite.co.uk/e/-big-belly-comedy-club-tickets-1993777184229",
-        "original_html": "• Комедийное шоу на русском языке 'Полезные связи' с Юрой Шахметовым пройдет 4 августа 2026 года в Big Belly Comedy Club в Лондоне. Билеты доступны на Eventbrite. <a href=\"https://eventbrite.co.uk/e/-big-belly-comedy-club-tickets-1993777184229\">UK Stand-Up Club Eventbrite</a>",
-        "removal_reason": "unrenderable_line",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 8,
-        "section": "Свежие новости",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
-        "risk": "translation",
-        "critical_error": true,
-        "critical_problem": "",
-        "completeness_concept": "death",
-        "outcome": "resolved_in_place",
-        "method": "removed",
-        "plan_slot_id": "last_24h-06",
-        "candidate_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-for-me-its-death-sentence-34346528",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/for-me-its-death-sentence-34346528",
-        "original_html": "• Совет Стокпорта продал спортивный комплекс Stockport Sports Village компании, связанной с футбольным клубом Stockport County. Закрытие спортзала Life Leisure запланировано на декабрь 2026 года, что вызывает опасения у местных жителей. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/for-me-its-death-sentence-34346528\">MEN</a>",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 28,
-        "section": "Городской радар",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'killed' (death/who/what) has no Russian rendering in the shipped line",
-        "risk": "translation",
-        "critical_error": true,
-        "critical_problem": "",
-        "completeness_concept": "death",
-        "outcome": "resolved_in_place",
-        "method": "removed",
-        "plan_slot_id": "city_watch-09",
-        "candidate_fingerprint": "media-layer-itv-granada-greater-manchester-itv-com-news-granada-2026-07-23-man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike",
-        "original_url_identity": "itv.com/news/granada/2026-07-23/man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike",
-        "original_html": "• Вынесен приговор — Терренс Кинг, 60 лет, был приговорен к 17 годам лишения свободы за убийство 15-летнего Девона Симмондса-Кейна, которого он намеренно сбил на Rowrah Crescent в Миддлтоне 22 июля 2025 года. <a href=\"https://itv.com/news/granada/2026-07-23/man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike\">ITV Granada Greater Manchester</a>",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 44,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'Murder' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
-        "risk": "translation",
-        "critical_error": true,
-        "critical_problem": "",
-        "completeness_concept": "homicide",
-        "outcome": "resolved_in_place",
-        "method": "removed",
-        "plan_slot_id": "ticket_radar-07",
-        "candidate_fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-radar-festival-friday-thy-art-is-manchester-31-07-2026-event-3-00638-943584",
-        "original_url_identity": "ticketmaster.co.uk/radar-festival-friday-thy-art-is-manchester-31-07-2026/event/3E00638CB943584A",
-        "original_html": "• <b>RADAR Festival</b> — 31 июля, O2 Victoria Warehouse Manchester. Билеты и время указаны на официальной странице. Состав: <b>Thy Art Is Murder</b>, <b>Chelsea Grin</b>, <b>Hacktivist</b>, <b>Cage Fight</b>, <b>CLT DRP</b>, <b>vianova</b>. <a href=\"https://ticketmaster.co.uk/radar-festival-friday-thy-art-is-manchester-31-07-2026/event/3E00638CB943584A\">Ticketmaster</a>",
+        "plan_slot_id": "future_announcements-01",
+        "candidate_fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-pause-and-notice-wellbeing-walks",
+        "original_url_identity": "stockport.gov.uk/events/pause-and-notice-wellbeing-walks",
+        "original_html": "• Бесплатная прогулка для благополучия пройдет в центре Stockport 12 августа с 12:30 до 13:30. <a href=\"http://stockport.gov.uk/events/pause-and-notice-wellbeing-walks\">Stockport Events</a>",
+        "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::утверждение о победе на дополнительных выборах не подтверждено источником.",
+        "group_key": "главная история дня::уточнение имени осуждённого для избежания путаницы.",
         "actions": [
           {
             "line_index": 1,
             "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Утверждение о победе на дополнительных выборах не подтверждено источником.",
+            "reason": "Уточнение имени осуждённого для избежания путаницы.",
             "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "reserve_replacement",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-moment-police-raid-home-linked-34356849",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849",
+            "original_html": "<b>Мужчина, участвовавший в поставках 'наркотика для изнасилования' (GBL) между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения.</b> Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849\">MEN</a>",
+            "model_replacement_rejected": "fact_lock: men",
+            "replacement_fingerprint": "media-layer-about-manchester-news-aboutmanchester-co-uk-manchester-united-odds-to-win-premier-league-comparing-todays-title-chances-with-the-ferguson-era",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 1,
+            "passed": false,
+            "detail": "final line missing"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::событие произошло в бирмингеме, что выходит за пределы географического охвата gm.",
+        "actions": [
+          {
+            "line_index": 6,
+            "section": "Свежие новости",
+            "requested_action": "strip",
+            "reason": "Событие произошло в Бирмингеме, что выходит за пределы географического охвата GM.",
+            "risk": "geo",
             "critical_error": true,
-            "critical_problem": "Неверное утверждение о причине отставки Энди Бернхэма.",
+            "critical_problem": "География события не соответствует контракту раздела.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "removed",
+            "plan_slot_id": "last_24h-04",
+            "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-teenager-charged-over-alleged-peter-34358047",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/teenager-charged-over-alleged-peter-34358047",
+            "original_html": "• 19-летний Омара Маджед предстал перед судом по обвинению в организации ложной тревоги о бомбе, что привело к эвакуации шоу Питера Кея в Бирмингеме. Предварительное слушание назначено на 30 сентября. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/teenager-charged-over-alleged-peter-34358047\">MEN</a>",
+            "backup_outcome": "backup_chain_exhausted",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 6,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::майкл каррик не является тренером манчестер юнайтед.",
+        "actions": [
+          {
+            "line_index": 17,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Майкл Каррик не является тренером Манчестер Юнайтед.",
+            "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-manchester-united-statement-signing-away-34360497",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497",
+            "original_html": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей Майкла Каррика в следующем сезоне. С менее чем четырьмя неделями до начала Премьер-лиги клубу необходимо активизировать свои действия на трансферном рынке, особенно после недавних изменений в составе, включая уход Каземиро и приход Андрея Сантоса и Юри Тилеманса за общую сумму £85 миллионов. <a href=\"https://manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497\">MEN Manchester United</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 17,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::указанная дата прекращения научных наблюдений не соответствует текущему контексту.",
+        "actions": [
+          {
+            "line_index": 20,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Указанная дата прекращения научных наблюдений не соответствует текущему контексту.",
+            "risk": "date",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "city_watch-01",
+            "candidate_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c5y6r9rdxygo",
+            "original_url_identity": "bbc.com/news/articles/c5y6r9rdxygo",
+            "original_html": "• Обсерватория Джодрелл Банк потеряла финансирование, и телескоп Ловелла может закрыться, если не будет найдено новое финансирование. Все научные наблюдения прекратятся 1 апреля 2028 года. <a href=\"https://bbc.co.uk/news/articles/c5y6r9rdxygo\">BBC Manchester</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 20,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "дальние анонсы::указано неверное место проведения мероприятия.",
+        "actions": [
+          {
+            "line_index": 34,
+            "section": "Дальние анонсы",
+            "requested_action": "patch",
+            "reason": "Указано неверное место проведения мероприятия.",
+            "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "model_patch",
+            "plan_slot_id": "future_announcements-01",
+            "candidate_fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-pause-and-notice-wellbeing-walks",
+            "original_url_identity": "stockport.gov.uk/events/pause-and-notice-wellbeing-walks",
+            "original_html": "• Бесплатная прогулка для благополучия пройдет в центре Stockport 12 августа с 12:30 до 13:30. <a href=\"http://stockport.gov.uk/events/pause-and-notice-wellbeing-walks\">Stockport Events</a>",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 34,
+            "passed": false,
+            "detail": "final line missing"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::устранение дублирования названия 'manchester academy' в конце строки",
+        "actions": [
+          {
+            "line_index": 35,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Устранение дублирования названия 'Manchester Academy' в конце строки.",
+            "risk": "format",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "ticket_radar-01",
+            "candidate_fingerprint": "venues-tickets-manchester-academy-manchesteracademy-net-order-gateway-13380381-james-johnston-manchester-academy-2-2026-08-14-19-30-00",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13380381/james-johnston-manchester-academy-2-2026-08-14-19-30-00",
+            "original_html": "• <b>James Johnston</b> — 14 августа, Manchester Academy; цена £20.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13380381/james-johnston-manchester-academy-2-2026-08-14-19-30-00\">Manchester Academy</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 35,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "ticket:james johnston|2026-08-14|manchester academy",
+            "visible_count": 1,
+            "passed": true
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "главная история дня::исправление чувствительного термина.",
+        "actions": [
+          {
+            "line_index": 1,
+            "section": "Главная история дня",
+            "requested_action": "patch",
+            "reason": "Исправление чувствительного термина.",
+            "risk": "sensitive",
+            "critical_error": true,
+            "critical_problem": "Не указано имя осуждённого, что может вызвать путаницу и недопонимание.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "removed",
             "plan_slot_id": "lead",
-            "candidate_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-cx2ke7pyw1lo",
-            "original_url_identity": "bbc.com/news/articles/cx2ke7pyw1lo",
-            "original_html": "<b>Избиратели в Greater Manchester выберут нового мэра в четверг, чтобы заменить Энди Бернхэма, который подал в отставку после победы на дополнительных выборах.</b> <a href=\"https://bbc.co.uk/news/articles/cx2ke7pyw1lo\">BBC Manchester</a>",
+            "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-moment-police-raid-home-linked-34356849",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849",
+            "original_html": "<b>Мужчина, участвовавший в поставках 'наркотика для изнасилования' (GBL) между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения.</b> Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849\">MEN</a>",
+            "model_replacement_rejected": "fact_lock: men",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
             "post_check_passed": true
           }
         ],
@@ -848,304 +723,30 @@
           {
             "line_index": 1,
             "passed": true,
-            "detail": "post-check passed"
+            "detail": "slot removed and source absent"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::исправление даты инцидента для соответствия контексту и дате публикации.",
+        "group_key": "свежие новости::дублирование информации о пожарах на болотах",
         "actions": [
           {
-            "line_index": 9,
+            "line_index": 3,
             "section": "Свежие новости",
-            "requested_action": "patch",
-            "reason": "Исправление даты инцидента для соответствия контексту и дате публикации.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата инцидента указана как 27 июля 2026 года, что противоречит дате публикации и описанию события.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "last_24h-07",
-            "candidate_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-shut-f-up-enough-racist-34331030",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/shut-f-up-enough-racist-34331030",
-            "original_html": "• В результате инцидента с расистскими оскорблениями, произошедшего 27 июля 2026 года, трое полицейских из Грейтера Манчестера оказались под следствием. Действия одного из них, который выключил камеру во время конфликта с задержанным, привели к его увольнению. Задержанный, Борвар Ахмед, в состоянии алкогольного опьянения оскорблял офицеров, что вызвало общественное возмущение и вопросы о профессионализме полиции. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/shut-f-up-enough-racist-34331030\">MEN</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 9,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::повторение слова 'metrolink' в конце строки избыточно.",
-        "actions": [
-          {
-            "line_index": 12,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "patch",
-            "reason": "Повторение слова 'Metrolink' в конце строки избыточно.",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о пожарах на болотах.",
             "risk": "format",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "transport-01",
-            "candidate_fingerprint": "transport-reminder|metrolink|eccles-line|2026-07-27",
-            "original_url_identity": "tfgm.com/travel-updates/travel-alerts/deansgate-castlefield-trafford-bar-tram-improvement-works",
-            "original_html": "• Metrolink (до 2 августа): на линии Eccles нет трамваев из-за ремонтных работ; курсирует замещающий автобус. <a href=\"https://tfgm.com/travel-updates/travel-alerts/deansgate-castlefield-trafford-bar-tram-improvement-works\">Metrolink</a>",
-            "verification": "judge correction matches the existing visible facts",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 12,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "городской радар::уточнение о результатах расследования, чтобы избежать недопонимания.",
-        "actions": [
-          {
-            "line_index": 20,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Уточнение о результатах расследования, чтобы избежать недопонимания.",
-            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Текст утверждает, что коронерское расследование завершено, но неясно, к какому выводу оно пришло. Это может ввести в заблуждение.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "media-layer-the-mill-manchestermill-co-uk-death-of-a-teacher-did-an-inquest-get-to-the-heart-of-a-school-tragedy",
-            "original_url_identity": "manchestermill.co.uk/death-of-a-teacher-did-an-inquest-get-to-the-heart-of-a-school-tragedy",
-            "original_html": "• Завершилось коронерское расследование по делу учительницы Кэти Аллен-Джайвс, которая умерла через три месяца после начала работы в академии в Гортоне. Коллеги утверждают, что руководство школы не было честным относительно обстоятельств, приведших к её смерти. <a href=\"https://manchestermill.co.uk/death-of-a-teacher-did-an-inquest-get-to-the-heart-of-a-school-tragedy\">The Mill</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 20,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::уточнение о возможных проблемах с ит, чтобы избежать недопонимания.",
-        "actions": [
-          {
-            "line_index": 22,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Уточнение о возможных проблемах с ИТ, чтобы избежать недопонимания.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Указаны невероятно низкие цифры преступности, что может быть связано с проблемами ИТ, но это не уточнено.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "city_watch-03",
-            "candidate_fingerprint": "media-layer-men-latest-news-manchestereveningnews-co-uk-news-greater-manchester-news-appears-no-crimes-been-committed-34326613",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/appears-no-crimes-been-committed-34326613",
-            "original_html": "• Данные о преступности от Greater Manchester Police показывают невероятно низкие цифры преступности, например, всего четыре преступления в Piccadilly Gardens за год, что вызывает опасения по поводу проблем с ИТ и прозрачностью. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/appears-no-crimes-been-committed-34326613\">MEN Latest News</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 22,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "дальние анонсы::мероприятие в ливерпуле не относится к greater manchester.",
-        "actions": [
-          {
-            "line_index": 34,
-            "section": "Дальние анонсы",
-            "requested_action": "strip",
-            "reason": "Мероприятие в Ливерпуле не относится к Greater Manchester.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Мероприятие в Ливерпуле не относится к Greater Manchester.",
+            "critical_problem": "Дублирование информации о пожарах на болотах.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "removed",
-            "plan_slot_id": "future_announcements-04",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-liverpool-onsale-ticketmaster-co-uk-gareth-taylor-and-his-queenies-formally-liverpool-04-09-2026-event-3-006315-9-1-97",
-            "original_url_identity": "ticketmaster.co.uk/gareth-taylor-and-his-queenies-formally-liverpool-04-09-2026/event/3E006315CF9C1B97",
-            "original_html": "• <b>Gareth Taylor and his Queenies (formally Bulsara and his Queenies)</b> — 4 сентября, O2 Academy 2 Liverpool (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/gareth-taylor-and-his-queenies-formally-liverpool-04-09-2026/event/3E006315CF9C1B97\">Ticketmaster</a>",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 34,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "дальние анонсы::мероприятие в daresbury (cheshire) не относится к greater manchester.",
-        "actions": [
-          {
-            "line_index": 36,
-            "section": "Дальние анонсы",
-            "requested_action": "strip",
-            "reason": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "removed",
-            "plan_slot_id": "future_announcements-06",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-freshfields-downtown-weekend-pass-cheshire-27-08-2026-event-37006312-59-713",
-            "original_url_identity": "ticketmaster.co.uk/freshfields-downtown-weekend-pass-cheshire-27-08-2026/event/37006312E59B713A",
-            "original_html": "• <b>Freshfields</b> — 27, 28, 29 и 30 августа, Daresbury (Cheshire). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/freshfields-downtown-weekend-pass-cheshire-27-08-2026/event/37006312E59B713A\">Ticketmaster</a>",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 37,
-            "section": "Дальние анонсы",
-            "requested_action": "strip",
-            "reason": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "removed",
-            "plan_slot_id": "future_announcements-07",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-creamfields-2026-souvenir-ticket-cheshire-27-08-2026-event-3700631-31-1",
-            "original_url_identity": "ticketmaster.co.uk/creamfields-2026-souvenir-ticket-cheshire-27-08-2026/event/3700631BCEA31B1E",
-            "original_html": "• <b>Creamfields 2026</b> — 27, 28, 29 и 30 августа, Daresbury (Cheshire). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/creamfields-2026-souvenir-ticket-cheshire-27-08-2026/event/3700631BCEA31B1E\">Ticketmaster</a>",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 36,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "line_index": 37,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::дата события должна быть 28 июля, но в источнике указано 28 июля.",
-        "actions": [
-          {
-            "line_index": 38,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "patch",
-            "reason": "Дата события должна быть 28 июля, но в источнике указано 28 июля.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-vanessa-carlton-manchester-28-07-2026-event-1-006392-2861-1",
-            "original_url_identity": "ticketmaster.co.uk/vanessa-carlton-manchester-28-07-2026/event/1F006392CD2861A1",
-            "original_html": "• <b>Vanessa Carlton</b> — 28 июля, Band On The Wall. (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/vanessa-carlton-manchester-28-07-2026/event/1F006392CD2861A1\">Ticketmaster</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 38,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::wolfmother относится к жанру rock, а не pop.",
-        "actions": [
-          {
-            "line_index": 39,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "patch",
-            "reason": "Wolfmother относится к жанру Rock, а не Pop.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неправильный жанр для Wolfmother.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "ticket_radar-02",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-wolfmother-manchester-30-07-2026-event-3-006477-1839-4",
-            "original_url_identity": "ticketmaster.co.uk/wolfmother-manchester-30-07-2026/event/3E006477CA1839C4",
-            "original_html": "• <b>Wolfmother</b> — 30 июля, O2 Ritz Manchester (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/wolfmother-manchester-30-07-2026/event/3E006477CA1839C4\">Ticketmaster</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 39,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "крупные концерты вне gm::duplicate entry for the weeknd on the same date and venue",
-        "actions": [
-          {
-            "line_index": 49,
-            "section": "Крупные концерты вне GM",
-            "requested_action": "strip",
-            "reason": "Duplicate entry for The Weeknd on the same date and venue.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Duplicate entry for The Weeknd on the same date and venue.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "removed",
-            "plan_slot_id": "outside_gm_tickets-04",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-15-08-2026-event-2300631-1960-6",
-            "original_url_identity": "ticketmaster.co.uk/the-weeknd-after-hours-til-dawn-london-15-08-2026/event/2300631DC1960FC6",
-            "original_html": "• <b>The Weeknd</b> — 15 августа, Wembley Stadium (Trap). Билеты поступили в продажу. <a href=\"https://ticketmaster.co.uk/the-weeknd-after-hours-til-dawn-london-15-08-2026/event/2300631DC1960FC6\">Ticketmaster</a>",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-major-incident-dovestone-new-phase-34361981",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/major-incident-dovestone-new-phase-34361981",
+            "original_html": "• Крупный инцидент продолжается, так как пожары на болотах в Довстоне, Свиншоу и Тинтвистле продолжают гореть, несмотря на дождь. Публика призвана избегать пострадавших районов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/major-incident-dovestone-new-phase-34361981\">MEN</a>",
+            "backup_outcome": "backup_chain_exhausted",
             "removal_reason": "duplicate_after_plan",
             "post_check_passed": true
           }
@@ -1153,13 +754,13 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 49,
+            "line_index": 3,
             "passed": true,
             "detail": "slot removed and source absent"
           },
           {
             "check": "duplicate_identity",
-            "identity": "ticket:the weeknd|2026-08-15|wembley stadium",
+            "identity": "topic:incident:oldham major incident at dovestone in new phase as huge moor fires rage on|same story new facts|2026 07 28",
             "visible_count": 0,
             "passed": true
           }
@@ -1167,30 +768,30 @@
         "known_factual_error": true
       },
       {
-        "group_key": "крупные концерты вне gm::указан неверный жанр 'rock', должен быть 'pop'.",
+        "group_key": "футбол::уточнение информации о трансфере.",
         "actions": [
           {
-            "line_index": 60,
-            "section": "Крупные концерты вне GM",
+            "line_index": 17,
+            "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Указан неверный жанр 'Rock', должен быть 'Pop'.",
+            "reason": "Уточнение информации о трансфере.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неправильный жанр указан для концерта Ariana Grande.",
+            "critical_problem": "Неверное указание тренера. Майкл Каррик не является тренером Манчестер Юнайтед.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "outside_gm_tickets-15",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-ariana-grande-the-eternal-sunshine-tour-london-24-08-2026-event-35006324-4-94",
-            "original_url_identity": "ticketmaster.co.uk/ariana-grande-the-eternal-sunshine-tour-london-24-08-2026/event/35006324F4E94EBB",
-            "original_html": "• <b>Ariana Grande</b> — 24 августа, The O2 (Pop). Билеты поступили в продажу. <a href=\"https://ticketmaster.co.uk/ariana-grande-the-eternal-sunshine-tour-london-24-08-2026/event/35006324F4E94EBB\">Ticketmaster</a>",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-manchester-united-statement-signing-away-34360497",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497",
+            "original_html": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей Майкла Каррика в следующем сезоне. С менее чем четырьмя неделями до начала Премьер-лиги клубу необходимо активизировать свои действия на трансферном рынке, особенно после недавних изменений в составе, включая уход Каземиро и приход Андрея Сантоса и Юри Тилеманса за общую сумму £85 миллионов. <a href=\"https://manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497\">MEN Manchester United</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 60,
+            "line_index": 17,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -1198,288 +799,55 @@
         "known_factual_error": true
       },
       {
-        "group_key": "крупные концерты вне gm::указан неверный жанр 'trap', должен быть 'hip-hop/rap'.",
+        "group_key": "городской радар::уточнение информации о финансировании.",
         "actions": [
           {
-            "line_index": 61,
-            "section": "Крупные концерты вне GM",
-            "requested_action": "patch",
-            "reason": "Указан неверный жанр 'Trap', должен быть 'Hip-Hop/Rap'.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неправильный жанр указан для концерта The Weeknd.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "outside_gm_tickets-16",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-18-08-2026-event-2300632990-70945",
-            "original_url_identity": "ticketmaster.co.uk/the-weeknd-after-hours-til-dawn-london-18-08-2026/event/2300632990F70945",
-            "original_html": "• <b>The Weeknd</b> — 18 августа, Wembley Stadium (Trap). Билеты поступили в продажу. <a href=\"https://ticketmaster.co.uk/the-weeknd-after-hours-til-dawn-london-18-08-2026/event/2300632990F70945\">Ticketmaster</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 61,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "крупные концерты вне gm::указан неверный жанр 'pop', должен быть 'rock'.",
-        "actions": [
-          {
-            "line_index": 69,
-            "section": "Крупные концерты вне GM",
-            "requested_action": "patch",
-            "reason": "Указан неверный жанр 'Pop', должен быть 'Rock'.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "outside_gm_tickets-24",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-wolfmother-bristol-28-07-2026-event-3-006477-003-5",
-            "original_url_identity": "ticketmaster.co.uk/wolfmother-bristol-28-07-2026/event/3E006477CE003B5E",
-            "original_html": "• <b>Wolfmother</b> — 28 июля, O2 Academy Bristol (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/wolfmother-bristol-28-07-2026/event/3E006477CE003B5E\">Ticketmaster</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 69,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "крупные концерты вне gm::уточнение названия группы и жанра в соответствии с источником.",
-        "actions": [
-          {
-            "line_index": 75,
-            "section": "Крупные концерты вне GM",
-            "requested_action": "patch",
-            "reason": "Уточнение названия группы и жанра в соответствии с источником.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "outside_gm_tickets-30",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-sex-pistols-ft-frank-carter-cardiff-01-08-2026-event-1-006378-5-46923",
-            "original_url_identity": "ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923",
-            "original_html": "• <b>SEX PISTOLS</b> — 1 августа, Cardiff Castle (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923\">Ticketmaster</a>",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 79,
-            "section": "Крупные концерты вне GM",
-            "requested_action": "patch",
-            "reason": "Уточнение названия группы и жанра в соответствии с источником.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "outside_gm_tickets-34",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-sex-pistols-ft-frank-carter-scarborough-02-08-2026-event-35006378-9-4825",
-            "original_url_identity": "ticketmaster.co.uk/sex-pistols-ft-frank-carter-scarborough-02-08-2026/event/35006378AE9C4825",
-            "original_html": "• <b>SEX PISTOLS</b> — 2 августа, Scarborough Open Air Theatre (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-scarborough-02-08-2026/event/35006378AE9C4825\">Ticketmaster</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 75,
-            "passed": true,
-            "detail": "post-check passed"
-          },
-          {
-            "line_index": 79,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "крупные концерты вне gm::исправление жанра музыки на правильный.",
-        "actions": [
-          {
-            "line_index": 90,
-            "section": "Крупные концерты вне GM",
-            "requested_action": "patch",
-            "reason": "Исправление жанра музыки на правильный.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "outside_gm_tickets-45",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-the-prodigy-milton-keynes-22-08-2026-event-3700635-18-8-8",
-            "original_url_identity": "ticketmaster.co.uk/the-prodigy-milton-keynes-22-08-2026/event/3700635EA18A8F8E",
-            "original_html": "• <b>The Prodigy</b> — 22 августа, The National Bowl (Ампиано). Время начала и билеты доступны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-prodigy-milton-keynes-22-08-2026/event/3700635EA18A8F8E\">Ticketmaster</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 90,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "русскоязычные концерты и стендап uk::мероприятие проходит в лондоне, что не соответствует географическому охвату greater manchester.",
-        "actions": [
-          {
-            "line_index": 93,
-            "section": "Русскоязычные концерты и стендап UK",
-            "requested_action": "strip",
-            "reason": "Мероприятие проходит в Лондоне, что не соответствует географическому охвату Greater Manchester.",
-            "risk": "geo",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "removed",
-            "plan_slot_id": "russian_events-01",
-            "candidate_fingerprint": "russian-speaking-events-eventfirst-diaspora-eventfirst-co-uk-event-skameika",
-            "original_url_identity": "eventfirst.co.uk/event/skameika",
-            "original_html": "• Спектакль «Скамейка» с Алексеем Паниным и Ольгой Силиной состоится 29 ноября 2026 года в Logan Hall, Лондон. Двери откроются в 18:00, начало в 19:00. Билеты в продаже от £30. <a href=\"https://eventfirst.co.uk/event/skameika\">EventFirst Diaspora</a>",
-            "removal_reason": "unrenderable_line",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 94,
-            "section": "Русскоязычные концерты и стендап UK",
-            "requested_action": "strip",
-            "reason": "Мероприятие проходит в Лондоне, что не соответствует географическому охвату Greater Manchester.",
-            "risk": "geo",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "removed",
-            "plan_slot_id": "russian_events-02",
-            "candidate_fingerprint": "russian-speaking-events-uk-stand-up-club-eventbrite-eventbrite-co-uk-e-big-belly-comedy-club-tickets-1993777184229",
-            "original_url_identity": "eventbrite.co.uk/e/-big-belly-comedy-club-tickets-1993777184229",
-            "original_html": "• Комедийное шоу на русском языке 'Полезные связи' с Юрой Шахметовым пройдет 4 августа 2026 года в Big Belly Comedy Club в Лондоне. Билеты доступны на Eventbrite. <a href=\"https://eventbrite.co.uk/e/-big-belly-comedy-club-tickets-1993777184229\">UK Stand-Up Club Eventbrite</a>",
-            "removal_reason": "unrenderable_line",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 93,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "line_index": 94,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "свежие новости::critical source fact dropped in translation: 'death' (death/who/what) has no russian rendering in the shipped line",
-        "actions": [
-          {
-            "line_index": 8,
-            "section": "Свежие новости",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
-            "risk": "translation",
-            "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "death",
-            "outcome": "resolved_in_place",
-            "method": "removed",
-            "plan_slot_id": "last_24h-06",
-            "candidate_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-for-me-its-death-sentence-34346528",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/for-me-its-death-sentence-34346528",
-            "original_html": "• Совет Стокпорта продал спортивный комплекс Stockport Sports Village компании, связанной с футбольным клубом Stockport County. Закрытие спортзала Life Leisure запланировано на декабрь 2026 года, что вызывает опасения у местных жителей. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/for-me-its-death-sentence-34346528\">MEN</a>",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 8,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::critical source fact dropped in translation: 'killed' (death/who/what) has no russian rendering in the shipped line",
-        "actions": [
-          {
-            "line_index": 28,
+            "line_index": 20,
             "section": "Городской радар",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'killed' (death/who/what) has no Russian rendering in the shipped line",
-            "risk": "translation",
+            "requested_action": "patch",
+            "reason": "Уточнение информации о финансировании.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "death",
+            "critical_problem": "Дата прекращения научных наблюдений указана как 1 апреля 2028 года, что не соответствует текущему контексту.",
+            "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "removed",
-            "plan_slot_id": "city_watch-09",
-            "candidate_fingerprint": "media-layer-itv-granada-greater-manchester-itv-com-news-granada-2026-07-23-man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike",
-            "original_url_identity": "itv.com/news/granada/2026-07-23/man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike",
-            "original_html": "• Вынесен приговор — Терренс Кинг, 60 лет, был приговорен к 17 годам лишения свободы за убийство 15-летнего Девона Симмондса-Кейна, которого он намеренно сбил на Rowrah Crescent в Миддлтоне 22 июля 2025 года. <a href=\"https://itv.com/news/granada/2026-07-23/man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike\">ITV Granada Greater Manchester</a>",
-            "removal_reason": "fact_lock_failed",
+            "method": "model_patch",
+            "plan_slot_id": "city_watch-01",
+            "candidate_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c5y6r9rdxygo",
+            "original_url_identity": "bbc.com/news/articles/c5y6r9rdxygo",
+            "original_html": "• Обсерватория Джодрелл Банк потеряла финансирование, и телескоп Ловелла может закрыться, если не будет найдено новое финансирование. Все научные наблюдения прекратятся 1 апреля 2028 года. <a href=\"https://bbc.co.uk/news/articles/c5y6r9rdxygo\">BBC Manchester</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 28,
+            "line_index": 20,
             "passed": true,
-            "detail": "slot removed and source absent"
+            "detail": "post-check passed"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "билеты / ticket radar::critical source fact dropped in translation: 'murder' (homicide/charge/verdict/victim) has no russian rendering in the shipped line",
+        "group_key": "дальние анонсы::мероприятие не соответствует географическому контракту.",
         "actions": [
           {
-            "line_index": 44,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'Murder' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
-            "risk": "translation",
+            "line_index": 34,
+            "section": "Дальние анонсы",
+            "requested_action": "strip",
+            "reason": "Мероприятие не соответствует географическому контракту.",
+            "risk": "geo",
             "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "homicide",
+            "critical_problem": "Некорректное указание места проведения мероприятия.",
+            "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "removed",
-            "plan_slot_id": "ticket_radar-07",
-            "candidate_fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-radar-festival-friday-thy-art-is-manchester-31-07-2026-event-3-00638-943584",
-            "original_url_identity": "ticketmaster.co.uk/radar-festival-friday-thy-art-is-manchester-31-07-2026/event/3E00638CB943584A",
-            "original_html": "• <b>RADAR Festival</b> — 31 июля, O2 Victoria Warehouse Manchester. Билеты и время указаны на официальной странице. Состав: <b>Thy Art Is Murder</b>, <b>Chelsea Grin</b>, <b>Hacktivist</b>, <b>Cage Fight</b>, <b>CLT DRP</b>, <b>vianova</b>. <a href=\"https://ticketmaster.co.uk/radar-festival-friday-thy-art-is-manchester-31-07-2026/event/3E00638CB943584A\">Ticketmaster</a>",
+            "plan_slot_id": "future_announcements-01",
+            "candidate_fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-pause-and-notice-wellbeing-walks",
+            "original_url_identity": "stockport.gov.uk/events/pause-and-notice-wellbeing-walks",
+            "original_html": "• Бесплатная прогулка для благополучия пройдет в центре Stockport 12 августа с 12:30 до 13:30. <a href=\"http://stockport.gov.uk/events/pause-and-notice-wellbeing-walks\">Stockport Events</a>",
+            "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
           }
@@ -1487,7 +855,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 44,
+            "line_index": 34,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -1496,277 +864,127 @@
       }
     ],
     "refetch": {
-      "attempted": 0,
-      "improved": 0,
+      "attempted": 2,
+      "improved": 2,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 14,
+      "skipped": 0,
       "reports": [
         {
-          "fingerprint": "transport-reminder|metrolink|eccles-line|2026-07-27",
-          "title": "[reminder] Metrolink Eccles line",
-          "status": "skipped",
-          "reason": "tfgm_ephemeral_alert",
-          "url": "https://tfgm.com/travel-updates/travel-alerts/deansgate-castlefield-trafford-bar-tram-improvement-works",
-          "candidate_evidence_chars": 0
+          "fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-pause-and-notice-wellbeing-walks",
+          "title": "Pause and Notice Wellbeing Walks",
+          "status": "ok",
+          "url": "http://stockport.gov.uk/events/pause-and-notice-wellbeing-walks",
+          "chars": 2442
         },
         {
-          "fingerprint": "venues-tickets-ticketmaster-liverpool-onsale-ticketmaster-co-uk-gareth-taylor-and-his-queenies-formally-liverpool-04-09-2026-event-3-006315-9-1-97",
-          "title": "Gareth Taylor and his Queenies (formally Bulsara and his Queenies) — event 2026-09-04 — public sale 2025-09-05 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/gareth-taylor-and-his-queenies-formally-liverpool-04-09-2026/event/3E006315CF9C1B97",
-          "candidate_evidence_chars": 347
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-freshfields-downtown-weekend-pass-cheshire-27-08-2026-event-37006312-59-713",
-          "title": "Freshfields - Downtown Weekend Pass — event 2026-08-27 — public sale 2025-08-29 09:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/freshfields-downtown-weekend-pass-cheshire-27-08-2026/event/37006312E59B713A",
-          "candidate_evidence_chars": 329
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-onsale-ticketmaster-co-uk-creamfields-2026-souvenir-ticket-cheshire-27-08-2026-event-3700631-31-1",
-          "title": "Creamfields 2026 - Souvenir Ticket — event 2026-08-27 — public sale 2025-08-29 08:30",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/creamfields-2026-souvenir-ticket-cheshire-27-08-2026/event/3700631BCEA31B1E",
-          "candidate_evidence_chars": 329
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-vanessa-carlton-manchester-28-07-2026-event-1-006392-2861-1",
-          "title": "Vanessa Carlton — event 2026-07-28 — public sale 2026-01-30 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/vanessa-carlton-manchester-28-07-2026/event/1F006392CD2861A1",
-          "candidate_evidence_chars": 365
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-wolfmother-manchester-30-07-2026-event-3-006477-1839-4",
-          "title": "Wolfmother — event 2026-07-30 — public sale 2026-03-30 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/wolfmother-manchester-30-07-2026/event/3E006477CA1839C4",
-          "candidate_evidence_chars": 367
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-15-08-2026-event-2300631-1960-6",
-          "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-08-15 — public sale 2025-09-12 12:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/the-weeknd-after-hours-til-dawn-london-15-08-2026/event/2300631DC1960FC6",
-          "candidate_evidence_chars": 339
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-ariana-grande-the-eternal-sunshine-tour-london-24-08-2026-event-35006324-4-94",
-          "title": "Ariana Grande - The Eternal Sunshine Tour — event 2026-08-24 — public sale 2025-09-18 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/ariana-grande-the-eternal-sunshine-tour-london-24-08-2026/event/35006324F4E94EBB",
-          "candidate_evidence_chars": 307
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-london-major-onsale-ticketmaster-co-uk-the-weeknd-after-hours-til-dawn-london-18-08-2026-event-2300632990-70945",
-          "title": "The Weeknd: After Hours Til Dawn Tour — event 2026-08-18 — public sale 2025-09-12 12:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/the-weeknd-after-hours-til-dawn-london-18-08-2026/event/2300632990F70945",
-          "candidate_evidence_chars": 339
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-wolfmother-bristol-28-07-2026-event-3-006477-003-5",
-          "title": "Wolfmother — event 2026-07-28 — public sale 2026-03-27 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/wolfmother-bristol-28-07-2026/event/3E006477CE003B5E",
-          "candidate_evidence_chars": 361
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-sex-pistols-ft-frank-carter-cardiff-01-08-2026-event-1-006378-5-46923",
-          "title": "SEX PISTOLS FT. FRANK CARTER — event 2026-08-01 — public sale 2025-11-28 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923",
-          "candidate_evidence_chars": 353
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-sex-pistols-ft-frank-carter-scarborough-02-08-2026-event-35006378-9-4825",
-          "title": "SEX PISTOLS FT. FRANK CARTER — event 2026-08-02 — public sale 2025-11-28 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-scarborough-02-08-2026/event/35006378AE9C4825",
-          "candidate_evidence_chars": 389
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-uk-major-upcoming-ticketmaster-co-uk-the-prodigy-milton-keynes-22-08-2026-event-3700635-18-8-8",
-          "title": "The Prodigy — event 2026-08-22 — public sale 2025-11-07 09:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/the-prodigy-milton-keynes-22-08-2026/event/3700635EA18A8F8E",
-          "candidate_evidence_chars": 395
-        },
-        {
-          "fingerprint": "venues-tickets-ticketmaster-manchester-upcoming-ticketmaster-co-uk-radar-festival-friday-thy-art-is-manchester-31-07-2026-event-3-00638-943584",
-          "title": "RADAR Festival: Friday - Thy Art Is Murder + Volumes + SikTh — event 2026-07-31 — public sale 2025-12-19 12:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/radar-festival-friday-thy-art-is-manchester-31-07-2026/event/3E00638CB943584A",
-          "candidate_evidence_chars": 405
+          "fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-pause-and-notice-wellbeing-walks",
+          "title": "Pause and Notice Wellbeing Walks",
+          "status": "ok",
+          "url": "http://stockport.gov.uk/events/pause-and-notice-wellbeing-walks",
+          "chars": 2442
         }
       ]
     },
-    "enrich_improved": 21,
-    "false_positive_existing_fact": 2,
-    "deterministic_rewrite_rejected": 3,
+    "enrich_improved": 11,
+    "deterministic_rewrite_rejected": 2,
+    "backup_chain_exhausted": 2,
+    "no_eligible_backup": 2,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 85,
-      "matched_lines": 85,
-      "applicable_lines": 2,
+      "checked_lines": 33,
+      "matched_lines": 33,
+      "applicable_lines": 3,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
-      "noncritical_omissions": [
-        {
-          "line_index": 6,
-          "dropped": [
-            "18:32",
-            "19:16",
-            "26 jul 2026"
-          ]
-        }
-      ],
+      "noncritical_omissions": [],
       "critical_errors": [],
-      "warnings": [
-        "line 6 drops source number/date fact(s): 18:32, 19:16, 26 jul 2026"
-      ],
+      "warnings": [],
       "recovered": 0,
       "pulled_for_rework": 0,
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 85,
-      "resolved_in_place": 85,
+      "checked_lines": 33,
+      "resolved_in_place": 33,
       "unresolved": 0,
       "findings": []
     },
-    "status": "resolved_in_place"
+    "status": "unresolved"
   },
-  "notes": "Уточнена причина отставки Энди Бернхэма для соответствия источнику.; Прогноз погоды соответствует источнику и не содержит ошибок.; Исправлена дата инцидента в строке 9 для соответствия контексту и дате публикации.; Выпуск можно отправлять, но стоит убрать избыточное повторение в строке 12.; Трансферные новости доминиру",
+  "notes": "Имя осуждённого добавлено для ясности и точности информации.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка о ложной тревоге о бомбе в Бирмингеме нарушает географический контракт раздела.; Все строки в разделе 'Общественный транспорт сегодня' корректны и соответствуют географическому охвату GM.",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.85,
+    "confidence": 0.9,
     "critical_errors": [
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "problem": "Неверное утверждение о причине отставки Энди Бернхэма.",
+        "problem": "Не указано имя осуждённого, что может вызвать путаницу и недопонимание.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 9,
+        "line_index": 6,
         "section": "Свежие новости",
-        "problem": "Дата инцидента указана как 27 июля 2026 года, что противоречит дате публикации и описанию события.",
-        "risk": "date",
+        "problem": "География события не соответствует контракту раздела.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 17,
+        "section": "Футбол",
+        "problem": "Неверное указание тренера. Майкл Каррик не является тренером Манчестер Юнайтед.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
         "line_index": 20,
         "section": "Городской радар",
-        "problem": "Текст утверждает, что коронерское расследование завершено, но неясно, к какому выводу оно пришло. Это может ввести в заблуждение.",
+        "problem": "Дата прекращения научных наблюдений указана как 1 апреля 2028 года, что не соответствует текущему контексту.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 34,
+        "section": "Дальние анонсы",
+        "problem": "Некорректное указание места проведения мероприятия.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 22,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Неправильное использование термина 'наркотик для изнасилования'.",
+        "risk": "sensitive",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о пожарах на болотах.",
+        "risk": "format",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 17,
+        "section": "Футбол",
+        "problem": "Неполная информация о трансфере.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 20,
         "section": "Городской радар",
-        "problem": "Указаны невероятно низкие цифры преступности, что может быть связано с проблемами ИТ, но это не уточнено.",
+        "problem": "Потеря финансирования обсерватории Джодрелл Банк не подтверждена.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
         "line_index": 34,
         "section": "Дальние анонсы",
-        "problem": "Мероприятие в Ливерпуле не относится к Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 36,
-        "section": "Дальние анонсы",
-        "problem": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 37,
-        "section": "Дальние анонсы",
-        "problem": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 38,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дата события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 39,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Неправильный жанр для Wolfmother.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 49,
-        "section": "Крупные концерты вне GM",
-        "problem": "Duplicate entry for The Weeknd on the same date and venue.",
-        "risk": "factual",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 60,
-        "section": "Крупные концерты вне GM",
-        "problem": "Неправильный жанр указан для концерта Ariana Grande.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 61,
-        "section": "Крупные концерты вне GM",
-        "problem": "Неправильный жанр указан для концерта The Weeknd.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 69,
-        "section": "Крупные концерты вне GM",
-        "problem": "Неправильный жанр указан для концерта Wolfmother.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 90,
-        "section": "Крупные концерты вне GM",
-        "problem": "Неправильный жанр музыки для The Prodigy.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 93,
-        "section": "Русскоязычные концерты и стендап UK",
-        "problem": "Мероприятие в Лондоне, а не в Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 94,
-        "section": "Русскоязычные концерты и стендап UK",
-        "problem": "Мероприятие в Лондоне, а не в Greater Manchester.",
+        "problem": "Мероприятие не соответствует географическому контракту.",
         "risk": "geo",
         "suggested_action": "strip"
       }
@@ -1776,161 +994,101 @@
         "line_index": 1,
         "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• Избиратели в Greater Manchester выберут нового мэра в четверг, чтобы заменить Энди Бернхэма, который подал в отставку. BBC Manchester",
-        "reason": "Утверждение о победе на дополнительных выборах не подтверждено источником.",
+        "replacement_text": "• Мужчина по имени Ахур Рамабарк Фати, участвовавший в поставках 'наркотика для изнасилования' (GBL) между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения. Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. MEN",
+        "reason": "Уточнение имени осуждённого для избежания путаницы.",
         "risk": "factual"
       },
       {
-        "line_index": 9,
+        "line_index": 6,
         "section": "Свежие новости",
-        "action": "patch",
-        "replacement_text": "• В результате инцидента с расистскими оскорблениями, произошедшего ранее в июле 2026 года, трое полицейских из Грейтера Манчестера оказались под следствием. Действия одного из них, который выключил камеру во время конфликта с задержанным, привели к его увольнению. Задержанный, Борвар Ахмед, в состоянии алкогольного опьянения оскорблял офицеров, что вызвало общественное возмущение и вопросы о профессионализме полиции. MEN",
-        "reason": "Исправление даты инцидента для соответствия контексту и дате публикации.",
-        "risk": "date"
+        "action": "strip",
+        "reason": "Событие произошло в Бирмингеме, что выходит за пределы географического охвата GM.",
+        "risk": "geo"
       },
       {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
+        "line_index": 17,
+        "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Metrolink (до 2 августа): на линии Eccles нет трамваев из-за ремонтных работ; курсирует замещающий автобус.",
-        "reason": "Повторение слова 'Metrolink' в конце строки избыточно.",
-        "risk": "format"
+        "replacement_text": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей в следующем сезоне. С менее чем четырьмя неделями до начала Премьер-лиги клубу необходимо активизировать свои действия на трансферном рынке, особенно после недавних изменений в составе, включая уход Каземиро и приход Андрея Сантоса и Юри Тилеманса за общую сумму £85 миллионов. MEN Manchester United",
+        "reason": "Майкл Каррик не является тренером Манчестер Юнайтед.",
+        "risk": "factual"
       },
       {
         "line_index": 20,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Завершилось коронерское расследование по делу учительницы Кэти Аллен-Джайвс, которая умерла через три месяца после начала работы в академии в Гортоне. Коллеги утверждают, что руководство школы не было честным относительно обстоятельств, приведших к её смерти. Результаты расследования пока не раскрыты. The Mill",
-        "reason": "Уточнение о результатах расследования, чтобы избежать недопонимания.",
+        "replacement_text": "• Обсерватория Джодрелл Банк потеряла финансирование, и телескоп Ловелла может закрыться, если не будет найдено новое финансирование. Все научные наблюдения могут прекратиться в будущем. BBC Manchester",
+        "reason": "Указанная дата прекращения научных наблюдений не соответствует текущему контексту.",
+        "risk": "date"
+      },
+      {
+        "line_index": 34,
+        "section": "Дальние анонсы",
+        "action": "patch",
+        "replacement_text": "• Бесплатная прогулка для благополучия пройдет в Stockroom, 37 to 39 Merseyway, Stockport 12 августа с 12:30 до 13:30. Stockport Events",
+        "reason": "Указано неверное место проведения мероприятия.",
         "risk": "factual"
       },
       {
-        "line_index": 22,
+        "line_index": 35,
+        "section": "Билеты / Ticket Radar",
+        "action": "patch",
+        "replacement_text": "• James Johnston — 14 августа, Manchester Academy; цена £20.00. Билеты и время указаны на официальной странице Manchester Academy.",
+        "reason": "Устранение дублирования названия 'Manchester Academy' в конце строки.",
+        "risk": "format"
+      },
+      {
+        "line_index": 1,
+        "section": "Главная история дня",
+        "action": "patch",
+        "replacement_text": "• Мужчина, участвовавший в поставках GBL между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения. Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. MEN",
+        "reason": "Исправление чувствительного термина.",
+        "risk": "sensitive"
+      },
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации о пожарах на болотах.",
+        "risk": "format"
+      },
+      {
+        "line_index": 17,
+        "section": "Футбол",
+        "action": "patch",
+        "replacement_text": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей Майкла Каррика в следующем сезоне. Клубу необходимо активизировать свои действия на трансферном рынке.",
+        "reason": "Уточнение информации о трансфере.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 20,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Данные о преступности от Greater Manchester Police показывают невероятно низкие цифры преступности, например, всего четыре преступления в Piccadilly Gardens за год, что вызывает опасения по поводу возможных проблем с ИТ и прозрачностью. MEN Latest News",
-        "reason": "Уточнение о возможных проблемах с ИТ, чтобы избежать недопонимания.",
+        "replacement_text": "• Обсерватория Джодрелл Банк может потерять финансирование, если не будет найдено новое финансирование. Все научные наблюдения могут прекратиться 1 апреля 2028 года. BBC Manchester",
+        "reason": "Уточнение информации о финансировании.",
         "risk": "factual"
       },
       {
         "line_index": 34,
         "section": "Дальние анонсы",
         "action": "strip",
-        "reason": "Мероприятие в Ливерпуле не относится к Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 36,
-        "section": "Дальние анонсы",
-        "action": "strip",
-        "reason": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 37,
-        "section": "Дальние анонсы",
-        "action": "strip",
-        "reason": "Мероприятие в Daresbury (Cheshire) не относится к Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 38,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Vanessa Carlton — 28 июля, Band On The Wall. (Pop). Билеты и время указаны на официальной странице. Ticketmaster",
-        "reason": "Дата события должна быть 28 июля, но в источнике указано 28 июля.",
-        "risk": "date"
-      },
-      {
-        "line_index": 39,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Wolfmother — 30 июля, O2 Ritz Manchester (Rock). Билеты и время указаны на официальной странице. Ticketmaster",
-        "reason": "Wolfmother относится к жанру Rock, а не Pop.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 49,
-        "section": "Крупные концерты вне GM",
-        "action": "strip",
-        "reason": "Duplicate entry for The Weeknd on the same date and venue.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 60,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• Ariana Grande — 24 августа, The O2 (Pop). Билеты поступили в продажу. Ticketmaster",
-        "reason": "Указан неверный жанр 'Rock', должен быть 'Pop'.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 61,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• The Weeknd — 18 августа, Wembley Stadium (Hip-Hop/Rap). Билеты поступили в продажу. Ticketmaster",
-        "reason": "Указан неверный жанр 'Trap', должен быть 'Hip-Hop/Rap'.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 69,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• Wolfmother — 28 июля, O2 Academy Bristol (Rock). Билеты и время указаны на официальной странице. Ticketmaster",
-        "reason": "Указан неверный жанр 'Pop', должен быть 'Rock'.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 75,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• SEX PISTOLS FT. FRANK CARTER — 1 августа, Cardiff Castle (Rock). Билеты и время указаны на официальной странице. Ticketmaster",
-        "reason": "Уточнение названия группы и жанра в соответствии с источником.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 79,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• SEX PISTOLS FT. FRANK CARTER — 2 августа, Scarborough Open Air Theatre (Rock). Билеты и время указаны на официальной странице. Ticketmaster",
-        "reason": "Уточнение названия группы и жанра в соответствии с источником.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 90,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• The Prodigy — 22 августа, The National Bowl (Электронная музыка). Время начала и билеты доступны на официальной странице. Ticketmaster",
-        "reason": "Исправление жанра музыки на правильный.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 93,
-        "section": "Русскоязычные концерты и стендап UK",
-        "action": "strip",
-        "reason": "Мероприятие проходит в Лондоне, что не соответствует географическому охвату Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 94,
-        "section": "Русскоязычные концерты и стендап UK",
-        "action": "strip",
-        "reason": "Мероприятие проходит в Лондоне, что не соответствует географическому охвату Greater Manchester.",
+        "replacement_text": "",
+        "reason": "Мероприятие не соответствует географическому контракту.",
         "risk": "geo"
       }
     ],
     "warnings": [
-      "Повторение слова 'Metrolink' в строке 12 избыточно.",
-      "В разделе 'Футбол' преобладают трансферные новости, что может снизить разнообразие контента.",
-      "Некоторые жанры и названия групп могут быть неточными, проверьте соответствие с источником.",
-      "Что важно сегодня: 0 item(s), emergency floor 2",
-      "ticket dominance: 57 ticket/concert item(s) vs 17 core item(s)"
+      "В разделе 'Общественный транспорт сегодня' все строки соответствуют требованиям, но стоит отметить, что информация о транспортных изменениях может быстро устаревать. Рекомендуется проверять актуальность данных перед публикацией.",
+      "В разделе 'IT и бизнес' нет критических ошибок, но стоит отметить, что плотность новостей может быть выше, чем в других разделах. Убедитесь, что это не нарушает баланс выпуска.",
+      "Дублирование названия 'Manchester Academy' в конце строки.",
+      "Отсутствие блока 'Что важно сегодня' и 'Что важно в ближайшие 7 дней' снижает полноту выпуска."
     ],
-    "notes": "Уточнена причина отставки Энди Бернхэма для соответствия источнику.; Прогноз погоды соответствует источнику и не содержит ошибок.; Исправлена дата инцидента в строке 9 для соответствия контексту и дате публикации.; Выпуск можно отправлять, но стоит убрать избыточное повторение в строке 12.; Трансферные новости доминиру",
+    "notes": "Имя осуждённого добавлено для ясности и точности информации.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка о ложной тревоге о бомбе в Бирмингеме нарушает географический контракт раздела.; Все строки в разделе 'Общественный транспорт сегодня' корректны и соответствуют географическому охвату GM.",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 14,
+      "chunk_count": 11,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -1948,8 +1106,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2228,
-          "duration_seconds": 2.809
+          "estimated_tokens": 2602,
+          "duration_seconds": 3.208
         },
         {
           "chunk_id": "chunk-02",
@@ -1966,8 +1124,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2114,
-          "duration_seconds": 1.286
+          "estimated_tokens": 2321,
+          "duration_seconds": 1.435
         },
         {
           "chunk_id": "chunk-03",
@@ -1984,8 +1142,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5982,
-          "duration_seconds": 3.691
+          "estimated_tokens": 7130,
+          "duration_seconds": 2.424
         },
         {
           "chunk_id": "chunk-04",
@@ -1999,11 +1157,11 @@
           ],
           "decision": "warn",
           "critical_error_count": 0,
-          "action_count": 1,
+          "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 3668,
-          "duration_seconds": 1.519
+          "estimated_tokens": 4077,
+          "duration_seconds": 1.436
         },
         {
           "chunk_id": "chunk-05",
@@ -2015,175 +1173,121 @@
           "sections": [
             "Футбол"
           ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3203,
-          "duration_seconds": 1.316
+          "estimated_tokens": 3590,
+          "duration_seconds": 2.62
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
             20,
-            29
+            30
           ],
           "sections": [
             "Городской радар"
           ],
           "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6132,
-          "duration_seconds": 4.87
+          "estimated_tokens": 7808,
+          "duration_seconds": 3.135
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            30,
-            30
+            31,
+            33
           ],
           "sections": [
-            "Еда, открытия и рынки"
+            "IT и бизнес"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 3538,
+          "duration_seconds": 30.765
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            34,
+            34
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2594,
+          "duration_seconds": 4.236
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            35,
+            35
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 1,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 2693,
+          "duration_seconds": 20.719
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            36,
+            36
+          ],
+          "sections": [
+            "Крупные концерты вне GM"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2374,
-          "duration_seconds": 1.521
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            31,
-            37
-          ],
-          "sections": [
-            "Дальние анонсы"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 3,
-          "action_count": 3,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 5281,
-          "duration_seconds": 7.905
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            38,
-            45
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 5760,
-          "duration_seconds": 19.484
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            46,
-            57
-          ],
-          "sections": [
-            "Крупные концерты вне GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 7406,
-          "duration_seconds": 70.821
+          "estimated_tokens": 2597,
+          "duration_seconds": 4.565
         },
         {
           "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            58,
-            69
-          ],
-          "sections": [
-            "Крупные концерты вне GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 3,
-          "action_count": 3,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 7432,
-          "duration_seconds": 85.379
-        },
-        {
-          "chunk_id": "chunk-12",
-          "status": "ok",
-          "line_range": [
-            70,
-            81
-          ],
-          "sections": [
-            "Крупные концерты вне GM"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 2,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 7346,
-          "duration_seconds": 16.136
-        },
-        {
-          "chunk_id": "chunk-13",
-          "status": "ok",
-          "line_range": [
-            82,
-            92
-          ],
-          "sections": [
-            "Крупные концерты вне GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 7007,
-          "duration_seconds": 15.304
-        },
-        {
-          "chunk_id": "chunk-14",
-          "status": "ok",
-          "line_range": [
-            93,
-            94
+            37,
+            37
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2836,
-          "duration_seconds": 7.656
+          "estimated_tokens": 2656,
+          "duration_seconds": 6.001
         }
       ],
       "reduce": {
@@ -2191,13 +1295,13 @@
         "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "warn",
-        "critical_error_count": 0,
-        "action_count": 0,
-        "warning_count": 2,
+        "decision": "repair_required",
+        "critical_error_count": 5,
+        "action_count": 5,
+        "warning_count": 1,
         "error": "",
-        "estimated_tokens": 13504,
-        "duration_seconds": 28.355
+        "estimated_tokens": 10025,
+        "duration_seconds": 27.408
       },
       "max_workers": 3,
       "chunk_line_target": 12,
