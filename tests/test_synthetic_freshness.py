@@ -17,7 +17,12 @@ from news_digest.pipeline.collector import fallbacks, weather
 from news_digest.pipeline.collector.weather import _met_office_practical_angle
 from news_digest.pipeline.release import _summarise_synthetic_freshness
 from news_digest.pipeline.transport_card import TransportCard
-from news_digest.pipeline.transport_fill import _make_reminder_candidate, _persistent_tram_record
+from news_digest.pipeline.transport_fill import (
+    _make_reminder_candidate,
+    _normalize_active_date_ranges,
+    _persistent_tram_record,
+    _recover_active_service_impacts,
+)
 
 
 # --------------------------------------------------------------------------
@@ -331,6 +336,48 @@ class TransportReminderFreshnessTest(unittest.TestCase):
             bounded,
             date(2026, 7, 21),
         ))
+
+    def test_saved_multiline_incident_recovers_all_services_without_live_fetch(self) -> None:
+        records = {
+            "metrolink|eccles-line": {
+                "key": "metrolink|eccles-line",
+                "operator": "Metrolink",
+                "line": "Eccles line",
+                "start_date": "2027-07-13",
+                "end_date": "2026-08-02",
+                "first_seen": "2026-07-22",
+                "last_confirmed": "2026-07-26",
+                "source_url": (
+                    "https://tfgm.com/travel-updates/travel-alerts/"
+                    "deansgate-castlefield-trafford-bar-tram-improvement-works"
+                ),
+            }
+        }
+        facts = [{
+            "title": "Major disruption to Metrolink services for upgrade works",
+            "evidence_packet": {
+                "evidence_text": (
+                    "Tracks are being replaced between Trafford Bar and Deansgate-Castlefield "
+                    "from 13 July until 2 August. No trams would operate on the Eccles, "
+                    "Trafford Centre and Altrincham lines while the East Didsbury/Manchester "
+                    "Airport lines would terminate at Firswood and the Rochdale line would "
+                    "terminate at Exchange Square. Replacement buses are running between "
+                    "affected stops."
+                )
+            },
+        }]
+
+        self.assertEqual(_normalize_active_date_ranges(records), 1)
+        self.assertEqual(_recover_active_service_impacts(records, facts), 1)
+        reminder = _make_reminder_candidate(records["metrolink|eccles-line"], "2026-07-28")
+
+        self.assertEqual(records["metrolink|eccles-line"]["start_date"], "2026-07-13")
+        for expected in (
+            "Altrincham", "Eccles", "Trafford Centre", "East Didsbury",
+            "Manchester Airport", "Firswood", "Rochdale", "Exchange Square",
+        ):
+            self.assertIn(expected, reminder["draft_line"])
+        self.assertIn("до 2 августа", reminder["draft_line"])
 
 
 # --------------------------------------------------------------------------
