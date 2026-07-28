@@ -938,6 +938,42 @@ class BuildRecordTest(unittest.TestCase):
         self.assertTrue(restored["specific_event"])
         self.assertEqual(restored["action_url"], "https://example.test/hillside")
 
+    def test_weekend_roundtrip_persists_derived_activity_and_gm_fit(self) -> None:
+        candidate = {
+            "fingerprint": "weekend-derived-roundtrip",
+            "title": "Family festival at Platt Fields",
+            "summary": "A family festival with workshops and a market.",
+            "evidence_text": "The family festival takes place at Platt Fields this weekend.",
+            "source_url": "https://example.test/platt-fields-festival",
+            "source_label": "Weekend Source",
+            "primary_block": "weekend_activities",
+            "category": "culture_weekly",
+            "venue_scope": "GM",
+            "draft_line": "• Platt Fields Family Festival — 1 августа, Platt Fields Market Garden.",
+            "event": {
+                "is_event": True,
+                "event_name": "Platt Fields Family Festival",
+                "venue": "Platt Fields Market Garden",
+                "date_start": "2026-08-01",
+                "booking_url": "https://example.test/platt-fields-festival",
+            },
+        }
+        record = build_inventory_record(
+            candidate,
+            prompt_version=1,
+            now_iso="2026-07-28T09:00:00+01:00",
+            run_id="night-events-derived",
+            wave="events",
+            source_name="Weekend Source",
+            source_report_category="culture_weekly",
+        )
+        self.assertTrue(record["render_ready"], record)
+        self.assertEqual(record["fact_card"]["activity_type"], "festival")
+        self.assertEqual(record["fact_card"]["gm_fit"], "GM")
+        restored = inventory_record_to_candidate(record)
+        self.assertEqual(restored["activity_type"], "festival")
+        self.assertEqual(restored["gm_fit"], "GM")
+
     def test_weekend_tuesday_card_reenters_on_friday_after_source_304(self) -> None:
         record = {
             "fingerprint": "weekend-friday",

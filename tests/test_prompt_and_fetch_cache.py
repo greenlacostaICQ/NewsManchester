@@ -536,6 +536,39 @@ class CollectorEmptyRetryAndFunnelTest(unittest.TestCase):
         self.assertEqual(trace["url_gate_passed"], 1)
         self.assertEqual(trace["candidates"], len(candidates))
 
+    def test_filtered_rss_zero_does_not_trigger_network_retry(self):
+        def fake_extract(_source, _body, *, trace=None):
+            if trace is not None:
+                trace.update(
+                    {
+                        "raw_extracted": 2,
+                        "url_gate_passed": 2,
+                        "date_gate_passed": 0,
+                        "geo_gate_passed": 2,
+                        "routing_passed": 0,
+                        "candidates": 0,
+                        "top_reject_reasons": [
+                            {"reason": "date_gate_stale_or_undated", "count": 2}
+                        ],
+                    }
+                )
+            return []
+
+        with patch.object(
+            collector_core,
+            "_fetch_source_body",
+            return_value=("<rss>two stale posts</rss>", self.source.url, []),
+        ) as fetch_mock, patch.object(
+            collector_core,
+            "_extract_source_candidates",
+            side_effect=fake_extract,
+        ):
+            health, candidates = collector_core._collect_single_source(self.source)
+
+        self.assertEqual(candidates, [])
+        self.assertFalse(health["empty_retry_performed"])
+        self.assertEqual(fetch_mock.call_count, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

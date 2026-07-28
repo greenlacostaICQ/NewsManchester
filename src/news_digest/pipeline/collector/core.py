@@ -571,6 +571,7 @@ def _collect_single_source(source) -> tuple[dict, list[dict]]:
         retryable_empty = (
             not source_candidates
             and bool(body.strip())
+            and int(extraction_funnel.get("raw_extracted") or 0) == 0
             and (
                 str(source.source_type or "").startswith("json_")
                 or str(source.source_type or "") == "rss"

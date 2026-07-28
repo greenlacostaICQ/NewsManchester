@@ -2214,3 +2214,19 @@
 - Ожидаемый эффект и метрика проверки: zero-yield имеет точный loss stage/reason; 404→200 и empty-body→useful-body восстанавливаются ровно одним retry.
 - ПРОВЕРКА (offline): fetch/funnel/retry regressions входят в 992 теста OK; workflow/CLI комментарии обновлены для same-run semantic model call.
 - ОБЩАЯ REPLAY-ПРОВЕРКА #0193–#0205: обязательный `replay_day.py --golden` завершил 12/12 дней без technical verify failure; lead во всех replay `ok`, новых `blank_runs_2plus` нет. На дефектном 28.07 до/после: plan `38→39`, shown `37→38`, removed `1→1`, divergences `7→6`, replay bullets `36→37`, lead `ok→ok`; восстановлена одна корректная строка, техническая целостность сохранена. Это offline proof; production-proof по свежим waves/rank остаётся ожидаемым.
+
+### 0206 — Weekend serializer сохраняет те же derived facts, что readiness — 2026-07-28
+- Статус: внедрено после production proof; повторная Events-wave ожидается.
+- Проблема: Events run `30357657334` успешно получил `55/55` sources, `141 found/enriched`, `42 fact-ready`, `37 render-ready`, но в сохранённых ready-карточках вычисленные `activity_type/gm_fit` оставались пустыми.
+- Причина (корень): `evaluate_card()` проверял `_card_field_value`, а `build_inventory_record()` затем сериализовал только raw `candidate/event` fields; synthetic fixture с явно заданными полями скрыла расхождение.
+- Решение: serializer сохраняет для каждого required field ровно тот derived `_card_field_value`, который прошёл readiness.
+- Ожидаемый эффект и метрика проверки: production ready-карточки имеют непустые `activity_type/gm_fit`, после `inventory_record_to_candidate` readiness не падает.
+- ПРОВЕРКА: production-дефект зафиксирован числами выше; derived-only regression добавлен, повторная wave фиксируется после push.
+
+### 0207 — Retry только для parser-zero, не для осознанного filter-zero — 2026-07-28
+- Статус: внедрено; production-proof ожидается.
+- Проблема: safe run `30356063825` завершился успешно, но broad collect занял около 15 минут; текущий predicate повторно fetch-ил любой RSS/JSON с нулём кандидатов, включая источники с найденными, но stale/non-GM записями.
+- Причина (корень): `retryable_empty` проверял только final candidates, игнорируя новый funnel `raw_extracted/top_reject_reasons`.
+- Решение: no-cache retry выполняется только при непустом body и `raw_extracted=0`; если parser нашёл posts и фильтры объяснили ноль, повторной сети нет.
+- Ожидаемый эффект и метрика проверки: transient/parser-zero получает ровно один retry; `raw=2/date_reject=2/candidates=0` получает ноль retry.
+- ПРОВЕРКА: оба точных regressions добавлены; production safe-rank повтор ожидается после push.

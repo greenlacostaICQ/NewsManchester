@@ -783,9 +783,10 @@ def build_inventory_record(
     for required_field in block_policy.get("required_fields") or ():
         if required_field in fact_card and fact_card.get(required_field) not in (None, "", [], {}):
             continue
-        value = candidate.get(required_field)
-        if value in (None, "", [], {}):
-            value = event.get(required_field)
+        # Persist the exact derived value that evaluate_card() just accepted.
+        # Raw candidate/event lookup loses computed Weekend activity_type and
+        # gm_fit, so a ready night card becomes incomplete after round-trip.
+        value = _card_field_value(candidate, str(required_field))
         if value not in (None, "", [], {}):
             fact_card[str(required_field)] = value
     serving_ttl = float(block_policy.get("serving_ttl_hours") or 0.0)
