@@ -152,7 +152,8 @@ BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
     "openings": {
         "heading": "Еда, открытия и рынки", "min": 3, "max": 3, "geo_scope": "gm",
         "schedule": "daily", "required_fields": ("event_name", "specific_event", "venue", "specific_venue", "opening_phase_or_date", "food_meaning", "action_url"),
-        "repeat_policy": "new_phase_only", "backup_depth": 3, "min_sources": 2, "max_per_source": 0,
+        "repeat_policy": "calendar_milestones", "backup_depth": 3, "min_sources": 2, "max_per_source": 0,
+        "repeat_milestone_days": (7, 1, 0),
         "source_report_categories": frozenset({"food_openings"}), "candidate_categories": frozenset({"food_openings"}),
         "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 90,
         "text_policy": "morning_writer", "source_replacement_allowed": False,

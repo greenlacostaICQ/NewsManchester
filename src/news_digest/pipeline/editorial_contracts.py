@@ -1603,6 +1603,15 @@ def _event_material_change(candidate: dict, previous: dict) -> str:
         current = str(current_event.get(key) or "").strip().lower()
         old = str(previous_event.get(key) or "").strip().lower()
         if current and old and current != old:
+            if key == "date_text":
+                current_start = str(
+                    current_event.get("date_start") or current_event.get("date") or ""
+                ).strip()[:10]
+                previous_start = str(
+                    previous_event.get("date_start") or previous_event.get("date") or ""
+                ).strip()[:10]
+                if current_start and current_start == previous_start:
+                    continue
             # A truncated date_text is source-page decay, not a new reader
             # moment: «26 June – 12 July» → «26 June» (the site dropped the
             # finished range) kept re-authorising the Онегин repeat for weeks.
@@ -1674,14 +1683,25 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
     need a real reader moment (today/tomorrow, a milestone, or a fresh sale).
     """
     current_contract = build_editorial_contract(candidate)
-    previous_contract = (
-        previous.get("editorial_contract")
-        if isinstance(previous.get("editorial_contract"), dict)
-        else build_editorial_contract(previous)
-    )
+    # Event facts can be enriched or routed after an earlier contract snapshot
+    # was stored. Rebuild both sides so a stale occurrence cannot look like a
+    # newly changed date and incorrectly authorise a repeat.
+    previous_contract = build_editorial_contract(previous)
     event_shape = str(current_contract.get("event_shape") or "")
     story_type = str(current_contract.get("story_type") or "")
-    if event_shape not in {"ticket", "recurring", "festival", "one_off", "event_like"} and story_type != "ticket":
+    dated_opening = (
+        (
+            str(candidate.get("primary_block") or "") == "openings"
+            or str(candidate.get("category") or "") == "food_openings"
+        )
+        and _opening_event_day(candidate) is not None
+    )
+    if (
+        event_shape
+        not in {"ticket", "recurring", "festival", "one_off", "event_like"}
+        and story_type != "ticket"
+        and not dated_opening
+    ):
         return {"applies": False, "allow": True, "reason": "not_calendar_item"}
     is_ticket_item = event_shape == "ticket" or story_type == "ticket"
 
@@ -1691,6 +1711,9 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
 
     current_date = _occurrence_date_from_contract(current_contract)
     previous_date = _occurrence_date_from_contract(previous_contract)
+    if dated_opening:
+        current_date = current_date or _opening_event_day(candidate)
+        previous_date = previous_date or _opening_event_day(previous)
     if current_date and previous_date and current_date != previous_date:
         return {"applies": True, "allow": True, "reason": "new_event_occurrence"}
 
@@ -1741,6 +1764,13 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
                 "reason": "planning_item_reached_weekend",
                 "days_until_event": days_until,
             }
+        weekly_inventory_repeat = (
+            event_shape == "recurring"
+            and str(candidate.get("primary_block") or "") in {
+                "weekend_activities",
+                "openings",
+            }
+        )
         if (
             event_shape == "recurring"
             and 0 <= days_until <= 7
@@ -1762,7 +1792,7 @@ def calendar_repeat_review(candidate: dict, previous: dict) -> dict[str, object]
         # to the generic d0/d1 milestone, or a weekly market shown yesterday
         # reappears today (owner 2026-06-13: weekly markets are weekly, not
         # daily).
-        if event_shape != "recurring" and days_until in milestone_days:
+        if not weekly_inventory_repeat and days_until in milestone_days:
             return {
                 "applies": True,
                 "allow": True,

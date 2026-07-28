@@ -413,6 +413,50 @@ _NEXT_7_LEISURE_RE = re.compile(
 _NEXT_7_SOURCE_CATEGORIES = {
     "media_layer", "gmp", "public_services", "council", "transport",
 }
+_NEXT_7_WEEKDAYS = {
+    "monday": 0,
+    "tuesday": 1,
+    "wednesday": 2,
+    "thursday": 3,
+    "friday": 4,
+    "saturday": 5,
+    "sunday": 6,
+}
+_NEXT_7_RELATIVE_WEEKDAY_RE = re.compile(
+    r"\b(?:(?P<modifier>next|this|on|from|starting|starts?|begins?)\s+)"
+    r"(?P<weekday>monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b",
+    re.IGNORECASE,
+)
+
+
+def _next_7_reference_day(candidate: dict) -> date:
+    """Publication day anchors relative weekday prose when it is available."""
+    for field in ("published_at", "published_date_london"):
+        parsed = _parse_datetime_value(str(candidate.get(field) or ""))
+        if parsed is not None:
+            return parsed.date()
+    return now_london().date()
+
+
+def _next_7_relative_weekday_date(candidate: dict, blob: str) -> date | None:
+    """Resolve a stated future weekday without turning an ended range into news.
+
+    ``from Monday to Thursday`` is anchored by Monday — the date on which the
+    practical change starts. If Monday has already passed by the morning run,
+    the item belongs in Today/current status rather than being mislabelled as a
+    future Thursday change.
+    """
+    match = _NEXT_7_RELATIVE_WEEKDAY_RE.search(blob)
+    if not match:
+        return None
+    reference = _next_7_reference_day(candidate)
+    weekday = _NEXT_7_WEEKDAYS[match.group("weekday").lower()]
+    delta = (weekday - reference.weekday()) % 7
+    modifier = str(match.group("modifier") or "").lower()
+    if modifier == "next" and delta == 0:
+        delta = 7
+    resolved = reference + timedelta(days=delta)
+    return resolved if resolved >= now_london().date() else None
 
 
 def _next_7_structured_date(candidate: dict) -> date | None:
@@ -453,7 +497,9 @@ def _next_7_structured_date(candidate: dict) -> date | None:
     }
     today = now_london().date()
     future = sorted(day for day in _explicit_dates_from_blob(own_text) if day >= today)
-    return future[0] if future else None
+    if future:
+        return future[0]
+    return _next_7_relative_weekday_date(candidate, blob)
 
 
 def route_future_practical_change(candidate: dict) -> bool:

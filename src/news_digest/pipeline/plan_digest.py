@@ -414,7 +414,27 @@ def _backup_eligible(candidate: dict) -> tuple[bool, str]:
         return False, "manual_review"
     if str(candidate.get("dedupe_decision") or "") in {"drop", "duplicate"}:
         return False, "duplicate"
-    if candidate.get("reject_reasons") or candidate.get("validation_errors"):
+    reject_reasons = [
+        str(reason)
+        for reason in (candidate.get("reject_reasons") or [])
+        if str(reason).strip()
+    ]
+    governing_repeat = (
+        candidate.get("governing_repeat_decision")
+        if isinstance(candidate.get("governing_repeat_decision"), dict)
+        else {}
+    )
+    if (
+        governing_repeat.get("allow")
+        and governing_repeat.get("repeat_class") in {"calendar", "lifecycle"}
+    ):
+        # Planner is the one final repeat owner. A stale provisional why-now
+        # rejection from an earlier validator snapshot cannot overrule the
+        # now-authorised D7/D1/D0 or material-change decision.
+        reject_reasons = [
+            reason for reason in reject_reasons if reason != "why_now_stale"
+        ]
+    if reject_reasons or candidate.get("validation_errors"):
         return False, "rejected"
     render_path = _backup_render_path(candidate)
     if not render_path:

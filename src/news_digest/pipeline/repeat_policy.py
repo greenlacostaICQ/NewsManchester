@@ -116,6 +116,18 @@ class RepeatVerdict:
 
 def _contract(candidate: dict[str, Any]) -> dict[str, Any]:
     raw = candidate.get("editorial_contract")
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    # Routing and event enrichment happen after an earlier contract may have
+    # been attached. Calendar decisions must read today's structured date, not
+    # a stale ``event_shape=none`` snapshot saved before enrichment.
+    if (
+        block in TICKET_REPEAT_BLOCKS
+        or block in EVENT_REPEAT_BLOCKS
+        or category in EVENT_REPEAT_CATEGORIES
+        or category == "venues_tickets"
+    ):
+        return build_editorial_contract(candidate)
     return raw if isinstance(raw, dict) else build_editorial_contract(candidate)
 
 
@@ -143,14 +155,25 @@ def _previous_day(previous: dict[str, Any]) -> str:
 def is_calendar_carry_candidate(candidate: dict[str, Any]) -> bool:
     """True only for event/ticket classes that may legitimately reappear.
 
-    Food/opening articles are intentionally excluded. A restaurant launch is a
-    one-shot story; if it is actually a dated market/fair, routing should move it
-    into an event block before repeat policy sees it.
+    Food/opening articles enter only with a concrete future opening occurrence.
+    Undated announcement copy remains one-shot; dated launches may return at
+    the block's D7/D1/D0 reader milestones.
     """
     block = str(candidate.get("primary_block") or "")
     category = str(candidate.get("category") or "")
     if block == "openings" or category == "food_openings":
-        return False
+        from news_digest.pipeline.event_extraction import event_start_date  # noqa: PLC0415
+
+        event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+        event_day = event_start_date(candidate)
+        return bool(
+            event_day
+            and event_day >= now_london().date()
+            and str(event.get("event_name") or candidate.get("title") or "").strip()
+            and str(event.get("venue") or "").strip()
+            and str(event.get("date_confidence") or "high") != "low"
+            and event.get("is_event") is not False
+        )
     if str(_contract(candidate).get("anchor_type") or "") == "bookable_listing":
         return True
     if block in TICKET_REPEAT_BLOCKS or block in EVENT_REPEAT_BLOCKS:
@@ -220,7 +243,9 @@ def validator_same_fingerprint_allow(candidate: dict[str, Any]) -> RepeatVerdict
         return RepeatVerdict(True, "ticket", "ticket_repeat_managed_by_calendar_policy")
 
     if is_calendar_carry_candidate(candidate) and (
-        anchor in {"dated_event", "recurring_occurrence", "bookable_listing"}
+        block == "openings"
+        or category == "food_openings"
+        or anchor in {"dated_event", "recurring_occurrence", "bookable_listing"}
         or event_shape in {"recurring", "festival", "one_off", "event_like", "bookable_activity"}
     ):
         event_day = _event_day(candidate)
@@ -268,7 +293,11 @@ def visible_repeat_verdict(candidate: dict[str, Any], previous: dict[str, Any] |
 
     block = str(candidate.get("primary_block") or "")
     category = str(candidate.get("category") or "")
-    if matched_by == "fingerprint" and (block == "openings" or category == "food_openings"):
+    if (
+        matched_by == "fingerprint"
+        and (block == "openings" or category == "food_openings")
+        and not is_calendar_carry_candidate(candidate)
+    ):
         comparable_previous_facts = any(
             previous.get(key)
             for key in ("summary", "lead", "event", "change_phase", "editorial_contract")

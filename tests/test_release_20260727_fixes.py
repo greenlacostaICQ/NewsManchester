@@ -22,7 +22,7 @@ from news_digest.pipeline.editorial_contracts import calendar_repeat_review
 from news_digest.pipeline.event_quality import event_quality_report
 from news_digest.pipeline.fact_completeness import translation_completeness_review
 from news_digest.pipeline.llm_rewrite import _apply_rewrite_shortlist
-from news_digest.pipeline.plan_digest import _backup_render_path
+from news_digest.pipeline.plan_digest import _backup_eligible, _backup_render_path
 from news_digest.pipeline.plan_execution import (
     JUDGE_REPAIR_BUDGET_RESERVE,
     SHARED_REPAIR_BUDGET_PER_RUN,
@@ -314,6 +314,54 @@ class Release20260727FixesTest(unittest.TestCase):
         self.assertTrue(route_future_practical_change(practical))
         self.assertEqual(practical["primary_block"], "next_7_days")
         self.assertFalse(route_future_practical_change(leisure))
+
+    def test_next7_producer_resolves_future_weekday_from_publication_day(self) -> None:
+        today = now_london().date()
+        change_day = today + timedelta(days=4)
+        weekday = (
+            "Monday", "Tuesday", "Wednesday", "Thursday",
+            "Friday", "Saturday", "Sunday",
+        )[change_day.weekday()]
+        practical = {
+            "include": True,
+            "category": "public_services",
+            "primary_block": "city_watch",
+            "published_at": f"{today.isoformat()}T07:00:00+01:00",
+            "title": f"Salford library closes from {weekday}",
+            "summary": "Residents must use another branch while works start.",
+        }
+
+        self.assertTrue(route_future_practical_change(practical))
+        self.assertEqual(
+            practical["next_7_effective_date"],
+            change_day.isoformat(),
+        )
+
+    def test_calendar_repeat_overrides_only_provisional_why_now_reject(self) -> None:
+        candidate = {
+            "validated": True,
+            "digest_selection_verdict": "reserve",
+            "primary_block": "professional_events",
+            "category": "professional_events",
+            "title": "Rochdale Business Growth Hub Drop-In",
+            "summary": "Free business advice at Fire Up Co-Working.",
+            "source_url": "https://example.test/rochdale",
+            "reject_reasons": ["why_now_stale"],
+            "governing_repeat_decision": {
+                "allow": True,
+                "repeat_class": "calendar",
+                "reason": "event_milestone_d1",
+            },
+            "professional_llm_match": {"fit": "consider"},
+        }
+
+        allowed, _ = _backup_eligible(candidate)
+        self.assertTrue(allowed)
+
+        candidate["reject_reasons"].append("event_missing_date")
+        allowed, reason = _backup_eligible(candidate)
+        self.assertFalse(allowed)
+        self.assertEqual(reason, "rejected")
 
     # 0160 — недосуговая карточка Next7 не обязана нести цену/бронирование.
     def test_non_leisure_next7_needs_no_price_or_booking(self) -> None:

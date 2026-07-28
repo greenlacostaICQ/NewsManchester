@@ -2399,7 +2399,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
         self.assertTrue(_calendar_item_should_carry_over(candidate, previous))
 
-    def test_food_opening_day_of_date_does_not_get_ticket_repeat_exception(self) -> None:
+    def test_food_opening_repeats_only_on_its_own_calendar_milestones(self) -> None:
         from news_digest.pipeline.dedupe import _calendar_item_should_carry_over
         from news_digest.pipeline.repeat_policy import (
             validator_same_fingerprint_allow,
@@ -2417,9 +2417,12 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
             "source_label": "Manchester's Finest",
             "source_url": "https://www.manchestersfinest.com/eating-and-drinking/restaurants/orme/",
             "event": {
+                "is_event": True,
                 "event_name": "Orme restaurant relaunch",
                 "venue": "Manchester",
+                "date": event_day,
                 "date_start": event_day,
+                "date_confidence": "high",
             },
         }
         previous = dict(candidate)
@@ -2427,15 +2430,115 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         previous["first_published_day_london"] = previous["last_published_day_london"]
         previous["editorial_contract"] = build_editorial_contract(previous)
 
-        self.assertFalse(_calendar_item_should_carry_over(candidate, previous))
-        self.assertFalse(validator_same_fingerprint_allow(candidate).allow)
+        self.assertTrue(_calendar_item_should_carry_over(candidate, previous))
+        self.assertTrue(validator_same_fingerprint_allow(candidate).allow)
         verdict = visible_repeat_verdict(candidate, previous)
-        self.assertFalse(verdict.allow, verdict)
+        self.assertTrue(verdict.allow, verdict)
+        self.assertEqual(verdict.repeat_class, "calendar")
+        self.assertEqual(verdict.reason, "event_milestone_d0")
         self.assertEqual(verdict.matched_by, "fingerprint")
+
+        ordinary_day = (now_london().date() + timedelta(days=3)).isoformat()
+        ordinary = {
+            **candidate,
+            "event": {
+                **candidate["event"],
+                "date": ordinary_day,
+                "date_start": ordinary_day,
+            },
+        }
+        ordinary_previous = {
+            **previous,
+            "event": dict(ordinary["event"]),
+        }
+        ordinary_verdict = visible_repeat_verdict(ordinary, ordinary_previous)
+        self.assertFalse(ordinary_verdict.allow, ordinary_verdict)
+        self.assertEqual(
+            ordinary_verdict.reason,
+            "same_calendar_item_without_new_reader_moment",
+        )
+
+    def test_undated_food_announcement_remains_one_shot(self) -> None:
+        from news_digest.pipeline.repeat_policy import visible_repeat_verdict
+
+        candidate = {
+            "include": True,
+            "fingerprint": "food-undated-repeat",
+            "primary_block": "openings",
+            "category": "food_openings",
+            "title": "A restaurant plans to open in Manchester",
+            "summary": "The opening is planned later this year.",
+            "source_label": "Food source",
+            "source_url": "https://example.test/food",
+            "event": {
+                "is_event": False,
+                "event_name": "Restaurant",
+                "venue": "Manchester",
+                "date": "",
+                "date_start": "",
+            },
+        }
+        previous = {
+            **candidate,
+            "last_published_day_london": (
+                now_london().date() - timedelta(days=1)
+            ).isoformat(),
+        }
+
+        verdict = visible_repeat_verdict(candidate, previous)
+
+        self.assertFalse(verdict.allow, verdict)
         self.assertIn(
             verdict.reason,
-            {"topic_lifecycle_rehash:opening:none", "exact_fingerprint_already_published"},
+            {
+                "same_calendar_item_without_new_reader_moment",
+                "exact_fingerprint_already_published",
+                "new_phase_without_named_fact",
+            },
         )
+
+    def test_professional_repeat_rebuilds_stale_contract_before_d1_decision(self) -> None:
+        from news_digest.pipeline.repeat_policy import visible_repeat_verdict
+
+        event_day = (now_london().date() + timedelta(days=1)).isoformat()
+        candidate = {
+            "include": True,
+            "fingerprint": "professional-rochdale-drop-in",
+            "primary_block": "professional_events",
+            "category": "professional_events",
+            "title": "Rochdale Business Growth Hub Drop-In",
+            "summary": "Free business advice at Fire Up Co-Working.",
+            "source_label": "GM Business Growth Hub Events",
+            "source_url": "https://example.test/rochdale-drop-in",
+            "event": {
+                "is_event": True,
+                "is_recurring": True,
+                "event_name": "Rochdale Business Growth Hub Drop-In",
+                "venue": "Fire Up Co-Working",
+                "date": event_day,
+                "date_start": event_day,
+                "date_confidence": "high",
+            },
+            # Exact production failure: this snapshot was attached before
+            # Professional joined the shared event contract.
+            "editorial_contract": {
+                "event_shape": "none",
+                "story_type": "planning",
+                "anchor_type": "new_phase",
+            },
+        }
+        previous = {
+            **candidate,
+            "last_published_day_london": (
+                now_london().date() - timedelta(days=1)
+            ).isoformat(),
+        }
+
+        verdict = visible_repeat_verdict(candidate, previous)
+
+        self.assertTrue(verdict.allow, verdict)
+        self.assertEqual(verdict.repeat_class, "calendar")
+        self.assertEqual(verdict.reason, "event_milestone_d1")
 
     def test_day_of_ticket_visible_repeat_policy_still_allows_exact_repeat(self) -> None:
         from news_digest.pipeline.repeat_policy import visible_repeat_verdict
