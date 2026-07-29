@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "run_date_london": "2026-07-28",
-  "created_at_london": "2026-07-28T08:16:08.830464+01:00",
+  "run_date_london": "2026-07-29",
+  "created_at_london": "2026-07-29T08:19:46.841629+01:00",
   "policy": "Every candidate must have selected / reserve / needs_enrichment / drop. Pending dedupe is not a valid final state.",
   "totals": {
-    "selected": 139,
-    "reserve": 33,
+    "selected": 531,
+    "reserve": 63,
     "needs_enrichment": 2,
-    "drop": 1059,
+    "drop": 628,
     "pending": 0
   },
   "pending_dedupe_left": [],
@@ -23,12 +23,18 @@
     },
     "last_24h": {
       "heading": "Свежие новости",
-      "total": 107,
-      "selected": 24,
-      "reserve": 4,
+      "total": 95,
+      "selected": 21,
+      "reserve": 0,
       "needs_enrichment": 0,
-      "drop": 79,
+      "drop": 74,
       "examples": [
+        {
+          "verdict": "drop",
+          "title": "New PM brings new hope for justice, nuclear tests veteran says",
+          "source_label": "BBC Manchester",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=news, anchor=none, tier=filler)."
+        },
         {
           "verdict": "drop",
           "title": "The 1% Club winner breaks world record for eating fish fingers",
@@ -42,22 +48,16 @@
           "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
-          "verdict": "reserve",
-          "title": "Head teacher to face trial over child abuse image charge",
-          "source_label": "BBC Manchester",
-          "reason": "Held as same-block backup for recovery."
+          "verdict": "drop",
+          "title": "Baby found 'emaciated' 19 days after social services closed case",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         },
         {
           "verdict": "drop",
-          "title": "Trafford WW2 bunker transformed to help wildlife",
-          "source_label": "BBC Manchester",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=planning, anchor=none, tier=filler)."
-        },
-        {
-          "verdict": "drop",
-          "title": "All eyes on Greater Manchester ahead of mayoral election",
-          "source_label": "BBC Manchester",
-          "reason": "Без новых фактов: уже был 2026-07-27 как «All eyes on Greater Manchester ahead of mayoral election»."
+          "title": "New PM brings new hope for justice, nuclear tests veteran says",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         },
         {
           "verdict": "drop",
@@ -73,25 +73,31 @@
         },
         {
           "verdict": "drop",
-          "title": "Ex political advisor Matthew Torbitt admits expense fraud claims",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+          "title": "'The next generation needs to be inspired': Sadness at Jodrell Bank as visitors take in magnificence of under-threat Lovell Telescope",
+          "source_label": "MEN",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         }
       ]
     },
     "city_watch": {
       "heading": "Городской радар",
-      "total": 92,
-      "selected": 18,
-      "reserve": 16,
+      "total": 101,
+      "selected": 23,
+      "reserve": 20,
       "needs_enrichment": 2,
       "drop": 56,
       "examples": [
         {
           "verdict": "drop",
+          "title": "What is Jodrell Bank Observatory and what does it do?",
+          "source_label": "BBC Manchester",
+          "reason": "Visible repeat policy allows this item: concrete_story_change:declared. | Validator: story is centred outside Greater Manchester; publisher section chrome was ignored."
+        },
+        {
+          "verdict": "drop",
           "title": "Greater Manchester mayor hopefuls discuss issues in live debate",
           "source_label": "BBC Manchester",
-          "reason": "Повтор сюжета без новых деталей: уже был 2026-07-08 как «Vacancy in the Office of the Greater Manchester Combined Authority Mayor - Greater Manchester Combined Authority»."
+          "reason": "Dedupe found a previous publication; final repeat decision is deferred to plan-digest (provisional=exact_fingerprint_already_published). | Validator: editorial_contract rejected item (story_type=incident, anchor=none, tier=filler)."
         },
         {
           "verdict": "reserve",
@@ -103,7 +109,7 @@
           "verdict": "drop",
           "title": "Candidates for Greater Manchester mayoral election",
           "source_label": "BBC Manchester",
-          "reason": "Visible repeat policy allows this item: concrete_story_change:declared. | Validator: editorial_contract rejected item (story_type=civic, anchor=none, tier=filler)."
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
           "verdict": "reserve",
@@ -115,105 +121,50 @@
           "verdict": "drop",
           "title": "Greater Manchester's mayoral election explained",
           "source_label": "BBC Manchester",
-          "reason": "Без новых фактов: уже был 2026-06-27 как «Greater Manchester's mayoral election explained». LLM-review: Та же объяснительная статья о выборах мэра, без новых фактов."
+          "reason": "Visible repeat policy allows this item: concrete_story_change:declared. | Validator: news item is 35 days old (hard cutoff 14d), dropped regardless of update wording."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Head teacher to face trial over child abuse image charge",
+          "source_label": "BBC Manchester",
+          "reason": "Held as same-block backup for recovery."
         },
         {
           "verdict": "drop",
-          "title": "Greater Manchester mayor hopefuls discuss issues in live debate",
-          "source_label": "BBC Manchester Web",
-          "reason": "Повтор сюжета без новых деталей: уже был 2026-07-08 как «Vacancy in the Office of the Greater Manchester Combined Authority Mayor - Greater Manchester Combined Authority». LLM-review: Та же статья о дебатах кандидатов, без новых фактов. LLM-review: Та же статья о дебатах, без новых фактов."
-        },
-        {
-          "verdict": "drop",
-          "title": "Why voting method change matters in mayoral poll",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Candidates for Greater Manchester mayoral election",
-          "source_label": "BBC Manchester Web",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+          "title": "Trafford WW2 bunker transformed to help wildlife",
+          "source_label": "BBC Manchester",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=planning, anchor=none, tier=filler)."
         }
       ]
     },
-    "future_announcements": {
-      "heading": "Дальние анонсы",
-      "total": 39,
-      "selected": 20,
+    "today_focus": {
+      "heading": "Что важно сегодня",
+      "total": 2,
+      "selected": 2,
       "reserve": 0,
       "needs_enrichment": 0,
-      "drop": 19,
-      "examples": [
-        {
-          "verdict": "drop",
-          "title": "Jah Lil — event 2026-11-16 — public sale 2025-02-28 10:00",
-          "source_label": "Ticketmaster Manchester Onsale",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=ticket_opportunity, ttl=1d)."
-        },
-        {
-          "verdict": "drop",
-          "title": "Avatar - The Last Airbender - Film With Live Orchestra — event 2026-10-05 — public sale 2025-05-02 15:00",
-          "source_label": "Ticketmaster Manchester Onsale",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=ticket_opportunity, ttl=1d)."
-        },
-        {
-          "verdict": "drop",
-          "title": "Andre Rieu — event 2026-09-11 — public sale 2025-06-06 12:00",
-          "source_label": "Ticketmaster Manchester Onsale",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=ticket_opportunity, ttl=1d)."
-        },
-        {
-          "verdict": "drop",
-          "title": "Milos — event 2027-03-22 — public sale 2025-06-13 10:00",
-          "source_label": "Ticketmaster Manchester Onsale",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=ticket_opportunity, ttl=1d)."
-        },
-        {
-          "verdict": "drop",
-          "title": "The Tumbling Paddies — event 2026-11-14 — public sale 2025-07-04 11:00",
-          "source_label": "Ticketmaster Manchester Onsale",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=ticket_opportunity, ttl=1d)."
-        },
-        {
-          "verdict": "drop",
-          "title": "Radar Festival 2026 - Weekend — event 2026-07-31 — public sale 2025-07-04 12:00",
-          "source_label": "Ticketmaster Manchester Onsale",
-          "reason": "Без новых фактов: уже был 2026-07-01 как «Radar Festival 2026 - Weekend — event 2026-07-31 — public sale 2025-07-04 12:00»."
-        },
-        {
-          "verdict": "drop",
-          "title": "Boyband in the Buff starring Gareth Gates — event 2026-09-10 — public sale 2025-08-26 10:00",
-          "source_label": "Ticketmaster Manchester Onsale",
-          "reason": "Без новых фактов: уже был 2026-07-27 как «Boyband in the Buff starring Gareth Gates — event 2026-09-10 — public sale 2025-08-26 10:00»."
-        },
-        {
-          "verdict": "drop",
-          "title": "Anastacia — event 2026-09-21 — public sale 2025-09-05 10:00",
-          "source_label": "Ticketmaster Manchester Onsale",
-          "reason": "Без новых фактов: уже был 2026-07-21 как «Anastacia — event 2026-09-21 — public sale 2025-09-05 10:00»."
-        }
-      ]
+      "drop": 0,
+      "examples": []
     },
     "transport": {
       "heading": "Общественный транспорт сегодня",
-      "total": 9,
-      "selected": 6,
-      "reserve": 2,
+      "total": 7,
+      "selected": 4,
+      "reserve": 1,
       "needs_enrichment": 0,
-      "drop": 1,
+      "drop": 2,
       "examples": [
         {
-          "verdict": "reserve",
-          "title": "Football: maybe. Sunshine: certainly — here's what's coming home",
+          "verdict": "drop",
+          "title": "Inside our high-stakes hustings",
           "source_label": "The Mill",
-          "reason": "Held as same-block backup for recovery."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: corrected section routing before translation (section_routing:transport). | Validator: transport item has no passenger movement impact and cannot be shown in Transport or borrowed by another public block."
         },
         {
           "verdict": "drop",
           "title": "Deansgate-Castlefield and Trafford Bar tram works [13 July - 2 August]",
           "source_label": "TfGM",
-          "reason": "Visible repeat policy allows this item: operational_anchor:service_status. | Validator: transport item has no passenger movement impact and cannot be shown in Transport or borrowed by another public block."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: transport item has no passenger movement impact and cannot be shown in Transport or borrowed by another public block."
         },
         {
           "verdict": "reserve",
@@ -223,25 +174,135 @@
         }
       ]
     },
-    "next_7_days": {
-      "heading": "Что важно в ближайшие 7 дней",
-      "total": 48,
-      "selected": 0,
-      "reserve": 0,
+    "future_announcements": {
+      "heading": "Дальние анонсы",
+      "total": 63,
+      "selected": 48,
+      "reserve": 9,
       "needs_enrichment": 0,
-      "drop": 48,
+      "drop": 6,
       "examples": [
         {
           "verdict": "drop",
-          "title": "Inhale Me, Exhale You By Kate Partington Tue 2 Jun 10:00 - Mon 28 Sep 22:00 Arches Windows",
-          "source_label": "HOME",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-26 (repeat=exact_fingerprint_already_published, anchor=dated_event, ttl=1d)."
+          "title": "Tickets on sale now for Dunham Massey's brand-new 2026 Christmas light trail",
+          "source_label": "Altrincham Today",
+          "reason": "Curator drop: Чистый PR без новостного повода."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Sabri Sisters Live",
+          "source_label": "The Lowry",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Macbeth at Orsdall Hall",
+          "source_label": "Manchester's Finest Events",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
         },
         {
           "verdict": "drop",
+          "title": "Next page Next page",
+          "source_label": "Manchester's Finest Events",
+          "reason": "Curator drop: Не содержит конкретной информации о событиях."
+        },
+        {
+          "verdict": "drop",
+          "title": "Radar Festival 2026 - Weekend — event 2026-07-31 — public sale 2025-07-04 12:00",
+          "source_label": "Ticketmaster Manchester Onsale",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "The Cure at Live from Wythenshawe Park — event 2026-08-21 — public sale 2025-10-03 09:00",
+          "source_label": "Ticketmaster Manchester Onsale",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Popular United matchday pub to undergo £400k transformation",
+          "source_label": "Manchester Wire",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "drop",
+          "title": "The historic Portico Library is hosting a Secret Supper Club this August",
+          "source_label": "Manchester Wire",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Demoted from weekend_activities to future_announcements: earliest date 2026-08-20 is 22 days out. | Validator: event quality gate failed (date)."
+        }
+      ]
+    },
+    "tech_business": {
+      "heading": "IT и бизнес",
+      "total": 13,
+      "selected": 1,
+      "reserve": 2,
+      "needs_enrichment": 0,
+      "drop": 10,
+      "examples": [
+        {
+          "verdict": "reserve",
+          "title": "Families invited to crack the case of the missing league ball in new Altrincham summer trail",
+          "source_label": "Altrincham Today",
+          "reason": "Board rejected: stale, outside_scope"
+        },
+        {
+          "verdict": "drop",
+          "title": "How our members are helping each other tackle graduate engagement | Manchester Digital",
+          "source_label": "Manchester Digital",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "What's next for fintech - and how do we get there? | Manchester Digital",
+          "source_label": "Manchester Digital",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "MD Fintech 26: The roundup | Manchester Digital",
+          "source_label": "Manchester Digital",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "MD Comment: London Tech Week and the 10,000 policy announcements | Manchester Digital",
+          "source_label": "Manchester Digital",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Prolific North",
+          "source_label": "Prolific North Manchester",
+          "reason": "Curator drop: Чистый PR без новостного повода."
+        },
+        {
+          "verdict": "drop",
+          "title": "Prolific North",
+          "source_label": "Prolific North Manchester",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Prolific North",
+          "source_label": "Prolific North Manchester",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        }
+      ]
+    },
+    "weekend_activities": {
+      "heading": "Выходные в GM",
+      "total": 116,
+      "selected": 19,
+      "reserve": 16,
+      "needs_enrichment": 0,
+      "drop": 81,
+      "examples": [
+        {
+          "verdict": "reserve",
           "title": "No booking required",
           "source_label": "HOME",
-          "reason": "Без новых фактов: уже был 2026-07-22 как «No booking required». LLM-review: Заголовок и содержание идентичны, новых фактов нет."
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
         },
         {
           "verdict": "drop",
@@ -278,190 +339,138 @@
           "title": "Huang Ruo: City of Floating Sounds",
           "source_label": "Factory International",
           "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: structured event date effective window ended 2024-06-06."
-        }
-      ]
-    },
-    "weekend_activities": {
-      "heading": "Выходные в GM",
-      "total": 80,
-      "selected": 8,
-      "reserve": 0,
-      "needs_enrichment": 0,
-      "drop": 72,
-      "examples": [
-        {
-          "verdict": "drop",
-          "title": "What's on for Kids this Summer Holiday",
-          "source_label": "Visit Manchester Weekend",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         },
         {
           "verdict": "drop",
-          "title": "What's on for Kids this Summer Holiday",
-          "source_label": "Visit Manchester Bank Holiday Guide",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Credit: Khris Cowley",
-          "source_label": "Manchester's Finest Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=dated_event, ttl=1d)."
-        },
-        {
-          "verdict": "drop",
-          "title": "RHS Garden Bridgewater | Visit Salford",
-          "source_label": "VisitSalford Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
-        },
-        {
-          "verdict": "drop",
-          "title": "Salford Quays and MediaCityUK | Visit Salford",
-          "source_label": "VisitSalford Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=event, anchor=bookable_listing, tier=filler)."
-        },
-        {
-          "verdict": "drop",
-          "title": "Salford's green spaces | Visit Salford",
-          "source_label": "VisitSalford Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event quality gate failed (date, price_or_free_or_booking)."
-        },
-        {
-          "verdict": "drop",
-          "title": "Coffee shops and tea rooms | Visit Salford",
-          "source_label": "VisitSalford Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event quality gate failed (date, place, price_or_free_or_booking)."
-        },
-        {
-          "verdict": "drop",
-          "title": "SFTOC Festival",
-          "source_label": "VisitSalford Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
+          "title": "A Possibility | Germaine Kruip | Manchester International Festival 2025",
+          "source_label": "Factory International",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: structured event date effective window ended 2025-07-20."
         }
       ]
     },
     "ticket_radar": {
       "heading": "Билеты / Ticket Radar",
-      "total": 55,
-      "selected": 7,
-      "reserve": 0,
+      "total": 74,
+      "selected": 54,
+      "reserve": 2,
       "needs_enrichment": 0,
-      "drop": 48,
+      "drop": 18,
       "examples": [
         {
           "verdict": "drop",
-          "title": "JOJI SOLARIS TOUR, with special guest Tommy Richman Sun 16 Aug 2026 Multiple times",
-          "source_label": "Co-op Live",
-          "reason": "Без новых фактов: уже был 2026-07-12 как «JOJI SOLARIS TOUR, with special guest Tommy Richman Sun 16 Aug 2026 Multiple times»."
-        },
-        {
-          "verdict": "drop",
-          "title": "The Neighbourhood THE WOURLD TOUR, plus special guests Nessa Barrett & Noise Dept Tue 1 Sep 2026 Multiple times",
-          "source_label": "Co-op Live",
-          "reason": "Без новых фактов: уже был 2026-07-12 как «The Neighbourhood THE WOURLD TOUR, plus special guests Nessa Barrett & Noise Dept Tue 1 Sep 2026 Multiple times»."
-        },
-        {
-          "verdict": "drop",
-          "title": "Daniel Caesar Son of Spergy Tour Fri 4 Sep 2026 Multiple times",
-          "source_label": "Co-op Live",
-          "reason": "Без новых фактов: уже был 2026-07-12 как «Daniel Caesar Son of Spergy Tour Fri 4 Sep 2026 Multiple times»."
-        },
-        {
-          "verdict": "drop",
-          "title": "A$AP ROCKY Don't Be Dumb World Tour Sat 5 Sep 2026 Multiple times",
-          "source_label": "Co-op Live",
-          "reason": "Без новых фактов: уже был 2026-07-12 как «A$AP ROCKY Don't Be Dumb World Tour Sat 5 Sep 2026 Multiple times»."
-        },
-        {
-          "verdict": "drop",
-          "title": "KATSEYE THE WILDWORLD TOUR Sun 6 Sep 2026 18:00",
-          "source_label": "Co-op Live",
-          "reason": "Без новых фактов: уже был 2026-07-16 как «KATSEYE THE WILDWORLD TOUR Sun 6 Sep 2026 18:00»."
-        },
-        {
-          "verdict": "drop",
-          "title": "Wolfmother — event 2026-07-30 — public sale 2026-03-30 10:00",
+          "title": "Radar Festival 2026 - Weekend — event 2026-07-31 — public sale 2025-07-04 12:00",
           "source_label": "Ticketmaster Manchester Upcoming",
-          "reason": "Visible repeat policy allows this item: ticket_type_changed. | Validator: no publishable reason for today's morning issue; item is stale/no-change."
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
           "verdict": "drop",
-          "title": "RADAR Festival: Friday - Thy Art Is Murder + Volumes + SikTh — event 2026-07-31 — public sale 2025-12-19 12:00",
+          "title": "RADAR Festival: Saturday - Skindred + Northlane + Protest The Hero — event 2026-08-01 — public sale 2025-12-19 12:00",
           "source_label": "Ticketmaster Manchester Upcoming",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=ticket_opportunity, ttl=1d)."
+          "reason": "Festival day/ticket-type/artist fragment merged into one festival card."
         },
         {
           "verdict": "drop",
-          "title": "Caylee Hammack — event 2026-07-31 — public sale 2026-04-24 10:00",
+          "title": "RADAR Festival: Sunday - Animals As Leaders + The Pineapple Thief — event 2026-08-02 — public sale 2025-12-19 12:00",
           "source_label": "Ticketmaster Manchester Upcoming",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=ticket_opportunity, ttl=1d)."
+          "reason": "Festival day/ticket-type/artist fragment merged into one festival card."
+        },
+        {
+          "verdict": "drop",
+          "title": "Hollywood Vampires - VIP Packages — event 2026-08-18 — public sale 2026-01-22 10:00",
+          "source_label": "Ticketmaster Manchester Upcoming",
+          "reason": "Premium/package ticket variant merged into main ticket line."
+        },
+        {
+          "verdict": "drop",
+          "title": "Hollywood Vampires - Venue Premium Tickets — event 2026-08-18 — public sale 2026-01-23 10:00",
+          "source_label": "Ticketmaster Manchester Upcoming",
+          "reason": "Premium/package ticket variant merged into main ticket line."
+        },
+        {
+          "verdict": "drop",
+          "title": "The Cure at Live from Wythenshawe Park — event 2026-08-21 — public sale 2025-10-03 09:00",
+          "source_label": "Ticketmaster Manchester Upcoming",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Lumas Winds group picture with instruments",
+          "source_label": "Bridgewater Hall",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event quality gate failed (date, district, price_or_free_or_booking)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Jonathan Scott Spring Concert Series",
+          "source_label": "Bridgewater Hall",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
         }
       ]
     },
     "outside_gm_tickets": {
       "heading": "Крупные концерты вне GM",
-      "total": 683,
-      "selected": 45,
-      "reserve": 2,
+      "total": 651,
+      "selected": 340,
+      "reserve": 1,
       "needs_enrichment": 0,
-      "drop": 636,
+      "drop": 310,
       "examples": [
         {
           "verdict": "drop",
-          "title": "The Southmartins — event 2026-11-21 — public sale 2025-04-25 10:00",
+          "title": "The Waterboys — event 2026-08-14 — public sale 2025-11-07 10:00",
           "source_label": "Ticketmaster Liverpool Onsale",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=ticket_opportunity, ttl=1d)."
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
           "verdict": "drop",
-          "title": "Avatar's the Last Airbender - Film with Live Orchestra — event 2026-10-11 — public sale 2025-05-02 15:00",
+          "title": "In the Park Liverpool presents Lewis Capaldi — event 2026-08-15 — public sale 2025-11-21 09:00",
           "source_label": "Ticketmaster Liverpool Onsale",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=ticket_opportunity, ttl=1d)."
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
           "verdict": "drop",
-          "title": "The Tumbling Paddies — event 2026-10-23 — public sale 2025-07-04 11:00",
+          "title": "The Saw Doctors — event 2026-08-15 — public sale 2025-11-21 10:00",
           "source_label": "Ticketmaster Liverpool Onsale",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=ticket_opportunity, ttl=1d)."
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
           "verdict": "drop",
-          "title": "What's Love Got to do With it? - The Ultimate Tribute to Tina Turner — event 2026-09-19 — public sale 2025-09-05 10:00",
-          "source_label": "Ticketmaster Liverpool Onsale",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=ticket_opportunity, ttl=1d)."
+          "title": "The Waterboys — event 2026-08-14 — public sale 2025-11-07 10:00",
+          "source_label": "Ticketmaster Liverpool Upcoming",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "The Saw Doctors — event 2026-08-15 — public sale 2025-11-21 10:00",
+          "source_label": "Ticketmaster Liverpool Upcoming",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "In the Park Liverpool presents Lewis Capaldi — event 2026-08-15 — public sale 2025-11-21 09:00",
+          "source_label": "Ticketmaster Liverpool Upcoming",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Nile Rodgers & CHIC — event 2026-08-17 — public sale 2025-12-05 10:00",
+          "source_label": "Ticketmaster Liverpool Upcoming",
+          "reason": "Multi-night run merged into one ticket line (#7)."
         },
         {
           "verdict": "drop",
           "title": "Gareth Taylor and his Queenies (formally Bulsara and his Queenies) — event 2026-09-04 — public sale 2025-09-05 10:00",
-          "source_label": "Ticketmaster Liverpool Onsale",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=ticket_opportunity, ttl=1d)."
-        },
-        {
-          "verdict": "drop",
-          "title": "Sounds Of The 60s Live - Hosted by Tony Blackburn MBE — event 2026-11-12 — public sale 2025-09-19 10:00",
-          "source_label": "Ticketmaster Liverpool Onsale",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=ticket_opportunity, ttl=1d)."
-        },
-        {
-          "verdict": "drop",
-          "title": "Steve Hackett - Best of Genesis & Solo Gems — event 2026-10-24 — public sale 2025-09-19 10:00",
-          "source_label": "Ticketmaster Liverpool Onsale",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=ticket_opportunity, ttl=1d)."
-        },
-        {
-          "verdict": "drop",
-          "title": "Erasured - The Ultimate Erasure Tribute — event 2026-09-19 — public sale 2025-10-16 10:00",
-          "source_label": "Ticketmaster Liverpool Onsale",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-27 (repeat=same_calendar_item_without_new_reader_moment, anchor=ticket_opportunity, ttl=1d)."
+          "source_label": "Ticketmaster Liverpool Upcoming",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         }
       ]
     },
     "russian_events": {
       "heading": "Русскоязычные концерты и стендап UK",
-      "total": 21,
-      "selected": 1,
+      "total": 19,
+      "selected": 6,
       "reserve": 0,
       "needs_enrichment": 0,
-      "drop": 20,
+      "drop": 13,
       "examples": [
         {
           "verdict": "drop",
@@ -471,21 +480,9 @@
         },
         {
           "verdict": "drop",
-          "title": "Спектакль \"Скамейка\"",
-          "source_label": "EventFirst Diaspora",
-          "reason": "Visible repeat policy allows this item: event_date_text_changed. LLM-review: Заголовок и дата идентичны предыдущей публикации, новых фактов нет. | Validator: same fingerprint was published on 2026-07-27, but repeat policy allows it (event_date_text_changed). | Validator: no publishable reason for today's morning issue; item is stale/no-change."
-        },
-        {
-          "verdict": "drop",
-          "title": "ПАВЕЛ ДЕДИЩЕВ В ЛОНДОНЕ | 30ГО СЕНТЯБРЯ | BIG BELLY COMEDY CLUB",
-          "source_label": "UK Stand-Up Club Eventbrite",
-          "reason": "Repeat without new phase."
-        },
-        {
-          "verdict": "drop",
           "title": "Goran Bregovic (London)",
           "source_label": "Kontramarka UK",
-          "reason": "Repeat without new phase."
+          "reason": "Dedupe found a previous publication; final repeat decision is deferred to plan-digest (provisional=same_calendar_item_without_new_reader_moment). | Russian block: no positive Russian/Ukrainian-language or diaspora evidence; source label alone is not proof."
         },
         {
           "verdict": "drop",
@@ -510,46 +507,52 @@
           "title": "Афиша Лондон",
           "source_label": "Afisha London",
           "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Russian block classifier: opera/ballet/classical item has no Russian-language or diaspora signal."
+        },
+        {
+          "verdict": "drop",
+          "title": "Афиша Лондон",
+          "source_label": "Afisha London",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Russian block classifier: opera/ballet/classical item has no Russian-language or diaspora signal."
+        },
+        {
+          "verdict": "drop",
+          "title": "Афиша Лондон",
+          "source_label": "Afisha London",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Russian block: no positive Russian/Ukrainian-language or diaspora evidence; source label alone is not proof."
         }
       ]
     },
     "openings": {
       "heading": "Еда, открытия и рынки",
       "total": 10,
-      "selected": 0,
-      "reserve": 1,
+      "selected": 3,
+      "reserve": 3,
       "needs_enrichment": 0,
-      "drop": 9,
+      "drop": 4,
       "examples": [
         {
           "verdict": "drop",
           "title": "Food Halls and Markets",
           "source_label": "Manchester's Finest",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: cross-day rehash — fingerprint already shipped on 2026-07-24 (repeat=exact_fingerprint_already_published, anchor=none, ttl=3d)."
+          "reason": "Curator drop: Чистый PR без новостного повода."
         },
         {
-          "verdict": "drop",
+          "verdict": "reserve",
           "title": "Porta are taking over the grills at Open Fire Dining Club for a Spanish feast built around giant paella",
           "source_label": "Manchester's Finest",
-          "reason": "Без новых фактов: уже был 2026-07-09 как «Porta are taking over the grills at Open Fire Dining Club for a Spanish feast built around giant paella». LLM-review: Заголовок и дата идентичны предыдущей публикации, новых фактов нет."
-        },
-        {
-          "verdict": "drop",
-          "title": "Manchester institution Salvi's announces closure of original city centre restaurant",
-          "source_label": "The Manc Eats",
-          "reason": "Без новых фактов: уже был 2026-07-27 как «Manchester institution Salvi's announces closure of original city centre restaurant». LLM-review: Заголовок и дата идентичны предыдущей публикации, новых фактов нет."
+          "reason": "Held as same-block backup for recovery."
         },
         {
           "verdict": "drop",
           "title": "Locals left stunned and excited by ‘unrecognisable' plans for returning Stockport pub",
           "source_label": "The Manc Eats",
-          "reason": "Без новых фактов: уже был 2026-07-26 как «Locals left stunned and excited by ‘unrecognisable' plans for returning Stockport pub». LLM-review: Заголовок и дата идентичны предыдущей публикации, новых фактов нет."
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
           "verdict": "drop",
           "title": "The beautiful new (now parrot-less) Mediterranean restaurant on the banks of the River Irwell",
           "source_label": "The Manc Eats",
-          "reason": "Без новых фактов: уже был 2026-07-24 как «The beautiful new (now parrot-less) Mediterranean restaurant on the banks of the River Irwell». LLM-review: Заголовок и дата идентичны предыдущей публикации, новых фактов нет."
+          "reason": "Curator drop: Чистый PR без новостного повода."
         },
         {
           "verdict": "reserve",
@@ -558,90 +561,32 @@
           "reason": "Held as same-block backup for recovery."
         },
         {
-          "verdict": "drop",
+          "verdict": "reserve",
           "title": "Wine bar with a difference to open at Stockport's Weir Mill - About Manchester",
           "source_label": "About Manchester Food & Drink",
-          "reason": "Без новых фактов: уже был 2026-07-25 как «Wine bar with a difference to open at Stockport's Weir Mill - About Manchester». LLM-review: Заголовок и содержание идентичны предыдущей публикации, новых фактов нет."
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
         },
         {
           "verdict": "drop",
-          "title": "Rudy's to open in Monton Salford - About Manchester",
+          "title": "Independent street food spot, Lucky Gyros, is set to open its doors in Manchester Arndale's Food Court in August - About Manchester",
           "source_label": "About Manchester Food & Drink",
-          "reason": "Repeat without new phase."
-        }
-      ]
-    },
-    "tech_business": {
-      "heading": "IT и бизнес",
-      "total": 14,
-      "selected": 3,
-      "reserve": 1,
-      "needs_enrichment": 0,
-      "drop": 10,
-      "examples": [
-        {
-          "verdict": "drop",
-          "title": "Nimble Approach help bring T Connect project to life | Manchester Digital",
-          "source_label": "Manchester Digital",
-          "reason": "Без новых фактов: уже был 2026-07-09 как «Nimble Approach help bring T Connect project to life | Manchester Digital». LLM-review: Заголовок и дата идентичны предыдущей публикации, новых фактов нет."
-        },
-        {
-          "verdict": "drop",
-          "title": "How our members are helping each other tackle graduate engagement | Manchester Digital",
-          "source_label": "Manchester Digital",
-          "reason": "Без новых фактов: уже был 2026-07-21 как «How our members are helping each other tackle graduate engagement | Manchester Digital». LLM-review: Заголовок и дата идентичны предыдущей публикации, новых фактов нет."
-        },
-        {
-          "verdict": "drop",
-          "title": "What's next for fintech - and how do we get there? | Manchester Digital",
-          "source_label": "Manchester Digital",
-          "reason": "Без новых фактов: уже был 2026-07-25 как «What's next for fintech - and how do we get there? | Manchester Digital». LLM-review: Тот же заголовок и тема, без новых фактов."
-        },
-        {
-          "verdict": "drop",
-          "title": "MD Comment: London Tech Week and the 10,000 policy announcements | Manchester Digital",
-          "source_label": "Manchester Digital",
-          "reason": "Без новых фактов: уже был 2026-07-26 как «MD Comment: London Tech Week and the 10,000 policy announcements | Manchester Digital». LLM-review: Тот же заголовок и тема, без новых фактов."
-        },
-        {
-          "verdict": "drop",
-          "title": "Prolific North",
-          "source_label": "Prolific North Manchester",
-          "reason": "Повтор сюжета без новых деталей: уже был 2026-07-24 как «Prolific North». LLM-review: Заголовок и описание идентичны предыдущей публикации, новых фактов нет."
-        },
-        {
-          "verdict": "drop",
-          "title": "Prolific North",
-          "source_label": "Prolific North Manchester",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Prolific North",
-          "source_label": "Prolific North Manchester",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Prolific North",
-          "source_label": "Prolific North Manchester",
           "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         }
       ]
     },
     "professional_events": {
       "heading": "Business/tech события для тебя",
-      "total": 41,
-      "selected": 0,
-      "reserve": 1,
+      "total": 42,
+      "selected": 3,
+      "reserve": 0,
       "needs_enrichment": 0,
-      "drop": 40,
+      "drop": 39,
       "examples": [
         {
           "verdict": "drop",
           "title": "Join the #MDTechCommunity Slack Channel | Manchester Digital",
           "source_label": "Manchester Digital Events",
-          "reason": "LLM-review: Новый заголовок и тема: приглашение в Slack-канал, ранее не упоминалось. | Validator: event-like candidate has no concrete upcoming date."
+          "reason": "Dedupe found a previous publication; final repeat decision is deferred to plan-digest (provisional=same_calendar_item_without_new_reader_moment). LLM-review: Новая тема: приглашение в Slack-канал, ранее не упоминалось. — без изменения факта карточки, остаётся повтор. | Validator: event-like candidate has no concrete upcoming date."
         },
         {
           "verdict": "drop",
@@ -653,47 +598,47 @@
           "verdict": "drop",
           "title": "Digital Her Summer Social: Careers, Change and AI | Manchester Digital",
           "source_label": "Manchester Digital Events",
-          "reason": "Повтор сюжета без новых деталей: уже был 2026-06-27 как «MD Future 26 | Manchester Digital». LLM-review: Новое событие: Digital Her Summer Social с конкретной датой и темой (AI, careers). — без изменения факта карточки, остаётся повтор."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional CV match: held for enrichment (no governing go/consider verdict)."
         },
         {
           "verdict": "drop",
           "title": "MD Future 26: FutureLive Innovation Day | Manchester Digital",
           "source_label": "Manchester Digital Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
+          "reason": "LLM-review: Новое событие: FutureLive Innovation Day с конкретными деталями (20 стартапов, отбор). | Validator: event-like candidate has no concrete upcoming date."
         },
         {
           "verdict": "drop",
           "title": "MD Future 26: FutureLive Innovation Day Evening Reception | Manchester Digital",
           "source_label": "Manchester Digital Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional CV match: held for enrichment (no governing go/consider verdict)."
-        },
-        {
-          "verdict": "drop",
-          "title": "MD Future 26 | Manchester Digital",
-          "source_label": "Manchester Digital Events",
-          "reason": "Без новых фактов: уже был 2026-06-27 как «MD Future 26 | Manchester Digital». LLM-review: Тот же заголовок и событие, без новых фактов."
-        },
-        {
-          "verdict": "drop",
-          "title": "Brain‑Healthy Workplaces: How HR Can Tackle Brain Fog, Burnout & Overload | Manchester Digital",
-          "source_label": "Manchester Digital Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional CV match: held for enrichment (no governing go/consider verdict)."
+          "reason": "LLM-review: Новое событие: вечерний приём FutureLive с деталями (дринки, канапе). | Professional CV match: held for enrichment (no governing go/consider verdict)."
         },
         {
           "verdict": "drop",
           "title": "Post-quantum cryptography: hype, reality, and the enterprise roadmap | Manchester Digital",
           "source_label": "Manchester Digital Events",
           "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event-like candidate has no concrete upcoming date."
+        },
+        {
+          "verdict": "drop",
+          "title": "From Pitch to Partnership | Manchester Digital",
+          "source_label": "Manchester Digital Events",
+          "reason": "Dedupe found a previous publication; final repeat decision is deferred to plan-digest (provisional=same_calendar_item_without_new_reader_moment). LLM-review: Новое событие: Venture Cafe 'From Pitch to Partnership' с деталями. — без изменения факта карточки, остаётся повтор. | Professional CV match: held for enrichment (no governing go/consider verdict)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Business Support | GM Business Growth Hub",
+          "source_label": "GM Business Growth Hub Events",
+          "reason": "LLM-review: Новая страница: общее описание Business Support, ранее не публиковалось. | Validator: event-like candidate has no concrete upcoming date."
         }
       ]
     },
     "football": {
       "heading": "Футбол",
-      "total": 33,
+      "total": 30,
       "selected": 6,
-      "reserve": 6,
+      "reserve": 9,
       "needs_enrichment": 0,
-      "drop": 21,
+      "drop": 15,
       "examples": [
         {
           "verdict": "drop",
@@ -704,44 +649,44 @@
         {
           "verdict": "drop",
           "title": "Training: Blues begin preseason week two!",
-          "source_label": "Manchester City",
+          "source_label": "Manchester City Men",
           "reason": "Curator drop: Чистый PR без новостного повода."
         },
         {
           "verdict": "drop",
-          "title": "Training: Blues begin preseason week two!",
-          "source_label": "Manchester City Men",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+          "title": "Man United latest: Michael Carrick discovers transfer decision as 'talks' over £30m star emerge",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
           "verdict": "drop",
-          "title": "JJ Gabriel, 15, could make Man Utd debut in Rosenborg friendly after senior call-up",
-          "source_label": "BBC Sport Manchester United",
-          "reason": "Без новых фактов: уже был 2026-07-24 как «JJ Gabriel, 15, could make Man Utd debut in Rosenborg friendly after senior call-up» — та же фигурант(а) JJ Gabriel. LLM-review: Заголовок и содержание идентичны прошлой публикации, новых фактов нет."
+          "title": "Manchester United have a player in their squad who will be like a new signing next season",
+          "source_label": "MEN Manchester United",
+          "reason": "LLM-review: Новая деталь: Амад вернулся в Каррингтон 21 июля, прошёл медосмотр и лёгкую тренировку. | Validator: celebrity-sighting card has no news angle (no crime/civic verb, no fresh date, no money/casualty, no GM borough)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Michael Carrick now has two new solutions to one of Man United's biggest problems last season",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Zinedine Zidane finally gives Man United closure after Michael Carrick coincidence",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
           "verdict": "reserve",
-          "title": "Leeds United: Leeds in talks to sign goalkeeper James Trafford from Manchester City",
-          "source_label": "BBC Sport Manchester City",
+          "title": "Memorabilia and 3am alarm calls - life as a Man City fan in Hong Kong and Korea",
+          "source_label": "MEN Manchester City",
           "reason": "Outside pre-rewrite shortlist for football."
         },
         {
-          "verdict": "drop",
-          "title": "Man United latest: Alex Scott transfer twist as fifth summer signing confirmed",
-          "source_label": "MEN Manchester United",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Man United star's shocking 'toxic' comment shows exactly how dressing room has changed",
-          "source_label": "MEN Manchester United",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Danny Welbeck to Man United transfer request made amid shock Chelsea move",
-          "source_label": "MEN Manchester United",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+          "verdict": "reserve",
+          "title": "Why Jack Grealish and Kalvin Phillips have been left out of Man City tour squad",
+          "source_label": "MEN Manchester City",
+          "reason": "Outside pre-rewrite shortlist for football."
         }
       ]
     }

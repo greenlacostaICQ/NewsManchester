@@ -2,85 +2,92 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair left 2 known factual operation(s) unresolved; delivery continues as degraded",
+  "reason": "pre-send repair completed with honest unresolved non-factual findings: operations=0, prose=1",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
-  "block_policy_version": "2026-07-27.p0",
-  "run_date_london": "2026-07-28",
-  "pipeline_run_id": "20260728T080140+0100",
-  "digest_sha256": "69fcb298c4dc037b0229b2df66fa0b8949b09362378cc9399770b99217f103a3",
-  "duration_seconds": 68.137,
+  "block_policy_version": "2026-07-28.p0",
+  "run_date_london": "2026-07-29",
+  "pipeline_run_id": "20260729T080145+0100",
+  "digest_sha256": "f575d3d76b0136d3a509159207922e0e725a616954cee0f1458141d215e688bd",
+  "duration_seconds": 70.241,
   "confidence": 0.9,
   "critical_errors": [
     {
       "line_index": 1,
       "section": "Главная история дня",
-      "problem": "Не указано имя осуждённого, что может вызвать путаницу и недопонимание.",
+      "problem": "Текст утверждает, что мужчины предстают перед судом по обвинению в убийстве, но не упоминает, что они отрицают вину.",
       "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 6,
-      "section": "Свежие новости",
-      "problem": "География события не соответствует контракту раздела.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 17,
-      "section": "Футбол",
-      "problem": "Неверное указание тренера. Майкл Каррик не является тренером Манчестер Юнайтед.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 20,
-      "section": "Городской радар",
-      "problem": "Дата прекращения научных наблюдений указана как 1 апреля 2028 года, что не соответствует текущему контексту.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 34,
-      "section": "Дальние анонсы",
-      "problem": "Некорректное указание места проведения мероприятия.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Неправильное использование термина 'наркотик для изнасилования'.",
-      "risk": "sensitive",
       "suggested_action": "repair"
     },
     {
       "line_index": 3,
       "section": "Свежие новости",
-      "problem": "Дублирование информации о пожарах на болотах.",
-      "risk": "format",
+      "problem": "Некорректное описание состояния девочки.",
+      "risk": "sensitive",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 4,
+      "section": "Свежие новости",
+      "problem": "Некорректное указание места инцидента.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 15,
+      "section": "Футбол",
+      "problem": "Неверное утверждение о роли Рубена Аморима как бывшего тренера Манчестер Юнайтед.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 22,
+      "section": "Городской радар",
+      "problem": "Andy Burnham is incorrectly referred to as Prime Minister.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 30,
+      "section": "Дальние анонсы",
+      "problem": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+      "risk": "geo",
       "suggested_action": "strip"
     },
     {
-      "line_index": 17,
-      "section": "Футбол",
-      "problem": "Неполная информация о трансфере.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 20,
-      "section": "Городской радар",
-      "problem": "Потеря финансирования обсерватории Джодрелл Банк не подтверждена.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 34,
+      "line_index": 31,
       "section": "Дальние анонсы",
-      "problem": "Мероприятие не соответствует географическому контракту.",
+      "problem": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
       "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 32,
+      "section": "Дальние анонсы",
+      "problem": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 33,
+      "section": "Билеты / Ticket Radar",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 4,
+      "section": "Свежие новости",
+      "problem": "Дублирование информации о приговоре Дук Дэнга.",
+      "risk": "factual",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 5,
+      "section": "Свежие новости",
+      "problem": "Дублирование информации о приговоре Дук Дэнга.",
+      "risk": "factual",
       "suggested_action": "strip"
     }
   ],
@@ -89,188 +96,180 @@
       "line_index": 1,
       "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• Мужчина по имени Ахур Рамабарк Фати, участвовавший в поставках 'наркотика для изнасилования' (GBL) между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения. Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. MEN",
-      "reason": "Уточнение имени осуждённого для избежания путаницы.",
+      "replacement_text": "• Четыре мужчины предстают перед судом по обвинению в убийстве 16-летнего Александра Джона Сойое, которое произошло 5 ноября 2020 года в Мостоне на фоне конфликта между бандами. По версии обвинения, после драки в Пикадилли Гарденс, участники банды RTD пришли в Мостон, чтобы отомстить, что и привело к трагедии, в результате которой Сойое получил 15 ударов и скончался на месте. Обвиняемые отрицают свою вину. MEN",
+      "reason": "Добавление информации о том, что обвиняемые отрицают вину, для точности и полноты.",
       "risk": "factual"
-    },
-    {
-      "line_index": 6,
-      "section": "Свежие новости",
-      "action": "strip",
-      "reason": "Событие произошло в Бирмингеме, что выходит за пределы географического охвата GM.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 17,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей в следующем сезоне. С менее чем четырьмя неделями до начала Премьер-лиги клубу необходимо активизировать свои действия на трансферном рынке, особенно после недавних изменений в составе, включая уход Каземиро и приход Андрея Сантоса и Юри Тилеманса за общую сумму £85 миллионов. MEN Manchester United",
-      "reason": "Майкл Каррик не является тренером Манчестер Юнайтед.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 20,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Обсерватория Джодрелл Банк потеряла финансирование, и телескоп Ловелла может закрыться, если не будет найдено новое финансирование. Все научные наблюдения могут прекратиться в будущем. BBC Manchester",
-      "reason": "Указанная дата прекращения научных наблюдений не соответствует текущему контексту.",
-      "risk": "date"
-    },
-    {
-      "line_index": 34,
-      "section": "Дальние анонсы",
-      "action": "patch",
-      "replacement_text": "• Бесплатная прогулка для благополучия пройдет в Stockroom, 37 to 39 Merseyway, Stockport 12 августа с 12:30 до 13:30. Stockport Events",
-      "reason": "Указано неверное место проведения мероприятия.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 35,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• James Johnston — 14 августа, Manchester Academy; цена £20.00. Билеты и время указаны на официальной странице Manchester Academy.",
-      "reason": "Устранение дублирования названия 'Manchester Academy' в конце строки.",
-      "risk": "format"
-    },
-    {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• Мужчина, участвовавший в поставках GBL между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения. Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. MEN",
-      "reason": "Исправление чувствительного термина.",
-      "risk": "sensitive"
     },
     {
       "line_index": 3,
       "section": "Свежие новости",
-      "action": "strip",
-      "replacement_text": "",
-      "reason": "Дублирование информации о пожарах на болотах.",
-      "risk": "format"
+      "action": "patch",
+      "replacement_text": "• 19-месячная девочка была найдена в критическом состоянии через 19 дней после закрытия дела социальными службами в Рочдейле. Девочка была истощена, обезвожена и покрыта язвами, что выявило серьезные недостатки в системе защиты детей. BBC Manchester",
+      "reason": "Уточнение состояния девочки для соответствия источнику.",
+      "risk": "sensitive"
     },
     {
-      "line_index": 17,
+      "line_index": 4,
+      "section": "Свежие новости",
+      "action": "patch",
+      "replacement_text": "• 21-летний Дук Дэнг был приговорен к двум годам тюремного заключения после того, как полиция задержала его на территории школы Edgar Wood Academy в Хейвуде, когда он был вооружен молотком, топором и ножом. MEN",
+      "reason": "Уточнение места инцидента для соответствия источнику.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 15,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей Майкла Каррика в следующем сезоне. Клубу необходимо активизировать свои действия на трансферном рынке.",
-      "reason": "Уточнение информации о трансфере.",
+      "replacement_text": "• Бывший тренер Спортинга Рубен Аморим признал, что совершил 'много ошибок' во время своего пребывания в клубе, общаясь с прессой во время предсезонного тура с новым клубом Милан. MEN Manchester United",
+      "reason": "Рубен Аморим никогда не был тренером Манчестер Юнайтед.",
       "risk": "factual"
     },
     {
-      "line_index": 20,
+      "line_index": 22,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Обсерватория Джодрелл Банк может потерять финансирование, если не будет найдено новое финансирование. Все научные наблюдения могут прекратиться 1 апреля 2028 года. BBC Manchester",
-      "reason": "Уточнение информации о финансировании.",
+      "replacement_text": "• Мэр Энди Бернэм открыл No 10 North в Манчестере и назвал это 'лучшим днем в своей жизни'.",
+      "reason": "Andy Burnham is the Mayor of Greater Manchester, not the Prime Minister.",
       "risk": "factual"
     },
     {
-      "line_index": 34,
+      "line_index": 30,
       "section": "Дальние анонсы",
       "action": "strip",
+      "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 31,
+      "section": "Дальние анонсы",
+      "action": "strip",
+      "reason": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 32,
+      "section": "Дальние анонсы",
+      "action": "strip",
+      "reason": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 33,
+      "section": "Билеты / Ticket Radar",
+      "action": "patch",
+      "replacement_text": "• Wolfmother — 30 июля, O2 Ritz Manchester. Билеты и время указаны на официальной странице. Ticketmaster",
+      "reason": "Дата события должна быть 30 июля, а не 29 июля.",
+      "risk": "date"
+    },
+    {
+      "line_index": 4,
+      "section": "Свежие новости",
+      "action": "strip",
       "replacement_text": "",
-      "reason": "Мероприятие не соответствует географическому контракту.",
-      "risk": "geo"
+      "reason": "Дублирование информации о приговоре Дук Дэнга.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 5,
+      "section": "Свежие новости",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации о приговоре Дук Дэнга.",
+      "risk": "factual"
     }
   ],
   "warnings": [
-    "В разделе 'Общественный транспорт сегодня' все строки соответствуют требованиям, но стоит отметить, что информация о транспортных изменениях может быстро устаревать. Рекомендуется проверять актуальность данных перед публикацией.",
-    "В разделе 'IT и бизнес' нет критических ошибок, но стоит отметить, что плотность новостей может быть выше, чем в других разделах. Убедитесь, что это не нарушает баланс выпуска.",
-    "Дублирование названия 'Manchester Academy' в конце строки.",
-    "Отсутствие блока 'Что важно сегодня' и 'Что важно в ближайшие 7 дней' снижает полноту выпуска."
+    "Недостаток в блоке 'Что важно сегодня': всего 1 элемент при минимуме 3.",
+    "Недостаток в блоке 'Что важно в ближайшие 7 дней': отсутствуют элементы при минимуме 3.",
+    "Недостаток в блоке 'Еда, открытия и рынки': отсутствуют элементы при минимуме 3."
   ],
   "product_completeness": {
-    "block_policy_version": "2026-07-27.p0",
+    "block_policy_version": "2026-07-28.p0",
     "scope": "input_before_pre_send_judge",
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 9,
-      "Общественный транспорт сегодня": 5,
+      "Свежие новости": 8,
+      "Общественный транспорт сегодня": 3,
+      "Что важно сегодня": 1,
       "Футбол": 3,
-      "Городской радар": 11,
-      "IT и бизнес": 3,
-      "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 1,
+      "Городской радар": 9,
+      "Business/tech события для тебя": 1,
+      "Дальние анонсы": 5,
+      "Билеты / Ticket Radar": 3,
       "Крупные концерты вне GM": 1,
-      "Русскоязычные концерты и стендап UK": 1
+      "Русскоязычные концерты и стендап UK": 2
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
-      "Свежие новости": 9,
+      "Что важно сегодня": 1,
+      "Свежие новости": 8,
       "Главная история дня": 1,
-      "Городской радар": 11,
+      "Городской радар": 9,
       "Что важно в ближайшие 7 дней": 0,
-      "Билеты / Ticket Radar": 1,
-      "Русскоязычные концерты и стендап UK": 1,
+      "Билеты / Ticket Radar": 3,
+      "Русскоязычные концерты и стендап UK": 2,
       "Еда, открытия и рынки": 0,
-      "Business/tech события для тебя": 0,
+      "Business/tech события для тебя": 1,
       "Футбол": 3
     },
-    "ticket_items": 3,
-    "core_items": 25,
+    "ticket_items": 6,
+    "core_items": 24,
     "writer_quality_counts": {
-      "included_candidates": 38,
-      "rendered_candidates": 37,
+      "included_candidates": 47,
+      "rendered_candidates": 38,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 1,
-      "replaced_from_plan_backup": 0,
-      "removed_with_reason": 1
+      "dropped_low_quality": 4,
+      "replaced_from_plan_backup": 4,
+      "removed_with_reason": 4
     },
     "source_health_counts": {
-      "ok": 104,
+      "ok": 108,
       "partial": 2,
-      "stale": 13,
+      "stale": 9,
       "empty": 6,
       "failed": 0,
-      "zero_yield": 87,
+      "zero_yield": 89,
       "no_contribution_breakdown": {
         "fetch_failed": 0,
-        "all_rejected": 87,
-        "idle_no_items": 17
+        "all_rejected": 89,
+        "idle_no_items": 13
       },
       "zero_contribution_by_stage": {
-        "selected": 69,
-        "written": 18,
-        "parsed": 17
+        "selected": 47,
+        "written": 42,
+        "parsed": 13
       },
-      "weekend_source_coverage_incidents": 44
+      "weekend_source_coverage_incidents": 54
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
+      "Что важно сегодня: 1 item(s), emergency floor 3",
       "Что важно в ближайшие 7 дней: 0 item(s), emergency floor 3",
-      "Билеты / Ticket Radar: 1 item(s), emergency floor 2",
-      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "Business/tech события для тебя: 0 item(s), emergency floor 1"
+      "Еда, открытия и рынки: 0 item(s), emergency floor 3"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 1 has unchecked number/date token(s): 12, 2000",
-      "patch for line 17 has unchecked number/date token(s): 85",
-      "patch for line 34 has unchecked number/date token(s): 12",
-      "multiple actions target line 1",
-      "patch for line 1 has unchecked number/date token(s): 12, 2000",
-      "multiple actions target line 17",
-      "multiple actions target line 20",
-      "patch for line 20 has unchecked number/date token(s): 1, 2028",
-      "multiple actions target line 34"
+      "patch for line 1 has unchecked number/date token(s): 15, 2020, 5",
+      "patch for line 4 has unchecked number/date token(s): 21",
+      "multiple actions target line 4"
     ],
     "can_apply_actions": true,
     "action_count": 11
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 37,
-    "matched_lines": 37,
-    "applicable_lines": 4,
+    "checked_lines": 38,
+    "matched_lines": 38,
+    "applicable_lines": 3,
     "unmatched_lines": 0,
     "critical_omission_count": 0,
     "critical_omissions": [],
@@ -284,16 +283,19 @@
     "dry_run": false,
     "fact_lock_version": "v1",
     "requested": 11,
-    "attempted": 11,
-    "applied": 11,
-    "model_patch_applied": 6,
+    "attempted": 9,
+    "applied": 9,
+    "model_patch_applied": 4,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 1,
-    "stripped": 4,
-    "unresolved": 2,
-    "blocking_unresolved": 2,
-    "resolved_in_place": 9,
-    "fact_lock_rejected": 2,
+    "reserve_replacement_used": 2,
+    "stripped": 3,
+    "unresolved": 0,
+    "blocking_unresolved": 0,
+    "resolved": 9,
+    "resolved_in_place": 6,
+    "resolved_by_replacement": 1,
+    "resolved_by_removal": 2,
+    "fact_lock_rejected": 0,
     "enrich_attempted": 11,
     "post_check_errors": [],
     "geo_contract_rejected": [],
@@ -302,426 +304,384 @@
         "line_index": 1,
         "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Уточнение имени осуждённого для избежания путаницы.",
+        "reason": "Добавление информации о том, что обвиняемые отрицают вину, для точности и полноты.",
         "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "reserve_replacement",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-moment-police-raid-home-linked-34356849",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849",
-        "original_html": "<b>Мужчина, участвовавший в поставках 'наркотика для изнасилования' (GBL) между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения.</b> Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849\">MEN</a>",
-        "model_replacement_rejected": "fact_lock: men",
-        "replacement_fingerprint": "media-layer-about-manchester-news-aboutmanchester-co-uk-manchester-united-odds-to-win-premier-league-comparing-todays-title-chances-with-the-ferguson-era",
-        "post_check_passed": false
-      },
-      {
-        "line_index": 6,
-        "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Событие произошло в Бирмингеме, что выходит за пределы географического охвата GM.",
-        "risk": "geo",
         "critical_error": true,
-        "critical_problem": "География события не соответствует контракту раздела.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "removed",
-        "plan_slot_id": "last_24h-04",
-        "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-teenager-charged-over-alleged-peter-34358047",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/teenager-charged-over-alleged-peter-34358047",
-        "original_html": "• 19-летний Омара Маджед предстал перед судом по обвинению в организации ложной тревоги о бомбе, что привело к эвакуации шоу Питера Кея в Бирмингеме. Предварительное слушание назначено на 30 сентября. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/teenager-charged-over-alleged-peter-34358047\">MEN</a>",
-        "backup_outcome": "backup_chain_exhausted",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Майкл Каррик не является тренером Манчестер Юнайтед.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
+        "critical_problem": "Текст утверждает, что мужчины предстают перед судом по обвинению в убийстве, но не упоминает, что они отрицают вину.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-manchester-united-statement-signing-away-34360497",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497",
-        "original_html": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей Майкла Каррика в следующем сезоне. С менее чем четырьмя неделями до начала Премьер-лиги клубу необходимо активизировать свои действия на трансферном рынке, особенно после недавних изменений в составе, включая уход Каземиро и приход Андрея Сантоса и Юри Тилеманса за общую сумму £85 миллионов. <a href=\"https://manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497\">MEN Manchester United</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 20,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Указанная дата прекращения научных наблюдений не соответствует текущему контексту.",
-        "risk": "date",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c5y6r9rdxygo",
-        "original_url_identity": "bbc.com/news/articles/c5y6r9rdxygo",
-        "original_html": "• Обсерватория Джодрелл Банк потеряла финансирование, и телескоп Ловелла может закрыться, если не будет найдено новое финансирование. Все научные наблюдения прекратятся 1 апреля 2028 года. <a href=\"https://bbc.co.uk/news/articles/c5y6r9rdxygo\">BBC Manchester</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 34,
-        "section": "Дальние анонсы",
-        "requested_action": "patch",
-        "reason": "Указано неверное место проведения мероприятия.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "model_patch",
-        "plan_slot_id": "future_announcements-01",
-        "candidate_fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-pause-and-notice-wellbeing-walks",
-        "original_url_identity": "stockport.gov.uk/events/pause-and-notice-wellbeing-walks",
-        "original_html": "• Бесплатная прогулка для благополучия пройдет в центре Stockport 12 августа с 12:30 до 13:30. <a href=\"http://stockport.gov.uk/events/pause-and-notice-wellbeing-walks\">Stockport Events</a>",
-        "post_check_passed": false
-      },
-      {
-        "line_index": 35,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Устранение дублирования названия 'Manchester Academy' в конце строки.",
-        "risk": "format",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "ticket_radar-01",
-        "candidate_fingerprint": "venues-tickets-manchester-academy-manchesteracademy-net-order-gateway-13380381-james-johnston-manchester-academy-2-2026-08-14-19-30-00",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13380381/james-johnston-manchester-academy-2-2026-08-14-19-30-00",
-        "original_html": "• <b>James Johnston</b> — 14 августа, Manchester Academy; цена £20.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13380381/james-johnston-manchester-academy-2-2026-08-14-19-30-00\">Manchester Academy</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "requested_action": "patch",
-        "reason": "Исправление чувствительного термина.",
-        "risk": "sensitive",
-        "critical_error": true,
-        "critical_problem": "Не указано имя осуждённого, что может вызвать путаницу и недопонимание.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "removed",
         "plan_slot_id": "lead",
-        "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-moment-police-raid-home-linked-34356849",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849",
-        "original_html": "<b>Мужчина, участвовавший в поставках 'наркотика для изнасилования' (GBL) между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения.</b> Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849\">MEN</a>",
-        "model_replacement_rejected": "fact_lock: men",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-four-accused-murdering-boy-16-34366454-a0a9761b39cf",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/four-accused-murdering-boy-16-34366454",
+        "original_html": "<b>Четыре мужчины предстают перед судом по обвинению в убийстве 16-летнего Александра Джона Сойое, которое произошло 5 ноября 2020 года в Мостоне на фоне конфликта между бандами.</b> По версии обвинения, после драки в Пикадилли Гарденс, участники банды RTD пришли в Мостон, чтобы отомстить, что и привело к трагедии, в результате которой Сойое получил 15 ударов и скончался на месте. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/four-accused-murdering-boy-16-34366454\">MEN</a>",
         "post_check_passed": true
       },
       {
         "line_index": 3,
         "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о пожарах на болотах.",
-        "risk": "format",
+        "requested_action": "patch",
+        "reason": "Уточнение состояния девочки для соответствия источнику.",
+        "risk": "sensitive",
         "critical_error": true,
-        "critical_problem": "Дублирование информации о пожарах на болотах.",
+        "critical_problem": "Некорректное описание состояния девочки.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "removed",
+        "method": "model_patch",
         "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-major-incident-dovestone-new-phase-34361981",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/major-incident-dovestone-new-phase-34361981",
-        "original_html": "• Крупный инцидент продолжается, так как пожары на болотах в Довстоне, Свиншоу и Тинтвистле продолжают гореть, несмотря на дождь. Публика призвана избегать пострадавших районов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/major-incident-dovestone-new-phase-34361981\">MEN</a>",
-        "backup_outcome": "backup_chain_exhausted",
-        "removal_reason": "duplicate_after_plan",
+        "candidate_fingerprint": "url-bbc-com-news-articles-crl7j4x32xko-566a4cf985e3",
+        "original_url_identity": "bbc.com/news/articles/crl7j4x32xko",
+        "original_html": "• 19-месячная девочка была найдена в критическом состоянии через 19 дней после закрытия дела социальными службами в Рочдейле, что выявило серьезные недостатки в системе защиты детей. <a href=\"https://bbc.co.uk/news/articles/crl7j4x32xko\">BBC Manchester</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 17,
+        "line_index": 4,
+        "section": "Свежие новости",
+        "requested_action": "patch",
+        "reason": "Уточнение места инцидента для соответствия источнику.",
+        "risk": "factual",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "last_24h-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-terrifying-moment-cops-tackled-screaming-34367771-37df3c514113",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/terrifying-moment-cops-tackled-screaming-34367771",
+        "original_html": "• 21-летний Дук Дэнг был приговорен к двум годам тюремного заключения после того, как полиция задержала его на территории академии Эдгара Вуда в Миддлтоне, когда он был вооружен молотком, топором и ножом. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/terrifying-moment-cops-tackled-screaming-34367771\">MEN</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 15,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Уточнение информации о трансфере.",
+        "reason": "Рубен Аморим никогда не был тренером Манчестер Юнайтед.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неверное указание тренера. Майкл Каррик не является тренером Манчестер Юнайтед.",
+        "critical_problem": "Неверное утверждение о роли Рубена Аморима как бывшего тренера Манчестер Юнайтед.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "model_patch",
+        "method": "verified_existing_fact",
         "plan_slot_id": "football-01",
-        "candidate_fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-manchester-united-statement-signing-away-34360497",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497",
-        "original_html": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей Майкла Каррика в следующем сезоне. С менее чем четырьмя неделями до начала Премьер-лиги клубу необходимо активизировать свои действия на трансферном рынке, особенно после недавних изменений в составе, включая уход Каземиро и приход Андрея Сантоса и Юри Тилеманса за общую сумму £85 миллионов. <a href=\"https://manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497\">MEN Manchester United</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-ruben-amorim-opens-up-failed-34364989-77a9afb672ee",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/ruben-amorim-opens-up-failed-34364989",
+        "original_html": "• Бывший тренер Манчестер Юнайтед Рубен Аморим признал, что совершил 'много ошибок' во время своего пребывания в клубе, общаясь с прессой во время предсезонного тура с новым клубом Милан. <a href=\"https://manchestereveningnews.co.uk/sport/football/ruben-amorim-opens-up-failed-34364989\">MEN Manchester United</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 20,
+        "line_index": 22,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Уточнение информации о финансировании.",
+        "reason": "Andy Burnham is the Mayor of Greater Manchester, not the Prime Minister.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дата прекращения научных наблюдений указана как 1 апреля 2028 года, что не соответствует текущему контексту.",
+        "critical_problem": "Andy Burnham is incorrectly referred to as Prime Minister.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c5y6r9rdxygo",
-        "original_url_identity": "bbc.com/news/articles/c5y6r9rdxygo",
-        "original_html": "• Обсерватория Джодрелл Банк потеряла финансирование, и телескоп Ловелла может закрыться, если не будет найдено новое финансирование. Все научные наблюдения прекратятся 1 апреля 2028 года. <a href=\"https://bbc.co.uk/news/articles/c5y6r9rdxygo\">BBC Manchester</a>",
+        "plan_slot_id": "city_watch-05",
+        "candidate_fingerprint": "url-business-live-co-uk-economic-development-andy-burnham-says-best-day-34346646-cc500f766044",
+        "original_url_identity": "business-live.co.uk/economic-development/andy-burnham-says-best-day-34346646",
+        "original_html": "• Премьер-министр Энди Бернэм открыл No 10 North в Манчестере и назвал это 'лучшим днем в своей жизни'. <a href=\"https://business-live.co.uk/economic-development/andy-burnham-says-best-day-34346646\">BusinessLive Greater Manchester</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 34,
+        "line_index": 30,
         "section": "Дальние анонсы",
         "requested_action": "strip",
-        "reason": "Мероприятие не соответствует географическому контракту.",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
         "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Некорректное указание места проведения мероприятия.",
+        "critical_problem": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
+        "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "future_announcements-01",
-        "candidate_fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-pause-and-notice-wellbeing-walks",
-        "original_url_identity": "stockport.gov.uk/events/pause-and-notice-wellbeing-walks",
-        "original_html": "• Бесплатная прогулка для благополучия пройдет в центре Stockport 12 августа с 12:30 до 13:30. <a href=\"http://stockport.gov.uk/events/pause-and-notice-wellbeing-walks\">Stockport Events</a>",
+        "plan_slot_id": "future_announcements-03",
+        "candidate_fingerprint": "event-event-gareth-taylor-and-his-queenies-formally-bulsara-and-his-queenies-2026-09-04-o2-academy-2-liverpool-5ab958d595ad",
+        "original_url_identity": "ticketmaster.co.uk/gareth-taylor-and-his-queenies-formally-liverpool-04-09-2026/event/3E006315CF9C1B97",
+        "original_html": "• <b>Gareth Taylor and his Queenies (formally Bulsara and his Queenies)</b> — 4 сентября, O2 Academy 2 Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/gareth-taylor-and-his-queenies-formally-liverpool-04-09-2026/event/3E006315CF9C1B97\">Ticketmaster</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 31,
+        "section": "Дальние анонсы",
+        "requested_action": "strip",
+        "reason": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "future_announcements-04",
+        "candidate_fingerprint": "event-event-freshfields-downtown-weekend-pass-2026-08-27-daresbury-a25367a8d9e6",
+        "original_url_identity": "ticketmaster.co.uk/freshfields-downtown-weekend-pass-cheshire-27-08-2026/event/37006312E59B713A",
+        "original_html": "• <b>Freshfields</b> — 27, 28, 29 и 30 августа, Daresbury. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/freshfields-downtown-weekend-pass-cheshire-27-08-2026/event/37006312E59B713A\">Ticketmaster</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 32,
+        "section": "Дальние анонсы",
+        "requested_action": "strip",
+        "reason": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "future_announcements-05",
+        "candidate_fingerprint": "event-event-creamfields-2026-souvenir-ticket-2026-08-27-daresbury-ad8b0302a5a8",
+        "original_url_identity": "ticketmaster.co.uk/creamfields-2026-souvenir-ticket-cheshire-27-08-2026/event/3700631BCEA31B1E",
+        "original_html": "• <b>Creamfields 2026</b> — 27, 28, 29 и 30 августа, Daresbury. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/creamfields-2026-souvenir-ticket-cheshire-27-08-2026/event/3700631BCEA31B1E\">Ticketmaster</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 33,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 30 июля, а не 29 июля.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "ticket_radar-01",
+        "candidate_fingerprint": "event-event-wolfmother-2026-07-30-o2-ritz-manchester-acef25ab20f6",
+        "original_url_identity": "ticketmaster.co.uk/wolfmother-manchester-30-07-2026/event/3E006477CA1839C4",
+        "original_html": "• <b>Wolfmother</b> — 30 июля, O2 Ritz Manchester. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/wolfmother-manchester-30-07-2026/event/3E006477CA1839C4\">Ticketmaster</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 4,
+        "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о приговоре Дук Дэнга.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Некорректное указание места инцидента.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-terrifying-moment-cops-tackled-screaming-34367771-37df3c514113",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/terrifying-moment-cops-tackled-screaming-34367771",
+        "original_html": "• 21-летний Дук Дэнг был приговорен к двум годам тюремного заключения после того, как полиция задержала его на территории академии Эдгара Вуда в Миддлтоне, когда он был вооружен молотком, топором и ножом. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/terrifying-moment-cops-tackled-screaming-34367771\">MEN</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-masked-teenager-e-bike-who-34367016-f383211c9762",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 5,
+        "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о приговоре Дук Дэнга.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о приговоре Дук Дэнга.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-failed-asylum-seeker-armed-hammer-34365375-12d4b9b881ff",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/failed-asylum-seeker-armed-hammer-34365375",
+        "original_html": "• 21-летний Дук Дэнг, не получивший убежище, был приговорён к двум годам тюрьмы за то, что пришёл в школу Edgar Wood Academy в Хейвуде с молотком, топором и кухонным ножом. Суд установил, что он хотел привлечь внимание к своей ситуации, так как трижды подавал заявку на убежище и каждый раз получал отказ. Инцидент произошёл 6 августа прошлого года, когда его заметили работающие неподалёку люди, после чего он был задержан. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/failed-asylum-seeker-armed-hammer-34365375\">MEN</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-60-personnel-still-battling-tintwistle-34367278-a6f900eb3e3e",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::уточнение имени осуждённого для избежания путаницы.",
+        "group_key": "главная история дня::добавление информации о том, что обвиняемые отрицают вину, для точности и полноты.",
         "actions": [
           {
             "line_index": 1,
             "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Уточнение имени осуждённого для избежания путаницы.",
+            "reason": "Добавление информации о том, что обвиняемые отрицают вину, для точности и полноты.",
             "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "reserve_replacement",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-moment-police-raid-home-linked-34356849",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849",
-            "original_html": "<b>Мужчина, участвовавший в поставках 'наркотика для изнасилования' (GBL) между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения.</b> Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849\">MEN</a>",
-            "model_replacement_rejected": "fact_lock: men",
-            "replacement_fingerprint": "media-layer-about-manchester-news-aboutmanchester-co-uk-manchester-united-odds-to-win-premier-league-comparing-todays-title-chances-with-the-ferguson-era",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 1,
-            "passed": false,
-            "detail": "final line missing"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::событие произошло в бирмингеме, что выходит за пределы географического охвата gm.",
-        "actions": [
-          {
-            "line_index": 6,
-            "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "Событие произошло в Бирмингеме, что выходит за пределы географического охвата GM.",
-            "risk": "geo",
             "critical_error": true,
-            "critical_problem": "География события не соответствует контракту раздела.",
+            "critical_problem": "Текст утверждает, что мужчины предстают перед судом по обвинению в убийстве, но не упоминает, что они отрицают вину.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "removed",
-            "plan_slot_id": "last_24h-04",
-            "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-teenager-charged-over-alleged-peter-34358047",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/teenager-charged-over-alleged-peter-34358047",
-            "original_html": "• 19-летний Омара Маджед предстал перед судом по обвинению в организации ложной тревоги о бомбе, что привело к эвакуации шоу Питера Кея в Бирмингеме. Предварительное слушание назначено на 30 сентября. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/teenager-charged-over-alleged-peter-34358047\">MEN</a>",
-            "backup_outcome": "backup_chain_exhausted",
-            "removal_reason": "fact_lock_failed",
+            "method": "model_patch",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-four-accused-murdering-boy-16-34366454-a0a9761b39cf",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/four-accused-murdering-boy-16-34366454",
+            "original_html": "<b>Четыре мужчины предстают перед судом по обвинению в убийстве 16-летнего Александра Джона Сойое, которое произошло 5 ноября 2020 года в Мостоне на фоне конфликта между бандами.</b> По версии обвинения, после драки в Пикадилли Гарденс, участники банды RTD пришли в Мостон, чтобы отомстить, что и привело к трагедии, в результате которой Сойое получил 15 ударов и скончался на месте. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/four-accused-murdering-boy-16-34366454\">MEN</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
-          {
-            "line_index": 6,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::майкл каррик не является тренером манчестер юнайтед.",
-        "actions": [
-          {
-            "line_index": 17,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Майкл Каррик не является тренером Манчестер Юнайтед.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-manchester-united-statement-signing-away-34360497",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497",
-            "original_html": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей Майкла Каррика в следующем сезоне. С менее чем четырьмя неделями до начала Премьер-лиги клубу необходимо активизировать свои действия на трансферном рынке, особенно после недавних изменений в составе, включая уход Каземиро и приход Андрея Сантоса и Юри Тилеманса за общую сумму £85 миллионов. <a href=\"https://manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497\">MEN Manchester United</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 17,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::указанная дата прекращения научных наблюдений не соответствует текущему контексту.",
-        "actions": [
-          {
-            "line_index": 20,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Указанная дата прекращения научных наблюдений не соответствует текущему контексту.",
-            "risk": "date",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c5y6r9rdxygo",
-            "original_url_identity": "bbc.com/news/articles/c5y6r9rdxygo",
-            "original_html": "• Обсерватория Джодрелл Банк потеряла финансирование, и телескоп Ловелла может закрыться, если не будет найдено новое финансирование. Все научные наблюдения прекратятся 1 апреля 2028 года. <a href=\"https://bbc.co.uk/news/articles/c5y6r9rdxygo\">BBC Manchester</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 20,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "дальние анонсы::указано неверное место проведения мероприятия.",
-        "actions": [
-          {
-            "line_index": 34,
-            "section": "Дальние анонсы",
-            "requested_action": "patch",
-            "reason": "Указано неверное место проведения мероприятия.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "model_patch",
-            "plan_slot_id": "future_announcements-01",
-            "candidate_fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-pause-and-notice-wellbeing-walks",
-            "original_url_identity": "stockport.gov.uk/events/pause-and-notice-wellbeing-walks",
-            "original_html": "• Бесплатная прогулка для благополучия пройдет в центре Stockport 12 августа с 12:30 до 13:30. <a href=\"http://stockport.gov.uk/events/pause-and-notice-wellbeing-walks\">Stockport Events</a>",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 34,
-            "passed": false,
-            "detail": "final line missing"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::устранение дублирования названия 'manchester academy' в конце строки",
-        "actions": [
-          {
-            "line_index": 35,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "patch",
-            "reason": "Устранение дублирования названия 'Manchester Academy' в конце строки.",
-            "risk": "format",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "venues-tickets-manchester-academy-manchesteracademy-net-order-gateway-13380381-james-johnston-manchester-academy-2-2026-08-14-19-30-00",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13380381/james-johnston-manchester-academy-2-2026-08-14-19-30-00",
-            "original_html": "• <b>James Johnston</b> — 14 августа, Manchester Academy; цена £20.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13380381/james-johnston-manchester-academy-2-2026-08-14-19-30-00\">Manchester Academy</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 35,
-            "passed": true,
-            "detail": "post-check passed"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:james johnston|2026-08-14|manchester academy",
-            "visible_count": 1,
-            "passed": true
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "главная история дня::исправление чувствительного термина.",
-        "actions": [
           {
             "line_index": 1,
-            "section": "Главная история дня",
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::уточнение состояния девочки для соответствия источнику.",
+        "actions": [
+          {
+            "line_index": 3,
+            "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Исправление чувствительного термина.",
+            "reason": "Уточнение состояния девочки для соответствия источнику.",
             "risk": "sensitive",
             "critical_error": true,
-            "critical_problem": "Не указано имя осуждённого, что может вызвать путаницу и недопонимание.",
+            "critical_problem": "Некорректное описание состояния девочки.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "removed",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "media-layer-men-news-sitemap-manchestereveningnews-co-uk-news-greater-manchester-news-moment-police-raid-home-linked-34356849",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849",
-            "original_html": "<b>Мужчина, участвовавший в поставках 'наркотика для изнасилования' (GBL) между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения.</b> Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/moment-police-raid-home-linked-34356849\">MEN</a>",
-            "model_replacement_rejected": "fact_lock: men",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
+            "method": "model_patch",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-bbc-com-news-articles-crl7j4x32xko-566a4cf985e3",
+            "original_url_identity": "bbc.com/news/articles/crl7j4x32xko",
+            "original_html": "• 19-месячная девочка была найдена в критическом состоянии через 19 дней после закрытия дела социальными службами в Рочдейле, что выявило серьезные недостатки в системе защиты детей. <a href=\"https://bbc.co.uk/news/articles/crl7j4x32xko\">BBC Manchester</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 1,
+            "line_index": 3,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::уточнение места инцидента для соответствия источнику.",
+        "actions": [
+          {
+            "line_index": 4,
+            "section": "Свежие новости",
+            "requested_action": "patch",
+            "reason": "Уточнение места инцидента для соответствия источнику.",
+            "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "last_24h-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-terrifying-moment-cops-tackled-screaming-34367771-37df3c514113",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/terrifying-moment-cops-tackled-screaming-34367771",
+            "original_html": "• 21-летний Дук Дэнг был приговорен к двум годам тюремного заключения после того, как полиция задержала его на территории академии Эдгара Вуда в Миддлтоне, когда он был вооружен молотком, топором и ножом. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/terrifying-moment-cops-tackled-screaming-34367771\">MEN</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 4,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::рубен аморим никогда не был тренером манчестер юнайтед.",
+        "actions": [
+          {
+            "line_index": 15,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Рубен Аморим никогда не был тренером Манчестер Юнайтед.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неверное утверждение о роли Рубена Аморима как бывшего тренера Манчестер Юнайтед.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-ruben-amorim-opens-up-failed-34364989-77a9afb672ee",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/ruben-amorim-opens-up-failed-34364989",
+            "original_html": "• Бывший тренер Манчестер Юнайтед Рубен Аморим признал, что совершил 'много ошибок' во время своего пребывания в клубе, общаясь с прессой во время предсезонного тура с новым клубом Милан. <a href=\"https://manchestereveningnews.co.uk/sport/football/ruben-amorim-opens-up-failed-34364989\">MEN Manchester United</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 15,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::andy burnham is the mayor of greater manchester, not the prime minister.",
+        "actions": [
+          {
+            "line_index": 22,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Andy Burnham is the Mayor of Greater Manchester, not the Prime Minister.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Andy Burnham is incorrectly referred to as Prime Minister.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "city_watch-05",
+            "candidate_fingerprint": "url-business-live-co-uk-economic-development-andy-burnham-says-best-day-34346646-cc500f766044",
+            "original_url_identity": "business-live.co.uk/economic-development/andy-burnham-says-best-day-34346646",
+            "original_html": "• Премьер-министр Энди Бернэм открыл No 10 North в Манчестере и назвал это 'лучшим днем в своей жизни'. <a href=\"https://business-live.co.uk/economic-development/andy-burnham-says-best-day-34346646\">BusinessLive Greater Manchester</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 22,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "дальние анонсы::событие проходит в ливерпуле, что не соответствует geo_scope gm.",
+        "actions": [
+          {
+            "line_index": 30,
+            "section": "Дальние анонсы",
+            "requested_action": "strip",
+            "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "future_announcements-03",
+            "candidate_fingerprint": "event-event-gareth-taylor-and-his-queenies-formally-bulsara-and-his-queenies-2026-09-04-o2-academy-2-liverpool-5ab958d595ad",
+            "original_url_identity": "ticketmaster.co.uk/gareth-taylor-and-his-queenies-formally-liverpool-04-09-2026/event/3E006315CF9C1B97",
+            "original_html": "• <b>Gareth Taylor and his Queenies (formally Bulsara and his Queenies)</b> — 4 сентября, O2 Academy 2 Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/gareth-taylor-and-his-queenies-formally-liverpool-04-09-2026/event/3E006315CF9C1B97\">Ticketmaster</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 30,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -729,171 +689,210 @@
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::дублирование информации о пожарах на болотах",
+        "group_key": "дальние анонсы::событие проходит в daresbury, что не соответствует geo_scope gm.",
         "actions": [
           {
-            "line_index": 3,
-            "section": "Свежие новости",
+            "line_index": 31,
+            "section": "Дальние анонсы",
             "requested_action": "strip",
-            "reason": "Дублирование информации о пожарах на болотах.",
-            "risk": "format",
+            "reason": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
+            "risk": "geo",
             "critical_error": true,
-            "critical_problem": "Дублирование информации о пожарах на болотах.",
+            "critical_problem": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
             "completeness_concept": "",
-            "outcome": "resolved_in_place",
+            "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "media-layer-men-manchestereveningnews-co-uk-news-greater-manchester-news-major-incident-dovestone-new-phase-34361981",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/major-incident-dovestone-new-phase-34361981",
-            "original_html": "• Крупный инцидент продолжается, так как пожары на болотах в Довстоне, Свиншоу и Тинтвистле продолжают гореть, несмотря на дождь. Публика призвана избегать пострадавших районов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/major-incident-dovestone-new-phase-34361981\">MEN</a>",
-            "backup_outcome": "backup_chain_exhausted",
-            "removal_reason": "duplicate_after_plan",
+            "plan_slot_id": "future_announcements-04",
+            "candidate_fingerprint": "event-event-freshfields-downtown-weekend-pass-2026-08-27-daresbury-a25367a8d9e6",
+            "original_url_identity": "ticketmaster.co.uk/freshfields-downtown-weekend-pass-cheshire-27-08-2026/event/37006312E59B713A",
+            "original_html": "• <b>Freshfields</b> — 27, 28, 29 и 30 августа, Daresbury. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/freshfields-downtown-weekend-pass-cheshire-27-08-2026/event/37006312E59B713A\">Ticketmaster</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 32,
+            "section": "Дальние анонсы",
+            "requested_action": "strip",
+            "reason": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "future_announcements-05",
+            "candidate_fingerprint": "event-event-creamfields-2026-souvenir-ticket-2026-08-27-daresbury-ad8b0302a5a8",
+            "original_url_identity": "ticketmaster.co.uk/creamfields-2026-souvenir-ticket-cheshire-27-08-2026/event/3700631BCEA31B1E",
+            "original_html": "• <b>Creamfields 2026</b> — 27, 28, 29 и 30 августа, Daresbury. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/creamfields-2026-souvenir-ticket-cheshire-27-08-2026/event/3700631BCEA31B1E\">Ticketmaster</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 3,
+            "line_index": 31,
             "passed": true,
             "detail": "slot removed and source absent"
           },
           {
-            "check": "duplicate_identity",
-            "identity": "topic:incident:oldham major incident at dovestone in new phase as huge moor fires rage on|same story new facts|2026 07 28",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::уточнение информации о трансфере.",
-        "actions": [
-          {
-            "line_index": 17,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Уточнение информации о трансфере.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неверное указание тренера. Майкл Каррик не является тренером Манчестер Юнайтед.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "football-men-manchester-united-manchestereveningnews-co-uk-sport-football-manchester-united-statement-signing-away-34360497",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497",
-            "original_html": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей Майкла Каррика в следующем сезоне. С менее чем четырьмя неделями до начала Премьер-лиги клубу необходимо активизировать свои действия на трансферном рынке, особенно после недавних изменений в составе, включая уход Каземиро и приход Андрея Сантоса и Юри Тилеманса за общую сумму £85 миллионов. <a href=\"https://manchestereveningnews.co.uk/sport/football/manchester-united-statement-signing-away-34360497\">MEN Manchester United</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 17,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::уточнение информации о финансировании.",
-        "actions": [
-          {
-            "line_index": 20,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Уточнение информации о финансировании.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Дата прекращения научных наблюдений указана как 1 апреля 2028 года, что не соответствует текущему контексту.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "media-layer-bbc-manchester-bbc-com-news-articles-c5y6r9rdxygo",
-            "original_url_identity": "bbc.com/news/articles/c5y6r9rdxygo",
-            "original_html": "• Обсерватория Джодрелл Банк потеряла финансирование, и телескоп Ловелла может закрыться, если не будет найдено новое финансирование. Все научные наблюдения прекратятся 1 апреля 2028 года. <a href=\"https://bbc.co.uk/news/articles/c5y6r9rdxygo\">BBC Manchester</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 20,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "дальние анонсы::мероприятие не соответствует географическому контракту.",
-        "actions": [
-          {
-            "line_index": 34,
-            "section": "Дальние анонсы",
-            "requested_action": "strip",
-            "reason": "Мероприятие не соответствует географическому контракту.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Некорректное указание места проведения мероприятия.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "removed",
-            "plan_slot_id": "future_announcements-01",
-            "candidate_fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-pause-and-notice-wellbeing-walks",
-            "original_url_identity": "stockport.gov.uk/events/pause-and-notice-wellbeing-walks",
-            "original_html": "• Бесплатная прогулка для благополучия пройдет в центре Stockport 12 августа с 12:30 до 13:30. <a href=\"http://stockport.gov.uk/events/pause-and-notice-wellbeing-walks\">Stockport Events</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 34,
+            "line_index": 32,
             "passed": true,
             "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::дата события должна быть 30 июля, а не 29 июля.",
+        "actions": [
+          {
+            "line_index": 33,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 30 июля, а не 29 июля.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "ticket_radar-01",
+            "candidate_fingerprint": "event-event-wolfmother-2026-07-30-o2-ritz-manchester-acef25ab20f6",
+            "original_url_identity": "ticketmaster.co.uk/wolfmother-manchester-30-07-2026/event/3E006477CA1839C4",
+            "original_html": "• <b>Wolfmother</b> — 30 июля, O2 Ritz Manchester. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/wolfmother-manchester-30-07-2026/event/3E006477CA1839C4\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 33,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::дублирование информации о приговоре дук дэнга",
+        "actions": [
+          {
+            "line_index": 4,
+            "section": "Свежие новости",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о приговоре Дук Дэнга.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Некорректное указание места инцидента.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-terrifying-moment-cops-tackled-screaming-34367771-37df3c514113",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/terrifying-moment-cops-tackled-screaming-34367771",
+            "original_html": "• 21-летний Дук Дэнг был приговорен к двум годам тюремного заключения после того, как полиция задержала его на территории академии Эдгара Вуда в Миддлтоне, когда он был вооружен молотком, топором и ножом. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/terrifying-moment-cops-tackled-screaming-34367771\">MEN</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-masked-teenager-e-bike-who-34367016-f383211c9762",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 5,
+            "section": "Свежие новости",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о приговоре Дук Дэнга.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о приговоре Дук Дэнга.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-failed-asylum-seeker-armed-hammer-34365375-12d4b9b881ff",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/failed-asylum-seeker-armed-hammer-34365375",
+            "original_html": "• 21-летний Дук Дэнг, не получивший убежище, был приговорён к двум годам тюрьмы за то, что пришёл в школу Edgar Wood Academy в Хейвуде с молотком, топором и кухонным ножом. Суд установил, что он хотел привлечь внимание к своей ситуации, так как трижды подавал заявку на убежище и каждый раз получал отказ. Инцидент произошёл 6 августа прошлого года, когда его заметили работающие неподалёку люди, после чего он был задержан. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/failed-asylum-seeker-armed-hammer-34365375\">MEN</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-60-personnel-still-battling-tintwistle-34367278-a6f900eb3e3e",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 4,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "line_index": 5,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "topic:incident:manchester failed asylum seeker armed with hammer at school wanted attention|sentenced|2026 07 28",
+            "visible_count": 0,
+            "passed": true
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "topic:incident:rochdale terrifying moment cops tackled screaming knifeman on school grounds|rejected|2026 07 29",
+            "visible_count": 0,
+            "passed": true
           }
         ],
         "known_factual_error": true
       }
     ],
     "refetch": {
-      "attempted": 2,
-      "improved": 2,
+      "attempted": 0,
+      "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 0,
+      "skipped": 4,
       "reports": [
         {
-          "fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-pause-and-notice-wellbeing-walks",
-          "title": "Pause and Notice Wellbeing Walks",
-          "status": "ok",
-          "url": "http://stockport.gov.uk/events/pause-and-notice-wellbeing-walks",
-          "chars": 2442
+          "fingerprint": "event-event-gareth-taylor-and-his-queenies-formally-bulsara-and-his-queenies-2026-09-04-o2-academy-2-liverpool-5ab958d595ad",
+          "title": "Gareth Taylor and his Queenies (formally Bulsara and his Queenies) — event 2026-09-04 — public sale 2025-09-05 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/gareth-taylor-and-his-queenies-formally-liverpool-04-09-2026/event/3E006315CF9C1B97",
+          "candidate_evidence_chars": 347
         },
         {
-          "fingerprint": "culture-weekly-stockport-events-stockport-gov-uk-events-pause-and-notice-wellbeing-walks",
-          "title": "Pause and Notice Wellbeing Walks",
-          "status": "ok",
-          "url": "http://stockport.gov.uk/events/pause-and-notice-wellbeing-walks",
-          "chars": 2442
+          "fingerprint": "event-event-freshfields-downtown-weekend-pass-2026-08-27-daresbury-a25367a8d9e6",
+          "title": "Freshfields - Downtown Weekend Pass — event 2026-08-27 — public sale 2025-08-29 09:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/freshfields-downtown-weekend-pass-cheshire-27-08-2026/event/37006312E59B713A",
+          "candidate_evidence_chars": 329
+        },
+        {
+          "fingerprint": "event-event-creamfields-2026-souvenir-ticket-2026-08-27-daresbury-ad8b0302a5a8",
+          "title": "Creamfields 2026 - Souvenir Ticket — event 2026-08-27 — public sale 2025-08-29 08:30",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/creamfields-2026-souvenir-ticket-cheshire-27-08-2026/event/3700631BCEA31B1E",
+          "candidate_evidence_chars": 329
+        },
+        {
+          "fingerprint": "event-event-wolfmother-2026-07-30-o2-ritz-manchester-acef25ab20f6",
+          "title": "Wolfmother — event 2026-07-30 — public sale 2026-03-30 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/wolfmother-manchester-30-07-2026/event/3E006477CA1839C4",
+          "candidate_evidence_chars": 367
         }
       ]
     },
     "enrich_improved": 11,
-    "deterministic_rewrite_rejected": 2,
-    "backup_chain_exhausted": 2,
-    "no_eligible_backup": 2,
+    "false_positive_existing_fact": 2,
+    "no_eligible_backup": 3,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 33,
-      "matched_lines": 33,
+      "checked_lines": 35,
+      "matched_lines": 35,
       "applicable_lines": 3,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
@@ -906,14 +905,22 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 33,
-      "resolved_in_place": 33,
-      "unresolved": 0,
-      "findings": []
+      "checked_lines": 35,
+      "resolved_in_place": 34,
+      "unresolved": 1,
+      "findings": [
+        {
+          "line_index": 31,
+          "section": "Билеты / Ticket Radar",
+          "outcome": "unresolved",
+          "code": "language_policy_defect",
+          "severity": "warning"
+        }
+      ]
     },
     "status": "unresolved"
   },
-  "notes": "Имя осуждённого добавлено для ясности и точности информации.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка о ложной тревоге о бомбе в Бирмингеме нарушает географический контракт раздела.; Все строки в разделе 'Общественный транспорт сегодня' корректны и соответствуют географическому охвату GM.",
+  "notes": "Добавлена информация о том, что обвиняемые отрицают вину, для соответствия фактам.; Прогноз погоды соответствует данным Met Office и контракту раздела.; Исправлены ошибки в описании состояния девочки и месте инцидента с Дук Дэнгом.; Все строки соответствуют требованиям и содержат актуальную информацию о транспортных из",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
@@ -921,71 +928,78 @@
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "problem": "Не указано имя осуждённого, что может вызвать путаницу и недопонимание.",
+        "problem": "Текст утверждает, что мужчины предстают перед судом по обвинению в убийстве, но не упоминает, что они отрицают вину.",
         "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 6,
-        "section": "Свежие новости",
-        "problem": "География события не соответствует контракту раздела.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "problem": "Неверное указание тренера. Майкл Каррик не является тренером Манчестер Юнайтед.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 20,
-        "section": "Городской радар",
-        "problem": "Дата прекращения научных наблюдений указана как 1 апреля 2028 года, что не соответствует текущему контексту.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 34,
-        "section": "Дальние анонсы",
-        "problem": "Некорректное указание места проведения мероприятия.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Неправильное использование термина 'наркотик для изнасилования'.",
-        "risk": "sensitive",
         "suggested_action": "repair"
       },
       {
         "line_index": 3,
         "section": "Свежие новости",
-        "problem": "Дублирование информации о пожарах на болотах.",
-        "risk": "format",
+        "problem": "Некорректное описание состояния девочки.",
+        "risk": "sensitive",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 4,
+        "section": "Свежие новости",
+        "problem": "Некорректное указание места инцидента.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 15,
+        "section": "Футбол",
+        "problem": "Неверное утверждение о роли Рубена Аморима как бывшего тренера Манчестер Юнайтед.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 22,
+        "section": "Городской радар",
+        "problem": "Andy Burnham is incorrectly referred to as Prime Minister.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 30,
+        "section": "Дальние анонсы",
+        "problem": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+        "risk": "geo",
         "suggested_action": "strip"
       },
       {
-        "line_index": 17,
-        "section": "Футбол",
-        "problem": "Неполная информация о трансфере.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 20,
-        "section": "Городской радар",
-        "problem": "Потеря финансирования обсерватории Джодрелл Банк не подтверждена.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 34,
+        "line_index": 31,
         "section": "Дальние анонсы",
-        "problem": "Мероприятие не соответствует географическому контракту.",
+        "problem": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
         "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 32,
+        "section": "Дальние анонсы",
+        "problem": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 33,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 4,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о приговоре Дук Дэнга.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 5,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о приговоре Дук Дэнга.",
+        "risk": "factual",
         "suggested_action": "strip"
       }
     ],
@@ -994,101 +1008,98 @@
         "line_index": 1,
         "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• Мужчина по имени Ахур Рамабарк Фати, участвовавший в поставках 'наркотика для изнасилования' (GBL) между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения. Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. MEN",
-        "reason": "Уточнение имени осуждённого для избежания путаницы.",
+        "replacement_text": "• Четыре мужчины предстают перед судом по обвинению в убийстве 16-летнего Александра Джона Сойое, которое произошло 5 ноября 2020 года в Мостоне на фоне конфликта между бандами. По версии обвинения, после драки в Пикадилли Гарденс, участники банды RTD пришли в Мостон, чтобы отомстить, что и привело к трагедии, в результате которой Сойое получил 15 ударов и скончался на месте. Обвиняемые отрицают свою вину. MEN",
+        "reason": "Добавление информации о том, что обвиняемые отрицают вину, для точности и полноты.",
         "risk": "factual"
-      },
-      {
-        "line_index": 6,
-        "section": "Свежие новости",
-        "action": "strip",
-        "reason": "Событие произошло в Бирмингеме, что выходит за пределы географического охвата GM.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей в следующем сезоне. С менее чем четырьмя неделями до начала Премьер-лиги клубу необходимо активизировать свои действия на трансферном рынке, особенно после недавних изменений в составе, включая уход Каземиро и приход Андрея Сантоса и Юри Тилеманса за общую сумму £85 миллионов. MEN Manchester United",
-        "reason": "Майкл Каррик не является тренером Манчестер Юнайтед.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 20,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Обсерватория Джодрелл Банк потеряла финансирование, и телескоп Ловелла может закрыться, если не будет найдено новое финансирование. Все научные наблюдения могут прекратиться в будущем. BBC Manchester",
-        "reason": "Указанная дата прекращения научных наблюдений не соответствует текущему контексту.",
-        "risk": "date"
-      },
-      {
-        "line_index": 34,
-        "section": "Дальние анонсы",
-        "action": "patch",
-        "replacement_text": "• Бесплатная прогулка для благополучия пройдет в Stockroom, 37 to 39 Merseyway, Stockport 12 августа с 12:30 до 13:30. Stockport Events",
-        "reason": "Указано неверное место проведения мероприятия.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 35,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• James Johnston — 14 августа, Manchester Academy; цена £20.00. Билеты и время указаны на официальной странице Manchester Academy.",
-        "reason": "Устранение дублирования названия 'Manchester Academy' в конце строки.",
-        "risk": "format"
-      },
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• Мужчина, участвовавший в поставках GBL между Манчестером и Лондоном, был приговорён к 12 годам тюремного заключения. Полиция провела обыск в доме, связанном с наркосетью, и изъяла более 2000 литров GBL. MEN",
-        "reason": "Исправление чувствительного термина.",
-        "risk": "sensitive"
       },
       {
         "line_index": 3,
         "section": "Свежие новости",
-        "action": "strip",
-        "replacement_text": "",
-        "reason": "Дублирование информации о пожарах на болотах.",
-        "risk": "format"
+        "action": "patch",
+        "replacement_text": "• 19-месячная девочка была найдена в критическом состоянии через 19 дней после закрытия дела социальными службами в Рочдейле. Девочка была истощена, обезвожена и покрыта язвами, что выявило серьезные недостатки в системе защиты детей. BBC Manchester",
+        "reason": "Уточнение состояния девочки для соответствия источнику.",
+        "risk": "sensitive"
       },
       {
-        "line_index": 17,
+        "line_index": 4,
+        "section": "Свежие новости",
+        "action": "patch",
+        "replacement_text": "• 21-летний Дук Дэнг был приговорен к двум годам тюремного заключения после того, как полиция задержала его на территории школы Edgar Wood Academy в Хейвуде, когда он был вооружен молотком, топором и ножом. MEN",
+        "reason": "Уточнение места инцидента для соответствия источнику.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 15,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Манчестер Юнайтед находится на пороге важного трансфера, который поможет команде достичь целей Майкла Каррика в следующем сезоне. Клубу необходимо активизировать свои действия на трансферном рынке.",
-        "reason": "Уточнение информации о трансфере.",
+        "replacement_text": "• Бывший тренер Спортинга Рубен Аморим признал, что совершил 'много ошибок' во время своего пребывания в клубе, общаясь с прессой во время предсезонного тура с новым клубом Милан. MEN Manchester United",
+        "reason": "Рубен Аморим никогда не был тренером Манчестер Юнайтед.",
         "risk": "factual"
       },
       {
-        "line_index": 20,
+        "line_index": 22,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Обсерватория Джодрелл Банк может потерять финансирование, если не будет найдено новое финансирование. Все научные наблюдения могут прекратиться 1 апреля 2028 года. BBC Manchester",
-        "reason": "Уточнение информации о финансировании.",
+        "replacement_text": "• Мэр Энди Бернэм открыл No 10 North в Манчестере и назвал это 'лучшим днем в своей жизни'.",
+        "reason": "Andy Burnham is the Mayor of Greater Manchester, not the Prime Minister.",
         "risk": "factual"
       },
       {
-        "line_index": 34,
+        "line_index": 30,
         "section": "Дальние анонсы",
         "action": "strip",
-        "replacement_text": "",
-        "reason": "Мероприятие не соответствует географическому контракту.",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
         "risk": "geo"
+      },
+      {
+        "line_index": 31,
+        "section": "Дальние анонсы",
+        "action": "strip",
+        "reason": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 32,
+        "section": "Дальние анонсы",
+        "action": "strip",
+        "reason": "Событие проходит в Daresbury, что не соответствует geo_scope GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 33,
+        "section": "Билеты / Ticket Radar",
+        "action": "patch",
+        "replacement_text": "• Wolfmother — 30 июля, O2 Ritz Manchester. Билеты и время указаны на официальной странице. Ticketmaster",
+        "reason": "Дата события должна быть 30 июля, а не 29 июля.",
+        "risk": "date"
+      },
+      {
+        "line_index": 4,
+        "section": "Свежие новости",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации о приговоре Дук Дэнга.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 5,
+        "section": "Свежие новости",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации о приговоре Дук Дэнга.",
+        "risk": "factual"
       }
     ],
     "warnings": [
-      "В разделе 'Общественный транспорт сегодня' все строки соответствуют требованиям, но стоит отметить, что информация о транспортных изменениях может быстро устаревать. Рекомендуется проверять актуальность данных перед публикацией.",
-      "В разделе 'IT и бизнес' нет критических ошибок, но стоит отметить, что плотность новостей может быть выше, чем в других разделах. Убедитесь, что это не нарушает баланс выпуска.",
-      "Дублирование названия 'Manchester Academy' в конце строки.",
-      "Отсутствие блока 'Что важно сегодня' и 'Что важно в ближайшие 7 дней' снижает полноту выпуска."
+      "Недостаток в блоке 'Что важно сегодня': всего 1 элемент при минимуме 3.",
+      "Недостаток в блоке 'Что важно в ближайшие 7 дней': отсутствуют элементы при минимуме 3.",
+      "Недостаток в блоке 'Еда, открытия и рынки': отсутствуют элементы при минимуме 3."
     ],
-    "notes": "Имя осуждённого добавлено для ясности и точности информации.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка о ложной тревоге о бомбе в Бирмингеме нарушает географический контракт раздела.; Все строки в разделе 'Общественный транспорт сегодня' корректны и соответствуют географическому охвату GM.",
+    "notes": "Добавлена информация о том, что обвиняемые отрицают вину, для соответствия фактам.; Прогноз погоды соответствует данным Met Office и контракту раздела.; Исправлены ошибки в описании состояния девочки и месте инцидента с Дук Дэнгом.; Все строки соответствуют требованиям и содержат актуальную информацию о транспортных из",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 11,
+      "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -1106,8 +1117,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2602,
-          "duration_seconds": 3.208
+          "estimated_tokens": 2660,
+          "duration_seconds": 3.722
         },
         {
           "chunk_id": "chunk-02",
@@ -1124,51 +1135,69 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2321,
-          "duration_seconds": 1.435
+          "estimated_tokens": 2320,
+          "duration_seconds": 2.704
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            11
+            10
           ],
           "sections": [
             "Свежие новости"
           ],
           "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7130,
-          "duration_seconds": 2.424
+          "estimated_tokens": 6362,
+          "duration_seconds": 4.288
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            12,
-            16
+            11,
+            13
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "warn",
+          "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
-          "warning_count": 1,
+          "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4077,
-          "duration_seconds": 1.436
+          "estimated_tokens": 3234,
+          "duration_seconds": 1.029
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            17,
-            19
+            14,
+            14
+          ],
+          "sections": [
+            "Что важно сегодня"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2561,
+          "duration_seconds": 1.176
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "ok",
+          "line_range": [
+            15,
+            17
           ],
           "sections": [
             "Футбол"
@@ -1178,15 +1207,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3590,
-          "duration_seconds": 2.62
+          "estimated_tokens": 3508,
+          "duration_seconds": 3.26
         },
         {
-          "chunk_id": "chunk-06",
+          "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            20,
-            30
+            18,
+            26
           ],
           "sections": [
             "Городской радар"
@@ -1196,65 +1225,65 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7808,
-          "duration_seconds": 3.135
-        },
-        {
-          "chunk_id": "chunk-07",
-          "status": "ok",
-          "line_range": [
-            31,
-            33
-          ],
-          "sections": [
-            "IT и бизнес"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 3538,
-          "duration_seconds": 30.765
+          "estimated_tokens": 6770,
+          "duration_seconds": 3.683
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            34,
-            34
+            27,
+            27
+          ],
+          "sections": [
+            "Business/tech события для тебя"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2731,
+          "duration_seconds": 3.162
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            28,
+            32
           ],
           "sections": [
             "Дальние анонсы"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 3,
+          "action_count": 3,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 4792,
+          "duration_seconds": 36.202
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            33,
+            35
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2594,
-          "duration_seconds": 4.236
+          "estimated_tokens": 3861,
+          "duration_seconds": 22.98
         },
         {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            35,
-            35
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 1,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 2693,
-          "duration_seconds": 20.719
-        },
-        {
-          "chunk_id": "chunk-10",
+          "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
             36,
@@ -1268,15 +1297,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2597,
-          "duration_seconds": 4.565
+          "estimated_tokens": 2533,
+          "duration_seconds": 5.846
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
             37,
-            37
+            38
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
@@ -1286,8 +1315,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2656,
-          "duration_seconds": 6.001
+          "estimated_tokens": 3159,
+          "duration_seconds": 7.714
         }
       ],
       "reduce": {
@@ -1296,16 +1325,23 @@
         "line_range": [],
         "sections": [],
         "decision": "repair_required",
-        "critical_error_count": 5,
-        "action_count": 5,
-        "warning_count": 1,
+        "critical_error_count": 2,
+        "action_count": 2,
+        "warning_count": 3,
         "error": "",
-        "estimated_tokens": 10025,
-        "duration_seconds": 27.408
+        "estimated_tokens": 10170,
+        "duration_seconds": 22.109
       },
       "max_workers": 3,
       "chunk_line_target": 12,
       "max_tpm": 27000.0
-    }
+    },
+    "provider_attempts": [
+      {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "status": "used"
+      }
+    ]
   }
 }
