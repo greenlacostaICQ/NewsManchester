@@ -729,9 +729,17 @@ def _call_pre_send_russian_editor_batch(
     items: list[dict[str, object]],
     record_call_from_response: object,
 ) -> tuple[dict[int, str], dict[str, object]]:
+    # The batch is addressed by LOCAL indices 0..n-1 and mapped back here.
+    # Sending global line numbers let a renumbering answer (round 2 gets a
+    # filtered subset, the model still replies 0..n-1) write a line into a
+    # foreign slot: on 2026-07-31 the radar line landed in «Главная история
+    # дня» and the plan sverka blocked the send. Indices outside the batch are
+    # dropped, never applied.
+    index_by_local = {local: int(item.get("index", local)) for local, item in enumerate(items)}
+    payload_items = [dict(item, index=local) for local, item in enumerate(items)]
     messages = [
         {"role": "system", "content": PRE_SEND_RUSSIAN_EDITOR_PROMPT},
-        {"role": "user", "content": json.dumps({"items": items}, ensure_ascii=False)},
+        {"role": "user", "content": json.dumps({"items": payload_items}, ensure_ascii=False)},
     ]
     max_tokens = min(12000, 300 * len(items) + 1200)
     # E1: reserve this batch's estimated token cost before firing so concurrent
@@ -774,9 +782,12 @@ def _call_pre_send_russian_editor_batch(
         if not isinstance(row, dict):
             continue
         try:
-            index = int(row.get("index"))
+            local_index = int(row.get("index"))
         except (TypeError, ValueError):
             continue
+        if local_index not in index_by_local:
+            continue
+        index = index_by_local[local_index]
         line = str(row.get("line") or "").strip()
         action = str(row.get("action") or row.get("status") or "").strip() or "rewrite"
         reason = str(row.get("reason") or "").strip()
@@ -882,6 +893,14 @@ def _apply_editor_line_actions(
                 continue
             original = str(item.get("line") or "")
             if not _line_preserves_links(original, fixed_line):
+                continue
+            # Words only: the editor may rewrite prose, never swap the story.
+            # A fix whose link target differs is another slot's line, not an
+            # edit of this one.
+            if _line_url_identity(original) != _line_url_identity(fixed_line):
+                warnings.append(
+                    f"Final-editor change on line {index} rejected: link target changed — состав правит только план."
+                )
                 continue
             unsupported = _editor_item_fact_lock_errors(item, fixed_line)
             if unsupported:
