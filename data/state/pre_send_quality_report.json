@@ -1,37 +1,51 @@
 {
-  "status": "ok",
+  "status": "partial",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair left 2 known factual operation(s) unresolved; delivery continues as degraded",
+  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-07-28.p0",
-  "run_date_london": "2026-07-31",
-  "pipeline_run_id": "20260731T161453+0100",
-  "digest_sha256": "b23e891bdd5e41b363f76c36308e37c2fb6cd516d531ba15ee27a7ddc7d79967",
-  "duration_seconds": 98.741,
+  "run_date_london": "2026-08-01",
+  "pipeline_run_id": "20260801T080142+0100",
+  "digest_sha256": "17a1f766ce10418ad66b1cb0d79c217ce30d074ebf61e390ed16e9ea85b95870",
+  "duration_seconds": 71.381,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 3,
-      "section": "Свежие новости",
-      "problem": "Дублирование информации о приговоре Сайеда Ахмада.",
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Не упомянуто, что Рики Свиндлс был аутистом, что является важной деталью в контексте инцидента.",
       "risk": "factual",
-      "suggested_action": "strip"
+      "suggested_action": "repair"
     },
     {
-      "line_index": 7,
+      "line_index": 5,
       "section": "Свежие новости",
-      "problem": "Дублирование информации о приговоре Сайеда Ахмада.",
-      "risk": "factual",
-      "suggested_action": "strip"
+      "problem": "Дата выборов указана как 1 августа 2026 года, что противоречит предыдущим строкам, где упоминается 31 июля 2026 года.",
+      "risk": "date",
+      "suggested_action": "repair"
     },
     {
-      "line_index": 17,
+      "line_index": 6,
+      "section": "Свежие новости",
+      "problem": "Упоминается, что выборы мэра прошли в Trafford, что неверно, так как это выборы мэра Большого Манчестера.",
+      "risk": "geo",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 12,
       "section": "Футбол",
-      "problem": "Некорректная информация о подписаниях игроков.",
-      "risk": "factual",
+      "problem": "География события не соответствует контракту раздела.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 22,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
       "suggested_action": "repair"
     },
     {
@@ -42,128 +56,157 @@
       "suggested_action": "repair"
     },
     {
-      "line_index": 32,
-      "section": "Городской радар",
-      "problem": "Возраст жертвы указан неверно.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 41,
-      "section": "IT и бизнес",
-      "problem": "Эндрю Бернхэм не является премьер-министром Великобритании.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 47,
-      "section": "Крупные концерты вне GM",
-      "problem": "Неправильная дата события.",
+      "line_index": 26,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 5,
-      "section": "Свежие новости",
-      "problem": "Дублирование информации о подсчете голосов на выборах мэра.",
-      "risk": "factual",
-      "suggested_action": "strip"
+      "line_index": 27,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
     },
     {
-      "line_index": 7,
-      "section": "Свежие новости",
-      "problem": "Дублирование информации о приговоре Сайеду Ахмаду.",
-      "risk": "factual",
-      "suggested_action": "strip"
+      "line_index": 30,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
     },
     {
-      "line_index": 3,
-      "section": "Свежие новости",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'knife' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "weapon_violence"
+      "line_index": 36,
+      "section": "Городской радар",
+      "problem": "Andy Burnham is incorrectly referred to as Prime Minister.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 37,
+      "section": "Билеты / Ticket Radar",
+      "problem": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 38,
+      "section": "Крупные концерты вне GM",
+      "problem": "Некорректное название события и отсутствие упоминания Frank Carter.",
+      "risk": "factual",
+      "suggested_action": "repair"
     }
   ],
   "actions": [
     {
-      "line_index": 3,
-      "section": "Свежие новости",
-      "action": "strip",
-      "reason": "Дублирование информации о приговоре Сайеда Ахмада.",
-      "risk": "factual",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 7,
-      "section": "Свежие новости",
-      "action": "strip",
-      "reason": "Дублирование информации о приговоре Сайеда Ахмада.",
-      "risk": "factual",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 17,
-      "section": "Футбол",
+      "line_index": 1,
+      "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• Манчестер Юнайтед подтвердил подписания вратарей Карла Дарлоу и Кита Маргетсона, полузащитника Юри Тилеманса, а также нападающего Тайна Топсона. Продолжаются слухи о Льюисе Холле и Ману Коне. MEN Manchester United",
-      "reason": "Ошибка в перечислении подписанных игроков: Андрей Сантос не упоминается в источнике.",
+      "replacement_text": "• В результате инцидента с 28-летним аутистом Рики Свиндлсом, который был задержан полицией в Salford 24 июля, начато расследование. Семья сообщила, что он переживал кризис психического здоровья, и в момент прибытия полиции находился в \"значительном стрессе\". Независимый офис по поведению полиции (IOPC) изучает, насколько оправданным было применение наручников, а также действия полицейских, которые пытались \"деэскалировать\" ситуацию. Ожидаются результаты токсикологического анализа, так как первоначальная экспертиза не выявила причины смерти. BBC Manchester",
+      "reason": "Уточнение статуса Рики Свиндлса как аутиста важно для понимания контекста инцидента.",
       "risk": "factual"
+    },
+    {
+      "line_index": 5,
+      "section": "Свежие новости",
+      "action": "patch",
+      "replacement_text": "• В результате выборов мэра, прошедших 31 июля 2026 года, в Большом Манчестере, Лейбористская партия одержала победу. Бев Крейг, набрав 66% голосов во втором туре, заменит Энди Бернама на посту мэра, обойдя кандидата от Reform UK Сиан Астли, которая получила 34%. Это событие знаменует собой новую фазу городской политики в регионе. MEN",
+      "reason": "Исправление даты выборов на 31 июля 2026 года.",
+      "risk": "date"
+    },
+    {
+      "line_index": 6,
+      "section": "Свежие новости",
+      "action": "patch",
+      "replacement_text": "• Вчера, 31 июля 2026 года, в Большом Манчестере прошли выборы мэра, в которых приняли участие около 170,000 избирателей. Это первая в Великобритании выборная кампания для стратегического мэра и крупнейшая по масштабам в истории страны, после того как экс-мэр Энди Бернхэм стал новым депутатом от Makerfield и премьер-министром. MEN",
+      "reason": "Исправление географической ошибки, так как выборы мэра касаются всего Большого Манчестера, а не только Trafford.",
+      "risk": "geo"
+    },
+    {
+      "line_index": 11,
+      "section": "Общественный транспорт сегодня",
+      "action": "patch",
+      "replacement_text": "• Metrolink (до 2 августа): трамваи не ходят по линиям Eccles, Trafford Centre и Altrincham; замещающий автобус — проверьте маршрут перед поездкой.",
+      "reason": "Повторение слова 'Metrolink' в конце строки избыточно.",
+      "risk": "format"
+    },
+    {
+      "line_index": 12,
+      "section": "Футбол",
+      "action": "strip",
+      "reason": "Матч Манчестер Сити против Интера проходит в Гонконге, что не соответствует географическому контракту GM.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 22,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 2 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный. The BIG Stockport Car Boot",
+      "reason": "Дата события должна быть 2 августа 2026 года.",
+      "risk": "date"
     },
     {
       "line_index": 23,
       "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• 26 июля в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход для покупателей бесплатный, для продавцов £10. The BIG Stockport Car Boot",
-      "reason": "Дата события в тексте не соответствует фактической дате начала события.",
+      "replacement_text": "• 2 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей £2.50. Bowlee Car Boot Sale",
+      "reason": "Дата события должна быть 2 августа 2026 года.",
       "risk": "date"
     },
     {
-      "line_index": 32,
+      "line_index": 26,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 2 августа в New Smithfield Market, Опеншоу, Манчестер, M11 — New Smithfield Sunday Market и автомобильная барахолка. Вход свободный. New Smithfield Sunday Market",
+      "reason": "Дата события должна быть 2 августа 2026 года.",
+      "risk": "date"
+    },
+    {
+      "line_index": 27,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 26 июля в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — автомобильная барахолка Burnage RFC. Burnage RFC Car Boot Sale",
+      "reason": "Дата события должна быть 26 июля, а не 2 августа.",
+      "risk": "date"
+    },
+    {
+      "line_index": 30,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 25 июля — автомобильная барахолка в Barton Aerodrome. Покупатели допускаются с 9:00, можно приходить с собакой. Barton Aerodrome Car Boot",
+      "reason": "Дата события должна быть 25 июля, а не 1 августа.",
+      "risk": "date"
+    },
+    {
+      "line_index": 36,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Предъявлено обвинение — 49-летний мужчина обвиняется в убийстве 59-летнего Уильяма Ридделла, который был найден мертвым в своей квартире в Chorlton в ноябре 2024 года. BBC Manchester",
-      "reason": "Указан неверный возраст жертвы.",
+      "replacement_text": "• Энди Бернхэм открыл No 10 North в Манчестере и назвал это \"лучшим днем в моей жизни\" во время своей первой встречи в новом офисе в Heron House, рядом с площадью Альберта. BusinessLive Greater Manchester",
+      "reason": "Andy Burnham is the Mayor of Greater Manchester, not the Prime Minister.",
       "risk": "factual"
     },
     {
-      "line_index": 41,
-      "section": "IT и бизнес",
+      "line_index": 37,
+      "section": "Билеты / Ticket Radar",
       "action": "patch",
-      "replacement_text": "• Эндрю Бернхэм, мэр Манчестера, выводит повестку по навыкам Greater Manchester на национальный уровень, основываясь на модели MBacc. Manchester Digital",
-      "reason": "Эндрю Бернхэм является мэром Манчестера, а не премьер-министром Великобритании.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 47,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• SEX PISTOLS FT. FRANK CARTER — 1 августа, Cardiff Castle. Билеты и время указаны на официальной странице. Ticketmaster",
-      "reason": "Исправление названия события и добавление полного названия группы.",
+      "replacement_text": "• Solya — 2 августа, Manchester The Deaf Institute. Билеты и время указаны на официальной странице. Ticketmaster",
+      "reason": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
       "risk": "date"
     },
     {
-      "line_index": 5,
-      "section": "Свежие новости",
-      "action": "strip",
-      "replacement_text": "",
-      "reason": "Дублирование информации о подсчете голосов на выборах мэра.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 7,
-      "section": "Свежие новости",
-      "action": "strip",
-      "replacement_text": "",
-      "reason": "Дублирование информации о приговоре Сайеду Ахмаду.",
+      "line_index": 38,
+      "section": "Крупные концерты вне GM",
+      "action": "patch",
+      "replacement_text": "• SEX PISTOLS FT. FRANK CARTER — тур: 1 августа, Cardiff Castle; 2 августа, Scarborough Open Air Theatre. Событие проходит сегодня. Ticketmaster",
+      "reason": "Уточнение названия события для соответствия фактам.",
       "risk": "factual"
     }
   ],
   "warnings": [
-    "В разделе 'Общественный транспорт сегодня' нет критических ошибок, но стоит отметить, что информация о забастовке на станции Манчестер Пикадилли может быть полезна для пассажиров, если она будет дополнена информацией о возможных изменениях в расписании или аль",
-    "В блоке 'Билеты / Ticket Radar' присутствует событие 'North West Calling 2027', которое состоится в 2027 году. Это может быть слишком далеко в будущем для текущего выпуска.",
-    "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога.",
-    "Секция 'Еда, открытия и рынки' содержит только 1 элемент, что ниже минимального порога."
+    "Повторение слова 'Metrolink' в конце строки избыточно и может быть удалено для улучшения читаемости.",
+    "judge reduce failed: parse_failed no parseable JSON"
   ],
   "product_completeness": {
     "block_policy_version": "2026-07-28.p0",
@@ -171,177 +214,225 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 9,
-      "Общественный транспорт сегодня": 4,
-      "Что важно сегодня": 1,
-      "Футбол": 2,
-      "Выходные в GM": 9,
-      "Городской радар": 11,
-      "Еда, открытия и рынки": 1,
-      "IT и бизнес": 2,
-      "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 4,
-      "Крупные концерты вне GM": 2,
-      "Русскоязычные концерты и стендап UK": 1
+      "Свежие новости": 8,
+      "Общественный транспорт сегодня": 1,
+      "Футбол": 3,
+      "Выходные в GM": 16,
+      "Городской радар": 6,
+      "Билеты / Ticket Radar": 1,
+      "Крупные концерты вне GM": 3
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 1,
-      "Свежие новости": 9,
+      "Что важно сегодня": 0,
+      "Свежие новости": 8,
       "Главная история дня": 1,
-      "Городской радар": 11,
-      "Выходные в GM": 9,
+      "Городской радар": 6,
+      "Выходные в GM": 16,
       "Что важно в ближайшие 7 дней": 0,
-      "Билеты / Ticket Radar": 4,
-      "Русскоязычные концерты и стендап UK": 1,
-      "Еда, открытия и рынки": 1,
+      "Билеты / Ticket Radar": 1,
+      "Русскоязычные концерты и стендап UK": 0,
+      "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
-      "Футбол": 2
+      "Футбол": 3
     },
-    "ticket_items": 7,
+    "ticket_items": 4,
     "core_items": 35,
     "writer_quality_counts": {
-      "included_candidates": 55,
-      "rendered_candidates": 49,
+      "included_candidates": 48,
+      "rendered_candidates": 40,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 2,
-      "replaced_from_plan_backup": 4,
-      "removed_with_reason": 2
+      "dropped_low_quality": 7,
+      "replaced_from_plan_backup": 0,
+      "removed_with_reason": 7
     },
     "source_health_counts": {
       "ok": 104,
       "partial": 2,
-      "stale": 12,
-      "empty": 7,
+      "stale": 13,
+      "empty": 5,
       "failed": 1,
-      "zero_yield": 78,
+      "zero_yield": 81,
       "no_contribution_breakdown": {
         "fetch_failed": 1,
-        "all_rejected": 78,
+        "all_rejected": 81,
         "idle_no_items": 16
       },
       "zero_contribution_by_stage": {
-        "written": 37,
-        "selected": 41,
-        "fetched": 1,
-        "parsed": 16
+        "written": 41,
+        "selected": 40,
+        "parsed": 16,
+        "fetched": 1
       },
-      "weekend_source_coverage_incidents": 48
+      "weekend_source_coverage_incidents": 43
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 1 item(s), emergency floor 3",
+      "Что важно сегодня: 0 item(s), emergency floor 3",
       "Что важно в ближайшие 7 дней: 0 item(s), emergency floor 3",
-      "Еда, открытия и рынки: 1 item(s), emergency floor 3",
+      "Билеты / Ticket Radar: 1 item(s), emergency floor 2",
+      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
+      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "Business/tech события для тебя: 0 item(s), emergency floor 1"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 23 has unchecked number/date token(s): 26",
-      "multiple actions target line 7"
+      "patch for line 5 has unchecked number/date token(s): 34, 66",
+      "patch for line 6 has unchecked number/date token(s): 170,000",
+      "patch for line 23 has unchecked number/date token(s): 2.50",
+      "patch for line 27 has unchecked number/date token(s): 26",
+      "patch for line 30 has unchecked number/date token(s): 25, 9:00"
     ],
     "can_apply_actions": true,
-    "action_count": 9
+    "action_count": 13
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 49,
-    "matched_lines": 49,
-    "applicable_lines": 4,
+    "checked_lines": 40,
+    "matched_lines": 40,
+    "applicable_lines": 3,
     "unmatched_lines": 0,
-    "critical_omission_count": 1,
-    "critical_omissions": [
-      {
-        "line_index": 3,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/man-who-murdered-wife-brutal-34383802",
-        "concept": "weapon_violence",
-        "obligation": "who/what",
-        "source_hit": "knife"
-      }
-    ],
+    "critical_omission_count": 0,
+    "critical_omissions": [],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 1,
+    "pulled_for_rework": 0,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 9,
-    "attempted": 5,
-    "applied": 5,
-    "model_patch_applied": 1,
+    "requested": 13,
+    "attempted": 8,
+    "applied": 7,
+    "model_patch_applied": 2,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 4,
+    "reserve_replacement_used": 5,
     "stripped": 0,
     "unresolved": 2,
-    "blocking_unresolved": 2,
-    "resolved": 6,
+    "blocking_unresolved": 1,
+    "resolved": 9,
     "resolved_in_place": 5,
-    "resolved_by_replacement": 1,
+    "resolved_by_replacement": 4,
     "resolved_by_removal": 0,
-    "fact_lock_rejected": 0,
-    "enrich_attempted": 9,
+    "fact_lock_rejected": 5,
+    "enrich_attempted": 13,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "actions": [
       {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о приговоре Сайеда Ахмада.",
+        "line_index": 1,
+        "section": "Главная история дня",
+        "requested_action": "patch",
+        "reason": "Уточнение статуса Рики Свиндлса как аутиста важно для понимания контекста инцидента.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дублирование информации о приговоре Сайеда Ахмада.",
-        "completeness_concept": "weapon_violence",
+        "critical_problem": "Не упомянуто, что Рики Свиндлс был аутистом, что является важной деталью в контексте инцидента.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c20d7pdlnxyo-b8b0b676ae02",
+        "original_url_identity": "bbc.com/news/articles/c20d7pdlnxyo",
+        "original_html": "<b>В результате инцидента с 28-летним Рики Свиндлсом, который был задержан полицией в Salford 24 июля, начато расследование.</b> Семья сообщила, что он переживал кризис психического здоровья, и в момент прибытия полиции находился в \"значительном стрессе\". Независимый офис по поведению полиции (IOPC) изучает, насколько оправданным было применение наручников, а также действия полицейских, которые пытались \"деэскалировать\" ситуацию. Ожидаются результаты токсикологического анализа, так как первоначальная экспертиза не выявила причины смерти. <a href=\"https://bbc.com/news/articles/c20d7pdlnxyo\">BBC Manchester</a>",
+        "model_replacement_rejected": "fact_lock: 24 июля",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-47-charged-firearms-offences-34386799-0de9b78e2a6e",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 5,
+        "section": "Свежие новости",
+        "requested_action": "patch",
+        "reason": "Исправление даты выборов на 31 июля 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата выборов указана как 1 августа 2026 года, что противоречит предыдущим строкам, где упоминается 31 июля 2026 года.",
+        "completeness_concept": "",
         "outcome": "unresolved",
         "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-who-murdered-wife-brutal-34383802-068697fecac7",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-who-murdered-wife-brutal-34383802",
-        "original_html": "• Вынесен приговор — 45-летний Сайед Ахмад был приговорён к пожизненному заключению за убийство своей 36-летней жены Анам Рафай, которую он жестоко зарезал в их доме в Wythenshawe 27 января 2026 года. Суд установил, что Ахмад был контролирующим и насильственным мужем, что привело к трагическому инциденту после того, как его жена подала на развод. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-who-murdered-wife-brutal-34383802\">MEN</a>",
-        "replacement_fingerprint": "url-oldham-gov-uk-news-article-2942-sirens-superheroes-and-a-special-guest-as-children-met-police-at-free-summer-holiday-session-13e9ada8357d",
+        "plan_slot_id": "last_24h-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-full-breakdown-how-every-part-34388049-a586599df644",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/full-breakdown-how-every-part-34388049",
+        "original_html": "• В результате выборов мэра, прошедших 1 августа 2026 года, в Большом Манчестере, Лейбористская партия одержала победу. Бев Крейг, набрав 66% голосов во втором туре, заменит Энди Бернама на посту мэра, обойдя кандидата от Reform UK Сиан Астли, которая получила 34%. Это событие знаменует собой новую фазу городской политики в регионе. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/full-breakdown-how-every-part-34388049\">MEN</a>",
+        "model_replacement_rejected": "fact_lock: 31 июля 2026",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-dovestone-moorland-blaze-update-as-34386619-2de33f7e8c24",
         "post_check_passed": false
       },
       {
-        "line_index": 7,
+        "line_index": 6,
         "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о приговоре Сайеда Ахмада.",
-        "risk": "factual",
+        "requested_action": "patch",
+        "reason": "Исправление географической ошибки, так как выборы мэра касаются всего Большого Манчестера, а не только Trafford.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Упоминается, что выборы мэра прошли в Trafford, что неверно, так как это выборы мэра Большого Манчестера.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "last_24h-04",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-how-trafford-voted-greater-manchester-34369590-ba3ff6e798e5",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/how-trafford-voted-greater-manchester-34369590",
+        "original_html": "• Вчера, 31 июля 2026 года, в Trafford прошли выборы мэра Большого Манчестера, в которых приняли участие около 170,000 избирателей. Это первая в Великобритании выборная кампания для стратегического мэра и крупнейшая по масштабам в истории страны, после того как экс-мэр Энди Бернхэм стал новым депутатом от Makerfield и премьер-министром. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/how-trafford-voted-greater-manchester-34369590\">MEN</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 11,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "patch",
+        "reason": "Повторение слова 'Metrolink' в конце строки избыточно.",
+        "risk": "format",
         "critical_error": false,
         "critical_problem": "",
         "completeness_concept": "",
         "outcome": "unresolved",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-05",
-        "candidate_fingerprint": "url-aboutmanchester-co-uk-man-jailed-for-life-after-pleading-guilty-to-murdering-his-wife-at-their-home-in-wythenshawe-d77b56d720ee",
-        "original_url_identity": "aboutmanchester.co.uk/man-jailed-for-life-after-pleading-guilty-to-murdering-his-wife-at-their-home-in-wythenshawe",
-        "original_html": "• 44-летний Сайед Рафай Ахмад из Уитеншо, признанный виновным в убийстве своей жены, приговорён к пожизненному заключению с минимальным сроком 27 лет. Трагедия произошла в январе этого года, когда полиция обнаружила 36-летнюю Анам Рафай с серьезными ножевыми ранениями. Несмотря на усилия экстренных служб, она была объявлена мёртвой на месте происшествия. Судебный процесс проходил на этой неделе в Манчестерском коронном суде. <a href=\"https://aboutmanchester.co.uk/man-jailed-for-life-after-pleading-guilty-to-murdering-his-wife-at-their-home-in-wythenshawe\">About Manchester News</a>",
-        "replacement_fingerprint": "url-bbc-com-news-articles-cvgx899j2d2o-c0f0156bf606",
+        "method": "",
+        "plan_slot_id": "",
+        "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-deansgate-castlefield-trafford-bar-tram-improvement-works-22c65c4edcd4",
+        "original_url_identity": "tfgm.com/travel-updates/travel-alerts/deansgate-castlefield-trafford-bar-tram-improvement-works",
+        "original_html": "• Metrolink (до 2 августа): трамваи не ходят по линиям Eccles, Trafford Centre и Altrincham; замещающий автобус — проверьте маршрут перед поездкой. <a href=\"https://tfgm.com/travel-updates/travel-alerts/deansgate-castlefield-trafford-bar-tram-improvement-works\">Metrolink</a>",
+        "model_replacement_rejected": "fact_lock: 2 августа",
         "post_check_passed": false
       },
       {
-        "line_index": 17,
+        "line_index": 12,
         "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Ошибка в перечислении подписанных игроков: Андрей Сантос не упоминается в источнике.",
-        "risk": "factual",
+        "requested_action": "strip",
+        "reason": "Матч Манчестер Сити против Интера проходит в Гонконге, что не соответствует географическому контракту GM.",
+        "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Некорректная информация о подписаниях игроков.",
+        "critical_problem": "География события не соответствует контракту раздела.",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
         "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-united-transfer-news-live-34374327-40e973e39872",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/man-united-transfer-news-live-34374327",
-        "original_html": "• Манчестер Юнайтед подтвердил подписания вратарей Карла Дарлоу и Кита Маргетсона, полузащитников Андрея Сантоса и Юри Тилеманса, а также нападающего Тайна Топсона. Продолжаются слухи о Льюисе Холле и Ману Коне. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/man-united-transfer-news-live-34374327\">MEN Manchester United</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-team-predicted-vs-34384395-0b1a6168b1a3",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-team-predicted-vs-34384395",
+        "original_html": "• Манчестер Сити сыграет с Интером в предсезонном товарищеском матче в Гонконге, что станет первой игрой Энцо Марески в роли главного тренера. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-team-predicted-vs-34384395\">MEN Manchester City</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-city-shouldnt-worry-paying-34378271-96937fbcddb1",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 22,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 2 августа 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-08",
+        "candidate_fingerprint": "event-id-jsonld-event-2d2c694af16a-4c4514024729",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
+        "original_html": "• 2 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
@@ -349,196 +440,214 @@
         "line_index": 23,
         "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Дата события в тексте не соответствует фактической дате начала события.",
+        "reason": "Дата события должна быть 2 августа 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "weekend_activities-09",
+        "candidate_fingerprint": "event-id-jsonld-event-f209fb8a7f19-5c2d144570ab",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
+        "original_html": "• 2 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей £2.50. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
+        "model_replacement_rejected": "fact_lock: bowlee",
+        "replacement_fingerprint": "event-event-manchester-fun-puzzle-treasure-hunt-single-route-or-double-for-racing-2026-08-01-9c25736c9b1a",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 26,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 2 августа 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-12",
+        "candidate_fingerprint": "event-id-jsonld-event-c3a7520ac370-75f4d7a5ceac",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot",
+        "original_html": "• 2 августа в New Smithfield Market, Опеншоу, Манчестер, M11 — New Smithfield Sunday Market и автомобильная барахолка. Вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot\">New Smithfield Sunday Market</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 27,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 26 июля, а не 2 августа.",
         "risk": "date",
         "critical_error": true,
         "critical_problem": "Дата события указана неверно.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-05",
-        "candidate_fingerprint": "event-event-the-big-stockport-car-boot-romiley-2026-07-26-waterside-farm-otterspool-road-romiley-stockport-sk6-3lq-545be71be9f1",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
-        "original_html": "• 2 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход для покупателей бесплатный, для продавцов £10. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
+        "plan_slot_id": "weekend_activities-13",
+        "candidate_fingerprint": "event-id-jsonld-event-67c0be804357-b48ce0a99391",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+        "original_html": "• 2 августа в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — автомобильная барахолка Burnage RFC. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 32,
-        "section": "Городской радар",
+        "line_index": 30,
+        "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Указан неверный возраст жертвы.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Возраст жертвы указан неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-05",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cqx72qw0r73o-b4f281fd3f17",
-        "original_url_identity": "bbc.com/news/articles/cqx72qw0r73o",
-        "original_html": "• Предъявлено обвинение — 49-летний мужчина обвиняется в убийстве Уильяма Ридделла, который был найден мертвым в своей квартире в Chorlton в ноябре 2024 года. <a href=\"https://bbc.co.uk/news/articles/cqx72qw0r73o\">BBC Manchester</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 41,
-        "section": "IT и бизнес",
-        "requested_action": "patch",
-        "reason": "Эндрю Бернхэм является мэром Манчестера, а не премьер-министром Великобритании.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Эндрю Бернхэм не является премьер-министром Великобритании.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "tech_business-02",
-        "candidate_fingerprint": "url-manchesterdigital-com-post-manchester-digital-md-comment-manchester-s-skills-agenda-goes-national-e9540d8540f0",
-        "original_url_identity": "manchesterdigital.com/post/manchester-digital/md-comment-manchester-s-skills-agenda-goes-national",
-        "original_html": "• Эндрю Бернхэм, теперь премьер-министр, выводит повестку по навыкам Greater Manchester на национальный уровень, основываясь на модели MBacc. <a href=\"https://manchesterdigital.com/post/manchester-digital/md-comment-manchester-s-skills-agenda-goes-national\">Manchester Digital</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 47,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Исправление названия события и добавление полного названия группы.",
+        "reason": "Дата события должна быть 25 июля, а не 1 августа.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Неправильная дата события.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "outside_gm_tickets-01",
-        "candidate_fingerprint": "event-event-sex-pistols-ft-frank-carter-2026-08-01-cardiff-castle-dead9bad19ad",
-        "original_url_identity": "ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923",
-        "original_html": "• <b>SEX PISTOLS</b> — 1 августа, Cardiff Castle. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923\">Ticketmaster</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 5,
-        "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о подсчете голосов на выборах мэра.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о подсчете голосов на выборах мэра.",
+        "critical_problem": "Дата события указана неверно.",
         "completeness_concept": "",
         "outcome": "resolved_by_replacement",
         "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-03",
-        "candidate_fingerprint": "url-aboutmanchester-co-uk-greater-manchester-mayoral-election-turnout-just-25-per-cent-e628edf92c34",
-        "original_url_identity": "aboutmanchester.co.uk/greater-manchester-mayoral-election-turnout-just-25-per-cent",
-        "original_html": "• Подсчет голосов начался на арене Co-op в ходе выборов мэра Большого Манчестера. Явка составила всего 25% — 538,659 человек проголосовали из 2,142,779 зарегистрированных избирателей, что является самым низким показателем в истории выборов. Ожидается, что ни один кандидат не наберет 50% голосов в первом туре, что может привести к подсчету голосов второго предпочтительного кандидата, что станет прецедентом для этих выборов. <a href=\"https://aboutmanchester.co.uk/greater-manchester-mayoral-election-turnout-just-25-per-cent\">About Manchester News</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-jealous-husband-desperate-not-lose-34378855-d96203628f68",
+        "plan_slot_id": "weekend_activities-16",
+        "candidate_fingerprint": "event-id-jsonld-event-2f62a8c58881-766d57c1c1a1",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+        "original_html": "• 1 августа — автомобильная барахолка в Barton Aerodrome. Покупатели допускаются с 9:00, можно приходить с собакой. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+        "model_replacement_rejected": "fact_lock: 25 июля, 9:00",
+        "replacement_fingerprint": "event-event-chotto-matte-s-new-terraza-weekend-brunch-2026-08-01-8dc2eca4b9c7",
         "post_check_passed": true
       },
       {
-        "line_index": 7,
-        "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о приговоре Сайеду Ахмаду.",
+        "line_index": 36,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Andy Burnham is the Mayor of Greater Manchester, not the Prime Minister.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дублирование информации о приговоре Сайеда Ахмада.",
+        "critical_problem": "Andy Burnham is incorrectly referred to as Prime Minister.",
         "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-05",
-        "candidate_fingerprint": "url-aboutmanchester-co-uk-man-jailed-for-life-after-pleading-guilty-to-murdering-his-wife-at-their-home-in-wythenshawe-d77b56d720ee",
-        "original_url_identity": "aboutmanchester.co.uk/man-jailed-for-life-after-pleading-guilty-to-murdering-his-wife-at-their-home-in-wythenshawe",
-        "original_html": "• 44-летний Сайед Рафай Ахмад из Уитеншо, признанный виновным в убийстве своей жены, приговорён к пожизненному заключению с минимальным сроком 27 лет. Трагедия произошла в январе этого года, когда полиция обнаружила 36-летнюю Анам Рафай с серьезными ножевыми ранениями. Несмотря на усилия экстренных служб, она была объявлена мёртвой на месте происшествия. Судебный процесс проходил на этой неделе в Манчестерском коронном суде. <a href=\"https://aboutmanchester.co.uk/man-jailed-for-life-after-pleading-guilty-to-murdering-his-wife-at-their-home-in-wythenshawe\">About Manchester News</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-stockport-council-boss-says-sorry-34377384-1ef357ff4ca4",
-        "post_check_passed": false
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "city_watch-10",
+        "candidate_fingerprint": "url-business-live-co-uk-economic-development-andy-burnham-says-best-day-34346646-cc500f766044",
+        "original_url_identity": "business-live.co.uk/economic-development/andy-burnham-says-best-day-34346646",
+        "original_html": "• Премьер-министр Энди Бернхэм открыл No 10 North в Манчестере и назвал это \"лучшим днем в моей жизни\" во время своей первой встречи в новом офисе в Heron House, рядом с площадью Альберта. <a href=\"https://business-live.co.uk/economic-development/andy-burnham-says-best-day-34346646\">BusinessLive Greater Manchester</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 37,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "patch",
+        "reason": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "ticket_radar-01",
+        "candidate_fingerprint": "event-event-solya-2026-08-02-manchester-the-deaf-institute-e495dc23bfa7",
+        "original_url_identity": "ticketmaster.co.uk/solya-manchester-02-08-2026/event/1F00646295C12538",
+        "original_html": "• <b>Solya</b> — 2 августа, Manchester The Deaf Institute. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/solya-manchester-02-08-2026/event/1F00646295C12538\">Ticketmaster</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 38,
+        "section": "Крупные концерты вне GM",
+        "requested_action": "patch",
+        "reason": "Уточнение названия события для соответствия фактам.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Некорректное название события и отсутствие упоминания Frank Carter.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "outside_gm_tickets-01",
+        "candidate_fingerprint": "event-event-sex-pistols-ft-frank-carter-2026-08-01-cardiff-castle-dead9bad19ad",
+        "original_url_identity": "ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923",
+        "original_html": "• <b>SEX PISTOLS</b> — тур: 1 августа, Cardiff Castle; 2 августа, Scarborough Open Air Theatre. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923\">Ticketmaster</a>",
+        "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::дублирование информации о приговоре сайеда ахмада",
+        "group_key": "главная история дня::уточнение статуса рики свиндлса как аутиста важно для понимания контекста инцидента.",
         "actions": [
           {
-            "line_index": 3,
-            "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о приговоре Сайеда Ахмада.",
+            "line_index": 1,
+            "section": "Главная история дня",
+            "requested_action": "patch",
+            "reason": "Уточнение статуса Рики Свиндлса как аутиста важно для понимания контекста инцидента.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Дублирование информации о приговоре Сайеда Ахмада.",
-            "completeness_concept": "weapon_violence",
-            "outcome": "unresolved",
+            "critical_problem": "Не упомянуто, что Рики Свиндлс был аутистом, что является важной деталью в контексте инцидента.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-who-murdered-wife-brutal-34383802-068697fecac7",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-who-murdered-wife-brutal-34383802",
-            "original_html": "• Вынесен приговор — 45-летний Сайед Ахмад был приговорён к пожизненному заключению за убийство своей 36-летней жены Анам Рафай, которую он жестоко зарезал в их доме в Wythenshawe 27 января 2026 года. Суд установил, что Ахмад был контролирующим и насильственным мужем, что привело к трагическому инциденту после того, как его жена подала на развод. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-who-murdered-wife-brutal-34383802\">MEN</a>",
-            "replacement_fingerprint": "url-oldham-gov-uk-news-article-2942-sirens-superheroes-and-a-special-guest-as-children-met-police-at-free-summer-holiday-session-13e9ada8357d",
-            "post_check_passed": false
-          },
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c20d7pdlnxyo-b8b0b676ae02",
+            "original_url_identity": "bbc.com/news/articles/c20d7pdlnxyo",
+            "original_html": "<b>В результате инцидента с 28-летним Рики Свиндлсом, который был задержан полицией в Salford 24 июля, начато расследование.</b> Семья сообщила, что он переживал кризис психического здоровья, и в момент прибытия полиции находился в \"значительном стрессе\". Независимый офис по поведению полиции (IOPC) изучает, насколько оправданным было применение наручников, а также действия полицейских, которые пытались \"деэскалировать\" ситуацию. Ожидаются результаты токсикологического анализа, так как первоначальная экспертиза не выявила причины смерти. <a href=\"https://bbc.com/news/articles/c20d7pdlnxyo\">BBC Manchester</a>",
+            "model_replacement_rejected": "fact_lock: 24 июля",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-47-charged-firearms-offences-34386799-0de9b78e2a6e",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
           {
-            "line_index": 7,
+            "line_index": 1,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::исправление даты выборов на 31 июля 2026 года.",
+        "actions": [
+          {
+            "line_index": 5,
             "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о приговоре Сайеда Ахмада.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
+            "requested_action": "patch",
+            "reason": "Исправление даты выборов на 31 июля 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата выборов указана как 1 августа 2026 года, что противоречит предыдущим строкам, где упоминается 31 июля 2026 года.",
             "completeness_concept": "",
             "outcome": "unresolved",
             "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-05",
-            "candidate_fingerprint": "url-aboutmanchester-co-uk-man-jailed-for-life-after-pleading-guilty-to-murdering-his-wife-at-their-home-in-wythenshawe-d77b56d720ee",
-            "original_url_identity": "aboutmanchester.co.uk/man-jailed-for-life-after-pleading-guilty-to-murdering-his-wife-at-their-home-in-wythenshawe",
-            "original_html": "• 44-летний Сайед Рафай Ахмад из Уитеншо, признанный виновным в убийстве своей жены, приговорён к пожизненному заключению с минимальным сроком 27 лет. Трагедия произошла в январе этого года, когда полиция обнаружила 36-летнюю Анам Рафай с серьезными ножевыми ранениями. Несмотря на усилия экстренных служб, она была объявлена мёртвой на месте происшествия. Судебный процесс проходил на этой неделе в Манчестерском коронном суде. <a href=\"https://aboutmanchester.co.uk/man-jailed-for-life-after-pleading-guilty-to-murdering-his-wife-at-their-home-in-wythenshawe\">About Manchester News</a>",
-            "replacement_fingerprint": "url-bbc-com-news-articles-cvgx899j2d2o-c0f0156bf606",
+            "plan_slot_id": "last_24h-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-full-breakdown-how-every-part-34388049-a586599df644",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/full-breakdown-how-every-part-34388049",
+            "original_html": "• В результате выборов мэра, прошедших 1 августа 2026 года, в Большом Манчестере, Лейбористская партия одержала победу. Бев Крейг, набрав 66% голосов во втором туре, заменит Энди Бернама на посту мэра, обойдя кандидата от Reform UK Сиан Астли, которая получила 34%. Это событие знаменует собой новую фазу городской политики в регионе. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/full-breakdown-how-every-part-34388049\">MEN</a>",
+            "model_replacement_rejected": "fact_lock: 31 июля 2026",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-dovestone-moorland-blaze-update-as-34386619-2de33f7e8c24",
             "post_check_passed": false
           }
         ],
         "outcome": "unresolved",
         "post_checks": [
           {
-            "line_index": 3,
-            "passed": true,
-            "detail": "post-check passed"
-          },
-          {
-            "line_index": 7,
+            "line_index": 5,
             "passed": false,
             "detail": "shared prose policy still fails"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "topic:incident:wythenshawe man who murdered wife in brutal deliberate and determined knife attack jailed for life|sentenced|2026 07 31",
-            "visible_count": 0,
-            "passed": true
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "topic:incident:manchester wythenshawe man jailed for life after pleading guilty to murdering his wife at their home in wythenshawe about manchester|event this week|2026 07 31",
-            "visible_count": 0,
-            "passed": true
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::ошибка в перечислении подписанных игроков: андрей сантос не упоминается в источнике.",
+        "group_key": "свежие новости::исправление географической ошибки, так как выборы мэра касаются всего большого манчестера, а не только trafford.",
         "actions": [
           {
-            "line_index": 17,
-            "section": "Футбол",
+            "line_index": 6,
+            "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Ошибка в перечислении подписанных игроков: Андрей Сантос не упоминается в источнике.",
-            "risk": "factual",
+            "reason": "Исправление географической ошибки, так как выборы мэра касаются всего Большого Манчестера, а не только Trafford.",
+            "risk": "geo",
             "critical_error": true,
-            "critical_problem": "Некорректная информация о подписаниях игроков.",
+            "critical_problem": "Упоминается, что выборы мэра прошли в Trafford, что неверно, так как это выборы мэра Большого Манчестера.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-united-transfer-news-live-34374327-40e973e39872",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/man-united-transfer-news-live-34374327",
-            "original_html": "• Манчестер Юнайтед подтвердил подписания вратарей Карла Дарлоу и Кита Маргетсона, полузащитников Андрея Сантоса и Юри Тилеманса, а также нападающего Тайна Топсона. Продолжаются слухи о Льюисе Холле и Ману Коне. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/man-united-transfer-news-live-34374327\">MEN Manchester United</a>",
+            "plan_slot_id": "last_24h-04",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-how-trafford-voted-greater-manchester-34369590-ba3ff6e798e5",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/how-trafford-voted-greater-manchester-34369590",
+            "original_html": "• Вчера, 31 июля 2026 года, в Trafford прошли выборы мэра Большого Манчестера, в которых приняли участие около 170,000 избирателей. Это первая в Великобритании выборная кампания для стратегического мэра и крупнейшая по масштабам в истории страны, после того как экс-мэр Энди Бернхэм стал новым депутатом от Makerfield и премьер-министром. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/how-trafford-voted-greater-manchester-34369590\">MEN</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -546,7 +655,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 17,
+            "line_index": 6,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -554,23 +663,166 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::дата события в тексте не соответствует фактической дате начала события.",
+        "group_key": "общественный транспорт сегодня::повторение слова 'metrolink' в конце строки избыточно.",
         "actions": [
+          {
+            "line_index": 11,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "patch",
+            "reason": "Повторение слова 'Metrolink' в конце строки избыточно.",
+            "risk": "format",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "",
+            "plan_slot_id": "",
+            "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-deansgate-castlefield-trafford-bar-tram-improvement-works-22c65c4edcd4",
+            "original_url_identity": "tfgm.com/travel-updates/travel-alerts/deansgate-castlefield-trafford-bar-tram-improvement-works",
+            "original_html": "• Metrolink (до 2 августа): трамваи не ходят по линиям Eccles, Trafford Centre и Altrincham; замещающий автобус — проверьте маршрут перед поездкой. <a href=\"https://tfgm.com/travel-updates/travel-alerts/deansgate-castlefield-trafford-bar-tram-improvement-works\">Metrolink</a>",
+            "model_replacement_rejected": "fact_lock: 2 августа",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 11,
+            "passed": false,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "футбол::матч манчестер сити против интера проходит в гонконге, что не соответствует географическому контракту gm.",
+        "actions": [
+          {
+            "line_index": 12,
+            "section": "Футбол",
+            "requested_action": "strip",
+            "reason": "Матч Манчестер Сити против Интера проходит в Гонконге, что не соответствует географическому контракту GM.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "География события не соответствует контракту раздела.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-team-predicted-vs-34384395-0b1a6168b1a3",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-team-predicted-vs-34384395",
+            "original_html": "• Манчестер Сити сыграет с Интером в предсезонном товарищеском матче в Гонконге, что станет первой игрой Энцо Марески в роли главного тренера. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-team-predicted-vs-34384395\">MEN Manchester City</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-city-shouldnt-worry-paying-34378271-96937fbcddb1",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 12,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата события должна быть 2 августа 2026 года.",
+        "actions": [
+          {
+            "line_index": 22,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 2 августа 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-08",
+            "candidate_fingerprint": "event-id-jsonld-event-2d2c694af16a-4c4514024729",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
+            "original_html": "• 2 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          },
           {
             "line_index": 23,
             "section": "Выходные в GM",
             "requested_action": "patch",
-            "reason": "Дата события в тексте не соответствует фактической дате начала события.",
+            "reason": "Дата события должна быть 2 августа 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "weekend_activities-09",
+            "candidate_fingerprint": "event-id-jsonld-event-f209fb8a7f19-5c2d144570ab",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
+            "original_html": "• 2 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей £2.50. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
+            "model_replacement_rejected": "fact_lock: bowlee",
+            "replacement_fingerprint": "event-event-manchester-fun-puzzle-treasure-hunt-single-route-or-double-for-racing-2026-08-01-9c25736c9b1a",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 26,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 2 августа 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-12",
+            "candidate_fingerprint": "event-id-jsonld-event-c3a7520ac370-75f4d7a5ceac",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot",
+            "original_html": "• 2 августа в New Smithfield Market, Опеншоу, Манчестер, M11 — New Smithfield Sunday Market и автомобильная барахолка. Вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot\">New Smithfield Sunday Market</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 22,
+            "passed": true,
+            "detail": "existing fact verified"
+          },
+          {
+            "line_index": 23,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "line_index": 26,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата события должна быть 26 июля, а не 2 августа.",
+        "actions": [
+          {
+            "line_index": 27,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 26 июля, а не 2 августа.",
             "risk": "date",
             "critical_error": true,
             "critical_problem": "Дата события указана неверно.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-05",
-            "candidate_fingerprint": "event-event-the-big-stockport-car-boot-romiley-2026-07-26-waterside-farm-otterspool-road-romiley-stockport-sk6-3lq-545be71be9f1",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
-            "original_html": "• 2 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход для покупателей бесплатный, для продавцов £10. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
+            "plan_slot_id": "weekend_activities-13",
+            "candidate_fingerprint": "event-id-jsonld-event-67c0be804357-b48ce0a99391",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+            "original_html": "• 2 августа в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — автомобильная барахолка Burnage RFC. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -578,7 +830,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 23,
+            "line_index": 27,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -586,172 +838,128 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::указан неверный возраст жертвы.",
+        "group_key": "выходные в gm::дата события должна быть 25 июля, а не 1 августа.",
         "actions": [
           {
-            "line_index": 32,
-            "section": "Городской радар",
+            "line_index": 30,
+            "section": "Выходные в GM",
             "requested_action": "patch",
-            "reason": "Указан неверный возраст жертвы.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Возраст жертвы указан неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-05",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cqx72qw0r73o-b4f281fd3f17",
-            "original_url_identity": "bbc.com/news/articles/cqx72qw0r73o",
-            "original_html": "• Предъявлено обвинение — 49-летний мужчина обвиняется в убийстве Уильяма Ридделла, который был найден мертвым в своей квартире в Chorlton в ноябре 2024 года. <a href=\"https://bbc.co.uk/news/articles/cqx72qw0r73o\">BBC Manchester</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 32,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "it и бизнес::эндрю бернхэм является мэром манчестера, а не премьер-министром великобритании.",
-        "actions": [
-          {
-            "line_index": 41,
-            "section": "IT и бизнес",
-            "requested_action": "patch",
-            "reason": "Эндрю Бернхэм является мэром Манчестера, а не премьер-министром Великобритании.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Эндрю Бернхэм не является премьер-министром Великобритании.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "tech_business-02",
-            "candidate_fingerprint": "url-manchesterdigital-com-post-manchester-digital-md-comment-manchester-s-skills-agenda-goes-national-e9540d8540f0",
-            "original_url_identity": "manchesterdigital.com/post/manchester-digital/md-comment-manchester-s-skills-agenda-goes-national",
-            "original_html": "• Эндрю Бернхэм, теперь премьер-министр, выводит повестку по навыкам Greater Manchester на национальный уровень, основываясь на модели MBacc. <a href=\"https://manchesterdigital.com/post/manchester-digital/md-comment-manchester-s-skills-agenda-goes-national\">Manchester Digital</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 41,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "крупные концерты вне gm::исправление названия события и добавление полного названия группы.",
-        "actions": [
-          {
-            "line_index": 47,
-            "section": "Крупные концерты вне GM",
-            "requested_action": "patch",
-            "reason": "Исправление названия события и добавление полного названия группы.",
+            "reason": "Дата события должна быть 25 июля, а не 1 августа.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Неправильная дата события.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "outside_gm_tickets-01",
-            "candidate_fingerprint": "event-event-sex-pistols-ft-frank-carter-2026-08-01-cardiff-castle-dead9bad19ad",
-            "original_url_identity": "ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923",
-            "original_html": "• <b>SEX PISTOLS</b> — 1 августа, Cardiff Castle. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923\">Ticketmaster</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 47,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::дублирование информации о подсчете голосов на выборах мэра",
-        "actions": [
-          {
-            "line_index": 5,
-            "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о подсчете голосов на выборах мэра.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о подсчете голосов на выборах мэра.",
+            "critical_problem": "Дата события указана неверно.",
             "completeness_concept": "",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-03",
-            "candidate_fingerprint": "url-aboutmanchester-co-uk-greater-manchester-mayoral-election-turnout-just-25-per-cent-e628edf92c34",
-            "original_url_identity": "aboutmanchester.co.uk/greater-manchester-mayoral-election-turnout-just-25-per-cent",
-            "original_html": "• Подсчет голосов начался на арене Co-op в ходе выборов мэра Большого Манчестера. Явка составила всего 25% — 538,659 человек проголосовали из 2,142,779 зарегистрированных избирателей, что является самым низким показателем в истории выборов. Ожидается, что ни один кандидат не наберет 50% голосов в первом туре, что может привести к подсчету голосов второго предпочтительного кандидата, что станет прецедентом для этих выборов. <a href=\"https://aboutmanchester.co.uk/greater-manchester-mayoral-election-turnout-just-25-per-cent\">About Manchester News</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-jealous-husband-desperate-not-lose-34378855-d96203628f68",
+            "plan_slot_id": "weekend_activities-16",
+            "candidate_fingerprint": "event-id-jsonld-event-2f62a8c58881-766d57c1c1a1",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+            "original_html": "• 1 августа — автомобильная барахолка в Barton Aerodrome. Покупатели допускаются с 9:00, можно приходить с собакой. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+            "model_replacement_rejected": "fact_lock: 25 июля, 9:00",
+            "replacement_fingerprint": "event-event-chotto-matte-s-new-terraza-weekend-brunch-2026-08-01-8dc2eca4b9c7",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 5,
+            "line_index": 30,
             "passed": true,
             "detail": "post-check passed"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "topic:civic:greater manchester mayoral election turnout just 25 per cent about manchester|announced|2026 07 31",
-            "visible_count": 0,
-            "passed": true
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::дублирование информации о приговоре сайеду ахмаду",
+        "group_key": "городской радар::andy burnham is the mayor of greater manchester, not the prime minister.",
         "actions": [
           {
-            "line_index": 7,
-            "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о приговоре Сайеду Ахмаду.",
+            "line_index": 36,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Andy Burnham is the Mayor of Greater Manchester, not the Prime Minister.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Дублирование информации о приговоре Сайеда Ахмада.",
+            "critical_problem": "Andy Burnham is incorrectly referred to as Prime Minister.",
             "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-05",
-            "candidate_fingerprint": "url-aboutmanchester-co-uk-man-jailed-for-life-after-pleading-guilty-to-murdering-his-wife-at-their-home-in-wythenshawe-d77b56d720ee",
-            "original_url_identity": "aboutmanchester.co.uk/man-jailed-for-life-after-pleading-guilty-to-murdering-his-wife-at-their-home-in-wythenshawe",
-            "original_html": "• 44-летний Сайед Рафай Ахмад из Уитеншо, признанный виновным в убийстве своей жены, приговорён к пожизненному заключению с минимальным сроком 27 лет. Трагедия произошла в январе этого года, когда полиция обнаружила 36-летнюю Анам Рафай с серьезными ножевыми ранениями. Несмотря на усилия экстренных служб, она была объявлена мёртвой на месте происшествия. Судебный процесс проходил на этой неделе в Манчестерском коронном суде. <a href=\"https://aboutmanchester.co.uk/man-jailed-for-life-after-pleading-guilty-to-murdering-his-wife-at-their-home-in-wythenshawe\">About Manchester News</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-stockport-council-boss-says-sorry-34377384-1ef357ff4ca4",
-            "post_check_passed": false
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "city_watch-10",
+            "candidate_fingerprint": "url-business-live-co-uk-economic-development-andy-burnham-says-best-day-34346646-cc500f766044",
+            "original_url_identity": "business-live.co.uk/economic-development/andy-burnham-says-best-day-34346646",
+            "original_html": "• Премьер-министр Энди Бернхэм открыл No 10 North в Манчестере и назвал это \"лучшим днем в моей жизни\" во время своей первой встречи в новом офисе в Heron House, рядом с площадью Альберта. <a href=\"https://business-live.co.uk/economic-development/andy-burnham-says-best-day-34346646\">BusinessLive Greater Manchester</a>",
+            "post_check_passed": true
           }
         ],
-        "outcome": "unresolved",
+        "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 7,
-            "passed": false,
-            "detail": "shared prose policy still fails"
-          },
+            "line_index": 36,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::дата события указана неверно. в тексте указано 2 августа, но фактическая дата события 2026-08-02.",
+        "actions": [
           {
-            "check": "duplicate_identity",
-            "identity": "topic:incident:manchester wythenshawe man jailed for life after pleading guilty to murdering his wife at their home in wythenshawe about manchester|event this week|2026 07 31",
-            "visible_count": 0,
-            "passed": true
+            "line_index": 37,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "ticket_radar-01",
+            "candidate_fingerprint": "event-event-solya-2026-08-02-manchester-the-deaf-institute-e495dc23bfa7",
+            "original_url_identity": "ticketmaster.co.uk/solya-manchester-02-08-2026/event/1F00646295C12538",
+            "original_html": "• <b>Solya</b> — 2 августа, Manchester The Deaf Institute. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/solya-manchester-02-08-2026/event/1F00646295C12538\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 37,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "крупные концерты вне gm::уточнение названия события для соответствия фактам.",
+        "actions": [
+          {
+            "line_index": 38,
+            "section": "Крупные концерты вне GM",
+            "requested_action": "patch",
+            "reason": "Уточнение названия события для соответствия фактам.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Некорректное название события и отсутствие упоминания Frank Carter.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "outside_gm_tickets-01",
+            "candidate_fingerprint": "event-event-sex-pistols-ft-frank-carter-2026-08-01-cardiff-castle-dead9bad19ad",
+            "original_url_identity": "ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923",
+            "original_html": "• <b>SEX PISTOLS</b> — тур: 1 августа, Cardiff Castle; 2 августа, Scarborough Open Air Theatre. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923\">Ticketmaster</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 38,
+            "passed": true,
+            "detail": "post-check passed"
           }
         ],
         "known_factual_error": true
@@ -762,8 +970,16 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 1,
+      "skipped": 2,
       "reports": [
+        {
+          "fingerprint": "event-event-solya-2026-08-02-manchester-the-deaf-institute-e495dc23bfa7",
+          "title": "Solya — event 2026-08-02 — public sale 2026-03-05 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/solya-manchester-02-08-2026/event/1F00646295C12538",
+          "candidate_evidence_chars": 391
+        },
         {
           "fingerprint": "event-event-sex-pistols-ft-frank-carter-2026-08-01-cardiff-castle-dead9bad19ad",
           "title": "SEX PISTOLS FT. FRANK CARTER — event 2026-08-01 — public sale 2025-11-28 10:00",
@@ -774,13 +990,15 @@
         }
       ]
     },
-    "enrich_improved": 9,
-    "false_positive_existing_fact": 4,
+    "enrich_improved": 13,
+    "deterministic_rewrite_rejected": 2,
+    "false_positive_existing_fact": 5,
+    "deterministic_fact_lock_rejected": 3,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 49,
-      "matched_lines": 49,
-      "applicable_lines": 4,
+      "checked_lines": 40,
+      "matched_lines": 40,
+      "applicable_lines": 3,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -792,13 +1010,20 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 49,
-      "resolved_in_place": 48,
-      "unresolved": 1,
+      "checked_lines": 40,
+      "resolved_in_place": 38,
+      "unresolved": 2,
       "findings": [
         {
-          "line_index": 7,
+          "line_index": 5,
           "section": "Свежие новости",
+          "outcome": "unresolved",
+          "code": "language_policy_defect",
+          "severity": "warning"
+        },
+        {
+          "line_index": 25,
+          "section": "Выходные в GM",
           "outcome": "unresolved",
           "code": "language_policy_defect",
           "severity": "warning"
@@ -807,30 +1032,44 @@
     },
     "status": "unresolved"
   },
-  "notes": "Строка соответствует всем требованиям: география GM, актуальность события, корректное изложение фактов.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Две строки содержат дублирующую информацию о приговоре Сайеда Ахмада. Удалите одну из них.; Информация о забастовке может быть более полезной с деталям",
+  "notes": "Уточнение статуса Рики Свиндлса как аутиста важно для понимания контекста инцидента.; Прогноз погоды соответствует данным Met Office и контракту раздела.; Исправлены ошибки в датах и географии выборов мэра Большого Манчестера.; Повторение слова 'Metrolink' в конце строки избыточно и может быть удалено для улучшения чит",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "problem": "Дублирование информации о приговоре Сайеда Ахмада.",
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Не упомянуто, что Рики Свиндлс был аутистом, что является важной деталью в контексте инцидента.",
         "risk": "factual",
-        "suggested_action": "strip"
+        "suggested_action": "repair"
       },
       {
-        "line_index": 7,
+        "line_index": 5,
         "section": "Свежие новости",
-        "problem": "Дублирование информации о приговоре Сайеда Ахмада.",
-        "risk": "factual",
-        "suggested_action": "strip"
+        "problem": "Дата выборов указана как 1 августа 2026 года, что противоречит предыдущим строкам, где упоминается 31 июля 2026 года.",
+        "risk": "date",
+        "suggested_action": "repair"
       },
       {
-        "line_index": 17,
+        "line_index": 6,
+        "section": "Свежие новости",
+        "problem": "Упоминается, что выборы мэра прошли в Trafford, что неверно, так как это выборы мэра Большого Манчестера.",
+        "risk": "geo",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 12,
         "section": "Футбол",
-        "problem": "Некорректная информация о подписаниях игроков.",
-        "risk": "factual",
+        "problem": "География события не соответствует контракту раздела.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 22,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
         "suggested_action": "repair"
       },
       {
@@ -841,124 +1080,162 @@
         "suggested_action": "repair"
       },
       {
-        "line_index": 32,
-        "section": "Городской радар",
-        "problem": "Возраст жертвы указан неверно.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 41,
-        "section": "IT и бизнес",
-        "problem": "Эндрю Бернхэм не является премьер-министром Великобритании.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 47,
-        "section": "Крупные концерты вне GM",
-        "problem": "Неправильная дата события.",
+        "line_index": 26,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 5,
-        "section": "Свежие новости",
-        "problem": "Дублирование информации о подсчете голосов на выборах мэра.",
-        "risk": "factual",
-        "suggested_action": "strip"
+        "line_index": 27,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
       },
       {
-        "line_index": 7,
-        "section": "Свежие новости",
-        "problem": "Дублирование информации о приговоре Сайеду Ахмаду.",
+        "line_index": 30,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 36,
+        "section": "Городской радар",
+        "problem": "Andy Burnham is incorrectly referred to as Prime Minister.",
         "risk": "factual",
-        "suggested_action": "strip"
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 37,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 38,
+        "section": "Крупные концерты вне GM",
+        "problem": "Некорректное название события и отсутствие упоминания Frank Carter.",
+        "risk": "factual",
+        "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "action": "strip",
-        "reason": "Дублирование информации о приговоре Сайеда Ахмада.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 7,
-        "section": "Свежие новости",
-        "action": "strip",
-        "reason": "Дублирование информации о приговоре Сайеда Ахмада.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
+        "line_index": 1,
+        "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• Манчестер Юнайтед подтвердил подписания вратарей Карла Дарлоу и Кита Маргетсона, полузащитника Юри Тилеманса, а также нападающего Тайна Топсона. Продолжаются слухи о Льюисе Холле и Ману Коне. MEN Manchester United",
-        "reason": "Ошибка в перечислении подписанных игроков: Андрей Сантос не упоминается в источнике.",
+        "replacement_text": "• В результате инцидента с 28-летним аутистом Рики Свиндлсом, который был задержан полицией в Salford 24 июля, начато расследование. Семья сообщила, что он переживал кризис психического здоровья, и в момент прибытия полиции находился в \"значительном стрессе\". Независимый офис по поведению полиции (IOPC) изучает, насколько оправданным было применение наручников, а также действия полицейских, которые пытались \"деэскалировать\" ситуацию. Ожидаются результаты токсикологического анализа, так как первоначальная экспертиза не выявила причины смерти. BBC Manchester",
+        "reason": "Уточнение статуса Рики Свиндлса как аутиста важно для понимания контекста инцидента.",
         "risk": "factual"
+      },
+      {
+        "line_index": 5,
+        "section": "Свежие новости",
+        "action": "patch",
+        "replacement_text": "• В результате выборов мэра, прошедших 31 июля 2026 года, в Большом Манчестере, Лейбористская партия одержала победу. Бев Крейг, набрав 66% голосов во втором туре, заменит Энди Бернама на посту мэра, обойдя кандидата от Reform UK Сиан Астли, которая получила 34%. Это событие знаменует собой новую фазу городской политики в регионе. MEN",
+        "reason": "Исправление даты выборов на 31 июля 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 6,
+        "section": "Свежие новости",
+        "action": "patch",
+        "replacement_text": "• Вчера, 31 июля 2026 года, в Большом Манчестере прошли выборы мэра, в которых приняли участие около 170,000 избирателей. Это первая в Великобритании выборная кампания для стратегического мэра и крупнейшая по масштабам в истории страны, после того как экс-мэр Энди Бернхэм стал новым депутатом от Makerfield и премьер-министром. MEN",
+        "reason": "Исправление географической ошибки, так как выборы мэра касаются всего Большого Манчестера, а не только Trafford.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 11,
+        "section": "Общественный транспорт сегодня",
+        "action": "patch",
+        "replacement_text": "• Metrolink (до 2 августа): трамваи не ходят по линиям Eccles, Trafford Centre и Altrincham; замещающий автобус — проверьте маршрут перед поездкой.",
+        "reason": "Повторение слова 'Metrolink' в конце строки избыточно.",
+        "risk": "format"
+      },
+      {
+        "line_index": 12,
+        "section": "Футбол",
+        "action": "strip",
+        "reason": "Матч Манчестер Сити против Интера проходит в Гонконге, что не соответствует географическому контракту GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 22,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 2 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный. The BIG Stockport Car Boot",
+        "reason": "Дата события должна быть 2 августа 2026 года.",
+        "risk": "date"
       },
       {
         "line_index": 23,
         "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• 26 июля в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход для покупателей бесплатный, для продавцов £10. The BIG Stockport Car Boot",
-        "reason": "Дата события в тексте не соответствует фактической дате начала события.",
+        "replacement_text": "• 2 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей £2.50. Bowlee Car Boot Sale",
+        "reason": "Дата события должна быть 2 августа 2026 года.",
         "risk": "date"
       },
       {
-        "line_index": 32,
+        "line_index": 26,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 2 августа в New Smithfield Market, Опеншоу, Манчестер, M11 — New Smithfield Sunday Market и автомобильная барахолка. Вход свободный. New Smithfield Sunday Market",
+        "reason": "Дата события должна быть 2 августа 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 27,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 26 июля в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — автомобильная барахолка Burnage RFC. Burnage RFC Car Boot Sale",
+        "reason": "Дата события должна быть 26 июля, а не 2 августа.",
+        "risk": "date"
+      },
+      {
+        "line_index": 30,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 25 июля — автомобильная барахолка в Barton Aerodrome. Покупатели допускаются с 9:00, можно приходить с собакой. Barton Aerodrome Car Boot",
+        "reason": "Дата события должна быть 25 июля, а не 1 августа.",
+        "risk": "date"
+      },
+      {
+        "line_index": 36,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Предъявлено обвинение — 49-летний мужчина обвиняется в убийстве 59-летнего Уильяма Ридделла, который был найден мертвым в своей квартире в Chorlton в ноябре 2024 года. BBC Manchester",
-        "reason": "Указан неверный возраст жертвы.",
+        "replacement_text": "• Энди Бернхэм открыл No 10 North в Манчестере и назвал это \"лучшим днем в моей жизни\" во время своей первой встречи в новом офисе в Heron House, рядом с площадью Альберта. BusinessLive Greater Manchester",
+        "reason": "Andy Burnham is the Mayor of Greater Manchester, not the Prime Minister.",
         "risk": "factual"
       },
       {
-        "line_index": 41,
-        "section": "IT и бизнес",
+        "line_index": 37,
+        "section": "Билеты / Ticket Radar",
         "action": "patch",
-        "replacement_text": "• Эндрю Бернхэм, мэр Манчестера, выводит повестку по навыкам Greater Manchester на национальный уровень, основываясь на модели MBacc. Manchester Digital",
-        "reason": "Эндрю Бернхэм является мэром Манчестера, а не премьер-министром Великобритании.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 47,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• SEX PISTOLS FT. FRANK CARTER — 1 августа, Cardiff Castle. Билеты и время указаны на официальной странице. Ticketmaster",
-        "reason": "Исправление названия события и добавление полного названия группы.",
+        "replacement_text": "• Solya — 2 августа, Manchester The Deaf Institute. Билеты и время указаны на официальной странице. Ticketmaster",
+        "reason": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
         "risk": "date"
       },
       {
-        "line_index": 5,
-        "section": "Свежие новости",
-        "action": "strip",
-        "replacement_text": "",
-        "reason": "Дублирование информации о подсчете голосов на выборах мэра.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 7,
-        "section": "Свежие новости",
-        "action": "strip",
-        "replacement_text": "",
-        "reason": "Дублирование информации о приговоре Сайеду Ахмаду.",
+        "line_index": 38,
+        "section": "Крупные концерты вне GM",
+        "action": "patch",
+        "replacement_text": "• SEX PISTOLS FT. FRANK CARTER — тур: 1 августа, Cardiff Castle; 2 августа, Scarborough Open Air Theatre. Событие проходит сегодня. Ticketmaster",
+        "reason": "Уточнение названия события для соответствия фактам.",
         "risk": "factual"
       }
     ],
     "warnings": [
-      "В разделе 'Общественный транспорт сегодня' нет критических ошибок, но стоит отметить, что информация о забастовке на станции Манчестер Пикадилли может быть полезна для пассажиров, если она будет дополнена информацией о возможных изменениях в расписании или аль",
-      "В блоке 'Билеты / Ticket Radar' присутствует событие 'North West Calling 2027', которое состоится в 2027 году. Это может быть слишком далеко в будущем для текущего выпуска.",
-      "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога.",
-      "Секция 'Еда, открытия и рынки' содержит только 1 элемент, что ниже минимального порога."
+      "Повторение слова 'Metrolink' в конце строки избыточно и может быть удалено для улучшения читаемости.",
+      "judge reduce failed: parse_failed no parseable JSON"
     ],
-    "notes": "Строка соответствует всем требованиям: география GM, актуальность события, корректное изложение фактов.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Две строки содержат дублирующую информацию о приговоре Сайеда Ахмада. Удалите одну из них.; Информация о забастовке может быть более полезной с деталям",
+    "notes": "Уточнение статуса Рики Свиндлса как аутиста важно для понимания контекста инцидента.; Прогноз погоды соответствует данным Met Office и контракту раздела.; Исправлены ошибки в датах и географии выборов мэра Большого Манчестера.; Повторение слова 'Metrolink' в конце строки избыточно и может быть удалено для улучшения чит",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "ok",
-      "chunk_count": 14,
+      "status": "partial",
+      "chunk_count": 10,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -971,13 +1248,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2644,
-          "duration_seconds": 1.314
+          "estimated_tokens": 2595,
+          "duration_seconds": 3.321
         },
         {
           "chunk_id": "chunk-02",
@@ -994,15 +1271,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2327,
-          "duration_seconds": 1.444
+          "estimated_tokens": 2345,
+          "duration_seconds": 1.95
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            11
+            10
           ],
           "sections": [
             "Свежие новости"
@@ -1012,51 +1289,33 @@
           "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7199,
-          "duration_seconds": 3.19
+          "estimated_tokens": 6513,
+          "duration_seconds": 4.447
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            12,
-            15
+            11,
+            11
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
           "decision": "warn",
           "critical_error_count": 0,
-          "action_count": 0,
+          "action_count": 1,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 3867,
-          "duration_seconds": 1.757
+          "estimated_tokens": 2321,
+          "duration_seconds": 2.37
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            16,
-            16
-          ],
-          "sections": [
-            "Что важно сегодня"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2588,
-          "duration_seconds": 1.104
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "ok",
-          "line_range": [
-            17,
-            18
+            12,
+            14
           ],
           "sections": [
             "Футбол"
@@ -1066,33 +1325,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3033,
-          "duration_seconds": 2.827
+          "estimated_tokens": 3512,
+          "duration_seconds": 1.81
         },
         {
-          "chunk_id": "chunk-07",
+          "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            19,
-            27
+            15,
+            26
           ],
           "sections": [
             "Выходные в GM"
           ],
           "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "critical_error_count": 3,
+          "action_count": 3,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7574,
-          "duration_seconds": 4.734
+          "estimated_tokens": 9380,
+          "duration_seconds": 3.719
+        },
+        {
+          "chunk_id": "chunk-07",
+          "status": "ok",
+          "line_range": [
+            27,
+            30
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 4605,
+          "duration_seconds": 21.59
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            28,
-            38
+            31,
+            36
           ],
           "sections": [
             "Городской радар"
@@ -1102,87 +1379,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7683,
-          "duration_seconds": 63.24
+          "estimated_tokens": 5136,
+          "duration_seconds": 31.506
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            39,
-            39
+            37,
+            37
           ],
           "sections": [
-            "Еда, открытия и рынки"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2606,
-          "duration_seconds": 6.93
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            40,
-            41
-          ],
-          "sections": [
-            "IT и бизнес"
+            "Билеты / Ticket Radar"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3132,
-          "duration_seconds": 17.903
+          "estimated_tokens": 2569,
+          "duration_seconds": 1.877
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            42,
-            42
-          ],
-          "sections": [
-            "Дальние анонсы"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2611,
-          "duration_seconds": 5.768
-        },
-        {
-          "chunk_id": "chunk-12",
-          "status": "ok",
-          "line_range": [
-            43,
-            46
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 4616,
-          "duration_seconds": 29.952
-        },
-        {
-          "chunk_id": "chunk-13",
-          "status": "ok",
-          "line_range": [
-            47,
-            48
+            38,
+            40
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -1192,40 +1415,22 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3107,
-          "duration_seconds": 7.156
-        },
-        {
-          "chunk_id": "chunk-14",
-          "status": "ok",
-          "line_range": [
-            49,
-            49
-          ],
-          "sections": [
-            "Русскоязычные концерты и стендап UK"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2703,
-          "duration_seconds": 4.449
+          "estimated_tokens": 3642,
+          "duration_seconds": 5.074
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "ok",
+        "status": "parse_failed",
         "line_range": [],
         "sections": [],
-        "decision": "repair_required",
-        "critical_error_count": 2,
-        "action_count": 2,
-        "warning_count": 2,
-        "error": "",
-        "estimated_tokens": 11070,
-        "duration_seconds": 25.511
+        "decision": "",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 0,
+        "error": "no parseable JSON",
+        "estimated_tokens": 9842,
+        "duration_seconds": 26.648
       },
       "max_workers": 3,
       "chunk_line_target": 12,
