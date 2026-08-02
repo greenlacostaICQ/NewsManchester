@@ -1,99 +1,99 @@
 {
-  "status": "partial",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
+  "reason": "pre-send repair executor applied 11 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-07-28.p0",
-  "run_date_london": "2026-08-01",
-  "pipeline_run_id": "20260801T080142+0100",
-  "digest_sha256": "17a1f766ce10418ad66b1cb0d79c217ce30d074ebf61e390ed16e9ea85b95870",
-  "duration_seconds": 71.381,
+  "run_date_london": "2026-08-02",
+  "pipeline_run_id": "20260802T080145+0100",
+  "digest_sha256": "fe4245129a9bf7f80450d0b17a18950050b55e287e80793352fd756474653ca7",
+  "duration_seconds": 60.11,
   "confidence": 0.9,
   "critical_errors": [
     {
       "line_index": 1,
       "section": "Главная история дня",
-      "problem": "Не упомянуто, что Рики Свиндлс был аутистом, что является важной деталью в контексте инцидента.",
+      "problem": "Текст не указывает, что смерть произошла на прошлой неделе, что важно для контекста.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 5,
+      "line_index": 9,
       "section": "Свежие новости",
-      "problem": "Дата выборов указана как 1 августа 2026 года, что противоречит предыдущим строкам, где упоминается 31 июля 2026 года.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 6,
-      "section": "Свежие новости",
-      "problem": "Упоминается, что выборы мэра прошли в Trafford, что неверно, так как это выборы мэра Большого Манчестера.",
-      "risk": "geo",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 12,
-      "section": "Футбол",
-      "problem": "География события не соответствует контракту раздела.",
+      "problem": "Пик-Дистрикт не является частью Greater Manchester.",
       "risk": "geo",
       "suggested_action": "strip"
     },
     {
-      "line_index": 22,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
+      "line_index": 11,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Неправильная дата начала замены поездов на автобусы.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 23,
+      "line_index": 14,
+      "section": "Футбол",
+      "problem": "Неверная география события.",
+      "risk": "geo",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 16,
       "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
+      "problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 26,
+      "line_index": 18,
       "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
+      "problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 27,
+      "line_index": 19,
       "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
+      "problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 30,
+      "line_index": 20,
       "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
+      "problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 36,
+      "line_index": 21,
       "section": "Городской радар",
-      "problem": "Andy Burnham is incorrectly referred to as Prime Minister.",
+      "problem": "Температура не указана в тексте.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 37,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
-      "risk": "date",
+      "line_index": 34,
+      "section": "Крупные концерты вне GM",
+      "problem": "Неполное название события.",
+      "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 38,
-      "section": "Крупные концерты вне GM",
-      "problem": "Некорректное название события и отсутствие упоминания Frank Carter.",
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Дублирование информации о смерти Рики Суиндэллса в 'Главной истории дня' и 'Городском радаре'.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 23,
+      "section": "Городской радар",
+      "problem": "Дублирование информации о смерти Рики Суиндэллса в 'Главной истории дня' и 'Городском радаре'.",
       "risk": "factual",
       "suggested_action": "repair"
     }
@@ -103,110 +103,134 @@
       "line_index": 1,
       "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• В результате инцидента с 28-летним аутистом Рики Свиндлсом, который был задержан полицией в Salford 24 июля, начато расследование. Семья сообщила, что он переживал кризис психического здоровья, и в момент прибытия полиции находился в \"значительном стрессе\". Независимый офис по поведению полиции (IOPC) изучает, насколько оправданным было применение наручников, а также действия полицейских, которые пытались \"деэскалировать\" ситуацию. Ожидаются результаты токсикологического анализа, так как первоначальная экспертиза не выявила причины смерти. BBC Manchester",
-      "reason": "Уточнение статуса Рики Свиндлса как аутиста важно для понимания контекста инцидента.",
+      "replacement_text": "• Рики Суиндэллс скончался на прошлой неделе после того, как его заковали в наручники полиция по вызову 999, его семья \"опустошена\", сообщает адвокат, пока продолжается расследование IOPC. MEN",
+      "reason": "Добавление временного контекста для точности.",
       "risk": "factual"
     },
     {
-      "line_index": 5,
+      "line_index": 9,
       "section": "Свежие новости",
-      "action": "patch",
-      "replacement_text": "• В результате выборов мэра, прошедших 31 июля 2026 года, в Большом Манчестере, Лейбористская партия одержала победу. Бев Крейг, набрав 66% голосов во втором туре, заменит Энди Бернама на посту мэра, обойдя кандидата от Reform UK Сиан Астли, которая получила 34%. Это событие знаменует собой новую фазу городской политики в регионе. MEN",
-      "reason": "Исправление даты выборов на 31 июля 2026 года.",
-      "risk": "date"
-    },
-    {
-      "line_index": 6,
-      "section": "Свежие новости",
-      "action": "patch",
-      "replacement_text": "• Вчера, 31 июля 2026 года, в Большом Манчестере прошли выборы мэра, в которых приняли участие около 170,000 избирателей. Это первая в Великобритании выборная кампания для стратегического мэра и крупнейшая по масштабам в истории страны, после того как экс-мэр Энди Бернхэм стал новым депутатом от Makerfield и премьер-министром. MEN",
-      "reason": "Исправление географической ошибки, так как выборы мэра касаются всего Большого Манчестера, а не только Trafford.",
-      "risk": "geo"
+      "action": "strip",
+      "reason": "Пик-Дистрикт не входит в географический охват GM.",
+      "risk": "geo",
+      "replacement_text": ""
     },
     {
       "line_index": 11,
       "section": "Общественный транспорт сегодня",
       "action": "patch",
-      "replacement_text": "• Metrolink (до 2 августа): трамваи не ходят по линиям Eccles, Trafford Centre и Altrincham; замещающий автобус — проверьте маршрут перед поездкой.",
-      "reason": "Повторение слова 'Metrolink' в конце строки избыточно.",
-      "risk": "format"
+      "replacement_text": "• National Rail: С понедельника, 3 августа, по пятницу, 7 августа, автобусы заменят поезда Transport for Wales на маршруте между Честером и Манчестер Пикадилли в позднее ночное и раннее утреннее время. National Rail Enquiries",
+      "reason": "Дата начала замены поездов на автобусы указана неверно. Должно быть с понедельника, 3 августа.",
+      "risk": "date"
     },
     {
-      "line_index": 12,
+      "line_index": 14,
       "section": "Футбол",
-      "action": "strip",
-      "reason": "Матч Манчестер Сити против Интера проходит в Гонконге, что не соответствует географическому контракту GM.",
+      "action": "patch",
+      "replacement_text": "• Билеты на матч Манчестер Сити против Арсенала в рамках Суперкубка Англии 16 августа 2026 года в Кардиффе доступны для покупки без сезонного билета за £199. MEN Manchester City",
+      "reason": "Указано неверное место проведения матча, который состоится в Кардиффе, а не в Greater Manchester.",
+      "risk": "geo"
+    },
+    {
+      "line_index": 16,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 26 июля в Waterside Farm, Otterspool Road, Romiley, Стокпорт, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход для покупателей бесплатный. The BIG Stockport Car Boot",
+      "reason": "Дата события должна соответствовать данным.",
+      "risk": "date"
+    },
+    {
+      "line_index": 18,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 26 июля в Bowlee Community Park, Middleton, Манчестер — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей около £2.50. Bowlee Car Boot Sale",
+      "reason": "Дата события должна соответствовать данным.",
+      "risk": "date"
+    },
+    {
+      "line_index": 19,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 26 июля в New Smithfield Market, Openshaw, Манчестер, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный для покупателей. New Smithfield Sunday Market",
+      "reason": "Дата события должна соответствовать данным.",
+      "risk": "date"
+    },
+    {
+      "line_index": 20,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 26 июля в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — Burnage RFC car boot sale. На площадке: автомобильная барахолка. Burnage RFC Car Boot Sale",
+      "reason": "Дата события должна соответствовать данным.",
+      "risk": "date"
+    },
+    {
+      "line_index": 21,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Метеорологическая служба предупреждает о 'очень теплой и влажной' погоде с температурой до 29°C в Greater Manchester на предстоящей неделе, ожидается очередная волна жары. United Utilities призывает разумно использовать воду, но ограничений не планируется. MEN",
+      "reason": "Указание температуры необходимо для полноты информации.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 30,
+      "section": "Билеты / Ticket Radar",
+      "action": "keep",
+      "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
       "risk": "geo",
       "replacement_text": ""
     },
     {
-      "line_index": 22,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 2 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный. The BIG Stockport Car Boot",
-      "reason": "Дата события должна быть 2 августа 2026 года.",
-      "risk": "date"
+      "line_index": 31,
+      "section": "Билеты / Ticket Radar",
+      "action": "keep",
+      "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
+      "risk": "geo",
+      "replacement_text": ""
     },
     {
-      "line_index": 23,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 2 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей £2.50. Bowlee Car Boot Sale",
-      "reason": "Дата события должна быть 2 августа 2026 года.",
-      "risk": "date"
+      "line_index": 32,
+      "section": "Билеты / Ticket Radar",
+      "action": "keep",
+      "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
+      "risk": "geo",
+      "replacement_text": ""
     },
     {
-      "line_index": 26,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 2 августа в New Smithfield Market, Опеншоу, Манчестер, M11 — New Smithfield Sunday Market и автомобильная барахолка. Вход свободный. New Smithfield Sunday Market",
-      "reason": "Дата события должна быть 2 августа 2026 года.",
-      "risk": "date"
+      "line_index": 33,
+      "section": "Билеты / Ticket Radar",
+      "action": "keep",
+      "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
+      "risk": "geo",
+      "replacement_text": ""
     },
     {
-      "line_index": 27,
-      "section": "Выходные в GM",
+      "line_index": 34,
+      "section": "Крупные концерты вне GM",
       "action": "patch",
-      "replacement_text": "• 26 июля в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — автомобильная барахолка Burnage RFC. Burnage RFC Car Boot Sale",
-      "reason": "Дата события должна быть 26 июля, а не 2 августа.",
-      "risk": "date"
-    },
-    {
-      "line_index": 30,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 25 июля — автомобильная барахолка в Barton Aerodrome. Покупатели допускаются с 9:00, можно приходить с собакой. Barton Aerodrome Car Boot",
-      "reason": "Дата события должна быть 25 июля, а не 1 августа.",
-      "risk": "date"
-    },
-    {
-      "line_index": 36,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Энди Бернхэм открыл No 10 North в Манчестере и назвал это \"лучшим днем в моей жизни\" во время своей первой встречи в новом офисе в Heron House, рядом с площадью Альберта. BusinessLive Greater Manchester",
-      "reason": "Andy Burnham is the Mayor of Greater Manchester, not the Prime Minister.",
+      "replacement_text": "• SEX PISTOLS FT. FRANK CARTER — 2 августа, Scarborough Open Air Theatre. Событие проходит сегодня. Ticketmaster",
+      "reason": "Указано неполное название события, что может ввести в заблуждение читателей.",
       "risk": "factual"
     },
     {
-      "line_index": 37,
-      "section": "Билеты / Ticket Radar",
+      "line_index": 1,
+      "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• Solya — 2 августа, Manchester The Deaf Institute. Билеты и время указаны на официальной странице. Ticketmaster",
-      "reason": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
-      "risk": "date"
+      "replacement_text": "• Рики Суиндэллс скончался после того, как его заковали в наручники полиция по вызову 999, его семья \"опустошена\", сообщает адвокат. Расследование IOPC продолжается. MEN",
+      "reason": "Устранение дублирования информации о смерти Рики Суиндэллса.",
+      "risk": "factual"
     },
     {
-      "line_index": 38,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• SEX PISTOLS FT. FRANK CARTER — тур: 1 августа, Cardiff Castle; 2 августа, Scarborough Open Air Theatre. Событие проходит сегодня. Ticketmaster",
-      "reason": "Уточнение названия события для соответствия фактам.",
+      "line_index": 23,
+      "section": "Городской радар",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Удаление дублирующей информации о смерти Рики Суиндэллса.",
       "risk": "factual"
     }
   ],
   "warnings": [
-    "Повторение слова 'Metrolink' в конце строки избыточно и может быть удалено для улучшения читаемости.",
-    "judge reduce failed: parse_failed no parseable JSON"
+    "События в разделе 'Билеты / Ticket Radar' соответствуют географическому контракту и содержат необходимую информацию. Однако, стоит проверить, чтобы в выпуске не было доминирования билетов над основными новостями.",
+    "Отсутствие блока 'Что важно сегодня' и 'Что важно в ближайшие 7 дней' снижает полноту выпуска."
   ],
   "product_completeness": {
     "block_policy_version": "2026-07-28.p0",
@@ -214,66 +238,65 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 8,
-      "Общественный транспорт сегодня": 1,
+      "Свежие новости": 7,
+      "Общественный транспорт сегодня": 2,
       "Футбол": 3,
-      "Выходные в GM": 16,
-      "Городской радар": 6,
-      "Билеты / Ticket Radar": 1,
-      "Крупные концерты вне GM": 3
+      "Выходные в GM": 6,
+      "Городской радар": 9,
+      "Билеты / Ticket Radar": 4,
+      "Крупные концерты вне GM": 2
     },
     "core_counts": {
       "Погода": 1,
       "Что важно сегодня": 0,
-      "Свежие новости": 8,
+      "Свежие новости": 7,
       "Главная история дня": 1,
-      "Городской радар": 6,
-      "Выходные в GM": 16,
+      "Городской радар": 9,
+      "Выходные в GM": 6,
       "Что важно в ближайшие 7 дней": 0,
-      "Билеты / Ticket Radar": 1,
+      "Билеты / Ticket Radar": 4,
       "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
       "Футбол": 3
     },
-    "ticket_items": 4,
-    "core_items": 35,
+    "ticket_items": 6,
+    "core_items": 27,
     "writer_quality_counts": {
-      "included_candidates": 48,
-      "rendered_candidates": 40,
+      "included_candidates": 42,
+      "rendered_candidates": 35,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 7,
-      "replaced_from_plan_backup": 0,
-      "removed_with_reason": 7
+      "dropped_low_quality": 6,
+      "replaced_from_plan_backup": 1,
+      "removed_with_reason": 6
     },
     "source_health_counts": {
-      "ok": 104,
+      "ok": 103,
       "partial": 2,
-      "stale": 13,
+      "stale": 14,
       "empty": 5,
       "failed": 1,
-      "zero_yield": 81,
+      "zero_yield": 87,
       "no_contribution_breakdown": {
         "fetch_failed": 1,
-        "all_rejected": 81,
-        "idle_no_items": 16
+        "all_rejected": 87,
+        "idle_no_items": 17
       },
       "zero_contribution_by_stage": {
-        "written": 41,
-        "selected": 40,
-        "parsed": 16,
+        "written": 48,
+        "selected": 39,
+        "parsed": 17,
         "fetched": 1
       },
-      "weekend_source_coverage_incidents": 43
+      "weekend_source_coverage_incidents": 49
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 0 item(s), emergency floor 3",
       "Что важно в ближайшие 7 дней: 0 item(s), emergency floor 3",
-      "Билеты / Ticket Radar: 1 item(s), emergency floor 2",
       "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "Business/tech события для тебя: 0 item(s), emergency floor 1"
@@ -282,20 +305,22 @@
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 5 has unchecked number/date token(s): 34, 66",
-      "patch for line 6 has unchecked number/date token(s): 170,000",
-      "patch for line 23 has unchecked number/date token(s): 2.50",
-      "patch for line 27 has unchecked number/date token(s): 26",
-      "patch for line 30 has unchecked number/date token(s): 25, 9:00"
+      "patch for line 14 has unchecked number/date token(s): 199",
+      "patch for line 16 has unchecked number/date token(s): 26",
+      "patch for line 18 has unchecked number/date token(s): 2.50, 26",
+      "patch for line 19 has unchecked number/date token(s): 26",
+      "patch for line 20 has unchecked number/date token(s): 26",
+      "patch for line 21 has unchecked number/date token(s): 29",
+      "multiple actions target line 1"
     ],
     "can_apply_actions": true,
-    "action_count": 13
+    "action_count": 16
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 40,
-    "matched_lines": 40,
-    "applicable_lines": 3,
+    "checked_lines": 35,
+    "matched_lines": 35,
+    "applicable_lines": 4,
     "unmatched_lines": 0,
     "critical_omission_count": 0,
     "critical_omissions": [],
@@ -308,21 +333,21 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 13,
-    "attempted": 8,
-    "applied": 7,
-    "model_patch_applied": 2,
+    "requested": 16,
+    "attempted": 11,
+    "applied": 11,
+    "model_patch_applied": 4,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 5,
-    "stripped": 0,
-    "unresolved": 2,
-    "blocking_unresolved": 1,
-    "resolved": 9,
-    "resolved_in_place": 5,
-    "resolved_by_replacement": 4,
-    "resolved_by_removal": 0,
+    "reserve_replacement_used": 1,
+    "stripped": 6,
+    "unresolved": 0,
+    "blocking_unresolved": 0,
+    "resolved": 10,
+    "resolved_in_place": 6,
+    "resolved_by_replacement": 1,
+    "resolved_by_removal": 3,
     "fact_lock_rejected": 5,
-    "enrich_attempted": 13,
+    "enrich_attempted": 12,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "actions": [
@@ -330,264 +355,358 @@
         "line_index": 1,
         "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Уточнение статуса Рики Свиндлса как аутиста важно для понимания контекста инцидента.",
+        "reason": "Добавление временного контекста для точности.",
         "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Не упомянуто, что Рики Свиндлс был аутистом, что является важной деталью в контексте инцидента.",
+        "critical_error": false,
+        "critical_problem": "",
         "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
         "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-bbc-com-news-articles-c20d7pdlnxyo-b8b0b676ae02",
-        "original_url_identity": "bbc.com/news/articles/c20d7pdlnxyo",
-        "original_html": "<b>В результате инцидента с 28-летним Рики Свиндлсом, который был задержан полицией в Salford 24 июля, начато расследование.</b> Семья сообщила, что он переживал кризис психического здоровья, и в момент прибытия полиции находился в \"значительном стрессе\". Независимый офис по поведению полиции (IOPC) изучает, насколько оправданным было применение наручников, а также действия полицейских, которые пытались \"деэскалировать\" ситуацию. Ожидаются результаты токсикологического анализа, так как первоначальная экспертиза не выявила причины смерти. <a href=\"https://bbc.com/news/articles/c20d7pdlnxyo\">BBC Manchester</a>",
-        "model_replacement_rejected": "fact_lock: 24 июля",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-47-charged-firearms-offences-34386799-0de9b78e2a6e",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-family-man-who-died-after-34388240-da2e48eb20ed",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/family-man-who-died-after-34388240",
+        "original_html": "<b>Рики Суиндэллс скончался после того, как его заковали в наручники полиция по вызову 999, его семья \"опустошена\", сообщает адвокат, пока продолжается расследование IOPC.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/family-man-who-died-after-34388240\">MEN</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 5,
+        "line_index": 9,
         "section": "Свежие новости",
-        "requested_action": "patch",
-        "reason": "Исправление даты выборов на 31 июля 2026 года.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата выборов указана как 1 августа 2026 года, что противоречит предыдущим строкам, где упоминается 31 июля 2026 года.",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-full-breakdown-how-every-part-34388049-a586599df644",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/full-breakdown-how-every-part-34388049",
-        "original_html": "• В результате выборов мэра, прошедших 1 августа 2026 года, в Большом Манчестере, Лейбористская партия одержала победу. Бев Крейг, набрав 66% голосов во втором туре, заменит Энди Бернама на посту мэра, обойдя кандидата от Reform UK Сиан Астли, которая получила 34%. Это событие знаменует собой новую фазу городской политики в регионе. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/full-breakdown-how-every-part-34388049\">MEN</a>",
-        "model_replacement_rejected": "fact_lock: 31 июля 2026",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-dovestone-moorland-blaze-update-as-34386619-2de33f7e8c24",
-        "post_check_passed": false
-      },
-      {
-        "line_index": 6,
-        "section": "Свежие новости",
-        "requested_action": "patch",
-        "reason": "Исправление географической ошибки, так как выборы мэра касаются всего Большого Манчестера, а не только Trafford.",
+        "requested_action": "strip",
+        "reason": "Пик-Дистрикт не входит в географический охват GM.",
         "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Упоминается, что выборы мэра прошли в Trafford, что неверно, так как это выборы мэра Большого Манчестера.",
+        "critical_problem": "Пик-Дистрикт не является частью Greater Manchester.",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "last_24h-04",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-how-trafford-voted-greater-manchester-34369590-ba3ff6e798e5",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/how-trafford-voted-greater-manchester-34369590",
-        "original_html": "• Вчера, 31 июля 2026 года, в Trafford прошли выборы мэра Большого Манчестера, в которых приняли участие около 170,000 избирателей. Это первая в Великобритании выборная кампания для стратегического мэра и крупнейшая по масштабам в истории страны, после того как экс-мэр Энди Бернхэм стал новым депутатом от Makerfield и премьер-министром. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/how-trafford-voted-greater-manchester-34369590\">MEN</a>",
-        "verification": "structured fact already rendered correctly",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "last_24h-07",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-beloved-corner-peak-district-burns-34376388-799cc5572382",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/beloved-corner-peak-district-burns-34376388",
+        "original_html": "• В районе Пик-Дистрикт, где бушует лесной пожар, жители переживают трудные времена. С 24 июня, когда начался пожар на Торнвилле, местные сообщества, такие как Тинтвистл и Холлингворт, столкнулись с катастрофическими потерями флоры и фауны. Несмотря на это, некоторые жители, такие как Джин Стривен, владелица кафе Pixie Bakes, отмечают, что им повезло избежать эвакуации, хотя напряжение сохраняется. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/beloved-corner-peak-district-burns-34376388\">MEN</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
         "line_index": 11,
         "section": "Общественный транспорт сегодня",
         "requested_action": "patch",
-        "reason": "Повторение слова 'Metrolink' в конце строки избыточно.",
-        "risk": "format",
-        "critical_error": false,
-        "critical_problem": "",
+        "reason": "Дата начала замены поездов на автобусы указана неверно. Должно быть с понедельника, 3 августа.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Неправильная дата начала замены поездов на автобусы.",
         "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "",
-        "plan_slot_id": "",
-        "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-deansgate-castlefield-trafford-bar-tram-improvement-works-22c65c4edcd4",
-        "original_url_identity": "tfgm.com/travel-updates/travel-alerts/deansgate-castlefield-trafford-bar-tram-improvement-works",
-        "original_html": "• Metrolink (до 2 августа): трамваи не ходят по линиям Eccles, Trafford Centre и Altrincham; замещающий автобус — проверьте маршрут перед поездкой. <a href=\"https://tfgm.com/travel-updates/travel-alerts/deansgate-castlefield-trafford-bar-tram-improvement-works\">Metrolink</a>",
-        "model_replacement_rejected": "fact_lock: 2 августа",
-        "post_check_passed": false
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "transport-02",
+        "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-buses-replace-late-night-early-morning-transport-for-wales-trains-between-cheste-0087540c36fa",
+        "original_url_identity": "nationalrail.co.uk/status-and-disruptions/buses-replace-late-night-early-morning-transport-for-wales-trains-between-cheste",
+        "original_html": "• National Rail: С понедельника, 3 августа, по пятницу, 7 августа, автобусы заменят поезда Transport for Wales на маршруте между Честером и Манчестер Пикадилли в позднее ночное и раннее утреннее время. <a href=\"https://nationalrail.co.uk/status-and-disruptions/buses-replace-late-night-early-morning-transport-for-wales-trains-between-cheste\">National Rail Enquiries</a>",
+        "model_replacement_rejected": "fact_lock: national rail",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
       },
       {
-        "line_index": 12,
+        "line_index": 14,
         "section": "Футбол",
-        "requested_action": "strip",
-        "reason": "Матч Манчестер Сити против Интера проходит в Гонконге, что не соответствует географическому контракту GM.",
+        "requested_action": "patch",
+        "reason": "Указано неверное место проведения матча, который состоится в Кардиффе, а не в Greater Manchester.",
         "risk": "geo",
         "critical_error": true,
-        "critical_problem": "География события не соответствует контракту раздела.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-team-predicted-vs-34384395-0b1a6168b1a3",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-team-predicted-vs-34384395",
-        "original_html": "• Манчестер Сити сыграет с Интером в предсезонном товарищеском матче в Гонконге, что станет первой игрой Энцо Марески в роли главного тренера. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-team-predicted-vs-34384395\">MEN Manchester City</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-city-shouldnt-worry-paying-34378271-96937fbcddb1",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 22,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события должна быть 2 августа 2026 года.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-08",
-        "candidate_fingerprint": "event-id-jsonld-event-2d2c694af16a-4c4514024729",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
-        "original_html": "• 2 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 23,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события должна быть 2 августа 2026 года.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "weekend_activities-09",
-        "candidate_fingerprint": "event-id-jsonld-event-f209fb8a7f19-5c2d144570ab",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
-        "original_html": "• 2 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей £2.50. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
-        "model_replacement_rejected": "fact_lock: bowlee",
-        "replacement_fingerprint": "event-event-manchester-fun-puzzle-treasure-hunt-single-route-or-double-for-racing-2026-08-01-9c25736c9b1a",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 26,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события должна быть 2 августа 2026 года.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-12",
-        "candidate_fingerprint": "event-id-jsonld-event-c3a7520ac370-75f4d7a5ceac",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot",
-        "original_html": "• 2 августа в New Smithfield Market, Опеншоу, Манчестер, M11 — New Smithfield Sunday Market и автомобильная барахолка. Вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot\">New Smithfield Sunday Market</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 27,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события должна быть 26 июля, а не 2 августа.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
+        "critical_problem": "Неверная география события.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-13",
+        "plan_slot_id": "football-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-how-buy-man-city-vs-34356993-790d137ff84b",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/how-buy-man-city-vs-34356993",
+        "original_html": "• Билеты на матч Манчестер Сити против Арсенала в рамках Суперкубка Англии 16 августа 2026 года доступны для покупки без сезонного билета за £199. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/how-buy-man-city-vs-34356993\">MEN Manchester City</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 16,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна соответствовать данным.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "weekend_activities-02",
+        "candidate_fingerprint": "event-id-jsonld-event-2d2c694af16a-4c4514024729",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
+        "original_html": "• 2 августа в Waterside Farm, Otterspool Road, Romiley, Стокпорт, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход для покупателей бесплатный. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
+        "model_replacement_rejected": "fact_lock: 26 июля",
+        "deterministic_rewrite_rejected": "post_check: structured event date is not rendered correctly",
+        "reserve_rejections": [
+          {
+            "fingerprint": "event-event-drop-in-family-circus-workshop-2026-08-02-home-35244a2992b4",
+            "errors": [
+              "structured event date is not rendered correctly"
+            ]
+          },
+          {
+            "fingerprint": "event-event-the-big-manchester-bake-2026-08-02-c575c1dcbeb1",
+            "errors": [
+              "structured event date is not rendered correctly"
+            ]
+          }
+        ],
+        "backup_outcome": "backup_chain_exhausted",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 18,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна соответствовать данным.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "weekend_activities-04",
+        "candidate_fingerprint": "event-id-jsonld-event-f209fb8a7f19-5c2d144570ab",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
+        "original_html": "• 2 августа в Bowlee Community Park, Middleton, Манчестер — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей около £2.50. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
+        "model_replacement_rejected": "fact_lock: 26 июля, bowlee",
+        "reserve_rejections": [
+          {
+            "fingerprint": "event-event-stockport-cider-salon-2026-2026-08-02-where-the-light-gets-in-d368f98c7f0f",
+            "errors": [
+              "structured event date is not rendered correctly"
+            ]
+          }
+        ],
+        "backup_outcome": "backup_chain_exhausted",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 19,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна соответствовать данным.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "weekend_activities-05",
+        "candidate_fingerprint": "event-id-jsonld-event-c3a7520ac370-75f4d7a5ceac",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot",
+        "original_html": "• 2 августа в New Smithfield Market, Openshaw, Манчестер, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный для покупателей. <a href=\"https://manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot\">New Smithfield Sunday Market</a>",
+        "model_replacement_rejected": "fact_lock: 26 июля",
+        "deterministic_rewrite_rejected": "post_check: structured event date is not rendered correctly",
+        "reserve_rejections": [
+          {
+            "fingerprint": "event-event-macbeth-at-orsdall-hall-2026-08-02-ordsall-hall-3accf8cd5e7f",
+            "errors": [
+              "structured event date is not rendered correctly"
+            ]
+          }
+        ],
+        "backup_outcome": "backup_chain_exhausted",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 20,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна соответствовать данным.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "weekend_activities-06",
         "candidate_fingerprint": "event-id-jsonld-event-67c0be804357-b48ce0a99391",
         "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-        "original_html": "• 2 августа в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — автомобильная барахолка Burnage RFC. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-        "verification": "structured fact already rendered correctly",
+        "original_html": "• 2 августа в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — Burnage RFC car boot sale. На площадке: автомобильная барахолка. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+        "model_replacement_rejected": "fact_lock: 26 июля",
+        "deterministic_rewrite_rejected": "post_check: structured event date is not rendered correctly",
+        "reserve_rejections": [
+          {
+            "fingerprint": "event-event-bottomless-pizzaluxe-manchester-2026-08-02-8eb64e79310e",
+            "errors": [
+              "structured event date is not rendered correctly"
+            ]
+          }
+        ],
+        "backup_outcome": "backup_chain_exhausted",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 21,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Указание температуры необходимо для полноты информации.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Температура не указана в тексте.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "city_watch-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-met-office-warns-very-warm-34390255-274cd923eaaa",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/met-office-warns-very-warm-34390255",
+        "original_html": "• Метеорологическая служба предупреждает о 'очень теплой и влажной' погоде с температурой°C в Greater Manchester на предстоящей неделе, ожидается очередная волна жары. United Utilities призывает разумно использовать воду, но ограничений не планируется. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/met-office-warns-very-warm-34390255\">MEN</a>",
         "post_check_passed": true
       },
       {
         "line_index": 30,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события должна быть 25 июля, а не 1 августа.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "weekend_activities-16",
-        "candidate_fingerprint": "event-id-jsonld-event-2f62a8c58881-766d57c1c1a1",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
-        "original_html": "• 1 августа — автомобильная барахолка в Barton Aerodrome. Покупатели допускаются с 9:00, можно приходить с собакой. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
-        "model_replacement_rejected": "fact_lock: 25 июля, 9:00",
-        "replacement_fingerprint": "event-event-chotto-matte-s-new-terraza-weekend-brunch-2026-08-01-8dc2eca4b9c7",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 36,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Andy Burnham is the Mayor of Greater Manchester, not the Prime Minister.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Andy Burnham is incorrectly referred to as Prime Minister.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "city_watch-10",
-        "candidate_fingerprint": "url-business-live-co-uk-economic-development-andy-burnham-says-best-day-34346646-cc500f766044",
-        "original_url_identity": "business-live.co.uk/economic-development/andy-burnham-says-best-day-34346646",
-        "original_html": "• Премьер-министр Энди Бернхэм открыл No 10 North в Манчестере и назвал это \"лучшим днем в моей жизни\" во время своей первой встречи в новом офисе в Heron House, рядом с площадью Альберта. <a href=\"https://business-live.co.uk/economic-development/andy-burnham-says-best-day-34346646\">BusinessLive Greater Manchester</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 37,
         "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
+        "requested_action": "keep",
+        "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
+        "risk": "geo",
+        "critical_error": false,
+        "critical_problem": "",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
+        "method": "keep",
         "plan_slot_id": "ticket_radar-01",
+        "candidate_fingerprint": "event-event-radar-festival-sunday-animals-as-leaders-the-pineapple-thief-2026-08-02-o2-victoria-warehouse-manchester-122d8f12d3c2",
+        "original_url_identity": "ticketmaster.co.uk/radar-festival-sunday-animals-as-leaders-manchester-02-08-2026/event/3E00638CC5ED60A6",
+        "original_html": "• <b>RADAR Festival</b> — 2 августа, O2 Victoria Warehouse Manchester. Событие проходит сегодня. Состав: <b>Animals As Leaders</b>, <b>The Pineapple Thief</b>, <b>Voyager</b>, <b>TEN56</b>, <b>Employed To Serve</b>, <b>ELWOOD STRAY</b>. <a href=\"https://ticketmaster.co.uk/radar-festival-sunday-animals-as-leaders-manchester-02-08-2026/event/3E00638CC5ED60A6\">Ticketmaster</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 31,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "keep",
+        "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
+        "risk": "geo",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "keep",
+        "plan_slot_id": "ticket_radar-02",
         "candidate_fingerprint": "event-event-solya-2026-08-02-manchester-the-deaf-institute-e495dc23bfa7",
         "original_url_identity": "ticketmaster.co.uk/solya-manchester-02-08-2026/event/1F00646295C12538",
-        "original_html": "• <b>Solya</b> — 2 августа, Manchester The Deaf Institute. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/solya-manchester-02-08-2026/event/1F00646295C12538\">Ticketmaster</a>",
-        "verification": "structured fact already rendered correctly",
+        "original_html": "• <b>Solya</b> — 2 августа, Manchester The Deaf Institute. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/solya-manchester-02-08-2026/event/1F00646295C12538\">Ticketmaster</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 38,
+        "line_index": 32,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "keep",
+        "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
+        "risk": "geo",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "keep",
+        "plan_slot_id": "ticket_radar-03",
+        "candidate_fingerprint": "event-event-joji-solaris-tour-with-special-guest-tommy-richman-sun-16-aug-2026-multiple-times-2026-08-16-co-op-live-63e07169f118",
+        "original_url_identity": "cooplive.com/events/joji-rzp7",
+        "original_html": "• <b>JOJI SOLARIS TOUR</b> — 16 августа, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/joji-rzp7\">Co-op Live</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 33,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "keep",
+        "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
+        "risk": "geo",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "keep",
+        "plan_slot_id": "ticket_radar-04",
+        "candidate_fingerprint": "event-event-the-neighbourhood-the-wourld-tour-plus-special-guests-nessa-barrett-noise-dept-tue-1-sep-2-2026-09-01-co-op-live-d28cf065b216",
+        "original_url_identity": "cooplive.com/events/the-neighbourhood-4dd3",
+        "original_html": "• <b>The Neighbourhood THE WOURLD TOUR</b> — 1 сентября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/the-neighbourhood-4dd3\">Co-op Live</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 34,
         "section": "Крупные концерты вне GM",
         "requested_action": "patch",
-        "reason": "Уточнение названия события для соответствия фактам.",
+        "reason": "Указано неполное название события, что может ввести в заблуждение читателей.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Некорректное название события и отсутствие упоминания Frank Carter.",
+        "critical_problem": "Неполное название события.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
         "plan_slot_id": "outside_gm_tickets-01",
-        "candidate_fingerprint": "event-event-sex-pistols-ft-frank-carter-2026-08-01-cardiff-castle-dead9bad19ad",
-        "original_url_identity": "ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923",
-        "original_html": "• <b>SEX PISTOLS</b> — тур: 1 августа, Cardiff Castle; 2 августа, Scarborough Open Air Theatre. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923\">Ticketmaster</a>",
+        "candidate_fingerprint": "event-event-sex-pistols-ft-frank-carter-2026-08-02-scarborough-open-air-theatre-eaf283350092",
+        "original_url_identity": "ticketmaster.co.uk/sex-pistols-ft-frank-carter-scarborough-02-08-2026/event/35006378AE9C4825",
+        "original_html": "• <b>SEX PISTOLS</b> — 2 августа, Scarborough Open Air Theatre. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-scarborough-02-08-2026/event/35006378AE9C4825\">Ticketmaster</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 1,
+        "section": "Главная история дня",
+        "requested_action": "patch",
+        "reason": "Устранение дублирования информации о смерти Рики Суиндэллса.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Текст не указывает, что смерть произошла на прошлой неделе, что важно для контекста.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-family-man-who-died-after-34388240-da2e48eb20ed",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/family-man-who-died-after-34388240",
+        "original_html": "<b>Рики Суиндэллс скончался после того, как его заковали в наручники полиция по вызову 999, его семья \"опустошена\", сообщает адвокат, пока продолжается расследование IOPC.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/family-man-who-died-after-34388240\">MEN</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 23,
+        "section": "Городской радар",
+        "requested_action": "strip",
+        "reason": "Удаление дублирующей информации о смерти Рики Суиндэллса.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о смерти Рики Суиндэллса в 'Главной истории дня' и 'Городском радаре'.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "city_watch-03",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c20d7pdlnxyo-b8b0b676ae02",
+        "original_url_identity": "bbc.com/news/articles/c20d7pdlnxyo",
+        "original_html": "• Смерть 28-летнего человека с аутизмом Рики Свиндэллса, который перестал дышать после того, как его заковали в наручники полицейские Greater Manchester, находится под расследованием. <a href=\"https://bbc.co.uk/news/articles/c20d7pdlnxyo\">BBC Manchester</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-next-stop-piccadilly-gardens-northern-34348709-4fc1b27b9228",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::уточнение статуса рики свиндлса как аутиста важно для понимания контекста инцидента.",
+        "group_key": "главная история дня::добавление временного контекста для точности.",
         "actions": [
           {
             "line_index": 1,
             "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Уточнение статуса Рики Свиндлса как аутиста важно для понимания контекста инцидента.",
+            "reason": "Добавление временного контекста для точности.",
             "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Не упомянуто, что Рики Свиндлс был аутистом, что является важной деталью в контексте инцидента.",
+            "critical_error": false,
+            "critical_problem": "",
             "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
             "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-bbc-com-news-articles-c20d7pdlnxyo-b8b0b676ae02",
-            "original_url_identity": "bbc.com/news/articles/c20d7pdlnxyo",
-            "original_html": "<b>В результате инцидента с 28-летним Рики Свиндлсом, который был задержан полицией в Salford 24 июля, начато расследование.</b> Семья сообщила, что он переживал кризис психического здоровья, и в момент прибытия полиции находился в \"значительном стрессе\". Независимый офис по поведению полиции (IOPC) изучает, насколько оправданным было применение наручников, а также действия полицейских, которые пытались \"деэскалировать\" ситуацию. Ожидаются результаты токсикологического анализа, так как первоначальная экспертиза не выявила причины смерти. <a href=\"https://bbc.com/news/articles/c20d7pdlnxyo\">BBC Manchester</a>",
-            "model_replacement_rejected": "fact_lock: 24 июля",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-47-charged-firearms-offences-34386799-0de9b78e2a6e",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-family-man-who-died-after-34388240-da2e48eb20ed",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/family-man-who-died-after-34388240",
+            "original_html": "<b>Рики Суиндэллс скончался после того, как его заковали в наручники полиция по вызову 999, его семья \"опустошена\", сообщает адвокат, пока продолжается расследование IOPC.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/family-man-who-died-after-34388240\">MEN</a>",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_by_replacement",
+        "outcome": "resolved_in_place",
         "post_checks": [
           {
             "line_index": 1,
@@ -598,406 +717,526 @@
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::исправление даты выборов на 31 июля 2026 года.",
+        "group_key": "свежие новости::пик-дистрикт не входит в географический охват gm.",
         "actions": [
           {
-            "line_index": 5,
+            "line_index": 9,
             "section": "Свежие новости",
-            "requested_action": "patch",
-            "reason": "Исправление даты выборов на 31 июля 2026 года.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата выборов указана как 1 августа 2026 года, что противоречит предыдущим строкам, где упоминается 31 июля 2026 года.",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-full-breakdown-how-every-part-34388049-a586599df644",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/full-breakdown-how-every-part-34388049",
-            "original_html": "• В результате выборов мэра, прошедших 1 августа 2026 года, в Большом Манчестере, Лейбористская партия одержала победу. Бев Крейг, набрав 66% голосов во втором туре, заменит Энди Бернама на посту мэра, обойдя кандидата от Reform UK Сиан Астли, которая получила 34%. Это событие знаменует собой новую фазу городской политики в регионе. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/full-breakdown-how-every-part-34388049\">MEN</a>",
-            "model_replacement_rejected": "fact_lock: 31 июля 2026",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-dovestone-moorland-blaze-update-as-34386619-2de33f7e8c24",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 5,
-            "passed": false,
-            "detail": "shared prose policy still fails"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::исправление географической ошибки, так как выборы мэра касаются всего большого манчестера, а не только trafford.",
-        "actions": [
-          {
-            "line_index": 6,
-            "section": "Свежие новости",
-            "requested_action": "patch",
-            "reason": "Исправление географической ошибки, так как выборы мэра касаются всего Большого Манчестера, а не только Trafford.",
+            "requested_action": "strip",
+            "reason": "Пик-Дистрикт не входит в географический охват GM.",
             "risk": "geo",
             "critical_error": true,
-            "critical_problem": "Упоминается, что выборы мэра прошли в Trafford, что неверно, так как это выборы мэра Большого Манчестера.",
+            "critical_problem": "Пик-Дистрикт не является частью Greater Manchester.",
             "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-04",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-how-trafford-voted-greater-manchester-34369590-ba3ff6e798e5",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/how-trafford-voted-greater-manchester-34369590",
-            "original_html": "• Вчера, 31 июля 2026 года, в Trafford прошли выборы мэра Большого Манчестера, в которых приняли участие около 170,000 избирателей. Это первая в Великобритании выборная кампания для стратегического мэра и крупнейшая по масштабам в истории страны, после того как экс-мэр Энди Бернхэм стал новым депутатом от Makerfield и премьер-министром. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/how-trafford-voted-greater-manchester-34369590\">MEN</a>",
-            "verification": "structured fact already rendered correctly",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "last_24h-07",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-beloved-corner-peak-district-burns-34376388-799cc5572382",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/beloved-corner-peak-district-burns-34376388",
+            "original_html": "• В районе Пик-Дистрикт, где бушует лесной пожар, жители переживают трудные времена. С 24 июня, когда начался пожар на Торнвилле, местные сообщества, такие как Тинтвистл и Холлингворт, столкнулись с катастрофическими потерями флоры и фауны. Несмотря на это, некоторые жители, такие как Джин Стривен, владелица кафе Pixie Bakes, отмечают, что им повезло избежать эвакуации, хотя напряжение сохраняется. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/beloved-corner-peak-district-burns-34376388\">MEN</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 6,
+            "line_index": 9,
             "passed": true,
-            "detail": "existing fact verified"
+            "detail": "slot removed and source absent"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::повторение слова 'metrolink' в конце строки избыточно.",
+        "group_key": "общественный транспорт сегодня::дата начала замены поездов на автобусы указана неверно. должно быть с понедельника, 3 августа.",
         "actions": [
           {
             "line_index": 11,
             "section": "Общественный транспорт сегодня",
             "requested_action": "patch",
-            "reason": "Повторение слова 'Metrolink' в конце строки избыточно.",
-            "risk": "format",
-            "critical_error": false,
-            "critical_problem": "",
+            "reason": "Дата начала замены поездов на автобусы указана неверно. Должно быть с понедельника, 3 августа.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Неправильная дата начала замены поездов на автобусы.",
             "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "",
-            "plan_slot_id": "",
-            "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-deansgate-castlefield-trafford-bar-tram-improvement-works-22c65c4edcd4",
-            "original_url_identity": "tfgm.com/travel-updates/travel-alerts/deansgate-castlefield-trafford-bar-tram-improvement-works",
-            "original_html": "• Metrolink (до 2 августа): трамваи не ходят по линиям Eccles, Trafford Centre и Altrincham; замещающий автобус — проверьте маршрут перед поездкой. <a href=\"https://tfgm.com/travel-updates/travel-alerts/deansgate-castlefield-trafford-bar-tram-improvement-works\">Metrolink</a>",
-            "model_replacement_rejected": "fact_lock: 2 августа",
-            "post_check_passed": false
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "transport-02",
+            "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-buses-replace-late-night-early-morning-transport-for-wales-trains-between-cheste-0087540c36fa",
+            "original_url_identity": "nationalrail.co.uk/status-and-disruptions/buses-replace-late-night-early-morning-transport-for-wales-trains-between-cheste",
+            "original_html": "• National Rail: С понедельника, 3 августа, по пятницу, 7 августа, автобусы заменят поезда Transport for Wales на маршруте между Честером и Манчестер Пикадилли в позднее ночное и раннее утреннее время. <a href=\"https://nationalrail.co.uk/status-and-disruptions/buses-replace-late-night-early-morning-transport-for-wales-trains-between-cheste\">National Rail Enquiries</a>",
+            "model_replacement_rejected": "fact_lock: national rail",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
           }
         ],
-        "outcome": "unresolved",
+        "outcome": "resolved_by_removal",
         "post_checks": [
           {
             "line_index": 11,
-            "passed": false,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::указано неверное место проведения матча, который состоится в кардиффе, а не в greater manchester.",
+        "actions": [
+          {
+            "line_index": 14,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Указано неверное место проведения матча, который состоится в Кардиффе, а не в Greater Manchester.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Неверная география события.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-how-buy-man-city-vs-34356993-790d137ff84b",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/how-buy-man-city-vs-34356993",
+            "original_html": "• Билеты на матч Манчестер Сити против Арсенала в рамках Суперкубка Англии 16 августа 2026 года доступны для покупки без сезонного билета за £199. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/how-buy-man-city-vs-34356993\">MEN Manchester City</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 14,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата события должна соответствовать данным.",
+        "actions": [
+          {
+            "line_index": 16,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна соответствовать данным.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "weekend_activities-02",
+            "candidate_fingerprint": "event-id-jsonld-event-2d2c694af16a-4c4514024729",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
+            "original_html": "• 2 августа в Waterside Farm, Otterspool Road, Romiley, Стокпорт, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход для покупателей бесплатный. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
+            "model_replacement_rejected": "fact_lock: 26 июля",
+            "deterministic_rewrite_rejected": "post_check: structured event date is not rendered correctly",
+            "reserve_rejections": [
+              {
+                "fingerprint": "event-event-drop-in-family-circus-workshop-2026-08-02-home-35244a2992b4",
+                "errors": [
+                  "structured event date is not rendered correctly"
+                ]
+              },
+              {
+                "fingerprint": "event-event-the-big-manchester-bake-2026-08-02-c575c1dcbeb1",
+                "errors": [
+                  "structured event date is not rendered correctly"
+                ]
+              }
+            ],
+            "backup_outcome": "backup_chain_exhausted",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 18,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна соответствовать данным.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "weekend_activities-04",
+            "candidate_fingerprint": "event-id-jsonld-event-f209fb8a7f19-5c2d144570ab",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
+            "original_html": "• 2 августа в Bowlee Community Park, Middleton, Манчестер — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей около £2.50. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
+            "model_replacement_rejected": "fact_lock: 26 июля, bowlee",
+            "reserve_rejections": [
+              {
+                "fingerprint": "event-event-stockport-cider-salon-2026-2026-08-02-where-the-light-gets-in-d368f98c7f0f",
+                "errors": [
+                  "structured event date is not rendered correctly"
+                ]
+              }
+            ],
+            "backup_outcome": "backup_chain_exhausted",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 19,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна соответствовать данным.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "weekend_activities-05",
+            "candidate_fingerprint": "event-id-jsonld-event-c3a7520ac370-75f4d7a5ceac",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot",
+            "original_html": "• 2 августа в New Smithfield Market, Openshaw, Манчестер, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный для покупателей. <a href=\"https://manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot\">New Smithfield Sunday Market</a>",
+            "model_replacement_rejected": "fact_lock: 26 июля",
+            "deterministic_rewrite_rejected": "post_check: structured event date is not rendered correctly",
+            "reserve_rejections": [
+              {
+                "fingerprint": "event-event-macbeth-at-orsdall-hall-2026-08-02-ordsall-hall-3accf8cd5e7f",
+                "errors": [
+                  "structured event date is not rendered correctly"
+                ]
+              }
+            ],
+            "backup_outcome": "backup_chain_exhausted",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 20,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна соответствовать данным.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "weekend_activities-06",
+            "candidate_fingerprint": "event-id-jsonld-event-67c0be804357-b48ce0a99391",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+            "original_html": "• 2 августа в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — Burnage RFC car boot sale. На площадке: автомобильная барахолка. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+            "model_replacement_rejected": "fact_lock: 26 июля",
+            "deterministic_rewrite_rejected": "post_check: structured event date is not rendered correctly",
+            "reserve_rejections": [
+              {
+                "fingerprint": "event-event-bottomless-pizzaluxe-manchester-2026-08-02-8eb64e79310e",
+                "errors": [
+                  "structured event date is not rendered correctly"
+                ]
+              }
+            ],
+            "backup_outcome": "backup_chain_exhausted",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 16,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "line_index": 18,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "line_index": 19,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "line_index": 20,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::указание температуры необходимо для полноты информации.",
+        "actions": [
+          {
+            "line_index": 21,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Указание температуры необходимо для полноты информации.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Температура не указана в тексте.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "city_watch-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-met-office-warns-very-warm-34390255-274cd923eaaa",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/met-office-warns-very-warm-34390255",
+            "original_html": "• Метеорологическая служба предупреждает о 'очень теплой и влажной' погоде с температурой°C в Greater Manchester на предстоящей неделе, ожидается очередная волна жары. United Utilities призывает разумно использовать воду, но ограничений не планируется. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/met-office-warns-very-warm-34390255\">MEN</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 21,
+            "passed": true,
             "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::информация о событии соответствует данным, указано место и дата в gm.",
+        "actions": [
+          {
+            "line_index": 30,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "keep",
+            "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
+            "risk": "geo",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "keep",
+            "plan_slot_id": "ticket_radar-01",
+            "candidate_fingerprint": "event-event-radar-festival-sunday-animals-as-leaders-the-pineapple-thief-2026-08-02-o2-victoria-warehouse-manchester-122d8f12d3c2",
+            "original_url_identity": "ticketmaster.co.uk/radar-festival-sunday-animals-as-leaders-manchester-02-08-2026/event/3E00638CC5ED60A6",
+            "original_html": "• <b>RADAR Festival</b> — 2 августа, O2 Victoria Warehouse Manchester. Событие проходит сегодня. Состав: <b>Animals As Leaders</b>, <b>The Pineapple Thief</b>, <b>Voyager</b>, <b>TEN56</b>, <b>Employed To Serve</b>, <b>ELWOOD STRAY</b>. <a href=\"https://ticketmaster.co.uk/radar-festival-sunday-animals-as-leaders-manchester-02-08-2026/event/3E00638CC5ED60A6\">Ticketmaster</a>",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 31,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "keep",
+            "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
+            "risk": "geo",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "keep",
+            "plan_slot_id": "ticket_radar-02",
+            "candidate_fingerprint": "event-event-solya-2026-08-02-manchester-the-deaf-institute-e495dc23bfa7",
+            "original_url_identity": "ticketmaster.co.uk/solya-manchester-02-08-2026/event/1F00646295C12538",
+            "original_html": "• <b>Solya</b> — 2 августа, Manchester The Deaf Institute. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/solya-manchester-02-08-2026/event/1F00646295C12538\">Ticketmaster</a>",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 32,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "keep",
+            "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
+            "risk": "geo",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "keep",
+            "plan_slot_id": "ticket_radar-03",
+            "candidate_fingerprint": "event-event-joji-solaris-tour-with-special-guest-tommy-richman-sun-16-aug-2026-multiple-times-2026-08-16-co-op-live-63e07169f118",
+            "original_url_identity": "cooplive.com/events/joji-rzp7",
+            "original_html": "• <b>JOJI SOLARIS TOUR</b> — 16 августа, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/joji-rzp7\">Co-op Live</a>",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 33,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "keep",
+            "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
+            "risk": "geo",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "keep",
+            "plan_slot_id": "ticket_radar-04",
+            "candidate_fingerprint": "event-event-the-neighbourhood-the-wourld-tour-plus-special-guests-nessa-barrett-noise-dept-tue-1-sep-2-2026-09-01-co-op-live-d28cf065b216",
+            "original_url_identity": "cooplive.com/events/the-neighbourhood-4dd3",
+            "original_html": "• <b>The Neighbourhood THE WOURLD TOUR</b> — 1 сентября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/the-neighbourhood-4dd3\">Co-op Live</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 30,
+            "passed": true,
+            "detail": "no repair requested"
+          },
+          {
+            "line_index": 31,
+            "passed": true,
+            "detail": "no repair requested"
+          },
+          {
+            "line_index": 32,
+            "passed": true,
+            "detail": "no repair requested"
+          },
+          {
+            "line_index": 33,
+            "passed": true,
+            "detail": "no repair requested"
           }
         ],
         "known_factual_error": false
       },
       {
-        "group_key": "футбол::матч манчестер сити против интера проходит в гонконге, что не соответствует географическому контракту gm.",
+        "group_key": "крупные концерты вне gm::указано неполное название события, что может ввести в заблуждение читателей.",
         "actions": [
           {
-            "line_index": 12,
-            "section": "Футбол",
-            "requested_action": "strip",
-            "reason": "Матч Манчестер Сити против Интера проходит в Гонконге, что не соответствует географическому контракту GM.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "География события не соответствует контракту раздела.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-team-predicted-vs-34384395-0b1a6168b1a3",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-team-predicted-vs-34384395",
-            "original_html": "• Манчестер Сити сыграет с Интером в предсезонном товарищеском матче в Гонконге, что станет первой игрой Энцо Марески в роли главного тренера. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-team-predicted-vs-34384395\">MEN Manchester City</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-city-shouldnt-worry-paying-34378271-96937fbcddb1",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 12,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дата события должна быть 2 августа 2026 года.",
-        "actions": [
-          {
-            "line_index": 22,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события должна быть 2 августа 2026 года.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-08",
-            "candidate_fingerprint": "event-id-jsonld-event-2d2c694af16a-4c4514024729",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
-            "original_html": "• 2 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 23,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события должна быть 2 августа 2026 года.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "weekend_activities-09",
-            "candidate_fingerprint": "event-id-jsonld-event-f209fb8a7f19-5c2d144570ab",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
-            "original_html": "• 2 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей £2.50. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
-            "model_replacement_rejected": "fact_lock: bowlee",
-            "replacement_fingerprint": "event-event-manchester-fun-puzzle-treasure-hunt-single-route-or-double-for-racing-2026-08-01-9c25736c9b1a",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 26,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события должна быть 2 августа 2026 года.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-12",
-            "candidate_fingerprint": "event-id-jsonld-event-c3a7520ac370-75f4d7a5ceac",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot",
-            "original_html": "• 2 августа в New Smithfield Market, Опеншоу, Манчестер, M11 — New Smithfield Sunday Market и автомобильная барахолка. Вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot\">New Smithfield Sunday Market</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 22,
-            "passed": true,
-            "detail": "existing fact verified"
-          },
-          {
-            "line_index": 23,
-            "passed": true,
-            "detail": "post-check passed"
-          },
-          {
-            "line_index": 26,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дата события должна быть 26 июля, а не 2 августа.",
-        "actions": [
-          {
-            "line_index": 27,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события должна быть 26 июля, а не 2 августа.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-13",
-            "candidate_fingerprint": "event-id-jsonld-event-67c0be804357-b48ce0a99391",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-            "original_html": "• 2 августа в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — автомобильная барахолка Burnage RFC. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 27,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дата события должна быть 25 июля, а не 1 августа.",
-        "actions": [
-          {
-            "line_index": 30,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события должна быть 25 июля, а не 1 августа.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "weekend_activities-16",
-            "candidate_fingerprint": "event-id-jsonld-event-2f62a8c58881-766d57c1c1a1",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
-            "original_html": "• 1 августа — автомобильная барахолка в Barton Aerodrome. Покупатели допускаются с 9:00, можно приходить с собакой. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
-            "model_replacement_rejected": "fact_lock: 25 июля, 9:00",
-            "replacement_fingerprint": "event-event-chotto-matte-s-new-terraza-weekend-brunch-2026-08-01-8dc2eca4b9c7",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 30,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::andy burnham is the mayor of greater manchester, not the prime minister.",
-        "actions": [
-          {
-            "line_index": 36,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Andy Burnham is the Mayor of Greater Manchester, not the Prime Minister.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Andy Burnham is incorrectly referred to as Prime Minister.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "city_watch-10",
-            "candidate_fingerprint": "url-business-live-co-uk-economic-development-andy-burnham-says-best-day-34346646-cc500f766044",
-            "original_url_identity": "business-live.co.uk/economic-development/andy-burnham-says-best-day-34346646",
-            "original_html": "• Премьер-министр Энди Бернхэм открыл No 10 North в Манчестере и назвал это \"лучшим днем в моей жизни\" во время своей первой встречи в новом офисе в Heron House, рядом с площадью Альберта. <a href=\"https://business-live.co.uk/economic-development/andy-burnham-says-best-day-34346646\">BusinessLive Greater Manchester</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 36,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::дата события указана неверно. в тексте указано 2 августа, но фактическая дата события 2026-08-02.",
-        "actions": [
-          {
-            "line_index": 37,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "patch",
-            "reason": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "event-event-solya-2026-08-02-manchester-the-deaf-institute-e495dc23bfa7",
-            "original_url_identity": "ticketmaster.co.uk/solya-manchester-02-08-2026/event/1F00646295C12538",
-            "original_html": "• <b>Solya</b> — 2 августа, Manchester The Deaf Institute. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/solya-manchester-02-08-2026/event/1F00646295C12538\">Ticketmaster</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 37,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "крупные концерты вне gm::уточнение названия события для соответствия фактам.",
-        "actions": [
-          {
-            "line_index": 38,
+            "line_index": 34,
             "section": "Крупные концерты вне GM",
             "requested_action": "patch",
-            "reason": "Уточнение названия события для соответствия фактам.",
+            "reason": "Указано неполное название события, что может ввести в заблуждение читателей.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Некорректное название события и отсутствие упоминания Frank Carter.",
+            "critical_problem": "Неполное название события.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
             "plan_slot_id": "outside_gm_tickets-01",
-            "candidate_fingerprint": "event-event-sex-pistols-ft-frank-carter-2026-08-01-cardiff-castle-dead9bad19ad",
-            "original_url_identity": "ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923",
-            "original_html": "• <b>SEX PISTOLS</b> — тур: 1 августа, Cardiff Castle; 2 августа, Scarborough Open Air Theatre. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923\">Ticketmaster</a>",
+            "candidate_fingerprint": "event-event-sex-pistols-ft-frank-carter-2026-08-02-scarborough-open-air-theatre-eaf283350092",
+            "original_url_identity": "ticketmaster.co.uk/sex-pistols-ft-frank-carter-scarborough-02-08-2026/event/35006378AE9C4825",
+            "original_html": "• <b>SEX PISTOLS</b> — 2 августа, Scarborough Open Air Theatre. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-scarborough-02-08-2026/event/35006378AE9C4825\">Ticketmaster</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 38,
+            "line_index": 34,
             "passed": true,
             "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "главная история дня::устранение дублирования информации о смерти рики суиндэллса",
+        "actions": [
+          {
+            "line_index": 1,
+            "section": "Главная история дня",
+            "requested_action": "patch",
+            "reason": "Устранение дублирования информации о смерти Рики Суиндэллса.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Текст не указывает, что смерть произошла на прошлой неделе, что важно для контекста.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-family-man-who-died-after-34388240-da2e48eb20ed",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/family-man-who-died-after-34388240",
+            "original_html": "<b>Рики Суиндэллс скончался после того, как его заковали в наручники полиция по вызову 999, его семья \"опустошена\", сообщает адвокат, пока продолжается расследование IOPC.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/family-man-who-died-after-34388240\">MEN</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 1,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "topic:incident:salford family of man who died after being handcuffed by police following 999 call devastated solicitor says as iopc probe continues|same story new facts|2026 08 01",
+            "visible_count": 1,
+            "passed": true
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::удаление дублирующей информации о смерти рики суиндэллса",
+        "actions": [
+          {
+            "line_index": 23,
+            "section": "Городской радар",
+            "requested_action": "strip",
+            "reason": "Удаление дублирующей информации о смерти Рики Суиндэллса.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о смерти Рики Суиндэллса в 'Главной истории дня' и 'Городском радаре'.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "city_watch-03",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c20d7pdlnxyo-b8b0b676ae02",
+            "original_url_identity": "bbc.com/news/articles/c20d7pdlnxyo",
+            "original_html": "• Смерть 28-летнего человека с аутизмом Рики Свиндэллса, который перестал дышать после того, как его заковали в наручники полицейские Greater Manchester, находится под расследованием. <a href=\"https://bbc.co.uk/news/articles/c20d7pdlnxyo\">BBC Manchester</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-next-stop-piccadilly-gardens-northern-34348709-4fc1b27b9228",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 23,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "topic:incident:salford death of autistic man handcuffed by police under investigation|same story new facts|2026 07 31",
+            "visible_count": 0,
+            "passed": true
           }
         ],
         "known_factual_error": true
       }
     ],
     "refetch": {
-      "attempted": 0,
+      "attempted": 1,
       "improved": 0,
-      "failed": 0,
+      "failed": 1,
       "empty_or_not_better": 0,
-      "skipped": 2,
+      "skipped": 1,
       "reports": [
         {
-          "fingerprint": "event-event-solya-2026-08-02-manchester-the-deaf-institute-e495dc23bfa7",
-          "title": "Solya — event 2026-08-02 — public sale 2026-03-05 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/solya-manchester-02-08-2026/event/1F00646295C12538",
-          "candidate_evidence_chars": 391
+          "fingerprint": "url-nationalrail-co-uk-status-and-disruptions-buses-replace-late-night-early-morning-transport-for-wales-trains-between-cheste-0087540c36fa",
+          "title": "Buses replace late night / early morning Transport for Wales trains between Chester and Manchester Piccadilly from Monday 3 to Friday 7 August",
+          "status": "failed",
+          "url": "https://nationalrail.co.uk/status-and-disruptions/buses-replace-late-night-early-morning-transport-for-wales-trains-between-cheste",
+          "error": "RuntimeError: HTTP 404"
         },
         {
-          "fingerprint": "event-event-sex-pistols-ft-frank-carter-2026-08-01-cardiff-castle-dead9bad19ad",
-          "title": "SEX PISTOLS FT. FRANK CARTER — event 2026-08-01 — public sale 2025-11-28 10:00",
+          "fingerprint": "event-event-sex-pistols-ft-frank-carter-2026-08-02-scarborough-open-air-theatre-eaf283350092",
+          "title": "SEX PISTOLS FT. FRANK CARTER — event 2026-08-02 — public sale 2025-11-28 10:00",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-cardiff-01-08-2026/event/1F006378B5A46923",
-          "candidate_evidence_chars": 353
+          "url": "https://ticketmaster.co.uk/sex-pistols-ft-frank-carter-scarborough-02-08-2026/event/35006378AE9C4825",
+          "candidate_evidence_chars": 389
         }
       ]
     },
-    "enrich_improved": 13,
-    "deterministic_rewrite_rejected": 2,
-    "false_positive_existing_fact": 5,
-    "deterministic_fact_lock_rejected": 3,
+    "enrich_improved": 12,
+    "no_eligible_backup": 2,
+    "deterministic_rewrite_rejected": 1,
+    "false_positive_existing_fact": 1,
+    "deterministic_rewrite_built": 3,
+    "deterministic_post_check_rejected": 3,
+    "reserve_post_check_rejected": 5,
+    "backup_chain_exhausted": 4,
+    "deterministic_fact_lock_rejected": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 40,
-      "matched_lines": 40,
+      "checked_lines": 29,
+      "matched_lines": 29,
       "applicable_lines": 3,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
@@ -1010,29 +1249,14 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 40,
-      "resolved_in_place": 38,
-      "unresolved": 2,
-      "findings": [
-        {
-          "line_index": 5,
-          "section": "Свежие новости",
-          "outcome": "unresolved",
-          "code": "language_policy_defect",
-          "severity": "warning"
-        },
-        {
-          "line_index": 25,
-          "section": "Выходные в GM",
-          "outcome": "unresolved",
-          "code": "language_policy_defect",
-          "severity": "warning"
-        }
-      ]
+      "checked_lines": 29,
+      "resolved_in_place": 29,
+      "unresolved": 0,
+      "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved"
   },
-  "notes": "Уточнение статуса Рики Свиндлса как аутиста важно для понимания контекста инцидента.; Прогноз погоды соответствует данным Met Office и контракту раздела.; Исправлены ошибки в датах и географии выборов мэра Большого Манчестера.; Повторение слова 'Metrolink' в конце строки избыточно и может быть удалено для улучшения чит",
+  "notes": "Добавление временного контекста улучшает точность и понимание ситуации.; Прогноз погоды соответствует данным Met Office и контракту раздела.; Строка о пожаре в Пик-Дистрикте нарушает географический контракт блока GM.; Ошибка в дате начала замены поездов на автобусы требует исправления.; Исправлена география матча на Ка",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
@@ -1040,84 +1264,84 @@
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "problem": "Не упомянуто, что Рики Свиндлс был аутистом, что является важной деталью в контексте инцидента.",
+        "problem": "Текст не указывает, что смерть произошла на прошлой неделе, что важно для контекста.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 5,
+        "line_index": 9,
         "section": "Свежие новости",
-        "problem": "Дата выборов указана как 1 августа 2026 года, что противоречит предыдущим строкам, где упоминается 31 июля 2026 года.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 6,
-        "section": "Свежие новости",
-        "problem": "Упоминается, что выборы мэра прошли в Trafford, что неверно, так как это выборы мэра Большого Манчестера.",
-        "risk": "geo",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 12,
-        "section": "Футбол",
-        "problem": "География события не соответствует контракту раздела.",
+        "problem": "Пик-Дистрикт не является частью Greater Manchester.",
         "risk": "geo",
         "suggested_action": "strip"
       },
       {
-        "line_index": 22,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
+        "line_index": 11,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Неправильная дата начала замены поездов на автобусы.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 23,
+        "line_index": 14,
+        "section": "Футбол",
+        "problem": "Неверная география события.",
+        "risk": "geo",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 16,
         "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
+        "problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 26,
+        "line_index": 18,
         "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
+        "problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 27,
+        "line_index": 19,
         "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
+        "problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 30,
+        "line_index": 20,
         "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
+        "problem": "Дата события указана как 2 августа, но в данных указана дата начала 26 июля.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 36,
+        "line_index": 21,
         "section": "Городской радар",
-        "problem": "Andy Burnham is incorrectly referred to as Prime Minister.",
+        "problem": "Температура не указана в тексте.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 37,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
-        "risk": "date",
+        "line_index": 34,
+        "section": "Крупные концерты вне GM",
+        "problem": "Неполное название события.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 38,
-        "section": "Крупные концерты вне GM",
-        "problem": "Некорректное название события и отсутствие упоминания Frank Carter.",
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Дублирование информации о смерти Рики Суиндэллса в 'Главной истории дня' и 'Городском радаре'.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 23,
+        "section": "Городской радар",
+        "problem": "Дублирование информации о смерти Рики Суиндэллса в 'Главной истории дня' и 'Городском радаре'.",
         "risk": "factual",
         "suggested_action": "repair"
       }
@@ -1127,115 +1351,135 @@
         "line_index": 1,
         "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• В результате инцидента с 28-летним аутистом Рики Свиндлсом, который был задержан полицией в Salford 24 июля, начато расследование. Семья сообщила, что он переживал кризис психического здоровья, и в момент прибытия полиции находился в \"значительном стрессе\". Независимый офис по поведению полиции (IOPC) изучает, насколько оправданным было применение наручников, а также действия полицейских, которые пытались \"деэскалировать\" ситуацию. Ожидаются результаты токсикологического анализа, так как первоначальная экспертиза не выявила причины смерти. BBC Manchester",
-        "reason": "Уточнение статуса Рики Свиндлса как аутиста важно для понимания контекста инцидента.",
+        "replacement_text": "• Рики Суиндэллс скончался на прошлой неделе после того, как его заковали в наручники полиция по вызову 999, его семья \"опустошена\", сообщает адвокат, пока продолжается расследование IOPC. MEN",
+        "reason": "Добавление временного контекста для точности.",
         "risk": "factual"
       },
       {
-        "line_index": 5,
+        "line_index": 9,
         "section": "Свежие новости",
-        "action": "patch",
-        "replacement_text": "• В результате выборов мэра, прошедших 31 июля 2026 года, в Большом Манчестере, Лейбористская партия одержала победу. Бев Крейг, набрав 66% голосов во втором туре, заменит Энди Бернама на посту мэра, обойдя кандидата от Reform UK Сиан Астли, которая получила 34%. Это событие знаменует собой новую фазу городской политики в регионе. MEN",
-        "reason": "Исправление даты выборов на 31 июля 2026 года.",
-        "risk": "date"
-      },
-      {
-        "line_index": 6,
-        "section": "Свежие новости",
-        "action": "patch",
-        "replacement_text": "• Вчера, 31 июля 2026 года, в Большом Манчестере прошли выборы мэра, в которых приняли участие около 170,000 избирателей. Это первая в Великобритании выборная кампания для стратегического мэра и крупнейшая по масштабам в истории страны, после того как экс-мэр Энди Бернхэм стал новым депутатом от Makerfield и премьер-министром. MEN",
-        "reason": "Исправление географической ошибки, так как выборы мэра касаются всего Большого Манчестера, а не только Trafford.",
+        "action": "strip",
+        "reason": "Пик-Дистрикт не входит в географический охват GM.",
         "risk": "geo"
       },
       {
         "line_index": 11,
         "section": "Общественный транспорт сегодня",
         "action": "patch",
-        "replacement_text": "• Metrolink (до 2 августа): трамваи не ходят по линиям Eccles, Trafford Centre и Altrincham; замещающий автобус — проверьте маршрут перед поездкой.",
-        "reason": "Повторение слова 'Metrolink' в конце строки избыточно.",
-        "risk": "format"
+        "replacement_text": "• National Rail: С понедельника, 3 августа, по пятницу, 7 августа, автобусы заменят поезда Transport for Wales на маршруте между Честером и Манчестер Пикадилли в позднее ночное и раннее утреннее время. National Rail Enquiries",
+        "reason": "Дата начала замены поездов на автобусы указана неверно. Должно быть с понедельника, 3 августа.",
+        "risk": "date"
       },
       {
-        "line_index": 12,
+        "line_index": 14,
         "section": "Футбол",
-        "action": "strip",
-        "reason": "Матч Манчестер Сити против Интера проходит в Гонконге, что не соответствует географическому контракту GM.",
+        "action": "patch",
+        "replacement_text": "• Билеты на матч Манчестер Сити против Арсенала в рамках Суперкубка Англии 16 августа 2026 года в Кардиффе доступны для покупки без сезонного билета за £199. MEN Manchester City",
+        "reason": "Указано неверное место проведения матча, который состоится в Кардиффе, а не в Greater Manchester.",
         "risk": "geo"
       },
       {
-        "line_index": 22,
+        "line_index": 16,
         "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• 2 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный. The BIG Stockport Car Boot",
-        "reason": "Дата события должна быть 2 августа 2026 года.",
+        "replacement_text": "• 26 июля в Waterside Farm, Otterspool Road, Romiley, Стокпорт, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход для покупателей бесплатный. The BIG Stockport Car Boot",
+        "reason": "Дата события должна соответствовать данным.",
         "risk": "date"
       },
       {
-        "line_index": 23,
+        "line_index": 18,
         "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• 2 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей £2.50. Bowlee Car Boot Sale",
-        "reason": "Дата события должна быть 2 августа 2026 года.",
+        "replacement_text": "• 26 июля в Bowlee Community Park, Middleton, Манчестер — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей около £2.50. Bowlee Car Boot Sale",
+        "reason": "Дата события должна соответствовать данным.",
         "risk": "date"
       },
       {
-        "line_index": 26,
+        "line_index": 19,
         "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• 2 августа в New Smithfield Market, Опеншоу, Манчестер, M11 — New Smithfield Sunday Market и автомобильная барахолка. Вход свободный. New Smithfield Sunday Market",
-        "reason": "Дата события должна быть 2 августа 2026 года.",
+        "replacement_text": "• 26 июля в New Smithfield Market, Openshaw, Манчестер, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный для покупателей. New Smithfield Sunday Market",
+        "reason": "Дата события должна соответствовать данным.",
         "risk": "date"
       },
       {
-        "line_index": 27,
+        "line_index": 20,
         "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• 26 июля в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — автомобильная барахолка Burnage RFC. Burnage RFC Car Boot Sale",
-        "reason": "Дата события должна быть 26 июля, а не 2 августа.",
+        "replacement_text": "• 26 июля в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — Burnage RFC car boot sale. На площадке: автомобильная барахолка. Burnage RFC Car Boot Sale",
+        "reason": "Дата события должна соответствовать данным.",
         "risk": "date"
       },
       {
-        "line_index": 30,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 25 июля — автомобильная барахолка в Barton Aerodrome. Покупатели допускаются с 9:00, можно приходить с собакой. Barton Aerodrome Car Boot",
-        "reason": "Дата события должна быть 25 июля, а не 1 августа.",
-        "risk": "date"
-      },
-      {
-        "line_index": 36,
+        "line_index": 21,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Энди Бернхэм открыл No 10 North в Манчестере и назвал это \"лучшим днем в моей жизни\" во время своей первой встречи в новом офисе в Heron House, рядом с площадью Альберта. BusinessLive Greater Manchester",
-        "reason": "Andy Burnham is the Mayor of Greater Manchester, not the Prime Minister.",
+        "replacement_text": "• Метеорологическая служба предупреждает о 'очень теплой и влажной' погоде с температурой до 29°C в Greater Manchester на предстоящей неделе, ожидается очередная волна жары. United Utilities призывает разумно использовать воду, но ограничений не планируется. MEN",
+        "reason": "Указание температуры необходимо для полноты информации.",
         "risk": "factual"
       },
       {
-        "line_index": 37,
+        "line_index": 30,
         "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Solya — 2 августа, Manchester The Deaf Institute. Билеты и время указаны на официальной странице. Ticketmaster",
-        "reason": "Дата события указана неверно. В тексте указано 2 августа, но фактическая дата события 2026-08-02.",
-        "risk": "date"
+        "action": "keep",
+        "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
+        "risk": "geo"
       },
       {
-        "line_index": 38,
+        "line_index": 31,
+        "section": "Билеты / Ticket Radar",
+        "action": "keep",
+        "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 32,
+        "section": "Билеты / Ticket Radar",
+        "action": "keep",
+        "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 33,
+        "section": "Билеты / Ticket Radar",
+        "action": "keep",
+        "reason": "Информация о событии соответствует данным, указано место и дата в GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 34,
         "section": "Крупные концерты вне GM",
         "action": "patch",
-        "replacement_text": "• SEX PISTOLS FT. FRANK CARTER — тур: 1 августа, Cardiff Castle; 2 августа, Scarborough Open Air Theatre. Событие проходит сегодня. Ticketmaster",
-        "reason": "Уточнение названия события для соответствия фактам.",
+        "replacement_text": "• SEX PISTOLS FT. FRANK CARTER — 2 августа, Scarborough Open Air Theatre. Событие проходит сегодня. Ticketmaster",
+        "reason": "Указано неполное название события, что может ввести в заблуждение читателей.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 1,
+        "section": "Главная история дня",
+        "action": "patch",
+        "replacement_text": "• Рики Суиндэллс скончался после того, как его заковали в наручники полиция по вызову 999, его семья \"опустошена\", сообщает адвокат. Расследование IOPC продолжается. MEN",
+        "reason": "Устранение дублирования информации о смерти Рики Суиндэллса.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 23,
+        "section": "Городской радар",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Удаление дублирующей информации о смерти Рики Суиндэллса.",
         "risk": "factual"
       }
     ],
     "warnings": [
-      "Повторение слова 'Metrolink' в конце строки избыточно и может быть удалено для улучшения читаемости.",
-      "judge reduce failed: parse_failed no parseable JSON"
+      "События в разделе 'Билеты / Ticket Radar' соответствуют географическому контракту и содержат необходимую информацию. Однако, стоит проверить, чтобы в выпуске не было доминирования билетов над основными новостями.",
+      "Отсутствие блока 'Что важно сегодня' и 'Что важно в ближайшие 7 дней' снижает полноту выпуска."
     ],
-    "notes": "Уточнение статуса Рики Свиндлса как аутиста важно для понимания контекста инцидента.; Прогноз погоды соответствует данным Met Office и контракту раздела.; Исправлены ошибки в датах и географии выборов мэра Большого Манчестера.; Повторение слова 'Metrolink' в конце строки избыточно и может быть удалено для улучшения чит",
+    "notes": "Добавление временного контекста улучшает точность и понимание ситуации.; Прогноз погоды соответствует данным Met Office и контракту раздела.; Строка о пожаре в Пик-Дистрикте нарушает географический контракт блока GM.; Ошибка в дате начала замены поездов на автобусы требует исправления.; Исправлена география матча на Ка",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "partial",
-      "chunk_count": 10,
+      "status": "ok",
+      "chunk_count": 9,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -1253,8 +1497,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2595,
-          "duration_seconds": 3.321
+          "estimated_tokens": 2579,
+          "duration_seconds": 2.162
         },
         {
           "chunk_id": "chunk-02",
@@ -1271,44 +1515,44 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2345,
-          "duration_seconds": 1.95
+          "estimated_tokens": 2320,
+          "duration_seconds": 1.157
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            10
+            9
           ],
           "sections": [
             "Свежие новости"
           ],
           "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6513,
-          "duration_seconds": 4.447
+          "estimated_tokens": 5938,
+          "duration_seconds": 2.43
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            11,
+            10,
             11
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "warn",
-          "critical_error_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
           "action_count": 1,
-          "warning_count": 1,
+          "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2321,
-          "duration_seconds": 2.37
+          "estimated_tokens": 2871,
+          "duration_seconds": 2.685
         },
         {
           "chunk_id": "chunk-05",
@@ -1325,51 +1569,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3512,
-          "duration_seconds": 1.81
+          "estimated_tokens": 3524,
+          "duration_seconds": 2.286
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
             15,
-            26
+            20
           ],
           "sections": [
             "Выходные в GM"
           ],
           "decision": "repair_required",
-          "critical_error_count": 3,
-          "action_count": 3,
+          "critical_error_count": 4,
+          "action_count": 4,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 9380,
-          "duration_seconds": 3.719
+          "estimated_tokens": 5915,
+          "duration_seconds": 4.684
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            27,
-            30
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 4605,
-          "duration_seconds": 21.59
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            31,
-            36
+            21,
+            29
           ],
           "sections": [
             "Городской радар"
@@ -1379,33 +1605,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5136,
-          "duration_seconds": 31.506
+          "estimated_tokens": 6812,
+          "duration_seconds": 23.005
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            30,
+            33
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 4,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 4281,
+          "duration_seconds": 2.654
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            37,
-            37
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2569,
-          "duration_seconds": 1.877
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            38,
-            40
+            34,
+            35
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -1415,22 +1641,22 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3642,
-          "duration_seconds": 5.074
+          "estimated_tokens": 3130,
+          "duration_seconds": 2.652
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
-        "critical_error_count": 0,
-        "action_count": 0,
-        "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 9842,
-        "duration_seconds": 26.648
+        "decision": "repair_required",
+        "critical_error_count": 2,
+        "action_count": 2,
+        "warning_count": 1,
+        "error": "",
+        "estimated_tokens": 9810,
+        "duration_seconds": 21.47
       },
       "max_workers": 3,
       "chunk_line_target": 12,
