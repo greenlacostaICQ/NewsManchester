@@ -1,73 +1,67 @@
 {
-  "status": "ok",
+  "status": "partial",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair completed with honest unresolved non-factual findings: operations=0, prose=1",
+  "reason": "pre-send repair executor applied 2 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-07-28.p0",
-  "run_date_london": "2026-08-04",
-  "pipeline_run_id": "20260804T080150+0100",
-  "digest_sha256": "246a9923ed184c7efa5e80ecc2c1647130151fdf54657e4c166b69c07e50b981",
-  "duration_seconds": 48.002,
+  "run_date_london": "2026-08-05",
+  "pipeline_run_id": "20260805T080146+0100",
+  "digest_sha256": "b45e90feab561c3d0dfeb4e1ab02e8529bdb1a38aa47ae8d62ea07bc95c8712a",
+  "duration_seconds": 72.131,
   "confidence": 0.9,
   "critical_errors": [
     {
       "line_index": 1,
       "section": "Главная история дня",
-      "problem": "Возрастной диапазон в тексте не соответствует источнику.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 6,
-      "section": "Свежие новости",
-      "problem": "A682 Woodhead Pass находится за пределами Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 19,
-      "section": "Футбол",
-      "problem": "Географическая ошибка: матч проходил в Гонконге, а не в Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 22,
-      "section": "Городской радар",
-      "problem": "Неправильное указание даты вынесения приговора.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Неправильный возрастной диапазон для бесплатного проезда.",
+      "problem": "Текст утверждает, что Александр Джон Сойое был убит в результате столкновения двух враждующих банд, но не упоминает, что он умер от множественных ножевых ранений, что является ключевой деталью.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
       "line_index": 3,
       "section": "Свежие новости",
-      "problem": "Неправильное указание статуса дела.",
-      "risk": "sensitive",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 17,
-      "section": "Футбол",
-      "problem": "Неправильная информация о контракте игрока.",
+      "problem": "Возраст жертвы указан неверно.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 22,
-      "section": "Городской радар",
-      "problem": "Неправильное указание места происшествия.",
+      "line_index": 16,
+      "section": "Футбол",
+      "problem": "География события не соответствует контракту раздела.",
       "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 21,
+      "section": "Городской радар",
+      "problem": "Неправильное описание приговора Томаса Уайта.",
+      "risk": "factual",
       "suggested_action": "repair"
+    },
+    {
+      "line_index": 24,
+      "section": "Еда, открытия и рынки",
+      "problem": "Время начала мероприятия указано неверно.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 28,
+      "section": "Билеты / Ticket Radar",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 1,
+      "section": "Главная история дня",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'stab' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "weapon_violence"
     }
   ],
   "actions": [
@@ -75,70 +69,53 @@
       "line_index": 1,
       "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• Новый мэр Greater Manchester Бев Крейг объявила о бесплатном проезде на автобусах для детей в возрасте от 11 до 16 лет с января года, что позволит семьям сэкономить около £500 на каждого ребенка в год. BBC Manchester",
-      "reason": "Возрастной диапазон в тексте должен соответствовать источнику.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 6,
-      "section": "Свежие новости",
-      "action": "strip",
-      "reason": "Woodhead Pass находится за пределами Greater Manchester, что нарушает географический контракт раздела.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 19,
-      "section": "Футбол",
-      "action": "strip",
-      "reason": "Матч проходил в Гонконге, что не соответствует географическому контракту GM.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 22,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Вынесен приговор — 60-летний Терренс Кинг приговорён к 17 годам тюремного заключения за убийство 15-летнего Девона Симмонда-Кейнса, наехав на него на автомобиле в Миддлтоне 22 июля 2026 года. ITV Granada Greater Manchester",
-      "reason": "Дата вынесения приговора указана неверно, должна быть 2026 год.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• Новый мэр Greater Manchester Бев Крейг объявила о бесплатном проезде на автобусах для детей в возрасте от 11 до 16 лет с января года, что позволит семьям сэкономить около £500 на каждого ребенка в год. BBC Manchester",
-      "reason": "Исправление возрастного диапазона для бесплатного проезда.",
+      "replacement_text": "• В Манчестере продолжается судебный процесс по делу о смерти 16-летнего Александра Джона Сойое, который умер от множественных ножевых ранений в результате столкновения двух враждующих банд. Прокуроры утверждают, что его смерть стала следствием мести за нападение на родственника члена банды M40, произошедшее ранее в тот же день. На скамье подсудимых находятся четыре человека, обвиняемых в убийстве. MEN",
+      "reason": "Добавление ключевой детали о причине смерти для точности.",
       "risk": "factual"
     },
     {
       "line_index": 3,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• 56-летний Брайан Кунлифф скончался после нападения на улице Брин в Уигане; двое мужчин арестованы по подозрению в убийстве. MEN",
-      "reason": "Уточнение статуса дела.",
-      "risk": "sensitive"
-    },
-    {
-      "line_index": 17,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Luke Shaw вошел в последний год своего контракта с Manchester United, и клуб имеет возможность продлить его на 12 месяцев. MEN Manchester United",
-      "reason": "Исправление информации о контракте игрока.",
+      "replacement_text": "• В Болтоне задержан 36-летний мужчина по подозрению в убийстве после того, как женщина в возрасте около 40 лет была найдена мёртвой в доме на улице Юэдейл. Полиция получила сообщение об атаке около 03:15 по местному времени и, прибыв на место, обнаружила жертву с серьёзными травмами. Мужчина находится под стражей, следственные действия продолжаются. BBC Manchester",
+      "reason": "Возраст жертвы должен быть исправлен на 40 лет, чтобы соответствовать источнику.",
       "risk": "factual"
     },
     {
-      "line_index": 22,
+      "line_index": 16,
+      "section": "Футбол",
+      "action": "strip",
+      "reason": "Матч Манчестер Сити против К-Лиги XI проходит в Сеуле, что не соответствует географическому контракту GM.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 21,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Вынесен приговор — 60-летний Терренс Кинг приговорён к 17 годам тюремного заключения за убийство 15-летнего Девона Симмонда-Кейнса, наехав на него на автомобиле в Манчестере 22 июля 2025 года. ITV Granada Greater Manchester",
-      "reason": "Исправление географического указания места происшествия.",
-      "risk": "geo"
+      "replacement_text": "• Сестра Томаса Уайта, который отбывает 14 лет в тюрьме по неопределённому приговору за кражу мобильного телефона, приветствует правительственный обзор \"бесчеловечных\" приговоров IPP. Томас был осуждён на минимальный срок в два года в 2012 году. BBC Manchester",
+      "reason": "Уточнение минимального срока приговора.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 24,
+      "section": "Еда, открытия и рынки",
+      "action": "patch",
+      "replacement_text": "• Сегодня, 5 августа, с 11:00 до 12:30 в Trafford Центре проходит открытие пиццерии Forbici с раздачей бесплатных пицц и турниром по игре \"камень, ножницы, бумага\". The Manc Eats",
+      "reason": "Указано неверное время начала мероприятия. Согласно источнику, мероприятие начинается в 11:00.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 28,
+      "section": "Билеты / Ticket Radar",
+      "action": "patch",
+      "replacement_text": "• Biohazard — 6 августа, Manchester Academy; цена £30.00. Билеты и время указаны на официальной странице. Manchester Academy",
+      "reason": "Дата события должна быть 6 августа 2026 года.",
+      "risk": "date"
     }
   ],
   "warnings": [
-    "Недостаточное количество элементов в секции 'Что важно сегодня'.",
-    "Отсутствие элементов в секции 'Что важно в ближайшие 7 дней'."
+    "judge reduce failed: parse_failed no parseable JSON"
   ],
   "product_completeness": {
     "block_policy_version": "2026-07-28.p0",
@@ -146,55 +123,57 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 8,
-      "Общественный транспорт сегодня": 4,
+      "Свежие новости": 9,
+      "Общественный транспорт сегодня": 2,
       "Что важно сегодня": 2,
       "Футбол": 3,
-      "Городской радар": 7,
+      "Городской радар": 5,
+      "Еда, открытия и рынки": 1,
       "IT и бизнес": 2,
-      "Business/tech события для тебя": 1
+      "Business/tech события для тебя": 1,
+      "Билеты / Ticket Radar": 4
     },
     "core_counts": {
       "Погода": 1,
       "Что важно сегодня": 2,
-      "Свежие новости": 8,
+      "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 7,
+      "Городской радар": 5,
       "Что важно в ближайшие 7 дней": 0,
-      "Билеты / Ticket Radar": 0,
+      "Билеты / Ticket Radar": 4,
       "Русскоязычные концерты и стендап UK": 0,
-      "Еда, открытия и рынки": 0,
+      "Еда, открытия и рынки": 1,
       "Business/tech события для тебя": 1,
       "Футбол": 3
     },
-    "ticket_items": 0,
+    "ticket_items": 4,
     "core_items": 23,
     "writer_quality_counts": {
-      "included_candidates": 34,
-      "rendered_candidates": 29,
+      "included_candidates": 37,
+      "rendered_candidates": 31,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 5,
-      "replaced_from_plan_backup": 0,
-      "removed_with_reason": 5
+      "dropped_low_quality": 3,
+      "replaced_from_plan_backup": 3,
+      "removed_with_reason": 3
     },
     "source_health_counts": {
       "ok": 104,
       "partial": 2,
-      "stale": 10,
-      "empty": 7,
+      "stale": 8,
+      "empty": 9,
       "failed": 1,
-      "zero_yield": 92,
+      "zero_yield": 88,
       "no_contribution_breakdown": {
         "fetch_failed": 1,
-        "all_rejected": 92,
+        "all_rejected": 88,
         "idle_no_items": 15
       },
       "zero_contribution_by_stage": {
-        "written": 52,
+        "written": 48,
         "selected": 40,
         "fetched": 1,
         "parsed": 15
@@ -204,36 +183,37 @@
     "input_alerts_before_judge": [
       "Что важно сегодня: 2 item(s), emergency floor 3",
       "Что важно в ближайшие 7 дней: 0 item(s), emergency floor 3",
-      "Билеты / Ticket Radar: 0 item(s), emergency floor 2",
       "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
-      "Еда, открытия и рынки: 0 item(s), emergency floor 3"
+      "Еда, открытия и рынки: 1 item(s), emergency floor 3"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 1 has unchecked number/date token(s): 500",
-      "patch for line 22 has unchecked number/date token(s): 15",
-      "multiple actions target line 1",
-      "patch for line 1 has unchecked number/date token(s): 500",
-      "patch for line 3 has unchecked number/date token(s): 56",
-      "patch for line 17 has unchecked number/date token(s): 12",
-      "multiple actions target line 22",
-      "patch for line 22 has unchecked number/date token(s): 15, 2025"
+      "patch for line 3 has unchecked number/date token(s): 40",
+      "patch for line 24 has unchecked number/date token(s): 11:00, 12:30"
     ],
     "can_apply_actions": true,
-    "action_count": 8
+    "action_count": 6
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 29,
-    "matched_lines": 29,
-    "applicable_lines": 4,
+    "checked_lines": 31,
+    "matched_lines": 31,
+    "applicable_lines": 2,
     "unmatched_lines": 0,
-    "critical_omission_count": 0,
-    "critical_omissions": [],
+    "critical_omission_count": 1,
+    "critical_omissions": [
+      {
+        "line_index": 1,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/teenager-died-after-suffering-multiple-34404356",
+        "concept": "weapon_violence",
+        "obligation": "who/what",
+        "source_hit": "stab"
+      }
+    ],
     "noncritical_omissions": [],
-    "recovered": 0,
+    "recovered": 1,
     "pulled_for_rework": 0,
     "still_missing": 0
   },
@@ -241,21 +221,21 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 8,
-    "attempted": 4,
-    "applied": 4,
-    "model_patch_applied": 2,
+    "requested": 6,
+    "attempted": 2,
+    "applied": 2,
+    "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 1,
-    "stripped": 1,
+    "stripped": 0,
     "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 8,
-    "resolved_in_place": 6,
+    "resolved": 6,
+    "resolved_in_place": 5,
     "resolved_by_replacement": 1,
-    "resolved_by_removal": 1,
+    "resolved_by_removal": 0,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 8,
+    "enrich_attempted": 6,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "actions": [
@@ -263,165 +243,129 @@
         "line_index": 1,
         "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Возрастной диапазон в тексте должен соответствовать источнику.",
+        "reason": "Добавление ключевой детали о причине смерти для точности.",
         "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
+        "critical_error": true,
+        "critical_problem": "Текст утверждает, что Александр Джон Сойое был убит в результате столкновения двух враждующих банд, но не упоминает, что он умер от множественных ножевых ранений, что является ключевой деталью.",
+        "completeness_concept": "weapon_violence",
         "outcome": "resolved_in_place",
         "method": "model_patch",
         "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cvg7q27qg1eo-766ee4fc0bb8",
-        "original_url_identity": "bbc.com/news/articles/cvg7q27qg1eo",
-        "original_html": "<b>Новый мэр Greater Manchester Бев Крейг объявила о бесплатном проезде на автобусах для детей в возрасте от 11 до 18 лет с января года, что позволит семьям сэкономить около £500 на каждого ребенка в год.</b> <a href=\"https://bbc.co.uk/news/articles/cvg7q27qg1eo\">BBC Manchester</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 6,
-        "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Woodhead Pass находится за пределами Greater Manchester, что нарушает географический контракт раздела.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "A682 Woodhead Pass находится за пределами Greater Manchester.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-04",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-woodhead-pass-closure-crash-live-34399278-9192ee587fff",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/woodhead-pass-closure-crash-live-34399278",
-        "original_html": "• На A682 Woodhead Pass произошла серьезная авария, в результате которой дорога закрыта. По информации от полиции Дербишира, участок от Mottram Road до Flouch останется закрытым на неопределенный срок, и водителей просят избегать этого района и выбирать альтернативные маршруты. Дорога будет закрыта всю ночь, и обновления по ситуации будут предоставлены в режиме реального времени. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/woodhead-pass-closure-crash-live-34399278\">MEN</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-urgent-appeal-blood-donors-manchester-34395719-a81a2f330f67",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 19,
-        "section": "Футбол",
-        "requested_action": "strip",
-        "reason": "Матч проходил в Гонконге, что не соответствует географическому контракту GM.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Географическая ошибка: матч проходил в Гонконге, а не в Greater Manchester.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "football-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-right-path-ryan-mcaidoo-man-34396229-901b3cb71c43",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/right-path-ryan-mcaidoo-man-34396229",
-        "original_html": "• 18-летний Ryan McAidoo произвел впечатление в предсезонном матче против Inter Milan, намекая на возможность попасть в основной состав. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/right-path-ryan-mcaidoo-man-34396229\">MEN Manchester City</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 22,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Дата вынесения приговора указана неверно, должна быть 2026 год.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-06",
-        "candidate_fingerprint": "url-itv-com-news-granada-2026-07-23-man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike-42e3c1254a82",
-        "original_url_identity": "itv.com/news/granada/2026-07-23/man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike",
-        "original_html": "• Вынесен приговор — 60-летний Терренс Кинг приговорён к 17 годам тюремного заключения за убийство 15-летнего Девона Симмонда-Кейнса, наехав на него на автомобиле в Миддлтоне 22 июля 2025 года. <a href=\"https://itv.com/news/granada/2026-07-23/man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike\">ITV Granada Greater Manchester</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "requested_action": "patch",
-        "reason": "Исправление возрастного диапазона для бесплатного проезда.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Возрастной диапазон в тексте не соответствует источнику.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cvg7q27qg1eo-766ee4fc0bb8",
-        "original_url_identity": "bbc.com/news/articles/cvg7q27qg1eo",
-        "original_html": "<b>Новый мэр Greater Manchester Бев Крейг объявила о бесплатном проезде на автобусах для детей в возрасте от 11 до 18 лет с января года, что позволит семьям сэкономить около £500 на каждого ребенка в год.</b> <a href=\"https://bbc.co.uk/news/articles/cvg7q27qg1eo\">BBC Manchester</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-teenager-died-after-suffering-multiple-34404356-0211b4e51eb3",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/teenager-died-after-suffering-multiple-34404356",
+        "original_html": "<b>В Манчестере продолжается судебный процесс по делу о смерти 16-летнего Александра Джона Сойое, который был убит в результате столкновения двух враждующих банд.</b> Прокуроры утверждают, что его смерть стала следствием мести за нападение на родственника члена банды M40, произошедшее ранее в тот же день. На скамье подсудимых находятся четыре человека, обвиняемых в убийстве. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/teenager-died-after-suffering-multiple-34404356\">MEN</a>",
         "post_check_passed": true
       },
       {
         "line_index": 3,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Уточнение статуса дела.",
-        "risk": "sensitive",
+        "reason": "Возраст жертвы должен быть исправлен на 40 лет, чтобы соответствовать источнику.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неправильное указание статуса дела.",
+        "critical_problem": "Возраст жертвы указан неверно.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
         "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-theres-kids-play-street-now-34398298-57f5d1755b57",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/theres-kids-play-street-now-34398298",
-        "original_html": "• 56-летний Брайан Кунлифф скончался после подозреваемого нападения на улице Брин в Уигане; двое мужчин арестованы по подозрению в убийстве. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/theres-kids-play-street-now-34398298\">MEN</a>",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cpvw1dlk70zo-cb9a4cba858e",
+        "original_url_identity": "bbc.com/news/articles/cpvw1dlk70zo",
+        "original_html": "• В Болтоне задержан 36-летний мужчина по подозрению в убийстве после того, как женщина в возрасте около 30 лет была найдена мёртвой в доме на улице Юэдейл. Полиция получила сообщение об атаке около 03:15 по местному времени и, прибыв на место, обнаружила жертву с серьёзными травмами. Мужчина находится под стражей, следственные действия продолжаются. <a href=\"https://bbc.co.uk/news/articles/cpvw1dlk70zo\">BBC Manchester</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 17,
+        "line_index": 16,
         "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Исправление информации о контракте игрока.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильная информация о контракте игрока.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-manchester-united-big-decision-make-34395784-c024f4de0abc",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/manchester-united-big-decision-make-34395784",
-        "original_html": "• Luke Shaw вошел в последний год своего контракта с Manchester United, и клуб не имеет возможности продлить его на 12 месяцев. <a href=\"https://manchestereveningnews.co.uk/sport/football/manchester-united-big-decision-make-34395784\">MEN Manchester United</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 22,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Исправление географического указания места происшествия.",
+        "requested_action": "strip",
+        "reason": "Матч Манчестер Сити против К-Лиги XI проходит в Сеуле, что не соответствует географическому контракту GM.",
         "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Неправильное указание даты вынесения приговора.",
+        "critical_problem": "География события не соответствует контракту раздела.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-predicted-line-up-34402930-932d09437727",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-predicted-line-up-34402930",
+        "original_html": "• Манчестер Сити сегодня сыграет против К-Лиги XI на стадионе Сангам в Сеуле, ожидается возвращение трех звезд и участие нового подписания. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-predicted-line-up-34402930\">MEN Manchester City</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-whats-on-family-kids-news-free-kelloggs-football-camp-holiday-34401096-795dda5743f9",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 21,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Уточнение минимального срока приговора.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неправильное описание приговора Томаса Уайта.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-06",
-        "candidate_fingerprint": "url-itv-com-news-granada-2026-07-23-man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike-42e3c1254a82",
-        "original_url_identity": "itv.com/news/granada/2026-07-23/man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike",
-        "original_html": "• Вынесен приговор — 60-летний Терренс Кинг приговорён к 17 годам тюремного заключения за убийство 15-летнего Девона Симмонда-Кейнса, наехав на него на автомобиле в Миддлтоне 22 июля 2025 года. <a href=\"https://itv.com/news/granada/2026-07-23/man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike\">ITV Granada Greater Manchester</a>",
+        "plan_slot_id": "city_watch-04",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c5y6lg42e04o-fee47d8f0f26",
+        "original_url_identity": "bbc.com/news/articles/c5y6lg42e04o",
+        "original_html": "• Сестра Томаса Уайта, который отбывает 14 лет в тюрьме по неопределённому приговору за кражу мобильного телефона, приветствует правительственный обзор \"бесчеловечных\" приговоров IPP. <a href=\"https://bbc.co.uk/news/articles/c5y6lg42e04o\">BBC Manchester</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 24,
+        "section": "Еда, открытия и рынки",
+        "requested_action": "patch",
+        "reason": "Указано неверное время начала мероприятия. Согласно источнику, мероприятие начинается в 11:00.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Время начала мероприятия указано неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "openings-01",
+        "candidate_fingerprint": "event-event-massive-rock-paper-scissors-tournament-with-big-pizza-prizes-takes-over-trafford-centre-th-2026-08-05-trafford-centre-a9330c234e3d",
+        "original_url_identity": "themanc.com/food-and-drink/massive-rock-paper-scissors-tournament-with-big-pizza-prizes-takes-over-trafford-centre-this-week",
+        "original_html": "• Сегодня, 5 августа,до 12:30 в Trafford Центре проходит открытие пиццерии Forbici с раздачей бесплатных пицц и турниром по игре \"камень, ножницы, бумага\". <a href=\"https://themanc.com/food-and-drink/massive-rock-paper-scissors-tournament-with-big-pizza-prizes-takes-over-trafford-centre-this-week\">The Manc Eats</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 28,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 6 августа 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "ticket_radar-01",
+        "candidate_fingerprint": "event-event-biohazard-6th-august-2026-2026-08-06-manchester-academy-2808b1d95020",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13380008/biohazard-manchester-club-academy-2026-08-06-19-30-00",
+        "original_html": "• <b>Biohazard</b> — 6 августа, Manchester Academy; цена £30.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13380008/biohazard-manchester-club-academy-2026-08-06-19-30-00\">Manchester Academy</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::возрастной диапазон в тексте должен соответствовать источнику.",
+        "group_key": "главная история дня::добавление ключевой детали о причине смерти для точности.",
         "actions": [
           {
             "line_index": 1,
             "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Возрастной диапазон в тексте должен соответствовать источнику.",
+            "reason": "Добавление ключевой детали о причине смерти для точности.",
             "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
+            "critical_error": true,
+            "critical_problem": "Текст утверждает, что Александр Джон Сойое был убит в результате столкновения двух враждующих банд, но не упоминает, что он умер от множественных ножевых ранений, что является ключевой деталью.",
+            "completeness_concept": "weapon_violence",
             "outcome": "resolved_in_place",
             "method": "model_patch",
             "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cvg7q27qg1eo-766ee4fc0bb8",
-            "original_url_identity": "bbc.com/news/articles/cvg7q27qg1eo",
-            "original_html": "<b>Новый мэр Greater Manchester Бев Крейг объявила о бесплатном проезде на автобусах для детей в возрасте от 11 до 18 лет с января года, что позволит семьям сэкономить около £500 на каждого ребенка в год.</b> <a href=\"https://bbc.co.uk/news/articles/cvg7q27qg1eo\">BBC Manchester</a>",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-teenager-died-after-suffering-multiple-34404356-0211b4e51eb3",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/teenager-died-after-suffering-multiple-34404356",
+            "original_html": "<b>В Манчестере продолжается судебный процесс по делу о смерти 16-летнего Александра Джона Сойое, который был убит в результате столкновения двух враждующих банд.</b> Прокуроры утверждают, что его смерть стала следствием мести за нападение на родственника члена банды M40, произошедшее ранее в тот же день. На скамье подсудимых находятся четыре человека, обвиняемых в убийстве. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/teenager-died-after-suffering-multiple-34404356\">MEN</a>",
             "post_check_passed": true
           }
         ],
@@ -436,31 +380,63 @@
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::woodhead pass находится за пределами greater manchester, что нарушает географический контракт раздела.",
+        "group_key": "свежие новости::возраст жертвы должен быть исправлен на 40 лет, чтобы соответствовать источнику.",
         "actions": [
           {
-            "line_index": 6,
+            "line_index": 3,
             "section": "Свежие новости",
+            "requested_action": "patch",
+            "reason": "Возраст жертвы должен быть исправлен на 40 лет, чтобы соответствовать источнику.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Возраст жертвы указан неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cpvw1dlk70zo-cb9a4cba858e",
+            "original_url_identity": "bbc.com/news/articles/cpvw1dlk70zo",
+            "original_html": "• В Болтоне задержан 36-летний мужчина по подозрению в убийстве после того, как женщина в возрасте около 30 лет была найдена мёртвой в доме на улице Юэдейл. Полиция получила сообщение об атаке около 03:15 по местному времени и, прибыв на место, обнаружила жертву с серьёзными травмами. Мужчина находится под стражей, следственные действия продолжаются. <a href=\"https://bbc.co.uk/news/articles/cpvw1dlk70zo\">BBC Manchester</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 3,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::матч манчестер сити против к-лиги xi проходит в сеуле, что не соответствует географическому контракту gm.",
+        "actions": [
+          {
+            "line_index": 16,
+            "section": "Футбол",
             "requested_action": "strip",
-            "reason": "Woodhead Pass находится за пределами Greater Manchester, что нарушает географический контракт раздела.",
+            "reason": "Матч Манчестер Сити против К-Лиги XI проходит в Сеуле, что не соответствует географическому контракту GM.",
             "risk": "geo",
             "critical_error": true,
-            "critical_problem": "A682 Woodhead Pass находится за пределами Greater Manchester.",
+            "critical_problem": "География события не соответствует контракту раздела.",
             "completeness_concept": "",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-04",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-woodhead-pass-closure-crash-live-34399278-9192ee587fff",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/woodhead-pass-closure-crash-live-34399278",
-            "original_html": "• На A682 Woodhead Pass произошла серьезная авария, в результате которой дорога закрыта. По информации от полиции Дербишира, участок от Mottram Road до Flouch останется закрытым на неопределенный срок, и водителей просят избегать этого района и выбирать альтернативные маршруты. Дорога будет закрыта всю ночь, и обновления по ситуации будут предоставлены в режиме реального времени. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/woodhead-pass-closure-crash-live-34399278\">MEN</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-urgent-appeal-blood-donors-manchester-34395719-a81a2f330f67",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-predicted-line-up-34402930-932d09437727",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-predicted-line-up-34402930",
+            "original_html": "• Манчестер Сити сегодня сыграет против К-Лиги XI на стадионе Сангам в Сеуле, ожидается возвращение трех звезд и участие нового подписания. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-predicted-line-up-34402930\">MEN Manchester City</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-whats-on-family-kids-news-free-kelloggs-football-camp-holiday-34401096-795dda5743f9",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 6,
+            "line_index": 16,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -468,56 +444,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::матч проходил в гонконге, что не соответствует географическому контракту gm.",
+        "group_key": "городской радар::уточнение минимального срока приговора.",
         "actions": [
           {
-            "line_index": 19,
-            "section": "Футбол",
-            "requested_action": "strip",
-            "reason": "Матч проходил в Гонконге, что не соответствует географическому контракту GM.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Географическая ошибка: матч проходил в Гонконге, а не в Greater Manchester.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "football-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-right-path-ryan-mcaidoo-man-34396229-901b3cb71c43",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/right-path-ryan-mcaidoo-man-34396229",
-            "original_html": "• 18-летний Ryan McAidoo произвел впечатление в предсезонном матче против Inter Milan, намекая на возможность попасть в основной состав. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/right-path-ryan-mcaidoo-man-34396229\">MEN Manchester City</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 19,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::дата вынесения приговора указана неверно, должна быть 2026 год.",
-        "actions": [
-          {
-            "line_index": 22,
+            "line_index": 21,
             "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Дата вынесения приговора указана неверно, должна быть 2026 год.",
+            "reason": "Уточнение минимального срока приговора.",
             "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
+            "critical_error": true,
+            "critical_problem": "Неправильное описание приговора Томаса Уайта.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-06",
-            "candidate_fingerprint": "url-itv-com-news-granada-2026-07-23-man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike-42e3c1254a82",
-            "original_url_identity": "itv.com/news/granada/2026-07-23/man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike",
-            "original_html": "• Вынесен приговор — 60-летний Терренс Кинг приговорён к 17 годам тюремного заключения за убийство 15-летнего Девона Симмонда-Кейнса, наехав на него на автомобиле в Миддлтоне 22 июля 2025 года. <a href=\"https://itv.com/news/granada/2026-07-23/man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike\">ITV Granada Greater Manchester</a>",
+            "plan_slot_id": "city_watch-04",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c5y6lg42e04o-fee47d8f0f26",
+            "original_url_identity": "bbc.com/news/articles/c5y6lg42e04o",
+            "original_html": "• Сестра Томаса Уайта, который отбывает 14 лет в тюрьме по неопределённому приговору за кражу мобильного телефона, приветствует правительственный обзор \"бесчеловечных\" приговоров IPP. <a href=\"https://bbc.co.uk/news/articles/c5y6lg42e04o\">BBC Manchester</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -525,7 +468,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 22,
+            "line_index": 21,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -533,54 +476,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "главная история дня::исправление возрастного диапазона для бесплатного проезда.",
+        "group_key": "еда, открытия и рынки::указано неверное время начала мероприятия. согласно источнику, мероприятие начинается в 11:00.",
         "actions": [
           {
-            "line_index": 1,
-            "section": "Главная история дня",
+            "line_index": 24,
+            "section": "Еда, открытия и рынки",
             "requested_action": "patch",
-            "reason": "Исправление возрастного диапазона для бесплатного проезда.",
+            "reason": "Указано неверное время начала мероприятия. Согласно источнику, мероприятие начинается в 11:00.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Возрастной диапазон в тексте не соответствует источнику.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cvg7q27qg1eo-766ee4fc0bb8",
-            "original_url_identity": "bbc.com/news/articles/cvg7q27qg1eo",
-            "original_html": "<b>Новый мэр Greater Manchester Бев Крейг объявила о бесплатном проезде на автобусах для детей в возрасте от 11 до 18 лет с января года, что позволит семьям сэкономить около £500 на каждого ребенка в год.</b> <a href=\"https://bbc.co.uk/news/articles/cvg7q27qg1eo\">BBC Manchester</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 1,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::уточнение статуса дела.",
-        "actions": [
-          {
-            "line_index": 3,
-            "section": "Свежие новости",
-            "requested_action": "patch",
-            "reason": "Уточнение статуса дела.",
-            "risk": "sensitive",
-            "critical_error": true,
-            "critical_problem": "Неправильное указание статуса дела.",
+            "critical_problem": "Время начала мероприятия указано неверно.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-theres-kids-play-street-now-34398298-57f5d1755b57",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/theres-kids-play-street-now-34398298",
-            "original_html": "• 56-летний Брайан Кунлифф скончался после подозреваемого нападения на улице Брин в Уигане; двое мужчин арестованы по подозрению в убийстве. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/theres-kids-play-street-now-34398298\">MEN</a>",
+            "plan_slot_id": "openings-01",
+            "candidate_fingerprint": "event-event-massive-rock-paper-scissors-tournament-with-big-pizza-prizes-takes-over-trafford-centre-th-2026-08-05-trafford-centre-a9330c234e3d",
+            "original_url_identity": "themanc.com/food-and-drink/massive-rock-paper-scissors-tournament-with-big-pizza-prizes-takes-over-trafford-centre-this-week",
+            "original_html": "• Сегодня, 5 августа,до 12:30 в Trafford Центре проходит открытие пиццерии Forbici с раздачей бесплатных пицц и турниром по игре \"камень, ножницы, бумага\". <a href=\"https://themanc.com/food-and-drink/massive-rock-paper-scissors-tournament-with-big-pizza-prizes-takes-over-trafford-centre-this-week\">The Manc Eats</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -588,7 +500,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 3,
+            "line_index": 24,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -596,23 +508,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::исправление информации о контракте игрока.",
+        "group_key": "билеты / ticket radar::дата события должна быть 6 августа 2026 года.",
         "actions": [
           {
-            "line_index": 17,
-            "section": "Футбол",
+            "line_index": 28,
+            "section": "Билеты / Ticket Radar",
             "requested_action": "patch",
-            "reason": "Исправление информации о контракте игрока.",
-            "risk": "factual",
+            "reason": "Дата события должна быть 6 августа 2026 года.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Неправильная информация о контракте игрока.",
+            "critical_problem": "Дата события указана неверно.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-manchester-united-big-decision-make-34395784-c024f4de0abc",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/manchester-united-big-decision-make-34395784",
-            "original_html": "• Luke Shaw вошел в последний год своего контракта с Manchester United, и клуб не имеет возможности продлить его на 12 месяцев. <a href=\"https://manchestereveningnews.co.uk/sport/football/manchester-united-big-decision-make-34395784\">MEN Manchester United</a>",
+            "plan_slot_id": "ticket_radar-01",
+            "candidate_fingerprint": "event-event-biohazard-6th-august-2026-2026-08-06-manchester-academy-2808b1d95020",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13380008/biohazard-manchester-club-academy-2026-08-06-19-30-00",
+            "original_html": "• <b>Biohazard</b> — 6 августа, Manchester Academy; цена £30.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13380008/biohazard-manchester-club-academy-2026-08-06-19-30-00\">Manchester Academy</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -620,39 +532,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 17,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::исправление географического указания места происшествия.",
-        "actions": [
-          {
-            "line_index": 22,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Исправление географического указания места происшествия.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Неправильное указание даты вынесения приговора.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-06",
-            "candidate_fingerprint": "url-itv-com-news-granada-2026-07-23-man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike-42e3c1254a82",
-            "original_url_identity": "itv.com/news/granada/2026-07-23/man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike",
-            "original_html": "• Вынесен приговор — 60-летний Терренс Кинг приговорён к 17 годам тюремного заключения за убийство 15-летнего Девона Симмонда-Кейнса, наехав на него на автомобиле в Миддлтоне 22 июля 2025 года. <a href=\"https://itv.com/news/granada/2026-07-23/man-jailed-for-17-years-for-murder-of-teenage-boy-on-e-bike\">ITV Granada Greater Manchester</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 22,
+            "line_index": 28,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -667,14 +547,13 @@
       "empty_or_not_better": 0,
       "skipped": 0
     },
-    "enrich_improved": 8,
-    "no_eligible_backup": 1,
+    "enrich_improved": 6,
     "false_positive_existing_fact": 4,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 28,
-      "matched_lines": 28,
-      "applicable_lines": 4,
+      "checked_lines": 31,
+      "matched_lines": 31,
+      "applicable_lines": 2,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -686,22 +565,14 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 28,
-      "resolved_in_place": 27,
-      "unresolved": 1,
-      "findings": [
-        {
-          "line_index": 8,
-          "section": "Свежие новости",
-          "outcome": "unresolved",
-          "code": "language_policy_defect",
-          "severity": "warning"
-        }
-      ]
+      "checked_lines": 31,
+      "resolved_in_place": 31,
+      "unresolved": 0,
+      "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved"
   },
-  "notes": "Возрастной диапазон в тексте был исправлен с 11-18 на 11-16 лет, чтобы соответствовать источнику.; Прогноз погоды соответствует данным Met Office и контракту раздела.; Строка о Woodhead Pass нарушает географический контракт и должна быть удалена.; Все строки соответствуют требованиям географии и содержат актуальную инф",
+  "notes": "Добавлена информация о множественных ножевых ранениях для точности описания события.; Прогноз погоды соответствует данным Met Office и контракту блока.; Исправлен возраст жертвы в строке 3 для соответствия источнику.; Обе строки соответствуют требованиям географии и содержат актуальную информацию о транспортных изменен",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
@@ -709,57 +580,43 @@
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "problem": "Возрастной диапазон в тексте не соответствует источнику.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 6,
-        "section": "Свежие новости",
-        "problem": "A682 Woodhead Pass находится за пределами Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 19,
-        "section": "Футбол",
-        "problem": "Географическая ошибка: матч проходил в Гонконге, а не в Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 22,
-        "section": "Городской радар",
-        "problem": "Неправильное указание даты вынесения приговора.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Неправильный возрастной диапазон для бесплатного проезда.",
+        "problem": "Текст утверждает, что Александр Джон Сойое был убит в результате столкновения двух враждующих банд, но не упоминает, что он умер от множественных ножевых ранений, что является ключевой деталью.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
         "line_index": 3,
         "section": "Свежие новости",
-        "problem": "Неправильное указание статуса дела.",
-        "risk": "sensitive",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "problem": "Неправильная информация о контракте игрока.",
+        "problem": "Возраст жертвы указан неверно.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 22,
-        "section": "Городской радар",
-        "problem": "Неправильное указание места происшествия.",
+        "line_index": 16,
+        "section": "Футбол",
+        "problem": "География события не соответствует контракту раздела.",
         "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 21,
+        "section": "Городской радар",
+        "problem": "Неправильное описание приговора Томаса Уайта.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 24,
+        "section": "Еда, открытия и рынки",
+        "problem": "Время начала мероприятия указано неверно.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 28,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
         "suggested_action": "repair"
       }
     ],
@@ -768,74 +625,58 @@
         "line_index": 1,
         "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• Новый мэр Greater Manchester Бев Крейг объявила о бесплатном проезде на автобусах для детей в возрасте от 11 до 16 лет с января года, что позволит семьям сэкономить около £500 на каждого ребенка в год. BBC Manchester",
-        "reason": "Возрастной диапазон в тексте должен соответствовать источнику.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 6,
-        "section": "Свежие новости",
-        "action": "strip",
-        "reason": "Woodhead Pass находится за пределами Greater Manchester, что нарушает географический контракт раздела.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 19,
-        "section": "Футбол",
-        "action": "strip",
-        "reason": "Матч проходил в Гонконге, что не соответствует географическому контракту GM.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 22,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Вынесен приговор — 60-летний Терренс Кинг приговорён к 17 годам тюремного заключения за убийство 15-летнего Девона Симмонда-Кейнса, наехав на него на автомобиле в Миддлтоне 22 июля 2026 года. ITV Granada Greater Manchester",
-        "reason": "Дата вынесения приговора указана неверно, должна быть 2026 год.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• Новый мэр Greater Manchester Бев Крейг объявила о бесплатном проезде на автобусах для детей в возрасте от 11 до 16 лет с января года, что позволит семьям сэкономить около £500 на каждого ребенка в год. BBC Manchester",
-        "reason": "Исправление возрастного диапазона для бесплатного проезда.",
+        "replacement_text": "• В Манчестере продолжается судебный процесс по делу о смерти 16-летнего Александра Джона Сойое, который умер от множественных ножевых ранений в результате столкновения двух враждующих банд. Прокуроры утверждают, что его смерть стала следствием мести за нападение на родственника члена банды M40, произошедшее ранее в тот же день. На скамье подсудимых находятся четыре человека, обвиняемых в убийстве. MEN",
+        "reason": "Добавление ключевой детали о причине смерти для точности.",
         "risk": "factual"
       },
       {
         "line_index": 3,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• 56-летний Брайан Кунлифф скончался после нападения на улице Брин в Уигане; двое мужчин арестованы по подозрению в убийстве. MEN",
-        "reason": "Уточнение статуса дела.",
-        "risk": "sensitive"
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Luke Shaw вошел в последний год своего контракта с Manchester United, и клуб имеет возможность продлить его на 12 месяцев. MEN Manchester United",
-        "reason": "Исправление информации о контракте игрока.",
+        "replacement_text": "• В Болтоне задержан 36-летний мужчина по подозрению в убийстве после того, как женщина в возрасте около 40 лет была найдена мёртвой в доме на улице Юэдейл. Полиция получила сообщение об атаке около 03:15 по местному времени и, прибыв на место, обнаружила жертву с серьёзными травмами. Мужчина находится под стражей, следственные действия продолжаются. BBC Manchester",
+        "reason": "Возраст жертвы должен быть исправлен на 40 лет, чтобы соответствовать источнику.",
         "risk": "factual"
       },
       {
-        "line_index": 22,
+        "line_index": 16,
+        "section": "Футбол",
+        "action": "strip",
+        "reason": "Матч Манчестер Сити против К-Лиги XI проходит в Сеуле, что не соответствует географическому контракту GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 21,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Вынесен приговор — 60-летний Терренс Кинг приговорён к 17 годам тюремного заключения за убийство 15-летнего Девона Симмонда-Кейнса, наехав на него на автомобиле в Манчестере 22 июля 2025 года. ITV Granada Greater Manchester",
-        "reason": "Исправление географического указания места происшествия.",
-        "risk": "geo"
+        "replacement_text": "• Сестра Томаса Уайта, который отбывает 14 лет в тюрьме по неопределённому приговору за кражу мобильного телефона, приветствует правительственный обзор \"бесчеловечных\" приговоров IPP. Томас был осуждён на минимальный срок в два года в 2012 году. BBC Manchester",
+        "reason": "Уточнение минимального срока приговора.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 24,
+        "section": "Еда, открытия и рынки",
+        "action": "patch",
+        "replacement_text": "• Сегодня, 5 августа, с 11:00 до 12:30 в Trafford Центре проходит открытие пиццерии Forbici с раздачей бесплатных пицц и турниром по игре \"камень, ножницы, бумага\". The Manc Eats",
+        "reason": "Указано неверное время начала мероприятия. Согласно источнику, мероприятие начинается в 11:00.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 28,
+        "section": "Билеты / Ticket Radar",
+        "action": "patch",
+        "replacement_text": "• Biohazard — 6 августа, Manchester Academy; цена £30.00. Билеты и время указаны на официальной странице. Manchester Academy",
+        "reason": "Дата события должна быть 6 августа 2026 года.",
+        "risk": "date"
       }
     ],
     "warnings": [
-      "Недостаточное количество элементов в секции 'Что важно сегодня'.",
-      "Отсутствие элементов в секции 'Что важно в ближайшие 7 дней'."
+      "judge reduce failed: parse_failed no parseable JSON"
     ],
-    "notes": "Возрастной диапазон в тексте был исправлен с 11-18 на 11-16 лет, чтобы соответствовать источнику.; Прогноз погоды соответствует данным Met Office и контракту раздела.; Строка о Woodhead Pass нарушает географический контракт и должна быть удалена.; Все строки соответствуют требованиям географии и содержат актуальную инф",
+    "notes": "Добавлена информация о множественных ножевых ранениях для точности описания события.; Прогноз погоды соответствует данным Met Office и контракту блока.; Исправлен возраст жертвы в строке 3 для соответствия источнику.; Обе строки соответствуют требованиям географии и содержат актуальную информацию о транспортных изменен",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "ok",
-      "chunk_count": 9,
+      "status": "partial",
+      "chunk_count": 11,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -853,8 +694,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2492,
-          "duration_seconds": 3.726
+          "estimated_tokens": 2643,
+          "duration_seconds": 4.254
         },
         {
           "chunk_id": "chunk-02",
@@ -871,15 +712,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2343,
-          "duration_seconds": 1.529
+          "estimated_tokens": 2344,
+          "duration_seconds": 2.214
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            10
+            11
           ],
           "sections": [
             "Свежие новости"
@@ -889,15 +730,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6663,
-          "duration_seconds": 3.261
+          "estimated_tokens": 6854,
+          "duration_seconds": 4.028
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            11,
-            14
+            12,
+            13
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -907,15 +748,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3856,
-          "duration_seconds": 1.464
+          "estimated_tokens": 2961,
+          "duration_seconds": 1.209
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            15,
-            16
+            14,
+            15
           ],
           "sections": [
             "Что важно сегодня"
@@ -925,15 +766,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3138,
-          "duration_seconds": 1.651
+          "estimated_tokens": 3216,
+          "duration_seconds": 1.881
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            17,
-            19
+            16,
+            18
           ],
           "sections": [
             "Футбол"
@@ -943,15 +784,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3472,
-          "duration_seconds": 2.462
+          "estimated_tokens": 3516,
+          "duration_seconds": 2.655
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            20,
-            26
+            19,
+            23
           ],
           "sections": [
             "Городской радар"
@@ -961,15 +802,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5717,
-          "duration_seconds": 2.616
+          "estimated_tokens": 4569,
+          "duration_seconds": 3.198
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            27,
-            28
+            24,
+            24
+          ],
+          "sections": [
+            "Еда, открытия и рынки"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2723,
+          "duration_seconds": 3.126
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            25,
+            26
           ],
           "sections": [
             "IT и бизнес"
@@ -979,15 +838,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3096,
-          "duration_seconds": 10.85
+          "estimated_tokens": 3049,
+          "duration_seconds": 11.803
         },
         {
-          "chunk_id": "chunk-09",
+          "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            29,
-            29
+            27,
+            27
           ],
           "sections": [
             "Business/tech события для тебя"
@@ -997,22 +856,40 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2704,
-          "duration_seconds": 3.67
+          "estimated_tokens": 2657,
+          "duration_seconds": 3.717
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            28,
+            31
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 4166,
+          "duration_seconds": 20.622
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "ok",
+        "status": "parse_failed",
         "line_range": [],
         "sections": [],
-        "decision": "repair_required",
-        "critical_error_count": 4,
-        "action_count": 4,
-        "warning_count": 2,
-        "error": "",
-        "estimated_tokens": 9445,
-        "duration_seconds": 28.903
+        "decision": "",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 0,
+        "error": "no parseable JSON",
+        "estimated_tokens": 9628,
+        "duration_seconds": 39.725
       },
       "max_workers": 3,
       "chunk_line_target": 12,
