@@ -1,67 +1,101 @@
 {
-  "status": "partial",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 2 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair completed with honest unresolved non-factual findings: operations=1, prose=0",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-07-28.p0",
-  "run_date_london": "2026-08-05",
-  "pipeline_run_id": "20260805T080146+0100",
-  "digest_sha256": "b45e90feab561c3d0dfeb4e1ab02e8529bdb1a38aa47ae8d62ea07bc95c8712a",
-  "duration_seconds": 72.131,
+  "run_date_london": "2026-08-07",
+  "pipeline_run_id": "20260807T080146+0100",
+  "digest_sha256": "4939706f5802ab9f3eb1f0f32296c0d3b78e7479f708c5f8c9782252cf949aba",
+  "duration_seconds": 119.19,
   "confidence": 0.9,
   "critical_errors": [
     {
       "line_index": 1,
       "section": "Главная история дня",
-      "problem": "Текст утверждает, что Александр Джон Сойое был убит в результате столкновения двух враждующих банд, но не упоминает, что он умер от множественных ножевых ранений, что является ключевой деталью.",
-      "risk": "factual",
+      "problem": "Текст утверждает, что Дональд МаКферсон убил свою жену, несмотря на оправдательный приговор, что может быть юридически некорректным утверждением.",
+      "risk": "legal",
       "suggested_action": "repair"
     },
     {
-      "line_index": 3,
+      "line_index": 8,
       "section": "Свежие новости",
-      "problem": "Возраст жертвы указан неверно.",
+      "problem": "Неправильное использование слова 'ударила'.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 16,
+      "line_index": 17,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Дата указана неверно. 8 августа 2026 года — это пятница, а не суббота.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 18,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Дата указана неверно. 8 августа 2026 года — это пятница, а не суббота.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 22,
       "section": "Футбол",
       "problem": "География события не соответствует контракту раздела.",
       "risk": "geo",
       "suggested_action": "strip"
     },
     {
-      "line_index": 21,
-      "section": "Городской радар",
-      "problem": "Неправильное описание приговора Томаса Уайта.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 24,
-      "section": "Еда, открытия и рынки",
-      "problem": "Время начала мероприятия указано неверно.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 28,
-      "section": "Билеты / Ticket Radar",
+      "line_index": 25,
+      "section": "Выходные в GM",
       "problem": "Дата события указана неверно.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'stab' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "weapon_violence"
+      "line_index": 29,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 32,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 33,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 35,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 37,
+      "section": "Выходные в GM",
+      "problem": "Неправильное указание места проведения мероприятия.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 42,
+      "section": "Городской радар",
+      "problem": "Неверное название университета.",
+      "risk": "factual",
+      "suggested_action": "repair"
     }
   ],
   "actions": [
@@ -69,53 +103,165 @@
       "line_index": 1,
       "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• В Манчестере продолжается судебный процесс по делу о смерти 16-летнего Александра Джона Сойое, который умер от множественных ножевых ранений в результате столкновения двух враждующих банд. Прокуроры утверждают, что его смерть стала следствием мести за нападение на родственника члена банды M40, произошедшее ранее в тот же день. На скамье подсудимых находятся четыре человека, обвиняемых в убийстве. MEN",
-      "reason": "Добавление ключевой детали о причине смерти для точности.",
+      "replacement_text": "• Коронер южного Манчестера пришел к выводу, что Дональд МаКферсон, оправданный ранее, несет ответственность за смерть своей жены Паулы Лисон в 2017 году. BBC Manchester",
+      "reason": "Уточнение формулировки, чтобы избежать юридических рисков.",
+      "risk": "legal"
+    },
+    {
+      "line_index": 8,
+      "section": "Свежие новости",
+      "action": "patch",
+      "replacement_text": "• Полиция транспорта Великобритании опубликовала изображения с камер видеонаблюдения женщины, которая, как утверждается, ударила мужчину острым предметом в лицо на поезде из Манчестера в Честер 1 августа, что привело к серьезной травме глаза. MEN",
+      "reason": "Уточнение, что это утверждение, а не установленный факт.",
       "risk": "factual"
+    },
+    {
+      "line_index": 17,
+      "section": "Общественный транспорт сегодня",
+      "action": "patch",
+      "replacement_text": "• Автобусы заменяют поезда Northern между Манчестер Пикадилли и Роуз Хилл Марпл в пятницу, 8 августа. National Rail Enquiries",
+      "reason": "Исправление даты на правильный день недели.",
+      "risk": "date"
+    },
+    {
+      "line_index": 18,
+      "section": "Общественный транспорт сегодня",
+      "action": "patch",
+      "replacement_text": "• Автобусы заменяют ранние утренние поезда Northern между Сталибриджем и Stockport в пятницу, 8 августа. National Rail Enquiries",
+      "reason": "Исправление даты на правильный день недели.",
+      "risk": "date"
+    },
+    {
+      "line_index": 22,
+      "section": "Футбол",
+      "action": "strip",
+      "reason": "Событие происходит в Гетеборге, что не соответствует географическому контракту GM.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 25,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 9 августа в Macron Stadium — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, есть туалеты. Bolton Car Boot Sale",
+      "reason": "Дата события должна быть 9 августа 2026 года.",
+      "risk": "date"
+    },
+    {
+      "line_index": 29,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 9 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход £10. The BIG Stockport Car Boot",
+      "reason": "Дата события должна быть 9 августа 2026 года.",
+      "risk": "date"
+    },
+    {
+      "line_index": 32,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 9 августа в New Smithfield Market, Openshaw, Manchester, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный. New Smithfield Sunday Market",
+      "reason": "Дата события должна быть 9 августа 2026 года.",
+      "risk": "date"
+    },
+    {
+      "line_index": 33,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 9 августа — Burnage RFC car boot sale. На площадке: автомобильная барахолка. Burnage RFC Car Boot Sale",
+      "reason": "Дата события должна быть 9 августа 2026 года.",
+      "risk": "date"
+    },
+    {
+      "line_index": 35,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 9 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка. Bowlee Car Boot Sale",
+      "reason": "Дата события должна быть 9 августа 2026 года.",
+      "risk": "date"
+    },
+    {
+      "line_index": 37,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• Orchestral Manoeuvres in the Dark выступят на открытом воздухе у Rochdale Town Hall 7 августа 2026 года. Creative Tourist Manchester",
+      "reason": "Указано неверное место проведения мероприятия. Правильное место - Rochdale Town Hall.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 42,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Университет Болтона уволил своего вице-канцлера профессора Джорджа Холмса после его приостановки в мае 2025 года из-за обвинений в финансовых злоупотреблениях. BBC Manchester",
+      "reason": "Университет неправильно назван как 'Greater Manchester', тогда как это Университет Болтона.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 47,
+      "section": "Еда, открытия и рынки",
+      "action": "strip",
+      "reason": "Информация о строительстве башни не относится к тематике еды или открытий.",
+      "risk": "format",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 49,
+      "section": "IT и бизнес",
+      "action": "patch",
+      "replacement_text": "• Агентство Edison Media назначено для поддержки маркетинга застройщика Moda в сфере аренды жилья. Prolific North Manchester",
+      "reason": "Исправление фактической ошибки в назначении роли.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 55,
+      "section": "Билеты / Ticket Radar",
+      "action": "strip",
+      "reason": "Дата события выходит за пределы текущего года, что не соответствует текущему контексту.",
+      "risk": "date",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 1,
+      "section": "Главная история дня",
+      "action": "patch",
+      "replacement_text": "• Коронер южного Манчестера пришел к выводу, что Дональд МаКферсон убил свою жену Паула Лисон в 2017 году, несмотря на его оправдательный приговор. Это вызывает вопросы о судебной системе.",
+      "reason": "Уточнение контекста для чувствительной информации.",
+      "risk": "sensitive"
     },
     {
       "line_index": 3,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• В Болтоне задержан 36-летний мужчина по подозрению в убийстве после того, как женщина в возрасте около 40 лет была найдена мёртвой в доме на улице Юэдейл. Полиция получила сообщение об атаке около 03:15 по местному времени и, прибыв на место, обнаружила жертву с серьёзными травмами. Мужчина находится под стражей, следственные действия продолжаются. BBC Manchester",
-      "reason": "Возраст жертвы должен быть исправлен на 40 лет, чтобы соответствовать источнику.",
-      "risk": "factual"
+      "replacement_text": "• В Bolton семья оплакивает 39-летнюю Эмму МаГоуэн, найденную мёртвой 4 августа. 36-летний Джозеф Уэбб обвиняется в её убийстве и остаётся под стражей.",
+      "reason": "Уточнение статуса обвинения.",
+      "risk": "sensitive"
     },
     {
-      "line_index": 16,
-      "section": "Футбол",
+      "line_index": 12,
+      "section": "Общественный транспорт сегодня",
       "action": "strip",
-      "reason": "Матч Манчестер Сити против К-Лиги XI проходит в Сеуле, что не соответствует географическому контракту GM.",
-      "risk": "geo",
-      "replacement_text": ""
+      "replacement_text": "",
+      "reason": "Удаление дублирующей информации.",
+      "risk": "format"
     },
     {
-      "line_index": 21,
-      "section": "Городской радар",
+      "line_index": 22,
+      "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Сестра Томаса Уайта, который отбывает 14 лет в тюрьме по неопределённому приговору за кражу мобильного телефона, приветствует правительственный обзор \"бесчеловечных\" приговоров IPP. Томас был осуждён на минимальный срок в два года в 2012 году. BBC Manchester",
-      "reason": "Уточнение минимального срока приговора.",
-      "risk": "factual"
+      "replacement_text": "• 7 августа 2026 года в Гетеборге шведские фанаты Манчестер Юнайтед создали 'мини Манчестер' перед предсезонным матчем против ПСЖ, который состоится 8 августа.",
+      "reason": "Корректировка даты матча.",
+      "risk": "date"
     },
     {
-      "line_index": 24,
-      "section": "Еда, открытия и рынки",
+      "line_index": 25,
+      "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• Сегодня, 5 августа, с 11:00 до 12:30 в Trafford Центре проходит открытие пиццерии Forbici с раздачей бесплатных пицц и турниром по игре \"камень, ножницы, бумага\". The Manc Eats",
-      "reason": "Указано неверное время начала мероприятия. Согласно источнику, мероприятие начинается в 11:00.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 28,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Biohazard — 6 августа, Manchester Academy; цена £30.00. Билеты и время указаны на официальной странице. Manchester Academy",
-      "reason": "Дата события должна быть 6 августа 2026 года.",
+      "replacement_text": "• 8 августа в Macron Stadium — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, есть туалеты.",
+      "reason": "Корректировка даты мероприятия.",
       "risk": "date"
     }
   ],
   "warnings": [
-    "judge reduce failed: parse_failed no parseable JSON"
+    "Некоторые секции, такие как 'Еда, открытия и рынки', имеют недостаточное количество элементов."
   ],
   "product_completeness": {
     "block_policy_version": "2026-07-28.p0",
@@ -124,96 +270,99 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 2,
-      "Что важно сегодня": 2,
+      "Общественный транспорт сегодня": 9,
+      "Что важно сегодня": 1,
       "Футбол": 3,
-      "Городской радар": 5,
+      "Выходные в GM": 14,
+      "Городской радар": 8,
       "Еда, открытия и рынки": 1,
       "IT и бизнес": 2,
       "Business/tech события для тебя": 1,
-      "Билеты / Ticket Radar": 4
+      "Дальние анонсы": 1,
+      "Билеты / Ticket Radar": 4,
+      "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 2,
+      "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 5,
+      "Городской радар": 8,
+      "Выходные в GM": 14,
       "Что важно в ближайшие 7 дней": 0,
       "Билеты / Ticket Radar": 4,
-      "Русскоязычные концерты и стендап UK": 0,
+      "Русскоязычные концерты и стендап UK": 1,
       "Еда, открытия и рынки": 1,
       "Business/tech события для тебя": 1,
       "Футбол": 3
     },
-    "ticket_items": 4,
-    "core_items": 23,
+    "ticket_items": 5,
+    "core_items": 39,
     "writer_quality_counts": {
-      "included_candidates": 37,
-      "rendered_candidates": 31,
+      "included_candidates": 60,
+      "rendered_candidates": 56,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 3,
-      "replaced_from_plan_backup": 3,
-      "removed_with_reason": 3
+      "dropped_low_quality": 4,
+      "replaced_from_plan_backup": 0,
+      "removed_with_reason": 4
     },
     "source_health_counts": {
-      "ok": 104,
+      "ok": 100,
       "partial": 2,
-      "stale": 8,
-      "empty": 9,
+      "stale": 9,
+      "empty": 13,
       "failed": 1,
-      "zero_yield": 88,
+      "zero_yield": 68,
       "no_contribution_breakdown": {
         "fetch_failed": 1,
-        "all_rejected": 88,
-        "idle_no_items": 15
+        "all_rejected": 68,
+        "idle_no_items": 19
       },
       "zero_contribution_by_stage": {
-        "written": 48,
         "selected": 40,
-        "fetched": 1,
-        "parsed": 15
+        "written": 28,
+        "parsed": 19,
+        "fetched": 1
       },
-      "weekend_source_coverage_incidents": 55
+      "weekend_source_coverage_incidents": 41
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 2 item(s), emergency floor 3",
+      "Что важно сегодня: 1 item(s), emergency floor 3",
       "Что важно в ближайшие 7 дней: 0 item(s), emergency floor 3",
-      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 1 item(s), emergency floor 3"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 3 has unchecked number/date token(s): 40",
-      "patch for line 24 has unchecked number/date token(s): 11:00, 12:30"
+      "patch for line 25 has unchecked number/date token(s): 9",
+      "patch for line 29 has unchecked number/date token(s): 9",
+      "patch for line 32 has unchecked number/date token(s): 9",
+      "patch for line 33 has unchecked number/date token(s): 9",
+      "patch for line 35 has unchecked number/date token(s): 9",
+      "patch for line 42 has unchecked number/date token(s): 2025",
+      "multiple actions target line 1",
+      "patch for line 3 has unchecked number/date token(s): 36, 39, 4",
+      "multiple actions target line 22",
+      "multiple actions target line 25"
     ],
     "can_apply_actions": true,
-    "action_count": 6
+    "action_count": 20
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 31,
-    "matched_lines": 31,
-    "applicable_lines": 2,
+    "checked_lines": 56,
+    "matched_lines": 56,
+    "applicable_lines": 3,
     "unmatched_lines": 0,
-    "critical_omission_count": 1,
-    "critical_omissions": [
-      {
-        "line_index": 1,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/teenager-died-after-suffering-multiple-34404356",
-        "concept": "weapon_violence",
-        "obligation": "who/what",
-        "source_hit": "stab"
-      }
-    ],
+    "critical_omission_count": 0,
+    "critical_omissions": [],
     "noncritical_omissions": [],
-    "recovered": 1,
+    "recovered": 0,
     "pulled_for_rework": 0,
     "still_missing": 0
   },
@@ -221,21 +370,21 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 6,
-    "attempted": 2,
-    "applied": 2,
-    "model_patch_applied": 1,
+    "requested": 20,
+    "attempted": 9,
+    "applied": 8,
+    "model_patch_applied": 3,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 1,
-    "stripped": 0,
-    "unresolved": 0,
+    "reserve_replacement_used": 2,
+    "stripped": 3,
+    "unresolved": 1,
     "blocking_unresolved": 0,
-    "resolved": 6,
-    "resolved_in_place": 5,
-    "resolved_by_replacement": 1,
-    "resolved_by_removal": 0,
-    "fact_lock_rejected": 0,
-    "enrich_attempted": 6,
+    "resolved": 14,
+    "resolved_in_place": 9,
+    "resolved_by_replacement": 2,
+    "resolved_by_removal": 3,
+    "fact_lock_rejected": 1,
+    "enrich_attempted": 20,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "actions": [
@@ -243,160 +392,417 @@
         "line_index": 1,
         "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Добавление ключевой детали о причине смерти для точности.",
+        "reason": "Уточнение формулировки, чтобы избежать юридических рисков.",
+        "risk": "legal",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "url-bbc-com-news-articles-ckg4k8751pdo-d8a5b94e333c",
+        "original_url_identity": "bbc.com/news/articles/ckg4k8751pdo",
+        "original_html": "<b>Коронер южного Манчестера пришел к выводу, что Дональд МаКферсон убил свою жену Паула Лисон в 2017 году, несмотря на его оправдательный приговор.</b> <a href=\"https://bbc.co.uk/news/articles/ckg4k8751pdo\">BBC Manchester</a>",
+        "model_replacement_rejected": "post_check: replacement drops homicide",
+        "backup_outcome": "backup_chain_exhausted",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 8,
+        "section": "Свежие новости",
+        "requested_action": "patch",
+        "reason": "Уточнение, что это утверждение, а не установленный факт.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Текст утверждает, что Александр Джон Сойое был убит в результате столкновения двух враждующих банд, но не упоминает, что он умер от множественных ножевых ранений, что является ключевой деталью.",
-        "completeness_concept": "weapon_violence",
+        "critical_problem": "Неправильное использование слова 'ударила'.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "last_24h-06",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-cctv-images-released-after-woman-34418648-e41a4b1e9793",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/cctv-images-released-after-woman-34418648",
+        "original_html": "• Полиция транспорта Великобритании опубликовала изображения с камер видеонаблюдения женщины, которая ударила мужчину острым предметом в лицо на поезде из Манчестера в Честер 1 августа, что привело к серьезной травме глаза. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/cctv-images-released-after-woman-34418648\">MEN</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 17,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "patch",
+        "reason": "Исправление даты на правильный день недели.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата указана неверно. 8 августа 2026 года — это пятница, а не суббота.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "transport-06",
+        "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-northern-buses-replace-trains-between-manchester-piccadilly-and-rose-hill-marple-3c04684d6cbd",
+        "original_url_identity": "nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-manchester-piccadilly-and-rose-hill-marple",
+        "original_html": "• Автобусы заменяют поезда Northern между Манчестер Пикадилли и Роуз Хилл Марпл в субботу, 8 августа. <a href=\"https://nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-manchester-piccadilly-and-rose-hill-marple\">National Rail Enquiries</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 18,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "patch",
+        "reason": "Исправление даты на правильный день недели.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата указана неверно. 8 августа 2026 года — это пятница, а не суббота.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "transport-07",
+        "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-buses-replace-early-morning-northern-trains-between-stalybridge-and-stockport-on-fcec72e56b14",
+        "original_url_identity": "nationalrail.co.uk/status-and-disruptions/buses-replace-early-morning-northern-trains-between-stalybridge-and-stockport-on",
+        "original_html": "• Автобусы заменяют ранние утренние поезда Northern между Сталибриджем и Stockport в субботу, 8 августа. <a href=\"https://nationalrail.co.uk/status-and-disruptions/buses-replace-early-morning-northern-trains-between-stalybridge-and-stockport-on\">National Rail Enquiries</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 22,
+        "section": "Футбол",
+        "requested_action": "strip",
+        "reason": "Событие происходит в Гетеборге, что не соответствует географическому контракту GM.",
+        "risk": "geo",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-we-created-mini-manchester-over-34414952-4caea5d1a560",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/we-created-mini-manchester-over-34414952",
+        "original_html": "• 7 августа 2026 года в Гетеборге шведские фанаты Манчестер Юнайтед создали 'мини Манчестер' перед предсезонным матчем против ПСЖ, который состоится в субботу. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/we-created-mini-manchester-over-34414952\">MEN Manchester United</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-prepared-sign-another-34413659-3a6b0d079055",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 25,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 9 августа 2026 года.",
+        "risk": "date",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-01",
+        "candidate_fingerprint": "event-id-jsonld-event-4f59eaacfb1a-45f9dc287508",
+        "original_url_identity": "carbootdirectory.co.uk/listings/bolton-car-boot",
+        "original_html": "• 9 августа в Macron Stadium — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, есть туалеты. <a href=\"https://carbootdirectory.co.uk/listings/bolton-car-boot\">Bolton Car Boot Sale</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 29,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 9 августа 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-05",
+        "candidate_fingerprint": "event-id-jsonld-event-b192150523e9-545b9ae640b8",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
+        "original_html": "• 9 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход £10. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 32,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 9 августа 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-08",
+        "candidate_fingerprint": "event-id-jsonld-event-3a7f23502846-96f08b870ff9",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot",
+        "original_html": "• 9 августа в New Smithfield Market, Openshaw, Manchester, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot\">New Smithfield Sunday Market</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 33,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 9 августа 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-09",
+        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-08-02-burnage-rfc-a06cea26e5fd",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+        "original_html": "• 9 августа — Burnage RFC car boot sale. На площадке: автомобильная барахолка. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 35,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 9 августа 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "weekend_activities-11",
+        "candidate_fingerprint": "event-id-jsonld-event-b8fef6f072fc-0a8b04556cce",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
+        "original_html": "• 9 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
+        "model_replacement_rejected": "fact_lock: bowlee",
+        "replacement_fingerprint": "event-event-the-pop-culture-roots-of-manchesterism-pints-of-knowledge-2026-08-08-fairfield-social-club-1ffc253ce00d",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 37,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Указано неверное место проведения мероприятия. Правильное место - Rochdale Town Hall.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неправильное указание места проведения мероприятия.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-13",
+        "candidate_fingerprint": "event-event-orchestral-manoeuvres-in-the-dark-at-rochdale-town-hall-square-2026-08-07-rochdale-town-hall-f172ce916725",
+        "original_url_identity": "creativetourist.com/event/orchestral-manoeuvres-in-the-dark",
+        "original_html": "• Orchestral Manoeuvres in the Dark выступят на открытом воздухе в Rochdale Town Hall Square 7 августа 2026 года. <a href=\"https://creativetourist.com/event/orchestral-manoeuvres-in-the-dark\">Creative Tourist Manchester</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 42,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Университет неправильно назван как 'Greater Manchester', тогда как это Университет Болтона.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неверное название университета.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "city_watch-06",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c1j19yx4026o-a7f275cb2e07",
+        "original_url_identity": "bbc.com/news/articles/c1j19yx4026o",
+        "original_html": "• Университет Greater Manchester уволил своего вице-канцлера профессора Джорджа Холмса после его приостановки в мае 2025 года из-за обвинений в финансовых злоупотреблениях. <a href=\"https://bbc.co.uk/news/articles/c1j19yx4026o\">BBC Manchester</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 47,
+        "section": "Еда, открытия и рынки",
+        "requested_action": "strip",
+        "reason": "Информация о строительстве башни не относится к тематике еды или открытий.",
+        "risk": "format",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "openings-01",
+        "candidate_fingerprint": "url-themanc-com-food-and-drink-plans-for-apartment-tower-next-to-britons-protection-pub-flats-scrapped-3dd80406604e",
+        "original_url_identity": "themanc.com/food-and-drink/plans-for-apartment-tower-next-to-britons-protection-pub-flats-scrapped",
+        "original_html": "• Планы по строительству 26-этажной башни рядом с историческим пабом Britons Protection отменены после того, как застройщик отозвал заявку. <a href=\"https://themanc.com/food-and-drink/plans-for-apartment-tower-next-to-britons-protection-pub-flats-scrapped\">The Manc Eats</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "unrenderable_line",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 49,
+        "section": "IT и бизнес",
+        "requested_action": "patch",
+        "reason": "Исправление фактической ошибки в назначении роли.",
+        "risk": "factual",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "tech_business-02",
+        "candidate_fingerprint": "url-prolificnorth-co-uk-news-edison-media-and-moda-form-strategic-partnership-to-support-growth-across-rental-living-portfolio-50c08621f87c",
+        "original_url_identity": "prolificnorth.co.uk/news/edison-media-and-moda-form-strategic-partnership-to-support-growth-across-rental-living-portfolio",
+        "original_html": "• Агентство Edison Media назначено застройщиком Moda для поддержки маркетинга в сфере аренды жилья. <a href=\"https://prolificnorth.co.uk/news/edison-media-and-moda-form-strategic-partnership-to-support-growth-across-rental-living-portfolio\">Prolific North Manchester</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 55,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "strip",
+        "reason": "Дата события выходит за пределы текущего года, что не соответствует текущему контексту.",
+        "risk": "date",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "ticket_radar-04",
+        "candidate_fingerprint": "event-event-the-reggae-orchestra-8th-may-2027-2027-05-08-manchester-academy-689f637a4d04",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13381109/the-reggae-orchestra-manchester-academy-2-2027-05-08-19-00-00",
+        "original_html": "• <b>The Reggae Orchestra</b> — 8 мая, Manchester Academy; цена £18.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381109/the-reggae-orchestra-manchester-academy-2-2027-05-08-19-00-00\">Manchester Academy</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "unrenderable_line",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 1,
+        "section": "Главная история дня",
+        "requested_action": "patch",
+        "reason": "Уточнение контекста для чувствительной информации.",
+        "risk": "sensitive",
+        "critical_error": true,
+        "critical_problem": "Текст утверждает, что Дональд МаКферсон убил свою жену, несмотря на оправдательный приговор, что может быть юридически некорректным утверждением.",
+        "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
         "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-teenager-died-after-suffering-multiple-34404356-0211b4e51eb3",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/teenager-died-after-suffering-multiple-34404356",
-        "original_html": "<b>В Манчестере продолжается судебный процесс по делу о смерти 16-летнего Александра Джона Сойое, который был убит в результате столкновения двух враждующих банд.</b> Прокуроры утверждают, что его смерть стала следствием мести за нападение на родственника члена банды M40, произошедшее ранее в тот же день. На скамье подсудимых находятся четыре человека, обвиняемых в убийстве. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/teenager-died-after-suffering-multiple-34404356\">MEN</a>",
+        "candidate_fingerprint": "url-bbc-com-news-articles-ckg4k8751pdo-d8a5b94e333c",
+        "original_url_identity": "bbc.com/news/articles/ckg4k8751pdo",
+        "original_html": "<b>Коронер южного Манчестера пришел к выводу, что Дональд МаКферсон убил свою жену Паула Лисон в 2017 году, несмотря на его оправдательный приговор.</b> <a href=\"https://bbc.co.uk/news/articles/ckg4k8751pdo\">BBC Manchester</a>",
         "post_check_passed": true
       },
       {
         "line_index": 3,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Возраст жертвы должен быть исправлен на 40 лет, чтобы соответствовать источнику.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Возраст жертвы указан неверно.",
+        "reason": "Уточнение статуса обвинения.",
+        "risk": "sensitive",
+        "critical_error": false,
+        "critical_problem": "",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
+        "method": "model_patch",
         "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cpvw1dlk70zo-cb9a4cba858e",
-        "original_url_identity": "bbc.com/news/articles/cpvw1dlk70zo",
-        "original_html": "• В Болтоне задержан 36-летний мужчина по подозрению в убийстве после того, как женщина в возрасте около 30 лет была найдена мёртвой в доме на улице Юэдейл. Полиция получила сообщение об атаке около 03:15 по местному времени и, прибыв на место, обнаружила жертву с серьёзными травмами. Мужчина находится под стражей, следственные действия продолжаются. <a href=\"https://bbc.co.uk/news/articles/cpvw1dlk70zo\">BBC Manchester</a>",
-        "verification": "structured fact already rendered correctly",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-heartbroken-family-pays-tribute-mum-34415968-1ba52b2688f9",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/heartbroken-family-pays-tribute-mum-34415968",
+        "original_html": "• В Bolton семья оплакивает 39-летнюю Эмму МаГоуэн, найденную мёртвой 4 августа. В это время 36-летний Джозеф Уэбб был обвинён в её убийстве и остаётся под стражей. Родные Эммы описали её как \"любимую дочь и обожаемую мать четырёх детей\", добавив, что \"наши сердца разбиты, и мы будем скучать по тебе вечно\". <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/heartbroken-family-pays-tribute-mum-34415968\">MEN</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 16,
-        "section": "Футбол",
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
         "requested_action": "strip",
-        "reason": "Матч Манчестер Сити против К-Лиги XI проходит в Сеуле, что не соответствует географическому контракту GM.",
-        "risk": "geo",
+        "reason": "Удаление дублирующей информации.",
+        "risk": "format",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "transport-01",
+        "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-whitworth-street-manchester-bus-stop-closure-70453af3eaea",
+        "original_url_identity": "tfgm.com/travel-updates/travel-alerts/whitworth-street-manchester-bus-stop-closure",
+        "original_html": "• Автобусы: остановка автобуса на Уитворт-стрит напротив Театра Палас закрыта из-за строительных работ; пассажиры должны использовать остановки до или после закрытой. <a href=\"https://tfgm.com/travel-updates/travel-alerts/whitworth-street-manchester-bus-stop-closure\">TfGM</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "duplicate_after_plan",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 22,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Корректировка даты матча.",
+        "risk": "date",
         "critical_error": true,
         "critical_problem": "География события не соответствует контракту раздела.",
         "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
         "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-predicted-line-up-34402930-932d09437727",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-predicted-line-up-34402930",
-        "original_html": "• Манчестер Сити сегодня сыграет против К-Лиги XI на стадионе Сангам в Сеуле, ожидается возвращение трех звезд и участие нового подписания. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-predicted-line-up-34402930\">MEN Manchester City</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-whats-on-family-kids-news-free-kelloggs-football-camp-holiday-34401096-795dda5743f9",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 21,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Уточнение минимального срока приговора.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильное описание приговора Томаса Уайта.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-04",
-        "candidate_fingerprint": "url-bbc-com-news-articles-c5y6lg42e04o-fee47d8f0f26",
-        "original_url_identity": "bbc.com/news/articles/c5y6lg42e04o",
-        "original_html": "• Сестра Томаса Уайта, который отбывает 14 лет в тюрьме по неопределённому приговору за кражу мобильного телефона, приветствует правительственный обзор \"бесчеловечных\" приговоров IPP. <a href=\"https://bbc.co.uk/news/articles/c5y6lg42e04o\">BBC Manchester</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-we-created-mini-manchester-over-34414952-4caea5d1a560",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/we-created-mini-manchester-over-34414952",
+        "original_html": "• 7 августа 2026 года в Гетеборге шведские фанаты Манчестер Юнайтед создали 'мини Манчестер' перед предсезонным матчем против ПСЖ, который состоится в субботу. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/we-created-mini-manchester-over-34414952\">MEN Manchester United</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 24,
-        "section": "Еда, открытия и рынки",
+        "line_index": 25,
+        "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Указано неверное время начала мероприятия. Согласно источнику, мероприятие начинается в 11:00.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Время начала мероприятия указано неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "openings-01",
-        "candidate_fingerprint": "event-event-massive-rock-paper-scissors-tournament-with-big-pizza-prizes-takes-over-trafford-centre-th-2026-08-05-trafford-centre-a9330c234e3d",
-        "original_url_identity": "themanc.com/food-and-drink/massive-rock-paper-scissors-tournament-with-big-pizza-prizes-takes-over-trafford-centre-this-week",
-        "original_html": "• Сегодня, 5 августа,до 12:30 в Trafford Центре проходит открытие пиццерии Forbici с раздачей бесплатных пицц и турниром по игре \"камень, ножницы, бумага\". <a href=\"https://themanc.com/food-and-drink/massive-rock-paper-scissors-tournament-with-big-pizza-prizes-takes-over-trafford-centre-this-week\">The Manc Eats</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 28,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Дата события должна быть 6 августа 2026 года.",
+        "reason": "Корректировка даты мероприятия.",
         "risk": "date",
         "critical_error": true,
         "critical_problem": "Дата события указана неверно.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "ticket_radar-01",
-        "candidate_fingerprint": "event-event-biohazard-6th-august-2026-2026-08-06-manchester-academy-2808b1d95020",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13380008/biohazard-manchester-club-academy-2026-08-06-19-30-00",
-        "original_html": "• <b>Biohazard</b> — 6 августа, Manchester Academy; цена £30.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13380008/biohazard-manchester-club-academy-2026-08-06-19-30-00\">Manchester Academy</a>",
+        "plan_slot_id": "weekend_activities-01",
+        "candidate_fingerprint": "event-id-jsonld-event-4f59eaacfb1a-45f9dc287508",
+        "original_url_identity": "carbootdirectory.co.uk/listings/bolton-car-boot",
+        "original_html": "• 9 августа в Macron Stadium — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, есть туалеты. <a href=\"https://carbootdirectory.co.uk/listings/bolton-car-boot\">Bolton Car Boot Sale</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::добавление ключевой детали о причине смерти для точности.",
+        "group_key": "главная история дня::уточнение формулировки, чтобы избежать юридических рисков.",
         "actions": [
           {
             "line_index": 1,
             "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Добавление ключевой детали о причине смерти для точности.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Текст утверждает, что Александр Джон Сойое был убит в результате столкновения двух враждующих банд, но не упоминает, что он умер от множественных ножевых ранений, что является ключевой деталью.",
-            "completeness_concept": "weapon_violence",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
+            "reason": "Уточнение формулировки, чтобы избежать юридических рисков.",
+            "risk": "legal",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "",
             "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-teenager-died-after-suffering-multiple-34404356-0211b4e51eb3",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/teenager-died-after-suffering-multiple-34404356",
-            "original_html": "<b>В Манчестере продолжается судебный процесс по делу о смерти 16-летнего Александра Джона Сойое, который был убит в результате столкновения двух враждующих банд.</b> Прокуроры утверждают, что его смерть стала следствием мести за нападение на родственника члена банды M40, произошедшее ранее в тот же день. На скамье подсудимых находятся четыре человека, обвиняемых в убийстве. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/teenager-died-after-suffering-multiple-34404356\">MEN</a>",
-            "post_check_passed": true
+            "candidate_fingerprint": "url-bbc-com-news-articles-ckg4k8751pdo-d8a5b94e333c",
+            "original_url_identity": "bbc.com/news/articles/ckg4k8751pdo",
+            "original_html": "<b>Коронер южного Манчестера пришел к выводу, что Дональд МаКферсон убил свою жену Паула Лисон в 2017 году, несмотря на его оправдательный приговор.</b> <a href=\"https://bbc.co.uk/news/articles/ckg4k8751pdo\">BBC Manchester</a>",
+            "model_replacement_rejected": "post_check: replacement drops homicide",
+            "backup_outcome": "backup_chain_exhausted",
+            "post_check_passed": false
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "unresolved",
         "post_checks": [
           {
             "line_index": 1,
-            "passed": true,
+            "passed": false,
             "detail": "post-check passed"
           }
         ],
-        "known_factual_error": true
+        "known_factual_error": false
       },
       {
-        "group_key": "свежие новости::возраст жертвы должен быть исправлен на 40 лет, чтобы соответствовать источнику.",
+        "group_key": "свежие новости::уточнение, что это утверждение, а не установленный факт.",
         "actions": [
           {
-            "line_index": 3,
+            "line_index": 8,
             "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Возраст жертвы должен быть исправлен на 40 лет, чтобы соответствовать источнику.",
+            "reason": "Уточнение, что это утверждение, а не установленный факт.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Возраст жертвы указан неверно.",
+            "critical_problem": "Неправильное использование слова 'ударила'.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cpvw1dlk70zo-cb9a4cba858e",
-            "original_url_identity": "bbc.com/news/articles/cpvw1dlk70zo",
-            "original_html": "• В Болтоне задержан 36-летний мужчина по подозрению в убийстве после того, как женщина в возрасте около 30 лет была найдена мёртвой в доме на улице Юэдейл. Полиция получила сообщение об атаке около 03:15 по местному времени и, прибыв на место, обнаружила жертву с серьёзными травмами. Мужчина находится под стражей, следственные действия продолжаются. <a href=\"https://bbc.co.uk/news/articles/cpvw1dlk70zo\">BBC Manchester</a>",
+            "plan_slot_id": "last_24h-06",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-cctv-images-released-after-woman-34418648-e41a4b1e9793",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/cctv-images-released-after-woman-34418648",
+            "original_html": "• Полиция транспорта Великобритании опубликовала изображения с камер видеонаблюдения женщины, которая ударила мужчину острым предметом в лицо на поезде из Манчестера в Честер 1 августа, что привело к серьезной травме глаза. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/cctv-images-released-after-woman-34418648\">MEN</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -404,7 +810,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 3,
+            "line_index": 8,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -412,31 +818,211 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::матч манчестер сити против к-лиги xi проходит в сеуле, что не соответствует географическому контракту gm.",
+        "group_key": "общественный транспорт сегодня::исправление даты на правильный день недели.",
         "actions": [
           {
-            "line_index": 16,
+            "line_index": 17,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "patch",
+            "reason": "Исправление даты на правильный день недели.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата указана неверно. 8 августа 2026 года — это пятница, а не суббота.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "transport-06",
+            "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-northern-buses-replace-trains-between-manchester-piccadilly-and-rose-hill-marple-3c04684d6cbd",
+            "original_url_identity": "nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-manchester-piccadilly-and-rose-hill-marple",
+            "original_html": "• Автобусы заменяют поезда Northern между Манчестер Пикадилли и Роуз Хилл Марпл в субботу, 8 августа. <a href=\"https://nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-manchester-piccadilly-and-rose-hill-marple\">National Rail Enquiries</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 18,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "patch",
+            "reason": "Исправление даты на правильный день недели.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата указана неверно. 8 августа 2026 года — это пятница, а не суббота.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "transport-07",
+            "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-buses-replace-early-morning-northern-trains-between-stalybridge-and-stockport-on-fcec72e56b14",
+            "original_url_identity": "nationalrail.co.uk/status-and-disruptions/buses-replace-early-morning-northern-trains-between-stalybridge-and-stockport-on",
+            "original_html": "• Автобусы заменяют ранние утренние поезда Northern между Сталибриджем и Stockport в субботу, 8 августа. <a href=\"https://nationalrail.co.uk/status-and-disruptions/buses-replace-early-morning-northern-trains-between-stalybridge-and-stockport-on\">National Rail Enquiries</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 17,
+            "passed": true,
+            "detail": "existing fact verified"
+          },
+          {
+            "line_index": 18,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::событие происходит в гетеборге, что не соответствует географическому контракту gm.",
+        "actions": [
+          {
+            "line_index": 22,
             "section": "Футбол",
             "requested_action": "strip",
-            "reason": "Матч Манчестер Сити против К-Лиги XI проходит в Сеуле, что не соответствует географическому контракту GM.",
+            "reason": "Событие происходит в Гетеборге, что не соответствует географическому контракту GM.",
             "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "География события не соответствует контракту раздела.",
+            "critical_error": false,
+            "critical_problem": "",
             "completeness_concept": "",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
             "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-predicted-line-up-34402930-932d09437727",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-predicted-line-up-34402930",
-            "original_html": "• Манчестер Сити сегодня сыграет против К-Лиги XI на стадионе Сангам в Сеуле, ожидается возвращение трех звезд и участие нового подписания. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-predicted-line-up-34402930\">MEN Manchester City</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-whats-on-family-kids-news-free-kelloggs-football-camp-holiday-34401096-795dda5743f9",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-we-created-mini-manchester-over-34414952-4caea5d1a560",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/we-created-mini-manchester-over-34414952",
+            "original_html": "• 7 августа 2026 года в Гетеборге шведские фанаты Манчестер Юнайтед создали 'мини Манчестер' перед предсезонным матчем против ПСЖ, который состоится в субботу. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/we-created-mini-manchester-over-34414952\">MEN Manchester United</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-prepared-sign-another-34413659-3a6b0d079055",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 16,
+            "line_index": 22,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "выходные в gm::дата события должна быть 9 августа 2026 года.",
+        "actions": [
+          {
+            "line_index": 25,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 9 августа 2026 года.",
+            "risk": "date",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-01",
+            "candidate_fingerprint": "event-id-jsonld-event-4f59eaacfb1a-45f9dc287508",
+            "original_url_identity": "carbootdirectory.co.uk/listings/bolton-car-boot",
+            "original_html": "• 9 августа в Macron Stadium — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, есть туалеты. <a href=\"https://carbootdirectory.co.uk/listings/bolton-car-boot\">Bolton Car Boot Sale</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 29,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 9 августа 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-05",
+            "candidate_fingerprint": "event-id-jsonld-event-b192150523e9-545b9ae640b8",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
+            "original_html": "• 9 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход £10. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 32,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 9 августа 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-08",
+            "candidate_fingerprint": "event-id-jsonld-event-3a7f23502846-96f08b870ff9",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot",
+            "original_html": "• 9 августа в New Smithfield Market, Openshaw, Manchester, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot\">New Smithfield Sunday Market</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 33,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 9 августа 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-09",
+            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-08-02-burnage-rfc-a06cea26e5fd",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+            "original_html": "• 9 августа — Burnage RFC car boot sale. На площадке: автомобильная барахолка. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 35,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 9 августа 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "weekend_activities-11",
+            "candidate_fingerprint": "event-id-jsonld-event-b8fef6f072fc-0a8b04556cce",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
+            "original_html": "• 9 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
+            "model_replacement_rejected": "fact_lock: bowlee",
+            "replacement_fingerprint": "event-event-the-pop-culture-roots-of-manchesterism-pints-of-knowledge-2026-08-08-fairfield-social-club-1ffc253ce00d",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 25,
+            "passed": true,
+            "detail": "existing fact verified"
+          },
+          {
+            "line_index": 29,
+            "passed": true,
+            "detail": "existing fact verified"
+          },
+          {
+            "line_index": 32,
+            "passed": true,
+            "detail": "existing fact verified"
+          },
+          {
+            "line_index": 33,
+            "passed": true,
+            "detail": "existing fact verified"
+          },
+          {
+            "line_index": 35,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -444,23 +1030,55 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::уточнение минимального срока приговора.",
+        "group_key": "выходные в gm::указано неверное место проведения мероприятия. правильное место - rochdale town hall.",
         "actions": [
           {
-            "line_index": 21,
+            "line_index": 37,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Указано неверное место проведения мероприятия. Правильное место - Rochdale Town Hall.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильное указание места проведения мероприятия.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-13",
+            "candidate_fingerprint": "event-event-orchestral-manoeuvres-in-the-dark-at-rochdale-town-hall-square-2026-08-07-rochdale-town-hall-f172ce916725",
+            "original_url_identity": "creativetourist.com/event/orchestral-manoeuvres-in-the-dark",
+            "original_html": "• Orchestral Manoeuvres in the Dark выступят на открытом воздухе в Rochdale Town Hall Square 7 августа 2026 года. <a href=\"https://creativetourist.com/event/orchestral-manoeuvres-in-the-dark\">Creative Tourist Manchester</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 37,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::университет неправильно назван как 'greater manchester', тогда как это университет болтона.",
+        "actions": [
+          {
+            "line_index": 42,
             "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Уточнение минимального срока приговора.",
+            "reason": "Университет неправильно назван как 'Greater Manchester', тогда как это Университет Болтона.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неправильное описание приговора Томаса Уайта.",
+            "critical_problem": "Неверное название университета.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-04",
-            "candidate_fingerprint": "url-bbc-com-news-articles-c5y6lg42e04o-fee47d8f0f26",
-            "original_url_identity": "bbc.com/news/articles/c5y6lg42e04o",
-            "original_html": "• Сестра Томаса Уайта, который отбывает 14 лет в тюрьме по неопределённому приговору за кражу мобильного телефона, приветствует правительственный обзор \"бесчеловечных\" приговоров IPP. <a href=\"https://bbc.co.uk/news/articles/c5y6lg42e04o\">BBC Manchester</a>",
+            "plan_slot_id": "city_watch-06",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c1j19yx4026o-a7f275cb2e07",
+            "original_url_identity": "bbc.com/news/articles/c1j19yx4026o",
+            "original_html": "• Университет Greater Manchester уволил своего вице-канцлера профессора Джорджа Холмса после его приостановки в мае 2025 года из-за обвинений в финансовых злоупотреблениях. <a href=\"https://bbc.co.uk/news/articles/c1j19yx4026o\">BBC Manchester</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -468,7 +1086,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 21,
+            "line_index": 42,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -476,23 +1094,221 @@
         "known_factual_error": true
       },
       {
-        "group_key": "еда, открытия и рынки::указано неверное время начала мероприятия. согласно источнику, мероприятие начинается в 11:00.",
+        "group_key": "еда, открытия и рынки::информация о строительстве башни не относится к тематике еды или открытий.",
         "actions": [
           {
-            "line_index": 24,
+            "line_index": 47,
             "section": "Еда, открытия и рынки",
+            "requested_action": "strip",
+            "reason": "Информация о строительстве башни не относится к тематике еды или открытий.",
+            "risk": "format",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "openings-01",
+            "candidate_fingerprint": "url-themanc-com-food-and-drink-plans-for-apartment-tower-next-to-britons-protection-pub-flats-scrapped-3dd80406604e",
+            "original_url_identity": "themanc.com/food-and-drink/plans-for-apartment-tower-next-to-britons-protection-pub-flats-scrapped",
+            "original_html": "• Планы по строительству 26-этажной башни рядом с историческим пабом Britons Protection отменены после того, как застройщик отозвал заявку. <a href=\"https://themanc.com/food-and-drink/plans-for-apartment-tower-next-to-britons-protection-pub-flats-scrapped\">The Manc Eats</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "unrenderable_line",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 47,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "it и бизнес::исправление фактической ошибки в назначении роли.",
+        "actions": [
+          {
+            "line_index": 49,
+            "section": "IT и бизнес",
             "requested_action": "patch",
-            "reason": "Указано неверное время начала мероприятия. Согласно источнику, мероприятие начинается в 11:00.",
+            "reason": "Исправление фактической ошибки в назначении роли.",
             "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "tech_business-02",
+            "candidate_fingerprint": "url-prolificnorth-co-uk-news-edison-media-and-moda-form-strategic-partnership-to-support-growth-across-rental-living-portfolio-50c08621f87c",
+            "original_url_identity": "prolificnorth.co.uk/news/edison-media-and-moda-form-strategic-partnership-to-support-growth-across-rental-living-portfolio",
+            "original_html": "• Агентство Edison Media назначено застройщиком Moda для поддержки маркетинга в сфере аренды жилья. <a href=\"https://prolificnorth.co.uk/news/edison-media-and-moda-form-strategic-partnership-to-support-growth-across-rental-living-portfolio\">Prolific North Manchester</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 49,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::дата события выходит за пределы текущего года, что не соответствует текущему контексту.",
+        "actions": [
+          {
+            "line_index": 55,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "strip",
+            "reason": "Дата события выходит за пределы текущего года, что не соответствует текущему контексту.",
+            "risk": "date",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "ticket_radar-04",
+            "candidate_fingerprint": "event-event-the-reggae-orchestra-8th-may-2027-2027-05-08-manchester-academy-689f637a4d04",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13381109/the-reggae-orchestra-manchester-academy-2-2027-05-08-19-00-00",
+            "original_html": "• <b>The Reggae Orchestra</b> — 8 мая, Manchester Academy; цена £18.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381109/the-reggae-orchestra-manchester-academy-2-2027-05-08-19-00-00\">Manchester Academy</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "unrenderable_line",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 55,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "главная история дня::уточнение контекста для чувствительной информации.",
+        "actions": [
+          {
+            "line_index": 1,
+            "section": "Главная история дня",
+            "requested_action": "patch",
+            "reason": "Уточнение контекста для чувствительной информации.",
+            "risk": "sensitive",
             "critical_error": true,
-            "critical_problem": "Время начала мероприятия указано неверно.",
+            "critical_problem": "Текст утверждает, что Дональд МаКферсон убил свою жену, несмотря на оправдательный приговор, что может быть юридически некорректным утверждением.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-bbc-com-news-articles-ckg4k8751pdo-d8a5b94e333c",
+            "original_url_identity": "bbc.com/news/articles/ckg4k8751pdo",
+            "original_html": "<b>Коронер южного Манчестера пришел к выводу, что Дональд МаКферсон убил свою жену Паула Лисон в 2017 году, несмотря на его оправдательный приговор.</b> <a href=\"https://bbc.co.uk/news/articles/ckg4k8751pdo\">BBC Manchester</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 1,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::уточнение статуса обвинения.",
+        "actions": [
+          {
+            "line_index": 3,
+            "section": "Свежие новости",
+            "requested_action": "patch",
+            "reason": "Уточнение статуса обвинения.",
+            "risk": "sensitive",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-heartbroken-family-pays-tribute-mum-34415968-1ba52b2688f9",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/heartbroken-family-pays-tribute-mum-34415968",
+            "original_html": "• В Bolton семья оплакивает 39-летнюю Эмму МаГоуэн, найденную мёртвой 4 августа. В это время 36-летний Джозеф Уэбб был обвинён в её убийстве и остаётся под стражей. Родные Эммы описали её как \"любимую дочь и обожаемую мать четырёх детей\", добавив, что \"наши сердца разбиты, и мы будем скучать по тебе вечно\". <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/heartbroken-family-pays-tribute-mum-34415968\">MEN</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 3,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "общественный транспорт сегодня::удаление дублирующей информации",
+        "actions": [
+          {
+            "line_index": 12,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "strip",
+            "reason": "Удаление дублирующей информации.",
+            "risk": "format",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "transport-01",
+            "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-whitworth-street-manchester-bus-stop-closure-70453af3eaea",
+            "original_url_identity": "tfgm.com/travel-updates/travel-alerts/whitworth-street-manchester-bus-stop-closure",
+            "original_html": "• Автобусы: остановка автобуса на Уитворт-стрит напротив Театра Палас закрыта из-за строительных работ; пассажиры должны использовать остановки до или после закрытой. <a href=\"https://tfgm.com/travel-updates/travel-alerts/whitworth-street-manchester-bus-stop-closure\">TfGM</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "duplicate_after_plan",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 12,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "story:tfgm|closed|manchester|same story new facts|2026 08 07",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "футбол::корректировка даты матча.",
+        "actions": [
+          {
+            "line_index": 22,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Корректировка даты матча.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "География события не соответствует контракту раздела.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "openings-01",
-            "candidate_fingerprint": "event-event-massive-rock-paper-scissors-tournament-with-big-pizza-prizes-takes-over-trafford-centre-th-2026-08-05-trafford-centre-a9330c234e3d",
-            "original_url_identity": "themanc.com/food-and-drink/massive-rock-paper-scissors-tournament-with-big-pizza-prizes-takes-over-trafford-centre-this-week",
-            "original_html": "• Сегодня, 5 августа,до 12:30 в Trafford Центре проходит открытие пиццерии Forbici с раздачей бесплатных пицц и турниром по игре \"камень, ножницы, бумага\". <a href=\"https://themanc.com/food-and-drink/massive-rock-paper-scissors-tournament-with-big-pizza-prizes-takes-over-trafford-centre-this-week\">The Manc Eats</a>",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-we-created-mini-manchester-over-34414952-4caea5d1a560",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/we-created-mini-manchester-over-34414952",
+            "original_html": "• 7 августа 2026 года в Гетеборге шведские фанаты Манчестер Юнайтед создали 'мини Манчестер' перед предсезонным матчем против ПСЖ, который состоится в субботу. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/we-created-mini-manchester-over-34414952\">MEN Manchester United</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -500,7 +1316,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 24,
+            "line_index": 22,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -508,23 +1324,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "билеты / ticket radar::дата события должна быть 6 августа 2026 года.",
+        "group_key": "выходные в gm::корректировка даты мероприятия.",
         "actions": [
           {
-            "line_index": 28,
-            "section": "Билеты / Ticket Radar",
+            "line_index": 25,
+            "section": "Выходные в GM",
             "requested_action": "patch",
-            "reason": "Дата события должна быть 6 августа 2026 года.",
+            "reason": "Корректировка даты мероприятия.",
             "risk": "date",
             "critical_error": true,
             "critical_problem": "Дата события указана неверно.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "event-event-biohazard-6th-august-2026-2026-08-06-manchester-academy-2808b1d95020",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13380008/biohazard-manchester-club-academy-2026-08-06-19-30-00",
-            "original_html": "• <b>Biohazard</b> — 6 августа, Manchester Academy; цена £30.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13380008/biohazard-manchester-club-academy-2026-08-06-19-30-00\">Manchester Academy</a>",
+            "plan_slot_id": "weekend_activities-01",
+            "candidate_fingerprint": "event-id-jsonld-event-4f59eaacfb1a-45f9dc287508",
+            "original_url_identity": "carbootdirectory.co.uk/listings/bolton-car-boot",
+            "original_html": "• 9 августа в Macron Stadium — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, есть туалеты. <a href=\"https://carbootdirectory.co.uk/listings/bolton-car-boot\">Bolton Car Boot Sale</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -532,7 +1348,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 28,
+            "line_index": 25,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -541,19 +1357,62 @@
       }
     ],
     "refetch": {
-      "attempted": 0,
-      "improved": 0,
-      "failed": 0,
+      "attempted": 4,
+      "improved": 2,
+      "failed": 2,
       "empty_or_not_better": 0,
-      "skipped": 0
+      "skipped": 1,
+      "reports": [
+        {
+          "fingerprint": "url-nationalrail-co-uk-status-and-disruptions-northern-buses-replace-trains-between-manchester-piccadilly-and-rose-hill-marple-3c04684d6cbd",
+          "title": "Northern: Buses replace trains between Manchester Piccadilly and Rose Hill Marple on Saturday 8 August",
+          "status": "failed",
+          "url": "https://nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-manchester-piccadilly-and-rose-hill-marple",
+          "error": "RuntimeError: HTTP 404"
+        },
+        {
+          "fingerprint": "url-nationalrail-co-uk-status-and-disruptions-buses-replace-early-morning-northern-trains-between-stalybridge-and-stockport-on-fcec72e56b14",
+          "title": "Buses replace early morning Northern trains between Stalybridge and Stockport on Saturday 8 August",
+          "status": "failed",
+          "url": "https://nationalrail.co.uk/status-and-disruptions/buses-replace-early-morning-northern-trains-between-stalybridge-and-stockport-on",
+          "error": "RuntimeError: HTTP 404"
+        },
+        {
+          "fingerprint": "event-id-jsonld-event-4f59eaacfb1a-45f9dc287508",
+          "title": "Bolton Car Boot Sale",
+          "status": "ok",
+          "url": "https://carbootdirectory.co.uk/listings/bolton-car-boot",
+          "chars": 6970
+        },
+        {
+          "fingerprint": "url-tfgm-com-travel-updates-travel-alerts-whitworth-street-manchester-bus-stop-closure-70453af3eaea",
+          "title": "Whitworth Street, Manchester - Bus Stop Closure",
+          "status": "skipped",
+          "reason": "tfgm_ephemeral_alert",
+          "url": "https://tfgm.com/travel-updates/travel-alerts/whitworth-street-manchester-bus-stop-closure",
+          "candidate_evidence_chars": 669
+        },
+        {
+          "fingerprint": "event-id-jsonld-event-4f59eaacfb1a-45f9dc287508",
+          "title": "Bolton Car Boot Sale",
+          "status": "ok",
+          "url": "https://carbootdirectory.co.uk/listings/bolton-car-boot",
+          "chars": 6970
+        }
+      ]
     },
-    "enrich_improved": 6,
-    "false_positive_existing_fact": 4,
+    "enrich_improved": 20,
+    "model_post_check_rejected": 1,
+    "deterministic_rewrite_rejected": 1,
+    "backup_chain_exhausted": 1,
+    "false_positive_existing_fact": 11,
+    "deterministic_fact_lock_rejected": 1,
+    "no_eligible_backup": 3,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 31,
-      "matched_lines": 31,
-      "applicable_lines": 2,
+      "checked_lines": 53,
+      "matched_lines": 53,
+      "applicable_lines": 3,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -565,14 +1424,14 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 31,
-      "resolved_in_place": 31,
+      "checked_lines": 53,
+      "resolved_in_place": 53,
       "unresolved": 0,
       "findings": []
     },
-    "status": "resolved"
+    "status": "unresolved"
   },
-  "notes": "Добавлена информация о множественных ножевых ранениях для точности описания события.; Прогноз погоды соответствует данным Met Office и контракту блока.; Исправлен возраст жертвы в строке 3 для соответствия источнику.; Обе строки соответствуют требованиям географии и содержат актуальную информацию о транспортных изменен",
+  "notes": "Формулировка должна быть осторожной, чтобы избежать утверждений, противоречащих судебному решению.; Прогноз погоды корректен и соответствует источнику Met Office. Ошибок нет.; Исправление необходимо для корректного представления фактов в строке 8.; Исправлены ошибки в датах для строк 17 и 18, чтобы соответствовать факт",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
@@ -580,42 +1439,140 @@
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "problem": "Текст утверждает, что Александр Джон Сойое был убит в результате столкновения двух враждующих банд, но не упоминает, что он умер от множественных ножевых ранений, что является ключевой деталью.",
-        "risk": "factual",
+        "problem": "Текст утверждает, что Дональд МаКферсон убил свою жену, несмотря на оправдательный приговор, что может быть юридически некорректным утверждением.",
+        "risk": "legal",
         "suggested_action": "repair"
       },
       {
-        "line_index": 3,
+        "line_index": 8,
         "section": "Свежие новости",
-        "problem": "Возраст жертвы указан неверно.",
+        "problem": "Неправильное использование слова 'ударила'.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 16,
+        "line_index": 17,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дата указана неверно. 8 августа 2026 года — это пятница, а не суббота.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 18,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дата указана неверно. 8 августа 2026 года — это пятница, а не суббота.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 22,
         "section": "Футбол",
         "problem": "География события не соответствует контракту раздела.",
         "risk": "geo",
         "suggested_action": "strip"
       },
       {
-        "line_index": 21,
-        "section": "Городской радар",
-        "problem": "Неправильное описание приговора Томаса Уайта.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 24,
-        "section": "Еда, открытия и рынки",
-        "problem": "Время начала мероприятия указано неверно.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 28,
-        "section": "Билеты / Ticket Radar",
+        "line_index": 25,
+        "section": "Выходные в GM",
         "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 29,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 32,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 33,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 35,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 37,
+        "section": "Выходные в GM",
+        "problem": "Неправильное указание места проведения мероприятия.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 42,
+        "section": "Городской радар",
+        "problem": "Неверное название университета.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 47,
+        "section": "Еда, открытия и рынки",
+        "problem": "Строка не соответствует тематике раздела 'Еда, открытия и рынки'.",
+        "risk": "format",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 49,
+        "section": "IT и бизнес",
+        "problem": "Неправильное назначение роли: Edison Media назначено застройщиком, что неверно.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 55,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Дата события указана как 8 мая 2027 года, что выходит за пределы текущего года.",
+        "risk": "date",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Коронерский вывод противоречит оправдательному приговору, что требует осторожности в подаче.",
+        "risk": "sensitive",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "problem": "Упоминание обвинения в убийстве требует точности в формулировке.",
+        "risk": "sensitive",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дублирование информации о закрытии остановок.",
+        "risk": "format",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 22,
+        "section": "Футбол",
+        "problem": "Некорректное указание даты матча.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 25,
+        "section": "Выходные в GM",
+        "problem": "Некорректное указание даты мероприятия.",
         "risk": "date",
         "suggested_action": "repair"
       }
@@ -625,58 +1582,168 @@
         "line_index": 1,
         "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• В Манчестере продолжается судебный процесс по делу о смерти 16-летнего Александра Джона Сойое, который умер от множественных ножевых ранений в результате столкновения двух враждующих банд. Прокуроры утверждают, что его смерть стала следствием мести за нападение на родственника члена банды M40, произошедшее ранее в тот же день. На скамье подсудимых находятся четыре человека, обвиняемых в убийстве. MEN",
-        "reason": "Добавление ключевой детали о причине смерти для точности.",
+        "replacement_text": "• Коронер южного Манчестера пришел к выводу, что Дональд МаКферсон, оправданный ранее, несет ответственность за смерть своей жены Паулы Лисон в 2017 году. BBC Manchester",
+        "reason": "Уточнение формулировки, чтобы избежать юридических рисков.",
+        "risk": "legal"
+      },
+      {
+        "line_index": 8,
+        "section": "Свежие новости",
+        "action": "patch",
+        "replacement_text": "• Полиция транспорта Великобритании опубликовала изображения с камер видеонаблюдения женщины, которая, как утверждается, ударила мужчину острым предметом в лицо на поезде из Манчестера в Честер 1 августа, что привело к серьезной травме глаза. MEN",
+        "reason": "Уточнение, что это утверждение, а не установленный факт.",
         "risk": "factual"
+      },
+      {
+        "line_index": 17,
+        "section": "Общественный транспорт сегодня",
+        "action": "patch",
+        "replacement_text": "• Автобусы заменяют поезда Northern между Манчестер Пикадилли и Роуз Хилл Марпл в пятницу, 8 августа. National Rail Enquiries",
+        "reason": "Исправление даты на правильный день недели.",
+        "risk": "date"
+      },
+      {
+        "line_index": 18,
+        "section": "Общественный транспорт сегодня",
+        "action": "patch",
+        "replacement_text": "• Автобусы заменяют ранние утренние поезда Northern между Сталибриджем и Stockport в пятницу, 8 августа. National Rail Enquiries",
+        "reason": "Исправление даты на правильный день недели.",
+        "risk": "date"
+      },
+      {
+        "line_index": 22,
+        "section": "Футбол",
+        "action": "strip",
+        "reason": "Событие происходит в Гетеборге, что не соответствует географическому контракту GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 25,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 9 августа в Macron Stadium — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, есть туалеты. Bolton Car Boot Sale",
+        "reason": "Дата события должна быть 9 августа 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 29,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 9 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход £10. The BIG Stockport Car Boot",
+        "reason": "Дата события должна быть 9 августа 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 32,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 9 августа в New Smithfield Market, Openshaw, Manchester, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный. New Smithfield Sunday Market",
+        "reason": "Дата события должна быть 9 августа 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 33,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 9 августа — Burnage RFC car boot sale. На площадке: автомобильная барахолка. Burnage RFC Car Boot Sale",
+        "reason": "Дата события должна быть 9 августа 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 35,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 9 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка. Bowlee Car Boot Sale",
+        "reason": "Дата события должна быть 9 августа 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 37,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• Orchestral Manoeuvres in the Dark выступят на открытом воздухе у Rochdale Town Hall 7 августа 2026 года. Creative Tourist Manchester",
+        "reason": "Указано неверное место проведения мероприятия. Правильное место - Rochdale Town Hall.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 42,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Университет Болтона уволил своего вице-канцлера профессора Джорджа Холмса после его приостановки в мае 2025 года из-за обвинений в финансовых злоупотреблениях. BBC Manchester",
+        "reason": "Университет неправильно назван как 'Greater Manchester', тогда как это Университет Болтона.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 47,
+        "section": "Еда, открытия и рынки",
+        "action": "strip",
+        "reason": "Информация о строительстве башни не относится к тематике еды или открытий.",
+        "risk": "format"
+      },
+      {
+        "line_index": 49,
+        "section": "IT и бизнес",
+        "action": "patch",
+        "replacement_text": "• Агентство Edison Media назначено для поддержки маркетинга застройщика Moda в сфере аренды жилья. Prolific North Manchester",
+        "reason": "Исправление фактической ошибки в назначении роли.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 55,
+        "section": "Билеты / Ticket Radar",
+        "action": "strip",
+        "reason": "Дата события выходит за пределы текущего года, что не соответствует текущему контексту.",
+        "risk": "date"
+      },
+      {
+        "line_index": 1,
+        "section": "Главная история дня",
+        "action": "patch",
+        "replacement_text": "• Коронер южного Манчестера пришел к выводу, что Дональд МаКферсон убил свою жену Паула Лисон в 2017 году, несмотря на его оправдательный приговор. Это вызывает вопросы о судебной системе.",
+        "reason": "Уточнение контекста для чувствительной информации.",
+        "risk": "sensitive"
       },
       {
         "line_index": 3,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• В Болтоне задержан 36-летний мужчина по подозрению в убийстве после того, как женщина в возрасте около 40 лет была найдена мёртвой в доме на улице Юэдейл. Полиция получила сообщение об атаке около 03:15 по местному времени и, прибыв на место, обнаружила жертву с серьёзными травмами. Мужчина находится под стражей, следственные действия продолжаются. BBC Manchester",
-        "reason": "Возраст жертвы должен быть исправлен на 40 лет, чтобы соответствовать источнику.",
-        "risk": "factual"
+        "replacement_text": "• В Bolton семья оплакивает 39-летнюю Эмму МаГоуэн, найденную мёртвой 4 августа. 36-летний Джозеф Уэбб обвиняется в её убийстве и остаётся под стражей.",
+        "reason": "Уточнение статуса обвинения.",
+        "risk": "sensitive"
       },
       {
-        "line_index": 16,
-        "section": "Футбол",
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
         "action": "strip",
-        "reason": "Матч Манчестер Сити против К-Лиги XI проходит в Сеуле, что не соответствует географическому контракту GM.",
-        "risk": "geo"
+        "replacement_text": "",
+        "reason": "Удаление дублирующей информации.",
+        "risk": "format"
       },
       {
-        "line_index": 21,
-        "section": "Городской радар",
+        "line_index": 22,
+        "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Сестра Томаса Уайта, который отбывает 14 лет в тюрьме по неопределённому приговору за кражу мобильного телефона, приветствует правительственный обзор \"бесчеловечных\" приговоров IPP. Томас был осуждён на минимальный срок в два года в 2012 году. BBC Manchester",
-        "reason": "Уточнение минимального срока приговора.",
-        "risk": "factual"
+        "replacement_text": "• 7 августа 2026 года в Гетеборге шведские фанаты Манчестер Юнайтед создали 'мини Манчестер' перед предсезонным матчем против ПСЖ, который состоится 8 августа.",
+        "reason": "Корректировка даты матча.",
+        "risk": "date"
       },
       {
-        "line_index": 24,
-        "section": "Еда, открытия и рынки",
+        "line_index": 25,
+        "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• Сегодня, 5 августа, с 11:00 до 12:30 в Trafford Центре проходит открытие пиццерии Forbici с раздачей бесплатных пицц и турниром по игре \"камень, ножницы, бумага\". The Manc Eats",
-        "reason": "Указано неверное время начала мероприятия. Согласно источнику, мероприятие начинается в 11:00.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 28,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Biohazard — 6 августа, Manchester Academy; цена £30.00. Билеты и время указаны на официальной странице. Manchester Academy",
-        "reason": "Дата события должна быть 6 августа 2026 года.",
+        "replacement_text": "• 8 августа в Macron Stadium — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, есть туалеты.",
+        "reason": "Корректировка даты мероприятия.",
         "risk": "date"
       }
     ],
     "warnings": [
-      "judge reduce failed: parse_failed no parseable JSON"
+      "Некоторые секции, такие как 'Еда, открытия и рынки', имеют недостаточное количество элементов."
     ],
-    "notes": "Добавлена информация о множественных ножевых ранениях для точности описания события.; Прогноз погоды соответствует данным Met Office и контракту блока.; Исправлен возраст жертвы в строке 3 для соответствия источнику.; Обе строки соответствуют требованиям географии и содержат актуальную информацию о транспортных изменен",
+    "notes": "Формулировка должна быть осторожной, чтобы избежать утверждений, противоречащих судебному решению.; Прогноз погоды корректен и соответствует источнику Met Office. Ошибок нет.; Исправление необходимо для корректного представления фактов в строке 8.; Исправлены ошибки в датах для строк 17 и 18, чтобы соответствовать факт",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "partial",
-      "chunk_count": 11,
+      "status": "ok",
+      "chunk_count": 15,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -694,8 +1761,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2643,
-          "duration_seconds": 4.254
+          "estimated_tokens": 2475,
+          "duration_seconds": 3.781
         },
         {
           "chunk_id": "chunk-02",
@@ -712,8 +1779,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2344,
-          "duration_seconds": 2.214
+          "estimated_tokens": 2320,
+          "duration_seconds": 2.905
         },
         {
           "chunk_id": "chunk-03",
@@ -730,33 +1797,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6854,
-          "duration_seconds": 4.028
+          "estimated_tokens": 7267,
+          "duration_seconds": 3.442
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            13
+            20
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2961,
-          "duration_seconds": 1.209
+          "estimated_tokens": 6491,
+          "duration_seconds": 4.136
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            14,
-            15
+            21,
+            21
           ],
           "sections": [
             "Что важно сегодня"
@@ -766,15 +1833,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3216,
-          "duration_seconds": 1.881
+          "estimated_tokens": 2549,
+          "duration_seconds": 1.569
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            16,
-            18
+            22,
+            24
           ],
           "sections": [
             "Футбол"
@@ -784,15 +1851,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3516,
-          "duration_seconds": 2.655
+          "estimated_tokens": 3502,
+          "duration_seconds": 2.348
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            19,
-            23
+            25,
+            36
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 5,
+          "action_count": 5,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 9515,
+          "duration_seconds": 78.327
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            37,
+            38
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3375,
+          "duration_seconds": 2.601
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            39,
+            46
           ],
           "sections": [
             "Городской радар"
@@ -802,15 +1905,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4569,
-          "duration_seconds": 3.198
+          "estimated_tokens": 6060,
+          "duration_seconds": 51.068
         },
         {
-          "chunk_id": "chunk-08",
+          "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            24,
-            24
+            47,
+            47
           ],
           "sections": [
             "Еда, открытия и рынки"
@@ -820,33 +1923,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2723,
-          "duration_seconds": 3.126
+          "estimated_tokens": 2652,
+          "duration_seconds": 2.091
         },
         {
-          "chunk_id": "chunk-09",
+          "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            25,
-            26
+            48,
+            49
           ],
           "sections": [
             "IT и бизнес"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3049,
-          "duration_seconds": 11.803
+          "estimated_tokens": 3018,
+          "duration_seconds": 6.293
         },
         {
-          "chunk_id": "chunk-10",
+          "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
-            27,
-            27
+            50,
+            50
           ],
           "sections": [
             "Business/tech события для тебя"
@@ -856,15 +1959,33 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2657,
-          "duration_seconds": 3.717
+          "estimated_tokens": 2743,
+          "duration_seconds": 4.604
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-13",
           "status": "ok",
           "line_range": [
-            28,
-            31
+            51,
+            51
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2600,
+          "duration_seconds": 6.191
+        },
+        {
+          "chunk_id": "chunk-14",
+          "status": "ok",
+          "line_range": [
+            52,
+            55
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -874,22 +1995,40 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4166,
-          "duration_seconds": 20.622
+          "estimated_tokens": 4498,
+          "duration_seconds": 11.422
+        },
+        {
+          "chunk_id": "chunk-15",
+          "status": "ok",
+          "line_range": [
+            56,
+            56
+          ],
+          "sections": [
+            "Русскоязычные концерты и стендап UK"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2632,
+          "duration_seconds": 4.147
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
-        "critical_error_count": 0,
-        "action_count": 0,
-        "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 9628,
-        "duration_seconds": 39.725
+        "decision": "repair_required",
+        "critical_error_count": 5,
+        "action_count": 5,
+        "warning_count": 1,
+        "error": "",
+        "estimated_tokens": 11654,
+        "duration_seconds": 26.92
       },
       "max_workers": 3,
       "chunk_line_target": 12,
