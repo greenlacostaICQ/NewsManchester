@@ -28,7 +28,10 @@ from news_digest.pipeline.plan_execution import (
     SHARED_REPAIR_BUDGET_PER_RUN,
     consume_repair_attempt,
 )
-from news_digest.pipeline.pre_send_quality_judge import _drop_out_of_contract_geo_rows
+from news_digest.pipeline.pre_send_quality_judge import (
+    _drop_out_of_contract_geo_rows,
+    _drop_source_link_metadata_rows,
+)
 from news_digest.pipeline.transport_card import transport_end_datetime
 from news_digest.pipeline.transport_fill import _collapse_transport_segment_duplicates, _expire_finished_transport
 
@@ -97,6 +100,36 @@ class Release20260727FixesTest(unittest.TestCase):
         self.assertEqual(kept, [])
         self.assertEqual([row["line_index"] for row in rejected], [1])
         self.assertEqual(block_policy("football")["geo_scope"], "gm_subject")
+
+    def test_judge_cannot_remove_mandatory_source_link_label_as_redundant_text(self) -> None:
+        digest_html = "\n".join(
+            [
+                "<b>Общественный транспорт сегодня</b>",
+                '• Линии между Liverpool и Wigan открыты; сбои продолжаются до 12:30. <a href="https://example.test/rail">National Rail Enquiries</a>',
+                '• National Rail ошибочно назвал линию закрытой. <a href="https://example.test/other">Rail Source</a>',
+            ]
+        )
+        rows = [
+            {
+                "line_index": 1,
+                "action": "patch",
+                "risk": "format",
+                "reason": "Удаление лишнего упоминания National Rail Enquiries.",
+                "critical_problem": "National Rail Enquiries в конце строки не имеет смысла.",
+            },
+            {
+                "line_index": 2,
+                "action": "patch",
+                "risk": "factual",
+                "reason": "National Rail неверно описал статус линии.",
+            },
+        ]
+
+        kept, rejected = _drop_source_link_metadata_rows(rows, digest_html)
+
+        self.assertEqual([row["line_index"] for row in kept], [2])
+        self.assertEqual([row["line_index"] for row in rejected], [1])
+        self.assertEqual(rejected[0]["source_link_label"], "National Rail Enquiries")
 
     def test_relative_transport_deadline_stays_on_publication_day(self) -> None:
         london_tz = now_london().tzinfo

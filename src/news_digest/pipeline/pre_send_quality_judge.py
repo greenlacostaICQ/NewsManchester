@@ -84,6 +84,9 @@ SYSTEM_PROMPT = """Ты старший редактор и fact-check судья
    «Футбол», «Выходные в GM», не доминируют ли билеты/концерты над core news, не слишком ли
    много выбранных кандидатов потеряно между rewrite/writer/render;
 8. не блокируй выпуск за стиль, если смысл безопасен.
+9. подпись source_link/source_label — обязательная техническая ссылка на источник, а не
+   редакционный текст карточки. Никогда не давай action для удаления, переименования или
+   «устранения повтора» подписи ссылки; проверяй только фактическую прозу строки.
 
 Decision:
 - "pass": критических проблем нет.
@@ -181,6 +184,24 @@ def _strip_tags(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def _source_anchor_label(line: str) -> str:
+    match = re.search(
+        r'<a\s+[^>]*href="[^"]+"[^>]*>(.*?)</a>',
+        str(line or ""),
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    return _strip_tags(match.group(1)) if match else ""
+
+
+def _without_source_anchor(line: str) -> str:
+    return re.sub(
+        r'<a\s+[^>]*href="[^"]+"[^>]*>.*?</a>',
+        " ",
+        str(line or ""),
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+
+
 def _digest_line_slots_from_html(digest_html: str) -> list[dict[str, Any]]:
     section = ""
     lines: list[dict[str, Any]] = []
@@ -192,7 +213,10 @@ def _digest_line_slots_from_html(digest_html: str) -> list[dict[str, Any]]:
         if header_match and not _strip_tags(line).startswith("Greater Manchester Brief"):
             section = _strip_tags(header_match.group(1))
             continue
-        plain = _strip_tags(line)
+        # The anchor label is required delivery metadata, not sentence prose.
+        # Feeding it to the judge caused a correct rail card to be removed
+        # because `National Rail Enquiries` at the end looked redundant.
+        plain = _strip_tags(_without_source_anchor(line))
         if not plain or plain.startswith("Greater Manchester Brief"):
             continue
         is_item = plain.startswith("•") or bool(section)
@@ -204,6 +228,7 @@ def _digest_line_slots_from_html(digest_html: str) -> list[dict[str, Any]]:
                 "section": section,
                 "text": plain[:900],
                 "html": line,
+                "source_link_label": _source_anchor_label(line)[:160],
                 "raw_index": raw_index,
             }
         )
@@ -438,6 +463,53 @@ def _drop_out_of_contract_geo_rows(
                     "geo_scope": section_geo_scope(section),
                     "reason": str(row.get("reason") or row.get("critical_problem") or "")[:200],
                     "gm_anchor_present": false_gm_complaint,
+                }
+            )
+            continue
+        kept.append(row)
+    return kept, rejected
+
+
+_SOURCE_LINK_METADATA_COMPLAINT_RE = re.compile(
+    r"\b(?:source|link|anchor|href|label)\b|источник|ссылк|подпис|"
+    r"в\s+конце\s+(?:строки|карточки)|(?:at|on)\s+the\s+end\s+of\s+the\s+(?:line|item)",
+    re.IGNORECASE,
+)
+
+
+def _drop_source_link_metadata_rows(
+    rows: list[dict[str, Any]], digest_html: str
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Reject judge actions aimed only at the mandatory source-link label."""
+    slots_by_index = {
+        int(slot.get("line_index") or 0): slot
+        for slot in _digest_line_slots_from_html(digest_html)
+    }
+    kept: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    for row in rows:
+        try:
+            line_index = int(row.get("line_index") or 0)
+        except (TypeError, ValueError):
+            line_index = 0
+        slot = slots_by_index.get(line_index) or {}
+        source_label = str(slot.get("source_link_label") or "").strip()
+        row_blob = " ".join(
+            str(row.get(field) or "")
+            for field in ("risk", "reason", "critical_problem", "problem")
+        )
+        targets_source_label = bool(
+            source_label
+            and source_label.casefold() in row_blob.casefold()
+            and _SOURCE_LINK_METADATA_COMPLAINT_RE.search(row_blob)
+        )
+        if targets_source_label:
+            rejected.append(
+                {
+                    "line_index": line_index,
+                    "section": str(slot.get("section") or row.get("section") or ""),
+                    "source_link_label": source_label[:160],
+                    "reason": str(row.get("reason") or row.get("critical_problem") or "")[:200],
                 }
             )
             continue
@@ -1497,6 +1569,7 @@ def _apply_repair_executor(
 ) -> tuple[str, dict[str, Any]]:
     rows = _action_rows(actions, critical_errors)
     rows, geo_contract_rejected = _drop_out_of_contract_geo_rows(rows, digest_html)
+    rows, source_link_metadata_rejected = _drop_source_link_metadata_rows(rows, digest_html)
     report: dict[str, Any] = {
         "enabled": True,
         "dry_run": dry_run,
@@ -1518,6 +1591,7 @@ def _apply_repair_executor(
         "enrich_attempted": 0,
         "post_check_errors": deterministic_post_check.get("errors") or [],
         "geo_contract_rejected": geo_contract_rejected,
+        "source_link_metadata_rejected": source_link_metadata_rejected,
         "actions": [],
         "operations": [],
     }
