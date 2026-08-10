@@ -1,109 +1,59 @@
 {
-  "status": "ok",
+  "status": "partial",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 10 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-07-28.p0",
-  "run_date_london": "2026-08-09",
-  "pipeline_run_id": "20260809T080142+0100",
-  "digest_sha256": "ce63c6734c1a5c42fcc8fa974fba90c1c7aad994db45cadc184e20ef3c922676",
-  "duration_seconds": 99.312,
+  "run_date_london": "2026-08-10",
+  "pipeline_run_id": "20260810T080145+0100",
+  "digest_sha256": "6e8b358e52ca5739d5d6dafab92a5fd6c1ccf261b2c96eef9f76bd770d6288cb",
+  "duration_seconds": 55.842,
   "confidence": 0.9,
   "critical_errors": [
     {
       "line_index": 1,
       "section": "Главная история дня",
-      "problem": "Энди Бернэм не является премьер-министром, он мэр Greater Manchester.",
+      "problem": "Отсутствует информация об аресте подозреваемого.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 5,
+      "line_index": 7,
       "section": "Свежие новости",
-      "problem": "Неправильное использование термина 'осуждены'.",
+      "problem": "Энди Бернэм указан как премьер-министр, что неверно. Он мэр Большого Манчестера.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 8,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дата указана неверно. 8 и 9 августа 2026 года - это суббота и воскресенье, но в тексте указано, что это суббота и воскресенье.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 26,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно. Указана дата 9 августа, но в источнике указана дата 2 августа.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 28,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно. Указана дата 9 августа, но в источнике указана дата 2 августа.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 30,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно. Указана дата 9 августа, но в источнике указана дата 2 августа.",
-      "risk": "date",
+      "line_index": 25,
+      "section": "Городской радар",
+      "problem": "Некорректное утверждение о смерти Эндрю Дэвиса. Он был освобождён в 2023 году, но умер в тюрьме.",
+      "risk": "factual",
       "suggested_action": "repair"
     },
     {
       "line_index": 31,
-      "section": "Выходные в GM",
-      "problem": "Неправильное указание места проведения мероприятия.",
-      "risk": "geo",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 32,
-      "section": "Выходные в GM",
-      "problem": "Дата мероприятия указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 37,
-      "section": "Городской радар",
-      "problem": "Событие произошло в Уэльсе, что выходит за пределы географического охвата GM.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 47,
       "section": "Дальние анонсы",
-      "problem": "Отсутствует информация о событии, только ссылка на сайт.",
-      "risk": "format",
+      "problem": "Некорректное указание места проведения события.",
+      "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 50,
+      "line_index": 33,
       "section": "Билеты / Ticket Radar",
-      "problem": "Дублирование информации о событии Kittie.",
-      "risk": "format",
-      "suggested_action": "strip"
+      "problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
+      "risk": "factual",
+      "suggested_action": "repair"
     },
     {
-      "line_index": 51,
+      "line_index": 34,
       "section": "Билеты / Ticket Radar",
-      "problem": "Дублирование информации о событии JOJI.",
-      "risk": "format",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 36,
-      "section": "Городской радар",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "weapon_violence"
+      "problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
+      "risk": "factual",
+      "suggested_action": "repair"
     }
   ],
   "actions": [
@@ -111,126 +61,54 @@
       "line_index": 1,
       "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• Мэр Greater Manchester Энди Бернэм носит синюю повязку на запястье, связанную с мальчиком по имени Джозеф из Wigan, с которым он встретился десять лет назад. MEN",
-      "reason": "Энди Бернэм является мэром Greater Manchester, а не премьер-министром.",
+      "replacement_text": "• В Tameside начато расследование убийства после того, как 61-летняя женщина была найдена мёртвой. 60-летний мужчина был арестован по подозрению в убийстве. MEN",
+      "reason": "Добавление информации об аресте подозреваемого для полноты и точности.",
       "risk": "factual"
     },
     {
-      "line_index": 5,
+      "line_index": 7,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• В Манчестерском коронном суде 7 августа 2026 года два сотрудника тюрьмы, Эль Уолтон и Джай Гаскойн, были признаны виновными в неуместных отношениях с братьями-грабителями, Дилом и Хаком Навазами, отбывающими наказание в HMP Buckley Hall. Судья отметил, что их действия подорвали доверие, которое было возложено на них в связи с их работой, несмотря на то, что они не передавали контрабанду и их отношения не стали сексуальными. MEN",
-      "reason": "Термин 'осуждены' подразумевает вынесение приговора, но в данном случае речь идет о признании вины.",
+      "replacement_text": "• Мэр Большого Манчестера Энди Бернэм объявил о новых мерах, направленных на борьбу с ложными скидками и ловушками подписок, которые, по его словам, помогут людям сэкономить деньги. Эти инициативы, названные им 'повседневными исправлениями', призваны облегчить финансовое бремя на домохозяйства в условиях кризиса стоимости жизни, и это только начало, так как Бернэм обещает представить ещё больше подобных мер в будущем. MEN",
+      "reason": "Исправление фактической ошибки: Энди Бернэм является мэром, а не премьер-министром.",
       "risk": "factual"
-    },
-    {
-      "line_index": 8,
-      "section": "Общественный транспорт сегодня",
-      "action": "patch",
-      "replacement_text": "• Автобусы заменяют поезда Northern между Манчестер Пикадилли и Хадфилдом в субботу 8 и воскресенье 9 августа 2026 года из-за ремонтных работ. Пассажирам рекомендуется проверить расписание перед поездкой.",
-      "reason": "Указание на National Rail Enquiries в конце строки не является необходимым и может быть удалено для улучшения читаемости.",
-      "risk": "format"
-    },
-    {
-      "line_index": 26,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 2 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход £10. The BIG Stockport Car Boot",
-      "reason": "Исправление даты события на 2 августа согласно источнику.",
-      "risk": "date"
-    },
-    {
-      "line_index": 28,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 2 августа в New Smithfield Market, Openshaw, Manchester, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный. New Smithfield Sunday Market",
-      "reason": "Исправление даты события на 2 августа согласно источнику.",
-      "risk": "date"
-    },
-    {
-      "line_index": 30,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 2 августа в Burnage RFC, Varley Park, Battersea Road, Stockport, SK4 3EA — Burnage RFC car boot sale. На площадке: автомобильная барахолка. Burnage RFC Car Boot Sale",
-      "reason": "Исправление даты события на 2 августа согласно источнику.",
-      "risk": "date"
-    },
-    {
-      "line_index": 31,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• Сегодня с 10:45 до 17:30 на площади Святого Петра в Манчестере пройдет бесплатное мероприятие \"Крази-гонки\" с 27 командами. Manchester's Finest Events",
-      "reason": "Указано неверное место проведения мероприятия.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 32,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 9 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка. Bowlee Car Boot Sale",
-      "reason": "Дата мероприятия должна быть 9 августа 2026 года.",
-      "risk": "date"
-    },
-    {
-      "line_index": 37,
-      "section": "Городской радар",
-      "action": "strip",
-      "reason": "Событие произошло в Уэльсе, что выходит за пределы географического охвата GM.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 47,
-      "section": "Дальние анонсы",
-      "action": "patch",
-      "replacement_text": "• Celebrating Caroline Aherne в New Century Hall Manchester 23 августа 2026 года. Билеты доступны на сайте Skiddle.",
-      "reason": "Добавлена информация о событии, дате и месте проведения.",
-      "risk": "format"
-    },
-    {
-      "line_index": 50,
-      "section": "Билеты / Ticket Radar",
-      "action": "strip",
-      "reason": "Дублирование информации о событии Kittie.",
-      "risk": "format",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 51,
-      "section": "Билеты / Ticket Radar",
-      "action": "strip",
-      "reason": "Дублирование информации о событии JOJI.",
-      "risk": "format",
-      "replacement_text": ""
     },
     {
       "line_index": 25,
-      "section": "Выходные в GM",
-      "action": "strip",
-      "reason": "Дублирование информации о Northern Quarter Makers Market.",
-      "risk": "format",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 38,
       "section": "Городской радар",
-      "action": "strip",
-      "reason": "Дублирование информации о приговоре Мохаммеда Аль Масри.",
-      "risk": "format",
-      "replacement_text": ""
+      "action": "patch",
+      "replacement_text": "• Серийный насильник Эндрю Дэвис, известный как 'насильник из Coronation Street', скончался от рака мозга в тюрьме. Он был освобождён в 2023 году, но позже вернулся в тюрьму за нарушение условий освобождения. MEN",
+      "reason": "Уточнение, что он умер в тюрьме, а не после освобождения.",
+      "risk": "factual"
     },
     {
-      "line_index": 50,
+      "line_index": 31,
+      "section": "Дальние анонсы",
+      "action": "patch",
+      "replacement_text": "• 28 августа 2026 года в 18:30 в Quays Theatre, The Lowry пройдет интерактивное семейное шоу \"Побег Бобби Сигала из Древнего Египта\". Билеты уже в продаже.",
+      "reason": "Указание места проведения события должно быть точным. 'Quays Theatre, The Lowry' вместо 'театре Quays Theatre, The Lowry'.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 33,
+      "section": "Билеты / Ticket Radar",
+      "action": "patch",
+      "replacement_text": "• Kittie — 10 августа, Manchester Club Academy; цена £32.50. Событие проходит сегодня. Ticketmaster",
+      "reason": "Уточнение места проведения события для устранения дублирования.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 34,
       "section": "Билеты / Ticket Radar",
       "action": "strip",
-      "reason": "Дублирование информации о концерте Kittie.",
-      "risk": "format",
+      "reason": "Удаление дублирующей информации о событии Kittie.",
+      "risk": "factual",
       "replacement_text": ""
     }
   ],
   "warnings": [
-    "В разделе 'Футбол' присутствуют три новости, что соответствует контракту, но стоит следить за балансом с другими разделами.",
-    "Недостаток в блоке 'Что важно сегодня' и 'Свежие новости'."
+    "В разделе 'Общественный транспорт сегодня' много информации о транспортных нарушениях, но это может быть полезно для читателей, планирующих поездки.",
+    "judge reduce failed: parse_failed no parseable JSON"
   ],
   "product_completeness": {
     "block_policy_version": "2026-07-28.p0",
@@ -238,122 +116,110 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 5,
-      "Общественный транспорт сегодня": 6,
+      "Свежие новости": 9,
+      "Общественный транспорт сегодня": 5,
       "Что важно сегодня": 2,
-      "Футбол": 3,
-      "Выходные в GM": 14,
       "Городской радар": 12,
-      "IT и бизнес": 2,
-      "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 4,
-      "Русскоязычные концерты и стендап UK": 1
+      "Дальние анонсы": 2,
+      "Билеты / Ticket Radar": 3,
+      "Крупные концерты вне GM": 1
     },
     "core_counts": {
       "Погода": 1,
       "Что важно сегодня": 2,
-      "Свежие новости": 5,
+      "Свежие новости": 9,
       "Главная история дня": 1,
       "Городской радар": 12,
-      "Выходные в GM": 14,
       "Что важно в ближайшие 7 дней": 0,
-      "Билеты / Ticket Radar": 4,
-      "Русскоязычные концерты и стендап UK": 1,
+      "Билеты / Ticket Radar": 3,
+      "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
-      "Футбол": 3
+      "Футбол": 0
     },
-    "ticket_items": 5,
-    "core_items": 38,
+    "ticket_items": 4,
+    "core_items": 25,
     "writer_quality_counts": {
-      "included_candidates": 54,
-      "rendered_candidates": 52,
+      "included_candidates": 39,
+      "rendered_candidates": 36,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 1,
-      "replaced_from_plan_backup": 1,
-      "removed_with_reason": 1
+      "dropped_low_quality": 2,
+      "replaced_from_plan_backup": 0,
+      "removed_with_reason": 2
     },
     "source_health_counts": {
-      "ok": 96,
+      "ok": 103,
       "partial": 2,
-      "stale": 12,
-      "empty": 12,
+      "stale": 11,
+      "empty": 6,
       "failed": 2,
-      "zero_yield": 69,
+      "zero_yield": 89,
       "no_contribution_breakdown": {
         "fetch_failed": 2,
-        "all_rejected": 69,
-        "idle_no_items": 22
+        "all_rejected": 89,
+        "idle_no_items": 15
       },
       "zero_contribution_by_stage": {
-        "written": 32,
-        "parsed": 22,
-        "selected": 37,
+        "written": 46,
+        "selected": 43,
+        "parsed": 15,
         "fetched": 2
       },
-      "weekend_source_coverage_incidents": 42
+      "weekend_source_coverage_incidents": 53
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 2 item(s), emergency floor 3",
-      "Свежие новости: 5 item(s), emergency floor 6",
       "Что важно в ближайшие 7 дней: 0 item(s), emergency floor 3",
+      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "Business/tech события для тебя: 0 item(s), emergency floor 1"
+      "Business/tech события для тебя: 0 item(s), emergency floor 1",
+      "Футбол: 0 item(s), emergency floor 2"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 31 has unchecked number/date token(s): 10:45, 17:30, 27",
-      "multiple actions target line 50"
+      "patch for line 25 has unchecked number/date token(s): 2023"
     ],
     "can_apply_actions": true,
-    "action_count": 15
+    "action_count": 6
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 52,
-    "matched_lines": 52,
-    "applicable_lines": 5,
+    "checked_lines": 36,
+    "matched_lines": 36,
+    "applicable_lines": 3,
     "unmatched_lines": 0,
-    "critical_omission_count": 1,
-    "critical_omissions": [
-      {
-        "line_index": 36,
-        "source_url_key": "aboutmanchester.co.uk/murderer-who-stabbed-sisters-boyfriend-on-new-years-eve-is-jailed-for-life",
-        "concept": "weapon_violence",
-        "obligation": "who/what",
-        "source_hit": "stabbed"
-      }
-    ],
+    "critical_omission_count": 0,
+    "critical_omissions": [],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 1,
+    "pulled_for_rework": 0,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 16,
-    "attempted": 10,
-    "applied": 10,
-    "model_patch_applied": 1,
+    "requested": 6,
+    "attempted": 5,
+    "applied": 5,
+    "model_patch_applied": 3,
     "deterministic_rewrite_used": 1,
-    "reserve_replacement_used": 1,
-    "stripped": 7,
-    "unresolved": 0,
-    "blocking_unresolved": 0,
-    "resolved": 14,
-    "resolved_in_place": 6,
-    "resolved_by_replacement": 1,
-    "resolved_by_removal": 7,
-    "fact_lock_rejected": 2,
-    "enrich_attempted": 16,
+    "reserve_replacement_used": 0,
+    "stripped": 1,
+    "unresolved": 1,
+    "blocking_unresolved": 1,
+    "resolved": 5,
+    "resolved_in_place": 4,
+    "resolved_by_replacement": 0,
+    "resolved_by_removal": 1,
+    "fact_lock_rejected": 1,
+    "enrich_attempted": 6,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "actions": [
@@ -361,317 +227,128 @@
         "line_index": 1,
         "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Энди Бернэм является мэром Greater Manchester, а не премьер-министром.",
+        "reason": "Добавление информации об аресте подозреваемого для полноты и точности.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Энди Бернэм не является премьер-министром, он мэр Greater Manchester.",
+        "critical_problem": "Отсутствует информация об аресте подозреваемого.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
         "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-special-wristband-prime-minister-andy-34414345-21f8ffe04144",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/special-wristband-prime-minister-andy-34414345",
-        "original_html": "<b>Премьер-министр Энди Бернэм носит синюю повязку на запястье, связанную с мальчиком по имени Джозеф из Wigan, с которым он встретился десять лет назад.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/special-wristband-prime-minister-andy-34414345\">MEN</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-murder-probe-launched-tameside-after-34428241-b17db658aaff",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/murder-probe-launched-tameside-after-34428241",
+        "original_html": "<b>В Tameside начато расследование убийства после того, как 61-летняя женщина была найдена мёртвой.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/murder-probe-launched-tameside-after-34428241\">MEN</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 5,
+        "line_index": 7,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Термин 'осуждены' подразумевает вынесение приговора, но в данном случае речь идет о признании вины.",
+        "reason": "Исправление фактической ошибки: Энди Бернэм является мэром, а не премьер-министром.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неправильное использование термина 'осуждены'.",
+        "critical_problem": "Энди Бернэм указан как премьер-министр, что неверно. Он мэр Большого Манчестера.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "last_24h-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-moonpig-cards-love-heart-pendants-34425284-d37adec7a605",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/moonpig-cards-love-heart-pendants-34425284",
-        "original_html": "• В Манчестерском коронном суде 7 августа 2026 года были осуждены два сотрудника тюрьмы, Эль Уолтон и Джай Гаскойн, за неуместные отношения с братьями-грабителями, Дилом и Хаком Навазами, отбывающими наказание в HMP Buckley Hall. Судья отметил, что их действия подорвали доверие, которое было возложено на них в связи с их работой, несмотря на то, что они не передавали контрабанду и их отношения не стали сексуальными. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/moonpig-cards-love-heart-pendants-34425284\">MEN</a>",
+        "plan_slot_id": "last_24h-05",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-andy-burnham-announces-everyday-fixes-34426587-cd48b0dec5fa",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-announces-everyday-fixes-34426587",
+        "original_html": "• Премьер-министр Энди Бернэм объявил о новых мерах, направленных на борьбу с ложными скидками и ловушками подписок, которые, по его словам, помогут людям сэкономить деньги. Эти инициативы, названные им 'повседневными исправлениями', призваны облегчить финансовое бремя на домохозяйства в условиях кризиса стоимости жизни, и это только начало, так как Бернэм обещает представить ещё больше подобных мер в будущем. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-announces-everyday-fixes-34426587\">MEN</a>",
         "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 8,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "patch",
-        "reason": "Указание на National Rail Enquiries в конце строки не является необходимым и может быть удалено для улучшения читаемости.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Дата указана неверно. 8 и 9 августа 2026 года - это суббота и воскресенье, но в тексте указано, что это суббота и воскресенье.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "transport-01",
-        "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-northern-buses-replace-trains-between-manchester-piccadilly-and-hadfield-on-satu-06d3a98f2ef4",
-        "original_url_identity": "nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-manchester-piccadilly-and-hadfield-on-satu",
-        "original_html": "• Автобусы заменяют поезда Northern между Манчестер Пикадилли и Хадфилдом в субботу 8 и воскресенье 9 августа 2026 года из-за ремонтных работ. Пассажирам рекомендуется проверить расписание перед поездкой. <a href=\"https://nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-manchester-piccadilly-and-hadfield-on-satu\">National Rail Enquiries</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 26,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Исправление даты события на 2 августа согласно источнику.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно. Указана дата 9 августа, но в источнике указана дата 2 августа.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-08",
-        "candidate_fingerprint": "event-id-jsonld-event-b192150523e9-545b9ae640b8",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
-        "original_html": "• 9 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход £10. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 28,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Исправление даты события на 2 августа согласно источнику.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно. Указана дата 9 августа, но в источнике указана дата 2 августа.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-10",
-        "candidate_fingerprint": "event-id-jsonld-event-3a7f23502846-96f08b870ff9",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot",
-        "original_html": "• 9 августа в New Smithfield Market, Openshaw, Manchester, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot\">New Smithfield Sunday Market</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 30,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Исправление даты события на 2 августа согласно источнику.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно. Указана дата 9 августа, но в источнике указана дата 2 августа.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-12",
-        "candidate_fingerprint": "event-id-jsonld-event-796ead9e6cbe-4f4bf6bf9f94",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-        "original_html": "• 9 августа в Burnage RFC, Varley Park, Battersea Road, Stockport, SK4 3EA — Burnage RFC car boot sale. На площадке: автомобильная барахолка. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 31,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Указано неверное место проведения мероприятия.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Неправильное указание места проведения мероприятия.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-13",
-        "candidate_fingerprint": "event-event-totally-stockport-krazy-races-2026-08-09-saint-peter-s-square-bb79ab7d3c41",
-        "original_url_identity": "manchestersfinest.com/events/totally-stockport-krazy-races",
-        "original_html": "• Сегодня с 10:45 до 17:30 на площади Святого Петра в Stockport пройдет бесплатное мероприятие \"Крази-гонки\" с 27 командами. <a href=\"https://manchestersfinest.com/events/totally-stockport-krazy-races\">Manchester&#x27;s Finest Events</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 32,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата мероприятия должна быть 9 августа 2026 года.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата мероприятия указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "weekend_activities-14",
-        "candidate_fingerprint": "event-id-jsonld-event-b8fef6f072fc-0a8b04556cce",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
-        "original_html": "• 9 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
-        "model_replacement_rejected": "fact_lock: bowlee",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 37,
-        "section": "Городской радар",
-        "requested_action": "strip",
-        "reason": "Событие произошло в Уэльсе, что выходит за пределы географического охвата GM.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Событие произошло в Уэльсе, что выходит за пределы географического охвата GM.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "city_watch-05",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-brothers-jailed-causing-death-34422924-ffcaf57f6c9a",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchester-brothers-jailed-causing-death-34422924",
-        "original_html": "• Вынесен приговор — братья из Манчестера приговорены к тюремному заключению за причинение смерти Риса Дженкинса в результате лобового столкновения во время гонки в Уэльсе в ноябре 2024 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchester-brothers-jailed-causing-death-34422924\">MEN</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 47,
-        "section": "Дальние анонсы",
-        "requested_action": "patch",
-        "reason": "Добавлена информация о событии, дате и месте проведения.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Отсутствует информация о событии, только ссылка на сайт.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "deterministic_rewrite",
-        "plan_slot_id": "future_announcements-01",
-        "candidate_fingerprint": "event-id-skiddle-com-3143387df6e4-df6b91c5ad67",
-        "original_url_identity": "skiddle.com/whats-on/Manchester/New-Century-Hall-Manchester/Celebrating-Caroline-Aherne/42512335",
-        "original_html": "• Билеты доступны для покупки на сайте Skiddle. <a href=\"https://skiddle.com/whats-on/Manchester/New-Century-Hall-Manchester/Celebrating-Caroline-Aherne/42512335\">Skiddle Manchester Comedy</a>",
-        "model_replacement_rejected": "fact_lock: 23 августа 2026",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 50,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о событии Kittie.",
-        "risk": "format",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "ticket_radar-03",
-        "candidate_fingerprint": "event-event-kittie-2026-08-10-manchester-club-academy-be681b9a8bea",
-        "original_url_identity": "ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121",
-        "original_html": "• <b>Kittie</b> — 10 августа, Manchester Club Academy. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121\">Ticketmaster</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 51,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о событии JOJI.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о событии JOJI.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "ticket_radar-04",
-        "candidate_fingerprint": "event-event-joji-solaris-tour-with-special-guest-tommy-richman-sun-16-aug-2026-multiple-times-2026-08-16-co-op-live-63e07169f118",
-        "original_url_identity": "cooplive.com/events/joji-rzp7",
-        "original_html": "• <b>JOJI SOLARIS TOUR</b> — 16 августа, Co-op Live. Билеты доступны на официальной странице. <a href=\"https://cooplive.com/events/joji-rzp7\">Co-op Live</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
         "post_check_passed": true
       },
       {
         "line_index": 25,
-        "section": "Выходные в GM",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о Northern Quarter Makers Market.",
-        "risk": "format",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "weekend_activities-03",
-        "candidate_fingerprint": "event-event-northern-quarter-makers-market-2026-08-09-manchester-m4-5jd-c43a82c26e5f",
-        "original_url_identity": "pedddle.com/market/northern-quarter-makers-market",
-        "original_html": "• 9 августа — Northern Quarter Makers Market в Манчестере. На рынке представлены ремесленные товары. <a href=\"https://pedddle.com/market/northern-quarter-makers-market\">Northern Quarter Makers Market</a>",
-        "replacement_fingerprint": "event-event-six-2026-08-09-lowry-c226b261523a",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 38,
         "section": "Городской радар",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о приговоре Мохаммеда Аль Масри.",
-        "risk": "format",
-        "critical_error": false,
-        "critical_problem": "",
+        "requested_action": "patch",
+        "reason": "Уточнение, что он умер в тюрьме, а не после освобождения.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Некорректное утверждение о смерти Эндрю Дэвиса. Он был освобождён в 2023 году, но умер в тюрьме.",
         "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "city_watch-06",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-young-mum-tricked-taxi-before-34422725-71b207126ddc",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/young-mum-tricked-taxi-before-34422725",
-        "original_html": "• Вынесен приговор — 7 августа 2026 года Мохаммед Аль Масри был приговорен к восьми годам лишения свободы за изнасилование молодой матери, которую он обманом заставил сесть в такси после рождественской вечеринки в центре Манчестера. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/young-mum-tricked-taxi-before-34422725\">MEN</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "city_watch-07",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-coronation-street-rapists-cause-death-34426354-3a73c544910c",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/coronation-street-rapists-cause-death-34426354",
+        "original_html": "• Серийный насильник Эндрю Дэвис, известный как 'насильник из Coronation Street', скончался от рака мозга в тюрьме. Он был освобождён в 2023 году, но через шесть недель вернулся в тюрьму за нарушение условий освобождения. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/coronation-street-rapists-cause-death-34426354\">MEN</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 50,
+        "line_index": 31,
+        "section": "Дальние анонсы",
+        "requested_action": "patch",
+        "reason": "Указание места проведения события должно быть точным. 'Quays Theatre, The Lowry' вместо 'театре Quays Theatre, The Lowry'.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Некорректное указание места проведения события.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "future_announcements-01",
+        "candidate_fingerprint": "event-event-bobby-seagull-s-escape-from-ancient-egypt-2026-08-28-lowry-188d1706ee39",
+        "original_url_identity": "thelowry.com/whats-on/bobby-seagulls-escape-from-ancient-egypt-59kn",
+        "original_html": "• 28 августа 2026 года в 18:30 в театре Quays Theatre, The Lowry пройдет интерактивное семейное шоу \"Побег Бобби Сигала из Древнего Египта\". Билеты уже в продаже. <a href=\"https://thelowry.com/whats-on/bobby-seagulls-escape-from-ancient-egypt-59kn\">The Lowry</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 33,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "patch",
+        "reason": "Уточнение места проведения события для устранения дублирования.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "deterministic_rewrite",
+        "plan_slot_id": "ticket_radar-01",
+        "candidate_fingerprint": "event-event-kittie-10th-august-2026-2026-08-10-manchester-academy-647e1f8cf200",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13379566/kittie-manchester-club-academy-2026-08-10-19-30-00",
+        "original_html": "• <b>Kittie</b> — 10 августа, Manchester Academy; цена £32.50. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13379566/kittie-manchester-club-academy-2026-08-10-19-30-00\">Manchester Academy</a>",
+        "model_replacement_rejected": "fact_lock: manchester club academy, ticketmaster",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 34,
         "section": "Билеты / Ticket Radar",
         "requested_action": "strip",
-        "reason": "Дублирование информации о концерте Kittie.",
-        "risk": "format",
+        "reason": "Удаление дублирующей информации о событии Kittie.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дублирование информации о событии Kittie.",
+        "critical_problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "ticket_radar-03",
+        "plan_slot_id": "ticket_radar-02",
         "candidate_fingerprint": "event-event-kittie-2026-08-10-manchester-club-academy-be681b9a8bea",
         "original_url_identity": "ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121",
-        "original_html": "• <b>Kittie</b> — 10 августа, Manchester Club Academy. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121\">Ticketmaster</a>",
+        "original_html": "• <b>Kittie</b> — 10 августа, Manchester Club Academy. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121\">Ticketmaster</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 36,
-        "section": "Городской радар",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-        "risk": "translation",
-        "critical_error": true,
-        "critical_problem": "",
-        "completeness_concept": "weapon_violence",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "city_watch-04",
-        "candidate_fingerprint": "url-aboutmanchester-co-uk-murderer-who-stabbed-sisters-boyfriend-on-new-years-eve-is-jailed-for-life-0accacc1952b",
-        "original_url_identity": "aboutmanchester.co.uk/murderer-who-stabbed-sisters-boyfriend-on-new-years-eve-is-jailed-for-life",
-        "original_html": "• Антони Джуниор Мюррей приговорен к пожизненному заключению с минимальным сроком 18 лет за убийство Джо Бартона, совершенное в канун Нового года на Тарн Драйв в Бери. Мюррей изначально утверждал, что нашел жертву без сознания, но данные с телефона опровергли его показания. <a href=\"https://aboutmanchester.co.uk/murderer-who-stabbed-sisters-boyfriend-on-new-years-eve-is-jailed-for-life\">About Manchester News</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::энди бернэм является мэром greater manchester, а не премьер-министром.",
+        "group_key": "главная история дня::добавление информации об аресте подозреваемого для полноты и точности.",
         "actions": [
           {
             "line_index": 1,
             "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Энди Бернэм является мэром Greater Manchester, а не премьер-министром.",
+            "reason": "Добавление информации об аресте подозреваемого для полноты и точности.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Энди Бернэм не является премьер-министром, он мэр Greater Manchester.",
+            "critical_problem": "Отсутствует информация об аресте подозреваемого.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
             "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-special-wristband-prime-minister-andy-34414345-21f8ffe04144",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/special-wristband-prime-minister-andy-34414345",
-            "original_html": "<b>Премьер-министр Энди Бернэм носит синюю повязку на запястье, связанную с мальчиком по имени Джозеф из Wigan, с которым он встретился десять лет назад.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/special-wristband-prime-minister-andy-34414345\">MEN</a>",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-murder-probe-launched-tameside-after-34428241-b17db658aaff",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/murder-probe-launched-tameside-after-34428241",
+            "original_html": "<b>В Tameside начато расследование убийства после того, как 61-летняя женщина была найдена мёртвой.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/murder-probe-launched-tameside-after-34428241\">MEN</a>",
             "post_check_passed": true
           }
         ],
@@ -686,23 +363,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::термин 'осуждены' подразумевает вынесение приговора, но в данном случае речь идет о признании вины.",
+        "group_key": "свежие новости::исправление фактической ошибки: энди бернэм является мэром, а не премьер-министром.",
         "actions": [
           {
-            "line_index": 5,
+            "line_index": 7,
             "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Термин 'осуждены' подразумевает вынесение приговора, но в данном случае речь идет о признании вины.",
+            "reason": "Исправление фактической ошибки: Энди Бернэм является мэром, а не премьер-министром.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неправильное использование термина 'осуждены'.",
+            "critical_problem": "Энди Бернэм указан как премьер-министр, что неверно. Он мэр Большого Манчестера.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-moonpig-cards-love-heart-pendants-34425284-d37adec7a605",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/moonpig-cards-love-heart-pendants-34425284",
-            "original_html": "• В Манчестерском коронном суде 7 августа 2026 года были осуждены два сотрудника тюрьмы, Эль Уолтон и Джай Гаскойн, за неуместные отношения с братьями-грабителями, Дилом и Хаком Навазами, отбывающими наказание в HMP Buckley Hall. Судья отметил, что их действия подорвали доверие, которое было возложено на них в связи с их работой, несмотря на то, что они не передавали контрабанду и их отношения не стали сексуальными. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/moonpig-cards-love-heart-pendants-34425284\">MEN</a>",
+            "plan_slot_id": "last_24h-05",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-andy-burnham-announces-everyday-fixes-34426587-cd48b0dec5fa",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-announces-everyday-fixes-34426587",
+            "original_html": "• Премьер-министр Энди Бернэм объявил о новых мерах, направленных на борьбу с ложными скидками и ловушками подписок, которые, по его словам, помогут людям сэкономить деньги. Эти инициативы, названные им 'повседневными исправлениями', призваны облегчить финансовое бремя на домохозяйства в условиях кризиса стоимости жизни, и это только начало, так как Бернэм обещает представить ещё больше подобных мер в будущем. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-announces-everyday-fixes-34426587\">MEN</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -710,7 +387,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 5,
+            "line_index": 7,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -718,240 +395,61 @@
         "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::указание на national rail enquiries в конце строки не является необходимым и может быть удалено для улучшения читаемости.",
+        "group_key": "городской радар::уточнение, что он умер в тюрьме, а не после освобождения.",
         "actions": [
           {
-            "line_index": 8,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "patch",
-            "reason": "Указание на National Rail Enquiries в конце строки не является необходимым и может быть удалено для улучшения читаемости.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Дата указана неверно. 8 и 9 августа 2026 года - это суббота и воскресенье, но в тексте указано, что это суббота и воскресенье.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "transport-01",
-            "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-northern-buses-replace-trains-between-manchester-piccadilly-and-hadfield-on-satu-06d3a98f2ef4",
-            "original_url_identity": "nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-manchester-piccadilly-and-hadfield-on-satu",
-            "original_html": "• Автобусы заменяют поезда Northern между Манчестер Пикадилли и Хадфилдом в субботу 8 и воскресенье 9 августа 2026 года из-за ремонтных работ. Пассажирам рекомендуется проверить расписание перед поездкой. <a href=\"https://nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-manchester-piccadilly-and-hadfield-on-satu\">National Rail Enquiries</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 8,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::исправление даты события на 2 августа согласно источнику.",
-        "actions": [
-          {
-            "line_index": 26,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Исправление даты события на 2 августа согласно источнику.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно. Указана дата 9 августа, но в источнике указана дата 2 августа.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-08",
-            "candidate_fingerprint": "event-id-jsonld-event-b192150523e9-545b9ae640b8",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
-            "original_html": "• 9 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход £10. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 28,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Исправление даты события на 2 августа согласно источнику.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно. Указана дата 9 августа, но в источнике указана дата 2 августа.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-10",
-            "candidate_fingerprint": "event-id-jsonld-event-3a7f23502846-96f08b870ff9",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot",
-            "original_html": "• 9 августа в New Smithfield Market, Openshaw, Manchester, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot\">New Smithfield Sunday Market</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 30,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Исправление даты события на 2 августа согласно источнику.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно. Указана дата 9 августа, но в источнике указана дата 2 августа.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-12",
-            "candidate_fingerprint": "event-id-jsonld-event-796ead9e6cbe-4f4bf6bf9f94",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-            "original_html": "• 9 августа в Burnage RFC, Varley Park, Battersea Road, Stockport, SK4 3EA — Burnage RFC car boot sale. На площадке: автомобильная барахолка. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 26,
-            "passed": true,
-            "detail": "existing fact verified"
-          },
-          {
-            "line_index": 28,
-            "passed": true,
-            "detail": "existing fact verified"
-          },
-          {
-            "line_index": 30,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::указано неверное место проведения мероприятия.",
-        "actions": [
-          {
-            "line_index": 31,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Указано неверное место проведения мероприятия.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Неправильное указание места проведения мероприятия.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-13",
-            "candidate_fingerprint": "event-event-totally-stockport-krazy-races-2026-08-09-saint-peter-s-square-bb79ab7d3c41",
-            "original_url_identity": "manchestersfinest.com/events/totally-stockport-krazy-races",
-            "original_html": "• Сегодня с 10:45 до 17:30 на площади Святого Петра в Stockport пройдет бесплатное мероприятие \"Крази-гонки\" с 27 командами. <a href=\"https://manchestersfinest.com/events/totally-stockport-krazy-races\">Manchester&#x27;s Finest Events</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 31,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дата мероприятия должна быть 9 августа 2026 года.",
-        "actions": [
-          {
-            "line_index": 32,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата мероприятия должна быть 9 августа 2026 года.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата мероприятия указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "weekend_activities-14",
-            "candidate_fingerprint": "event-id-jsonld-event-b8fef6f072fc-0a8b04556cce",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
-            "original_html": "• 9 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
-            "model_replacement_rejected": "fact_lock: bowlee",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 32,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::событие произошло в уэльсе, что выходит за пределы географического охвата gm.",
-        "actions": [
-          {
-            "line_index": 37,
+            "line_index": 25,
             "section": "Городской радар",
-            "requested_action": "strip",
-            "reason": "Событие произошло в Уэльсе, что выходит за пределы географического охвата GM.",
-            "risk": "geo",
+            "requested_action": "patch",
+            "reason": "Уточнение, что он умер в тюрьме, а не после освобождения.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Событие произошло в Уэльсе, что выходит за пределы географического охвата GM.",
+            "critical_problem": "Некорректное утверждение о смерти Эндрю Дэвиса. Он был освобождён в 2023 году, но умер в тюрьме.",
             "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "city_watch-05",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-brothers-jailed-causing-death-34422924-ffcaf57f6c9a",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchester-brothers-jailed-causing-death-34422924",
-            "original_html": "• Вынесен приговор — братья из Манчестера приговорены к тюремному заключению за причинение смерти Риса Дженкинса в результате лобового столкновения во время гонки в Уэльсе в ноябре 2024 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchester-brothers-jailed-causing-death-34422924\">MEN</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "city_watch-07",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-coronation-street-rapists-cause-death-34426354-3a73c544910c",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/coronation-street-rapists-cause-death-34426354",
+            "original_html": "• Серийный насильник Эндрю Дэвис, известный как 'насильник из Coronation Street', скончался от рака мозга в тюрьме. Он был освобождён в 2023 году, но через шесть недель вернулся в тюрьму за нарушение условий освобождения. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/coronation-street-rapists-cause-death-34426354\">MEN</a>",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_by_removal",
+        "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 37,
+            "line_index": 25,
             "passed": true,
-            "detail": "slot removed and source absent"
+            "detail": "post-check passed"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "дальние анонсы::добавлена информация о событии, дате и месте проведения.",
+        "group_key": "дальние анонсы::указание места проведения события должно быть точным. 'quays theatre, the lowry' вместо 'театре quays theatre, the lowry'.",
         "actions": [
           {
-            "line_index": 47,
+            "line_index": 31,
             "section": "Дальние анонсы",
             "requested_action": "patch",
-            "reason": "Добавлена информация о событии, дате и месте проведения.",
-            "risk": "format",
+            "reason": "Указание места проведения события должно быть точным. 'Quays Theatre, The Lowry' вместо 'театре Quays Theatre, The Lowry'.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Отсутствует информация о событии, только ссылка на сайт.",
+            "critical_problem": "Некорректное указание места проведения события.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "deterministic_rewrite",
+            "method": "model_patch",
             "plan_slot_id": "future_announcements-01",
-            "candidate_fingerprint": "event-id-skiddle-com-3143387df6e4-df6b91c5ad67",
-            "original_url_identity": "skiddle.com/whats-on/Manchester/New-Century-Hall-Manchester/Celebrating-Caroline-Aherne/42512335",
-            "original_html": "• Билеты доступны для покупки на сайте Skiddle. <a href=\"https://skiddle.com/whats-on/Manchester/New-Century-Hall-Manchester/Celebrating-Caroline-Aherne/42512335\">Skiddle Manchester Comedy</a>",
-            "model_replacement_rejected": "fact_lock: 23 августа 2026",
+            "candidate_fingerprint": "event-event-bobby-seagull-s-escape-from-ancient-egypt-2026-08-28-lowry-188d1706ee39",
+            "original_url_identity": "thelowry.com/whats-on/bobby-seagulls-escape-from-ancient-egypt-59kn",
+            "original_html": "• 28 августа 2026 года в 18:30 в театре Quays Theatre, The Lowry пройдет интерактивное семейное шоу \"Побег Бобби Сигала из Древнего Египта\". Билеты уже в продаже. <a href=\"https://thelowry.com/whats-on/bobby-seagulls-escape-from-ancient-egypt-59kn\">The Lowry</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 47,
+            "line_index": 31,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -959,178 +457,61 @@
         "known_factual_error": true
       },
       {
-        "group_key": "билеты / ticket radar::дублирование информации о событии kittie",
+        "group_key": "билеты / ticket radar::уточнение места проведения события для устранения дублирования",
         "actions": [
           {
-            "line_index": 50,
+            "line_index": 33,
             "section": "Билеты / Ticket Radar",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о событии Kittie.",
-            "risk": "format",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "ticket_radar-03",
-            "candidate_fingerprint": "event-event-kittie-2026-08-10-manchester-club-academy-be681b9a8bea",
-            "original_url_identity": "ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121",
-            "original_html": "• <b>Kittie</b> — 10 августа, Manchester Club Academy. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121\">Ticketmaster</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 50,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:kittie|2026-08-10|manchester club academy",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "билеты / ticket radar::дублирование информации о событии joji",
-        "actions": [
-          {
-            "line_index": 51,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о событии JOJI.",
-            "risk": "format",
+            "requested_action": "patch",
+            "reason": "Уточнение места проведения события для устранения дублирования.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Дублирование информации о событии JOJI.",
+            "critical_problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
             "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "ticket_radar-04",
-            "candidate_fingerprint": "event-event-joji-solaris-tour-with-special-guest-tommy-richman-sun-16-aug-2026-multiple-times-2026-08-16-co-op-live-63e07169f118",
-            "original_url_identity": "cooplive.com/events/joji-rzp7",
-            "original_html": "• <b>JOJI SOLARIS TOUR</b> — 16 августа, Co-op Live. Билеты доступны на официальной странице. <a href=\"https://cooplive.com/events/joji-rzp7\">Co-op Live</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
+            "outcome": "unresolved",
+            "method": "deterministic_rewrite",
+            "plan_slot_id": "ticket_radar-01",
+            "candidate_fingerprint": "event-event-kittie-10th-august-2026-2026-08-10-manchester-academy-647e1f8cf200",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13379566/kittie-manchester-club-academy-2026-08-10-19-30-00",
+            "original_html": "• <b>Kittie</b> — 10 августа, Manchester Academy; цена £32.50. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13379566/kittie-manchester-club-academy-2026-08-10-19-30-00\">Manchester Academy</a>",
+            "model_replacement_rejected": "fact_lock: manchester club academy, ticketmaster",
+            "post_check_passed": false
           }
         ],
-        "outcome": "resolved_by_removal",
+        "outcome": "unresolved",
         "post_checks": [
           {
-            "line_index": 51,
-            "passed": true,
-            "detail": "slot removed and source absent"
+            "line_index": 33,
+            "passed": false,
+            "detail": "line did not change"
           },
           {
             "check": "duplicate_identity",
-            "identity": "ticket:joji solaris tour|2026-08-16|co op live",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дублирование информации о northern quarter makers market",
-        "actions": [
-          {
-            "line_index": 25,
-            "section": "Выходные в GM",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о Northern Quarter Makers Market.",
-            "risk": "format",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "weekend_activities-03",
-            "candidate_fingerprint": "event-event-northern-quarter-makers-market-2026-08-09-manchester-m4-5jd-c43a82c26e5f",
-            "original_url_identity": "pedddle.com/market/northern-quarter-makers-market",
-            "original_html": "• 9 августа — Northern Quarter Makers Market в Манчестере. На рынке представлены ремесленные товары. <a href=\"https://pedddle.com/market/northern-quarter-makers-market\">Northern Quarter Makers Market</a>",
-            "replacement_fingerprint": "event-event-six-2026-08-09-lowry-c226b261523a",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 25,
-            "passed": true,
-            "detail": "post-check passed"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:northern quarter makers market|2026-08-09|manchester m4 5jd",
+            "identity": "ticket:kittie|2026-08-10|manchester academy",
             "visible_count": 1,
             "passed": true
           }
         ],
-        "known_factual_error": false
+        "known_factual_error": true
       },
       {
-        "group_key": "городской радар::дублирование информации о приговоре мохаммеда аль масри",
+        "group_key": "билеты / ticket radar::удаление дублирующей информации о событии kittie",
         "actions": [
           {
-            "line_index": 38,
-            "section": "Городской радар",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о приговоре Мохаммеда Аль Масри.",
-            "risk": "format",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "city_watch-06",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-young-mum-tricked-taxi-before-34422725-71b207126ddc",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/young-mum-tricked-taxi-before-34422725",
-            "original_html": "• Вынесен приговор — 7 августа 2026 года Мохаммед Аль Масри был приговорен к восьми годам лишения свободы за изнасилование молодой матери, которую он обманом заставил сесть в такси после рождественской вечеринки в центре Манчестера. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/young-mum-tricked-taxi-before-34422725\">MEN</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 38,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "topic:incident:manchester city centre young mum tricked into taxi before being raped by man who followed her after christmas night out thought she was goin|sentenced|2026 08 07",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "билеты / ticket radar::дублирование информации о концерте kittie",
-        "actions": [
-          {
-            "line_index": 50,
+            "line_index": 34,
             "section": "Билеты / Ticket Radar",
             "requested_action": "strip",
-            "reason": "Дублирование информации о концерте Kittie.",
-            "risk": "format",
+            "reason": "Удаление дублирующей информации о событии Kittie.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Дублирование информации о событии Kittie.",
+            "critical_problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "ticket_radar-03",
+            "plan_slot_id": "ticket_radar-02",
             "candidate_fingerprint": "event-event-kittie-2026-08-10-manchester-club-academy-be681b9a8bea",
             "original_url_identity": "ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121",
-            "original_html": "• <b>Kittie</b> — 10 августа, Manchester Club Academy. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121\">Ticketmaster</a>",
+            "original_html": "• <b>Kittie</b> — 10 августа, Manchester Club Academy. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121\">Ticketmaster</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "duplicate_after_plan",
             "post_check_passed": true
@@ -1139,7 +520,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 50,
+            "line_index": 34,
             "passed": true,
             "detail": "slot removed and source absent"
           },
@@ -1148,81 +529,18 @@
             "identity": "ticket:kittie|2026-08-10|manchester club academy",
             "visible_count": 0,
             "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no russian rendering in the shipped line",
-        "actions": [
-          {
-            "line_index": 36,
-            "section": "Городской радар",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-            "risk": "translation",
-            "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "weapon_violence",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "city_watch-04",
-            "candidate_fingerprint": "url-aboutmanchester-co-uk-murderer-who-stabbed-sisters-boyfriend-on-new-years-eve-is-jailed-for-life-0accacc1952b",
-            "original_url_identity": "aboutmanchester.co.uk/murderer-who-stabbed-sisters-boyfriend-on-new-years-eve-is-jailed-for-life",
-            "original_html": "• Антони Джуниор Мюррей приговорен к пожизненному заключению с минимальным сроком 18 лет за убийство Джо Бартона, совершенное в канун Нового года на Тарн Драйв в Бери. Мюррей изначально утверждал, что нашел жертву без сознания, но данные с телефона опровергли его показания. <a href=\"https://aboutmanchester.co.uk/murderer-who-stabbed-sisters-boyfriend-on-new-years-eve-is-jailed-for-life\">About Manchester News</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 36,
-            "passed": true,
-            "detail": "slot removed and source absent"
           }
         ],
         "known_factual_error": true
       }
     ],
     "refetch": {
-      "attempted": 2,
+      "attempted": 0,
       "improved": 0,
-      "failed": 1,
-      "empty_or_not_better": 1,
-      "skipped": 3,
+      "failed": 0,
+      "empty_or_not_better": 0,
+      "skipped": 1,
       "reports": [
-        {
-          "fingerprint": "url-nationalrail-co-uk-status-and-disruptions-northern-buses-replace-trains-between-manchester-piccadilly-and-hadfield-on-satu-06d3a98f2ef4",
-          "title": "Northern: Buses replace trains between Manchester Piccadilly and Hadfield on Saturday 8 and Sunday 9 August",
-          "status": "failed",
-          "url": "https://nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-manchester-piccadilly-and-hadfield-on-satu",
-          "error": "RuntimeError: HTTP 404"
-        },
-        {
-          "fingerprint": "event-id-skiddle-com-3143387df6e4-df6b91c5ad67",
-          "title": "Celebrating Caroline Aherne",
-          "status": "empty",
-          "url": "https://skiddle.com/whats-on/Manchester/New-Century-Hall-Manchester/Celebrating-Caroline-Aherne/42512335",
-          "chars": 0
-        },
-        {
-          "fingerprint": "event-event-kittie-2026-08-10-manchester-club-academy-be681b9a8bea",
-          "title": "Kittie — event 2026-08-10 — public sale 2026-02-06 09:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121",
-          "candidate_evidence_chars": 377
-        },
-        {
-          "fingerprint": "event-event-joji-solaris-tour-with-special-guest-tommy-richman-sun-16-aug-2026-multiple-times-2026-08-16-co-op-live-63e07169f118",
-          "title": "JOJI SOLARIS TOUR, with special guest Tommy Richman Sun 16 Aug 2026 Multiple times",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://cooplive.com/events/joji-rzp7",
-          "candidate_evidence_chars": 0
-        },
         {
           "fingerprint": "event-event-kittie-2026-08-10-manchester-club-academy-be681b9a8bea",
           "title": "Kittie — event 2026-08-10 — public sale 2026-02-06 09:00",
@@ -1233,17 +551,15 @@
         }
       ]
     },
-    "enrich_improved": 15,
-    "false_positive_existing_fact": 6,
-    "deterministic_fact_lock_rejected": 1,
-    "no_eligible_backup": 7,
+    "enrich_improved": 6,
+    "false_positive_existing_fact": 1,
     "deterministic_rewrite_built": 1,
-    "deterministic_rewrite_rejected": 1,
+    "no_eligible_backup": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 46,
-      "matched_lines": 46,
-      "applicable_lines": 2,
+      "checked_lines": 35,
+      "matched_lines": 35,
+      "applicable_lines": 3,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -1255,14 +571,14 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 46,
-      "resolved_in_place": 46,
+      "checked_lines": 35,
+      "resolved_in_place": 35,
       "unresolved": 0,
       "findings": []
     },
-    "status": "resolved"
+    "status": "unresolved"
   },
-  "notes": "Исправление необходимо для корректного указания должности Энди Бернэма.; Прогноз погоды соответствует данным Met Office и контракту раздела.; Исправление необходимо для корректного отражения статуса судебного процесса.; Исправлена ошибка в указании дней недели для дат 8 и 9 августа 2026 года.; Обе строки соответствуют ",
+  "notes": "Добавлена информация об аресте подозреваемого для соответствия фактам.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в указании должности Энди Бернэма. Остальные строки безопасны.; Все строки соответствуют географическому охвату GM и содержат актуальную информацию о транспортных нар",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
@@ -1270,107 +586,44 @@
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "problem": "Энди Бернэм не является премьер-министром, он мэр Greater Manchester.",
+        "problem": "Отсутствует информация об аресте подозреваемого.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 5,
+        "line_index": 7,
         "section": "Свежие новости",
-        "problem": "Неправильное использование термина 'осуждены'.",
+        "problem": "Энди Бернэм указан как премьер-министр, что неверно. Он мэр Большого Манчестера.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 8,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дата указана неверно. 8 и 9 августа 2026 года - это суббота и воскресенье, но в тексте указано, что это суббота и воскресенье.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 26,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно. Указана дата 9 августа, но в источнике указана дата 2 августа.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 28,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно. Указана дата 9 августа, но в источнике указана дата 2 августа.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 30,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно. Указана дата 9 августа, но в источнике указана дата 2 августа.",
-        "risk": "date",
+        "line_index": 25,
+        "section": "Городской радар",
+        "problem": "Некорректное утверждение о смерти Эндрю Дэвиса. Он был освобождён в 2023 году, но умер в тюрьме.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
         "line_index": 31,
-        "section": "Выходные в GM",
-        "problem": "Неправильное указание места проведения мероприятия.",
-        "risk": "geo",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 32,
-        "section": "Выходные в GM",
-        "problem": "Дата мероприятия указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 37,
-        "section": "Городской радар",
-        "problem": "Событие произошло в Уэльсе, что выходит за пределы географического охвата GM.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 47,
         "section": "Дальние анонсы",
-        "problem": "Отсутствует информация о событии, только ссылка на сайт.",
-        "risk": "format",
+        "problem": "Некорректное указание места проведения события.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 50,
+        "line_index": 33,
         "section": "Билеты / Ticket Radar",
-        "problem": "Дублирование информации о событии Kittie.",
-        "risk": "format",
-        "suggested_action": "strip"
+        "problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
+        "risk": "factual",
+        "suggested_action": "repair"
       },
       {
-        "line_index": 51,
+        "line_index": 34,
         "section": "Билеты / Ticket Radar",
-        "problem": "Дублирование информации о событии JOJI.",
-        "risk": "format",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 25,
-        "section": "Выходные в GM",
-        "problem": "Дублирование информации о Northern Quarter Makers Market.",
-        "risk": "format",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 38,
-        "section": "Городской радар",
-        "problem": "Дублирование информации о приговоре Мохаммеда Аль Масри.",
-        "risk": "format",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 50,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дублирование информации о концерте Kittie.",
-        "risk": "format",
-        "suggested_action": "strip"
+        "problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
+        "risk": "factual",
+        "suggested_action": "repair"
       }
     ],
     "actions": [
@@ -1378,126 +631,59 @@
         "line_index": 1,
         "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• Мэр Greater Manchester Энди Бернэм носит синюю повязку на запястье, связанную с мальчиком по имени Джозеф из Wigan, с которым он встретился десять лет назад. MEN",
-        "reason": "Энди Бернэм является мэром Greater Manchester, а не премьер-министром.",
+        "replacement_text": "• В Tameside начато расследование убийства после того, как 61-летняя женщина была найдена мёртвой. 60-летний мужчина был арестован по подозрению в убийстве. MEN",
+        "reason": "Добавление информации об аресте подозреваемого для полноты и точности.",
         "risk": "factual"
       },
       {
-        "line_index": 5,
+        "line_index": 7,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• В Манчестерском коронном суде 7 августа 2026 года два сотрудника тюрьмы, Эль Уолтон и Джай Гаскойн, были признаны виновными в неуместных отношениях с братьями-грабителями, Дилом и Хаком Навазами, отбывающими наказание в HMP Buckley Hall. Судья отметил, что их действия подорвали доверие, которое было возложено на них в связи с их работой, несмотря на то, что они не передавали контрабанду и их отношения не стали сексуальными. MEN",
-        "reason": "Термин 'осуждены' подразумевает вынесение приговора, но в данном случае речь идет о признании вины.",
+        "replacement_text": "• Мэр Большого Манчестера Энди Бернэм объявил о новых мерах, направленных на борьбу с ложными скидками и ловушками подписок, которые, по его словам, помогут людям сэкономить деньги. Эти инициативы, названные им 'повседневными исправлениями', призваны облегчить финансовое бремя на домохозяйства в условиях кризиса стоимости жизни, и это только начало, так как Бернэм обещает представить ещё больше подобных мер в будущем. MEN",
+        "reason": "Исправление фактической ошибки: Энди Бернэм является мэром, а не премьер-министром.",
         "risk": "factual"
-      },
-      {
-        "line_index": 8,
-        "section": "Общественный транспорт сегодня",
-        "action": "patch",
-        "replacement_text": "• Автобусы заменяют поезда Northern между Манчестер Пикадилли и Хадфилдом в субботу 8 и воскресенье 9 августа 2026 года из-за ремонтных работ. Пассажирам рекомендуется проверить расписание перед поездкой.",
-        "reason": "Указание на National Rail Enquiries в конце строки не является необходимым и может быть удалено для улучшения читаемости.",
-        "risk": "format"
-      },
-      {
-        "line_index": 26,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 2 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход £10. The BIG Stockport Car Boot",
-        "reason": "Исправление даты события на 2 августа согласно источнику.",
-        "risk": "date"
-      },
-      {
-        "line_index": 28,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 2 августа в New Smithfield Market, Openshaw, Manchester, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный. New Smithfield Sunday Market",
-        "reason": "Исправление даты события на 2 августа согласно источнику.",
-        "risk": "date"
-      },
-      {
-        "line_index": 30,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 2 августа в Burnage RFC, Varley Park, Battersea Road, Stockport, SK4 3EA — Burnage RFC car boot sale. На площадке: автомобильная барахолка. Burnage RFC Car Boot Sale",
-        "reason": "Исправление даты события на 2 августа согласно источнику.",
-        "risk": "date"
-      },
-      {
-        "line_index": 31,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• Сегодня с 10:45 до 17:30 на площади Святого Петра в Манчестере пройдет бесплатное мероприятие \"Крази-гонки\" с 27 командами. Manchester's Finest Events",
-        "reason": "Указано неверное место проведения мероприятия.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 32,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 9 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка. Bowlee Car Boot Sale",
-        "reason": "Дата мероприятия должна быть 9 августа 2026 года.",
-        "risk": "date"
-      },
-      {
-        "line_index": 37,
-        "section": "Городской радар",
-        "action": "strip",
-        "reason": "Событие произошло в Уэльсе, что выходит за пределы географического охвата GM.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 47,
-        "section": "Дальние анонсы",
-        "action": "patch",
-        "replacement_text": "• Celebrating Caroline Aherne в New Century Hall Manchester 23 августа 2026 года. Билеты доступны на сайте Skiddle.",
-        "reason": "Добавлена информация о событии, дате и месте проведения.",
-        "risk": "format"
-      },
-      {
-        "line_index": 50,
-        "section": "Билеты / Ticket Radar",
-        "action": "strip",
-        "reason": "Дублирование информации о событии Kittie.",
-        "risk": "format"
-      },
-      {
-        "line_index": 51,
-        "section": "Билеты / Ticket Radar",
-        "action": "strip",
-        "reason": "Дублирование информации о событии JOJI.",
-        "risk": "format"
       },
       {
         "line_index": 25,
-        "section": "Выходные в GM",
-        "action": "strip",
-        "reason": "Дублирование информации о Northern Quarter Makers Market.",
-        "risk": "format"
-      },
-      {
-        "line_index": 38,
         "section": "Городской радар",
-        "action": "strip",
-        "reason": "Дублирование информации о приговоре Мохаммеда Аль Масри.",
-        "risk": "format"
+        "action": "patch",
+        "replacement_text": "• Серийный насильник Эндрю Дэвис, известный как 'насильник из Coronation Street', скончался от рака мозга в тюрьме. Он был освобождён в 2023 году, но позже вернулся в тюрьму за нарушение условий освобождения. MEN",
+        "reason": "Уточнение, что он умер в тюрьме, а не после освобождения.",
+        "risk": "factual"
       },
       {
-        "line_index": 50,
+        "line_index": 31,
+        "section": "Дальние анонсы",
+        "action": "patch",
+        "replacement_text": "• 28 августа 2026 года в 18:30 в Quays Theatre, The Lowry пройдет интерактивное семейное шоу \"Побег Бобби Сигала из Древнего Египта\". Билеты уже в продаже.",
+        "reason": "Указание места проведения события должно быть точным. 'Quays Theatre, The Lowry' вместо 'театре Quays Theatre, The Lowry'.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 33,
+        "section": "Билеты / Ticket Radar",
+        "action": "patch",
+        "replacement_text": "• Kittie — 10 августа, Manchester Club Academy; цена £32.50. Событие проходит сегодня. Ticketmaster",
+        "reason": "Уточнение места проведения события для устранения дублирования.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 34,
         "section": "Билеты / Ticket Radar",
         "action": "strip",
-        "reason": "Дублирование информации о концерте Kittie.",
-        "risk": "format"
+        "reason": "Удаление дублирующей информации о событии Kittie.",
+        "risk": "factual"
       }
     ],
     "warnings": [
-      "В разделе 'Футбол' присутствуют три новости, что соответствует контракту, но стоит следить за балансом с другими разделами.",
-      "Недостаток в блоке 'Что важно сегодня' и 'Свежие новости'."
+      "В разделе 'Общественный транспорт сегодня' много информации о транспортных нарушениях, но это может быть полезно для читателей, планирующих поездки.",
+      "judge reduce failed: parse_failed no parseable JSON"
     ],
-    "notes": "Исправление необходимо для корректного указания должности Энди Бернэма.; Прогноз погоды соответствует данным Met Office и контракту раздела.; Исправление необходимо для корректного отражения статуса судебного процесса.; Исправлена ошибка в указании дней недели для дат 8 и 9 августа 2026 года.; Обе строки соответствуют ",
+    "notes": "Добавлена информация об аресте подозреваемого для соответствия фактам.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в указании должности Энди Бернэма. Остальные строки безопасны.; Все строки соответствуют географическому охвату GM и содержат актуальную информацию о транспортных нар",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "ok",
-      "chunk_count": 13,
+      "status": "partial",
+      "chunk_count": 9,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -1515,8 +701,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2557,
-          "duration_seconds": 3.032
+          "estimated_tokens": 2534,
+          "duration_seconds": 2.869
         },
         {
           "chunk_id": "chunk-02",
@@ -1533,15 +719,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2320,
-          "duration_seconds": 1.554
+          "estimated_tokens": 2310,
+          "duration_seconds": 1.631
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            7
+            11
           ],
           "sections": [
             "Свежие новости"
@@ -1551,33 +737,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4892,
-          "duration_seconds": 2.633
+          "estimated_tokens": 7256,
+          "duration_seconds": 3.607
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            8,
-            13
+            12,
+            16
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
           "error": "",
-          "estimated_tokens": 5230,
-          "duration_seconds": 2.41
+          "estimated_tokens": 4449,
+          "duration_seconds": 1.383
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            14,
-            15
+            17,
+            18
           ],
           "sections": [
             "Что важно сегодня"
@@ -1587,69 +773,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3164,
-          "duration_seconds": 0.972
+          "estimated_tokens": 3177,
+          "duration_seconds": 1.279
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            16,
-            18
-          ],
-          "sections": [
-            "Футбол"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 3570,
-          "duration_seconds": 1.172
-        },
-        {
-          "chunk_id": "chunk-07",
-          "status": "ok",
-          "line_range": [
             19,
             30
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 3,
-          "action_count": 3,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 9206,
-          "duration_seconds": 63.949
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            31,
-            32
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3268,
-          "duration_seconds": 2.505
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            33,
-            44
           ],
           "sections": [
             "Городской радар"
@@ -1659,33 +791,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 8521,
-          "duration_seconds": 40.322
+          "estimated_tokens": 8227,
+          "duration_seconds": 2.865
         },
         {
-          "chunk_id": "chunk-10",
+          "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            45,
-            46
-          ],
-          "sections": [
-            "IT и бизнес"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3072,
-          "duration_seconds": 0.941
-        },
-        {
-          "chunk_id": "chunk-11",
-          "status": "ok",
-          "line_range": [
-            47,
-            47
+            31,
+            32
           ],
           "sections": [
             "Дальние анонсы"
@@ -1695,15 +809,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2563,
-          "duration_seconds": 2.912
+          "estimated_tokens": 3225,
+          "duration_seconds": 14.028
         },
         {
-          "chunk_id": "chunk-12",
+          "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            48,
-            51
+            33,
+            35
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -1713,40 +827,40 @@
           "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4252,
-          "duration_seconds": 9.142
+          "estimated_tokens": 3750,
+          "duration_seconds": 22.277
         },
         {
-          "chunk_id": "chunk-13",
+          "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            52,
-            52
+            36,
+            36
           ],
           "sections": [
-            "Русскоязычные концерты и стендап UK"
+            "Крупные концерты вне GM"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2700,
-          "duration_seconds": 4.925
+          "estimated_tokens": 2545,
+          "duration_seconds": 3.148
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "ok",
+        "status": "parse_failed",
         "line_range": [],
         "sections": [],
-        "decision": "repair_required",
-        "critical_error_count": 3,
-        "action_count": 3,
-        "warning_count": 1,
-        "error": "",
-        "estimated_tokens": 11500,
-        "duration_seconds": 24.374
+        "decision": "",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 0,
+        "error": "no parseable JSON",
+        "estimated_tokens": 10193,
+        "duration_seconds": 26.632
       },
       "max_workers": 3,
       "chunk_line_target": 12,
