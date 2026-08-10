@@ -98,6 +98,40 @@ def close_pending_dedupe_reasons(candidates: list[dict]) -> list[dict]:
     return closed
 
 
+def _enforce_cheap_dedup_invariant(candidates: list[dict]) -> list[dict]:
+    """Do not let cross-day repeat logic resurrect a same-run exact twin.
+
+    Calendar/lifecycle repeat policy answers whether one story may return on a
+    later day.  It must not override the collector's deterministic decision
+    that two rows in *this* run point at the same canonical source page.
+    """
+    restored: list[dict] = []
+    for candidate in candidates:
+        if not isinstance(candidate, dict) or not candidate.get("cheap_dedup_drop"):
+            continue
+        was_included = bool(candidate.get("include"))
+        previous_decision = str(candidate.get("dedupe_decision") or "")
+        candidate["include"] = False
+        candidate["dedupe_decision"] = "drop"
+        candidate["dedupe_verdict"] = "drop"
+        candidate["change_type"] = "same_story_rehash"
+        if "cheap pre-enrich duplicate" not in str(candidate.get("reason") or "").lower():
+            candidate["reason"] = (
+                "Cheap pre-enrich duplicate remains suppressed after history checks."
+            )
+        if was_included or previous_decision != "drop":
+            restored.append(
+                {
+                    "fingerprint": str(candidate.get("fingerprint") or ""),
+                    "title": str(candidate.get("title") or "")[:120],
+                    "source_url": str(candidate.get("source_url") or ""),
+                    "previous_decision": previous_decision,
+                    "kept_fingerprint": str(candidate.get("cheap_dedup_of") or ""),
+                }
+            )
+    return restored
+
+
 def initialize_candidates_state(project_root: Path, *, overwrite: bool = False) -> StageResult:
     state_dir = project_root / "data" / "state"
     state_dir.mkdir(parents=True, exist_ok=True)
@@ -437,6 +471,8 @@ def dedupe_candidates(project_root: Path) -> StageResult:
         )
     _mark_timing("history_match_and_contracts_seconds", history_loop_t0)
 
+    cheap_dedup_invariant_restored = _enforce_cheap_dedup_invariant(candidates)
+
     # LLM borderline review: heuristic _classify_change_type can't tell
     # "£230m requested" from "£230m granted". For candidates labelled
     # no_change/same_story_rehash that DO carry substantive evidence_text,
@@ -495,6 +531,14 @@ def dedupe_candidates(project_root: Path) -> StageResult:
     semantic_guard = _apply_semantic_drop_guard(candidates)
     _mark_timing("semantic_guard_seconds", semantic_guard_t0)
 
+    late_cheap_dedup_restored = _enforce_cheap_dedup_invariant(candidates)
+    cheap_dedup_invariant_restored.extend(late_cheap_dedup_restored)
+    if cheap_dedup_invariant_restored:
+        warnings.append(
+            "Dedupe restored the same-run exact-duplicate invariant for "
+            f"{len(cheap_dedup_invariant_restored)} candidate(s) after history review."
+        )
+
     # 0158: замок дедупа — «pending dedupe» не переживает стадию, а полнота
     # блока считается по тому, что реально пережило дедуп, а не по ночному складу.
     pending_dedupe_closed = close_pending_dedupe_reasons(candidates)
@@ -545,6 +589,7 @@ def dedupe_candidates(project_root: Path) -> StageResult:
                 if isinstance(c, dict) and str(c.get("semantic_dedupe_match") or "").startswith("embedding")
             ),
             "semantic_guard": semantic_guard,
+            "cheap_dedup_invariant_restored": cheap_dedup_invariant_restored,
             "history_identity_migration": history_identity_migration,
             "pending_dedupe_closed": pending_dedupe_closed,
             "post_dedupe_completeness": post_dedupe_completeness,
@@ -891,6 +936,8 @@ def _borderline_pairs(
     pairs: list[tuple[dict, dict]] = []
     for c in candidates:
         if not isinstance(c, dict):
+            continue
+        if c.get("cheap_dedup_drop"):
             continue
         if str(c.get("change_type") or "") not in {"no_change", "same_story_rehash"}:
             continue

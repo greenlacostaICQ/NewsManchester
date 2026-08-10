@@ -762,6 +762,7 @@ def apply_cheap_dedup_before_enrich(candidates: list[dict]) -> dict[str, object]
             candidate["dedupe_decision"] = "drop"
             candidate["change_type"] = "same_story_rehash"
             candidate["cheap_dedup_drop"] = True
+            candidate["cheap_dedup_of"] = winner_fp
             candidate["reason"] = (
                 "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
             )

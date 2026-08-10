@@ -18,10 +18,23 @@ from pathlib import Path
 from unittest.mock import patch
 
 from news_digest.pipeline.block_policy import BLOCK_POLICY_VERSION
-from news_digest.pipeline.common import candidates_by_fingerprint, canonical_url_identity, now_london
+from news_digest.pipeline.common import (
+    candidates_by_fingerprint,
+    canonical_url_identity,
+    fingerprint_for_candidate,
+    now_london,
+)
+from news_digest.pipeline.dedupe import dedupe_candidates
 from news_digest.pipeline.editor import edit_digest
 from news_digest.pipeline.plan_digest import run_plan_digest
-from news_digest.pipeline.plan_execution import load_execution, load_plan, next_backup, save_execution
+from news_digest.pipeline.plan_execution import (
+    build_final_execution_report,
+    load_execution,
+    load_plan,
+    next_backup,
+    save_execution,
+)
+from news_digest.pipeline.repeat_policy import RepeatVerdict
 from news_digest.pipeline.release import _planner_repeat_decision
 from news_digest.pipeline.verify_digest_plan import run_verify_digest_plan
 from news_digest.pipeline.writer import write_digest
@@ -99,6 +112,132 @@ class PlanContractTest(unittest.TestCase):
         resolved = candidates_by_fingerprint([selected, dropped_twin])
 
         self.assertIs(resolved["same-fp"], selected)
+
+    def test_same_run_cheap_duplicate_cannot_be_resurrected_by_repeat_policy(self) -> None:
+        candidate = _candidate(
+            11,
+            block="weekend_activities",
+            category="culture_weekly",
+            title="Prestwich Makers Market",
+            source_url="https://pedddle.com/market/prestwich-makers-market",
+            event={
+                "is_event": True,
+                "event_name": "Prestwich Makers Market",
+                "venue": "Prestwich M25 1BR",
+                "date_start": now_london().strftime("%Y-%m-%d"),
+            },
+            include=False,
+            dedupe_decision="drop",
+            cheap_dedup_drop=True,
+            cheap_dedup_of="kept-jsonld-row",
+            reason="Cheap pre-enrich duplicate — same URL/title kept from stronger source.",
+        )
+        fingerprint = fingerprint_for_candidate(candidate)
+        candidate["fingerprint"] = fingerprint
+        previous = {
+            **candidate,
+            "include": True,
+            "fingerprint": fingerprint,
+            "normalized_title": "prestwich makers market",
+            "last_published_day_london": now_london().strftime("%Y-%m-%d"),
+            "first_published_day_london": now_london().strftime("%Y-%m-%d"),
+        }
+        allow_calendar_repeat = RepeatVerdict(
+            True,
+            "calendar",
+            "current_weekend_inventory_occurrence",
+            previous_fingerprint=fingerprint,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, [candidate])
+            (state_dir / "published_facts.json").write_text(
+                json.dumps(
+                    {
+                        "last_updated_london": now_london().isoformat(),
+                        "facts": [previous],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            with patch(
+                "news_digest.pipeline.dedupe.visible_repeat_verdict",
+                return_value=allow_calendar_repeat,
+            ), patch(
+                "news_digest.pipeline.dedupe._review_borderline_with_llm",
+                return_value={},
+            ), patch(
+                "news_digest.pipeline.dedupe._review_semantic_borderline_with_llm",
+                return_value={},
+            ), patch.dict(
+                os.environ,
+                {"OPENAI_API_KEY": "", "DEEPSEEK_API_KEY": "", "GROQ_API_KEY": ""},
+            ):
+                dedupe_candidates(root)
+            updated = json.loads(
+                (state_dir / "candidates.json").read_text(encoding="utf-8")
+            )["candidates"][0]
+            report = json.loads(
+                (state_dir / "dedupe_memory.json").read_text(encoding="utf-8")
+            )
+
+        self.assertFalse(updated["include"])
+        self.assertEqual(updated["dedupe_decision"], "drop")
+        self.assertTrue(report["cheap_dedup_invariant_restored"])
+
+    def test_planner_allows_one_primary_or_backup_per_canonical_url(self) -> None:
+        shared_url = "https://pedddle.com/market/prestwich-makers-market"
+        rows = [
+            _candidate(
+                21 + idx,
+                block="weekend_activities",
+                category="culture_weekly",
+                fingerprint=f"prestwich-variant-{idx}",
+                title="Prestwich Makers Market",
+                source_url=shared_url,
+                event={
+                    "is_event": True,
+                    "event_name": "Prestwich Makers Market",
+                    "venue": venue,
+                    "date_start": "2026-08-09",
+                },
+            )
+            for idx, venue in enumerate(("Prestwich M25 1BR", "Outside Longfield Centre"))
+        ]
+        with patch.dict(os.environ, {"NEWS_DIGEST_FAKE_NOW": "2026-08-09T08:00:00+01:00"}):
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                state_dir = _seed(root, rows)
+                with patch(
+                    "news_digest.pipeline.plan_digest._apply_routing",
+                    return_value="",
+                ), patch(
+                    "news_digest.pipeline.plan_digest._admission_verdict",
+                    return_value=("ok", ""),
+                ):
+                    run_plan_digest(root)
+                plan = load_plan(state_dir)
+                stored = json.loads(
+                    (state_dir / "candidates.json").read_text(encoding="utf-8")
+                )["candidates"]
+
+        by_fp = {row["fingerprint"]: row for row in stored}
+        refs = [slot["primary_fingerprint"] for slot in plan["slots"]]
+        refs.extend(
+            fp
+            for slot in plan["slots"]
+            for fp in slot.get("backup_fingerprints") or []
+        )
+        matching = [
+            fp
+            for fp in refs
+            if canonical_url_identity(by_fp[fp]["source_url"])
+            == canonical_url_identity(shared_url)
+        ]
+        self.assertEqual(len(matching), 1)
+        self.assertEqual(plan["totals"]["canonical_url_duplicates_demoted"], 1)
 
     def test_cap_demoted_fresh_candidates_become_slot_backups(self) -> None:
         candidates = [_candidate(i) for i in range(16)]
@@ -289,6 +428,56 @@ class PlanContractTest(unittest.TestCase):
         rendered = set(report["rendered_candidate_fingerprints"])
         self.assertTrue(rendered, "writer must render the plan")
         self.assertLessEqual(rendered, allowed, "видимая строка вне плана запрещена")
+
+    def test_writer_replaces_late_same_url_collision_from_slot_backup(self) -> None:
+        candidates = [_candidate(i) for i in range(18)]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, candidates)
+            run_plan_digest(root)
+            plan = load_plan(state_dir)
+            section_slots: dict[str, list[dict]] = {}
+            for slot in plan["slots"]:
+                section_slots.setdefault(slot["section"], []).append(slot)
+            earlier = target = None
+            for slots in section_slots.values():
+                slots.sort(key=lambda row: int(row.get("position") or 0))
+                for index, slot in enumerate(slots[1:], start=1):
+                    if slot.get("backup_fingerprints"):
+                        earlier, target = slots[index - 1], slot
+                        break
+                if target is not None:
+                    break
+            self.assertIsNotNone(earlier)
+            self.assertIsNotNone(target)
+            by_fp = {row["fingerprint"]: row for row in candidates}
+            shared_url = by_fp[earlier["primary_fingerprint"]]["source_url"]
+            by_fp[target["primary_fingerprint"]]["source_url"] = shared_url
+            (state_dir / "candidates.json").write_text(
+                json.dumps(
+                    {
+                        "pipeline_run_id": "plan-contract-test",
+                        "run_date_london": now_london().strftime("%Y-%m-%d"),
+                        "candidates": candidates,
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            result = write_digest(root)
+            execution = load_execution(state_dir)
+            draft = (state_dir / "draft_digest.html").read_text(encoding="utf-8")
+
+        self.assertTrue(result.ok)
+        outcome = execution["slots"][target["slot_id"]]
+        self.assertEqual(outcome["status"], "replaced")
+        self.assertTrue(
+            any(
+                attempt.get("reason") == "duplicate_after_plan"
+                for attempt in outcome.get("failed_attempts") or []
+            )
+        )
+        self.assertEqual(draft.count(shared_url), 1)
 
     def test_4b_editor_does_not_delete_identical_planned_rows(self) -> None:
         candidates = [_candidate(i) for i in range(7)]
@@ -1071,6 +1260,42 @@ class PlanContractTest(unittest.TestCase):
         self.assertTrue(report["ship_degraded"])
         self.assertEqual(report["technical_errors"], [])
         self.assertIn("unresolved_known_factual", {row["kind"] for row in report["divergences"]})
+
+    def test_17_verify_reports_planned_url_duplicate_but_never_blocks_delivery(self) -> None:
+        candidates = [_candidate(i) for i in range(7)]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, candidates)
+            run_plan_digest(root)
+            write_digest(root)
+            outgoing = root / "data" / "outgoing"
+            outgoing.mkdir(parents=True, exist_ok=True)
+            html = (state_dir / "draft_digest.html").read_text(encoding="utf-8")
+            (outgoing / "current_digest.html").write_text(html, encoding="utf-8")
+            final_selection = build_final_execution_report(state_dir, html, write=False)
+            final_selection["divergences"] = [
+                {
+                    "kind": "html_line_duplicated",
+                    "url_identity": "pedddle.com/market/prestwich-makers-market",
+                    "sections": ["Выходные в GM", "Выходные в GM"],
+                }
+            ]
+            with patch(
+                "news_digest.pipeline.verify_digest_plan.build_final_execution_report",
+                return_value=final_selection,
+            ):
+                result = run_verify_digest_plan(root)
+            report = json.loads(
+                (state_dir / "verify_digest_plan_report.json").read_text(encoding="utf-8")
+            )
+
+        self.assertTrue(result.ok)
+        self.assertTrue(report["ship_degraded"])
+        self.assertEqual(report["technical_errors"], [])
+        self.assertIn(
+            "html_line_duplicated",
+            {row["kind"] for row in report["divergences"]},
+        )
 
 
 if __name__ == "__main__":

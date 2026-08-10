@@ -16,6 +16,7 @@ from news_digest.pipeline.block_policy import BLOCK_POLICY_REGISTRY, block_polic
 from news_digest.pipeline.common import (
     PRIMARY_BLOCKS,
     candidates_by_fingerprint,
+    canonical_url_identity,
     is_placeholder_practical_angle,
     now_london,
     pipeline_run_id_from,
@@ -5377,6 +5378,7 @@ def _produce_slot_line(
 
 
 _REMOVAL_REASON_BY_ERROR_PREFIX = (
+    ("duplicate_after_plan", "duplicate_after_plan"),
     ("draft_line contains number(s) not present", "unsupported_fact"),
     ("missing_required_facts", "missing_required_facts"),
     ("expired", "expired_after_plan"),
@@ -5569,6 +5571,7 @@ def write_digest(project_root: Path) -> StageResult:
         slots_by_section[section].sort(key=lambda s: int(s.get("position") or 0))
 
     used_fingerprints: set[str] = set()
+    used_url_identities: set[str] = set()
     sections_out: dict[str, list[str]] = {}
     section_sources: dict[str, list[str]] = {}
     section_fingerprints: dict[str, list[str]] = {}
@@ -5598,8 +5601,22 @@ def write_digest(project_root: Path) -> StageResult:
         tried_backup = False
         while attempts:
             fp, candidate = attempts.pop(0)
+            candidate_url_identity = canonical_url_identity(
+                str((candidate or {}).get("source_url") or "")
+            )
             if candidate is None or fp in used_fingerprints:
                 record_outcome(execution, slot_id, status="", failed_fingerprint=fp, reason="candidate_missing_or_used", stage="writer")
+            elif candidate_url_identity and candidate_url_identity in used_url_identities:
+                if not first_errors:
+                    first_errors = ["duplicate_after_plan"]
+                record_outcome(
+                    execution,
+                    slot_id,
+                    status="",
+                    failed_fingerprint=fp,
+                    reason="duplicate_after_plan",
+                    stage="writer",
+                )
             else:
                 quality_counts["included_candidates"] += 1
                 line, line_errors = _produce_slot_line(
@@ -5643,6 +5660,8 @@ def write_digest(project_root: Path) -> StageResult:
                         stage="writer",
                     )
                     used_fingerprints.add(fp)
+                    if candidate_url_identity:
+                        used_url_identities.add(candidate_url_identity)
                     return candidate, line, status
                 if not first_errors:
                     first_errors = list(line_errors) or ["unrenderable_line"]

@@ -25,6 +25,7 @@ import re
 
 from news_digest.pipeline.common import (
     PRIMARY_BLOCKS,
+    canonical_url_identity,
     fingerprint_for_candidate,
     now_london,
     pipeline_run_id_from,
@@ -172,6 +173,11 @@ def _story_key(candidate: dict) -> str:
     from news_digest.pipeline.editor import _candidate_story_identity_key  # noqa: PLC0415
 
     return _candidate_story_identity_key(candidate)
+
+
+def _url_identity(candidate: dict) -> str:
+    """Composition identity shared with final HTML verification."""
+    return canonical_url_identity(str(candidate.get("source_url") or ""))
 
 
 def _a_tier_physical_key(candidate: dict) -> str:
@@ -394,6 +400,8 @@ def _backup_eligible(candidate: dict) -> tuple[bool, str]:
     """Only a clean capacity hold can enter a planner slot backup chain."""
     if not isinstance(candidate, dict):
         return False, "not_a_candidate"
+    if candidate.get("cheap_dedup_drop"):
+        return False, "cheap_same_run_duplicate"
     if not candidate.get("validated", False):
         return False, "not_validated"
     if str(candidate.get("digest_selection_verdict") or "") == "drop":
@@ -490,6 +498,8 @@ def _admission_verdict(candidate: dict, previous_by_fp: dict[str, dict]) -> tupl
         _is_outside_current_weekend_candidate,
     )
 
+    if candidate.get("cheap_dedup_drop"):
+        return "out", "cheap_same_run_duplicate"
     if candidate.get("validation_errors"):
         return "out", "validation_errors"
     if not candidate.get("source_url") or not candidate.get("source_label"):
@@ -686,6 +696,9 @@ def run_plan_digest(project_root: Path) -> StageResult:
         verdict = str(candidate.get("digest_selection_verdict") or "")
         shortlist_status = str(candidate.get("rewrite_shortlist_status") or "")
         included = bool(candidate.get("include"))
+        if candidate.get("cheap_dedup_drop"):
+            _mark_out(candidate, "cheap_same_run_duplicate")
+            continue
         a_tier_eligible, a_tier_reason = a_tier_ticket_policy(candidate)
         if a_tier_eligible and not candidate.get("a_tier_collapsed_into"):
             candidate["a_tier_policy_status"] = "must_show"
@@ -790,6 +803,8 @@ def run_plan_digest(project_root: Path) -> StageResult:
 
     # Одна история — один слот во всём выпуске (включая lead).
     seen_story_keys: set[str] = set()
+    seen_url_identities: set[str] = set()
+    lead_understudy_url_identities: set[str] = set()
 
     # --- Lead --------------------------------------------------------------
     lead_candidate = next(
@@ -816,6 +831,9 @@ def run_plan_digest(project_root: Path) -> StageResult:
             if lead_candidate in pool:
                 pool.remove(lead_candidate)
         seen_story_keys.add(_story_key(lead_candidate))
+        lead_url_identity = _url_identity(lead_candidate)
+        if lead_url_identity:
+            seen_url_identities.add(lead_url_identity)
 
     # Дублёры главной — из-под публичной границы (из запасных пулов),
     # чтобы не замораживать сильные новости штатного выпуска.
@@ -828,10 +846,14 @@ def run_plan_digest(project_root: Path) -> StageResult:
             if not _blob(candidate) and candidate.get("plan_render_path") != "model_write":
                 continue
             key = _story_key(candidate)
-            if key in seen_story_keys:
+            url_identity = _url_identity(candidate)
+            if key in seen_story_keys or (url_identity and url_identity in seen_url_identities):
                 continue
             lead_understudies.append(str(candidate.get("fingerprint") or ""))
             seen_story_keys.add(key)
+            if url_identity:
+                seen_url_identities.add(url_identity)
+                lead_understudy_url_identities.add(url_identity)
         if len(lead_understudies) >= LEAD_UNDERSTUDY_COUNT:
             break
     # If ordinary reserve is too thin, deliberately hold strong overflow from
@@ -852,7 +874,13 @@ def run_plan_digest(project_root: Path) -> StageResult:
                     break
                 eligible, render_path = _backup_eligible(candidate)
                 key = _story_key(candidate)
-                if not eligible or _is_weak_lead(candidate) or (key and key in seen_story_keys):
+                url_identity = _url_identity(candidate)
+                if (
+                    not eligible
+                    or _is_weak_lead(candidate)
+                    or (key and key in seen_story_keys)
+                    or (url_identity and url_identity in seen_url_identities)
+                ):
                     continue
                 pool.remove(candidate)
                 candidate["plan_render_path"] = render_path
@@ -861,6 +889,9 @@ def run_plan_digest(project_root: Path) -> StageResult:
                 lead_understudies.append(str(candidate.get("fingerprint") or ""))
                 if key:
                     seen_story_keys.add(key)
+                if url_identity:
+                    seen_url_identities.add(url_identity)
+                    lead_understudy_url_identities.add(url_identity)
             if len(lead_understudies) >= LEAD_UNDERSTUDY_COUNT:
                 break
     lead_backup_shortfall = max(0, LEAD_UNDERSTUDY_COUNT - len(lead_understudies))
@@ -884,11 +915,17 @@ def run_plan_digest(project_root: Path) -> StageResult:
         kept: list[dict] = []
         for candidate in pool:
             key = _story_key(candidate)
+            url_identity = _url_identity(candidate)
+            if url_identity and url_identity in seen_url_identities:
+                demoted.append((candidate, "duplicate_source_url_cross_slot"))
+                continue
             if key and key in seen_story_keys:
                 demoted.append((candidate, "duplicate_story_cross_section"))
                 continue
             if key:
                 seen_story_keys.add(key)
+            if url_identity:
+                seen_url_identities.add(url_identity)
             kept.append(candidate)
         pools[section] = kept
 
@@ -1069,11 +1106,26 @@ def run_plan_digest(project_root: Path) -> StageResult:
         ]
         if key
     }
+    final_primary_url_identities = {
+        url_identity
+        for url_identity in (
+            [_url_identity(lead_candidate)] if lead_candidate is not None else []
+        )
+        + [
+            _url_identity(candidate)
+            for section_pool in planned.values()
+            for candidate in section_pool
+        ]
+        if url_identity
+    }
 
     # --- Слоты и цепочки запасных -------------------------------------------
     slots: list[dict] = []
     sections_summary: dict[str, dict] = {}
     used_backup_fps = set(lead_understudies)
+    used_backup_url_identities = (
+        set(final_primary_url_identities) | lead_understudy_url_identities
+    )
     for section in ordered:
         if section == PRIMARY_BLOCKS["lead_story"]:
             lead_planned = 1 if lead_candidate is not None else 0
@@ -1121,6 +1173,10 @@ def run_plan_digest(project_root: Path) -> StageResult:
             c for c in backup_pools.get(section) or []
             if str(c.get("fingerprint") or "") not in used_backup_fps
             and _story_key(c) not in final_primary_story_keys
+            and (
+                not _url_identity(c)
+                or _url_identity(c) not in used_backup_url_identities
+            )
         ]
         eligible_backup_count = len(queue)
         backups_filtered_before_assignment = max(
@@ -1139,11 +1195,17 @@ def run_plan_digest(project_root: Path) -> StageResult:
             if not promoted_fp or promoted_fp in used_backup_fps:
                 continue
             key = _story_key(promoted)
+            url_identity = _url_identity(promoted)
             if key and key in final_primary_story_keys:
+                continue
+            if url_identity and url_identity in final_primary_url_identities:
                 continue
             used_backup_fps.add(promoted_fp)
             if key:
                 final_primary_story_keys.add(key)
+            if url_identity:
+                final_primary_url_identities.add(url_identity)
+                used_backup_url_identities.add(url_identity)
             promoted["publish_plan_reason"] = "Повышен планёркой из резерва: недобор раздела до минимума."
             pool.append(promoted)
             promoted_here += 1
@@ -1173,7 +1235,12 @@ def run_plan_digest(project_root: Path) -> StageResult:
                 backup_fp = str(backup.get("fingerprint") or "")
                 if not backup_fp or backup_fp in used_backup_fps:
                     continue
+                backup_url_identity = _url_identity(backup)
+                if backup_url_identity and backup_url_identity in used_backup_url_identities:
+                    continue
                 used_backup_fps.add(backup_fp)
+                if backup_url_identity:
+                    used_backup_url_identities.add(backup_url_identity)
                 backup["publish_plan_status"] = "reserve"
                 backup["publish_plan_reason"] = f"Запасной слота {block_key}-{position:02d}"
                 chains[position].append(backup_fp)
@@ -1390,6 +1457,10 @@ def run_plan_digest(project_root: Path) -> StageResult:
             ),
             "out": len(out_rows),
             "demoted_to_backup": len(demoted),
+            "canonical_url_duplicates_demoted": sum(
+                1 for _candidate, reason in demoted
+                if reason == "duplicate_source_url_cross_slot"
+            ),
         },
         "a_tier_conservation": {
             "recognised": len(a_tier_identity.get("recognised_physical_events") or []),

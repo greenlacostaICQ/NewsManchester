@@ -322,12 +322,14 @@ def run_verify_digest_plan(project_root: Path, digest_path: Path | None = None) 
 
     # These are technical composition defects: unlike an honest coded removal,
     # they mean the HTML is not a faithful execution of the immutable plan.
+    # A repeated canonical URL is different: it is a recoverable content
+    # collision. Planner/writer normally collapse or replace it; if it still
+    # reaches verify, ship degraded rather than withholding the whole issue.
     blocking_plan_kinds = {
         "planned_line_missing_from_final_html",
         "slot_rendered_in_wrong_section",
         "removed_line_still_visible",
         "line_outside_plan",
-        "html_line_duplicated",
         "final_report_row_count_mismatch",
     }
     for divergence in divergences:
