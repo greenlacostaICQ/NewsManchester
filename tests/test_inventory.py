@@ -1331,6 +1331,27 @@ class NightWaveTest(unittest.TestCase):
         with patch.dict("os.environ", {}, clear=True):
             self.assertEqual(collector_core._morning_inventory_mode(), "on")
 
+    def test_daily_workflow_has_full_no_send_production_probe(self) -> None:
+        workflow = (Path(__file__).parents[1] / ".github" / "workflows" / "daily-digest.yml").read_text(encoding="utf-8")
+        self.assertIn("dry_run_no_send:", workflow)
+        self.assertIn("Report full dry-run result", workflow)
+        self.assertIn('"verify_ok_technical": verify.get("ok_technical")', workflow)
+        normal_guard = "if: ${{ inputs.stop_after_rank != true && inputs.dry_run_no_send != true }}"
+        always_guard = "if: ${{ always() && inputs.stop_after_rank != true && inputs.dry_run_no_send != true }}"
+        for step_name in (
+            "Send digest to Telegram",
+            "Post-publish quality judge (S6)",
+            "Send weekly quality panel summary (Sundays only)",
+        ):
+            start = workflow.index(f"- name: {step_name}")
+            self.assertIn(normal_guard, workflow[start:start + 900])
+        for step_name in (
+            "Send internal warnings to Telegram (if any)",
+            "Commit updated state files",
+        ):
+            start = workflow.index(f"- name: {step_name}")
+            self.assertIn(always_guard, workflow[start:start + 900])
+
     def test_night_state_commit_pushes_back_to_dispatched_branch(self) -> None:
         workflow = (Path(__file__).parents[1] / ".github" / "workflows" / "night-inventory.yml").read_text(encoding="utf-8")
         self.assertIn('target_branch="${GITHUB_REF_NAME:-main}"', workflow)

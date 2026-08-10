@@ -310,8 +310,15 @@ def _call_block(
     block: str,
     candidates: list[dict],
     diagnostics: list[dict],
-) -> dict[str, dict]:
-    """One listwise call for one block. Returns fingerprint -> verdict."""
+) -> dict[str, dict] | None:
+    """One listwise call for one block.
+
+    ``None`` means that no provider response was obtained (transport/API
+    failure).  An empty mapping means that the provider answered, but the
+    listwise payload was unusable and this block should try the next route.
+    Keeping those outcomes distinct prevents a valid HTTP response with one
+    missing row from tripping the provider circuit breaker.
+    """
     if not candidates or not step.api_key:
         return {}
     try:
@@ -405,7 +412,7 @@ def _call_block(
                 "duration_seconds": round(time.monotonic() - t0, 3),
             }
         )
-        return {}
+        return None
     diagnostic.update(
         {
             "provider": step.provider_label,
@@ -418,6 +425,20 @@ def _call_block(
         }
     )
     diagnostics.append(diagnostic)
+    if not verdicts:
+        rejection_reason = (
+            diagnostic.get("atomic_rejection")
+            or diagnostic.get("parse_error")
+            or "zero_accepted_rows"
+        )
+        logger.warning(
+            "Board rank %s (%s) response rejected — reason=%s accepted=%s/%s; trying next route.",
+            block,
+            step.provider_label,
+            rejection_reason,
+            diagnostic.get("accepted", 0),
+            diagnostic.get("sent", len(expected)),
+        )
     for verdict in verdicts.values():
         verdict["provider"] = step.provider_label
         verdict["model"] = step.model
@@ -510,9 +531,14 @@ def rank_boards(
             if provider_health.is_dead(step.provider):
                 continue
             result = _call_block(step, block, ordered, diagnostics)
-            if result:
+            if result is not None:
                 provider_health.record_success(step.provider)
-                return result
+                if result:
+                    return result
+                # The API was reachable and authenticated. Fall through for
+                # this block, but do not label a response-contract miss as a
+                # provider outage and poison the other concurrent boards.
+                continue
             provider_health.record_failure(step.provider)
         return {}
 

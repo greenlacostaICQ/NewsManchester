@@ -9,6 +9,11 @@ on:
         required: false
         type: boolean
         default: false
+      dry_run_no_send:
+        description: "Run the complete pipeline through final verify; do not send Telegram, run post-publish reports, or persist state"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -171,8 +176,72 @@ jobs:
         if: ${{ inputs.stop_after_rank != true }}
         run: python3 scripts/run_local_digest.py verify-digest-plan
 
+      - name: Report full dry-run result
+        if: ${{ inputs.stop_after_rank != true && inputs.dry_run_no_send == true }}
+        run: |
+          python3 - <<'PY'
+          import json
+          from collections import Counter
+          from pathlib import Path
+
+          def load(name):
+              path = Path("data/state") / name
+              return json.loads(path.read_text()) if path.exists() else {}
+
+          intake = load("morning_inventory_intake_report.json")
+          live = intake.get("live_collection") or {}
+          rank = load("rank_digest_report.json")
+          plan = load("release_plan.json")
+          execution = load("plan_execution_report.json")
+          release = load("release_report.json")
+          verify = load("verify_digest_plan_report.json")
+          slot_statuses = Counter(
+              row.get("status", "unknown")
+              for row in (execution.get("slots") or {}).values()
+              if isinstance(row, dict)
+          )
+          board = rank.get("board_rank") or {}
+          rejected_responses = [
+              {
+                  "block": row.get("block"),
+                  "provider": row.get("provider"),
+                  "reason": row.get("atomic_rejection") or row.get("parse_error"),
+                  "accepted": row.get("accepted"),
+                  "sent": row.get("sent"),
+              }
+              for row in (board.get("diagnostics") or [])
+              if isinstance(row, dict) and not row.get("accepted")
+          ]
+          output = Path("data/outgoing/current_digest.html")
+          print(json.dumps({
+              "dry_run_no_send": True,
+              "mode": intake.get("mode"),
+              "morning_consumed": intake.get("morning_consumed"),
+              "night_replaced_categories": sorted(
+                  category for category, row in live.items()
+                  if isinstance(row, dict) and not row.get("collected_live", True)
+              ),
+              "live_fallback_categories": {
+                  category: row.get("reason")
+                  for category, row in live.items()
+                  if isinstance(row, dict) and row.get("collected_live", True)
+              },
+              "rank_stage": rank.get("stage_status"),
+              "ranked_candidates": board.get("ranked_candidates"),
+              "board_rejected_responses": rejected_responses,
+              "plan_totals": plan.get("totals") or {},
+              "execution_statuses": dict(sorted(slot_statuses.items())),
+              "release_decision": release.get("release_decision"),
+              "verify_ok_technical": verify.get("ok_technical"),
+              "ship_degraded": verify.get("ship_degraded"),
+              "verify_counts": verify.get("counts") or {},
+              "technical_errors": verify.get("technical_errors") or [],
+              "digest_bytes": output.stat().st_size if output.exists() else 0,
+          }, ensure_ascii=False, indent=2))
+          PY
+
       - name: Send digest to Telegram
-        if: ${{ inputs.stop_after_rank != true }}
+        if: ${{ inputs.stop_after_rank != true && inputs.dry_run_no_send != true }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
@@ -186,7 +255,7 @@ jobs:
         # the LLM call errors, the step prints and exits 0. Drift is
         # written into release_report.json so send-warnings can surface
         # it without rerunning the judge.
-        if: ${{ inputs.stop_after_rank != true }}
+        if: ${{ inputs.stop_after_rank != true && inputs.dry_run_no_send != true }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI }}
         run: |
@@ -196,7 +265,7 @@ jobs:
         # Always run so a blocked digest (release_decision=fail with
         # unhealthy health) still notifies the chat. Script no-ops when
         # release_report.json is missing.
-        if: ${{ always() && inputs.stop_after_rank != true }}
+        if: ${{ always() && inputs.stop_after_rank != true && inputs.dry_run_no_send != true }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
           TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
@@ -205,7 +274,7 @@ jobs:
           python3 scripts/run_local_digest.py send-warnings
 
       - name: Send weekly quality panel summary (Sundays only)
-        if: ${{ inputs.stop_after_rank != true }}
+        if: ${{ inputs.stop_after_rank != true && inputs.dry_run_no_send != true }}
         # The ONLY weekly Telegram report: quality panel + one cost line.
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
@@ -263,7 +332,7 @@ jobs:
           fi
 
       - name: Commit updated state files
-        if: ${{ always() && inputs.stop_after_rank != true }}
+        if: ${{ always() && inputs.stop_after_rank != true && inputs.dry_run_no_send != true }}
         run: |
           git config user.name "digest-bot"
           git config user.email "digest-bot@users.noreply.github.com"

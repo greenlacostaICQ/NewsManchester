@@ -7,21 +7,33 @@ block, and a reject only removes an item when the guards allow it.
 from __future__ import annotations
 
 import json
+import sys
 import unittest
+from types import SimpleNamespace
+from unittest import mock
 
+from news_digest.pipeline import provider_health
 from news_digest.pipeline.board_rank import (
     JUDGED_BLOCKS,
+    _call_block,
     _parse_board_rank_results,
     apply_board_rank,
     board_rank_bonus,
     board_reject_verdict,
     judged_block,
     lead_candidate_pool,
+    rank_boards,
 )
 from news_digest.pipeline.writer import _section_priority_score
 
 
 class BoardRankContractTests(unittest.TestCase):
+    def setUp(self) -> None:
+        provider_health.reset()
+
+    def tearDown(self) -> None:
+        provider_health.reset()
+
     def test_ranks_are_renumbered_and_scored_relative_to_the_block(self) -> None:
         expected = {"fp-a": {"title": "A"}, "fp-b": {"title": "B"}, "fp-c": {"title": "C"}}
         raw = json.dumps(
@@ -112,6 +124,139 @@ class BoardRankContractTests(unittest.TestCase):
             [row["fingerprint"] for row in diagnostic["missing_candidates"]],
             ["fp-c"],
         )
+
+    def test_call_block_reports_http_200_contract_rejection_as_non_transport_failure(self) -> None:
+        candidates = [
+            {"fingerprint": "fp-a", "title": "A", "summary": "Story A"},
+            {"fingerprint": "fp-b", "title": "B", "summary": "Story B"},
+        ]
+        raw = json.dumps({
+            "items": [
+                {"fingerprint": "fp-a", "rank": 1, "decision": "publish", "confidence": 0.9},
+            ]
+        })
+        response = SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content=raw))]
+        )
+        completions = SimpleNamespace(create=mock.Mock(return_value=response))
+        client = SimpleNamespace(chat=SimpleNamespace(completions=completions))
+        fake_openai = SimpleNamespace(OpenAI=mock.Mock(return_value=client))
+        step = SimpleNamespace(
+            provider="deepseek",
+            provider_label="DeepSeek",
+            model="deepseek-v4-pro",
+            api_key="key",
+            base_url="https://example.test/v1",
+            timeout_seconds=60,
+        )
+        diagnostics = []
+
+        with mock.patch.dict(sys.modules, {"openai": fake_openai}), mock.patch(
+            "news_digest.pipeline.llm_rewrite._API_RATE_LIMITER.acquire",
+        ), mock.patch(
+            "news_digest.pipeline.llm_rewrite._API_TOKEN_LIMITER.acquire",
+        ), mock.patch(
+            "news_digest.pipeline.cost_tracker.record_call_from_response",
+        ), self.assertLogs("news_digest.pipeline.board_rank", level="WARNING") as captured:
+            result = _call_block(step, "last_24h", candidates, diagnostics)
+
+        self.assertEqual(result, {})
+        self.assertEqual(diagnostics[0]["atomic_rejection"], "incomplete_candidate_set")
+        self.assertIn("reason=incomplete_candidate_set accepted=1/2", "\n".join(captured.output))
+
+    def test_rejected_http_responses_fall_back_without_killing_provider(self) -> None:
+        candidates = [
+            {
+                "fingerprint": "fp-a",
+                "include": True,
+                "primary_block": "last_24h",
+                "title": "A concrete Greater Manchester story",
+                "summary": "Public consequence for residents.",
+            }
+        ]
+        route = [
+            SimpleNamespace(provider="deepseek", provider_label="DeepSeek", model="deepseek", api_key="key"),
+            SimpleNamespace(provider="openai", provider_label="OpenAI", model="mini", api_key="key"),
+        ]
+
+        def fake_call(step, block, pool, diagnostics):
+            if step.provider == "deepseek":
+                diagnostics.append({
+                    "block": block,
+                    "provider": "DeepSeek",
+                    "sent": len(pool),
+                    "accepted": 0,
+                    "atomic_rejection": "incomplete_candidate_set",
+                })
+                return {}
+            return {
+                row["fingerprint"]: {
+                    "rank": index,
+                    "rank_total": len(pool),
+                    "score": 100.0,
+                    "decision": "publish",
+                    "confidence": 0.9,
+                    "duplicate_of": "",
+                    "why": "",
+                }
+                for index, row in enumerate(pool, start=1)
+            }
+
+        with mock.patch(
+            "news_digest.pipeline.board_rank.resolve_model_route",
+            return_value=route,
+        ), mock.patch(
+            "news_digest.pipeline.board_rank._call_block",
+            side_effect=fake_call,
+        ):
+            verdicts, report = rank_boards(candidates)
+
+        self.assertIn("fp-a", verdicts)
+        self.assertTrue(report["enabled"])
+        self.assertFalse(provider_health.is_dead("deepseek"))
+
+    def test_two_transport_failures_still_trip_provider_breaker(self) -> None:
+        candidates = [
+            {
+                "fingerprint": "fp-a",
+                "include": True,
+                "primary_block": "last_24h",
+                "title": "A concrete Greater Manchester story",
+                "summary": "Public consequence for residents.",
+            }
+        ]
+        route = [
+            SimpleNamespace(provider="deepseek", provider_label="DeepSeek", model="deepseek", api_key="key"),
+            SimpleNamespace(provider="openai", provider_label="OpenAI", model="mini", api_key="key"),
+        ]
+
+        def fake_call(step, _block, pool, _diagnostics):
+            if step.provider == "deepseek":
+                return None
+            return {
+                row["fingerprint"]: {
+                    "rank": index,
+                    "rank_total": len(pool),
+                    "score": 100.0,
+                    "decision": "publish",
+                    "confidence": 0.9,
+                    "duplicate_of": "",
+                    "why": "",
+                }
+                for index, row in enumerate(pool, start=1)
+            }
+
+        with mock.patch(
+            "news_digest.pipeline.board_rank.resolve_model_route",
+            return_value=route,
+        ), mock.patch(
+            "news_digest.pipeline.board_rank._call_block",
+            side_effect=fake_call,
+        ):
+            verdicts, _ = rank_boards(candidates)
+
+        self.assertIn("fp-a", verdicts)
+        self.assertTrue(provider_health.is_dead("deepseek"))
 
     def test_lead_board_compares_six_real_news_candidates(self) -> None:
         candidates = [
