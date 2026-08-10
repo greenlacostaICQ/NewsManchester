@@ -811,15 +811,21 @@ def collect_digest(project_root: Path) -> StageResult:
             mode=inventory_mode,
             prompt_version=PROMPT_REGISTRY_VERSION,
             unchanged_source_confirmations=unchanged_source_confirmations,
+            source_replacement_categories=set(skip_categories),
         )
         candidates.extend(inventory_candidates)
         inventory_report["actual_intake"] = intake_report
-        merged_into_live = int((intake_report.get("funnel") or {}).get("merged_into_live") or 0)
+        intake_funnel = intake_report.get("funnel") or {}
+        merged_into_live = int(intake_funnel.get("merged_into_live") or 0)
+        confirmed_by_night_replacement = int(
+            intake_funnel.get("confirmed_by_night_replacement") or 0
+        )
         inserted_from_inventory = int(intake_report.get("inserted_candidates") or 0)
         inventory_report["morning_consumed"] = bool(merged_into_live or inserted_from_inventory)
         inventory_report["operational_truth"] = {
-            "records_loaded": int((intake_report.get("funnel") or {}).get("records") or 0),
+            "records_loaded": int(intake_funnel.get("records") or 0),
             "merged_into_live": merged_into_live,
+            "confirmed_by_night_replacement": confirmed_by_night_replacement,
             "inserted_into_pipeline": inserted_from_inventory,
             "status": "consumed" if merged_into_live or inserted_from_inventory else "no_effect",
         }

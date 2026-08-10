@@ -1612,11 +1612,24 @@ def build_morning_inventory_intake(
     today: str | None = None,
     prompt_version: int | None = None,
     unchanged_source_confirmations: set[tuple[str, str]] | None = None,
+    source_replacement_categories: set[str] | None = None,
 ) -> tuple[list[dict], dict[str, object]]:
     """Restore every registry block marked assist into the normal morning path."""
     today = today or today_london()
     mode = str(mode or "assist").lower()
     unchanged_source_confirmations = unchanged_source_confirmations or set()
+    # In `on`, a category whose broad scan was deliberately replaced must be
+    # allowed to publish its current, operationally proven night cards. Without
+    # this explicit hand-off the intake still required a matching morning-live
+    # candidate, even though that category's morning sources had just been
+    # skipped. The result was a circular contract: inventory was declared safe
+    # enough to replace live collection and then held for lack of live
+    # confirmation. Keep assist unchanged and trust only rows whose own action
+    # URL is alive; the category-level health/floor/backup checks are performed
+    # by `inventory_source_replacement_plan` before this set is passed in.
+    source_replacement_categories = (
+        set(source_replacement_categories or ()) if mode == "on" else set()
+    )
     existing: set[str] = set()
     live_by_fingerprint: dict[str, dict] = {}
     live_by_url: dict[str, dict] = {}
@@ -1646,6 +1659,7 @@ def build_morning_inventory_intake(
         "operational_fact_ready": 0,
         "morning_eligible": 0,
         "merged_into_live": 0,
+        "confirmed_by_night_replacement": 0,
         "after_live_dedupe": 0,
         "inserted_after_cap": 0,
     }
@@ -1818,9 +1832,40 @@ def build_morning_inventory_intake(
             lineage["intake_status"] = "confirmed_by_unchanged_source"
             lineage["reason"] = "morning_source_not_modified"
             continue
+        source_report_category = str(
+            working_record.get("source_report_category")
+            or working_record.get("category")
+            or ""
+        )
+        night_replacement_confirmed = bool(
+            source_report_category in source_replacement_categories
+            and operational_provenance
+            and str(
+                working_record.get("action_url_liveness")
+                or working_record.get("liveness_status")
+                or ""
+            ).lower() == "alive"
+        )
+        if night_replacement_confirmed:
+            candidate["inventory_lineage_id"] = str(lineage["lineage_id"])
+            candidate["inventory_live_confirmation"] = "current_night_replacement"
+            candidates.append(candidate)
+            confirmed_supply_candidates.append(candidate)
+            if fp:
+                existing.add(fp)
+            bucket["after_live_dedupe"] += 1
+            bucket["night_replacement_confirmed"] = (
+                bucket.get("night_replacement_confirmed", 0) + 1
+            )
+            funnel["confirmed_by_night_replacement"] += 1
+            funnel["after_live_dedupe"] += 1
+            lineage["candidate_fingerprint"] = fp
+            lineage["intake_status"] = "confirmed_by_night_replacement"
+            lineage["reason"] = "healthy_night_wave_and_alive_action_url"
+            continue
         # Night is factual enrichment, not a second publisher. A card without
-        # a matching morning-live candidate remains inventory-only even when it
-        # is fact-ready; tomorrow's/current live scan must confirm actuality.
+        # a matching morning-live candidate remains inventory-only unless its
+        # category passed the explicit `on` source-replacement contract above.
         rejected["not_live_confirmed"] = rejected.get("not_live_confirmed", 0) + 1
         lineage["candidate_fingerprint"] = fp
         lineage["intake_status"] = "held_without_live_confirmation"

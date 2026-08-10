@@ -1078,6 +1078,101 @@ class BuildRecordTest(unittest.TestCase):
         self.assertEqual(inserted[0]["inventory_live_confirmation"], "source_not_modified")
         self.assertEqual(report["lineage_status_counts"]["inserted_into_pipeline"], 1)
 
+    def test_on_source_replacement_publishes_alive_current_night_card_without_live_match(self) -> None:
+        record = {
+            "fingerprint": "weekend-on-replacement",
+            "title": "Hillside Festival",
+            "summary": "A family festival in Bury.",
+            "source_url": "https://example.test/hillside-on",
+            "booking_url": "https://example.test/hillside-on",
+            "source_label": "Weekend Source",
+            "source_name": "Weekend Source",
+            "primary_block": "weekend_activities",
+            "category": "culture_weekly",
+            "source_report_category": "culture_weekly",
+            "quality_status": "needs_text",
+            "missing_facts": ["draft_line"],
+            "last_seen_at": "2026-07-31T02:00:00+01:00",
+            "run_id": "night-events-current",
+            "wave": "events",
+            "observed_in_wave": True,
+            "action_url_liveness": "alive",
+            "serving_ttl_hours": 96,
+            "fact_card": {
+                "event_name": "Hillside Festival",
+                "specific_event": True,
+                "venue": "Bury",
+                "date_start": "2026-08-01",
+                "action_url": "https://example.test/hillside-on",
+                "activity_type": "family_festival",
+                "gm_fit": True,
+            },
+        }
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-31T08:00:00+01:00"),
+        ):
+            inserted, report = build_morning_inventory_intake(
+                [record],
+                existing_candidates=[],
+                mode="on",
+                today="2026-07-31",
+                source_replacement_categories={"culture_weekly"},
+            )
+
+        self.assertEqual([row["fingerprint"] for row in inserted], ["weekend-on-replacement"])
+        self.assertEqual(
+            inserted[0]["inventory_live_confirmation"],
+            "current_night_replacement",
+        )
+        self.assertEqual(report["funnel"]["confirmed_by_night_replacement"], 1)
+        self.assertEqual(report["funnel"]["inserted_after_cap"], 1)
+
+    def test_assist_never_uses_source_replacement_confirmation(self) -> None:
+        record = {
+            "fingerprint": "weekend-assist-hold",
+            "title": "Hillside Festival",
+            "summary": "A family festival in Bury.",
+            "source_url": "https://example.test/hillside-assist",
+            "source_label": "Weekend Source",
+            "source_name": "Weekend Source",
+            "primary_block": "weekend_activities",
+            "category": "culture_weekly",
+            "source_report_category": "culture_weekly",
+            "quality_status": "needs_text",
+            "missing_facts": ["draft_line"],
+            "last_seen_at": "2026-07-31T02:00:00+01:00",
+            "run_id": "night-events-current",
+            "wave": "events",
+            "observed_in_wave": True,
+            "action_url_liveness": "alive",
+            "serving_ttl_hours": 96,
+            "fact_card": {
+                "event_name": "Hillside Festival",
+                "specific_event": True,
+                "venue": "Bury",
+                "date_start": "2026-08-01",
+                "action_url": "https://example.test/hillside-assist",
+                "activity_type": "family_festival",
+                "gm_fit": True,
+            },
+        }
+        with patch(
+            "news_digest.pipeline.inventory.now_london",
+            return_value=datetime.fromisoformat("2026-07-31T08:00:00+01:00"),
+        ):
+            inserted, report = build_morning_inventory_intake(
+                [record],
+                existing_candidates=[],
+                mode="assist",
+                today="2026-07-31",
+                source_replacement_categories={"culture_weekly"},
+            )
+
+        self.assertEqual(inserted, [])
+        self.assertEqual(report["funnel"]["confirmed_by_night_replacement"], 0)
+        self.assertEqual(report["rejected"]["not_live_confirmed"], 1)
+
     def test_weekend_304_does_not_revive_dead_action_url(self) -> None:
         record = {
             "fingerprint": "weekend-dead-link",
