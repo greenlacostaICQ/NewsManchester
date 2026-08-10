@@ -1336,6 +1336,9 @@ class NightWaveTest(unittest.TestCase):
         self.assertIn("dry_run_no_send:", workflow)
         self.assertIn("Report full dry-run result", workflow)
         self.assertIn('"verify_ok_technical": verify.get("ok_technical")', workflow)
+        self.assertIn('"execution_removal_reasons"', workflow)
+        self.assertIn('"execution_replacement_reasons"', workflow)
+        self.assertIn('"verify_divergence_kinds"', workflow)
         normal_guard = "if: ${{ inputs.stop_after_rank != true && inputs.dry_run_no_send != true }}"
         always_guard = "if: ${{ always() && inputs.stop_after_rank != true && inputs.dry_run_no_send != true }}"
         for step_name in (

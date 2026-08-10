@@ -377,6 +377,39 @@ class DuplicateTest(unittest.TestCase):
         self.assertTrue(candidates[0]["include"])
         self.assertFalse(candidates[1]["include"])
 
+    def test_same_show_dedupes_across_club_academy_venue_alias(self) -> None:
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "ticketmaster-kittie",
+                "dedupe_decision": "new",
+                "category": "venues_tickets",
+                "primary_block": "ticket_radar",
+                "title": "Kittie — Manchester Club Academy — 10 August 2026",
+                "summary": "Manchester Club Academy | event_date=2026-08-10",
+                "event": {"event_name": "Kittie", "venue": "Manchester Club Academy", "date_start": "2026-08-10"},
+                "source_label": "Ticketmaster Manchester Upcoming",
+                "source_url": "https://ticketmaster.co.uk/kittie/event/abc123",
+            },
+            {
+                "include": True,
+                "fingerprint": "academy-kittie",
+                "dedupe_decision": "new",
+                "category": "venues_tickets",
+                "primary_block": "ticket_radar",
+                "title": "Kittie - 10th August 2026",
+                "summary": "Manchester Academy | event_date=2026-08-10",
+                "event": {"event_name": "Kittie - 10th August 2026", "venue": "Manchester Academy", "date_start": "2026-08-10"},
+                "source_label": "Manchester Academy",
+                "source_url": "https://www.manchesteracademy.net/event/kittie",
+            },
+        ]
+
+        drops = _apply_intra_batch_dedup(candidates)
+
+        self.assertEqual(len(drops), 1, drops)
+        self.assertEqual(sum(bool(item["include"]) for item in candidates), 1)
+
     def test_venue_premium_ticket_events_require_specific_overlap(self) -> None:
         # "Venue Premium Tickets" is Ticketmaster packaging, not the event.
         candidates = [

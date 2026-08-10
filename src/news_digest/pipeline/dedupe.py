@@ -1613,6 +1613,20 @@ def _ticket_event_identity(candidate: dict) -> tuple[str, str]:
     return name, date
 
 
+_EVENT_VENUE_IDENTITY_ALIASES = {
+    # Ticketmaster names the room "Manchester Club Academy" while the
+    # operator page uses the campus name "Manchester Academy" for the same
+    # physical show. Without the alias, one Kittie occurrence produced three
+    # public cards on 2026-08-10.
+    "manchester club academy": "manchester academy",
+}
+
+
+def _event_venue_identity(value: object) -> str:
+    venue = normalize_title(str(value or ""))
+    return _EVENT_VENUE_IDENTITY_ALIASES.get(venue, venue)
+
+
 def _event_identity_key(candidate: dict) -> tuple[str, str, str]:
     """Structured identity for event/calendar candidates.
 
@@ -1631,7 +1645,7 @@ def _event_identity_key(candidate: dict) -> tuple[str, str, str]:
         or hint.get("date")
         or ""
     ).strip()[:10]
-    venue = normalize_title(str(event.get("venue") or hint.get("venue") or ""))
+    venue = _event_venue_identity(event.get("venue") or hint.get("venue") or "")
     identity_tail = venue
     if not identity_tail:
         identity_tail = normalize_title(str(candidate.get("event_instance_id") or hint.get("event_instance_id") or ""))
@@ -1648,7 +1662,7 @@ def _ticket_exact_dedupe_key(candidate: dict) -> tuple[str, str, str, str]:
     ev = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     artist = normalize_title(ticket_artist_name(candidate) or _ticket_event_identity(candidate)[0])
     date = str(ev.get("date_start") or ev.get("event_date") or _ticket_event_identity(candidate)[1] or "").strip()[:10]
-    venue = normalize_title(str(ev.get("venue") or ""))
+    venue = _event_venue_identity(ev.get("venue") or "")
     if not venue:
         summary_chunks = [chunk.strip() for chunk in str(candidate.get("summary") or "").split("|")]
         if summary_chunks:
@@ -1968,6 +1982,7 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
         group_i = _dedup_block_group(block_i)
         is_event_ticket_group = group_i == _dedup_block_group("ticket_radar")
         event_identity_i = _event_identity_key(ci) if is_event_ticket_group else ("", "", "")
+        exact_ticket_i = _ticket_exact_dedupe_key(ci) if is_event_ticket_group else ("", "", "", "")
         topic_i = topic_key_for_candidate(ci)
         cluster_i = str(ci.get("story_cluster_key") or "")
         rank_i = _source_rank(
@@ -1983,6 +1998,31 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                 continue
 
             if is_event_ticket_group:
+                exact_ticket_j = _ticket_exact_dedupe_key(cj)
+                exact_match = (
+                    exact_ticket_i[:3] == exact_ticket_j[:3]
+                    and all(exact_ticket_i[:3])
+                )
+                same_external_event = bool(
+                    exact_ticket_i[3]
+                    and exact_ticket_i[3] == exact_ticket_j[3]
+                )
+                if exact_match or same_external_event:
+                    if _prefer_ticket_duplicate_candidate(ci, cj):
+                        to_drop[j] = {
+                            "kept_index": i,
+                            "overlap": 1.0,
+                            "ticket_exact_key": "|".join(exact_ticket_i[:3]),
+                        }
+                    else:
+                        to_drop[i] = {
+                            "kept_index": j,
+                            "overlap": 1.0,
+                            "ticket_exact_key": "|".join(exact_ticket_j[:3]),
+                        }
+                        break
+                    continue
+
                 event_identity_j = _event_identity_key(cj)
                 if all(event_identity_i) and all(event_identity_j):
                     if event_identity_i == event_identity_j:
@@ -2004,16 +2044,6 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
             # guard runs BEFORE the cluster/topic/token paths so a shared venue
             # or generic topic-key can no longer collapse distinct concerts.
             if is_event_ticket_group:
-                exact_i = _ticket_exact_dedupe_key(ci)
-                exact_j = _ticket_exact_dedupe_key(cj)
-                exact_match = exact_i[:3] == exact_j[:3] and all(exact_i[:3])
-                if exact_match or (exact_i[3] and exact_i[3] == exact_j[3]):
-                    if _prefer_ticket_duplicate_candidate(ci, cj):
-                        to_drop[j] = {"kept_index": i, "overlap": 1.0, "ticket_exact_key": "|".join(exact_i[:3])}
-                    else:
-                        to_drop[i] = {"kept_index": j, "overlap": 1.0, "ticket_exact_key": "|".join(exact_j[:3])}
-                        break
-                    continue
                 if _is_distinct_ticket_event(ci, cj):
                     continue
             if _distinct_market_listing_pair(ci, cj):

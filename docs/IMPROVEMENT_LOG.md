@@ -2336,23 +2336,78 @@
 - Где была ошибка (если не сработает): смотреть `morning_inventory_intake_report.source_replacement_plan` и новый Actions-step; `mode!=on` означает orchestration/config, `current_night_scan_incomplete` — health последней category-wave, `post_contract_block_insufficient` — facts/floor/source diversity, `action_urls_not_verified` — URL probe.
 
 ### 0219 — HTTP-ответ DeepSeek больше не считается отказом провайдера — 2026-08-10
-- Статус: внедрено; offline/replay-проверка завершена, production-proof ожидается в полном dry-run.
+- Статус: ПРОВЕРЕНО-работает.
 - Проблема: safe run `31372103724` получил от DeepSeek пять успешных HTTP 200, но затем после двух неполных listwise-ответов общий circuit breaker пометил DeepSeek dead-for-run. Из-за этого English-card ветка сразу перешла на OpenAI, а Actions-лог сохранил только общее сообщение о двух failures без причины. Формулировка «DeepSeek отключился после двух сбоев» была неверной: ключ, баланс и аккаунт не менялись; breaker был локальным для одного процесса и сбросился после run.
 - Причина (корень): `board_rank._call_block` возвращал одинаковый `{}` и при API/transport exception, и при HTTP-ответе, который parser атомарно отклонил из-за неполного набора кандидатов. `_rank_one` вызывал `provider_health.record_failure()` для любого пустого mapping, поэтому ошибка контракта одного prompt-блока отравляла доступность провайдера для остальных параллельных досок и последующей English-card ветки.
 - Решение: `_call_block` теперь возвращает `None` только когда ответ провайдера не получен из-за исключения; пустой mapping означает «API ответил, но payload непригоден». Вторая ситуация сбрасывает failure counter как доказательство доступного/authenticated API и пробует следующий route только для данного блока; первая по-прежнему учитывается breaker. Для каждого отклонённого HTTP-ответа в Actions-лог выводятся block/provider, точный `parse_error` или `atomic_rejection` и `accepted/sent`.
 - Почему так (отвергнутые альтернативы): не повышаем threshold — это лишь дольше держало бы реально недоступный/неоплаченный provider; не отключаем breaker — два настоящих timeout/auth/billing отказа должны быстро включать fallback; не принимаем частичный listwise-ответ — неполный список меняет конкуренцию и нарушает атомарность ранжирования.
 - Ожидаемый эффект и метрика проверки: два подряд HTTP 200 с `incomplete_candidate_set` не добавляют DeepSeek в `dead_providers`; два настоящих transport/API exception по-прежнему добавляют. При fallback rank завершается, а точная причина видна в логе и `board_rank.diagnostics`.
 - Файлы/места: `src/news_digest/pipeline/board_rank.py:_call_block/rank_boards._rank_one`; `tests/test_board_rank.py`.
-- ПРОВЕРКА (offline): отдельный реальный `_call_block` regression подтверждает HTTP-response `{}` + warning `reason=incomplete_candidate_set accepted=1/2`; два таких ответа не убивают DeepSeek, два `None`-отказа включают breaker. `test_board_rank + test_provider_health`: 17/17; полный suite: `1010/1010` OK. Обязательный replay 10.08: `38 shown / 0 replaced / 0 removed`, 37 bullets, lead `ok`, `blank_runs_2plus=0`, technical verify OK, 5 content divergences → `ship_degraded`.
+- ПРОВЕРКА: отдельный `_call_block` regression подтверждает HTTP-response `{}` + warning с причиной; два таких ответа не убивают DeepSeek, два `None`-отказа включают breaker. `test_board_rank + test_provider_health`: 17/17; полный suite: `1010/1010` OK. Production dry-run `31374561875` на `bc41fc1`: DeepSeek ответил HTTP 200 на всех пяти block-вызовах; неполный `last_24h` был отклонён как structured-response, но `provider_health` breaker не сработал. После этого English-card ветка отправила в DeepSeek `56` кандидатов в `14/14` успешных HTTP-200 batch, OpenAI fallback понадобился для `0` карточек; rewrite отправил ещё `9` кандидатов в `2/2` успешных batch. Rank завершился success с `31` ranked candidates. Ключи, баланс и аккаунт не менялись.
 - Где была ошибка: смешение health провайдера и качества конкретного structured response в одном пустом return value.
 
 ### 0220 — Полный production dry-run до финального verify без Telegram — 2026-08-10
-- Статус: внедрено; offline workflow-контракт проверен, production-run ожидается после push.
+- Статус: ПРОВЕРЕНО-работает.
 - Проблема: safe run `31372103724` доказал только `collect → dedupe → validate → curator → transport → rank`; `stop_after_rank=true` намеренно пропустил `plan → rewrite → write → edit → build → pre-send judge → verify`. Поэтому он не был доказательством, что первый завтрашний выпуск в inventory `on` пройдёт весь путь. Обычный manual dispatch опасен: он принудительно отправляет Telegram и коммитит runtime state.
 - Причина (корень): workflow имел только два режима — короткий rank probe или полноценная отправка. Без третьего режима нельзя было выполнить production secrets/network/model calls и одновременно гарантировать отсутствие доставки и изменения репозитория.
 - Решение: добавлен boolean input `dry_run_no_send`. Он выполняет полный production pipeline через `verify-digest-plan`, затем печатает компактную воронку intake/rank/plan/execution/release/verify. Telegram send, post-publish judge, internal warnings, weekly message и commit state имеют отдельный явный guard `dry_run_no_send != true` и поэтому пропускаются независимо от результата предыдущих стадий.
 - Почему так (отвергнутые альтернативы): локальный replay не проверяет сеть, ночное intake и реальные ключи; `stop_after_rank` не проверяет выпуск; обычный `--force` dispatch мог бы повторно отправить дайджест. Отдельная копия workflow дала бы риск расхождения с завтрашним production маршрутом, поэтому probe является режимом того же файла и тех же стадий.
 - Ожидаемый эффект и метрика проверки: manual run с `dry_run_no_send=true` доходит до `verify_ok_technical=true`, создаёт ненулевой digest, показывает slot counts и intake `mode=on`; шаги Send/Post-publish/Warnings/Weekly/Commit имеют `skipped`, Telegram message IDs и git state не меняются.
 - Файлы/места: `.github/workflows/daily-digest.yml:workflow_dispatch/Report full dry-run result/Telegram and commit guards`; `tests/test_inventory.py`.
-- ПРОВЕРКА (offline): YAML parse OK; workflow regression проверяет input, итоговый report и все пять side-effect guards; входит в полный suite `1010/1010` OK. Production numbers будут записаны отдельным подтверждением после запуска на `main`.
+- ПРОВЕРКА: YAML parse OK; workflow regression проверяет input, итоговый report и все side-effect guards; входит в полный suite `1010/1010` OK. Production dry-run `31374561875` выполнил тот же `daily-digest.yml` на `bc41fc1` за `24:17`: inventory `mode=on`, `4855 loaded → 168 merged + 2 inserted`, rank success (`31`), plan `34` слота + `18` backups, build `ship_degraded`, финальный verify `ok_technical=true`, `unfilled=0`, `lines_outside_plan=0`, `empty_bullets=0`, `technical_errors=[]`, digest `14818` bytes. Исполнение после repair: `24 shown / 5 replaced / 5 removed`, `29` видимых source links; judge `11 requested / 10 applied / 0 unresolved`. Send, post-publish, warnings, weekly summary и commit-state — все `skipped`; Telegram и git state не менялись. Прогон выявил четыре content-класса для исправлений #0221–#0224, но доказал техническую проходимость полного production-маршрута.
 - Где была ошибка (если не сработает): проверить input в event payload и `if` каждого side-effect step; отсутствие итогового JSON означает падение до/на verify, но не разрешает send или commit.
+
+### 0221 — Финальный judge знает GM borough и выездные матчи клубов — 2026-08-10
+- Статус: внедрено; offline/replay-проверка завершена, production-proof ожидается.
+- Проблема: полный dry-run `31374561875` ошибочно снял Liverpool–Wigan rail card как «не GM» и заменил новости Manchester City/Manchester United из-за матчей в Seoul/Gothenburg. Wigan — borough Greater Manchester, а футбольный раздел описывает GM-клуб независимо от места выездного матча.
+- Причина (корень): judge видел единый `geo_scope=gm`: у транспорта не было детерминированной защиты названий десяти GM borough, а football не различал место субъекта новости и место события.
+- Решение: football получил контракт `gm_subject`; prompt явно разрешает выездные события GM-субъекта. Перед repair action детерминированный фильтр отклоняет geo-жалобу для `gm_subject/uk/uk_outside_gm`, а в обычном `gm`-разделе — если видимая строка содержит Greater Manchester или один из десяти borough на английском/русском. Полностью non-GM строка без такого якоря остаётся доступна для снятия.
+- Почему так: исправляется общий класс «модель не знает административную границу/путает субъект и место» без отключения геоконтроля и без добавления нового LLM-вызова.
+- Ожидаемый эффект и метрика проверки: Wigan transport и away-match GM clubs не получают strip/replace по geo; Liverpool-only карточка в GM-разделе по-прежнему проходит action.
+- Файлы/места: `block_policy.py:BLOCK_POLICY_REGISTRY`; `pre_send_quality_judge.py:_drop_out_of_contract_geo_rows`; `tests/test_release_20260727_fixes.py`.
+- ПРОВЕРКА (offline): три точечных regressions OK; полный suite `1016/1016` OK. Replay 10.08: `38 shown / 0 replaced / 0 removed`, technical verify OK, lead `ok`, `blank_runs_2plus=0`.
+- Где была ошибка (если не сработает): проверить section heading → `block_policy` и текст строки, который получил judge action.
+
+### 0222 — Относительный срок транспорта привязан к дню публикации — 2026-08-10
+- Статус: внедрено; offline/replay-проверка завершена, production-proof ожидается.
+- Проблема: 10.08 в план попало сообщение, опубликованное 08.08, «Altrincham–Stockport disruption until 18:00 tonight»; система переинтерпретировала `tonight` как вечер 10.08 и только финальный judge снял stale-карточку.
+- Причина (корень): `transport_end_datetime` для времени без явной даты всегда подставлял дату текущего pipeline run, игнорируя `published_at`.
+- Решение: время-only (`until 18:00`/`до 18:00`) теперь привязывается к London-дню `published_at`; явные дата+время продолжают иметь приоритет, а невалидная/отсутствующая дата сохраняет прежний fallback на run day.
+- Почему так: относительные слова принадлежат тексту источника и его дате, а не дню повторного чтения из inventory/cache; это закрывает класс stale relative-time карточек без общего сокращения retention.
+- Ожидаемый эффект и метрика проверки: пример 08.08 даёт end=`2026-08-08T18:00+01:00` и считается завершённым утром 10.08.
+- Файлы/места: `transport_card.py:transport_end_datetime`; `tests/test_release_20260727_fixes.py`.
+- ПРОВЕРКА (offline): точный regression OK; полный suite `1016/1016` OK; replay 10.08 без регрессии — `38/0/0`, technical verify OK.
+- Где была ошибка (если не сработает): проверить, что collector сохранил корректный ISO `published_at` и что source phrase попала в transport fact blob.
+
+### 0223 — Один концерт схлопывается при алиасах названия площадки — 2026-08-10
+- Статус: внедрено; offline/replay-проверка завершена, production-proof ожидается.
+- Проблема: один концерт Kittie 10.08 прошёл несколькими карточками: Ticketmaster называл площадку `Manchester Club Academy`, venue page — `Manchester Academy`; две копии пришлось удалять только финальному judge.
+- Причина (корень): exact event identity уже использовал artist+date+venue, но нормализовал строку, не сводя известные официальные варианты одной площадки. Разные URL не позволяли запасному URL-ключу помочь.
+- Решение: venue identity получил узкий alias `Manchester Club Academy → Manchester Academy`; он применяется и к structured event identity, и к ticket exact key. Очищенный exact key `artist+date+venue` проверяется до сырого structured event name, поэтому `Kittie` и `Kittie - 10th August 2026` считаются одним шоу.
+- Почему так: сохраняется безопасное правило artist+date+venue — разные артисты/даты не схлопываются; fuzzy venue matching, способный объединить разные залы, не вводится.
+- Ожидаемый эффект и метрика проверки: две Kittie-карточки с одной датой и venue aliases дают ровно один survivor до rank/plan.
+- Файлы/места: `dedupe.py:_event_venue_identity/_event_identity_key/_ticket_exact_dedupe_key`; `tests/test_editorial_regression.py`.
+- ПРОВЕРКА (offline): regression использует реальные различающиеся event names и venue aliases; даёт `1` drop и `1` included survivor. Дополнительный probe на двух живых кандидатах из `candidates.json` также дал `2 → 1`. Полный suite `1016/1016` OK; replay 10.08 — `38 shown / 0 replaced / 0 removed`, technical verify OK.
+- Где была ошибка (если не сработает): проверить structured `event.event_name/date_start/venue`; alias намеренно не применяется к пустым/неструктурированным событиям.
+
+### 0224 — Подборки death/funeral notices не доходят до планёрки — 2026-08-10
+- Статус: внедрено; offline/replay-проверка завершена, production-proof ожидается.
+- Проблема: weekly memorial/death-notices roundup попал в план как обычная свежая новость и был заменён только финальным judge из-за отсутствия одного конкретного news event.
+- Причина (корень): валидатор имел отдельный deterministic reject для multi-case court roundup, но не имел эквивалентного класса для recurring memorial/funeral galleries.
+- Решение: plural `death/funeral/memorial notices`, obituary roundup/list и MEN-style `/gallery/death-notices-` получают код `memorial_notice_roundup` в news-блоках до rank. Одиночный obituary под правило не попадает.
+- Почему так: это устойчивый тип страницы, а не проблема формулировки; ранний deterministic predicate экономит slot/backup и не запрещает настоящую отдельную новость о человеке.
+- Ожидаемый эффект и метрика проверки: roundup `include=false` с явным reject code; standalone obituary не получает этот code.
+- Файлы/места: `candidate_validator.py:_exclude_memorial_notice_roundup`; `tests/test_digest_quality_guardrails.py`.
+- ПРОВЕРКА (offline): positive + negative regressions OK; полный suite `1016/1016` OK; replay 10.08 — `38/0/0`, technical verify OK.
+- Где была ошибка (если не сработает): проверить `primary_block` и полный candidate blob; predicate намеренно ограничен news-блоками.
+
+### 0225 — Dry-run печатает причины каждой замены/потери — 2026-08-10
+- Статус: внедрено; offline workflow-проверка завершена, production-proof ожидается.
+- Проблема: первый полный dry-run показал только totals `5 replaced / 5 removed`; для RCA пришлось вручную читать длинный judge log, а причина writer removal не попала в итоговую воронку.
+- Причина (корень): итоговый report агрегировал только `plan_execution.status`, игнорируя `replacement_reason/reason` и `verify.divergences`.
+- Решение: report добавляет counters `execution_removal_reasons`, `execution_replacement_reasons`, `verify_divergence_kinds`.
+- Почему так: это компактная наблюдаемость из существующих state-файлов, без нового stage/model и без печати больших JSON.
+- Ожидаемый эффект и метрика проверки: следующий dry-run объясняет все removed/replaced/divergence counts в одном финальном JSON.
+- Файлы/места: `.github/workflows/daily-digest.yml:Report full dry-run result`; `tests/test_inventory.py`.
+- ПРОВЕРКА (offline): YAML parse OK; workflow regression и полный suite `1016/1016` OK.
+- Где была ошибка (если не сработает): проверить фактические поля `plan_execution_report.slots[*].replacement_reason/reason` и `verify_digest_plan_report.divergences[*]`.

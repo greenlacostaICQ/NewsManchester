@@ -71,6 +71,8 @@ SYSTEM_PROMPT = """Ты старший редактор и fact-check судья
 3. события/афиша: venue не должен стать artist, дата/окно даты не должны противоречить evidence;
 4. география — ПО КОНТРАКТУ РАЗДЕЛА, у каждой строки он приходит в поле geo_scope:
    • gm — событие обязано быть в Greater Manchester (Дальние анонсы, Билеты, городские блоки);
+   • gm_subject — субъект обязан быть из Greater Manchester, но само событие может быть
+     в другом городе/стране (Футбол: выездной матч Manchester United/City законен);
    • uk — допустима любая точка UK, включая Лондон (Русскоязычные концерты и стендап UK);
    • uk_outside_gm — допустима точка UK вне GM (Крупные концерты вне GM).
    Единого правила «любое событие должно быть в GM» нет: строку нельзя снимать за
@@ -371,10 +373,18 @@ def _rendered_candidates_by_url(rendered_candidates: list[dict[str, Any]]) -> di
 
 
 # Разделы, где не-GM география законна и снимать за неё строку нельзя.
-_NON_GM_GEO_SCOPES = {"uk", "uk_outside_gm"}
+_NON_GM_GEO_SCOPES = {"gm_subject", "uk", "uk_outside_gm"}
 _GEO_RISK_RE = re.compile(
     r"\bgeo(?:graph\w*)?\b|географ|"
     r"не\s*-?\s*gm|вне\s+gm|greater\s+manchester|не\s+в\s+gm|not\s+in\s+gm",
+    re.IGNORECASE,
+)
+_GM_LOCATION_ANCHOR_RE = re.compile(
+    r"\b(?:greater\s+manchester|manchester|salford|stockport|tameside|trafford|"
+    r"oldham|rochdale|bury|bolton|wigan|"
+    r"больш(?:ой|ого|ом)\s+манчестер|манчестер\w*|с[ао]лфорд\w*|стокпорт\w*|"
+    r"т[еэ]ймсайд\w*|тр[аэ]фф?орд\w*|олдх[эе]м\w*|рочдейл\w*|бери\w*|"
+    r"болтон\w*|уиган\w*)\b",
     re.IGNORECASE,
 )
 
@@ -398,8 +408,8 @@ def _row_is_out_of_contract_geo_complaint(row: dict[str, Any], section: str) -> 
 def _drop_out_of_contract_geo_rows(
     rows: list[dict[str, Any]], digest_html: str
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    section_by_index = {
-        int(slot.get("line_index") or 0): str(slot.get("section") or "")
+    slots_by_index = {
+        int(slot.get("line_index") or 0): slot
         for slot in _digest_line_slots_from_html(digest_html)
     }
     kept: list[dict[str, Any]] = []
@@ -409,14 +419,25 @@ def _drop_out_of_contract_geo_rows(
             line_index = int(row.get("line_index") or 0)
         except (TypeError, ValueError):
             line_index = 0
-        section = section_by_index.get(line_index) or str(row.get("section") or "")
-        if _row_is_out_of_contract_geo_complaint(row, section):
+        slot = slots_by_index.get(line_index) or {}
+        section = str(slot.get("section") or row.get("section") or "")
+        row_blob = " ".join(
+            str(row.get(field) or "")
+            for field in ("risk", "reason", "critical_problem", "problem")
+        )
+        false_gm_complaint = (
+            section_geo_scope(section) == "gm"
+            and bool(_GEO_RISK_RE.search(row_blob))
+            and bool(_GM_LOCATION_ANCHOR_RE.search(str(slot.get("text") or "")))
+        )
+        if _row_is_out_of_contract_geo_complaint(row, section) or false_gm_complaint:
             rejected.append(
                 {
                     "line_index": line_index,
                     "section": section,
                     "geo_scope": section_geo_scope(section),
                     "reason": str(row.get("reason") or row.get("critical_problem") or "")[:200],
+                    "gm_anchor_present": false_gm_complaint,
                 }
             )
             continue

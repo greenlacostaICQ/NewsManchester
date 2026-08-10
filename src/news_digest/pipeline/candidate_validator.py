@@ -1009,6 +1009,13 @@ _LOW_VALUE_LIFESTYLE_RE = re.compile(
     re.IGNORECASE,
 )
 
+_MEMORIAL_NOTICE_ROUNDUP_RE = re.compile(
+    r"\b(?:death|funeral|memorial)\s+notices\b|"
+    r"\bobituar(?:y|ies)\s+(?:roundup|list)\b|"
+    r"/gallery/death-notices-",
+    re.IGNORECASE,
+)
+
 _LOW_VALUE_FOOTBALL_RE = re.compile(
     r"\b("
     r"connection\s+with\s+our\s+fans|farewell\s+interview|"
@@ -2131,6 +2138,21 @@ def _exclude_court_roundup_listicle(candidate: dict) -> bool:
     return True
 
 
+def _exclude_memorial_notice_roundup(candidate: dict) -> bool:
+    if not candidate.get("include"):
+        return False
+    if str(candidate.get("primary_block") or "") not in {"last_24h", "today_focus", "city_watch"}:
+        return False
+    if not _MEMORIAL_NOTICE_ROUNDUP_RE.search(_candidate_blob(candidate)):
+        return False
+    _append_reject(
+        candidate,
+        "memorial_notice_roundup",
+        "Validator: recurring memorial/funeral notice list is not a standalone news event.",
+    )
+    return True
+
+
 def _exclude_council_admin_without_impact(candidate: dict) -> bool:
     if not candidate.get("include"):
         return False
@@ -3028,6 +3050,7 @@ def validate_candidates(project_root: Path) -> StageResult:
             _time_gate("sold_out_event_initial", lambda: _exclude_sold_out_event(candidate))
         if candidate.get("include"):
             _time_gate("court_roundup_listicle", lambda: _exclude_court_roundup_listicle(candidate))
+            _time_gate("memorial_notice_roundup", lambda: _exclude_memorial_notice_roundup(candidate))
         if candidate.get("include"):
             _time_gate("council_admin_without_impact", lambda: _exclude_council_admin_without_impact(candidate))
         if candidate.get("include"):

@@ -1424,6 +1424,45 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertFalse(updated.get("include"))
         self.assertIn("court_roundup_listicle", updated.get("reject_reasons") or [])
 
+    def test_memorial_notice_roundup_is_rejected(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "weekly-death-notices-roundup",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "Death notices and funeral announcements from the Manchester Evening News",
+                "summary": "A weekly gallery collects funeral and memorial notices for several people.",
+                "lead": "",
+                "evidence_text": "The roundup contains multiple unrelated notices.",
+                "source_label": "MEN",
+                "source_url": "https://example.test/gallery/death-notices-august-10",
+                "published_at": now_london().isoformat(),
+            }
+        )
+
+        self.assertFalse(updated.get("include"))
+        self.assertIn("memorial_notice_roundup", updated.get("reject_reasons") or [])
+
+    def test_standalone_obituary_is_not_treated_as_roundup(self) -> None:
+        updated = self._validate_one(
+            {
+                "include": True,
+                "fingerprint": "standalone-obituary",
+                "category": "media_layer",
+                "primary_block": "last_24h",
+                "title": "Obituary: Manchester community leader remembered",
+                "summary": "A standalone report looks back at one community leader's work in Manchester.",
+                "lead": "",
+                "evidence_text": "The report concerns one named person and their community work.",
+                "source_label": "Local News",
+                "source_url": "https://example.test/obituary-community-leader",
+                "published_at": now_london().isoformat(),
+            }
+        )
+
+        self.assertNotIn("memorial_notice_roundup", updated.get("reject_reasons") or [])
+
     def test_council_cabinet_admin_without_reader_impact_is_rejected(self) -> None:
         updated = self._validate_one(
             {

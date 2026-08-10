@@ -200,6 +200,21 @@ jobs:
               for row in (execution.get("slots") or {}).values()
               if isinstance(row, dict)
           )
+          removal_reasons = Counter(
+              str(row.get("replacement_reason") or row.get("reason") or "unspecified")[:160]
+              for row in (execution.get("slots") or {}).values()
+              if isinstance(row, dict) and row.get("status") == "removed"
+          )
+          replacement_reasons = Counter(
+              str(row.get("replacement_reason") or row.get("reason") or "unspecified")[:160]
+              for row in (execution.get("slots") or {}).values()
+              if isinstance(row, dict) and row.get("status") == "replaced"
+          )
+          divergence_kinds = Counter(
+              str(row.get("kind") or row.get("code") or row.get("reason") or "unspecified")[:160]
+              for row in (verify.get("divergences") or [])
+              if isinstance(row, dict)
+          )
           board = rank.get("board_rank") or {}
           rejected_responses = [
               {
@@ -231,10 +246,13 @@ jobs:
               "board_rejected_responses": rejected_responses,
               "plan_totals": plan.get("totals") or {},
               "execution_statuses": dict(sorted(slot_statuses.items())),
+              "execution_removal_reasons": dict(sorted(removal_reasons.items())),
+              "execution_replacement_reasons": dict(sorted(replacement_reasons.items())),
               "release_decision": release.get("release_decision"),
               "verify_ok_technical": verify.get("ok_technical"),
               "ship_degraded": verify.get("ship_degraded"),
               "verify_counts": verify.get("counts") or {},
+              "verify_divergence_kinds": dict(sorted(divergence_kinds.items())),
               "technical_errors": verify.get("technical_errors") or [],
               "digest_bytes": output.stat().st_size if output.exists() else 0,
           }, ensure_ascii=False, indent=2))

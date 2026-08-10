@@ -8,7 +8,7 @@ can derive their compatibility constants from the same registry.
 from __future__ import annotations
 
 
-BLOCK_POLICY_VERSION = "2026-08-10.p2"
+BLOCK_POLICY_VERSION = "2026-08-10.p3"
 
 
 BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
@@ -183,7 +183,7 @@ BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
         "budget_exempt": True,
     },
     "football": {
-        "heading": "Футбол", "min": 2, "max": 3, "geo_scope": "gm",
+        "heading": "Футбол", "min": 2, "max": 3, "geo_scope": "gm_subject",
         "schedule": "daily", "required_fields": ("what_happened", "why_now"),
         "repeat_policy": "new_facts_only", "backup_depth": 2, "min_sources": 1, "max_per_source": 0,
         "source_report_categories": frozenset({"football"}), "candidate_categories": frozenset({"football"}),

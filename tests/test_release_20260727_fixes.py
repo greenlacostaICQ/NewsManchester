@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 import tempfile
 import unittest
@@ -29,6 +29,7 @@ from news_digest.pipeline.plan_execution import (
     consume_repair_attempt,
 )
 from news_digest.pipeline.pre_send_quality_judge import _drop_out_of_contract_geo_rows
+from news_digest.pipeline.transport_card import transport_end_datetime
 from news_digest.pipeline.transport_fill import _collapse_transport_segment_duplicates, _expire_finished_transport
 
 
@@ -60,6 +61,56 @@ class Release20260727FixesTest(unittest.TestCase):
 
         self.assertEqual([row["line_index"] for row in kept], [3])
         self.assertEqual([row["line_index"] for row in rejected], [1, 2])
+
+    def test_judge_cannot_strip_wigan_transport_as_non_gm(self) -> None:
+        digest_html = "\n".join(
+            [
+                "<b>Общественный транспорт сегодня</b>",
+                '• Поезда Liverpool–Wigan отменены до вечера. <a href="https://example.test/rail">National Rail</a>',
+                '• В Liverpool закрыта городская улица. <a href="https://example.test/road">Council</a>',
+            ]
+        )
+        rows = [
+            {"line_index": 1, "action": "strip", "risk": "geo", "reason": "Wigan is not in Greater Manchester"},
+            {"line_index": 2, "action": "strip", "risk": "geo", "reason": "Liverpool is not in Greater Manchester"},
+        ]
+
+        kept, rejected = _drop_out_of_contract_geo_rows(rows, digest_html)
+
+        self.assertEqual([row["line_index"] for row in kept], [2])
+        self.assertEqual([row["line_index"] for row in rejected], [1])
+        self.assertTrue(rejected[0]["gm_anchor_present"])
+
+    def test_judge_cannot_strip_gm_club_away_match(self) -> None:
+        digest_html = "\n".join(
+            [
+                "<b>Футбол</b>",
+                '• Manchester City сыграл матч в Сеуле. <a href="https://example.test/city">Club</a>',
+            ]
+        )
+        rows = [
+            {"line_index": 1, "action": "replace", "risk": "geo", "reason": "The match took place outside Greater Manchester"},
+        ]
+
+        kept, rejected = _drop_out_of_contract_geo_rows(rows, digest_html)
+
+        self.assertEqual(kept, [])
+        self.assertEqual([row["line_index"] for row in rejected], [1])
+        self.assertEqual(block_policy("football")["geo_scope"], "gm_subject")
+
+    def test_relative_transport_deadline_stays_on_publication_day(self) -> None:
+        london_tz = now_london().tzinfo
+        now = datetime(2026, 8, 10, 8, 0, tzinfo=london_tz)
+        candidate = {
+            "published_at": "2026-08-08T16:25:00+01:00",
+            "summary": "Disruption between Altrincham and Stockport until 18:00 tonight.",
+        }
+
+        end = transport_end_datetime(candidate, now=now)
+
+        self.assertIsNotNone(end)
+        self.assertEqual(end.isoformat(), "2026-08-08T18:00:00+01:00")
+        self.assertLess(end, now)
 
     def test_one_registry_controls_rewrite_minimum_and_russian_geography(self) -> None:
         self.assertEqual(block_policy("tech_business")["min"], 0)

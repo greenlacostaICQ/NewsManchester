@@ -335,7 +335,25 @@ def transport_end_datetime(candidate: dict, *, now: datetime | None = None) -> d
             )
         except ValueError:
             return None
-    return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    # A time-only phrase such as "until 18:00 tonight" belongs to the
+    # article's publication day, not to whatever day the next pipeline run
+    # happens to read it. Re-anchoring an 8-Aug article to 10-Aug made an
+    # already-finished disruption look live until 18:00 on the 10th.
+    anchor = now
+    published_raw = str(candidate.get("published_at") or "").strip()
+    if published_raw:
+        try:
+            published = datetime.fromisoformat(published_raw.replace("Z", "+00:00"))
+            if published.tzinfo is not None and now.tzinfo is not None:
+                published = published.astimezone(now.tzinfo)
+            anchor = now.replace(
+                year=published.year,
+                month=published.month,
+                day=published.day,
+            )
+        except (TypeError, ValueError):
+            pass
+    return anchor.replace(hour=hour, minute=minute, second=0, microsecond=0)
 
 
 def transport_card_is_finished(candidate: dict, *, now: datetime | None = None) -> bool:
