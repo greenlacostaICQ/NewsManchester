@@ -2271,13 +2271,13 @@
 - Где была ошибка: same-run exact dedup и cross-day repeat были последовательными мутирующими решениями без инварианта; поздний verify подменял recovery блокировкой.
 
 ### 0212 — Терминальный 402 сразу переключает English-card route — 2026-08-10
-- Статус: внедрено; offline-проверка завершена, production-proof ожидается.
+- Статус: развёрнуто в `main`; точный 402 подтверждён regression, production orchestration подтверждён safe run.
 - Проблема: 06.08 DeepSeek сначала вернул `402 Insufficient Balance`, но English-card ветка продолжала batch/split/single retry и съела остаток 35-минутного job timeout; выпуск не дошёл до отправки.
 - Причина (корень): terminal-account guard существовал только в русской rewrite-ветке; `_call_english_card_provider_batch` трактовал 401/402/403 как обычный неполный batch.
 - Решение: English-card route получил общий terminal event и отмену same-account split/single retry; терминальными считаются явные auth/billing ошибки и HTTP 401/402/403. Job timeout увеличен с 35 до 60 минут как техническая страховка, а не как замена fail-fast.
 - Почему так: повтор того же запроса не исправляет пустой баланс; следующий уже существующий provider route может исправить ситуацию без новой стадии или модели.
 - Файлы/места: `llm_rewrite.py:_call_english_card_provider_batch/_is_terminal_provider_error`; `.github/workflows/daily-digest.yml`.
-- ПРОВЕРКА (offline): точный 402 regression — один API-вызов для двух карточек, split/single retry `0`, mapping `{}` для немедленного перехода к следующему route; targeted tests OK.
+- ПРОВЕРКА: точный 402 regression — один API-вызов для двух карточек, split/single retry `0`, mapping `{}` для немедленного перехода к следующему route; targeted tests OK. Safe production run `31369578184` на `43e05eb` завершился success за `14:47`, rank за `5:12`, штатно остановился после rank и ничего не отправлял. В этом run DeepSeek отвечал `200`, поэтому terminal 402 в production не возник и не мог быть там измерен.
 
 ### 0213 — Hybrid night lineage входит в честный night→live funnel — 2026-08-10
 - Статус: внедрено; offline-проверка завершена, production-proof ожидается.
@@ -2298,13 +2298,13 @@
 - ПРОВЕРКА (offline): пустой блок planned_shortfall `3→0`; одна допустимая Next7-карточка planned `1`; targeted tests OK.
 
 ### 0215 — Успешные ночные волны молчат в Telegram — 2026-08-10
-- Статус: внедрено; workflow production-proof ожидается.
+- Статус: ПРОВЕРЕНО-работает.
 - Проблема: пять штатных ночных волн ежедневно присылали служебные сообщения даже при успешном завершении.
 - Причина (корень): `night-inventory.yml` содержал отдельный `success()` notify-step наряду с аварийным уведомлением.
 - Решение: success/degraded completion notification удалён; Telegram-step остался только под `failure()` и только для реально запущенной волны.
 - Почему так: нормальный контур не создаёт шум; пропущенная fallback-волна также молчит, а реальный workflow failure остаётся заметным.
 - Файлы/места: `.github/workflows/night-inventory.yml`.
-- ПРОВЕРКА (offline): workflow содержит `Notify Telegram — wave failed`; `Notify Telegram — wave complete` отсутствует.
+- ПРОВЕРКА: workflow содержит `Notify Telegram — wave failed`; `Notify Telegram — wave complete` отсутствует. Production Events run `31369564647` и Pro/Food/Russian run `31370830336` завершились success; в обоих единственный Telegram-step `Notify Telegram — wave failed` имел статус `skipped`.
 
 ### 0216 — Частичный numeric repair не откатывается; Football сохраняется — 2026-08-10
 - Статус: внедрено; targeted/replay-проверка завершена, production-proof ожидается.
@@ -2316,10 +2316,10 @@
 - ПРОВЕРКА: targeted regressions OK. Replay 10.08 до правки: `36 shown / 0 replaced / 2 removed`, 35 bullets, verify OK. После: `38 shown / 0 replaced / 0 removed`, 37 bullets, Football восстановлен, lead `ok`, blank_runs_2plus `0`, verify OK.
 
 ### 0217 — Доказанно мёртвые ночные URL не портят health — 2026-08-10
-- Статус: внедрено; production wave-proof ожидается.
+- Статус: ПРОВЕРЕНО-работает.
 - Проблема: Manchester Brick Festival давал HTTP 404 все десять проверенных ночей; CompiledMCR давал TLS EOF три ночи подряд, из-за чего Events и Pro/Food/Russian постоянно выглядели degraded.
 - Причина (корень): одноразовый Brick URL остался включён после события; CompiledMCR endpoint перестал устанавливать стабильный TLS.
 - Решение: оба источника отключены в registry с явной причиной и условием повторного включения; остальные источники и требования блока не менялись.
 - Почему так: для CompiledMCR сначала проверен recovery-first путь — отдельные urllib и curl_cffi probes оба провалились; непроверенный transport fallback не добавлялся.
 - Файлы/места: `data/sources.toml`.
-- ПРОВЕРКА (offline): live probe 10.08 — urllib `SSL UNEXPECTED_EOF`, curl_cffi `TLS connect error`; после config load оба имени отсутствуют в `SOURCES`. Ошибки следующей production wave должны стать `0` при здоровье остальных источников.
+- ПРОВЕРКА: live probe 10.08 — urllib `SSL UNEXPECTED_EOF`, curl_cffi `TLS connect error`; после config load оба имени отсутствуют в `SOURCES`. Production Pro/Food/Russian run `31370830336`: `14` sources, `success`, `0` errors, `8` fact-ready, `1` render-ready, `6` morning-eligible — постоянный CompiledMCR TLS error исчез. Events run `31369564647`: Brick source отсутствует, `54` sources, `34` fact/render-ready; единственный error — временный TicketTailor 403 у South Manchester Food Festival, который был healthy 05–10.08 и потому не отключён по одному сбою.
