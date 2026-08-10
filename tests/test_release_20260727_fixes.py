@@ -474,6 +474,40 @@ class Release20260727FixesTest(unittest.TestCase):
         self.assertTrue(official["include"])
         del now
 
+    def test_wigan_liverpool_media_rewrite_collapses_into_official_status(self) -> None:
+        official = {
+            "fingerprint": "national-rail-wigan",
+            "primary_block": "transport",
+            "category": "transport",
+            "include": True,
+            "title": "Northern: Major disruption between Liverpool Lime Street and Wigan North Western expected until 12:30",
+            "summary": "The line is blocked after an emergency incident and trains are disrupted.",
+        }
+        media = {
+            "fingerprint": "men-wigan",
+            "primary_block": "transport",
+            "category": "media_layer",
+            "include": True,
+            "title": "Major disruption as Greater Manchester train line blocked",
+            "summary": "The line between Wigan and Liverpool is blocked, causing serious disruption until 12:30.",
+        }
+        different_wigan_route = {
+            "fingerprint": "wigan-bolton",
+            "primary_block": "transport",
+            "category": "media_layer",
+            "include": True,
+            "title": "Delays between Wigan and Bolton",
+            "summary": "A separate signalling fault is delaying trains.",
+        }
+
+        dropped = _collapse_transport_segment_duplicates(
+            [official, media, different_wigan_route]
+        )
+
+        self.assertEqual([row["fingerprint"] for row in dropped], ["men-wigan"])
+        self.assertFalse(media["include"])
+        self.assertTrue(different_wigan_route["include"])
+
     # 0163 — пустой план не останавливает выпуск.
     def test_empty_plan_ships_degraded_instead_of_failing(self) -> None:
         from news_digest.pipeline.writer import write_digest

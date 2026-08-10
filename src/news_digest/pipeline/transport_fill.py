@@ -645,11 +645,13 @@ _OFFICIAL_TRANSPORT_CATEGORIES = frozenset({"transport"})
 _SEGMENT_TOKEN_RE = re.compile(
     r"\b(?:eccles|altrincham|trafford\s+centre|bury|rochdale|oldham|ashton|"
     r"didsbury|chorlton|salford\s+quays|media\s*city|piccadilly|victoria|"
-    r"deansgate|cornbrook|stalybridge|wigan\s+wallgate|southport|bolton|"
+    r"deansgate|cornbrook|stalybridge|wigan(?:\s+(?:wallgate|north\s+western))?|"
+    r"liverpool(?:\s+lime\s+street)?|st\s+helens(?:\s+junction)?|southport|bolton|"
     r"stockport|prestwich|whitefield|radcliffe|droylsden|newton\s+heath|"
     r"velopark|etihad|airport|wythenshawe|sale|brooklands|timperley)\b",
     re.IGNORECASE,
 )
+_BROAD_RAIL_ENDPOINT_TOKENS = frozenset({"wigan", "liverpool", "st helens"})
 
 
 def _transport_blob(candidate: dict) -> str:
@@ -660,10 +662,27 @@ def _transport_blob(candidate: dict) -> str:
 
 
 def _transport_segment_tokens(candidate: dict) -> frozenset[str]:
-    return frozenset(
-        match.group(0).lower().replace("  ", " ")
-        for match in _SEGMENT_TOKEN_RE.finditer(_transport_blob(candidate))
-    )
+    tokens: set[str] = set()
+    for match in _SEGMENT_TOKEN_RE.finditer(_transport_blob(candidate)):
+        token = match.group(0).lower().replace("  ", " ")
+        if token.startswith("wigan"):
+            token = "wigan"
+        elif token.startswith("liverpool"):
+            token = "liverpool"
+        elif token.startswith("st helens"):
+            token = "st helens"
+        tokens.add(token)
+    return frozenset(tokens)
+
+
+def _transport_segment_overlap(first: dict, second: dict) -> frozenset[str]:
+    shared = _transport_segment_tokens(first) & _transport_segment_tokens(second)
+    # A borough/city name alone is too broad to prove the same rail incident;
+    # two shared endpoints are enough. Existing line/station tokens remain
+    # specific enough to match on one value (e.g. Eccles line).
+    if shared and shared <= _BROAD_RAIL_ENDPOINT_TOKENS and len(shared) < 2:
+        return frozenset()
+    return shared
 
 
 # Классы воздействия. Самостоятельным считается воздействие, которого нет
@@ -672,7 +691,7 @@ def _transport_segment_tokens(candidate: dict) -> frozenset[str]:
 _IMPACT_CLASS_RE: tuple[tuple[str, "re.Pattern[str]"], ...] = (
     ("no_service", re.compile(r"no\s+trams?|no\s+trains?|нет\s+трамва|нет\s+поезд|suspend", re.IGNORECASE)),
     ("replacement", re.compile(r"replacement\s+bus|замещающ\w*\s+автобус|buses\s+replace", re.IGNORECASE)),
-    ("closure", re.compile(r"clos(?:ed|ure)|закрыт", re.IGNORECASE)),
+    ("closure", re.compile(r"clos(?:ed|ure)|blocked|закрыт|заблокирован", re.IGNORECASE)),
     ("diversion", re.compile(r"diversion|объезд", re.IGNORECASE)),
     ("delay", re.compile(r"delay|сбой|задержк", re.IGNORECASE)),
     ("works", re.compile(r"engineering\s+work|track\s+(?:replacement|renewal)|roadworks?|ремонтн\w*\s+работ|замена\s+рельс", re.IGNORECASE)),
@@ -739,14 +758,14 @@ def _collapse_transport_segment_duplicates(candidates: list[dict]) -> list[dict]
             continue
         covering = [
             official_card for official_card in official
-            if _transport_segment_tokens(official_card) & tokens
+            if _transport_segment_overlap(official_card, candidate)
         ]
         if not covering:
             continue
         shared: set[str] = set()
         official_impacts: set[str] = set()
         for official_card in covering:
-            shared |= set(_transport_segment_tokens(official_card) & tokens)
+            shared |= set(_transport_segment_overlap(official_card, candidate))
             official_impacts |= set(_transport_impact_classes(official_card))
         # Самостоятельное воздействие — класс последствий, которого нет ни в
         # одном официальном статусе по этому участку. Ещё одно название места

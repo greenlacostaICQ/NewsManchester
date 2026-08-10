@@ -421,6 +421,41 @@ class ReplacementPlanTest(unittest.TestCase):
         self.assertFalse(plan["diaspora_events"]["safe_to_skip"])
         self.assertEqual(plan["diaspora_events"]["reason"], "current_night_scan_incomplete")
 
+    def test_on_requires_primary_plus_plan_backups_before_skipping_live_source(self) -> None:
+        one_card = {"completeness": {"blocks": {
+            "professional_events": {
+                "block_sufficient": True,
+                "liveness_sufficient_for_replacement": True,
+                "candidate_count": 1,
+                "action_url_alive_count": 1,
+            },
+        }}}
+        plan = inventory_source_replacement_plan(
+            one_card,
+            {"professional_events": {"status": "ok"}},
+        )
+
+        self.assertFalse(plan["professional_events"]["safe_to_skip"])
+        self.assertFalse(plan["professional_events"]["backup_sufficient"])
+        self.assertEqual(
+            plan["professional_events"]["reason"],
+            "post_contract_backup_insufficient",
+        )
+
+        three_cards = {"completeness": {"blocks": {
+            "professional_events": {
+                "block_sufficient": True,
+                "liveness_sufficient_for_replacement": True,
+                "candidate_count": 3,
+                "action_url_alive_count": 3,
+            },
+        }}}
+        safe = inventory_source_replacement_plan(
+            three_cards,
+            {"professional_events": {"status": "ok"}},
+        )
+        self.assertTrue(safe["professional_events"]["safe_to_skip"])
+
     def test_latest_night_health_exposes_source_errors(self) -> None:
         rows = [
             {"run_id": "r1", "run_at_london": "2026-07-13T03:30:00+01:00", "category": "food_openings", "checked": True, "found": 2, "errors": 0, "expected_sources": 2},
@@ -1339,6 +1374,7 @@ class NightWaveTest(unittest.TestCase):
         self.assertIn('"execution_removal_reasons"', workflow)
         self.assertIn('"execution_replacement_reasons"', workflow)
         self.assertIn('"verify_divergence_kinds"', workflow)
+        self.assertIn('"planned_shortfalls"', workflow)
         normal_guard = "if: ${{ inputs.stop_after_rank != true && inputs.dry_run_no_send != true }}"
         always_guard = "if: ${{ always() && inputs.stop_after_rank != true && inputs.dry_run_no_send != true }}"
         for step_name in (

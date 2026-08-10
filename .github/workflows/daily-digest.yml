@@ -215,6 +215,11 @@ jobs:
               for row in (verify.get("divergences") or [])
               if isinstance(row, dict)
           )
+          planned_shortfalls = {
+              section: row.get("expected_shortfall")
+              for section, row in (plan.get("sections") or {}).items()
+              if isinstance(row, dict) and row.get("expected_shortfall")
+          }
           board = rank.get("board_rank") or {}
           rejected_responses = [
               {
@@ -245,6 +250,7 @@ jobs:
               "ranked_candidates": board.get("ranked_candidates"),
               "board_rejected_responses": rejected_responses,
               "plan_totals": plan.get("totals") or {},
+              "planned_shortfalls": planned_shortfalls,
               "execution_statuses": dict(sorted(slot_statuses.items())),
               "execution_removal_reasons": dict(sorted(removal_reasons.items())),
               "execution_replacement_reasons": dict(sorted(replacement_reasons.items())),

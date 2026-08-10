@@ -2405,9 +2405,31 @@
 - Статус: внедрено; offline workflow-проверка завершена, production-proof ожидается.
 - Проблема: первый полный dry-run показал только totals `5 replaced / 5 removed`; для RCA пришлось вручную читать длинный judge log, а причина writer removal не попала в итоговую воронку.
 - Причина (корень): итоговый report агрегировал только `plan_execution.status`, игнорируя `replacement_reason/reason` и `verify.divergences`.
-- Решение: report добавляет counters `execution_removal_reasons`, `execution_replacement_reasons`, `verify_divergence_kinds`.
+- Решение: report добавляет counters `execution_removal_reasons`, `execution_replacement_reasons`, `verify_divergence_kinds` и per-section `planned_shortfalls`.
 - Почему так: это компактная наблюдаемость из существующих state-файлов, без нового stage/model и без печати больших JSON.
 - Ожидаемый эффект и метрика проверки: следующий dry-run объясняет все removed/replaced/divergence counts в одном финальном JSON.
 - Файлы/места: `.github/workflows/daily-digest.yml:Report full dry-run result`; `tests/test_inventory.py`.
-- ПРОВЕРКА (offline): YAML parse OK; workflow regression и полный suite `1016/1016` OK.
+- ПРОВЕРКА: YAML parse OK; workflow regression и полный suite `1016/1016` OK. Production dry-run `31377892504`: report точно объяснил `33 shown / 0 replaced / 2 removed`, оба removal с кодом `duplicate_after_plan`; divergences `execution_loss=2`, `planned_shortfall=4`; `technical_errors=[]`, digest `17163` bytes.
 - Где была ошибка (если не сработает): проверить фактические поля `plan_execution_report.slots[*].replacement_reason/reason` и `verify_digest_plan_report.divergences[*]`.
+
+### 0226 — Ночная source replacement требует primary плюс запасных плана — 2026-08-10
+- Статус: внедрено; production-proof ожидается после push.
+- Проблема: dry-run `31377892504` честно включил `mode=on` и пропустил live-scan для `diaspora_events`/`professional_events`, потому что ночь имела по одной contract-ready карточке и формально закрывала `min=1`. После repeat/selection обе секции получили planned shortfall: запасных для переживания одного downstream reject не было.
+- Причина (корень): `inventory_source_replacement_plan` проверял только `candidate_count >= block.min` и liveness для того же floor, хотя slot-plan policy уже требует `backup_depth=2`. Критерий «можно не собирать утром» был слабее реального контракта исполнения плана.
+- Решение: полное замещение source scan разрешено только при `candidate_count >= min + backup_depth` и таком же количестве action-URL `alive` для каждого обязательного output-block. Если минимум есть, но запаса нет, категория остаётся в общем `on`-режиме, однако получает точный live-fallback `post_contract_backup_insufficient`/`backup_action_urls_not_verified` в том же run.
+- Почему так: это использует существующую глубину запасных как единый контракт и не добавляет stage/model. Возврат всей системы в `assist` не нужен; только недоказанно устойчивый блок собирается live.
+- Ожидаемый эффект и метрика проверки: одна карточка при `min=1, backup_depth=2` больше не даёт `safe_to_skip`; три живые карточки дают. В production Russian/Professional с ночным запасом `1` должны появиться в `live_fallback_categories`, а не в `night_replaced_categories`.
+- Файлы/места: `inventory.py:inventory_source_replacement_plan`; `tests/test_inventory.py:ReplacementPlanTest`.
+- ПРОВЕРКА (offline): regressions `1 → fallback`, `3 → safe_to_skip`; существующие health/liveness/replacement tests OK. Полный suite `1018/1018` OK; replay 10.08 — `38 shown / 0 replaced / 0 removed`, technical verify OK.
+- Где была ошибка (если не сработает): сравнить `completeness.blocks[*].candidate_count/action_url_alive_count` с `min+backup_depth` и финальным `release_plan.sections[*].expected_shortfall`.
+
+### 0227 — Wigan–Liverpool media duplicate снимается до plan — 2026-08-10
+- Статус: внедрено; production-proof ожидается после push.
+- Проблема: dry-run `31377892504` запланировал официальный National Rail status и MEN-пересказ того же Wigan–Liverpool incident; final judge правильно снял медийную копию, но потерял слот без backup.
+- Причина (корень): deterministic transport overlap знал `Wigan Wallgate`, но не нормализовал `Wigan North Western / Liverpool Lime Street / St Helens Junction`; `blocked/заблокирован` также не входил в общий impact-class `closure`.
+- Решение: endpoint tokens расширены и нормализуются до Wigan/Liverpool/St Helens; для этих широких названий совпадение требует минимум два общих endpoint, поэтому отдельный Wigan–Bolton incident не схлопывается. `blocked/заблокирован` добавлен в closure. При совпадении участка и impact официальный transport source остаётся, media rewrite снимается до rank/plan.
+- Почему так: используется существующий recovery-first transport predicate; fuzzy/LLM dedupe не добавляется. Требование двух широких endpoint защищает разные маршруты внутри одного borough.
+- Ожидаемый эффект и метрика проверки: National Rail Wigan–Liverpool + MEN Wigan–Liverpool дают один survivor; Wigan–Bolton остаётся отдельным.
+- Файлы/места: `transport_fill.py:_transport_segment_tokens/_transport_segment_overlap/_collapse_transport_segment_duplicates`; `tests/test_release_20260727_fixes.py`.
+- ПРОВЕРКА (offline): live-shaped triple даёт drop только MEN Wigan–Liverpool; существующий Eccles official/media regression также остаётся green. Полный suite `1018/1018` OK; replay 10.08 — `38 shown / 0 replaced / 0 removed`, technical verify OK.
+- Где была ошибка (если не сработает): проверить source category=`transport`, нормализованные endpoint tokens и разность `_transport_impact_classes`.

@@ -2071,6 +2071,26 @@ def inventory_source_replacement_plan(
             or (isinstance(blocks.get(block), dict) and blocks[block].get("block_sufficient"))
             for block in output_blocks
         )
+        # A source scan may be skipped only when night stock can fill the
+        # primary floor *and* the slot-plan backup depth. One Russian or
+        # professional card technically met min=1, but a repeat/selection
+        # decision then emptied the public section after live collection had
+        # already been skipped. Reports created before this contract did not
+        # carry counts, so retain their boolean meaning for compatibility.
+        backup_sufficient = supported and all(
+            bool(INVENTORY_BLOCK_REGISTRY.get(block, {}).get("optional"))
+            or (
+                isinstance(blocks.get(block), dict)
+                and (
+                    int(blocks[block].get("candidate_count") or 0)
+                    >= int(INVENTORY_BLOCK_REGISTRY.get(block, {}).get("min") or 0)
+                    + int(INVENTORY_BLOCK_REGISTRY.get(block, {}).get("backup_depth") or 0)
+                    if "candidate_count" in blocks[block]
+                    else bool(blocks[block].get("block_sufficient"))
+                )
+            )
+            for block in output_blocks
+        )
         liveness_sufficient = supported and all(
             bool(INVENTORY_BLOCK_REGISTRY.get(block, {}).get("optional"))
             or (
@@ -2079,10 +2099,24 @@ def inventory_source_replacement_plan(
             )
             for block in output_blocks
         )
+        backup_liveness_sufficient = supported and all(
+            bool(INVENTORY_BLOCK_REGISTRY.get(block, {}).get("optional"))
+            or (
+                isinstance(blocks.get(block), dict)
+                and (
+                    int(blocks[block].get("action_url_alive_count") or 0)
+                    >= int(INVENTORY_BLOCK_REGISTRY.get(block, {}).get("min") or 0)
+                    + int(INVENTORY_BLOCK_REGISTRY.get(block, {}).get("backup_depth") or 0)
+                    if "action_url_alive_count" in blocks[block]
+                    else bool(blocks[block].get("liveness_sufficient_for_replacement"))
+                )
+            )
+            for block in output_blocks
+        )
         scan_complete = str(health.get("status") or "") == "ok"
         safe = bool(
-            supported and replacement_allowed and block_sufficient
-            and liveness_sufficient and scan_complete
+            supported and replacement_allowed and block_sufficient and backup_sufficient
+            and liveness_sufficient and backup_liveness_sufficient and scan_complete
         )
         if safe:
             reason = "safe_post_contract_replacement"
@@ -2094,15 +2128,23 @@ def inventory_source_replacement_plan(
             reason = "current_night_scan_incomplete"
         elif not block_sufficient:
             reason = "post_contract_block_insufficient"
-        else:
+        elif not backup_sufficient:
+            reason = "post_contract_backup_insufficient"
+        elif not liveness_sufficient:
             reason = "action_urls_not_verified"
+        elif not backup_liveness_sufficient:
+            reason = "backup_action_urls_not_verified"
+        else:
+            reason = "source_replacement_contract_incomplete"
         plan[category] = {
             "safe_to_skip": safe,
             "reason": reason,
             "output_blocks": sorted(output_blocks),
             "scan_complete": scan_complete,
             "block_sufficient": block_sufficient,
+            "backup_sufficient": backup_sufficient,
             "liveness_sufficient": liveness_sufficient,
+            "backup_liveness_sufficient": backup_liveness_sufficient,
             "source_replacement_allowed": replacement_allowed,
             "night_health": health,
         }
