@@ -2269,3 +2269,57 @@
 - Файлы/места: `story_intelligence.py:apply_cheap_dedup_before_enrich`; `dedupe.py:_enforce_cheap_dedup_invariant`; `plan_digest.py:_url_identity/run_plan_digest`; `writer.py:write_digest/_removal_reason_from_errors`; `verify_digest_plan.py:blocking_plan_kinds`; `tests/test_plan_contract.py`.
 - ПРОВЕРКА (offline + production audit): production-аудит 09.08 — 2 canonical URL collision-группы в primaries, 6 resurrected cheap-дублей. Baseline replay 09.08: `53` public slots, `52` draft lines, verify FAIL на двух `html_line_duplicated`, `51` replay bullets, lead ok. После изменения: `49` public slots, `48` draft lines, verify OK — `47 shown / 1 replaced / 1 removed`, `6` content divergences → `ship_degraded`, `47` bullets, lead ok; выпуск дошёл бы до send. Полный suite: 1000/1000 тестов OK. `replay_day.py --golden`: 12/12 дней OK, technical verify failures 0, lead ok 12/12, новых `blank_runs_2plus` нет. Старый production-код 10.08 снова воскресил 2 cheap-дубля, но одновременно в plan они не попали: verify success, Telegram delivery в 08:24 BST (`message_ids` 1045–1049), workflow `31364164998` success. Это подтверждает повторяемость причины и отсутствие сегодняшней недоставки, но proof нового invariant будет только на следующем запуске с `a0dfd1c`.
 - Где была ошибка: same-run exact dedup и cross-day repeat были последовательными мутирующими решениями без инварианта; поздний verify подменял recovery блокировкой.
+
+### 0212 — Терминальный 402 сразу переключает English-card route — 2026-08-10
+- Статус: внедрено; offline-проверка завершена, production-proof ожидается.
+- Проблема: 06.08 DeepSeek сначала вернул `402 Insufficient Balance`, но English-card ветка продолжала batch/split/single retry и съела остаток 35-минутного job timeout; выпуск не дошёл до отправки.
+- Причина (корень): terminal-account guard существовал только в русской rewrite-ветке; `_call_english_card_provider_batch` трактовал 401/402/403 как обычный неполный batch.
+- Решение: English-card route получил общий terminal event и отмену same-account split/single retry; терминальными считаются явные auth/billing ошибки и HTTP 401/402/403. Job timeout увеличен с 35 до 60 минут как техническая страховка, а не как замена fail-fast.
+- Почему так: повтор того же запроса не исправляет пустой баланс; следующий уже существующий provider route может исправить ситуацию без новой стадии или модели.
+- Файлы/места: `llm_rewrite.py:_call_english_card_provider_batch/_is_terminal_provider_error`; `.github/workflows/daily-digest.yml`.
+- ПРОВЕРКА (offline): точный 402 regression — один API-вызов для двух карточек, split/single retry `0`, mapping `{}` для немедленного перехода к следующему route; targeted tests OK.
+
+### 0213 — Hybrid night lineage входит в честный night→live funnel — 2026-08-10
+- Статус: внедрено; offline-проверка завершена, production-proof ожидается.
+- Проблема: 10.08 intake реально merged `199` ночных lineage, но release показывал active `42` и live-confirmed `40`, потому что не считал `159 hybrid_merged_into_live`.
+- Причина (корень): release признавал активными только `inserted_into_pipeline/merged_into_live`, хотя collector отдельно маркирует hybrid merge.
+- Решение: `hybrid_merged_into_live` включён в active/current и в night→live `live_confirmed/enriched/planned/visible`.
+- Почему так: меняется только отчётность по уже существующему lineage; состав и отбор выпуска не затрагиваются.
+- Файлы/места: `release.py:_summarise_inventory_morning_effect`.
+- ПРОВЕРКА (offline): regression с одним hybrid lineage даёт active `1`, live-confirmed `1`, visible `1`; targeted test OK.
+
+### 0214 — Next7 опционален, но показывается при наличии факта — 2026-08-10
+- Статус: внедрено; offline-проверка завершена, production-proof ожидается.
+- Проблема: десять дней подряд честный пул Next7 был пуст, но продуктовый floor `3` ежедневно создавал ложный planned_shortfall; owner уточнил: блок показываем только если есть реальное изменение.
+- Причина (корень): block policy сохранял `min=3, optional=false` от прежнего плана, несмотря на узкий non-leisure контракт без статических производителей.
+- Решение: Next7 теперь `min=0, optional=true, max=6`; дата/практический факт/роутинг не ослаблены. Реальная карточка по-прежнему получает слот.
+- Почему так: пустота больше не считается дефектом и не заполняется досугом; при наличии изменения блок появляется автоматически.
+- Файлы/места: `block_policy.py:BLOCK_POLICY_REGISTRY[next_7_days]`; planner/verify regressions.
+- ПРОВЕРКА (offline): пустой блок planned_shortfall `3→0`; одна допустимая Next7-карточка planned `1`; targeted tests OK.
+
+### 0215 — Успешные ночные волны молчат в Telegram — 2026-08-10
+- Статус: внедрено; workflow production-proof ожидается.
+- Проблема: пять штатных ночных волн ежедневно присылали служебные сообщения даже при успешном завершении.
+- Причина (корень): `night-inventory.yml` содержал отдельный `success()` notify-step наряду с аварийным уведомлением.
+- Решение: success/degraded completion notification удалён; Telegram-step остался только под `failure()` и только для реально запущенной волны.
+- Почему так: нормальный контур не создаёт шум; пропущенная fallback-волна также молчит, а реальный workflow failure остаётся заметным.
+- Файлы/места: `.github/workflows/night-inventory.yml`.
+- ПРОВЕРКА (offline): workflow содержит `Notify Telegram — wave failed`; `Notify Telegram — wave complete` отсутствует.
+
+### 0216 — Частичный numeric repair не откатывается; Football сохраняется — 2026-08-10
+- Статус: внедрено; targeted/replay-проверка завершена, production-proof ожидается.
+- Проблема: 10.08 оба футбольных слота были сняты: полезные однофразовые карточки длиной 137–138 символов содержали неподтверждённый leading publication date; после очистки оставались только мягкие length/sentence замечания.
+- Причина (корень): writer сохранял numeric repair только если он сразу устранял вообще все ошибки; частично исправленная строка отбрасывалась и лестница снова видела исходную неподтверждённую дату. Дополнительно `38,5 миллиона` не сопоставлялось с evidence `£38.5m`.
+- Решение: безопасный частичный numeric repair становится текущей строкой и продолжает обычную repair ladder; неподтверждённая начальная дата снимается целиком; decimal comma/point и русские magnitude-слова нормализуются одинаково. После фактовой очистки существующий core short fallback сохраняет ясную карточку без наполнителя.
+- Почему так: это лечит класс «факт исправлен, но осталась только форма», не отключая numeric/factual QA и не повышая бюджет моделей.
+- Файлы/места: `writer.py:_number_tokens/_strip_unsupported_number_phrases/_produce_slot_line`; `tests/test_digest_quality_guardrails.py`.
+- ПРОВЕРКА: targeted regressions OK. Replay 10.08 до правки: `36 shown / 0 replaced / 2 removed`, 35 bullets, verify OK. После: `38 shown / 0 replaced / 0 removed`, 37 bullets, Football восстановлен, lead `ok`, blank_runs_2plus `0`, verify OK.
+
+### 0217 — Доказанно мёртвые ночные URL не портят health — 2026-08-10
+- Статус: внедрено; production wave-proof ожидается.
+- Проблема: Manchester Brick Festival давал HTTP 404 все десять проверенных ночей; CompiledMCR давал TLS EOF три ночи подряд, из-за чего Events и Pro/Food/Russian постоянно выглядели degraded.
+- Причина (корень): одноразовый Brick URL остался включён после события; CompiledMCR endpoint перестал устанавливать стабильный TLS.
+- Решение: оба источника отключены в registry с явной причиной и условием повторного включения; остальные источники и требования блока не менялись.
+- Почему так: для CompiledMCR сначала проверен recovery-first путь — отдельные urllib и curl_cffi probes оба провалились; непроверенный transport fallback не добавлялся.
+- Файлы/места: `data/sources.toml`.
+- ПРОВЕРКА (offline): live probe 10.08 — urllib `SSL UNEXPECTED_EOF`, curl_cffi `TLS connect error`; после config load оба имени отсутствуют в `SOURCES`. Ошибки следующей production wave должны стать `0` при здоровье остальных источников.

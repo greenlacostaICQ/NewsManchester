@@ -1,4 +1,6 @@
 import json
+import sys
+import types
 import unittest
 from datetime import date, timedelta
 from unittest import mock
@@ -6,6 +8,7 @@ from unittest import mock
 from news_digest.pipeline.llm_rewrite import (
     _apply_cost_after_quality_guard,
     _cap_repair_targets,
+    _call_english_card_provider_batch,
     _call_with_fallback,
     _cost_after_quality_skip_reason,
     _force_write_evidence_floor,
@@ -39,8 +42,38 @@ def _candidate(fingerprint: str, title: str = "Test story") -> dict:
 class LlmRewriteDiagnosticsTests(unittest.TestCase):
     def test_terminal_provider_error_stops_same_account_retry_loop(self) -> None:
         self.assertTrue(_is_terminal_provider_error(RuntimeError("insufficient_quota")))
+        self.assertTrue(_is_terminal_provider_error(RuntimeError("Error code: 402 - Insufficient Balance")))
         self.assertTrue(_is_terminal_provider_error(RuntimeError("Incorrect API key provided")))
         self.assertFalse(_is_terminal_provider_error(TimeoutError("request timed out")))
+
+    def test_english_cards_do_not_split_retry_terminal_account_error(self) -> None:
+        client = mock.MagicMock()
+        client.chat.completions.create.side_effect = RuntimeError(
+            "Error code: 402 - Insufficient Balance"
+        )
+        diagnostics: list[dict] = []
+        candidates = [_candidate("fp-1"), _candidate("fp-2")]
+        fake_openai = types.SimpleNamespace(OpenAI=mock.Mock(return_value=client))
+
+        with (
+            mock.patch.dict(sys.modules, {"openai": fake_openai}),
+            mock.patch("news_digest.pipeline.llm_rewrite._API_RATE_LIMITER.acquire"),
+            mock.patch("news_digest.pipeline.llm_rewrite._API_TOKEN_LIMITER.acquire"),
+            mock.patch("news_digest.pipeline.llm_rewrite._jittered_sleep"),
+        ):
+            result = _call_english_card_provider_batch(
+                "https://provider.test/v1",
+                "key",
+                "model",
+                candidates,
+                "DeepSeek",
+                batch_size=2,
+                diagnostics=diagnostics,
+            )
+
+        self.assertEqual(result, {})
+        self.assertEqual(client.chat.completions.create.call_count, 1)
+        self.assertEqual(len(diagnostics), 1)
 
     def test_parse_provider_results_reports_rejection_reasons(self) -> None:
         batch = [_candidate("fp-1", "Good"), _candidate("fp-2", "Empty"), _candidate("fp-3", "No bullet")]

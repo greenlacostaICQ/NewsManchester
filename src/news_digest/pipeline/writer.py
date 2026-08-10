@@ -4536,7 +4536,11 @@ _NUMBER_TOKEN_RE = re.compile(
     r"\b\d{1,4}(?:[,\u00a0\u202f ]\d{3})*(?:\.\d+)?\b"
 )
 _TIME_TOKEN_RE = re.compile(r"\b(\d{1,2})[:.](\d{2})\s*(?:am|pm|a\.m\.|p\.m\.)?\b", re.IGNORECASE)
-_MONEY_MAGNITUDE_RE = re.compile(r"\b£?\s*(\d+(?:\.\d+)?)\s*(m|million|bn|billion)\b", re.IGNORECASE)
+_MONEY_MAGNITUDE_RE = re.compile(
+    r"\b£?\s*(\d+(?:[.,]\d+)?)\s*"
+    r"(m|million|миллион(?:а|ов)?|млн|bn|billion|миллиард(?:а|ов)?|млрд)\b",
+    re.IGNORECASE,
+)
 
 
 def _number_tokens(value: str) -> set[str]:
@@ -4547,12 +4551,21 @@ def _number_tokens(value: str) -> set[str]:
         tokens.add(str(int(minute)))
         tokens.add(minute)
     for amount, magnitude in _MONEY_MAGNITUDE_RE.findall(text):
-        whole = amount.split(".", 1)[0]
+        normalized_amount = amount.replace(",", ".")
+        amount_parts = normalized_amount.split(".", 1)
+        whole = amount_parts[0]
         if whole:
             tokens.add(whole)
+        if len(amount_parts) == 2 and amount_parts[1]:
+            tokens.add(amount_parts[1])
         try:
-            multiplier = 1_000_000_000 if magnitude.lower().startswith("b") else 1_000_000
-            expanded = int(float(amount) * multiplier)
+            magnitude_key = magnitude.lower()
+            multiplier = (
+                1_000_000_000
+                if magnitude_key.startswith("b") or magnitude_key.startswith("миллиард") or magnitude_key == "млрд"
+                else 1_000_000
+            )
+            expanded = int(float(normalized_amount) * multiplier)
             tokens.add(str(expanded))
         except ValueError:
             pass
@@ -4628,6 +4641,25 @@ def _strip_unsupported_number_phrases(candidate: dict, line: str) -> tuple[str, 
         return line, []
     repaired = str(line or "")
     reasons: list[str] = []
+    # Model prose often prepends the article publication day even though that
+    # day is absent from the saved evidence fields (10.08: three otherwise
+    # useful football cards were removed for this alone).  If any number in a
+    # leading Russian date is unsupported, remove the whole date phrase before
+    # the generic numeric repair; never drop the only news sentence with it.
+    leading_date = re.match(
+        rf"^(\s*•\s*)\d{{1,2}}\s+{_RU_MONTH_WORD}(?:\s+\d{{4}})?(?:\s+года?)?\s+",
+        repaired,
+        flags=re.IGNORECASE,
+    )
+    if leading_date:
+        date_tokens = _number_tokens(leading_date.group(0))
+        unsupported_date_tokens = sorted(date_tokens.intersection(missing))
+        if unsupported_date_tokens:
+            repaired = leading_date.group(1) + repaired[leading_date.end():]
+            reasons.extend(
+                f"removed_unsupported_leading_date:{token}"
+                for token in unsupported_date_tokens
+            )
     for token in missing:
         escaped = re.escape(token)
         before = repaired
@@ -5286,13 +5318,13 @@ def _produce_slot_line(
         if numeric_errors:
             stripped_line, strip_repairs = _strip_unsupported_number_phrases(candidate, line)
             if strip_repairs and stripped_line != line:
+                line = stripped_line
                 stripped_errors = _draft_line_quality_errors(candidate, stripped_line)
+                draft_line_errors = stripped_errors
                 if not stripped_errors:
-                    line = stripped_line
-                    draft_line_errors = []
                     _append_recovery_step(candidate, "draft_line_quality_repair", "recovered", missing=strip_repairs)
                 else:
-                    draft_line_errors = stripped_errors
+                    _append_recovery_step(candidate, "draft_line_quality_repair", "partial", missing=strip_repairs)
     if category in REQUIRE_DRAFT_LINE_CATEGORIES and draft_line_errors:
         _append_recovery_step(candidate, "final_replacement", "attempted", missing=draft_line_errors)
         replacement = _final_replacement_line(candidate)

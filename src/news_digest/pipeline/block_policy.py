@@ -8,7 +8,7 @@ can derive their compatibility constants from the same registry.
 from __future__ import annotations
 
 
-BLOCK_POLICY_VERSION = "2026-07-28.p0"
+BLOCK_POLICY_VERSION = "2026-08-10.p1"
 
 
 BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
@@ -84,7 +84,7 @@ BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
         "optional": False, "intake_cap": 0, "rewrite_recall_cap": 16,
     },
     "next_7_days": {
-        "heading": "Что важно в ближайшие 7 дней", "min": 3, "max": 6, "geo_scope": "gm",
+        "heading": "Что важно в ближайшие 7 дней", "min": 0, "max": 6, "geo_scope": "gm",
         "schedule": "daily", "required_fields": ("date_start", "non_leisure"),
         "repeat_policy": "calendar_milestones", "backup_depth": 2, "min_sources": 2, "max_per_source": 2,
         "repeat_milestone_days": (30, 14, 7, 1, 0),
@@ -92,7 +92,7 @@ BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
         "candidate_categories": frozenset({"media_layer", "gmp", "public_services", "council", "transport"}),
         "mode": "assist", "serving_ttl_hours": 96.0, "retention_days": 30,
         "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
-        "optional": False, "intake_cap": 12, "rewrite_recall_cap": 14,
+        "optional": True, "intake_cap": 12, "rewrite_recall_cap": 14,
     },
     "future_announcements": {
         "heading": "Дальние анонсы", "min": 0, "max": 0, "geo_scope": "gm",

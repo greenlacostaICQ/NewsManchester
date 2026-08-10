@@ -91,6 +91,26 @@ def _strip_volatile(plan: dict) -> dict:
 
 
 class PlanContractTest(unittest.TestCase):
+    def test_next7_is_optional_but_plans_a_real_candidate_when_present(self) -> None:
+        candidate = _candidate(
+            90,
+            block="next_7_days",
+            category="public_services",
+            title="Council service hours change next Thursday",
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, [candidate])
+            with patch("news_digest.pipeline.plan_digest._apply_routing", return_value=""), patch(
+                "news_digest.pipeline.plan_digest._admission_verdict", return_value=("ok", "")
+            ):
+                run_plan_digest(root)
+            plan = load_plan(state_dir)
+
+        section = plan["sections"]["Что важно в ближайшие 7 дней"]
+        self.assertEqual(section["planned"], 1)
+        self.assertIsNone(section["expected_shortfall"])
+
     def test_canonical_lookup_keeps_selected_enriched_twin(self) -> None:
         selected = _candidate(
             1,
@@ -522,7 +542,7 @@ class PlanContractTest(unittest.TestCase):
             self.assertEqual(final_selection["counts"]["final_html_rows"], 6)
             self.assertEqual(final_selection["counts"]["final_report_rows"], 6)
             self.assertEqual(final_selection["sections"]["Свежие новости"]["execution_loss"], 1)
-            self.assertEqual(final_selection["sections"]["Что важно в ближайшие 7 дней"]["planned_shortfall"], 3)
+            self.assertEqual(final_selection["sections"]["Что важно в ближайшие 7 дней"]["planned_shortfall"], 0)
             # технический брак: вчерашняя шапка — блокирует
             stale = "\n".join(lines).replace(
                 now_london().strftime("%Y-%m-%d"), "2020-01-01", 1
@@ -613,7 +633,7 @@ class PlanContractTest(unittest.TestCase):
             report["event_completeness"]["counts"],
             {"checked": 1, "missing_date": 0, "missing_venue": 0},
         )
-        self.assertGreater(
+        self.assertEqual(
             report["shortfalls"]["Что важно в ближайшие 7 дней"]["planned_shortfall"],
             0,
         )

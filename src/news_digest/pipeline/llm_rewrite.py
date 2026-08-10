@@ -2001,6 +2001,7 @@ def _call_english_card_provider_batch(
         max_retries=0 if provider_name.lower().startswith("openai") else sdk_retries_for_route(provider=provider_name, model=model, base_url=base_url),
     )
     mapping: EnglishCardMapping = {}
+    terminal_failure = threading.Event()
     batches = _token_aware_batches(
         candidates,
         batch_size=batch_size,
@@ -2019,6 +2020,8 @@ def _call_english_card_provider_batch(
     )
 
     def _send_once(batch: list[dict], batch_idx: int, attempt: str) -> EnglishCardMapping:
+        if terminal_failure.is_set():
+            return {}
         user_payload = {"today_date": today_london(), "candidates": _english_card_batch_items(batch)}
         messages = [
             {"role": "system", "content": ENGLISH_CARD_SYSTEM},
@@ -2072,6 +2075,12 @@ def _call_english_card_provider_batch(
             return batch_mapping
         except Exception as exc:  # noqa: BLE001
             logger.warning("%s English cards: batch %s/%d (%s) failed — %s", provider_name, batch_idx, len(batches), attempt, exc)
+            if _is_terminal_provider_error(exc):
+                terminal_failure.set()
+                logger.warning(
+                    "%s English cards: terminal provider failure — cancelling same-account retries and continuing to the next route.",
+                    provider_name,
+                )
             if diagnostics is not None:
                 diagnostics.append(
                     {
@@ -2100,6 +2109,8 @@ def _call_english_card_provider_batch(
 
     def _process_batch(batch_idx: int, batch: list[dict]) -> EnglishCardMapping:
         result = _send_once(batch, batch_idx, "initial")
+        if terminal_failure.is_set():
+            return result
         missing = [c for c in batch if str(c.get("fingerprint") or "") not in result]
         if missing and len(missing) > 1:
             split_size = max(1, min(4, len(missing) // 2 or 1))
@@ -3308,14 +3319,28 @@ def _finalize_digest_selection_verdicts(candidates: list[dict]) -> dict[str, obj
 def _is_terminal_provider_error(exc: Exception | str) -> bool:
     """Errors that cannot recover by splitting or retrying the same account."""
     text = str(exc or "").lower()
+    status_code = getattr(exc, "status_code", None)
+    response = getattr(exc, "response", None)
+    if status_code is None and response is not None:
+        status_code = getattr(response, "status_code", None)
+    if status_code in {401, 402, 403}:
+        return True
     return any(
         marker in text
         for marker in (
             "insufficient_quota",
+            "insufficient quota",
+            "insufficient_balance",
+            "insufficient balance",
+            "payment required",
+            "billing limit",
             "invalid_api_key",
             "authenticationerror",
             "authentication_error",
             "incorrect api key",
+            "error code: 401",
+            "error code: 402",
+            "error code: 403",
         )
     )
 

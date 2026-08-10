@@ -2791,7 +2791,11 @@ def _summarise_inventory_morning_effect(
     final_by_block: dict[str, Counter] = defaultdict(Counter)
     active_by_block: dict[str, Counter] = defaultdict(Counter)
     final_lineages: list[dict[str, object]] = []
-    active_statuses = {"inserted_into_pipeline", "merged_into_live"}
+    active_statuses = {
+        "inserted_into_pipeline",
+        "merged_into_live",
+        "hybrid_merged_into_live",
+    }
     provenance_counts: Counter = Counter()
     active_lineages = 0
     active_current_lineages = 0
@@ -2839,7 +2843,7 @@ def _summarise_inventory_morning_effect(
         selected = str((candidate or {}).get("publish_plan_status") or "") in {"show", "must_show"} or str(
             (candidate or {}).get("digest_selection_verdict") or ""
         ) == "selected"
-        if provenance == "current" and intake_status == "merged_into_live":
+        if provenance == "current" and intake_status in {"merged_into_live", "hybrid_merged_into_live"}:
             live_confirmed_count += 1
             enriched_count += int(bool(lineage.get("enriched_fields")))
             planned_live_count += int(bool(candidate is not None and selected))

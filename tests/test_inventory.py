@@ -1434,7 +1434,7 @@ class NightWaveTest(unittest.TestCase):
         self.assertEqual(summary["render_ready_records"], 1)
         self.assertEqual(summary["last_wave"], "breaking")
 
-    def test_release_funnel_tracks_night_lineage_merged_into_live(self) -> None:
+    def test_release_funnel_tracks_hybrid_night_lineage_merged_into_live(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             state_dir = Path(tmp) / "data" / "state"
             outgoing_dir = Path(tmp) / "data" / "outgoing"
@@ -1453,7 +1453,7 @@ class NightWaveTest(unittest.TestCase):
                             "live_fingerprint": "night-1-with-evidence",
                             "source_url": "https://example.test/story",
                             "primary_block": "weekend_activities",
-                            "intake_status": "merged_into_live",
+                            "intake_status": "hybrid_merged_into_live",
                             "operational_provenance": "current",
                         }],
                     },
@@ -1496,6 +1496,8 @@ class NightWaveTest(unittest.TestCase):
         self.assertEqual(summary["final_funnel"]["active_morning_lineages"], 1)
         self.assertEqual(summary["final_funnel"]["active_current_lineages"], 1)
         self.assertEqual(summary["final_funnel"]["visible_in_final_html"], 1)
+        self.assertEqual(summary["final_funnel"]["night_to_live"]["live_confirmed"], 1)
+        self.assertEqual(summary["final_funnel"]["night_to_live"]["visible"], 1)
         self.assertEqual(summary["final_funnel"]["lineages"][0]["final_status"], "visible_html")
         self.assertEqual(summary["final_funnel"]["lineages"][0]["candidate_fingerprint"], "live-1")
 

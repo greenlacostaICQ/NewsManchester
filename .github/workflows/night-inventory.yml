@@ -152,49 +152,6 @@ jobs:
           echo "Could not push inventory after 5 attempts." >&2
           exit 1
 
-      - name: Notify Telegram — wave complete
-        if: ${{ success() && steps.wave.outputs.skip != 'true' }}
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.NEWSBOTKEY }}
-          TELEGRAM_TARGET: ${{ secrets.BOTNEWSNAME }}
-        run: |
-          python3 - <<'PY'
-          import json, os, urllib.parse, urllib.request
-
-          try:
-              with open("/tmp/inventory_summary.json", encoding="utf-8") as fh:
-                  summary = json.load(fh)
-          except Exception:
-              summary = {}
-
-          wave = summary.get("wave", "?")
-          polled = summary.get("sources_polled", 0)
-          found = int(summary.get("found_this_run", 0) or 0)
-          ready = int(summary.get("morning_eligible_this_run", 0) or 0)
-          errors = int(summary.get("source_errors", 0) or 0)
-          health = summary.get("health", "unknown")
-          dur = summary.get("duration_seconds", 0)
-          text = (
-              f"🌙 Инвентарь · волна {wave}\n"
-              f"источников опрошено: {polled}\n"
-              f"найдено в этом прогоне: {found}\n"
-              f"готово к выпуску: {ready}\n"
-              f"ошибок источников: {errors}\n"
-              f"статус: {health}\n"
-              f"время: {dur}s"
-          )
-
-          token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-          target = os.environ.get("TELEGRAM_TARGET", "")
-          if not token or not target:
-              print("No Telegram token/target — skipping notify.")
-          else:
-              data = urllib.parse.urlencode({"chat_id": target, "text": text}).encode()
-              req = urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=data)
-              with urllib.request.urlopen(req, timeout=20) as resp:
-                  print("Telegram notify status:", resp.status)
-          PY
-
       - name: Notify Telegram — wave failed
         if: ${{ failure() && steps.wave.outputs.skip != 'true' }}
         env:

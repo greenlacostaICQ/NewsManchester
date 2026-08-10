@@ -57,6 +57,7 @@ from news_digest.pipeline.writer import (
     _football_priority_kind,
     _line_claims_future_ticket_sale,
     _number_tokens,
+    _produce_slot_line,
     _repair_editorial_contract_line,
     _section_priority_score,
     _SectionRow,
@@ -609,7 +610,6 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
 
     def test_july_weekend_audit_sources_are_direct_weekend_pages(self) -> None:
         required = {
-            "Manchester Brick Festival",
             "Foodies Festival Tatton Park",
             "Festwich",
             "Prestwich Makers Market",
@@ -617,6 +617,7 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         by_name = {source.name: source for source in SOURCES}
 
         self.assertTrue(required.issubset(by_name))
+        self.assertNotIn("Manchester Brick Festival", by_name)
         for name in required:
             source = by_name[name]
             self.assertEqual(source.primary_block, "weekend_activities")
@@ -3381,6 +3382,43 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertNotIn("50", repaired)
         self.assertNotIn("9:55", repaired)
         self.assertFalse(_draft_line_quality_errors(candidate, repaired))
+
+    def test_football_keeps_complete_short_line_after_unsupported_leading_date(self) -> None:
+        candidate = {
+            "category": "football",
+            "primary_block": "football",
+            "title": "Mason Mount injury overshadows Manchester United draw with PSG",
+            "summary": "Manchester United drew 1-1 with PSG and Mason Mount left with a foot injury.",
+            "evidence_text": "Mason Mount was taken off with a foot injury after Manchester United drew 1-1 with PSG.",
+        }
+        line = (
+            "• 8 августа 2026 года Манчестер Юнайтед сыграл вничью 1-1 с ПСЖ, "
+            "однако травма Мейсона Маунта вызывает беспокойство."
+        )
+        candidate["draft_line"] = line
+
+        repaired, reasons = _strip_unsupported_number_phrases(candidate, line)
+
+        self.assertTrue(reasons)
+        self.assertNotIn("августа 2026", repaired)
+        self.assertFalse(
+            any("number(s) not present" in error for error in _draft_line_quality_errors(candidate, repaired))
+        )
+        rendered, errors = _produce_slot_line(
+            candidate,
+            "Футбол",
+            warnings=[],
+            quality_counts={},
+            controlled_enrichment_report={
+                "model_enriched": 0,
+                "model_attempts": 0,
+                "short_but_complete": 0,
+                "held_thin_evidence": 0,
+            },
+            execution={"repair_attempts_used": 8, "repair_attempts_by_stage": {}},
+        )
+        self.assertTrue(rendered)
+        self.assertEqual(errors, [])
 
     def test_city_grouped_number_and_concise_complete_line_are_supported(self) -> None:
         candidate = {
