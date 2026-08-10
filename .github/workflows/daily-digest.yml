@@ -60,12 +60,41 @@ jobs:
           # National Rail Enquiries Incidents API (GM rail disruptions, transport block).
           NRE_USERNAME: ${{ secrets.NRE_USERNAME }}
           NRE_PASSWORD: ${{ secrets.NRE_PASSWORD }}
+          # Inventory-first production mode. A category skips its morning broad
+          # scan only when today's night wave is healthy and every routed block
+          # is sufficient with verified live action URLs; otherwise it falls
+          # back to the ordinary live collection in this same run.
+          MORNING_INVENTORY_MODE: "on"
           FORCE_COLLECT: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
         run: |
           set -euo pipefail
           python3 scripts/run_local_digest.py collect-digest
           python3 scripts/run_local_digest.py dedupe-digest
           python3 scripts/run_local_digest.py validate-candidates
+
+      - name: Report night → morning intake decision
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("data/state/morning_inventory_intake_report.json").read_text())
+          live = report.get("live_collection") or {}
+          print(json.dumps({
+              "mode": report.get("mode"),
+              "morning_consumed": report.get("morning_consumed"),
+              "operational_truth": report.get("operational_truth") or {},
+              "night_replaced_categories": sorted(
+                  category for category, row in live.items()
+                  if isinstance(row, dict) and not row.get("collected_live", True)
+              ),
+              "live_fallback_categories": {
+                  category: row.get("reason")
+                  for category, row in live.items()
+                  if isinstance(row, dict) and row.get("collected_live", True)
+              },
+          }, ensure_ascii=False, indent=2))
+          PY
 
       - name: Curator pass — editorial drop + lead selection
         env:

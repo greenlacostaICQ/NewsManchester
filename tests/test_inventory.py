@@ -380,7 +380,7 @@ class ReplacementPlanTest(unittest.TestCase):
             frozenset({"ticket_radar", "future_announcements", "outside_gm_tickets"}),
         )
 
-    def test_mixed_ticket_category_never_skips_without_explicit_permission(self) -> None:
+    def test_on_replaces_complete_healthy_live_verified_assist_categories(self) -> None:
         report = {"completeness": {"blocks": {
             "ticket_radar": {"block_sufficient": True, "liveness_sufficient_for_replacement": True},
             "future_announcements": {"block_sufficient": True, "liveness_sufficient_for_replacement": True},
@@ -392,10 +392,34 @@ class ReplacementPlanTest(unittest.TestCase):
             "food_openings": {"status": "ok"},
         }
         plan = inventory_source_replacement_plan(report, health)
+        self.assertTrue(plan["venues_tickets"]["safe_to_skip"])
+        self.assertEqual(plan["venues_tickets"]["reason"], "safe_post_contract_replacement")
+        self.assertTrue(plan["food_openings"]["safe_to_skip"])
+        self.assertEqual(plan["food_openings"]["reason"], "safe_post_contract_replacement")
+
+    def test_on_keeps_live_fallback_when_night_urls_are_not_verified(self) -> None:
+        report = {"completeness": {"blocks": {
+            "ticket_radar": {"block_sufficient": True, "liveness_sufficient_for_replacement": False},
+            "future_announcements": {"block_sufficient": True, "liveness_sufficient_for_replacement": True},
+            "outside_gm_tickets": {"block_sufficient": True, "liveness_sufficient_for_replacement": True},
+        }}}
+        plan = inventory_source_replacement_plan(
+            report,
+            {"venues_tickets": {"status": "ok"}},
+        )
         self.assertFalse(plan["venues_tickets"]["safe_to_skip"])
-        self.assertEqual(plan["venues_tickets"]["reason"], "source_replacement_not_enabled")
-        self.assertFalse(plan["food_openings"]["safe_to_skip"])
-        self.assertEqual(plan["food_openings"]["reason"], "source_replacement_not_enabled")
+        self.assertEqual(plan["venues_tickets"]["reason"], "action_urls_not_verified")
+
+    def test_on_keeps_live_fallback_when_latest_night_wave_is_degraded(self) -> None:
+        report = {"completeness": {"blocks": {
+            "russian_events": {"block_sufficient": True, "liveness_sufficient_for_replacement": True},
+        }}}
+        plan = inventory_source_replacement_plan(
+            report,
+            {"diaspora_events": {"status": "degraded"}},
+        )
+        self.assertFalse(plan["diaspora_events"]["safe_to_skip"])
+        self.assertEqual(plan["diaspora_events"]["reason"], "current_night_scan_incomplete")
 
     def test_latest_night_health_exposes_source_errors(self) -> None:
         rows = [
@@ -1296,6 +1320,16 @@ class NightWaveTest(unittest.TestCase):
         workflow = (Path(__file__).parents[1] / ".github" / "workflows" / "daily-digest.yml").read_text(encoding="utf-8")
         self.assertIn("for attempt in 1 2 3 4 5", workflow)
         self.assertIn("Pushed daily state on attempt", workflow)
+
+    def test_daily_workflow_runs_inventory_first_with_guarded_live_fallback(self) -> None:
+        from news_digest.pipeline.collector import core as collector_core
+
+        workflow = (Path(__file__).parents[1] / ".github" / "workflows" / "daily-digest.yml").read_text(encoding="utf-8")
+        self.assertIn('MORNING_INVENTORY_MODE: "on"', workflow)
+        self.assertIn("Report night → morning intake decision", workflow)
+        self.assertIn('"night_replaced_categories"', workflow)
+        with patch.dict("os.environ", {}, clear=True):
+            self.assertEqual(collector_core._morning_inventory_mode(), "on")
 
     def test_night_state_commit_pushes_back_to_dispatched_branch(self) -> None:
         workflow = (Path(__file__).parents[1] / ".github" / "workflows" / "night-inventory.yml").read_text(encoding="utf-8")

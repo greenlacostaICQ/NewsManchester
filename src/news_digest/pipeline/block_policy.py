@@ -8,7 +8,7 @@ can derive their compatibility constants from the same registry.
 from __future__ import annotations
 
 
-BLOCK_POLICY_VERSION = "2026-08-10.p1"
+BLOCK_POLICY_VERSION = "2026-08-10.p2"
 
 
 BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
@@ -78,7 +78,7 @@ BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
         "repeat_milestone_days": (30, 14, 7, 1, 0),
         "source_report_categories": frozenset({"culture_weekly"}), "candidate_categories": frozenset({"culture_weekly"}),
         "mode": "assist", "serving_ttl_hours": 96.0, "retention_days": 30,
-        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
+        "text_policy": "deterministic_or_morning", "source_replacement_allowed": True,
         "source_not_modified_confirms_inventory": True,
         "source_confirmation_scope": "retained_inventory",
         "optional": False, "intake_cap": 0, "rewrite_recall_cap": 16,
@@ -91,7 +91,7 @@ BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
         "source_report_categories": frozenset({"media_layer", "gmp", "public_services", "transport"}),
         "candidate_categories": frozenset({"media_layer", "gmp", "public_services", "council", "transport"}),
         "mode": "assist", "serving_ttl_hours": 96.0, "retention_days": 30,
-        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
+        "text_policy": "deterministic_or_morning", "source_replacement_allowed": True,
         "optional": True, "intake_cap": 12, "rewrite_recall_cap": 14,
     },
     "future_announcements": {
@@ -102,7 +102,7 @@ BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
         "source_report_categories": frozenset({"culture_weekly", "venues_tickets"}),
         "candidate_categories": frozenset({"culture_weekly", "venues_tickets"}),
         "mode": "assist", "serving_ttl_hours": 336.0, "retention_days": 30,
-        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
+        "text_policy": "deterministic_or_morning", "source_replacement_allowed": True,
         "optional": True, "intake_cap": 20, "rewrite_recall_cap": 14,
     },
     "ticket_radar": {
@@ -118,7 +118,7 @@ BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
         "cap_exempt_tiers": ("A", "PROTECTED"),
         "source_report_categories": frozenset({"venues_tickets"}), "candidate_categories": frozenset({"venues_tickets"}),
         "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 30,
-        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
+        "text_policy": "deterministic_or_morning", "source_replacement_allowed": True,
         "optional": False, "intake_cap": 20, "rewrite_recall_cap": 8,
     },
     "outside_gm_tickets": {
@@ -134,7 +134,7 @@ BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
         "cap_exempt_tiers": ("A", "PROTECTED"),
         "source_report_categories": frozenset({"venues_tickets"}), "candidate_categories": frozenset({"venues_tickets"}),
         "mode": "assist", "serving_ttl_hours": 336.0, "retention_days": 30,
-        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
+        "text_policy": "deterministic_or_morning", "source_replacement_allowed": True,
         "optional": True, "intake_cap": 6, "rewrite_recall_cap": 4,
     },
     "russian_events": {
@@ -145,7 +145,7 @@ BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
         "source_report_categories": frozenset({"diaspora_events"}),
         "candidate_categories": frozenset({"russian_speaking_events", "diaspora_events"}),
         "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 30,
-        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
+        "text_policy": "deterministic_or_morning", "source_replacement_allowed": True,
         "optional": False, "intake_cap": 10, "rewrite_recall_cap": 12,
         "budget_exempt": True,
     },
@@ -156,7 +156,7 @@ BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
         "repeat_milestone_days": (7, 1, 0),
         "source_report_categories": frozenset({"food_openings"}), "candidate_categories": frozenset({"food_openings"}),
         "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 90,
-        "text_policy": "morning_writer", "source_replacement_allowed": False,
+        "text_policy": "morning_writer", "source_replacement_allowed": True,
         "source_not_modified_confirms_inventory": True,
         "source_confirmation_scope": "current_day",
         "optional": False, "intake_cap": 10,
@@ -178,7 +178,7 @@ BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
         "repeat_milestone_days": (30, 14, 7, 1, 0),
         "source_report_categories": frozenset({"professional_events"}), "candidate_categories": frozenset({"professional_events"}),
         "mode": "assist", "serving_ttl_hours": 168.0, "retention_days": 30,
-        "text_policy": "deterministic_or_morning", "source_replacement_allowed": False,
+        "text_policy": "deterministic_or_morning", "source_replacement_allowed": True,
         "optional": False, "intake_cap": 10, "rewrite_recall_cap": 3,
         "budget_exempt": True,
     },

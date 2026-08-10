@@ -69,7 +69,7 @@ class StageResult:
 # Cloudflare-protected sources still go through the curl_cffi cascade
 # inside _fetch_source_body, so per-source resilience is unchanged.
 _COLLECTOR_MAX_WORKERS = 12
-_MORNING_INVENTORY_DEFAULT_MODE = "assist"
+_MORNING_INVENTORY_DEFAULT_MODE = "on"
 _SENSITIVE_QUERY_KEYS = {"apikey", "api_key", "key", "token", "access_token"}
 _HARD_NEWS_SOURCES = {
     "BBC Manchester",
