@@ -2,57 +2,50 @@
   "status": "partial",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
+  "reason": "pre-send repair executor applied 1 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
-  "block_policy_version": "2026-07-28.p0",
-  "run_date_london": "2026-08-10",
-  "pipeline_run_id": "20260810T080145+0100",
-  "digest_sha256": "6e8b358e52ca5739d5d6dafab92a5fd6c1ccf261b2c96eef9f76bd770d6288cb",
-  "duration_seconds": 55.842,
+  "block_policy_version": "2026-08-10.p3",
+  "run_date_london": "2026-08-11",
+  "pipeline_run_id": "20260811T080142+0100",
+  "digest_sha256": "6f9f67fbbdd55d93da19871137de3e7a0c930b4f4b809b6803d43975f2702408",
+  "duration_seconds": 65.453,
   "confidence": 0.9,
   "critical_errors": [
     {
       "line_index": 1,
       "section": "Главная история дня",
-      "problem": "Отсутствует информация об аресте подозреваемого.",
-      "risk": "factual",
+      "problem": "Текст не упоминает, что преследование закончилось в Западном Йоркшире, что важно для понимания географии инцидента.",
+      "risk": "geo",
       "suggested_action": "repair"
     },
     {
-      "line_index": 7,
+      "line_index": 10,
       "section": "Свежие новости",
-      "problem": "Энди Бернэм указан как премьер-министр, что неверно. Он мэр Большого Манчестера.",
+      "problem": "Дублирование информации о приостановке строительства самой высокой башни в Greater Manchester.",
+      "risk": "factual",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 16,
+      "section": "Футбол",
+      "problem": "Неверное указание главного тренера Манчестер Сити.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 25,
+      "line_index": 23,
       "section": "Городской радар",
-      "problem": "Некорректное утверждение о смерти Эндрю Дэвиса. Он был освобождён в 2023 году, но умер в тюрьме.",
-      "risk": "factual",
+      "problem": "Неправильное форматирование даты.",
+      "risk": "format",
       "suggested_action": "repair"
     },
     {
-      "line_index": 31,
-      "section": "Дальние анонсы",
-      "problem": "Некорректное указание места проведения события.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 33,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 34,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
-      "risk": "factual",
+      "line_index": 27,
+      "section": "Городской радар",
+      "problem": "Неполное предложение, отсутствует пробел и слово.",
+      "risk": "format",
       "suggested_action": "repair"
     }
   ],
@@ -61,138 +54,125 @@
       "line_index": 1,
       "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• В Tameside начато расследование убийства после того, как 61-летняя женщина была найдена мёртвой. 60-летний мужчина был арестован по подозрению в убийстве. MEN",
-      "reason": "Добавление информации об аресте подозреваемого для полноты и точности.",
-      "risk": "factual"
+      "replacement_text": "• Студент-полицейский Мохаммад Хассан, 23 года, служащий в полиции Большого Манчестера, был обвинён в нескольких преступлениях, включая изнасилование и похищение. Обвинения были выдвинуты после получения экстренного вызова в субботу вечером, 22:20 BST, когда в автомобиле слышался голос женщины. Преследование закончилось в Западном Йоркшире. Хассан, который был отстранён от службы, должен явиться в суд в Манчестере. Полиция продолжает оказывать поддержку пострадавшей.",
+      "reason": "Добавление информации о месте завершения преследования для точности географии.",
+      "risk": "geo"
     },
     {
-      "line_index": 7,
+      "line_index": 10,
       "section": "Свежие новости",
-      "action": "patch",
-      "replacement_text": "• Мэр Большого Манчестера Энди Бернэм объявил о новых мерах, направленных на борьбу с ложными скидками и ловушками подписок, которые, по его словам, помогут людям сэкономить деньги. Эти инициативы, названные им 'повседневными исправлениями', призваны облегчить финансовое бремя на домохозяйства в условиях кризиса стоимости жизни, и это только начало, так как Бернэм обещает представить ещё больше подобных мер в будущем. MEN",
-      "reason": "Исправление фактической ошибки: Энди Бернэм является мэром, а не премьер-министром.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 25,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Серийный насильник Эндрю Дэвис, известный как 'насильник из Coronation Street', скончался от рака мозга в тюрьме. Он был освобождён в 2023 году, но позже вернулся в тюрьму за нарушение условий освобождения. MEN",
-      "reason": "Уточнение, что он умер в тюрьме, а не после освобождения.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 31,
-      "section": "Дальние анонсы",
-      "action": "patch",
-      "replacement_text": "• 28 августа 2026 года в 18:30 в Quays Theatre, The Lowry пройдет интерактивное семейное шоу \"Побег Бобби Сигала из Древнего Египта\". Билеты уже в продаже.",
-      "reason": "Указание места проведения события должно быть точным. 'Quays Theatre, The Lowry' вместо 'театре Quays Theatre, The Lowry'.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 33,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Kittie — 10 августа, Manchester Club Academy; цена £32.50. Событие проходит сегодня. Ticketmaster",
-      "reason": "Уточнение места проведения события для устранения дублирования.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 34,
-      "section": "Билеты / Ticket Radar",
       "action": "strip",
-      "reason": "Удаление дублирующей информации о событии Kittie.",
+      "reason": "Дублирование информации о приостановке строительства самой высокой башни в Greater Manchester.",
       "risk": "factual",
       "replacement_text": ""
+    },
+    {
+      "line_index": 16,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• Главный тренер Манчестер Сити Пеп Гвардиола провел час в Сеуле с пятью журналистами, обсуждая изменения в команде и планы по борьбе с Арсеналом. Он отметил, что потеря таких игроков, как Бернардо Силва и Джон Стоунс, открывает новые возможности для формирования команды, и подчеркнул, что в футболе всегда происходит смена поколений.",
+      "reason": "Неверное указание главного тренера Манчестер Сити.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 23,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• В Greater Manchester с 11 по 14 августа объявлено о предупреждении о жаре.",
+      "reason": "Исправлено форматирование даты.",
+      "risk": "format"
+    },
+    {
+      "line_index": 27,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• В King Pins в Манчестере бесплатный боулинг для детей в августе при оплате взрослого.",
+      "reason": "Добавлено недостающее слово и пробел.",
+      "risk": "format"
     }
   ],
   "warnings": [
-    "В разделе 'Общественный транспорт сегодня' много информации о транспортных нарушениях, но это может быть полезно для читателей, планирующих поездки.",
     "judge reduce failed: parse_failed no parseable JSON"
   ],
   "product_completeness": {
-    "block_policy_version": "2026-07-28.p0",
+    "block_policy_version": "2026-08-10.p3",
     "scope": "input_before_pre_send_judge",
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 5,
-      "Что важно сегодня": 2,
+      "Общественный транспорт сегодня": 3,
+      "Что важно сегодня": 1,
+      "Футбол": 3,
       "Городской радар": 12,
-      "Дальние анонсы": 2,
-      "Билеты / Ticket Radar": 3,
+      "IT и бизнес": 2,
+      "Билеты / Ticket Radar": 2,
       "Крупные концерты вне GM": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 2,
+      "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
       "Городской радар": 12,
-      "Что важно в ближайшие 7 дней": 0,
-      "Билеты / Ticket Radar": 3,
+      "Билеты / Ticket Radar": 2,
       "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
-      "Футбол": 0
+      "Футбол": 3
     },
-    "ticket_items": 4,
-    "core_items": 25,
+    "ticket_items": 3,
+    "core_items": 27,
     "writer_quality_counts": {
-      "included_candidates": 39,
-      "rendered_candidates": 36,
+      "included_candidates": 36,
+      "rendered_candidates": 35,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 2,
+      "dropped_low_quality": 1,
       "replaced_from_plan_backup": 0,
-      "removed_with_reason": 2
+      "removed_with_reason": 1
     },
     "source_health_counts": {
-      "ok": 103,
+      "ok": 112,
       "partial": 2,
-      "stale": 11,
-      "empty": 6,
-      "failed": 2,
-      "zero_yield": 89,
+      "stale": 4,
+      "empty": 4,
+      "failed": 1,
+      "zero_yield": 35,
       "no_contribution_breakdown": {
-        "fetch_failed": 2,
-        "all_rejected": 89,
-        "idle_no_items": 15
+        "fetch_failed": 1,
+        "all_rejected": 35,
+        "idle_no_items": 66
       },
       "zero_contribution_by_stage": {
-        "written": 46,
-        "selected": 43,
-        "parsed": 15,
-        "fetched": 2
+        "selected": 16,
+        "written": 19,
+        "parsed": 66,
+        "fetched": 1
       },
-      "weekend_source_coverage_incidents": 53
+      "weekend_source_coverage_incidents": 54
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 2 item(s), emergency floor 3",
-      "Что важно в ближайшие 7 дней: 0 item(s), emergency floor 3",
+      "Что важно сегодня: 1 item(s), emergency floor 3",
       "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "Business/tech события для тебя: 0 item(s), emergency floor 1",
-      "Футбол: 0 item(s), emergency floor 2"
+      "Business/tech события для тебя: 0 item(s), emergency floor 1"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [
-      "patch for line 25 has unchecked number/date token(s): 2023"
-    ],
+    "warnings": [],
     "can_apply_actions": true,
-    "action_count": 6
+    "action_count": 5
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 36,
-    "matched_lines": 36,
-    "applicable_lines": 3,
+    "checked_lines": 35,
+    "matched_lines": 35,
+    "applicable_lines": 2,
     "unmatched_lines": 0,
     "critical_omission_count": 0,
     "critical_omissions": [],
@@ -205,181 +185,113 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 6,
-    "attempted": 5,
-    "applied": 5,
-    "model_patch_applied": 3,
-    "deterministic_rewrite_used": 1,
+    "requested": 3,
+    "attempted": 1,
+    "applied": 1,
+    "model_patch_applied": 1,
+    "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 0,
-    "stripped": 1,
-    "unresolved": 1,
-    "blocking_unresolved": 1,
-    "resolved": 5,
-    "resolved_in_place": 4,
+    "stripped": 0,
+    "unresolved": 0,
+    "blocking_unresolved": 0,
+    "resolved": 3,
+    "resolved_in_place": 3,
     "resolved_by_replacement": 0,
-    "resolved_by_removal": 1,
-    "fact_lock_rejected": 1,
-    "enrich_attempted": 6,
+    "resolved_by_removal": 0,
+    "fact_lock_rejected": 0,
+    "enrich_attempted": 3,
     "post_check_errors": [],
-    "geo_contract_rejected": [],
-    "actions": [
+    "geo_contract_rejected": [
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "requested_action": "patch",
-        "reason": "Добавление информации об аресте подозреваемого для полноты и точности.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Отсутствует информация об аресте подозреваемого.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-murder-probe-launched-tameside-after-34428241-b17db658aaff",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/murder-probe-launched-tameside-after-34428241",
-        "original_html": "<b>В Tameside начато расследование убийства после того, как 61-летняя женщина была найдена мёртвой.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/murder-probe-launched-tameside-after-34428241\">MEN</a>",
-        "post_check_passed": true
+        "geo_scope": "gm",
+        "reason": "Добавление информации о месте завершения преследования для точности географии.",
+        "gm_anchor_present": true
       },
       {
-        "line_index": 7,
+        "line_index": 10,
         "section": "Свежие новости",
+        "geo_scope": "gm",
+        "reason": "Дублирование информации о приостановке строительства самой высокой башни в Greater Manchester.",
+        "gm_anchor_present": true
+      }
+    ],
+    "source_link_metadata_rejected": [],
+    "actions": [
+      {
+        "line_index": 16,
+        "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Исправление фактической ошибки: Энди Бернэм является мэром, а не премьер-министром.",
+        "reason": "Неверное указание главного тренера Манчестер Сити.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Энди Бернэм указан как премьер-министр, что неверно. Он мэр Большого Манчестера.",
+        "critical_problem": "Неверное указание главного тренера Манчестер Сити.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "last_24h-05",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-andy-burnham-announces-everyday-fixes-34426587-cd48b0dec5fa",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-announces-everyday-fixes-34426587",
-        "original_html": "• Премьер-министр Энди Бернэм объявил о новых мерах, направленных на борьбу с ложными скидками и ловушками подписок, которые, по его словам, помогут людям сэкономить деньги. Эти инициативы, названные им 'повседневными исправлениями', призваны облегчить финансовое бремя на домохозяйства в условиях кризиса стоимости жизни, и это только начало, так как Бернэм обещает представить ещё больше подобных мер в будущем. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-announces-everyday-fixes-34426587\">MEN</a>",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-enzo-maresca-interview-man-city-34430341-370ab9c3ee0c",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-interview-man-city-34430341",
+        "original_html": "• Главный тренер Манчестер Сити Энцо Мареска провел час в Сеуле с пятью журналистами, обсуждая изменения в команде и планы по борьбе с Арсеналом. Он отметил, что потеря таких игроков, как Бернардо Силва и Джон Стоунс, открывает новые возможности для формирования команды, и подчеркнул, что в футболе всегда происходит смена поколений. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-interview-man-city-34430341\">MEN Manchester City</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 25,
+        "line_index": 23,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Уточнение, что он умер в тюрьме, а не после освобождения.",
-        "risk": "factual",
+        "reason": "Исправлено форматирование даты.",
+        "risk": "format",
         "critical_error": true,
-        "critical_problem": "Некорректное утверждение о смерти Эндрю Дэвиса. Он был освобождён в 2023 году, но умер в тюрьме.",
+        "critical_problem": "Неправильное форматирование даты.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "city_watch-07",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-coronation-street-rapists-cause-death-34426354-3a73c544910c",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/coronation-street-rapists-cause-death-34426354",
-        "original_html": "• Серийный насильник Эндрю Дэвис, известный как 'насильник из Coronation Street', скончался от рака мозга в тюрьме. Он был освобождён в 2023 году, но через шесть недель вернулся в тюрьму за нарушение условий освобождения. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/coronation-street-rapists-cause-death-34426354\">MEN</a>",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "city_watch-05",
+        "candidate_fingerprint": "url-aboutmanchester-co-uk-amber-heat-alert-for-greater-manchester-from-tomorrow-until-friday-812d49f45af4",
+        "original_url_identity": "aboutmanchester.co.uk/amber-heat-alert-for-greater-manchester-from-tomorrow-until-friday",
+        "original_html": "• В Greater Manchester11 августа14 августа объявлено о предупреждении о жаре. <a href=\"https://aboutmanchester.co.uk/amber-heat-alert-for-greater-manchester-from-tomorrow-until-friday\">About Manchester News</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 31,
-        "section": "Дальние анонсы",
+        "line_index": 27,
+        "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Указание места проведения события должно быть точным. 'Quays Theatre, The Lowry' вместо 'театре Quays Theatre, The Lowry'.",
-        "risk": "factual",
+        "reason": "Добавлено недостающее слово и пробел.",
+        "risk": "format",
         "critical_error": true,
-        "critical_problem": "Некорректное указание места проведения события.",
+        "critical_problem": "Неполное предложение, отсутствует пробел и слово.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "future_announcements-01",
-        "candidate_fingerprint": "event-event-bobby-seagull-s-escape-from-ancient-egypt-2026-08-28-lowry-188d1706ee39",
-        "original_url_identity": "thelowry.com/whats-on/bobby-seagulls-escape-from-ancient-egypt-59kn",
-        "original_html": "• 28 августа 2026 года в 18:30 в театре Quays Theatre, The Lowry пройдет интерактивное семейное шоу \"Побег Бобби Сигала из Древнего Египта\". Билеты уже в продаже. <a href=\"https://thelowry.com/whats-on/bobby-seagulls-escape-from-ancient-egypt-59kn\">The Lowry</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 33,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Уточнение места проведения события для устранения дублирования.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "deterministic_rewrite",
-        "plan_slot_id": "ticket_radar-01",
-        "candidate_fingerprint": "event-event-kittie-10th-august-2026-2026-08-10-manchester-academy-647e1f8cf200",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13379566/kittie-manchester-club-academy-2026-08-10-19-30-00",
-        "original_html": "• <b>Kittie</b> — 10 августа, Manchester Academy; цена £32.50. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13379566/kittie-manchester-club-academy-2026-08-10-19-30-00\">Manchester Academy</a>",
-        "model_replacement_rejected": "fact_lock: manchester club academy, ticketmaster",
-        "post_check_passed": false
-      },
-      {
-        "line_index": 34,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "strip",
-        "reason": "Удаление дублирующей информации о событии Kittie.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "ticket_radar-02",
-        "candidate_fingerprint": "event-event-kittie-2026-08-10-manchester-club-academy-be681b9a8bea",
-        "original_url_identity": "ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121",
-        "original_html": "• <b>Kittie</b> — 10 августа, Manchester Club Academy. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121\">Ticketmaster</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
+        "plan_slot_id": "city_watch-09",
+        "candidate_fingerprint": "url-aboutmanchester-co-uk-free-bowling-for-kids-in-manchester-all-summer-holidays-4eba853ce6e9",
+        "original_url_identity": "aboutmanchester.co.uk/free-bowling-for-kids-in-manchester-all-summer-holidays",
+        "original_html": "• В King Pins в Манчестере бесплатный боулинг для детейлетавгуста с оплатой взрослого. <a href=\"https://aboutmanchester.co.uk/free-bowling-for-kids-in-manchester-all-summer-holidays\">About Manchester News</a>",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::добавление информации об аресте подозреваемого для полноты и точности.",
+        "group_key": "футбол::неверное указание главного тренера манчестер сити.",
         "actions": [
           {
-            "line_index": 1,
-            "section": "Главная история дня",
+            "line_index": 16,
+            "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Добавление информации об аресте подозреваемого для полноты и точности.",
+            "reason": "Неверное указание главного тренера Манчестер Сити.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Отсутствует информация об аресте подозреваемого.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-murder-probe-launched-tameside-after-34428241-b17db658aaff",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/murder-probe-launched-tameside-after-34428241",
-            "original_html": "<b>В Tameside начато расследование убийства после того, как 61-летняя женщина была найдена мёртвой.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/murder-probe-launched-tameside-after-34428241\">MEN</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 1,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::исправление фактической ошибки: энди бернэм является мэром, а не премьер-министром.",
-        "actions": [
-          {
-            "line_index": 7,
-            "section": "Свежие новости",
-            "requested_action": "patch",
-            "reason": "Исправление фактической ошибки: Энди Бернэм является мэром, а не премьер-министром.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Энди Бернэм указан как премьер-министр, что неверно. Он мэр Большого Манчестера.",
+            "critical_problem": "Неверное указание главного тренера Манчестер Сити.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-05",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-andy-burnham-announces-everyday-fixes-34426587-cd48b0dec5fa",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-announces-everyday-fixes-34426587",
-            "original_html": "• Премьер-министр Энди Бернэм объявил о новых мерах, направленных на борьбу с ложными скидками и ловушками подписок, которые, по его словам, помогут людям сэкономить деньги. Эти инициативы, названные им 'повседневными исправлениями', призваны облегчить финансовое бремя на домохозяйства в условиях кризиса стоимости жизни, и это только начало, так как Бернэм обещает представить ещё больше подобных мер в будущем. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-announces-everyday-fixes-34426587\">MEN</a>",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-enzo-maresca-interview-man-city-34430341-370ab9c3ee0c",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-interview-man-city-34430341",
+            "original_html": "• Главный тренер Манчестер Сити Энцо Мареска провел час в Сеуле с пятью журналистами, обсуждая изменения в команде и планы по борьбе с Арсеналом. Он отметил, что потеря таких игроков, как Бернардо Силва и Джон Стоунс, открывает новые возможности для формирования команды, и подчеркнул, что в футболе всегда происходит смена поколений. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-interview-man-city-34430341\">MEN Manchester City</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -387,7 +299,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 7,
+            "line_index": 16,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -395,140 +307,64 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::уточнение, что он умер в тюрьме, а не после освобождения.",
+        "group_key": "городской радар::исправлено форматирование даты.",
         "actions": [
           {
-            "line_index": 25,
+            "line_index": 23,
             "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Уточнение, что он умер в тюрьме, а не после освобождения.",
-            "risk": "factual",
+            "reason": "Исправлено форматирование даты.",
+            "risk": "format",
             "critical_error": true,
-            "critical_problem": "Некорректное утверждение о смерти Эндрю Дэвиса. Он был освобождён в 2023 году, но умер в тюрьме.",
+            "critical_problem": "Неправильное форматирование даты.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "city_watch-07",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-coronation-street-rapists-cause-death-34426354-3a73c544910c",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/coronation-street-rapists-cause-death-34426354",
-            "original_html": "• Серийный насильник Эндрю Дэвис, известный как 'насильник из Coronation Street', скончался от рака мозга в тюрьме. Он был освобождён в 2023 году, но через шесть недель вернулся в тюрьму за нарушение условий освобождения. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/coronation-street-rapists-cause-death-34426354\">MEN</a>",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "city_watch-05",
+            "candidate_fingerprint": "url-aboutmanchester-co-uk-amber-heat-alert-for-greater-manchester-from-tomorrow-until-friday-812d49f45af4",
+            "original_url_identity": "aboutmanchester.co.uk/amber-heat-alert-for-greater-manchester-from-tomorrow-until-friday",
+            "original_html": "• В Greater Manchester11 августа14 августа объявлено о предупреждении о жаре. <a href=\"https://aboutmanchester.co.uk/amber-heat-alert-for-greater-manchester-from-tomorrow-until-friday\">About Manchester News</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 25,
+            "line_index": 23,
             "passed": true,
-            "detail": "post-check passed"
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "дальние анонсы::указание места проведения события должно быть точным. 'quays theatre, the lowry' вместо 'театре quays theatre, the lowry'.",
+        "group_key": "городской радар::добавлено недостающее слово и пробел.",
         "actions": [
           {
-            "line_index": 31,
-            "section": "Дальние анонсы",
+            "line_index": 27,
+            "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Указание места проведения события должно быть точным. 'Quays Theatre, The Lowry' вместо 'театре Quays Theatre, The Lowry'.",
-            "risk": "factual",
+            "reason": "Добавлено недостающее слово и пробел.",
+            "risk": "format",
             "critical_error": true,
-            "critical_problem": "Некорректное указание места проведения события.",
+            "critical_problem": "Неполное предложение, отсутствует пробел и слово.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "future_announcements-01",
-            "candidate_fingerprint": "event-event-bobby-seagull-s-escape-from-ancient-egypt-2026-08-28-lowry-188d1706ee39",
-            "original_url_identity": "thelowry.com/whats-on/bobby-seagulls-escape-from-ancient-egypt-59kn",
-            "original_html": "• 28 августа 2026 года в 18:30 в театре Quays Theatre, The Lowry пройдет интерактивное семейное шоу \"Побег Бобби Сигала из Древнего Египта\". Билеты уже в продаже. <a href=\"https://thelowry.com/whats-on/bobby-seagulls-escape-from-ancient-egypt-59kn\">The Lowry</a>",
+            "plan_slot_id": "city_watch-09",
+            "candidate_fingerprint": "url-aboutmanchester-co-uk-free-bowling-for-kids-in-manchester-all-summer-holidays-4eba853ce6e9",
+            "original_url_identity": "aboutmanchester.co.uk/free-bowling-for-kids-in-manchester-all-summer-holidays",
+            "original_html": "• В King Pins в Манчестере бесплатный боулинг для детейлетавгуста с оплатой взрослого. <a href=\"https://aboutmanchester.co.uk/free-bowling-for-kids-in-manchester-all-summer-holidays\">About Manchester News</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 31,
+            "line_index": 27,
             "passed": true,
             "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::уточнение места проведения события для устранения дублирования",
-        "actions": [
-          {
-            "line_index": 33,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "patch",
-            "reason": "Уточнение места проведения события для устранения дублирования.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "deterministic_rewrite",
-            "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "event-event-kittie-10th-august-2026-2026-08-10-manchester-academy-647e1f8cf200",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13379566/kittie-manchester-club-academy-2026-08-10-19-30-00",
-            "original_html": "• <b>Kittie</b> — 10 августа, Manchester Academy; цена £32.50. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13379566/kittie-manchester-club-academy-2026-08-10-19-30-00\">Manchester Academy</a>",
-            "model_replacement_rejected": "fact_lock: manchester club academy, ticketmaster",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 33,
-            "passed": false,
-            "detail": "line did not change"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:kittie|2026-08-10|manchester academy",
-            "visible_count": 1,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::удаление дублирующей информации о событии kittie",
-        "actions": [
-          {
-            "line_index": 34,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "strip",
-            "reason": "Удаление дублирующей информации о событии Kittie.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "ticket_radar-02",
-            "candidate_fingerprint": "event-event-kittie-2026-08-10-manchester-club-academy-be681b9a8bea",
-            "original_url_identity": "ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121",
-            "original_html": "• <b>Kittie</b> — 10 августа, Manchester Club Academy. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121\">Ticketmaster</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 34,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:kittie|2026-08-10|manchester club academy",
-            "visible_count": 0,
-            "passed": true
           }
         ],
         "known_factual_error": true
@@ -539,27 +375,15 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 1,
-      "reports": [
-        {
-          "fingerprint": "event-event-kittie-2026-08-10-manchester-club-academy-be681b9a8bea",
-          "title": "Kittie — event 2026-08-10 — public sale 2026-02-06 09:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/kittie-manchester-10-08-2026/event/1F00643E9B7B4121",
-          "candidate_evidence_chars": 377
-        }
-      ]
+      "skipped": 0
     },
-    "enrich_improved": 6,
-    "false_positive_existing_fact": 1,
-    "deterministic_rewrite_built": 1,
-    "no_eligible_backup": 1,
+    "enrich_improved": 3,
+    "false_positive_existing_fact": 2,
     "final_fact_completeness": {
       "version": "v1",
       "checked_lines": 35,
       "matched_lines": 35,
-      "applicable_lines": 3,
+      "applicable_lines": 2,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -576,9 +400,9 @@
       "unresolved": 0,
       "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved"
   },
-  "notes": "Добавлена информация об аресте подозреваемого для соответствия фактам.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в указании должности Энди Бернэма. Остальные строки безопасны.; Все строки соответствуют географическому охвату GM и содержат актуальную информацию о транспортных нар",
+  "notes": "Добавление информации о завершении преследования в Западном Йоркшире важно для точности географии инцидента.; Прогноз погоды корректен и соответствует требованиям блока.; Строка 10 дублирует информацию из строки 6, что может вызвать путаницу у читателей.; Все строки соответствуют требованиям и содержат актуальную инфор",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
@@ -586,43 +410,36 @@
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "problem": "Отсутствует информация об аресте подозреваемого.",
-        "risk": "factual",
+        "problem": "Текст не упоминает, что преследование закончилось в Западном Йоркшире, что важно для понимания географии инцидента.",
+        "risk": "geo",
         "suggested_action": "repair"
       },
       {
-        "line_index": 7,
+        "line_index": 10,
         "section": "Свежие новости",
-        "problem": "Энди Бернэм указан как премьер-министр, что неверно. Он мэр Большого Манчестера.",
+        "problem": "Дублирование информации о приостановке строительства самой высокой башни в Greater Manchester.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 16,
+        "section": "Футбол",
+        "problem": "Неверное указание главного тренера Манчестер Сити.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 25,
+        "line_index": 23,
         "section": "Городской радар",
-        "problem": "Некорректное утверждение о смерти Эндрю Дэвиса. Он был освобождён в 2023 году, но умер в тюрьме.",
-        "risk": "factual",
+        "problem": "Неправильное форматирование даты.",
+        "risk": "format",
         "suggested_action": "repair"
       },
       {
-        "line_index": 31,
-        "section": "Дальние анонсы",
-        "problem": "Некорректное указание места проведения события.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 33,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 34,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дублирование информации о событии Kittie в Manchester Academy и Manchester Club Academy.",
-        "risk": "factual",
+        "line_index": 27,
+        "section": "Городской радар",
+        "problem": "Неполное предложение, отсутствует пробел и слово.",
+        "risk": "format",
         "suggested_action": "repair"
       }
     ],
@@ -631,59 +448,50 @@
         "line_index": 1,
         "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• В Tameside начато расследование убийства после того, как 61-летняя женщина была найдена мёртвой. 60-летний мужчина был арестован по подозрению в убийстве. MEN",
-        "reason": "Добавление информации об аресте подозреваемого для полноты и точности.",
-        "risk": "factual"
+        "replacement_text": "• Студент-полицейский Мохаммад Хассан, 23 года, служащий в полиции Большого Манчестера, был обвинён в нескольких преступлениях, включая изнасилование и похищение. Обвинения были выдвинуты после получения экстренного вызова в субботу вечером, 22:20 BST, когда в автомобиле слышался голос женщины. Преследование закончилось в Западном Йоркшире. Хассан, который был отстранён от службы, должен явиться в суд в Манчестере. Полиция продолжает оказывать поддержку пострадавшей.",
+        "reason": "Добавление информации о месте завершения преследования для точности географии.",
+        "risk": "geo"
       },
       {
-        "line_index": 7,
+        "line_index": 10,
         "section": "Свежие новости",
-        "action": "patch",
-        "replacement_text": "• Мэр Большого Манчестера Энди Бернэм объявил о новых мерах, направленных на борьбу с ложными скидками и ловушками подписок, которые, по его словам, помогут людям сэкономить деньги. Эти инициативы, названные им 'повседневными исправлениями', призваны облегчить финансовое бремя на домохозяйства в условиях кризиса стоимости жизни, и это только начало, так как Бернэм обещает представить ещё больше подобных мер в будущем. MEN",
-        "reason": "Исправление фактической ошибки: Энди Бернэм является мэром, а не премьер-министром.",
+        "action": "strip",
+        "reason": "Дублирование информации о приостановке строительства самой высокой башни в Greater Manchester.",
         "risk": "factual"
       },
       {
-        "line_index": 25,
+        "line_index": 16,
+        "section": "Футбол",
+        "action": "patch",
+        "replacement_text": "• Главный тренер Манчестер Сити Пеп Гвардиола провел час в Сеуле с пятью журналистами, обсуждая изменения в команде и планы по борьбе с Арсеналом. Он отметил, что потеря таких игроков, как Бернардо Силва и Джон Стоунс, открывает новые возможности для формирования команды, и подчеркнул, что в футболе всегда происходит смена поколений.",
+        "reason": "Неверное указание главного тренера Манчестер Сити.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 23,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Серийный насильник Эндрю Дэвис, известный как 'насильник из Coronation Street', скончался от рака мозга в тюрьме. Он был освобождён в 2023 году, но позже вернулся в тюрьму за нарушение условий освобождения. MEN",
-        "reason": "Уточнение, что он умер в тюрьме, а не после освобождения.",
-        "risk": "factual"
+        "replacement_text": "• В Greater Manchester с 11 по 14 августа объявлено о предупреждении о жаре.",
+        "reason": "Исправлено форматирование даты.",
+        "risk": "format"
       },
       {
-        "line_index": 31,
-        "section": "Дальние анонсы",
+        "line_index": 27,
+        "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• 28 августа 2026 года в 18:30 в Quays Theatre, The Lowry пройдет интерактивное семейное шоу \"Побег Бобби Сигала из Древнего Египта\". Билеты уже в продаже.",
-        "reason": "Указание места проведения события должно быть точным. 'Quays Theatre, The Lowry' вместо 'театре Quays Theatre, The Lowry'.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 33,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Kittie — 10 августа, Manchester Club Academy; цена £32.50. Событие проходит сегодня. Ticketmaster",
-        "reason": "Уточнение места проведения события для устранения дублирования.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 34,
-        "section": "Билеты / Ticket Radar",
-        "action": "strip",
-        "reason": "Удаление дублирующей информации о событии Kittie.",
-        "risk": "factual"
+        "replacement_text": "• В King Pins в Манчестере бесплатный боулинг для детей в августе при оплате взрослого.",
+        "reason": "Добавлено недостающее слово и пробел.",
+        "risk": "format"
       }
     ],
     "warnings": [
-      "В разделе 'Общественный транспорт сегодня' много информации о транспортных нарушениях, но это может быть полезно для читателей, планирующих поездки.",
       "judge reduce failed: parse_failed no parseable JSON"
     ],
-    "notes": "Добавлена информация об аресте подозреваемого для соответствия фактам.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в указании должности Энди Бернэма. Остальные строки безопасны.; Все строки соответствуют географическому охвату GM и содержат актуальную информацию о транспортных нар",
+    "notes": "Добавление информации о завершении преследования в Западном Йоркшире важно для точности географии инцидента.; Прогноз погоды корректен и соответствует требованиям блока.; Строка 10 дублирует информацию из строки 6, что может вызвать путаницу у читателей.; Все строки соответствуют требованиям и содержат актуальную инфор",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "partial",
-      "chunk_count": 9,
+      "chunk_count": 10,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -701,8 +509,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2534,
-          "duration_seconds": 2.869
+          "estimated_tokens": 2670,
+          "duration_seconds": 4.727
         },
         {
           "chunk_id": "chunk-02",
@@ -719,8 +527,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2310,
-          "duration_seconds": 1.631
+          "estimated_tokens": 2430,
+          "duration_seconds": 1.377
         },
         {
           "chunk_id": "chunk-03",
@@ -737,33 +545,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7256,
-          "duration_seconds": 3.607
+          "estimated_tokens": 7010,
+          "duration_seconds": 2.727
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            16
+            14
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "warn",
+          "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
-          "warning_count": 1,
+          "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4449,
-          "duration_seconds": 1.383
+          "estimated_tokens": 3678,
+          "duration_seconds": 1.142
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            17,
-            18
+            15,
+            15
           ],
           "sections": [
             "Что важно сегодня"
@@ -773,11 +581,29 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3177,
-          "duration_seconds": 1.279
+          "estimated_tokens": 2718,
+          "duration_seconds": 1.306
         },
         {
           "chunk_id": "chunk-06",
+          "status": "ok",
+          "line_range": [
+            16,
+            18
+          ],
+          "sections": [
+            "Футбол"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3744,
+          "duration_seconds": 2.868
+        },
+        {
+          "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
             19,
@@ -787,55 +613,55 @@
             "Городской радар"
           ],
           "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 8227,
-          "duration_seconds": 2.865
+          "estimated_tokens": 8600,
+          "duration_seconds": 28.988
         },
         {
-          "chunk_id": "chunk-07",
+          "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
             31,
             32
           ],
           "sections": [
-            "Дальние анонсы"
+            "IT и бизнес"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3225,
-          "duration_seconds": 14.028
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            33,
-            35
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3750,
-          "duration_seconds": 22.277
+          "estimated_tokens": 3176,
+          "duration_seconds": 1.007
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            36,
-            36
+            33,
+            34
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3334,
+          "duration_seconds": 1.505
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            35,
+            35
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -845,8 +671,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2545,
-          "duration_seconds": 3.148
+          "estimated_tokens": 2732,
+          "duration_seconds": 5.447
         }
       ],
       "reduce": {
@@ -859,8 +685,8 @@
         "action_count": 0,
         "warning_count": 0,
         "error": "no parseable JSON",
-        "estimated_tokens": 10193,
-        "duration_seconds": 26.632
+        "estimated_tokens": 10018,
+        "duration_seconds": 30.576
       },
       "max_workers": 3,
       "chunk_line_target": 12,
