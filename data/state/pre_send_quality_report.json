@@ -1,98 +1,115 @@
 {
-  "status": "partial",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 1 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair executor applied 2 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-08-11",
-  "pipeline_run_id": "20260811T080142+0100",
-  "digest_sha256": "6f9f67fbbdd55d93da19871137de3e7a0c930b4f4b809b6803d43975f2702408",
-  "duration_seconds": 65.453,
+  "run_date_london": "2026-08-12",
+  "pipeline_run_id": "20260812T080152+0100",
+  "digest_sha256": "8d7cd0fb6c4ab918ce5c34fcd491f234cfc186a56491392c1ed26e92f3f12f5f",
+  "duration_seconds": 74.233,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Текст не упоминает, что преследование закончилось в Западном Йоркшире, что важно для понимания географии инцидента.",
-      "risk": "geo",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 10,
+      "line_index": 3,
       "section": "Свежие новости",
-      "problem": "Дублирование информации о приостановке строительства самой высокой башни в Greater Manchester.",
-      "risk": "factual",
-      "suggested_action": "strip"
+      "problem": "Неправильное использование термина 'обвинён'.",
+      "risk": "legal",
+      "suggested_action": "repair"
     },
     {
       "line_index": 16,
       "section": "Футбол",
-      "problem": "Неверное указание главного тренера Манчестер Сити.",
+      "problem": "Ошибка в описании позиции игрока.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 23,
+      "line_index": 21,
       "section": "Городской радар",
-      "problem": "Неправильное форматирование даты.",
-      "risk": "format",
+      "problem": "Неверное указание премьер-министра. В тексте упоминается Энди Бёрнхэм, который является мэром Манчестера, а не премьер-министром.",
+      "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 27,
-      "section": "Городской радар",
-      "problem": "Неполное предложение, отсутствует пробел и слово.",
-      "risk": "format",
+      "line_index": 32,
+      "section": "Business/tech события для тебя",
+      "problem": "Дата события указана неверно: 8 сентября 2026 года — это вторник, а не четверг.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 34,
+      "section": "Дальние анонсы",
+      "problem": "Неправильное название события.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 35,
+      "section": "Дальние анонсы",
+      "problem": "Неправильное название события.",
+      "risk": "factual",
       "suggested_action": "repair"
     }
   ],
   "actions": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• Студент-полицейский Мохаммад Хассан, 23 года, служащий в полиции Большого Манчестера, был обвинён в нескольких преступлениях, включая изнасилование и похищение. Обвинения были выдвинуты после получения экстренного вызова в субботу вечером, 22:20 BST, когда в автомобиле слышался голос женщины. Преследование закончилось в Западном Йоркшире. Хассан, который был отстранён от службы, должен явиться в суд в Манчестере. Полиция продолжает оказывать поддержку пострадавшей.",
-      "reason": "Добавление информации о месте завершения преследования для точности географии.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 10,
+      "line_index": 3,
       "section": "Свежие новости",
-      "action": "strip",
-      "reason": "Дублирование информации о приостановке строительства самой высокой башни в Greater Manchester.",
-      "risk": "factual",
-      "replacement_text": ""
+      "action": "patch",
+      "replacement_text": "• Предъявлено обвинение — студент-полицейский Мохаммад Хассан, 23 года, обвиняется в изнасиловании и похищении после звонка на номер 999, поступившего 8 августа в 22:20, в котором слышался женский крик о помощи в автомобиле в районе Манчестера. Хассан был арестован после погони по автомагистрали M62 и предстал перед судом в Стокпорте, где не признал вины и не подал ходатайство о залоге.",
+      "reason": "Использование термина 'обвинён' может подразумевать вину, что юридически неверно до вынесения приговора.",
+      "risk": "legal"
     },
     {
       "line_index": 16,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Главный тренер Манчестер Сити Пеп Гвардиола провел час в Сеуле с пятью журналистами, обсуждая изменения в команде и планы по борьбе с Арсеналом. Он отметил, что потеря таких игроков, как Бернардо Силва и Джон Стоунс, открывает новые возможности для формирования команды, и подчеркнул, что в футболе всегда происходит смена поколений.",
-      "reason": "Неверное указание главного тренера Манчестер Сити.",
+      "replacement_text": "• Манчестер Юнайтед интересуется Илиманом Ндиайе и готовит предложение на £14 млн за перспективного нападающего, а также рассматривает сделку с Луисом Пейджем.",
+      "reason": "Илиман Ндиайе является нападающим, а не защитником.",
       "risk": "factual"
     },
     {
-      "line_index": 23,
+      "line_index": 21,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• В Greater Manchester с 11 по 14 августа объявлено о предупреждении о жаре.",
-      "reason": "Исправлено форматирование даты.",
-      "risk": "format"
+      "replacement_text": "• Активистка Джекки Олден выразила удивление в связи с объявлением правительства о жестких мерах против азартных игр, включая предоставление советам большего контроля над новыми букмекерскими конторами. Мэр Манчестера Энди Бёрнхэм поддержал эти меры.",
+      "reason": "Исправление фактической ошибки о должности Энди Бёрнхэма.",
+      "risk": "factual"
     },
     {
-      "line_index": 27,
-      "section": "Городской радар",
+      "line_index": 32,
+      "section": "Business/tech события для тебя",
       "action": "patch",
-      "replacement_text": "• В King Pins в Манчестере бесплатный боулинг для детей в августе при оплате взрослого.",
-      "reason": "Добавлено недостающее слово и пробел.",
-      "risk": "format"
+      "replacement_text": "• Сетевое мероприятие пройдет во вторник, 8 сентября 2026 года, с 8:30 до 10:30 в Эджли Парк, Стокпорт; бесплатно для членов палаты, £22 для не членов.",
+      "reason": "Дата события указана неверно: 8 сентября 2026 года — это вторник, а не четверг.",
+      "risk": "date"
+    },
+    {
+      "line_index": 34,
+      "section": "Дальние анонсы",
+      "action": "patch",
+      "replacement_text": "• Бесплатная круговая прогулка длиной 4 мили или меньше начнётся в Marple Costa 25 августа 2026 года с 13:30 до 16:30. Название события: Walkaday Marple.",
+      "reason": "Название события не соответствует фактам.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 35,
+      "section": "Дальние анонсы",
+      "action": "patch",
+      "replacement_text": "• Бесплатная линейная прогулка длиной 8 миль или меньше начнётся на Hope Train Station 21 августа 2026 года с 11:40 до 16:30. Название события: Walkaday Hope to Edale.",
+      "reason": "Название события не соответствует фактам.",
+      "risk": "factual"
     }
   ],
   "warnings": [
-    "judge reduce failed: parse_failed no parseable JSON"
+    "Секция 'Что важно сегодня' содержит только один элемент, что ниже минимального порога.",
+    "Секция 'Билеты / Ticket Radar' отсутствует, что ниже минимального порога.",
+    "Секция 'Еда, открытия и рынки' отсутствует, что ниже минимального порога."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -101,31 +118,33 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 3,
+      "Общественный транспорт сегодня": 2,
       "Что важно сегодня": 1,
       "Футбол": 3,
-      "Городской радар": 12,
-      "IT и бизнес": 2,
-      "Билеты / Ticket Radar": 2,
-      "Крупные концерты вне GM": 1
+      "Городской радар": 11,
+      "IT и бизнес": 3,
+      "Business/tech события для тебя": 1,
+      "Дальние анонсы": 3,
+      "Крупные концерты вне GM": 5,
+      "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
       "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 12,
-      "Билеты / Ticket Radar": 2,
-      "Русскоязычные концерты и стендап UK": 0,
+      "Городской радар": 11,
+      "Билеты / Ticket Radar": 0,
+      "Русскоязычные концерты и стендап UK": 1,
       "Еда, открытия и рынки": 0,
-      "Business/tech события для тебя": 0,
+      "Business/tech события для тебя": 1,
       "Футбол": 3
     },
-    "ticket_items": 3,
+    "ticket_items": 6,
     "core_items": 27,
     "writer_quality_counts": {
-      "included_candidates": 36,
-      "rendered_candidates": 35,
+      "included_candidates": 42,
+      "rendered_candidates": 41,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
@@ -136,43 +155,46 @@
       "removed_with_reason": 1
     },
     "source_health_counts": {
-      "ok": 112,
+      "ok": 110,
       "partial": 2,
-      "stale": 4,
-      "empty": 4,
-      "failed": 1,
-      "zero_yield": 35,
+      "stale": 6,
+      "empty": 5,
+      "failed": 0,
+      "zero_yield": 86,
       "no_contribution_breakdown": {
-        "fetch_failed": 1,
-        "all_rejected": 35,
-        "idle_no_items": 66
+        "fetch_failed": 0,
+        "all_rejected": 86,
+        "idle_no_items": 14
       },
       "zero_contribution_by_stage": {
-        "selected": 16,
-        "written": 19,
-        "parsed": 66,
-        "fetched": 1
+        "written": 42,
+        "parsed": 14,
+        "selected": 44
       },
-      "weekend_source_coverage_incidents": 54
+      "weekend_source_coverage_incidents": 53
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 1 item(s), emergency floor 3",
-      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
-      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "Business/tech события для тебя: 0 item(s), emergency floor 1"
+      "Билеты / Ticket Radar: 0 item(s), emergency floor 2",
+      "Еда, открытия и рынки: 0 item(s), emergency floor 3"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [],
+    "warnings": [
+      "patch for line 16 has unchecked number/date token(s): 14",
+      "patch for line 32 has unchecked number/date token(s): 10:30, 8:30",
+      "patch for line 34 has unchecked number/date token(s): 13:30, 16:30, 25, 4",
+      "patch for line 35 has unchecked number/date token(s): 16:30, 21"
+    ],
     "can_apply_actions": true,
-    "action_count": 5
+    "action_count": 6
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 35,
-    "matched_lines": 35,
-    "applicable_lines": 2,
+    "checked_lines": 41,
+    "matched_lines": 41,
+    "applicable_lines": 3,
     "unmatched_lines": 0,
     "critical_omission_count": 0,
     "critical_omissions": [],
@@ -185,114 +207,186 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 3,
-    "attempted": 1,
-    "applied": 1,
+    "requested": 6,
+    "attempted": 2,
+    "applied": 2,
     "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 0,
+    "reserve_replacement_used": 1,
     "stripped": 0,
     "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 3,
-    "resolved_in_place": 3,
-    "resolved_by_replacement": 0,
+    "resolved": 5,
+    "resolved_in_place": 4,
+    "resolved_by_replacement": 1,
     "resolved_by_removal": 0,
-    "fact_lock_rejected": 0,
-    "enrich_attempted": 3,
+    "fact_lock_rejected": 1,
+    "enrich_attempted": 6,
     "post_check_errors": [],
-    "geo_contract_rejected": [
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "geo_scope": "gm",
-        "reason": "Добавление информации о месте завершения преследования для точности географии.",
-        "gm_anchor_present": true
-      },
-      {
-        "line_index": 10,
-        "section": "Свежие новости",
-        "geo_scope": "gm",
-        "reason": "Дублирование информации о приостановке строительства самой высокой башни в Greater Manchester.",
-        "gm_anchor_present": true
-      }
-    ],
+    "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "requested_action": "patch",
+        "reason": "Использование термина 'обвинён' может подразумевать вину, что юридически неверно до вынесения приговора.",
+        "risk": "legal",
+        "critical_error": true,
+        "critical_problem": "Неправильное использование термина 'обвинён'.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-01",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cx2rd5xn5g2o-c1831bec49f2",
+        "original_url_identity": "bbc.com/news/articles/cx2rd5xn5g2o",
+        "original_html": "• Предъявлено обвинение — студент-полицейский Мохаммад Хассан, 23 года, обвинён в изнасиловании и похищении после звонка на номер 999, поступившего 8 августа в 22:20, в котором слышался женский крик о помощи в автомобиле в районе Манчестера. Хассан был арестован после погони по автомагистрали M62 и предстал перед судом в Стокпорте, где не признал вины и не подал ходатайство о залоге. <a href=\"https://bbc.com/news/articles/cx2rd5xn5g2o\">BBC Manchester</a>",
+        "model_replacement_rejected": "fact_lock: 8 августа",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m56-traffic-live-carriageway-towards-34441867-0ed78108f810",
+        "post_check_passed": true
+      },
       {
         "line_index": 16,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Неверное указание главного тренера Манчестер Сити.",
+        "reason": "Илиман Ндиайе является нападающим, а не защитником.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неверное указание главного тренера Манчестер Сити.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-enzo-maresca-interview-man-city-34430341-370ab9c3ee0c",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-interview-man-city-34430341",
-        "original_html": "• Главный тренер Манчестер Сити Энцо Мареска провел час в Сеуле с пятью журналистами, обсуждая изменения в команде и планы по борьбе с Арсеналом. Он отметил, что потеря таких игроков, как Бернардо Силва и Джон Стоунс, открывает новые возможности для формирования команды, и подчеркнул, что в футболе всегда происходит смена поколений. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-interview-man-city-34430341\">MEN Manchester City</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 23,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Исправлено форматирование даты.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Неправильное форматирование даты.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-05",
-        "candidate_fingerprint": "url-aboutmanchester-co-uk-amber-heat-alert-for-greater-manchester-from-tomorrow-until-friday-812d49f45af4",
-        "original_url_identity": "aboutmanchester.co.uk/amber-heat-alert-for-greater-manchester-from-tomorrow-until-friday",
-        "original_html": "• В Greater Manchester11 августа14 августа объявлено о предупреждении о жаре. <a href=\"https://aboutmanchester.co.uk/amber-heat-alert-for-greater-manchester-from-tomorrow-until-friday\">About Manchester News</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 27,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Добавлено недостающее слово и пробел.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Неполное предложение, отсутствует пробел и слово.",
+        "critical_problem": "Ошибка в описании позиции игрока.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "city_watch-09",
-        "candidate_fingerprint": "url-aboutmanchester-co-uk-free-bowling-for-kids-in-manchester-all-summer-holidays-4eba853ce6e9",
-        "original_url_identity": "aboutmanchester.co.uk/free-bowling-for-kids-in-manchester-all-summer-holidays",
-        "original_html": "• В King Pins в Манчестере бесплатный боулинг для детейлетавгуста с оплатой взрослого. <a href=\"https://aboutmanchester.co.uk/free-bowling-for-kids-in-manchester-all-summer-holidays\">About Manchester News</a>",
+        "plan_slot_id": "football-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-manchester-united-transfer-news-live-34436279-4ff5e963e151",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/manchester-united-transfer-news-live-34436279",
+        "original_html": "• Манчестер Юнайтед интересуется Илиманом Ндиайе и готовит предложение на £14 млн за перспективного защитника, а также рассматривает сделку с Луисом Пейджем. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/manchester-united-transfer-news-live-34436279\">MEN Manchester United</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 21,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Исправление фактической ошибки о должности Энди Бёрнхэма.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неверное указание премьер-министра. В тексте упоминается Энди Бёрнхэм, который является мэром Манчестера, а не премьер-министром.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "city_watch-04",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c1m1kjmjzvyo-c7d9beb712bb",
+        "original_url_identity": "bbc.com/news/articles/c1m1kjmjzvyo",
+        "original_html": "• Активистка Джекки Олден выразила удивление в связи с объявлением правительства о жестких мерах против азартных игр, включая предоставление советам большего контроля над новыми букмекерскими конторами. <a href=\"https://bbc.co.uk/news/articles/c1m1kjmjzvyo\">BBC Manchester</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 32,
+        "section": "Business/tech события для тебя",
+        "requested_action": "patch",
+        "reason": "Дата события указана неверно: 8 сентября 2026 года — это вторник, а не четверг.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно: 8 сентября 2026 года — это вторник, а не четверг.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "professional_events-01",
+        "candidate_fingerprint": "event-event-networking-networking-south-stockport-september-tuesday-8-sep-8-30am-10-30am-2026-09-08-03f3fece8dae",
+        "original_url_identity": "gmchamber.co.uk/events/networking-south-stockport-september",
+        "original_html": "• Сетевое мероприятие пройдет во вторник, 8 сентября 2026 года, с 8:30 до 10:30 в Эджли Парк, Стокпорт; бесплатно для членов палаты, £22 для не членов. <a href=\"https://gmchamber.co.uk/events/networking-south-stockport-september\">GM Chamber Events</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 34,
+        "section": "Дальние анонсы",
+        "requested_action": "patch",
+        "reason": "Название события не соответствует фактам.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неправильное название события.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "future_announcements-02",
+        "candidate_fingerprint": "event-event-welcome-to-stockport-council-2026-08-25-1a-the-hollins-marple-ae2d439b2ed1",
+        "original_url_identity": "stockport.gov.uk/events/walkaday-marple-marple-ridge-and-hawk-green",
+        "original_html": "• Бесплатная круговая прогулка длиной 4 мили или меньше начнётся в Marple Costa 25 августа 2026 года с 13:30 до 16:30. <a href=\"http://stockport.gov.uk/events/walkaday-marple-marple-ridge-and-hawk-green\">Stockport Events</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 35,
+        "section": "Дальние анонсы",
+        "requested_action": "patch",
+        "reason": "Название события не соответствует фактам.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неправильное название события.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "future_announcements-03",
+        "candidate_fingerprint": "event-event-welcome-to-stockport-council-2026-08-21-hope-station-hope-1f49ff88464b",
+        "original_url_identity": "stockport.gov.uk/events/walkaday-hope-to-edale-including-win-hill",
+        "original_html": "• Бесплатная линейная прогулка длиной 8 миль или меньше начнётся на Hope Train Station 21 августа 2026 года с 11:40 до 16:30. <a href=\"http://stockport.gov.uk/events/walkaday-hope-to-edale-including-win-hill\">Stockport Events</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "футбол::неверное указание главного тренера манчестер сити.",
+        "group_key": "свежие новости::использование термина 'обвинён' может подразумевать вину, что юридически неверно до вынесения приговора.",
+        "actions": [
+          {
+            "line_index": 3,
+            "section": "Свежие новости",
+            "requested_action": "patch",
+            "reason": "Использование термина 'обвинён' может подразумевать вину, что юридически неверно до вынесения приговора.",
+            "risk": "legal",
+            "critical_error": true,
+            "critical_problem": "Неправильное использование термина 'обвинён'.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cx2rd5xn5g2o-c1831bec49f2",
+            "original_url_identity": "bbc.com/news/articles/cx2rd5xn5g2o",
+            "original_html": "• Предъявлено обвинение — студент-полицейский Мохаммад Хассан, 23 года, обвинён в изнасиловании и похищении после звонка на номер 999, поступившего 8 августа в 22:20, в котором слышался женский крик о помощи в автомобиле в районе Манчестера. Хассан был арестован после погони по автомагистрали M62 и предстал перед судом в Стокпорте, где не признал вины и не подал ходатайство о залоге. <a href=\"https://bbc.com/news/articles/cx2rd5xn5g2o\">BBC Manchester</a>",
+            "model_replacement_rejected": "fact_lock: 8 августа",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m56-traffic-live-carriageway-towards-34441867-0ed78108f810",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 3,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::илиман ндиайе является нападающим, а не защитником.",
         "actions": [
           {
             "line_index": 16,
             "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Неверное указание главного тренера Манчестер Сити.",
+            "reason": "Илиман Ндиайе является нападающим, а не защитником.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неверное указание главного тренера Манчестер Сити.",
+            "critical_problem": "Ошибка в описании позиции игрока.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-enzo-maresca-interview-man-city-34430341-370ab9c3ee0c",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-interview-man-city-34430341",
-            "original_html": "• Главный тренер Манчестер Сити Энцо Мареска провел час в Сеуле с пятью журналистами, обсуждая изменения в команде и планы по борьбе с Арсеналом. Он отметил, что потеря таких игроков, как Бернардо Силва и Джон Стоунс, открывает новые возможности для формирования команды, и подчеркнул, что в футболе всегда происходит смена поколений. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-interview-man-city-34430341\">MEN Manchester City</a>",
-            "verification": "structured fact already rendered correctly",
+            "method": "model_patch",
+            "plan_slot_id": "football-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-manchester-united-transfer-news-live-34436279-4ff5e963e151",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/manchester-united-transfer-news-live-34436279",
+            "original_html": "• Манчестер Юнайтед интересуется Илиманом Ндиайе и готовит предложение на £14 млн за перспективного защитника, а также рассматривает сделку с Луисом Пейджем. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/manchester-united-transfer-news-live-34436279\">MEN Manchester United</a>",
             "post_check_passed": true
           }
         ],
@@ -301,29 +395,29 @@
           {
             "line_index": 16,
             "passed": true,
-            "detail": "existing fact verified"
+            "detail": "post-check passed"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::исправлено форматирование даты.",
+        "group_key": "городской радар::исправление фактической ошибки о должности энди бёрнхэма.",
         "actions": [
           {
-            "line_index": 23,
+            "line_index": 21,
             "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Исправлено форматирование даты.",
-            "risk": "format",
+            "reason": "Исправление фактической ошибки о должности Энди Бёрнхэма.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неправильное форматирование даты.",
+            "critical_problem": "Неверное указание премьер-министра. В тексте упоминается Энди Бёрнхэм, который является мэром Манчестера, а не премьер-министром.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-05",
-            "candidate_fingerprint": "url-aboutmanchester-co-uk-amber-heat-alert-for-greater-manchester-from-tomorrow-until-friday-812d49f45af4",
-            "original_url_identity": "aboutmanchester.co.uk/amber-heat-alert-for-greater-manchester-from-tomorrow-until-friday",
-            "original_html": "• В Greater Manchester11 августа14 августа объявлено о предупреждении о жаре. <a href=\"https://aboutmanchester.co.uk/amber-heat-alert-for-greater-manchester-from-tomorrow-until-friday\">About Manchester News</a>",
+            "plan_slot_id": "city_watch-04",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c1m1kjmjzvyo-c7d9beb712bb",
+            "original_url_identity": "bbc.com/news/articles/c1m1kjmjzvyo",
+            "original_html": "• Активистка Джекки Олден выразила удивление в связи с объявлением правительства о жестких мерах против азартных игр, включая предоставление советам большего контроля над новыми букмекерскими конторами. <a href=\"https://bbc.co.uk/news/articles/c1m1kjmjzvyo\">BBC Manchester</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -331,7 +425,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 23,
+            "line_index": 21,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -339,32 +433,88 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::добавлено недостающее слово и пробел.",
+        "group_key": "business/tech события для тебя::дата события указана неверно: 8 сентября 2026 года — это вторник, а не четверг.",
         "actions": [
           {
-            "line_index": 27,
-            "section": "Городской радар",
+            "line_index": 32,
+            "section": "Business/tech события для тебя",
             "requested_action": "patch",
-            "reason": "Добавлено недостающее слово и пробел.",
-            "risk": "format",
+            "reason": "Дата события указана неверно: 8 сентября 2026 года — это вторник, а не четверг.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Неполное предложение, отсутствует пробел и слово.",
+            "critical_problem": "Дата события указана неверно: 8 сентября 2026 года — это вторник, а не четверг.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "city_watch-09",
-            "candidate_fingerprint": "url-aboutmanchester-co-uk-free-bowling-for-kids-in-manchester-all-summer-holidays-4eba853ce6e9",
-            "original_url_identity": "aboutmanchester.co.uk/free-bowling-for-kids-in-manchester-all-summer-holidays",
-            "original_html": "• В King Pins в Манчестере бесплатный боулинг для детейлетавгуста с оплатой взрослого. <a href=\"https://aboutmanchester.co.uk/free-bowling-for-kids-in-manchester-all-summer-holidays\">About Manchester News</a>",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "professional_events-01",
+            "candidate_fingerprint": "event-event-networking-networking-south-stockport-september-tuesday-8-sep-8-30am-10-30am-2026-09-08-03f3fece8dae",
+            "original_url_identity": "gmchamber.co.uk/events/networking-south-stockport-september",
+            "original_html": "• Сетевое мероприятие пройдет во вторник, 8 сентября 2026 года, с 8:30 до 10:30 в Эджли Парк, Стокпорт; бесплатно для членов палаты, £22 для не членов. <a href=\"https://gmchamber.co.uk/events/networking-south-stockport-september\">GM Chamber Events</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 27,
+            "line_index": 32,
             "passed": true,
-            "detail": "post-check passed"
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "дальние анонсы::название события не соответствует фактам.",
+        "actions": [
+          {
+            "line_index": 34,
+            "section": "Дальние анонсы",
+            "requested_action": "patch",
+            "reason": "Название события не соответствует фактам.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильное название события.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "future_announcements-02",
+            "candidate_fingerprint": "event-event-welcome-to-stockport-council-2026-08-25-1a-the-hollins-marple-ae2d439b2ed1",
+            "original_url_identity": "stockport.gov.uk/events/walkaday-marple-marple-ridge-and-hawk-green",
+            "original_html": "• Бесплатная круговая прогулка длиной 4 мили или меньше начнётся в Marple Costa 25 августа 2026 года с 13:30 до 16:30. <a href=\"http://stockport.gov.uk/events/walkaday-marple-marple-ridge-and-hawk-green\">Stockport Events</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 35,
+            "section": "Дальние анонсы",
+            "requested_action": "patch",
+            "reason": "Название события не соответствует фактам.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильное название события.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "future_announcements-03",
+            "candidate_fingerprint": "event-event-welcome-to-stockport-council-2026-08-21-hope-station-hope-1f49ff88464b",
+            "original_url_identity": "stockport.gov.uk/events/walkaday-hope-to-edale-including-win-hill",
+            "original_html": "• Бесплатная линейная прогулка длиной 8 миль или меньше начнётся на Hope Train Station 21 августа 2026 года с 11:40 до 16:30. <a href=\"http://stockport.gov.uk/events/walkaday-hope-to-edale-including-win-hill\">Stockport Events</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 34,
+            "passed": true,
+            "detail": "existing fact verified"
+          },
+          {
+            "line_index": 35,
+            "passed": true,
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
@@ -377,12 +527,13 @@
       "empty_or_not_better": 0,
       "skipped": 0
     },
-    "enrich_improved": 3,
-    "false_positive_existing_fact": 2,
+    "enrich_improved": 6,
+    "deterministic_rewrite_rejected": 1,
+    "false_positive_existing_fact": 4,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 35,
-      "matched_lines": 35,
+      "checked_lines": 41,
+      "matched_lines": 41,
       "applicable_lines": 2,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
@@ -395,103 +546,121 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 35,
-      "resolved_in_place": 35,
+      "checked_lines": 41,
+      "resolved_in_place": 41,
       "unresolved": 0,
       "findings": []
     },
     "status": "resolved"
   },
-  "notes": "Добавление информации о завершении преследования в Западном Йоркшире важно для точности географии инцидента.; Прогноз погоды корректен и соответствует требованиям блока.; Строка 10 дублирует информацию из строки 6, что может вызвать путаницу у читателей.; Все строки соответствуют требованиям и содержат актуальную инфор",
+  "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного юридического описания статуса обвиняемого.; Обе строки корректны и соответствуют требованиям географии и фактической точности.; Строка соответ",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Текст не упоминает, что преследование закончилось в Западном Йоркшире, что важно для понимания географии инцидента.",
-        "risk": "geo",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 10,
+        "line_index": 3,
         "section": "Свежие новости",
-        "problem": "Дублирование информации о приостановке строительства самой высокой башни в Greater Manchester.",
-        "risk": "factual",
-        "suggested_action": "strip"
+        "problem": "Неправильное использование термина 'обвинён'.",
+        "risk": "legal",
+        "suggested_action": "repair"
       },
       {
         "line_index": 16,
         "section": "Футбол",
-        "problem": "Неверное указание главного тренера Манчестер Сити.",
+        "problem": "Ошибка в описании позиции игрока.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 23,
+        "line_index": 21,
         "section": "Городской радар",
-        "problem": "Неправильное форматирование даты.",
-        "risk": "format",
+        "problem": "Неверное указание премьер-министра. В тексте упоминается Энди Бёрнхэм, который является мэром Манчестера, а не премьер-министром.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 27,
-        "section": "Городской радар",
-        "problem": "Неполное предложение, отсутствует пробел и слово.",
-        "risk": "format",
+        "line_index": 32,
+        "section": "Business/tech события для тебя",
+        "problem": "Дата события указана неверно: 8 сентября 2026 года — это вторник, а не четверг.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 34,
+        "section": "Дальние анонсы",
+        "problem": "Неправильное название события.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 35,
+        "section": "Дальние анонсы",
+        "problem": "Неправильное название события.",
+        "risk": "factual",
         "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• Студент-полицейский Мохаммад Хассан, 23 года, служащий в полиции Большого Манчестера, был обвинён в нескольких преступлениях, включая изнасилование и похищение. Обвинения были выдвинуты после получения экстренного вызова в субботу вечером, 22:20 BST, когда в автомобиле слышался голос женщины. Преследование закончилось в Западном Йоркшире. Хассан, который был отстранён от службы, должен явиться в суд в Манчестере. Полиция продолжает оказывать поддержку пострадавшей.",
-        "reason": "Добавление информации о месте завершения преследования для точности географии.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 10,
+        "line_index": 3,
         "section": "Свежие новости",
-        "action": "strip",
-        "reason": "Дублирование информации о приостановке строительства самой высокой башни в Greater Manchester.",
-        "risk": "factual"
+        "action": "patch",
+        "replacement_text": "• Предъявлено обвинение — студент-полицейский Мохаммад Хассан, 23 года, обвиняется в изнасиловании и похищении после звонка на номер 999, поступившего 8 августа в 22:20, в котором слышался женский крик о помощи в автомобиле в районе Манчестера. Хассан был арестован после погони по автомагистрали M62 и предстал перед судом в Стокпорте, где не признал вины и не подал ходатайство о залоге.",
+        "reason": "Использование термина 'обвинён' может подразумевать вину, что юридически неверно до вынесения приговора.",
+        "risk": "legal"
       },
       {
         "line_index": 16,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Главный тренер Манчестер Сити Пеп Гвардиола провел час в Сеуле с пятью журналистами, обсуждая изменения в команде и планы по борьбе с Арсеналом. Он отметил, что потеря таких игроков, как Бернардо Силва и Джон Стоунс, открывает новые возможности для формирования команды, и подчеркнул, что в футболе всегда происходит смена поколений.",
-        "reason": "Неверное указание главного тренера Манчестер Сити.",
+        "replacement_text": "• Манчестер Юнайтед интересуется Илиманом Ндиайе и готовит предложение на £14 млн за перспективного нападающего, а также рассматривает сделку с Луисом Пейджем.",
+        "reason": "Илиман Ндиайе является нападающим, а не защитником.",
         "risk": "factual"
       },
       {
-        "line_index": 23,
+        "line_index": 21,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• В Greater Manchester с 11 по 14 августа объявлено о предупреждении о жаре.",
-        "reason": "Исправлено форматирование даты.",
-        "risk": "format"
+        "replacement_text": "• Активистка Джекки Олден выразила удивление в связи с объявлением правительства о жестких мерах против азартных игр, включая предоставление советам большего контроля над новыми букмекерскими конторами. Мэр Манчестера Энди Бёрнхэм поддержал эти меры.",
+        "reason": "Исправление фактической ошибки о должности Энди Бёрнхэма.",
+        "risk": "factual"
       },
       {
-        "line_index": 27,
-        "section": "Городской радар",
+        "line_index": 32,
+        "section": "Business/tech события для тебя",
         "action": "patch",
-        "replacement_text": "• В King Pins в Манчестере бесплатный боулинг для детей в августе при оплате взрослого.",
-        "reason": "Добавлено недостающее слово и пробел.",
-        "risk": "format"
+        "replacement_text": "• Сетевое мероприятие пройдет во вторник, 8 сентября 2026 года, с 8:30 до 10:30 в Эджли Парк, Стокпорт; бесплатно для членов палаты, £22 для не членов.",
+        "reason": "Дата события указана неверно: 8 сентября 2026 года — это вторник, а не четверг.",
+        "risk": "date"
+      },
+      {
+        "line_index": 34,
+        "section": "Дальние анонсы",
+        "action": "patch",
+        "replacement_text": "• Бесплатная круговая прогулка длиной 4 мили или меньше начнётся в Marple Costa 25 августа 2026 года с 13:30 до 16:30. Название события: Walkaday Marple.",
+        "reason": "Название события не соответствует фактам.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 35,
+        "section": "Дальние анонсы",
+        "action": "patch",
+        "replacement_text": "• Бесплатная линейная прогулка длиной 8 миль или меньше начнётся на Hope Train Station 21 августа 2026 года с 11:40 до 16:30. Название события: Walkaday Hope to Edale.",
+        "reason": "Название события не соответствует фактам.",
+        "risk": "factual"
       }
     ],
     "warnings": [
-      "judge reduce failed: parse_failed no parseable JSON"
+      "Секция 'Что важно сегодня' содержит только один элемент, что ниже минимального порога.",
+      "Секция 'Билеты / Ticket Radar' отсутствует, что ниже минимального порога.",
+      "Секция 'Еда, открытия и рынки' отсутствует, что ниже минимального порога."
     ],
-    "notes": "Добавление информации о завершении преследования в Западном Йоркшире важно для точности географии инцидента.; Прогноз погоды корректен и соответствует требованиям блока.; Строка 10 дублирует информацию из строки 6, что может вызвать путаницу у читателей.; Все строки соответствуют требованиям и содержат актуальную инфор",
+    "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного юридического описания статуса обвиняемого.; Обе строки корректны и соответствуют требованиям географии и фактической точности.; Строка соответ",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "partial",
-      "chunk_count": 10,
+      "status": "ok",
+      "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -504,13 +673,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2670,
-          "duration_seconds": 4.727
+          "estimated_tokens": 2764,
+          "duration_seconds": 1.808
         },
         {
           "chunk_id": "chunk-02",
@@ -527,8 +696,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2430,
-          "duration_seconds": 1.377
+          "estimated_tokens": 2451,
+          "duration_seconds": 1.542
         },
         {
           "chunk_id": "chunk-03",
@@ -545,15 +714,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7010,
-          "duration_seconds": 2.727
+          "estimated_tokens": 7039,
+          "duration_seconds": 3.71
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            14
+            13
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -563,15 +732,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3678,
-          "duration_seconds": 1.142
+          "estimated_tokens": 3162,
+          "duration_seconds": 1.168
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            15,
-            15
+            14,
+            14
           ],
           "sections": [
             "Что важно сегодня"
@@ -581,15 +750,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2718,
-          "duration_seconds": 1.306
+          "estimated_tokens": 2712,
+          "duration_seconds": 1.024
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            16,
-            18
+            15,
+            17
           ],
           "sections": [
             "Футбол"
@@ -599,33 +768,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3744,
-          "duration_seconds": 2.868
+          "estimated_tokens": 3608,
+          "duration_seconds": 2.128
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            19,
-            30
+            18,
+            28
           ],
           "sections": [
             "Городской радар"
           ],
           "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 8600,
-          "duration_seconds": 28.988
+          "estimated_tokens": 7768,
+          "duration_seconds": 45.785
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            31,
-            32
+            29,
+            31
           ],
           "sections": [
             "IT и бизнес"
@@ -635,33 +804,51 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3176,
-          "duration_seconds": 1.007
+          "estimated_tokens": 3726,
+          "duration_seconds": 1.975
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            33,
-            34
+            32,
+            32
           ],
           "sections": [
-            "Билеты / Ticket Radar"
+            "Business/tech события для тебя"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3334,
-          "duration_seconds": 1.505
+          "estimated_tokens": 2817,
+          "duration_seconds": 2.677
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            35,
+            33,
             35
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3886,
+          "duration_seconds": 9.283
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            36,
+            40
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -671,22 +858,40 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2732,
-          "duration_seconds": 5.447
+          "estimated_tokens": 5072,
+          "duration_seconds": 22.881
+        },
+        {
+          "chunk_id": "chunk-12",
+          "status": "ok",
+          "line_range": [
+            41,
+            41
+          ],
+          "sections": [
+            "Русскоязычные концерты и стендап UK"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2765,
+          "duration_seconds": 3.822
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
+        "decision": "warn",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 10018,
-        "duration_seconds": 30.576
+        "warning_count": 3,
+        "error": "",
+        "estimated_tokens": 10543,
+        "duration_seconds": 22.823
       },
       "max_workers": 3,
       "chunk_line_target": 12,
