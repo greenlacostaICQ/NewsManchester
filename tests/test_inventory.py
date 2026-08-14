@@ -1618,6 +1618,62 @@ class NightWaveTest(unittest.TestCase):
             # the ticket source is outside the live_news wave — not collected
             self.assertEqual(read_inventory(root / "data" / "state", "venues_tickets"), [])
 
+    def test_ticket_wave_applies_existing_default_ticket_type_before_inventory_card(self) -> None:
+        import types
+        from unittest import mock
+
+        import scripts.run_local_digest as runner
+        from news_digest.pipeline.collector import core as collector_core
+        from news_digest.pipeline import inventory, ticket_notability
+
+        event_day = (now_london().date() + timedelta(days=3)).isoformat()
+        source = types.SimpleNamespace(name="Manchester Academy", report_category="venues_tickets")
+        candidate = {
+            "fingerprint": "academy-ticket",
+            "include": True,
+            "category": "venues_tickets",
+            "primary_block": "ticket_radar",
+            "title": "Artist - upcoming Manchester Academy show",
+            "summary": f"Manchester Academy | Manchester | event_date={event_day} 19:30",
+            "lead": "Tickets are available.",
+            "practical_angle": "Check availability.",
+            "source_url": "https://manchesteracademy.net/order/gateway/123/show",
+            "event": {"event_name": "Artist", "venue": "Manchester Academy", "date_start": event_day},
+        }
+        signal = types.SimpleNamespace(
+            artist="Artist",
+            kind="artist",
+            tier="B",
+            confidence=0.9,
+            signal="official_ticket_page",
+            headliners=("Artist",),
+            signals={},
+            event_owner="Artist",
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "data" / "state").mkdir(parents=True)
+            with mock.patch.object(runner, "PROJECT_ROOT", root), \
+                    mock.patch.object(collector_core, "SOURCES", [source]), \
+                    mock.patch.object(
+                        collector_core,
+                        "_collect_single_source",
+                        return_value=({"checked": True, "fetched": True, "errors": []}, [candidate]),
+                    ), \
+                    mock.patch.object(ticket_notability, "enrich_ticket_notability", return_value=signal), \
+                    mock.patch.object(
+                        inventory,
+                        "probe_inventory_action_urls",
+                        return_value={"checked": 0, "alive": 0, "reachable": 0, "not_found": 0, "unknown": 0},
+                    ), \
+                    mock.patch("sys.stdout"):
+                rc = runner.cmd_collect_inventory("tickets")
+
+            self.assertEqual(rc, 0)
+            row = read_inventory(root / "data" / "state", "venues_tickets")[0]
+            self.assertEqual(row["fact_card"]["ticket_type"], "event_this_week")
+
     def test_release_reports_inventory_as_not_yet_morning_consumed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             state_dir = Path(tmp) / "data" / "state"

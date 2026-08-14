@@ -2543,3 +2543,14 @@
 - Файлы/места: `inventory.py:action_url_probe_result`, `probe_inventory_action_urls`, `_apply_action_url_probe`; `tests/test_inventory.py`.
 - ПРОВЕРКА (offline): targeted `3/3`, весь `tests.test_inventory` `79/79`, полный набор `1041/1041`. Production-before: run `31792959261`, все 40 сохранённых fact-ready ticket rows имели `action_url_probe_reason=http_status`, `action_url_http_status=403`, `action_url_liveness=unknown`.
 - Где была ошибка (если не сработало): проверить `action_url_probe.reachable/alive/unknown`, сохранённые `action_url_http_status`, block `action_url_alive_count` и morning replacement reason.
+
+### 0238 — Ночная ticket-wave применяет общий классификатор ticket_type до сохранения карточки — 2026-08-14
+- Статус: внедрено; offline проверка пройдена, повторная production ticket-wave ожидается.
+- Проблема: после исправления WAF run `31793748393` дал `80 reachable / 2 not_found / 0 unknown`, но `venues_tickets` всё ещё не мог полностью заменить утренний scan: `Ticket Radar` имел `7` готовых карточек из `2` источников, а живые карточки — только из одного. Ещё `20` текущих Manchester Academy событий с датой, venue и билетным URL были `missing_facts` только из-за отсутствующего `ticket_type`.
+- Причина (корень): утренний `validate-candidates` давно вызывает `_ensure_default_ticket_type`, но отдельный ночной orchestration строил inventory record до этого общего классификатора. Один и тот же источник проходил утром и терялся ночью.
+- Решение: night ticket loop вызывает существующий `_ensure_default_ticket_type(candidate)` перед ticket notability и `build_inventory_record`. Нового классификатора, модели, стадии или ослабления block floor нет.
+- Почему так: это выравнивает ночной и утренний контракты в точке, где расходились данные. Событие в ближайшие 14 дней получает `event_this_week`; остальные получают тот же детерминированный тип, что и утром.
+- Ожидаемый эффект и метрика проверки: Manchester Academy перестаёт давать `missing_facts=['ticket_type']`; `Ticket Radar` получает живой второй официальный источник; `venues_tickets.safe_to_skip=true`, если остальные floor/backup/health проверки сохранены.
+- Файлы/места: `scripts/run_local_digest.py:cmd_collect_inventory`; `tests/test_inventory.py:NightWaveTest`.
+- ПРОВЕРКА (offline): targeted `3/3`, полный набор `1042/1042`; integration test строит night inventory card без исходного `ticket_type` и получает `fact_card.ticket_type=event_this_week`. Production-before: run `31793748393`, Manchester Academy `20/20` rows отсутствовали из ready только по `ticket_type`; replacement reason `action_urls_not_verified`.
+- Где была ошибка (если не сработало): проверить per-source `missing_facts`, `fact_card.ticket_type`, `Ticket Radar action_url_alive_source_count` и `source_replacement_plan.venues_tickets`.

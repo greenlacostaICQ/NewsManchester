@@ -1288,6 +1288,7 @@ def cmd_collect_inventory(wave: str) -> int:
     from news_digest.pipeline.event_extraction import enrich_candidates_events  # noqa: PLC0415
     from news_digest.pipeline.change_classifier import attach_change_phase  # noqa: PLC0415
     from news_digest.pipeline.candidate_validator import (  # noqa: PLC0415
+        _ensure_default_ticket_type,
         _enforce_leisure_routing_contract,
         _reroute_market_planning_to_weekend,
         classify_russian_evidence,
@@ -1368,6 +1369,7 @@ def cmd_collect_inventory(wave: str) -> int:
             if str(candidate.get("primary_block") or "") == "russian_events":
                 candidate["russian_evidence"] = classify_russian_evidence(candidate)
             if str(candidate.get("category") or "") == "venues_tickets":
+                _ensure_default_ticket_type(candidate)
                 notability = enrich_ticket_notability(candidate, state_dir / "ticket_notability_cache.json")
                 candidate["ticket_notability"] = {
                     "artist": notability.artist,
