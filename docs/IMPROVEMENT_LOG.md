@@ -2499,3 +2499,14 @@
 - Файлы/места: `src/news_digest/pipeline/pre_send_quality_judge.py:_repair_request_already_satisfied`; `src/news_digest/pipeline/release.py:_validate_candidates`; tests pre-send/delivery/inventory.
 - ПРОВЕРКА (offline): supported charge testcase → `verified_existing_fact`; planner-resolved repeat включён без `invalid dedupe_decision`; полный набор 1030/1030. Replay 12.08 и `--golden` завершены, final prose findings 0 на проблемном дне.
 - Где была ошибка (если не сработало): —
+
+### 0234 — Listwise rank не обрезает большие доски; dry-run показывает funnel каждого блока — 2026-08-14
+- Статус: внедрено; production-proof ожидается.
+- Проблема: полный production dry-run `31782396441` успешно дошёл до отправки, но DeepSeek вернул обрезанный JSON для `city_watch` (27 строк) и `last_24h` (23), OpenAI reserve один раз отдал только 22/27 строк и один раз тоже обрезал JSON. Rank сохранил безопасный deterministic порядок, однако модель реально ранжировала только 14 кандидатов. Тот же dry-run показывал итоговые shortfall, но не позволял одним компактным отчётом доказать funnel Food/CV/Tickets/A-tier по стадиям.
+- Причина (корень): выходной лимит считался как `70 токенов × строка + 900`, хотя один длинный fingerprint вместе с обязательными JSON-полями уже занимает значительную часть этого бюджета. Для OpenAI reserve JSON mode не включался и корректность зависела только от текста prompt.
+- Решение: бюджет поднят до `120 токенов × строка + 900` с общим cap 8192; JSON mode теперь обязателен и для OpenAI reserve; диагностика фиксирует `finish_reason` и фактический output budget. Итог dry-run дополнен компактными collected→included→repeat→planned→rendered funnel для всех ключевых блоков, полным planned→written→visible по секциям, CV-report, notability coverage и A-tier conservation.
+- Почему так: увеличивается только уже существующий ответ одной доски; новые модели, вызовы и стадии не добавляются. Atomic contract («все fingerprint или ни одного») и безопасный deterministic fallback сохраняются.
+- Ожидаемый эффект и метрика проверки: 23/27-кандидатные доски возвращают полный JSON на primary или reserve; `ranked_candidates` больше не падает до 14 из-за length truncation; dry-run показывает A-tier `missing=[]`, CV reuse и потери каждого публичного блока без чтения больших state-файлов.
+- Файлы/места: `src/news_digest/pipeline/board_rank.py:_board_output_token_budget/_call_block`; `.github/workflows/daily-digest.yml:Report full dry-run result`; `tests/test_board_rank.py`.
+- ПРОВЕРКА (до исправления, production): run `31782396441`, `mode=on`, 68 public slots; `58 shown / 5 replaced / 5 removed`, `technical_errors=[]`; три contract-rejection, `ranked_candidates=14`. После исправления: ожидается следующий production dry-run.
+- Где была ошибка (если не сработало): проверить `board_rank.diagnostics[*].finish_reason/max_output_tokens/accepted/sent` и provider response contract.

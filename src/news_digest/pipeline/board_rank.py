@@ -100,6 +100,9 @@ BOARD_REJECT_MIN_CONFIDENCE = 0.65
 
 _MAX_ITEMS_PER_CALL = 60
 _EVIDENCE_CHARS = 320
+_OUTPUT_TOKENS_PER_ITEM = 120
+_OUTPUT_TOKEN_HEADROOM = 900
+_MAX_OUTPUT_TOKENS = 8192
 LEAD_POOL_SIZE = 6
 LEAD_SOURCE_BLOCKS = frozenset({"today_focus", "last_24h", "city_watch"})
 
@@ -193,6 +196,14 @@ def _rank_item_payload(candidate: dict) -> dict[str, object]:
         "event_date": _clip(event.get("date_start") or event.get("date"), 32),
         "venue": _clip(event.get("venue"), 80),
     }
+
+
+def _board_output_token_budget(item_count: int) -> int:
+    """Budget enough JSON for long fingerprints plus each verdict's fields."""
+    return min(
+        _MAX_OUTPUT_TOKENS,
+        _OUTPUT_TOKENS_PER_ITEM * max(0, int(item_count)) + _OUTPUT_TOKEN_HEADROOM,
+    )
 
 
 def _parse_board_rank_results(
@@ -362,8 +373,10 @@ def _call_block(
         if step.provider_label.lower().startswith("openai")
         else sdk_retries_for_route(provider=step.provider_label, model=step.model, base_url=step.base_url),
     )
-    # ~70 output tokens per ranked item plus headroom for the top-3 explanations.
-    max_tokens = min(8192, 70 * len(expected) + 900)
+    # Fingerprints alone are often 40-70 tokens. Production responses with 23
+    # and 27 rows were truncated under the old 70-token/item allowance before
+    # the model could emit every mandatory verdict.
+    max_tokens = _board_output_token_budget(len(expected))
     started_at = now_london().isoformat()
     t0 = time.monotonic()
     queue_wait_seconds = 0.0
@@ -375,14 +388,21 @@ def _call_block(
             _API_TOKEN_LIMITER.acquire(_estimate_request_tokens(messages, max_tokens))
             queue_wait_seconds = time.monotonic() - queue_t0
             api_t0 = time.monotonic()
+            completion_options = chat_completion_options_for_route(
+                provider=step.provider_label,
+                model=step.model,
+                base_url=step.base_url,
+            )
+            # The board contract is JSON for every provider. DeepSeek already
+            # receives this through its route options; OpenAI reserve must get
+            # the same guarantee instead of relying only on prompt wording.
+            completion_options.setdefault("response_format", {"type": "json_object"})
             response = client.chat.completions.create(
                 model=step.model,
                 messages=messages,
                 temperature=0.1,
                 max_tokens=max_tokens,
-                **chat_completion_options_for_route(
-                    provider=step.provider_label, model=step.model, base_url=step.base_url
-                ),
+                **completion_options,
             )
             api_seconds = time.monotonic() - api_t0
         from news_digest.pipeline.cost_tracker import record_call_from_response  # noqa: PLC0415
@@ -398,6 +418,8 @@ def _call_block(
         )
         raw = response.choices[0].message.content.strip()
         verdicts, diagnostic = _parse_board_rank_results(raw, expected, block)
+        diagnostic["finish_reason"] = str(getattr(response.choices[0], "finish_reason", "") or "")
+        diagnostic["max_output_tokens"] = max_tokens
     except Exception as exc:  # noqa: BLE001
         logger.warning("Board rank %s (%s) failed — %s", block, step.provider_label, exc)
         diagnostics.append(

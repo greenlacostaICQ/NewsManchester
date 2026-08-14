@@ -1470,6 +1470,10 @@ class NightWaveTest(unittest.TestCase):
         self.assertIn('"execution_replacement_reasons"', workflow)
         self.assertIn('"verify_divergence_kinds"', workflow)
         self.assertIn('"planned_shortfalls"', workflow)
+        self.assertIn('"block_funnels"', workflow)
+        self.assertIn('"section_funnel"', workflow)
+        self.assertIn('"professional_cv_match"', workflow)
+        self.assertIn('"a_tier_verify"', workflow)
         normal_guard = "if: ${{ inputs.stop_after_rank != true && inputs.dry_run_no_send != true }}"
         always_guard = "if: ${{ always() && inputs.stop_after_rank != true && inputs.dry_run_no_send != true }}"
         for step_name in (

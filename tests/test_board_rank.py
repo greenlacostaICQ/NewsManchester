@@ -15,6 +15,7 @@ from unittest import mock
 from news_digest.pipeline import provider_health
 from news_digest.pipeline.board_rank import (
     JUDGED_BLOCKS,
+    _board_output_token_budget,
     _call_block,
     _parse_board_rank_results,
     apply_board_rank,
@@ -58,6 +59,10 @@ class BoardRankContractTests(unittest.TestCase):
         self.assertEqual(board_rank_bonus({"board_rank_score": 0.0}), -25.0)
         # Anything the board never judged is untouched.
         self.assertEqual(board_rank_bonus({}), 0.0)
+
+    def test_output_budget_fits_long_listwise_json(self) -> None:
+        self.assertEqual(_board_output_token_budget(27), 4140)
+        self.assertEqual(_board_output_token_budget(60), 8100)
 
     def test_reject_is_executed_only_when_every_guard_allows_it(self) -> None:
         confident = {"board_decision": "reject", "board_confidence": 0.9}
@@ -162,6 +167,7 @@ class BoardRankContractTests(unittest.TestCase):
 
         self.assertEqual(result, {})
         self.assertEqual(diagnostics[0]["atomic_rejection"], "incomplete_candidate_set")
+        self.assertEqual(completions.create.call_args.kwargs["response_format"], {"type": "json_object"})
         self.assertIn("reason=incomplete_candidate_set accepted=1/2", "\n".join(captured.output))
 
     def test_rejected_http_responses_fall_back_without_killing_provider(self) -> None:

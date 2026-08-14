@@ -191,10 +191,46 @@ jobs:
           intake = load("morning_inventory_intake_report.json")
           live = intake.get("live_collection") or {}
           rank = load("rank_digest_report.json")
+          candidates = load("candidates.json").get("candidates") or []
+          validation = load("candidate_validation_report.json")
           plan = load("release_plan.json")
           execution = load("plan_execution_report.json")
+          writer = load("writer_report.json")
           release = load("release_report.json")
           verify = load("verify_digest_plan_report.json")
+          rendered = set(writer.get("rendered_candidate_fingerprints") or [])
+
+          def candidate_funnel(category=None, block=None):
+              rows = [
+                  row for row in candidates
+                  if isinstance(row, dict)
+                  and (category is None or row.get("category") == category)
+                  and (block is None or row.get("primary_block") == block)
+              ]
+              return {
+                  "collected": len(rows),
+                  "included_after_upstream": sum(bool(row.get("include")) for row in rows),
+                  "repeat_allowed": sum(
+                      (row.get("governing_repeat_decision") or {}).get("allow") is True
+                      for row in rows
+                  ),
+                  "repeat_blocked": sum(
+                      (row.get("governing_repeat_decision") or {}).get("allow") is False
+                      for row in rows
+                  ),
+                  "planned": sum(row.get("publish_plan_status") == "show" for row in rows),
+                  "rendered": sum(str(row.get("fingerprint") or "") in rendered for row in rows),
+              }
+
+          section_funnel = {
+              section: {
+                  "planned": len(row.get("slots") or []),
+                  "written": int((writer.get("section_counts") or {}).get(section) or 0),
+                  "visible": int((verify.get("actual_section_counts") or {}).get(section) or 0),
+              }
+              for section, row in (plan.get("sections") or {}).items()
+              if isinstance(row, dict)
+          }
           slot_statuses = Counter(
               row.get("status", "unknown")
               for row in (execution.get("slots") or {}).values()
@@ -249,6 +285,24 @@ jobs:
               "rank_stage": rank.get("stage_status"),
               "ranked_candidates": board.get("ranked_candidates"),
               "board_rejected_responses": rejected_responses,
+              "block_funnels": {
+                  "food_openings": candidate_funnel(category="food_openings"),
+                  "professional_events": candidate_funnel(category="professional_events"),
+                  "ticket_radar": candidate_funnel(block="ticket_radar"),
+                  "outside_gm_tickets": candidate_funnel(block="outside_gm_tickets"),
+                  "future_announcements": candidate_funnel(block="future_announcements"),
+                  "weekend_activities": candidate_funnel(block="weekend_activities"),
+                  "football": candidate_funnel(block="football"),
+                  "last_24h": candidate_funnel(block="last_24h"),
+                  "city_watch": candidate_funnel(block="city_watch"),
+                  "transport": candidate_funnel(block="transport"),
+                  "tech_business": candidate_funnel(block="tech_business"),
+              },
+              "section_funnel": section_funnel,
+              "professional_cv_match": validation.get("professional_llm_match") or {},
+              "ticket_notability": rank.get("ticket_notability") or {},
+              "a_tier_plan": plan.get("a_tier_conservation") or {},
+              "a_tier_verify": verify.get("a_tier_conservation") or {},
               "plan_totals": plan.get("totals") or {},
               "planned_shortfalls": planned_shortfalls,
               "execution_statuses": dict(sorted(slot_statuses.items())),
