@@ -580,7 +580,11 @@ def _apply_routing(candidate: dict, warnings: list[str]) -> str:
         return "non_gm_regional"
     timing_decision, timing_reason = _section_event_timing_decision(candidate)
     if timing_decision == "move_future":
-        candidate["primary_block"] = "future_announcements"
+        # Timing must not erase the venue-scope contract. A future ticket at
+        # a non-GM venue stays in the outside-GM lane (and still has to pass
+        # A-tier), instead of leaking into the GM far-announcements section.
+        if str(candidate.get("primary_block") or "") != "outside_gm_tickets":
+            candidate["primary_block"] = "future_announcements"
     elif timing_decision == "move_next_7":
         candidate["primary_block"] = "next_7_days"
     elif timing_decision == "hold" and is_a_tier_ticket(candidate):

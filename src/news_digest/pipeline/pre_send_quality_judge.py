@@ -1325,6 +1325,30 @@ def _candidate_own_completeness_errors(candidate: dict[str, Any] | None, line: s
     ]
 
 
+def _replacement_geo_contract_errors(section: str, candidate: dict[str, Any] | None) -> list[str]:
+    """Reject a reserve that repeats the same event-geo defect as its primary."""
+    if section_geo_scope(section) != "gm" or not isinstance(candidate, dict):
+        return []
+    block = str(candidate.get("primary_block") or "")
+    category = str(candidate.get("category") or "")
+    if block not in {"next_7_days", "weekend_activities", "future_announcements", "ticket_radar"} and category not in {
+        "culture_weekly",
+        "venues_tickets",
+        "russian_speaking_events",
+    }:
+        return []
+    from news_digest.pipeline.candidate_validator import resolve_venue_scope  # noqa: PLC0415
+
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    declared_scope = str(candidate.get("venue_scope") or event.get("venue_scope") or "").lower()
+    if "outside" in declared_scope or "nearby" in declared_scope:
+        return [f"replacement violates gm geo scope: {declared_scope}"]
+    scope, place = resolve_venue_scope(candidate)
+    if scope in {"outside", "nearby"}:
+        return [f"replacement violates gm geo scope: {place or scope}"]
+    return []
+
+
 def _plan_slot_id_for_line(
     execution: dict[str, Any],
     candidate: dict[str, Any] | None,
@@ -1798,6 +1822,7 @@ def _apply_repair_executor(
                         backup_candidate,
                         apply_requested_concept=False,
                     ) + _candidate_own_completeness_errors(backup_candidate, candidate_line)
+                    post_errors.extend(_replacement_geo_contract_errors(section_name, backup_candidate))
                     if not post_errors:
                         replacement = candidate_line
                         action_record["method"] = "reserve_replacement"

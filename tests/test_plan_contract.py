@@ -26,7 +26,7 @@ from news_digest.pipeline.common import (
 )
 from news_digest.pipeline.dedupe import dedupe_candidates
 from news_digest.pipeline.editor import edit_digest
-from news_digest.pipeline.plan_digest import run_plan_digest
+from news_digest.pipeline.plan_digest import _apply_routing, run_plan_digest
 from news_digest.pipeline.plan_execution import (
     build_final_execution_report,
     load_execution,
@@ -91,6 +91,28 @@ def _strip_volatile(plan: dict) -> dict:
 
 
 class PlanContractTest(unittest.TestCase):
+    def test_outside_gm_ticket_keeps_geo_lane_when_timing_moves_future(self) -> None:
+        event_day = (now_london().date() + timedelta(days=20)).isoformat()
+        candidate = _candidate(
+            1900,
+            block="outside_gm_tickets",
+            category="venues_tickets",
+            title=f"Creamfields — event {event_day}",
+            event={
+                "is_event": True,
+                "event_name": "Creamfields",
+                "date_start": event_day,
+                "venue": "Daresbury Estate",
+                "borough": "Daresbury",
+            },
+            venue_scope="outside_gm",
+        )
+
+        reason = _apply_routing(candidate, [])
+
+        self.assertEqual(reason, "")
+        self.assertEqual(candidate["primary_block"], "outside_gm_tickets")
+
     def test_next7_is_optional_but_plans_a_real_candidate_when_present(self) -> None:
         candidate = _candidate(
             90,

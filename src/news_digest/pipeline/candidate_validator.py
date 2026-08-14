@@ -380,6 +380,17 @@ _TRANSPORT_SERVICE_IMPACT_RE = re.compile(
     r".{0,90}\b(?:train(?:s)?(?!\s+station)|rail\s+services?|tram(?:s)?|metrolink|bus(?:es)?|bus\s+services?)\b",
     re.IGNORECASE | re.DOTALL,
 )
+_TRANSPORT_SENSITIVE_SERVICE_IMPACT_RE = re.compile(
+    r"\b(?:train(?:s)?|rail\s+services?|tram(?:s)?|metrolink|bus\s+services?|buses)\b"
+    r".{0,70}\b(?:disrupt(?:ed|ion)?|delay(?:ed|s)?|cancel(?:led|lation)?|"
+    r"divert(?:ed|ion)?|suspended|not\s+running|services?\s+affected)\b|"
+    r"\b(?:disrupt(?:ed|ion)?|delay(?:ed|s)?|cancel(?:led|lation)?|"
+    r"divert(?:ed|ion)?|suspended|not\s+running|services?\s+affected)\b"
+    r".{0,70}\b(?:train(?:s)?|rail\s+services?|tram(?:s)?|metrolink|bus\s+services?|buses)\b|"
+    r"\b(?:rail\s+replacement\s+bus(?:es)?|buses\s+replace\s+trains?|"
+    r"(?:station|line|tram\s+stop|bus\s+stop)\s+(?:is\s+)?(?:closed|closure))\b",
+    re.IGNORECASE | re.DOTALL,
+)
 _TRANSPORT_MOVEMENT_IMPACT_RE = re.compile(
     r"\b(?:cancel(?:led|ling|lation)?|delay(?:ed|s)?|disruption|disrupted|"
     r"no\s+service|no\s+trains?|not\s+running|replacement\s+bus(?:es)?|"
@@ -571,7 +582,7 @@ def _should_route_to_transport(candidate: dict, blob: str, source_label: str) ->
     # police cordon being closed without affecting any train, tram or bus.
     # Sensitive incidents need an explicit mode+movement-impact statement.
     if _SENSITIVE_INCIDENT_DETAIL_RE.search(blob):
-        return bool(_TRANSPORT_SERVICE_IMPACT_RE.search(blob))
+        return bool(_TRANSPORT_SENSITIVE_SERVICE_IMPACT_RE.search(blob))
     return True
 
 

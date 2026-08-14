@@ -139,6 +139,39 @@ class EnglishDataQATests(unittest.TestCase):
         self.assertNotIn("section_routing:transport", reasons)
         self.assertEqual(candidate["primary_block"], "last_24h")
 
+    def test_fatal_collision_with_replacement_bus_is_not_a_service_alert(self) -> None:
+        candidate = {
+            "include": True,
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "source_label": "MEN Latest News",
+            "title": "Heartbroken mum pays tribute after fatal collision",
+            "summary": (
+                "A 28-year-old man died after a collision between a motorcycle "
+                "and a replacement bus on Wigan Road."
+            ),
+        }
+
+        reasons = _apply_section_routing_quality(candidate)
+
+        self.assertNotIn("section_routing:transport", reasons)
+        self.assertEqual(candidate["primary_block"], "last_24h")
+
+    def test_sensitive_story_with_explicit_bus_disruption_still_routes(self) -> None:
+        candidate = {
+            "include": True,
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "source_label": "BBC Manchester",
+            "title": "Road collision disrupts buses in Salford",
+            "summary": "Bus services are diverted after a collision closed the route.",
+        }
+
+        reasons = _apply_section_routing_quality(candidate)
+
+        self.assertIn("section_routing:transport", reasons)
+        self.assertEqual(candidate["primary_block"], "transport")
+
     def test_property_item_does_not_stay_in_it_business(self) -> None:
         candidate = {
             "include": True,

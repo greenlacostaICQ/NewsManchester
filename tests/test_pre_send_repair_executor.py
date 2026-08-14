@@ -12,11 +12,32 @@ from news_digest.pipeline.pre_send_quality_judge import (
     _fact_lock_errors_for_replacement,
     _finalize_repair_report,
     _repair_request_already_satisfied,
+    _replacement_geo_contract_errors,
 )
 from news_digest.pipeline.plan_execution import build_final_execution_report
 
 
 class PreSendRepairExecutorTest(unittest.TestCase):
+    def test_gm_event_section_rejects_non_gm_reserve(self) -> None:
+        candidate = {
+            "category": "venues_tickets",
+            "primary_block": "future_announcements",
+            "venue_scope": "outside_gm",
+            "title": "Freshfields Arena Saturday Pass",
+            "event": {
+                "is_event": True,
+                "event_name": "Freshfields Arena",
+                "venue": "Daresbury Estate",
+                "borough": "Daresbury",
+            },
+        }
+
+        self.assertTrue(_replacement_geo_contract_errors("Дальние анонсы", candidate))
+        self.assertEqual(
+            _replacement_geo_contract_errors("Крупные концерты вне GM", candidate),
+            [],
+        )
+
     def test_supported_accusation_wording_is_not_misread_as_conviction(self) -> None:
         candidate = {
             "title": "Kyle Howard charged with murder of Keeley Aspinoll",
