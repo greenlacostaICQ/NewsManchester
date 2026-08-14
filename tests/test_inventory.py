@@ -679,6 +679,28 @@ class StateFoundationTest(unittest.TestCase):
             self.assertEqual(row["action_url_liveness"], "alive")
             self.assertEqual(row["action_url_checked_at"], "2026-07-15T01:01:00+01:00")
 
+    def test_fresh_waf_blocked_action_url_counts_as_reachable_not_dead(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+            merge_inventory(
+                state_dir,
+                "venues_tickets",
+                [
+                    {
+                        "fingerprint": "waf-ticket",
+                        "run_id": "run-waf",
+                        "observed_in_wave": True,
+                        "action_url_probe_result": "reachable",
+                        "action_url_http_status": 403,
+                        "action_url_probe_reason": "http_status",
+                    }
+                ],
+            )
+
+            row = read_inventory(state_dir, "venues_tickets")[0]
+            self.assertEqual(row["action_url_liveness"], "alive")
+            self.assertEqual(row["action_url_http_status"], 403)
+
     def test_retention_cleanup_keeps_future_ticket_and_removes_old_transport(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             state_dir = Path(tmp)
@@ -765,13 +787,14 @@ class StateFoundationTest(unittest.TestCase):
             self.assertEqual(report["removed_retired"], 1)
             self.assertEqual(report["removed_recurring_duplicate"], 1)
 
-    def test_http_status_contract_keeps_blocking_responses_unknown(self) -> None:
+    def test_http_status_contract_distinguishes_waf_from_missing_pages(self) -> None:
         self.assertEqual(action_url_probe_result(200), "alive")
         self.assertEqual(action_url_probe_result(302), "alive")
         self.assertEqual(action_url_probe_result(404), "not_found")
         self.assertEqual(action_url_probe_result(410), "not_found")
-        self.assertEqual(action_url_probe_result(403), "unknown")
-        self.assertEqual(action_url_probe_result(429), "unknown")
+        self.assertEqual(action_url_probe_result(403), "reachable")
+        self.assertEqual(action_url_probe_result(405), "reachable")
+        self.assertEqual(action_url_probe_result(429), "reachable")
 
 
 class BuildRecordTest(unittest.TestCase):

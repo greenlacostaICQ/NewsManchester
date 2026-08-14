@@ -2532,3 +2532,14 @@
 - Файлы/места: `candidate_validator.py:_should_route_to_transport`; `plan_digest.py:_apply_routing`; `pre_send_quality_judge.py:_replacement_geo_contract_errors`; профильные тесты.
 - ПРОВЕРКА (offline/replay): профильные файлы `75/75`, полный набор `1040/1040`; replay 14.08 сохранил `63 shown / 0 replaced / 0 removed`; golden replay `12/12` завершён без нового падения или уменьшения 14.08. Production-дефект зафиксирован run `31788557384`; исправленный production outcome ожидается от следующего утреннего выпуска.
 - Где была ошибка (если не сработало): проверить `section_routing_quality`, `primary_block` после `_apply_routing`, `venue_scope/event.venue_scope` и `reserve_rejections[*].errors`.
+
+### 0237 — WAF-ответ билетной страницы подтверждает reachable URL и не выключает ночной intake — 2026-08-14
+- Статус: внедрено; offline проверка пройдена, повторная production ticket-wave ожидается.
+- Проблема: новая tickets-wave `31792959261` успешно опросила 15 источников (`838 found`, `0 source errors`, `123 fact-ready`, `97 render-ready`, `81 morning-eligible`), но action URL report дал `alive=0 / unknown=80 / not_found=2`. Из-за этого morning intake честно отказывался заменять билетный сбор ночью (`action_urls_not_verified`), хотя все сохранённые fact-ready ссылки ответили HTTP 403.
+- Причина (корень): probe отправляет HEAD; Ticketmaster/Co-op WAF запрещает автоматический HEAD с 403 даже для существующей публичной страницы. Контракт признавал живыми только 2xx/3xx, поэтому свежая официальная карточка с явным WAF-ответом теряла liveness.
+- Решение: 403/405/429 получают отдельный audit-result `reachable`; при merge свежей волны он считается liveness `alive`, при этом настоящий HTTP status сохраняется. Только 404/410 добавляют failure-run и по-прежнему требуют два независимых прогона для `dead`; timeout/URLError остаются `unknown`.
+- Почему так: явный WAF/method/rate-limit ответ доказывает существование endpoint, но не маскируется под clean 200. Правило не оживляет отсутствующие страницы и не ослабляет двухпрогонную 404/410 защиту.
+- Ожидаемый эффект и метрика проверки: текущие 403-ссылки считаются пригодными для night replacement; `action_url_probe.reachable>0`, `liveness_sufficient_for_replacement=true` при достаточном блоке; 404/410 остаются not-found/dead по прежнему контракту.
+- Файлы/места: `inventory.py:action_url_probe_result`, `probe_inventory_action_urls`, `_apply_action_url_probe`; `tests/test_inventory.py`.
+- ПРОВЕРКА (offline): targeted `3/3`, весь `tests.test_inventory` `79/79`, полный набор `1041/1041`. Production-before: run `31792959261`, все 40 сохранённых fact-ready ticket rows имели `action_url_probe_reason=http_status`, `action_url_http_status=403`, `action_url_liveness=unknown`.
+- Где была ошибка (если не сработало): проверить `action_url_probe.reachable/alive/unknown`, сохранённые `action_url_http_status`, block `action_url_alive_count` и morning replacement reason.

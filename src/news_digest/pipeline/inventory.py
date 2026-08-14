@@ -192,6 +192,13 @@ def action_url_probe_result(http_status: int | None) -> str:
         return "alive"
     if http_status in {404, 410}:
         return "not_found"
+    # Public ticketing pages commonly reject automated HEAD requests while
+    # remaining valid in a browser. A current source observation plus an
+    # explicit 403/405/429 response proves that the endpoint is reachable; it
+    # does not prove the event page disappeared. Keep the real status in the
+    # audit fields and distinguish this from a clean 2xx/3xx probe.
+    if http_status in {403, 405, 429}:
+        return "reachable"
     return "unknown"
 
 
@@ -266,7 +273,7 @@ def probe_inventory_action_urls(
     ]
     with ThreadPoolExecutor(max_workers=max(1, min(max_workers, len(urls) or 1))) as executor:
         results = list(executor.map(lambda value: _probe_action_url(value, timeout_seconds=timeout_seconds), urls))
-    counts = {"checked": 0, "alive": 0, "not_found": 0, "unknown": 0}
+    counts = {"checked": 0, "alive": 0, "reachable": 0, "not_found": 0, "unknown": 0}
     for identity, result in zip(by_identity, results, strict=True):
         outcome = str(result.get("result") or "unknown")
         counts["checked"] += 1
@@ -291,7 +298,7 @@ def _apply_action_url_probe(previous: dict, merged: dict) -> None:
         return
     failures = [str(value) for value in previous.get("action_url_failure_run_ids") or [] if str(value)]
     run_id = str(merged.get("run_id") or merged.get("observed_run_id") or "")
-    if probe_result == "alive":
+    if probe_result in {"alive", "reachable"}:
         merged["action_url_liveness"] = "alive"
         failures = []
     elif probe_result == "not_found":
@@ -299,7 +306,7 @@ def _apply_action_url_probe(previous: dict, merged: dict) -> None:
             failures.append(run_id)
         merged["action_url_liveness"] = "dead" if len(failures) >= 2 else "unknown"
     else:
-        # 403/405/429, timeout and network errors do not prove that the page died.
+        # Timeout and network errors do not prove that the page died.
         merged["action_url_liveness"] = "unknown"
     merged["action_url_failure_run_ids"] = failures[-6:]
 
