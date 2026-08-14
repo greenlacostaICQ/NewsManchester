@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, timedelta
+import re
 from typing import Any
 
 from news_digest.pipeline.common import now_london
@@ -90,6 +91,25 @@ def needs_concrete_phase_fact(candidate: dict[str, Any]) -> bool:
     block = str(candidate.get("primary_block") or "")
     category = str(candidate.get("category") or "")
     return block in TICKET_REPEAT_BLOCKS or block in EVENT_REPEAT_BLOCKS or category in EVENT_REPEAT_CATEGORIES
+
+
+def _unchanged_exact_source_evidence(candidate: dict[str, Any], previous: dict[str, Any]) -> bool:
+    """True when the exact URL still carries the exact evidence already sent."""
+    current_packet = candidate.get("evidence_packet") if isinstance(candidate.get("evidence_packet"), dict) else candidate
+    previous_packet = previous.get("evidence_packet") if isinstance(previous.get("evidence_packet"), dict) else previous
+
+    def normalised(packet: dict[str, Any], field: str) -> str:
+        return re.sub(r"\s+", " ", str(packet.get(field) or "")).strip().lower()
+
+    current_evidence = normalised(current_packet, "evidence_text")
+    previous_evidence = normalised(previous_packet, "evidence_text")
+    if not current_evidence or not previous_evidence:
+        return False
+    return (
+        current_evidence == previous_evidence
+        and normalised(current_packet, "title") == normalised(previous_packet, "title")
+        and normalised(current_packet, "published_at") == normalised(previous_packet, "published_at")
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -315,6 +335,22 @@ def visible_repeat_verdict(candidate: dict[str, Any], previous: dict[str, Any] |
                 previous_title=previous_title,
                 previous_published_day=previous_day,
             )
+
+    if (
+        matched_by == "fingerprint"
+        and block not in OPERATIONAL_REPEAT_BLOCKS
+        and not is_calendar_carry_candidate(candidate)
+        and _unchanged_exact_source_evidence(candidate, previous)
+    ):
+        return RepeatVerdict(
+            False,
+            "same_fingerprint",
+            "exact_fingerprint_unchanged_evidence",
+            matched_by=matched_by,
+            previous_fingerprint=previous_fp,
+            previous_title=previous_title,
+            previous_published_day=previous_day,
+        )
 
     if str(candidate.get("change_type") or "") in {"same_story_new_facts", "follow_up"}:
         # 0165: for an event/ticket card the claim "same story, new facts" has to

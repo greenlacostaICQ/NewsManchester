@@ -56,6 +56,7 @@ from news_digest.pipeline.writer import (
     _ensure_source_anchor_for_rendered_line,
     _football_priority_kind,
     _line_claims_future_ticket_sale,
+    _numeric_missing_tokens,
     _number_tokens,
     _produce_slot_line,
     _repair_editorial_contract_line,
@@ -2638,6 +2639,34 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertTrue(moved_verdict.allow)
         self.assertEqual(moved_verdict.reason, "concrete_story_change:place")
 
+    def test_exact_url_with_unchanged_evidence_cannot_claim_generic_follow_up(self) -> None:
+        from news_digest.pipeline.repeat_policy import visible_repeat_verdict
+
+        packet = {
+            "title": "Prolific shoplifter banned from shops for three years",
+            "published_at": "2026-08-04T13:09:00+01:00",
+            "evidence_text": "The court imposed a three-year order and eight weeks in custody.",
+        }
+        candidate = {
+            "fingerprint": "oldham-shoplifter",
+            "primary_block": "city_watch",
+            "category": "council",
+            "title": packet["title"],
+            "change_type": "follow_up",
+            "evidence_packet": dict(packet),
+        }
+        previous = {
+            "fingerprint": candidate["fingerprint"],
+            "title": candidate["title"],
+            "last_published_day_london": (now_london().date() - timedelta(days=1)).isoformat(),
+            "evidence_packet": dict(packet),
+        }
+
+        verdict = visible_repeat_verdict(candidate, previous)
+
+        self.assertFalse(verdict.allow)
+        self.assertEqual(verdict.reason, "exact_fingerprint_unchanged_evidence")
+
     def test_undated_ticket_visible_repeat_policy_does_not_bypass_calendar_review(self) -> None:
         from news_digest.pipeline.repeat_policy import visible_repeat_verdict
 
@@ -3393,6 +3422,35 @@ class DigestQualityGuardrailsTest(unittest.TestCase):
         self.assertIn("2200", tokens)
         self.assertIn("7", tokens)
         self.assertIn("45", tokens)
+
+    def test_publication_date_is_supported_numeric_evidence(self) -> None:
+        candidate = {
+            "title": "Rail operators issue extreme heat warning",
+            "published_at": "2026-08-13T10:46:57+01:00",
+        }
+
+        self.assertEqual(
+            _numeric_missing_tokens(candidate, "• Операторы выпустили предупреждение 13 августа 2026 года."),
+            [],
+        )
+
+    def test_office_lease_story_is_not_treated_as_retail_opening(self) -> None:
+        candidate = {
+            "category": "media_layer",
+            "primary_block": "last_24h",
+            "title": "Worker fears no work-life balance under BT relocation plan",
+            "evidence_text": (
+                "BT will close its office when the lease runs out and relocate 600 roles."
+            ),
+        }
+        line = (
+            "• BT закроет офис и перенесёт 600 рабочих мест в другие города. "
+            "Сотрудники опасаются более долгих поездок."
+        )
+
+        errors = _draft_line_quality_errors(candidate, line)
+
+        self.assertFalse(any("commercial/retail item" in error for error in errors), errors)
 
     def test_fresh_numeric_guard_strips_unsupported_phrase_not_drop(self) -> None:
         candidate = {

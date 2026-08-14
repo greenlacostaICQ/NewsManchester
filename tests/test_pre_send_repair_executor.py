@@ -59,6 +59,28 @@ class PreSendRepairExecutorTest(unittest.TestCase):
             )
         )
 
+    def test_recurring_event_uses_next_occurrence_not_stale_jsonld_date(self) -> None:
+        candidate = {
+            "primary_block": "weekend_activities",
+            "event": {
+                "is_recurring": True,
+                "date_start": "2026-08-09",
+                "next_occurrence": "2026-08-16",
+            },
+            "event_occurrence": {"shape": "recurring", "date": "2026-08-16"},
+        }
+
+        self.assertTrue(
+            _repair_request_already_satisfied(
+                {
+                    "risk": "date",
+                    "reason": "Дата должна быть 9 августа, а не 16 августа.",
+                },
+                "• Ярмарка пройдёт 16 августа в Middleton.",
+                candidate,
+            )
+        )
+
     def test_bidirectional_lock_does_not_protect_an_unsupported_amount(self) -> None:
         candidate = {
             "title": "Club discusses a possible transfer",

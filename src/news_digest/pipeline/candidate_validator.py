@@ -371,6 +371,15 @@ _TRANSPORT_IMPACT_RE = re.compile(
     r"сбой|задерж|отмен|объезд|закрыт|работы|лифт)\b",
     re.IGNORECASE,
 )
+_TRANSPORT_SERVICE_IMPACT_RE = re.compile(
+    r"\b(?:train(?:s)?(?!\s+station)|rail\s+services?|tram(?:s)?|metrolink|bus(?:es)?|bus\s+services?)\b"
+    r".{0,90}\b(?:disrupt(?:ed|ion)?|delay(?:ed|s)?|cancel(?:led|lation)?|"
+    r"divert(?:ed|ion)?|closed|closure|suspended|not\s+running|replacement)\b|"
+    r"\b(?:disrupt(?:ed|ion)?|delay(?:ed|s)?|cancel(?:led|lation)?|"
+    r"divert(?:ed|ion)?|closed|closure|suspended|not\s+running|replacement)\b"
+    r".{0,90}\b(?:train(?:s)?(?!\s+station)|rail\s+services?|tram(?:s)?|metrolink|bus(?:es)?|bus\s+services?)\b",
+    re.IGNORECASE | re.DOTALL,
+)
 _TRANSPORT_MOVEMENT_IMPACT_RE = re.compile(
     r"\b(?:cancel(?:led|ling|lation)?|delay(?:ed|s)?|disruption|disrupted|"
     r"no\s+service|no\s+trains?|not\s+running|replacement\s+bus(?:es)?|"
@@ -556,7 +565,14 @@ def _should_route_to_transport(candidate: dict, blob: str, source_label: str) ->
         return True
     if category in _NEVER_AUTO_TRANSPORT_CATEGORIES:
         return False
-    return bool(_TRANSPORT_SECTION_RE.search(blob) and _TRANSPORT_IMPACT_RE.search(blob))
+    if not (_TRANSPORT_SECTION_RE.search(blob) and _TRANSPORT_IMPACT_RE.search(blob)):
+        return False
+    # A crime/fire/crash story can mention a nearby station and a road or
+    # police cordon being closed without affecting any train, tram or bus.
+    # Sensitive incidents need an explicit mode+movement-impact statement.
+    if _SENSITIVE_INCIDENT_DETAIL_RE.search(blob):
+        return bool(_TRANSPORT_SERVICE_IMPACT_RE.search(blob))
+    return True
 
 
 def _hold_sensitive_thin_or_failed_enrichment(candidate: dict) -> bool:

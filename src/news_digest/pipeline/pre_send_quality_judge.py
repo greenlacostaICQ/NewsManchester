@@ -1191,7 +1191,17 @@ def _line_has_expected_event_date(candidate: dict[str, Any] | None, line: str) -
     if not isinstance(candidate, dict):
         return False
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    raw = str(event.get("date_start") or event.get("date") or "")[:10]
+    occurrence = candidate.get("event_occurrence") if isinstance(candidate.get("event_occurrence"), dict) else {}
+    if event.get("is_recurring"):
+        raw = str(
+            event.get("next_occurrence")
+            or occurrence.get("date")
+            or event.get("date_start")
+            or event.get("date")
+            or ""
+        )[:10]
+    else:
+        raw = str(event.get("date_start") or event.get("date") or "")[:10]
     match = re.fullmatch(r"(20\d{2})-(\d{2})-(\d{2})", raw)
     if not match:
         return False

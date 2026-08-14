@@ -4590,8 +4590,22 @@ def _number_tokens(value: str) -> set[str]:
 def _number_evidence_tokens(candidate: dict) -> set[str]:
     fields = [
         str(candidate.get(field) or "")
-        for field in ("title", "summary", "lead", "evidence_text", "practical_angle")
+        for field in (
+            "title",
+            "summary",
+            "lead",
+            "evidence_text",
+            "practical_angle",
+            "published_at",
+            "published_date_london",
+        )
     ]
+    story_frame = candidate.get("story_frame") if isinstance(candidate.get("story_frame"), dict) else {}
+    fields.append(str(story_frame.get("when") or ""))
+    for field in ("published_at", "published_date_london"):
+        iso_match = re.search(r"(?<!\d)(20\d{2})-(\d{2})-(\d{2})(?!\d)", str(candidate.get(field) or ""))
+        if iso_match:
+            fields.append(" ".join(str(int(value)) for value in iso_match.groups()))
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     fields.extend(str(event.get(key) or "") for key in ("date", "date_start", "date_end", "date_text", "price"))
     rewrite_packet = candidate.get("rewrite_packet") if isinstance(candidate.get("rewrite_packet"), dict) else {}
@@ -4823,8 +4837,12 @@ def _draft_line_quality_errors(candidate: dict, line: str) -> list[str]:
                     errors.append("old official/public-service item needs a concrete new public reason.")
         except ValueError:
             pass
-    if re.search(r"\b(?:lease|retail mix|experiential retail|10-year lease|аренд)", _blob_for_repair(candidate), re.IGNORECASE):
-        if not re.search(r"\b(?:откро|opening|opens?|доступн|store|магазин|дата|from\s+\d|с\s+\d)", _blob_for_repair(candidate), re.IGNORECASE):
+    commercial_blob = _blob_for_repair(candidate)
+    if (
+        re.search(r"\b(?:lease|retail mix|experiential retail|10-year lease|аренд)", commercial_blob, re.IGNORECASE)
+        and re.search(r"\b(?:retail|shop|store|shopping|restaurant|bar|cafe|unit|магазин|ресторан|кафе)\b", commercial_blob, re.IGNORECASE)
+    ):
+        if not re.search(r"\b(?:откро|opening|opens?|доступн|store|магазин|дата|from\s+\d|с\s+\d)", commercial_blob, re.IGNORECASE):
             errors.append("commercial/retail item needs opening/access/useful local impact.")
     # Thin-evidence + long-draft = LLM padded a teaser into a vague card.
     # We only check long-format categories (city news / events / business etc.) —
