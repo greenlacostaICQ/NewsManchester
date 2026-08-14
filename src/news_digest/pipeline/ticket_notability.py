@@ -292,11 +292,17 @@ def ticket_headliner_candidates(candidate: dict) -> list[str]:
         if isinstance(values, list):
             for value in values:
                 if isinstance(value, dict):
-                    names.extend(_split_lineup(str(value.get("name") or value.get("artist") or "")))
+                    name = _clean_artist_name(str(value.get("name") or value.get("artist") or ""))
+                    if name:
+                        names.append(name)
                 else:
-                    names.extend(_split_lineup(str(value)))
+                    name = _clean_artist_name(str(value))
+                    if name:
+                        names.append(name)
         elif isinstance(values, dict):
-            names.extend(_split_lineup(str(values.get("name") or values.get("artist") or "")))
+            name = _clean_artist_name(str(values.get("name") or values.get("artist") or ""))
+            if name:
+                names.append(name)
         elif isinstance(values, str):
             names.extend(_split_lineup(values))
     blob = " | ".join(
@@ -306,6 +312,40 @@ def ticket_headliner_candidates(candidate: dict) -> list[str]:
     for match in _LINEUP_FIELD_RE.finditer(blob):
         names.extend(_split_lineup(match.group(1)))
     primary = ticket_artist_name(candidate)
+    owner = _clean_artist_name(str(event.get("event_owner") or ""))
+    if owner:
+        owner_key = _cache_key(owner)
+        raw = str(event.get("event_name") or candidate.get("title") or "")
+        raw = re.split(r"\s+—\s+event\b", raw, maxsplit=1, flags=re.IGNORECASE)[0]
+        title_tail = re.split(r"\s[-–—]\s", raw)[-1]
+        tail_key = _cache_key(title_tail)
+        # Ticketmaster series pages often put the brand first ("All Points
+        # East - Lorde", "Edinburgh Summer Sessions - The Cure"). The series
+        # is the event owner, but the named attraction is the artist whose
+        # reach determines A/B/C. Only promote a non-owner attraction when it
+        # is explicitly present in the event title, so support acts on normal
+        # concert pages do not become the primary artist.
+        titled_attraction = next(
+            (
+                name
+                for name in names
+                if _cache_key(name) != owner_key
+                and _cache_key(name)
+                and _cache_key(name) in tail_key
+            ),
+            "",
+        )
+        if not titled_attraction and re.search(
+            r"\b(?:sessions?|festival|weekender|series|all points east|outbreak)\b",
+            owner,
+            re.IGNORECASE,
+        ):
+            titled_attraction = next(
+                (name for name in names if _cache_key(name) != owner_key),
+                "",
+            )
+        if titled_attraction:
+            primary = titled_attraction
     if primary:
         names.insert(0, primary)
     return list(dict.fromkeys(names))[:8]
@@ -990,7 +1030,16 @@ def prefetch_notability(
     Returns a small report for the writer report / logs.
     """
     if os.environ.get("NEWS_DIGEST_TICKET_NOTABILITY_LOOKUP", "").strip() != "1":
-        return {"enabled": False, "looked_up": 0, "skipped_fresh": 0, "queued": 0, "deferred_budget": 0}
+        return {
+            "enabled": False,
+            "looked_up": 0,
+            "classified": 0,
+            "unknown": 0,
+            "coverage_ratio": 0.0,
+            "skipped_fresh": 0,
+            "queued": 0,
+            "deferred_budget": 0,
+        }
 
     cache_path = cache_path or Path("data/state/ticket_notability_cache.json")
     cache = _load_cache(cache_path)
@@ -1062,6 +1111,7 @@ def prefetch_notability(
     deferred = 0
     counter_lock = threading.Lock()
     provider_status_counts: dict[str, dict[str, int]] = {}
+    tier_counts: dict[str, int] = {}
 
     def _task(name: str, c: dict) -> None:
         nonlocal looked, deferred
@@ -1072,6 +1122,8 @@ def prefetch_notability(
         result = _artist_notability(name, ticket_event_kind(c), c, artists, now, allow_network=True)
         with counter_lock:
             looked += 1
+            tier = str(result.tier or "unknown").lower()
+            tier_counts[tier] = tier_counts.get(tier, 0) + 1
             statuses = (result.signals or {}).get("provider_status")
             if isinstance(statuses, dict):
                 for provider, status in statuses.items():
@@ -1085,9 +1137,17 @@ def prefetch_notability(
                 future.result()
         write_json(cache_path, cache)
 
+    classified = sum(
+        count for tier, count in tier_counts.items() if tier in {"a", "b", "c"}
+    )
+    unknown = max(0, looked - classified)
     return {
         "enabled": True,
         "looked_up": looked,
+        "classified": classified,
+        "unknown": unknown,
+        "coverage_ratio": round(classified / looked, 3) if looked else 0.0,
+        "tier_counts": tier_counts,
         "skipped_fresh": skipped_fresh,
         "queued": len(work),
         "deferred_budget": deferred,
@@ -1213,10 +1273,15 @@ def stamp_canonical_ticket_notability(
         if old_artist and old_tier:
             conflicts_before.setdefault(old_artist, set()).add(old_tier)
         value = enrich_ticket_notability(candidate, cache_path)
+        resolved_artist = _cache_key(value.artist or ticket_artist_name(candidate))
         if (
             str(value.tier or "").lower() in {"", "unknown"}
             and str(value.signal or "") in {"lookup_disabled", "not_found"}
             and old_tier in {"A", "B", "C", "D", "PROTECTED"}
+            and (
+                old_artist == resolved_artist
+                or resolved_artist.startswith(f"{old_artist} ")
+            )
         ):
             # Offline/replay or a temporarily unavailable canonical cache must
             # not erase the last complete row-level result.  All rows for the

@@ -354,6 +354,14 @@ class Release20260727FixesTest(unittest.TestCase):
         self.assertEqual(_today_focus_native_fit(foreign_sidebar_without_story_action)[0], False)
         self.assertEqual(_today_focus_native_fit(closed_historically_without_current_audience)[0], False)
 
+    def test_today_rejects_completed_court_phase_even_when_people_are_named(self) -> None:
+        completed = {
+            "title": "Manchester man charged after last year's road incident",
+            "summary": "Drivers and residents were affected when the road closed in 2025.",
+        }
+
+        self.assertEqual(_today_focus_native_fit(completed), (False, "finished_action"))
+
     def test_today_refill_counts_only_post_validation_survivors(self) -> None:
         rejected = {
             "fingerprint": "rejected",

@@ -74,6 +74,45 @@ class ArtistNotabilityTest(unittest.TestCase):
         # YouTube/Last.fm/MusicBrainz (the rate-limited one).
         self.assertEqual((calls["yt"], calls["lf"], calls["mb"]), (0, 0, 0))
 
+    def test_series_owner_does_not_replace_named_headliner(self) -> None:
+        candidate = {
+            "title": "All Points East - Lorde — event 2026-08-22",
+            "category": "venues_tickets",
+            "primary_block": "outside_gm_tickets",
+            "event": {
+                "event_name": "All Points East - Lorde",
+                "event_owner": "All Points East",
+                "attractions": [
+                    {"name": "All Points East"},
+                    {"name": "Lorde"},
+                    {"name": "PinkPantheress"},
+                ],
+            },
+        }
+
+        self.assertEqual(tn.ticket_headliner_candidates(candidate)[0], "Lorde")
+
+    def test_attraction_name_keeps_commas_and_plus_signs(self) -> None:
+        tyler = {
+            "title": "All Points East - Tyler, the Creator",
+            "event": {
+                "event_name": "All Points East - Tyler, the Creator",
+                "event_owner": "All Points East",
+                "attractions": [{"name": "All Points East"}, {"name": "Tyler, the Creator"}],
+            },
+        }
+        florence = {
+            "title": "Edinburgh Summer Sessions - Florence + The Machine",
+            "event": {
+                "event_name": "Edinburgh Summer Sessions - Florence + The Machine",
+                "event_owner": "Edinburgh Summer Sessions",
+                "attractions": [{"name": "Florence + The Machine"}],
+            },
+        }
+
+        self.assertEqual(tn.ticket_headliner_candidates(tyler)[0], "Tyler, the Creator")
+        self.assertEqual(tn.ticket_headliner_candidates(florence)[0], "Florence + The Machine")
+
     def test_musicbrainz_only_runs_when_still_unknown(self) -> None:
         calls = {"mb": 0}
 
@@ -451,6 +490,8 @@ class PrefetchTest(unittest.TestCase):
         self.assertTrue(report["enabled"])
         self.assertEqual(report["queued"], 2)  # the non-ticket candidate is ignored
         self.assertEqual(report["looked_up"], 2)
+        self.assertEqual(report["classified"] + report["unknown"], 2)
+        self.assertIn("coverage_ratio", report)
 
         # Second run: both now fresh in cache → skipped, nothing looked up.
         tn._CACHE_MEM.clear()

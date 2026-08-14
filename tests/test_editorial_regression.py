@@ -292,6 +292,27 @@ class DuplicateTest(unittest.TestCase):
         self.assertEqual(drops[0]["fingerprint"], "fp-men")
         self.assertEqual(drops[0]["kept_fingerprint"], "fp-bbc")
 
+    def test_shared_borough_does_not_merge_unrelated_food_and_office_stories(self) -> None:
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "stockport-wine-bar",
+                "title": "New wine bar Dahlia opens in Stockport town centre",
+                "primary_block": "openings",
+                "source_label": "Manchester Confidential",
+            },
+            {
+                "include": True,
+                "fingerprint": "stockport-office",
+                "title": "Vitality expands its Stockport office workforce",
+                "primary_block": "openings",
+                "source_label": "Place North West",
+            },
+        ]
+
+        self.assertEqual(_apply_intra_batch_dedup(candidates), [])
+        self.assertTrue(all(candidate["include"] for candidate in candidates))
+
     def test_different_boroughs_are_not_duplicates(self) -> None:
         # Same headline pattern but Salford vs Oldham council — distinct stories.
         candidates = [

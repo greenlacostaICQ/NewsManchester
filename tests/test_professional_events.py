@@ -411,6 +411,27 @@ class ProfessionalEventsTest(unittest.TestCase):
         self.assertEqual(report["sent"], 0)
         self.assertTrue(morning_kept["include"])
 
+    def test_cv_evidence_hash_ignores_transport_identity_only(self) -> None:
+        from news_digest.pipeline.professional_events import professional_cv_evidence_hash
+
+        night = self._candidate(
+            "Manchester AI leadership briefing",
+            "Free AI briefing for product leaders.",
+        )
+        morning = json.loads(json.dumps(night))
+        night["fingerprint"] = "inventory-url-identity"
+        morning["fingerprint"] = "morning-event-identity"
+
+        self.assertEqual(
+            professional_cv_evidence_hash(night),
+            professional_cv_evidence_hash(morning),
+        )
+        morning["event"]["venue"] = "Bridgewater Hall"
+        self.assertNotEqual(
+            professional_cv_evidence_hash(night),
+            professional_cv_evidence_hash(morning),
+        )
+
     def test_night_fills_place_and_access_before_the_cv_match(self) -> None:
         # 0164: a card held without place/access can never render, so the model
         # must not be spent on it — the stated facts are filled first.

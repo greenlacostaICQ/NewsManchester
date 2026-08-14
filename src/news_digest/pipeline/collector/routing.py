@@ -238,6 +238,8 @@ def _today_focus_native_fit(candidate: dict) -> tuple[bool, str]:
     blob = _today_blob(candidate)
     if not _has_gm_token(blob.lower()):
         return False, "no_place"
+    if _TODAY_FINISHED_ACTION_RE.search(blob):
+        return False, "finished_action"
     # Summary and lead are deliberately compact.  The action and place above
     # must still be present in the card's own fields (so a foreign page sidebar
     # cannot create a Today story), but the article body may identify who is
@@ -249,7 +251,6 @@ def _today_focus_native_fit(candidate: dict) -> tuple[bool, str]:
         named_place = (
             action_class in _TODAY_PLACE_AUDIENCE_CLASSES
             and _TODAY_AFFECTED_PLACE_RE.search(blob)
-            and not _TODAY_FINISHED_ACTION_RE.search(blob)
         )
         if not named_place:
             return False, "no_affected_people"

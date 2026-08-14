@@ -16,6 +16,30 @@ from news_digest.pipeline.release import (
 
 
 class DeliveryContentDegradesTest(unittest.TestCase):
+    def test_release_accepts_repeat_decision_resolved_by_planner(self) -> None:
+        errors: list[str] = []
+        warnings: list[str] = []
+        context = _validate_candidates(
+            {
+                "run_date_london": today_london(),
+                "candidates": [
+                    {
+                        "include": True,
+                        "source_url": "https://example.test/story",
+                        "source_label": "BBC Manchester",
+                        "dedupe_decision": "repeat_pending_planner",
+                        "governing_repeat_decision": {"allow": True},
+                    }
+                ],
+            },
+            today_london(),
+            errors,
+            warnings,
+        )
+
+        self.assertEqual(len(context["included_candidates"]), 1)
+        self.assertFalse(any("invalid dedupe_decision" in row for row in warnings))
+
     def test_release_treats_content_gaps_as_warnings(self) -> None:
         errors: list[str] = []
         warnings: list[str] = []

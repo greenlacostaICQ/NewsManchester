@@ -971,6 +971,34 @@ class PlanContractTest(unittest.TestCase):
         self.assertEqual(plan["a_tier_conservation"]["identity"]["collapsed_rows"], 0)
         self.assertFalse(any(row.get("a_tier_collapsed_into") for row in planned_candidates))
 
+    def test_7ca_merged_a_tier_row_conserves_every_physical_date(self) -> None:
+        row = _candidate(
+            719,
+            block="outside_gm_tickets",
+            category="venues_tickets",
+            title="Global Star — event 2099-01-12",
+            event={
+                "date_start": "2099-01-12",
+                "venue": "Wembley Stadium",
+                "is_event": True,
+            },
+            merged_event_dates=["2099-01-12", "2099-01-13"],
+            ticket_notability={"artist": "Global Star", "tier": "A", "kind": "artist"},
+            ticket_type="regular_upcoming",
+            venue_scope="outside",
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state_dir = _seed(root, [row])
+            run_plan_digest(root)
+            plan = load_plan(state_dir)
+
+        conservation = plan["a_tier_conservation"]
+        self.assertEqual(conservation["recognised"], 2)
+        self.assertEqual(conservation["eligible"], 2)
+        self.assertEqual(conservation["planned"], 2)
+        self.assertEqual(conservation["missing_from_plan"], [])
+
     def test_0166_outside_gm_tour_becomes_one_artist_card_listing_its_dates(self) -> None:
         # 29 A-tier artists produced 54 physical dates and 46 Outside-GM lines.
         # The dates stay in the pool; the section shows one card per tour.

@@ -250,7 +250,17 @@ def _validate_candidates(
             warnings.append(f"Candidate #{index} is missing source_url or source_label and was ignored by release.")
             continue
         decision = candidate.get("dedupe_decision")
-        if decision not in {"drop", "carry_over_with_label", "new_phase", "new"}:
+        allowed_decisions = {"drop", "carry_over_with_label", "new_phase", "new"}
+        if decision == "repeat_pending_planner":
+            governing = candidate.get("governing_repeat_decision")
+            if not isinstance(governing, dict) or "allow" not in governing:
+                warnings.append(
+                    f"Candidate #{index} still has unresolved repeat_pending_planner and was ignored by release."
+                )
+                continue
+            if not governing.get("allow"):
+                continue
+        elif decision not in allowed_decisions:
             warnings.append(
                 f"Candidate #{index} has invalid dedupe_decision {decision!r} and was ignored by release."
             )

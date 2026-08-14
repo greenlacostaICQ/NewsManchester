@@ -6,8 +6,8 @@ import threading
 import time
 import unittest
 
-from news_digest.pipeline.common import PRIMARY_BLOCKS
-from datetime import datetime
+from news_digest.pipeline.common import PRIMARY_BLOCKS, now_london
+from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -1565,8 +1565,9 @@ class NightWaveTest(unittest.TestCase):
                 candidate["entities"] = {"venues": ["HOME"]}
 
         def fake_events(candidates):
+            event_day = (now_london().date() + timedelta(days=7)).isoformat()
             for candidate in candidates:
-                candidate["event"] = {"event_name": "Market", "venue": "HOME", "date_start": "2026-07-11"}
+                candidate["event"] = {"event_name": "Market", "venue": "HOME", "date_start": event_day}
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

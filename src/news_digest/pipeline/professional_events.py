@@ -521,8 +521,13 @@ def professional_cv_evidence_hash(candidate: dict[str, Any]) -> str:
     re-enrichment must not invalidate a night verdict, while a changed date,
     venue, price or description must.
     """
+    snapshot = professional_cv_fact_snapshot(candidate)
+    # Night inventory and the morning collector can assign different URL-based
+    # fingerprints to the same fact card. Identity is useful for audit, but it
+    # is not evidence shown to the CV matcher and must not invalidate reuse.
+    snapshot.pop("id", None)
     raw = json.dumps(
-        professional_cv_fact_snapshot(candidate),
+        snapshot,
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),

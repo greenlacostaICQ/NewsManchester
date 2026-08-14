@@ -1778,6 +1778,19 @@ def _merge_multinight_ticket_runs(candidates: list[dict]) -> list[dict]:
     """
     from news_digest.pipeline.ticket_notability import ticket_artist_name  # noqa: PLC0415
 
+    premium_re = re.compile(r"\b(?:venue premium tickets|premium tickets|premium packages?|vip packages?)\b", re.IGNORECASE)
+
+    def _run_signature(candidate: dict, event: dict) -> str:
+        """Keep different headliners in a branded concert series separate."""
+        raw = str(event.get("event_name") or candidate.get("title") or "")
+        raw = re.split(
+            r"\s+[—–]\s+(?:event|public\s+sale)\b",
+            raw,
+            maxsplit=1,
+            flags=re.IGNORECASE,
+        )[0]
+        return normalize_title(premium_re.sub("", raw))
+
     groups: dict[tuple, list[tuple[str, dict]]] = {}
     for c in candidates:
         if not isinstance(c, dict) or not c.get("include"):
@@ -1792,12 +1805,12 @@ def _merge_multinight_ticket_runs(candidates: list[dict]) -> list[dict]:
         date = str(ev.get("date_start") or ev.get("event_date") or _ticket_event_identity(c)[1] or "")[:10]
         venue = normalize_title(str(ev.get("venue") or ""))
         toks = frozenset(_ticket_name_tokens(normalize_title(name)))
-        if not toks or not venue or not date:
+        run_signature = _run_signature(c, ev)
+        if not toks or not venue or not date or not run_signature:
             continue
-        groups.setdefault((toks, venue), []).append((date, c))
+        groups.setdefault((toks, venue, run_signature), []).append((date, c))
 
     drops: list[dict] = []
-    premium_re = re.compile(r"\b(?:venue premium tickets|premium tickets|premium packages?|vip packages?)\b", re.IGNORECASE)
     for items in groups.values():
         dates = sorted({d for d, _ in items})
         if len(items) < 2:
@@ -2126,12 +2139,12 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
             tokens_j = _title_tokens(str(cj.get("title") or ""))
             entities_j = _title_entities(str(cj.get("title") or ""))
 
-            # FAST PATH — shared distinctive entity. If two titles both
-            # mention the same proper noun (Burnham, Mainoo, Manchester
-            # United, Trafford Centre, City), treat as same story even
-            # when token Jaccard is low. Catches the classic political-
-            # story case where each headline picks different verbs around
-            # the same subject.
+            # Shared names are only supporting evidence, never a story key by
+            # themselves. A borough, venue, club or employer can occur in many
+            # unrelated stories on the same day (the live Food loss paired a
+            # Stockport wine bar with an office story). Require at least two
+            # shared title facts and meaningful overall overlap before using
+            # the entity shortcut.
             shared_entities = entities_i & entities_j
             if _is_football_pair(ci, cj):
                 shared_entities = _football_distinctive_shared_entities(entities_i, entities_j)
@@ -2155,15 +2168,22 @@ def _apply_intra_batch_dedup(candidates: list[dict]) -> list[dict]:
                                 break
                     if strong:
                         break
-                if strong:
+                token_intersection = tokens_i & tokens_j
+                token_union = tokens_i | tokens_j
+                entity_overlap = (
+                    len(token_intersection) / len(token_union)
+                    if token_union
+                    else 0.0
+                )
+                if strong and len(token_intersection) >= 2 and entity_overlap >= 0.18:
                     rank_j = _source_rank(
                         str(cj.get("source_label") or ""),
                         str(cj.get("category") or ""),
                     )
                     if _prefer_dedupe_candidate(ci, cj, rank_i, rank_j):
-                        to_drop[j] = {"kept_index": i, "overlap": 0.0, "shared_entity": ",".join(sorted(shared_entities))[:60]}
+                        to_drop[j] = {"kept_index": i, "overlap": entity_overlap, "shared_entity": ",".join(sorted(shared_entities))[:60]}
                     else:
-                        to_drop[i] = {"kept_index": j, "overlap": 0.0, "shared_entity": ",".join(sorted(shared_entities))[:60]}
+                        to_drop[i] = {"kept_index": j, "overlap": entity_overlap, "shared_entity": ",".join(sorted(shared_entities))[:60]}
                         break
                     continue
 

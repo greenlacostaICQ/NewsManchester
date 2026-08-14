@@ -2455,3 +2455,47 @@
 - Файлы/места: `pre_send_quality_judge.py:SYSTEM_PROMPT/_digest_line_slots_from_html/_drop_source_link_metadata_rows/_apply_repair_executor`; `tests/test_release_20260727_fixes.py`.
 - ПРОВЕРКА (offline): exact production-shaped regression + соседняя factual negative case OK; targeted `12/12`, полный suite `1021/1021` OK. Replay 10.08: `38 shown / 0 replaced / 0 removed`, technical verify OK, lead `ok`, `blank_runs_2plus=0`.
 - Где была ошибка (если не сработает): проверить `repair_executor.source_link_metadata_rejected`, исходный anchor label и причину judge action; HTML anchor никогда не должен исчезать из outgoing payload.
+
+### 0230 — Общая сущность не схлопывает разные сюжеты; концертная серия не теряет артистов — 2026-08-14
+- Статус: внедрено; offline/replay проверка пройдена, production-proof ожидается.
+- Проблема: 12 августа дедупликатор снял Food-карточку про новый wine bar в Stockport как дубль новости про офис Vitality в Stockport; аналогичные нулевые пересечения встречались между Food, City, Tech и Football. В билетах разные дни All Points East / Edinburgh Summer Sessions объединялись по названию серии, поэтому отдельные артисты исчезали до A-tier.
+- Причина (корень): `dedupe._apply_intra_batch_dedup` принимал одно общее proper-name за достаточное доказательство одного сюжета; `_merge_multinight_ticket_runs` группировал только по очищенному «артисту» и площадке, а очистка отрезала часть после дефиса и превращала название серии в артиста.
+- Решение: entity-fast-path теперь требует минимум два общих содержательных токена и overlap ≥0.18; отдельная run-signature сохраняет различающий хвост заголовка серии, при этом premium-вариант и реальный multi-night одного шоу всё ещё схлопываются. Это общее правило, без исключений под Stockport/конкретных артистов.
+- Почему так (отвергнутые альтернативы): blacklist районов и ручные исключения для фестивалей не покрывают следующий бренд/город; полное удаление entity-path ухудшило бы реальные переформулированные дубли Andy Burnham/Mainoo.
+- Ожидаемый эффект и метрика проверки: 0 ложных entity-drop для пары с одним общим местом; разные named-headliner series rows остаются `include=true`; реальные одинаковые сюжеты и premium-дубли по-прежнему дают один survivor.
+- Файлы/места: `src/news_digest/pipeline/dedupe.py:_apply_intra_batch_dedup`, `_merge_multinight_ticket_runs`; `tests/test_editorial_regression.py`, `tests/test_ticket_consolidation.py`.
+- ПРОВЕРКА (offline): профильный набор 188/188, полный набор 1030/1030. Регрессии: Stockport Food vs office → 2/2 сохранены; All Points East Lorde vs Tyler → 2/2 сохранены; существующие same-story/premium тесты зелёные. Replay `--golden`: 12/12 дней завершены, новых падений/пустых строк нет.
+- Где была ошибка (если не сработало): —
+
+### 0231 — A-tier считается по артисту и сохраняет каждую физическую дату — 2026-08-14
+- Статус: внедрено; offline/replay проверка пройдена, production-proof ожидается.
+- Проблема: Ticketmaster-карточки `All Points East - Lorde`, `Edinburgh Summer Sessions - The Cure` получали notability для владельца серии (C/unknown), а не для Lorde/The Cure. После раннего multi-night merge планёрка видела только одну дату ряда, из-за чего conservation-report занижал физические события и часть A-tier не получала слот.
+- Причина (корень): `ticket_headliner_candidates` вставлял очищенное начало title перед structured attractions и дробил цельное имя артиста по `,`/`+`; `_a_tier_physical_key` снова читал начало title; `merged_event_dates` не входили в physical-event ledger.
+- Решение: для series-owner выбирается named attraction из хвоста title (или первый отдельный attraction у явно брендированной серии); структурированное attraction-name сохраняется целиком (`Tyler, the Creator`, `Florence + The Machine`). Старый tier переиспользуется только при совпадающей artist identity. Планёрка строит artist key из canonical notability и разворачивает `merged_event_dates` в отдельные physical keys, показывая их одной tour-card со всеми датами. Prefetch-report теперь публикует `classified`, `unknown`, `coverage_ratio`, `tier_counts` и provider-status.
+- Почему так (отвергнутые альтернативы): принудительно считать бренд серии A-tier неверно; показывать отдельную почти одинаковую строку на каждую дату ухудшает выпуск; дополнительные API/модели не нужны — structured attractions уже есть в источнике.
+- Ожидаемый эффект и метрика проверки: `a_tier_conservation.recognised/eligible/planned` считает каждую venue+date; `missing_from_plan=[]`; notability artist совпадает с named headliner, а не series owner; покрытие lookup измеримо.
+- Файлы/места: `src/news_digest/pipeline/ticket_notability.py:ticket_headliner_candidates`, `prefetch_notability`, `stamp_canonical_ticket_notability`; `src/news_digest/pipeline/plan_digest.py:_a_tier_*`; тесты notability/plan.
+- ПРОВЕРКА (offline): на живом пуле 14 series rows корректно разрешены (Lorde, The Cure, Biffy Clyro, Florence + The Machine, Tyler, the Creator, The Prodigy, Twenty One Pilots и др.). Replay 12.08: общий выпуск 40→41 карточка, «Крупные концерты вне GM» 5→6, plan shown 41→42, снятия остались 1, prose defects 0. Replay 06.07 также 51→52 карточки; остальные golden-дни без изменения метрик. Полный набор 1030/1030.
+- Где была ошибка (если не сработало): —
+
+### 0232 — Ночной CV-вердикт переживает смену transport identity; Today не принимает завершённое действие — 2026-08-14
+- Статус: внедрено; offline проверка пройдена, production-proof ожидается.
+- Проблема: одинаковый professional fact-card утром повторно отправлялся в CV-модель (`reused_night_verdict=0`), если night inventory и live collector дали разные fingerprint/URL identity. В Today завершённый court/incident сюжет мог пройти, если в тексте были названы пострадавшие люди.
+- Причина (корень): `professional_cv_evidence_hash` включал техническое поле `id`, хотя модель его не использует как факт; `_TODAY_FINISHED_ACTION_RE` проверялся только в запасной ветке «объект вместо аудитории», а не до допуска карточки.
+- Решение: CV hash строится только по показанным модели фактам (title/date/venue/price/access/booking/source/summary), `id` остаётся в audit snapshot, но не инвалидирует verdict. Today завершает проверку с `finished_action` до анализа аудитории.
+- Почему так (отвергнутые альтернативы): fuzzy-сравнение CV-текста сложнее и менее надёжно, чем хеш точного fact snapshot; отдельный список court-исключений после планирования был бы слишком поздним.
+- Ожидаемый эффект и метрика проверки: неизменный fact-card с новым fingerprint даёт тот же evidence hash и повторный LLM-вызов не происходит; изменение venue/date/summary меняет hash; completed court phase не попадает в Today.
+- Файлы/места: `src/news_digest/pipeline/professional_events.py:professional_cv_evidence_hash`; `src/news_digest/pipeline/collector/routing.py:_today_focus_native_fit`; соответствующие тесты.
+- ПРОВЕРКА (offline): одинаковые факты при двух fingerprint → hash equal; изменение venue → hash differs; completed court example → `(False, finished_action)`; профильный набор 188/188, полный 1030/1030.
+- Где была ошибка (если не сработало): —
+
+### 0233 — Final judge не путает обвинение с приговором; release принимает решение planner — 2026-08-14
+- Статус: внедрено; offline/replay проверка пройдена, production-proof ожидается.
+- Проблема: 12 августа final judge объявил корректное «обвинён» утверждением виновности и заменил валидную BBC-карточку; release одновременно печатал 100+ ложных warning для `repeat_pending_planner`, хотя planner уже записал финальный verdict.
+- Причина (корень): fact-lock не распознавал русскую форму accusation как точное отражение source `charged`; release разрешал только старые dedupe-status и не читал `governing_repeat_decision`. Отдельно один night-inventory тест протухал из-за фиксированной даты 11.07.2026.
+- Решение: supported accusation (`charged` в candidate + `обвинён/предъявлено обвинение` в строке, без conviction wording) считается уже подтверждённым фактом и не запускает замену. Release принимает `repeat_pending_planner` только при наличии planner verdict, включает allow и молча исключает blocked. Тестовая дата inventory стала относительной к `now_london()`.
+- Почему так (отвергнутые альтернативы): запрет слова «обвинён» ухудшает юридическую точность; отключение final judge целиком убрало бы полезные проверки; простое добавление provisional status в allowlist без governing verdict скрывало бы незавершённую стадию.
+- Ожидаемый эффект и метрика проверки: корректная legal-card остаётся в своём слоте; ложные invalid-dedupe warnings исчезают, но неразрешённый provisional status остаётся видимым предупреждением; тесты не зависят от календарной даты запуска.
+- Файлы/места: `src/news_digest/pipeline/pre_send_quality_judge.py:_repair_request_already_satisfied`; `src/news_digest/pipeline/release.py:_validate_candidates`; tests pre-send/delivery/inventory.
+- ПРОВЕРКА (offline): supported charge testcase → `verified_existing_fact`; planner-resolved repeat включён без `invalid dedupe_decision`; полный набор 1030/1030. Replay 12.08 и `--golden` завершены, final prose findings 0 на проблемном дне.
+- Где была ошибка (если не сработало): —

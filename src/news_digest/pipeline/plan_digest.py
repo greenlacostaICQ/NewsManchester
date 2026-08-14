@@ -180,15 +180,53 @@ def _url_identity(candidate: dict) -> str:
     return canonical_url_identity(str(candidate.get("source_url") or ""))
 
 
-def _a_tier_physical_key(candidate: dict) -> str:
-    """Physical event identity used for collapse and conservation."""
-    from news_digest.pipeline.ticket_notability import ticket_artist_name  # noqa: PLC0415
+def _a_tier_artist_key(candidate: dict) -> str:
+    """Canonical artist identity; a festival/series owner is not the act."""
+    from news_digest.pipeline.ticket_notability import (  # noqa: PLC0415
+        ticket_artist_name,
+        ticket_headliner_candidates,
+    )
+
+    notability = (
+        candidate.get("ticket_notability")
+        if isinstance(candidate.get("ticket_notability"), dict)
+        else {}
+    )
+    artist = str(notability.get("artist") or "").strip()
+    if not artist:
+        headliners = ticket_headliner_candidates(candidate)
+        artist = headliners[0] if headliners else ticket_artist_name(candidate)
+    return re.sub(r"[^a-z0-9]+", " ", artist.lower()).strip()
+
+
+def _a_tier_event_days(candidate: dict) -> list[str]:
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    values = [event.get("date_start") or event.get("date")]
+    values.extend(candidate.get("merged_event_dates") or [])
+    return sorted(
+        {
+            str(value or "")[:10]
+            for value in values
+            if re.fullmatch(r"20\d{2}-\d{2}-\d{2}", str(value or "")[:10])
+        }
+    )
+
+
+def _a_tier_physical_keys(candidate: dict) -> list[str]:
+    """Every physical date represented by a possibly merged source row."""
 
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    artist = re.sub(r"[^a-z0-9]+", " ", ticket_artist_name(candidate).lower()).strip()
+    artist = _a_tier_artist_key(candidate)
     venue = re.sub(r"[^a-z0-9]+", " ", str(event.get("venue") or "").lower()).strip()
-    event_day = str(event.get("date_start") or event.get("date") or "")[:10]
-    return f"ticket:{artist}:{venue}:{event_day}" if artist and venue and event_day else ""
+    if not artist or not venue:
+        return []
+    return [f"ticket:{artist}:{venue}:{event_day}" for event_day in _a_tier_event_days(candidate)]
+
+
+def _a_tier_physical_key(candidate: dict) -> str:
+    """Primary physical event identity kept for callers expecting one key."""
+    keys = _a_tier_physical_keys(candidate)
+    return keys[0] if keys else ""
 
 
 def _stored_repeat_allows(candidate: dict) -> bool:
@@ -207,8 +245,6 @@ def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
     date stays its own card: that one is the reader's own city. Nothing leaves
     the pool — collapsed rows keep their event records and only lose their slot.
     """
-    from news_digest.pipeline.ticket_notability import ticket_artist_name  # noqa: PLC0415
-
     recognised_artists: set[str] = set()
     recognised_physical_events: set[str] = set()
     grouped: dict[tuple[str, str, date], list[dict]] = {}
@@ -228,23 +264,24 @@ def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
         if not isinstance(candidate, dict) or not is_a_tier_ticket(candidate):
             continue
         event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-        artist = re.sub(r"[^a-z0-9]+", " ", ticket_artist_name(candidate).lower()).strip()
+        artist = _a_tier_artist_key(candidate)
         if artist:
             recognised_artists.add(artist)
         eligible, _ = a_tier_ticket_policy(candidate)
         if not eligible:
             continue
-        try:
-            event_day = date.fromisoformat(str(event.get("date_start") or event.get("date") or "")[:10])
-        except ValueError:
-            continue
         venue = re.sub(r"[^a-z0-9]+", " ", str(event.get("venue") or "").lower()).strip()
-        if artist and venue:
-            recognised_physical_events.add(f"ticket:{artist}:{venue}:{event_day.isoformat()}")
-        if not _stored_repeat_allows(candidate):
-            continue
-        if artist and venue:
-            grouped.setdefault((artist, venue, event_day), []).append(candidate)
+        for event_day_text in _a_tier_event_days(candidate):
+            try:
+                event_day = date.fromisoformat(event_day_text)
+            except ValueError:
+                continue
+            if artist and venue:
+                recognised_physical_events.add(f"ticket:{artist}:{venue}:{event_day.isoformat()}")
+            if not _stored_repeat_allows(candidate):
+                continue
+            if artist and venue:
+                grouped.setdefault((artist, venue, event_day), []).append(candidate)
 
     def _survivor_key(candidate: dict) -> tuple:
         return (
@@ -261,9 +298,8 @@ def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
         conserved_events += 1
         survivor = min(rows, key=_survivor_key)
         survivor_fp = str(survivor.get("fingerprint") or "")
-        physical_key = _a_tier_physical_key(survivor)
-        if physical_key:
-            physical_representatives[physical_key] = survivor_fp
+        physical_key = f"ticket:{artist}:{_venue}:{event_day.isoformat()}"
+        physical_representatives[physical_key] = survivor_fp
         for candidate in rows:
             if candidate is survivor:
                 continue
@@ -302,9 +338,8 @@ def _collapse_a_tier_event_runs(candidates: list[dict]) -> dict[str, object]:
             tour_survivor["draft_line_model"] = "deterministic_writer_fallback"
         tour_cards += 1
         for _stop_day, _stop_venue, candidate in stops:
-            stop_key = _a_tier_physical_key(candidate)
-            if stop_key:
-                physical_representatives[stop_key] = tour_fp
+            stop_key = f"ticket:{_a_tier_artist_key(candidate)}:{re.sub(r'[^a-z0-9]+', ' ', _stop_venue.lower()).strip()}:{_stop_day.isoformat()}"
+            physical_representatives[stop_key] = tour_fp
             if candidate is tour_survivor:
                 continue
             candidate["a_tier_collapsed_into"] = tour_fp
@@ -1366,8 +1401,7 @@ def run_plan_digest(project_root: Path) -> StageResult:
     for candidate in candidates:
         if not isinstance(candidate, dict) or not is_a_tier_ticket(candidate):
             continue
-        physical_key = _a_tier_physical_key(candidate)
-        if physical_key:
+        for physical_key in _a_tier_physical_keys(candidate):
             a_tier_candidates_by_physical_key.setdefault(physical_key, []).append(candidate)
     a_tier_physical_event_outcomes: list[dict[str, str]] = []
     for physical_key in sorted(a_tier_identity.get("recognised_physical_events") or []):
@@ -1487,7 +1521,8 @@ def run_plan_digest(project_root: Path) -> StageResult:
             "policy": (
                 "Conservation is counted by physical A-tier event (owner + venue + date), "
                 "Technical source duplicates collapse before timing/watch/cap/repeat; "
-                "another real date or venue remains independently canonical."
+                "another real date or venue remains canonical; merged source rows list every "
+                "represented date on their single artist card."
             ),
         },
         "warnings": warnings,

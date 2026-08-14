@@ -17,6 +17,24 @@ from news_digest.pipeline.plan_execution import build_final_execution_report
 
 
 class PreSendRepairExecutorTest(unittest.TestCase):
+    def test_supported_accusation_wording_is_not_misread_as_conviction(self) -> None:
+        candidate = {
+            "title": "Kyle Howard charged with murder of Keeley Aspinoll",
+            "summary": "A man has been charged with murder after Keeley Aspinoll was found dead.",
+        }
+        line = "• Кайл Ховард обвинён в убийстве Кили Аспинолл."
+
+        self.assertTrue(
+            _repair_request_already_satisfied(
+                {
+                    "risk": "legal",
+                    "reason": "The word обвинён incorrectly states guilt rather than an accusation.",
+                },
+                line,
+                candidate,
+            )
+        )
+
     def test_judge_cannot_remove_supported_structured_date_or_stockport_venue(self) -> None:
         candidate = {
             "title": "Business conference at Stockport Exchange",

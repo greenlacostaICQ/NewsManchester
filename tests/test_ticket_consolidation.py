@@ -185,6 +185,25 @@ class TicketOnsaleFromBlobTest(unittest.TestCase):
 
 
 class TicketConsolidationTest(unittest.TestCase):
+    def test_branded_series_keeps_different_named_headliners(self) -> None:
+        rows = [
+            _tk(
+                "All Points East - Lorde",
+                venue="Victoria Park",
+                date="2026-08-22",
+                attractions=["All Points East", "Lorde"],
+            ),
+            _tk(
+                "All Points East - Tyler, The Creator",
+                venue="Victoria Park",
+                date="2026-08-23",
+                attractions=["All Points East", "Tyler, The Creator"],
+            ),
+        ]
+
+        self.assertEqual(_merge_multinight_ticket_runs(rows), [])
+        self.assertTrue(all(row["include"] for row in rows))
+
     def test_consolidation_collapses_and_drops(self) -> None:
         cands = [
             # one artist at two venues/dates → two distinct event cards

@@ -1223,13 +1223,35 @@ def _repair_request_already_satisfied(
     concept = str(row.get("completeness_concept") or "").strip()
     if concept and line_satisfies_concept(concept, _strip_tags(original_line)):
         return True
-    risk_blob = f"{row.get('risk') or ''} {row.get('reason') or ''} {row.get('critical_problem') or ''}".lower()
+    risk_blob = (
+        f"{row.get('risk') or ''} {row.get('reason') or ''} "
+        f"{row.get('problem') or ''} {row.get('critical_problem') or ''}"
+    ).lower()
     date_supported = bool(
         re.search(r"\bdate\b|дат", risk_blob)
         and _line_has_expected_event_date(candidate, original_line)
     )
     if date_supported:
         return True
+    # «Обвинён / предъявлено обвинение» describes an accusation, not a
+    # conviction. The final model once treated this correct Russian legal
+    # status as an assertion of guilt and replaced a valid BBC story. Preserve
+    # it only when the candidate itself says charged/обвинён and the visible
+    # line contains no conviction wording.
+    if isinstance(candidate, dict) and re.search(r"guilt|винов", risk_blob):
+        visible = _strip_tags(original_line).lower()
+        source = " ".join(
+            str(candidate.get(field) or "")
+            for field in ("title", "summary", "lead", "evidence_text")
+        ).lower()
+        accusation = re.search(
+            r"обвин[её]н\w*|обвиняется|предъявлен\w*\s+обвинени",
+            visible,
+        )
+        source_charge = re.search(r"\bcharged\b|обвин", source)
+        conviction = re.search(r"осужд[её]н|признан\w*\s+виновн|виновен|convicted", visible)
+        if accusation and source_charge and not conviction:
+            return True
     # Bidirectional fact lock: the judge may not call an existing number,
     # venue, place or other factual token "wrong" when every such token is
     # present in the saved candidate evidence.  The model has no independent
