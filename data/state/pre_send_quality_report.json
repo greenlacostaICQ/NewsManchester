@@ -1,144 +1,21 @@
 {
-  "status": "ok",
+  "status": "failed",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 1 repair(s); every operation passed its post-check",
+  "reason": "pre-send judge requested a hold without an executable repair; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-08-15",
-  "pipeline_run_id": "20260815T080140+0100",
-  "digest_sha256": "d1dd7160a3fe8b4055f238eb1226a9ce0a86c99cc21057c3b45e8fde03c96ad8",
-  "duration_seconds": 76.798,
-  "confidence": 0.85,
-  "critical_errors": [
-    {
-      "line_index": 4,
-      "section": "Свежие новости",
-      "problem": "Ошибка в тексте: 'разогналсямиль в час' вместо 'разогнался до 100 миль в час'.",
-      "risk": "translation",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 15,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Событие произошло за пределами Greater Manchester, но представлено как местное.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 18,
-      "section": "Футбол",
-      "problem": "Неверное имя игрока.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 21,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 30,
-      "section": "Городской радар",
-      "problem": "Текст содержит ошибку в описании события. Театр не откроется для культурного использования, а только получил финансирование для создания временной площадки.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 34,
-      "section": "IT и бизнес",
-      "problem": "Неполное предложение, отсутствует окончание.",
-      "risk": "format",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 37,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дата события указана дважды, и одна из них неверна.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 43,
-      "section": "Крупные концерты вне GM",
-      "problem": "Неправильное название события и место проведения.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    }
-  ],
-  "actions": [
-    {
-      "line_index": 4,
-      "section": "Свежие новости",
-      "action": "patch",
-      "replacement_text": "• Во время полицейской погони за угнанным фургоном, которая проходила через Bolton, Wigan и Чорли 14 августа, водитель разогнался до 100 миль в час, в результате чего пострадал велосипедист.",
-      "reason": "Исправление ошибки перевода для ясности.",
-      "risk": "translation"
-    },
-    {
-      "line_index": 15,
-      "section": "Общественный транспорт сегодня",
-      "action": "strip",
-      "reason": "Событие произошло на A31, что находится за пределами Greater Manchester, и не соответствует geo_scope.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 18,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Манчестер Юнайтед близок к подписанию Луиса Бейджа из Лестера за 10 миллионов фунтов плюс бонусы, что станет их четвертым подписанием этим летом. Также клуб интересуется Адамом Уортоном и Ибрагимом Мбае.",
-      "reason": "Неверное имя игрока: Луи Пейдж вместо Луис Бейдж.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 21,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 9 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход бесплатный для покупателей, £10 для продавцов.",
-      "reason": "Дата события должна быть 9 августа, а не 16 августа.",
-      "risk": "date"
-    },
-    {
-      "line_index": 30,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Королевский театр Вигана получил дополнительное финансирование для создания временной площадки на 250 мест, что является шагом к его будущему открытию для культурного использования.",
-      "reason": "Уточнение фактической информации о статусе театра.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 34,
-      "section": "IT и бизнес",
-      "action": "patch",
-      "replacement_text": "• Nimble Approach предоставил волонтеров для менторства студентов T Level в рамках программы T Connect от Manchester Digital.",
-      "reason": "Завершение предложения для ясности.",
-      "risk": "format"
-    },
-    {
-      "line_index": 37,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Collectorcon — 18 октября, 12:00, Manchester Academy. Билеты и время указаны на официальной странице.",
-      "reason": "Исправление неверной даты и времени события.",
-      "risk": "date"
-    },
-    {
-      "line_index": 43,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• All Points East — 22 августа, Victoria Park London; 25 августа, Royal Highland Showgrounds. Билеты и время указаны на официальной странице.",
-      "reason": "Исправлено название события и место проведения.",
-      "risk": "factual"
-    }
-  ],
+  "run_date_london": "2026-08-16",
+  "pipeline_run_id": "20260816T080125+0100",
+  "digest_sha256": "1a282284982b7001fb435d8700345611824507bd674024aae66e14994455a85c",
+  "duration_seconds": 81.748,
+  "confidence": 0.0,
+  "critical_errors": [],
+  "actions": [],
   "warnings": [
-    "Отсутствие блока 'Что важно сегодня' снижает полноту выпуска.",
-    "Блок 'Выходные в GM' содержит только 5 элементов, что ниже минимального порога в 6."
+    "all judge calls failed: 13 failure(s)"
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -146,83 +23,87 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 9,
-      "Общественный транспорт сегодня": 4,
+      "Свежие новости": 7,
+      "Общественный транспорт сегодня": 5,
       "Футбол": 3,
-      "Выходные в GM": 5,
-      "Городской радар": 8,
-      "IT и бизнес": 3,
-      "Билеты / Ticket Radar": 3,
+      "Выходные в GM": 9,
+      "Городской радар": 5,
+      "IT и бизнес": 1,
+      "Дальние анонсы": 3,
+      "Билеты / Ticket Radar": 1,
       "Крупные концерты вне GM": 7,
       "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
       "Что важно сегодня": 0,
-      "Свежие новости": 9,
+      "Свежие новости": 7,
       "Главная история дня": 1,
-      "Городской радар": 8,
-      "Выходные в GM": 5,
-      "Билеты / Ticket Radar": 3,
+      "Городской радар": 5,
+      "Выходные в GM": 9,
+      "Билеты / Ticket Radar": 1,
       "Русскоязычные концерты и стендап UK": 1,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
       "Футбол": 3
     },
-    "ticket_items": 11,
-    "core_items": 27,
+    "ticket_items": 9,
+    "core_items": 26,
     "writer_quality_counts": {
       "included_candidates": 45,
-      "rendered_candidates": 45,
+      "rendered_candidates": 44,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 0,
+      "dropped_low_quality": 1,
       "replaced_from_plan_backup": 0,
-      "removed_with_reason": 0
+      "removed_with_reason": 1
     },
     "source_health_counts": {
-      "ok": 118,
+      "ok": 106,
       "partial": 0,
-      "stale": 3,
-      "empty": 3,
+      "stale": 8,
+      "empty": 10,
       "failed": 0,
-      "zero_yield": 30,
+      "zero_yield": 59,
       "no_contribution_breakdown": {
         "fetch_failed": 0,
-        "all_rejected": 30,
-        "idle_no_items": 71
+        "all_rejected": 59,
+        "idle_no_items": 39
       },
       "zero_contribution_by_stage": {
-        "selected": 15,
-        "written": 15,
-        "parsed": 71
+        "written": 31,
+        "selected": 28,
+        "parsed": 39
       },
-      "weekend_source_coverage_incidents": 50
+      "weekend_source_coverage_incidents": 44
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 0 item(s), emergency floor 3",
-      "Выходные в GM: 5 item(s), emergency floor 6",
+      "Билеты / Ticket Radar: 1 item(s), emergency floor 2",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "Business/tech события для тебя: 0 item(s), emergency floor 1"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [
-      "patch for line 21 has unchecked number/date token(s): 9",
-      "patch for line 30 has unchecked number/date token(s): 250"
-    ],
+    "warnings": [],
     "can_apply_actions": true,
-    "action_count": 8
+    "action_count": 0,
+    "model_unavailable_fallback": {
+      "status": "ran",
+      "mode": "model_unavailable_fallback",
+      "defect_count": 0,
+      "findings": []
+    }
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 45,
-    "matched_lines": 45,
-    "applicable_lines": 0,
+    "checked_lines": 44,
+    "matched_lines": 44,
+    "applicable_lines": 1,
     "unmatched_lines": 0,
     "critical_omission_count": 0,
     "critical_omissions": [],
@@ -235,416 +116,31 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 7,
-    "attempted": 2,
-    "applied": 1,
-    "model_patch_applied": 1,
+    "requested": 0,
+    "attempted": 0,
+    "applied": 0,
+    "model_patch_applied": 0,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 0,
     "stripped": 0,
     "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 7,
-    "resolved_in_place": 7,
+    "resolved": 0,
+    "resolved_in_place": 0,
     "resolved_by_replacement": 0,
     "resolved_by_removal": 0,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 7,
+    "enrich_attempted": 0,
     "post_check_errors": [],
-    "geo_contract_rejected": [
-      {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "geo_scope": "gm",
-        "reason": "Событие произошло на A31, что находится за пределами Greater Manchester, и не соответствует geo_scope.",
-        "gm_anchor_present": true
-      }
-    ],
+    "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
-    "actions": [
-      {
-        "line_index": 4,
-        "section": "Свежие новости",
-        "requested_action": "patch",
-        "reason": "Исправление ошибки перевода для ясности.",
-        "risk": "translation",
-        "critical_error": true,
-        "critical_problem": "Ошибка в тексте: 'разогналсямиль в час' вместо 'разогнался до 100 миль в час'.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "last_24h-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-stolen-vans-reckless-100mph-attempt-34459401-45b9372f4f79",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/stolen-vans-reckless-100mph-attempt-34459401",
-        "original_html": "• Во время полицейской погони за угнанным фургоном, которая проходила через Bolton, Wigan и Чорли 14 августа, водитель разогналсямиль в час, в результате чего пострадал велосипедист. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/stolen-vans-reckless-100mph-attempt-34459401\">MEN</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 18,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Неверное имя игрока: Луи Пейдж вместо Луис Бейдж.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неверное имя игрока.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "football-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-manchester-united-transfer-news-live-34436279-4ff5e963e151",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/manchester-united-transfer-news-live-34436279",
-        "original_html": "• Манчестер Юнайтед близок к подписанию Луи Пейджа из Лестера за 10 миллионов фунтов плюс бонусы, что станет их четвертым подписанием этим летом. Также клуб интересуется Адамом Уортоном и Ибрагимом Мбае. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/manchester-united-transfer-news-live-34436279\">MEN Manchester United</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 21,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события должна быть 9 августа, а не 16 августа.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-03",
-        "candidate_fingerprint": "event-event-the-big-stockport-car-boot-romiley-2026-08-09-waterside-farm-otterspool-road-romiley-stockport-sk6-3lq-0bf252120a45",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
-        "original_html": "• 16 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход бесплатный для покупателей, £10 для продавцов. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 30,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Уточнение фактической информации о статусе театра.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Текст содержит ошибку в описании события. Театр не откроется для культурного использования, а только получил финансирование для создания временной площадки.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-07",
-        "candidate_fingerprint": "url-wigan-gov-uk-news-articles-2026-august-ef-bb-bfroyal-court-theatre-set-to-welcome-audiences-again-following-new-funding-boost-aspx-342014c0eff5",
-        "original_url_identity": "wigan.gov.uk/News/Articles/2026/August/%ef%bb%bfRoyal-Court-Theatre-set-to-welcome-audiences-again-following-new-funding-boost.aspx",
-        "original_html": "• Королевский театр Вигана получил дополнительное финансирование для создания временной площадки на 250 мест и вновь откроется для культурного использования. <a href=\"https://wigan.gov.uk/News/Articles/2026/August/%ef%bb%bfRoyal-Court-Theatre-set-to-welcome-audiences-again-following-new-funding-boost.aspx\">Wigan Council</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 34,
-        "section": "IT и бизнес",
-        "requested_action": "patch",
-        "reason": "Завершение предложения для ясности.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Неполное предложение, отсутствует окончание.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "tech_business-03",
-        "candidate_fingerprint": "url-manchesterdigital-com-post-manchester-digital-nimble-approach-help-bring-t-connect-project-to-life-459f94aed2f5",
-        "original_url_identity": "manchesterdigital.com/post/manchester-digital/nimble-approach-help-bring-t-connect-project-to-life",
-        "original_html": "• Nimble Approach предоставил волонтеров для менторства студентов T Level в рамках программы T Connect от <a href=\"https://manchesterdigital.com/post/manchester-digital/nimble-approach-help-bring-t-connect-project-to-life\">Manchester Digital</a>",
-        "verification": "judge correction matches the existing visible facts",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 37,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Исправление неверной даты и времени события.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана дважды, и одна из них неверна.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "ticket_radar-03",
-        "candidate_fingerprint": "event-event-collectorcon-collectorcon-sun-18th-oct-12-00-buy-2026-10-18-manchester-academy-bf0cad1f0d12",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13380849/collectorcon-manchester-academy-2026-10-18-12-00-00",
-        "original_html": "• <b>Collectorcon Collectorcon Sun 18th Oct, 12</b> — 18 октября, Manchester Academy. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13380849/collectorcon-manchester-academy-2026-10-18-12-00-00\">Manchester Academy</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 43,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Исправлено название события и место проведения.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильное название события и место проведения.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "outside_gm_tickets-06",
-        "candidate_fingerprint": "event-event-all-points-east-lorde-2026-08-22-victoria-park-london-56cdc5df6cac",
-        "original_url_identity": "ticketmaster.co.uk/all-points-east-lorde-london-22-08-2026/event/37006364B4B15CA1",
-        "original_html": "• <b>Edinburgh Summer Sessions</b> — тур: 22 августа, Victoria Park London; 25 августа, Royal Highland Showgrounds. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/all-points-east-lorde-london-22-08-2026/event/37006364B4B15CA1\">Ticketmaster</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      }
-    ],
-    "operations": [
-      {
-        "group_key": "свежие новости::исправление ошибки перевода для ясности.",
-        "actions": [
-          {
-            "line_index": 4,
-            "section": "Свежие новости",
-            "requested_action": "patch",
-            "reason": "Исправление ошибки перевода для ясности.",
-            "risk": "translation",
-            "critical_error": true,
-            "critical_problem": "Ошибка в тексте: 'разогналсямиль в час' вместо 'разогнался до 100 миль в час'.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "last_24h-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-stolen-vans-reckless-100mph-attempt-34459401-45b9372f4f79",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/stolen-vans-reckless-100mph-attempt-34459401",
-            "original_html": "• Во время полицейской погони за угнанным фургоном, которая проходила через Bolton, Wigan и Чорли 14 августа, водитель разогналсямиль в час, в результате чего пострадал велосипедист. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/stolen-vans-reckless-100mph-attempt-34459401\">MEN</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 4,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::неверное имя игрока: луи пейдж вместо луис бейдж.",
-        "actions": [
-          {
-            "line_index": 18,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Неверное имя игрока: Луи Пейдж вместо Луис Бейдж.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неверное имя игрока.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-manchester-united-transfer-news-live-34436279-4ff5e963e151",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/manchester-united-transfer-news-live-34436279",
-            "original_html": "• Манчестер Юнайтед близок к подписанию Луи Пейджа из Лестера за 10 миллионов фунтов плюс бонусы, что станет их четвертым подписанием этим летом. Также клуб интересуется Адамом Уортоном и Ибрагимом Мбае. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/manchester-united-transfer-news-live-34436279\">MEN Manchester United</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 18,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дата события должна быть 9 августа, а не 16 августа.",
-        "actions": [
-          {
-            "line_index": 21,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события должна быть 9 августа, а не 16 августа.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-03",
-            "candidate_fingerprint": "event-event-the-big-stockport-car-boot-romiley-2026-08-09-waterside-farm-otterspool-road-romiley-stockport-sk6-3lq-0bf252120a45",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
-            "original_html": "• 16 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход бесплатный для покупателей, £10 для продавцов. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 21,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::уточнение фактической информации о статусе театра.",
-        "actions": [
-          {
-            "line_index": 30,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Уточнение фактической информации о статусе театра.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Текст содержит ошибку в описании события. Театр не откроется для культурного использования, а только получил финансирование для создания временной площадки.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-07",
-            "candidate_fingerprint": "url-wigan-gov-uk-news-articles-2026-august-ef-bb-bfroyal-court-theatre-set-to-welcome-audiences-again-following-new-funding-boost-aspx-342014c0eff5",
-            "original_url_identity": "wigan.gov.uk/News/Articles/2026/August/%ef%bb%bfRoyal-Court-Theatre-set-to-welcome-audiences-again-following-new-funding-boost.aspx",
-            "original_html": "• Королевский театр Вигана получил дополнительное финансирование для создания временной площадки на 250 мест и вновь откроется для культурного использования. <a href=\"https://wigan.gov.uk/News/Articles/2026/August/%ef%bb%bfRoyal-Court-Theatre-set-to-welcome-audiences-again-following-new-funding-boost.aspx\">Wigan Council</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 30,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "it и бизнес::завершение предложения для ясности.",
-        "actions": [
-          {
-            "line_index": 34,
-            "section": "IT и бизнес",
-            "requested_action": "patch",
-            "reason": "Завершение предложения для ясности.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Неполное предложение, отсутствует окончание.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "tech_business-03",
-            "candidate_fingerprint": "url-manchesterdigital-com-post-manchester-digital-nimble-approach-help-bring-t-connect-project-to-life-459f94aed2f5",
-            "original_url_identity": "manchesterdigital.com/post/manchester-digital/nimble-approach-help-bring-t-connect-project-to-life",
-            "original_html": "• Nimble Approach предоставил волонтеров для менторства студентов T Level в рамках программы T Connect от <a href=\"https://manchesterdigital.com/post/manchester-digital/nimble-approach-help-bring-t-connect-project-to-life\">Manchester Digital</a>",
-            "verification": "judge correction matches the existing visible facts",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 34,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::исправление неверной даты и времени события.",
-        "actions": [
-          {
-            "line_index": 37,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "patch",
-            "reason": "Исправление неверной даты и времени события.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана дважды, и одна из них неверна.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "ticket_radar-03",
-            "candidate_fingerprint": "event-event-collectorcon-collectorcon-sun-18th-oct-12-00-buy-2026-10-18-manchester-academy-bf0cad1f0d12",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13380849/collectorcon-manchester-academy-2026-10-18-12-00-00",
-            "original_html": "• <b>Collectorcon Collectorcon Sun 18th Oct, 12</b> — 18 октября, Manchester Academy. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13380849/collectorcon-manchester-academy-2026-10-18-12-00-00\">Manchester Academy</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 37,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "крупные концерты вне gm::исправлено название события и место проведения.",
-        "actions": [
-          {
-            "line_index": 43,
-            "section": "Крупные концерты вне GM",
-            "requested_action": "patch",
-            "reason": "Исправлено название события и место проведения.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неправильное название события и место проведения.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "outside_gm_tickets-06",
-            "candidate_fingerprint": "event-event-all-points-east-lorde-2026-08-22-victoria-park-london-56cdc5df6cac",
-            "original_url_identity": "ticketmaster.co.uk/all-points-east-lorde-london-22-08-2026/event/37006364B4B15CA1",
-            "original_html": "• <b>Edinburgh Summer Sessions</b> — тур: 22 августа, Victoria Park London; 25 августа, Royal Highland Showgrounds. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/all-points-east-lorde-london-22-08-2026/event/37006364B4B15CA1\">Ticketmaster</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 43,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      }
-    ],
-    "refetch": {
-      "attempted": 0,
-      "improved": 0,
-      "failed": 0,
-      "empty_or_not_better": 0,
-      "skipped": 2,
-      "reports": [
-        {
-          "fingerprint": "event-event-collectorcon-collectorcon-sun-18th-oct-12-00-buy-2026-10-18-manchester-academy-bf0cad1f0d12",
-          "title": "Collectorcon Collectorcon Sun 18th Oct, 12:00 BUY",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://manchesteracademy.net/order/gateway/13380849/collectorcon-manchester-academy-2026-10-18-12-00-00",
-          "candidate_evidence_chars": 99
-        },
-        {
-          "fingerprint": "event-event-all-points-east-lorde-2026-08-22-victoria-park-london-56cdc5df6cac",
-          "title": "All Points East - Lorde — event 2026-08-22 — public sale 2025-11-20 09:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/all-points-east-lorde-london-22-08-2026/event/37006364B4B15CA1",
-          "candidate_evidence_chars": 363
-        }
-      ]
-    },
-    "enrich_improved": 7,
-    "false_positive_existing_fact": 6,
+    "actions": [],
+    "operations": [],
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 45,
-      "matched_lines": 45,
-      "applicable_lines": 0,
+      "checked_lines": 44,
+      "matched_lines": 44,
+      "applicable_lines": 1,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -656,154 +152,28 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 45,
-      "resolved_in_place": 45,
+      "checked_lines": 44,
+      "resolved_in_place": 44,
       "unresolved": 0,
       "findings": []
     },
     "status": "resolved"
   },
-  "notes": "Строка соответствует требованиям: событие в GM, информация актуальна и соответствует источнику.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка перевода в строке о полицейской погоне.; Строка о поломке автобуса National Express не соответствует географическому контракту.; Ошибка в име",
+  "notes": "pre-send judge failed before producing usable verdicts",
   "raw": {
-    "decision": "repair_required",
-    "confidence": 0.85,
-    "critical_errors": [
-      {
-        "line_index": 4,
-        "section": "Свежие новости",
-        "problem": "Ошибка в тексте: 'разогналсямиль в час' вместо 'разогнался до 100 миль в час'.",
-        "risk": "translation",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Событие произошло за пределами Greater Manchester, но представлено как местное.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 18,
-        "section": "Футбол",
-        "problem": "Неверное имя игрока.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 21,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 30,
-        "section": "Городской радар",
-        "problem": "Текст содержит ошибку в описании события. Театр не откроется для культурного использования, а только получил финансирование для создания временной площадки.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 34,
-        "section": "IT и бизнес",
-        "problem": "Неполное предложение, отсутствует окончание.",
-        "risk": "format",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 37,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дата события указана дважды, и одна из них неверна.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 43,
-        "section": "Крупные концерты вне GM",
-        "problem": "Неправильное название события и место проведения.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      }
-    ],
-    "actions": [
-      {
-        "line_index": 4,
-        "section": "Свежие новости",
-        "action": "patch",
-        "replacement_text": "• Во время полицейской погони за угнанным фургоном, которая проходила через Bolton, Wigan и Чорли 14 августа, водитель разогнался до 100 миль в час, в результате чего пострадал велосипедист.",
-        "reason": "Исправление ошибки перевода для ясности.",
-        "risk": "translation"
-      },
-      {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "action": "strip",
-        "reason": "Событие произошло на A31, что находится за пределами Greater Manchester, и не соответствует geo_scope.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 18,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Манчестер Юнайтед близок к подписанию Луиса Бейджа из Лестера за 10 миллионов фунтов плюс бонусы, что станет их четвертым подписанием этим летом. Также клуб интересуется Адамом Уортоном и Ибрагимом Мбае.",
-        "reason": "Неверное имя игрока: Луи Пейдж вместо Луис Бейдж.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 21,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 9 августа в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход бесплатный для покупателей, £10 для продавцов.",
-        "reason": "Дата события должна быть 9 августа, а не 16 августа.",
-        "risk": "date"
-      },
-      {
-        "line_index": 30,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Королевский театр Вигана получил дополнительное финансирование для создания временной площадки на 250 мест, что является шагом к его будущему открытию для культурного использования.",
-        "reason": "Уточнение фактической информации о статусе театра.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 34,
-        "section": "IT и бизнес",
-        "action": "patch",
-        "replacement_text": "• Nimble Approach предоставил волонтеров для менторства студентов T Level в рамках программы T Connect от Manchester Digital.",
-        "reason": "Завершение предложения для ясности.",
-        "risk": "format"
-      },
-      {
-        "line_index": 37,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Collectorcon — 18 октября, 12:00, Manchester Academy. Билеты и время указаны на официальной странице.",
-        "reason": "Исправление неверной даты и времени события.",
-        "risk": "date"
-      },
-      {
-        "line_index": 43,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• All Points East — 22 августа, Victoria Park London; 25 августа, Royal Highland Showgrounds. Билеты и время указаны на официальной странице.",
-        "reason": "Исправлено название события и место проведения.",
-        "risk": "factual"
-      }
-    ],
+    "decision": "block",
+    "confidence": 0.0,
+    "critical_errors": [],
+    "actions": [],
     "warnings": [
-      "Отсутствие блока 'Что важно сегодня' снижает полноту выпуска.",
-      "Блок 'Выходные в GM' содержит только 5 элементов, что ниже минимального порога в 6."
+      "all judge calls failed: 13 failure(s)"
     ],
-    "notes": "Строка соответствует требованиям: событие в GM, информация актуальна и соответствует источнику.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка перевода в строке о полицейской погоне.; Строка о поломке автобуса National Express не соответствует географическому контракту.; Ошибка в име",
+    "notes": "pre-send judge failed before producing usable verdicts",
     "map_reduce": {
-      "mode": "map_reduce",
-      "status": "ok",
-      "chunk_count": 11,
-      "failed_chunk_count": 0,
       "chunks": [
         {
           "chunk_id": "chunk-01",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
             1,
             1
@@ -811,17 +181,17 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "pass",
+          "decision": "",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2748,
-          "duration_seconds": 1.548
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
+          "estimated_tokens": 2680,
+          "duration_seconds": 1.185
         },
         {
           "chunk_id": "chunk-02",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
             2,
             2
@@ -829,189 +199,207 @@
           "sections": [
             "Погода"
           ],
-          "decision": "pass",
+          "decision": "",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2430,
-          "duration_seconds": 1.578
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
+          "estimated_tokens": 2463,
+          "duration_seconds": 0.934
         },
         {
           "chunk_id": "chunk-03",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
             3,
-            11
+            9
           ],
           "sections": [
             "Свежие новости"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 7203,
-          "duration_seconds": 3.054
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
+          "estimated_tokens": 6033,
+          "duration_seconds": 0.966
         },
         {
           "chunk_id": "chunk-04",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
-            12,
-            15
+            10,
+            14
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 4116,
-          "duration_seconds": 2.862
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
+          "estimated_tokens": 4979,
+          "duration_seconds": 0.517
         },
         {
           "chunk_id": "chunk-05",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
-            16,
-            18
+            15,
+            17
           ],
           "sections": [
             "Футбол"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3661,
-          "duration_seconds": 2.823
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
+          "estimated_tokens": 3692,
+          "duration_seconds": 0.562
         },
         {
           "chunk_id": "chunk-06",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
-            19,
-            23
+            18,
+            26
           ],
           "sections": [
             "Выходные в GM"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 5139,
-          "duration_seconds": 2.682
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
+          "estimated_tokens": 7883,
+          "duration_seconds": 53.207
         },
         {
           "chunk_id": "chunk-07",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
-            24,
+            27,
             31
           ],
           "sections": [
             "Городской радар"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 6352,
-          "duration_seconds": 45.7
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
+          "estimated_tokens": 5123,
+          "duration_seconds": 0.632
         },
         {
           "chunk_id": "chunk-08",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
             32,
-            34
+            32
           ],
           "sections": [
             "IT и бизнес"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3762,
-          "duration_seconds": 2.821
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
+          "estimated_tokens": 2731,
+          "duration_seconds": 0.659
         },
         {
           "chunk_id": "chunk-09",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
-            35,
-            37
+            33,
+            35
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
+          "estimated_tokens": 3924,
+          "duration_seconds": 14.631
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "failed",
+          "line_range": [
+            36,
+            36
           ],
           "sections": [
             "Билеты / Ticket Radar"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3750,
-          "duration_seconds": 10.051
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
+          "estimated_tokens": 2645,
+          "duration_seconds": 5.936
         },
         {
-          "chunk_id": "chunk-10",
-          "status": "ok",
+          "chunk_id": "chunk-11",
+          "status": "failed",
           "line_range": [
-            38,
-            44
+            37,
+            43
           ],
           "sections": [
             "Крупные концерты вне GM"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
           "estimated_tokens": 6192,
-          "duration_seconds": 28.581
+          "duration_seconds": 28.584
         },
         {
-          "chunk_id": "chunk-11",
-          "status": "ok",
+          "chunk_id": "chunk-12",
+          "status": "failed",
           "line_range": [
-            45,
-            45
+            44,
+            44
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
           ],
-          "decision": "pass",
+          "decision": "",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
-          "error": "",
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
           "estimated_tokens": 2771,
-          "duration_seconds": 4.889
+          "duration_seconds": 6.138
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "ok",
+        "status": "failed",
         "line_range": [],
         "sections": [],
-        "decision": "warn",
+        "decision": "",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 2,
-        "error": "",
-        "estimated_tokens": 10705,
-        "duration_seconds": 25.302
+        "warning_count": 0,
+        "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
+        "estimated_tokens": 11900,
+        "duration_seconds": 26.248
       },
       "max_workers": 3,
       "chunk_line_target": 12,
