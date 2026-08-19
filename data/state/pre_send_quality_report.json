@@ -2,29 +2,20 @@
   "status": "failed",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 1 repair(s); every operation passed its post-check",
+  "reason": "pre-send judge requested a hold without an executable repair; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-08-18",
-  "pipeline_run_id": "20260818T080133+0100",
-  "digest_sha256": "c81faab804dbebb1a2859cf37528e57b006f5dbd17eb05acdda2aad4514dadc1",
-  "duration_seconds": 66.452,
+  "run_date_london": "2026-08-19",
+  "pipeline_run_id": "20260819T080139+0100",
+  "digest_sha256": "986a2d0d74e9228f6570104ee23811119e3ac95a712897aac004a8141114bc3a",
+  "duration_seconds": 60.067,
   "confidence": 0.0,
-  "critical_errors": [
-    {
-      "line_index": 8,
-      "section": "Свежие новости",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "weapon_violence"
-    }
-  ],
+  "critical_errors": [],
   "actions": [],
   "warnings": [
-    "all judge calls failed: 12 failure(s)"
+    "all judge calls failed: 11 failure(s)"
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -33,62 +24,64 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 4,
+      "Общественный транспорт сегодня": 6,
       "Что важно сегодня": 1,
-      "Футбол": 3,
-      "Городской радар": 7,
-      "IT и бизнес": 2,
-      "Билеты / Ticket Radar": 2,
-      "Крупные концерты вне GM": 5,
-      "Русскоязычные концерты и стендап UK": 3
+      "Футбол": 2,
+      "Городской радар": 8,
+      "IT и бизнес": 3,
+      "Билеты / Ticket Radar": 1,
+      "Крупные концерты вне GM": 7
     },
     "core_counts": {
       "Погода": 1,
       "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 7,
-      "Билеты / Ticket Radar": 2,
-      "Русскоязычные концерты и стендап UK": 3,
+      "Городской радар": 8,
+      "Билеты / Ticket Radar": 1,
+      "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
-      "Футбол": 3
+      "Футбол": 2
     },
-    "ticket_items": 10,
+    "ticket_items": 8,
     "core_items": 22,
     "writer_quality_counts": {
       "included_candidates": 40,
-      "rendered_candidates": 38,
+      "rendered_candidates": 39,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 0,
-      "replaced_from_plan_backup": 2,
-      "removed_with_reason": 0
+      "dropped_low_quality": 1,
+      "replaced_from_plan_backup": 0,
+      "removed_with_reason": 1
     },
     "source_health_counts": {
-      "ok": 99,
+      "ok": 109,
       "partial": 0,
-      "stale": 10,
-      "empty": 13,
-      "failed": 0,
-      "zero_yield": 70,
+      "stale": 6,
+      "empty": 7,
+      "failed": 1,
+      "zero_yield": 80,
       "no_contribution_breakdown": {
-        "fetch_failed": 0,
-        "all_rejected": 70,
-        "idle_no_items": 33
+        "fetch_failed": 1,
+        "all_rejected": 80,
+        "idle_no_items": 24
       },
       "zero_contribution_by_stage": {
-        "selected": 35,
-        "written": 35,
-        "parsed": 33
+        "written": 43,
+        "selected": 37,
+        "parsed": 24,
+        "fetched": 1
       },
       "weekend_source_coverage_incidents": 54
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 1 item(s), emergency floor 3",
+      "Билеты / Ticket Radar: 1 item(s), emergency floor 2",
+      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "Business/tech события для тебя: 0 item(s), emergency floor 1"
     ]
@@ -107,115 +100,46 @@
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 38,
-    "matched_lines": 38,
-    "applicable_lines": 5,
+    "checked_lines": 39,
+    "matched_lines": 39,
+    "applicable_lines": 4,
     "unmatched_lines": 0,
-    "critical_omission_count": 1,
-    "critical_omissions": [
-      {
-        "line_index": 8,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/park-reopens-after-man-24-34472219",
-        "concept": "weapon_violence",
-        "obligation": "who/what",
-        "source_hit": "stabbed"
-      }
-    ],
+    "critical_omission_count": 0,
+    "critical_omissions": [],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 1,
+    "pulled_for_rework": 0,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 1,
-    "attempted": 1,
-    "applied": 1,
+    "requested": 0,
+    "attempted": 0,
+    "applied": 0,
     "model_patch_applied": 0,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 1,
+    "reserve_replacement_used": 0,
     "stripped": 0,
     "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 1,
+    "resolved": 0,
     "resolved_in_place": 0,
-    "resolved_by_replacement": 1,
+    "resolved_by_replacement": 0,
     "resolved_by_removal": 0,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 1,
+    "enrich_attempted": 0,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
-    "actions": [
-      {
-        "line_index": 8,
-        "section": "Свежие новости",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-        "risk": "translation",
-        "critical_error": true,
-        "critical_problem": "",
-        "completeness_concept": "weapon_violence",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-06",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-park-reopens-after-man-24-34472219-0f4675cdebc3",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/park-reopens-after-man-24-34472219",
-        "original_html": "• Парк на Chapel Street в Levenshulme снова открыт после убийства 24-летнего мужчины; 27-летний подозреваемый отпущен под залог, полиция считает нападение изолированным. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/park-reopens-after-man-24-34472219\">MEN Latest News</a>",
-        "replacement_fingerprint": "url-bbc-com-news-articles-c86nxpvz536o-186c432f442a",
-        "post_check_passed": true
-      }
-    ],
-    "operations": [
-      {
-        "group_key": "свежие новости::critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no russian rendering in the shipped line",
-        "actions": [
-          {
-            "line_index": 8,
-            "section": "Свежие новости",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-            "risk": "translation",
-            "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "weapon_violence",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-06",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-park-reopens-after-man-24-34472219-0f4675cdebc3",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/park-reopens-after-man-24-34472219",
-            "original_html": "• Парк на Chapel Street в Levenshulme снова открыт после убийства 24-летнего мужчины; 27-летний подозреваемый отпущен под залог, полиция считает нападение изолированным. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/park-reopens-after-man-24-34472219\">MEN Latest News</a>",
-            "replacement_fingerprint": "url-bbc-com-news-articles-c86nxpvz536o-186c432f442a",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 8,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      }
-    ],
-    "refetch": {
-      "attempted": 0,
-      "improved": 0,
-      "failed": 0,
-      "empty_or_not_better": 0,
-      "skipped": 0
-    },
-    "enrich_improved": 1,
-    "deterministic_rewrite_rejected": 1,
+    "actions": [],
+    "operations": [],
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 38,
-      "matched_lines": 38,
-      "applicable_lines": 5,
+      "checked_lines": 39,
+      "matched_lines": 39,
+      "applicable_lines": 4,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -227,8 +151,8 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 38,
-      "resolved_in_place": 38,
+      "checked_lines": 39,
+      "resolved_in_place": 39,
       "unresolved": 0,
       "findings": []
     },
@@ -241,7 +165,7 @@
     "critical_errors": [],
     "actions": [],
     "warnings": [
-      "all judge calls failed: 12 failure(s)"
+      "all judge calls failed: 11 failure(s)"
     ],
     "notes": "pre-send judge failed before producing usable verdicts",
     "map_reduce": {
@@ -261,8 +185,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 2699,
-          "duration_seconds": 0.962
+          "estimated_tokens": 2638,
+          "duration_seconds": 0.88
         },
         {
           "chunk_id": "chunk-02",
@@ -279,8 +203,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 2460,
-          "duration_seconds": 0.971
+          "estimated_tokens": 2464,
+          "duration_seconds": 0.937
         },
         {
           "chunk_id": "chunk-03",
@@ -297,15 +221,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 7031,
-          "duration_seconds": 1.074
+          "estimated_tokens": 7264,
+          "duration_seconds": 0.954
         },
         {
           "chunk_id": "chunk-04",
           "status": "failed",
           "line_range": [
             12,
-            15
+            17
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -315,15 +239,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 4297,
-          "duration_seconds": 0.555
+          "estimated_tokens": 4724,
+          "duration_seconds": 0.468
         },
         {
           "chunk_id": "chunk-05",
           "status": "failed",
           "line_range": [
-            16,
-            16
+            18,
+            18
           ],
           "sections": [
             "Что важно сегодня"
@@ -333,15 +257,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 2658,
-          "duration_seconds": 0.58
+          "estimated_tokens": 2629,
+          "duration_seconds": 0.567
         },
         {
           "chunk_id": "chunk-06",
           "status": "failed",
           "line_range": [
-            17,
-            19
+            19,
+            20
           ],
           "sections": [
             "Футбол"
@@ -351,15 +275,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 3673,
-          "duration_seconds": 0.52
+          "estimated_tokens": 3193,
+          "duration_seconds": 0.515
         },
         {
           "chunk_id": "chunk-07",
           "status": "failed",
           "line_range": [
-            20,
-            26
+            21,
+            28
           ],
           "sections": [
             "Городской радар"
@@ -369,15 +293,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 6058,
-          "duration_seconds": 37.665
+          "estimated_tokens": 6413,
+          "duration_seconds": 32.411
         },
         {
           "chunk_id": "chunk-08",
           "status": "failed",
           "line_range": [
-            27,
-            28
+            29,
+            31
           ],
           "sections": [
             "IT и бизнес"
@@ -387,15 +311,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 3100,
-          "duration_seconds": 0.563
+          "estimated_tokens": 3614,
+          "duration_seconds": 0.539
         },
         {
           "chunk_id": "chunk-09",
           "status": "failed",
           "line_range": [
-            29,
-            30
+            32,
+            32
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -405,15 +329,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 3344,
-          "duration_seconds": 4.01
+          "estimated_tokens": 2801,
+          "duration_seconds": 4.192
         },
         {
           "chunk_id": "chunk-10",
           "status": "failed",
           "line_range": [
-            31,
-            35
+            33,
+            39
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -423,26 +347,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 5099,
-          "duration_seconds": 23.621
-        },
-        {
-          "chunk_id": "chunk-11",
-          "status": "failed",
-          "line_range": [
-            36,
-            38
-          ],
-          "sections": [
-            "Русскоязычные концерты и стендап UK"
-          ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 3966,
-          "duration_seconds": 8.874
+          "estimated_tokens": 6213,
+          "duration_seconds": 17.553
         }
       ],
       "reduce": {
@@ -455,8 +361,8 @@
         "action_count": 0,
         "warning_count": 0,
         "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-        "estimated_tokens": 11284,
-        "duration_seconds": 25.43
+        "estimated_tokens": 11230,
+        "duration_seconds": 25.036
       },
       "max_workers": 3,
       "chunk_line_target": 12,
