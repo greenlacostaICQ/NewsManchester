@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "run_date_london": "2026-08-19",
-  "created_at_london": "2026-08-19T08:18:34.600573+01:00",
+  "run_date_london": "2026-08-20",
+  "created_at_london": "2026-08-20T08:19:00.956263+01:00",
   "policy": "Every candidate must have selected / reserve / needs_enrichment / drop. Pending dedupe is not a valid final state.",
   "totals": {
-    "selected": 138,
-    "reserve": 92,
+    "selected": 134,
+    "reserve": 85,
     "needs_enrichment": 1,
-    "drop": 257,
+    "drop": 260,
     "pending": 0
   },
   "pending_dedupe_left": [],
@@ -21,59 +21,117 @@
       "drop": 0,
       "examples": []
     },
-    "last_24h": {
-      "heading": "Свежие новости",
-      "total": 111,
-      "selected": 35,
-      "reserve": 6,
-      "needs_enrichment": 0,
-      "drop": 70,
+    "city_watch": {
+      "heading": "Городской радар",
+      "total": 73,
+      "selected": 27,
+      "reserve": 16,
+      "needs_enrichment": 1,
+      "drop": 29,
       "examples": [
         {
           "verdict": "drop",
-          "title": "Teen completes seven GCSE exams over five months with his eyes",
+          "title": "Nearly all unregistered HMOs in Salford deemed unsafe",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate remains suppressed after history checks. LLM-review: Заголовок и содержание идентичны прошлой публикации, новых фактов нет."
+        },
+        {
+          "verdict": "reserve",
+          "title": "The 'magpie-like' London con artist who posed in Warwickshire as a house sitter",
+          "source_label": "BBC Manchester Web",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "drop",
+          "title": "Victim named as police make second arrest in Levenshulme murder probe",
+          "source_label": "MEN Latest News",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "The new eyes in the sky policing Manchester from 200 miles away in London",
+          "source_label": "MEN Latest News",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: story is centred outside Greater Manchester; publisher section chrome was ignored."
+        },
+        {
+          "verdict": "drop",
+          "title": "New mayor Bev Craig announces free bus travel for 11-18 year olds across Greater Manchester",
+          "source_label": "ITV Granada Greater Manchester",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Bev Craig promises 'big reveal' in first day as new Greater Manchester mayor",
+          "source_label": "ITV Granada Greater Manchester",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Andy Burnham hails Bev Craig 'Queen of the North' as she becomes Greater Manchester Mayor",
+          "source_label": "ITV Granada Greater Manchester",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "reserve",
+          "title": "'I will defend this city region with every bone in my body': Bev Craig's victory speech in full",
+          "source_label": "ITV Granada Greater Manchester",
+          "reason": "Held as same-block backup for recovery."
+        }
+      ]
+    },
+    "last_24h": {
+      "heading": "Свежие новости",
+      "total": 115,
+      "selected": 25,
+      "reserve": 9,
+      "needs_enrichment": 0,
+      "drop": 81,
+      "examples": [
+        {
+          "verdict": "drop",
+          "title": "Godmother of rock and roll's Manchester station gig honoured",
           "source_label": "BBC Manchester",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=news, anchor=none, tier=filler)."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=soft_news, anchor=none, tier=filler)."
         },
         {
           "verdict": "drop",
-          "title": "Wroxham mausoleum with Trafford Park link get listed status upgrade",
+          "title": "Blackley stabbing victim 'will live forever in our hearts'",
           "source_label": "BBC Manchester",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=planning, anchor=none, tier=filler)."
-        },
-        {
-          "verdict": "drop",
-          "title": "Airport boss defends £453m car parking income",
-          "source_label": "BBC Manchester Web",
           "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         },
         {
-          "verdict": "drop",
-          "title": "Man stabbed in Levenshulme named after second murder arrest",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+          "verdict": "reserve",
+          "title": "Manchester Airport boss defends car parking income",
+          "source_label": "BBC Manchester",
+          "reason": "Held as same-block backup for recovery."
         },
         {
           "verdict": "drop",
-          "title": "Oldham housing estate could be built in \"beautiful\" valley",
-          "source_label": "BBC Manchester Web",
+          "title": "Levenshulme stabbing victim 'loved and respected by friends'",
+          "source_label": "BBC Manchester",
           "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         },
         {
-          "verdict": "drop",
-          "title": "Funding boost for historic Wigan Royal Court Theatre",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
+          "verdict": "reserve",
           "title": "Cheadle mental health wards ordered to improve upgraded to 'good'",
+          "source_label": "BBC Manchester",
+          "reason": "Board rejected: duplicate"
+        },
+        {
+          "verdict": "drop",
+          "title": "The man who vowed to stop 'inhumane treatment of climbing boys'",
           "source_label": "BBC Manchester Web",
           "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         },
         {
           "verdict": "drop",
-          "title": "Ex Man-Utd player Paul Scholes banned from driving",
+          "title": "Godmother of rock and roll's Manchester station gig honoured",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "'It was hard to adjust after sleeping rough for a year'",
           "source_label": "BBC Manchester Web",
           "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         }
@@ -88,135 +146,31 @@
       "drop": 0,
       "examples": []
     },
-    "city_watch": {
-      "heading": "Городской радар",
-      "total": 72,
-      "selected": 24,
-      "reserve": 15,
-      "needs_enrichment": 1,
-      "drop": 32,
-      "examples": [
-        {
-          "verdict": "reserve",
-          "title": "The 'magpie-like' London con artist who posed in Warwickshire as a house sitter",
-          "source_label": "BBC Manchester Web",
-          "reason": "Held as same-block backup for recovery."
-        },
-        {
-          "verdict": "drop",
-          "title": "Man charged after Salford rooftop stand-off ends",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "The Mancunian Way: A world-class future?",
-          "source_label": "MEN",
-          "reason": "Visible repeat policy allows this item: concrete_story_change:declared. | Validator: editorial_contract rejected item (story_type=civic, anchor=none, tier=filler)."
-        },
-        {
-          "verdict": "drop",
-          "title": "The Mancunian Way: A world-class future?",
-          "source_label": "MEN Latest News",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "The Mancunian Way: A world-class future?",
-          "source_label": "MEN News Sitemap",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "reserve",
-          "title": "'Weird' maths teacher who touched girl pupils hair and sang 'I love you' banned from schools",
-          "source_label": "MEN News Sitemap",
-          "reason": "Board rejected: duplicate"
-        },
-        {
-          "verdict": "drop",
-          "title": "New mayor Bev Craig announces free bus travel for 11-18 year olds across Greater Manchester",
-          "source_label": "ITV Granada Greater Manchester",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Bev Craig promises 'big reveal' in first day as new Greater Manchester mayor",
-          "source_label": "ITV Granada Greater Manchester",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        }
-      ]
-    },
     "transport": {
       "heading": "Общественный транспорт сегодня",
-      "total": 8,
+      "total": 9,
       "selected": 6,
       "reserve": 1,
       "needs_enrichment": 0,
-      "drop": 1,
+      "drop": 2,
       "examples": [
+        {
+          "verdict": "drop",
+          "title": "Fallen tree leads to train cancellations in Greater Manchester",
+          "source_label": "MEN News Sitemap",
+          "reason": "Transport: ограничение закончилось в 10:30 — до времени планирования выпуска."
+        },
         {
           "verdict": "drop",
           "title": "Tram works - Rochdale via Oldham Line",
           "source_label": "TfGM",
-          "reason": "Visible repeat policy allows this item: operational_anchor:service_status. | Validator: transport item has no passenger movement impact and cannot be shown in Transport or borrowed by another public block."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: transport item has no passenger movement impact and cannot be shown in Transport or borrowed by another public block."
         },
         {
           "verdict": "reserve",
-          "title": "Talbot Road, Hyde - Bus Stop Closure",
+          "title": "Calderbrook Road, Littleborough - Bus Stop Closure",
           "source_label": "TfGM",
           "reason": "Held as same-block backup for recovery."
-        }
-      ]
-    },
-    "tech_business": {
-      "heading": "IT и бизнес",
-      "total": 15,
-      "selected": 8,
-      "reserve": 2,
-      "needs_enrichment": 0,
-      "drop": 5,
-      "examples": [
-        {
-          "verdict": "reserve",
-          "title": "Bolton man immediately admitted all to police after officers stormed his home",
-          "source_label": "MEN News Sitemap",
-          "reason": "Board rejected: outside_scope, crime"
-        },
-        {
-          "verdict": "drop",
-          "title": "Prolific North",
-          "source_label": "Prolific North Manchester",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Prolific North",
-          "source_label": "Prolific North Manchester",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Prolific North",
-          "source_label": "Prolific North Manchester",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Prolific North",
-          "source_label": "Prolific North Manchester",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "reserve",
-          "title": "World-first AI Partnership Between The University of Manchester and Microsoft Announced",
-          "source_label": "MIDAS Manchester",
-          "reason": "Held as same-block backup for recovery."
-        },
-        {
-          "verdict": "drop",
-          "title": "INVEST MANCHESTER Monthly | August 2026",
-          "source_label": "MIDAS Manchester",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         }
       ]
     },
@@ -236,13 +190,35 @@
         }
       ]
     },
+    "tech_business": {
+      "heading": "IT и бизнес",
+      "total": 7,
+      "selected": 5,
+      "reserve": 0,
+      "needs_enrichment": 0,
+      "drop": 2,
+      "examples": [
+        {
+          "verdict": "drop",
+          "title": "Manchester Digital launches Switchboard to support early tech careers | Manchester Digital",
+          "source_label": "Manchester Digital",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "MD Comment: Manchester's Skills Agenda Goes National | Manchester Digital",
+          "source_label": "Manchester Digital",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        }
+      ]
+    },
     "weekend_activities": {
       "heading": "Выходные в GM",
-      "total": 123,
-      "selected": 13,
-      "reserve": 24,
+      "total": 122,
+      "selected": 12,
+      "reserve": 27,
       "needs_enrichment": 0,
-      "drop": 86,
+      "drop": 83,
       "examples": [
         {
           "verdict": "reserve",
@@ -258,13 +234,13 @@
         },
         {
           "verdict": "reserve",
-          "title": "Sunny Dancer (15) An inspiring crowd-pleaser about a summer camp for kids with cancer, featuring a vibrant young cast. Thu 13 Aug - Wed 26 Aug",
+          "title": "The End of Oak Street (12A) A mysterious event moves the Platt family's neighbourhood into an unrecognizable world. Fri 14 Aug - Thu 27 Aug",
           "source_label": "HOME",
-          "reason": "Held as same-block backup for recovery."
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
         },
         {
           "verdict": "reserve",
-          "title": "The End of Oak Street (12A) A mysterious event moves the Platt family's neighbourhood into an unrecognizable world. Fri 14 Aug - Thu 27 Aug",
+          "title": "Tony (15) Before Anthony Bourdain, there was Tony. Fri 14 Aug - Thu 27 Aug",
           "source_label": "HOME",
           "reason": "Outside DeepSeek ranking board (soft max 90)."
         },
@@ -296,9 +272,9 @@
     },
     "future_announcements": {
       "heading": "Дальние анонсы",
-      "total": 18,
-      "selected": 4,
-      "reserve": 14,
+      "total": 17,
+      "selected": 8,
+      "reserve": 9,
       "needs_enrichment": 0,
       "drop": 0,
       "examples": [
@@ -322,12 +298,6 @@
         },
         {
           "verdict": "reserve",
-          "title": "North America's No.1 cocktail bar is taking over SCHOFIELD'S for one night only",
-          "source_label": "Manchester Wire",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        },
-        {
-          "verdict": "reserve",
           "title": "Magic at the Midland",
           "source_label": "DesignMyNight Bank Holiday",
           "reason": "Outside DeepSeek ranking board (soft max 90)."
@@ -340,25 +310,31 @@
         },
         {
           "verdict": "reserve",
-          "title": "Laughterama - Manchester",
+          "title": "Back To The 90s - Summer Outdoor Festival - Manchester",
           "source_label": "Skiddle Manchester Festivals",
           "reason": "Outside DeepSeek ranking board (soft max 90)."
         },
         {
           "verdict": "reserve",
-          "title": "Manchester Psych Festival",
-          "source_label": "Skiddle Manchester Festivals",
+          "title": "TEZ ILYAS - Desi Stand-Up Comedy Night",
+          "source_label": "Skiddle Manchester Comedy",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Urmston Artisan Market",
+          "source_label": "Urmston Artisan Market",
           "reason": "Outside DeepSeek ranking board (soft max 90)."
         }
       ]
     },
     "russian_events": {
       "heading": "Русскоязычные концерты и стендап UK",
-      "total": 21,
-      "selected": 5,
-      "reserve": 3,
+      "total": 20,
+      "selected": 6,
+      "reserve": 0,
       "needs_enrichment": 0,
-      "drop": 13,
+      "drop": 14,
       "examples": [
         {
           "verdict": "drop",
@@ -367,16 +343,10 @@
           "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event quality gate failed (date)."
         },
         {
-          "verdict": "reserve",
-          "title": "ГУДБАЙ SUMMER | 04 СЕНТЯБРЯ | ШАШЛЫКИ PARTY В MAGDALEN HALL",
-          "source_label": "UK Stand-Up Club Eventbrite",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "ПАВЕЛ ДЕДИЩЕВ В ЛОНДОНЕ | 30ГО СЕНТЯБРЯ | BIG BELLY COMEDY CLUB",
-          "source_label": "UK Stand-Up Club Eventbrite",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
+          "verdict": "drop",
+          "title": "Natalka Karpa Live in Manchester",
+          "source_label": "EventFirst Diaspora",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Russian block: no positive Russian/Ukrainian-language or diaspora evidence; source label alone is not proof."
         },
         {
           "verdict": "drop",
@@ -407,17 +377,29 @@
           "title": "Афиша Лондон",
           "source_label": "Afisha London",
           "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Russian block classifier: opera/ballet/classical item has no Russian-language or diaspora signal."
+        },
+        {
+          "verdict": "drop",
+          "title": "Афиша Лондон",
+          "source_label": "Afisha London",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Russian block: no positive Russian/Ukrainian-language or diaspora evidence; source label alone is not proof."
         }
       ]
     },
     "openings": {
       "heading": "Еда, открытия и рынки",
-      "total": 7,
-      "selected": 2,
+      "total": 9,
+      "selected": 3,
       "reserve": 5,
       "needs_enrichment": 0,
-      "drop": 0,
+      "drop": 1,
       "examples": [
+        {
+          "verdict": "reserve",
+          "title": "Food Halls and Markets",
+          "source_label": "Manchester's Finest",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
         {
           "verdict": "reserve",
           "title": "Chinatown favourite Pho Cue are bringing modern Vietnamese cooking to Open Fire Dining Club",
@@ -426,19 +408,19 @@
         },
         {
           "verdict": "reserve",
-          "title": "New Latin BBQ and bar Dahlia to bring open-fire cooking and late-night DJs to the Northern Quarter",
-          "source_label": "Manchester's Finest",
-          "reason": "Held as same-block backup for recovery."
+          "title": "Family behind Salvi's launch new concept, weeks after iconic restaurant closure",
+          "source_label": "The Manc Eats",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "drop",
+          "title": "SpudBros are returning to the Trafford Centre following HUGELY successful debut",
+          "source_label": "The Manc Eats",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: item has no current food opening, reopening, market, menu, or concept change."
         },
         {
           "verdict": "reserve",
           "title": "Massive rock, paper, scissors tournament with BIG pizza prizes takes over Trafford Centre this week",
-          "source_label": "The Manc Eats",
-          "reason": "Held as same-block backup for recovery."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Legendary landlady of The Peveril of the Peak pub has passed away",
           "source_label": "The Manc Eats",
           "reason": "Held as same-block backup for recovery."
         },
@@ -510,11 +492,11 @@
     },
     "football": {
       "heading": "Футбол",
-      "total": 30,
-      "selected": 2,
-      "reserve": 13,
+      "total": 29,
+      "selected": 6,
+      "reserve": 10,
       "needs_enrichment": 0,
-      "drop": 15,
+      "drop": 13,
       "examples": [
         {
           "verdict": "reserve",
@@ -524,45 +506,45 @@
         },
         {
           "verdict": "reserve",
-          "title": "Man Utd: How Michael Carrick's side are shaping up for Premier League season",
-          "source_label": "BBC Sport Manchester United",
-          "reason": "Outside pre-rewrite shortlist for football."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Man United transfer news LIVE: Gavi decision, £34m blow, Rafael Leao update",
+          "title": "Man United transfer news LIVE: Carlos Baleba bombshell, Gavi decision, Rafael Leao update",
           "source_label": "MEN Manchester United",
           "reason": "Outside pre-rewrite shortlist for football."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Manchester United know the mistake they can't afford to make with Marcus Rashford",
-          "source_label": "MEN Manchester United",
-          "reason": "Outside pre-rewrite shortlist for football."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Man United have perfect chance to seal their most important signing of summer transfer window",
-          "source_label": "MEN Manchester United",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
         },
         {
           "verdict": "drop",
-          "title": "Michael Carrick still has four major Man United transfer problems to solve",
+          "title": "Man United's next transfer 'decided' after finally wrapping up £65m Carlos Baleba deal",
           "source_label": "MEN Manchester United",
           "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
           "verdict": "drop",
-          "title": "Man United transfer news: Gavi response, Marc Casado offer, Rafeal Leao update",
+          "title": "Man United latest: Myles Lewis-Skelly transfer stance emerges as club work on £65m move",
           "source_label": "MEN Manchester United",
           "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
+          "verdict": "reserve",
+          "title": "Nine Man United players have had squad number upgrades ahead of new season",
+          "source_label": "MEN Manchester United",
+          "reason": "Outside pre-rewrite shortlist for football."
+        },
+        {
           "verdict": "drop",
-          "title": "Gavi responds as Man United willing to meet Barcelona's asking price for transfer",
+          "title": "Manchester United fear might become reality with Bruno Fernandes",
           "source_label": "MEN Manchester United",
           "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Man United will regret it for years if they don't take transfer opportunity this summer",
+          "source_label": "MEN Manchester United",
+          "reason": "Outside pre-rewrite shortlist for football."
+        },
+        {
+          "verdict": "drop",
+          "title": "How to watch Pep Guardiola Man City documentary A Beautiful Obsession for free",
+          "source_label": "MEN Manchester City",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: football item is club PR/farewell filler rather than match, transfer, injury, or ticket news."
         }
       ]
     },
@@ -577,9 +559,9 @@
     },
     "outside_gm_tickets": {
       "heading": "Крупные концерты вне GM",
-      "total": 23,
-      "selected": 15,
-      "reserve": 8,
+      "total": 19,
+      "selected": 12,
+      "reserve": 7,
       "needs_enrichment": 0,
       "drop": 0,
       "examples": [
@@ -622,12 +604,6 @@
         {
           "verdict": "reserve",
           "title": "Ariana Grande - The Eternal Sunshine Tour — event 2026-08-23 — public sale 2025-09-18 10:00",
-          "source_label": "Ticketmaster UK Major Upcoming",
-          "reason": "Held as same-block backup for recovery."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Ariana Grande - The Eternal Sunshine Tour — event 2026-08-20 — public sale 2025-09-18 10:00",
           "source_label": "Ticketmaster UK Major Upcoming",
           "reason": "Held as same-block backup for recovery."
         }
