@@ -1997,12 +1997,43 @@ def inventory_block_completeness(
         live_sources = {str(c.get("source_label") or "") for c in live_rows if str(c.get("source_label") or "")}
         with_text = sum(1 for c in rows if str(c.get("draft_line") or "").strip())
         min_sources = int(policy.get("min_sources") or 0)
+        min_activity_types = int(policy.get("min_activity_types") or 0)
+        activity_types: set[str] = set()
+        live_activity_types: set[str] = set()
+        if min_activity_types:
+            from news_digest.pipeline.weekend_inventory import weekend_activity_group  # noqa: PLC0415
+
+            for candidate in rows:
+                probe = candidate
+                fact = candidate.get("fact_card") if isinstance(candidate.get("fact_card"), dict) else {}
+                if fact and not isinstance(candidate.get("event"), dict):
+                    probe = dict(candidate)
+                    probe["event"] = fact
+                    probe.setdefault("title", fact.get("event_name"))
+                    probe.setdefault("source_url", fact.get("action_url"))
+                group = weekend_activity_group(probe)
+                if group:
+                    activity_types.add(group)
+                    if candidate in live_rows:
+                        live_activity_types.add(group)
         optional = bool(policy.get("optional"))
         block_mode = str(policy.get("mode") or "")
         applicable = block_mode == "assist"
-        sufficient = None if not applicable else (optional or (len(rows) >= floor and len(sources) >= min_sources))
+        sufficient = None if not applicable else (
+            optional
+            or (
+                len(rows) >= floor
+                and len(sources) >= min_sources
+                and len(activity_types) >= min_activity_types
+            )
+        )
         liveness_sufficient = None if not applicable else (
-            optional or (len(live_rows) >= floor and len(live_sources) >= min_sources)
+            optional
+            or (
+                len(live_rows) >= floor
+                and len(live_sources) >= min_sources
+                and len(live_activity_types) >= min_activity_types
+            )
         )
         by_block[block] = {
             "heading": PRIMARY_BLOCKS.get(block, block),
@@ -2014,6 +2045,10 @@ def inventory_block_completeness(
             "action_url_alive_count": len(live_rows),
             "action_url_alive_source_count": len(live_sources),
             "min_sources": min_sources,
+            "activity_types": sorted(activity_types),
+            "activity_type_count": len(activity_types),
+            "action_url_alive_activity_type_count": len(live_activity_types),
+            "min_activity_types": min_activity_types,
             "optional": optional,
             "completeness_applicable": applicable,
             "block_sufficient": sufficient,

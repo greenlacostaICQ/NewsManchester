@@ -38,7 +38,7 @@ from news_digest.pipeline.collector.filters import (
     _is_stale_transport,
 )
 from news_digest.pipeline.common import now_london
-from news_digest.pipeline.curator import _is_curator_protected
+from news_digest.pipeline.curator import _is_curator_protected, _semantic_dedup_pass
 from news_digest.pipeline.dedupe import (
     _apply_intra_batch_dedup,
     _similar_published_titles,
@@ -364,6 +364,25 @@ class DuplicateTest(unittest.TestCase):
         drops = _apply_intra_batch_dedup(candidates)
         self.assertEqual(drops, [])
         self.assertTrue(all(item["include"] for item in candidates))
+
+    def test_distinct_weekend_markets_survive_template_text_dedup(self) -> None:
+        candidates = [
+            {
+                "include": True,
+                "fingerprint": "sale-market",
+                "primary_block": "weekend_activities",
+                "draft_line": "• Sale Makers Market: независимые продавцы, ремесленные товары и еда; проверьте время.",
+            },
+            {
+                "include": True,
+                "fingerprint": "bolton-market",
+                "primary_block": "weekend_activities",
+                "draft_line": "• Bolton Makers Market: независимые продавцы, ремесленные товары и еда; проверьте время.",
+            },
+        ]
+
+        self.assertEqual(_semantic_dedup_pass(candidates), 0)
+        self.assertTrue(all(candidate["include"] for candidate in candidates))
 
     def test_same_ticket_event_dedupes_across_gm_and_uk_sections(self) -> None:
         candidates = [

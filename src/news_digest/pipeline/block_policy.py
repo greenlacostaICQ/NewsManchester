@@ -74,7 +74,7 @@ BLOCK_POLICY_REGISTRY: dict[str, dict[str, object]] = {
     "weekend_activities": {
         "heading": "Выходные в GM", "min": 6, "max": 0, "geo_scope": "gm",
         "schedule": "thursday_to_sunday", "required_fields": ("event_name", "specific_event", "venue", "date_start", "action_url", "activity_type", "gm_fit"),
-        "repeat_policy": "calendar_milestones", "backup_depth": 2, "min_sources": 2, "max_per_source": 0,
+        "repeat_policy": "calendar_milestones", "backup_depth": 2, "min_sources": 2, "min_activity_types": 3, "max_per_source": 0,
         "repeat_milestone_days": (30, 14, 7, 1, 0),
         "source_report_categories": frozenset({"culture_weekly"}), "candidate_categories": frozenset({"culture_weekly"}),
         "mode": "assist", "serving_ttl_hours": 96.0, "retention_days": 30,

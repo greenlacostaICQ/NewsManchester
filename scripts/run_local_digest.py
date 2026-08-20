@@ -1204,9 +1204,9 @@ def _complete_inventory_wave_for_day(
 ) -> dict | None:
     """Return the newest complete run for a wave/day, otherwise None.
 
-    A degraded run still counts as a completed trigger: the fallback exists to
-    recover a missed scheduler call, not to hammer sources again because one or
-    two of them returned an honest error.
+    A degraded run does not suppress the single scheduled fallback. The retry
+    exists for exactly the transient timeout pattern that otherwise leaves a
+    whole Weekend source family missing from the morning inventory.
     """
     grouped: dict[str, list[dict]] = {}
     for row in rows:
@@ -1220,7 +1220,8 @@ def _complete_inventory_wave_for_day(
     for run_id, run_rows in reversed(list(grouped.items())):
         expected = max((int(row.get("expected_sources") or 0) for row in run_rows), default=0)
         checked = sum(1 for row in run_rows if row.get("checked"))
-        if expected > 0 and len(run_rows) >= expected and checked >= expected:
+        errors = sum(int(row.get("errors") or 0) for row in run_rows)
+        if expected > 0 and len(run_rows) >= expected and checked >= expected and errors == 0:
             return {
                 "run_id": run_id,
                 "wave": wave,
@@ -1228,7 +1229,7 @@ def _complete_inventory_wave_for_day(
                 "represented": len(run_rows),
                 "checked": checked,
                 "expected_sources": expected,
-                "errors": sum(int(row.get("errors") or 0) for row in run_rows),
+                "errors": errors,
             }
     return None
 

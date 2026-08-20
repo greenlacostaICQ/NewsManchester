@@ -55,6 +55,7 @@ from news_digest.pipeline.professional_events import score_professional_event
 from news_digest.pipeline.weekend_inventory import (
     current_weekend_window,
     is_weekend_inventory_candidate,
+    weekend_activity_group,
     weekend_occurrence_date,
 )
 
@@ -3014,6 +3015,7 @@ def _clean_weekend_event_title(title: str) -> str:
 
 def _weekend_source_details(candidate: dict) -> list[str]:
     blob = _event_source_blob(candidate)
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
     details: list[str] = []
     buyer = re.search(
         r"(?:buyers?|покупател[ьи])\s*(?:from|с)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?",
@@ -3027,20 +3029,34 @@ def _weekend_source_details(candidate: dict) -> list[str]:
         number = stalls.group(1)
         prefix = "более " if "+" in stalls.group(0) else ""
         details.append(f"{prefix}{number} продавцов")
-    price = re.search(r"(?:entry|admission|вход)[^£]{0,40}(£\s*\d+(?:\.\d{1,2})?)", blob, flags=re.IGNORECASE)
-    if not price:
-        price = re.search(r"(£\s*\d+(?:\.\d{1,2})?)\s*(?:per\s+car\s+entry|entry|admission)", blob, flags=re.IGNORECASE)
-    if price:
-        details.append(f"вход {price.group(1).replace(' ', '')}")
-    elif re.search(r"\b(?:free\s+(?:entry|admission)|entry\s+free|admission\s+free)\b", blob, flags=re.IGNORECASE):
+    structured_price = str(event.get("price") or "").strip()
+    buyer_free = bool(re.search(
+        r"\b(?:buyers?\s+(?:are\s+)?free|free\s+(?:for\s+)?buyers?|"
+        r"free\s+(?:entry|admission)|entry\s+free|admission\s+free)\b",
+        blob,
+        flags=re.IGNORECASE,
+    ))
+    seller_price = re.search(
+        r"\b(?:sellers?|traders?|stallholders?|pitches?)\b[^£]{0,35}(£\s*\d+(?:\.\d{1,2})?)",
+        blob,
+        flags=re.IGNORECASE,
+    )
+    if event.get("free") or structured_price.lower() in {"free", "£0", "£0.00", "0"} or buyer_free:
         details.append("вход свободный")
     else:
+        price = re.search(r"(?:entry|admission|вход)[^£]{0,25}(£\s*\d+(?:\.\d{1,2})?)", blob, flags=re.IGNORECASE)
+        if not price:
+            price = re.search(r"(£\s*\d+(?:\.\d{1,2})?)\s*(?:per\s+car\s+entry|entry|admission)", blob, flags=re.IGNORECASE)
+        if price and (not seller_price or price.group(1).replace(" ", "") != seller_price.group(1).replace(" ", "")):
+            details.append(f"вход {price.group(1).replace(' ', '')}")
+        elif structured_price and not seller_price and re.search(r"£\s*\d", structured_price):
+            details.append(f"вход {structured_price.replace(' ', '')}")
         ticket_price = re.search(
             r"(?:tickets?|билеты?)\s*(?:cost|from|от|стоят|по)?\s*(£\s*\d+(?:\.\d{1,2})?)",
             blob,
             flags=re.IGNORECASE,
         )
-        if ticket_price:
+        if ticket_price and not any(item.startswith("вход ") for item in details):
             details.append(f"билеты {ticket_price.group(1).replace(' ', '')}")
     free_events = re.search(r"\b(?:more\s+than|over)\s+(\d{2,4})\s+free\s+(?:events?|activities)\b", blob, flags=re.IGNORECASE)
     if free_events:
@@ -3921,12 +3937,15 @@ def _weekend_activity_score(candidate: dict, line: str) -> float:
     if re.search(r"\b(?:warrington|liverpool|london|yorkshire|cumbria|edinburgh)\b", blob):
         return -95.0
     score = 0.0
+    group = weekend_activity_group(candidate)
+    score += {
+        "special_events": 80,
+        "exhibitions": 70,
+        "markets": 50,
+        "routine_markets": 10,
+    }.get(group, 0)
     if _future_date_signal(blob):
         score += 40
-    if re.search(r"\b(?:market|makers?|car boot|food festival|festival|fair|flea)\b", blob):
-        score += 55
-    if re.search(r"\b(?:flower festival|jazz festival|car boot|makers market|food festival)\b", blob):
-        score += 25
     if re.search(r"\b(?:visit manchester|manchester theatres|manchester's finest|creative tourist)\b", blob):
         score += 12
     if _weekend_source_details(candidate):

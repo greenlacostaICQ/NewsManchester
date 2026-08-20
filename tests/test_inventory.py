@@ -1298,8 +1298,23 @@ class BuildRecordTest(unittest.TestCase):
         })
 
     def test_block_completeness_separates_required_and_optional_blocks(self) -> None:
+        weekend_titles = (
+            "Manchester Pride Festival",
+            "Spies exhibition",
+            "Sale Makers Market",
+            "Manchester Pride Festival",
+            "Spies exhibition",
+            "Sale Makers Market",
+        )
         candidates = [
-            {"primary_block": "weekend_activities", "source_label": f"src{i}", "draft_line": "• line"}
+            {
+                "primary_block": "weekend_activities",
+                "source_label": f"src{i}",
+                "source_url": f"https://example.test/weekend-{i}",
+                "title": weekend_titles[i],
+                "draft_line": "• line",
+                "event": {"is_event": True, "event_name": weekend_titles[i], "venue": "Manchester"},
+            }
             for i in range(6)
         ] + [
             {"primary_block": "openings", "source_label": "food"}
@@ -1441,8 +1456,7 @@ class NightWaveTest(unittest.TestCase):
         result = _complete_inventory_wave_for_day(
             complete_rows, wave="events", day_london="2026-07-20"
         )
-        self.assertIsNotNone(result)
-        self.assertEqual(result["errors"], 1)
+        self.assertIsNone(result)
         self.assertIsNone(_complete_inventory_wave_for_day(
             complete_rows[:1], wave="events", day_london="2026-07-20"
         ))

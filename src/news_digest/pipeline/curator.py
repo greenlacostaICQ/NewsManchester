@@ -152,7 +152,7 @@ _DEDUP_STOPWORDS = {
 _BLOCKS_TO_SKIP_DEDUP = {
     # Транспорт и tickets — все строки шаблонные, дедуп даёт ложные срабатывания.
     # Дубли тут ловятся другим механизмом (fingerprint на уровне TfGM/Ticketmaster).
-    "transport", "ticket_radar", "outside_gm_tickets",
+    "transport", "ticket_radar", "outside_gm_tickets", "weekend_activities",
 }
 
 

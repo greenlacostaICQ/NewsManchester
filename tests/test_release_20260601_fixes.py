@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from news_digest.pipeline.editorial_contracts import crime_specificity_review
+from news_digest.pipeline.release import _weekend_source_coverage_report
 from news_digest.pipeline.writer import (
     _draft_line_quality_errors,
     _is_expired_event_candidate,
@@ -10,6 +11,23 @@ from news_digest.pipeline.writer import (
 
 
 class Release20260601FixesTest(unittest.TestCase):
+    def test_weekend_source_credit_requires_rendering_in_weekend_section(self) -> None:
+        report = _weekend_source_coverage_report([
+            {
+                "name": "Shared venue source",
+                "category": "culture_weekly",
+                "primary_block": "weekend_activities",
+                "source_contract": "event_calendar",
+                "fetched": True,
+                "candidate_count": 2,
+                "coverage_signal_count": 1,
+                "rendered_count": 1,
+                "weekend_rendered_count": 0,
+            }
+        ])
+        self.assertEqual(report["rendered_sources"], 0)
+        self.assertEqual(report["incident_count"], 1)
+
     def test_court_reporter_byline_does_not_crime_flag_politics(self) -> None:
         # "Court reporter" is the journalist's beat, not a court case. It must
         # not push a political story into the crime gate (2026-06-01 false hold

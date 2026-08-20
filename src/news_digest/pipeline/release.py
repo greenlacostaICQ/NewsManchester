@@ -942,6 +942,11 @@ def _count_per_source_yield(
         rendered_set = set(rendered_fingerprints.get("rendered_candidate_fingerprints") or ())
     else:
         rendered_set = set(rendered_fingerprints or ())
+    rendered_sections = (
+        (writer_report or {}).get("rendered_section_by_fingerprint")
+        if isinstance((writer_report or {}).get("rendered_section_by_fingerprint"), dict)
+        else {}
+    )
     yields: dict[str, dict[str, object]] = {}
     for candidate in (candidates_report or {}).get("candidates") or []:
         if not isinstance(candidate, dict):
@@ -954,6 +959,7 @@ def _count_per_source_yield(
             {
                 "curated": 0,
                 "rendered": 0,
+                "rendered_weekend": 0,
                 "reject_reasons": {},
                 "loss_funnel": {
                     "candidate_pool": 0,
@@ -990,6 +996,8 @@ def _count_per_source_yield(
         fp = str(candidate.get("fingerprint") or "")
         if fp and fp in rendered_set:
             record["rendered"] = int(record["rendered"]) + 1
+            if str(rendered_sections.get(fp) or "") == "Выходные в GM":
+                record["rendered_weekend"] = int(record["rendered_weekend"]) + 1
             if isinstance(funnel, dict):
                 funnel["rendered"] = int(funnel.get("rendered") or 0) + 1
     cand_by_fp = {
@@ -1010,6 +1018,7 @@ def _count_per_source_yield(
             {
                 "curated": 0,
                 "rendered": 0,
+                "rendered_weekend": 0,
                 "reject_reasons": {},
                 "loss_funnel": {
                     "candidate_pool": 0,
@@ -1132,7 +1141,7 @@ def _weekend_source_coverage_report(sources: list[dict[str, object]]) -> dict[st
     rendered_sources = 0
     for row in watched:
         raw = int(row.get("candidate_count") or row.get("raw_count") or 0)
-        rendered = int(row.get("rendered_count") or 0)
+        rendered = int(row.get("weekend_rendered_count") or 0)
         coverage_signal = int(row.get("coverage_signal_count") or 0)
         if rendered > 0:
             rendered_sources += 1
@@ -1222,6 +1231,7 @@ def _summarise_source_health(
                     "accepted_count": accepted_count,
                     "rejected_count": max(raw_count - accepted_count, 0),
                     "rendered_count": int(row_yield["rendered"]),
+                    "weekend_rendered_count": int(row_yield.get("rendered_weekend") or 0),
                     "reject_reasons": row_yield.get("reject_reasons") or {},
                     "loss_funnel": loss_funnel,
                     "failure_count": len(list(entry.get("errors") or [])),
@@ -1268,6 +1278,7 @@ def _summarise_source_health(
             "accepted_count": int(row["curated"]),
             "rejected_count": 0,
             "rendered_count": int(row["rendered"]),
+            "weekend_rendered_count": int(row.get("rendered_weekend") or 0),
             "reject_reasons": row.get("reject_reasons") or {},
             "loss_funnel": row.get("loss_funnel") or {},
             "failure_count": 0,

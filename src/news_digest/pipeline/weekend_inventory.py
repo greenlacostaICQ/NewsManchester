@@ -52,6 +52,11 @@ _ORDINARY_AFISHA_RE = re.compile(
     r"comedy\s+club|nightclub|club\s+night|dj\s+set)\b",
     re.IGNORECASE,
 )
+_ROUTINE_LEISURE_RE = re.compile(
+    r"\b(?:walking\s+tour|guided\s+walk|escape\s+room|treasure\s+hunt|"
+    r"bottomless\s+brunch|cocktail\s+bar|kitty\s+yoga)\b",
+    re.IGNORECASE,
+)
 
 _SELLER_ADMIN_RE = re.compile(
     r"\b(?:"
@@ -78,6 +83,32 @@ _MONTHLY_RE = re.compile(
     re.IGNORECASE,
 )
 _THIS_WEEKEND_RE = re.compile(r"\b(?:this\s+weekend|bank\s+holiday\s+weekend)\b", re.IGNORECASE)
+
+WEEKEND_GROUP_HEADINGS = {
+    "special_events": "Фестивали и специальные события",
+    "exhibitions": "Выставки",
+    "markets": "Ярмарки и рынки",
+    "routine_markets": "Регулярные рынки и car boot",
+}
+WEEKEND_GROUP_ORDER = tuple(WEEKEND_GROUP_HEADINGS)
+
+_EXHIBITION_RE = re.compile(
+    r"\b(?:exhibition|exhibit|gallery|museum|installation|display|выставк|экспозиц)\b",
+    re.IGNORECASE,
+)
+_SPECIAL_EVENT_RE = re.compile(
+    r"\b(?:festival|pride|championships?|world\s+finals?|finals?|summer\s+show|"
+    r"community\s+(?:festival|day)|family\s+day|street\s+event|(?:reggae|beauty)\s+brunch|b-?boy|"
+    r"breaking|dance\s+battle|heritage|medieval|re-?enact(?:ment)?|workshops?|"
+    r"public\s+trail|themed\s+trail|museum\s+after[-\s]?hours|special\s+event)\b",
+    re.IGNORECASE,
+)
+_MARKET_RE = re.compile(
+    r"\b(?:makers?\s+market|artisan\s+market|farmers?\s+market|food\s+market|"
+    r"flea\s+market|vintage\s+(?:sale|market)|market|fair|fayre|craft\s+fayre)\b",
+    re.IGNORECASE,
+)
+_CAR_BOOT_RE = re.compile(r"\b(?:car\s*boot|boot\s*sale)\b", re.IGNORECASE)
 
 
 def _blob(candidate: dict) -> str:
@@ -270,17 +301,55 @@ def has_current_weekend_occurrence(candidate: dict, *, today: date | None = None
     return bool(_THIS_WEEKEND_RE.search(_blob(candidate)))
 
 
-def weekend_activity_type(candidate: dict | None) -> str:
-    """Return the concrete protected-inventory activity family, if any."""
+def weekend_activity_group(candidate: dict | None) -> str:
+    """Return the reader-facing Weekend group for a concrete dated activity."""
     if not isinstance(candidate, dict):
         return ""
     text = _activity_blob(candidate)
+    if _SELLER_ADMIN_RE.search(text):
+        return ""
+    if _ROUTINE_LEISURE_RE.search(text) and not (_SPECIAL_EVENT_RE.search(text) or _MARKET_RE.search(text)):
+        return ""
+    if _ORDINARY_AFISHA_RE.search(text) and not (_SPECIAL_EVENT_RE.search(text) or _MARKET_RE.search(text)):
+        return ""
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    structured = str(event.get("activity_type") or candidate.get("activity_type") or "").strip()
+    typed_text = f"{structured} {text}".strip()
+    if _EXHIBITION_RE.search(typed_text):
+        return "exhibitions"
+    if _SPECIAL_EVENT_RE.search(typed_text):
+        return "special_events"
+    if _CAR_BOOT_RE.search(typed_text):
+        return "routine_markets"
+    if _MARKET_RE.search(typed_text):
+        weekly = bool(_WEEKLY_RE.search(_blob(candidate)))
+        return "routine_markets" if weekly else "markets"
+    if _INVENTORY_TYPE_RE.search(typed_text):
+        return "special_events"
+    return ""
+
+
+def weekend_activity_type(candidate: dict | None) -> str:
+    """Return the concrete protected-inventory activity type, if any."""
+    if not isinstance(candidate, dict):
+        return ""
+    text = _activity_blob(candidate)
+    group = weekend_activity_group(candidate)
+    if not group:
+        return ""
     match = _INVENTORY_TYPE_RE.search(text)
-    if not match or _SELLER_ADMIN_RE.search(text):
-        return ""
-    if _ORDINARY_AFISHA_RE.search(text) and not re.search(r"\bfestival|fair|market|pride|heritage\b", text, re.IGNORECASE):
-        return ""
-    return re.sub(r"\s+", "_", match.group(0).strip().lower())
+    if match:
+        return re.sub(r"\s+", "_", match.group(0).strip().lower())
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    structured = str(event.get("activity_type") or candidate.get("activity_type") or "").strip().lower()
+    if structured:
+        return re.sub(r"\W+", "_", structured).strip("_")
+    return {
+        "exhibitions": "exhibition",
+        "markets": "market",
+        "routine_markets": "recurring_market",
+        "special_events": "special_event",
+    }[group]
 
 
 def is_weekend_inventory_candidate(candidate: dict | None, *, today: date | None = None) -> bool:
@@ -288,6 +357,6 @@ def is_weekend_inventory_candidate(candidate: dict | None, *, today: date | None
         return False
     if str(candidate.get("primary_block") or "") != "weekend_activities":
         return False
-    if not weekend_activity_type(candidate):
+    if not weekend_activity_group(candidate):
         return False
     return has_current_weekend_occurrence(candidate, today=today)

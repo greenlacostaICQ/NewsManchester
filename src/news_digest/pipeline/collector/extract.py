@@ -2538,9 +2538,12 @@ def _extract_skiddle_api_items(source: SourceDef, body: str) -> list[ExtractedIt
     results = payload.get("results")
     if not isinstance(results, list):
         return []
-    items: list[ExtractedItem] = []
+    from news_digest.pipeline.weekend_inventory import current_weekend_window  # noqa: PLC0415
+
+    window_start, window_end = current_weekend_window(today=now_london().date())
+    ranked_items: list[tuple[int, str, int, ExtractedItem]] = []
     seen: set[str] = set()
-    for event in results:
+    for position, event in enumerate(results):
         if not isinstance(event, dict):
             continue
         title = _clean_title_text(str(event.get("eventname") or ""))
@@ -2581,21 +2584,26 @@ def _extract_skiddle_api_items(source: SourceDef, body: str) -> list[ExtractedIt
                 "start_date": start_iso or start_raw,
                 "event_instance_id": instance or f"skiddle-{event.get('id') or url}",
             }
-        items.append(
-            ExtractedItem(
-                title=title,
-                url=url,
-                published_at=start_iso,
-                summary=_summary_from_evidence(evidence) or description[:300] or title,
-                lead=_derive_lead(source, title, evidence),
-                evidence_text=evidence[:4000],
-                enrichment_status="ok_skiddle_card",
-                structured_event_hint=hint,
-            )
+        item = ExtractedItem(
+            title=title,
+            url=url,
+            published_at=start_iso,
+            summary=_summary_from_evidence(evidence) or description[:300] or title,
+            lead=_derive_lead(source, title, evidence),
+            evidence_text=evidence[:4000],
+            enrichment_status="ok_skiddle_card",
+            structured_event_hint=hint,
         )
-        if len(items) >= source.max_candidates:
-            break
-    return items
+        event_day = None
+        if start_iso:
+            try:
+                event_day = datetime.fromisoformat(start_iso.replace("Z", "+00:00")).date()
+            except ValueError:
+                event_day = None
+        current_weekend = bool(event_day and window_start <= event_day <= window_end)
+        ranked_items.append((0 if current_weekend else 1, start_iso or "~", position, item))
+    ranked_items.sort(key=lambda row: (row[0], row[1], row[2]))
+    return [row[3] for row in ranked_items[: source.max_candidates]]
 
 
 def _extract_eventbrite_events(source: SourceDef, body: str) -> list[ExtractedItem]:

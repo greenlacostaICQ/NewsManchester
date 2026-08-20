@@ -30,6 +30,11 @@ from news_digest.pipeline.transport_language import (
     repair_transport_line_language,
     transport_language_issues,
 )
+from news_digest.pipeline.weekend_inventory import (
+    WEEKEND_GROUP_HEADINGS,
+    WEEKEND_GROUP_ORDER,
+    weekend_activity_group,
+)
 
 
 MIN_CITY_PRACTICAL_ANGLE_LENGTH = 40
@@ -452,6 +457,28 @@ def _candidate_index(candidates: list[dict]) -> dict[str, dict]:
         if fp:
             index.setdefault(fp, candidate)
     return index
+
+
+def _group_weekend_lines(
+    lines: list[str],
+    candidates_by_key: dict[str, dict],
+) -> tuple[list[str], dict[str, int]]:
+    """Group the final Weekend list without creating extra plan items."""
+    buckets: dict[str, list[str]] = {group: [] for group in WEEKEND_GROUP_ORDER}
+    for line in lines:
+        candidate = candidates_by_key.get(_line_url_identity(line))
+        group = weekend_activity_group(candidate) or "special_events"
+        buckets.setdefault(group, []).append(line)
+    rendered: list[str] = []
+    counts: dict[str, int] = {}
+    for group in WEEKEND_GROUP_ORDER:
+        group_lines = buckets.get(group) or []
+        if not group_lines:
+            continue
+        counts[group] = len(group_lines)
+        rendered.append(f"<i>{WEEKEND_GROUP_HEADINGS[group]}</i>")
+        rendered.extend(group_lines)
+    return rendered, counts
 
 
 def _clip_text(value: object, limit: int = 900) -> str:
@@ -1241,6 +1268,7 @@ def edit_digest(project_root: Path) -> StageResult:
                 warnings.append(f"Required block missing after editor pass: {block}; shipping degraded.")
 
     rendered: list[str] = []
+    weekend_composition: dict[str, object] = {"counts": {}, "group_count": 0, "dominant_share": 0.0}
     if draft_text:
         first_line = draft_text.splitlines()[0].strip()
         rendered.append(first_line)
@@ -1249,6 +1277,20 @@ def edit_digest(project_root: Path) -> StageResult:
         real_lines = [line for line in lines if line.strip() and line.strip() != "•"]
         if not real_lines:
             continue
+        if section_name == "Выходные в GM":
+            real_lines, group_counts = _group_weekend_lines(real_lines, candidates_by_key)
+            total = sum(group_counts.values())
+            dominant = max(group_counts.values(), default=0)
+            weekend_composition = {
+                "counts": group_counts,
+                "group_count": len(group_counts),
+                "dominant_share": round(dominant / total, 3) if total else 0.0,
+            }
+            if total >= 4 and (len(group_counts) < 2 or dominant / total > 0.6):
+                warnings.append(
+                    "Weekend composition is too concentrated: "
+                    f"{group_counts}; выпуск отправляется, но ночному сбору нужна более широкая типовая выборка."
+                )
         rendered.append(f"<b>{section_name}</b>")
         rendered.extend(real_lines)
         rendered.append("")
@@ -1268,6 +1310,7 @@ def edit_digest(project_root: Path) -> StageResult:
         "run_date_london": today_london(),
         "stage_status": "complete",
         "errors": errors,
+        "weekend_composition": weekend_composition,
         "warnings": warnings,
         "city_candidate_count": len(city_candidates),
         "soft_candidate_count": len(soft_candidates),

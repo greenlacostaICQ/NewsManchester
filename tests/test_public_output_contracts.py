@@ -33,6 +33,7 @@ from news_digest.pipeline.writer import (
     _football_is_sport_news,
     _is_outside_current_weekend_candidate,
     _weekend_activity_score,
+    _weekend_source_details,
     _today_focus_candidate_is_eligible,
     _transport_line_priority,
     _future_announcement_decision,
@@ -42,6 +43,7 @@ from news_digest.pipeline.writer import (
     _section_priority_score,
     _ticket_watch_decision,
 )
+from news_digest.pipeline.editor import _group_weekend_lines
 
 
 class PublicOutputContractTests(unittest.TestCase):
@@ -366,6 +368,54 @@ class PublicOutputContractTests(unittest.TestCase):
         self.assertIn("более 300 продавцов", line)
         self.assertNotIn("Bolton Car Boot Sale — Bolton Car Boot Sale", line)
         self.assertNotIn("Проверьте наличие мест", line)
+
+    def test_weekend_price_does_not_turn_seller_pitch_fee_into_admission(self) -> None:
+        candidate = {
+            "primary_block": "weekend_activities",
+            "title": "Stockport car boot sale",
+            "summary": "Buyers free. Sellers £10 per pitch.",
+            "source_url": "https://example.test/stockport-boot",
+            "event": {"is_event": True, "event_name": "Stockport car boot sale", "price": "£10", "free": True},
+        }
+        details = _weekend_source_details(candidate)
+        self.assertIn("вход свободный", details)
+        self.assertNotIn("вход £10", details)
+
+    def test_weekend_editor_groups_specials_exhibitions_markets_and_boots(self) -> None:
+        candidates = {
+            "example.test/special": {
+                "title": "Levenshulme Pride festival", "source_url": "https://example.test/special",
+                "event": {"is_event": True, "event_name": "Levenshulme Pride festival", "venue": "Klondyke"},
+            },
+            "example.test/exhibition": {
+                "title": "Spies exhibition", "source_url": "https://example.test/exhibition",
+                "event": {"is_event": True, "event_name": "Spies exhibition", "venue": "IWM North"},
+            },
+            "example.test/market": {
+                "title": "Sale Makers Market", "source_url": "https://example.test/market",
+                "event": {"is_event": True, "event_name": "Sale Makers Market", "venue": "Sale"},
+            },
+            "example.test/boot": {
+                "title": "Bolton Car Boot Sale", "source_url": "https://example.test/boot",
+                "event": {"is_event": True, "event_name": "Bolton Car Boot Sale", "venue": "Bolton"},
+            },
+        }
+        lines = [
+            f'• Item <a href="https://{key}">source</a>'
+            for key in ("example.test/boot", "example.test/market", "example.test/exhibition", "example.test/special")
+        ]
+        grouped, counts = _group_weekend_lines(lines, candidates)
+        headings = [line for line in grouped if line.startswith("<i>")]
+        self.assertEqual(
+            headings,
+            [
+                "<i>Фестивали и специальные события</i>",
+                "<i>Выставки</i>",
+                "<i>Ярмарки и рынки</i>",
+                "<i>Регулярные рынки и car boot</i>",
+            ],
+        )
+        self.assertEqual(sum(counts.values()), 4)
 
     @patch("news_digest.pipeline.weekend_inventory.now_london")
     @patch("news_digest.pipeline.writer.now_london")

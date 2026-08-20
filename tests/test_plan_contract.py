@@ -229,6 +229,34 @@ class PlanContractTest(unittest.TestCase):
         self.assertEqual(updated["dedupe_decision"], "drop")
         self.assertTrue(report["cheap_dedup_invariant_restored"])
 
+    def test_current_weekend_inventory_is_primary_even_if_rank_marks_reserve(self) -> None:
+        candidate = _candidate(
+            18,
+            block="weekend_activities",
+            category="culture_weekly",
+            title="UK B-Boy Championships World Finals",
+            source_url="https://example.test/bboy-finals",
+            digest_selection_verdict="reserve",
+            event={
+                "is_event": True,
+                "event_name": "UK B-Boy Championships World Finals",
+                "venue": "Aviva Studios",
+                "date_start": "2026-08-16",
+            },
+        )
+        with patch.dict(os.environ, {"NEWS_DIGEST_FAKE_NOW": "2026-08-16T08:00:00+01:00"}):
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                state_dir = _seed(root, [candidate])
+                with patch("news_digest.pipeline.plan_digest._apply_routing", return_value=""), patch(
+                    "news_digest.pipeline.plan_digest._admission_verdict", return_value=("ok", "")
+                ):
+                    run_plan_digest(root)
+                plan = load_plan(state_dir)
+
+        primaries = {slot["primary_fingerprint"] for slot in plan["slots"]}
+        self.assertIn(candidate["fingerprint"], primaries)
+
     def test_planner_allows_one_primary_or_backup_per_canonical_url(self) -> None:
         shared_url = "https://pedddle.com/market/prestwich-makers-market"
         rows = [

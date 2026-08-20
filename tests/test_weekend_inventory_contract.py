@@ -10,11 +10,17 @@ from news_digest.pipeline.common import now_london
 from news_digest.pipeline.candidate_validator import _reroute_market_planning_to_weekend
 from news_digest.pipeline.editorial_contracts import calendar_repeat_review
 from news_digest.pipeline.event_extraction import enrich_candidate_event
-from news_digest.pipeline.inventory import build_inventory_record, prewrite_stable_inventory_candidate
+from news_digest.pipeline.inventory import (
+    build_inventory_record,
+    inventory_block_completeness,
+    prewrite_stable_inventory_candidate,
+)
 from news_digest.pipeline.weekend_inventory import (
+    WEEKEND_GROUP_HEADINGS,
     candidate_recurring_occurrence_date,
     current_weekend_window,
     is_weekend_inventory_candidate,
+    weekend_activity_group,
     weekend_activity_type,
     weekend_occurrence_date,
 )
@@ -366,6 +372,41 @@ class WeekendInventoryContractTests(unittest.TestCase):
         self.assertTrue(is_weekend_inventory_candidate(beauty, today=date(2026, 7, 2)))
         self.assertFalse(is_weekend_inventory_candidate(concert, today=date(2026, 7, 2)))
         self.assertEqual(market["event"]["date_start"], event_day.isoformat())
+
+    def test_complete_exhibition_and_world_final_are_protected_weekend_inventory(self) -> None:
+        event_day = date(2026, 8, 16)
+        exhibition = _weekend_inventory_candidate(title="Spies, Lies and Deception exhibition")
+        final = _weekend_inventory_candidate(title="UK B-Boy Championships World Finals")
+        for candidate in (exhibition, final):
+            candidate["event"]["date_start"] = event_day.isoformat()
+            candidate["event"]["date"] = event_day.isoformat()
+
+        self.assertTrue(is_weekend_inventory_candidate(exhibition, today=event_day))
+        self.assertTrue(is_weekend_inventory_candidate(final, today=event_day))
+        self.assertEqual(weekend_activity_group(exhibition), "exhibitions")
+        self.assertEqual(weekend_activity_group(final), "special_events")
+        self.assertEqual(WEEKEND_GROUP_HEADINGS["exhibitions"], "Выставки")
+
+    def test_weekend_completeness_requires_activity_family_diversity(self) -> None:
+        event_day = _next_saturday().isoformat()
+
+        def row(index: int, title: str, source: str) -> dict:
+            candidate = _weekend_inventory_candidate(index, title=title)
+            candidate["source_label"] = source
+            candidate["action_url_liveness"] = "alive"
+            candidate["event"]["date_start"] = event_day
+            return candidate
+
+        rows = [row(index, f"Car Boot Sale {index}", f"Boot source {index % 2}") for index in range(6)]
+        weekend = inventory_block_completeness(rows)["blocks"]["weekend_activities"]
+        self.assertFalse(weekend["block_sufficient"])
+        self.assertEqual(weekend["activity_type_count"], 1)
+
+        rows[-2] = row(10, "Manchester Pride Festival", "Pride source")
+        rows[-1] = row(11, "Major museum exhibition", "Museum source")
+        weekend = inventory_block_completeness(rows)["blocks"]["weekend_activities"]
+        self.assertTrue(weekend["block_sufficient"])
+        self.assertEqual(weekend["activity_type_count"], 3)
 
     def test_rewrite_board_caps_do_not_cut_weekend_inventory(self) -> None:
         weekend = [_weekend_inventory_candidate(idx) for idx in range(12)]

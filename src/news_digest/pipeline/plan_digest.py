@@ -796,7 +796,12 @@ def run_plan_digest(project_root: Path) -> StageResult:
                 physical_key = _a_tier_physical_key(candidate)
                 if physical_key:
                     eligible_a_tier_physical_keys.add(physical_key)
-        if included and (verdict != "reserve" or a_tier_eligible):
+        weekend_must_show = False
+        if str(candidate.get("primary_block") or "") == "weekend_activities":
+            from news_digest.pipeline.weekend_inventory import is_weekend_inventory_candidate  # noqa: PLC0415
+
+            weekend_must_show = is_weekend_inventory_candidate(candidate)
+        if included and (verdict != "reserve" or a_tier_eligible or weekend_must_show):
             # 0161: основной слот допускается только с доказуемым путём до
             # строки. Раньше проверку проходили лишь запасные — планёрка
             # ставила в план карточку без фактов и текста (27.07: Tech 2,
@@ -836,9 +841,22 @@ def run_plan_digest(project_root: Path) -> StageResult:
     for section in list(backup_pools):
         backup_pools[section] = _sorted_pool(backup_pools[section], section)
 
+    weekend_section = "Выходные в GM"
+    if show_weekend:
+        from news_digest.pipeline.weekend_inventory import (  # noqa: PLC0415
+            WEEKEND_GROUP_ORDER,
+            weekend_activity_group,
+        )
+
+        group_order = {name: index for index, name in enumerate(WEEKEND_GROUP_ORDER)}
+        for weekend_pool in (pools[weekend_section], backup_pools[weekend_section]):
+            weekend_pool.sort(
+                key=lambda candidate: group_order.get(weekend_activity_group(candidate), len(group_order))
+            )
+
     demoted: list[tuple[dict, str]] = []
     if show_weekend:
-        pools["Выходные в GM"] = _collapse_weekend_duplicates(pools["Выходные в GM"], demoted)
+        pools[weekend_section] = _collapse_weekend_duplicates(pools[weekend_section], demoted)
 
     # Одна история — один слот во всём выпуске (включая lead).
     seen_story_keys: set[str] = set()

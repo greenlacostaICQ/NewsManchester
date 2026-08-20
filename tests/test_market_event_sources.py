@@ -174,6 +174,41 @@ class MarketEventSourcesTest(unittest.TestCase):
             _extract_source_candidates(source, json.dumps({"error": 1, "results": []})), []
         )
 
+    @mock.patch("news_digest.pipeline.collector.extract.now_london")
+    def test_skiddle_api_prioritises_current_weekend_before_source_cap(self, mock_now) -> None:
+        mock_now.return_value = datetime.fromisoformat("2026-08-13T08:00:00+01:00")
+        source = SourceDef(
+            name="Skiddle Manchester Festivals",
+            report_category="culture_weekly",
+            candidate_category="culture_weekly",
+            url="https://www.skiddle.com/api/v1/events/search/?api_key=KEY",
+            primary_block="weekend_activities",
+            source_type="json_skiddle",
+            allowed_hosts=("skiddle.com",),
+            max_candidates=1,
+        )
+        body = json.dumps({
+            "error": 0,
+            "results": [
+                {
+                    "id": "later", "eventname": "Later nearby festival",
+                    "startdate": "2026-09-01T12:00:00",
+                    "venue": {"name": "Near Venue", "town": "Manchester"},
+                    "link": "https://www.skiddle.com/whats-on/Manchester/Near/Later/1/",
+                },
+                {
+                    "id": "weekend", "eventname": "Reggae Brunch Summer Fest",
+                    "startdate": "2026-08-16T14:00:00",
+                    "venue": {"name": "Freight Island", "town": "Manchester"},
+                    "link": "https://www.skiddle.com/whats-on/Manchester/Freight/Reggae/2/",
+                },
+            ],
+        })
+
+        candidates = _extract_source_candidates(source, body)
+
+        self.assertEqual([candidate["title"] for candidate in candidates], ["Reggae Brunch Summer Fest"])
+
     def test_recurring_market_schedule_satisfies_event_date_gate(self) -> None:
         candidate = {
             "category": "culture_weekly",
