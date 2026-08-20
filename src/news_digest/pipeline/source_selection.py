@@ -273,6 +273,13 @@ SOURCE_TIER: dict[str, int] = {
     "South Manchester Food Festival": 1,
     "Altrincham Market": 1,
     "Stockport Events": 1,
+    "Ai Weiwei Button Up": 1,
+    "Bolton Makers Market": 1,
+    "Levenshulme Pride": 1,
+    "MediaCity What's On": 1,
+    "Mottram Show": 1,
+    "Sale Makers Market": 1,
+    "Totally Stockport Events": 1,
 
     # ── Tier 2: regional / national authoritative media ─────────────────
     "BBC Manchester": 2,

@@ -275,7 +275,12 @@ class SourceHealthSummaryWithYieldTest(unittest.TestCase):
         }
         cands = {"candidates": [_candidate("Rendered Weekend Market", "fp1", include=True)]}
 
-        result = _summarise_source_health(scan, candidates_report=cands, rendered_fingerprints={"fp1"})
+        result = _summarise_source_health(
+            scan,
+            candidates_report=cands,
+            rendered_fingerprints={"fp1"},
+            writer_report={"rendered_section_by_fingerprint": {"fp1": "Выходные в GM"}},
+        )
 
         coverage = result["weekend_source_coverage"]
         self.assertEqual(coverage["checked_sources"], 2)

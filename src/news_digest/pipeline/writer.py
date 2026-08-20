@@ -2332,11 +2332,19 @@ def _bridgewater_slug_datetime(candidate: dict) -> datetime | None:
 
 
 def _line_has_conflicting_event_date(candidate: dict, line: str) -> bool:
-    event_dt = (
-        _weekend_occurrence_datetime(candidate)
-        if str(candidate.get("primary_block") or "") == _WEEKEND_BLOCK
-        else None
-    )
+    event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
+    occurrence = candidate.get("event_occurrence") if isinstance(candidate.get("event_occurrence"), dict) else {}
+    event_dt = None
+    if str(candidate.get("primary_block") or "") == _WEEKEND_BLOCK and event.get("is_recurring"):
+        # Final QA must compare the line with the occurrence saved on this
+        # candidate, even when a later replay makes that occurrence historical.
+        raw_occurrence = str(event.get("next_occurrence") or occurrence.get("date") or "")[:10]
+        try:
+            event_dt = datetime.fromisoformat(raw_occurrence) if raw_occurrence else None
+        except ValueError:
+            event_dt = None
+    if event_dt is None and str(candidate.get("primary_block") or "") == _WEEKEND_BLOCK:
+        event_dt = _weekend_occurrence_datetime(candidate)
     event_dt = event_dt or _event_structured_datetime(candidate)
     if event_dt is None:
         return False
