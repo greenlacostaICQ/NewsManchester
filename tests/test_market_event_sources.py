@@ -104,6 +104,7 @@ class MarketEventSourcesTest(unittest.TestCase):
         self.assertEqual(items[0].structured_event_hint["date_start"][:10], "2025-11-29")
         self.assertEqual(items[0].structured_event_hint["date_end"][:10], "2026-08-31")
         self.assertEqual(items[0].structured_event_hint["activity_type"], "exhibition")
+        self.assertEqual(items[0].structured_event_hint["borough"], "Salford")
         self.assertEqual(items[1].structured_event_hint["activity_type"], "food_market")
         self.assertTrue(_is_allowed_source_link(source, items[1].url, items[1].title, items[1].summary))
 

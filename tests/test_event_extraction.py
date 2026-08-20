@@ -234,6 +234,22 @@ class ExtractEventTest(unittest.TestCase):
         self.assertTrue(result["is_event"])
         self.assertEqual(result["schema_version"], EVENT_SCHEMA_VERSION)
 
+    def test_structured_calendar_borough_overrides_missing_entities(self):
+        result = extract_event({
+            "title": "Grub on the Docks",
+            "category": "culture_weekly",
+            "primary_block": "weekend_activities",
+            "source_url": "https://mediacityuk.co.uk/events/grub-on-the-docks",
+            "structured_event_hint": {
+                "event_name": "Grub on the Docks",
+                "date_start": "2026-05-28",
+                "date_end": "2026-09-20",
+                "borough": "Salford",
+            },
+        })
+
+        self.assertEqual(result["borough"], "Salford")
+
     def test_ticket_native_source_url_is_booking_url(self):
         c = {
             "title": "Concert at Ticketmaster",

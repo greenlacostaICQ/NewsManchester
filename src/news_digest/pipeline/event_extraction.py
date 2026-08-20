@@ -682,7 +682,7 @@ def extract_event(candidate: dict, entities: dict | None = None) -> dict:
             date_text = str(hint.get("date_text") or "").strip() or date_text or parsed_hint
             date_confidence = "high"
     boroughs = entities.get("boroughs") if isinstance(entities.get("boroughs"), list) else []
-    borough = str(boroughs[0]) if boroughs else ""
+    borough = str(hint.get("borough") or "").strip() or (str(boroughs[0]) if boroughs else "")
     price = str(hint.get("price") or "").strip() or _extract_price(blob)
     is_free = price.lower() == "free" or bool(_FREE_RE.search(blob))
     booking_url = str(hint.get("booking_url") or "").strip() or _extract_booking_url(candidate)

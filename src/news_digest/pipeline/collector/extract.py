@@ -767,6 +767,7 @@ def _extract_mediacity_event_cards(source: SourceDef, body: str) -> list[Extract
         hint = {
             "schema_source": "mediacity_event_card",
             "event_name": title,
+            "borough": "Salford",
             "date": start,
             "date_start": start,
             "date_end": end,
