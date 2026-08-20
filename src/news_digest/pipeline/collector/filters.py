@@ -1098,6 +1098,9 @@ def _source_override(
     """Return True/False for sources whose logic can't be expressed as _SourcePolicy.
     Return None to fall through to policy/default evaluation.
     """
+    if source.name == "MediaCity What's On":
+        return lowered_path.startswith("/events/") and len(lowered_title) >= 8
+
     if source.name in {"BBC Manchester", "BBC Manchester Web"}:
         if not ("/news/articles/" in lowered_path or "/news/uk-england-" in lowered_path):
             return False

@@ -7,7 +7,13 @@ from unittest import mock
 from zoneinfo import ZoneInfo
 
 from news_digest.pipeline.collector.core import _fetch_ticketmaster_paginated_body
-from news_digest.pipeline.collector.extract import _extract_source_candidates, _jsonld_event_node_to_item
+from news_digest.pipeline.collector.extract import (
+    _extract_html_page_event,
+    _extract_mediacity_event_cards,
+    _extract_source_candidates,
+    _jsonld_event_node_to_item,
+)
+from news_digest.pipeline.collector.filters import _is_allowed_source_link
 from news_digest.pipeline.collector.sources import SourceDef
 from news_digest.pipeline.event_extraction import enrich_candidate_event
 from news_digest.pipeline.event_quality import event_quality_report
@@ -62,6 +68,72 @@ class JsonLdUrlSanitizationTest(unittest.TestCase):
 
 
 class MarketEventSourcesTest(unittest.TestCase):
+    def test_mediacity_cards_preserve_ranges_and_activity_types(self) -> None:
+        source = SourceDef(
+            name="MediaCity What's On",
+            report_category="culture_weekly",
+            candidate_category="culture_weekly",
+            url="https://www.mediacityuk.co.uk/events/",
+            primary_block="weekend_activities",
+            source_type="html_mediacity_events",
+            source_contract="event_calendar",
+            allowed_hosts=("mediacityuk.co.uk",),
+            max_candidates=40,
+        )
+        html = """
+        <article class="c-card-grid-item c-card-grid-item--event">
+          <div class="c-card-grid-item__category">Exhibition<svg></svg></div>
+          <div class="c-card-grid-item__details">
+            <p>29<suZ>th</suZ> November 2025 - 31<suZ>st</suZ> August 2026</p>
+            <h3 class="c-card-grid-item__title"><a href="/events/spies-lies/">Spies, Lies and Deception</a></h3>
+          </div>
+        </article>
+        <article class="c-card-grid-item c-card-grid-item--event">
+          <div class="c-card-grid-item__category">Event<svg></svg></div>
+          <div class="c-card-grid-item__details">
+            <p>28<suZ>th</suZ> May - 20<suZ>th</suZ> September 2026</p>
+            <h3 class="c-card-grid-item__title"><a href="/events/grub/">Grub on the Docks</a></h3>
+            <div><p>Street food on the waterfront.</p></div>
+          </div>
+        </article>
+        """
+
+        items = _extract_mediacity_event_cards(source, html)
+
+        self.assertEqual([item.title for item in items], ["Spies, Lies and Deception", "Grub on the Docks"])
+        self.assertEqual(items[0].structured_event_hint["date_start"][:10], "2025-11-29")
+        self.assertEqual(items[0].structured_event_hint["date_end"][:10], "2026-08-31")
+        self.assertEqual(items[0].structured_event_hint["activity_type"], "exhibition")
+        self.assertEqual(items[1].structured_event_hint["activity_type"], "food_market")
+        self.assertTrue(_is_allowed_source_link(source, items[1].url, items[1].title, items[1].summary))
+
+    def test_page_event_prefers_visible_range_over_inverted_jsonld(self) -> None:
+        source = SourceDef(
+            name="Ai Weiwei Button Up",
+            report_category="culture_weekly",
+            candidate_category="culture_weekly",
+            url="https://factoryinternational.org/whats-on/ai-weiwei-button-up/",
+            primary_block="weekend_activities",
+            source_type="html_page_event",
+            source_contract="event_calendar",
+            allowed_hosts=("factoryinternational.org",),
+            max_candidates=1,
+        )
+        html = """
+        <html><head><title>Ai Weiwei: Button Up!</title>
+        <script type="application/ld+json">{"@type":"Event","name":"Button Up",
+        "startDate":"2027-07-02","endDate":"2026-09-06","location":{"name":"Aviva Studios"}}</script>
+        </head><body><main><h1>Ai Weiwei: Button Up!</h1>
+        <p>2 Jul - 6 Sep 2026</p><p>A major exhibition at Aviva Studios in Manchester.</p>
+        </main></body></html>
+        """
+
+        [item] = _extract_html_page_event(source, html)
+
+        self.assertEqual(item.published_at[:10], "2026-07-02")
+        self.assertEqual(item.structured_event_hint["date_start"][:10], "2026-07-02")
+        self.assertEqual(item.structured_event_hint["date_end"][:10], "2026-09-06")
+
     def test_html_page_event_keeps_direct_market_page(self) -> None:
         source = SourceDef(
             name="First Street Makers Market",

@@ -377,7 +377,9 @@ class WeekendInventoryContractTests(unittest.TestCase):
         event_day = date(2026, 8, 16)
         exhibition = _weekend_inventory_candidate(title="Spies, Lies and Deception exhibition")
         final = _weekend_inventory_candidate(title="UK B-Boy Championships World Finals")
-        for candidate in (exhibition, final):
+        food_market = _weekend_inventory_candidate(title="Grub on the Docks")
+        food_market["activity_type"] = "food_market"
+        for candidate in (exhibition, final, food_market):
             candidate["event"]["date_start"] = event_day.isoformat()
             candidate["event"]["date"] = event_day.isoformat()
 
@@ -385,6 +387,7 @@ class WeekendInventoryContractTests(unittest.TestCase):
         self.assertTrue(is_weekend_inventory_candidate(final, today=event_day))
         self.assertEqual(weekend_activity_group(exhibition), "exhibitions")
         self.assertEqual(weekend_activity_group(final), "special_events")
+        self.assertEqual(weekend_activity_group(food_market), "markets")
         self.assertEqual(WEEKEND_GROUP_HEADINGS["exhibitions"], "Выставки")
 
     def test_weekend_completeness_requires_activity_family_diversity(self) -> None:

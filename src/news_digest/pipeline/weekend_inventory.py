@@ -313,7 +313,11 @@ def weekend_activity_group(candidate: dict | None) -> str:
     if _ORDINARY_AFISHA_RE.search(text) and not (_SPECIAL_EVENT_RE.search(text) or _MARKET_RE.search(text)):
         return ""
     event = candidate.get("event") if isinstance(candidate.get("event"), dict) else {}
-    structured = str(event.get("activity_type") or candidate.get("activity_type") or "").strip()
+    structured = re.sub(
+        r"[_-]+",
+        " ",
+        str(event.get("activity_type") or candidate.get("activity_type") or "").strip(),
+    )
     typed_text = f"{structured} {text}".strip()
     if _EXHIBITION_RE.search(typed_text):
         return "exhibitions"
@@ -323,7 +327,8 @@ def weekend_activity_group(candidate: dict | None) -> str:
         return "routine_markets"
     if _MARKET_RE.search(typed_text):
         weekly = bool(_WEEKLY_RE.search(_blob(candidate)))
-        return "routine_markets" if weekly else "markets"
+        explicitly_seasonal_food_market = structured == "food market"
+        return "routine_markets" if weekly and not explicitly_seasonal_food_market else "markets"
     if _INVENTORY_TYPE_RE.search(typed_text):
         return "special_events"
     return ""

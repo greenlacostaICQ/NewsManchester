@@ -623,6 +623,33 @@ def _extract_text_date_hint(text: str) -> str | None:
     return None
 
 
+def _extract_visible_event_date_range(text: str) -> tuple[str, str] | None:
+    """Parse the explicit visitor-facing date range before incidental dates."""
+    cleaned = _clean_long_text(text)
+    full = re.search(
+        r"\b(?P<sd>\d{1,2})\s*(?:st|nd|rd|th)?\s+(?P<sm>[A-Za-z]+)"
+        r"(?:\s+(?P<sy>20\d{2}))?\s*(?:-|–|—|to)\s*"
+        r"(?P<ed>\d{1,2})\s*(?:st|nd|rd|th)?\s+(?P<em>[A-Za-z]+)\s+(?P<ey>20\d{2})\b",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    same_month = re.search(
+        r"\b(?P<sd>\d{1,2})\s*(?:st|nd|rd|th)?\s*(?:-|–|—|to)\s*"
+        r"(?P<ed>\d{1,2})\s*(?:st|nd|rd|th)?\s+(?P<em>[A-Za-z]+)\s+(?P<ey>20\d{2})\b",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    match = full or same_month
+    if not match:
+        return None
+    parts = match.groupdict()
+    start_month = parts.get("sm") or parts["em"]
+    start_year = parts.get("sy") or parts["ey"]
+    start = _parse_datetime_value_flexible(f"{int(parts['sd'])} {start_month} {start_year}")
+    end = _parse_datetime_value_flexible(f"{int(parts['ed'])} {parts['em']} {parts['ey']}")
+    return (start, end) if start and end else None
+
+
 def _extract_html_page_event(source: SourceDef, body: str) -> list[ExtractedItem]:
     """Treat a source URL as a single event/market page.
 
@@ -647,10 +674,24 @@ def _extract_html_page_event(source: SourceDef, body: str) -> list[ExtractedItem
     paragraph_evidence = _extract_paragraph_evidence(body, title)
     enriched_summary = _extract_jsonld_description(body) or _extract_meta_description(body)
     structured_event_hint = _extract_jsonld_event_hint(body)
+    visible_range = _extract_visible_event_date_range(visible_text)
+    if visible_range:
+        visible_start, visible_end = visible_range
+        structured_start = str(structured_event_hint.get("date_start") or "")
+        structured_end = str(structured_event_hint.get("date_end") or "")
+        if not structured_start or not structured_end or structured_start[:10] > structured_end[:10]:
+            structured_event_hint.update(
+                date=visible_start,
+                date_start=visible_start,
+                date_end=visible_end,
+                date_text=visible_start[:10],
+                schema_source="visible_event_range",
+            )
     evidence = _clean_long_text(" ".join(part for part in (enriched_summary, paragraph_evidence, visible_text) if part))
     summary = _summary_from_evidence(evidence) or enriched_summary or _default_summary(source, title)
     published_at = (
-        _extract_jsonld_start_date(body)
+        (structured_event_hint.get("date_start") if structured_event_hint.get("schema_source") == "visible_event_range" else None)
+        or _extract_jsonld_start_date(body)
         or _extract_article_published_at(body)
         or _extract_text_date_hint(evidence)
         or _published_at_from_title_or_url(title, source.url)
@@ -667,6 +708,100 @@ def _extract_html_page_event(source: SourceDef, body: str) -> list[ExtractedItem
             structured_event_hint=structured_event_hint,
         )
     ]
+
+
+def _extract_mediacity_event_cards(source: SourceDef, body: str) -> list[ExtractedItem]:
+    """Read the dated cards on MediaCity's server-rendered What's On page."""
+    items: list[ExtractedItem] = []
+    seen: set[str] = set()
+    for article in re.findall(
+        r'<article\b[^>]*c-card-grid-item--event[^>]*>(.*?)</article>',
+        body,
+        flags=re.IGNORECASE | re.DOTALL,
+    ):
+        title_match = re.search(
+            r'<h3\b[^>]*c-card-grid-item__title[^>]*>\s*<a\b[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
+            article,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        if not title_match:
+            continue
+        url = clean_url(parse.urljoin(source.url, unescape(title_match.group(1))))
+        title = _clean_title_text(_clean_long_text(title_match.group(2)))
+        if not url or url in seen or len(title) < 8:
+            continue
+        category_match = re.search(
+            r'c-card-grid-item__category[^>]*>(.*?)<svg\b',
+            article,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        category = _clean_long_text(category_match.group(1)) if category_match else "Event"
+        date_match = next(
+            (
+                match
+                for match in re.finditer(r"<p\b[^>]*>(.*?)</p>", article, flags=re.IGNORECASE | re.DOTALL)
+                if re.search(r"\b20\d{2}\b", _clean_long_text(match.group(1)))
+            ),
+            None,
+        )
+        date_text = _clean_long_text(date_match.group(1)) if date_match else ""
+        date_range = _extract_visible_event_date_range(date_text)
+        if not date_range:
+            continue
+        start, end = date_range
+        after_title = article[title_match.end():]
+        summary_match = re.search(r"<p\b[^>]*>(.*?)</p>", after_title, flags=re.IGNORECASE | re.DOTALL)
+        summary = _clean_snippet(summary_match.group(1)) if summary_match else ""
+        type_blob = f"{category} {title} {summary}".lower()
+        activity_type = ""
+        if "exhibition" in type_blob:
+            activity_type = "exhibition"
+        elif (
+            re.search(r"\bmarkets?\b", type_blob)
+            or "street food" in type_blob
+            or "grub on the docks" in type_blob
+        ):
+            activity_type = "food_market" if "food" in type_blob or "grub" in type_blob else "market"
+        elif "festival" in type_blob:
+            activity_type = "festival"
+        hint = {
+            "schema_source": "mediacity_event_card",
+            "event_name": title,
+            "date": start,
+            "date_start": start,
+            "date_end": end,
+            "date_text": date_text,
+            "activity_type": activity_type,
+            "booking_url": url,
+            "event_instance_id": _jsonld_event_instance_id(title, start, "MediaCity"),
+        }
+        evidence = _clean_long_text(
+            " | ".join(part for part in (category, date_text, summary, "MediaCity, Salford") if part)
+        )
+        seen.add(url)
+        items.append(
+            ExtractedItem(
+                title=title,
+                url=url,
+                published_at=start,
+                summary=summary or evidence,
+                lead=title,
+                evidence_text=evidence,
+                enrichment_status="ok_mediacity_card",
+                structured_event_hint={key: value for key, value in hint.items() if value},
+            )
+        )
+    return items
+
+
+def _extract_mediacity_detail_hint(body: str) -> dict[str, str]:
+    venue_match = re.search(
+        r'c-hero-event__col--venue.*?<p\b[^>]*c-hero-event__subtitle[^>]*>(.*?)</p>',
+        body,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    venue = _clean_long_text(venue_match.group(1)) if venue_match else ""
+    return {"venue": venue, "schema_source": "mediacity_event_page"} if venue else {}
 
 
 def _summary_from_evidence(evidence: str) -> str:
@@ -726,6 +861,7 @@ _TRUSTED_CARD_ENRICHMENT = {
     "ok_weekly_section", "ok_sectioned_guide", "ok_gmmh_press_release",
     "ok_heritage_card", "ok_manchester_theatres_card",
     "ok_pedddle_event_card",
+    "ok_mediacity_card",
 }
 
 _DEEP_EVENT_ENRICHMENT_SOURCES = {
@@ -734,6 +870,7 @@ _DEEP_EVENT_ENRICHMENT_SOURCES = {
     "Manchester's Finest Events",
     "GM Chamber Events",
     "CompiledMCR Tech Events",
+    "MediaCity What's On",
 }
 
 
@@ -909,8 +1046,11 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         paragraph_evidence = _trafilatura_evidence(article_html) or paragraph_evidence
     enriched_summary = _extract_jsonld_description(article_html) or _extract_meta_description(article_html)
     enriched_title = _extract_jsonld_title(article_html) or _extract_page_title(article_html)
+    detail_hint = _extract_jsonld_event_hint(article_html)
+    if source.source_type == "html_mediacity_events":
+        detail_hint = _merge_event_hints(_extract_mediacity_detail_hint(article_html), detail_hint)
     structured_event_hint = _merge_event_hints(
-        _extract_jsonld_event_hint(article_html),
+        detail_hint,
         dict(item.structured_event_hint or {}),
     )
     if detail_url and structured_event_hint and not structured_event_hint.get("booking_url"):
@@ -938,6 +1078,7 @@ def _enrich_item(source: SourceDef, item: ExtractedItem) -> ExtractedItem:
         "Manchester's Finest Events",
         "GM Chamber Events",
         "CompiledMCR Tech Events",
+        "MediaCity What's On",
         "Manchester Theatres Weekend",
         "Manchester Theatres Next Weekend",
         "Manchester City",
@@ -3269,6 +3410,8 @@ def _extract_source_candidates(
         links = _extract_eventfirst_items(body)
     elif source.source_type == "html_page_event":
         links = _extract_html_page_event(source, body)
+    elif source.source_type == "html_mediacity_events":
+        links = _extract_mediacity_event_cards(source, body)
     elif source.source_type == "html_visitmanchester_events":
         links = _extract_visit_manchester_events(source, body)
     elif source.source_type == "html_phm_events":
@@ -3440,6 +3583,7 @@ def _extract_source_candidates(
             "enrichment_status": item.enrichment_status,
             "source_trial": bool(getattr(source, "trial", False)),
             "structured_event_hint": dict(item.structured_event_hint or {}),
+            "activity_type": str((item.structured_event_hint or {}).get("activity_type") or ""),
         }
         if source.primary_block == "last_24h" and primary_block not in {"last_24h", "city_watch"}:
             candidate["reason"] = (
