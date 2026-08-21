@@ -196,6 +196,7 @@ jobs:
           plan = load("release_plan.json")
           execution = load("plan_execution_report.json")
           writer = load("writer_report.json")
+          editor = load("editor_report.json")
           release = load("release_report.json")
           verify = load("verify_digest_plan_report.json")
           rendered = set(writer.get("rendered_candidate_fingerprints") or [])
@@ -299,6 +300,19 @@ jobs:
                   "tech_business": candidate_funnel(block="tech_business"),
               },
               "section_funnel": section_funnel,
+              "weekend_composition": editor.get("weekend_composition") or {},
+              "weekend_visible_candidates": [
+                  {
+                      "title": row.get("title"),
+                      "source": row.get("source_label"),
+                      "activity_type": row.get("activity_type")
+                          or (row.get("event") or {}).get("activity_type"),
+                  }
+                  for row in candidates
+                  if isinstance(row, dict)
+                  and row.get("primary_block") == "weekend_activities"
+                  and str(row.get("fingerprint") or "") in rendered
+              ],
               "professional_cv_match": validation.get("professional_llm_match") or {},
               "ticket_notability": rank.get("ticket_notability") or {},
               "a_tier_plan": plan.get("a_tier_conservation") or {},

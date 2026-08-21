@@ -1509,6 +1509,8 @@ class NightWaveTest(unittest.TestCase):
         self.assertIn('"planned_shortfalls"', workflow)
         self.assertIn('"block_funnels"', workflow)
         self.assertIn('"section_funnel"', workflow)
+        self.assertIn('"weekend_composition"', workflow)
+        self.assertIn('"weekend_visible_candidates"', workflow)
         self.assertIn('"professional_cv_match"', workflow)
         self.assertIn('"a_tier_verify"', workflow)
         normal_guard = "if: ${{ inputs.stop_after_rank != true && inputs.dry_run_no_send != true }}"
