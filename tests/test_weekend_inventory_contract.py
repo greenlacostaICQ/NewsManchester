@@ -318,6 +318,69 @@ class WeekendInventoryContractTests(unittest.TestCase):
         self.assertEqual(fps, [hubble_fp])
         self.assertEqual(dropped[0]["fingerprint"], sound_fp)
 
+    def test_weekend_duplicate_events_accept_short_and_full_venue(self) -> None:
+        date_key = _next_saturday().isoformat()
+        candidates = {
+            "finest": {
+                "fingerprint": "finest",
+                "primary_block": "weekend_activities",
+                "title": "The Magic of Thailand Festival",
+                "event": {
+                    "date_start": date_key,
+                    "event_name": "The Magic of Thailand Festival",
+                    "venue": "Platt Fields Park",
+                },
+            },
+            "skiddle": {
+                "fingerprint": "skiddle",
+                "primary_block": "weekend_activities",
+                "title": "Magic of Thailand Festival in Manchester",
+                "event": {
+                    "date_start": date_key,
+                    "event_name": "Magic of Thailand Festival in Manchester",
+                    "venue": "Platt Fields Park Platt Lane Manchester M14 5NF",
+                },
+            },
+        }
+
+        lines, _srcs, fps, _scores, _titles, dropped = _collapse_weekend_duplicate_events(
+            ["• The Magic of Thailand Festival.", "• Magic of Thailand Festival in Manchester."],
+            ["Manchester's Finest", "Skiddle"],
+            ["finest", "skiddle"],
+            [100.0, 90.0],
+            ["The Magic of Thailand Festival", "Magic of Thailand Festival in Manchester"],
+            candidates,
+        )
+
+        self.assertEqual(lines, ["• The Magic of Thailand Festival."])
+        self.assertEqual(fps, ["finest"])
+        self.assertEqual(dropped[0]["fingerprint"], "skiddle")
+
+    def test_weekend_duplicate_events_keep_same_name_at_different_venues(self) -> None:
+        date_key = _next_saturday().isoformat()
+        candidates = {
+            fp: {
+                "fingerprint": fp,
+                "primary_block": "weekend_activities",
+                "title": "Community Makers Day",
+                "event": {"date_start": date_key, "event_name": "Community Makers Day", "venue": venue},
+            }
+            for fp, venue in (("sale", "Sale Town Hall"), ("bolton", "Bolton Market Hall"))
+        }
+
+        lines, _srcs, fps, _scores, _titles, dropped = _collapse_weekend_duplicate_events(
+            ["• Community Makers Day at Sale Town Hall.", "• Community Makers Day at Bolton Market Hall."],
+            ["Sale", "Bolton"],
+            ["sale", "bolton"],
+            [100.0, 90.0],
+            ["Community Makers Day", "Community Makers Day"],
+            candidates,
+        )
+
+        self.assertEqual(len(lines), 2)
+        self.assertEqual(fps, ["sale", "bolton"])
+        self.assertEqual(dropped, [])
+
     def test_market_is_routed_to_weekend_before_planning(self) -> None:
         # Pin to a Saturday so the event date lands inside the current-weekend
         # window on any day the suite runs — the rescue only fires when the

@@ -4045,6 +4045,12 @@ def _weekend_duplicate_date(candidate: dict) -> str:
     return str(event.get("date_start") or event.get("date") or "").strip()[:10]
 
 
+def _weekend_duplicate_venues_match(left: str, right: str) -> bool:
+    if not left or not right:
+        return False
+    return left == right or (min(len(left), len(right)) >= 8 and (left in right or right in left))
+
+
 def _collapse_weekend_duplicate_events(
     lines: list[str],
     srcs: list[str],
@@ -4063,9 +4069,19 @@ def _collapse_weekend_duplicate_events(
         venue_key = _weekend_duplicate_venue(candidate, line)
         token_key = _weekend_duplicate_tokens(candidate, line, titles[idx] if idx < len(titles) else "")
         duplicate_of = ""
-        if date_key and venue_key and len(token_key) >= 2:
+        if date_key and len(token_key) >= 2:
             for seen_date, seen_venue, seen_tokens, seen_idx in seen:
-                if seen_date == date_key and seen_venue == venue_key and len(token_key & seen_tokens) >= 2:
+                same_name_without_two_venues = (
+                    token_key == seen_tokens and (not venue_key or not seen_venue)
+                )
+                if (
+                    seen_date == date_key
+                    and len(token_key & seen_tokens) >= 2
+                    and (
+                        _weekend_duplicate_venues_match(venue_key, seen_venue)
+                        or same_name_without_two_venues
+                    )
+                ):
                     duplicate_of = str(fps[seen_idx] if seen_idx < len(fps) else "")
                     break
         if duplicate_of:

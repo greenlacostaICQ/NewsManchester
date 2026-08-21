@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from news_digest.pipeline.block_policy import (
     BLOCK_POLICY_VERSION,
@@ -507,13 +508,13 @@ class Release20260727FixesTest(unittest.TestCase):
         }
         candidates = [finished, official, media]
 
-        expired = _expire_finished_transport(candidates)
+        with patch("news_digest.pipeline.transport_fill.now_london", return_value=now):
+            expired = _expire_finished_transport(candidates)
         duplicates = _collapse_transport_segment_duplicates(candidates)
 
         self.assertEqual([row["fingerprint"] for row in expired], ["tpe-1"])
         self.assertEqual([row["fingerprint"] for row in duplicates], ["bbc-1"])
         self.assertTrue(official["include"])
-        del now
 
     def test_wigan_liverpool_media_rewrite_collapses_into_official_status(self) -> None:
         official = {
