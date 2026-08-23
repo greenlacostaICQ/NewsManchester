@@ -2,29 +2,20 @@
   "status": "failed",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 1 repair(s); every operation passed its post-check",
+  "reason": "pre-send judge requested a hold without an executable repair; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-08-22",
-  "pipeline_run_id": "20260822T080132+0100",
-  "digest_sha256": "7100c3224d732c47d676435889b973f0591564fe22f4c3d5f3c88c6fdff18799",
-  "duration_seconds": 102.368,
+  "run_date_london": "2026-08-23",
+  "pipeline_run_id": "20260823T080129+0100",
+  "digest_sha256": "a1d9839b020954c64435d663fa1fb5feb50521e103b841ef94879c588d73510f",
+  "duration_seconds": 80.018,
   "confidence": 0.0,
-  "critical_errors": [
-    {
-      "line_index": 5,
-      "section": "Свежие новости",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "acquittal"
-    }
-  ],
+  "critical_errors": [],
   "actions": [],
   "warnings": [
-    "all judge calls failed: 15 failure(s)"
+    "all judge calls failed: 13 failure(s)"
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -33,66 +24,64 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 1,
-      "Что важно сегодня": 1,
+      "Общественный транспорт сегодня": 5,
       "Футбол": 2,
-      "Выходные в GM": 16,
+      "Выходные в GM": 11,
       "Городской радар": 5,
-      "IT и бизнес": 3,
-      "Дальние анонсы": 2,
-      "Билеты / Ticket Radar": 2,
-      "Крупные концерты вне GM": 7,
+      "IT и бизнес": 1,
+      "Билеты / Ticket Radar": 3,
+      "Крупные концерты вне GM": 5,
       "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 1,
+      "Что важно сегодня": 0,
       "Свежие новости": 9,
       "Главная история дня": 1,
       "Городской радар": 5,
-      "Выходные в GM": 16,
-      "Билеты / Ticket Radar": 2,
+      "Выходные в GM": 11,
+      "Билеты / Ticket Radar": 3,
       "Русскоязычные концерты и стендап UK": 1,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
       "Футбол": 2
     },
-    "ticket_items": 10,
-    "core_items": 35,
+    "ticket_items": 9,
+    "core_items": 29,
     "writer_quality_counts": {
-      "included_candidates": 54,
-      "rendered_candidates": 51,
+      "included_candidates": 46,
+      "rendered_candidates": 44,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
-      "dropped_missing_draft_line": 0,
+      "dropped_missing_draft_line": 1,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 0,
-      "replaced_from_plan_backup": 3,
-      "removed_with_reason": 0
+      "dropped_low_quality": 1,
+      "replaced_from_plan_backup": 0,
+      "removed_with_reason": 2
     },
     "source_health_counts": {
-      "ok": 111,
+      "ok": 112,
       "partial": 0,
-      "stale": 5,
-      "empty": 11,
-      "failed": 2,
-      "zero_yield": 72,
+      "stale": 10,
+      "empty": 7,
+      "failed": 1,
+      "zero_yield": 80,
       "no_contribution_breakdown": {
-        "fetch_failed": 2,
-        "all_rejected": 72,
-        "idle_no_items": 27
+        "fetch_failed": 1,
+        "all_rejected": 80,
+        "idle_no_items": 25
       },
       "zero_contribution_by_stage": {
-        "selected": 38,
-        "written": 34,
-        "parsed": 27,
-        "fetched": 2
+        "written": 39,
+        "selected": 41,
+        "parsed": 25,
+        "fetched": 1
       },
-      "weekend_source_coverage_incidents": 50
+      "weekend_source_coverage_incidents": 51
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 1 item(s), emergency floor 3",
+      "Что важно сегодня: 0 item(s), emergency floor 3",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "Business/tech события для тебя: 0 item(s), emergency floor 1"
     ]
@@ -111,115 +100,46 @@
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 51,
-    "matched_lines": 51,
-    "applicable_lines": 3,
+    "checked_lines": 44,
+    "matched_lines": 44,
+    "applicable_lines": 1,
     "unmatched_lines": 4,
-    "critical_omission_count": 1,
-    "critical_omissions": [
-      {
-        "line_index": 5,
-        "source_url_key": "bbc.com/news/articles/cx2re79vnypo",
-        "concept": "acquittal",
-        "obligation": "charge/verdict/victim",
-        "source_hit": "not guilty"
-      }
-    ],
+    "critical_omission_count": 0,
+    "critical_omissions": [],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 1,
+    "pulled_for_rework": 0,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 1,
-    "attempted": 1,
-    "applied": 1,
+    "requested": 0,
+    "attempted": 0,
+    "applied": 0,
     "model_patch_applied": 0,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 1,
+    "reserve_replacement_used": 0,
     "stripped": 0,
     "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 1,
+    "resolved": 0,
     "resolved_in_place": 0,
-    "resolved_by_replacement": 1,
+    "resolved_by_replacement": 0,
     "resolved_by_removal": 0,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 1,
+    "enrich_attempted": 0,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
-    "actions": [
-      {
-        "line_index": 5,
-        "section": "Свежие новости",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no Russian rendering in the shipped line",
-        "risk": "translation",
-        "critical_error": true,
-        "critical_problem": "",
-        "completeness_concept": "acquittal",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-03",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cx2re79vnypo-0391e4bb2076",
-        "original_url_identity": "bbc.com/news/articles/cx2re79vnypo",
-        "original_html": "• Шания Кэр-След, 20 лет, в Королевском суде Миншалл-стрит не признала вину по двум обвинениям в поджоге и признала опасное вождение; суд по поджогу назначен на май 2027 года, приговор за вождение — на 29 сентября. <a href=\"https://bbc.com/news/articles/cx2re79vnypo\">BBC Manchester</a>",
-        "replacement_fingerprint": "url-aboutmanchester-co-uk-auris-manchesters-first-sound-art-festival-announces-newly-confirmed-artists-for-their-2026-programme-dff759a01e2e",
-        "post_check_passed": true
-      }
-    ],
-    "operations": [
-      {
-        "group_key": "свежие новости::critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no russian rendering in the shipped line",
-        "actions": [
-          {
-            "line_index": 5,
-            "section": "Свежие новости",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no Russian rendering in the shipped line",
-            "risk": "translation",
-            "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "acquittal",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-03",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cx2re79vnypo-0391e4bb2076",
-            "original_url_identity": "bbc.com/news/articles/cx2re79vnypo",
-            "original_html": "• Шания Кэр-След, 20 лет, в Королевском суде Миншалл-стрит не признала вину по двум обвинениям в поджоге и признала опасное вождение; суд по поджогу назначен на май 2027 года, приговор за вождение — на 29 сентября. <a href=\"https://bbc.com/news/articles/cx2re79vnypo\">BBC Manchester</a>",
-            "replacement_fingerprint": "url-aboutmanchester-co-uk-auris-manchesters-first-sound-art-festival-announces-newly-confirmed-artists-for-their-2026-programme-dff759a01e2e",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 5,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      }
-    ],
-    "refetch": {
-      "attempted": 0,
-      "improved": 0,
-      "failed": 0,
-      "empty_or_not_better": 0,
-      "skipped": 0
-    },
-    "enrich_improved": 1,
-    "deterministic_rewrite_rejected": 1,
+    "actions": [],
+    "operations": [],
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 51,
-      "matched_lines": 51,
-      "applicable_lines": 2,
+      "checked_lines": 44,
+      "matched_lines": 44,
+      "applicable_lines": 1,
       "unmatched_lines": 4,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -231,8 +151,8 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 55,
-      "resolved_in_place": 55,
+      "checked_lines": 48,
+      "resolved_in_place": 48,
       "unresolved": 0,
       "findings": []
     },
@@ -245,7 +165,7 @@
     "critical_errors": [],
     "actions": [],
     "warnings": [
-      "all judge calls failed: 15 failure(s)"
+      "all judge calls failed: 13 failure(s)"
     ],
     "notes": "pre-send judge failed before producing usable verdicts",
     "map_reduce": {
@@ -265,8 +185,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 2719,
-          "duration_seconds": 1.031
+          "estimated_tokens": 2705,
+          "duration_seconds": 0.969
         },
         {
           "chunk_id": "chunk-02",
@@ -283,8 +203,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 2440,
-          "duration_seconds": 0.959
+          "estimated_tokens": 2430,
+          "duration_seconds": 0.941
         },
         {
           "chunk_id": "chunk-03",
@@ -301,15 +221,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 6942,
-          "duration_seconds": 1.004
+          "estimated_tokens": 7111,
+          "duration_seconds": 1.158
         },
         {
           "chunk_id": "chunk-04",
           "status": "failed",
           "line_range": [
             12,
-            12
+            16
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -319,33 +239,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 2613,
-          "duration_seconds": 0.595
+          "estimated_tokens": 4294,
+          "duration_seconds": 0.522
         },
         {
           "chunk_id": "chunk-05",
           "status": "failed",
           "line_range": [
-            13,
-            13
-          ],
-          "sections": [
-            "Что важно сегодня"
-          ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 2710,
-          "duration_seconds": 0.603
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "failed",
-          "line_range": [
-            14,
-            15
+            17,
+            18
           ],
           "sections": [
             "Футбол"
@@ -355,15 +257,33 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 3128,
-          "duration_seconds": 0.557
+          "estimated_tokens": 3136,
+          "duration_seconds": 0.61
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "failed",
+          "line_range": [
+            19,
+            30
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
+          "estimated_tokens": 7618,
+          "duration_seconds": 0.562
         },
         {
           "chunk_id": "chunk-07",
           "status": "failed",
           "line_range": [
-            16,
-            27
+            31,
+            33
           ],
           "sections": [
             "Выходные в GM"
@@ -373,33 +293,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 8147,
-          "duration_seconds": 70.995
+          "estimated_tokens": 4096,
+          "duration_seconds": 23.269
         },
         {
           "chunk_id": "chunk-08",
           "status": "failed",
           "line_range": [
-            28,
-            35
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 6633,
-          "duration_seconds": 0.563
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "failed",
-          "line_range": [
-            36,
-            40
+            34,
+            38
           ],
           "sections": [
             "Городской радар"
@@ -409,15 +311,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 4743,
-          "duration_seconds": 33.1
+          "estimated_tokens": 4771,
+          "duration_seconds": 40.158
         },
         {
-          "chunk_id": "chunk-10",
+          "chunk_id": "chunk-09",
           "status": "failed",
           "line_range": [
-            41,
-            43
+            39,
+            39
           ],
           "sections": [
             "IT и бизнес"
@@ -427,33 +329,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 3734,
-          "duration_seconds": 7.213
+          "estimated_tokens": 2607,
+          "duration_seconds": 5.265
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-10",
           "status": "failed",
           "line_range": [
-            44,
-            45
-          ],
-          "sections": [
-            "Дальние анонсы"
-          ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 3226,
-          "duration_seconds": 7.205
-        },
-        {
-          "chunk_id": "chunk-12",
-          "status": "failed",
-          "line_range": [
-            46,
-            47
+            40,
+            42
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -463,15 +347,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 3418,
-          "duration_seconds": 7.548
+          "estimated_tokens": 3878,
+          "duration_seconds": 8.696
         },
         {
-          "chunk_id": "chunk-13",
+          "chunk_id": "chunk-11",
           "status": "failed",
           "line_range": [
-            48,
-            54
+            43,
+            47
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -481,15 +365,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 6071,
-          "duration_seconds": 30.347
+          "estimated_tokens": 4917,
+          "duration_seconds": 36.863
         },
         {
-          "chunk_id": "chunk-14",
+          "chunk_id": "chunk-12",
           "status": "failed",
           "line_range": [
-            55,
-            55
+            48,
+            48
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
@@ -499,8 +383,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 2840,
-          "duration_seconds": 6.18
+          "estimated_tokens": 2828,
+          "duration_seconds": 6.31
         }
       ],
       "reduce": {
@@ -513,8 +397,8 @@
         "action_count": 0,
         "warning_count": 0,
         "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-        "estimated_tokens": 12451,
-        "duration_seconds": 27.662
+        "estimated_tokens": 11728,
+        "duration_seconds": 26.044
       },
       "max_workers": 3,
       "chunk_line_target": 12,

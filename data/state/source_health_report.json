@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
-  "pipeline_run_id": "20260822T080132+0100",
-  "run_date_london": "2026-08-22",
-  "created_at_london": "2026-08-22T08:10:01.166855+01:00",
+  "pipeline_run_id": "20260823T080129+0100",
+  "run_date_london": "2026-08-23",
+  "created_at_london": "2026-08-23T08:03:54.679415+01:00",
   "policy": "A source that fetched OK but extracted 0 items is a parser/filter failure to inspect, not proof that the source is healthy.",
   "counts": {
     "checked": 128,
-    "ok": 111,
-    "empty_parser": 11,
-    "failed_fetch": 2,
+    "ok": 114,
+    "empty_parser": 7,
+    "failed_fetch": 1,
     "dead_url": 0,
-    "timeout": 1,
-    "not_modified": 4,
-    "needs_action": 13
+    "timeout": 0,
+    "not_modified": 6,
+    "needs_action": 8
   },
   "dead_parser_today": [
     {
@@ -23,16 +23,6 @@
       "recommended_next_action": "inspect HTML/feed shape and source filter before curl/proxy",
       "warnings": [
         "GMCA: fetched successfully but no candidate links passed filters"
-      ]
-    },
-    {
-      "name": "National Rail Enquiries",
-      "category": "transport",
-      "url": "https://www.nationalrail.co.uk/status-and-disruptions/",
-      "failure_class": "parser_or_filter_empty",
-      "recommended_next_action": "inspect HTML/feed shape and source filter before curl/proxy",
-      "warnings": [
-        "National Rail Enquiries: fetched successfully but no candidate links passed filters"
       ]
     },
     {
@@ -86,36 +76,6 @@
       ]
     },
     {
-      "name": "Manchester United",
-      "category": "football",
-      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC6yW44UGJJBvYTlfC7CRg2Q",
-      "failure_class": "parser_or_filter_empty",
-      "recommended_next_action": "inspect HTML/feed shape and source filter before curl/proxy",
-      "warnings": [
-        "Manchester United: fetched successfully but no candidate links passed filters"
-      ]
-    },
-    {
-      "name": "Manchester City",
-      "category": "football",
-      "url": "https://www.mancity.com/news?tag=News",
-      "failure_class": "parser_or_filter_empty",
-      "recommended_next_action": "inspect HTML/feed shape and source filter before curl/proxy",
-      "warnings": [
-        "Manchester City: fetched successfully but no candidate links passed filters"
-      ]
-    },
-    {
-      "name": "Manchester City Men",
-      "category": "football",
-      "url": "https://www.mancity.com/news/mens",
-      "failure_class": "parser_or_filter_empty",
-      "recommended_next_action": "inspect HTML/feed shape and source filter before curl/proxy",
-      "warnings": [
-        "Manchester City Men: fetched successfully but no candidate links passed filters"
-      ]
-    },
-    {
       "name": "BusinessLive Greater Manchester",
       "category": "tech_business",
       "url": "https://www.business-live.co.uk/news/",
@@ -136,16 +96,6 @@
       "errors": [
         "HTTP 500"
       ]
-    },
-    {
-      "name": "Chorlton Makers Market",
-      "category": "culture_weekly",
-      "url": "https://chorlton.coop/series/chorlton-makers-market/",
-      "failure_class": "fetch_timeout",
-      "recommended_next_action": "check timeout, fallback URL, and source availability",
-      "errors": [
-        "The read operation timed out"
-      ]
     }
   ],
   "sources": [
@@ -156,38 +106,42 @@
       "fetched_url": "https://feeds.bbci.co.uk/news/england/manchester/rss.xml",
       "source_contract": "hard_news_daily",
       "status": "ok",
-      "candidate_count": 11,
-      "publishable_count": 11,
-      "dated_candidate_count": 11,
-      "coverage_signal_count": 10,
+      "candidate_count": 10,
+      "publishable_count": 10,
+      "dated_candidate_count": 10,
+      "coverage_signal_count": 8,
       "coverage_signal_label": "fresh published items",
       "failure_class": "healthy_with_candidates",
       "reliability_ladder_step": "none",
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.278,
-      "extract_duration_seconds": 3.471,
-      "byte_count": 17372,
-      "post_count": 23,
+      "fetch_duration_seconds": 0.301,
+      "extract_duration_seconds": 3.163,
+      "byte_count": 15168,
+      "post_count": 20,
       "extraction_funnel": {
-        "raw_extracted": 23,
+        "raw_extracted": 20,
         "url_gate_passed": 11,
-        "date_gate_passed": 11,
+        "date_gate_passed": 10,
         "geo_gate_passed": 11,
-        "routing_passed": 11,
-        "candidates": 11,
+        "routing_passed": 10,
+        "candidates": 10,
         "geo_gate_owner": "source policy here; final GM consequence gate in validator",
         "top_reject_reasons": [
           {
             "reason": "url_or_geo_source_policy",
-            "count": 12
+            "count": 9
+          },
+          {
+            "reason": "date_gate_stale_or_undated",
+            "count": 1
           }
         ]
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 3.75,
+      "duration_seconds": 3.464,
       "needs_action": false
     },
     {
@@ -197,42 +151,42 @@
       "fetched_url": "https://www.bbc.co.uk/news/england/manchester",
       "source_contract": "hard_news_daily",
       "status": "ok",
-      "candidate_count": 11,
-      "publishable_count": 11,
-      "dated_candidate_count": 11,
-      "coverage_signal_count": 10,
+      "candidate_count": 12,
+      "publishable_count": 12,
+      "dated_candidate_count": 12,
+      "coverage_signal_count": 8,
       "coverage_signal_label": "fresh published items",
       "failure_class": "healthy_with_candidates",
       "reliability_ladder_step": "none",
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.431,
-      "extract_duration_seconds": 2.367,
-      "byte_count": 620766,
-      "post_count": 56,
+      "fetch_duration_seconds": 0.596,
+      "extract_duration_seconds": 3.197,
+      "byte_count": 639025,
+      "post_count": 57,
       "extraction_funnel": {
-        "raw_extracted": 56,
-        "url_gate_passed": 11,
-        "date_gate_passed": 11,
-        "geo_gate_passed": 11,
-        "routing_passed": 11,
-        "candidates": 11,
+        "raw_extracted": 57,
+        "url_gate_passed": 12,
+        "date_gate_passed": 12,
+        "geo_gate_passed": 12,
+        "routing_passed": 12,
+        "candidates": 12,
         "geo_gate_owner": "source policy here; final GM consequence gate in validator",
         "top_reject_reasons": [
           {
             "reason": "url_or_geo_source_policy",
-            "count": 35
+            "count": 39
           },
           {
             "reason": "duplicate_url",
-            "count": 10
+            "count": 6
           }
         ]
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 3.798,
+      "duration_seconds": 3.793,
       "needs_action": false
     },
     {
@@ -242,42 +196,42 @@
       "fetched_url": "https://www.manchestereveningnews.co.uk/news/greater-manchester-news/",
       "source_contract": "hard_news_daily",
       "status": "ok",
-      "candidate_count": 23,
-      "publishable_count": 23,
-      "dated_candidate_count": 23,
-      "coverage_signal_count": 23,
+      "candidate_count": 19,
+      "publishable_count": 19,
+      "dated_candidate_count": 19,
+      "coverage_signal_count": 19,
       "coverage_signal_label": "fresh published items",
       "failure_class": "healthy_with_candidates",
       "reliability_ladder_step": "none",
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.177,
-      "extract_duration_seconds": 19.381,
-      "byte_count": 801381,
-      "post_count": 94,
+      "fetch_duration_seconds": 0.467,
+      "extract_duration_seconds": 12.139,
+      "byte_count": 802955,
+      "post_count": 99,
       "extraction_funnel": {
-        "raw_extracted": 94,
-        "url_gate_passed": 23,
-        "date_gate_passed": 23,
-        "geo_gate_passed": 23,
-        "routing_passed": 23,
-        "candidates": 23,
+        "raw_extracted": 99,
+        "url_gate_passed": 19,
+        "date_gate_passed": 19,
+        "geo_gate_passed": 19,
+        "routing_passed": 19,
+        "candidates": 19,
         "geo_gate_owner": "source policy here; final GM consequence gate in validator",
         "top_reject_reasons": [
           {
             "reason": "duplicate_url",
-            "count": 50
+            "count": 46
           },
           {
             "reason": "url_or_geo_source_policy",
-            "count": 21
+            "count": 34
           }
         ]
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 20.559,
+      "duration_seconds": 12.606,
       "needs_action": false
     },
     {
@@ -287,42 +241,42 @@
       "fetched_url": "https://www.manchestereveningnews.co.uk/news/",
       "source_contract": "hard_news_daily",
       "status": "ok",
-      "candidate_count": 29,
-      "publishable_count": 29,
-      "dated_candidate_count": 29,
-      "coverage_signal_count": 29,
+      "candidate_count": 24,
+      "publishable_count": 24,
+      "dated_candidate_count": 24,
+      "coverage_signal_count": 24,
       "coverage_signal_label": "fresh published items",
       "failure_class": "healthy_with_candidates",
       "reliability_ladder_step": "none",
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.698,
-      "extract_duration_seconds": 24.273,
-      "byte_count": 842563,
-      "post_count": 178,
+      "fetch_duration_seconds": 0.527,
+      "extract_duration_seconds": 14.683,
+      "byte_count": 841854,
+      "post_count": 175,
       "extraction_funnel": {
-        "raw_extracted": 178,
-        "url_gate_passed": 29,
-        "date_gate_passed": 29,
-        "geo_gate_passed": 29,
-        "routing_passed": 29,
-        "candidates": 29,
+        "raw_extracted": 175,
+        "url_gate_passed": 24,
+        "date_gate_passed": 24,
+        "geo_gate_passed": 24,
+        "routing_passed": 24,
+        "candidates": 24,
         "geo_gate_owner": "source policy here; final GM consequence gate in validator",
         "top_reject_reasons": [
           {
-            "reason": "duplicate_url",
-            "count": 84
+            "reason": "url_or_geo_source_policy",
+            "count": 79
           },
           {
-            "reason": "url_or_geo_source_policy",
-            "count": 65
+            "reason": "duplicate_url",
+            "count": 72
           }
         ]
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 24.973,
+      "duration_seconds": 15.211,
       "needs_action": false
     },
     {
@@ -335,39 +289,39 @@
       "candidate_count": 40,
       "publishable_count": 40,
       "dated_candidate_count": 40,
-      "coverage_signal_count": 35,
+      "coverage_signal_count": 29,
       "coverage_signal_label": "fresh published items",
       "failure_class": "healthy_with_candidates",
       "reliability_ladder_step": "none",
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.734,
-      "extract_duration_seconds": 33.061,
-      "byte_count": 180387,
-      "post_count": 241,
+      "fetch_duration_seconds": 0.83,
+      "extract_duration_seconds": 28.484,
+      "byte_count": 157996,
+      "post_count": 211,
       "extraction_funnel": {
-        "raw_extracted": 241,
-        "url_gate_passed": 42,
+        "raw_extracted": 211,
+        "url_gate_passed": 45,
         "date_gate_passed": 40,
-        "geo_gate_passed": 42,
+        "geo_gate_passed": 45,
         "routing_passed": 40,
         "candidates": 40,
         "geo_gate_owner": "source policy here; final GM consequence gate in validator",
         "top_reject_reasons": [
           {
             "reason": "url_or_geo_source_policy",
-            "count": 120
+            "count": 157
           },
           {
             "reason": "date_gate_stale_or_undated",
-            "count": 2
+            "count": 5
           }
         ]
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 33.795,
+      "duration_seconds": 29.314,
       "needs_action": false
     },
     {
@@ -387,8 +341,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.595,
-      "extract_duration_seconds": 10.697,
+      "fetch_duration_seconds": 0.324,
+      "extract_duration_seconds": 7.231,
       "byte_count": 95382,
       "post_count": 15,
       "extraction_funnel": {
@@ -403,7 +357,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 11.292,
+      "duration_seconds": 7.556,
       "needs_action": false
     },
     {
@@ -423,9 +377,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.32,
-      "extract_duration_seconds": 8.693,
-      "byte_count": 174091,
+      "fetch_duration_seconds": 0.42,
+      "extract_duration_seconds": 9.841,
+      "byte_count": 174124,
       "post_count": 69,
       "extraction_funnel": {
         "raw_extracted": 69,
@@ -452,7 +406,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 9.013,
+      "duration_seconds": 10.262,
       "needs_action": false
     },
     {
@@ -462,29 +416,33 @@
       "fetched_url": "https://aboutmanchester.co.uk/feed/",
       "source_contract": "hard_news_daily",
       "status": "ok",
-      "candidate_count": 6,
-      "publishable_count": 6,
-      "dated_candidate_count": 6,
-      "coverage_signal_count": 6,
+      "candidate_count": 2,
+      "publishable_count": 2,
+      "dated_candidate_count": 2,
+      "coverage_signal_count": 0,
       "coverage_signal_label": "fresh published items",
       "failure_class": "healthy_with_candidates",
       "reliability_ladder_step": "none",
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.361,
-      "extract_duration_seconds": 4.619,
+      "fetch_duration_seconds": 1.215,
+      "extract_duration_seconds": 4.753,
       "byte_count": 54393,
       "post_count": 10,
       "extraction_funnel": {
         "raw_extracted": 10,
         "url_gate_passed": 6,
-        "date_gate_passed": 6,
+        "date_gate_passed": 2,
         "geo_gate_passed": 6,
-        "routing_passed": 6,
-        "candidates": 6,
+        "routing_passed": 2,
+        "candidates": 2,
         "geo_gate_owner": "source policy here; final GM consequence gate in validator",
         "top_reject_reasons": [
+          {
+            "reason": "date_gate_stale_or_undated",
+            "count": 4
+          },
           {
             "reason": "url_or_geo_source_policy",
             "count": 4
@@ -493,7 +451,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 5.981,
+      "duration_seconds": 5.968,
       "needs_action": false
     },
     {
@@ -513,8 +471,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.26,
-      "extract_duration_seconds": 6.275,
+      "fetch_duration_seconds": 0.286,
+      "extract_duration_seconds": 1.378,
       "byte_count": 160872,
       "post_count": 13,
       "extraction_funnel": {
@@ -534,7 +492,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 6.535,
+      "duration_seconds": 1.664,
       "needs_action": false
     },
     {
@@ -543,39 +501,27 @@
       "url": "https://altrincham.todaynews.co.uk/feed/",
       "fetched_url": "https://altrincham.todaynews.co.uk/feed/",
       "source_contract": "news_periodic",
-      "status": "ok",
-      "candidate_count": 7,
-      "publishable_count": 7,
-      "dated_candidate_count": 7,
-      "coverage_signal_count": 7,
-      "coverage_signal_label": "items",
-      "failure_class": "healthy_with_candidates",
+      "status": "not_modified",
+      "candidate_count": 0,
+      "publishable_count": 0,
+      "dated_candidate_count": 0,
+      "coverage_signal_count": 0,
+      "coverage_signal_label": "",
+      "failure_class": "healthy_not_modified",
       "reliability_ladder_step": "none",
-      "recommended_next_action": "no reliability action",
+      "recommended_next_action": "no action; source reached and unchanged",
       "errors": [],
-      "warnings": [],
-      "fetch_duration_seconds": 0.434,
-      "extract_duration_seconds": 4.414,
-      "byte_count": 91387,
-      "post_count": 14,
-      "extraction_funnel": {
-        "raw_extracted": 14,
-        "url_gate_passed": 14,
-        "date_gate_passed": 7,
-        "geo_gate_passed": 14,
-        "routing_passed": 7,
-        "candidates": 7,
-        "geo_gate_owner": "source policy here; final GM consequence gate in validator",
-        "top_reject_reasons": [
-          {
-            "reason": "date_gate_stale_or_undated",
-            "count": 7
-          }
-        ]
-      },
+      "warnings": [
+        "304 Not Modified — no new content since last fetch"
+      ],
+      "fetch_duration_seconds": 0.468,
+      "extract_duration_seconds": 0.0,
+      "byte_count": 0,
+      "post_count": 0,
+      "extraction_funnel": {},
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 4.848,
+      "duration_seconds": 0.47,
       "needs_action": false
     },
     {
@@ -597,8 +543,8 @@
       "warnings": [
         "GMCA: fetched successfully but no candidate links passed filters"
       ],
-      "fetch_duration_seconds": 0.629,
-      "extract_duration_seconds": 0.005,
+      "fetch_duration_seconds": 0.371,
+      "extract_duration_seconds": 0.007,
       "byte_count": 38369,
       "post_count": 20,
       "extraction_funnel": {
@@ -618,7 +564,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.634,
+      "duration_seconds": 0.378,
       "needs_action": true
     },
     {
@@ -638,28 +584,28 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.356,
-      "extract_duration_seconds": 5.377,
-      "byte_count": 73773,
+      "fetch_duration_seconds": 0.355,
+      "extract_duration_seconds": 16.302,
+      "byte_count": 73772,
       "post_count": 20,
       "extraction_funnel": {
         "raw_extracted": 20,
-        "url_gate_passed": 9,
+        "url_gate_passed": 17,
         "date_gate_passed": 5,
-        "geo_gate_passed": 9,
+        "geo_gate_passed": 17,
         "routing_passed": 5,
         "candidates": 5,
         "geo_gate_owner": "source policy here; final GM consequence gate in validator",
         "top_reject_reasons": [
           {
             "reason": "date_gate_stale_or_undated",
-            "count": 4
+            "count": 12
           }
         ]
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 5.734,
+      "duration_seconds": 16.657,
       "needs_action": false
     },
     {
@@ -679,9 +625,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.373,
-      "extract_duration_seconds": 473.307,
-      "byte_count": 122598,
+      "fetch_duration_seconds": 1.583,
+      "extract_duration_seconds": 78.77,
+      "byte_count": 122606,
       "post_count": 18,
       "extraction_funnel": {
         "raw_extracted": 18,
@@ -704,7 +650,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 474.68,
+      "duration_seconds": 80.353,
       "needs_action": false
     },
     {
@@ -724,28 +670,28 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.371,
-      "extract_duration_seconds": 6.248,
+      "fetch_duration_seconds": 0.527,
+      "extract_duration_seconds": 7.284,
       "byte_count": 10530,
       "post_count": 20,
       "extraction_funnel": {
         "raw_extracted": 20,
-        "url_gate_passed": 8,
+        "url_gate_passed": 9,
         "date_gate_passed": 5,
-        "geo_gate_passed": 8,
+        "geo_gate_passed": 9,
         "routing_passed": 5,
         "candidates": 5,
         "geo_gate_owner": "source policy here; final GM consequence gate in validator",
         "top_reject_reasons": [
           {
             "reason": "date_gate_stale_or_undated",
-            "count": 3
+            "count": 4
           }
         ]
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 6.619,
+      "duration_seconds": 7.812,
       "needs_action": false
     },
     {
@@ -765,8 +711,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.546,
-      "extract_duration_seconds": 4.903,
+      "fetch_duration_seconds": 0.611,
+      "extract_duration_seconds": 5.369,
       "byte_count": 10335,
       "post_count": 20,
       "extraction_funnel": {
@@ -781,7 +727,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 5.448,
+      "duration_seconds": 5.98,
       "needs_action": false
     },
     {
@@ -801,8 +747,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.538,
-      "extract_duration_seconds": 5.397,
+      "fetch_duration_seconds": 0.573,
+      "extract_duration_seconds": 4.6,
       "byte_count": 9901,
       "post_count": 20,
       "extraction_funnel": {
@@ -817,7 +763,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 5.934,
+      "duration_seconds": 5.173,
       "needs_action": false
     },
     {
@@ -826,39 +772,27 @@
       "url": "https://www.mynewsdesk.com/uk/rss/current_news/49585",
       "fetched_url": "https://www.mynewsdesk.com/uk/rss/current_news/49585",
       "source_contract": "official_background",
-      "status": "ok",
-      "candidate_count": 5,
-      "publishable_count": 5,
-      "dated_candidate_count": 5,
-      "coverage_signal_count": 5,
-      "coverage_signal_label": "items",
-      "failure_class": "healthy_with_candidates",
+      "status": "not_modified",
+      "candidate_count": 0,
+      "publishable_count": 0,
+      "dated_candidate_count": 0,
+      "coverage_signal_count": 0,
+      "coverage_signal_label": "",
+      "failure_class": "healthy_not_modified",
       "reliability_ladder_step": "none",
-      "recommended_next_action": "no reliability action",
+      "recommended_next_action": "no action; source reached and unchanged",
       "errors": [],
-      "warnings": [],
-      "fetch_duration_seconds": 0.398,
-      "extract_duration_seconds": 3.255,
-      "byte_count": 20619,
-      "post_count": 20,
-      "extraction_funnel": {
-        "raw_extracted": 20,
-        "url_gate_passed": 7,
-        "date_gate_passed": 5,
-        "geo_gate_passed": 7,
-        "routing_passed": 5,
-        "candidates": 5,
-        "geo_gate_owner": "source policy here; final GM consequence gate in validator",
-        "top_reject_reasons": [
-          {
-            "reason": "date_gate_stale_or_undated",
-            "count": 2
-          }
-        ]
-      },
+      "warnings": [
+        "304 Not Modified — no new content since last fetch"
+      ],
+      "fetch_duration_seconds": 0.254,
+      "extract_duration_seconds": 0.0,
+      "byte_count": 0,
+      "post_count": 0,
+      "extraction_funnel": {},
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 3.653,
+      "duration_seconds": 0.255,
       "needs_action": false
     },
     {
@@ -878,8 +812,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.852,
-      "extract_duration_seconds": 5.476,
+      "fetch_duration_seconds": 0.62,
+      "extract_duration_seconds": 5.445,
       "byte_count": 45083,
       "post_count": 24,
       "extraction_funnel": {
@@ -903,7 +837,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 6.328,
+      "duration_seconds": 6.065,
       "needs_action": false
     },
     {
@@ -923,12 +857,12 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.723,
-      "extract_duration_seconds": 0.026,
-      "byte_count": 514727,
-      "post_count": 43,
+      "fetch_duration_seconds": 1.907,
+      "extract_duration_seconds": 0.013,
+      "byte_count": 516013,
+      "post_count": 35,
       "extraction_funnel": {
-        "raw_extracted": 43,
+        "raw_extracted": 35,
         "url_gate_passed": 5,
         "date_gate_passed": 5,
         "geo_gate_passed": 5,
@@ -939,7 +873,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.749,
+      "duration_seconds": 1.92,
       "needs_action": false
     },
     {
@@ -948,37 +882,35 @@
       "url": "https://www.nationalrail.co.uk/status-and-disruptions/",
       "fetched_url": "https://www.nationalrail.co.uk/status-and-disruptions/",
       "source_contract": "transport_live",
-      "status": "empty_parser",
-      "candidate_count": 0,
-      "publishable_count": 0,
-      "dated_candidate_count": 0,
-      "coverage_signal_count": 0,
+      "status": "ok",
+      "candidate_count": 1,
+      "publishable_count": 1,
+      "dated_candidate_count": 1,
+      "coverage_signal_count": 1,
       "coverage_signal_label": "live/known transport items",
-      "failure_class": "parser_or_filter_empty",
-      "reliability_ladder_step": "parser_fix",
-      "recommended_next_action": "inspect HTML/feed shape and source filter before curl/proxy",
+      "failure_class": "healthy_with_candidates",
+      "reliability_ladder_step": "none",
+      "recommended_next_action": "no reliability action",
       "errors": [],
-      "warnings": [
-        "National Rail Enquiries: fetched successfully but no candidate links passed filters"
-      ],
-      "fetch_duration_seconds": 0.254,
-      "extract_duration_seconds": 5.238,
-      "byte_count": 358095,
-      "post_count": 0,
+      "warnings": [],
+      "fetch_duration_seconds": 0.243,
+      "extract_duration_seconds": 2.04,
+      "byte_count": 390426,
+      "post_count": 1,
       "extraction_funnel": {
-        "raw_extracted": 0,
-        "url_gate_passed": 0,
-        "date_gate_passed": 0,
-        "geo_gate_passed": 0,
-        "routing_passed": 0,
-        "candidates": 0,
+        "raw_extracted": 1,
+        "url_gate_passed": 1,
+        "date_gate_passed": 1,
+        "geo_gate_passed": 1,
+        "routing_passed": 1,
+        "candidates": 1,
         "geo_gate_owner": "source policy here; final GM consequence gate in validator",
         "top_reject_reasons": []
       },
-      "empty_retry_performed": true,
-      "empty_retry_result": "still_empty",
-      "duration_seconds": 5.493,
-      "needs_action": true
+      "empty_retry_performed": false,
+      "empty_retry_result": "",
+      "duration_seconds": 2.283,
+      "needs_action": false
     },
     {
       "name": "BBC Manchester public safety fallback",
@@ -987,42 +919,42 @@
       "fetched_url": "https://www.bbc.com/news/england/manchester",
       "source_contract": "hard_news_daily",
       "status": "ok",
-      "candidate_count": 3,
-      "publishable_count": 3,
-      "dated_candidate_count": 3,
-      "coverage_signal_count": 2,
+      "candidate_count": 2,
+      "publishable_count": 2,
+      "dated_candidate_count": 2,
+      "coverage_signal_count": 0,
       "coverage_signal_label": "fresh published items",
       "failure_class": "healthy_with_candidates",
       "reliability_ladder_step": "none",
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.548,
-      "extract_duration_seconds": 1.773,
-      "byte_count": 605860,
-      "post_count": 56,
+      "fetch_duration_seconds": 0.649,
+      "extract_duration_seconds": 1.099,
+      "byte_count": 626325,
+      "post_count": 57,
       "extraction_funnel": {
-        "raw_extracted": 56,
-        "url_gate_passed": 3,
-        "date_gate_passed": 3,
-        "geo_gate_passed": 3,
-        "routing_passed": 3,
-        "candidates": 3,
+        "raw_extracted": 57,
+        "url_gate_passed": 2,
+        "date_gate_passed": 2,
+        "geo_gate_passed": 2,
+        "routing_passed": 2,
+        "candidates": 2,
         "geo_gate_owner": "source policy here; final GM consequence gate in validator",
         "top_reject_reasons": [
           {
             "reason": "url_or_geo_source_policy",
-            "count": 51
+            "count": 54
           },
           {
             "reason": "duplicate_url",
-            "count": 2
+            "count": 1
           }
         ]
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 2.322,
+      "duration_seconds": 1.748,
       "needs_action": false
     },
     {
@@ -1042,8 +974,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.011,
-      "extract_duration_seconds": 0.003,
+      "fetch_duration_seconds": 2.279,
+      "extract_duration_seconds": 0.004,
       "byte_count": 156063,
       "post_count": 5,
       "extraction_funnel": {
@@ -1058,7 +990,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.014,
+      "duration_seconds": 2.283,
       "needs_action": false
     },
     {
@@ -1078,12 +1010,12 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 2.805,
-      "extract_duration_seconds": 5.917,
-      "byte_count": 1607274,
-      "post_count": 28,
+      "fetch_duration_seconds": 2.418,
+      "extract_duration_seconds": 6.01,
+      "byte_count": 1672565,
+      "post_count": 31,
       "extraction_funnel": {
-        "raw_extracted": 28,
+        "raw_extracted": 31,
         "url_gate_passed": 5,
         "date_gate_passed": 5,
         "geo_gate_passed": 5,
@@ -1093,7 +1025,7 @@
         "top_reject_reasons": [
           {
             "reason": "url_or_geo_source_policy",
-            "count": 21
+            "count": 22
           },
           {
             "reason": "duplicate_url",
@@ -1103,7 +1035,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 8.723,
+      "duration_seconds": 8.43,
       "needs_action": false
     },
     {
@@ -1123,8 +1055,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.023,
-      "extract_duration_seconds": 7.127,
+      "fetch_duration_seconds": 0.966,
+      "extract_duration_seconds": 7.05,
       "byte_count": 56467,
       "post_count": 12,
       "extraction_funnel": {
@@ -1148,7 +1080,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 8.151,
+      "duration_seconds": 8.016,
       "needs_action": false
     },
     {
@@ -1168,9 +1100,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 2.093,
-      "extract_duration_seconds": 13.622,
-      "byte_count": 130467,
+      "fetch_duration_seconds": 2.51,
+      "extract_duration_seconds": 15.229,
+      "byte_count": 130330,
       "post_count": 43,
       "extraction_funnel": {
         "raw_extracted": 43,
@@ -1189,7 +1121,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 15.715,
+      "duration_seconds": 17.74,
       "needs_action": false
     },
     {
@@ -1209,9 +1141,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.377,
-      "extract_duration_seconds": 0.093,
-      "byte_count": 581253,
+      "fetch_duration_seconds": 1.035,
+      "extract_duration_seconds": 0.092,
+      "byte_count": 580526,
       "post_count": 1,
       "extraction_funnel": {
         "raw_extracted": 1,
@@ -1225,7 +1157,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.47,
+      "duration_seconds": 1.128,
       "needs_action": false
     },
     {
@@ -1245,9 +1177,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.587,
-      "extract_duration_seconds": 5.432,
-      "byte_count": 153521,
+      "fetch_duration_seconds": 1.341,
+      "extract_duration_seconds": 5.031,
+      "byte_count": 153510,
       "post_count": 41,
       "extraction_funnel": {
         "raw_extracted": 41,
@@ -1266,7 +1198,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 7.019,
+      "duration_seconds": 6.372,
       "needs_action": false
     },
     {
@@ -1286,8 +1218,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.192,
-      "extract_duration_seconds": 15.768,
+      "fetch_duration_seconds": 1.124,
+      "extract_duration_seconds": 13.723,
       "byte_count": 100624,
       "post_count": 9,
       "extraction_funnel": {
@@ -1302,7 +1234,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 16.961,
+      "duration_seconds": 14.847,
       "needs_action": false
     },
     {
@@ -1324,9 +1256,9 @@
       "warnings": [
         "Mottram Show: fetched successfully but no candidate links passed filters"
       ],
-      "fetch_duration_seconds": 1.147,
+      "fetch_duration_seconds": 0.869,
       "extract_duration_seconds": 0.002,
-      "byte_count": 252276,
+      "byte_count": 254301,
       "post_count": 0,
       "extraction_funnel": {
         "raw_extracted": 0,
@@ -1340,7 +1272,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.149,
+      "duration_seconds": 0.871,
       "needs_action": true
     },
     {
@@ -1360,8 +1292,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.884,
-      "extract_duration_seconds": 0.005,
+      "fetch_duration_seconds": 2.313,
+      "extract_duration_seconds": 0.004,
       "byte_count": 87598,
       "post_count": 1,
       "extraction_funnel": {
@@ -1376,7 +1308,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.888,
+      "duration_seconds": 2.317,
       "needs_action": false
     },
     {
@@ -1396,12 +1328,12 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.852,
-      "extract_duration_seconds": 5.081,
-      "byte_count": 505733,
-      "post_count": 55,
+      "fetch_duration_seconds": 3.235,
+      "extract_duration_seconds": 5.25,
+      "byte_count": 518807,
+      "post_count": 58,
       "extraction_funnel": {
-        "raw_extracted": 55,
+        "raw_extracted": 58,
         "url_gate_passed": 5,
         "date_gate_passed": 5,
         "geo_gate_passed": 5,
@@ -1421,7 +1353,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 5.933,
+      "duration_seconds": 8.485,
       "needs_action": false
     },
     {
@@ -1441,9 +1373,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.718,
-      "extract_duration_seconds": 0.671,
-      "byte_count": 136243,
+      "fetch_duration_seconds": 0.755,
+      "extract_duration_seconds": 0.876,
+      "byte_count": 134574,
       "post_count": 2,
       "extraction_funnel": {
         "raw_extracted": 2,
@@ -1457,7 +1389,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.389,
+      "duration_seconds": 1.632,
       "needs_action": false
     },
     {
@@ -1467,33 +1399,33 @@
       "fetched_url": "https://phm.org.uk/whats-on/",
       "source_contract": "event_calendar",
       "status": "ok",
-      "candidate_count": 4,
-      "publishable_count": 4,
-      "dated_candidate_count": 4,
-      "coverage_signal_count": 4,
+      "candidate_count": 3,
+      "publishable_count": 3,
+      "dated_candidate_count": 3,
+      "coverage_signal_count": 3,
       "coverage_signal_label": "items",
       "failure_class": "healthy_with_candidates",
       "reliability_ladder_step": "none",
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.203,
-      "extract_duration_seconds": 5.77,
-      "byte_count": 53167,
-      "post_count": 4,
+      "fetch_duration_seconds": 1.176,
+      "extract_duration_seconds": 4.46,
+      "byte_count": 51900,
+      "post_count": 3,
       "extraction_funnel": {
-        "raw_extracted": 4,
-        "url_gate_passed": 4,
-        "date_gate_passed": 4,
-        "geo_gate_passed": 4,
-        "routing_passed": 4,
-        "candidates": 4,
+        "raw_extracted": 3,
+        "url_gate_passed": 3,
+        "date_gate_passed": 3,
+        "geo_gate_passed": 3,
+        "routing_passed": 3,
+        "candidates": 3,
         "geo_gate_owner": "source policy here; final GM consequence gate in validator",
         "top_reject_reasons": []
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 6.974,
+      "duration_seconds": 5.636,
       "needs_action": false
     },
     {
@@ -1513,9 +1445,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.237,
-      "extract_duration_seconds": 8.983,
-      "byte_count": 45736,
+      "fetch_duration_seconds": 1.295,
+      "extract_duration_seconds": 8.706,
+      "byte_count": 45666,
       "post_count": 40,
       "extraction_funnel": {
         "raw_extracted": 40,
@@ -1534,7 +1466,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 10.22,
+      "duration_seconds": 10.0,
       "needs_action": false
     },
     {
@@ -1554,8 +1486,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.603,
-      "extract_duration_seconds": 30.639,
+      "fetch_duration_seconds": 0.356,
+      "extract_duration_seconds": 0.406,
       "byte_count": 553990,
       "post_count": 1,
       "extraction_funnel": {
@@ -1570,7 +1502,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 31.242,
+      "duration_seconds": 0.763,
       "needs_action": false
     },
     {
@@ -1590,9 +1522,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.677,
-      "extract_duration_seconds": 30.623,
-      "byte_count": 574790,
+      "fetch_duration_seconds": 0.238,
+      "extract_duration_seconds": 30.514,
+      "byte_count": 574791,
       "post_count": 1,
       "extraction_funnel": {
         "raw_extracted": 1,
@@ -1606,7 +1538,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 31.3,
+      "duration_seconds": 30.753,
       "needs_action": false
     },
     {
@@ -1626,9 +1558,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.309,
-      "extract_duration_seconds": 0.906,
-      "byte_count": 405477,
+      "fetch_duration_seconds": 0.078,
+      "extract_duration_seconds": 0.367,
+      "byte_count": 405491,
       "post_count": 1,
       "extraction_funnel": {
         "raw_extracted": 1,
@@ -1642,7 +1574,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.215,
+      "duration_seconds": 0.445,
       "needs_action": false
     },
     {
@@ -1662,9 +1594,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.468,
-      "extract_duration_seconds": 31.091,
-      "byte_count": 433164,
+      "fetch_duration_seconds": 0.242,
+      "extract_duration_seconds": 0.355,
+      "byte_count": 433165,
       "post_count": 1,
       "extraction_funnel": {
         "raw_extracted": 1,
@@ -1678,7 +1610,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 31.559,
+      "duration_seconds": 0.597,
       "needs_action": false
     },
     {
@@ -1688,27 +1620,27 @@
       "fetched_url": "https://www.manchestersfinest.com/events/",
       "source_contract": "event_calendar",
       "status": "ok",
-      "candidate_count": 10,
-      "publishable_count": 10,
-      "dated_candidate_count": 9,
-      "coverage_signal_count": 10,
+      "candidate_count": 9,
+      "publishable_count": 9,
+      "dated_candidate_count": 8,
+      "coverage_signal_count": 9,
       "coverage_signal_label": "items",
       "failure_class": "healthy_with_candidates",
       "reliability_ladder_step": "none",
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.244,
-      "extract_duration_seconds": 15.51,
-      "byte_count": 83665,
-      "post_count": 24,
+      "fetch_duration_seconds": 0.992,
+      "extract_duration_seconds": 10.926,
+      "byte_count": 83168,
+      "post_count": 23,
       "extraction_funnel": {
-        "raw_extracted": 24,
-        "url_gate_passed": 10,
-        "date_gate_passed": 10,
-        "geo_gate_passed": 10,
-        "routing_passed": 10,
-        "candidates": 10,
+        "raw_extracted": 23,
+        "url_gate_passed": 9,
+        "date_gate_passed": 9,
+        "geo_gate_passed": 9,
+        "routing_passed": 9,
+        "candidates": 9,
         "geo_gate_owner": "source policy here; final GM consequence gate in validator",
         "top_reject_reasons": [
           {
@@ -1719,7 +1651,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 16.755,
+      "duration_seconds": 11.918,
       "needs_action": false
     },
     {
@@ -1739,7 +1671,7 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.254,
+      "fetch_duration_seconds": 0.214,
       "extract_duration_seconds": 0.003,
       "byte_count": 148285,
       "post_count": 5,
@@ -1760,7 +1692,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.257,
+      "duration_seconds": 0.217,
       "needs_action": false
     },
     {
@@ -1780,8 +1712,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.519,
-      "extract_duration_seconds": 3.277,
+      "fetch_duration_seconds": 0.407,
+      "extract_duration_seconds": 1.612,
       "byte_count": 67799,
       "post_count": 17,
       "extraction_funnel": {
@@ -1795,13 +1727,13 @@
         "top_reject_reasons": [
           {
             "reason": "url_or_geo_source_policy",
-            "count": 1
+            "count": 2
           }
         ]
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 3.796,
+      "duration_seconds": 2.019,
       "needs_action": false
     },
     {
@@ -1821,9 +1753,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.356,
-      "extract_duration_seconds": 2.298,
-      "byte_count": 562583,
+      "fetch_duration_seconds": 0.426,
+      "extract_duration_seconds": 2.902,
+      "byte_count": 317519,
       "post_count": 27,
       "extraction_funnel": {
         "raw_extracted": 27,
@@ -1842,7 +1774,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 2.654,
+      "duration_seconds": 3.329,
       "needs_action": false
     },
     {
@@ -1862,9 +1794,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 5.679,
-      "extract_duration_seconds": 87.272,
-      "byte_count": 227659,
+      "fetch_duration_seconds": 5.932,
+      "extract_duration_seconds": 89.699,
+      "byte_count": 227686,
       "post_count": 74,
       "extraction_funnel": {
         "raw_extracted": 74,
@@ -1887,7 +1819,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 92.951,
+      "duration_seconds": 95.632,
       "needs_action": false
     },
     {
@@ -1900,15 +1832,15 @@
       "candidate_count": 5,
       "publishable_count": 5,
       "dated_candidate_count": 5,
-      "coverage_signal_count": 2,
-      "coverage_signal_label": "upcoming dated items",
+      "coverage_signal_count": 5,
+      "coverage_signal_label": "items",
       "failure_class": "healthy_with_candidates",
       "reliability_ladder_step": "none",
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.767,
-      "extract_duration_seconds": 5.657,
+      "fetch_duration_seconds": 0.619,
+      "extract_duration_seconds": 5.66,
       "byte_count": 72306,
       "post_count": 28,
       "extraction_funnel": {
@@ -1928,7 +1860,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 6.424,
+      "duration_seconds": 6.279,
       "needs_action": false
     },
     {
@@ -1948,12 +1880,12 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.964,
-      "extract_duration_seconds": 7.193,
-      "byte_count": 126700,
-      "post_count": 44,
+      "fetch_duration_seconds": 0.773,
+      "extract_duration_seconds": 5.84,
+      "byte_count": 126959,
+      "post_count": 45,
       "extraction_funnel": {
-        "raw_extracted": 44,
+        "raw_extracted": 45,
         "url_gate_passed": 5,
         "date_gate_passed": 5,
         "geo_gate_passed": 5,
@@ -1963,17 +1895,17 @@
         "top_reject_reasons": [
           {
             "reason": "url_or_geo_source_policy",
-            "count": 22
+            "count": 20
           },
           {
             "reason": "duplicate_url",
-            "count": 3
+            "count": 4
           }
         ]
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 8.156,
+      "duration_seconds": 6.613,
       "needs_action": false
     },
     {
@@ -1993,9 +1925,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.674,
-      "extract_duration_seconds": 0.005,
-      "byte_count": 389741,
+      "fetch_duration_seconds": 0.456,
+      "extract_duration_seconds": 0.006,
+      "byte_count": 389695,
       "post_count": 5,
       "extraction_funnel": {
         "raw_extracted": 5,
@@ -2009,7 +1941,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.679,
+      "duration_seconds": 0.463,
       "needs_action": false
     },
     {
@@ -2029,9 +1961,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.622,
+      "fetch_duration_seconds": 0.433,
       "extract_duration_seconds": 0.008,
-      "byte_count": 507996,
+      "byte_count": 507962,
       "post_count": 10,
       "extraction_funnel": {
         "raw_extracted": 10,
@@ -2050,7 +1982,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.631,
+      "duration_seconds": 0.441,
       "needs_action": false
     },
     {
@@ -2059,27 +1991,43 @@
       "url": "https://fscmcr.co.uk/",
       "fetched_url": "https://fscmcr.co.uk/",
       "source_contract": "event_calendar",
-      "status": "not_modified",
-      "candidate_count": 0,
-      "publishable_count": 0,
-      "dated_candidate_count": 0,
-      "coverage_signal_count": 0,
-      "coverage_signal_label": "",
-      "failure_class": "healthy_not_modified",
+      "status": "ok",
+      "candidate_count": 4,
+      "publishable_count": 4,
+      "dated_candidate_count": 4,
+      "coverage_signal_count": 4,
+      "coverage_signal_label": "upcoming dated items",
+      "failure_class": "healthy_with_candidates",
       "reliability_ladder_step": "none",
-      "recommended_next_action": "no action; source reached and unchanged",
+      "recommended_next_action": "no reliability action",
       "errors": [],
-      "warnings": [
-        "304 Not Modified — no new content since last fetch"
-      ],
-      "fetch_duration_seconds": 0.101,
-      "extract_duration_seconds": 0.0,
-      "byte_count": 0,
-      "post_count": 0,
-      "extraction_funnel": {},
+      "warnings": [],
+      "fetch_duration_seconds": 0.302,
+      "extract_duration_seconds": 1.558,
+      "byte_count": 137983,
+      "post_count": 20,
+      "extraction_funnel": {
+        "raw_extracted": 20,
+        "url_gate_passed": 4,
+        "date_gate_passed": 4,
+        "geo_gate_passed": 4,
+        "routing_passed": 4,
+        "candidates": 4,
+        "geo_gate_owner": "source policy here; final GM consequence gate in validator",
+        "top_reject_reasons": [
+          {
+            "reason": "url_or_geo_source_policy",
+            "count": 13
+          },
+          {
+            "reason": "duplicate_url",
+            "count": 3
+          }
+        ]
+      },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.102,
+      "duration_seconds": 1.86,
       "needs_action": false
     },
     {
@@ -2089,38 +2037,38 @@
       "fetched_url": "https://www.skiddle.com/api/v1/events/search/?api_key=%2A%2A%2A&latitude=53.4839&longitude=-2.2446&radius=15&eventcode=FEST&order=distance&description=1&limit=100",
       "source_contract": "event_calendar",
       "status": "ok",
-      "candidate_count": 41,
-      "publishable_count": 41,
-      "dated_candidate_count": 41,
-      "coverage_signal_count": 41,
+      "candidate_count": 38,
+      "publishable_count": 38,
+      "dated_candidate_count": 38,
+      "coverage_signal_count": 38,
       "coverage_signal_label": "upcoming dated items",
       "failure_class": "healthy_with_candidates",
       "reliability_ladder_step": "none",
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.405,
+      "fetch_duration_seconds": 0.295,
       "extract_duration_seconds": 0.009,
-      "byte_count": 137681,
-      "post_count": 47,
+      "byte_count": 124940,
+      "post_count": 43,
       "extraction_funnel": {
-        "raw_extracted": 47,
-        "url_gate_passed": 41,
-        "date_gate_passed": 41,
-        "geo_gate_passed": 41,
-        "routing_passed": 41,
-        "candidates": 41,
+        "raw_extracted": 43,
+        "url_gate_passed": 38,
+        "date_gate_passed": 38,
+        "geo_gate_passed": 38,
+        "routing_passed": 38,
+        "candidates": 38,
         "geo_gate_owner": "source policy here; final GM consequence gate in validator",
         "top_reject_reasons": [
           {
             "reason": "url_or_geo_source_policy",
-            "count": 6
+            "count": 5
           }
         ]
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.415,
+      "duration_seconds": 0.305,
       "needs_action": false
     },
     {
@@ -2130,38 +2078,33 @@
       "fetched_url": "https://www.skiddle.com/api/v1/events/search/?api_key=%2A%2A%2A&latitude=53.4839&longitude=-2.2446&radius=15&eventcode=COMEDY&order=distance&description=1&limit=50",
       "source_contract": "event_calendar",
       "status": "ok",
-      "candidate_count": 49,
-      "publishable_count": 49,
-      "dated_candidate_count": 49,
-      "coverage_signal_count": 49,
+      "candidate_count": 50,
+      "publishable_count": 50,
+      "dated_candidate_count": 50,
+      "coverage_signal_count": 50,
       "coverage_signal_label": "upcoming dated items",
       "failure_class": "healthy_with_candidates",
       "reliability_ladder_step": "none",
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.244,
+      "fetch_duration_seconds": 0.4,
       "extract_duration_seconds": 0.01,
-      "byte_count": 94235,
+      "byte_count": 94534,
       "post_count": 50,
       "extraction_funnel": {
         "raw_extracted": 50,
-        "url_gate_passed": 49,
-        "date_gate_passed": 49,
-        "geo_gate_passed": 49,
-        "routing_passed": 49,
-        "candidates": 49,
+        "url_gate_passed": 50,
+        "date_gate_passed": 50,
+        "geo_gate_passed": 50,
+        "routing_passed": 50,
+        "candidates": 50,
         "geo_gate_owner": "source policy here; final GM consequence gate in validator",
-        "top_reject_reasons": [
-          {
-            "reason": "url_or_geo_source_policy",
-            "count": 1
-          }
-        ]
+        "top_reject_reasons": []
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.254,
+      "duration_seconds": 0.411,
       "needs_action": false
     },
     {
@@ -2181,9 +2124,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.668,
+      "fetch_duration_seconds": 0.105,
       "extract_duration_seconds": 0.019,
-      "byte_count": 488603,
+      "byte_count": 488607,
       "post_count": 1,
       "extraction_funnel": {
         "raw_extracted": 1,
@@ -2197,7 +2140,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.688,
+      "duration_seconds": 0.124,
       "needs_action": false
     },
     {
@@ -2226,7 +2169,7 @@
       "extraction_funnel": {},
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.217,
+      "duration_seconds": 1.743,
       "needs_action": true
     },
     {
@@ -2246,8 +2189,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.35,
-      "extract_duration_seconds": 0.033,
+      "fetch_duration_seconds": 0.237,
+      "extract_duration_seconds": 0.032,
       "byte_count": 1109069,
       "post_count": 1,
       "extraction_funnel": {
@@ -2262,7 +2205,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.384,
+      "duration_seconds": 0.271,
       "needs_action": false
     },
     {
@@ -2282,7 +2225,7 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.831,
+      "fetch_duration_seconds": 0.728,
       "extract_duration_seconds": 0.009,
       "byte_count": 98750,
       "post_count": 1,
@@ -2298,7 +2241,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.841,
+      "duration_seconds": 0.737,
       "needs_action": false
     },
     {
@@ -2318,9 +2261,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.524,
-      "extract_duration_seconds": 0.025,
-      "byte_count": 374338,
+      "fetch_duration_seconds": 2.21,
+      "extract_duration_seconds": 0.024,
+      "byte_count": 373913,
       "post_count": 1,
       "extraction_funnel": {
         "raw_extracted": 1,
@@ -2334,7 +2277,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.55,
+      "duration_seconds": 2.235,
       "needs_action": false
     },
     {
@@ -2354,7 +2297,7 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.78,
+      "fetch_duration_seconds": 0.747,
       "extract_duration_seconds": 0.006,
       "byte_count": 98135,
       "post_count": 1,
@@ -2370,7 +2313,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.786,
+      "duration_seconds": 0.754,
       "needs_action": false
     },
     {
@@ -2390,7 +2333,7 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.67,
+      "fetch_duration_seconds": 0.586,
       "extract_duration_seconds": 0.003,
       "byte_count": 45266,
       "post_count": 1,
@@ -2406,7 +2349,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.673,
+      "duration_seconds": 0.589,
       "needs_action": false
     },
     {
@@ -2426,7 +2369,7 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 2.709,
+      "fetch_duration_seconds": 2.404,
       "extract_duration_seconds": 0.017,
       "byte_count": 276623,
       "post_count": 1,
@@ -2442,7 +2385,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 2.727,
+      "duration_seconds": 2.421,
       "needs_action": false
     },
     {
@@ -2462,8 +2405,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.571,
-      "extract_duration_seconds": 0.027,
+      "fetch_duration_seconds": 0.81,
+      "extract_duration_seconds": 0.022,
       "byte_count": 442219,
       "post_count": 1,
       "extraction_funnel": {
@@ -2478,7 +2421,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.598,
+      "duration_seconds": 0.832,
       "needs_action": false
     },
     {
@@ -2487,27 +2430,34 @@
       "url": "https://www.campfieldmarket.com/",
       "fetched_url": "https://www.campfieldmarket.com/",
       "source_contract": "event_calendar",
-      "status": "not_modified",
-      "candidate_count": 0,
-      "publishable_count": 0,
+      "status": "ok",
+      "candidate_count": 1,
+      "publishable_count": 1,
       "dated_candidate_count": 0,
-      "coverage_signal_count": 0,
-      "coverage_signal_label": "",
-      "failure_class": "healthy_not_modified",
+      "coverage_signal_count": 1,
+      "coverage_signal_label": "items",
+      "failure_class": "healthy_with_candidates",
       "reliability_ladder_step": "none",
-      "recommended_next_action": "no action; source reached and unchanged",
+      "recommended_next_action": "no reliability action",
       "errors": [],
-      "warnings": [
-        "304 Not Modified — no new content since last fetch"
-      ],
-      "fetch_duration_seconds": 0.161,
-      "extract_duration_seconds": 0.0,
-      "byte_count": 0,
-      "post_count": 0,
-      "extraction_funnel": {},
+      "warnings": [],
+      "fetch_duration_seconds": 0.15,
+      "extract_duration_seconds": 0.01,
+      "byte_count": 171706,
+      "post_count": 1,
+      "extraction_funnel": {
+        "raw_extracted": 1,
+        "url_gate_passed": 1,
+        "date_gate_passed": 1,
+        "geo_gate_passed": 1,
+        "routing_passed": 1,
+        "candidates": 1,
+        "geo_gate_owner": "source policy here; final GM consequence gate in validator",
+        "top_reject_reasons": []
+      },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.162,
+      "duration_seconds": 0.16,
       "needs_action": false
     },
     {
@@ -2527,8 +2477,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.705,
-      "extract_duration_seconds": 0.008,
+      "fetch_duration_seconds": 1.9,
+      "extract_duration_seconds": 0.007,
       "byte_count": 165324,
       "post_count": 1,
       "extraction_funnel": {
@@ -2543,7 +2493,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.714,
+      "duration_seconds": 1.906,
       "needs_action": false
     },
     {
@@ -2563,7 +2513,7 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.433,
+      "fetch_duration_seconds": 0.368,
       "extract_duration_seconds": 0.009,
       "byte_count": 45549,
       "post_count": 1,
@@ -2579,7 +2529,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.441,
+      "duration_seconds": 0.376,
       "needs_action": false
     },
     {
@@ -2599,7 +2549,7 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.637,
+      "fetch_duration_seconds": 1.357,
       "extract_duration_seconds": 0.004,
       "byte_count": 52696,
       "post_count": 1,
@@ -2615,7 +2565,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.641,
+      "duration_seconds": 1.362,
       "needs_action": false
     },
     {
@@ -2635,9 +2585,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.905,
-      "extract_duration_seconds": 0.017,
-      "byte_count": 211529,
+      "fetch_duration_seconds": 2.339,
+      "extract_duration_seconds": 0.016,
+      "byte_count": 211637,
       "post_count": 1,
       "extraction_funnel": {
         "raw_extracted": 1,
@@ -2651,7 +2601,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.922,
+      "duration_seconds": 2.356,
       "needs_action": false
     },
     {
@@ -2673,9 +2623,9 @@
       "warnings": [
         "Sale Makers Market: fetched successfully but no candidate links passed filters"
       ],
-      "fetch_duration_seconds": 1.099,
+      "fetch_duration_seconds": 0.92,
       "extract_duration_seconds": 0.003,
-      "byte_count": 439685,
+      "byte_count": 439793,
       "post_count": 0,
       "extraction_funnel": {
         "raw_extracted": 0,
@@ -2689,7 +2639,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.102,
+      "duration_seconds": 0.923,
       "needs_action": true
     },
     {
@@ -2711,9 +2661,9 @@
       "warnings": [
         "Bolton Makers Market: fetched successfully but no candidate links passed filters"
       ],
-      "fetch_duration_seconds": 2.778,
+      "fetch_duration_seconds": 2.365,
       "extract_duration_seconds": 0.002,
-      "byte_count": 185297,
+      "byte_count": 185357,
       "post_count": 0,
       "extraction_funnel": {
         "raw_extracted": 0,
@@ -2727,7 +2677,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 2.78,
+      "duration_seconds": 2.367,
       "needs_action": true
     },
     {
@@ -2747,8 +2697,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.191,
-      "extract_duration_seconds": 0.006,
+      "fetch_duration_seconds": 0.123,
+      "extract_duration_seconds": 0.01,
       "byte_count": 146062,
       "post_count": 5,
       "extraction_funnel": {
@@ -2763,7 +2713,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.197,
+      "duration_seconds": 0.134,
       "needs_action": false
     },
     {
@@ -2783,8 +2733,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.194,
-      "extract_duration_seconds": 0.006,
+      "fetch_duration_seconds": 0.066,
+      "extract_duration_seconds": 0.01,
       "byte_count": 138404,
       "post_count": 5,
       "extraction_funnel": {
@@ -2799,7 +2749,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.2,
+      "duration_seconds": 0.076,
       "needs_action": false
     },
     {
@@ -2819,9 +2769,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.09,
-      "extract_duration_seconds": 0.017,
-      "byte_count": 384753,
+      "fetch_duration_seconds": 0.823,
+      "extract_duration_seconds": 0.018,
+      "byte_count": 388873,
       "post_count": 1,
       "extraction_funnel": {
         "raw_extracted": 1,
@@ -2835,7 +2785,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.108,
+      "duration_seconds": 0.842,
       "needs_action": false
     },
     {
@@ -2855,7 +2805,7 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.183,
+      "fetch_duration_seconds": 0.145,
       "extract_duration_seconds": 0.006,
       "byte_count": 137873,
       "post_count": 5,
@@ -2871,7 +2821,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.189,
+      "duration_seconds": 0.151,
       "needs_action": false
     },
     {
@@ -2891,8 +2841,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.191,
-      "extract_duration_seconds": 0.009,
+      "fetch_duration_seconds": 0.136,
+      "extract_duration_seconds": 0.01,
       "byte_count": 151747,
       "post_count": 4,
       "extraction_funnel": {
@@ -2907,37 +2857,44 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.2,
+      "duration_seconds": 0.145,
       "needs_action": false
     },
     {
       "name": "Chorlton Makers Market",
       "category": "culture_weekly",
       "url": "https://chorlton.coop/series/chorlton-makers-market/",
-      "fetched_url": "",
+      "fetched_url": "https://chorlton.coop/series/chorlton-makers-market/",
       "source_contract": "event_calendar",
-      "status": "failed_fetch",
-      "candidate_count": 0,
-      "publishable_count": 0,
-      "dated_candidate_count": 0,
-      "coverage_signal_count": 0,
-      "coverage_signal_label": "",
-      "failure_class": "fetch_timeout",
-      "reliability_ladder_step": "fetch_tuning",
-      "recommended_next_action": "check timeout, fallback URL, and source availability",
-      "errors": [
-        "The read operation timed out"
-      ],
+      "status": "ok",
+      "candidate_count": 1,
+      "publishable_count": 1,
+      "dated_candidate_count": 1,
+      "coverage_signal_count": 1,
+      "coverage_signal_label": "upcoming dated items",
+      "failure_class": "healthy_with_candidates",
+      "reliability_ladder_step": "none",
+      "recommended_next_action": "no reliability action",
+      "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.0,
-      "extract_duration_seconds": 0.0,
-      "byte_count": 0,
-      "post_count": 0,
-      "extraction_funnel": {},
+      "fetch_duration_seconds": 1.014,
+      "extract_duration_seconds": 0.014,
+      "byte_count": 160236,
+      "post_count": 13,
+      "extraction_funnel": {
+        "raw_extracted": 13,
+        "url_gate_passed": 1,
+        "date_gate_passed": 1,
+        "geo_gate_passed": 1,
+        "routing_passed": 1,
+        "candidates": 1,
+        "geo_gate_owner": "source policy here; final GM consequence gate in validator",
+        "top_reject_reasons": []
+      },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 30.482,
-      "needs_action": true
+      "duration_seconds": 1.028,
+      "needs_action": false
     },
     {
       "name": "Barton Aerodrome Car Boot",
@@ -2956,12 +2913,12 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.629,
-      "extract_duration_seconds": 0.012,
-      "byte_count": 179599,
-      "post_count": 10,
+      "fetch_duration_seconds": 0.734,
+      "extract_duration_seconds": 0.011,
+      "byte_count": 175548,
+      "post_count": 9,
       "extraction_funnel": {
-        "raw_extracted": 10,
+        "raw_extracted": 9,
         "url_gate_passed": 1,
         "date_gate_passed": 1,
         "geo_gate_passed": 1,
@@ -2972,7 +2929,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.641,
+      "duration_seconds": 0.744,
       "needs_action": false
     },
     {
@@ -2992,8 +2949,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.601,
-      "extract_duration_seconds": 0.011,
+      "fetch_duration_seconds": 0.744,
+      "extract_duration_seconds": 0.013,
       "byte_count": 179004,
       "post_count": 11,
       "extraction_funnel": {
@@ -3008,7 +2965,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.612,
+      "duration_seconds": 0.758,
       "needs_action": false
     },
     {
@@ -3028,7 +2985,7 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.458,
+      "fetch_duration_seconds": 0.472,
       "extract_duration_seconds": 0.029,
       "byte_count": 285349,
       "post_count": 36,
@@ -3044,7 +3001,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.487,
+      "duration_seconds": 0.501,
       "needs_action": false
     },
     {
@@ -3064,8 +3021,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.471,
-      "extract_duration_seconds": 0.012,
+      "fetch_duration_seconds": 0.3,
+      "extract_duration_seconds": 0.007,
       "byte_count": 151542,
       "post_count": 4,
       "extraction_funnel": {
@@ -3080,7 +3037,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.483,
+      "duration_seconds": 0.307,
       "needs_action": false
     },
     {
@@ -3100,8 +3057,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.417,
-      "extract_duration_seconds": 0.027,
+      "fetch_duration_seconds": 0.528,
+      "extract_duration_seconds": 0.03,
       "byte_count": 285450,
       "post_count": 36,
       "extraction_funnel": {
@@ -3116,7 +3073,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.444,
+      "duration_seconds": 0.559,
       "needs_action": false
     },
     {
@@ -3136,9 +3093,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.202,
-      "extract_duration_seconds": 0.014,
-      "byte_count": 127397,
+      "fetch_duration_seconds": 0.166,
+      "extract_duration_seconds": 0.013,
+      "byte_count": 127392,
       "post_count": 2,
       "extraction_funnel": {
         "raw_extracted": 2,
@@ -3152,7 +3109,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.215,
+      "duration_seconds": 0.18,
       "needs_action": false
     },
     {
@@ -3172,9 +3129,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.741,
+      "fetch_duration_seconds": 2.749,
       "extract_duration_seconds": 0.004,
-      "byte_count": 346139,
+      "byte_count": 332342,
       "post_count": 1,
       "extraction_funnel": {
         "raw_extracted": 1,
@@ -3188,7 +3145,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.746,
+      "duration_seconds": 2.753,
       "needs_action": false
     },
     {
@@ -3208,9 +3165,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.105,
-      "extract_duration_seconds": 6.103,
-      "byte_count": 154477,
+      "fetch_duration_seconds": 0.615,
+      "extract_duration_seconds": 4.452,
+      "byte_count": 154536,
       "post_count": 31,
       "extraction_funnel": {
         "raw_extracted": 31,
@@ -3233,7 +3190,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 7.208,
+      "duration_seconds": 5.068,
       "needs_action": false
     },
     {
@@ -3255,8 +3212,8 @@
       "warnings": [
         "Secret Manchester Monthly Guide: fetched successfully but no candidate links passed filters"
       ],
-      "fetch_duration_seconds": 0.169,
-      "extract_duration_seconds": 0.212,
+      "fetch_duration_seconds": 0.15,
+      "extract_duration_seconds": 0.135,
       "byte_count": 1999,
       "post_count": 0,
       "extraction_funnel": {
@@ -3271,7 +3228,7 @@
       },
       "empty_retry_performed": true,
       "empty_retry_result": "still_empty",
-      "duration_seconds": 0.38,
+      "duration_seconds": 0.284,
       "needs_action": true
     },
     {
@@ -3293,8 +3250,8 @@
       "warnings": [
         "Secret Manchester Gigs: fetched successfully but no candidate links passed filters"
       ],
-      "fetch_duration_seconds": 0.144,
-      "extract_duration_seconds": 0.222,
+      "fetch_duration_seconds": 0.133,
+      "extract_duration_seconds": 0.141,
       "byte_count": 1999,
       "post_count": 0,
       "extraction_funnel": {
@@ -3309,7 +3266,7 @@
       },
       "empty_retry_performed": true,
       "empty_retry_result": "still_empty",
-      "duration_seconds": 0.366,
+      "duration_seconds": 0.274,
       "needs_action": true
     },
     {
@@ -3322,19 +3279,19 @@
       "candidate_count": 5,
       "publishable_count": 5,
       "dated_candidate_count": 5,
-      "coverage_signal_count": 4,
-      "coverage_signal_label": "upcoming dated items",
+      "coverage_signal_count": 5,
+      "coverage_signal_label": "items",
       "failure_class": "healthy_with_candidates",
       "reliability_ladder_step": "none",
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.749,
-      "extract_duration_seconds": 1.127,
-      "byte_count": 2773273,
-      "post_count": 3916,
+      "fetch_duration_seconds": 1.511,
+      "extract_duration_seconds": 1.102,
+      "byte_count": 2765282,
+      "post_count": 3905,
       "extraction_funnel": {
-        "raw_extracted": 3916,
+        "raw_extracted": 3905,
         "url_gate_passed": 5,
         "date_gate_passed": 5,
         "geo_gate_passed": 5,
@@ -3345,7 +3302,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 2.878,
+      "duration_seconds": 2.615,
       "needs_action": false
     },
     {
@@ -3790,10 +3747,10 @@
       "fetched_url": "",
       "source_contract": "night_inventory",
       "status": "ok",
-      "candidate_count": 47,
-      "publishable_count": 47,
-      "dated_candidate_count": 47,
-      "coverage_signal_count": 47,
+      "candidate_count": 45,
+      "publishable_count": 45,
+      "dated_candidate_count": 45,
+      "coverage_signal_count": 45,
       "coverage_signal_label": "night inventory candidates",
       "failure_class": "",
       "reliability_ladder_step": "",
@@ -3827,12 +3784,12 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.288,
-      "extract_duration_seconds": 7.145,
-      "byte_count": 97842,
-      "post_count": 33,
+      "fetch_duration_seconds": 0.615,
+      "extract_duration_seconds": 5.821,
+      "byte_count": 97301,
+      "post_count": 32,
       "extraction_funnel": {
-        "raw_extracted": 33,
+        "raw_extracted": 32,
         "url_gate_passed": 5,
         "date_gate_passed": 5,
         "geo_gate_passed": 5,
@@ -3842,13 +3799,13 @@
         "top_reject_reasons": [
           {
             "reason": "url_or_geo_source_policy",
-            "count": 13
+            "count": 12
           }
         ]
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 8.433,
+      "duration_seconds": 6.436,
       "needs_action": false
     },
     {
@@ -3868,9 +3825,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.272,
-      "extract_duration_seconds": 9.594,
-      "byte_count": 243763,
+      "fetch_duration_seconds": 0.22,
+      "extract_duration_seconds": 7.968,
+      "byte_count": 223675,
       "post_count": 46,
       "extraction_funnel": {
         "raw_extracted": 46,
@@ -3897,7 +3854,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 9.866,
+      "duration_seconds": 8.188,
       "needs_action": false
     },
     {
@@ -3917,9 +3874,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.759,
-      "extract_duration_seconds": 9.889,
-      "byte_count": 158809,
+      "fetch_duration_seconds": 0.619,
+      "extract_duration_seconds": 8.304,
+      "byte_count": 158248,
       "post_count": 20,
       "extraction_funnel": {
         "raw_extracted": 20,
@@ -3938,7 +3895,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 10.648,
+      "duration_seconds": 8.923,
       "needs_action": false
     },
     {
@@ -3946,135 +3903,6 @@
       "category": "football",
       "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC6yW44UGJJBvYTlfC7CRg2Q",
       "fetched_url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC6yW44UGJJBvYTlfC7CRg2Q",
-      "source_contract": "football_official",
-      "status": "empty_parser",
-      "candidate_count": 0,
-      "publishable_count": 0,
-      "dated_candidate_count": 0,
-      "coverage_signal_count": 0,
-      "coverage_signal_label": "items",
-      "failure_class": "parser_or_filter_empty",
-      "reliability_ladder_step": "parser_fix",
-      "recommended_next_action": "inspect HTML/feed shape and source filter before curl/proxy",
-      "errors": [],
-      "warnings": [
-        "Manchester United: fetched successfully but no candidate links passed filters"
-      ],
-      "fetch_duration_seconds": 0.189,
-      "extract_duration_seconds": 0.002,
-      "byte_count": 21034,
-      "post_count": 14,
-      "extraction_funnel": {
-        "raw_extracted": 14,
-        "url_gate_passed": 0,
-        "date_gate_passed": 0,
-        "geo_gate_passed": 0,
-        "routing_passed": 0,
-        "candidates": 0,
-        "geo_gate_owner": "source policy here; final GM consequence gate in validator",
-        "top_reject_reasons": [
-          {
-            "reason": "url_or_geo_source_policy",
-            "count": 14
-          }
-        ]
-      },
-      "empty_retry_performed": false,
-      "empty_retry_result": "",
-      "duration_seconds": 0.191,
-      "needs_action": true
-    },
-    {
-      "name": "Manchester City",
-      "category": "football",
-      "url": "https://www.mancity.com/news?tag=News",
-      "fetched_url": "https://www.mancity.com/news?tag=News",
-      "source_contract": "football_official",
-      "status": "empty_parser",
-      "candidate_count": 0,
-      "publishable_count": 0,
-      "dated_candidate_count": 0,
-      "coverage_signal_count": 0,
-      "coverage_signal_label": "items",
-      "failure_class": "parser_or_filter_empty",
-      "reliability_ladder_step": "parser_fix",
-      "recommended_next_action": "inspect HTML/feed shape and source filter before curl/proxy",
-      "errors": [],
-      "warnings": [
-        "Manchester City: fetched successfully but no candidate links passed filters"
-      ],
-      "fetch_duration_seconds": 0.708,
-      "extract_duration_seconds": 0.019,
-      "byte_count": 294419,
-      "post_count": 1,
-      "extraction_funnel": {
-        "raw_extracted": 1,
-        "url_gate_passed": 0,
-        "date_gate_passed": 0,
-        "geo_gate_passed": 0,
-        "routing_passed": 0,
-        "candidates": 0,
-        "geo_gate_owner": "source policy here; final GM consequence gate in validator",
-        "top_reject_reasons": [
-          {
-            "reason": "url_or_geo_source_policy",
-            "count": 1
-          }
-        ]
-      },
-      "empty_retry_performed": false,
-      "empty_retry_result": "",
-      "duration_seconds": 0.727,
-      "needs_action": true
-    },
-    {
-      "name": "Manchester City Men",
-      "category": "football",
-      "url": "https://www.mancity.com/news/mens",
-      "fetched_url": "https://www.mancity.com/news/mens",
-      "source_contract": "football_official",
-      "status": "empty_parser",
-      "candidate_count": 0,
-      "publishable_count": 0,
-      "dated_candidate_count": 0,
-      "coverage_signal_count": 0,
-      "coverage_signal_label": "items",
-      "failure_class": "parser_or_filter_empty",
-      "reliability_ladder_step": "parser_fix",
-      "recommended_next_action": "inspect HTML/feed shape and source filter before curl/proxy",
-      "errors": [],
-      "warnings": [
-        "Manchester City Men: fetched successfully but no candidate links passed filters"
-      ],
-      "fetch_duration_seconds": 0.678,
-      "extract_duration_seconds": 0.018,
-      "byte_count": 271675,
-      "post_count": 2,
-      "extraction_funnel": {
-        "raw_extracted": 2,
-        "url_gate_passed": 0,
-        "date_gate_passed": 0,
-        "geo_gate_passed": 0,
-        "routing_passed": 0,
-        "candidates": 0,
-        "geo_gate_owner": "source policy here; final GM consequence gate in validator",
-        "top_reject_reasons": [
-          {
-            "reason": "url_or_geo_source_policy",
-            "count": 2
-          }
-        ]
-      },
-      "empty_retry_performed": false,
-      "empty_retry_result": "",
-      "duration_seconds": 0.696,
-      "needs_action": true
-    },
-    {
-      "name": "BBC Sport Manchester United",
-      "category": "football",
-      "url": "https://feeds.bbci.co.uk/sport/football/teams/manchester-united/rss.xml",
-      "fetched_url": "https://feeds.bbci.co.uk/sport/football/teams/manchester-united/rss.xml",
       "source_contract": "football_official",
       "status": "ok",
       "candidate_count": 1,
@@ -4087,9 +3915,86 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.18,
-      "extract_duration_seconds": 1.037,
-      "byte_count": 3595,
+      "fetch_duration_seconds": 0.036,
+      "extract_duration_seconds": 0.558,
+      "byte_count": 21283,
+      "post_count": 15,
+      "extraction_funnel": {
+        "raw_extracted": 15,
+        "url_gate_passed": 1,
+        "date_gate_passed": 1,
+        "geo_gate_passed": 1,
+        "routing_passed": 1,
+        "candidates": 1,
+        "geo_gate_owner": "source policy here; final GM consequence gate in validator",
+        "top_reject_reasons": [
+          {
+            "reason": "url_or_geo_source_policy",
+            "count": 14
+          }
+        ]
+      },
+      "empty_retry_performed": false,
+      "empty_retry_result": "",
+      "duration_seconds": 0.594,
+      "needs_action": false
+    },
+    {
+      "name": "Manchester City",
+      "category": "football",
+      "url": "https://www.mancity.com/news?tag=News",
+      "fetched_url": "https://www.mancity.com/news?tag=News",
+      "source_contract": "football_official",
+      "status": "ok",
+      "candidate_count": 1,
+      "publishable_count": 1,
+      "dated_candidate_count": 1,
+      "coverage_signal_count": 1,
+      "coverage_signal_label": "items",
+      "failure_class": "healthy_with_candidates",
+      "reliability_ladder_step": "none",
+      "recommended_next_action": "no reliability action",
+      "errors": [],
+      "warnings": [],
+      "fetch_duration_seconds": 0.163,
+      "extract_duration_seconds": 0.57,
+      "byte_count": 296902,
+      "post_count": 1,
+      "extraction_funnel": {
+        "raw_extracted": 1,
+        "url_gate_passed": 1,
+        "date_gate_passed": 1,
+        "geo_gate_passed": 1,
+        "routing_passed": 1,
+        "candidates": 1,
+        "geo_gate_owner": "source policy here; final GM consequence gate in validator",
+        "top_reject_reasons": []
+      },
+      "empty_retry_performed": false,
+      "empty_retry_result": "",
+      "duration_seconds": 0.733,
+      "needs_action": false
+    },
+    {
+      "name": "Manchester City Men",
+      "category": "football",
+      "url": "https://www.mancity.com/news/mens",
+      "fetched_url": "https://www.mancity.com/news/mens",
+      "source_contract": "football_official",
+      "status": "ok",
+      "candidate_count": 1,
+      "publishable_count": 1,
+      "dated_candidate_count": 1,
+      "coverage_signal_count": 1,
+      "coverage_signal_label": "items",
+      "failure_class": "healthy_with_candidates",
+      "reliability_ladder_step": "none",
+      "recommended_next_action": "no reliability action",
+      "errors": [],
+      "warnings": [],
+      "fetch_duration_seconds": 0.514,
+      "extract_duration_seconds": 0.453,
+      "byte_count": 273431,
       "post_count": 2,
       "extraction_funnel": {
         "raw_extracted": 2,
@@ -4108,7 +4013,43 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.217,
+      "duration_seconds": 0.968,
+      "needs_action": false
+    },
+    {
+      "name": "BBC Sport Manchester United",
+      "category": "football",
+      "url": "https://feeds.bbci.co.uk/sport/football/teams/manchester-united/rss.xml",
+      "fetched_url": "https://feeds.bbci.co.uk/sport/football/teams/manchester-united/rss.xml",
+      "source_contract": "football_official",
+      "status": "ok",
+      "candidate_count": 1,
+      "publishable_count": 1,
+      "dated_candidate_count": 1,
+      "coverage_signal_count": 1,
+      "coverage_signal_label": "items",
+      "failure_class": "healthy_with_candidates",
+      "reliability_ladder_step": "none",
+      "recommended_next_action": "no reliability action",
+      "errors": [],
+      "warnings": [],
+      "fetch_duration_seconds": 0.354,
+      "extract_duration_seconds": 1.329,
+      "byte_count": 3602,
+      "post_count": 1,
+      "extraction_funnel": {
+        "raw_extracted": 1,
+        "url_gate_passed": 1,
+        "date_gate_passed": 1,
+        "geo_gate_passed": 1,
+        "routing_passed": 1,
+        "candidates": 1,
+        "geo_gate_owner": "source policy here; final GM consequence gate in validator",
+        "top_reject_reasons": []
+      },
+      "empty_retry_performed": false,
+      "empty_retry_result": "",
+      "duration_seconds": 1.683,
       "needs_action": false
     },
     {
@@ -4128,9 +4069,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.479,
-      "extract_duration_seconds": 1.339,
-      "byte_count": 610032,
+      "fetch_duration_seconds": 0.329,
+      "extract_duration_seconds": 0.544,
+      "byte_count": 617933,
       "post_count": 4,
       "extraction_funnel": {
         "raw_extracted": 4,
@@ -4149,7 +4090,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.818,
+      "duration_seconds": 0.874,
       "needs_action": false
     },
     {
@@ -4169,9 +4110,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.4,
-      "extract_duration_seconds": 6.992,
-      "byte_count": 37299,
+      "fetch_duration_seconds": 0.174,
+      "extract_duration_seconds": 4.4,
+      "byte_count": 36069,
       "post_count": 25,
       "extraction_funnel": {
         "raw_extracted": 25,
@@ -4185,7 +4126,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 7.392,
+      "duration_seconds": 4.574,
       "needs_action": false
     },
     {
@@ -4205,28 +4146,28 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.416,
-      "extract_duration_seconds": 6.821,
-      "byte_count": 36800,
+      "fetch_duration_seconds": 0.332,
+      "extract_duration_seconds": 5.23,
+      "byte_count": 36772,
       "post_count": 25,
       "extraction_funnel": {
         "raw_extracted": 25,
-        "url_gate_passed": 10,
-        "date_gate_passed": 10,
-        "geo_gate_passed": 10,
+        "url_gate_passed": 11,
+        "date_gate_passed": 11,
+        "geo_gate_passed": 11,
         "routing_passed": 8,
         "candidates": 8,
         "geo_gate_owner": "source policy here; final GM consequence gate in validator",
         "top_reject_reasons": [
           {
             "reason": "football_fluff",
-            "count": 2
+            "count": 3
           }
         ]
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 7.237,
+      "duration_seconds": 5.562,
       "needs_action": false
     },
     {
@@ -4246,9 +4187,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.897,
-      "extract_duration_seconds": 0.603,
-      "byte_count": 69208,
+      "fetch_duration_seconds": 0.692,
+      "extract_duration_seconds": 0.289,
+      "byte_count": 68127,
       "post_count": 20,
       "extraction_funnel": {
         "raw_extracted": 20,
@@ -4262,7 +4203,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 1.499,
+      "duration_seconds": 0.982,
       "needs_action": false
     },
     {
@@ -4282,12 +4223,12 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.602,
-      "extract_duration_seconds": 0.021,
-      "byte_count": 73917,
-      "post_count": 20,
+      "fetch_duration_seconds": 0.379,
+      "extract_duration_seconds": 0.01,
+      "byte_count": 73430,
+      "post_count": 19,
       "extraction_funnel": {
-        "raw_extracted": 20,
+        "raw_extracted": 19,
         "url_gate_passed": 6,
         "date_gate_passed": 6,
         "geo_gate_passed": 6,
@@ -4298,7 +4239,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.623,
+      "duration_seconds": 0.389,
       "needs_action": false
     },
     {
@@ -4318,8 +4259,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.731,
-      "extract_duration_seconds": 3.389,
+      "fetch_duration_seconds": 0.669,
+      "extract_duration_seconds": 3.991,
       "byte_count": 87138,
       "post_count": 30,
       "extraction_funnel": {
@@ -4339,7 +4280,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 4.121,
+      "duration_seconds": 4.66,
       "needs_action": false
     },
     {
@@ -4348,39 +4289,27 @@
       "url": "https://www.prolificnorth.co.uk/location/manchester/feed/",
       "fetched_url": "https://www.prolificnorth.co.uk/location/manchester/feed/",
       "source_contract": "business_news",
-      "status": "ok",
-      "candidate_count": 5,
-      "publishable_count": 5,
-      "dated_candidate_count": 5,
-      "coverage_signal_count": 5,
-      "coverage_signal_label": "items",
-      "failure_class": "healthy_with_candidates",
+      "status": "not_modified",
+      "candidate_count": 0,
+      "publishable_count": 0,
+      "dated_candidate_count": 0,
+      "coverage_signal_count": 0,
+      "coverage_signal_label": "",
+      "failure_class": "healthy_not_modified",
       "reliability_ladder_step": "none",
-      "recommended_next_action": "no reliability action",
+      "recommended_next_action": "no action; source reached and unchanged",
       "errors": [],
-      "warnings": [],
-      "fetch_duration_seconds": 1.564,
-      "extract_duration_seconds": 1.747,
-      "byte_count": 127526,
-      "post_count": 22,
-      "extraction_funnel": {
-        "raw_extracted": 22,
-        "url_gate_passed": 5,
-        "date_gate_passed": 5,
-        "geo_gate_passed": 5,
-        "routing_passed": 5,
-        "candidates": 5,
-        "geo_gate_owner": "source policy here; final GM consequence gate in validator",
-        "top_reject_reasons": [
-          {
-            "reason": "url_or_geo_source_policy",
-            "count": 4
-          }
-        ]
-      },
+      "warnings": [
+        "304 Not Modified — no new content since last fetch"
+      ],
+      "fetch_duration_seconds": 1.55,
+      "extract_duration_seconds": 0.0,
+      "byte_count": 0,
+      "post_count": 0,
+      "extraction_funnel": {},
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 3.312,
+      "duration_seconds": 1.551,
       "needs_action": false
     },
     {
@@ -4400,9 +4329,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.398,
+      "fetch_duration_seconds": 0.942,
       "extract_duration_seconds": 0.009,
-      "byte_count": 85357,
+      "byte_count": 82981,
       "post_count": 10,
       "extraction_funnel": {
         "raw_extracted": 10,
@@ -4421,7 +4350,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.407,
+      "duration_seconds": 0.951,
       "needs_action": false
     },
     {
@@ -4441,9 +4370,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.954,
-      "extract_duration_seconds": 18.66,
-      "byte_count": 91805,
+      "fetch_duration_seconds": 0.718,
+      "extract_duration_seconds": 17.171,
+      "byte_count": 91661,
       "post_count": 20,
       "extraction_funnel": {
         "raw_extracted": 20,
@@ -4462,7 +4391,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 19.614,
+      "duration_seconds": 17.889,
       "needs_action": false
     },
     {
@@ -4471,34 +4400,27 @@
       "url": "https://www.investmanchester.co.uk/news/?feed=rss2",
       "fetched_url": "https://www.investmanchester.co.uk/news/?feed=rss2",
       "source_contract": "business_news",
-      "status": "ok",
-      "candidate_count": 5,
-      "publishable_count": 5,
-      "dated_candidate_count": 5,
-      "coverage_signal_count": 5,
-      "coverage_signal_label": "items",
-      "failure_class": "healthy_with_candidates",
+      "status": "not_modified",
+      "candidate_count": 0,
+      "publishable_count": 0,
+      "dated_candidate_count": 0,
+      "coverage_signal_count": 0,
+      "coverage_signal_label": "",
+      "failure_class": "healthy_not_modified",
       "reliability_ladder_step": "none",
-      "recommended_next_action": "no reliability action",
+      "recommended_next_action": "no action; source reached and unchanged",
       "errors": [],
-      "warnings": [],
-      "fetch_duration_seconds": 2.348,
-      "extract_duration_seconds": 0.005,
-      "byte_count": 108820,
-      "post_count": 12,
-      "extraction_funnel": {
-        "raw_extracted": 12,
-        "url_gate_passed": 5,
-        "date_gate_passed": 5,
-        "geo_gate_passed": 5,
-        "routing_passed": 5,
-        "candidates": 5,
-        "geo_gate_owner": "source policy here; final GM consequence gate in validator",
-        "top_reject_reasons": []
-      },
+      "warnings": [
+        "304 Not Modified — no new content since last fetch"
+      ],
+      "fetch_duration_seconds": 1.233,
+      "extract_duration_seconds": 0.0,
+      "byte_count": 0,
+      "post_count": 0,
+      "extraction_funnel": {},
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 2.353,
+      "duration_seconds": 1.234,
       "needs_action": false
     },
     {
@@ -4520,7 +4442,7 @@
       "warnings": [
         "BusinessLive Greater Manchester: fetched successfully but no candidate links passed filters"
       ],
-      "fetch_duration_seconds": 0.29,
+      "fetch_duration_seconds": 0.28,
       "extract_duration_seconds": 0.0,
       "byte_count": 2031,
       "post_count": 0,
@@ -4536,7 +4458,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.291,
+      "duration_seconds": 0.281,
       "needs_action": true
     },
     {
@@ -4556,8 +4478,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.549,
-      "extract_duration_seconds": 4.644,
+      "fetch_duration_seconds": 0.707,
+      "extract_duration_seconds": 6.289,
       "byte_count": 363240,
       "post_count": 57,
       "extraction_funnel": {
@@ -4577,7 +4499,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 5.194,
+      "duration_seconds": 6.997,
       "needs_action": false
     },
     {
@@ -4597,8 +4519,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.113,
-      "extract_duration_seconds": 9.647,
+      "fetch_duration_seconds": 0.857,
+      "extract_duration_seconds": 7.864,
       "byte_count": 66736,
       "post_count": 36,
       "extraction_funnel": {
@@ -4618,7 +4540,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 10.761,
+      "duration_seconds": 8.721,
       "needs_action": false
     },
     {
@@ -4638,8 +4560,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.731,
-      "extract_duration_seconds": 5.923,
+      "fetch_duration_seconds": 0.305,
+      "extract_duration_seconds": 4.568,
       "byte_count": 55821,
       "post_count": 70,
       "extraction_funnel": {
@@ -4659,7 +4581,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 6.655,
+      "duration_seconds": 4.873,
       "needs_action": false
     },
     {
@@ -4679,8 +4601,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 1.078,
-      "extract_duration_seconds": 5.619,
+      "fetch_duration_seconds": 0.8,
+      "extract_duration_seconds": 5.64,
       "byte_count": 122690,
       "post_count": 11,
       "extraction_funnel": {
@@ -4700,7 +4622,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 6.697,
+      "duration_seconds": 6.44,
       "needs_action": false
     },
     {
@@ -4720,9 +4642,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 2.156,
-      "extract_duration_seconds": 8.806,
-      "byte_count": 771090,
+      "fetch_duration_seconds": 2.019,
+      "extract_duration_seconds": 12.577,
+      "byte_count": 771084,
       "post_count": 110,
       "extraction_funnel": {
         "raw_extracted": 110,
@@ -4745,7 +4667,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 10.963,
+      "duration_seconds": 14.597,
       "needs_action": false
     },
     {
@@ -4765,8 +4687,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.697,
-      "extract_duration_seconds": 2.859,
+      "fetch_duration_seconds": 0.806,
+      "extract_duration_seconds": 4.761,
       "byte_count": 55264,
       "post_count": 4,
       "extraction_funnel": {
@@ -4786,7 +4708,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 3.556,
+      "duration_seconds": 5.567,
       "needs_action": false
     },
     {
@@ -4808,14 +4730,14 @@
       "warnings": [
         "304 Not Modified — no new content since last fetch"
       ],
-      "fetch_duration_seconds": 0.275,
+      "fetch_duration_seconds": 0.203,
       "extract_duration_seconds": 0.0,
       "byte_count": 0,
       "post_count": 0,
       "extraction_funnel": {},
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.276,
+      "duration_seconds": 0.204,
       "needs_action": false
     },
     {
@@ -4837,14 +4759,14 @@
       "warnings": [
         "304 Not Modified — no new content since last fetch"
       ],
-      "fetch_duration_seconds": 0.807,
+      "fetch_duration_seconds": 0.642,
       "extract_duration_seconds": 0.0,
       "byte_count": 0,
       "post_count": 0,
       "extraction_funnel": {},
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.807,
+      "duration_seconds": 0.642,
       "needs_action": false
     },
     {
@@ -4864,8 +4786,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 0.465,
-      "extract_duration_seconds": 0.336,
+      "fetch_duration_seconds": 0.541,
+      "extract_duration_seconds": 0.443,
       "byte_count": 16780,
       "post_count": 1,
       "extraction_funnel": {
@@ -4880,7 +4802,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 0.801,
+      "duration_seconds": 0.984,
       "needs_action": false
     },
     {
@@ -4900,9 +4822,9 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 3.792,
-      "extract_duration_seconds": 19.33,
-      "byte_count": 143952,
+      "fetch_duration_seconds": 0.459,
+      "extract_duration_seconds": 18.41,
+      "byte_count": 143768,
       "post_count": 47,
       "extraction_funnel": {
         "raw_extracted": 47,
@@ -4925,7 +4847,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 23.122,
+      "duration_seconds": 18.87,
       "needs_action": false
     },
     {
@@ -4945,8 +4867,8 @@
       "recommended_next_action": "no reliability action",
       "errors": [],
       "warnings": [],
-      "fetch_duration_seconds": 2.07,
-      "extract_duration_seconds": 2.364,
+      "fetch_duration_seconds": 2.987,
+      "extract_duration_seconds": 3.88,
       "byte_count": 243833,
       "post_count": 31,
       "extraction_funnel": {
@@ -4961,7 +4883,7 @@
       },
       "empty_retry_performed": false,
       "empty_retry_result": "",
-      "duration_seconds": 4.433,
+      "duration_seconds": 6.867,
       "needs_action": false
     }
   ]
